@@ -245,16 +245,25 @@ const menu = computed(() => {
   // themselves, another for someone else, and who in its tooltip
   const designer = m.find((x) => x.link == '/designer');
   if (designer && designerLockIndicator.value) designer.indicator = designerLockIndicator.value;
-  // the instance's own links placed in the header itself (Settings > Appearance > Links > Custom)
-  for (const l of store.headerLinks || []) {
-    if (l.menu !== false) continue;
-    m.push({ title: l.label, href: l.url, icon: iconOrDefault(l.icon), newTab: !!l.newTab });
-  }
   return m;
 });
 
-// the own links nested in the header's Links menu (the others sit in the header itself)
-const menuLinks = computed(() => (store.headerLinks || []).filter((l) => l.menu !== false));
+// the instance's own links in the header : each with the links inside it ; a menu's own
+// address, when it has one, is the first entry of its menu
+const ownLinks = computed(() => {
+  const all = store.headerLinks || [];
+  return all
+    .filter((l) => !l.parent)
+    .map((top) => {
+      const children = all.filter((l) => l.parent === top.id);
+      return {
+        ...top,
+        children,
+        entries: top.url ? [top, ...children] : children,
+        nav: { title: top.label, href: top.url, icon: iconOrDefault(top.icon), newTab: !!top.newTab },
+      };
+    });
+});
 
 const currentLanguage = computed(() => languages.find((l) => l.code === locale.value) || fallbackLanguage);
 
@@ -337,51 +346,54 @@ const buildMismatch = computed(() => {
     <!-- primary navigation, next to the logo -->
     <template #start>
       <ul ref="primaryNav" class="navbar-nav af-nav-primary me-auto" :class="FIT_CLASSES[navFit]">
-        <BsNavLink v-for="m in menu" :key="m.link || `${m.title}|${m.href}`" :link="m" />
-        <!-- the instance's own links nested under one menu (Settings > Appearance > Links >
-             Custom) ; those placed in the header itself are in the menu above -->
-        <li v-if="menuLinks.length" class="nav-item dropdown">
-          <a
-            class="nav-link icon-link link-body-emphasis dropdown-toggle"
-            href="#"
-            role="button"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
-            :title="t('nav.links')"
-            @click.prevent
-          >
-            <span class="af-nav-link-icon"><font-awesome-icon icon="link" /></span>
-            <span class="af-nav-text">{{ t('nav.links') }}</span>
-          </a>
-          <ul class="dropdown-menu">
-            <li v-for="l in menuLinks" :key="`${l.label}|${l.url}`">
-              <!-- a page of the app in this tab : the router's ; a site, or a new tab : a plain link -->
-              <router-link
-                v-if="l.url.startsWith('/') && !l.newTab"
-                class="dropdown-item d-flex align-items-center"
-                :to="l.url"
-              >
-                <span class="icon"><font-awesome-icon :icon="iconOrDefault(l.icon)" fixed-width /></span>
-                <span class="ms-2">{{ l.label }}</span>
-              </router-link>
-              <a
-                v-else
-                class="dropdown-item d-flex align-items-center"
-                :href="l.url"
-                :target="l.newTab ? '_blank' : '_self'"
-                :rel="l.newTab ? 'noopener noreferrer' : undefined"
-              >
-                <span class="icon"><font-awesome-icon :icon="iconOrDefault(l.icon)" fixed-width /></span>
-                <span class="ms-2">{{ l.label }}</span>
-                <font-awesome-icon
-                  v-if="l.newTab"
-                  icon="arrow-up-right-from-square"
-                  class="ms-auto ps-3 af-menu-meta"
-                />
-              </a>
-            </li>
-          </ul>
-        </li>
+        <BsNavLink v-for="m in menu" :key="m.link" :link="m" />
+        <!-- the instance's own links (Settings > Appearance > Links > Custom), after them : a link
+             with links inside it is a menu, its own address (if any) the first of them -->
+        <template v-for="top in ownLinks" :key="top.id">
+          <BsNavLink v-if="!top.children.length" :link="top.nav" />
+          <li v-else class="nav-item dropdown">
+            <a
+              class="nav-link icon-link link-body-emphasis dropdown-toggle"
+              href="#"
+              role="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+              :title="top.label"
+              @click.prevent
+            >
+              <span class="af-nav-link-icon"><font-awesome-icon :icon="iconOrDefault(top.icon)" /></span>
+              <span class="af-nav-text">{{ top.label }}</span>
+            </a>
+            <ul class="dropdown-menu">
+              <li v-for="l in top.entries" :key="l.id">
+                <!-- a page of the app in this tab : the router's ; a site, or a new tab : a plain link -->
+                <router-link
+                  v-if="l.url.startsWith('/') && !l.newTab"
+                  class="dropdown-item d-flex align-items-center"
+                  :to="l.url"
+                >
+                  <span class="icon"><font-awesome-icon :icon="iconOrDefault(l.icon)" fixed-width /></span>
+                  <span class="ms-2">{{ l.label }}</span>
+                </router-link>
+                <a
+                  v-else
+                  class="dropdown-item d-flex align-items-center"
+                  :href="l.url"
+                  :target="l.newTab ? '_blank' : '_self'"
+                  :rel="l.newTab ? 'noopener noreferrer' : undefined"
+                >
+                  <span class="icon"><font-awesome-icon :icon="iconOrDefault(l.icon)" fixed-width /></span>
+                  <span class="ms-2">{{ l.label }}</span>
+                  <font-awesome-icon
+                    v-if="l.newTab"
+                    icon="arrow-up-right-from-square"
+                    class="ms-auto ps-3 af-menu-meta"
+                  />
+                </a>
+              </li>
+            </ul>
+          </li>
+        </template>
       </ul>
     </template>
 

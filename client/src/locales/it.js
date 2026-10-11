@@ -14,7 +14,6 @@ export default {
     always: 'sempre',
   },
   nav: {
-    links: 'Collegamenti',
     // the lock on the Designer link while someone holds the designer, in its tooltip
     designerLockedByMe: 'Il designer è bloccato da te',
     designerLockedBy: 'Il designer è bloccato da {user}',
@@ -714,14 +713,17 @@ export default {
       linkIcon: 'Icona',
       linkLabel: 'Etichetta',
       linkUrl: 'Indirizzo',
-      linkPlacement: 'Posizione',
+      linkInside: 'Dentro',
+      linkHoldsLinks: "Un collegamento con collegamenti al suo interno resta nell'intestazione.",
+      linkUrlOptional: 'Facoltativo per un menu',
       linkInHeader: "Nell'intestazione",
-      linkInMenu: 'Nel menu Collegamenti',
       linkNewTab: 'Nuova scheda',
       linkUp: 'Su',
       linkDown: 'Giù',
       linksHelp:
-        "I tuoi collegamenti, al massimo {max}: nell'intestazione dopo quelli integrati, o nel suo menu Collegamenti. Un indirizzo è un sito (https://…) o una pagina dell'app (/forms/all).",
+        "I tuoi collegamenti, al massimo {max} nell'intestazione dopo quelli integrati. Un collegamento può stare dentro un altro, che si apre allora come menu. Un indirizzo è un sito (https://…) o una pagina dell'app (/forms/all).",
+      linksTooMany:
+        "Al massimo {max} collegamenti nell'intestazione e {inside} dentro ciascuno. Metti gli altri dentro uno di essi o rimuovili.",
       nameDescription: "Il nome dell'applicazione, nella scheda del browser e nella pagina di accesso.",
       environmentDescription:
         "Un'etichetta accanto al logo che indica di quale istanza si tratta, come PRODUZIONE o TEST.",

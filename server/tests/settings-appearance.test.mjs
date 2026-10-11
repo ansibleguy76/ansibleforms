@@ -67,37 +67,46 @@ test("a header link goes to an http or https site or a page of the app, nothing 
 
 test("the header's links : a valid one kept, an invalid one left out, at most a few", () => {
   const links = validHeaderLinks([
-    { label: "  Wiki ", url: "https://wiki.example.com", icon: "book", newTab: 1 },
-    { label: "Evil", url: "javascript:alert(1)", icon: "bug" },
+    { id: "w", label: "  Wiki ", url: "https://wiki.example.com", icon: "book", newTab: 1 },
+    { id: "e", label: "Evil", url: "javascript:alert(1)", icon: "bug" },
     { label: "", url: "/forms/all" },
-    { label: "Jobs", url: "/jobs/all", icon: "<svg>" },
+    { id: "j", label: "Jobs", url: "/jobs/all", icon: "<svg>" },
   ]);
   expect(links).toEqual([
-    { label: "Wiki", url: "https://wiki.example.com", icon: "book", newTab: true, menu: true },
+    { id: "w", label: "Wiki", url: "https://wiki.example.com", icon: "book", newTab: true, parent: null },
     // an icon that is no icon's name : the link's own
-    { label: "Jobs", url: "/jobs/all", icon: "link", newTab: false, menu: true },
+    { id: "j", label: "Jobs", url: "/jobs/all", icon: "link", newTab: false, parent: null },
   ]);
   const many = Array.from({ length: 9 }, (_, i) => ({ label: `L${i}`, url: `/p${i}` }));
   expect(validHeaderLinks(many)).toHaveLength(MAX_HEADER_LINKS);
   expect(validHeaderLinks("not json")).toEqual([]);
   // kept as JSON, none as null
-  expect(new Settings({ header_links: [{ label: "Wiki", url: "/w" }] }).header_links).toBe(
-    JSON.stringify([{ label: "Wiki", url: "/w", icon: "link", newTab: false, menu: true }]),
-  );
+  expect(JSON.parse(new Settings({ header_links: [{ id: "w", label: "Wiki", url: "/w" }] }).header_links)).toEqual([
+    { id: "w", label: "Wiki", url: "/w", icon: "link", newTab: false, parent: null },
+  ]);
   expect(new Settings({ header_links: [] }).header_links).toBe(null);
 });
 
+test("a link inside another : one level, the menu with something to open, grouped under it", () => {
+  const links = validHeaderLinks([
+    { id: "a", label: "Child of help", url: "/a", parent: "help" },
+    // a menu needs no address of its own
+    { id: "help", label: "Help" },
+    { id: "b", label: "Inside a child", url: "/b", parent: "a" },
+    { id: "c", label: "Inside nothing", url: "/c", parent: "gone" },
+    { id: "d", label: "Inside itself", url: "/d", parent: "d" },
+    // no address and nothing inside : nothing to open
+    { id: "empty", label: "Empty" },
+  ]);
+  expect(links.map((l) => `${l.id}<${l.parent ?? ""}`)).toEqual([
+    "help<", "a<help",
+    // a link inside one that is inside another : in the header
+    "b<", "c<", "d<",
+  ]);
+});
 test("a date format is one of those offered, anything else none", () => {
   expect(new Settings({ default_date_format: "DD/MM/YYYY" }).default_date_format).toBe("DD/MM/YYYY");
   expect(new Settings({ default_date_format: "<b>YYYY</b>" }).default_date_format).toBe(null);
   expect(new Settings({ default_date_format: "" }).default_date_format).toBe(null);
 });
 
-test("a header link sits in the Links menu unless it asks for the header itself", () => {
-  const [inMenu, inHeader] = validHeaderLinks([
-    { label: "Wiki", url: "/w" },
-    { label: "Status", url: "/s", menu: false },
-  ]);
-  expect(inMenu.menu).toBe(true);
-  expect(inHeader.menu).toBe(false);
-});

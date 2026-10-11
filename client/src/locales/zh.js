@@ -14,7 +14,6 @@ export default {
     always: '始终',
   },
   nav: {
-    links: '链接',
     // the lock on the Designer link while someone holds the designer, in its tooltip
     designerLockedByMe: '设计器已由您锁定',
     designerLockedBy: '设计器已由 {user} 锁定',
@@ -696,14 +695,16 @@ export default {
       linkIcon: '图标',
       linkLabel: '标签',
       linkUrl: '地址',
-      linkPlacement: '位置',
+      linkInside: '位于',
+      linkHoldsLinks: '包含其他链接的链接保留在页眉中。',
+      linkUrlOptional: '菜单可不填',
       linkInHeader: '页眉',
-      linkInMenu: '链接菜单',
       linkNewTab: '新标签页',
       linkUp: '上移',
       linkDown: '下移',
       linksHelp:
-        '自定义链接，最多 {max} 个：放在页眉中内置链接之后，或放在链接菜单中。地址可以是网站（https://…）或应用页面（/forms/all）。',
+        '自定义链接，页眉中内置链接之后最多 {max} 个。链接可以放在另一个链接中，该链接随后作为菜单打开。地址可以是网站（https://…）或应用页面（/forms/all）。',
+      linksTooMany: '页眉中最多 {max} 个链接，每个链接内最多 {inside} 个。请将其余链接放入其中一个，或将其删除。',
       nameDescription: '应用程序的名称，显示在浏览器标签页和登录页面。',
       environmentDescription: '显示在徽标旁、标明这是哪个实例的标签，例如 PRODUCTION 或 TEST。',
       announcementDescription: '在页眉下方向所有人显示的消息，例如维护窗口，直到你选择的日期。',

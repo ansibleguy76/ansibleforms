@@ -14,7 +14,6 @@ export default {
     always: 'siempre',
   },
   nav: {
-    links: 'Enlaces',
     // the lock on the Designer link while someone holds the designer, in its tooltip
     designerLockedByMe: 'El diseñador está bloqueado por ti',
     designerLockedBy: 'El diseñador está bloqueado por {user}',
@@ -712,14 +711,17 @@ export default {
       linkIcon: 'Icono',
       linkLabel: 'Etiqueta',
       linkUrl: 'Dirección',
-      linkPlacement: 'Ubicación',
+      linkInside: 'Dentro de',
+      linkHoldsLinks: 'Un enlace con enlaces dentro se queda en la cabecera.',
+      linkUrlOptional: 'Opcional para un menú',
       linkInHeader: 'En la cabecera',
-      linkInMenu: 'En el menú Enlaces',
       linkNewTab: 'Nueva pestaña',
       linkUp: 'Subir',
       linkDown: 'Bajar',
       linksHelp:
-        'Tus propios enlaces, como máximo {max}: en la cabecera tras los integrados, o dentro de su menú Enlaces. Una dirección es un sitio (https://…) o una página de la aplicación (/forms/all).',
+        'Tus propios enlaces, como máximo {max} en la cabecera tras los integrados. Un enlace puede ir dentro de otro, que se abre entonces como menú. Una dirección es un sitio (https://…) o una página de la aplicación (/forms/all).',
+      linksTooMany:
+        'Como máximo {max} enlaces en la cabecera y {inside} dentro de cada uno. Pon los demás dentro de uno o quítalos.',
       nameDescription: 'El nombre de la aplicación, en la pestaña del navegador y en la página de inicio de sesión.',
       environmentDescription: 'Una etiqueta junto al logotipo que indica qué instancia es, como PRODUCCIÓN o TEST.',
       announcementDescription:

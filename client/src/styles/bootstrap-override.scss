@@ -105,6 +105,17 @@
   --af-field-border: #b6bec6;
 }
 
+// The icon in a field's grey box (BsInput's, a settings row's, a dialog's) : the grey of the
+// field's border, in every theme - one rule, whatever class the box was given (text-gray-500
+// or none)
+:root {
+  --af-field-icon: var(--af-field-border);
+}
+.input-group > .input-group-text,
+.input-group > .input-group-text.text-gray-500 {
+  color: var(--af-field-icon);
+}
+
 // A job's output : the page's subtle grey, and its line numbers' column a shade darker ; in
 // the dark theme a terminal's black, its line numbers' column a near black
 :root {

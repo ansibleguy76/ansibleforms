@@ -14,7 +14,6 @@ export default {
     always: 'zawsze',
   },
   nav: {
-    links: 'Linki',
     // the lock on the Designer link while someone holds the designer, in its tooltip
     designerLockedByMe: 'Projektant jest zablokowany przez ciebie',
     designerLockedBy: 'Projektant jest zablokowany przez użytkownika {user}',
@@ -712,14 +711,17 @@ export default {
       linkIcon: 'Ikona',
       linkLabel: 'Etykieta',
       linkUrl: 'Adres',
-      linkPlacement: 'Położenie',
+      linkInside: 'Wewnątrz',
+      linkHoldsLinks: 'Link z linkami w środku zostaje w nagłówku.',
+      linkUrlOptional: 'Opcjonalny dla menu',
       linkInHeader: 'W nagłówku',
-      linkInMenu: 'W menu Linki',
       linkNewTab: 'Nowa karta',
       linkUp: 'W górę',
       linkDown: 'W dół',
       linksHelp:
-        'Własne linki, najwyżej {max}: w nagłówku po wbudowanych lub w jego menu Linki. Adres to witryna (https://…) lub strona aplikacji (/forms/all).',
+        'Własne linki, najwyżej {max} w nagłówku po wbudowanych. Link może być w innym, który wtedy otwiera się jako menu. Adres to witryna (https://…) lub strona aplikacji (/forms/all).',
+      linksTooMany:
+        'Najwyżej {max} linków w nagłówku i {inside} w każdym. Umieść pozostałe w jednym z nich lub je usuń.',
       nameDescription: 'Nazwa aplikacji, na karcie przeglądarki i na stronie logowania.',
       environmentDescription: 'Etykieta obok logo, która mówi, która to instancja, np. PRODUKCJA lub TEST.',
       announcementDescription: 'Wiadomość pod nagłówkiem dla wszystkich, np. okno serwisowe, do wybranej daty.',

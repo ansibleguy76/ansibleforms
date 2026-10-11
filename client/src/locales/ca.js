@@ -14,7 +14,6 @@ export default {
     always: 'sempre',
   },
   nav: {
-    links: 'Enllaços',
     // the lock on the Designer link while someone holds the designer, in its tooltip
     designerLockedByMe: 'Tens bloquejat el dissenyador',
     designerLockedBy: '{user} té bloquejat el dissenyador',
@@ -714,14 +713,17 @@ export default {
       linkIcon: 'Icona',
       linkLabel: 'Etiqueta',
       linkUrl: 'Adreça',
-      linkPlacement: 'Ubicació',
+      linkInside: 'Dins de',
+      linkHoldsLinks: 'Un enllaç amb enllaços a dins es queda a la capçalera.',
+      linkUrlOptional: 'Opcional per a un menú',
       linkInHeader: 'A la capçalera',
-      linkInMenu: 'Al menú Enllaços',
       linkNewTab: 'Pestanya nova',
       linkUp: 'Pujar',
       linkDown: 'Baixar',
       linksHelp:
-        "Els teus enllaços, com a màxim {max}: a la capçalera després dels integrats, o dins del seu menú Enllaços. Una adreça és un lloc (https://…) o una pàgina de l'aplicació (/forms/all).",
+        "Els teus enllaços, com a màxim {max} a la capçalera després dels integrats. Un enllaç pot anar dins d'un altre, que llavors s'obre com a menú. Una adreça és un lloc (https://…) o una pàgina de l'aplicació (/forms/all).",
+      linksTooMany:
+        "Com a màxim {max} enllaços a la capçalera i {inside} dins de cadascun. Posa'n els altres dins d'un o treu-los.",
       nameDescription: "El nom de l'aplicació, a la pestanya del navegador i a la pàgina d'inici de sessió.",
       environmentDescription: 'Una etiqueta al costat del logotip que indica quina instància és, com PRODUCCIÓ o TEST.',
       announcementDescription:

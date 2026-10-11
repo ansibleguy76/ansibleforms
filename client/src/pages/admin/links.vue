@@ -9,9 +9,10 @@
 /*      link, its page, its api.                                  */
 /*    Custom : the instance's own links (a wiki, a runbook, a     */
 /*      support portal) - a label, an address, an icon, a new tab */
-/*      or not, in the header itself or nested in its Links menu. */
-/*      Kept in the settings row ; the server keeps only http(s)  */
-/*      sites and pages of the app.                               */
+/*      or not, in the header itself or inside another of them,   */
+/*      which is then a menu in the header (one level). Kept in   */
+/*      the settings row ; the server keeps only http(s) sites    */
+/*      and pages of the app.                                     */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted } from 'vue';
@@ -42,6 +43,7 @@ const crumbs = computed(() => {
 
 // as many as the header has room for, as the server keeps them (models/settings.model.js)
 const MAX_LINKS = 5;
+const MAX_INSIDE = 10;
 // the title's popover : what the page is for, and on Custom how a link is written
 const description = computed(() =>
   activeTab.value === 'custom'
@@ -70,7 +72,7 @@ const builtin = computed(() =>
  *   row (object): the settings row.
  *
  * Returns:
- *   object: { header_links : [{ label, url, icon, newTab, menu }] }.
+ *   object: { header_links : [{ id, label, url, icon, newTab, parent }] }.
  */
 function linksOf(row) {
   let list;
@@ -85,12 +87,59 @@ function linksOf(row) {
       url: l.url || '',
       icon: l.icon || 'link',
       newTab: !!l.newTab,
-      // nested in the Links menu unless placed in the header itself
-      menu: l.menu !== false,
+      id: l.id || newId(),
+      // the link it is inside ; none : in the header itself
+      parent: l.parent || '',
     })),
   };
 }
-const { edit: own, dirty: ownDirty, load: loadOwn, save: saveOwn } = useSettingsRow(linksOf);
+// sent as the server keeps it : in the header itself is no parent
+const {
+  edit: own,
+  dirty: ownDirty,
+  load: loadOwn,
+  save: saveOwn,
+} = useSettingsRow(linksOf, (fields) => ({
+  header_links: fields.header_links.map((l) => ({ ...l, parent: l.parent || null })),
+}));
+
+/**
+ * A new link's id : what a link inside it names.
+ *
+ * Returns:
+ *   string: 8 letters and digits.
+ */
+function newId() {
+  return Math.random().toString(36).slice(2, 10).padEnd(8, '0');
+}
+
+/**
+ * Whether links sit inside a link : it is a menu in the header, so it stays there.
+ *
+ * Args:
+ *   link (object): the link.
+ *
+ * Returns:
+ *   boolean: true when it holds others.
+ */
+function holdsLinks(link) {
+  return own.value.header_links.some((l) => l.parent === link.id);
+}
+
+/**
+ * The links a link may go inside : those in the header itself, but itself.
+ *
+ * Args:
+ *   link (object): the link.
+ *
+ * Returns:
+ *   Array: [{ id, label }].
+ */
+function parentsFor(link) {
+  return own.value.header_links
+    .filter((l) => !l.parent && l.id !== link.id)
+    .map((l) => ({ id: l.id, label: l.label.trim() || '…' }));
+}
 
 /**
  * Whether an address may be a header link : an http or https site, or a page of the app (one
@@ -115,15 +164,29 @@ function isLinkUrl(url) {
 }
 
 // a link that would not be kept : no label, or an address the header may not open
-const invalid = computed(() => own.value.header_links.map((l) => ({ label: !l.label.trim(), url: !isLinkUrl(l.url) })));
-const anyInvalid = computed(() => invalid.value.some((x) => x.label || x.url));
+// a link that would not be kept : no label, or an address the header may not open (a menu may
+// have none : its links open something)
+const invalid = computed(() =>
+  own.value.header_links.map((l) => ({
+    label: !l.label.trim(),
+    url: holdsLinks(l) && !l.parent ? !!l.url.trim() && !isLinkUrl(l.url) : !isLinkUrl(l.url),
+  })),
+);
+// more in the header itself, or inside one, than the header has room for
+const tooMany = computed(() => {
+  const tops = own.value.header_links.filter((l) => !l.parent);
+  return (
+    tops.length > MAX_LINKS ||
+    tops.some((top) => own.value.header_links.filter((l) => l.parent === top.id).length > MAX_INSIDE)
+  );
+});
+const anyInvalid = computed(() => tooMany.value || invalid.value.some((x) => x.label || x.url));
 
 /**
  * Adds an empty link at the end.
  */
 function addLink() {
-  if (own.value.header_links.length >= MAX_LINKS) return;
-  own.value.header_links.push({ label: '', url: 'https://', icon: 'link', newTab: true, menu: true });
+  own.value.header_links.push({ id: newId(), label: '', url: 'https://', icon: 'link', newTab: true, parent: '' });
 }
 
 /**
@@ -147,7 +210,9 @@ function moveLink(index, step) {
  *   index (number): the link.
  */
 function removeLink(index) {
-  own.value.header_links.splice(index, 1);
+  const [gone] = own.value.header_links.splice(index, 1);
+  // the links that were inside it go to the header itself
+  for (const l of own.value.header_links) if (l.parent === gone.id) l.parent = '';
 }
 
 // ─── saving ───────────────────────────────────────────────────────────────────
@@ -197,7 +262,7 @@ onMounted(async () => {
         <BsButton
           v-if="activeTab === 'custom'"
           icon="plus"
-          :disabled="own.header_links.length >= MAX_LINKS"
+          :disabled="own.header_links.length >= MAX_LINKS * (1 + MAX_INSIDE)"
           @click="addLink()"
           >{{ t('settings.interface.addLink') }}</BsButton
         >
@@ -224,21 +289,31 @@ onMounted(async () => {
             <FaIcon icon="link" class="empty-state-icon" />
             <span>{{ t('settings.interface.noLinks') }}</span>
           </div>
-          <div v-else class="af-links">
+          <div v-if="tooMany" class="alert alert-warning py-2">
+            <FaIcon icon="triangle-exclamation" class="me-2" />
+            {{ t('settings.interface.linksTooMany', { max: MAX_LINKS, inside: MAX_INSIDE }) }}
+          </div>
+          <div v-if="own.header_links.length" class="af-links">
             <div class="af-links-row af-links-head">
               <span>{{ t('settings.interface.linkIcon') }}</span>
               <span>{{ t('settings.interface.linkLabel') }}</span>
               <span>{{ t('settings.interface.linkUrl') }}</span>
-              <span>{{ t('settings.interface.linkPlacement') }}</span>
+              <span>{{ t('settings.interface.linkInside') }}</span>
               <span class="text-center">{{ t('settings.interface.linkNewTab') }}</span>
               <span></span>
             </div>
-            <div v-for="(l, i) in own.header_links" :key="i" class="af-links-row">
-              <!-- the icon : picked from a few that suit a link, shown in the field's grey box (as a
+            <div
+              v-for="(l, i) in own.header_links"
+              :key="l.id"
+              class="af-links-row"
+              :class="{ 'af-link-nested': l.parent }"
+            >
+              <!-- every field as the settings pages' (BsInput) : the grey box with its icon, then the
+                   field. The icon : picked from a few that suit a link, shown in its grey box (as a
                    category's icon in the designer) -->
-              <div class="input-group input-group-sm">
+              <div class="input-group">
                 <span class="input-group-text"
-                  ><FaIcon :icon="isIconName(l.icon) ? l.icon : 'link'" fixed-width
+                  ><FaIcon :fixedwidth="true" :icon="isIconName(l.icon) ? l.icon : 'link'"
                 /></span>
                 <select v-model="l.icon" class="form-select" :aria-label="t('settings.interface.linkIcon')">
                   <!-- an icon not in the list (saved through the api) : offered, so it stays visible -->
@@ -246,29 +321,42 @@ onMounted(async () => {
                   <option v-for="name in LINK_ICONS" :key="name" :value="name">{{ name }}</option>
                 </select>
               </div>
-              <input
-                v-model="l.label"
-                class="form-control form-control-sm"
-                :class="{ 'is-invalid': invalid[i]?.label }"
-                maxlength="30"
-                :aria-label="t('settings.interface.linkLabel')"
-              />
-              <input
-                v-model.trim="l.url"
-                class="form-control form-control-sm"
-                :class="{ 'is-invalid': invalid[i]?.url }"
-                :aria-label="t('settings.interface.linkUrl')"
-                spellcheck="false"
-              />
-              <!-- where it sits : in the header itself, or nested in its Links menu -->
-              <select
-                v-model="l.menu"
-                class="form-select form-select-sm"
-                :aria-label="t('settings.interface.linkPlacement')"
-              >
-                <option :value="false">{{ t('settings.interface.linkInHeader') }}</option>
-                <option :value="true">{{ t('settings.interface.linkInMenu') }}</option>
-              </select>
+              <div class="input-group">
+                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="font" /></span>
+                <input
+                  v-model="l.label"
+                  class="form-control"
+                  :class="{ 'is-invalid': invalid[i]?.label }"
+                  maxlength="30"
+                  :aria-label="t('settings.interface.linkLabel')"
+                />
+              </div>
+              <div class="input-group">
+                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="globe" /></span>
+                <input
+                  v-model.trim="l.url"
+                  class="form-control"
+                  :class="{ 'is-invalid': invalid[i]?.url }"
+                  :placeholder="holdsLinks(l) ? t('settings.interface.linkUrlOptional') : ''"
+                  :aria-label="t('settings.interface.linkUrl')"
+                  spellcheck="false"
+                />
+              </div>
+              <!-- where it sits : in the header itself, or inside one of the header's links (which
+                   then opens as a menu) ; a link that holds others stays in the header -->
+              <div class="input-group">
+                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="sitemap" /></span>
+                <select
+                  v-model="l.parent"
+                  class="form-select"
+                  :disabled="holdsLinks(l)"
+                  :title="holdsLinks(l) ? t('settings.interface.linkHoldsLinks') : undefined"
+                  :aria-label="t('settings.interface.linkInside')"
+                >
+                  <option value="">{{ t('settings.interface.linkInHeader') }}</option>
+                  <option v-for="p in parentsFor(l)" :key="p.id" :value="p.id">{{ p.label }}</option>
+                </select>
+              </div>
               <div class="form-check form-switch d-flex justify-content-center mb-0">
                 <input
                   v-model="l.newTab"
@@ -319,18 +407,34 @@ onMounted(async () => {
 :deep(.card-body > :last-child > .mb-3:last-child) {
   margin-bottom: 0 !important;
 }
-/* the own links : one row each, the same columns for the header line */
+/* the own links : one row each, the same columns for the header line ; a card narrower than
+   them scrolls sideways rather than squeezing the fields */
 .af-links {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  max-width: 64rem;
+  overflow-x: auto;
 }
 .af-links-row {
   display: grid;
-  grid-template-columns: 11rem 11rem minmax(12rem, 1fr) 12rem 5rem 6rem;
+  grid-template-columns: 14.5rem 12rem minmax(14rem, 1fr) 13rem 5rem 6rem;
   gap: 0.75rem;
   align-items: center;
+  min-width: 67.5rem;
+}
+/* a link inside another : indented under it within its column, a corner arrow before it */
+.af-link-nested > :first-child {
+  margin-left: 1.5rem;
+  width: calc(100% - 1.5rem);
+  position: relative;
+}
+.af-link-nested > :first-child::before {
+  content: '↳';
+  position: absolute;
+  left: -1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--bs-secondary-color);
 }
 .af-links-head {
   font-weight: 600;

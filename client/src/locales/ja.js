@@ -14,7 +14,6 @@ export default {
     always: '常に',
   },
   nav: {
-    links: 'リンク',
     // the lock on the Designer link while someone holds the designer, in its tooltip
     designerLockedByMe: 'デザイナーはあなたがロックしています',
     designerLockedBy: 'デザイナーは {user} がロックしています',
@@ -712,14 +711,17 @@ export default {
       linkIcon: 'アイコン',
       linkLabel: 'ラベル',
       linkUrl: 'アドレス',
-      linkPlacement: '配置',
+      linkInside: '親リンク',
+      linkHoldsLinks: '中にリンクがあるリンクはヘッダーに残ります。',
+      linkUrlOptional: 'メニューでは省略可',
       linkInHeader: 'ヘッダー',
-      linkInMenu: 'リンクメニュー',
       linkNewTab: '新しいタブ',
       linkUp: '上へ',
       linkDown: '下へ',
       linksHelp:
-        '独自のリンク（最大 {max} 件）：ヘッダーの組み込みリンクの後、またはリンクメニューの中。アドレスはサイト（https://…）またはアプリのページ（/forms/all）。',
+        '独自のリンク（ヘッダーには組み込みリンクの後に最大 {max} 件）。リンクは別のリンクの中に置けます。その場合、親リンクはメニューとして開きます。アドレスはサイト（https://…）またはアプリのページ（/forms/all）。',
+      linksTooMany:
+        'ヘッダーには最大 {max} 件、各リンクの中には最大 {inside} 件です。他のリンクはどれかの中に入れるか削除してください。',
       nameDescription: 'アプリケーションの名前。ブラウザーのタブとサインインページに表示されます。',
       environmentDescription: 'ロゴの横に表示し、どのインスタンスかを示すラベル（PRODUCTION、TEST など）。',
       announcementDescription:

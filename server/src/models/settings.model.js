@@ -104,19 +104,28 @@ var Settings=function(settings){
     }
 };
 // the most links the header takes, and the longest label : it has room for a few short ones
+// the most links in the header itself, the most inside one of them, the longest label : the
+// header has room for a few short ones
 export const MAX_HEADER_LINKS = 5;
+export const MAX_NESTED_LINKS = 10;
 const MAX_LINK_LABEL = 30;
 /**
- * The header's own links, as Settings > Appearance > Links keeps them : each a label, an http
- * or https address or a path of the app (/forms/all), a Font Awesome icon's name, whether it
- * opens in a new tab and whether it sits in the header's Links menu (else in the header itself). A link without a label or a valid address is left out ; any other address
- * (javascript:, data:, //host) never reaches the header.
+ * The header's own links, as Settings > Appearance > Links keeps them : each an id, a label, an
+ * http or https address or a path of the app (/forms/all), a Font Awesome icon's name, whether
+ * it opens in a new tab, and the link it sits inside (parent : another link's id) or none - in
+ * the header itself. A link with links inside it is a menu in the header ; its own address is
+ * then optional (the first entry of its menu when it has one). One level only : a link inside
+ * a link that is itself inside one, or inside one that is not there, goes to the header.
+ *
+ * A link without a label, or with an address that is not a site or a page of the app
+ * (javascript:, data:, //host), is left out - so is a menu left with nothing to open.
  *
  * Args:
  *   value (Array|string|null): the links, or their JSON.
  *
  * Returns:
- *   Array: the valid links, at most MAX_HEADER_LINKS.
+ *   Array: the valid links in their order, at most MAX_HEADER_LINKS in the header and
+ *     MAX_NESTED_LINKS inside each.
  */
 export function validHeaderLinks(value){
   let list = value;
@@ -124,18 +133,53 @@ export function validHeaderLinks(value){
     try { list = JSON.parse(list); } catch { return []; }
   }
   if(!Array.isArray(list)) return [];
-  const links = [];
-  for(const item of list){
-    if(!item || typeof item !== 'object') continue;
+  // ------------------------------------------------------------------
+  // each link as it may be kept : an id of its own, an address only when valid
+  // ------------------------------------------------------------------
+  const seen = new Set();
+  const items = [];
+  list.forEach((item, index) => {
+    if(!item || typeof item !== 'object') return;
     const label = String(item.label ?? '').trim().slice(0, MAX_LINK_LABEL);
+    if(!label) return;
     const url = String(item.url ?? '').trim();
-    if(!label || !isLinkUrl(url)) continue;
+    if(url && !isLinkUrl(url)) return;
+    let id = /^[a-z0-9]{1,16}$/.test(String(item.id ?? '')) ? String(item.id) : `l${index}`;
+    while(seen.has(id)) id = `${id}x`;
+    seen.add(id);
     const icon = /^[a-z0-9-]{1,40}$/.test(String(item.icon ?? '')) ? String(item.icon) : 'link';
-    // in the Links menu unless asked otherwise (a link saved before it could choose : the menu)
-    links.push({ label, url, icon, newTab: !!item.newTab, menu: item.menu !== false });
-    if(links.length >= MAX_HEADER_LINKS) break;
+    const parent = /^[a-z0-9]{1,16}$/.test(String(item.parent ?? '')) ? String(item.parent) : null;
+    items.push({ id, label, url, icon, newTab: !!item.newTab, parent });
+  });
+  // ------------------------------------------------------------------
+  // one level : inside a link of the header, else in the header itself
+  // ------------------------------------------------------------------
+  const byId = new Map(items.map((l) => [l.id, l]));
+  // first inside a link that is there and is not itself ...
+  for(const l of items){
+    if(l.parent && (!byId.has(l.parent) || l.parent === l.id)) l.parent = null;
   }
-  return links;
+  // ... then only one level : inside a link that is inside another, it goes to the header
+  const nested = new Set(items.filter((l) => l.parent).map((l) => l.id));
+  for(const l of items){
+    if(l.parent && nested.has(l.parent)) l.parent = null;
+  }
+  // ------------------------------------------------------------------
+  // what opens something : a link inside needs an address, one in the header an address or
+  // links inside it ; then the limits
+  // ------------------------------------------------------------------
+  const inside = (top) => items.filter((l) => l.parent === top.id && l.url);
+  const kept = [];
+  let tops = 0;
+  for(const l of items.filter((x) => !x.parent)){
+    const children = inside(l).slice(0, MAX_NESTED_LINKS);
+    if(!l.url && !children.length) continue;
+    if(tops >= MAX_HEADER_LINKS) break;
+    tops++;
+    kept.push({ id: l.id, label: l.label, url: l.url, icon: l.icon, newTab: l.newTab, parent: null });
+    for(const c of children) kept.push({ id: c.id, label: c.label, url: c.url, icon: c.icon, newTab: c.newTab, parent: l.id });
+  }
+  return kept;
 }
 /**
  * Whether an address may be a header link : http or https with a host, or a path of the app

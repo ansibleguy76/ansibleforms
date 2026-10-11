@@ -14,7 +14,6 @@ export default {
     always: 'always',
   },
   nav: {
-    links: 'Links',
     // the lock on the Designer link while someone holds the designer, in its tooltip
     designerLockedByMe: 'The designer is locked by you',
     designerLockedBy: 'The designer is locked by {user}',
@@ -708,14 +707,17 @@ export default {
       linkIcon: 'Icon',
       linkLabel: 'Label',
       linkUrl: 'Address',
-      linkPlacement: 'Placement',
+      linkInside: 'Inside',
+      linkHoldsLinks: 'A link with links inside it stays in the header.',
+      linkUrlOptional: 'Optional for a menu',
       linkInHeader: 'In the header',
-      linkInMenu: 'In the Links menu',
       linkNewTab: 'New tab',
       linkUp: 'Move up',
       linkDown: 'Move down',
       linksHelp:
-        'Your own links, at most {max}: in the header after the built-in ones, or nested in its Links menu. An address is a site (https://…) or a page of the app (/forms/all).',
+        'Your own links, at most {max} in the header after the built-in ones. A link can sit inside another, which then opens as a menu. An address is a site (https://…) or a page of the app (/forms/all).',
+      linksTooMany:
+        'At most {max} links in the header itself, and {inside} inside each. Put the others inside one, or remove them.',
       nameDescription: 'The name of the application, in the browser tab and on the sign-in page.',
       environmentDescription: 'A label beside the logo that says which instance this is, such as PRODUCTION or TEST.',
       announcementDescription:

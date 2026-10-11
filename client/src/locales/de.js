@@ -14,7 +14,6 @@ export default {
     always: 'immer',
   },
   nav: {
-    links: 'Links',
     // the lock on the Designer link while someone holds the designer, in its tooltip
     designerLockedByMe: 'Der Designer ist von Ihnen gesperrt',
     designerLockedBy: 'Der Designer ist von {user} gesperrt',
@@ -718,14 +717,17 @@ export default {
       linkIcon: 'Symbol',
       linkLabel: 'Bezeichnung',
       linkUrl: 'Adresse',
-      linkPlacement: 'Platzierung',
+      linkInside: 'Innerhalb von',
+      linkHoldsLinks: 'Ein Link mit Links darin bleibt in der Kopfzeile.',
+      linkUrlOptional: 'Optional für ein Menü',
       linkInHeader: 'In der Kopfzeile',
-      linkInMenu: 'Im Menü Links',
       linkNewTab: 'Neuer Tab',
       linkUp: 'Nach oben',
       linkDown: 'Nach unten',
       linksHelp:
-        'Eigene Links, höchstens {max}: in der Kopfzeile nach den integrierten oder in ihrem Menü Links. Eine Adresse ist eine Website (https://…) oder eine Seite der App (/forms/all).',
+        'Eigene Links, höchstens {max} in der Kopfzeile nach den integrierten. Ein Link kann in einem anderen liegen, der sich dann als Menü öffnet. Eine Adresse ist eine Website (https://…) oder eine Seite der App (/forms/all).',
+      linksTooMany:
+        'Höchstens {max} Links in der Kopfzeile und {inside} in jedem. Lege die anderen in einen davon oder entferne sie.',
       nameDescription: 'Der Name der Anwendung, im Browser-Tab und auf der Anmeldeseite.',
       environmentDescription: 'Ein Label neben dem Logo, das die Instanz kennzeichnet, z. B. PRODUKTION oder TEST.',
       announcementDescription:
