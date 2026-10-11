@@ -1025,6 +1025,15 @@ export default {
       projectHelp_rundeck: 'El nombre del proyecto de Rundeck con los jobs.',
       tokenHelp_semaphore: 'Un token de API de un usuario de Semaphore: menú del usuario, API tokens.',
       tokenHelp_rundeck: 'El token de API de un usuario de Rundeck: perfil del usuario, User API Tokens.',
+      kind_jenkins: 'Jenkins',
+      type_jenkins: 'Jenkins',
+      type_jenkinsHint: 'Jobs de Jenkins, para formularios de plantilla que lo nombran',
+      uriHelp_jenkins:
+        'La dirección de Jenkins, p. ej. https://jenkins.example.com, con su ruta si Jenkins está bajo una.',
+      projectHelp_jenkins: 'La carpeta en la que están los jobs (ops, u ops/web); vacío para los jobs de la raíz.',
+      tokenHelp_jenkins: 'Un token de API del usuario de Jenkins: menú del usuario, Security, API Token.',
+      usernameHelp_jenkins:
+        'El usuario de Jenkins al que pertenece el token de API; los jobs se ejecutan como este usuario.',
       noDefaultHelp:
         'Nunca un predeterminado: un formulario de plantilla que no nombra ningún runner se ejecuta en el AWX predeterminado, así que un formulario nombra este runner con runner: <name>.',
     },

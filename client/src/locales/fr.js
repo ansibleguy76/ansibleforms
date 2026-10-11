@@ -1031,6 +1031,15 @@ export default {
       projectHelp_rundeck: 'Le nom du projet Rundeck qui contient les jobs.',
       tokenHelp_semaphore: "Un jeton d'API d'un utilisateur Semaphore : menu de l'utilisateur, API tokens.",
       tokenHelp_rundeck: "Le jeton d'API d'un utilisateur Rundeck : profil de l'utilisateur, User API Tokens.",
+      kind_jenkins: 'Jenkins',
+      type_jenkins: 'Jenkins',
+      type_jenkinsHint: 'Jobs Jenkins, pour les formulaires de modèle qui le nomment',
+      uriHelp_jenkins:
+        "L'adresse de Jenkins, p. ex. https://jenkins.example.com, avec son chemin si Jenkins tourne sous un chemin.",
+      projectHelp_jenkins: 'Le dossier des jobs (ops, ou ops/web) ; vide pour les jobs à la racine.',
+      tokenHelp_jenkins: "Un jeton d'API de l'utilisateur Jenkins : menu de l'utilisateur, Security, API Token.",
+      usernameHelp_jenkins:
+        "L'utilisateur Jenkins auquel appartient le jeton d'API ; les jobs tournent sous cet utilisateur.",
       noDefaultHelp:
         "Jamais un défaut : un formulaire de modèle qui ne nomme aucun runner s'exécute sur l'AWX par défaut, un formulaire nomme donc ce runner avec runner: <name>.",
     },

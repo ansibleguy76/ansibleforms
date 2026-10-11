@@ -1021,6 +1021,14 @@ export default {
       projectHelp_rundeck: 'De naam van het Rundeck-project met de jobs.',
       tokenHelp_semaphore: 'Een API-token van een Semaphore-gebruiker: menu van de gebruiker, API tokens.',
       tokenHelp_rundeck: 'Het API-token van een Rundeck-gebruiker: profiel van de gebruiker, User API Tokens.',
+      kind_jenkins: 'Jenkins',
+      type_jenkins: 'Jenkins',
+      type_jenkinsHint: 'Jenkins-jobs, voor templateformulieren die hem noemen',
+      uriHelp_jenkins:
+        'Het Jenkins-adres, bijv. https://jenkins.example.com, met het pad als Jenkins onder een pad draait.',
+      projectHelp_jenkins: 'De map waarin de jobs staan (ops, of ops/web); leeg voor de jobs op het hoogste niveau.',
+      tokenHelp_jenkins: 'Een API-token van de Jenkins-gebruiker: het gebruikersmenu, Security, API Token.',
+      usernameHelp_jenkins: 'De Jenkins-gebruiker van wie het API-token is; de jobs draaien als deze gebruiker.',
       noDefaultHelp:
         'Nooit een standaard: een sjabloonformulier dat geen runner noemt draait op de standaard-AWX, dus een formulier noemt deze runner met runner: <name>.',
     },

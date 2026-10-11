@@ -1300,6 +1300,15 @@ export default {
       projectHelp_rundeck: 'El nom del projecte de Rundeck amb els jobs.',
       tokenHelp_semaphore: "Un token d'API d'un usuari de Semaphore: menú de l'usuari, API tokens.",
       tokenHelp_rundeck: "El token d'API d'un usuari de Rundeck: perfil de l'usuari, User API Tokens.",
+      kind_jenkins: 'Jenkins',
+      type_jenkins: 'Jenkins',
+      type_jenkinsHint: 'Jobs de Jenkins, per a formularis de plantilla que el nomenen',
+      uriHelp_jenkins:
+        "L'adreça de Jenkins, p. ex. https://jenkins.example.com, amb el seu camí si Jenkins està sota un.",
+      projectHelp_jenkins: "La carpeta on són els jobs (ops, o ops/web); buit per als jobs de l'arrel.",
+      tokenHelp_jenkins: "Un token d'API de l'usuari de Jenkins: menú de l'usuari, Security, API Token.",
+      usernameHelp_jenkins:
+        "L'usuari de Jenkins al qual pertany el token d'API; els jobs s'executen com aquest usuari.",
       noDefaultHelp:
         "Mai un predeterminat: un formulari de plantilla que no anomena cap runner s'executa a l'AWX predeterminat, així que un formulari anomena aquest runner amb runner: <name>.",
     },

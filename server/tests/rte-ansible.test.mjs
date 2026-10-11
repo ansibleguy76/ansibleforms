@@ -437,8 +437,10 @@ describe("which runner runs a playbook job", () => {
     assert.equal(byDefault.row.name, "rte-default");
   });
 
-  test("a template form may name a semaphore or a rundeck runner ; a playbook form may not", async () => {
-    runnerRows = [{ name: "sem", type: "semaphore" }, { name: "rd", type: "rundeck" }];
+  test("a template form may name a semaphore, a rundeck or a jenkins runner ; a playbook form may not", async () => {
+    runnerRows = [{ name: "sem", type: "semaphore" }, { name: "rd", type: "rundeck" }, { name: "ci", type: "jenkins" }];
+    assert.equal((await resolveRunner({ jobType: "awx", extravars: { __runner__: "ci" } })).impl.type, "jenkins");
+    await assert.rejects(resolveRunner({ jobType: "ansible", extravars: { __runner__: "ci" } }), /Runner 'ci' \(jenkins\) cannot run a playbook/);
     assert.equal((await resolveRunner({ jobType: "awx", extravars: { __runner__: "sem" } })).impl.type, "semaphore");
     assert.equal((await resolveRunner({ jobType: "awx", extravars: { __runner__: "rd" } })).impl.type, "rundeck");
     await assert.rejects(resolveRunner({ jobType: "ansible", extravars: { __runner__: "sem" } }), /Runner 'sem' \(semaphore\) cannot run a playbook/);

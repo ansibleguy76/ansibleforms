@@ -1288,6 +1288,13 @@ export default {
       projectHelp_rundeck: 'Nazwa projektu Rundeck z zadaniami.',
       tokenHelp_semaphore: 'Token API użytkownika Semaphore: menu użytkownika, API tokens.',
       tokenHelp_rundeck: 'Token API użytkownika Rundeck: profil użytkownika, User API Tokens.',
+      kind_jenkins: 'Jenkins',
+      type_jenkins: 'Jenkins',
+      type_jenkinsHint: 'Zadania Jenkinsa, dla formularzy szablonów, które go wskazują',
+      uriHelp_jenkins: 'Adres Jenkinsa, np. https://jenkins.example.com, ze ścieżką, jeśli Jenkins działa pod ścieżką.',
+      projectHelp_jenkins: 'Folder zadań (ops lub ops/web); puste dla zadań na najwyższym poziomie.',
+      tokenHelp_jenkins: 'Token API użytkownika Jenkinsa: menu użytkownika, Security, API Token.',
+      usernameHelp_jenkins: 'Użytkownik Jenkinsa, do którego należy token API; zadania działają jako ten użytkownik.',
       noDefaultHelp:
         'Nigdy domyślny: formularz szablonu, który nie wskazuje runnera, działa na domyślnym AWX, więc formularz wskazuje ten runner przez runner: <name>.',
     },

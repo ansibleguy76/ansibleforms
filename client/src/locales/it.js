@@ -1023,6 +1023,14 @@ export default {
       projectHelp_rundeck: 'Il nome del progetto Rundeck con i job.',
       tokenHelp_semaphore: 'Un token API di un utente Semaphore: menu dell’utente, API tokens.',
       tokenHelp_rundeck: 'Il token API di un utente Rundeck: profilo dell’utente, User API Tokens.',
+      kind_jenkins: 'Jenkins',
+      type_jenkins: 'Jenkins',
+      type_jenkinsHint: 'Job di Jenkins, per i moduli template che lo nominano',
+      uriHelp_jenkins:
+        "L'indirizzo di Jenkins, ad es. https://jenkins.example.com, con il suo percorso se Jenkins gira sotto uno.",
+      projectHelp_jenkins: 'La cartella dei job (ops, o ops/web); vuota per i job alla radice.',
+      tokenHelp_jenkins: "Un token API dell'utente Jenkins: menu dell'utente, Security, API Token.",
+      usernameHelp_jenkins: "L'utente Jenkins a cui appartiene il token API; i job girano come questo utente.",
       noDefaultHelp:
         'Mai un predefinito: un form di template che non nomina un runner gira sull’AWX predefinito, quindi un form nomina questo runner con runner: <name>.',
     },
