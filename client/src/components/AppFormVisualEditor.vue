@@ -469,6 +469,26 @@ defineExpose({
     <template v-else-if="form">
       <!-- ─── Form : edited in place ─── -->
       <div class="af-form-grid">
+        <div v-if="!isSubform">
+          <label class="form-label fw-bold">{{ t('designer.visualIcon') }}</label>
+          <div class="input-group">
+            <span class="input-group-text"
+              ><FaIcon :fixedwidth="true" :icon="form.icon || 'square'" :class="{ 'opacity-25': !form.icon }"
+            /></span>
+            <select
+              class="form-select"
+              :value="form.icon"
+              :disabled="locked"
+              @change="setText('icon', $event.target.value)"
+            >
+              <option value="">{{ t('designer.visualNoIcon') }}</option>
+              <option v-if="form.icon && !availableIcons.includes(form.icon)" :value="form.icon">
+                {{ form.icon }}
+              </option>
+              <option v-for="ic in availableIcons" :key="ic" :value="ic">{{ ic }}</option>
+            </select>
+          </div>
+        </div>
         <div>
           <label class="form-label fw-bold">{{ t('designer.formName') }}</label>
           <div class="input-group">
@@ -489,26 +509,6 @@ defineExpose({
             <select class="form-select" :value="form.type" :disabled="locked" @change="setType($event.target.value)">
               <option v-if="!formTypes.includes(form.type)" :value="form.type">{{ form.type }}</option>
               <option v-for="ft in formTypes" :key="ft" :value="ft">{{ ft }}</option>
-            </select>
-          </div>
-        </div>
-        <div v-if="!isSubform">
-          <label class="form-label fw-bold">{{ t('designer.visualIcon') }}</label>
-          <div class="input-group">
-            <span class="input-group-text"
-              ><FaIcon :fixedwidth="true" :icon="form.icon || 'square'" :class="{ 'opacity-25': !form.icon }"
-            /></span>
-            <select
-              class="form-select"
-              :value="form.icon"
-              :disabled="locked"
-              @change="setText('icon', $event.target.value)"
-            >
-              <option value="">{{ t('designer.visualNoIcon') }}</option>
-              <option v-if="form.icon && !availableIcons.includes(form.icon)" :value="form.icon">
-                {{ form.icon }}
-              </option>
-              <option v-for="ic in availableIcons" :key="ic" :value="ic">{{ ic }}</option>
             </select>
           </div>
         </div>
