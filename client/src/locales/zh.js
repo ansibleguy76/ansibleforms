@@ -1606,7 +1606,7 @@ export default {
     formKeepExtravars: '保留 extravars',
     formUserExtravars: 'extravars 中的用户',
     formUserExtravarsHelp:
-      'ansibleforms_user 的哪些键传给 playbook。留空则遵循 EXTRAVARS_USER_FIELDS，all 发送整个对象，none 不发送任何内容。',
+      'ansibleforms_user 的哪些键传给 playbook：\n• 留空：遵循 EXTRAVARS_USER_FIELDS\n• all：整个对象\n• none：不发送',
     formScmBranch: 'SCM 分支',
     formExecEnv: '执行环境',
     formInstanceGroups: '实例组（逗号分隔）',

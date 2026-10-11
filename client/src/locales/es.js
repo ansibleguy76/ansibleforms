@@ -1666,7 +1666,7 @@ export default {
     formKeepExtravars: 'Mantener extravars',
     formUserExtravars: 'Usuario en extravars',
     formUserExtravarsHelp:
-      'Que claves de ansibleforms_user se envian al playbook. Vacio sigue EXTRAVARS_USER_FIELDS, all envia el objeto completo, none no envia nada.',
+      'Qué claves de ansibleforms_user se envían al playbook:\n• vacío: lo que indique EXTRAVARS_USER_FIELDS\n• all: el objeto completo\n• none: nada',
     formScmBranch: 'Rama SCM',
     formExecEnv: 'Entorno de ejecución',
     formInstanceGroups: 'Grupos de instancias (separados por comas)',

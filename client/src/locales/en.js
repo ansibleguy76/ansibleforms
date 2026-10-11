@@ -1643,7 +1643,7 @@ export default {
     formKeepExtravars: 'Keep extravars',
     formUserExtravars: 'User in extravars',
     formUserExtravarsHelp:
-      'Which keys of ansibleforms_user go to the playbook. Empty follows EXTRAVARS_USER_FIELDS, all sends the whole object, none sends nothing.',
+      'Which keys of ansibleforms_user go to the playbook:\n• empty: as EXTRAVARS_USER_FIELDS says\n• all: the whole object\n• none: nothing',
     formScmBranch: 'SCM branch',
     formExecEnv: 'Execution environment',
     formInstanceGroups: 'Instance groups (comma-separated)',

@@ -1664,7 +1664,7 @@ export default {
     formKeepExtravars: 'Mantieni extravars',
     formUserExtravars: 'Utente negli extravars',
     formUserExtravarsHelp:
-      "Quali chiavi di ansibleforms_user vengono inviate al playbook. Vuoto segue EXTRAVARS_USER_FIELDS, all invia l'intero oggetto, none non invia nulla.",
+      "Quali chiavi di ansibleforms_user vengono inviate al playbook:\n• vuoto: come indica EXTRAVARS_USER_FIELDS\n• all: l'intero oggetto\n• none: niente",
     formScmBranch: 'Branch SCM',
     formExecEnv: 'Ambiente di esecuzione',
     formInstanceGroups: 'Gruppi di istanze (separati da virgola)',

@@ -1644,7 +1644,7 @@ export default {
     formKeepExtravars: 'extravars を保持',
     formUserExtravars: 'extravars 内のユーザー',
     formUserExtravarsHelp:
-      'ansibleforms_user のどのキーを playbook に渡すかを指定します。空欄の場合は EXTRAVARS_USER_FIELDS に従い、all はオブジェクト全体を送信し、none は何も送信しません。',
+      'ansibleforms_user のどのキーを playbook に渡すか：\n• 空欄：EXTRAVARS_USER_FIELDS に従う\n• all：オブジェクト全体\n• none：何も送らない',
     formScmBranch: 'SCM ブランチ',
     formExecEnv: '実行環境',
     formInstanceGroups: 'インスタンスグループ (カンマ区切り)',

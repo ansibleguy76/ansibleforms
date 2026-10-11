@@ -1673,7 +1673,7 @@ export default {
     formKeepExtravars: 'Conserva les extravars',
     formUserExtravars: 'Usuari a les extravars',
     formUserExtravarsHelp:
-      "Quines claus d'ansibleforms_user arriben al playbook. Buit segueix EXTRAVARS_USER_FIELDS, all envia l'objecte sencer, none no envia res.",
+      "Quines claus d'ansibleforms_user arriben al playbook:\n• buit: el que indiqui EXTRAVARS_USER_FIELDS\n• all: l'objecte sencer\n• none: res",
     formScmBranch: 'Branca SCM',
     formExecEnv: "Entorn d'execució",
     formInstanceGroups: "Grups d'instàncies (separats per comes)",

@@ -1665,7 +1665,7 @@ export default {
     formKeepExtravars: 'Extravars behouden',
     formUserExtravars: 'Gebruiker in extravars',
     formUserExtravarsHelp:
-      'Welke sleutels van ansibleforms_user naar de playbook gaan. Leeg volgt EXTRAVARS_USER_FIELDS, all stuurt het hele object, none stuurt niets.',
+      'Welke sleutels van ansibleforms_user naar het playbook gaan:\n• leeg: zoals EXTRAVARS_USER_FIELDS zegt\n• all: het hele object\n• none: niets',
     formScmBranch: 'SCM-branch',
     formExecEnv: 'Uitvoeringsomgeving',
     formInstanceGroups: 'Instantiegroepen (kommagescheiden)',
