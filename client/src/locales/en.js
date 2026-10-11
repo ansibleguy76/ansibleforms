@@ -1105,7 +1105,8 @@ export default {
     },
     knownhosts: {
       label: 'Known host',
-      description: 'SSH known hosts for verifying remote server fingerprints.',
+      description:
+        "The servers the app trusts over SSH. A repository's host is added when it is first cloned; playbooks run on an RTE, which keeps its own.",
       showEntry: 'Show host entry',
       deleteEntry: 'Delete host entry',
       hostEntry: 'Host entry',
@@ -1153,8 +1154,10 @@ export default {
       type_smtpHint: 'A user and password for a mail server',
     },
     ssh: {
+      tabKey: 'Key',
       label: 'SSH key',
-      description: 'SSH key pair used by AnsibleForms to connect to remote hosts.',
+      description:
+        "The key pair the app connects with over SSH: to Git, for a repository at git{'@'}host:org/repo.git.",
       privateKeyArt: 'Private key art',
       privateKey: 'Private key',
       privateKeyHelp: 'Use to overwrite the current private key, know what your are doing!',

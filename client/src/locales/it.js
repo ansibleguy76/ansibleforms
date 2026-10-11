@@ -1118,7 +1118,8 @@ export default {
     },
     knownhosts: {
       label: 'Host conosciuto',
-      description: 'Host SSH noti per la verifica delle impronte digitali dei server remoti.',
+      description:
+        "I server di cui l'app si fida via SSH. L'host di un repository viene aggiunto al primo clone; i playbook girano su un RTE, che ha i propri.",
       showEntry: 'Mostra voce host',
       deleteEntry: 'Elimina voce host',
       hostEntry: 'Voce host',
@@ -1166,8 +1167,10 @@ export default {
       type_smtpHint: 'Un utente e una password per un server mail',
     },
     ssh: {
+      tabKey: 'Chiave',
       label: 'Chiave SSH',
-      description: 'Coppia di chiavi SSH utilizzata da AnsibleForms per connettersi agli host remoti.',
+      description:
+        "La coppia di chiavi con cui l'app si collega via SSH: a Git, per un repository su git{'@'}host:org/repo.git.",
       privateKeyArt: 'Tipo di chiave privata',
       privateKey: 'Chiave privata',
       privateKeyHelp: "Usa per sovrascrivere l'attuale chiave privata, assicurati di sapere cosa stai facendo!",

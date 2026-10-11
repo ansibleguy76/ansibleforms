@@ -146,7 +146,7 @@ export function searchPages(t, options) {
       title: t('sidebar.knownHosts'),
       section: settings,
       icon: 'server',
-      link: '/settings/known-hosts',
+      link: '/settings/ssh/known-hosts',
     },
     {
       title: t('sidebar.mail'),

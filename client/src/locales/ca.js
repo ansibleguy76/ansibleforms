@@ -1059,7 +1059,8 @@ export default {
     },
     knownhosts: {
       label: 'Amfitrió conegut',
-      description: 'Amfitrions coneguts SSH per verificar les empremtes dels servidors remots.',
+      description:
+        "Els servidors en què l'aplicació confia per SSH. L'amfitrió d'un repositori s'afegeix en clonar-lo per primer cop; els playbooks s'executen en un RTE, que té els seus.",
       showEntry: "Mostra l'entrada de l'amfitrió",
       deleteEntry: "Suprimeix l'entrada de l'amfitrió",
       hostEntry: "Entrada de l'amfitrió",
@@ -1108,8 +1109,10 @@ export default {
       type_smtpHint: 'Un usuari i una contrasenya per a un servidor de correu',
     },
     ssh: {
+      tabKey: 'Clau',
       label: 'Clau SSH',
-      description: 'Parell de claus SSH que utilitza AnsibleForms per connectar-se als amfitrions remots.',
+      description:
+        "El parell de claus amb què l'aplicació es connecta per SSH: a Git, per a un repositori a git{'@'}host:org/repo.git.",
       privateKeyArt: 'Art de la clau privada',
       privateKey: 'Clau privada',
       privateKeyHelp: 'Serveix per sobreescriure la clau privada actual, sàpigues què fas!',

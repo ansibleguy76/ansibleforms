@@ -1130,7 +1130,8 @@ export default {
     },
     knownhosts: {
       label: 'Bekannter Host',
-      description: 'SSH-Known-Hosts zur Überprüfung von Fingerabdrücken entfernter Server.',
+      description:
+        'Die Server, denen die App per SSH vertraut. Der Host eines Repositorys wird beim ersten Klonen hinzugefügt; Playbooks laufen auf einem RTE, das seine eigenen hat.',
       showEntry: 'Host-Eintrag anzeigen',
       deleteEntry: 'Host-Eintrag loeschen',
       hostEntry: 'Host-Eintrag',
@@ -1179,8 +1180,10 @@ export default {
       type_smtpHint: 'Ein Benutzer und Passwort für einen Mailserver',
     },
     ssh: {
+      tabKey: 'Schlüssel',
       label: 'SSH-Schluessel',
-      description: 'SSH-Schlüsselpaar, das von AnsibleForms zur Verbindung mit entfernten Hosts verwendet wird.',
+      description:
+        "Das Schlüsselpaar, mit dem sich die App per SSH verbindet: zu Git, für ein Repository unter git{'@'}host:org/repo.git.",
       privateKeyArt: 'Private-Key-Art',
       privateKey: 'Privater Schluessel',
       privateKeyHelp:

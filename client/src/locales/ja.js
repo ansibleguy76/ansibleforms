@@ -1044,7 +1044,8 @@ export default {
     },
     knownhosts: {
       label: '既知のホスト',
-      description: 'リモートサーバーのフィンガープリントを検証するための SSH の既知のホストです。',
+      description:
+        'アプリが SSH で信頼するサーバー。リポジトリのホストは初回のクローン時に追加されます。プレイブックは RTE で実行され、RTE は独自のものを持ちます。',
       showEntry: 'ホストエントリを表示',
       deleteEntry: 'ホストエントリを削除',
       hostEntry: 'ホストエントリ',
@@ -1092,8 +1093,9 @@ export default {
       type_smtpHint: 'メールサーバーのユーザーとパスワード',
     },
     ssh: {
+      tabKey: 'キー',
       label: 'SSH キー',
-      description: 'AnsibleForms がリモートホストへの接続に使用する SSH キーペアです。',
+      description: "アプリが SSH で接続するときのキーペア（git{'@'}host:org/repo.git のリポジトリ用の Git 接続）。",
       privateKeyArt: '秘密鍵のランダムアート',
       privateKey: '秘密鍵',
       privateKeyHelp: '現在の秘密鍵を上書きする場合に使用します。内容を理解したうえで操作してください。',

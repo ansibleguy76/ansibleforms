@@ -1052,7 +1052,8 @@ export default {
     },
     knownhosts: {
       label: 'Znany host',
-      description: 'Znane hosty SSH do weryfikacji odcisków zdalnych serwerów.',
+      description:
+        'Serwery, którym aplikacja ufa przez SSH. Host repozytorium jest dodawany przy pierwszym klonowaniu; playbooki działają na RTE, które ma własne.',
       showEntry: 'Pokaż wpis hosta',
       deleteEntry: 'Usuń wpis hosta',
       hostEntry: 'Wpis hosta',
@@ -1101,8 +1102,10 @@ export default {
       type_smtpHint: 'Użytkownik i hasło do serwera poczty',
     },
     ssh: {
+      tabKey: 'Klucz',
       label: 'Klucz SSH',
-      description: 'Para kluczy SSH używana przez AnsibleForms do łączenia się ze zdalnymi hostami.',
+      description:
+        "Para kluczy, którą aplikacja łączy się przez SSH: z Git, dla repozytorium pod git{'@'}host:org/repo.git.",
       privateKeyArt: 'Grafika klucza prywatnego',
       privateKey: 'Klucz prywatny',
       privateKeyHelp: 'Służy do nadpisania bieżącego klucza prywatnego, upewnij się, że wiesz, co robisz!',

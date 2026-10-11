@@ -1117,7 +1117,8 @@ export default {
     },
     knownhosts: {
       label: 'Known host',
-      description: 'SSH-known-hosts voor het verifiëren van vingerafdrukken van externe servers.',
+      description:
+        'De servers die de app via SSH vertrouwt. De host van een repository wordt bij de eerste kloon toegevoegd; playbooks draaien op een RTE, die zijn eigen heeft.',
       showEntry: 'Host entry tonen',
       deleteEntry: 'Host entry verwijderen',
       hostEntry: 'Host entry',
@@ -1166,8 +1167,10 @@ export default {
       type_smtpHint: 'Een gebruiker en wachtwoord voor een mailserver',
     },
     ssh: {
+      tabKey: 'Sleutel',
       label: 'SSH sleutel',
-      description: 'SSH-sleutelpaar dat door AnsibleForms wordt gebruikt om verbinding te maken met externe hosts.',
+      description:
+        "Het sleutelpaar waarmee de app via SSH verbindt: met Git, voor een repository op git{'@'}host:org/repo.git.",
       privateKeyArt: 'Privésleutel art',
       privateKey: 'Privésleutel',
       privateKeyHelp: 'Gebruik om de huidige privésleutel te overschrijven, weet wat u doet!',

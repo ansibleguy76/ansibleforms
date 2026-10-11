@@ -1017,7 +1017,7 @@ export default {
     },
     knownhosts: {
       label: '已知主机',
-      description: '用于验证远程服务器指纹的 SSH 已知主机。',
+      description: '应用通过 SSH 信任的服务器。仓库的主机在首次克隆时添加；剧本在 RTE 上运行，RTE 有自己的列表。',
       showEntry: '显示主机条目',
       deleteEntry: '删除主机条目',
       hostEntry: '主机条目',
@@ -1065,8 +1065,9 @@ export default {
       type_smtpHint: '邮件服务器的用户和密码',
     },
     ssh: {
+      tabKey: '密钥',
       label: 'SSH 密钥',
-      description: 'AnsibleForms 用于连接远程主机的 SSH 密钥对。',
+      description: "应用通过 SSH 连接时使用的密钥对：连接 Git，用于 git{'@'}host:org/repo.git 的仓库。",
       privateKeyArt: '私钥指纹图',
       privateKey: '私钥',
       privateKeyHelp: '用于覆盖当前私钥，请确认您清楚自己在做什么！',

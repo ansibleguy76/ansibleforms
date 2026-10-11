@@ -243,13 +243,13 @@ describe('copying to the clipboard reports what actually happened', () => {
   });
 
   it('no component calls copyText directly any more', () => {
-    for (const f of ['src/components/BsSshKey.vue', 'src/components/AppForm.vue', 'src/pages/admin/knownHosts.vue']) {
+    for (const f of ['src/components/BsSshKey.vue', 'src/components/AppForm.vue', 'src/pages/admin/ssh.vue']) {
       expect(read(f)).not.toMatch(/\bcopyText\(/);
     }
   });
 
   it('every call site toasts success only after the promise resolves', () => {
-    for (const f of ['src/components/BsSshKey.vue', 'src/components/AppForm.vue', 'src/pages/admin/knownHosts.vue']) {
+    for (const f of ['src/components/BsSshKey.vue', 'src/components/AppForm.vue', 'src/pages/admin/ssh.vue']) {
       const src = read(f);
       const calls = [...src.matchAll(/Helpers\.copyToClipboard\([^)]*\)([\s\S]{0,220})/g)];
       expect(calls.length).toBeGreaterThan(0);

@@ -94,7 +94,6 @@ const sections = computed(() =>
         { title: t('sidebar.secretStores'), icon: 'vault', link: '/settings/secret-stores' },
         { title: t('sidebar.runners'), icon: 'rocket', link: '/settings/runners' },
         { title: t('sidebar.ssh'), icon: 'key', link: '/settings/ssh' },
-        { title: t('sidebar.knownHosts'), icon: 'server', link: '/settings/known-hosts' },
         { title: t('sidebar.mail'), icon: 'envelope', link: '/settings/mail' },
         { title: t('sidebar.chat'), icon: 'comments', link: '/settings/chat' },
         { title: t('sidebar.mcp'), icon: 'robot', link: '/settings/mcp' },

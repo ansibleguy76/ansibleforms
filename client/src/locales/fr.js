@@ -1130,7 +1130,8 @@ export default {
     },
     knownhosts: {
       label: 'Hote connu',
-      description: 'Hôtes SSH connus pour vérifier les empreintes des serveurs distants.',
+      description:
+        "Les serveurs auxquels l'application fait confiance en SSH. L'hôte d'un dépôt est ajouté à son premier clonage ; les playbooks s'exécutent sur un RTE, qui a les siens.",
       showEntry: "Afficher l'entree d'hote",
       deleteEntry: "Supprimer l'entree d'hote",
       hostEntry: "Entree d'hote",
@@ -1179,8 +1180,10 @@ export default {
       type_smtpHint: 'Un utilisateur et un mot de passe pour un serveur mail',
     },
     ssh: {
+      tabKey: 'Clé',
       label: 'Cle SSH',
-      description: 'Paire de clés SSH utilisée par AnsibleForms pour se connecter aux hôtes distants.',
+      description:
+        "La paire de clés avec laquelle l'application se connecte en SSH : à Git, pour un dépôt en git{'@'}host:org/repo.git.",
       privateKeyArt: 'Type de cle privee',
       privateKey: 'Cle privee',
       privateKeyHelp: 'A utiliser pour remplacer la cle privee actuelle, sachez ce que vous faites !',
