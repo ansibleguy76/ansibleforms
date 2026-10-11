@@ -617,7 +617,7 @@ defineExpose({
             />
           </div>
         </div>
-        <!-- the type : a row below the name, the settings it decides right after it -->
+        <!-- the type : a row of its own, below the name -->
         <div class="af-form-newrow">
           <label class="form-label fw-bold">{{ t('designer.formType') }}</label>
           <div class="input-group">
@@ -628,149 +628,6 @@ defineExpose({
             </select>
           </div>
         </div>
-        <div v-if="form.type === 'ansible'">
-          <label class="form-label fw-bold">{{ t('designer.formPlaybook') }}</label>
-          <div class="input-group">
-            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="file-code" /></span>
-            <input
-              class="form-control"
-              :class="{ 'is-invalid': !form.playbook.trim() }"
-              :value="form.playbook"
-              :disabled="locked"
-              spellcheck="false"
-              @change="setText('playbook', $event.target.value)"
-            />
-          </div>
-          <div class="form-text">{{ t('designer.helpPlaybook') }}</div>
-        </div>
-        <div v-if="form.type === 'awx'">
-          <label class="form-label fw-bold">{{ t('designer.formTemplate') }}</label>
-          <div class="input-group">
-            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="file-code" /></span>
-            <input
-              class="form-control"
-              :class="{ 'is-invalid': !form.template.trim() }"
-              :value="form.template"
-              :disabled="locked"
-              @change="setText('template', $event.target.value)"
-            />
-          </div>
-          <div class="form-text">{{ t('designer.helpTemplate') }}</div>
-        </div>
-        <!-- the runner : picked from the instance's, of the type the form needs ; typed when the
-             list cannot be read -->
-        <div v-if="runs">
-          <label class="form-label fw-bold">{{ t('designer.formRunner') }}</label>
-          <div class="input-group">
-            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="server" /></span>
-            <select
-              v-if="runnerChoices"
-              class="form-select"
-              :value="setting('runner')"
-              :disabled="locked"
-              @change="setText('runner', $event.target.value)"
-            >
-              <option value="">{{ t('designer.runnerDefault') }}</option>
-              <!-- a runner the list does not have (another type, or gone) : offered, so it shows -->
-              <option v-if="setting('runner') && !runnerChoices.includes(setting('runner'))" :value="setting('runner')">
-                {{ setting('runner') }}
-              </option>
-              <option v-for="r in runnerChoices" :key="r" :value="r">{{ r }}</option>
-            </select>
-            <input
-              v-else
-              class="form-control"
-              :value="setting('runner')"
-              :disabled="locked"
-              spellcheck="false"
-              @change="setText('runner', $event.target.value)"
-            />
-          </div>
-          <div class="form-text">{{ t('designer.formRunnerHelp') }}</div>
-        </div>
-        <div v-for="x in textSettings" :key="x.key">
-          <label class="form-label fw-bold">{{ t(x.label) }}</label>
-          <div class="input-group">
-            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" :icon="x.icon" /></span>
-            <input
-              class="form-control"
-              :value="setting(x.key)"
-              :disabled="locked"
-              spellcheck="false"
-              @change="setText(x.key, $event.target.value)"
-            />
-          </div>
-          <div v-if="x.help" class="form-text">{{ t(x.help) }}</div>
-        </div>
-        <div v-if="awx">
-          <label class="form-label fw-bold">{{ t('designer.formInstanceGroups') }}</label>
-          <div class="input-group">
-            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="layer-group" /></span>
-            <input
-              class="form-control"
-              :value="
-                Array.isArray(setting('instanceGroups'))
-                  ? setting('instanceGroups').join(', ')
-                  : setting('instanceGroups')
-              "
-              :disabled="locked"
-              @change="setInstanceGroups($event.target.value)"
-            />
-          </div>
-          <div class="form-text">{{ t('designer.helpInstanceGroups') }}</div>
-        </div>
-        <!-- the user in the extravars : a choice, and the keys when only some -->
-        <div v-if="allows('userExtravars')">
-          <label class="form-label fw-bold">{{ t('designer.formUserExtravars') }}</label>
-          <div class="input-group">
-            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="user" /></span>
-            <select class="form-select" :value="userMode" :disabled="locked" @change="setUserMode($event.target.value)">
-              <option value="">{{ t('designer.userExtravarsDefault') }}</option>
-              <option value="all">{{ t('designer.userExtravarsAll') }}</option>
-              <option value="none">{{ t('designer.userExtravarsNone') }}</option>
-              <option value="keys">{{ t('designer.userExtravarsKeys') }}</option>
-            </select>
-          </div>
-          <div v-if="userMode === 'keys'" class="input-group mt-2">
-            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="key" /></span>
-            <input
-              class="form-control"
-              :value="userMode === 'keys' ? setting('userExtravars') : ''"
-              :disabled="locked"
-              placeholder="username,email,type"
-              spellcheck="false"
-              @change="
-                setText(
-                  'userExtravars',
-                  $event.target.value
-                    .split(',')
-                    .map((k) => k.trim())
-                    .filter(Boolean)
-                    .join(','),
-                )
-              "
-            />
-          </div>
-          <div class="form-text">{{ t('designer.formUserExtravarsHelp') }}</div>
-        </div>
-        <div v-if="allows('launchValidation')">
-          <label class="form-label fw-bold">{{ t('designer.formLaunchValidation') }}</label>
-          <div class="input-group">
-            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="shield-halved" /></span>
-            <select
-              class="form-select"
-              :value="setting('launchValidation')"
-              :disabled="locked"
-              @change="setText('launchValidation', $event.target.value)"
-            >
-              <option value="">{{ t('designer.formLaunchValidationDefault') }}</option>
-              <option value="log">log</option>
-              <option value="enforce">enforce</option>
-            </select>
-          </div>
-          <div class="form-text">{{ t('designer.formLaunchValidationHelp') }}</div>
-        </div>
-        <!-- what the form is : its description, its help, where it shows -->
         <div class="af-form-span2 af-form-newrow">
           <label class="form-label fw-bold">{{ t('designer.formDescription') }}</label>
           <!-- a sentence or two : as tall as two lines, as the help below -->
@@ -847,6 +704,131 @@ defineExpose({
           </div>
           <div class="form-text">{{ t('designer.helpIcon') }}</div>
         </div>
+        <div v-if="form.type === 'ansible'">
+          <label class="form-label fw-bold">{{ t('designer.formPlaybook') }}</label>
+          <div class="input-group">
+            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="file-code" /></span>
+            <input
+              class="form-control"
+              :class="{ 'is-invalid': !form.playbook.trim() }"
+              :value="form.playbook"
+              :disabled="locked"
+              spellcheck="false"
+              @change="setText('playbook', $event.target.value)"
+            />
+          </div>
+          <div class="form-text">{{ t('designer.helpPlaybook') }}</div>
+        </div>
+        <div v-if="form.type === 'awx'">
+          <label class="form-label fw-bold">{{ t('designer.formTemplate') }}</label>
+          <div class="input-group">
+            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="file-code" /></span>
+            <input
+              class="form-control"
+              :class="{ 'is-invalid': !form.template.trim() }"
+              :value="form.template"
+              :disabled="locked"
+              @change="setText('template', $event.target.value)"
+            />
+          </div>
+          <div class="form-text">{{ t('designer.helpTemplate') }}</div>
+        </div>
+        <!-- the runner : picked from the instance's, of the type the form needs ; typed when the
+             list cannot be read -->
+        <div v-if="runs">
+          <label class="form-label fw-bold">{{ t('designer.formRunner') }}</label>
+          <div class="input-group">
+            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="server" /></span>
+            <select
+              v-if="runnerChoices"
+              class="form-select"
+              :value="setting('runner')"
+              :disabled="locked"
+              @change="setText('runner', $event.target.value)"
+            >
+              <option value="">{{ t('designer.runnerDefault') }}</option>
+              <!-- a runner the list does not have (another type, or gone) : offered, so it shows -->
+              <option v-if="setting('runner') && !runnerChoices.includes(setting('runner'))" :value="setting('runner')">
+                {{ setting('runner') }}
+              </option>
+              <option v-for="r in runnerChoices" :key="r" :value="r">{{ r }}</option>
+            </select>
+            <input
+              v-else
+              class="form-control"
+              :value="setting('runner')"
+              :disabled="locked"
+              spellcheck="false"
+              @change="setText('runner', $event.target.value)"
+            />
+          </div>
+          <div class="form-text">{{ t('designer.formRunnerHelp') }}</div>
+        </div>
+        <div v-for="x in textSettings" :key="x.key">
+          <label class="form-label fw-bold">{{ t(x.label) }}</label>
+          <div class="input-group">
+            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" :icon="x.icon" /></span>
+            <input
+              class="form-control"
+              :value="setting(x.key)"
+              :disabled="locked"
+              spellcheck="false"
+              @change="setText(x.key, $event.target.value)"
+            />
+          </div>
+          <div v-if="x.help" class="form-text">{{ t(x.help) }}</div>
+        </div>
+        <!-- the user in the extravars : a choice, and the keys when only some -->
+        <div v-if="allows('userExtravars')">
+          <label class="form-label fw-bold">{{ t('designer.formUserExtravars') }}</label>
+          <div class="input-group">
+            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="user" /></span>
+            <select class="form-select" :value="userMode" :disabled="locked" @change="setUserMode($event.target.value)">
+              <option value="">{{ t('designer.userExtravarsDefault') }}</option>
+              <option value="all">{{ t('designer.userExtravarsAll') }}</option>
+              <option value="none">{{ t('designer.userExtravarsNone') }}</option>
+              <option value="keys">{{ t('designer.userExtravarsKeys') }}</option>
+            </select>
+          </div>
+          <div v-if="userMode === 'keys'" class="input-group mt-2">
+            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="key" /></span>
+            <input
+              class="form-control"
+              :value="userMode === 'keys' ? setting('userExtravars') : ''"
+              :disabled="locked"
+              placeholder="username,email,type"
+              spellcheck="false"
+              @change="
+                setText(
+                  'userExtravars',
+                  $event.target.value
+                    .split(',')
+                    .map((k) => k.trim())
+                    .filter(Boolean)
+                    .join(','),
+                )
+              "
+            />
+          </div>
+          <div class="form-text">{{ t('designer.formUserExtravarsHelp') }}</div>
+        </div>
+        <div v-if="awx">
+          <label class="form-label fw-bold">{{ t('designer.formInstanceGroups') }}</label>
+          <div class="input-group">
+            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="layer-group" /></span>
+            <input
+              class="form-control"
+              :value="
+                Array.isArray(setting('instanceGroups'))
+                  ? setting('instanceGroups').join(', ')
+                  : setting('instanceGroups')
+              "
+              :disabled="locked"
+              @change="setInstanceGroups($event.target.value)"
+            />
+          </div>
+          <div class="form-text">{{ t('designer.helpInstanceGroups') }}</div>
+        </div>
         <div v-if="allows('order')">
           <label class="form-label fw-bold">{{ t('designer.formOrder') }}</label>
           <div class="input-group">
@@ -860,6 +842,23 @@ defineExpose({
             />
           </div>
           <div class="form-text">{{ t('designer.helpOrder') }}</div>
+        </div>
+        <div v-if="allows('launchValidation')">
+          <label class="form-label fw-bold">{{ t('designer.formLaunchValidation') }}</label>
+          <div class="input-group">
+            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="shield-halved" /></span>
+            <select
+              class="form-select"
+              :value="setting('launchValidation')"
+              :disabled="locked"
+              @change="setText('launchValidation', $event.target.value)"
+            >
+              <option value="">{{ t('designer.formLaunchValidationDefault') }}</option>
+              <option value="log">log</option>
+              <option value="enforce">enforce</option>
+            </select>
+          </div>
+          <div class="form-text">{{ t('designer.formLaunchValidationHelp') }}</div>
         </div>
         <!-- notifications : on or off ; on, who gets them, on which statuses and events -->
         <div v-if="allows('notifications')" class="af-form-span2">
@@ -1421,7 +1420,7 @@ defineExpose({
 .af-form-span2 {
   grid-column: span 2;
 }
-/* starts a row of its own (the type under the name, the description after the run settings) ;
+/* starts a row of its own (the type under the name, the description under the type) ;
    'span 2' alone is a start, so a wide one says both */
 .af-form-newrow {
   grid-column: 1;
