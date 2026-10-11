@@ -436,9 +436,9 @@ onMounted(async () => {
   transform: translateY(-50%);
   color: var(--bs-secondary-color);
 }
+/* the column names : as a field's label on the settings pages (form-label fw-bold) */
 .af-links-head {
-  font-weight: 600;
-  font-size: 0.875rem;
+  font-weight: 700;
 }
 </style>
 <route lang="yaml">
