@@ -379,15 +379,8 @@ export default function getSettings(t) {
         // what the group is for, or who owns it
         {
           key: 'description',
-          // room for a description, the counts beside it
-          width: shareUpTo(
-            0.6,
-            384,
-            44 +
-              56 +
-              pxOf(headerWidth(t('settings.users.labelPlural'), true, '8rem', true)) +
-              pxOf(headerWidth(t('settings.settingsPage.roles'), true, '8rem', true)),
-          ),
+          // as wide as the longest description, as long as there is room
+          fit: true,
           label: t('settings.fields.description'),
           sortable: true,
           required: false,

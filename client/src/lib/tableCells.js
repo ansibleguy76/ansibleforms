@@ -102,3 +102,31 @@ export function shareUpTo(share, cap, reserve = 0) {
 export function pxOf(width) {
   return parseInt(width, 10) || 128;
 }
+
+/**
+ * The width the longest of some values needs in a table's cell : each measured in a hidden cell
+ * of a table like the lists', in its font and padding.
+ *
+ * Args:
+ *   texts (string[]): the values, as the cells show them.
+ *
+ * Returns:
+ *   number: the widest one's width, in px (0 when nothing can be measured).
+ */
+export function widestCell(texts) {
+  if (typeof document === 'undefined' || !document.body) return 0;
+  const table = document.createElement('table');
+  table.className = 'table table-sm mb-0 bs-dt-table af-table';
+  table.style.cssText = 'position:absolute;visibility:hidden;left:-9999px;top:0;width:auto';
+  table.innerHTML = '<tbody><tr><td style="white-space:nowrap"></td></tr></tbody>';
+  document.body.appendChild(table);
+  const td = table.querySelector('td');
+  let widest = 0;
+  // each text once ; a few hundred at most (a list's page or its filtered rows)
+  for (const text of [...new Set(texts)].slice(0, 500)) {
+    td.textContent = text;
+    widest = Math.max(widest, td.getBoundingClientRect().width);
+  }
+  table.remove();
+  return Math.ceil(widest);
+}

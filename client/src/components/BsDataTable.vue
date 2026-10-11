@@ -10,7 +10,9 @@
  *                           filterType?: 'number' | 'boolean' | 'gt0',
  *                           align?: 'end' (numbers : header, filter and cells to the right),
  *                           width?: a CSS width for the column (the rest share what is left),
- *                             or (tableWidth px) => a CSS width, to follow the table's width
+ *                             or (tableWidth px) => a CSS width, to follow the table's width,
+ *                           fit?: true - as wide as its longest value (a description), never
+ *                             narrower than its header nor wider than the other columns leave
  *                           hideBelow?: a width in px - the column is left out while the table
  *                             is narrower, so the wide ones keep room on a small screen }]
  *  pageSize       Number  Initial page size (default 25) — a page size the user
@@ -42,13 +44,14 @@
 
  */
 
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount, useSlots } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Helpers from '@/lib/Helpers';
 import BsPagination from './BsPagination.vue';
 import BsSearch from './BsSearch.vue';
 import BsColumnPicker from './BsColumnPicker.vue';
 import { parseNumberFilter, csvCell, htmlToText } from '@/lib/dataTable';
+import { headerWidth, widestCell } from '@/lib/tableCells';
 
 const { t } = useI18n();
 
@@ -119,7 +122,7 @@ const visibleColumns = computed(() =>
 );
 // every column shown with a width of its own : an empty column after them takes the room left,
 // so the columns keep their widths rather than stretching (a count far from its neighbour)
-const spacer = computed(() => visibleColumns.value.length > 0 && visibleColumns.value.every((c) => c.width));
+const spacer = computed(() => visibleColumns.value.length > 0 && visibleColumns.value.every((c) => c.width || c.fit));
 /**
  * A column's width : as given, or worked out from the table's width (a share up to a cap).
  *
@@ -130,9 +133,45 @@ const spacer = computed(() => visibleColumns.value.length > 0 && visibleColumns.
  *   string|null: a CSS width, or null for a share of what is left.
  */
 function colWidth(col) {
+  if (col.fit) return fitWidths.value[col.key] || null;
   if (typeof col.width === 'function') return col.width(tableWidth.value);
   return col.width || null;
 }
+
+/**
+ * A CSS width in px : px as they are, rem at 16px, a share (%) of the table.
+ *
+ * Args:
+ *   width (string|null): a column's width.
+ *
+ * Returns:
+ *   number: px ; 0 for none.
+ */
+function pxOf(width) {
+  if (!width) return 0;
+  const n = parseFloat(width);
+  if (String(width).endsWith('rem')) return n * 16;
+  if (String(width).endsWith('%')) return Number.isFinite(tableWidth.value) ? (n / 100) * tableWidth.value : 0;
+  return n || 0;
+}
+
+// a column with `fit` : as wide as its longest value, from the rows the table shows after its
+// search, never narrower than its header, never wider than the room the other columns leave
+// (the checkbox, the row menu and their own widths), shared between the fitted columns
+const slots = useSlots();
+const fitWidths = computed(() => {
+  const fitted = visibleColumns.value.filter((c) => c.fit);
+  if (!fitted.length) return {};
+  let room = tableWidth.value - (props.selectable ? 44 : 0) - (slots['row-actions'] ? 56 : 0);
+  for (const c of visibleColumns.value) if (!c.fit) room -= pxOf(colWidth(c));
+  const each = room / fitted.length;
+  const out = {};
+  for (const c of fitted) {
+    const longest = Math.max(widestCell(filteredItems.value.map((i) => cellPlain(i, c))), pxOf(headerWidth(c.label)));
+    out[c.key] = `${Math.round(Math.max(0, Math.min(each, longest)))}px`;
+  }
+  return out;
+});
 
 function toggleColumn(key) {
   const s = new Set(hiddenColumns.value);

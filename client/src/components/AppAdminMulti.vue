@@ -961,6 +961,8 @@ const dataTableColumns = computed(() => {
       };
       // a field may set its column's width (a yes / no column as wide as its header)
       if (f.width) col.width = f.width;
+      // or fit its longest value (a description), as long as there is room
+      if (f.fit) col.fit = true;
       // and the table width it needs to be shown (a short column left out on a narrow screen)
       if (f.hideBelow) col.hideBelow = f.hideBelow;
       // and its alignment (a count : to the right)
