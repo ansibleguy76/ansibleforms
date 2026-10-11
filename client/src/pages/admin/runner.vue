@@ -4,8 +4,8 @@
 /*  A runner's page (/settings/runners/<id>), opened from the        */
 /*  runners' list : the steps of its dialog as tabs, the tab kept */
 /*  in the url -                                                  */
-/*    Runner          its name, description, whether it is the    */
-/*                    default of its kind, its registration       */
+/*    Details         its registration, name, description,        */
+/*                    whether it is the default of its kind       */
 /*    Type            RTE, AWX, AAP or Ascender                   */
 /*    Connection      its address and how its certificate is     */
 /*                    checked                                     */
@@ -143,7 +143,7 @@ async function update(data) {
 // ─── tabs ─────────────────────────────────────────────────────────────────────
 // the dialog's steps : Runner, Type, Connection, Authentication ; then what runs on it
 const tabs = computed(() => [
-  { key: 'runner', label: t('settings.runners.stepRunner'), icon: 'rocket' },
+  { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
   { key: 'type', label: t('settings.runners.stepType'), icon: 'shapes' },
   { key: 'connection', label: t('settings.runners.stepConnection'), icon: 'globe' },
   { key: 'authentication', label: t('settings.runners.stepAuth'), icon: 'key' },
@@ -189,7 +189,7 @@ async function loadJobs() {
     jobs.value = [];
   }
 }
-const { activeTab, tabLink } = useRouteTab('runner', (key) => tabs.value.some((x) => x.key === key));
+const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
 // the title : Runners › <name>, each step a link
 const pageCrumbs = computed(() => [
@@ -380,8 +380,12 @@ onMounted(async () => {
             <FaIcon icon="lock" class="me-2" />{{ t('settings.common.seedManagedNotice') }}
           </div>
           <fieldset :disabled="readOnly">
-            <!-- Runner : what it is called, whether it is the default, its registration -->
-            <template v-if="activeTab === 'runner'">
+            <!-- Details : its registration, what it is called, whether it is the default -->
+            <template v-if="activeTab === 'details'">
+              <div class="mb-3">
+                <div class="form-label fw-bold">{{ t('settings.runners.state') }}</div>
+                <span v-html="registrationPill(t, runner.state)"></span>
+              </div>
               <BsInput
                 class="af-runner-field"
                 v-model="edit.name"
@@ -415,10 +419,6 @@ onMounted(async () => {
                   />
                 </div>
                 <div class="form-text">{{ t('settings.runners.defaultHelp', { forms: defaultFor }) }}</div>
-              </div>
-              <div class="mb-3">
-                <div class="form-label fw-bold">{{ t('settings.runners.state') }}</div>
-                <span v-html="registrationPill(t, runner.state)"></span>
               </div>
             </template>
             <!-- Type : RTE, AWX, AAP or Ascender, each its label and a few grey words -->
