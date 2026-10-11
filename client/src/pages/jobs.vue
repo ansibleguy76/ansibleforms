@@ -1249,7 +1249,7 @@ onMounted(async () => {
                   />
                 </th>
                 <!-- a multistep job's caret : a column of its own, the ids never moved by it -->
-                <th class="af-jobs-expand" data-fit-keep="2rem"></th>
+                <th class="af-jobs-expand" data-fit-keep="1.5rem"></th>
                 <th
                   v-for="col in visibleColumns"
                   :key="col.key"
