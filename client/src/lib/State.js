@@ -2,6 +2,7 @@ import axios from 'axios';
 import { useAppStore } from '@/stores/app';
 import TokenStorage from '@/lib/TokenStorage';
 import Navigate from '@/lib/Navigate';
+import Time from '@/lib/Time';
 
 var State = {
   loadProfile() {
@@ -70,15 +71,28 @@ var State = {
   // what the instance switches on : the chat button (ENABLE_CHAT and a provider) and the
   // designer (SHOW_DESIGNER), as the server says
   async loadAppConfig() {
-    const store = useAppStore();
     try {
       const result = await axios.get(`/api/v2/app/config`);
-      store.chatEnabled = !!result.data?.chatEnabled;
-      store.designerEnabled = result.data?.designerEnabled !== false;
-      store.appConfigLoaded = true;
+      State.applyAppConfig(result.data || {});
     } catch (err) {
-      store.chatEnabled = false;
+      useAppStore().chatEnabled = false;
     }
+  },
+  // what /api/v2/app/config says, into the app : the switches, and Settings > Appearance >
+  // Interface's name (the browser tab), label, announcement and forms view
+  applyAppConfig(data) {
+    const store = useAppStore();
+    store.chatEnabled = !!data.chatEnabled;
+    store.designerEnabled = data.designerEnabled !== false;
+    store.appName = data.appName || null;
+    store.envLabel = data.envLabel || null;
+    store.envLabelColor = data.envLabelColor || null;
+    store.banner = data.banner || null;
+    store.formsView = data.formsView || null;
+    // the time zone for everyone : only while this browser has not chosen its own (the profile)
+    if (!Time.hasOwnPreference()) store.timezone = data.timezone || 'UTC';
+    store.appConfigLoaded = true;
+    document.title = data.appName || 'Ansible Forms';
   },
   async refreshApprovals() {
     const store = useAppStore();

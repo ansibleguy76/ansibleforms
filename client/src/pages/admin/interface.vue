@@ -4,11 +4,15 @@
 /*  Settings > Appearance > Interface, in tabs (the tab kept in    */
 /*  the address) :                                                */
 /*    Defaults : how the app looks for everyone by default - the  */
-/*      theme and its colour (in the database), the language (an */
-/*      environment variable). A user's own choice (the top bar,  */
-/*      the profile) wins over them.                              */
-/*    Header : whether the designer shows in the header (an       */
-/*      environment variable, applied without a restart).         */
+/*      theme and its colour, the forms list's view, the time     */
+/*      zone (in the database), the language (an environment      */
+/*      variable). A user's own choice (the top bar, the profile) */
+/*      wins over them.                                           */
+/*    Header : the designer's link (an environment variable,      */
+/*      applied without a restart), the environment label beside  */
+/*      the logo and the announcement under the header.           */
+/*    Name : the application's name, in the browser tab and on    */
+/*      the sign-in page.                                         */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted } from 'vue';
@@ -18,6 +22,8 @@ import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import Helpers from '@/lib/Helpers';
 import Theme from '@/lib/Theme';
+import Time from '@/lib/Time';
+import { PILL } from '@/lib/tableCells';
 import State from '@/lib/State';
 import { useEnvVars } from '@/composables/useEnvVars';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
@@ -30,6 +36,7 @@ const authenticated = ref(false);
 const tabs = computed(() => [
   { key: 'defaults', label: t('settings.interface.tabDefaults'), icon: 'sliders' },
   { key: 'header', label: t('settings.interface.tabHeader'), icon: 'window-maximize' },
+  { key: 'name', label: t('settings.interface.tabName'), icon: 'font' },
 ]);
 // the variables of each tab : the language with the defaults, the designer's switch in the header
 const defaultsEnv = computed(() => envItems.value.filter((e) => e.name === 'DEFAULT_LANGUAGE'));
@@ -47,8 +54,9 @@ const crumbs = computed(() => {
   return tab ? [...base, { title: tab.label, icon: tab.icon, to: tabLink(tab.key) }] : base;
 });
 
-// ─── the theme and its colour : the settings row ──────────────────────────────
-const theme = ref({ default_theme: 'light', default_theme_color: '#008cba' }); // as edited
+// ─── what the settings row keeps ──────────────────────────────────────────────
+// the theme and its colour, the forms view, the label, the announcement, the name
+const theme = ref(lookOf({})); // as edited
 const savedTheme = ref(null); // as saved
 const themeOptions = Theme.themes().map((th) => ({ value: th.value, label: th.title }));
 // the colours a Color theme offers
@@ -67,27 +75,68 @@ const colorPalette = [
   { label: 'Brown', hex: '#795548' },
 ];
 
+// the environment label's colours (the app's pill tones) and the announcement's levels, as the
+// server keeps them (models/settings.model.js)
+const LABEL_COLORS = ['blue', 'green', 'amber', 'orange', 'red', 'grey'];
+const bannerLevels = computed(() =>
+  ['info', 'warning', 'danger'].map((v) => ({ value: v, label: t(`settings.interface.banner_${v}`) })),
+);
+// the time zones : UTC, each user's browser's own, or any zone
+const timezones = computed(() => [
+  { value: 'UTC', label: 'UTC' },
+  { value: 'browser', label: t('settings.interface.timezoneBrowser') },
+  ...Time.zones()
+    .filter((z) => z !== 'UTC')
+    .map((z) => ({ value: z, label: z })),
+]);
+const formsViews = computed(() =>
+  ['tiles', 'list'].map((v) => ({ value: v, label: t(`settings.interface.formsView_${v}`) })),
+);
+
 /**
- * The theme and colour of a settings row, as the page edits them : light and the blue without
- * one.
+ * A date of the server (UTC) as a datetime-local field shows it, in the user's zone.
+ *
+ * Args:
+ *   value (string|null): the date.
+ *
+ * Returns:
+ *   string: YYYY-MM-DDTHH:mm, or empty.
+ */
+function toLocalInput(value) {
+  if (!value) return '';
+  const d = new Date(String(value).includes('T') ? value : String(value).replace(' ', 'T') + 'Z');
+  if (isNaN(d.getTime())) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/**
+ * What the page edits of a settings row : light, the blue, tiles, none of the rest without them.
  *
  * Args:
  *   row (object): the settings row.
  *
  * Returns:
- *   object: { default_theme, default_theme_color }.
+ *   object: the fields, as the page edits them.
  */
-function themeOf(row) {
+function lookOf(row) {
   return {
     default_theme: row?.default_theme || 'light',
     default_theme_color: Theme.current(row?.default_theme_color || '#008cba'),
+    forms_view: row?.forms_view || 'tiles',
+    default_timezone: row?.default_timezone || 'UTC',
+    env_label: row?.env_label || '',
+    // shown unless switched off
+    env_label_show: row?.env_label_show !== 0 && row?.env_label_show !== false,
+    env_label_color: row?.env_label_color || 'red',
+    banner_message: row?.banner_message || '',
+    banner_level: row?.banner_level || 'info',
+    banner_until: toLocalInput(row?.banner_until),
+    app_name: row?.app_name || '',
   };
 }
 const themeDirty = computed(
-  () =>
-    !!savedTheme.value &&
-    (theme.value.default_theme !== savedTheme.value.default_theme ||
-      theme.value.default_theme_color !== savedTheme.value.default_theme_color),
+  () => !!savedTheme.value && JSON.stringify(theme.value) !== JSON.stringify(savedTheme.value),
 );
 
 // ─── the language and the designer : environment variables ────────────────────
@@ -99,25 +148,27 @@ const dirty = computed(() => themeDirty.value || envDirty.value);
 useUnsavedGuard(dirty, () => t('settings.common.unsavedChanges'));
 
 /**
- * Loads the theme and its colour.
+ * Loads what the page edits of the settings row.
  */
 async function loadTheme() {
   try {
     const result = await axios.get('/api/v2/settings/');
-    theme.value = themeOf(result.data);
-    savedTheme.value = themeOf(result.data);
+    theme.value = lookOf(result.data);
+    savedTheme.value = lookOf(result.data);
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 
 /**
- * Saves what changed : the theme and its colour, then the variables.
+ * Saves what changed : the settings row's fields, then the variables.
  */
 async function save() {
   if (themeDirty.value) {
     try {
-      await axios.put('/api/v2/settings/', { ...theme.value });
+      // the end of the announcement : the user's local time, sent as a moment (UTC)
+      const until = theme.value.banner_until ? new Date(theme.value.banner_until).toISOString() : null;
+      await axios.put('/api/v2/settings/', { ...theme.value, banner_until: until });
       toast.success(`${t('sidebar.interface')} ${t('settings.common.isUpdated')}`);
       await loadTheme();
     } catch (err) {
@@ -125,11 +176,9 @@ async function save() {
       return;
     }
   }
-  if (envDirty.value) {
-    await saveEnvironmentVariables();
-    // the designer switched on or off : the header's Designer link follows at once
-    await State.loadAppConfig();
-  }
+  if (envDirty.value) await saveEnvironmentVariables();
+  // the header follows at once : the Designer link, the label, the announcement, the name
+  await State.loadAppConfig();
 }
 
 onMounted(async () => {
@@ -208,10 +257,117 @@ onMounted(async () => {
             <div class="mt-4"></div>
             <AppEnvField v-model="envEdits[e.name]" :e="e" />
           </template>
+          <!-- the forms list's view and the time zone : in the database -->
+          <BsInput
+            class="af-interface-field mt-4"
+            :isFloating="false"
+            type="select"
+            icon="table-cells-large"
+            v-model="theme.forms_view"
+            :values="formsViews"
+            valueKey="value"
+            labelKey="label"
+            :label="t('settings.interface.formsView')"
+            :help="t('settings.interface.formsViewHelp')"
+          />
+          <BsInput
+            class="af-interface-field mt-4"
+            :isFloating="false"
+            type="select"
+            icon="clock"
+            v-model="theme.default_timezone"
+            :values="timezones"
+            valueKey="value"
+            labelKey="label"
+            :label="t('settings.interface.timezone')"
+            :help="t('settings.interface.timezoneHelp')"
+          />
         </div>
-        <!-- Header : what the header shows, the designer's link -->
+        <!-- Header : the designer's link, the environment label, the announcement -->
         <div v-show="activeTab === 'header'">
           <AppEnvField v-for="e in headerEnv" :key="e.name" v-model="envEdits[e.name]" :e="e" :asSwitch="true" />
+          <!-- the label beside the logo, and its colour (a pill, shown as the header shows it) -->
+          <label class="form-label fw-bold af-switch-title mt-4" for="af-env-label-show">{{
+            t('settings.interface.envLabelShow')
+          }}</label>
+          <div class="form-check form-switch mb-0">
+            <input
+              id="af-env-label-show"
+              v-model="theme.env_label_show"
+              class="form-check-input"
+              type="checkbox"
+              role="switch"
+            />
+          </div>
+          <div class="form-text">{{ t('settings.interface.envLabelShowHelp') }}</div>
+          <BsInput
+            class="af-interface-field mt-4"
+            :isFloating="false"
+            icon="tag"
+            v-model="theme.env_label"
+            :label="t('settings.interface.envLabel')"
+            :help="t('settings.interface.envLabelHelp')"
+          />
+          <div
+            class="mt-2 ms-1 d-flex flex-wrap gap-2"
+            role="radiogroup"
+            :aria-label="t('settings.interface.envLabelColor')"
+          >
+            <button
+              v-for="c in LABEL_COLORS"
+              :key="c"
+              type="button"
+              class="badge rounded-pill fw-semibold af-pill af-label-choice"
+              :class="[PILL[c], { 'af-label-choice-active': theme.env_label_color === c }]"
+              role="radio"
+              :aria-checked="theme.env_label_color === c"
+              @click="theme.env_label_color = c"
+            >
+              <span class="af-pill-label">{{ theme.env_label || 'PRODUCTION' }}</span>
+            </button>
+          </div>
+          <!-- the announcement under the header : its message, its level, its end -->
+          <BsInput
+            class="af-interface-wide mt-4"
+            :isFloating="false"
+            type="textarea"
+            icon="bullhorn"
+            v-model="theme.banner_message"
+            :label="t('settings.interface.banner')"
+            :help="t('settings.interface.bannerHelp')"
+          />
+          <BsInput
+            class="af-interface-field mt-4"
+            :isFloating="false"
+            type="select"
+            icon="circle-info"
+            v-model="theme.banner_level"
+            :values="bannerLevels"
+            valueKey="value"
+            labelKey="label"
+            :label="t('settings.interface.bannerLevel')"
+          />
+          <BsInput
+            class="af-interface-field mt-4"
+            :isFloating="false"
+            type="datetime-local"
+            icon="calendar"
+            v-model="theme.banner_until"
+            :label="t('settings.interface.bannerUntil')"
+            :help="t('settings.interface.bannerUntilHelp')"
+          />
+        </div>
+        <!-- Name : the browser tab's and the sign-in page's -->
+        <div v-show="activeTab === 'name'">
+          <BsInput
+            class="af-interface-field"
+            :isFloating="false"
+            icon="font"
+            v-model="theme.app_name"
+            placeholder="Ansible Forms"
+            :label="t('settings.interface.appName')"
+            :help="t('settings.interface.appNameHelp')"
+          />
         </div>
       </template>
     </AppSettings>
@@ -221,6 +377,18 @@ onMounted(async () => {
 /* as wide as the language below it (AppEnvField : a dropdown's width on the settings pages) */
 .af-interface-field :deep(.input-group) {
   max-width: 20rem;
+}
+/* the announcement's message : wider, as a sentence or two */
+.af-interface-wide :deep(.input-group) {
+  max-width: 40rem;
+}
+/* a colour of the environment label : the pill itself, the chosen one ringed */
+.af-label-choice {
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+.af-label-choice-active {
+  border-color: var(--bs-body-color);
 }
 /* a colour of the Color theme : a round swatch, the chosen one ringed and ticked */
 .settings-color-swatch {

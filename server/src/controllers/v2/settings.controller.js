@@ -1,4 +1,5 @@
 'use strict';
+import { forgetAppDefaults } from "../../routes/v2/app.routes.js";
 import Settings from '../../models/settings.model.js';
 import Form from '../../models/form.model.js';
 import Lock from '../../models/lock.model.js';
@@ -136,6 +137,8 @@ const update = async function(req, res) {
             return res.status(400).json(RestResult.error(i18n.t(req, 'errors.requiredFields')));
           }
           await Settings.update(record);
+          // the theme, the name, the label, the announcement : shown at once
+          forgetAppDefaults();
           res.json(RestResult.single(null));
         } catch(err) {
           res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedUpdateSettings'), Helpers.getError(err)));

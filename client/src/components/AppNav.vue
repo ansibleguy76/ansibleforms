@@ -35,6 +35,8 @@ import { jobsPath } from '@/lib/jobsPath';
 onMounted(async () => {
   try {
     const res = await axios.get('/api/v2/app/config');
+    // the switches, the name, the label, the announcement (State.applyAppConfig)
+    State.applyAppConfig(res.data || {});
     // Apply server default language if user hasn't chosen one
     if (res.data?.defaultLanguage) {
       applyDefaultLanguage(res.data.defaultLanguage);
@@ -368,6 +370,8 @@ const buildMismatch = computed(() => {
       </BsNavItem>
     </ul>
   </BsNavBar>
+  <!-- the announcement of Settings > Appearance > Interface > Header -->
+  <AppAnnouncement />
   <!-- the server runs a newer build than this tab (a tab opened before an upgrade, issue #660) :
        offer a reload, never reload by itself, so nothing typed in a form is lost -->
   <div v-if="store.newVersionAvailable && !store.newVersionDismissed" class="af-new-version" role="status">

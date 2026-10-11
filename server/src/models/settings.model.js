@@ -60,7 +60,65 @@ var Settings=function(settings){
     if(settings.default_theme_color !== undefined){
       this.default_theme_color = settings.default_theme_color || null;
     }
+    // Settings > Appearance > Interface : each kept to what the page offers, an empty value none
+    const text = (v, max) => (v === null || v === undefined || String(v).trim() === '' ? null : String(v).trim().slice(0, max));
+    const oneOf = (v, allowed) => (allowed.includes(v) ? v : null);
+    if(settings.app_name !== undefined){
+      this.app_name = text(settings.app_name, 100);
+    }
+    if(settings.env_label !== undefined){
+      this.env_label = text(settings.env_label, 40);
+    }
+    // the label shown or not : kept while hidden, so it comes back as it was
+    if(settings.env_label_show !== undefined){
+      this.env_label_show = settings.env_label_show === false || settings.env_label_show === 0 || settings.env_label_show === '0' ? 0 : 1;
+    }
+    if(settings.env_label_color !== undefined){
+      this.env_label_color = oneOf(settings.env_label_color, LABEL_COLORS);
+    }
+    if(settings.banner_message !== undefined){
+      this.banner_message = text(settings.banner_message, 500);
+    }
+    if(settings.banner_level !== undefined){
+      this.banner_level = oneOf(settings.banner_level, BANNER_LEVELS);
+    }
+    if(settings.banner_until !== undefined){
+      const until = settings.banner_until ? new Date(settings.banner_until) : null;
+      this.banner_until = until && !isNaN(until.getTime()) ? until.toISOString().slice(0, 19).replace('T', ' ') : null;
+    }
+    if(settings.forms_view !== undefined){
+      this.forms_view = oneOf(settings.forms_view, FORMS_VIEWS);
+    }
+    // the time zone dates show in : UTC, the browser's own, or a zone name (Europe/Madrid)
+    if(settings.default_timezone !== undefined){
+      this.default_timezone = validTimezone(settings.default_timezone);
+    }
 };
+/**
+ * A default time zone as Settings > Appearance > Interface keeps it : UTC, browser (each
+ * browser's own zone) or a zone name this server knows ; anything else is none.
+ *
+ * Args:
+ *   value (string): the zone asked for.
+ *
+ * Returns:
+ *   string|null: the zone, or null.
+ */
+export function validTimezone(value){
+  if(!value || typeof value !== 'string') return null;
+  if(value === 'UTC' || value === 'browser') return value;
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: value });
+    return value.slice(0, 64);
+  } catch {
+    return null;
+  }
+}
+// what Settings > Appearance > Interface offers : the environment label's colours (the app's
+// pill tones), the announcement's levels, the forms list's views
+export const LABEL_COLORS = ['blue', 'green', 'amber', 'orange', 'red', 'grey'];
+export const BANNER_LEVELS = ['info', 'warning', 'danger'];
+export const FORMS_VIEWS = ['tiles', 'list'];
 // Resolve whether the ACTIVE config lives in the database, from a findFormsYaml record.
 //
 // Precedence is the same everywhere in the app: the ENVIRONMENT first, then the database,
@@ -361,10 +419,23 @@ Settings.findUrl = function () {
 // endpoint blocks the SPA from rendering even the login page, so a MySQL outage
 // must cost one connectTimeout, not one per setting.
 Settings.findAppDefaults = function () {
-  return mysql.do("SELECT default_language, default_theme, default_theme_color FROM AnsibleForms.`settings` LIMIT 1")
-    .then((res) => (res.length > 0)
-      ? { language: res[0].default_language || null, theme: res[0].default_theme || null, color: res[0].default_theme_color || null }
-      : { language: null, theme: null, color: null })
+  return mysql.do("SELECT default_language, default_theme, default_theme_color, app_name, env_label, env_label_show, env_label_color, banner_message, banner_level, banner_until, forms_view, default_timezone FROM AnsibleForms.`settings` LIMIT 1")
+    .then((res) => {
+      const r = res[0] || {};
+      return {
+        language: r.default_language || null,
+        theme: r.default_theme || null,
+        color: r.default_theme_color || null,
+        // Settings > Appearance > Interface
+        appName: r.app_name || null,
+        // hidden (the switch off) : none
+        envLabel: r.env_label_show === 0 ? null : r.env_label || null,
+        envLabelColor: r.env_label_color || null,
+        banner: r.banner_message ? { message: r.banner_message, level: r.banner_level || 'info', until: r.banner_until || null } : null,
+        formsView: r.forms_view || null,
+        timezone: r.default_timezone || null,
+      };
+    })
 }
 Settings.findFormsYaml = function () {
 

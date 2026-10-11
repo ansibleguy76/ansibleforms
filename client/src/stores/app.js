@@ -33,6 +33,14 @@ export const useAppStore = defineStore('app', () => {
   const chatEnabled = ref(false); // ENABLE_CHAT and a configured provider (/api/v2/app/config)
   const designerEnabled = ref(true); // SHOW_DESIGNER : the designer there at all (/api/v2/app/config)
   const appConfigLoaded = ref(false); // /api/v2/app/config read at least once (State.loadAppConfig)
+  // Settings > Appearance > Interface (/api/v2/app/config) : the name in the browser tab and on
+  // the sign-in page, the label beside the logo and its colour, the announcement under the
+  // header ({ message, level, until } while it runs), the forms list's view for everyone
+  const appName = ref(null);
+  const envLabel = ref(null);
+  const envLabelColor = ref(null);
+  const banner = ref(null);
+  const formsView = ref(null);
   // the time zone dates are shown in : 'UTC', 'browser' or an IANA zone (lib/Time.js) ; read
   // here so every page re-renders its dates when the user picks another one
   const timezone = ref(loadTimezone());
@@ -64,6 +72,11 @@ export const useAppStore = defineStore('app', () => {
     chatEnabled,
     designerEnabled,
     appConfigLoaded,
+    appName,
+    envLabel,
+    envLabelColor,
+    banner,
+    formsView,
     timezone,
     newVersionAvailable,
     newVersionDismissed,

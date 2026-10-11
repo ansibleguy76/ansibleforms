@@ -245,6 +245,18 @@ CREATE TABLE `settings` (
   `logo` longtext DEFAULT NULL,
   -- the website icon (browser tab), a data url ; NULL : the bundled one
   `favicon` longtext DEFAULT NULL,
+  -- Settings > Appearance > Interface : the name in the browser tab and on the sign-in page,
+  -- the label beside the logo (PRODUCTION) and its colour, an announcement under the header
+  -- until a date, the forms list's view and the time zone for everyone
+  `app_name` varchar(100) DEFAULT NULL,
+  `env_label` varchar(40) DEFAULT NULL,
+  `env_label_show` tinyint(4) NOT NULL DEFAULT 1,
+  `env_label_color` varchar(20) DEFAULT NULL,
+  `banner_message` text DEFAULT NULL,
+  `banner_level` varchar(10) DEFAULT NULL,
+  `banner_until` datetime DEFAULT NULL,
+  `forms_view` varchar(10) DEFAULT NULL,
+  `default_timezone` varchar(64) DEFAULT NULL,
   `config_source` varchar(20) DEFAULT NULL,
   `default_language` varchar(5) DEFAULT NULL,
   `default_theme` varchar(10) DEFAULT NULL,

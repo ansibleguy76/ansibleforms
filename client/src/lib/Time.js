@@ -57,6 +57,14 @@ const Time = {
     const pref = Time.preference();
     return pref === BROWSER ? Time.browserZone() : pref;
   },
+  // whether this browser chose its zone (the profile) : else the app's default applies
+  hasOwnPreference() {
+    try {
+      return !!localStorage.getItem(STORAGE_KEY);
+    } catch {
+      return false;
+    }
+  },
   setPreference(value) {
     try {
       useAppStore().timezone = value;

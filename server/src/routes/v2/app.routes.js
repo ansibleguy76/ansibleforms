@@ -21,7 +21,7 @@ async function resolveDefaults() {
   // default_language column, and the settings page greys that field out to say so.
   // (Before 6.3.0 the database value won and the variable was only a fallback.)
   const languageFromEnv = process.env.DEFAULT_LANGUAGE || null;
-  let result = { language: languageFromEnv || "en", theme: null, color: null };
+  let result = { language: languageFromEnv || "en", theme: null, color: null, appName: null, envLabel: null, envLabelColor: null, banner: null, formsView: null, timezone: null };
   try {
     // language, theme and theme color all live on the same single settings row, so
     // they are read in ONE query : this endpoint blocks the SPA from rendering even
@@ -34,6 +34,12 @@ async function resolveDefaults() {
     }
     result.theme = defaults.theme;
     result.color = defaults.color;
+    result.appName = defaults.appName;
+    result.envLabel = defaults.envLabel;
+    result.envLabelColor = defaults.envLabelColor;
+    result.banner = defaults.banner;
+    result.formsView = defaults.formsView;
+    result.timezone = defaults.timezone;
   } catch (e) {
     logger.debug("Could not read the defaults from database, using env var fallback")
   }
@@ -49,6 +55,29 @@ async function chatEnabled() {
   return ChatSettings.configuredCached();
 }
 
+/**
+ * Forgets the cached defaults : a settings save shows at once (on this node ; the others within
+ * CACHE_TTL_MS).
+ */
+export function forgetAppDefaults() {
+  defaultsCache = { value: undefined, fetchedAt: 0 };
+}
+
+/**
+ * The announcement while it runs : none once its end date has passed.
+ *
+ * Args:
+ *   banner (object|null): { message, level, until }.
+ *
+ * Returns:
+ *   object|null: the banner, or null.
+ */
+function runningBanner(banner) {
+  if (!banner) return null;
+  if (banner.until && new Date(banner.until).getTime() <= Date.now()) return null;
+  return banner;
+}
+
 router.get("/config", async (req, res) => {
   const defaults = await resolveDefaults();
   res.json({
@@ -62,6 +91,15 @@ router.get("/config", async (req, res) => {
     // whether the designer is there at all (SHOW_DESIGNER, Settings > Appearance > Interface) :
     // the header's Designer link needs it as well as the user's showDesigner option
     designerEnabled: !!appConfig.showDesigner,
+    // Settings > Appearance > Interface : the name in the browser tab and on the sign-in page,
+    // the label beside the logo, the announcement under the header while it runs, the forms
+    // list's view for whoever has not chosen one
+    appName: defaults.appName,
+    envLabel: defaults.envLabel,
+    envLabelColor: defaults.envLabelColor,
+    banner: runningBanner(defaults.banner),
+    formsView: defaults.formsView,
+    timezone: defaults.timezone,
   });
 });
 
