@@ -12,12 +12,13 @@
 /*  with content (before a row menu) ; a table without one gives  */
 /*  that room to its last column with content.                    */
 /*                                                                */
-/*  A column never grows past 50 characters : a longer value ends */
-/*  in "…" and the spacer takes the room ; nor does one shrink    */
-/*  below 12, nor below its header : too narrow a frame, the      */
-/*  table grows past it and the frame scrolls sideways. A table   */
-/*  can hand the widths it measured itself (data-fit-natural,     */
-/*  BsDataTable over all its rows, not only the page shown).      */
+/*  A long column (a description) gets the room the others leave, */
+/*  its value ending in "…" when that is not enough ; none        */
+/*  shrinks below 12 characters, nor below its header : too       */
+/*  narrow a frame, the table grows past it and the frame scrolls */
+/*  sideways. A table can hand the widths it measured itself      */
+/*  (data-fit-natural, BsDataTable over all its rows, not only    */
+/*  the page shown).                                              */
 /*                                                                */
 /*  Measured again when the table's frame changes width and when  */
 /*  its rows change (a tab's rows loaded, a row removed).         */
@@ -26,9 +27,6 @@
 
 // the columns that keep their own width : a row's checkbox, its menu
 const FIXED = ['bs-dt-select', 'bs-dt-row-actions', 'af-row-menu-col', 'af-jobs-select', 'af-expand-col'];
-// the most a column that fits its values grows to, in characters of its font : a longer value
-// (a description) ends in "…", the room left goes to the spacer
-const CAP_CHARS = 50;
 // the least a column that gives way shrinks to, in characters : below it the table gets wider than
 // its frame, which scrolls sideways, rather than cutting a value to a letter or two
 const MIN_CHARS = 12;
@@ -41,12 +39,12 @@ let measureContext = null;
  *
  * Args:
  *   table (HTMLTableElement): the table.
- *   chars (number): how many characters (CAP_CHARS, MIN_CHARS).
+ *   chars (number): how many characters (MIN_CHARS).
  *
  * Returns:
  *   number: the width, in px ; Infinity when it cannot be measured (no cap).
  */
-function capWidth(table, chars = CAP_CHARS) {
+function charsWidth(table, chars) {
   const cell = table.tBodies[0]?.rows[0]?.cells[0] || table;
   const style = getComputedStyle(cell);
   measureContext = measureContext || document.createElement('canvas').getContext('2d');
@@ -184,9 +182,6 @@ function fit(table) {
 
   const fixed = natural.map((_, i) => isFixed(table, i));
   const flex = natural.map((_, i) => i).filter((i) => !fixed[i]);
-  // no column that fits its values wider than CAP_CHARS characters : a longer value is cut
-  const cap = capWidth(table);
-  for (const i of flex) natural[i] = Math.min(natural[i], cap);
   // the room they share : the frame's width less the fixed columns'
   const width = frame.clientWidth;
   const room = width - natural.reduce((sum, w, i) => sum + (fixed[i] ? w : 0), 0);
@@ -197,7 +192,7 @@ function fit(table) {
   // never narrower than MIN_CHARS characters (or its own width when less), nor than its header :
   // too narrow a frame, the table grows past it and the frame scrolls sideways (.af-table-frame)
   if (shared) {
-    const least = capWidth(table, MIN_CHARS);
+    const least = charsWidth(table, MIN_CHARS);
     shared = shared.map((w, k) => Math.max(w, Math.min(natural[flex[k]], least), headers[flex[k]]));
     const total = natural.reduce((sum, w, i) => sum + (fixed[i] ? w : 0), 0) + shared.reduce((a, b) => a + b, 0);
     table.style.width = total > width ? `${total}px` : '100%';
