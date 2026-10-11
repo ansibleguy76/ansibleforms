@@ -363,7 +363,8 @@ export default {
     title: 'Custom logo',
     description: 'Replace the AnsibleForms logo in the top bar with your own image.',
     constraints:
-      'Allowed types are PNG, JPEG, WEBP, GIF and SVG, with a maximum size of 900 KB and recommended dimensions of 200 × 30 px.',
+      'Allowed types are PNG, JPEG, WEBP, GIF and SVG, with a maximum size of 900 KB. The header shows the logo at most 200 × 33 px, keeping its proportions.',
+    headerSize: 'In the header: {width} × {height} px',
     current: 'Current logo',
     default: 'Default AnsibleForms logo',
     custom: 'Your uploaded logo',

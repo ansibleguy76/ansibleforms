@@ -363,7 +363,8 @@ export default {
     title: 'Własne logo',
     description: 'Zastąp logo AnsibleForms na górnym pasku własnym obrazem.',
     constraints:
-      'Dozwolone typy to PNG, JPEG, WEBP, GIF i SVG, maksymalny rozmiar to 900 KB, a zalecane wymiary to 200 × 30 px.',
+      'Dozwolone typy to PNG, JPEG, WEBP, GIF i SVG, o maksymalnym rozmiarze 900 KB. Nagłówek pokazuje logo maksymalnie w rozmiarze 200 × 33 px, z zachowaniem proporcji.',
+    headerSize: 'W nagłówku: {width} × {height} px',
     current: 'Bieżące logo',
     default: 'Domyślne logo AnsibleForms',
     custom: 'Przesłane logo',

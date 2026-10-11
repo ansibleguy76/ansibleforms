@@ -363,7 +363,8 @@ export default {
     title: 'Eigen logo',
     description: 'Vervang het AnsibleForms logo in de bovenbalk door je eigen afbeelding.',
     constraints:
-      'Toegestane types zijn PNG, JPEG, WEBP, GIF en SVG, met een maximale grootte van 900 KB en aanbevolen afmetingen van 200 × 30 px.',
+      'Toegestane typen zijn PNG, JPEG, WEBP, GIF en SVG, met een maximale grootte van 900 KB. De koptekst toont het logo op maximaal 200 × 33 px, met behoud van de verhoudingen.',
+    headerSize: 'In de koptekst: {width} × {height} px',
     current: 'Huidig logo',
     default: 'Standaard AnsibleForms logo',
     custom: 'Uw geüploade logo',

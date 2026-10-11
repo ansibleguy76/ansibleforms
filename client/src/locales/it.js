@@ -366,7 +366,8 @@ export default {
     title: 'Logo personalizzato',
     description: 'Sostituisci il logo AnsibleForms nella barra superiore con la tua immagine.',
     constraints:
-      'I tipi consentiti sono PNG, JPEG, WEBP, GIF e SVG, con una dimensione massima di 900 KB e dimensioni consigliate di 200 × 30 px.',
+      "I tipi consentiti sono PNG, JPEG, WEBP, GIF e SVG, con una dimensione massima di 900 KB. L'intestazione mostra il logo al massimo a 200 × 33 px, mantenendone le proporzioni.",
+    headerSize: "Nell'intestazione: {width} × {height} px",
     current: 'Logo attuale',
     default: 'Logo AnsibleForms predefinito',
     custom: 'Il logo che hai caricato',

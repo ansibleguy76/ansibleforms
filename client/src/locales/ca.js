@@ -365,7 +365,8 @@ export default {
     title: 'Logotip personalitzat',
     description: "Substitueix el logotip d'AnsibleForms de la barra superior per una imatge pròpia.",
     constraints:
-      'Els tipus permesos són PNG, JPEG, WEBP, GIF i SVG, amb una mida màxima de 900 KB i unes dimensions recomanades de 200 × 30 px.',
+      'Els tipus permesos són PNG, JPEG, WEBP, GIF i SVG, amb una mida màxima de 900 KB. La capçalera mostra el logotip a 200 × 33 px com a màxim, mantenint-ne les proporcions.',
+    headerSize: 'A la capçalera: {width} × {height} px',
     current: 'Logotip actual',
     default: "Logotip predeterminat d'AnsibleForms",
     custom: 'El logotip que has pujat',

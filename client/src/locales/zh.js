@@ -358,7 +358,9 @@ export default {
   logo: {
     title: '自定义徽标',
     description: '用您自己的图片替换顶栏中的 AnsibleForms 徽标。',
-    constraints: '允许的类型为 PNG、JPEG、WEBP、GIF 和 SVG，最大 900 KB，建议尺寸为 200 × 30 px。',
+    constraints:
+      '允许的类型为 PNG、JPEG、WEBP、GIF 和 SVG，最大 900 KB。页眉中徽标最大显示为 200 × 33 px，并保持其比例。',
+    headerSize: '页眉中：{width} × {height} px',
     current: '当前徽标',
     default: '默认 AnsibleForms 徽标',
     custom: '您上传的徽标',

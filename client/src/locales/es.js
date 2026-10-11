@@ -363,7 +363,8 @@ export default {
     title: 'Logo personalizado',
     description: 'Reemplaza el logo de AnsibleForms en la barra superior por tu propia imagen.',
     constraints:
-      'Los tipos permitidos son PNG, JPEG, WEBP, GIF y SVG, con un tamaño máximo de 900 KB y dimensiones recomendadas de 200 × 30 px.',
+      'Los tipos permitidos son PNG, JPEG, WEBP, GIF y SVG, con un tamaño máximo de 900 KB. La cabecera muestra el logo a 200 × 33 px como máximo, manteniendo sus proporciones.',
+    headerSize: 'En la cabecera: {width} × {height} px',
     current: 'Logo actual',
     default: 'Logo AnsibleForms por defecto',
     custom: 'El logotipo que ha subido',

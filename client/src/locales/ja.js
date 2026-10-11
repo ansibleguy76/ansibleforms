@@ -362,7 +362,9 @@ export default {
   logo: {
     title: 'カスタムロゴ',
     description: '上部バーの AnsibleForms ロゴを独自の画像に置き換えます。',
-    constraints: '使用できる形式は PNG、JPEG、WEBP、GIF、SVG で、最大サイズは 900 KB、推奨サイズは 200 × 30 px です。',
+    constraints:
+      '使用できる形式は PNG、JPEG、WEBP、GIF、SVG で、最大サイズは 900 KB です。ヘッダーではロゴを縦横比を保ったまま最大 200 × 33 px で表示します。',
+    headerSize: 'ヘッダーでの表示：{width} × {height} px',
     current: '現在のロゴ',
     default: 'AnsibleForms の既定のロゴ',
     custom: 'アップロードしたロゴ',
