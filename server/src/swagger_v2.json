@@ -713,7 +713,7 @@
                           "use_for_config": { "type": "boolean" },
                           "use_for_forms": { "type": "boolean" },
                           "use_for_playbooks": { "type": "boolean" },
-                          "use_for_vars_files": { "type": "boolean" },
+                          "use_for_workflows": { "type": "boolean" },
                           "rebase_on_start": { "type": "boolean" },
                           "cron": { "type": "string" },
                           "status": { "type": "string" },
@@ -752,7 +752,7 @@
                   "use_for_config": { "type": "boolean" },
                   "use_for_forms": { "type": "boolean" },
                   "use_for_playbooks": { "type": "boolean" },
-                  "use_for_vars_files": { "type": "boolean" },
+                  "use_for_workflows": { "type": "boolean" },
                   "rebase_on_start": { "type": "boolean" },
                   "cron": { "type": "string" }
                 }
@@ -811,7 +811,7 @@
                     "use_for_config": { "type": "boolean" },
                     "use_for_forms": { "type": "boolean" },
                     "use_for_playbooks": { "type": "boolean" },
-                    "use_for_vars_files": { "type": "boolean" },
+                    "use_for_workflows": { "type": "boolean" },
                     "rebase_on_start": { "type": "boolean" },
                     "cron": { "type": "string" },
                     "status": { "type": "string" },
@@ -853,7 +853,7 @@
                   "use_for_config": { "type": "boolean" },
                   "use_for_forms": { "type": "boolean" },
                   "use_for_playbooks": { "type": "boolean" },
-                  "use_for_vars_files": { "type": "boolean" },
+                  "use_for_workflows": { "type": "boolean" },
                   "rebase_on_start": { "type": "boolean" },
                   "cron": { "type": "string" }
                 }

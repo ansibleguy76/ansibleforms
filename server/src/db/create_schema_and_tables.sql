@@ -305,7 +305,8 @@ CREATE TABLE `repositories` (
   -- added by a patch on an existing install ; keep both paths in sync (schema.model.js)
   `branch` varchar(250) DEFAULT NULL,
   `use_for_config` tinyint(4) DEFAULT 0,
-  `use_for_vars_files` tinyint(4) DEFAULT 0,
+  -- the workflows the designer builds (one repository only)
+  `use_for_workflows` tinyint(4) DEFAULT 0,
   `credential` varchar(250) DEFAULT NULL,
   `cron` varchar(50) DEFAULT NULL,
   `status` varchar(50) DEFAULT NULL,
