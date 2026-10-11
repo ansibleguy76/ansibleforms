@@ -681,7 +681,9 @@ export default {
     // Settings > Appearance > Interface
     interface: {
       tabDefaults: '默认值',
-      tabHeader: '页眉',
+      tabLinks: '链接',
+      tabEnvironment: '环境',
+      tabAnnouncement: '公告',
       designer: '设计器',
       designerHelp: '在页眉中显示设计器链接',
       tabName: '名称',
@@ -696,6 +698,7 @@ export default {
       envLabelHelp: '显示在徽标旁的标签，例如 PRODUCTION 或 TEST；留空则不显示',
       envLabelShow: '环境标签',
       envLabelShowHelp: '在徽标旁显示环境标签',
+      envLabelPreview: '预览',
       envLabelColor: '标签颜色',
       banner: '公告',
       bannerHelp: '在页眉下方向所有人显示的消息，例如维护窗口；留空则不显示',

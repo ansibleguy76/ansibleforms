@@ -918,7 +918,7 @@ async function patchVersion7(messages, success, failed) {
     ["default_timezone", "varchar(64)"]]) {
     await checkPromise(addColumn("settings", name, type, true, "NULL"), messages, success, failed);
   }
-  // the environment label shown or not (Settings > Appearance > Interface > Header) : shown
+  // the environment label shown or not (Settings > Appearance > Interface > Environment) : shown
   await checkPromise(addColumn("settings", "env_label_show", "tinyint(4)", false, "1"), messages, success, failed);
   await checkPromise(copyAwxToRunners(), messages, success, failed);
   await checkPromise(addColumn("jobs", "job_log", "longtext", true, "NULL"), messages, success, failed);

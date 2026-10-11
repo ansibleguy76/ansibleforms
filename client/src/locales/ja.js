@@ -697,7 +697,9 @@ export default {
     // Settings > Appearance > Interface
     interface: {
       tabDefaults: '既定値',
-      tabHeader: 'ヘッダー',
+      tabLinks: 'リンク',
+      tabEnvironment: '環境',
+      tabAnnouncement: 'お知らせ',
       designer: 'デザイナー',
       designerHelp: 'ヘッダーにデザイナーのリンクを表示',
       tabName: '名前',
@@ -712,6 +714,7 @@ export default {
       envLabelHelp: 'ロゴの横のラベル（PRODUCTION、TEST など）。空の場合はなし',
       envLabelShow: '環境ラベル',
       envLabelShowHelp: 'ロゴの横に環境ラベルを表示',
+      envLabelPreview: 'プレビュー',
       envLabelColor: 'ラベルの色',
       banner: 'お知らせ',
       bannerHelp: '全員向けにヘッダーの下に表示するメッセージ（メンテナンス予定など）。空の場合はなし',

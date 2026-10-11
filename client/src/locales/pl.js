@@ -697,7 +697,9 @@ export default {
     // Settings > Appearance > Interface
     interface: {
       tabDefaults: 'Wartości domyślne',
-      tabHeader: 'Nagłówek',
+      tabLinks: 'Linki',
+      tabEnvironment: 'Środowisko',
+      tabAnnouncement: 'Ogłoszenie',
       designer: 'Projektant',
       designerHelp: 'Pokaż link Projektant w nagłówku',
       tabName: 'Nazwa',
@@ -712,6 +714,7 @@ export default {
       envLabelHelp: 'Etykieta obok logo, np. PRODUKCJA lub TEST ; pusta, brak',
       envLabelShow: 'Etykieta środowiska',
       envLabelShowHelp: 'Pokaż etykietę środowiska obok logo',
+      envLabelPreview: 'Podgląd',
       envLabelColor: 'Kolor etykiety',
       banner: 'Ogłoszenie',
       bannerHelp: 'Wiadomość pod nagłówkiem dla wszystkich, np. okno serwisowe ; pusta, brak',

@@ -703,7 +703,9 @@ export default {
     // Settings > Appearance > Interface
     interface: {
       tabDefaults: 'Standardwerte',
-      tabHeader: 'Kopfzeile',
+      tabLinks: 'Links',
+      tabEnvironment: 'Umgebung',
+      tabAnnouncement: 'Ankündigung',
       designer: 'Designer',
       designerHelp: 'Den Designer-Link in der Kopfzeile anzeigen',
       tabName: 'Name',
@@ -718,6 +720,7 @@ export default {
       envLabelHelp: 'Ein Label neben dem Logo, z. B. PRODUKTION oder TEST ; leer, keines',
       envLabelShow: 'Umgebungslabel',
       envLabelShowHelp: 'Das Umgebungslabel neben dem Logo anzeigen',
+      envLabelPreview: 'Vorschau',
       envLabelColor: 'Labelfarbe',
       banner: 'Ankündigung',
       bannerHelp: 'Eine Nachricht unter der Kopfzeile für alle, z. B. ein Wartungsfenster ; leer, keine',

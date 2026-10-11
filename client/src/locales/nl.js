@@ -697,7 +697,9 @@ export default {
     // Settings > Appearance > Interface
     interface: {
       tabDefaults: 'Standaardwaarden',
-      tabHeader: 'Koptekst',
+      tabLinks: 'Links',
+      tabEnvironment: 'Omgeving',
+      tabAnnouncement: 'Aankondiging',
       designer: 'Designer',
       designerHelp: 'De Designer-link in de koptekst tonen',
       tabName: 'Naam',
@@ -712,6 +714,7 @@ export default {
       envLabelHelp: 'Een label naast het logo, zoals PRODUCTIE of TEST ; leeg, geen',
       envLabelShow: 'Omgevingslabel',
       envLabelShowHelp: 'Het omgevingslabel naast het logo tonen',
+      envLabelPreview: 'Voorbeeld',
       envLabelColor: 'Labelkleur',
       banner: 'Aankondiging',
       bannerHelp: 'Een bericht onder de kop voor iedereen, zoals een onderhoudsvenster ; leeg, geen',

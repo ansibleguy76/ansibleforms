@@ -703,7 +703,9 @@ export default {
     // Settings > Appearance > Interface
     interface: {
       tabDefaults: 'Valeurs par défaut',
-      tabHeader: 'En-tête',
+      tabLinks: 'Liens',
+      tabEnvironment: 'Environnement',
+      tabAnnouncement: 'Annonce',
       designer: 'Designer',
       designerHelp: "Afficher le lien Designer dans l'en-tête",
       tabName: 'Nom',
@@ -718,6 +720,7 @@ export default {
       envLabelHelp: 'Une étiquette à côté du logo, comme PRODUCTION ou TEST ; vide, aucune',
       envLabelShow: "Étiquette d'environnement",
       envLabelShowHelp: "Afficher l'étiquette d'environnement à côté du logo",
+      envLabelPreview: 'Aperçu',
       envLabelColor: "Couleur de l'étiquette",
       banner: 'Annonce',
       bannerHelp: "Un message sous l'en-tête pour tous, comme une fenêtre de maintenance ; vide, aucun",

@@ -370,7 +370,7 @@ const buildMismatch = computed(() => {
       </BsNavItem>
     </ul>
   </BsNavBar>
-  <!-- the announcement of Settings > Appearance > Interface > Header -->
+  <!-- the announcement of Settings > Appearance > Interface > Announcement -->
   <AppAnnouncement />
   <!-- the server runs a newer build than this tab (a tab opened before an upgrade, issue #660) :
        offer a reload, never reload by itself, so nothing typed in a form is lost -->

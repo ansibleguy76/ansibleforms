@@ -693,7 +693,9 @@ export default {
     // Settings > Appearance > Interface
     interface: {
       tabDefaults: 'Defaults',
-      tabHeader: 'Header',
+      tabLinks: 'Links',
+      tabEnvironment: 'Environment',
+      tabAnnouncement: 'Announcement',
       designer: 'Designer',
       designerHelp: 'Show the Designer link in the header',
       tabName: 'Name',
@@ -708,6 +710,7 @@ export default {
       envLabelHelp: 'A label beside the logo, such as PRODUCTION or TEST. Leave empty for none',
       envLabelShow: 'Environment label',
       envLabelShowHelp: 'Show the environment label beside the logo',
+      envLabelPreview: 'Preview',
       envLabelColor: 'Label color',
       banner: 'Announcement',
       bannerHelp: 'A message under the header for everyone, such as a maintenance window. Leave empty for none',

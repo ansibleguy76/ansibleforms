@@ -2,8 +2,8 @@
 /******************************************************************/
 /*                                                                */
 /*  The environment label beside the logo (PRODUCTION, TEST...) : */
-/*  Settings > Appearance > Interface > Header, a pill in the     */
-/*  colour chosen there. Nothing without one.                     */
+/*  Settings > Appearance > Interface > Environment, a pill in    */
+/*  the colour chosen there. Nothing without one.                 */
 /*                                                                */
 /******************************************************************/
 import { computed } from 'vue';
@@ -21,10 +21,10 @@ const tone = computed(() => PILL[store.envLabelColor] || PILL.grey);
 </template>
 <style scoped>
 /* close to the logo, centred on it : over the room the brand keeps on its right (its padding
-   and margin, 36px), 16px from the logo, that room then kept after the label */
+   and margin, 36px), 20px from the logo, that room then kept after the label */
 .af-env-label {
-  margin-left: -1.25rem;
-  margin-right: 1.25rem;
+  margin-left: -1rem;
+  margin-right: 1rem;
   align-self: center;
 }
 </style>

@@ -699,7 +699,9 @@ export default {
     // Settings > Appearance > Interface
     interface: {
       tabDefaults: 'Valori predefiniti',
-      tabHeader: 'Intestazione',
+      tabLinks: 'Collegamenti',
+      tabEnvironment: 'Ambiente',
+      tabAnnouncement: 'Annuncio',
       designer: 'Designer',
       designerHelp: "Mostra il link Designer nell'intestazione",
       tabName: 'Nome',
@@ -714,6 +716,7 @@ export default {
       envLabelHelp: "Un'etichetta accanto al logo, come PRODUZIONE o TEST ; vuota, nessuna",
       envLabelShow: "Etichetta d'ambiente",
       envLabelShowHelp: "Mostrare l'etichetta d'ambiente accanto al logo",
+      envLabelPreview: 'Anteprima',
       envLabelColor: "Colore dell'etichetta",
       banner: 'Annuncio',
       bannerHelp: "Un messaggio sotto l'intestazione per tutti, come una finestra di manutenzione ; vuoto, nessuno",

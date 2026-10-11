@@ -8,9 +8,10 @@
 /*      zone (in the database), the language (an environment      */
 /*      variable). A user's own choice (the top bar, the profile) */
 /*      wins over them.                                           */
-/*    Header : the designer's link (an environment variable,      */
-/*      applied without a restart), the environment label beside  */
-/*      the logo and the announcement under the header.           */
+/*    Links : the designer's link in the header (an environment   */
+/*      variable, applied without a restart).                     */
+/*    Environment : the label beside the logo (PRODUCTION).       */
+/*    Announcement : a message under the header for everyone.     */
 /*    Name : the application's name, in the browser tab and on    */
 /*      the sign-in page.                                         */
 /*                                                                */
@@ -35,7 +36,9 @@ const authenticated = ref(false);
 // ─── tabs ─────────────────────────────────────────────────────────────────────
 const tabs = computed(() => [
   { key: 'defaults', label: t('settings.interface.tabDefaults'), icon: 'sliders' },
-  { key: 'header', label: t('settings.interface.tabHeader'), icon: 'window-maximize' },
+  { key: 'links', label: t('settings.interface.tabLinks'), icon: 'link' },
+  { key: 'environment', label: t('settings.interface.tabEnvironment'), icon: 'tag' },
+  { key: 'announcement', label: t('settings.interface.tabAnnouncement'), icon: 'bullhorn' },
   { key: 'name', label: t('settings.interface.tabName'), icon: 'font' },
 ]);
 // the variables of each tab : the language with the defaults, the designer's switch in the header
@@ -81,6 +84,21 @@ const LABEL_COLORS = ['blue', 'green', 'amber', 'orange', 'red', 'grey'];
 const bannerLevels = computed(() =>
   ['info', 'warning', 'danger'].map((v) => ({ value: v, label: t(`settings.interface.banner_${v}`) })),
 );
+// the header as it is (its background, its logo's image) : the label's preview shows it so
+const headerLook = ref({ background: '', logo: '' });
+
+/**
+ * Reads the header's background and logo, for the label's preview.
+ */
+function readHeaderLook() {
+  const header = document.querySelector('nav.af-header');
+  const logo = header?.querySelector('.af-brand img');
+  headerLook.value = {
+    background: header ? getComputedStyle(header).backgroundColor : '',
+    logo: logo ? logo.currentSrc || logo.src : '',
+  };
+}
+
 // the time zones : UTC, each user's browser's own, or any zone
 const timezones = computed(() => [
   { value: 'UTC', label: 'UTC' },
@@ -185,6 +203,7 @@ onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
   await Promise.all([loadTheme(), loadEnvironmentVariables()]);
+  readHeaderLook();
 });
 </script>
 <template>
@@ -283,11 +302,14 @@ onMounted(async () => {
             :help="t('settings.interface.timezoneHelp')"
           />
         </div>
-        <!-- Header : the designer's link, the environment label, the announcement -->
-        <div v-show="activeTab === 'header'">
+        <!-- Links : the designer's link in the header -->
+        <div v-show="activeTab === 'links'">
           <AppEnvField v-for="e in headerEnv" :key="e.name" v-model="envEdits[e.name]" :e="e" :asSwitch="true" />
+        </div>
+        <!-- Environment : the label beside the logo, its colour and how it looks -->
+        <div v-show="activeTab === 'environment'">
           <!-- the label beside the logo, and its colour (a pill, shown as the header shows it) -->
-          <label class="form-label fw-bold af-switch-title mt-2" for="af-env-label-show">{{
+          <label class="form-label fw-bold af-switch-title" for="af-env-label-show">{{
             t('settings.interface.envLabelShow')
           }}</label>
           <div class="form-check form-switch mb-0">
@@ -308,8 +330,10 @@ onMounted(async () => {
             :label="t('settings.interface.envLabel')"
             :help="t('settings.interface.envLabelHelp')"
           />
+          <!-- its colour : round swatches, as the Color theme's -->
+          <label class="form-label fw-bold mt-4 d-block">{{ t('settings.interface.envLabelColor') }}</label>
           <div
-            class="mt-2 ms-1 d-flex flex-wrap gap-2"
+            class="d-flex flex-wrap gap-2 ms-1"
             role="radiogroup"
             :aria-label="t('settings.interface.envLabelColor')"
           >
@@ -317,18 +341,33 @@ onMounted(async () => {
               v-for="c in LABEL_COLORS"
               :key="c"
               type="button"
-              class="badge rounded-pill fw-semibold af-pill af-label-choice"
-              :class="[PILL[c], { 'af-label-choice-active': theme.env_label_color === c }]"
+              class="settings-color-swatch af-label-swatch"
+              :class="[PILL[c], { 'af-label-swatch-active': theme.env_label_color === c }]"
+              :title="c"
               role="radio"
               :aria-checked="theme.env_label_color === c"
               @click="theme.env_label_color = c"
             >
-              <span class="af-pill-label">{{ theme.env_label || 'PRODUCTION' }}</span>
+              <FaIcon v-if="theme.env_label_color === c" icon="check" class="settings-swatch-check" />
             </button>
           </div>
-          <!-- the announcement under the header : its message, its level, its end -->
+          <!-- the preview : the header's logo and the label, as the header shows them -->
+          <label class="form-label fw-bold mt-4 d-block">{{ t('settings.interface.envLabelPreview') }}</label>
+          <div class="af-label-preview" :style="{ backgroundColor: headerLook.background }">
+            <img v-if="headerLook.logo" :src="headerLook.logo" class="af-label-preview-logo" alt="" />
+            <span
+              class="badge rounded-pill fw-semibold af-pill af-label-preview-pill"
+              :class="PILL[theme.env_label_color] || PILL.grey"
+              :style="{ opacity: theme.env_label_show ? 1 : 0.35 }"
+            >
+              <span class="af-pill-label">{{ theme.env_label || 'PRODUCTION' }}</span>
+            </span>
+          </div>
+        </div>
+        <!-- Announcement : the message under the header, its level, its end -->
+        <div v-show="activeTab === 'announcement'">
           <BsInput
-            class="af-interface-wide mt-4"
+            class="af-interface-wide"
             :isFloating="false"
             type="textarea"
             icon="bullhorn"
@@ -382,13 +421,27 @@ onMounted(async () => {
 .af-interface-wide :deep(.input-group) {
   max-width: 40rem;
 }
-/* a colour of the environment label : the pill itself, the chosen one ringed */
-.af-label-choice {
-  border: 2px solid transparent;
-  cursor: pointer;
+/* a colour of the environment label : a round swatch in the pill's colour ; the pill's colours
+   take the border away (!important), so the chosen one is ringed with a shadow */
+.af-label-swatch-active {
+  box-shadow:
+    0 0 0 2px var(--bs-body-bg),
+    0 0 0 4px var(--bs-body-color);
 }
-.af-label-choice-active {
-  border-color: var(--bs-body-color);
+/* the label's preview : the header's background, its logo, the label 20px from it, as there */
+.af-label-preview {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+}
+.af-label-preview-logo {
+  max-width: 200px;
+  max-height: 33px;
+}
+.af-label-preview-pill {
+  margin-left: 20px;
 }
 /* a colour of the Color theme : a round swatch, the chosen one ringed and ticked */
 .settings-color-swatch {

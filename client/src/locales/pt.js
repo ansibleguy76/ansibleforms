@@ -699,7 +699,9 @@ export default {
     // Settings > Appearance > Interface
     interface: {
       tabDefaults: 'Predefinições',
-      tabHeader: 'Cabeçalho',
+      tabLinks: 'Ligações',
+      tabEnvironment: 'Ambiente',
+      tabAnnouncement: 'Anúncio',
       designer: 'Designer',
       designerHelp: 'Mostrar a ligação do Designer no cabeçalho',
       tabName: 'Nome',
@@ -714,6 +716,7 @@ export default {
       envLabelHelp: 'Uma etiqueta junto ao logótipo, como PRODUÇÃO ou TEST ; vazia, nenhuma',
       envLabelShow: 'Etiqueta de ambiente',
       envLabelShowHelp: 'Mostrar a etiqueta de ambiente junto ao logótipo',
+      envLabelPreview: 'Pré-visualização',
       envLabelColor: 'Cor da etiqueta',
       banner: 'Anúncio',
       bannerHelp: 'Uma mensagem sob o cabeçalho para todos, como uma janela de manutenção ; vazia, nenhuma',

@@ -699,7 +699,9 @@ export default {
     // Settings > Appearance > Interface
     interface: {
       tabDefaults: 'Valors predeterminats',
-      tabHeader: 'Capçalera',
+      tabLinks: 'Enllaços',
+      tabEnvironment: 'Entorn',
+      tabAnnouncement: 'Avís',
       designer: 'Dissenyador',
       designerHelp: "Mostra l'enllaç del Dissenyador a la capçalera",
       tabName: 'Nom',
@@ -715,6 +717,7 @@ export default {
       envLabelHelp: 'Una etiqueta al costat del logotip, com PRODUCCIÓ o TEST ; buida, cap',
       envLabelShow: "Etiqueta d'entorn",
       envLabelShowHelp: "Mostrar l'etiqueta d'entorn al costat del logotip",
+      envLabelPreview: 'Previsualització',
       envLabelColor: "Color de l'etiqueta",
       banner: 'Avís',
       bannerHelp: 'Un missatge sota la capçalera per a tothom, com una finestra de manteniment ; buit, cap',
