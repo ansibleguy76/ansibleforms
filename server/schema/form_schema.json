@@ -54,7 +54,7 @@
     {
       "properties": {
         "type": {
-          "enum": ["awx"]
+          "enum": ["template", "awx"]
         },
         "vaultCredentials": {"not":{}},
         "playbook": {"not":{}},
@@ -374,7 +374,7 @@
             {
               "properties": {
                 "type": {
-                  "enum": ["awx"]
+                  "enum": ["template", "awx"]
                 },
                 "playbook": {"not":{}},
                 "vaultCredentials": {"not":{}},
@@ -387,7 +387,7 @@
         "properties":{
           "type": {
             "type": "string",
-            "enum": ["ansible", "awx"]
+            "enum": ["ansible", "template", "awx"]
           },
           "name": {"type": "string"},
           "playbook": {"type": "string"},
@@ -499,7 +499,7 @@
     },
     "type": {
       "type": "string",
-      "enum": ["ansible", "awx", "multistep", "subform"]
+      "enum": ["ansible", "template", "awx", "multistep", "subform"]
     },
     "hasApproval":{ "type": "boolean"},
     "approval":{

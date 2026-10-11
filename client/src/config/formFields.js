@@ -598,8 +598,13 @@ export function fieldTypeAllows(type, key) {
   return !(forbiddenFieldKeys[type] || []).includes(key);
 }
 
-// the form types (server/schema/form_schema.json, its top-level type)
-export const formTypes = ['ansible', 'awx', 'multistep', 'subform'];
+// the form types (server/schema/form_schema.json, its top-level type) : template runs a job on a
+// template runner (AWX, AAP, Ascender, Semaphore, Rundeck, Jenkins) ; awx is its old name
+export const formTypes = ['ansible', 'template', 'awx', 'multistep', 'subform'];
+// the form types that run a template : the same form either way
+export const TEMPLATE_FORM_TYPES = ['template', 'awx'];
+// the runner types a template form may run on
+export const TEMPLATE_RUNNER_TYPES = ['awx', 'semaphore', 'rundeck', 'jenkins'];
 
 // Mirror of the per-type `oneOf` in server/schema/form_schema.json : every form
 // type FORBIDS a set of keys, so a key left behind by a type change makes the
@@ -617,6 +622,7 @@ export const forbiddenFormKeys = {
     'instanceGroups',
     'expression',
   ],
+  template: ['playbook', 'playbookSubPath', 'ansibleCredentials', 'vaultCredentials', 'steps', 'expression'],
   awx: ['playbook', 'playbookSubPath', 'ansibleCredentials', 'vaultCredentials', 'steps', 'expression'],
   multistep: [
     'playbook',

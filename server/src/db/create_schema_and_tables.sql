@@ -213,6 +213,8 @@ CREATE TABLE `jobs` (
   `pid` int(11) DEFAULT NULL,
   `host` varchar(255) DEFAULT NULL,
   `runner` varchar(250) DEFAULT NULL,
+  -- what that runner was when the job ran (awx, aap, ascender, semaphore, rundeck, jenkins, rte)
+  `runner_kind` varchar(20) DEFAULT NULL,
   `job_log` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `tracker` varchar(250) DEFAULT NULL,
   PRIMARY KEY (`id`),

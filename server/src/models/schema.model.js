@@ -565,7 +565,7 @@ const SCHEMA_MANIFEST = {
     // between them, the designer lock, and the node that follows a job
     patchVersion7: { tables: ['secret_stores', 'runners', 'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'mail_servers', 'login_failures', 'token_revocations', 'schema_migrations',
                               'directory_users', 'announcements', 'disclaimer_versions', 'disclaimer_acceptances'],
-                     columns: ['schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'jobs.runner',
+                     columns: ['schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'jobs.runner', 'jobs.runner_kind',
                                'runners.username', 'runners.password', 'runners.use_credentials', 'runners.node_id', 'jobs.job_log',
                                'jobs.tracker', 'repositories.claim_node', 'repositories.claim_since',
                                'repositories.use_for_workflows',
@@ -883,6 +883,11 @@ async function patchVersion7(messages, success, failed) {
   const runners = fs.readFileSync(`${__dirname}/../db/create_runners_table.sql`);
   await checkPromise(addTable("runners", runners.toString()), messages, success, failed);
   await checkPromise(addColumn("jobs", "runner", "varchar(250)", true, "NULL"), messages, success, failed);
+  // what that runner was when the job ran (the jobs list says jenkins, aap ...) : kept on the job,
+  // so a runner removed or renamed later does not change it ; the jobs before it, once, from their
+  // runner as it is now
+  await checkPromise(addColumn("jobs", "runner_kind", "varchar(20)", true, "NULL"), messages, success, failed);
+  await checkPromise(fillJobRunnerKinds(), messages, success, failed);
   // AWX/AAP/Ascender connections are runners of type awx : the awx table is copied into
   // runners once, then dropped ; the job log a playbook writes is stored on the job
   await checkPromise(addColumn("runners", "username", "varchar(250)", true, "NULL"), messages, success, failed);
@@ -975,6 +980,18 @@ async function patchVersion7(messages, success, failed) {
   // their own : they are the forms repository's (its vars folder, Repository.getVarsFilesPath)
   await checkPromise(addColumn("repositories", "use_for_workflows", "tinyint(4)", true, "0"), messages, success, failed);
   await checkPromise(dropColumn("repositories", "use_for_vars_files"), messages, success, failed);
+}
+
+// Idempotent by its WHERE clause : only a job with a runner and no kind yet gets one, from its
+// runner as it is now (none when that runner is gone)
+function fillJobRunnerKinds() {
+  return mysql
+    .do(
+      "UPDATE AnsibleForms.`jobs` j JOIN AnsibleForms.`runners` r ON r.name = j.runner " +
+        "SET j.runner_kind = IF(r.type = 'awx', COALESCE(NULLIF(r.flavour, ''), 'awx'), r.type) " +
+        "WHERE j.runner_kind IS NULL AND j.runner IS NOT NULL"
+    )
+    .then((res) => `filled the runner kind of ${res?.affectedRows ?? 0} job(s)`);
 }
 
 // Idempotent by its WHERE clause : only a credential without a valid type gets one
