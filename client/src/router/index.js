@@ -64,7 +64,9 @@ const directoryUser = () => import('@/pages/admin/directory-user.vue');
 const backups = () => import('@/pages/admin/backups.vue');
 
 import TokenStorage from '@/lib/TokenStorage.js';
-import { designerSwitchedOffNow } from '@/stores/app';
+import axios from 'axios';
+import { getActivePinia } from 'pinia';
+import { useAppStore } from '@/stores/app';
 
 // Every route that needs a role option says which, as `meta.permission` : the one guard below
 // checks it, and the left menus and the header search read it from the route a link resolves to
@@ -331,6 +333,36 @@ export function permissionGuard(to) {
   return TokenStorage.getPayload()?.user?.options?.[permission] ? true : { name: '/' };
 }
 router.beforeEach(permissionGuard);
+// the one read of /api/v2/app/config a route check may wait for, shared by the checks of one load
+let appConfigRead = null;
+
+/**
+ * Whether the designer is switched off for the instance, read from the server first when the app
+ * has not read it yet (a fresh tab opened on /designer).
+ *
+ * Here rather than in the app store : an axios import there closes a chunk loop
+ * (app -> vendor -> ace -> app) and the page stays blank.
+ *
+ * Returns:
+ *   Promise<boolean>: true when switched off.
+ */
+async function designerSwitchedOffNow() {
+  if (!getActivePinia()) return false;
+  const store = useAppStore();
+  if (!store.appConfigLoaded) {
+    appConfigRead =
+      appConfigRead ||
+      axios
+        .get('/api/v2/app/config')
+        .then((res) => {
+          store.designerEnabled = res.data?.designerEnabled !== false;
+          store.appConfigLoaded = true;
+        })
+        .catch(() => {});
+    await appConfigRead;
+  }
+  return store.designerEnabled === false;
+}
 // the designer switched off for the instance : for everyone its address leads nowhere, the page
 // not found as any address that does not exist (the address kept), the switch read from the
 // server first when this tab has not read it yet (a link or a bookmark straight to /designer)
