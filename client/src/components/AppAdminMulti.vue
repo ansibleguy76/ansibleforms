@@ -72,6 +72,8 @@
 /*  action.enabledWhen: (item) => boolean - the action is off for */
 /*      the records it returns false for (greyed out ; a delete's */
 /*      also greys the record's checkbox)                         */
+/*  settings.listQuery: '?directory=1' - added to the list's read */
+/*      (the LDAP and SSO users beside the local ones)            */
 /*  settings.openPage: (item) => path - a record has its own page */
 /*      (a user's) : its row and its Edit open that page instead  */
 /*      of the record dialog ; New still opens the dialog         */
@@ -286,7 +288,7 @@ async function loadItems(force = true) {
   // this was the other half.) Assigning the new list when it arrives also removes
   // the "no data" flicker.
   resetSelection();
-  itemList.value = await loadList(objectType, isFlat);
+  itemList.value = await loadList(objectType, isFlat, undefined, props.settings.listQuery || '');
   // Drop selected rows that are no longer there. resetSelection() clears the SINGLE
   // item selection (the offcanvas), not the multi-select set, so without this the
   // toolbar kept counting rows that had been deleted - by this admin elsewhere, by
@@ -328,10 +330,10 @@ function flatRow(value) {
   const name = String(value);
   return { id: name, name };
 }
-async function loadList(type, isFlat = false, version = undefined) {
+async function loadList(type, isFlat = false, version = undefined, query = '') {
   const apiVersion = version || props.apiVersion;
   try {
-    const result = await axios.get(`/api/v${apiVersion}/${type}/`);
+    const result = await axios.get(`/api/v${apiVersion}/${type}/${query}`);
     if (apiVersion == 2) {
       if (isFlat) {
         const records = Array.isArray(result.data.records) ? result.data.records : [];

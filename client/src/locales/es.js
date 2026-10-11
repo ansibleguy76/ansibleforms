@@ -281,6 +281,9 @@ export default {
       user_update: 'Usuario actualizado',
       user_password_update: 'Contraseña cambiada',
       user_delete: 'Usuario eliminado',
+      directory_users_block_create: 'Inicio de sesión de usuario de directorio bloqueado o permitido',
+      directory_users_delete: 'Usuario de directorio olvidado',
+      directory_users_end_sessions_create: 'Sesiones de usuario de directorio finalizadas',
       user_groups_create: 'Usuario añadido a un grupo',
       user_groups_delete: 'Usuario quitado de un grupo',
     },
@@ -599,6 +602,46 @@ export default {
       lastRun: 'Última ejecución',
       createdAt: 'Creado en',
       expiresAt: 'Expira en',
+    },
+    // the LDAP and SSO users and groups beside the local ones : their source, their sign-in
+    directory: {
+      source: 'Origen',
+      sourceLocal: 'Local',
+      sourceLdap: 'LDAP',
+      sourceAzuread: 'Entra ID',
+      sourceOidc: 'OIDC',
+      blocked: 'Inicio de sesión bloqueado',
+      blockedShort: 'Bloqueado',
+      neverSignedIn: 'Nunca ha iniciado sesión',
+      displayName: 'Nombre',
+      firstSeen: 'Visto por primera vez',
+      lastLogin: 'Último inicio de sesión',
+      signIn: 'Inicio de sesión',
+      signInAllowed: 'Permitido',
+      blockSignIn: 'Bloquear inicio de sesión',
+      allowSignIn: 'Permitir inicio de sesión',
+      endSessions: 'Cerrar sesiones',
+      forget: 'Olvidar',
+      blockConfirm:
+        '¿Bloquear el inicio de sesión de {name}? Sus sesiones terminan ahora y se rechaza cada inicio de sesión hasta que lo vuelvas a permitir.',
+      forgetConfirm:
+        '¿Olvidar a {name}? Su registro se elimina y vuelve en su próximo inicio de sesión. Sus trabajos, trabajos guardados y programaciones se mantienen.',
+      blockedNote:
+        'Un administrador bloqueó el inicio de sesión de este usuario: sus sesiones terminaron y se rechaza cada inicio de sesión.',
+      neverNote:
+        'Los roles de la configuración nombran a este usuario, pero nunca ha iniciado sesión: sus grupos se conocen en su primer inicio de sesión.',
+      readOnlyNote:
+        'Este usuario viene de {source}: quién es y sus grupos se leen de allí en cada inicio de sesión, y se muestran aquí según el último.',
+      groupReadOnlyNote:
+        'Este grupo viene de {source}: sus usuarios son los vistos en él en su último inicio de sesión.',
+      sessionsEnded: 'Las sesiones de {name} terminaron.',
+      nowBlocked: 'El inicio de sesión de {name} está bloqueado.',
+      nowAllowed: 'El inicio de sesión de {name} está permitido.',
+      forgotten: '{name} ha sido olvidado.',
+      notFound: "No hay ningún usuario '{name}' de {source}.",
+      groupNotFound: "No hay ningún grupo '{name}' de {source}.",
+      noMember: 'Aún no se ha visto ningún usuario en este grupo.',
+      noGroupSeen: 'No se vio ningún grupo en el último inicio de sesión.',
     },
     // what a settings page links to its record : the Forms, Jobs, Activity and Used by tabs
     linked: {

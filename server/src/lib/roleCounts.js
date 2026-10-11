@@ -11,7 +11,7 @@ import logger from './logger.js';
  * Returns:
  *   Promise<object[]>: the config's roles, each { name, users, groups }.
  */
-async function configRoles() {
+export async function configRoles() {
   try {
     const baseConfig = await Form.load(null, null, null, true);
     return Array.isArray(baseConfig?.roles) ? baseConfig.roles : [];

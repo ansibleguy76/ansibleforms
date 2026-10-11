@@ -24,17 +24,14 @@ import axios from 'axios';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
-import Helpers from '@/lib/Helpers';
-// a job's times as the jobs page shows them (the server sends them in its own zone)
-import Time from '@/lib/Time';
-import { cronCell } from '@/lib/cronCell';
 import { formPath } from '@/lib/formsPath';
 import { useFormLinks } from '@/composables/useFormLinks';
+import { useUserLinks } from '@/composables/useUserLinks';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { useRoleAssignments } from '@/composables/useRoleAssignments';
 
-const { t, te } = useI18n();
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const authenticated = ref(false);
@@ -105,149 +102,28 @@ async function update(data) {
   }
 }
 
-// ─── Stored jobs and schedules ────────────────────────────────────────────────
-// what the user keeps to run : the form values it stored (their user written type/name), and the
-// jobs it planned with Run later (the schedules that run as it : their owner) ; a schedule an
-// admin made runs as no one, and is nobody's here. A row opens the stored job or the schedule.
-const storedJobs = ref([]);
-const schedules = ref([]);
-const userStoredJobs = computed(() =>
-  user.value ? storedJobs.value.filter((j) => j.username === `local/${user.value.username}`) : [],
-);
-const userSchedules = computed(() => {
-  if (!user.value) return [];
-  return schedules.value.filter((s) => {
-    try {
-      const owner = s.owner ? JSON.parse(s.owner) : null;
-      return owner?.type === 'local' && owner.username === user.value.username;
-    } catch {
-      return false;
-    }
-  });
-});
-
-// a one-time run's Schedule cell : it has no cron, it runs once (escaped : it goes to v-html)
-const oneTimeCell = computed(() =>
-  t('settings.schedules.oneTimeRun').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'),
-);
-
-/**
- * When a schedule runs : a one-time run at its Run at, a recurring one at its cron's next time.
- *
- * Args:
- *   s (object): a schedule row, with run_at and next_run.
- *
- * Returns:
- *   string|null: the date, as the server sent it ; null when there is none.
- */
-function nextRunOf(s) {
-  return (s.one_time_run ? s.run_at : s.next_run) || null;
-}
-
-/**
- * Loads every stored job and schedule : the tabs keep the user's. Either may be refused (the
- * stored jobs or the schedules switched off) : its tab stays empty.
- */
-async function loadJobs() {
-  const [j, s] = await Promise.allSettled([axios.get('/api/v2/stored-jobs/'), axios.get('/api/v2/schedule/')]);
-  storedJobs.value = j.status === 'fulfilled' ? j.value.data.records || j.value.data || [] : [];
-  schedules.value = s.status === 'fulfilled' ? s.value.data.records || s.value.data || [] : [];
-}
-
-// ─── Forms, Jobs, Activity ────────────────────────────────────────────────────
+// ─── Forms, Jobs, Stored jobs, Schedules, Activity ─────────────────────────────
 // the forms its roles open (the admin role, every form) ; a row opens the form
 const { loadForms, formsOfRoles } = useFormLinks();
 const userForms = computed(() => formsOfRoles(userRoles.value.map((r) => r.name)));
-// the jobs it launched, the latest first : a multistep job's steps stay under their job
-const JOBS_SHOWN = 100;
-const jobs = ref([]);
-const userJobs = computed(() => jobs.value.filter((j) => !j.parent_id));
-// what the audit log recorded it doing, the latest first
-const ACTIVITY_SHOWN = 100;
-const activity = ref([]);
-
-/**
- * Loads the user's jobs and its activity ; either refused or failing, its tab stays empty.
- */
-async function loadLinked() {
-  const name = encodeURIComponent(user.value?.username || '');
-  if (!name) return;
-  const [j, a] = await Promise.allSettled([
-    axios.get(`/api/v2/job/?user=${name}&user_type=local&records=${JOBS_SHOWN}`),
-    axios.get(`/api/v2/audit?actor=${name}&actorType=local&limit=${ACTIVITY_SHOWN}`),
-  ]);
-  jobs.value = j.status === 'fulfilled' ? j.value.data.records || j.value.data || [] : [];
-  const audit = a.status === 'fulfilled' ? a.value.data : null;
-  activity.value = (audit?.records !== undefined ? audit : audit?.result)?.records || [];
-}
-
-// ─── the tables of the linked tabs ────────────────────────────────────────────
-// the outcomes of the audit log, as its page names them
-const OUTCOMES = { success: 'audit.outcomeSuccess', failure: 'audit.outcomeFailure', denied: 'audit.outcomeDenied' };
 const formColumns = computed(() => [
   { key: 'name', label: t('settings.fields.form') },
   { key: 'through', label: t('settings.linked.throughRoles'), value: (f) => f.through.join(', ') },
   { key: 'description', label: t('settings.fields.description') },
 ]);
-const jobColumns = computed(() => [
-  { key: 'id', label: t('settings.linked.job'), value: (j) => `#${j.id}` },
-  { key: 'form', label: t('settings.fields.form') },
-  { key: 'status', label: t('settings.linked.status') },
-  { key: 'start', label: t('settings.linked.started'), value: (j) => j.start && Time.format(j.start) },
-]);
-const storedJobColumns = computed(() => [
-  { key: 'name', label: t('settings.fields.name') },
-  { key: 'form_name', label: t('settings.fields.form') },
-  { key: 'description', label: t('settings.fields.description') },
-  {
-    key: 'expires_at',
-    label: t('settings.fields.expiresAt'),
-    // none : it never expires
-    value: (j) => (j.expires_at ? Helpers.formatServerDate(j.expires_at) : t('settings.storedJobs.neverExpires')),
-  },
-]);
-const scheduleColumns = computed(() => [
-  { key: 'name', label: t('settings.fields.name') },
-  { key: 'form', label: t('settings.fields.form') },
-  // how it runs : a recurring schedule's cron, its meaning on hover ; or once
-  {
-    key: 'cron',
-    label: t('settings.schedules.stepSchedule'),
-    class: 'text-nowrap',
-    html: (s) => (s.one_time_run ? oneTimeCell.value : cronCell(s.cron)),
-  },
-  // when it runs : a one-time run its Run at, a recurring one its cron's next time
-  {
-    key: 'next_run',
-    label: t('settings.schedules.nextRun'),
-    value: (s) => nextRunOf(s) && Helpers.formatServerDate(nextRunOf(s)),
-  },
-]);
-const activityColumns = computed(() => [
-  { key: 'created_at', label: t('audit.time'), value: (r) => Helpers.formatServerDate(r.created_at) },
-  { key: 'action', label: t('audit.action'), value: (r) => actionLabel(r.action) },
-  { key: 'target', label: t('audit.target') },
-  {
-    key: 'outcome',
-    label: t('audit.outcome'),
-    value: (r) => (OUTCOMES[r.outcome] ? t(OUTCOMES[r.outcome]) : r.outcome),
-  },
-]);
-
-/**
- * An audit action in words, as the audit log shows it ; the stored action when it has none.
- *
- * Args:
- *   action (string): the stored action (settings.config.update).
- *
- * Returns:
- *   string: its label.
- */
-function actionLabel(action) {
-  if (!action) return '';
-  const key = 'audit.actionLabels.' + String(action).replace(/[.-]/g, '_');
-  return te(key) ? t(key) : action;
-}
+// what it launched, keeps and did (composables/useUserLinks.js), as an LDAP or SSO user's page
+const who = computed(() => (user.value ? { type: 'local', username: user.value.username } : null));
+const {
+  jobs: userJobs,
+  storedJobs: userStoredJobs,
+  schedules: userSchedules,
+  activity,
+  loadUserLinks,
+  jobColumns,
+  storedJobColumns,
+  scheduleColumns,
+  activityColumns,
+} = useUserLinks(who);
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
 // Details (username, description, email), Groups, Roles, Forms, Jobs, Stored jobs, Schedules,
@@ -421,8 +297,8 @@ async function deleteUser() {
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
-  await Promise.all([load(), loadRoles(), loadJobs(), loadForms()]);
-  await loadLinked();
+  await Promise.all([load(), loadRoles(), loadForms()]);
+  await loadUserLinks();
   // opened from the list's Add to group : the dialog open at once, the url left clean
   if (route.query.add && user.value) {
     // in every group already : the dialog says so, its Save off

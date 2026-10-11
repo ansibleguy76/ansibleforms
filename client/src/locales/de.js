@@ -285,6 +285,9 @@ export default {
       user_update: 'Benutzer aktualisiert',
       user_password_update: 'Passwort geändert',
       user_delete: 'Benutzer gelöscht',
+      directory_users_block_create: 'Anmeldung eines Verzeichnisbenutzers gesperrt oder erlaubt',
+      directory_users_delete: 'Verzeichnisbenutzer vergessen',
+      directory_users_end_sessions_create: 'Sitzungen eines Verzeichnisbenutzers beendet',
       user_groups_create: 'Benutzer zu einer Gruppe hinzugefügt',
       user_groups_delete: 'Benutzer aus einer Gruppe entfernt',
     },
@@ -606,6 +609,46 @@ export default {
       lastRun: 'Letzter Lauf',
       createdAt: 'Erstellt am',
       expiresAt: 'Laeuft ab am',
+    },
+    // the LDAP and SSO users and groups beside the local ones : their source, their sign-in
+    directory: {
+      source: 'Herkunft',
+      sourceLocal: 'Lokal',
+      sourceLdap: 'LDAP',
+      sourceAzuread: 'Entra ID',
+      sourceOidc: 'OIDC',
+      blocked: 'Anmeldung gesperrt',
+      blockedShort: 'Gesperrt',
+      neverSignedIn: 'Nie angemeldet',
+      displayName: 'Name',
+      firstSeen: 'Zuerst gesehen',
+      lastLogin: 'Letzte Anmeldung',
+      signIn: 'Anmeldung',
+      signInAllowed: 'Erlaubt',
+      blockSignIn: 'Anmeldung sperren',
+      allowSignIn: 'Anmeldung erlauben',
+      endSessions: 'Sitzungen beenden',
+      forget: 'Vergessen',
+      blockConfirm:
+        'Die Anmeldung von {name} sperren? Die Sitzungen enden jetzt, und jede Anmeldung wird abgelehnt, bis du sie wieder erlaubst.',
+      forgetConfirm:
+        '{name} vergessen? Der Eintrag wird entfernt und kommt bei der nächsten Anmeldung zurück. Jobs, gespeicherte Jobs und Zeitpläne bleiben.',
+      blockedNote:
+        'Ein Administrator hat die Anmeldung dieses Benutzers gesperrt: die Sitzungen wurden beendet und jede Anmeldung wird abgelehnt.',
+      neverNote:
+        'Die Rollen der Konfiguration nennen diesen Benutzer, aber er hat sich nie angemeldet: seine Gruppen sind ab der ersten Anmeldung bekannt.',
+      readOnlyNote:
+        'Dieser Benutzer kommt aus {source}: wer er ist und seine Gruppen werden bei jeder Anmeldung dort gelesen und hier nach der letzten gezeigt.',
+      groupReadOnlyNote:
+        'Diese Gruppe kommt aus {source}: ihre Benutzer sind die, die bei ihrer letzten Anmeldung darin gesehen wurden.',
+      sessionsEnded: 'Die Sitzungen von {name} wurden beendet.',
+      nowBlocked: 'Die Anmeldung von {name} ist gesperrt.',
+      nowAllowed: 'Die Anmeldung von {name} ist erlaubt.',
+      forgotten: '{name} wurde vergessen.',
+      notFound: "Es gibt keinen Benutzer '{name}' aus {source}.",
+      groupNotFound: "Es gibt keine Gruppe '{name}' aus {source}.",
+      noMember: 'Noch kein Benutzer in dieser Gruppe gesehen.',
+      noGroupSeen: 'Bei der letzten Anmeldung wurde keine Gruppe gesehen.',
     },
     // what a settings page links to its record : the Forms, Jobs, Activity and Used by tabs
     linked: {

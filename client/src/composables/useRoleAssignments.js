@@ -1,7 +1,7 @@
 /******************************************************************/
 /*                                                                */
-/*  useRoleAssignments : the roles assigned to a local user or a  */
-/*  local group                                                   */
+/*  useRoleAssignments : the roles assigned to a user or a group, */
+/*  local or from a directory (LDAP, Entra ID, OIDC)              */
 /*                                                                */
 /*  For the Roles tab of a user's page and a group's page : the   */
 /*  roles of the config (config.yaml) that name the user, one of  */
@@ -52,23 +52,25 @@ export function useRoleAssignments() {
     list.filter((x) => x.provider === provider && wanted.has(x.name)).map((x) => x.name);
 
   /**
-   * The roles a local user has, each with how : by its name, through some of its groups, or as
+   * The roles a user has, each with how : by its name, through some of its groups, or as
    * everyone's (public).
    *
    * Args:
    *   username (string): the user's name.
-   *   groupNames (string[]): the names of its local groups.
+   *   groupNames (string[]): the names of its groups (without their provider).
+   *   provider (string): where the user and its groups come from : local (default), ldap,
+   *     azuread, oidc.
    *
    * Returns:
    *   object[]: { name, description, direct, groups (string[]), everyone }, by name.
    */
-  function rolesOfUser(username, groupNames) {
+  function rolesOfUser(username, groupNames, provider = 'local') {
     const mine = new Set(groupNames);
     return roles.value
       .map((r) => {
         const everyone = r.name === 'public';
-        const direct = !everyone && names(r.users, 'local', new Set([username])).length > 0;
-        const groups = everyone ? [] : names(r.groups, 'local', mine);
+        const direct = !everyone && names(r.users, provider, new Set([username])).length > 0;
+        const groups = everyone ? [] : names(r.groups, provider, mine);
         return everyone || direct || groups.length ? { ...row(r), direct, groups, everyone } : null;
       })
       .filter(Boolean)
@@ -76,17 +78,18 @@ export function useRoleAssignments() {
   }
 
   /**
-   * The roles that name a local group.
+   * The roles that name a group.
    *
    * Args:
-   *   groupName (string): the group's name.
+   *   groupName (string): the group's name (without its provider).
+   *   provider (string): where the group comes from : local (default), ldap, azuread, oidc.
    *
    * Returns:
    *   object[]: { name, description }, by name.
    */
-  function rolesOfGroup(groupName) {
+  function rolesOfGroup(groupName, provider = 'local') {
     return roles.value
-      .filter((r) => r.name !== 'public' && names(r.groups, 'local', new Set([groupName])).length)
+      .filter((r) => r.name !== 'public' && names(r.groups, provider, new Set([groupName])).length)
       .map(row)
       .sort(byName);
   }

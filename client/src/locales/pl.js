@@ -281,6 +281,9 @@ export default {
       user_update: 'Zaktualizowano użytkownika',
       user_password_update: 'Zmieniono hasło',
       user_delete: 'Usunięto użytkownika',
+      directory_users_block_create: 'Logowanie użytkownika katalogu zablokowane lub dozwolone',
+      directory_users_delete: 'Użytkownik katalogu zapomniany',
+      directory_users_end_sessions_create: 'Sesje użytkownika katalogu zakończone',
       user_groups_create: 'Użytkownik dodany do grupy',
       user_groups_delete: 'Użytkownik usunięty z grupy',
     },
@@ -599,6 +602,46 @@ export default {
       lastRun: 'Ostatnie uruchomienie',
       createdAt: 'Utworzono',
       expiresAt: 'Wygasa',
+    },
+    // the LDAP and SSO users and groups beside the local ones : their source, their sign-in
+    directory: {
+      source: 'Źródło',
+      sourceLocal: 'Lokalny',
+      sourceLdap: 'LDAP',
+      sourceAzuread: 'Entra ID',
+      sourceOidc: 'OIDC',
+      blocked: 'Logowanie zablokowane',
+      blockedShort: 'Zablokowany',
+      neverSignedIn: 'Nigdy się nie logował',
+      displayName: 'Nazwa',
+      firstSeen: 'Pierwszy raz widziany',
+      lastLogin: 'Ostatnie logowanie',
+      signIn: 'Logowanie',
+      signInAllowed: 'Dozwolone',
+      blockSignIn: 'Zablokuj logowanie',
+      allowSignIn: 'Zezwól na logowanie',
+      endSessions: 'Zakończ sesje',
+      forget: 'Zapomnij',
+      blockConfirm:
+        'Zablokować logowanie {name}? Sesje kończą się teraz, a każde logowanie jest odrzucane, dopóki znowu na nie nie zezwolisz.',
+      forgetConfirm:
+        'Zapomnieć {name}? Rekord zostanie usunięty i wróci przy następnym logowaniu. Zadania, zapisane zadania i harmonogramy pozostają.',
+      blockedNote:
+        'Administrator zablokował logowanie tego użytkownika: sesje zostały zakończone, a każde logowanie jest odrzucane.',
+      neverNote:
+        'Role konfiguracji wskazują tego użytkownika, ale nigdy się nie zalogował: jego grupy będą znane przy pierwszym logowaniu.',
+      readOnlyNote:
+        'Ten użytkownik pochodzi z {source}: kim jest i jego grupy są odczytywane stamtąd przy każdym logowaniu i pokazywane tu według ostatniego.',
+      groupReadOnlyNote:
+        'Ta grupa pochodzi z {source}: jej użytkownicy to ci, których widziano w niej przy ich ostatnim logowaniu.',
+      sessionsEnded: 'Sesje {name} zostały zakończone.',
+      nowBlocked: 'Logowanie {name} jest zablokowane.',
+      nowAllowed: 'Logowanie {name} jest dozwolone.',
+      forgotten: '{name} został zapomniany.',
+      notFound: "Nie ma użytkownika '{name}' z {source}.",
+      groupNotFound: "Nie ma grupy '{name}' z {source}.",
+      noMember: 'Nie widziano jeszcze żadnego użytkownika w tej grupie.',
+      noGroupSeen: 'Przy ostatnim logowaniu nie widziano żadnej grupy.',
     },
     // what a settings page links to its record : the Forms, Jobs, Activity and Used by tabs
     linked: {

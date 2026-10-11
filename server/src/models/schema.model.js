@@ -504,7 +504,8 @@ const SCHEMA_MANIFEST = {
   base: {
     tables: ['groups', 'users', 'tokens', 'credentials', 'ldap', 'jobs', 'job_output',
              'settings', 'repositories', 'schedule', 'audit', 'chat_settings', 'secret_stores', 'runners',
-             'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'mail_servers', 'login_failures', 'token_revocations', 'schema_migrations'],
+             'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'mail_servers', 'login_failures', 'token_revocations', 'schema_migrations',
+             'directory_users'],
   },
   patches: {
     patchVersion4: { columns: ['ldap.groups_search_base', 'ldap.groups_attribute', 'ldap.group_class',
@@ -541,7 +542,8 @@ const SCHEMA_MANIFEST = {
     // dropped), and the job log a playbook writes is stored on the job
     // and the worker and several app nodes : the processes on the database, what changed
     // between them, the designer lock, and the node that follows a job
-    patchVersion7: { tables: ['secret_stores', 'runners', 'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'mail_servers', 'login_failures', 'token_revocations', 'schema_migrations'],
+    patchVersion7: { tables: ['secret_stores', 'runners', 'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'mail_servers', 'login_failures', 'token_revocations', 'schema_migrations',
+                              'directory_users'],
                      columns: ['schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'jobs.runner',
                                'runners.username', 'runners.password', 'runners.use_credentials', 'runners.node_id', 'jobs.job_log',
                                'jobs.tracker', 'repositories.claim_node', 'repositories.claim_since',
@@ -894,6 +896,9 @@ async function patchVersion7(messages, success, failed) {
   // revoked tokens : logouts and password changes (lib/tokenRevocation.js)
   const tokenRevocations = fs.readFileSync(`${__dirname}/../db/create_token_revocations_table.sql`);
   await checkPromise(addTable("token_revocations", tokenRevocations.toString()), messages, success, failed);
+  // the LDAP and SSO users seen at sign-in, and their sign-in blocked (models/directoryUser.model.js)
+  const directoryUsers = fs.readFileSync(`${__dirname}/../db/create_directory_users_table.sql`);
+  await checkPromise(addTable("directory_users", directoryUsers.toString()), messages, success, failed);
   // the chat's key can be an api credential's password instead of its own
   await checkPromise(addColumn("chat_settings", "credential", "varchar(250)", true, "NULL"), messages, success, failed);
   // a description on the local groups and users : what a group is for, who owns an account

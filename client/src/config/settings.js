@@ -44,6 +44,36 @@ const escapeHtml = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /**
+ * Where a user or a group comes from, in words : Local, LDAP, Entra ID, OIDC.
+ *
+ * Args:
+ *   t (function): the vue-i18n translate function.
+ *   source (string): local, ldap, azuread or oidc.
+ *
+ * Returns:
+ *   string: its name ; the source itself when unknown.
+ */
+export function sourceLabel(t, source) {
+  const key = { local: 'sourceLocal', ldap: 'sourceLdap', azuread: 'sourceAzuread', oidc: 'sourceOidc' }[source];
+  return key ? t(`settings.directory.${key}`) : String(source ?? '');
+}
+
+/**
+ * The page of a user or a group from a directory (LDAP, Entra ID, OIDC) : its source and name in
+ * the address, the name url-encoded (an Entra ID upn holds an @).
+ *
+ * Args:
+ *   kind (string): users or groups.
+ *   item (object): the row, { source, username or name }.
+ *
+ * Returns:
+ *   string: /settings/<kind>/<source>/<name>.
+ */
+export function directoryPath(kind, item) {
+  return `/settings/${kind}/${item.source}/${encodeURIComponent(item.username ?? item.name)}`;
+}
+
+/**
  * The empty value of a pill column (a schedule that never ran) : an en dash in a pill with no
  * colour of its own - the text's - so it lines up with the other rows' pill text rather than
  * starting at their edge, without looking like a value.
@@ -162,8 +192,12 @@ export default function getSettings(t) {
       description: t('settings.users.description'),
       icon: 'user',
       selectable: false,
-      // a user has its own page (pages/admin/user.vue) : its row and Edit open it, New the wizard
-      openPage: (item) => `/settings/users/${item.id}`,
+      // the LDAP and SSO users beside the local ones (seen at sign-in, or named by a role)
+      listQuery: '?directory=1',
+      // a user has its own page (pages/admin/user.vue ; an LDAP or SSO user's
+      // pages/admin/directory-user.vue) : its row and Edit open it, New the wizard
+      openPage: (item) =>
+        !item.source || item.source === 'local' ? `/settings/users/${item.id}` : directoryPath('users', item),
       // the dialog in steps : who the user is, the password (editing : left empty, it stays), the
       // group that gives the roles
       steps: [
@@ -182,6 +216,8 @@ export default function getSettings(t) {
           color: 'edit',
           dividerBefore: true,
           to: (u) => ({ path: `/settings/users/${u.id}/groups`, query: { add: '1' } }),
+          // its groups come from its directory
+          enabledWhen: (u) => !u.source || u.source === 'local',
         },
         {
           name: 'change_password',
@@ -189,14 +225,17 @@ export default function getSettings(t) {
           icon: 'lock',
           color: 'change',
           dividerBefore: true,
+          // its password is its directory's
+          enabledWhen: (u) => !u.source || u.source === 'local',
         },
         {
           name: 'delete',
           title: t('settings.users.deleteUser'),
           icon: 'trash',
           color: 'delete',
-          // the admin user is the way back in : never deleted (the server refuses it too)
-          enabledWhen: (u) => u.username !== 'admin',
+          // the admin user is the way back in : never deleted (the server refuses it too) ; an
+          // LDAP or SSO user is forgotten from its page, never deleted here
+          enabledWhen: (u) => u.username !== 'admin' && (!u.source || u.source === 'local'),
         },
       ],
       fields: [
@@ -217,6 +256,23 @@ export default function getSettings(t) {
           required: true,
           filterable: true,
           icon: 'user',
+        },
+        // where the user comes from : local, or its directory (LDAP, Entra ID, OIDC) ; an LDAP or
+        // SSO user's sign-in blocked, or never signed in, said beside it
+        {
+          key: 'source',
+          label: t('settings.directory.source'),
+          noInput: true,
+          sortable: true,
+          filterable: true,
+          width: '12rem',
+          render: (v, row) =>
+            escapeHtml(sourceLabel(t, v || 'local')) +
+            (row?.blocked
+              ? ` <span class="badge af-blocked-badge ms-2">${escapeHtml(t('settings.directory.blockedShort'))}</span>`
+              : v && v !== 'local' && !row?.seen
+                ? ` <span class="badge af-required-badge ms-2">${escapeHtml(t('settings.directory.neverSignedIn'))}</span>`
+                : ''),
         },
         // who the user is, or what the account is for (a service account)
         {
@@ -331,8 +387,12 @@ export default function getSettings(t) {
           key: 'group_ids',
         },
       ],
-      // a group has its own page (pages/admin/group.vue) : its row and Edit open it, New the dialog
-      openPage: (item) => `/settings/groups/${item.id}`,
+      // the LDAP and SSO groups beside the local ones (seen at a sign-in, or named by a role)
+      listQuery: '?directory=1',
+      // a group has its own page (pages/admin/group.vue ; an LDAP or SSO group's
+      // pages/admin/directory-group.vue) : its row and Edit open it, New the dialog
+      openPage: (item) =>
+        !item.source || item.source === 'local' ? `/settings/groups/${item.id}` : directoryPath('groups', item),
       // in the row menu : editing, its users, then Delete last, each apart
       actions: [
         { name: 'edit', title: t('settings.groups.editGroup'), icon: 'pencil', color: 'edit' },
@@ -344,14 +404,17 @@ export default function getSettings(t) {
           color: 'edit',
           dividerBefore: true,
           to: (g) => ({ path: `/settings/groups/${g.id}/users`, query: { add: '1' } }),
+          // its users come from its directory
+          enabledWhen: (g) => !g.source || g.source === 'local',
         },
         {
           name: 'delete',
           title: t('settings.groups.deleteGroup'),
           icon: 'trash',
           color: 'delete',
-          // the admins group is never deleted (the server refuses it too)
-          enabledWhen: (g) => g.name !== 'admins',
+          // the admins group is never deleted (the server refuses it too) ; an LDAP or SSO group
+          // lives in its directory
+          enabledWhen: (g) => g.name !== 'admins' && (!g.source || g.source === 'local'),
         },
       ],
       fields: [
@@ -367,12 +430,14 @@ export default function getSettings(t) {
         },
         {
           key: 'name',
-          // room for a group's name : the table's spacer takes what is left
+          // room for a group's name : the table's spacer takes what is left (the checkbox, the
+          // source, the counts and the row menu are reserved)
           width: shareUpTo(
             0.4,
             256,
             44 +
               56 +
+              128 +
               pxOf(headerWidth(t('settings.users.labelPlural'), true, '8rem', true)) +
               pxOf(headerWidth(t('settings.settingsPage.roles'), true, '8rem', true)),
           ),
@@ -381,6 +446,16 @@ export default function getSettings(t) {
           required: true,
           filterable: true,
           icon: 'users',
+        },
+        // where the group comes from : local, or its directory (LDAP, Entra ID, OIDC)
+        {
+          key: 'source',
+          label: t('settings.directory.source'),
+          noInput: true,
+          sortable: true,
+          filterable: true,
+          width: '8rem',
+          render: (v) => escapeHtml(sourceLabel(t, v || 'local')),
         },
         // what the group is for, or who owns it
         {

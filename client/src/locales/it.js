@@ -284,6 +284,9 @@ export default {
       user_update: 'Utente aggiornato',
       user_password_update: 'Password modificata',
       user_delete: 'Utente eliminato',
+      directory_users_block_create: 'Accesso di un utente di directory bloccato o consentito',
+      directory_users_delete: 'Utente di directory dimenticato',
+      directory_users_end_sessions_create: 'Sessioni di un utente di directory terminate',
       user_groups_create: 'Utente aggiunto a un gruppo',
       user_groups_delete: 'Utente rimosso da un gruppo',
     },
@@ -602,6 +605,45 @@ export default {
       lastRun: 'Ultima esecuzione',
       createdAt: 'Creato il',
       expiresAt: 'Scade il',
+    },
+    // the LDAP and SSO users and groups beside the local ones : their source, their sign-in
+    directory: {
+      source: 'Origine',
+      sourceLocal: 'Locale',
+      sourceLdap: 'LDAP',
+      sourceAzuread: 'Entra ID',
+      sourceOidc: 'OIDC',
+      blocked: 'Accesso bloccato',
+      blockedShort: 'Bloccato',
+      neverSignedIn: 'Mai acceduto',
+      displayName: 'Nome',
+      firstSeen: 'Visto la prima volta',
+      lastLogin: 'Ultimo accesso',
+      signIn: 'Accesso',
+      signInAllowed: 'Consentito',
+      blockSignIn: 'Blocca accesso',
+      allowSignIn: 'Consenti accesso',
+      endSessions: 'Termina sessioni',
+      forget: 'Dimentica',
+      blockConfirm:
+        "Bloccare l'accesso di {name}? Le sue sessioni terminano ora e ogni accesso viene rifiutato finché non lo consenti di nuovo.",
+      forgetConfirm:
+        'Dimenticare {name}? Il suo record viene rimosso e torna al prossimo accesso. I suoi job, job salvati e pianificazioni restano.',
+      blockedNote:
+        "Un amministratore ha bloccato l'accesso di questo utente: le sue sessioni sono terminate e ogni accesso viene rifiutato.",
+      neverNote:
+        "I ruoli della configurazione nominano questo utente, ma non ha mai effettuato l'accesso: i suoi gruppi sono noti al primo accesso.",
+      readOnlyNote:
+        "Questo utente proviene da {source}: chi è e i suoi gruppi vengono letti lì a ogni accesso e mostrati qui secondo l'ultimo.",
+      groupReadOnlyNote: 'Questo gruppo proviene da {source}: i suoi utenti sono quelli visti al loro ultimo accesso.',
+      sessionsEnded: 'Le sessioni di {name} sono terminate.',
+      nowBlocked: "L'accesso di {name} è bloccato.",
+      nowAllowed: "L'accesso di {name} è consentito.",
+      forgotten: '{name} è stato dimenticato.',
+      notFound: "Non esiste un utente '{name}' da {source}.",
+      groupNotFound: "Non esiste un gruppo '{name}' da {source}.",
+      noMember: 'Nessun utente visto in questo gruppo finora.',
+      noGroupSeen: "Nessun gruppo visto all'ultimo accesso.",
     },
     // what a settings page links to its record : the Forms, Jobs, Activity and Used by tabs
     linked: {

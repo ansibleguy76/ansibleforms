@@ -281,6 +281,9 @@ export default {
       user_update: 'User updated',
       user_password_update: 'Password changed',
       user_delete: 'User deleted',
+      directory_users_block_create: 'Directory user sign-in blocked or allowed',
+      directory_users_delete: 'Directory user forgotten',
+      directory_users_end_sessions_create: 'Directory user sessions ended',
       user_groups_create: 'User added to a group',
       user_groups_delete: 'User removed from a group',
     },
@@ -597,6 +600,45 @@ export default {
       lastRun: 'Last run',
       createdAt: 'Created at',
       expiresAt: 'Expires at',
+    },
+    // the LDAP and SSO users and groups beside the local ones : their source, their sign-in
+    directory: {
+      source: 'Source',
+      sourceLocal: 'Local',
+      sourceLdap: 'LDAP',
+      sourceAzuread: 'Entra ID',
+      sourceOidc: 'OIDC',
+      blocked: 'Sign-in blocked',
+      blockedShort: 'Blocked',
+      neverSignedIn: 'Never signed in',
+      displayName: 'Name',
+      firstSeen: 'First seen',
+      lastLogin: 'Last sign-in',
+      signIn: 'Sign-in',
+      signInAllowed: 'Allowed',
+      blockSignIn: 'Block sign-in',
+      allowSignIn: 'Allow sign-in',
+      endSessions: 'End sessions',
+      forget: 'Forget',
+      blockConfirm:
+        'Block the sign-in of {name}? Their sessions end now, and every sign-in is refused until you allow it again.',
+      forgetConfirm:
+        'Forget {name}? Their record goes and comes back at their next sign-in. Their jobs, stored jobs and schedules stay.',
+      blockedNote:
+        'An administrator blocked the sign-in of this user: their sessions ended and every sign-in is refused.',
+      neverNote:
+        'The roles of the configuration name this user, but they never signed in: their groups are known at their first sign-in.',
+      readOnlyNote:
+        'This user comes from {source}: who they are and their groups are read from there at every sign-in, and shown here as of the last one.',
+      groupReadOnlyNote: 'This group comes from {source}: its users are those seen in it at their last sign-in.',
+      sessionsEnded: 'The sessions of {name} ended.',
+      nowBlocked: 'The sign-in of {name} is blocked.',
+      nowAllowed: 'The sign-in of {name} is allowed.',
+      forgotten: '{name} is forgotten.',
+      notFound: "There is no user '{name}' from {source}.",
+      groupNotFound: "There is no group '{name}' from {source}.",
+      noMember: 'No user seen in this group yet.',
+      noGroupSeen: 'No group seen at the last sign-in.',
     },
     // what a settings page links to its record : the Forms, Jobs, Activity and Used by tabs
     linked: {

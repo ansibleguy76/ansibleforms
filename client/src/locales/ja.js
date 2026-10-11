@@ -281,6 +281,9 @@ export default {
       user_update: 'ユーザーを更新',
       user_password_update: 'パスワードを変更',
       user_delete: 'ユーザーを削除',
+      directory_users_block_create: 'ディレクトリユーザーのサインインをブロックまたは許可',
+      directory_users_delete: 'ディレクトリユーザーを削除',
+      directory_users_end_sessions_create: 'ディレクトリユーザーのセッションを終了',
       user_groups_create: 'ユーザーをグループに追加',
       user_groups_delete: 'ユーザーをグループから削除',
     },
@@ -598,6 +601,46 @@ export default {
       lastRun: '最終実行',
       createdAt: '作成日時',
       expiresAt: '有効期限',
+    },
+    // the LDAP and SSO users and groups beside the local ones : their source, their sign-in
+    directory: {
+      source: 'ソース',
+      sourceLocal: 'ローカル',
+      sourceLdap: 'LDAP',
+      sourceAzuread: 'Entra ID',
+      sourceOidc: 'OIDC',
+      blocked: 'サインインはブロック中',
+      blockedShort: 'ブロック中',
+      neverSignedIn: 'サインイン履歴なし',
+      displayName: '名前',
+      firstSeen: '初回確認',
+      lastLogin: '最終サインイン',
+      signIn: 'サインイン',
+      signInAllowed: '許可',
+      blockSignIn: 'サインインをブロック',
+      allowSignIn: 'サインインを許可',
+      endSessions: 'セッションを終了',
+      forget: '削除',
+      blockConfirm:
+        '{name} のサインインをブロックしますか？セッションは直ちに終了し、再び許可するまですべてのサインインが拒否されます。',
+      forgetConfirm:
+        '{name} を削除しますか？記録は削除され、次回のサインインで再作成されます。ジョブ、保存済みジョブ、スケジュールは残ります。',
+      blockedNote:
+        '管理者がこのユーザーのサインインをブロックしました。セッションは終了し、すべてのサインインが拒否されます。',
+      neverNote:
+        '構成のロールはこのユーザーを指定していますが、まだサインインしていません。グループは初回サインイン時にわかります。',
+      readOnlyNote:
+        'このユーザーは {source} から来ています。ユーザー情報とグループはサインインのたびにそこから読み取られ、ここでは最後のサインイン時点のものを表示します。',
+      groupReadOnlyNote:
+        'このグループは {source} から来ています。ユーザーは最後のサインイン時にこのグループで確認されたユーザーです。',
+      sessionsEnded: '{name} のセッションを終了しました。',
+      nowBlocked: '{name} のサインインはブロックされています。',
+      nowAllowed: '{name} のサインインは許可されています。',
+      forgotten: '{name} を削除しました。',
+      notFound: '{source} にユーザー「{name}」は存在しません。',
+      groupNotFound: '{source} にグループ「{name}」は存在しません。',
+      noMember: 'このグループで確認されたユーザーはまだいません。',
+      noGroupSeen: '最後のサインインで確認されたグループはありません。',
     },
     // what a settings page links to its record : the Forms, Jobs, Activity and Used by tabs
     linked: {

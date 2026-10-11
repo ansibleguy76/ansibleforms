@@ -1,6 +1,7 @@
-// The number of stored jobs and planned jobs a local user keeps, for the users list : its
-// stored jobs are those whose username is `local/<username>`, its schedules those that run as
-// it (their owner, written by Run later) ; a schedule an admin made has no owner, nobody's.
+// The number of stored jobs and planned jobs a user keeps, for the users list : its stored jobs
+// are those whose username is `<type>/<username>` (local, or an LDAP or SSO user's source), its
+// schedules those that run as it (their owner, written by Run later) ; a schedule an admin made
+// has no owner, nobody's.
 import CrudModel from '../models/crud.model.js';
 import logger from './logger.js';
 
@@ -43,10 +44,11 @@ function ownerOf(schedule) {
 }
 
 /**
- * Adds stored_job_count and schedule_count to each local user.
+ * Adds stored_job_count and schedule_count to each user.
  *
  * Args:
- *   users (object[]): the users, each { username }.
+ *   users (object[]): the users, each { username, source? } - source the type (local when
+ *     none).
  *   storedJobs (object[]|undefined): the stored jobs, each { username } ; read when not given.
  *   schedules (object[]|undefined): the schedules, each { owner } ; read when not given.
  *
@@ -62,7 +64,7 @@ export async function withUserJobCounts(users, storedJobs, schedules) {
   const plannedBy = tally(planned.map(ownerOf));
   return users.map((u) => ({
     ...u,
-    stored_job_count: storedBy.get(`local/${u.username}`) || 0,
-    schedule_count: plannedBy.get(`local/${u.username}`) || 0,
+    stored_job_count: storedBy.get(`${u.source || 'local'}/${u.username}`) || 0,
+    schedule_count: plannedBy.get(`${u.source || 'local'}/${u.username}`) || 0,
   }));
 }

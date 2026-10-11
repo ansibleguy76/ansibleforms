@@ -286,6 +286,9 @@ export default {
       user_update: 'Utilisateur modifié',
       user_password_update: 'Mot de passe modifie',
       user_delete: 'Utilisateur supprimé',
+      directory_users_block_create: "Connexion d'un utilisateur d'annuaire bloquée ou autorisée",
+      directory_users_delete: "Utilisateur d'annuaire oublié",
+      directory_users_end_sessions_create: "Sessions d'un utilisateur d'annuaire terminées",
       user_groups_create: 'Utilisateur ajouté à un groupe',
       user_groups_delete: "Utilisateur retiré d'un groupe",
     },
@@ -605,6 +608,46 @@ export default {
       lastRun: 'Derniere execution',
       createdAt: 'Cree le',
       expiresAt: 'Expire le',
+    },
+    // the LDAP and SSO users and groups beside the local ones : their source, their sign-in
+    directory: {
+      source: 'Origine',
+      sourceLocal: 'Local',
+      sourceLdap: 'LDAP',
+      sourceAzuread: 'Entra ID',
+      sourceOidc: 'OIDC',
+      blocked: 'Connexion bloquée',
+      blockedShort: 'Bloqué',
+      neverSignedIn: 'Jamais connecté',
+      displayName: 'Nom',
+      firstSeen: 'Vu la première fois',
+      lastLogin: 'Dernière connexion',
+      signIn: 'Connexion',
+      signInAllowed: 'Autorisée',
+      blockSignIn: 'Bloquer la connexion',
+      allowSignIn: 'Autoriser la connexion',
+      endSessions: 'Terminer les sessions',
+      forget: 'Oublier',
+      blockConfirm:
+        "Bloquer la connexion de {name} ? Ses sessions se terminent maintenant, et chaque connexion est refusée jusqu'à ce que vous l'autorisiez à nouveau.",
+      forgetConfirm:
+        'Oublier {name} ? Son enregistrement disparaît et revient à sa prochaine connexion. Ses jobs, jobs enregistrés et planifications restent.',
+      blockedNote:
+        'Un administrateur a bloqué la connexion de cet utilisateur : ses sessions sont terminées et chaque connexion est refusée.',
+      neverNote:
+        "Les rôles de la configuration nomment cet utilisateur, mais il ne s'est jamais connecté : ses groupes sont connus à sa première connexion.",
+      readOnlyNote:
+        'Cet utilisateur vient de {source} : qui il est et ses groupes y sont lus à chaque connexion, et affichés ici selon la dernière.',
+      groupReadOnlyNote:
+        'Ce groupe vient de {source} : ses utilisateurs sont ceux vus dedans à leur dernière connexion.',
+      sessionsEnded: 'Les sessions de {name} sont terminées.',
+      nowBlocked: 'La connexion de {name} est bloquée.',
+      nowAllowed: 'La connexion de {name} est autorisée.',
+      forgotten: '{name} est oublié.',
+      notFound: "Il n'y a pas d'utilisateur '{name}' de {source}.",
+      groupNotFound: "Il n'y a pas de groupe '{name}' de {source}.",
+      noMember: 'Aucun utilisateur vu dans ce groupe pour le moment.',
+      noGroupSeen: 'Aucun groupe vu à la dernière connexion.',
     },
     // what a settings page links to its record : the Forms, Jobs, Activity and Used by tabs
     linked: {

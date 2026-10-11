@@ -281,6 +281,9 @@ export default {
       user_update: 'Gebruiker bijgewerkt',
       user_password_update: 'Wachtwoord gewijzigd',
       user_delete: 'Gebruiker verwijderd',
+      directory_users_block_create: 'Aanmelden van directorygebruiker geblokkeerd of toegestaan',
+      directory_users_delete: 'Directorygebruiker vergeten',
+      directory_users_end_sessions_create: 'Sessies van directorygebruiker beëindigd',
       user_groups_create: 'Gebruiker aan een groep toegevoegd',
       user_groups_delete: 'Gebruiker uit een groep verwijderd',
     },
@@ -600,6 +603,46 @@ export default {
       lastRun: 'Laatste uitvoering',
       createdAt: 'Aangemaakt op',
       expiresAt: 'Verloopt op',
+    },
+    // the LDAP and SSO users and groups beside the local ones : their source, their sign-in
+    directory: {
+      source: 'Bron',
+      sourceLocal: 'Lokaal',
+      sourceLdap: 'LDAP',
+      sourceAzuread: 'Entra ID',
+      sourceOidc: 'OIDC',
+      blocked: 'Aanmelden geblokkeerd',
+      blockedShort: 'Geblokkeerd',
+      neverSignedIn: 'Nooit aangemeld',
+      displayName: 'Naam',
+      firstSeen: 'Eerst gezien',
+      lastLogin: 'Laatst aangemeld',
+      signIn: 'Aanmelden',
+      signInAllowed: 'Toegestaan',
+      blockSignIn: 'Aanmelden blokkeren',
+      allowSignIn: 'Aanmelden toestaan',
+      endSessions: 'Sessies beëindigen',
+      forget: 'Vergeten',
+      blockConfirm:
+        'Het aanmelden van {name} blokkeren? De sessies eindigen nu, en elke aanmelding wordt geweigerd tot je het weer toestaat.',
+      forgetConfirm:
+        "{name} vergeten? Het record verdwijnt en komt terug bij de volgende aanmelding. Jobs, opgeslagen jobs en schema's blijven.",
+      blockedNote:
+        'Een beheerder heeft het aanmelden van deze gebruiker geblokkeerd: de sessies zijn beëindigd en elke aanmelding wordt geweigerd.',
+      neverNote:
+        'De rollen van de configuratie noemen deze gebruiker, maar die heeft zich nooit aangemeld: de groepen zijn bekend bij de eerste aanmelding.',
+      readOnlyNote:
+        'Deze gebruiker komt uit {source}: wie het is en de groepen worden daar bij elke aanmelding gelezen, en hier getoond volgens de laatste.',
+      groupReadOnlyNote:
+        'Deze groep komt uit {source}: de gebruikers zijn degenen die er bij hun laatste aanmelding in gezien zijn.',
+      sessionsEnded: 'De sessies van {name} zijn beëindigd.',
+      nowBlocked: 'Het aanmelden van {name} is geblokkeerd.',
+      nowAllowed: 'Het aanmelden van {name} is toegestaan.',
+      forgotten: '{name} is vergeten.',
+      notFound: "Er is geen gebruiker '{name}' uit {source}.",
+      groupNotFound: "Er is geen groep '{name}' uit {source}.",
+      noMember: 'Nog geen gebruiker in deze groep gezien.',
+      noGroupSeen: 'Geen groep gezien bij de laatste aanmelding.',
     },
     // what a settings page links to its record : the Forms, Jobs, Activity and Used by tabs
     linked: {

@@ -283,6 +283,9 @@ export default {
       user_update: 'Usuari actualitzat',
       user_password_update: 'Contrasenya canviada',
       user_delete: 'Usuari suprimit',
+      directory_users_block_create: "Inici de sessió d'usuari de directori bloquejat o permès",
+      directory_users_delete: 'Usuari de directori oblidat',
+      directory_users_end_sessions_create: "Sessions d'usuari de directori finalitzades",
       user_groups_create: 'Usuari afegit a un grup',
       user_groups_delete: "Usuari tret d'un grup",
     },
@@ -601,6 +604,46 @@ export default {
       lastRun: 'Darrera execució',
       createdAt: 'Creat el',
       expiresAt: 'Caduca el',
+    },
+    // the LDAP and SSO users and groups beside the local ones : their source, their sign-in
+    directory: {
+      source: 'Origen',
+      sourceLocal: 'Local',
+      sourceLdap: 'LDAP',
+      sourceAzuread: 'Entra ID',
+      sourceOidc: 'OIDC',
+      blocked: 'Inici de sessió bloquejat',
+      blockedShort: 'Bloquejat',
+      neverSignedIn: 'Mai no ha iniciat sessió',
+      displayName: 'Nom',
+      firstSeen: 'Vist per primer cop',
+      lastLogin: 'Darrer inici de sessió',
+      signIn: 'Inici de sessió',
+      signInAllowed: 'Permès',
+      blockSignIn: "Bloqueja l'inici de sessió",
+      allowSignIn: "Permet l'inici de sessió",
+      endSessions: 'Tanca les sessions',
+      forget: 'Oblida',
+      blockConfirm:
+        "Vols bloquejar l'inici de sessió de {name}? Les seves sessions acaben ara i es rebutja cada inici de sessió fins que el tornis a permetre.",
+      forgetConfirm:
+        "Vols oblidar {name}? El seu registre s'elimina i torna al proper inici de sessió. Els seus treballs, treballs desats i programacions es mantenen.",
+      blockedNote:
+        "Un administrador ha bloquejat l'inici de sessió d'aquest usuari: les seves sessions han acabat i es rebutja cada inici de sessió.",
+      neverNote:
+        'Els rols de la configuració nomenen aquest usuari, però mai no ha iniciat sessió: els seus grups es coneixen al primer inici de sessió.',
+      readOnlyNote:
+        "Aquest usuari ve de {source}: qui és i els seus grups es llegeixen d'allà a cada inici de sessió, i es mostren aquí segons el darrer.",
+      groupReadOnlyNote:
+        'Aquest grup ve de {source}: els seus usuaris són els vistos en ell al seu darrer inici de sessió.',
+      sessionsEnded: 'Les sessions de {name} han acabat.',
+      nowBlocked: "L'inici de sessió de {name} està bloquejat.",
+      nowAllowed: "L'inici de sessió de {name} està permès.",
+      forgotten: "{name} s'ha oblidat.",
+      notFound: "No hi ha cap usuari '{name}' de {source}.",
+      groupNotFound: "No hi ha cap grup '{name}' de {source}.",
+      noMember: "Encara no s'ha vist cap usuari en aquest grup.",
+      noGroupSeen: "No s'ha vist cap grup al darrer inici de sessió.",
     },
     // what a settings page links to its record : the Forms, Jobs, Activity and Used by tabs
     linked: {

@@ -9,6 +9,9 @@ import { unlockAccount } from '../../lib/loginThrottle.js';
 import Group from '../../models/group.model.js';
 import { withUserRoleCounts } from '../../lib/roleCounts.js';
 import { withUserJobCounts } from '../../lib/jobCounts.js';
+import DirectoryUser from '../../models/directoryUser.model.js';
+import { directoryUserRows } from '../../lib/directoryViews.js';
+import { configRoles } from '../../lib/roleCounts.js';
 import authConfig from '../../../config/auth.config.js';
 import Token from '../../models/token.model.js';
 import { revokeUser } from '../../lib/tokenRevocation.js';
@@ -62,8 +65,14 @@ const findAllOr1 = async function(req, res) {
       });
       // and how many roles each has, for the list's Roles column (lib/roleCounts.js), and how
       // many stored jobs and planned jobs it keeps, for its optional columns (lib/jobCounts.js)
-      const counted = await withUserRoleCounts(users, await Group.findAll());
-      res.json(RestResult.list(await withUserJobCounts(counted)));
+      const counted = (await withUserRoleCounts(users, await Group.findAll())).map((u) => ({ ...u, source: 'local' }));
+      // ?directory=1 (the Users list) : the LDAP and SSO users beside them, those seen at
+      // sign-in and those the roles name (lib/directoryViews.js) ; every other caller keeps
+      // the local users only
+      const directory = req.query.directory
+        ? directoryUserRows(await DirectoryUser.findAll(), await configRoles())
+        : [];
+      res.json(RestResult.list(await withUserJobCounts([...counted, ...directory])));
     }
   } catch(err) {
     res.status(500).json(RestResult.error(err.toString()));

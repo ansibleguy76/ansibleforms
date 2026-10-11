@@ -283,6 +283,9 @@ export default {
       user_update: 'Utilizador atualizado',
       user_password_update: 'Palavra-passe alterada',
       user_delete: 'Utilizador eliminado',
+      directory_users_block_create: 'Início de sessão de utilizador de diretório bloqueado ou permitido',
+      directory_users_delete: 'Utilizador de diretório esquecido',
+      directory_users_end_sessions_create: 'Sessões de utilizador de diretório terminadas',
       user_groups_create: 'Utilizador adicionado a um grupo',
       user_groups_delete: 'Utilizador removido de um grupo',
     },
@@ -601,6 +604,46 @@ export default {
       lastRun: 'Última execução',
       createdAt: 'Criado em',
       expiresAt: 'Expira em',
+    },
+    // the LDAP and SSO users and groups beside the local ones : their source, their sign-in
+    directory: {
+      source: 'Origem',
+      sourceLocal: 'Local',
+      sourceLdap: 'LDAP',
+      sourceAzuread: 'Entra ID',
+      sourceOidc: 'OIDC',
+      blocked: 'Início de sessão bloqueado',
+      blockedShort: 'Bloqueado',
+      neverSignedIn: 'Nunca iniciou sessão',
+      displayName: 'Nome',
+      firstSeen: 'Visto pela primeira vez',
+      lastLogin: 'Último início de sessão',
+      signIn: 'Início de sessão',
+      signInAllowed: 'Permitido',
+      blockSignIn: 'Bloquear início de sessão',
+      allowSignIn: 'Permitir início de sessão',
+      endSessions: 'Terminar sessões',
+      forget: 'Esquecer',
+      blockConfirm:
+        'Bloquear o início de sessão de {name}? As sessões terminam agora e cada início de sessão é recusado até o voltar a permitir.',
+      forgetConfirm:
+        'Esquecer {name}? O registo é removido e volta no próximo início de sessão. Os trabalhos, trabalhos guardados e agendamentos ficam.',
+      blockedNote:
+        'Um administrador bloqueou o início de sessão deste utilizador: as sessões terminaram e cada início de sessão é recusado.',
+      neverNote:
+        'Os papéis da configuração nomeiam este utilizador, mas nunca iniciou sessão: os grupos são conhecidos no primeiro início de sessão.',
+      readOnlyNote:
+        'Este utilizador vem de {source}: quem é e os seus grupos são lidos de lá a cada início de sessão, e mostrados aqui segundo o último.',
+      groupReadOnlyNote:
+        'Este grupo vem de {source}: os seus utilizadores são os vistos nele no último início de sessão.',
+      sessionsEnded: 'As sessões de {name} terminaram.',
+      nowBlocked: 'O início de sessão de {name} está bloqueado.',
+      nowAllowed: 'O início de sessão de {name} está permitido.',
+      forgotten: '{name} foi esquecido.',
+      notFound: "Não existe nenhum utilizador '{name}' de {source}.",
+      groupNotFound: "Não existe nenhum grupo '{name}' de {source}.",
+      noMember: 'Ainda nenhum utilizador visto neste grupo.',
+      noGroupSeen: 'Nenhum grupo visto no último início de sessão.',
     },
     // what a settings page links to its record : the Forms, Jobs, Activity and Used by tabs
     linked: {
