@@ -130,22 +130,16 @@ export function searchPages(t, options) {
       link: '/settings/credentials',
     },
     {
-      title: t('sidebar.runners'),
-      section: settings,
-      icon: 'rocket',
-      link: '/settings/runners',
-    },
-    {
-      title: t('sidebar.mail'),
-      section: settings,
-      icon: 'envelope',
-      link: '/settings/mail',
-    },
-    {
       title: t('sidebar.secretStores'),
       section: settings,
       icon: 'vault',
       link: '/settings/secret-stores',
+    },
+    {
+      title: t('sidebar.runners'),
+      section: settings,
+      icon: 'rocket',
+      link: '/settings/runners',
     },
     { title: t('sidebar.ssh'), section: settings, icon: 'key', link: '/settings/ssh' },
     {
@@ -153,6 +147,12 @@ export function searchPages(t, options) {
       section: settings,
       icon: 'server',
       link: '/settings/known-hosts',
+    },
+    {
+      title: t('sidebar.mail'),
+      section: settings,
+      icon: 'envelope',
+      link: '/settings/mail',
     },
     {
       title: t('sidebar.chat'),
