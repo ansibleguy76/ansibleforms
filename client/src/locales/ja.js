@@ -754,7 +754,7 @@ export default {
       banner_info: '情報',
       banner_warning: '警告',
       banner_danger: '危険',
-      bannerUntil: '終了日時',
+      bannerUntil: '表示期限',
       bannerUntilHelp: 'この時刻を過ぎるとお知らせは表示されません。空の場合は削除するまで表示。',
       bannerClose: '閉じる',
       appName: 'アプリケーション名',

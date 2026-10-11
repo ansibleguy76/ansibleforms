@@ -750,7 +750,7 @@ export default {
       banner_info: 'Info',
       banner_warning: 'Warning',
       banner_danger: 'Danger',
-      bannerUntil: 'Until',
+      bannerUntil: 'Show until',
       bannerUntilHelp: 'The announcement hides after this moment. Leave empty to keep it until removed.',
       bannerClose: 'Close',
       appName: 'Application name',

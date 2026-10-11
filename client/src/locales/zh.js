@@ -736,7 +736,7 @@ export default {
       banner_info: '信息',
       banner_warning: '警告',
       banner_danger: '危险',
-      bannerUntil: '截止',
+      bannerUntil: '显示至',
       bannerUntilHelp: '此时间之后公告不再显示；留空则一直显示直到删除。',
       bannerClose: '关闭',
       appName: '应用名称',
