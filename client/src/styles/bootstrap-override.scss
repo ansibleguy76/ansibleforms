@@ -608,3 +608,18 @@
   font-size: 0.65rem;
   filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.5));
 }
+
+// ─── an outline editor's row buttons (Settings > Appearance > Links, Designer > Categories) ───
+// square, as tall as the row's fields ; blue when they may be pressed (btn-outline-primary),
+// and when not, the arrow a very light grey (Bootstrap's own border grey, lighter than the
+// fields') in the fields' outline
+.af-row-btn {
+  width: 2.5rem;
+  padding-left: 0;
+  padding-right: 0;
+}
+.af-row-btn:disabled {
+  color: var(--bs-border-color);
+  border-color: var(--af-field-border);
+  opacity: 1;
+}

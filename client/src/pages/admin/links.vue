@@ -464,7 +464,7 @@ onMounted(async () => {
                   <!-- ← out of its menu, → inside the header link above -->
                   <button
                     type="button"
-                    class="btn af-link-btn"
+                    class="btn af-row-btn"
                     :class="!l.parent ? 'btn-outline-secondary' : 'btn-outline-primary'"
                     :disabled="!l.parent"
                     :title="t('settings.interface.linkOutdent')"
@@ -474,7 +474,7 @@ onMounted(async () => {
                   </button>
                   <button
                     type="button"
-                    class="btn af-link-btn"
+                    class="btn af-row-btn"
                     :class="!canIndent(i) ? 'btn-outline-secondary' : 'btn-outline-primary'"
                     :disabled="!canIndent(i)"
                     :title="holdsLinks(l) ? t('settings.interface.linkHoldsLinks') : t('settings.interface.linkIndent')"
@@ -484,7 +484,7 @@ onMounted(async () => {
                   </button>
                   <button
                     type="button"
-                    class="btn af-link-btn"
+                    class="btn af-row-btn"
                     :class="!canMove(i, -1) ? 'btn-outline-secondary' : 'btn-outline-primary'"
                     :disabled="!canMove(i, -1)"
                     :title="t('settings.interface.linkUp')"
@@ -494,7 +494,7 @@ onMounted(async () => {
                   </button>
                   <button
                     type="button"
-                    class="btn af-link-btn"
+                    class="btn af-row-btn"
                     :class="!canMove(i, 1) ? 'btn-outline-secondary' : 'btn-outline-primary'"
                     :disabled="!canMove(i, 1)"
                     :title="t('settings.interface.linkDown')"
@@ -505,7 +505,7 @@ onMounted(async () => {
                 </div>
                 <button
                   type="button"
-                  class="btn btn-outline-danger af-link-btn"
+                  class="btn btn-outline-danger af-row-btn"
                   :title="t('common.delete')"
                   @click="removeLink(i)"
                 >
@@ -546,19 +546,6 @@ onMounted(async () => {
 /* the column names : as a field's label on the settings pages (form-label fw-bold) */
 .af-links-head {
   font-weight: 700;
-}
-/* a row's buttons : square, as tall as its fields */
-.af-link-btn {
-  width: 2.5rem;
-  padding-left: 0;
-  padding-right: 0;
-}
-/* a move that may not be pressed : its arrow a very light grey (Bootstrap's own border grey,
-   lighter than the fields'), its outline the fields' */
-.af-link-btn:disabled {
-  color: var(--bs-border-color);
-  border-color: var(--af-field-border);
-  opacity: 1;
 }
 </style>
 <route lang="yaml">
