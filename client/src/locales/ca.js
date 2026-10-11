@@ -1690,7 +1690,7 @@ export default {
     userExtravarsKeys: 'Només aquestes claus',
     formScmBranch: 'Branca SCM',
     formExecEnv: "Entorn d'execució",
-    formInstanceGroups: "Grups d'instàncies (separats per comes)",
+    formInstanceGroups: "Grups d'instàncies",
     formAnsibleCreds: "Credencials d'Ansible",
     formVaultCreds: 'Credencials de Vault',
     helpText: "Text d'ajuda (es mostra a la pàgina del formulari)",

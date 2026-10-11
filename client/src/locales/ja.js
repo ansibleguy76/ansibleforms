@@ -1661,7 +1661,7 @@ export default {
     userExtravarsKeys: 'これらのキーのみ',
     formScmBranch: 'SCM ブランチ',
     formExecEnv: '実行環境',
-    formInstanceGroups: 'インスタンスグループ (カンマ区切り)',
+    formInstanceGroups: 'インスタンスグループ',
     formAnsibleCreds: 'Ansible の認証情報',
     formVaultCreds: 'Vault の認証情報',
     helpText: 'ヘルプテキスト (フォームページに表示)',

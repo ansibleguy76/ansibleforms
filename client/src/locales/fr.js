@@ -1696,7 +1696,7 @@ export default {
     userExtravarsKeys: 'Seulement ces clés',
     formScmBranch: 'Branche SCM',
     formExecEnv: "Environnement d'exécution",
-    formInstanceGroups: "Groupes d'instances (séparés par des virgules)",
+    formInstanceGroups: "Groupes d'instances",
     formAnsibleCreds: 'Identifiants Ansible',
     formVaultCreds: 'Identifiants Vault',
     helpText: "Texte d'aide (affiché sur la page du formulaire)",

@@ -1703,7 +1703,7 @@ export default {
     userExtravarsKeys: 'Nur diese Schlüssel',
     formScmBranch: 'SCM-Branch',
     formExecEnv: 'Ausführungsumgebung',
-    formInstanceGroups: 'Instanzgruppen (kommagetrennt)',
+    formInstanceGroups: 'Instanzgruppen',
     formAnsibleCreds: 'Ansible-Anmeldedaten',
     formVaultCreds: 'Vault-Anmeldedaten',
     helpText: 'Hilfetext (auf der Formularseite angezeigt)',

@@ -1690,7 +1690,7 @@ export default {
     userExtravarsKeys: 'Apenas estas chaves',
     formScmBranch: 'Ramo SCM',
     formExecEnv: 'Ambiente de execução',
-    formInstanceGroups: 'Grupos de instâncias (separados por vírgulas)',
+    formInstanceGroups: 'Grupos de instâncias',
     formAnsibleCreds: 'Credenciais Ansible',
     formVaultCreds: 'Credenciais Vault',
     helpText: 'Texto de ajuda (mostrado na página do formulário)',

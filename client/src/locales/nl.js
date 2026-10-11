@@ -1682,7 +1682,7 @@ export default {
     userExtravarsKeys: 'Alleen deze sleutels',
     formScmBranch: 'SCM-branch',
     formExecEnv: 'Uitvoeringsomgeving',
-    formInstanceGroups: 'Instantiegroepen (kommagescheiden)',
+    formInstanceGroups: 'Instantiegroepen',
     formAnsibleCreds: 'Ansible-referenties',
     formVaultCreds: 'Vault-referenties',
     helpText: 'Helptekst (getoond op de formulierpagina)',

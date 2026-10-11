@@ -1681,7 +1681,7 @@ export default {
     userExtravarsKeys: 'Solo queste chiavi',
     formScmBranch: 'Branch SCM',
     formExecEnv: 'Ambiente di esecuzione',
-    formInstanceGroups: 'Gruppi di istanze (separati da virgola)',
+    formInstanceGroups: 'Gruppi di istanze',
     formAnsibleCreds: 'Credenziali Ansible',
     formVaultCreds: 'Credenziali Vault',
     helpText: 'Testo di aiuto (mostrato nella pagina del modulo)',

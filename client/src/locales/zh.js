@@ -1623,7 +1623,7 @@ export default {
     userExtravarsKeys: '仅这些键',
     formScmBranch: 'SCM 分支',
     formExecEnv: '执行环境',
-    formInstanceGroups: '实例组（逗号分隔）',
+    formInstanceGroups: '实例组',
     formAnsibleCreds: 'Ansible 凭据',
     formVaultCreds: 'Vault 凭据',
     helpText: '帮助文本（显示在表单页面上）',
