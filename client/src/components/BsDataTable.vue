@@ -10,6 +10,7 @@
  *                           filterType?: 'number' | 'boolean' | 'gt0',
  *                           align?: 'end' (numbers : header, filter and cells to the right),
  *                           width?: a CSS width for the column (the rest share what is left),
+ *                             or (tableWidth px) => a CSS width, to follow the table's width
  *                           hideBelow?: a width in px - the column is left out while the table
  *                             is narrower, so the wide ones keep room on a small screen }]
  *  pageSize       Number  Initial page size (default 25) — a page size the user
@@ -116,6 +117,22 @@ onBeforeUnmount(() => tableObserver?.disconnect());
 const visibleColumns = computed(() =>
   props.columns.filter((c) => !hiddenColumns.value.has(c.key) && !(c.hideBelow && tableWidth.value < c.hideBelow)),
 );
+// every column shown with a width of its own : an empty column after them takes the room left,
+// so the columns keep their widths rather than stretching (a count far from its neighbour)
+const spacer = computed(() => visibleColumns.value.length > 0 && visibleColumns.value.every((c) => c.width));
+/**
+ * A column's width : as given, or worked out from the table's width (a share up to a cap).
+ *
+ * Args:
+ *   col (object): the column.
+ *
+ * Returns:
+ *   string|null: a CSS width, or null for a share of what is left.
+ */
+function colWidth(col) {
+  if (typeof col.width === 'function') return col.width(tableWidth.value);
+  return col.width || null;
+}
 
 function toggleColumn(key) {
   const s = new Set(hiddenColumns.value);
@@ -505,14 +522,11 @@ function clearSelection() {
 // ─── CSV export ───────────────────────────────────────────────────────────────
 // The filtered rows, every column, as the plain text the table shows. CSV rather than
 // .xlsx : no library, and Excel opens it. The BOM makes Excel read it as UTF-8.
-// a spacer column (`spacer: true`) only takes up the width left : no data, not exported and
-// not in the Columns menu
-const dataColumns = computed(() => props.columns.filter((c) => !c.spacer));
 
 function exportCsv() {
-  const lines = [dataColumns.value.map((c) => csvCell(c.label)).join(',')];
+  const lines = [props.columns.map((c) => csvCell(c.label)).join(',')];
   for (const item of filteredItems.value) {
-    lines.push(dataColumns.value.map((col) => csvCell(cellPlain(item, col))).join(','));
+    lines.push(props.columns.map((col) => csvCell(cellPlain(item, col))).join(','));
   }
   const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
@@ -572,7 +586,7 @@ function exportCsv() {
         <div class="ms-auto d-flex align-items-center gap-2">
           <!-- Column picker, with presets -->
           <BsColumnPicker
-            :columns="dataColumns"
+            :columns="columns"
             :hidden="hiddenColumns"
             :name="name"
             :buttonClass="toolButton"
@@ -614,7 +628,7 @@ function exportCsv() {
               :key="col.key"
               :class="{ 'bs-dt-sortable': col.sortable, 'text-end': col.align === 'end' }"
               @click="col.sortable ? toggleSort(col.key) : undefined"
-              :style="{ userSelect: 'none', whiteSpace: 'nowrap', width: col.width || null }"
+              :style="{ userSelect: 'none', whiteSpace: 'nowrap', width: colWidth(col) }"
             >
               {{ col.label }}
               <span v-if="col.sortable" class="text-muted ms-1" style="font-size: 0.7em">
@@ -627,6 +641,7 @@ function exportCsv() {
               </span>
             </th>
             <!-- Row actions header -->
+            <th v-if="spacer" class="bs-dt-spacer"></th>
             <th v-if="$slots['row-actions']" style="width: 3.5rem"></th>
           </tr>
         </thead>
@@ -667,13 +682,16 @@ function exportCsv() {
               </template>
               <span v-else v-html="cellHtml(item, col)" />
             </td>
+            <td v-if="spacer" class="bs-dt-spacer"></td>
             <td v-if="$slots['row-actions']" class="bs-dt-row-actions">
               <slot name="row-actions" :item="item" />
             </td>
           </tr>
           <tr v-if="!pageItems.length">
             <td
-              :colspan="visibleColumns.length + (selectable ? 1 : 0) + ($slots['row-actions'] ? 1 : 0)"
+              :colspan="
+                visibleColumns.length + (selectable ? 1 : 0) + (spacer ? 1 : 0) + ($slots['row-actions'] ? 1 : 0)
+              "
               class="text-center text-muted py-3"
             >
               {{ t('common.noData') }}

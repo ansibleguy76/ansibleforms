@@ -72,3 +72,33 @@ export function headerWidth(label, sortable = true, fallback = '8rem', end = fal
   table.remove();
   return width > 0 ? `${Math.ceil(width) + 10}px` : fallback;
 }
+
+/**
+ * A column width that follows the table : a share of the room the other columns leave, never
+ * more than a cap. A wide screen keeps the column at the cap (the table's spacer takes the
+ * rest), a narrow one shrinks it, so the table never gets wider than its frame.
+ *
+ * Args:
+ *   share (number): the share of the room left, 0 to 1 (the shared columns' together : 1 or less).
+ *   cap (number): the most, in px.
+ *   reserve (number): the px the other columns take (the checkbox, the counts, the row menu).
+ *
+ * Returns:
+ *   Function: (tableWidth px) => a CSS width, for a BsDataTable column's width.
+ */
+export function shareUpTo(share, cap, reserve = 0) {
+  return (tableWidth) => `${Math.round(Math.max(0, Math.min(cap, (tableWidth - reserve) * share)))}px`;
+}
+
+/**
+ * A width in px, from a CSS width in px (headerWidth's).
+ *
+ * Args:
+ *   width (string): '123px'.
+ *
+ * Returns:
+ *   number: 123 ; 128 when it is not in px.
+ */
+export function pxOf(width) {
+  return parseInt(width, 10) || 128;
+}

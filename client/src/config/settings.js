@@ -6,7 +6,7 @@ import Helpers from '@/lib/Helpers';
 import i18n from '@/plugins/i18n';
 import { describeCron } from '@/config/cronDescribe';
 import { cronValidationMessage } from './cron';
-import { headerWidth, PILL } from '@/lib/tableCells';
+import { headerWidth, PILL, shareUpTo, pxOf } from '@/lib/tableCells';
 import { formPath } from '@/lib/formsPath';
 
 // A cron field is validated with the SAME check the editor uses (config/cron.js), which
@@ -361,6 +361,15 @@ export default function getSettings(t) {
         },
         {
           key: 'name',
+          // room for a group's name : the table's spacer takes what is left
+          width: shareUpTo(
+            0.4,
+            256,
+            44 +
+              56 +
+              pxOf(headerWidth(t('settings.users.labelPlural'), true, '8rem', true)) +
+              pxOf(headerWidth(t('settings.settingsPage.roles'), true, '8rem', true)),
+          ),
           label: t('settings.fields.name'),
           sortable: true,
           required: true,
@@ -370,6 +379,15 @@ export default function getSettings(t) {
         // what the group is for, or who owns it
         {
           key: 'description',
+          // room for a description, the counts beside it
+          width: shareUpTo(
+            0.6,
+            384,
+            44 +
+              56 +
+              pxOf(headerWidth(t('settings.users.labelPlural'), true, '8rem', true)) +
+              pxOf(headerWidth(t('settings.settingsPage.roles'), true, '8rem', true)),
+          ),
           label: t('settings.fields.description'),
           sortable: true,
           required: false,
