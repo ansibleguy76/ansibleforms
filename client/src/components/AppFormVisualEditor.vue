@@ -59,6 +59,9 @@ import {
   setFormIn,
   renameFormCredential,
   EMAIL,
+  orderedForms,
+  placeOf,
+  orderFor,
 } from '@/lib/formDoc';
 
 const props = defineProps({
@@ -66,6 +69,8 @@ const props = defineProps({
   readOnly: { type: Boolean, default: false },
   categoryOptions: { type: Array, default: () => [] },
   roleOptions: { type: Array, default: () => [] },
+  // the other forms of the forms list, { name, order } : the places this one can go
+  otherForms: { type: Array, default: () => [] },
 });
 const emit = defineEmits(['update:modelValue']);
 const { t } = useI18n();
@@ -448,15 +453,21 @@ function setFlag(key, on) {
   change((d) => setFormValue(d, key, on ? true : undefined));
 }
 
+// ─── its place in the forms list : picked, its order worked out (lib/formDoc.js) ───
+const placesAfter = computed(() => orderedForms(props.otherForms));
+const place = computed(() =>
+  placeOf(setting('order') === '' ? undefined : setting('order'), form.value?.name, props.otherForms),
+);
+
 /**
- * Sets the form's order : a number, or no key.
+ * Puts the form at a place in the forms list : first, after another, or none (last,
+ * alphabetically) ; only its own order changes.
  *
  * Args:
- *   text (string): what was typed.
+ *   where (string): 'first', 'after:<name>' or ''.
  */
-function setOrder(text) {
-  const n = Number(text);
-  change((d) => setFormValue(d, 'order', text !== '' && !isNaN(n) ? n : undefined));
+function setPlace(where) {
+  change((d) => setFormValue(d, 'order', orderFor(where, props.otherForms)));
 }
 
 /**
@@ -848,17 +859,24 @@ defineExpose({
         </div>
         <div v-if="allows('order')">
           <label class="form-label fw-bold">{{ t('designer.formOrder') }}</label>
+          <!-- a place among the other forms : the order is worked out from it -->
           <div class="input-group">
             <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="arrow-down-1-9" /></span>
-            <input
-              type="number"
-              class="form-control"
-              :value="setting('order')"
-              :disabled="locked"
-              @change="setOrder($event.target.value)"
-            />
+            <select class="form-select" :value="place" :disabled="locked" @change="setPlace($event.target.value)">
+              <option value="first">{{ t('designer.orderFirst') }}</option>
+              <option v-for="f in placesAfter" :key="f.name" :value="'after:' + f.name">
+                {{ t('designer.orderAfter', { name: f.name }) }}
+              </option>
+              <option value="">{{ t('designer.orderNone') }}</option>
+            </select>
           </div>
-          <div class="form-text">{{ t('designer.helpOrder') }}</div>
+          <div class="form-text">
+            {{
+              typeof setting('order') === 'number'
+                ? t('designer.helpOrderAt', { order: setting('order') })
+                : t('designer.helpOrderNone')
+            }}
+          </div>
         </div>
         <div v-if="allows('launchValidation')">
           <label class="form-label fw-bold">{{ t('designer.formLaunchValidation') }}</label>

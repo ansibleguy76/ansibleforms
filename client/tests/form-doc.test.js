@@ -27,6 +27,9 @@ import {
   setFormIn,
   renameFormCredential,
   EMAIL,
+  orderedForms,
+  placeOf,
+  orderFor,
 } from '@/lib/formDoc';
 
 const FORM = `# the form
@@ -240,5 +243,37 @@ describe("the form's nested settings", () => {
   test('an email as the schema takes it', () => {
     expect(EMAIL.test('ops@example.com')).toBe(true);
     expect(EMAIL.test('ops@')).toBe(false);
+  });
+});
+
+describe("the form's place in the forms list", () => {
+  const others = [
+    { name: 'Deploy', order: 5 },
+    { name: 'Hello', order: 2 },
+    { name: 'Backup', order: 3 },
+    { name: 'Loose' },
+  ];
+
+  test('the forms with an order, as the list sorts them', () => {
+    expect(orderedForms(others).map((f) => f.name)).toEqual(['Hello', 'Backup', 'Deploy']);
+  });
+
+  test('where it sits now', () => {
+    expect(placeOf(undefined, 'Me', others)).toBe('');
+    expect(placeOf(1, 'Me', others)).toBe('first');
+    expect(placeOf(4, 'Me', others)).toBe('after:Backup');
+    expect(placeOf(9, 'Me', others)).toBe('after:Deploy');
+  });
+
+  test('the order of a place : a whole number when there is room, else halfway, none removes it', () => {
+    expect(orderFor('first', others)).toBe(1);
+    expect(orderFor('after:Backup', others)).toBe(4);
+    expect(orderFor('after:Hello', others)).toBe(2.5);
+    expect(orderFor('after:Deploy', others)).toBe(6);
+    expect(orderFor('', others)).toBeUndefined();
+    expect(orderFor('first', [])).toBe(1);
+    // the place it gets is the place asked for
+    for (const place of ['first', 'after:Hello', 'after:Backup', 'after:Deploy'])
+      expect(placeOf(orderFor(place, others), 'Me', others), place).toBe(place);
   });
 });

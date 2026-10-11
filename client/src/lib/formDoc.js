@@ -565,3 +565,67 @@ export function renameFormCredential(doc, from, to) {
 
 // an email as the schema takes it (server/schema/form_schema.json, /email)
 export const EMAIL = /^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,64}$/;
+
+// ─── the form's place in the forms list (its order) ───────────────────────────
+
+/**
+ * The forms with an order, as the forms list sorts them (pages/index.vue : by order, then by
+ * name) - the places another form can go after.
+ *
+ * Args:
+ *   others (object[]): the other forms, { name, order }.
+ *
+ * Returns:
+ *   object[]: those with a number, sorted.
+ */
+export function orderedForms(others) {
+  return others
+    .filter((f) => typeof f.order === 'number' && Number.isFinite(f.order))
+    .sort((a, b) => a.order - b.order || String(a.name).localeCompare(String(b.name)));
+}
+
+/**
+ * Where a form sits now : 'first', 'after:<name>' of the form just before it, or '' without an
+ * order (the list puts it last, alphabetically).
+ *
+ * Args:
+ *   order (number|undefined): its order.
+ *   name (string): its name (ties are sorted by name).
+ *   others (object[]): the other forms, { name, order }.
+ *
+ * Returns:
+ *   string: its place.
+ */
+export function placeOf(order, name, others) {
+  if (typeof order !== 'number' || !Number.isFinite(order)) return '';
+  const before = orderedForms(others).filter(
+    (f) => f.order < order || (f.order === order && String(f.name).localeCompare(String(name)) < 0),
+  );
+  return before.length ? `after:${before[before.length - 1].name}` : 'first';
+}
+
+/**
+ * The order that puts a form at a place : a whole number when there is room, else halfway
+ * between its two neighbours (the order takes any number : no other form changes).
+ *
+ * Args:
+ *   place (string): 'first', 'after:<name>', or '' for none.
+ *   others (object[]): the other forms, { name, order }.
+ *
+ * Returns:
+ *   number|undefined: the order ; undefined for none.
+ */
+export function orderFor(place, others) {
+  if (!place) return undefined;
+  const list = orderedForms(others);
+  if (!list.length) return 1;
+  if (place === 'first') return Math.ceil(list[0].order) - 1;
+  const i = list.findIndex((f) => `after:${f.name}` === place);
+  if (i < 0) return undefined;
+  const a = list[i].order;
+  const next = list.slice(i + 1).find((f) => f.order > a);
+  if (!next) return Math.floor(a) + 1;
+  const whole = Math.floor(a) + 1;
+  if (whole < next.order) return whole;
+  return (a + next.order) / 2;
+}

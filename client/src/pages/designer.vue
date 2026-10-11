@@ -1881,6 +1881,12 @@ watch(currentForm, (form) => {
 const visualCategoryOptions = computed(() =>
   categoryPaths(Array.isArray(categoriesObj.value) ? categoriesObj.value : []),
 );
+// the other forms of the forms list (not the subforms), for the place of this one
+const visualOtherForms = computed(() =>
+  formsObj.value
+    .filter((f) => f && f.type !== 'subform' && f.name && f.name !== currentFormName.value)
+    .map((f) => ({ name: String(f.name), order: typeof f.order === 'number' ? f.order : undefined })),
+);
 const visualRoleOptions = computed(() =>
   (Array.isArray(rolesObj.value) ? rolesObj.value : [])
     .map((r) => (r && typeof r === 'object' ? String(r.name ?? '').trim() : ''))
@@ -5479,6 +5485,7 @@ onBeforeUnmount(() => {
                         :readOnly="!(lock && lock.match) || configTemplated"
                         :categoryOptions="visualCategoryOptions"
                         :roleOptions="visualRoleOptions"
+                        :otherForms="visualOtherForms"
                       />
                     </div>
                     <div v-else-if="editorTarget" :key="'formeditor-' + currentForm">
