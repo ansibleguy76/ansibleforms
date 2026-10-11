@@ -392,3 +392,99 @@ export function setFieldValues(doc, node, text) {
   node.set('values', doc.createNode(parsed));
   return '';
 }
+
+// ─── a field's properties of its type (config/fieldProperties.js) ─────────────
+
+/**
+ * A property of a field as its input shows it : text, a number, a flag, a choice, a scalar (text
+ * or a number), or YAML text for a list or an object.
+ *
+ * Args:
+ *   node (object): the field.
+ *   prop (object): the property ({ key, kind }).
+ *
+ * Returns:
+ *   any: the value as its input takes it.
+ */
+export function fieldPropValue(node, prop) {
+  const value = node.get(prop.key, true);
+  if (value === undefined || value === null) return prop.kind === 'switch' ? false : '';
+  const json = YAML.isNode(value) ? value.toJSON() : value;
+  if (prop.kind === 'yaml') return typeof json === 'string' ? json : YAML.stringify(json).trimEnd();
+  if (prop.kind === 'switch') return json === true;
+  return json === null || json === undefined ? '' : String(json);
+}
+
+/**
+ * Sets a property of a field from its input : a number as a number (empty removes it), a flag
+ * as true or false, YAML as what it says (a list, an object, a value) ; a scalar keeps its node.
+ *
+ * Args:
+ *   doc (object): the form's YAML document.
+ *   node (object): the field.
+ *   prop (object): the property ({ key, kind }).
+ *   input (any): what was typed or picked.
+ *
+ * Returns:
+ *   string: '' when set, else why not (YAML that does not parse, not a number).
+ */
+export function setFieldProp(doc, node, prop, input) {
+  if (prop.kind === 'switch') {
+    setKey(node, prop.key, !!input);
+    return '';
+  }
+  if (prop.kind === 'number') {
+    const text = String(input ?? '').trim();
+    if (!text) {
+      node.delete(prop.key);
+      return '';
+    }
+    const n = Number(text);
+    if (isNaN(n)) return 'not a number';
+    setKey(node, prop.key, n);
+    return '';
+  }
+  if (prop.kind === 'yaml') {
+    let parsed;
+    try {
+      parsed = YAML.parse(String(input ?? ''));
+    } catch (e) {
+      return e?.message || String(e);
+    }
+    if (parsed === null || parsed === undefined) parsed = '';
+    if (typeof parsed === 'object') node.set(prop.key, doc.createNode(parsed));
+    else setKey(node, prop.key, parsed);
+    return '';
+  }
+  // text or a number (minValue, maxLength...) : a whole number that spells itself back is one
+  if (prop.kind === 'scalar') {
+    const text = String(input ?? '').trim();
+    const n = Number(text);
+    setKey(node, prop.key, text !== '' && Number.isFinite(n) && String(n) === text ? n : text);
+    return '';
+  }
+  setKey(node, prop.key, String(input ?? ''));
+  return '';
+}
+
+/**
+ * Adds a property to a field, with what a new one starts as : empty text, 0, on, the first
+ * choice, an empty list or object.
+ *
+ * Args:
+ *   doc (object): the form's YAML document.
+ *   node (object): the field.
+ *   prop (object): the property ({ key, kind, options, init }).
+ */
+export function addFieldProp(doc, node, prop) {
+  if (node.has(prop.key)) return;
+  const start = {
+    text: '',
+    scalar: '',
+    number: 0,
+    switch: true,
+    select: prop.options?.[0] ?? '',
+    yaml: prop.init ?? '',
+  }[prop.kind];
+  node.set(prop.key, typeof start === 'object' ? doc.createNode(start) : start);
+}

@@ -1542,7 +1542,9 @@ export default {
     visualDuplicateField: 'Un autre champ porte ce nom.',
     visualNoName: "Un champ a besoin d'un nom.",
     visualFieldsHint:
-      "Le nom, le type, le libellé et l'obligation sont dans la ligne de chaque champ ; son ▸ déplie l'aide, la valeur par défaut, la sortie et les valeurs. Les tâches, expressions et le reste restent dans le YAML, tels qu'écrits.",
+      "Le nom, le libellé et l'obligation sont dans la ligne de chaque champ ; son ▸ déplie son type et chaque propriété de ce type.",
+    visualAddProperty: 'Ajouter une propriété…',
+    visualRemoveProperty: 'Retirer cette propriété',
     visualFieldDetails: 'Son aide, sa valeur par défaut, sa sortie et ses valeurs',
     visualValuesHelp: 'Une liste YAML : une valeur par ligne (- dev), ou des objets (- name: Rome).',
     visualYamlError: "Le YAML ne peut pas être affiché ici : corrigez-le dans l'onglet YAML",

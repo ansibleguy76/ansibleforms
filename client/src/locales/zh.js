@@ -1471,8 +1471,9 @@ export default {
     visualRequired: '必填',
     visualDuplicateField: '另一个字段使用了此名称。',
     visualNoName: '字段需要名称。',
-    visualFieldsHint:
-      '名称、类型、标签和必填位于每个字段的行中；其 ▸ 展开帮助、默认值、输出和取值。作业、表达式等保留在 YAML 中，保持原样。',
+    visualFieldsHint: '名称、标签和必填位于每个字段的行中；其 ▸ 展开类型及该类型的所有属性。',
+    visualAddProperty: '添加属性…',
+    visualRemoveProperty: '移除此属性',
     visualFieldDetails: '帮助、默认值、输出和取值',
     visualValuesHelp: 'YAML 列表：每行一个值（- dev），或对象（- name: Rome）。',
     visualYamlError: '无法在此显示 YAML：请在 YAML 标签中修正',

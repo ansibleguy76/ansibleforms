@@ -1509,7 +1509,9 @@ export default {
     visualDuplicateField: '別のフィールドがこの名前を使っています。',
     visualNoName: 'フィールドには名前が必要です。',
     visualFieldsHint:
-      '名前、種類、ラベル、必須は各フィールドの行にあります。▸ でヘルプ、既定値、出力、値を展開します。ジョブや式などはそのまま YAML に残ります。',
+      '名前、ラベル、必須は各フィールドの行にあります。▸ で種類とその種類のすべてのプロパティを展開します。',
+    visualAddProperty: 'プロパティを追加…',
+    visualRemoveProperty: 'このプロパティを削除',
     visualFieldDetails: 'ヘルプ、既定値、出力、値',
     visualValuesHelp: 'YAML のリスト：1 行に 1 つの値（- dev）、またはオブジェクト（- name: Rome）。',
     visualYamlError: 'ここでは YAML を表示できません：YAML タブで修正してください',

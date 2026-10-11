@@ -1528,7 +1528,9 @@ export default {
     visualDuplicateField: 'Een ander veld heeft deze naam.',
     visualNoName: 'Een veld heeft een naam nodig.',
     visualFieldsHint:
-      'Naam, type, label en verplicht staan in de rij van elk veld; zijn ▸ klapt help, standaardwaarde, uitvoer en waarden open. Jobs, expressies en de rest blijven in de YAML, zoals geschreven.',
+      'Naam, label en verplicht staan in de rij van elk veld; zijn ▸ klapt zijn type en elke eigenschap van dat type open.',
+    visualAddProperty: 'Eigenschap toevoegen…',
+    visualRemoveProperty: 'Deze eigenschap verwijderen',
     visualFieldDetails: 'Help, standaardwaarde, uitvoer en waarden',
     visualValuesHelp: 'Een YAML-lijst: één waarde per regel (- dev), of objecten (- name: Rome).',
     visualYamlError: 'De YAML kan hier niet worden getoond : corrigeer hem in het tabblad YAML',

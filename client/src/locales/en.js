@@ -1507,7 +1507,9 @@ export default {
     visualDuplicateField: 'Another field has this name.',
     visualNoName: 'A field needs a name.',
     visualFieldsHint:
-      "Name, type, label and required are in each field's row; its ▸ unfolds its help, default, output and values. Jobs, expressions and the rest stay in the YAML, as written.",
+      "Name, label and required are in each field's row; its ▸ unfolds its type and every property that type takes.",
+    visualAddProperty: 'Add property…',
+    visualRemoveProperty: 'Remove this property',
     visualFieldDetails: 'Its help, default, output and values',
     visualValuesHelp: 'A YAML list: one value per line (- dev), or objects (- name: Rome).',
     visualYamlError: 'The YAML cannot be shown here : fix it in the YAML tab',

@@ -1549,7 +1549,9 @@ export default {
     visualDuplicateField: 'Ein anderes Feld hat diesen Namen.',
     visualNoName: 'Ein Feld braucht einen Namen.',
     visualFieldsHint:
-      'Name, Typ, Bezeichnung und Pflicht stehen in der Zeile jedes Feldes; sein ▸ klappt Hilfe, Standardwert, Ausgabe und Werte auf. Jobs, Ausdrücke und der Rest bleiben im YAML, wie geschrieben.',
+      'Name, Bezeichnung und Pflicht stehen in der Zeile jedes Feldes; sein ▸ klappt seinen Typ und jede Eigenschaft dieses Typs auf.',
+    visualAddProperty: 'Eigenschaft hinzufügen…',
+    visualRemoveProperty: 'Diese Eigenschaft entfernen',
     visualFieldDetails: 'Hilfe, Standardwert, Ausgabe und Werte',
     visualValuesHelp: 'Eine YAML-Liste: ein Wert pro Zeile (- dev) oder Objekte (- name: Rome).',
     visualYamlError: 'Das YAML kann hier nicht angezeigt werden : im Tab YAML korrigieren',

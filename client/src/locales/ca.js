@@ -1537,7 +1537,9 @@ export default {
     visualDuplicateField: 'Un altre camp té aquest nom.',
     visualNoName: 'Un camp necessita un nom.',
     visualFieldsHint:
-      'Nom, tipus, etiqueta i obligatori són a la fila de cada camp; el seu ▸ desplega ajuda, valor per defecte, sortida i valors. Les tasques, expressions i la resta queden al YAML, tal com estan escrits.',
+      'Nom, etiqueta i obligatori són a la fila de cada camp; el seu ▸ desplega el seu tipus i cada propietat que aquest tipus admet.',
+    visualAddProperty: 'Afegir propietat…',
+    visualRemoveProperty: 'Treure aquesta propietat',
     visualFieldDetails: 'La seva ajuda, valor per defecte, sortida i valors',
     visualValuesHelp: 'Una llista YAML: un valor per línia (- dev), o objectes (- name: Rome).',
     visualYamlError: 'El YAML no es pot mostrar aquí : corregiu-lo a la pestanya YAML',

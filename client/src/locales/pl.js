@@ -1522,7 +1522,9 @@ export default {
     visualDuplicateField: 'Inne pole ma tę nazwę.',
     visualNoName: 'Pole musi mieć nazwę.',
     visualFieldsHint:
-      'Nazwa, typ, etykieta i wymagalność są w wierszu każdego pola; jego ▸ rozwija pomoc, wartość domyślną, wyjście i wartości. Zadania, wyrażenia i reszta zostają w YAML, tak jak zapisano.',
+      'Nazwa, etykieta i wymagalność są w wierszu każdego pola; jego ▸ rozwija typ i każdą właściwość tego typu.',
+    visualAddProperty: 'Dodaj właściwość…',
+    visualRemoveProperty: 'Usuń tę właściwość',
     visualFieldDetails: 'Pomoc, wartość domyślna, wyjście i wartości',
     visualValuesHelp: 'Lista YAML: jedna wartość w wierszu (- dev) lub obiekty (- name: Rome).',
     visualYamlError: 'Nie można tu pokazać YAML : popraw go w karcie YAML',

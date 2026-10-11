@@ -30,6 +30,7 @@ import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner';
 import YAML from 'yaml';
 import { fieldTypes, formTypes, forbiddenFormKeys, fieldTypeAllows } from '@/config/formFields';
+import { fieldProperties } from '@/config/fieldProperties';
 import { availableIcons } from '@/config/icons';
 import {
   fieldsState,
@@ -50,6 +51,9 @@ import {
   setFieldOutput,
   fieldValuesText,
   setFieldValues,
+  fieldPropValue,
+  setFieldProp,
+  addFieldProp,
 } from '@/lib/formDoc';
 
 const props = defineProps({
@@ -445,6 +449,42 @@ function setRowValues(row, text) {
   valuesError.value = { ...valuesError.value, [row.uid]: problem };
 }
 
+// ─── a field's properties of its type ─────────────────────────────────────────
+// what its type allows (the schema refuses the form with another), set or not
+const typeProps = (f) => fieldProperties.filter((p) => fieldTypeAllows(f.type, p.key));
+const setProps = (f) => typeProps(f).filter((p) => f.node.has(p.key));
+const addableProps = (f) => typeProps(f).filter((p) => !f.node.has(p.key));
+// a value refused (YAML that does not parse, not a number) : said under it, not written
+const propError = ref({});
+
+/**
+ * Sets a property of a field from its input.
+ *
+ * Args:
+ *   f (object): the field's row.
+ *   prop (object): the property.
+ *   input (any): what was typed or picked.
+ */
+function setProp(f, prop, input) {
+  let problem = '';
+  change((d) => {
+    problem = setFieldProp(d, f.node, prop, input);
+  });
+  propError.value = { ...propError.value, [f.uid + prop.key]: problem };
+}
+
+/**
+ * Adds a property of its type to a field.
+ *
+ * Args:
+ *   f (object): the field's row.
+ *   key (string): the property.
+ */
+function addProp(f, key) {
+  const prop = fieldProperties.find((p) => p.key === key);
+  if (prop) change((d) => addFieldProp(d, f.node, prop));
+}
+
 /**
  * Removes a field, after asking : its other properties go with it.
  *
@@ -766,7 +806,6 @@ defineExpose({
         <div class="af-cats-row af-cats-head">
           <span></span>
           <span>{{ t('designer.fieldName') }}</span>
-          <span>{{ t('designer.fieldType') }}</span>
           <span>{{ t('designer.fieldLabel') }}</span>
           <span class="text-center">{{ t('designer.visualRequired') }}</span>
           <span></span>
@@ -795,20 +834,6 @@ defineExpose({
                 spellcheck="false"
                 @change="change(() => setFieldText(f.node, 'name', $event.target.value.trim()))"
               />
-            </div>
-            <div class="input-group">
-              <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="shapes" /></span>
-              <select
-                class="form-select"
-                :value="f.type"
-                :disabled="!fieldsEditable"
-                :aria-label="t('designer.fieldType')"
-                @change="setRowType(f, $event.target.value)"
-              >
-                <!-- a type not in the list (a typo in the YAML) : offered, so it stays visible -->
-                <option v-if="!fieldTypes.includes(f.type)" :value="f.type">{{ f.type }}</option>
-                <option v-for="ft in fieldTypes" :key="ft" :value="ft">{{ ft }}</option>
-              </select>
             </div>
             <div class="input-group">
               <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="font" /></span>
@@ -866,8 +891,26 @@ defineExpose({
               </button>
             </div>
           </div>
-          <!-- the field's other properties : help, default, output, values (when its type has them) -->
+          <!-- the field's other properties : its type first, then help, default, output, values (when
+               its type has them), then the properties of its type it has, and those it may add -->
           <div v-if="open.has(f.uid)" class="af-field-details">
+            <div>
+              <label class="form-label fw-bold">{{ t('designer.fieldType') }}</label>
+              <div class="input-group">
+                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="shapes" /></span>
+                <select
+                  class="form-select"
+                  :value="f.type"
+                  :disabled="!fieldsEditable"
+                  :aria-label="t('designer.fieldType')"
+                  @change="setRowType(f, $event.target.value)"
+                >
+                  <!-- a type not in the list (a typo in the YAML) : offered, so it stays visible -->
+                  <option v-if="!fieldTypes.includes(f.type)" :value="f.type">{{ f.type }}</option>
+                  <option v-for="ft in fieldTypes" :key="ft" :value="ft">{{ ft }}</option>
+                </select>
+              </div>
+            </div>
             <div>
               <label class="form-label fw-bold">{{ t('designer.fieldHelp') }}</label>
               <input
@@ -919,6 +962,81 @@ defineExpose({
               <div v-if="valuesError[f.uid]" class="invalid-feedback d-block">{{ valuesError[f.uid] }}</div>
               <div class="form-text">{{ t('designer.visualValuesHelp') }}</div>
             </div>
+            <!-- the properties of its type it has : each its input, its description, a cross -->
+            <div v-for="pr in setProps(f)" :key="pr.key" :class="{ 'af-field-values': pr.kind === 'yaml' }">
+              <label class="form-label fw-bold d-flex align-items-center">
+                <code class="af-prop-key">{{ pr.key }}</code>
+                <button
+                  type="button"
+                  class="btn-close ms-auto af-prop-remove"
+                  :disabled="!fieldsEditable"
+                  :title="t('designer.visualRemoveProperty')"
+                  @click="change(() => f.node.delete(pr.key))"
+                ></button>
+              </label>
+              <div v-if="pr.kind === 'switch'" class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  role="switch"
+                  :checked="fieldPropValue(f.node, pr)"
+                  :disabled="!fieldsEditable"
+                  @change="setProp(f, pr, $event.target.checked)"
+                />
+              </div>
+              <select
+                v-else-if="pr.kind === 'select'"
+                class="form-select"
+                :value="fieldPropValue(f.node, pr)"
+                :disabled="!fieldsEditable"
+                @change="setProp(f, pr, $event.target.value)"
+              >
+                <option v-if="!pr.options.includes(fieldPropValue(f.node, pr))" :value="fieldPropValue(f.node, pr)">
+                  {{ fieldPropValue(f.node, pr) }}
+                </option>
+                <option v-for="o in pr.options" :key="o" :value="o">{{ o }}</option>
+              </select>
+              <textarea
+                v-else-if="pr.kind === 'yaml'"
+                class="form-control font-monospace"
+                :class="{ 'is-invalid': propError[f.uid + pr.key] }"
+                rows="3"
+                :value="fieldPropValue(f.node, pr)"
+                :disabled="!fieldsEditable"
+                spellcheck="false"
+                @change="setProp(f, pr, $event.target.value)"
+              ></textarea>
+              <input
+                v-else
+                class="form-control"
+                :class="{ 'is-invalid': propError[f.uid + pr.key] }"
+                :type="pr.kind === 'number' ? 'number' : 'text'"
+                :value="fieldPropValue(f.node, pr)"
+                :disabled="!fieldsEditable"
+                spellcheck="false"
+                @change="setProp(f, pr, $event.target.value)"
+              />
+              <div v-if="propError[f.uid + pr.key]" class="invalid-feedback d-block">
+                {{ propError[f.uid + pr.key] }}
+              </div>
+              <div v-if="pr.short" class="form-text">{{ pr.short }}</div>
+            </div>
+            <!-- what else its type takes : added from a list, its description beside each -->
+            <div v-if="fieldsEditable && addableProps(f).length" class="af-field-values">
+              <select
+                class="form-select af-form-add"
+                :value="''"
+                @change="
+                  addProp(f, $event.target.value);
+                  $event.target.value = '';
+                "
+              >
+                <option value="">{{ t('designer.visualAddProperty') }}</option>
+                <option v-for="pr in addableProps(f)" :key="pr.key" :value="pr.key">
+                  {{ pr.key }}{{ pr.short ? ' - ' + pr.short : '' }}
+                </option>
+              </select>
+            </div>
           </div>
         </template>
       </div>
@@ -969,10 +1087,10 @@ defineExpose({
 .af-cats-row {
   display: grid;
   /* name and label share the room ; the last as wide as its buttons (two moves, the gap, Delete) */
-  grid-template-columns: 1.75rem minmax(10rem, 1fr) 11rem minmax(10rem, 1fr) 6.5rem 8rem;
+  grid-template-columns: 1.75rem minmax(10rem, 1fr) minmax(10rem, 1fr) 6.5rem 8rem;
   gap: 0.75rem;
   align-items: center;
-  min-width: 52rem;
+  min-width: 40rem;
 }
 .af-cats-head {
   font-weight: 700;
@@ -985,7 +1103,8 @@ defineExpose({
 /* a field's other properties : under its row, past its caret, framed as a sub-part of it */
 .af-field-details {
   display: grid;
-  grid-template-columns: minmax(12rem, 1fr) minmax(12rem, 1fr) auto;
+  /* its type, help and default, then the output switch ; a wide one (values, YAML) on its own */
+  grid-template-columns: repeat(3, minmax(10rem, 1fr)) auto;
   gap: 0.75rem 1rem;
   margin: 0 0 0.5rem 2.5rem;
   padding: 0.75rem 1rem;
@@ -993,6 +1112,14 @@ defineExpose({
 }
 .af-field-values {
   grid-column: 1 / -1;
+}
+/* a property's name as the YAML writes it, and its cross */
+.af-prop-key {
+  font-weight: 600;
+  color: var(--bs-body-color);
+}
+.af-prop-remove {
+  font-size: 0.55rem;
 }
 /* the form's switches : four columns of two, filled column by column, each column as wide as
    its longer label */

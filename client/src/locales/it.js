@@ -1527,7 +1527,9 @@ export default {
     visualDuplicateField: 'Un altro campo ha questo nome.',
     visualNoName: 'Un campo ha bisogno di un nome.',
     visualFieldsHint:
-      'Nome, tipo, etichetta e obbligatorio sono nella riga di ogni campo; il suo ▸ apre aiuto, valore predefinito, output e valori. Job, espressioni e il resto restano nello YAML, come scritti.',
+      'Nome, etichetta e obbligatorio sono nella riga di ogni campo; il suo ▸ apre il suo tipo e ogni proprietà di quel tipo.',
+    visualAddProperty: 'Aggiungi proprietà…',
+    visualRemoveProperty: 'Rimuovi questa proprietà',
     visualFieldDetails: 'Aiuto, valore predefinito, output e valori',
     visualValuesHelp: 'Una lista YAML: un valore per riga (- dev), o oggetti (- name: Rome).',
     visualYamlError: 'Lo YAML non può essere mostrato qui : correggilo nella scheda YAML',
