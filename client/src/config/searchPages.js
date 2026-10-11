@@ -118,16 +118,28 @@ export function searchPages(t, options) {
       link: '/settings/sso',
     },
     {
-      title: t('sidebar.mail'),
+      title: t('sidebar.repositories'),
       section: settings,
-      icon: 'envelope',
-      link: '/settings/mail',
+      icon: 'fab,git',
+      link: '/settings/repositories',
     },
     {
       title: t('sidebar.credentials'),
       section: settings,
       icon: 'lock',
       link: '/settings/credentials',
+    },
+    {
+      title: t('sidebar.runners'),
+      section: settings,
+      icon: 'rocket',
+      link: '/settings/runners',
+    },
+    {
+      title: t('sidebar.mail'),
+      section: settings,
+      icon: 'envelope',
+      link: '/settings/mail',
     },
     {
       title: t('sidebar.secretStores'),
@@ -141,18 +153,6 @@ export function searchPages(t, options) {
       section: settings,
       icon: 'server',
       link: '/settings/known-hosts',
-    },
-    {
-      title: t('sidebar.runners'),
-      section: settings,
-      icon: 'rocket',
-      link: '/settings/runners',
-    },
-    {
-      title: t('sidebar.repositories'),
-      section: settings,
-      icon: 'fab,git',
-      link: '/settings/repositories',
     },
     {
       title: t('sidebar.chat'),
