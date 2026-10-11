@@ -86,3 +86,9 @@ test("the header's links : a valid one kept, an invalid one left out, at most a 
   );
   expect(new Settings({ header_links: [] }).header_links).toBe(null);
 });
+
+test("a date format is one of those offered, anything else none", () => {
+  expect(new Settings({ default_date_format: "DD/MM/YYYY" }).default_date_format).toBe("DD/MM/YYYY");
+  expect(new Settings({ default_date_format: "<b>YYYY</b>" }).default_date_format).toBe(null);
+  expect(new Settings({ default_date_format: "" }).default_date_format).toBe(null);
+});

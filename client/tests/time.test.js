@@ -96,3 +96,32 @@ describe('Helpers.formatServerDate', () => {
     expect(Helpers.formatServerDate('')).toBe('');
   });
 });
+
+describe('the date format', () => {
+  beforeEach(() => {
+    localStorage.removeItem('af_timezone');
+    localStorage.removeItem('af_date_format');
+  });
+
+  test('is ISO when nothing is picked', () => {
+    expect(Time.datePattern()).toBe('YYYY-MM-DD');
+    expect(Time.hasOwnDateFormat()).toBe(false);
+  });
+
+  test('writes the date part of every date in the format picked, the time as before', () => {
+    localStorage.setItem('af_date_format', 'DD/MM/YYYY');
+    expect(Time.format('2026-10-06T00:23:03.000Z')).toBe('06/10/2026 00:23:03 UTC');
+    // a pattern of its own keeps its own date part in the format too
+    expect(Time.format('2026-10-06T00:23:03.000Z', 'YYYY-MM-DD HH:mm')).toBe('06/10/2026 00:23 UTC');
+    localStorage.setItem('af_date_format', 'MM/DD/YYYY');
+    expect(Time.format('2026-10-06T00:23:03.000Z')).toBe('10/06/2026 00:23:03 UTC');
+    localStorage.setItem('af_date_format', 'DD.MM.YYYY');
+    expect(Helpers.formatServerDate('2026-07-26 00:21:46')).toBe('26.07.2026 00:21:46');
+  });
+
+  test('an unknown format is ISO, never written as given', () => {
+    localStorage.setItem('af_date_format', '<b>YYYY</b>');
+    expect(Time.datePattern()).toBe('YYYY-MM-DD');
+    expect(Time.format('2026-10-06T00:23:03.000Z')).toBe('2026-10-06 00:23:03 UTC');
+  });
+});

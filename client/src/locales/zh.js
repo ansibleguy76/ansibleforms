@@ -55,6 +55,8 @@ export default {
     timezone: '时区',
     timezoneBrowser: '此浏览器（{zone}）',
     timezoneAll: '所有时区',
+    dateFormat: '日期格式',
+    dateFormatHint: '每个日期中日期部分的显示方式。',
     timezoneHint: 'AnsibleForms 中的日期和时间均按此时区显示。服务器日志和作业输出保留服务器写入的时间。',
     formsView: '表单视图',
     // the api token view
@@ -712,6 +714,8 @@ export default {
       timezone: '默认时区',
       timezoneHelp: '显示日期所用的时区（适用于未自行选择的用户）。',
       timezoneBrowser: '每位用户的浏览器',
+      dateFormat: '默认日期格式',
+      dateFormatHelp: '日期的显示方式（适用于未自行选择的用户）。',
       envLabel: '标签文字',
       envLabelHelp: '显示在徽标旁的标签，例如 PRODUCTION 或 TEST；留空则不显示。',
       envLabelShow: '环境标签',

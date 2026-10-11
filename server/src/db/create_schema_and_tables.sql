@@ -257,6 +257,7 @@ CREATE TABLE `settings` (
   `banner_until` datetime DEFAULT NULL,
   `forms_view` varchar(10) DEFAULT NULL,
   `default_timezone` varchar(64) DEFAULT NULL,
+  `default_date_format` varchar(20) DEFAULT NULL,
   -- the header's own links (Settings > Appearance > Links), as JSON
   `header_links` text DEFAULT NULL,
   `config_source` varchar(20) DEFAULT NULL,

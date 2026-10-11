@@ -554,7 +554,7 @@ const SCHEMA_MANIFEST = {
                                'users.description', 'schedule.raw_form_data', 'users.blocked', 'settings.favicon',
                                'settings.app_name', 'settings.env_label', 'settings.env_label_show', 'settings.env_label_color',
                                'settings.banner_message', 'settings.banner_level', 'settings.banner_until',
-                               'settings.forms_view', 'settings.default_timezone', 'settings.header_links'] },
+                               'settings.forms_view', 'settings.default_timezone', 'settings.default_date_format', 'settings.header_links'] },
   },
 };
 
@@ -912,10 +912,10 @@ async function patchVersion7(messages, success, failed) {
   // the website icon (Settings > Appearance > Icon), a data url like the logo
   await checkPromise(addColumn("settings", "favicon", "longtext", true, "NULL"), messages, success, failed);
   // Settings > Appearance : the name, the environment label, the announcement and
-  // the forms list's view and the time zone for everyone, the header's own links
+  // the forms list's view, the time zone and the date format for everyone, the header's own links
   for (const [name, type] of [["app_name", "varchar(100)"], ["env_label", "varchar(40)"], ["env_label_color", "varchar(20)"],
     ["banner_message", "text"], ["banner_level", "varchar(10)"], ["banner_until", "datetime"], ["forms_view", "varchar(10)"],
-    ["default_timezone", "varchar(64)"], ["header_links", "text"]]) {
+    ["default_timezone", "varchar(64)"], ["default_date_format", "varchar(20)"], ["header_links", "text"]]) {
     await checkPromise(addColumn("settings", name, type, true, "NULL"), messages, success, failed);
   }
   // the environment label shown or not (Settings > Appearance > Environment) : shown

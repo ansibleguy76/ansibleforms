@@ -57,6 +57,8 @@ export default {
     timezone: 'Fuseau horaire',
     timezoneBrowser: 'Ce navigateur ({zone})',
     timezoneAll: 'Tous les fuseaux',
+    dateFormat: 'Format de date',
+    dateFormatHint: 'Comment la partie date de chaque date est affichée.',
     timezoneHint:
       "Les dates et heures d'AnsibleForms sont affichées dans ce fuseau horaire. Le journal du serveur et la sortie des jobs gardent les heures écrites par le serveur.",
     formsView: 'Affichage des formulaires',
@@ -736,6 +738,8 @@ export default {
       timezone: 'Fuseau horaire par défaut',
       timezoneHelp: "Le fuseau horaire d'affichage des dates, pour les utilisateurs sans choix propre.",
       timezoneBrowser: 'Le navigateur de chaque utilisateur',
+      dateFormat: 'Format de date par défaut',
+      dateFormatHelp: 'Comment les dates sont affichées, pour les utilisateurs sans choix propre.',
       envLabel: "Texte de l'étiquette",
       envLabelHelp: 'Une étiquette à côté du logo, comme PRODUCTION ou TEST ; vide, aucune.',
       envLabelShow: "Étiquette d'environnement",

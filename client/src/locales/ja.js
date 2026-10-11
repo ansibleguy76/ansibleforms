@@ -56,6 +56,8 @@ export default {
     timezone: 'タイムゾーン',
     timezoneBrowser: 'このブラウザー ({zone})',
     timezoneAll: 'すべてのタイムゾーン',
+    dateFormat: '日付形式',
+    dateFormatHint: '各日付の日付部分の表示形式。',
     timezoneHint:
       'AnsibleForms 全体の日時はこのタイムゾーンで表示されます。サーバーログとジョブ出力には、サーバーが書き込んだ時刻がそのまま残ります。',
     formsView: 'フォームの表示',
@@ -729,6 +731,8 @@ export default {
       timezone: '既定のタイムゾーン',
       timezoneHelp: '日付を表示するタイムゾーン（自分で選んでいないユーザー向け）。',
       timezoneBrowser: '各ユーザーのブラウザー',
+      dateFormat: '既定の日付形式',
+      dateFormatHelp: '日付の表示形式（自分で選んでいないユーザー向け）。',
       envLabel: 'ラベルの文字',
       envLabelHelp: 'ロゴの横のラベル（PRODUCTION、TEST など）。空の場合はなし。',
       envLabelShow: '環境ラベル',

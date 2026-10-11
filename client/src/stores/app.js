@@ -13,6 +13,15 @@ function loadTimezone() {
   }
 }
 
+// the user's date format, kept in this browser like the time zone ; none : the app's default
+function loadDateFormat() {
+  try {
+    return localStorage.getItem('af_date_format') || 'YYYY-MM-DD';
+  } catch {
+    return 'YYYY-MM-DD';
+  }
+}
+
 export const useAppStore = defineStore('app', () => {
   const theme = ref('light'); // default theme
   const profile = ref(null);
@@ -46,6 +55,8 @@ export const useAppStore = defineStore('app', () => {
   // the time zone dates are shown in : 'UTC', 'browser' or an IANA zone (lib/Time.js) ; read
   // here so every page re-renders its dates when the user picks another one
   const timezone = ref(loadTimezone());
+  // the date format dates are shown in (lib/Time.js) : the user's, else the app's default
+  const dateFormat = ref(loadDateFormat());
   // the server runs a newer build than this tab (App.vue's response interceptor) ; the banner
   // under the header offers a reload, and can be dismissed for the rest of this visit
   const newVersionAvailable = ref(false);
@@ -81,6 +92,7 @@ export const useAppStore = defineStore('app', () => {
     formsView,
     headerLinks,
     timezone,
+    dateFormat,
     newVersionAvailable,
     newVersionDismissed,
   };

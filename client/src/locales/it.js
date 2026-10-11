@@ -57,6 +57,8 @@ export default {
     timezone: 'Fuso orario',
     timezoneBrowser: 'Questo browser ({zone})',
     timezoneAll: 'Tutti i fusi',
+    dateFormat: 'Formato data',
+    dateFormatHint: 'Come viene mostrata la parte data di ogni data.',
     timezoneHint:
       "Date e orari in tutto AnsibleForms sono mostrati in questo fuso orario. Il log del server e l'output dei job mantengono gli orari scritti dal server.",
     formsView: 'Vista dei form',
@@ -732,6 +734,8 @@ export default {
       timezone: 'Fuso orario predefinito',
       timezoneHelp: 'Il fuso orario in cui sono mostrate le date, per gli utenti che non hanno scelto il proprio.',
       timezoneBrowser: 'Il browser di ogni utente',
+      dateFormat: 'Formato data predefinito',
+      dateFormatHelp: 'Come vengono mostrate le date, per gli utenti che non hanno scelto il proprio.',
       envLabel: "Testo dell'etichetta",
       envLabelHelp: "Un'etichetta accanto al logo, come PRODUZIONE o TEST ; vuota, nessuna.",
       envLabelShow: "Etichetta d'ambiente",

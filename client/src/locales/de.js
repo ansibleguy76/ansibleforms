@@ -57,6 +57,8 @@ export default {
     timezone: 'Zeitzone',
     timezoneBrowser: 'Dieser Browser ({zone})',
     timezoneAll: 'Alle Zonen',
+    dateFormat: 'Datumsformat',
+    dateFormatHint: 'Wie der Datumsteil jedes Datums angezeigt wird.',
     timezoneHint:
       'Datum und Uhrzeit werden in ganz AnsibleForms in dieser Zeitzone angezeigt. Das Serverprotokoll und die Jobausgabe behalten die Zeiten, die der Server hineingeschrieben hat.',
     formsView: 'Formularansicht',
@@ -735,6 +737,8 @@ export default {
       timezone: 'Standard-Zeitzone',
       timezoneHelp: 'Die Zeitzone, in der Daten angezeigt werden, für Benutzer ohne eigene Wahl.',
       timezoneBrowser: 'Der Browser jedes Benutzers',
+      dateFormat: 'Standard-Datumsformat',
+      dateFormatHelp: 'Wie Daten angezeigt werden, für Benutzer ohne eigene Wahl.',
       envLabel: 'Labeltext',
       envLabelHelp: 'Ein Label neben dem Logo, z. B. PRODUKTION oder TEST ; leer, keines.',
       envLabelShow: 'Umgebungslabel',

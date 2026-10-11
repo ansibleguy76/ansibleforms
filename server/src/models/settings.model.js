@@ -93,6 +93,10 @@ var Settings=function(settings){
     if(settings.default_timezone !== undefined){
       this.default_timezone = validTimezone(settings.default_timezone);
     }
+    // the date format dates show in (Settings > Appearance > Defaults)
+    if(settings.default_date_format !== undefined){
+      this.default_date_format = oneOf(settings.default_date_format, DATE_FORMATS);
+    }
     // the header's own links (Settings > Appearance > Links > Custom), kept as JSON ; none : null
     if(settings.header_links !== undefined){
       const links = validHeaderLinks(settings.header_links);
@@ -178,6 +182,8 @@ export function validTimezone(value){
 export const LABEL_COLORS = ['blue', 'green', 'amber', 'orange', 'red', 'grey'];
 export const BANNER_LEVELS = ['info', 'warning', 'danger'];
 export const FORMS_VIEWS = ['tiles', 'list'];
+// the date formats offered, as dayjs writes them : digits and separators only
+export const DATE_FORMATS = ['YYYY-MM-DD', 'DD/MM/YYYY', 'MM/DD/YYYY', 'DD.MM.YYYY'];
 // Resolve whether the ACTIVE config lives in the database, from a findFormsYaml record.
 //
 // Precedence is the same everywhere in the app: the ENVIRONMENT first, then the database,
@@ -478,7 +484,7 @@ Settings.findUrl = function () {
 // endpoint blocks the SPA from rendering even the login page, so a MySQL outage
 // must cost one connectTimeout, not one per setting.
 Settings.findAppDefaults = function () {
-  return mysql.do("SELECT default_language, default_theme, default_theme_color, app_name, env_label, env_label_show, env_label_color, banner_message, banner_level, banner_until, forms_view, default_timezone, header_links FROM AnsibleForms.`settings` LIMIT 1")
+  return mysql.do("SELECT default_language, default_theme, default_theme_color, app_name, env_label, env_label_show, env_label_color, banner_message, banner_level, banner_until, forms_view, default_timezone, default_date_format, header_links FROM AnsibleForms.`settings` LIMIT 1")
     .then((res) => {
       const r = res[0] || {};
       return {
@@ -493,6 +499,7 @@ Settings.findAppDefaults = function () {
         banner: r.banner_message ? { message: r.banner_message, level: r.banner_level || 'info', until: r.banner_until || null } : null,
         formsView: r.forms_view || null,
         timezone: r.default_timezone || null,
+        dateFormat: r.default_date_format || null,
         // only for who is signed in (GET /api/v2/app/links), never the public /config
         headerLinks: validHeaderLinks(r.header_links),
       };

@@ -91,6 +91,8 @@ var State = {
     store.formsView = data.formsView || null;
     // the time zone for everyone : only while this browser has not chosen its own (the profile)
     if (!Time.hasOwnPreference()) store.timezone = data.timezone || 'UTC';
+    // the date format for everyone : only while this browser has not chosen its own
+    if (!Time.hasOwnDateFormat()) store.dateFormat = data.dateFormat || 'YYYY-MM-DD';
     store.appConfigLoaded = true;
     document.title = data.appName || 'Ansible Forms';
   },

@@ -56,6 +56,8 @@ export default {
     timezone: 'Fuso horário',
     timezoneBrowser: 'Este navegador ({zone})',
     timezoneAll: 'Todos os fusos',
+    dateFormat: 'Formato de data',
+    dateFormatHint: 'Como é mostrada a parte da data de cada data.',
     timezoneHint:
       'As datas e horas em todo o AnsibleForms são apresentadas neste fuso horário. O registo do servidor e o resultado das tarefas mantêm as horas que o servidor neles escreveu.',
     formsView: 'Vista de formulários',
@@ -732,6 +734,8 @@ export default {
       timezone: 'Fuso horário predefinido',
       timezoneHelp: 'O fuso horário em que as datas são mostradas, para utilizadores sem escolha própria.',
       timezoneBrowser: 'O navegador de cada utilizador',
+      dateFormat: 'Formato de data predefinido',
+      dateFormatHelp: 'Como as datas são mostradas, para utilizadores sem escolha própria.',
       envLabel: 'Texto da etiqueta',
       envLabelHelp: 'Uma etiqueta junto ao logótipo, como PRODUÇÃO ou TEST ; vazia, nenhuma.',
       envLabelShow: 'Etiqueta de ambiente',

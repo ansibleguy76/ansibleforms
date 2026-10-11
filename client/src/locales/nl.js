@@ -56,6 +56,8 @@ export default {
     timezone: 'Tijdzone',
     timezoneBrowser: 'Deze browser ({zone})',
     timezoneAll: 'Alle zones',
+    dateFormat: 'Datumnotatie',
+    dateFormatHint: 'Hoe het datumdeel van elke datum wordt getoond.',
     timezoneHint:
       'Datums en tijden in heel AnsibleForms worden in deze tijdzone getoond. Het serverlog en de joboutput houden de tijden die de server erin schreef.',
     formsView: 'Weergave formulieren',
@@ -729,6 +731,8 @@ export default {
       timezone: 'Standaard tijdzone',
       timezoneHelp: 'De tijdzone waarin datums worden getoond, voor gebruikers zonder eigen keuze.',
       timezoneBrowser: 'De browser van elke gebruiker',
+      dateFormat: 'Standaard datumnotatie',
+      dateFormatHelp: 'Hoe datums worden getoond, voor gebruikers zonder eigen keuze.',
       envLabel: 'Labeltekst',
       envLabelHelp: 'Een label naast het logo, zoals PRODUCTIE of TEST ; leeg, geen.',
       envLabelShow: 'Omgevingslabel',

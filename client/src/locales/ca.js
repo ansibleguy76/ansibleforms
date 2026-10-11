@@ -56,6 +56,8 @@ export default {
     timezone: 'Zona horària',
     timezoneBrowser: 'Aquest navegador ({zone})',
     timezoneAll: 'Totes les zones',
+    dateFormat: 'Format de data',
+    dateFormatHint: 'Com es llegeix la part de data de cada data.',
     timezoneHint:
       "Les dates i hores d'AnsibleForms es mostren en aquesta zona horària. El registre del servidor i la sortida de les tasques mantenen les hores que hi va escriure el servidor.",
     formsView: 'Vista dels formularis',
@@ -732,6 +734,8 @@ export default {
       timezone: 'Zona horària predeterminada',
       timezoneHelp: "La zona horària en què es mostren les dates, per als usuaris que no n'han triat la seva.",
       timezoneBrowser: 'El navegador de cada usuari',
+      dateFormat: 'Format de data predeterminat',
+      dateFormatHelp: "Com es llegeixen les dates, per als usuaris que no n'han triat el seu.",
       envLabel: "Text de l'etiqueta",
       envLabelHelp: 'Una etiqueta al costat del logotip, com PRODUCCIÓ o TEST ; buida, cap.',
       envLabelShow: "Etiqueta d'entorn",

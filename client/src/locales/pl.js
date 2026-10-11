@@ -56,6 +56,8 @@ export default {
     timezone: 'Strefa czasowa',
     timezoneBrowser: 'Ta przeglądarka ({zone})',
     timezoneAll: 'Wszystkie strefy',
+    dateFormat: 'Format daty',
+    dateFormatHint: 'Jak wyświetlana jest część daty każdej daty.',
     timezoneHint:
       'Daty i godziny w całym AnsibleForms są wyświetlane w tej strefie czasowej. Dziennik serwera i wyniki zadań zachowują godziny zapisane przez serwer.',
     formsView: 'Widok formularzy',
@@ -728,6 +730,8 @@ export default {
       timezone: 'Domyślna strefa czasowa',
       timezoneHelp: 'Strefa czasowa, w której pokazywane są daty, dla użytkowników bez własnego wyboru.',
       timezoneBrowser: 'Przeglądarka każdego użytkownika',
+      dateFormat: 'Domyślny format daty',
+      dateFormatHelp: 'Jak wyświetlane są daty dla użytkowników bez własnego wyboru.',
       envLabel: 'Tekst etykiety',
       envLabelHelp: 'Etykieta obok logo, np. PRODUKCJA lub TEST ; pusta, brak.',
       envLabelShow: 'Etykieta środowiska',

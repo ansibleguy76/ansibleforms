@@ -15,7 +15,8 @@ import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import Helpers from '@/lib/Helpers';
 import Theme from '@/lib/Theme';
-import Time from '@/lib/Time';
+import Time, { DATE_FORMATS } from '@/lib/Time';
+import dayjs from 'dayjs';
 import State from '@/lib/State';
 import { useEnvVars } from '@/composables/useEnvVars';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
@@ -52,6 +53,8 @@ const timezones = computed(() => [
     .filter((z) => z !== 'UTC')
     .map((z) => ({ value: z, label: z })),
 ]);
+// the date formats, each shown as today's date reads in it
+const dateFormats = computed(() => DATE_FORMATS.map((f) => ({ value: f, label: `${dayjs().format(f)}  (${f})` })));
 const formsViews = computed(() =>
   ['tiles', 'list'].map((v) => ({ value: v, label: t(`settings.interface.formsView_${v}`) })),
 );
@@ -71,6 +74,7 @@ function lookOf(row) {
     default_theme_color: Theme.current(row?.default_theme_color || '#008cba'),
     forms_view: row?.forms_view || 'tiles',
     default_timezone: row?.default_timezone || 'UTC',
+    default_date_format: row?.default_date_format || 'YYYY-MM-DD',
   };
 }
 const themeDirty = computed(
@@ -115,7 +119,7 @@ async function save() {
     }
   }
   if (envDirty.value) await saveEnvironmentVariables();
-  // the app follows at once : the forms view, the time zone
+  // the app follows at once : the forms view, the time zone, the date format
   await State.loadAppConfig();
 }
 
@@ -203,6 +207,18 @@ onMounted(async () => {
             labelKey="label"
             :label="t('settings.interface.timezone')"
             :help="t('settings.interface.timezoneHelp')"
+          />
+          <BsInput
+            class="af-interface-field mt-4"
+            :isFloating="false"
+            type="select"
+            icon="calendar"
+            v-model="theme.default_date_format"
+            :values="dateFormats"
+            valueKey="value"
+            labelKey="label"
+            :label="t('settings.interface.dateFormat')"
+            :help="t('settings.interface.dateFormatHelp')"
           />
         </div>
       </template>
