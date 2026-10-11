@@ -469,7 +469,7 @@ defineExpose({
     <template v-else-if="form">
       <!-- ─── Form : edited in place ─── -->
       <div class="af-form-grid">
-        <!-- the name : two columns, its type beside it -->
+        <!-- the name : two columns, its type beside it ; its description and help as wide -->
         <div class="af-form-span2">
           <label class="form-label fw-bold">{{ t('designer.formName') }}</label>
           <div class="input-group">
@@ -493,7 +493,7 @@ defineExpose({
             </select>
           </div>
         </div>
-        <div class="af-form-wide">
+        <div class="af-form-span2">
           <label class="form-label fw-bold">{{ t('designer.formDescription') }}</label>
           <!-- a sentence or two : as tall as two lines, as the help below -->
           <textarea
@@ -504,7 +504,7 @@ defineExpose({
             @change="setText('description', $event.target.value)"
           ></textarea>
         </div>
-        <div class="af-form-wide">
+        <div class="af-form-span2">
           <label class="form-label fw-bold">{{ t('designer.helpText') }}</label>
           <textarea
             class="form-control"
