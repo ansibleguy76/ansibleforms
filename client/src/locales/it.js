@@ -1499,6 +1499,7 @@ export default {
     previewNotRun: "Questa è un'anteprima : il modulo non è stato eseguito",
     visual: 'Visuale',
     runnerDefault: 'Runner predefinito del suo tipo',
+    helpIcon: 'Mostrata sul suo riquadro e nella lista dei moduli.',
     helpPlaybook: 'Il playbook che esegue.',
     helpTemplate: 'Il template di job AWX che avvia.',
     helpInventory: "L'inventario su cui vengono eseguiti i job.",

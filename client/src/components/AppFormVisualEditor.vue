@@ -469,27 +469,8 @@ defineExpose({
     <template v-else-if="form">
       <!-- ─── Form : edited in place ─── -->
       <div class="af-form-grid">
-        <div v-if="!isSubform">
-          <label class="form-label fw-bold">{{ t('designer.visualIcon') }}</label>
-          <div class="input-group">
-            <span class="input-group-text"
-              ><FaIcon :fixedwidth="true" :icon="form.icon || 'square'" :class="{ 'opacity-25': !form.icon }"
-            /></span>
-            <select
-              class="form-select"
-              :value="form.icon"
-              :disabled="locked"
-              @change="setText('icon', $event.target.value)"
-            >
-              <option value="">{{ t('designer.visualNoIcon') }}</option>
-              <option v-if="form.icon && !availableIcons.includes(form.icon)" :value="form.icon">
-                {{ form.icon }}
-              </option>
-              <option v-for="ic in availableIcons" :key="ic" :value="ic">{{ ic }}</option>
-            </select>
-          </div>
-        </div>
-        <div>
+        <!-- the name : two columns, its type beside it -->
+        <div class="af-form-span2">
           <label class="form-label fw-bold">{{ t('designer.formName') }}</label>
           <div class="input-group">
             <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="font" /></span>
@@ -569,6 +550,27 @@ defineExpose({
         </div>
         <!-- the rest of the settings : the texts, then AWX's instance groups, the order, the launch
              validation, the help, the switches - only what the type allows -->
+        <div v-if="!isSubform">
+          <label class="form-label fw-bold">{{ t('designer.visualIcon') }}</label>
+          <div class="input-group">
+            <span class="input-group-text"
+              ><FaIcon :fixedwidth="true" :icon="form.icon || 'square'" :class="{ 'opacity-25': !form.icon }"
+            /></span>
+            <select
+              class="form-select"
+              :value="form.icon"
+              :disabled="locked"
+              @change="setText('icon', $event.target.value)"
+            >
+              <option value="">{{ t('designer.visualNoIcon') }}</option>
+              <option v-if="form.icon && !availableIcons.includes(form.icon)" :value="form.icon">
+                {{ form.icon }}
+              </option>
+              <option v-for="ic in availableIcons" :key="ic" :value="ic">{{ ic }}</option>
+            </select>
+          </div>
+          <div class="form-text">{{ t('designer.helpIcon') }}</div>
+        </div>
         <div v-if="form.type === 'ansible'">
           <label class="form-label fw-bold">{{ t('designer.formPlaybook') }}</label>
           <div class="input-group">
@@ -927,6 +929,9 @@ defineExpose({
 }
 .af-form-wide {
   grid-column: 1 / -1;
+}
+.af-form-span2 {
+  grid-column: span 2;
 }
 /* a category or a role it has : a pill, its cross removes it */
 .af-form-pill {

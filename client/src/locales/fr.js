@@ -1514,6 +1514,7 @@ export default {
     previewNotRun: "Ceci est un aperçu : le formulaire n'a pas été lancé",
     visual: 'Visuel',
     runnerDefault: 'Runner par défaut de son type',
+    helpIcon: 'Affichée sur sa tuile et dans la liste des formulaires.',
     helpPlaybook: "Le playbook qu'il exécute.",
     helpTemplate: "Le modèle de tâche AWX qu'il lance.",
     helpInventory: "L'inventaire sur lequel s'exécutent ses tâches.",

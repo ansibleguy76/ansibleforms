@@ -1495,6 +1495,7 @@ export default {
     previewNotRun: 'To jest podgląd : formularz nie został uruchomiony',
     visual: 'Wizualny',
     runnerDefault: 'Domyślny runner jego typu',
+    helpIcon: 'Pokazywana na jego kafelku i na liście formularzy.',
     helpPlaybook: 'Playbook, który uruchamia.',
     helpTemplate: 'Szablon zadania AWX, który uruchamia.',
     helpInventory: 'Inwentarz, na którym działają jego zadania.',

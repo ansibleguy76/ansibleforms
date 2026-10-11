@@ -1445,6 +1445,7 @@ export default {
     previewNotRun: '这是预览：表单未执行',
     visual: '可视化',
     runnerDefault: '其类型的默认运行器',
+    helpIcon: '显示在其磁贴和表单列表中。',
     helpPlaybook: '它运行的 playbook。',
     helpTemplate: '它启动的 AWX 作业模板。',
     helpInventory: '作业运行所针对的清单。',

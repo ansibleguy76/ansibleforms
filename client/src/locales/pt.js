@@ -1508,6 +1508,7 @@ export default {
     previewNotRun: 'Isto é uma pré-visualização : o formulário não foi executado',
     visual: 'Visual',
     runnerDefault: 'Runner predefinido do seu tipo',
+    helpIcon: 'Mostrado no seu mosaico e na lista de formulários.',
     helpPlaybook: 'O playbook que executa.',
     helpTemplate: 'O template de trabalho AWX que lança.',
     helpInventory: 'O inventário sobre o qual os trabalhos são executados.',

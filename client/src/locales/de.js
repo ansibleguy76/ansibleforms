@@ -1521,6 +1521,7 @@ export default {
     previewNotRun: 'Dies ist eine Vorschau : das Formular wurde nicht ausgeführt',
     visual: 'Visuell',
     runnerDefault: 'Standard-Runner seines Typs',
+    helpIcon: 'Auf seiner Kachel und in der Formularliste angezeigt.',
     helpPlaybook: 'Das Playbook, das es ausführt.',
     helpTemplate: 'Die AWX-Jobvorlage, die es startet.',
     helpInventory: 'Das Inventar, gegen das seine Jobs laufen.',
