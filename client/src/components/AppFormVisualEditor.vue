@@ -558,12 +558,20 @@ const valuesError = ref({});
  *   row (object): the field's row.
  *   text (string): the YAML.
  */
+// why a value was refused, in the user's language (a YAML parse error stays as the parser
+// wrote it, as in the YAML tab)
+function problemText(problem) {
+  if (problem === 'not a list') return t('designer.visualNotAList');
+  if (problem === 'not a number') return t('designer.visualNotANumber');
+  return problem;
+}
+
 function setRowValues(row, text) {
   let problem = '';
   change((d) => {
     problem = setFieldValues(d, row.node, text);
   });
-  valuesError.value = { ...valuesError.value, [row.uid]: problem };
+  valuesError.value = { ...valuesError.value, [row.uid]: problemText(problem) };
 }
 
 // ─── a field's properties of its type ─────────────────────────────────────────
@@ -587,7 +595,7 @@ function setProp(f, prop, input) {
   change((d) => {
     problem = setFieldProp(d, f.node, prop, input);
   });
-  propError.value = { ...propError.value, [f.uid + prop.key]: problem };
+  propError.value = { ...propError.value, [f.uid + prop.key]: problemText(problem) };
 }
 
 /**

@@ -1639,6 +1639,7 @@ export default {
     visualRemoveProperty: 'Treure aquesta propietat',
     visualFieldDetails: 'La seva ajuda, valor per defecte, sortida i valors',
     visualValuesHelp: 'Una llista YAML: un valor per línia (- dev), o objectes (- name: Rome).',
+    visualNotANumber: 'no és un número',
     visualYamlError: 'El YAML no es pot mostrar aquí : corregiu-lo a la pestanya YAML',
     visualNotAList: 'no és una llista',
     visualNotAMap: 'no és un mapa',

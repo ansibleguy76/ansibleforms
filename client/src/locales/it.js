@@ -1629,6 +1629,7 @@ export default {
     visualRemoveProperty: 'Rimuovi questa proprietà',
     visualFieldDetails: 'Aiuto, valore predefinito, output e valori',
     visualValuesHelp: 'Una lista YAML: un valore per riga (- dev), o oggetti (- name: Rome).',
+    visualNotANumber: 'non è un numero',
     visualYamlError: 'Lo YAML non può essere mostrato qui : correggilo nella scheda YAML',
     visualNotAList: 'non è una lista',
     visualNotAMap: 'non è una mappa',

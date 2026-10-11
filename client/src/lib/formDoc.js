@@ -15,7 +15,8 @@ import { forbiddenFieldKeys, requiredFieldKeys, forbiddenFormKeys } from '@/conf
 
 /**
  * Sets a key of a map : an existing scalar keeps its node (its quoting, its comment) ;
- * undefined removes the key.
+ * undefined removes the key. An empty placeholder ("") that gets a value loses its quotes,
+ * so the value is written plain where YAML allows it.
  *
  * Args:
  *   map (object): the YAML map.
@@ -28,8 +29,11 @@ export function setKey(map, key, value) {
     return;
   }
   const node = map.get(key, true);
-  if (YAML.isScalar(node)) node.value = value;
-  else map.set(key, value);
+  if (YAML.isScalar(node)) {
+    // the quotes were only there to write an empty string : the YAML picks them anew
+    if (node.value === '' && value !== '') node.type = undefined;
+    node.value = value;
+  } else map.set(key, value);
 }
 
 /**

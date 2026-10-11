@@ -1644,6 +1644,7 @@ export default {
     visualRemoveProperty: 'Retirer cette propriété',
     visualFieldDetails: 'Son aide, sa valeur par défaut, sa sortie et ses valeurs',
     visualValuesHelp: 'Une liste YAML : une valeur par ligne (- dev), ou des objets (- name: Rome).',
+    visualNotANumber: 'pas un nombre',
     visualYamlError: "Le YAML ne peut pas être affiché ici : corrigez-le dans l'onglet YAML",
     visualNotAList: 'pas une liste',
     visualNotAMap: 'pas une table',

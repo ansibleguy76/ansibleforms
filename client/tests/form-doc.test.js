@@ -240,6 +240,14 @@ describe("the form's nested settings", () => {
     expect(doc.has('credentials')).toBe(false);
   });
 
+  test('an empty placeholder that gets a value loses its quotes, a quoted value keeps them', () => {
+    const doc = parse('name: X\ntype: ansible\ncredentials:\n  db: ""\n  api: "007"\n');
+    setFormIn(doc, 'credentials', 'db', 'mysql');
+    setFormIn(doc, 'credentials', 'api', '008');
+    expect(doc.toString()).toContain('db: mysql\n');
+    expect(doc.toString()).toContain('api: "008"');
+  });
+
   test('an email as the schema takes it', () => {
     expect(EMAIL.test('ops@example.com')).toBe(true);
     expect(EMAIL.test('ops@')).toBe(false);

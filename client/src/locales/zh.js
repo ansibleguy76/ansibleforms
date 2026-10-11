@@ -1573,6 +1573,7 @@ export default {
     visualRemoveProperty: '移除此属性',
     visualFieldDetails: '帮助、默认值、输出和取值',
     visualValuesHelp: 'YAML 列表：每行一个值（- dev），或对象（- name: Rome）。',
+    visualNotANumber: '不是数字',
     visualYamlError: '无法在此显示 YAML：请在 YAML 标签中修正',
     visualNotAList: '不是列表',
     visualNotAMap: '不是映射',
