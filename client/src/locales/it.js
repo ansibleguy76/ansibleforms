@@ -847,7 +847,7 @@ export default {
       helpCredential: "Una credenziale di Connessioni > Credenziali: l'utente e la password (o il token) che git usa.",
       helpScheduledPull: 'Esegue automaticamente il pull del repository secondo una pianificazione.',
       newCredential: 'Aggiungi credenziale',
-      scheduledPull: 'Pull pianificato',
+      scheduledPull: 'Attiva il pull pianificato',
       stepCredentials: 'Credenziali',
       stepRepository: 'Repository',
       stepSchedule: 'Pianificazione del pull',

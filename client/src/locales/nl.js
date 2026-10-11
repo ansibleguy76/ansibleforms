@@ -842,7 +842,7 @@ export default {
         'Een referentie uit Verbindingen > Referenties: de gebruikersnaam en het wachtwoord (of token) die git gebruikt.',
       helpScheduledPull: 'De repository automatisch volgens een schema pullen.',
       newCredential: 'Referentie toevoegen',
-      scheduledPull: 'Geplande pull',
+      scheduledPull: 'Geplande pull inschakelen',
       stepCredentials: 'Referenties',
       stepRepository: 'Repository',
       stepSchedule: 'Pull-schema',

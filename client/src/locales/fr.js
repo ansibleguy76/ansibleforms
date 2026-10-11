@@ -851,7 +851,7 @@ export default {
         "Un identifiant de Connexions > Identifiants : l'utilisateur et le mot de passe (ou le jeton) que git utilise.",
       helpScheduledPull: 'Faire automatiquement un pull du dépôt selon une planification.',
       newCredential: 'Ajouter un identifiant',
-      scheduledPull: 'Pull planifié',
+      scheduledPull: 'Activer le pull planifié',
       stepCredentials: 'Identifiants',
       stepRepository: 'Dépôt',
       stepSchedule: 'Planification du pull',

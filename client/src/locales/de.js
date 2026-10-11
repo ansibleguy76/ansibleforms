@@ -850,7 +850,7 @@ export default {
         'Anmeldedaten aus Verbindungen > Anmeldedaten: Benutzername und Passwort (oder Token), die git verwendet.',
       helpScheduledPull: 'Das Repository automatisch nach Zeitplan pullen.',
       newCredential: 'Anmeldedaten hinzufügen',
-      scheduledPull: 'Geplanter Pull',
+      scheduledPull: 'Geplanten Pull aktivieren',
       stepCredentials: 'Anmeldedaten',
       stepRepository: 'Repository',
       stepSchedule: 'Pull-Zeitplan',

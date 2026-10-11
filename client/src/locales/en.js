@@ -835,7 +835,7 @@ export default {
       helpCredential: 'A credential of Connections > Credentials: the username and password (or token) git uses.',
       helpScheduledPull: 'Automatically pull the repository on a schedule.',
       newCredential: 'Add credential',
-      scheduledPull: 'Scheduled pull',
+      scheduledPull: 'Enable scheduled pull',
       stepCredentials: 'Credentials',
       stepRepository: 'Repository',
       stepSchedule: 'Pull schedule',

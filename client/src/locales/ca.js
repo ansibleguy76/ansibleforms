@@ -848,7 +848,7 @@ export default {
         "Una credencial de Connexions > Credencials: l'usuari i la contrasenya (o el testimoni) que fa servir git.",
       helpScheduledPull: 'Fa pull del repositori automàticament segons una programació.',
       newCredential: 'Afegeix una credencial',
-      scheduledPull: 'Pull programat',
+      scheduledPull: 'Activa el pull programat',
       stepCredentials: 'Credencials',
       stepRepository: 'Repositori',
       stepSchedule: 'Programació del pull',

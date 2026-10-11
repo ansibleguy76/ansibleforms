@@ -847,7 +847,7 @@ export default {
         'Uma credencial de Ligações > Credenciais: o utilizador e a palavra-passe (ou o token) que o git usa.',
       helpScheduledPull: 'Faz pull do repositório automaticamente segundo um agendamento.',
       newCredential: 'Adicionar credencial',
-      scheduledPull: 'Pull agendado',
+      scheduledPull: 'Ativar o pull agendado',
       stepCredentials: 'Credenciais',
       stepRepository: 'Repositório',
       stepSchedule: 'Agendamento do pull',

@@ -818,7 +818,7 @@ export default {
       helpCredential: '连接 > 凭据 中的凭据：git 使用的用户名和密码（或令牌）。',
       helpScheduledPull: '按计划自动拉取仓库。',
       newCredential: '添加凭据',
-      scheduledPull: '定时拉取',
+      scheduledPull: '启用定时拉取',
       stepCredentials: '凭据',
       stepRepository: '仓库',
       stepSchedule: '拉取计划',

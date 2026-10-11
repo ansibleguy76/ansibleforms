@@ -843,7 +843,7 @@ export default {
         'Poświadczenie z Połączenia > Poświadczenia: nazwa użytkownika i hasło (lub token), których używa git.',
       helpScheduledPull: 'Automatycznie wykonuje pull repozytorium według harmonogramu.',
       newCredential: 'Dodaj poświadczenie',
-      scheduledPull: 'Zaplanowany pull',
+      scheduledPull: 'Włącz zaplanowany pull',
       stepCredentials: 'Poświadczenia',
       stepRepository: 'Repozytorium',
       stepSchedule: 'Harmonogram pull',

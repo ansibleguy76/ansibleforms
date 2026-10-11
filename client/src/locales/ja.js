@@ -840,7 +840,7 @@ export default {
       helpCredential: '接続 > 認証情報 の認証情報です。git が使うユーザー名とパスワード (またはトークン) です。',
       helpScheduledPull: 'スケジュールに従ってリポジトリを自動でプルします。',
       newCredential: '認証情報を追加',
-      scheduledPull: '定期プル',
+      scheduledPull: '定期プルを有効にする',
       stepCredentials: '認証情報',
       stepRepository: 'リポジトリ',
       stepSchedule: 'プルのスケジュール',
