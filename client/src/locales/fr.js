@@ -389,6 +389,8 @@ export default {
     current: 'Icône actuelle',
     default: 'Icône AnsibleForms par défaut',
     custom: 'Votre icône téléversée',
+    size: '{width} × {height} px',
+    vector: 'SVG, net à toute taille',
     uploadButton: 'Téléverser',
     newIcon: 'Nouvelle icône',
     remove: "Supprimer l'icône personnalisée",

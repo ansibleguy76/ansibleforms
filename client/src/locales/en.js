@@ -384,6 +384,8 @@ export default {
     current: 'Current icon',
     default: 'Default AnsibleForms icon',
     custom: 'Your uploaded icon',
+    size: '{width} × {height} px',
+    vector: 'SVG, sharp at any size',
     uploadButton: 'Upload',
     newIcon: 'New icon',
     remove: 'Remove custom icon',

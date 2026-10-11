@@ -384,6 +384,8 @@ export default {
     current: '現在のアイコン',
     default: 'AnsibleForms の既定のアイコン',
     custom: 'アップロードしたアイコン',
+    size: '{width} × {height} px',
+    vector: 'SVG、どのサイズでも鮮明',
     uploadButton: 'アップロード',
     newIcon: '新しいアイコン',
     remove: 'カスタムアイコンを削除',

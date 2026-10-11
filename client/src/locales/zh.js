@@ -380,6 +380,8 @@ export default {
     current: '当前图标',
     default: '默认 AnsibleForms 图标',
     custom: '您上传的图标',
+    size: '{width} × {height} px',
+    vector: 'SVG，任意尺寸都清晰',
     uploadButton: '上传',
     newIcon: '新图标',
     remove: '删除自定义图标',

@@ -384,6 +384,8 @@ export default {
     current: 'Bieżąca ikona',
     default: 'Domyślna ikona AnsibleForms',
     custom: 'Przesłana ikona',
+    size: '{width} × {height} px',
+    vector: 'SVG, ostry w każdym rozmiarze',
     uploadButton: 'Prześlij',
     newIcon: 'Nowa ikona',
     remove: 'Usuń własną ikonę',

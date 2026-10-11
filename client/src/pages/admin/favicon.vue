@@ -104,6 +104,21 @@ async function removeIcon() {
 
 // the icon in use : the stored one, or the bundled one of index.html
 const currentIcon = computed(() => store.customFavicon || 'favicon.svg');
+// the current icon's own size, read from its image once loaded ; an svg has none, it is sharp at
+// any size
+const iconSize = ref(null);
+
+/**
+ * Reads the current icon's size from its loaded image.
+ *
+ * Args:
+ *   event (Event): the image's load.
+ */
+function onIconLoad(event) {
+  const img = event.target;
+  const svg = /^data:image\/svg\+xml|\.svg$/i.test(currentIcon.value);
+  iconSize.value = svg ? 'svg' : { width: img.naturalWidth, height: img.naturalHeight };
+}
 
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
@@ -131,10 +146,15 @@ onMounted(async () => {
             <label class="form-label fw-bold mb-2">{{ t('favicon.current') }}</label>
             <div class="af-icon-box">
               <!-- as the browser shows it : 16 px in a tab, 32 px on a bookmark -->
-              <img :src="currentIcon" class="af-icon-16" alt="" />
+              <img :src="currentIcon" class="af-icon-16" alt="" @load="onIconLoad" />
               <img :src="currentIcon" class="af-icon-32" alt="" />
             </div>
-            <div class="form-text">{{ store.customFavicon ? t('favicon.custom') : t('favicon.default') }}</div>
+            <!-- which one it is, and its own size (an svg : any size), as the logo page -->
+            <div class="form-text">
+              {{ store.customFavicon ? t('favicon.custom') : t('favicon.default') }}
+              <template v-if="iconSize === 'svg'"> · {{ t('favicon.vector') }}</template>
+              <template v-else-if="iconSize"> · {{ t('favicon.size', iconSize) }}</template>
+            </div>
           </div>
           <div v-if="preview" class="col-md-6">
             <label class="form-label fw-bold mb-2">{{ t('favicon.newIcon') }}</label>

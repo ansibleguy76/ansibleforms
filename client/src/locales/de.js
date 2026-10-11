@@ -388,6 +388,8 @@ export default {
     current: 'Aktuelles Symbol',
     default: 'Standard-AnsibleForms-Symbol',
     custom: 'Ihr hochgeladenes Symbol',
+    size: '{width} × {height} px',
+    vector: 'SVG, in jeder Größe scharf',
     uploadButton: 'Hochladen',
     newIcon: 'Neues Symbol',
     remove: 'Eigenes Symbol entfernen',

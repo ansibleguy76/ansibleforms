@@ -384,6 +384,8 @@ export default {
     current: 'Huidig pictogram',
     default: 'Standaard AnsibleForms pictogram',
     custom: 'Uw geüploade pictogram',
+    size: '{width} × {height} px',
+    vector: 'SVG, scherp op elk formaat',
     uploadButton: 'Uploaden',
     newIcon: 'Nieuw pictogram',
     remove: 'Eigen pictogram verwijderen',

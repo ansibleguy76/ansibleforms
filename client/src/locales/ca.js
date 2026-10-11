@@ -386,6 +386,8 @@ export default {
     current: 'Icona actual',
     default: "Icona predeterminada d'AnsibleForms",
     custom: 'La icona que has pujat',
+    size: '{width} × {height} px',
+    vector: 'SVG, nítid a qualsevol mida',
     uploadButton: 'Puja',
     newIcon: 'Icona nova',
     remove: 'Elimina la icona personalitzada',
