@@ -221,15 +221,36 @@ const textSettings = computed(() =>
     { key: 'vaultCredentials', label: 'designer.formVaultCreds', icon: 'lock', show: allows('vaultCredentials') },
     { key: 'tags', label: 'designer.formTags', icon: 'tags', show: allows('tags') },
     { key: 'limit', label: 'designer.formLimit', icon: 'filter', show: allows('limit') },
-    {
-      key: 'userExtravars',
-      label: 'designer.formUserExtravars',
-      icon: 'user',
-      show: allows('userExtravars'),
-      help: 'designer.formUserExtravarsHelp',
-    },
   ].filter((x) => x.show),
 );
+// ─── the user in the extravars : the instance's default, all, none, or only some keys ───
+// (server/src/lib/common.js, userForExtravars) ; empty follows EXTRAVARS_USER_FIELDS
+const userKeysChosen = ref(false);
+const userMode = computed(() => {
+  const v = String(setting('userExtravars') || '').trim();
+  if (!v) return userKeysChosen.value ? 'keys' : '';
+  if (v.toLowerCase() === 'all') return 'all';
+  if (v.toLowerCase() === 'none') return 'none';
+  return 'keys';
+});
+
+/**
+ * Picks what the playbook gets of the user : the keys are typed next, nothing is written until
+ * then (empty would mean the instance's default).
+ *
+ * Args:
+ *   mode (string): '', 'all', 'none' or 'keys'.
+ */
+function setUserMode(mode) {
+  userKeysChosen.value = mode === 'keys';
+  if (mode === 'keys') {
+    // keys already there stay ; 'all' or 'none' make room for the keys to type
+    if (['all', 'none'].includes(String(setting('userExtravars')).toLowerCase())) setText('userExtravars', '');
+    return;
+  }
+  setText('userExtravars', mode);
+}
+
 // the switches : true, or no key
 const flagSettings = computed(() =>
   [
@@ -531,6 +552,40 @@ defineExpose({
           </div>
           <!-- a help on two lines : its line breaks kept -->
           <div v-if="x.help" class="form-text af-pre-line">{{ t(x.help) }}</div>
+        </div>
+        <!-- the user in the extravars : a choice, and the keys when only some -->
+        <div v-if="allows('userExtravars')">
+          <label class="form-label fw-bold">{{ t('designer.formUserExtravars') }}</label>
+          <div class="input-group">
+            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="user" /></span>
+            <select class="form-select" :value="userMode" :disabled="locked" @change="setUserMode($event.target.value)">
+              <option value="">{{ t('designer.userExtravarsDefault') }}</option>
+              <option value="all">{{ t('designer.userExtravarsAll') }}</option>
+              <option value="none">{{ t('designer.userExtravarsNone') }}</option>
+              <option value="keys">{{ t('designer.userExtravarsKeys') }}</option>
+            </select>
+          </div>
+          <div v-if="userMode === 'keys'" class="input-group mt-2">
+            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="key" /></span>
+            <input
+              class="form-control"
+              :value="userMode === 'keys' ? setting('userExtravars') : ''"
+              :disabled="locked"
+              placeholder="username,email,type"
+              spellcheck="false"
+              @change="
+                setText(
+                  'userExtravars',
+                  $event.target.value
+                    .split(',')
+                    .map((k) => k.trim())
+                    .filter(Boolean)
+                    .join(','),
+                )
+              "
+            />
+          </div>
+          <div class="form-text">{{ t('designer.formUserExtravarsHelp') }}</div>
         </div>
         <div v-if="awx">
           <label class="form-label fw-bold">{{ t('designer.formInstanceGroups') }}</label>
