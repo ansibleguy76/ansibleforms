@@ -40,19 +40,17 @@ function labelOf(row) {
 const { edit: look, dirty, load, save } = useSettingsRow(labelOf);
 useUnsavedGuard(dirty, () => t('settings.common.unsavedChanges'));
 
-// the header as it is (its background, its font size, its logo's image) : the preview shows it
-// so, the label as large as there
-const headerLook = ref({ background: '', fontSize: '', logo: '' });
+// the header as it is (its background, its logo's image) : the preview shows it so
+const headerLook = ref({ background: '', logo: '' });
 
 /**
- * Reads the header's background, font size and logo, for the preview.
+ * Reads the header's background and logo, for the preview.
  */
 function readHeaderLook() {
   const header = document.querySelector('nav.af-header');
   const logo = header?.querySelector('.af-brand img');
   headerLook.value = {
     background: header ? getComputedStyle(header).backgroundColor : '',
-    fontSize: header ? getComputedStyle(header).fontSize : '',
     logo: logo ? logo.currentSrc || logo.src : '',
   };
 }
@@ -125,10 +123,7 @@ onMounted(async () => {
         </div>
         <!-- the preview : the header's logo and the label, as the header shows them -->
         <label class="form-label fw-bold mt-4 d-block">{{ t('settings.interface.envLabelPreview') }}</label>
-        <div
-          class="af-label-preview"
-          :style="{ backgroundColor: headerLook.background, fontSize: headerLook.fontSize }"
-        >
+        <div class="af-label-preview" :style="{ backgroundColor: headerLook.background }">
           <img v-if="headerLook.logo" :src="headerLook.logo" class="af-label-preview-logo" alt="" />
           <span
             class="badge rounded-pill fw-semibold af-pill af-label-preview-pill"
@@ -175,6 +170,8 @@ onMounted(async () => {
 }
 .af-label-preview-pill {
   margin-left: 20px;
+  /* as the header's (AppEnvLabel) */
+  font-size: 12px;
 }
 /* its letters apart, as the header's (AppEnvLabel) */
 .af-label-preview-pill .af-pill-label {

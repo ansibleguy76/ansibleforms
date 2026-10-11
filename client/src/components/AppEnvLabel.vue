@@ -27,6 +27,10 @@ const tone = computed(() => PILL[store.envLabelColor] || PILL.grey);
   margin-right: 1rem;
   align-self: center;
 }
+/* 12px wherever it shows (the header's smaller font would make it 10.5px), as its preview */
+.af-env-label {
+  font-size: 12px;
+}
 /* its letters a little apart : a word in capitals, read at a glance */
 .af-env-label .af-pill-label {
   letter-spacing: 0.06em;
