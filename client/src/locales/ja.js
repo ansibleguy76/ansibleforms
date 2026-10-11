@@ -712,11 +712,14 @@ export default {
       linkIcon: 'アイコン',
       linkLabel: 'ラベル',
       linkUrl: 'アドレス',
+      linkPlacement: '配置',
+      linkInHeader: 'ヘッダー',
+      linkInMenu: 'リンクメニュー',
       linkNewTab: '新しいタブ',
       linkUp: '上へ',
       linkDown: '下へ',
       linksHelp:
-        'ヘッダーに表示する独自のリンク（組み込みのリンクの後、最大 {max} 件）。アドレスはサイト（https://…）またはアプリのページ（/forms/all）。アイコンは Font Awesome の名前（book、life-ring など）。',
+        '独自のリンク（最大 {max} 件）：ヘッダーの組み込みリンクの後、またはリンクメニューの中。アドレスはサイト（https://…）またはアプリのページ（/forms/all）。',
       nameDescription: 'アプリケーションの名前。ブラウザーのタブとサインインページに表示されます。',
       environmentDescription: 'ロゴの横に表示し、どのインスタンスかを示すラベル（PRODUCTION、TEST など）。',
       announcementDescription:

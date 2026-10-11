@@ -108,8 +108,8 @@ export const MAX_HEADER_LINKS = 5;
 const MAX_LINK_LABEL = 30;
 /**
  * The header's own links, as Settings > Appearance > Links keeps them : each a label, an http
- * or https address or a path of the app (/forms/all), a Font Awesome icon's name and whether it
- * opens in a new tab. A link without a label or a valid address is left out ; any other address
+ * or https address or a path of the app (/forms/all), a Font Awesome icon's name, whether it
+ * opens in a new tab and whether it sits in the header's Links menu (else in the header itself). A link without a label or a valid address is left out ; any other address
  * (javascript:, data:, //host) never reaches the header.
  *
  * Args:
@@ -131,7 +131,8 @@ export function validHeaderLinks(value){
     const url = String(item.url ?? '').trim();
     if(!label || !isLinkUrl(url)) continue;
     const icon = /^[a-z0-9-]{1,40}$/.test(String(item.icon ?? '')) ? String(item.icon) : 'link';
-    links.push({ label, url, icon, newTab: !!item.newTab });
+    // in the Links menu unless asked otherwise (a link saved before it could choose : the menu)
+    links.push({ label, url, icon, newTab: !!item.newTab, menu: item.menu !== false });
     if(links.length >= MAX_HEADER_LINKS) break;
   }
   return links;

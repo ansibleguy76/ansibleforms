@@ -73,16 +73,16 @@ test("the header's links : a valid one kept, an invalid one left out, at most a 
     { label: "Jobs", url: "/jobs/all", icon: "<svg>" },
   ]);
   expect(links).toEqual([
-    { label: "Wiki", url: "https://wiki.example.com", icon: "book", newTab: true },
+    { label: "Wiki", url: "https://wiki.example.com", icon: "book", newTab: true, menu: true },
     // an icon that is no icon's name : the link's own
-    { label: "Jobs", url: "/jobs/all", icon: "link", newTab: false },
+    { label: "Jobs", url: "/jobs/all", icon: "link", newTab: false, menu: true },
   ]);
   const many = Array.from({ length: 9 }, (_, i) => ({ label: `L${i}`, url: `/p${i}` }));
   expect(validHeaderLinks(many)).toHaveLength(MAX_HEADER_LINKS);
   expect(validHeaderLinks("not json")).toEqual([]);
   // kept as JSON, none as null
   expect(new Settings({ header_links: [{ label: "Wiki", url: "/w" }] }).header_links).toBe(
-    JSON.stringify([{ label: "Wiki", url: "/w", icon: "link", newTab: false }]),
+    JSON.stringify([{ label: "Wiki", url: "/w", icon: "link", newTab: false, menu: true }]),
   );
   expect(new Settings({ header_links: [] }).header_links).toBe(null);
 });
@@ -91,4 +91,13 @@ test("a date format is one of those offered, anything else none", () => {
   expect(new Settings({ default_date_format: "DD/MM/YYYY" }).default_date_format).toBe("DD/MM/YYYY");
   expect(new Settings({ default_date_format: "<b>YYYY</b>" }).default_date_format).toBe(null);
   expect(new Settings({ default_date_format: "" }).default_date_format).toBe(null);
+});
+
+test("a header link sits in the Links menu unless it asks for the header itself", () => {
+  const [inMenu, inHeader] = validHeaderLinks([
+    { label: "Wiki", url: "/w" },
+    { label: "Status", url: "/s", menu: false },
+  ]);
+  expect(inMenu.menu).toBe(true);
+  expect(inHeader.menu).toBe(false);
 });

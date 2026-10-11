@@ -232,9 +232,7 @@ onMounted(async () => {
         </template>
       </template>
       <template #actions>
-        <BsButton cssClass="ms-3" :icon="loading ? 'spinner' : 'refresh'" @click="load()">{{
-          t('health.refresh')
-        }}</BsButton>
+        <BsButton :icon="loading ? 'spinner' : 'refresh'" @click="load()">{{ t('health.refresh') }}</BsButton>
       </template>
     </AppSettings>
   </AppSettingsPage>

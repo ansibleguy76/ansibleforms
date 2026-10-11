@@ -712,11 +712,14 @@ export default {
       linkIcon: 'Pictogram',
       linkLabel: 'Label',
       linkUrl: 'Adres',
+      linkPlacement: 'Plaats',
+      linkInHeader: 'In de kop',
+      linkInMenu: 'In het menu Links',
       linkNewTab: 'Nieuw tabblad',
       linkUp: 'Omhoog',
       linkDown: 'Omlaag',
       linksHelp:
-        'Je eigen links in de kop, na de ingebouwde, hoogstens {max}. Een adres is een site (https://…) of een pagina van de app (/forms/all). Het pictogram is een Font Awesome-naam, zoals book of life-ring.',
+        'Je eigen links, hoogstens {max}: in de kop na de ingebouwde, of in het menu Links. Een adres is een site (https://…) of een pagina van de app (/forms/all).',
       nameDescription: 'De naam van de applicatie, in het browsertabblad en op de aanmeldpagina.',
       environmentDescription: 'Een label naast het logo dat aangeeft welke instantie dit is, zoals PRODUCTIE of TEST.',
       announcementDescription:

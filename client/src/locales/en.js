@@ -708,11 +708,14 @@ export default {
       linkIcon: 'Icon',
       linkLabel: 'Label',
       linkUrl: 'Address',
+      linkPlacement: 'Placement',
+      linkInHeader: 'In the header',
+      linkInMenu: 'In the Links menu',
       linkNewTab: 'New tab',
       linkUp: 'Move up',
       linkDown: 'Move down',
       linksHelp:
-        'Your own links in the header, after the built-in ones, at most {max}. An address is a site (https://…) or a page of the app (/forms/all). The icon is a Font Awesome name, such as book or life-ring.',
+        'Your own links, at most {max}: in the header after the built-in ones, or nested in its Links menu. An address is a site (https://…) or a page of the app (/forms/all).',
       nameDescription: 'The name of the application, in the browser tab and on the sign-in page.',
       environmentDescription: 'A label beside the logo that says which instance this is, such as PRODUCTION or TEST.',
       announcementDescription:

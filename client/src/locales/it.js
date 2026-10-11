@@ -714,11 +714,14 @@ export default {
       linkIcon: 'Icona',
       linkLabel: 'Etichetta',
       linkUrl: 'Indirizzo',
+      linkPlacement: 'Posizione',
+      linkInHeader: "Nell'intestazione",
+      linkInMenu: 'Nel menu Collegamenti',
       linkNewTab: 'Nuova scheda',
       linkUp: 'Su',
       linkDown: 'Giù',
       linksHelp:
-        "I tuoi collegamenti nell'intestazione, dopo quelli integrati, al massimo {max}. Un indirizzo è un sito (https://…) o una pagina dell'app (/forms/all). L'icona è un nome Font Awesome, come book o life-ring.",
+        "I tuoi collegamenti, al massimo {max}: nell'intestazione dopo quelli integrati, o nel suo menu Collegamenti. Un indirizzo è un sito (https://…) o una pagina dell'app (/forms/all).",
       nameDescription: "Il nome dell'applicazione, nella scheda del browser e nella pagina di accesso.",
       environmentDescription:
         "Un'etichetta accanto al logo che indica di quale istanza si tratta, come PRODUZIONE o TEST.",

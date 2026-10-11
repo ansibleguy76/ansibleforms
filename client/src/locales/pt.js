@@ -715,11 +715,14 @@ export default {
       linkIcon: 'Ícone',
       linkLabel: 'Etiqueta',
       linkUrl: 'Endereço',
+      linkPlacement: 'Posição',
+      linkInHeader: 'No cabeçalho',
+      linkInMenu: 'No menu Ligações',
       linkNewTab: 'Novo separador',
       linkUp: 'Subir',
       linkDown: 'Descer',
       linksHelp:
-        'As suas ligações no cabeçalho, após as integradas, no máximo {max}. Um endereço é um site (https://…) ou uma página da aplicação (/forms/all). O ícone é um nome do Font Awesome, como book ou life-ring.',
+        'As suas ligações, no máximo {max}: no cabeçalho após as integradas, ou no seu menu Ligações. Um endereço é um site (https://…) ou uma página da aplicação (/forms/all).',
       nameDescription: 'O nome da aplicação, no separador do navegador e na página de início de sessão.',
       environmentDescription: 'Uma etiqueta junto ao logótipo que indica que instância é, como PRODUÇÃO ou TEST.',
       announcementDescription:

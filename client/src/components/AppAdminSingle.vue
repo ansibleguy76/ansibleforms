@@ -330,12 +330,10 @@ defineExpose({
         :key="action.name"
         v-show="!action.dependency || item[action.dependency]"
         :icon="action.icon"
-        cssClass="ms-3"
         @click="doEmit(action.name)"
         >{{ action.title }}</BsButton
       >
       <BsButton
-        cssClass="ms-3"
         icon="save"
         :colorClass="(isDirty && !isManaged) || extraDirty ? 'primary' : 'secondary'"
         :disabled="(!isDirty || isManaged) && !extraDirty"

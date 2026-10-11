@@ -718,11 +718,14 @@ export default {
       linkIcon: 'Icône',
       linkLabel: 'Libellé',
       linkUrl: 'Adresse',
+      linkPlacement: 'Emplacement',
+      linkInHeader: "Dans l'en-tête",
+      linkInMenu: 'Dans le menu Liens',
       linkNewTab: 'Nouvel onglet',
       linkUp: 'Monter',
       linkDown: 'Descendre',
       linksHelp:
-        "Vos propres liens dans l'en-tête, après les intégrés, {max} au plus. Une adresse est un site (https://…) ou une page de l'application (/forms/all). L'icône est un nom Font Awesome, comme book ou life-ring.",
+        "Vos propres liens, {max} au plus : dans l'en-tête après les intégrés, ou dans son menu Liens. Une adresse est un site (https://…) ou une page de l'application (/forms/all).",
       nameDescription: "Le nom de l'application, dans l'onglet du navigateur et sur la page de connexion.",
       environmentDescription:
         "Une étiquette à côté du logo qui indique de quelle instance il s'agit, comme PRODUCTION ou TEST.",

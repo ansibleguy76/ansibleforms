@@ -718,11 +718,14 @@ export default {
       linkIcon: 'Symbol',
       linkLabel: 'Bezeichnung',
       linkUrl: 'Adresse',
+      linkPlacement: 'Platzierung',
+      linkInHeader: 'In der Kopfzeile',
+      linkInMenu: 'Im Menü Links',
       linkNewTab: 'Neuer Tab',
       linkUp: 'Nach oben',
       linkDown: 'Nach unten',
       linksHelp:
-        'Eigene Links in der Kopfzeile, nach den integrierten, höchstens {max}. Eine Adresse ist eine Website (https://…) oder eine Seite der App (/forms/all). Das Symbol ist ein Font-Awesome-Name, z. B. book oder life-ring.',
+        'Eigene Links, höchstens {max}: in der Kopfzeile nach den integrierten oder in ihrem Menü Links. Eine Adresse ist eine Website (https://…) oder eine Seite der App (/forms/all).',
       nameDescription: 'Der Name der Anwendung, im Browser-Tab und auf der Anmeldeseite.',
       environmentDescription: 'Ein Label neben dem Logo, das die Instanz kennzeichnet, z. B. PRODUKTION oder TEST.',
       announcementDescription:

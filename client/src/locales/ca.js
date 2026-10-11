@@ -714,11 +714,14 @@ export default {
       linkIcon: 'Icona',
       linkLabel: 'Etiqueta',
       linkUrl: 'Adreça',
+      linkPlacement: 'Ubicació',
+      linkInHeader: 'A la capçalera',
+      linkInMenu: 'Al menú Enllaços',
       linkNewTab: 'Pestanya nova',
       linkUp: 'Pujar',
       linkDown: 'Baixar',
       linksHelp:
-        "Els teus enllaços a la capçalera, després dels integrats, com a màxim {max}. Una adreça és un lloc (https://…) o una pàgina de l'aplicació (/forms/all). La icona és un nom de Font Awesome, com book o life-ring.",
+        "Els teus enllaços, com a màxim {max}: a la capçalera després dels integrats, o dins del seu menú Enllaços. Una adreça és un lloc (https://…) o una pàgina de l'aplicació (/forms/all).",
       nameDescription: "El nom de l'aplicació, a la pestanya del navegador i a la pàgina d'inici de sessió.",
       environmentDescription: 'Una etiqueta al costat del logotip que indica quina instància és, com PRODUCCIÓ o TEST.',
       announcementDescription:

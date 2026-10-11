@@ -7,10 +7,11 @@
 /*      environment variable applied without a restart).          */
 /*      Switched off, the designer is gone for everyone : its     */
 /*      link, its page, its api.                                  */
-/*    Custom : the instance's own links after them (a wiki, a     */
-/*      runbook, a support portal) - a label, an address, an      */
-/*      icon, a new tab or not. Kept in the settings row ; the    */
-/*      server keeps only http(s) sites and pages of the app.     */
+/*    Custom : the instance's own links (a wiki, a runbook, a     */
+/*      support portal) - a label, an address, an icon, a new tab */
+/*      or not, in the header itself or nested in its Links menu. */
+/*      Kept in the settings row ; the server keeps only http(s)  */
+/*      sites and pages of the app.                               */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted } from 'vue';
@@ -69,7 +70,7 @@ const builtin = computed(() =>
  *   row (object): the settings row.
  *
  * Returns:
- *   object: { header_links : [{ label, url, icon, newTab }] }.
+ *   object: { header_links : [{ label, url, icon, newTab, menu }] }.
  */
 function linksOf(row) {
   let list;
@@ -84,6 +85,8 @@ function linksOf(row) {
       url: l.url || '',
       icon: l.icon || 'link',
       newTab: !!l.newTab,
+      // nested in the Links menu unless placed in the header itself
+      menu: l.menu !== false,
     })),
   };
 }
@@ -120,7 +123,7 @@ const anyInvalid = computed(() => invalid.value.some((x) => x.label || x.url));
  */
 function addLink() {
   if (own.value.header_links.length >= MAX_LINKS) return;
-  own.value.header_links.push({ label: '', url: 'https://', icon: 'link', newTab: true });
+  own.value.header_links.push({ label: '', url: 'https://', icon: 'link', newTab: true, menu: true });
 }
 
 /**
@@ -194,7 +197,6 @@ onMounted(async () => {
         <BsButton
           v-if="activeTab === 'custom'"
           icon="plus"
-          cssClass="me-3"
           :disabled="own.header_links.length >= MAX_LINKS"
           @click="addLink()"
           >{{ t('settings.interface.addLink') }}</BsButton
@@ -227,6 +229,7 @@ onMounted(async () => {
               <span>{{ t('settings.interface.linkIcon') }}</span>
               <span>{{ t('settings.interface.linkLabel') }}</span>
               <span>{{ t('settings.interface.linkUrl') }}</span>
+              <span>{{ t('settings.interface.linkPlacement') }}</span>
               <span class="text-center">{{ t('settings.interface.linkNewTab') }}</span>
               <span></span>
             </div>
@@ -257,6 +260,15 @@ onMounted(async () => {
                 :aria-label="t('settings.interface.linkUrl')"
                 spellcheck="false"
               />
+              <!-- where it sits : in the header itself, or nested in its Links menu -->
+              <select
+                v-model="l.menu"
+                class="form-select form-select-sm"
+                :aria-label="t('settings.interface.linkPlacement')"
+              >
+                <option :value="false">{{ t('settings.interface.linkInHeader') }}</option>
+                <option :value="true">{{ t('settings.interface.linkInMenu') }}</option>
+              </select>
               <div class="form-check form-switch d-flex justify-content-center mb-0">
                 <input
                   v-model="l.newTab"
@@ -312,11 +324,11 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  max-width: 60rem;
+  max-width: 64rem;
 }
 .af-links-row {
   display: grid;
-  grid-template-columns: 11rem 12rem minmax(12rem, 1fr) 5rem 6rem;
+  grid-template-columns: 11rem 11rem minmax(12rem, 1fr) 12rem 5rem 6rem;
   gap: 0.75rem;
   align-items: center;
 }

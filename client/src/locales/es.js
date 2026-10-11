@@ -712,11 +712,14 @@ export default {
       linkIcon: 'Icono',
       linkLabel: 'Etiqueta',
       linkUrl: 'Dirección',
+      linkPlacement: 'Ubicación',
+      linkInHeader: 'En la cabecera',
+      linkInMenu: 'En el menú Enlaces',
       linkNewTab: 'Nueva pestaña',
       linkUp: 'Subir',
       linkDown: 'Bajar',
       linksHelp:
-        'Tus propios enlaces en la cabecera, tras los integrados, como máximo {max}. Una dirección es un sitio (https://…) o una página de la aplicación (/forms/all). El icono es un nombre de Font Awesome, como book o life-ring.',
+        'Tus propios enlaces, como máximo {max}: en la cabecera tras los integrados, o dentro de su menú Enlaces. Una dirección es un sitio (https://…) o una página de la aplicación (/forms/all).',
       nameDescription: 'El nombre de la aplicación, en la pestaña del navegador y en la página de inicio de sesión.',
       environmentDescription: 'Una etiqueta junto al logotipo que indica qué instancia es, como PRODUCCIÓN o TEST.',
       announcementDescription:

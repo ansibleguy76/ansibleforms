@@ -121,14 +121,9 @@ onMounted(async () => {
           @click="upload()"
           >{{ t('logo.uploadButton') }}</BsButton
         >
-        <BsButton
-          v-if="store.customLogo && !store.logoIsDefault"
-          cssClass="ms-3"
-          icon="trash"
-          :disabled="busy"
-          @click="removeLogo()"
-          >{{ t('logo.remove') }}</BsButton
-        >
+        <BsButton v-if="store.customLogo && !store.logoIsDefault" icon="trash" :disabled="busy" @click="removeLogo()">{{
+          t('logo.remove')
+        }}</BsButton>
       </template>
       <template #default>
         <div class="row">

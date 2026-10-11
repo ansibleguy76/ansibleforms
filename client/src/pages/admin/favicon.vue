@@ -141,7 +141,7 @@ onMounted(async () => {
           @click="upload()"
           >{{ t('favicon.uploadButton') }}</BsButton
         >
-        <BsButton v-if="store.customFavicon" cssClass="ms-3" icon="trash" :disabled="busy" @click="removeIcon()">{{
+        <BsButton v-if="store.customFavicon" icon="trash" :disabled="busy" @click="removeIcon()">{{
           t('favicon.remove')
         }}</BsButton>
       </template>

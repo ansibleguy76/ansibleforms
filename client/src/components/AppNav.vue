@@ -138,7 +138,16 @@ function fitPrimaryNav() {
 }
 const refit = () => nextTick(fitPrimaryNav);
 // what changes the room : the own links, the label, the Designer link, the language, the logo
-watch(() => [store.headerLinks?.length, store.envLabel, store.designerEnabled, locale.value, store.customLogo], refit);
+watch(
+  () => [
+    JSON.stringify(store.headerLinks || []),
+    store.envLabel,
+    store.designerEnabled,
+    locale.value,
+    store.customLogo,
+  ],
+  refit,
+);
 let navObserver = null;
 onMounted(() => {
   refit();
@@ -236,8 +245,16 @@ const menu = computed(() => {
   // themselves, another for someone else, and who in its tooltip
   const designer = m.find((x) => x.link == '/designer');
   if (designer && designerLockIndicator.value) designer.indicator = designerLockIndicator.value;
+  // the instance's own links placed in the header itself (Settings > Appearance > Links > Custom)
+  for (const l of store.headerLinks || []) {
+    if (l.menu !== false) continue;
+    m.push({ title: l.label, href: l.url, icon: iconOrDefault(l.icon), newTab: !!l.newTab });
+  }
   return m;
 });
+
+// the own links nested in the header's Links menu (the others sit in the header itself)
+const menuLinks = computed(() => (store.headerLinks || []).filter((l) => l.menu !== false));
 
 const currentLanguage = computed(() => languages.find((l) => l.code === locale.value) || fallbackLanguage);
 
@@ -320,10 +337,10 @@ const buildMismatch = computed(() => {
     <!-- primary navigation, next to the logo -->
     <template #start>
       <ul ref="primaryNav" class="navbar-nav af-nav-primary me-auto" :class="FIT_CLASSES[navFit]">
-        <BsNavLink v-for="m in menu" :key="m.link" :link="m" />
-        <!-- the instance's own links (Settings > Appearance > Links > Custom), under one menu :
-             five more links would push the buttons on the right out of the header -->
-        <li v-if="store.headerLinks?.length" class="nav-item dropdown">
+        <BsNavLink v-for="m in menu" :key="m.link || `${m.title}|${m.href}`" :link="m" />
+        <!-- the instance's own links nested under one menu (Settings > Appearance > Links >
+             Custom) ; those placed in the header itself are in the menu above -->
+        <li v-if="menuLinks.length" class="nav-item dropdown">
           <a
             class="nav-link icon-link link-body-emphasis dropdown-toggle"
             href="#"
@@ -337,7 +354,7 @@ const buildMismatch = computed(() => {
             <span class="af-nav-text">{{ t('nav.links') }}</span>
           </a>
           <ul class="dropdown-menu">
-            <li v-for="l in store.headerLinks" :key="`${l.label}|${l.url}`">
+            <li v-for="l in menuLinks" :key="`${l.label}|${l.url}`">
               <!-- a page of the app in this tab : the router's ; a site, or a new tab : a plain link -->
               <router-link
                 v-if="l.url.startsWith('/') && !l.newTab"
