@@ -18,6 +18,7 @@ import appConfig from "../../../config/app.config.js";
 import { fileURLToPath } from 'url';
 import { bump } from '../../lib/epochs.js';
 import Errors from '../../lib/errors.js';
+import { formLinks } from '../../lib/formLinks.js';
 import yaml from 'yaml';
 import { isAdminRequest } from '../../lib/adminGrants.js';
 import { canonicalJson } from '../../lib/formEngine/output.js';
@@ -485,6 +486,17 @@ const formNames = async function(req,res){
   }
 }
 
+// every form with the roles that open it and where its jobs run (lib/formLinks.js) : the Forms
+// tabs of the settings pages (a role, a group, a user, a runner)
+const formsLinked = async function(req,res){
+  try{
+    var formConfig = await Form.load(undefined,undefined,true)
+    res.json(RestResult.list(formLinks(formConfig.forms)))
+  }catch(err){
+    res.status(500).json(RestResult.error(i18n.t(req, 'config.failedGetFormsList'), helpers.getError(err)))
+  }
+}
+
 // designer-accessible config mode: whether the active config lives in the
 // database. Uses the shared Settings.resolveConfigInDatabase helper (the same
 // config_source/env resolution used across the models) so designers (who may
@@ -521,6 +533,7 @@ const configTemplated = async function(req,res){
 
 export default {
   findList,
+  formsLinked,
   findOne,
   findAll,
   backups,

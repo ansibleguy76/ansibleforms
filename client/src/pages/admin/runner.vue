@@ -10,6 +10,9 @@
 /*    Connection      its address and how its certificate is     */
 /*                    checked                                     */
 /*    Authentication  a token, or a user and password (AWX)       */
+/*    Forms           the forms that run on it, by name or as the */
+/*                    default of its type                         */
+/*    Jobs            the jobs that ran on it, the latest first   */
 /*  Test connection, Change token (or password) and Delete top    */
 /*  right, beside Save. A runner of the config seed is read only. */
 /*                                                                */
@@ -25,6 +28,9 @@ import { useAppStore } from '@/stores/app';
 import { RUNNER_KINDS, runnerKind, registrationPill } from '@/config/settings';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
+import { useFormLinks } from '@/composables/useFormLinks';
+import { formPath } from '@/lib/formsPath';
+import Time from '@/lib/Time';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -135,13 +141,54 @@ async function update(data) {
 }
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
-// the dialog's steps : Runner, Type, Connection, Authentication
+// the dialog's steps : Runner, Type, Connection, Authentication ; then what runs on it
 const tabs = computed(() => [
   { key: 'runner', label: t('settings.runners.stepRunner'), icon: 'rocket' },
   { key: 'type', label: t('settings.runners.stepType'), icon: 'shapes' },
   { key: 'connection', label: t('settings.runners.stepConnection'), icon: 'globe' },
   { key: 'authentication', label: t('settings.runners.stepAuth'), icon: 'key' },
+  { key: 'forms', label: t('settings.linked.forms'), icon: 'rectangle-list', count: runnerForms.value.length },
+  { key: 'jobs', label: t('settings.linked.jobs'), icon: 'history', count: runnerJobs.value.length },
 ]);
+
+// ─── Forms and Jobs ───────────────────────────────────────────────────────────
+// the forms whose jobs run on it : those that name it, and, the default of its type, those that
+// name none ; a row opens the form
+const { loadForms, formsOfRunner } = useFormLinks();
+const runnerForms = computed(() => formsOfRunner(runner.value));
+const formColumns = computed(() => [
+  { key: 'name', label: t('settings.fields.form') },
+  {
+    key: 'how',
+    label: t('settings.linked.runsHere'),
+    value: (f) => (f.byDefault ? t('settings.linked.asDefault') : t('settings.linked.namesIt')),
+  },
+  { key: 'description', label: t('settings.fields.description') },
+]);
+// the jobs that ran on it, the latest first : a multistep job's steps stay under their job
+const JOBS_SHOWN = 100;
+const jobs = ref([]);
+const runnerJobs = computed(() => jobs.value.filter((j) => !j.parent_id));
+const jobColumns = computed(() => [
+  { key: 'id', label: t('settings.linked.job'), value: (j) => `#${j.id}` },
+  { key: 'form', label: t('settings.fields.form') },
+  { key: 'status', label: t('settings.linked.status') },
+  // its times as the jobs page shows them (the server sends them in its own zone)
+  { key: 'start', label: t('settings.linked.started'), value: (j) => j.start && Time.format(j.start) },
+]);
+
+/**
+ * Loads the jobs that ran on the runner ; refused or failing, the tab stays empty.
+ */
+async function loadJobs() {
+  if (!runner.value?.name) return;
+  try {
+    const res = await axios.get(`/api/v2/job/?runner=${encodeURIComponent(runner.value.name)}&records=${JOBS_SHOWN}`);
+    jobs.value = res.data.records || res.data || [];
+  } catch {
+    jobs.value = [];
+  }
+}
 const { activeTab, tabLink } = useRouteTab('runner', (key) => tabs.value.some((x) => x.key === key));
 
 // the title : Runners › <name>, each step a link
@@ -252,7 +299,8 @@ async function deleteRunner() {
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
-  await load();
+  await Promise.all([load(), loadForms()]);
+  await loadJobs();
 });
 </script>
 <template>
@@ -297,6 +345,7 @@ onMounted(async () => {
             >
               <FaIcon :icon="tab.icon" class="me-1" />
               {{ tab.label }}
+              <span v-if="tab.count !== undefined" class="badge af-tab-count ms-1">{{ tab.count }}</span>
             </a>
           </li>
         </ul>
@@ -306,6 +355,25 @@ onMounted(async () => {
           <FaIcon icon="rocket" class="empty-state-icon" />
           <span>{{ t('settings.runners.notFound', { id: runnerId }) }}</span>
         </div>
+        <!-- Forms : the forms that run on it ; a row opens the form -->
+        <AppLinkedTable
+          v-else-if="runner && activeTab === 'forms'"
+          :columns="formColumns"
+          :rows="runnerForms"
+          rowKey="name"
+          :to="(f) => formPath(f.name)"
+          :empty="t('settings.linked.noFormRunner')"
+        />
+        <!-- Jobs : the jobs that ran on it, the latest first ; a row opens the job -->
+        <AppLinkedTable
+          v-else-if="runner && activeTab === 'jobs'"
+          :columns="jobColumns"
+          :rows="runnerJobs"
+          :to="(j) => `/jobs/${j.id}`"
+          :empty="t('settings.linked.noJob')"
+        >
+          <template #cell-status="{ row }"><AppStatusPill :status="row.status" /></template>
+        </AppLinkedTable>
         <div v-else-if="runner && edit" class="af-runner-tab">
           <!-- a runner of the config seed : read only here -->
           <div v-if="managed" class="alert alert-secondary py-2">
@@ -481,6 +549,12 @@ onMounted(async () => {
   </AppSettingsPage>
 </template>
 <style scoped>
+/* the count of a tab : small and grey, as the menus' badges */
+.af-tab-count {
+  background: var(--bs-secondary-bg);
+  color: var(--bs-secondary-color);
+  font-weight: 600;
+}
 /* the wide fields' width of the settings pages, as a user's and a repository's */
 .af-runner-field :deep(.input-group) {
   max-width: 40rem;

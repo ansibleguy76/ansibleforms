@@ -10,6 +10,7 @@ const findAll = async function (req, res) {
   try {
     const result = await Audit.find({
       actor: req.query.actor,
+      actorType: req.query.actorType,
       action: req.query.action,
       targetType: req.query.targetType,
       target: req.query.target,

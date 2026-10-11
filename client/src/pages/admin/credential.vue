@@ -124,8 +124,19 @@ async function load() {
   } catch {
     credential.value = null;
   }
-  const stores = await axios.get('/api/v2/secretstore/', auth).catch(() => null);
+  const [stores, mails, repos] = await Promise.all([
+    axios.get('/api/v2/secretstore/', auth).catch(() => null),
+    axios.get('/api/v2/mailserver/', auth).catch(() => null),
+    axios.get('/api/v2/repository/', auth).catch(() => null),
+  ]);
   secretStores.value = [{ name: '' }, ...(stores?.data?.records || []).map((s) => ({ name: s.name }))];
+  // what names a credential : a secret store (its token or login), a mail server (its smtp
+  // login), a repository (its git login) ; the Used by tab keeps those naming this one
+  users.value = [
+    ...(stores?.data?.records || []).map((r) => ({ ...r, kind: 'secretStore', to: `/settings/secret-stores/${r.id}` })),
+    ...(mails?.data?.records || []).map((r) => ({ ...r, kind: 'mailServer', to: `/settings/mail/${r.id}` })),
+    ...(repos?.data?.records || []).map((r) => ({ ...r, kind: 'repository', to: `/settings/repositories/${r.id}` })),
+  ];
   loaded.value = true;
 }
 
@@ -148,8 +159,21 @@ async function update(data) {
   }
 }
 
+// ─── Used by ──────────────────────────────────────────────────────────────────
+// the secret stores, mail servers and repositories that name the credential ; a row opens it
+const users = ref([]);
+const usedBy = computed(() =>
+  credential.value ? users.value.filter((u) => u.credential && u.credential === credential.value.name) : [],
+);
+const usedByColumns = computed(() => [
+  { key: 'name', label: t('settings.fields.name') },
+  { key: 'kind', label: t('settings.linked.kind'), value: (u) => t(`settings.linked.${u.kind}`) },
+  { key: 'description', label: t('settings.fields.description') },
+]);
+
 // ─── tabs ─────────────────────────────────────────────────────────────────────
-// the dialog's steps : Store not for a CyberArk's, Connection for SSH and a database only
+// the dialog's steps : Store not for a CyberArk's, Connection for SSH and a database only ;
+// then what uses it
 const tabs = computed(() =>
   [
     { key: 'credential', label: t('settings.credentials.stepCredential'), icon: 'lock' },
@@ -161,10 +185,11 @@ const tabs = computed(() =>
       label: t('settings.credentials.stepConnection'),
       icon: 'server',
     },
+    { key: 'used-by', label: t('settings.linked.usedBy'), icon: 'link', count: usedBy.value.length },
   ].filter(Boolean),
 );
 const { activeTab, tabLink } = useRouteTab('credential', (key) =>
-  ['credential', 'type', 'login', 'store', 'connection'].includes(key),
+  ['credential', 'type', 'login', 'store', 'connection', 'used-by'].includes(key),
 );
 // a tab the type does not have (Connection of an API credential) : its first
 const shownTab = computed(() => (tabs.value.some((x) => x.key === activeTab.value) ? activeTab.value : 'credential'));
@@ -305,6 +330,7 @@ onMounted(async () => {
             <a class="nav-link" :class="{ active: shownTab === tab.key }" href="#" @click.prevent="activeTab = tab.key">
               <FaIcon :icon="tab.icon" class="me-1" />
               {{ tab.label }}
+              <span v-if="tab.count !== undefined" class="badge af-tab-count ms-1">{{ tab.count }}</span>
             </a>
           </li>
         </ul>
@@ -314,6 +340,15 @@ onMounted(async () => {
           <FaIcon icon="lock" class="empty-state-icon" />
           <span>{{ t('settings.credentials.notFound', { id: credentialId }) }}</span>
         </div>
+        <!-- Used by : what names the credential ; a row opens it -->
+        <AppLinkedTable
+          v-else-if="credential && shownTab === 'used-by'"
+          :columns="usedByColumns"
+          :rows="usedBy"
+          rowKey="to"
+          :to="(u) => u.to"
+          :empty="t('settings.linked.noUse')"
+        />
         <div v-else-if="credential && edit" class="af-credential-tab">
           <!-- a credential of the config seed : read only here -->
           <div v-if="managed" class="alert alert-secondary py-2">
@@ -518,6 +553,12 @@ onMounted(async () => {
   </AppSettingsPage>
 </template>
 <style scoped>
+/* the count of a tab : small and grey, as the menus' badges */
+.af-tab-count {
+  background: var(--bs-secondary-bg);
+  color: var(--bs-secondary-color);
+  font-weight: 600;
+}
 /* the wide fields' width of the settings pages, as a runner's and a secret store's */
 .af-credential-field :deep(.input-group) {
   max-width: 40rem;

@@ -2,12 +2,13 @@
 /******************************************************************/
 /*                                                                */
 /*  A local group's page (/settings/groups/<id>), opened from the */
-/*  groups list, in three tabs, the tab kept in the address       */
+/*  groups list, in tabs, the tab kept in the address             */
 /*  (/users, /roles) ; a row of a tab opens its item :            */
 /*  Details - name, description                                   */
 /*  Users - the users in it : Add user, and a row's menu or the   */
 /*          checkboxes remove one, never from its only group      */
 /*  Roles - the roles that name the group                         */
+/*  Forms - the forms those roles open                            */
 /*  Delete top right, off for admins and while the group has      */
 /*  users (the server refuses).                                   */
 /*                                                                */
@@ -21,6 +22,8 @@ import Profile from '@/lib/Profile';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { useRoleAssignments } from '@/composables/useRoleAssignments';
+import { useFormLinks } from '@/composables/useFormLinks';
+import { formPath } from '@/lib/formsPath';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -82,17 +85,28 @@ function toastError(err) {
 }
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
-// Details (name, description), Users ; the tab kept in the url
+// Details (name, description), Users, Roles, Forms ; the tab kept in the url
 const tabs = computed(() => [
   { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
   { key: 'users', label: t('settings.settingsPage.users'), icon: 'user' },
   { key: 'roles', label: t('settings.settingsPage.roles'), icon: 'user-shield' },
+  { key: 'forms', label: t('settings.linked.forms'), icon: 'rectangle-list' },
 ]);
 
 // ─── Roles ────────────────────────────────────────────────────────────────────
 // the roles that name the group ; a row opens the role's page
 const { loadRoles, rolesOfGroup } = useRoleAssignments();
 const groupRoles = computed(() => (group.value ? rolesOfGroup(group.value.name) : []));
+
+// ─── Forms ────────────────────────────────────────────────────────────────────
+// the forms the group's roles open, and through which ; a row opens the form
+const { loadForms, formsOfRoles } = useFormLinks();
+const groupForms = computed(() => formsOfRoles(groupRoles.value.map((r) => r.name)));
+const formColumns = computed(() => [
+  { key: 'name', label: t('settings.fields.form') },
+  { key: 'through', label: t('settings.linked.throughRoles'), value: (f) => f.through.join(', ') },
+  { key: 'description', label: t('settings.fields.description') },
+]);
 const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
 // the title : Groups › <name>, each step a link : Groups back to the list, the name to this page
@@ -200,7 +214,7 @@ async function deleteGroup() {
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
-  await Promise.all([load(), loadRoles()]);
+  await Promise.all([load(), loadRoles(), loadForms()]);
   // opened from the list's Add user : the dialog open at once, the url left clean
   if (route.query.add && group.value) {
     addingUser.value = others.value[0]?.id ?? '';
@@ -257,6 +271,7 @@ onMounted(async () => {
               {{ tab.label }}
               <span v-if="tab.key === 'users'" class="badge af-tab-count ms-1">{{ members.length }}</span>
               <span v-if="tab.key === 'roles'" class="badge af-tab-count ms-1">{{ groupRoles.length }}</span>
+              <span v-if="tab.key === 'forms'" class="badge af-tab-count ms-1">{{ groupForms.length }}</span>
             </a>
           </li>
         </ul>
@@ -287,6 +302,15 @@ onMounted(async () => {
         </div>
         <!-- Users : the users in the group, as the app's other tables -->
         <!-- Roles : the roles that name the group ; a row opens the role -->
+        <!-- Forms : the forms its roles open ; a row opens the form -->
+        <AppLinkedTable
+          v-else-if="group && activeTab === 'forms'"
+          :columns="formColumns"
+          :rows="groupForms"
+          rowKey="name"
+          :to="(f) => formPath(f.name)"
+          :empty="t('settings.linked.noFormGroup')"
+        />
         <template v-else-if="group && activeTab === 'roles'">
           <p v-if="!groupRoles.length" class="text-muted small mb-0">{{ t('settings.groups.noRole') }}</p>
           <div v-else class="af-table-frame">

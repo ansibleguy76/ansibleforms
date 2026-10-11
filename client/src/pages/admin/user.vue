@@ -2,15 +2,18 @@
 /******************************************************************/
 /*                                                                */
 /*  A local user's page (/settings/users/<id>), opened from the   */
-/*  users list, in five tabs, the tab kept in the address         */
+/*  users list, in tabs, the tab kept in the address              */
 /*  (/groups, /roles...) ; a row of a tab opens its item :        */
 /*  Details - username, description, email                        */
 /*  Groups - the groups it belongs to : Add group, and a row's    */
 /*           menu or the checkboxes remove one, never the last    */
 /*  Roles - the roles it has, and how (by name, through a group,  */
 /*          public as everyone's)                                 */
+/*  Forms - the forms its roles open                              */
+/*  Jobs - the jobs it launched, the latest first                 */
 /*  Stored jobs - the form values it stored to run again          */
 /*  Schedules - the jobs it planned with Run later                */
+/*  Activity - what the audit log recorded it doing               */
 /*  Change password and Delete top right, as the list's row menu  */
 /*  has them.                                                     */
 /*                                                                */
@@ -22,13 +25,16 @@ import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import Helpers from '@/lib/Helpers';
+// a job's times as the jobs page shows them (the server sends them in its own zone)
+import Time from '@/lib/Time';
 import { cronCell } from '@/lib/cronCell';
-import { useCellPopovers } from '@/composables/useCellPopovers';
+import { formPath } from '@/lib/formsPath';
+import { useFormLinks } from '@/composables/useFormLinks';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { useRoleAssignments } from '@/composables/useRoleAssignments';
 
-const { t } = useI18n();
+const { t, te } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const authenticated = ref(false);
@@ -103,8 +109,6 @@ async function update(data) {
 // what the user keeps to run : the form values it stored (their user written type/name), and the
 // jobs it planned with Run later (the schedules that run as it : their owner) ; a schedule an
 // admin made runs as no one, and is nobody's here. A row opens the stored job or the schedule.
-// a cron's meaning in words on hover, as the schedules list has it
-const { onCellHover } = useCellPopovers();
 const storedJobs = ref([]);
 const schedules = ref([]);
 const userStoredJobs = computed(() =>
@@ -150,13 +154,110 @@ async function loadJobs() {
   schedules.value = s.status === 'fulfilled' ? s.value.data.records || s.value.data || [] : [];
 }
 
+// ─── Forms, Jobs, Activity ────────────────────────────────────────────────────
+// the forms its roles open (the admin role, every form) ; a row opens the form
+const { loadForms, formsOfRoles } = useFormLinks();
+const userForms = computed(() => formsOfRoles(userRoles.value.map((r) => r.name)));
+// the jobs it launched, the latest first : a multistep job's steps stay under their job
+const JOBS_SHOWN = 100;
+const jobs = ref([]);
+const userJobs = computed(() => jobs.value.filter((j) => !j.parent_id));
+// what the audit log recorded it doing, the latest first
+const ACTIVITY_SHOWN = 100;
+const activity = ref([]);
+
+/**
+ * Loads the user's jobs and its activity ; either refused or failing, its tab stays empty.
+ */
+async function loadLinked() {
+  const name = encodeURIComponent(user.value?.username || '');
+  if (!name) return;
+  const [j, a] = await Promise.allSettled([
+    axios.get(`/api/v2/job/?user=${name}&user_type=local&records=${JOBS_SHOWN}`),
+    axios.get(`/api/v2/audit?actor=${name}&actorType=local&limit=${ACTIVITY_SHOWN}`),
+  ]);
+  jobs.value = j.status === 'fulfilled' ? j.value.data.records || j.value.data || [] : [];
+  const audit = a.status === 'fulfilled' ? a.value.data : null;
+  activity.value = (audit?.records !== undefined ? audit : audit?.result)?.records || [];
+}
+
+// ─── the tables of the linked tabs ────────────────────────────────────────────
+// the outcomes of the audit log, as its page names them
+const OUTCOMES = { success: 'audit.outcomeSuccess', failure: 'audit.outcomeFailure', denied: 'audit.outcomeDenied' };
+const formColumns = computed(() => [
+  { key: 'name', label: t('settings.fields.form') },
+  { key: 'through', label: t('settings.linked.throughRoles'), value: (f) => f.through.join(', ') },
+  { key: 'description', label: t('settings.fields.description') },
+]);
+const jobColumns = computed(() => [
+  { key: 'id', label: t('settings.linked.job'), value: (j) => `#${j.id}` },
+  { key: 'form', label: t('settings.fields.form') },
+  { key: 'status', label: t('settings.linked.status') },
+  { key: 'start', label: t('settings.linked.started'), value: (j) => j.start && Time.format(j.start) },
+]);
+const storedJobColumns = computed(() => [
+  { key: 'name', label: t('settings.fields.name') },
+  { key: 'form_name', label: t('settings.fields.form') },
+  { key: 'description', label: t('settings.fields.description') },
+  {
+    key: 'expires_at',
+    label: t('settings.fields.expiresAt'),
+    // none : it never expires
+    value: (j) => (j.expires_at ? Helpers.formatServerDate(j.expires_at) : t('settings.storedJobs.neverExpires')),
+  },
+]);
+const scheduleColumns = computed(() => [
+  { key: 'name', label: t('settings.fields.name') },
+  { key: 'form', label: t('settings.fields.form') },
+  // how it runs : a recurring schedule's cron, its meaning on hover ; or once
+  {
+    key: 'cron',
+    label: t('settings.schedules.stepSchedule'),
+    class: 'text-nowrap',
+    html: (s) => (s.one_time_run ? oneTimeCell.value : cronCell(s.cron)),
+  },
+  // when it runs : a one-time run its Run at, a recurring one its cron's next time
+  {
+    key: 'next_run',
+    label: t('settings.schedules.nextRun'),
+    value: (s) => nextRunOf(s) && Helpers.formatServerDate(nextRunOf(s)),
+  },
+]);
+const activityColumns = computed(() => [
+  { key: 'created_at', label: t('audit.time'), value: (r) => Helpers.formatServerDate(r.created_at) },
+  { key: 'action', label: t('audit.action'), value: (r) => actionLabel(r.action) },
+  { key: 'target', label: t('audit.target') },
+  {
+    key: 'outcome',
+    label: t('audit.outcome'),
+    value: (r) => (OUTCOMES[r.outcome] ? t(OUTCOMES[r.outcome]) : r.outcome),
+  },
+]);
+
+/**
+ * An audit action in words, as the audit log shows it ; the stored action when it has none.
+ *
+ * Args:
+ *   action (string): the stored action (settings.config.update).
+ *
+ * Returns:
+ *   string: its label.
+ */
+function actionLabel(action) {
+  if (!action) return '';
+  const key = 'audit.actionLabels.' + String(action).replace(/[.-]/g, '_');
+  return te(key) ? t(key) : action;
+}
+
 // ─── tabs ─────────────────────────────────────────────────────────────────────
-// Details (username, description, email), Groups, Roles, Stored jobs, Schedules ; the tab kept
-// in the url
+// Details (username, description, email), Groups, Roles, Forms, Jobs, Stored jobs, Schedules,
+// Activity ; the tab kept in the url
 const tabs = computed(() => [
   { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
   { key: 'groups', label: t('settings.settingsPage.groups'), icon: 'users', count: userGroups.value.length },
   { key: 'roles', label: t('settings.settingsPage.roles'), icon: 'user-shield', count: userRoles.value.length },
+  { key: 'forms', label: t('settings.linked.forms'), icon: 'rectangle-list', count: userForms.value.length },
+  { key: 'jobs', label: t('settings.linked.jobs'), icon: 'history', count: userJobs.value.length },
   {
     key: 'stored-jobs',
     label: t('settings.storedJobs.labelPlural'),
@@ -164,6 +265,7 @@ const tabs = computed(() => [
     count: userStoredJobs.value.length,
   },
   { key: 'schedules', label: t('settings.schedules.labelPlural'), icon: 'clock', count: userSchedules.value.length },
+  { key: 'activity', label: t('settings.linked.activity'), icon: 'clipboard-list', count: activity.value.length },
 ]);
 
 // ─── Roles ────────────────────────────────────────────────────────────────────
@@ -319,7 +421,8 @@ async function deleteUser() {
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
-  await Promise.all([load(), loadRoles(), loadJobs()]);
+  await Promise.all([load(), loadRoles(), loadJobs(), loadForms()]);
+  await loadLinked();
   // opened from the list's Add to group : the dialog open at once, the url left clean
   if (route.query.add && user.value) {
     // in every group already : the dialog says so, its Save off
@@ -441,65 +544,48 @@ onMounted(async () => {
             </table>
           </div>
         </template>
+        <!-- Forms : the forms its roles open ; a row opens the form -->
+        <AppLinkedTable
+          v-else-if="user && activeTab === 'forms'"
+          :columns="formColumns"
+          :rows="userForms"
+          rowKey="name"
+          :to="(f) => formPath(f.name)"
+          :empty="t('settings.linked.noFormUser')"
+        />
+        <!-- Jobs : the jobs it launched, the latest first ; a row opens the job -->
+        <AppLinkedTable
+          v-else-if="user && activeTab === 'jobs'"
+          :columns="jobColumns"
+          :rows="userJobs"
+          :to="(j) => `/jobs/${j.id}`"
+          :empty="t('settings.linked.noJob')"
+        >
+          <template #cell-status="{ row }"><AppStatusPill :status="row.status" /></template>
+        </AppLinkedTable>
         <!-- Stored jobs : the form values it stored ; a row opens the stored job -->
-        <template v-else-if="user && activeTab === 'stored-jobs'">
-          <p v-if="!userStoredJobs.length" class="text-muted small mb-0">{{ t('settings.users.noStoredJob') }}</p>
-          <div v-else class="af-table-frame">
-            <table class="table af-table">
-              <thead>
-                <tr>
-                  <th>{{ t('settings.fields.name') }}</th>
-                  <th>{{ t('settings.fields.form') }}</th>
-                  <th>{{ t('settings.fields.description') }}</th>
-                  <th>{{ t('settings.fields.expiresAt') }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="j in userStoredJobs" :key="j.id" role="button" @click="router.push(`/jobs/stored/${j.id}`)">
-                  <td class="af-row-open">{{ j.name }}</td>
-                  <td>{{ j.form_name }}</td>
-                  <td>{{ j.description || '–' }}</td>
-                  <!-- none : it never expires -->
-                  <td>
-                    {{ j.expires_at ? Helpers.formatServerDate(j.expires_at) : t('settings.storedJobs.neverExpires') }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </template>
+        <AppLinkedTable
+          v-else-if="user && activeTab === 'stored-jobs'"
+          :columns="storedJobColumns"
+          :rows="userStoredJobs"
+          :to="(j) => `/jobs/stored/${j.id}`"
+          :empty="t('settings.users.noStoredJob')"
+        />
         <!-- Schedules : the jobs it planned with Run later ; a row opens the schedule -->
-        <template v-else-if="user && activeTab === 'schedules'">
-          <p v-if="!userSchedules.length" class="text-muted small mb-0">{{ t('settings.users.noSchedule') }}</p>
-          <div v-else class="af-table-frame">
-            <table class="table af-table" @mouseover="onCellHover">
-              <thead>
-                <tr>
-                  <th>{{ t('settings.fields.name') }}</th>
-                  <th>{{ t('settings.fields.form') }}</th>
-                  <th>{{ t('settings.schedules.stepSchedule') }}</th>
-                  <th>{{ t('settings.schedules.nextRun') }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="s in userSchedules"
-                  :key="s.id"
-                  role="button"
-                  @click="router.push(`/jobs/schedules/${s.id}`)"
-                >
-                  <td class="af-row-open">{{ s.name }}</td>
-                  <td>{{ s.form || '–' }}</td>
-                  <!-- how it runs : a recurring schedule's cron, its meaning on hover ; or once -->
-                  <!-- eslint-disable-next-line vue/no-v-html -- cronCell escapes it -->
-                  <td class="text-nowrap" v-html="s.one_time_run ? oneTimeCell : cronCell(s.cron)"></td>
-                  <!-- when it runs : a one-time run its Run at, a recurring one its cron's next time -->
-                  <td>{{ nextRunOf(s) ? Helpers.formatServerDate(nextRunOf(s)) : '–' }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </template>
+        <AppLinkedTable
+          v-else-if="user && activeTab === 'schedules'"
+          :columns="scheduleColumns"
+          :rows="userSchedules"
+          :to="(s) => `/jobs/schedules/${s.id}`"
+          :empty="t('settings.users.noSchedule')"
+        />
+        <!-- Activity : what the audit log recorded it doing, the latest first -->
+        <AppLinkedTable
+          v-else-if="user && activeTab === 'activity'"
+          :columns="activityColumns"
+          :rows="activity"
+          :empty="t('settings.linked.noActivity')"
+        />
         <template v-else-if="user">
           <p v-if="!userGroups.length" class="text-muted small mb-0">{{ t('settings.users.noGroup') }}</p>
           <div v-else class="af-table-frame">
