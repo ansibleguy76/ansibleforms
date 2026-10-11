@@ -111,7 +111,7 @@ export default {
     failedCloneRepository: "No s'ha pogut clonar el repositori",
     failedResetRepository: "No s'ha pogut restablir el repositori",
     failedPullRepository: "No s'ha pogut fer pull del repositori",
-    failedSyncRepository: "No s'ha pogut sincronitzar el repositori",
+    failedSyncRepository: "No s’ha pogut fer push del repositori",
     noFormsRepositories: "No hi ha cap repositori de formularis configurat",
     failedApplyConfigSeed: "No s'ha pogut aplicar el config seed",
     noConfigSeed: "No hi ha cap config seed configurat (CONFIG_SEED_PATH és buit)",

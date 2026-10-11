@@ -111,7 +111,7 @@ export default {
     failedCloneRepository: "Kan repository niet klonen",
     failedResetRepository: "Kan repository niet resetten",
     failedPullRepository: "Kan repository niet pullen",
-    failedSyncRepository: "Repository synchroniseren mislukt",
+    failedSyncRepository: "Pushen van de repository mislukt",
     noFormsRepositories: "Geen forms repositories geconfigureerd",
     failedApplyConfigSeed: "Kan de configuratie-seed niet toepassen",
     noConfigSeed: "Er is geen configuratie-seed geconfigureerd (CONFIG_SEED_PATH is leeg)",

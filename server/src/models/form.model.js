@@ -46,13 +46,13 @@ const formsSchema = (() => {
 })();
 const jsonSchemaDraft6 = JSON.parse(fs.readFileSync(path.join(__dirname, "../../node_modules/ajv/lib/refs/json-schema-draft-06.json"), "utf8"));
 
-const backupPath = appConfig.formsBackupPath
-
-// New paths using config.yaml
-const configFileName = path.basename(appConfig.configPath)
-const formsPath = appConfig.formsFolderPath
-const formsBackupPath = path.join(backupPath,'forms')
-const configFileBackupPath = path.join(backupPath,configFileName)
+// The paths, read from appConfig each time they are used : the settings page changes
+// FORMS_BACKUP_PATH, CONFIG_PATH and FORMS_FOLDER_PATH without a restart (lib/envSettings.js)
+const backupPath = () => appConfig.formsBackupPath
+const configFileName = () => path.basename(appConfig.configPath)
+const formsPath = () => appConfig.formsFolderPath
+const formsBackupPath = () => path.join(backupPath(),'forms')
+const configFileBackupPath = () => path.join(backupPath(),configFileName())
 // A snapshot is normally of the ACTIVE config, and a restore reinstates it into
 // whatever source is active at that moment. The two writes that REPLACE one source
 // with the other - Settings.exportConfig (database -> file) and
@@ -66,9 +66,9 @@ const configFileBackupPath = path.join(backupPath,configFileName)
 // the backups list, the suffix parser and the retention cleanup keep working
 // unchanged, and an 'active' snapshot keeps its plain historical name.
 const configBackupPathForSource = function(source){
-  if(source!=='file' && source!=='database') return configFileBackupPath
-  const parsed = path.parse(configFileName)
-  return path.join(backupPath,`${parsed.name}.${source}${parsed.ext}`)
+  if(source!=='file' && source!=='database') return configFileBackupPath()
+  const parsed = path.parse(configFileName())
+  return path.join(backupPath(),`${parsed.name}.${source}${parsed.ext}`)
 }
 // the snapshot sources that carry their name ; anything else is an 'active' snapshot
 const fixedBackupSources = ['file','database']
@@ -227,7 +227,7 @@ async function getSaveTargets() {
   // staging is the default target for new files in repository mode ; it is
   // listed last so an existing repository file is always matched first
   const stagingDir = { name: null, path: appConfig.formsStagingPath, staging: true }
-  const formsDirs = repoMode ? [...repoFolders, stagingDir] : [{ name: null, path: formsPath }]
+  const formsDirs = repoMode ? [...repoFolders, stagingDir] : [{ name: null, path: formsPath() }]
   // the distinct git repositories this save writes into : the forms repos plus
   // the repo that holds config.yaml (it may be a separate use_for_config repo,
   // and then there are no forms repos at all - which is why this is not gated on
@@ -309,8 +309,8 @@ async function getBaseConfig() {
     }
     
     // Also ensure the forms directory exists
-    if (!fs.existsSync(formsPath)) {
-      copyFormsDirectoryTemplate(formsPath);
+    if (!fs.existsSync(formsPath())) {
+      copyFormsDirectoryTemplate(formsPath());
     }
     // at this point we have a config file and forms directory
 
@@ -864,7 +864,7 @@ Form.backups = function() {
   var files
   var backups=[]
   try{
-    files = fs.readdirSync(backupPath)
+    files = fs.readdirSync(backupPath())
     if(files){
       // filter only backups
       files=files.filter((item)=>item.match(/y[a]{0,1}ml\.bak\.[0-9]{17}$/g))
@@ -1134,7 +1134,7 @@ Form.removeOld=function(days=60){
     return
   }
   days = keep
-  var items = fs.readdirSync(backupPath)
+  var items = fs.readdirSync(backupPath())
   if(items && items.length){
     // filter only backup yamls
     items=items.filter((item)=>item.match(/\.bak\.[0-9]{17}$/g))
@@ -1145,7 +1145,7 @@ Form.removeOld=function(days=60){
       var old=moment().diff(moment(iso),"days") // how old ?
       if(old>days){ // date is older than x days ?
         logger.debug("Removing old backup item")
-        fse.removeSync(path.join(backupPath,item)) // remove backup
+        fse.removeSync(path.join(backupPath(),item)) // remove backup
       }else{
         //logger.debug(`Keeping ${file} [${old} days]`)
       }
@@ -1161,11 +1161,11 @@ Form.removeOld=function(days=60){
 // (configBackupPathForSource) so the restore reinstates it there.
 Form.backup = async function(configOnly=false,source='active'){
   logger.info(configOnly ? "Making backup of config" : "Making backup of config and forms")
-  const sourceFormsPath = formsPath
+  const sourceFormsPath = formsPath()
   // 'HH' (00-23), not 'kk' (1-24) : with 'kk' a backup taken at midnight was named
   // hour '24', which moment can no longer reparse (see Form.backups)
   var timestamp=moment().format("YYYYMMDDHHmmssSSS")
-  var backupformsdir=formsBackupPath +".bak."+timestamp
+  var backupformsdir=formsBackupPath() +".bak."+timestamp
   var backupconfigfile=configBackupPathForSource(source) +".bak."+timestamp
   var backupfile=path.parse(backupconfigfile).base
   Form.removeOld(appConfig.oldBackupDays) // read now : OLD_BACKUP_DAYS changes without a restart
@@ -1244,7 +1244,7 @@ Form.backup = async function(configOnly=false,source='active'){
 // remove unique backupname with forms folder
 Form.remove = function(backupName){
   logger.debug(`Removing old backup '${backupName}'`)
-  var backupformsdir=formsBackupPath+getBackupSuffix(backupName)
+  var backupformsdir=formsBackupPath()+getBackupSuffix(backupName)
 
   // Remove the config.yaml backup, whichever source it was taken from (a timestamp
   // only ever carries one of them, see configBackupPathForSource ; all are tried so
@@ -1264,9 +1264,9 @@ Form.remove = function(backupName){
   }
 }
 Form.restoreBackup = async function(backupName,configOnly=false){
-  const targetFormsPath = formsPath
+  const targetFormsPath = formsPath()
   const suffix = getBackupSuffix(backupName)
-  var backupformsdir=formsBackupPath+suffix
+  var backupformsdir=formsBackupPath()+suffix
   // a snapshot taken from a FIXED source lives under its own name and goes back to
   // that source ; only a plain 'active' snapshot follows whatever is serving the
   // config at restore time
@@ -1337,8 +1337,8 @@ Form.save = async function(data){
   // a form 'source' is client-controlled ; reject any that would escape its
   // forms folder (path traversal / absolute path) before it is used as a path
   for (const g of Object.values(groups)) {
-    const probe = path.resolve(formsPath, g.source)
-    if (g.source.includes("\0") || path.isAbsolute(g.source) || !probe.startsWith(path.resolve(formsPath) + path.sep)) {
+    const probe = path.resolve(formsPath(), g.source)
+    if (g.source.includes("\0") || path.isAbsolute(g.source) || !probe.startsWith(path.resolve(formsPath()) + path.sep)) {
       throw new Error(`Invalid form source '${g.source}' : must be a path inside the forms folder`)
     }
   }
@@ -1557,7 +1557,7 @@ Form.restore = async function(backupName,backupBeforeRestore){
 // create the backup path, and clear backups past their retention
 Form.initBackupFolder=function(){
   try{
-    fs.mkdirSync(backupPath, { recursive: true })
+    fs.mkdirSync(backupPath(), { recursive: true })
   }catch(e){
     logger.error("Failed to init backup folder\n",e)
   }

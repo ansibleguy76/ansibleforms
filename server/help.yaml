@@ -723,7 +723,7 @@
     version: 7.0.0
     type: number
     allowed: 0 or a positive integer
-    default: 12
+    default: 8
     short: The shortest password a person may set
     hint: 0 checks no length
     description: |

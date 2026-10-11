@@ -175,6 +175,8 @@ const saveEnv = async function(req,res){
       const value = updates[name] === null || updates[name] === undefined ? '' : String(updates[name])
       // hand the documented default over : clearing a field means "back to the default", and
       // applyLive cannot know what that is
+      // an RTE's own variable : the app has nothing to apply, and its restart would change nothing
+      if(EnvSettings.classify(name) === 'rte'){ EnvSettings.applyLive(name, value, docs.get(name)?.default); continue }
       if(!EnvSettings.applyLive(name, value, docs.get(name)?.default)) restart.push(name)
     }
 
@@ -202,8 +204,9 @@ const saveEnv = async function(req,res){
 // ACCESS_TOKEN_EXPIRATION and ACCESS_TOKEN_ISSUER are not secrets and are worth seeing -
 // so this matches a trailing _TOKEN instead, which is what VAULT_TOKEN and any future
 // <service>_TOKEN look like. HTTPS_KEY is deliberately NOT matched: it is a path to a key
-// file, not the key itself, and the path is useful to see.
-const SECRET_ENV_NAME = /PASSWORD|SECRET|_TOKEN$/;
+// file, not the key itself, and the path is useful to see. PASSWORD and SECRET are trailing
+// too, for the same reason : PASSWORD_MIN_LENGTH is a number, and it was hidden as a secret.
+const SECRET_ENV_NAME = /_PASSWORD$|_SECRET$|_TOKEN$/;
 const MASK = "*** NOT REVEALED ***";
 
 // Deprecated since 7 (removed in 8) : the Vault page these served is replaced by the
@@ -289,7 +292,8 @@ const env = async function(req,res){
       // is often a paragraph shared by several variables, which reads as boilerplate
       item.hint = x.hint || null
       // editing metadata : 'refused' (never editable, with the reason), 'live' (takes
-      // effect on save) or 'restart' (saved, but needs a restart). `overridden` means the
+      // effect on save), 'rte' (read by an RTE, set where it runs) or 'restart' (saved, but
+      // needs a restart). `overridden` means the
       // real environment holds this value, so writing the managed file cannot change it.
       item.editable = EnvSettings.classify(x.name)
       item.refusedReason = EnvSettings.REFUSED[x.name] || null

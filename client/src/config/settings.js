@@ -1270,7 +1270,7 @@ export default function getSettings(t) {
       flat: true, // flat data structure,
       icon: 'server',
       actions: [
-        { name: 'preview', title: t('settings.knownhosts.showEntry'), icon: 'info-circle', color: 'change' },
+        { name: 'preview', title: t('settings.knownhosts.showEntry'), icon: 'copy', color: 'change' },
         { name: 'delete', title: t('settings.knownhosts.deleteEntry'), icon: 'trash', color: 'delete' },
       ],
       fields: [

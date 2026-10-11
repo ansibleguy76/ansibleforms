@@ -111,7 +111,7 @@ export default {
     failedCloneRepository: "Repository konnte nicht geklont werden",
     failedResetRepository: "Repository konnte nicht zurueckgesetzt werden",
     failedPullRepository: "Repository konnte nicht gepullt werden",
-    failedSyncRepository: "Repository konnte nicht synchronisiert werden",
+    failedSyncRepository: "Das Repository konnte nicht gepusht werden",
     noFormsRepositories: "Keine Forms-Repositories konfiguriert",
     failedApplyConfigSeed: "Konfigurations-Seed konnte nicht angewendet werden",
     noConfigSeed: "Es ist kein Konfigurations-Seed konfiguriert (CONFIG_SEED_PATH ist leer)",

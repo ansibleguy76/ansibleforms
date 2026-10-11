@@ -2,7 +2,7 @@
 /*                                                                */
 /*  What a local password must be when a person sets one through  */
 /*  the API (a new user, an admin setting it, a user changing     */
-/*  their own) : PASSWORD_MIN_LENGTH characters at least (12, 0   */
+/*  their own) : PASSWORD_MIN_LENGTH characters at least (8, 0    */
 /*  turns the length off), not the username, not the public      */
 /*  default. Length beats composition rules : a long passphrase   */
 /*  is strong and easy to remember, "Passw0rd!" is neither.       */

@@ -28,29 +28,49 @@ const withRequest = winston.format((info) => {
 const requestSuffix = (info) => (info.requestId ? ` [req ${info.requestId}]` : '');
 
 // LOG_FORMAT=json : one JSON object a line, for a log collector (Loki, ELK, Splunk...) - its time
-// in ISO, its level, its message, the request and the process it comes from
-const jsonLines = process.env.LOG_FORMAT === 'json';
+// in ISO, its level, its message, the request and the process it comes from. Read per line, so
+// a change on the settings page applies at once (setLogFormat)
+let jsonLines = process.env.LOG_FORMAT === 'json';
 const PROCESS_FIELDS = { role: process.env.AF_ROLE || 'all', host: os.hostname() };
-const formatJson = winston.format.combine(
-  withRequest(),
-  winston.format.printf((info) => JSON.stringify({
-    time: new Date().toISOString(),
-    level: info.level,
-    message: info.message,
-    ...(info.requestId ? { requestId: info.requestId } : {}),
-    ...PROCESS_FIELDS,
-  })),
-);
 
-const formatColor = jsonLines ? formatJson : winston.format.combine(withRequest(), winston.format.printf(
+/**
+ * Switches the log lines between text and JSON (LOG_FORMAT), for every transport at once.
+ *
+ * Args:
+ *   value (string): 'json', or anything else for text.
+ */
+export function setLogFormat(value) {
+  jsonLines = String(value || '').trim().toLowerCase() === 'json';
+}
+
+/**
+ * A log line as JSON : its time in ISO, its level, its message, its request and its process.
+ *
+ * Args:
+ *   info (object): winston's entry.
+ *
+ * Returns:
+ *   string: the line.
+ */
+const jsonLine = (info) => JSON.stringify({
+  time: new Date().toISOString(),
+  level: info.level,
+  message: info.message,
+  ...(info.requestId ? { requestId: info.requestId } : {}),
+  ...PROCESS_FIELDS,
+});
+
+const formatColor = winston.format.combine(withRequest(), winston.format.printf(
   (info) => {
+    if (jsonLines) return jsonLine(info);
     const timestamp = getTimestamp();
     return `${timestamp} ${color[info.level] || ''}${info.level}: ${info.message}${requestSuffix(info)}\x1b[0m`;
   }
 ));
 
-const formatNoColor = jsonLines ? formatJson : winston.format.combine(withRequest(), winston.format.printf(
+const formatNoColor = winston.format.combine(withRequest(), winston.format.printf(
   (info) => {
+    if (jsonLines) return jsonLine(info);
     const timestamp = getTimestamp();
     return `${timestamp} ${info.level}: ${info.message}${requestSuffix(info)}`;
   }

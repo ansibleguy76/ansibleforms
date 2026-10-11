@@ -327,6 +327,23 @@ const envRestartPending = ref([]);
 // A field is a real input only when it can actually be written : never for a refused
 // variable, and never for one the real environment already sets, because dotenv will not
 // overwrite that and the save would silently do nothing.
+/**
+ * Whether a variable's value is long : a path, a command, an address, a list of hosts, an
+ * expression. A tab holding one has all its fields that wide, wide enough to read it : the
+ * fields of a tab are one width.
+ *
+ * Args:
+ *   e (object): the variable.
+ *
+ * Returns:
+ *   boolean: true for a long one.
+ */
+function envWide(e) {
+  return /(_PATH|_COMMAND|_REGEX|_URI|_URL|_HOSTS|_KEY|_CERT|_FIELDS|_DESTINATIONS|_DATA_\{dynamic\})$|^REGEX_/.test(
+    e.name,
+  );
+}
+
 function envEditable(e) {
   return e.editable !== 'refused' && !e.overridden;
 }
@@ -428,6 +445,7 @@ onMounted(async () => {
                below through the env endpoint - the one Save button covers both. -->
             <template v-if="group.key === 'server'">
               <BsInput
+                class="af-env-field af-env-wide"
                 :isFloating="false"
                 icon="globe"
                 v-model="$v.item.url.$model"
@@ -456,7 +474,7 @@ onMounted(async () => {
                  <input>: it looks like the fields beside it, but nothing writes these
                  - they come from the process environment - so an input would promise
                  an edit that cannot happen. -->
-              <div class="mb-3">
+              <div class="mb-3 af-env-field" :class="{ 'af-env-wide': group.items.some(envWide) }">
                 <!-- an editable variable gets a real BsInput, so it is identical to the
                    Settings tab. One that cannot be written keeps the read-only box and
                    says why, rather than offering an edit that would not take. -->
@@ -480,7 +498,7 @@ onMounted(async () => {
                       <span class="input-group-text text-gray-500">
                         <FaIcon :fixedwidth="true" :icon="e.editable === 'refused' ? 'lock' : 'shield-halved'" />
                       </span>
-                      <div class="form-control env-value" :title="e.name">
+                      <div class="form-control env-value" :title="e.value ? String(e.value) : e.name">
                         {{ e.value === null || e.value === '' ? '—' : e.value }}
                       </div>
                     </div>
@@ -490,6 +508,10 @@ onMounted(async () => {
                     {{ e.overridden ? t('settings.settingsPage.envOverridden') : e.refusedReason || '' }}
                   </div>
                 </template>
+                <!-- read by an RTE from its own environment : this page cannot reach it -->
+                <div v-if="envEditable(e) && e.editable === 'rte'" class="form-text env-restart">
+                  {{ t('settings.settingsPage.envRteOnly') }}
+                </div>
                 <div v-if="envEditable(e) && e.editable === 'restart'" class="form-text env-restart">
                   {{ t('settings.settingsPage.envRestartRequired') }}
                   <!-- for a path, 'takes effect after a restart' is true but misses the
@@ -558,6 +580,18 @@ onMounted(async () => {
   </AppSettingsPage>
 </template>
 <style scoped>
+/* the variables' fields one width, as on the other settings pages (AppEnvField) : across the
+   whole card, a number or a yes / no sat far from its label. A tab holding a long value (a
+   path, a command, an address) has all its fields wider, wide enough to read it : the fields
+   of a tab are one width */
+.af-env-field :deep(.input-group),
+.af-env-field > .input-group {
+  max-width: 20rem;
+}
+.af-env-wide :deep(.input-group),
+.af-env-wide > .input-group {
+  max-width: 40rem;
+}
 /* the card body padding of a tabbed AppSettings card is set globally
    (bootstrap-override.scss, .tab-card-flush-card) */
 
@@ -586,9 +620,11 @@ onMounted(async () => {
 }
 .env-value {
   background-color: var(--bs-tertiary-bg);
-  height: auto;
-  min-height: calc(1.5em + 0.75rem + 2px);
-  word-break: break-all;
+  /* one line, as a field : a long value (a path) ends in an ellipsis, all of it in the
+     tooltip */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-family: var(--bs-font-monospace);
 }
 </style>

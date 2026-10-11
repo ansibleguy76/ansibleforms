@@ -5,13 +5,14 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import appConfig, { jobsListSize } from '../../config/app.config.js';
 import mysql from '../models/db.model.js';
-import logger, { setLogLevel, setLogColor, rebuildSyslogTransport, rebuildFileTransports } from './logger.js';
+import logger, { setLogLevel, setLogColor, setLogFormat, rebuildSyslogTransport, rebuildFileTransports } from './logger.js';
 import { setDefaultLocale } from './i18n.js';
 import { applySecureContext } from './httpsContext.js';
 import { rebuildBodyParsers } from './bodyParsers.js';
 import { applyTrustProxy, compileTrustProxy } from './trustProxy.js';
 import authConfig from '../../config/auth.config.js';
 import logConfig, { parseRetentionDays } from '../../config/log.config.js';
+import ansibleConfig from '../../config/ansible.config.js';
 
 // Editing environment variables from the settings page.
 //
@@ -57,10 +58,8 @@ export const ENV_EDIT_DISABLED_REASON =
 // from appConfig at call time rather than capturing them at import. Anything not listed
 // here is saved but needs a restart - that is the safe default, not a limitation to work
 // around: a value captured at import cannot be changed under the running process.
-// NOT in this table, deliberately, even though each maps to a real appConfig field:
-//   FORMS_BACKUP_PATH  - form.model.js captures it as `const backupPath` at import
-// Writing appConfig for those changed nothing while the page reported "applied now", which
-// is the ANSIBLE_PATH bug again. They are 'restart' until their consumer reads at call time.
+// A field belongs here only when its consumer reads appConfig at call time : writing a value
+// captured at import changes nothing while the page reports "applied now".
 const LIVE = {
   JOB_RETENTION_DAYS: { key: 'jobRetentionDays', parse: v => parseInt(v, 10) || 0 },
   AUDIT_RETENTION_DAYS: { key: 'auditRetentionDays', parse: v => parseInt(v, 10) || 0 },
@@ -130,6 +129,12 @@ const LIVE = {
   // multer's destination callback dereferences this per upload (the SIZE cap does not -
   // see the UPLOAD_MAX_GB note above)
   UPLOAD_PATH: { key: 'uploadPath', parse: v => v },
+  // form.model reads it (and the forms and config paths) each time it backs up or restores
+  FORMS_BACKUP_PATH: { key: 'formsBackupPath', parse: v => v },
+  // app.js builds the security headers both ways and picks one per request from this
+  CONTENT_SECURITY_POLICY: { key: 'contentSecurityPolicy', parse: v => String(v ?? 1).trim() !== '0' },
+  // no longer read : the designer lock lives in the database since 7 (models/lock.model.js)
+  LOCK_PATH: { key: 'lockPath', parse: v => v },
 };
 
 // Read straight from process.env at call time by their consumer rather than captured into
@@ -139,7 +144,34 @@ const LIVE_ENV_ONLY = new Set([
   'REST_ALLOWED_HOSTS', 'REST_DENIED_HOSTS',
   // expression.model reads it through getExpressionMode() on every expression
   'EXPRESSION_SANITIZER',
+  // lib/metrics.js reads it on every scrape of /api/v2/metrics
+  'METRICS_TOKEN',
+  // runners/awx/api.js reads it each time it follows a job (contactTolerance)
+  'AWX_LOST_MINUTES',
+  // runners/rte.js reads it each time a job waits for a busy RTE
+  'RTE_QUEUE_MINUTES',
+  // schema.model reads it when an upgrade patches the database, which happens at a start
+  'UPGRADE_BACKUP',
 ]);
+
+// Read by an RTE (AF_ROLE=rte) from its own environment : this page, on the app, cannot reach
+// it - neither now nor after a restart of the app. Set where the RTE runs.
+const RTE_ONLY = new Set(['RTE_DRAIN_SECONDS', 'RTE_MAX_JOBS', 'RTE_REGISTER', 'RTE_TOKEN', 'RTE_URL']);
+
+// the VAULT_* variables are imported once, as the secret store 'vault' (secrets/importVaultEnv.js)
+// : imported when saved, as a start would, a moment later so that the fields saved together
+// (its address, its token, its mount...) are all there first. Imported before, it only warns.
+let vaultImport = null;
+function importVaultSoon() {
+  clearTimeout(vaultImport);
+  vaultImport = setTimeout(() => {
+    import('../secrets/importVaultEnv.js')
+      .then(({ importVaultFromEnvOnce }) => importVaultFromEnvOnce())
+      .catch((err) => logger.error(`Could not import the VAULT_* variables : ${err.message || err}`));
+  }, 500);
+  // a pending import never keeps the process alive
+  vaultImport.unref?.();
+}
 
 // Live, but needing more than an appConfig field or process.env : a function that
 // reconfigures something already constructed.
@@ -208,6 +240,19 @@ const LIVE_CUSTOM = {
   LOG_SYSLOG_SOURCE: (v) => { logConfig.sysloglocalhost = v; return rebuildSyslogTransport(); },
   LOG_SYSLOG_TYPE: (v) => { logConfig.syslogtype = v; return rebuildSyslogTransport(); },
   LOG_SYSLOG_APPNAME: (v) => { logConfig.syslogappname = v; return rebuildSyslogTransport(); },
+  // login.controller bounds an api token's life with it on every login
+  API_TOKEN_MAX_DAYS: (v) => { authConfig.apiTokenMaxDays = Math.max(1, parseInt(v, 10) || 90); },
+  // the playbook folder : read when a playbook starts (rte/ansible-core.js)
+  ANSIBLE_PATH: (v) => { ansibleConfig.path = v || path.resolve(__dirname_es, '../../persistent/playbooks'); },
+  // every transport's format reads it per line : text or JSON
+  LOG_FORMAT: (v) => setLogFormat(v),
+  VAULT_ADDR: () => importVaultSoon(),
+  VAULT_TOKEN: () => importVaultSoon(),
+  VAULT_NAMESPACE: () => importVaultSoon(),
+  VAULT_DEFAULT_MOUNT: () => importVaultSoon(),
+  VAULT_KV_VERSION: () => importVaultSoon(),
+  VAULT_SKIP_VERIFY: () => importVaultSoon(),
+  VAULT_CACHE_TTL_MS: () => importVaultSoon(),
 };
 
 // Restart-tier variables that point at a location holding data. A restart applies the new
@@ -217,8 +262,21 @@ export const RELOCATES = new Set([
   'FORMS_STAGING_PATH', 'REPO_PATH', 'UPLOAD_PATH', 'VARS_FILES_PATH', 'LOG_PATH',
 ]);
 
+/**
+ * How a saved variable takes effect : 'refused' (not editable here), 'live' (at once), 'rte'
+ * (read by an RTE, set where it runs) or 'restart' (at the next start : the database's
+ * address and login, the port, https, the base url and the process's role, which decide how
+ * the process itself starts).
+ *
+ * Args:
+ *   name (string): the variable.
+ *
+ * Returns:
+ *   string: the tier.
+ */
 export function classify(name) {
   if (REFUSED[name]) return 'refused';
+  if (RTE_ONLY.has(name)) return 'rte';
   return (LIVE[name] || LIVE_ENV_ONLY.has(name) || LIVE_CUSTOM[name]) ? 'live' : 'restart';
 }
 

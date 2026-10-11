@@ -40,6 +40,7 @@ function loadServerTimeZone() {
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { normalizeParts, cronValidationMessage } from '@/config/cron';
+import { describeCron } from '@/config/cronDescribe';
 
 const { t, locale } = useI18n();
 const emit = defineEmits(['update:modelValue']);
@@ -227,127 +228,12 @@ const segmentValues = computed(() => {
   };
 });
 
+// the expression in words : the helper the tables' popovers use (config/cronDescribe.js), so the
+// editor and the lists say the same thing, in the app's language ('0 * * * *' : Every hour)
 const humanDescription = computed(() => {
   const v = (props.modelValue || '').trim();
   if (!v || expressionError.value) return '';
-  const all = v.split(/\s+/);
-  const sec = all.length === 6 ? all[0] : null;
-  const [min, hr, dom, mon, dow] = normalizeParts(all);
-
-  // Wildcard check
-  if (sec === null && all.every((p) => p === '*')) return t('settings.cron.everyMinute');
-
-  let pieces = [];
-
-  // Time part - a repeating seconds field already implies "every minute"
-  const secEvery = sec !== null && (sec === '*' || sec.startsWith('*/'));
-  if (secEvery) {
-    pieces.push(sec === '*' ? t('settings.cron.everySecond') : t('settings.cron.everyNSeconds', { n: sec.slice(2) }));
-  }
-  if (min === '*' && hr === '*') {
-    if (!secEvery) pieces.push(t('settings.cron.everyMinute'));
-  } else if (min.startsWith('*/')) {
-    pieces.push(t('settings.cron.everyNMinutes', { n: min.slice(2) }));
-    // the hour restriction still applies to a repeating minute field
-    if (hr.startsWith('*/')) {
-      pieces.push(t('settings.cron.everyNHours', { n: hr.slice(2) }));
-    } else if (hr !== '*') {
-      pieces.push(t('settings.cron.atHour', { hr }));
-    }
-  } else if (hr.startsWith('*/')) {
-    // a wildcard minute fires 60 times per matching hour, so it has to be
-    // named: only a fixed minute 0 is implied by "every N hours"
-    if (min === '*' && !secEvery) pieces.push(t('settings.cron.everyMinute'));
-    pieces.push(t('settings.cron.everyNHours', { n: hr.slice(2) }));
-    if (min !== '0' && min !== '*') pieces.push(t('settings.cron.atMinute', { min }));
-  } else if (hr !== '*' && min !== '*') {
-    pieces.push(t('settings.cron.atTime', { hr: hr.padStart(2, '0'), min: min.padStart(2, '0') }));
-  } else if (hr !== '*') {
-    if (!secEvery) pieces.push(t('settings.cron.everyMinute'));
-    pieces.push(t('settings.cron.atHour', { hr }));
-  } else if (min !== '*') {
-    pieces.push(t('settings.cron.atMinute', { min }));
-  }
-  if (sec !== null && !secEvery && sec !== '0') {
-    pieces.push(t('settings.cron.atSecond', { sec }));
-  }
-
-  // Day of month - croner strips every 'L' from the field and matches the last
-  // day of the month in addition to whatever remains ('15L' -> 15 or the last)
-  let domPiece = null;
-  if (dom !== '*') {
-    const bare = dom.replace(/L/gi, '');
-    domPiece = [
-      bare === '' ? null : t('settings.cron.onDay', { day: bare }),
-      bare === dom ? null : t('settings.cron.lastDayOfMonth'),
-    ]
-      .filter(Boolean)
-      .join(` ${t('settings.cron.or')} `);
-  }
-
-  // Day of week
-  let dowPiece = null;
-  if (dow !== '*') {
-    // croner treats 7 as Sunday (same index as 0)
-    const dowName = (val) => {
-      const n = parseInt(val);
-      if (n === 7) return dowNames.value[0];
-      return n >= 0 && n <= 6 ? dowNames.value[n] : val;
-    };
-    const names = dow.split(',').map((part) => {
-      // step ('a-b/s' or '*/s'): leave raw, ranges/steps don't name cleanly
-      if (part.includes('/')) return part;
-      // nth ('1#2') or last ('5L') occurrence of the weekday in the month
-      let token = part;
-      let suffix = '';
-      if (token.includes('#')) {
-        const nth = token.split('#')[1];
-        token = token.split('#')[0];
-        // croner ignores an empty nth, so '1#' is just '1'
-        if (nth) suffix = /^L$/i.test(nth) ? ` (${t('settings.cron.last')})` : ` #${nth}`;
-      } else if (/L$/i.test(token)) {
-        token = token.slice(0, -1);
-        suffix = ` (${t('settings.cron.last')})`;
-      }
-      // plain range 'a-b': name both ends
-      if (token.includes('-')) {
-        const [a, b] = token.split('-');
-        return `${dowName(a)}-${dowName(b)}${suffix}`;
-      }
-      return `${dowName(token)}${suffix}`;
-    });
-    dowPiece = t('settings.cron.onWeekday', { day: names.join(', ') });
-  }
-
-  // when both day fields are restricted, cron fires when EITHER matches
-  if (domPiece && dowPiece) {
-    pieces.push(`${domPiece} ${t('settings.cron.or')} ${dowPiece}`);
-  } else if (domPiece) {
-    pieces.push(domPiece);
-  } else if (dowPiece) {
-    pieces.push(dowPiece);
-  }
-
-  // Month
-  if (mon !== '*') {
-    const monName = (val) => {
-      const n = parseInt(val);
-      return n >= 1 && n <= 12 ? monthNames.value[n - 1] : val;
-    };
-    const names = mon.split(',').map((part) => {
-      // step ('a-b/s' or '*/s'): leave raw
-      if (part.includes('/')) return part;
-      // plain range 'a-b': name both ends
-      if (part.includes('-')) {
-        const [a, b] = part.split('-');
-        return `${monName(a)}-${monName(b)}`;
-      }
-      return monName(part);
-    });
-    pieces.push(t('settings.cron.inMonth', { month: names.join(', ') }));
-  }
-
-  return pieces.join(', ');
+  return describeCron(v, locale.value);
 });
 
 // A "wall clock" below is a millisecond value whose UTC fields hold the local

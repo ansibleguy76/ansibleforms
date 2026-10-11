@@ -29,7 +29,6 @@ const ssoProvider = () => import('@/pages/admin/sso-provider.vue');
 const groups = () => import('@/pages/admin/groups.vue');
 const group = () => import('@/pages/admin/group.vue');
 const directoryGroup = () => import('@/pages/admin/directory-group.vue');
-const knownHosts = () => import('@/pages/admin/knownHosts.vue');
 const ldap = () => import('@/pages/admin/ldap.vue');
 const chatSettings = () => import('@/pages/admin/chat.vue');
 const mcpSettings = () => import('@/pages/admin/mcp.vue');
@@ -181,12 +180,6 @@ const routes = [
     component: directoryGroup,
     meta: { permission: 'showSettings' },
   },
-  {
-    path: '/settings/known-hosts/:tab?',
-    name: '/settings/known-hosts',
-    component: knownHosts,
-    meta: { permission: 'showSettings' },
-  },
   { path: '/settings/ldap/:tab?', name: '/settings/ldap', component: ldap, meta: { permission: 'showSettings' } },
   // the disclaimer users accept once, and who accepted it
   {
@@ -244,8 +237,6 @@ const routes = [
     component: announcementsPage,
     meta: { permission: 'showSettings' },
   },
-  // its address before it held several
-  { path: '/settings/announcement', redirect: '/settings/announcements' },
   {
     path: '/settings/repositories',
     name: '/settings/repositories',

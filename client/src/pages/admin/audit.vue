@@ -219,20 +219,34 @@ onMounted(async () => {
               <table v-fit-columns class="table table-sm table-hover mb-0 af-table audit-table">
                 <thead>
                   <tr>
-                    <th data-fit-keep="14rem">{{ t('audit.time') }}</th>
+                    <!-- the time in full, its zone included : its own width, never cut -->
+                    <th data-fit-keep>{{ t('audit.time') }}</th>
+                    <!-- the row's detail unfolds : its caret after the time, as the jobs list's (styles/tables.scss) -->
+                    <th class="af-expand-col"></th>
                     <th>{{ t('audit.actor') }}</th>
                     <th>{{ t('audit.action') }}</th>
                     <th>{{ t('audit.target') }}</th>
                     <th data-fit-keep="7rem">{{ t('audit.outcome') }}</th>
                     <th data-fit-keep="10rem">{{ t('audit.ip') }}</th>
                     <th class="af-fit-spacer"></th>
-                    <th data-fit-keep="3rem"></th>
                   </tr>
                 </thead>
                 <tbody>
                   <template v-for="r in records" :key="r.id">
                     <tr class="audit-row">
                       <td class="font-monospace">{{ Helpers.formatServerDate(r.created_at) }}</td>
+                      <!-- a row with a detail unfolds it : right, down while open, as the jobs list's steps -->
+                      <td
+                        class="af-expand-col text-center"
+                        :role="r.detail ? 'button' : null"
+                        @click="r.detail && toggle(r.id)"
+                      >
+                        <FaIcon
+                          v-if="r.detail"
+                          :icon="expanded[r.id] ? 'angle-down' : 'angle-right'"
+                          :fixedwidth="true"
+                        />
+                      </td>
                       <td>
                         <span v-if="r.actor">{{ r.actor }}</span>
                         <span v-else class="text-muted fst-italic">{{ t('audit.system') }}</span>
@@ -246,16 +260,6 @@ onMounted(async () => {
                       </td>
                       <td class="font-monospace small text-muted">{{ r.ip }}</td>
                       <td class="af-fit-spacer"></td>
-                      <td class="text-end">
-                        <!-- a plain icon : a button would make the rows with a detail taller -->
-                        <a
-                          v-if="r.detail"
-                          href="#"
-                          class="text-body-secondary af-audit-toggle"
-                          @click.prevent="toggle(r.id)"
-                          ><FaIcon :icon="expanded[r.id] ? 'chevron-up' : 'chevron-down'"
-                        /></a>
-                      </td>
                     </tr>
                     <tr v-if="expanded[r.id] && r.detail">
                       <td colspan="8" class="bg-body-tertiary">
@@ -297,8 +301,5 @@ onMounted(async () => {
 }
 .audit-row td {
   white-space: nowrap;
-}
-.af-audit-toggle {
-  padding: 0 0.25rem;
 }
 </style>

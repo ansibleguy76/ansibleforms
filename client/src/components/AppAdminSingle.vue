@@ -450,6 +450,12 @@ defineExpose({
   </AppSettings>
 </template>
 <style scoped>
+/* every field one width, as on the other settings pages : across the whole card, its value sat
+   far from its label, and two or three to a row they were each another width. 20rem fits the
+   narrowest column (three to a row), so the fields of a tab line up */
+:deep(.card-body .input-group) {
+  max-width: 20rem;
+}
 :deep(.card-body) {
   padding-top: 1.25rem;
   /* 1rem, and nothing added on top of it. This used to be 0.5rem plus a 1.25rem

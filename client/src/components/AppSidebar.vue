@@ -83,17 +83,18 @@ const sections = computed(() =>
       // repositories, and it has the same 'test the connection' action.
       title: t('sidebar.sections.connections'),
       items: [
-        { title: t('sidebar.mail'), icon: 'envelope', link: '/settings/mail' },
-        { title: t('sidebar.credentials'), icon: 'lock', link: '/settings/credentials' },
-        { title: t('sidebar.secretStores'), icon: 'vault', link: '/settings/secret-stores' },
-        { title: t('sidebar.ssh'), icon: 'key', link: '/settings/ssh' },
-        { title: t('sidebar.knownHosts'), icon: 'server', link: '/settings/known-hosts' },
-        { title: t('sidebar.runners'), icon: 'rocket', link: '/settings/runners' },
+        // where forms and playbooks come from, what they log in with (and the stores that hold it),
+        // where jobs run ; then the rest
         {
           title: t('sidebar.repositories'),
           icon: 'fab,git',
           link: '/settings/repositories',
         },
+        { title: t('sidebar.credentials'), icon: 'lock', link: '/settings/credentials' },
+        { title: t('sidebar.secretStores'), icon: 'vault', link: '/settings/secret-stores' },
+        { title: t('sidebar.runners'), icon: 'rocket', link: '/settings/runners' },
+        { title: t('sidebar.ssh'), icon: 'key', link: '/settings/ssh' },
+        { title: t('sidebar.mail'), icon: 'envelope', link: '/settings/mail' },
         { title: t('sidebar.chat'), icon: 'comments', link: '/settings/chat' },
         { title: t('sidebar.mcp'), icon: 'robot', link: '/settings/mcp' },
       ],
