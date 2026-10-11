@@ -404,15 +404,24 @@ onMounted(async () => {
               <!-- every field as the settings pages' (BsInput) : the grey box with its icon, then the
                    field. The icon : picked from a few that suit a link, shown in its grey box (as a
                    category's icon in the designer) -->
-              <div class="input-group">
-                <span class="input-group-text"
-                  ><FaIcon :fixedwidth="true" :icon="isIconName(l.icon) ? l.icon : 'link'"
-                /></span>
-                <select v-model="l.icon" class="form-select" :aria-label="t('settings.interface.linkIcon')">
-                  <!-- an icon not in the list (saved through the api) : offered, so it stays visible -->
-                  <option v-if="l.icon && !LINK_ICONS.includes(l.icon)" :value="l.icon">{{ l.icon }}</option>
-                  <option v-for="name in LINK_ICONS" :key="name" :value="name">{{ name }}</option>
-                </select>
+              <!-- a link inside another : indented, with the designer categories' nested icon -->
+              <div class="d-flex align-items-center" :style="{ paddingLeft: l.parent ? '1.5rem' : 0 }">
+                <FaIcon
+                  v-if="l.parent"
+                  icon="level-up-alt"
+                  class="text-muted me-2 fa-rotate-90"
+                  style="font-size: 0.75rem"
+                />
+                <div class="input-group flex-grow-1">
+                  <span class="input-group-text"
+                    ><FaIcon :fixedwidth="true" :icon="isIconName(l.icon) ? l.icon : 'link'"
+                  /></span>
+                  <select v-model="l.icon" class="form-select" :aria-label="t('settings.interface.linkIcon')">
+                    <!-- an icon not in the list (saved through the api) : offered, so it stays visible -->
+                    <option v-if="l.icon && !LINK_ICONS.includes(l.icon)" :value="l.icon">{{ l.icon }}</option>
+                    <option v-for="name in LINK_ICONS" :key="name" :value="name">{{ name }}</option>
+                  </select>
+                </div>
               </div>
               <div class="input-group">
                 <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="font" /></span>
@@ -520,20 +529,6 @@ onMounted(async () => {
   gap: 0.75rem;
   align-items: center;
   min-width: 52rem;
-}
-/* a link inside another : indented under it within its column, a corner arrow before it */
-.af-link-nested > :first-child {
-  margin-left: 1.5rem;
-  width: calc(100% - 1.5rem);
-  position: relative;
-}
-.af-link-nested > :first-child::before {
-  content: '↳';
-  position: absolute;
-  left: -1.25rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--bs-secondary-color);
 }
 /* the column names : as a field's label on the settings pages (form-label fw-bold) */
 .af-links-head {
