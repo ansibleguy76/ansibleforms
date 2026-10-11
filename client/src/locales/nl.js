@@ -565,6 +565,11 @@ export default {
       passwordKeep: 'Het huidige wachtwoord blijft behouden, tenzij je een nieuw invoert.',
       tokenKeep: 'Het huidige token blijft behouden, tenzij je een nieuw invoert.',
       takenBy: 'Al in gebruik door {name}',
+      role: 'Rol',
+      roleGivenBy: 'Toegekend via',
+      roleDirectly: 'Direct',
+      roleThroughGroups: 'Via {groups}',
+      roleEveryone: 'Iedereen',
     },
     fields: {
       id: 'ID',
@@ -628,6 +633,7 @@ export default {
       groupNotFound: "Er is geen groep met id '{id}'.",
       nameRequired: 'Een naam is verplicht',
       stillHasUsers: 'Verwijder eerst de gebruikers: een groep met gebruikers kan niet worden verwijderd',
+      noRole: 'Geen rol noemt deze groep.',
     },
     repositories: {
       label: 'Repository',

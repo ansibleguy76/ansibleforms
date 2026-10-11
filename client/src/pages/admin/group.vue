@@ -1,12 +1,15 @@
 <script setup>
 /******************************************************************/
 /*                                                                */
-/*  A local group's page (/settings/groups/<id>), opened from the    */
-/*  groups list : its Details tab (name, description) and its     */
-/*  Users tab (the users in it : Add user, and a row's menu or    */
-/*  the checkboxes remove one, never from its only group), the    */
-/*  tab kept in the address (/users). Delete top right, off for   */
-/*  admins and while the group has users (the server refuses).    */
+/*  A local group's page (/settings/groups/<id>), opened from the */
+/*  groups list, in three tabs, the tab kept in the address       */
+/*  (/users, /roles) ; a row of a tab opens its item :            */
+/*  Details - name, description                                   */
+/*  Users - the users in it : Add user, and a row's menu or the   */
+/*          checkboxes remove one, never from its only group      */
+/*  Roles - the roles that name the group                         */
+/*  Delete top right, off for admins and while the group has      */
+/*  users (the server refuses).                                   */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted } from 'vue';
@@ -17,6 +20,7 @@ import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
+import { useRoleAssignments } from '@/composables/useRoleAssignments';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -82,7 +86,13 @@ function toastError(err) {
 const tabs = computed(() => [
   { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
   { key: 'users', label: t('settings.settingsPage.users'), icon: 'user' },
+  { key: 'roles', label: t('settings.settingsPage.roles'), icon: 'user-shield' },
 ]);
+
+// ─── Roles ────────────────────────────────────────────────────────────────────
+// the roles that name the group ; a row opens the role's page
+const { loadRoles, rolesOfGroup } = useRoleAssignments();
+const groupRoles = computed(() => (group.value ? rolesOfGroup(group.value.name) : []));
 const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
 // the title : Groups › <name>, each step a link : Groups back to the list, the name to this page
@@ -190,7 +200,7 @@ async function deleteGroup() {
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
-  await load();
+  await Promise.all([load(), loadRoles()]);
   // opened from the list's Add user : the dialog open at once, the url left clean
   if (route.query.add && group.value) {
     addingUser.value = others.value[0]?.id ?? '';
@@ -246,6 +256,7 @@ onMounted(async () => {
               <FaIcon :icon="tab.icon" class="me-1" />
               {{ tab.label }}
               <span v-if="tab.key === 'users'" class="badge af-tab-count ms-1">{{ members.length }}</span>
+              <span v-if="tab.key === 'roles'" class="badge af-tab-count ms-1">{{ groupRoles.length }}</span>
             </a>
           </li>
         </ul>
@@ -275,6 +286,31 @@ onMounted(async () => {
           />
         </div>
         <!-- Users : the users in the group, as the app's other tables -->
+        <!-- Roles : the roles that name the group ; a row opens the role -->
+        <template v-else-if="group && activeTab === 'roles'">
+          <p v-if="!groupRoles.length" class="text-muted small mb-0">{{ t('settings.groups.noRole') }}</p>
+          <div v-else class="af-table-frame">
+            <table class="table af-table">
+              <thead>
+                <tr>
+                  <th>{{ t('settings.common.role') }}</th>
+                  <th>{{ t('settings.fields.description') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="r in groupRoles"
+                  :key="r.name"
+                  role="button"
+                  @click="router.push(`/settings/roles/${encodeURIComponent(r.name)}`)"
+                >
+                  <td class="af-row-open">{{ r.name }}</td>
+                  <td>{{ r.description || '–' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
         <template v-else-if="group">
           <p v-if="!members.length" class="text-muted small mb-0">{{ t('settings.groups.noUsers') }}</p>
           <div v-else class="af-table-frame">
@@ -301,8 +337,15 @@ onMounted(async () => {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="u in members" :key="u.id" :class="{ 'bs-dt-selected': selectedUsers.includes(u.id) }">
-                  <td class="text-center bs-dt-select">
+                <!-- a row opens the user's page, as every list ; its box and its menu do their own -->
+                <tr
+                  v-for="u in members"
+                  :key="u.id"
+                  role="button"
+                  :class="{ 'bs-dt-selected': selectedUsers.includes(u.id) }"
+                  @click="router.push(`/settings/users/${u.id}`)"
+                >
+                  <td class="text-center bs-dt-select" @click.stop>
                     <!-- this group is the user's only one : it stays (a user keeps one group) -->
                     <input
                       type="checkbox"
@@ -313,14 +356,10 @@ onMounted(async () => {
                       @change="toggleUser(u.id)"
                     />
                   </td>
-                  <td>
-                    <router-link :to="`/settings/users/${u.id}`" class="af-group-user-link">{{
-                      u.username
-                    }}</router-link>
-                  </td>
+                  <td class="af-row-open">{{ u.username }}</td>
                   <td>{{ u.description || '–' }}</td>
                   <td>{{ u.email || '–' }}</td>
-                  <td class="bs-dt-row-actions">
+                  <td class="bs-dt-row-actions" @click.stop>
                     <div class="dropdown">
                       <a
                         role="button"
@@ -394,15 +433,6 @@ onMounted(async () => {
 /* the row menu's column : as narrow as the other tables' */
 .af-group-menu-col {
   width: 3.5rem;
-}
-/* a user's name : a link to its page, in the blue of the rows that open something */
-.af-group-user-link {
-  color: var(--bs-primary);
-  font-weight: 500;
-  text-decoration: none;
-}
-.af-group-user-link:hover {
-  text-decoration: underline;
 }
 /* the count of a tab : small and grey, as the menus' badges */
 .af-tab-count {

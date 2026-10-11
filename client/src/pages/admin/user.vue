@@ -1,12 +1,16 @@
 <script setup>
 /******************************************************************/
 /*                                                                */
-/*  A local user's page (/settings/users/<id>), opened from the      */
-/*  users list : its Details tab (username, description, email)  */
-/*  and its Groups tab (the groups it belongs to : Add group, and */
-/*  a row's menu or the checkboxes remove one, never the last),   */
-/*  the tab kept in the address (/groups). Change password and    */
-/*  Delete top right, as the list's row menu has them.            */
+/*  A local user's page (/settings/users/<id>), opened from the   */
+/*  users list, in three tabs, the tab kept in the address        */
+/*  (/groups, /roles) ; a row of a tab opens its item :           */
+/*  Details - username, description, email                        */
+/*  Groups - the groups it belongs to : Add group, and a row's    */
+/*           menu or the checkboxes remove one, never the last    */
+/*  Roles - the roles it has, and how (by name, through a group,  */
+/*          public as everyone's)                                 */
+/*  Change password and Delete top right, as the list's row menu  */
+/*  has them.                                                     */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted } from 'vue';
@@ -17,6 +21,7 @@ import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
+import { useRoleAssignments } from '@/composables/useRoleAssignments';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -90,11 +95,41 @@ async function update(data) {
 }
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
-// Details (username, description, email), Groups ; the tab kept in the url
+// Details (username, description, email), Groups, Roles ; the tab kept in the url
 const tabs = computed(() => [
   { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
   { key: 'groups', label: t('settings.settingsPage.groups'), icon: 'users' },
+  { key: 'roles', label: t('settings.settingsPage.roles'), icon: 'user-shield' },
 ]);
+
+// ─── Roles ────────────────────────────────────────────────────────────────────
+// the roles the user has : by its name, through its groups, public as everyone's ; a row opens
+// the role's page
+const { loadRoles, rolesOfUser } = useRoleAssignments();
+const userRoles = computed(() =>
+  user.value
+    ? rolesOfUser(
+        user.value.username,
+        userGroups.value.map((g) => g.name),
+      )
+    : [],
+);
+/**
+ * How a role is the user's, in words : directly, through which groups, or everyone's.
+ *
+ * Args:
+ *   r (object): a row of userRoles.
+ *
+ * Returns:
+ *   string: the Given by cell.
+ */
+function givenBy(r) {
+  if (r.everyone) return t('settings.common.roleEveryone');
+  const parts = [];
+  if (r.direct) parts.push(t('settings.common.roleDirectly'));
+  if (r.groups.length) parts.push(t('settings.common.roleThroughGroups', { groups: r.groups.join(', ') }));
+  return parts.join(' · ');
+}
 const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
 // the title : Users › <username>, each step a link : Users back to the list, the name to this page
@@ -220,7 +255,7 @@ async function deleteUser() {
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
-  await load();
+  await Promise.all([load(), loadRoles()]);
   // opened from the list's Add to group : the dialog open at once, the url left clean
   if (route.query.add && user.value) {
     // in every group already : the dialog says so, its Save off
@@ -279,6 +314,7 @@ onMounted(async () => {
               <FaIcon :icon="tab.icon" class="me-1" />
               {{ tab.label }}
               <span v-if="tab.key === 'groups'" class="badge af-tab-count ms-1">{{ userGroups.length }}</span>
+              <span v-if="tab.key === 'roles'" class="badge af-tab-count ms-1">{{ userRoles.length }}</span>
             </a>
           </li>
         </ul>
@@ -316,6 +352,32 @@ onMounted(async () => {
           />
         </div>
         <!-- Groups : the group it belongs to, as the app's other tables -->
+        <!-- Roles : the roles the user has, and how ; a row opens the role -->
+        <template v-else-if="user && activeTab === 'roles'">
+          <div class="af-table-frame">
+            <table class="table af-table">
+              <thead>
+                <tr>
+                  <th>{{ t('settings.common.role') }}</th>
+                  <th>{{ t('settings.common.roleGivenBy') }}</th>
+                  <th>{{ t('settings.fields.description') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="r in userRoles"
+                  :key="r.name"
+                  role="button"
+                  @click="router.push(`/settings/roles/${encodeURIComponent(r.name)}`)"
+                >
+                  <td class="af-row-open">{{ r.name }}</td>
+                  <td>{{ givenBy(r) }}</td>
+                  <td>{{ r.description || '–' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
         <template v-else-if="user">
           <p v-if="!userGroups.length" class="text-muted small mb-0">{{ t('settings.users.noGroup') }}</p>
           <div v-else class="af-table-frame">
@@ -340,8 +402,15 @@ onMounted(async () => {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="g in userGroups" :key="g.id" :class="{ 'bs-dt-selected': selectedGroups.includes(g.id) }">
-                  <td class="text-center bs-dt-select">
+                <!-- a row opens the group's page, as every list ; its box and its menu do their own -->
+                <tr
+                  v-for="g in userGroups"
+                  :key="g.id"
+                  role="button"
+                  :class="{ 'bs-dt-selected': selectedGroups.includes(g.id) }"
+                  @click="router.push(`/settings/groups/${g.id}`)"
+                >
+                  <td class="text-center bs-dt-select" @click.stop>
                     <input
                       type="checkbox"
                       class="form-check-input"
@@ -349,10 +418,10 @@ onMounted(async () => {
                       @change="toggleGroup(g.id)"
                     />
                   </td>
-                  <td>{{ g.name }}</td>
+                  <td class="af-row-open">{{ g.name }}</td>
                   <!-- an en dash when the group says nothing -->
                   <td>{{ g.description || '–' }}</td>
-                  <td class="bs-dt-row-actions">
+                  <td class="bs-dt-row-actions" @click.stop>
                     <div class="dropdown">
                       <a
                         role="button"

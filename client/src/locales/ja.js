@@ -563,6 +563,11 @@ export default {
       passwordKeep: '新しいパスワードを入力しない限り、現在のパスワードが維持されます。',
       tokenKeep: '新しいトークンを入力しない限り、現在のトークンが維持されます。',
       takenBy: '{name} で使用中',
+      role: 'ロール',
+      roleGivenBy: '付与元',
+      roleDirectly: '直接',
+      roleThroughGroups: '{groups} 経由',
+      roleEveryone: '全員',
     },
     fields: {
       id: 'ID',
@@ -626,6 +631,7 @@ export default {
       groupNotFound: "ID '{id}' のグループはありません。",
       nameRequired: '名前が必要です',
       stillHasUsers: '先にユーザーを削除してください: ユーザーがいるグループは削除できません',
+      noRole: 'このグループを指定するロールはありません。',
     },
     repositories: {
       label: 'リポジトリ',

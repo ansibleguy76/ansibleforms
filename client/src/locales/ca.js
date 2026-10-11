@@ -566,6 +566,11 @@ export default {
       passwordKeep: "Es conserva la contrasenya actual tret que n'escriguis una de nova.",
       tokenKeep: "Es conserva el token actual tret que n'escriguis un de nou.",
       takenBy: 'Ja el fa servir {name}',
+      role: 'Rol',
+      roleGivenBy: 'Atorgat per',
+      roleDirectly: 'Directament',
+      roleThroughGroups: 'A través de {groups}',
+      roleEveryone: 'Tothom',
     },
     fields: {
       id: 'ID',
@@ -629,6 +634,7 @@ export default {
       groupNotFound: "No hi ha cap grup amb l'id '{id}'.",
       nameRequired: 'Cal un nom',
       stillHasUsers: 'Treu primer els seus usuaris: un grup amb usuaris no es pot suprimir',
+      noRole: 'Cap rol no anomena aquest grup.',
     },
     repositories: {
       label: 'Repositori',

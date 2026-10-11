@@ -567,6 +567,11 @@ export default {
       passwordKeep: 'La password attuale viene mantenuta, a meno che non ne digiti una nuova.',
       tokenKeep: 'Il token attuale viene mantenuto, a meno che non ne digiti uno nuovo.',
       takenBy: 'Già usato da {name}',
+      role: 'Ruolo',
+      roleGivenBy: 'Assegnato da',
+      roleDirectly: 'Direttamente',
+      roleThroughGroups: 'Tramite {groups}',
+      roleEveryone: 'Tutti',
     },
     fields: {
       id: 'ID',
@@ -630,6 +635,7 @@ export default {
       groupNotFound: "Non esiste un gruppo con id '{id}'.",
       nameRequired: 'È richiesto un nome',
       stillHasUsers: 'Rimuovi prima i suoi utenti: un gruppo con utenti non può essere eliminato',
+      noRole: 'Nessun ruolo nomina questo gruppo.',
     },
     repositories: {
       label: 'Repository',

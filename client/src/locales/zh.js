@@ -554,6 +554,11 @@ export default {
       passwordKeep: '除非输入新密码，否则保留当前密码。',
       tokenKeep: '除非输入新令牌，否则保留当前令牌。',
       takenBy: '已被 {name} 使用',
+      role: '角色',
+      roleGivenBy: '授予方式',
+      roleDirectly: '直接',
+      roleThroughGroups: '通过 {groups}',
+      roleEveryone: '所有人',
     },
     fields: {
       id: 'ID',
@@ -617,6 +622,7 @@ export default {
       groupNotFound: "没有 ID 为 '{id}' 的组。",
       nameRequired: '需要名称',
       stillHasUsers: '请先移除其用户：有用户的组无法删除',
+      noRole: '没有角色指定此组。',
     },
     repositories: {
       label: '仓库',

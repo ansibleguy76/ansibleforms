@@ -570,6 +570,11 @@ export default {
       passwordKeep: 'Le mot de passe actuel est conservé, sauf si vous en saisissez un nouveau.',
       tokenKeep: 'Le jeton actuel est conservé, sauf si vous en saisissez un nouveau.',
       takenBy: 'Déjà utilisé par {name}',
+      role: 'Rôle',
+      roleGivenBy: 'Attribué par',
+      roleDirectly: 'Directement',
+      roleThroughGroups: 'Via {groups}',
+      roleEveryone: 'Tout le monde',
     },
     fields: {
       id: 'ID',
@@ -633,6 +638,7 @@ export default {
       groupNotFound: "Aucun groupe n'a l'id '{id}'.",
       nameRequired: 'Un nom est requis',
       stillHasUsers: "Retirez d'abord ses utilisateurs : un groupe avec des utilisateurs ne peut pas être supprimé",
+      noRole: 'Aucun rôle ne nomme ce groupe.',
     },
     repositories: {
       label: 'Depot',
