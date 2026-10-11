@@ -16,8 +16,11 @@
 /*  rows: the items ; rowKey: the field that keys a row (id)      */
 /*  to: (row) => an address, or null for a row that opens nothing */
 /*  empty: the note shown with no rows                            */
+/*  The rows a page at a time, the pager under the table          */
+/*  (AppTablePager : the page in the address).                    */
 /*                                                                */
 /******************************************************************/
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCellPopovers } from '@/composables/useCellPopovers';
 
@@ -30,6 +33,9 @@ const props = defineProps({
 });
 
 const router = useRouter();
+// the rows of the page shown (AppTablePager) ; the first page's until it says
+const pageRows = ref(null);
+const shownRows = computed(() => pageRows.value ?? props.rows.slice(0, 25));
 // a cell that has more to say (data-af-popover, a cron's meaning) : its text on hover
 const { onCellHover } = useCellPopovers();
 
@@ -86,7 +92,7 @@ function text(col, row) {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="row in rows" :key="row[rowKey]" :role="target(row) ? 'button' : null" @click="open(row)">
+        <tr v-for="row in shownRows" :key="row[rowKey]" :role="target(row) ? 'button' : null" @click="open(row)">
           <!-- the first cell names the item : a link's colour when the row opens it -->
           <td
             v-for="(col, i) in columns"
@@ -104,4 +110,6 @@ function text(col, row) {
       </tbody>
     </table>
   </div>
+  <!-- the rows shown, the page size and the pages, under the table as a list's -->
+  <AppTablePager v-if="rows.length" :items="rows" @change="(r) => (pageRows = r)" />
 </template>

@@ -28,6 +28,7 @@ import Profile from '@/lib/Profile';
 import { formPath } from '@/lib/formsPath';
 import { useFormLinks } from '@/composables/useFormLinks';
 import { useUserLinks } from '@/composables/useUserLinks';
+import { usePagedRows } from '@/composables/usePagedRows';
 import { setSignInBlocked } from '@/lib/signIn';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
@@ -174,6 +175,8 @@ function givenBy(r) {
   if (r.groups.length) parts.push(t('settings.common.roleThroughGroups', { groups: r.groups.join(', ') }));
   return parts.join(' · ');
 }
+// the rows of the page shown of the Groups and Roles tables (their pager under them)
+const { paged, setPaged } = usePagedRows();
 const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
 // the title : Users › <username>, each step a link : Users back to the list, the name to this page
@@ -474,7 +477,7 @@ onMounted(async () => {
               </thead>
               <tbody>
                 <tr
-                  v-for="r in userRoles"
+                  v-for="r in paged('roles', userRoles)"
                   :key="r.name"
                   role="button"
                   @click="router.push(`/settings/roles/${encodeURIComponent(r.name)}`)"
@@ -487,6 +490,7 @@ onMounted(async () => {
               </tbody>
             </table>
           </div>
+          <AppTablePager :items="userRoles" @change="(r) => setPaged('roles', r)" />
         </template>
         <!-- Forms : the forms its roles open ; a row opens the form -->
         <AppLinkedTable
@@ -557,7 +561,7 @@ onMounted(async () => {
               <tbody>
                 <!-- a row opens the group's page, as every list ; its box and its menu do their own -->
                 <tr
-                  v-for="g in userGroups"
+                  v-for="g in paged('groups', userGroups)"
                   :key="g.id"
                   role="button"
                   :class="{ 'bs-dt-selected': selectedGroups.includes(g.id) }"
@@ -604,6 +608,7 @@ onMounted(async () => {
               </tbody>
             </table>
           </div>
+          <AppTablePager v-if="userGroups.length" :items="userGroups" @change="(r) => setPaged('groups', r)" />
         </template>
       </template>
       <template v-if="user" #actions>

@@ -31,6 +31,7 @@
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { requiredRoleDescription } from '@/config/roles';
+import { usePagedRows } from '@/composables/usePagedRows';
 
 const props = defineProps({
   readOnly: { type: Boolean, default: false },
@@ -137,6 +138,14 @@ function removeGroup(index) {
   emit('removed');
 }
 
+// ─── the role page's tables, a page at a time (AppTablePager under them) ──────
+// the users : those the role names, then those it gets through a local group (read only)
+const memberRows = computed(() => [
+  ...role.value.users.map((u) => ({ key: u._uid, named: u })),
+  ...props.throughGroups.map((m) => ({ key: `g/${m.username}/${m.group}`, via: m })),
+]);
+const { paged, setPaged } = usePagedRows();
+
 /**
  * Removes a user from the role.
  *
@@ -231,58 +240,61 @@ function removeUser(index) {
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="(usr, uIdx) in role.users"
-              :key="usr._uid"
-              :class="{ 'bs-dt-selected': selected.includes(usr._uid) }"
-            >
-              <td class="text-center bs-dt-select">
-                <input
-                  type="checkbox"
-                  class="form-check-input"
-                  :disabled="readOnly"
-                  :checked="selected.includes(usr._uid)"
-                  @change="toggleSelected(usr._uid)"
-                />
-              </td>
-              <td>{{ usr.name }}</td>
-              <td>{{ usr.provider }}</td>
-              <!-- named in the role itself : no group -->
-              <td class="text-muted">–</td>
-              <td class="af-fit-spacer"></td>
-              <td class="bs-dt-row-actions">
-                <!-- its menu, as the rows of the other tables -->
-                <div v-if="!readOnly" class="dropdown">
-                  <a
-                    role="button"
-                    class="bs-dt-row-menu px-2"
-                    data-bs-toggle="dropdown"
-                    data-bs-popper-config='{"strategy":"fixed"}'
-                  >
-                    <FaIcon icon="ellipsis-vertical" />
-                  </a>
-                  <ul class="dropdown-menu dropdown-menu-end">
-                    <li>
-                      <a class="dropdown-item text-danger" href="#" @click.prevent="removeUser(uIdx)">
-                        <FaIcon icon="trash" class="me-2" />{{ t('settings.settingsPage.removeFromRole') }}
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </td>
-            </tr>
-            <tr v-for="m in throughGroups" :key="'g/' + m.username + '/' + m.group">
-              <!-- through a group : changed on the group, not here -->
-              <td class="text-center bs-dt-select"><input type="checkbox" class="form-check-input" disabled /></td>
-              <td>{{ m.username }}</td>
-              <td>local</td>
-              <td>{{ m.group }}</td>
-              <td class="af-fit-spacer"></td>
-              <td></td>
-            </tr>
+            <template v-for="row in paged('users', memberRows)" :key="row.key">
+              <tr v-if="row.named" :class="{ 'bs-dt-selected': selected.includes(row.named._uid) }">
+                <td class="text-center bs-dt-select">
+                  <input
+                    type="checkbox"
+                    class="form-check-input"
+                    :disabled="readOnly"
+                    :checked="selected.includes(row.named._uid)"
+                    @change="toggleSelected(row.named._uid)"
+                  />
+                </td>
+                <td>{{ row.named.name }}</td>
+                <td>{{ row.named.provider }}</td>
+                <!-- named in the role itself : no group -->
+                <td class="text-muted">–</td>
+                <td class="af-fit-spacer"></td>
+                <td class="bs-dt-row-actions">
+                  <!-- its menu, as the rows of the other tables -->
+                  <div v-if="!readOnly" class="dropdown">
+                    <a
+                      role="button"
+                      class="bs-dt-row-menu px-2"
+                      data-bs-toggle="dropdown"
+                      data-bs-popper-config='{"strategy":"fixed"}'
+                    >
+                      <FaIcon icon="ellipsis-vertical" />
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                      <li>
+                        <a
+                          class="dropdown-item text-danger"
+                          href="#"
+                          @click.prevent="removeUser(role.users.indexOf(row.named))"
+                        >
+                          <FaIcon icon="trash" class="me-2" />{{ t('settings.settingsPage.removeFromRole') }}
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+                </td>
+              </tr>
+              <tr v-else>
+                <!-- through a group : changed on the group, not here -->
+                <td class="text-center bs-dt-select"><input type="checkbox" class="form-check-input" disabled /></td>
+                <td>{{ row.via.username }}</td>
+                <td>local</td>
+                <td>{{ row.via.group }}</td>
+                <td class="af-fit-spacer"></td>
+                <td></td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>
+      <AppTablePager v-if="memberRows.length" :items="memberRows" @change="(r) => setPaged('users', r)" />
     </template>
     <p v-else-if="!tab && role.users.length === 0" class="text-muted small mb-3">
       {{ t('settings.settingsPage.roleNoUsers') }}
@@ -348,7 +360,7 @@ function removeUser(index) {
           </thead>
           <tbody>
             <tr
-              v-for="(grp, gIdx) in role.groups"
+              v-for="grp in paged('groups', role.groups)"
               :key="grp._uid"
               :class="{ 'bs-dt-selected': selected.includes(grp._uid) }"
             >
@@ -377,7 +389,11 @@ function removeUser(index) {
                   </a>
                   <ul class="dropdown-menu dropdown-menu-end">
                     <li>
-                      <a class="dropdown-item text-danger" href="#" @click.prevent="removeGroup(gIdx)">
+                      <a
+                        class="dropdown-item text-danger"
+                        href="#"
+                        @click.prevent="removeGroup(role.groups.indexOf(grp))"
+                      >
                         <FaIcon icon="trash" class="me-2" />{{ t('settings.settingsPage.removeFromRole') }}
                       </a>
                     </li>
@@ -388,6 +404,7 @@ function removeUser(index) {
           </tbody>
         </table>
       </div>
+      <AppTablePager v-if="role.groups.length" :items="role.groups" @change="(r) => setPaged('groups', r)" />
     </template>
     <p v-else-if="!tab && role.groups.length === 0" class="text-muted small mb-3">
       {{ t('settings.settingsPage.roleNoGroups') }}

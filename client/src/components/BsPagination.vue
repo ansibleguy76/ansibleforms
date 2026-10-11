@@ -9,6 +9,8 @@
 /*        (default 10, a stored cookie wins over it)  */
 /*      buttonsShown: Number - Number of buttons     */
 /*      index: Number - Index of the item to show    */
+/*      currentPage: Number - the page shown, from   */
+/*        outside (a page's address)                 */
 /*                                                  */
 /*  @emit:                                          */
 /*      change: Array - List of items to show        */
@@ -32,6 +34,8 @@ const props = defineProps({
   buttonsShown: { type: Number },
   index: { type: Number },
   name: { type: String, default: null },
+  // the page shown, when its owner keeps it (a record page's tab : in the address)
+  currentPage: { type: Number, default: null },
 });
 
 // DATA
@@ -167,8 +171,16 @@ onMounted(() => {
       pageSize.value = parseInt(saved);
     }
   }
-  setPage(pageByIndex.value);
+  setPage(props.currentPage > 0 ? Math.min(props.currentPage, pages.value.length) : pageByIndex.value);
 });
+
+// the page set from outside (Back to an address with another page)
+watch(
+  () => props.currentPage,
+  (p) => {
+    if (p > 0 && p !== page.value) setPage(Math.min(p, pages.value.length));
+  },
+);
 </script>
 <template>
   <!-- the page size, then the page boxes : the size outside the list, so Previous is its first

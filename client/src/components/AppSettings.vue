@@ -24,6 +24,9 @@
 /*      tabs          tabs above the card                         */
 /*      feedback      status text next to the title               */
 /*      footer        free content directly under the card        */
+/*  A table's pager in the card (AppTablePager, a record page's   */
+/*  tab) moves under the card, as a list's : provided as          */
+/*  'afPagerTo', its place right under the card.                  */
 /*      actions       the page's buttons, top right               */
 /*      headerActions view controls, next to the title            */
 /*                                                                */
@@ -35,7 +38,7 @@
 /*  filters, columns), the buttons act on it.                     */
 /*                                                                */
 /******************************************************************/
-import { computed } from 'vue';
+import { computed, provide } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { sectionOf } from '@/lib/sections';
@@ -43,6 +46,10 @@ import { sectionOf } from '@/lib/sections';
 // a title of one step links to the page itself : its plain address, without a tab or a filter
 const route = useRoute();
 const { t } = useI18n();
+
+// under the card : where the pager of a table in it goes (AppTablePager), as a list's
+const pagerId = `af-card-pager-${Math.random().toString(36).slice(2, 10)}`;
+provide('afPagerTo', `#${pagerId}`);
 
 const props = defineProps({
   icon: {
@@ -120,6 +127,8 @@ const steps = computed(() => {
         </div>
       </div>
       <div v-else class="af-bare-content"><slot></slot></div>
+      <!-- a table's pager in the card, under it (AppTablePager) -->
+      <div :id="pagerId"></div>
       <slot name="footer"></slot>
     </div>
   </section>
