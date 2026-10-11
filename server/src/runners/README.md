@@ -63,7 +63,7 @@ Three choices carry the design:
 | `runners/awx/index.js` | The awx runner: launch, cancel, check. |
 | `runners/awx/api.js` | The AWX API calls and the output tracking (`Awx.launch`, `launchTemplate`, `trackJob`, `trackWorkflowJob`, `abortJob`, the `find*ByName` lookups), all taking the runner row. |
 | `runners/semaphore.js` | The semaphore runner: a Semaphore UI template in the runner's `project`, found by name or id, launched with the form's values as extra vars (`environment`), its task followed once a second (output lines, `success` / `error` / `stopped`), stopped on abort. |
-| `runners/rundeck.js` | The rundeck runner: a Rundeck job in the runner's `project`, found by `group/name`, name or uuid, run with only the options it declares, its output read on by offset and lastmod (ERROR lines as stderr), `succeeded` / `aborted` / anything else failed, aborted on abort. |
+| `runners/rundeck.js` | The rundeck runner: a Rundeck job in the runner's `project`, found by `group/name`, name or uuid, run with only the options it declares, its output read on by offset and lastmod (ERROR lines as stderr, each line's `[node]` once the output comes from several nodes), `succeeded` / `aborted` / anything else failed, aborted on abort. |
 | `runners/common.js` | What the runners that follow a remote job share: `clientFor` (axios with the runner's certificate settings), `contactTolerance`, `lostContact`, `jobEnded`, `delay`. |
 | `rte/server.js` | The RTE: its API, the job claim, its own clean-up. |
 | `rte/ansible-core.js` | The one place a playbook runs: `runAnsibleJob`, `buildAnsibleArgs` (no shell), `executeCommand` (process group, abort flag, output limit, job log). |

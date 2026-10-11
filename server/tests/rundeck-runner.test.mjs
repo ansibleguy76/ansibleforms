@@ -107,7 +107,11 @@ const server = http.createServer((req, res) => {
       if (e.step < script.length) {
         const [state, ...lines] = script[e.step++];
         e.state = state;
-        for (const l of lines) e.entries.push(l.startsWith("ERROR:") ? { level: "ERROR", log: l.slice(6) } : { level: "NORMAL", log: l });
+        for (const l of lines) {
+        // "node>text" : a line from that node, else from the one node every line comes from
+        const [node, log] = l.includes(">") ? l.split(">", 2) : ["rd-host", l];
+        e.entries.push(log.startsWith("ERROR:") ? { level: "ERROR", log: log.slice(6), node } : { level: "NORMAL", log, node });
+      }
       }
       if (e.abortRequested && e.state === "running") e.state = "aborted";
       const done = e.state !== "running";
@@ -173,6 +177,19 @@ describe("a job on Rundeck", () => {
     assert.equal(reads[0].query.offset, "0");
     assert.equal(reads[0].query.lastmod, "0", "no lastModified before the first line");
     assert.ok(reads.some((r) => r.query.offset === "2" && r.query.lastmod === "1002"), "both cursors carried forward");
+  });
+
+  test("a job on several nodes says each line's node ; on one node the lines are as they are", { timeout: 20000 }, async () => {
+    script = [["running", "web1>step 1", "web2>step 1"], ["running", "web1>ERROR:disk full"], ["succeeded", "web2>done"]];
+    await run({});
+    const lines = text().split("\n");
+    assert.ok(lines.includes("[web1] step 1") && lines.includes("[web2] step 1") && lines.includes("[web2] done"));
+    assert.ok(outputs.some((o) => o.output_type === "stderr" && o.output === "[web1] disk full"));
+    jobRow = { id: 5, status: "running" };
+    outputs = [];
+    script = [["running", "step 1"], ["succeeded", "done"]];
+    await run({});
+    assert.ok(text().split("\n").includes("step 1"), "one node : no prefix");
   });
 
   test("a bare name and a uuid name the job too", { timeout: 20000 }, async () => {

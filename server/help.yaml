@@ -2482,7 +2482,8 @@
           the runner's project. Only the job's own options are sent, each from the form value or
           credential of the same name (a list or an object as its json) ; other values stay in
           AnsibleForms. `limit` becomes the node filter, `verbose` the DEBUG log level ; the
-          AWX properties are not used.
+          AWX properties are not used. The job's output is shown as Rundeck logs it, its error
+          lines in red ; once it comes from several nodes, each line starts with its `[node]`.
         examples:
         - name: Run on the vmware runtime
           code: |

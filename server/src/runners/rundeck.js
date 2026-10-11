@@ -141,6 +141,9 @@ async function trackExecution(runner, job, executionId, jobid, counter) {
   let offset = 0;
   let lastmod = 0;
   let abortSent = false;
+  // the nodes the output came from : once there are two, each line says its node - the lines of
+  // a job that runs on several nodes interleave
+  const nodes = new Set();
   for (;;) {
     let out;
     try {
@@ -166,13 +169,16 @@ async function trackExecution(runner, job, executionId, jobid, counter) {
       if (chunk.length) abortRequested = (await Job.printJobOutput(chunk.join("\n"), stream, jobid, ++counter)) || abortRequested;
       chunk = [];
     };
-    for (const e of Array.isArray(out?.entries) ? out.entries : []) {
+    const entries = Array.isArray(out?.entries) ? out.entries : [];
+    for (const e of entries) if (e?.node) nodes.add(e.node);
+    for (const e of entries) {
       const s = e?.level === "ERROR" ? "stderr" : "stdout";
       if (s !== stream) {
         await flush();
         stream = s;
       }
-      chunk.push(String(e?.log ?? ""));
+      const prefix = nodes.size > 1 && e?.node ? `[${e.node}] ` : "";
+      chunk.push(prefix + String(e?.log ?? ""));
     }
     await flush();
     // the abort flag, also when there was nothing to write
