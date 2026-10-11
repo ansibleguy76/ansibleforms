@@ -2,12 +2,12 @@
 // tracking its output back into the job. Every function takes the runner ROW (a runner of
 // type awx, its secrets decrypted) - the connection the form named, or the default one.
 import axios from "axios";
-import https from "https";
 import yaml from "yaml";
 import logger from "../../lib/logger.js";
 import Errors from "../../lib/errors.js";
 import appConfig from "../../../config/app.config.js";
 import { safeParse } from "../../lib/safejson.js";
+import { delay, getHttpsAgent, contactTolerance, jobEnded, lostContact as endLost, REMOTE_TIMEOUT_MS } from "../common.js";
 // a cycle (job.model imports the orchestrator, which reaches this module) ; Job is only
 // used when a job runs, long after both modules have loaded
 import Job from "../../models/job.model.js";
@@ -56,48 +56,13 @@ export function serverOf(runner) {
   return uri;
 }
 
-function delay(t, v) {
-  return new Promise((resolve) => setTimeout(resolve, t, v));
-}
-
-export function getHttpsAgent(awx) {
-  return new https.Agent({
-    rejectUnauthorized: !awx.ignore_certs,
-    ca: awx.ca_bundle || undefined,
-  });
-}
+// the helpers every runner that follows a remote job shares (runners/common.js), re-exported
+// where the tests and callers have always found them
+export { contactTolerance, getHttpsAgent };
 
 // basic auth with a user and password, or a bearer token
 // every AWX call : a connection that hangs must fail and reach the retries, not wait for ever
-const AWX_TIMEOUT_MS = 60000;
-// polls in a row that may fail before the job is given up
-const AWX_MAX_RETRIES = 10;
-
-/**
- * How long AWX may fail to answer before a followed job is given up : AWX_LOST_MINUTES (5) of
- * failures in a row, with a backoff between the tries (1, 2, 4 ... 30 seconds). A network blip,
- * an AWX restart or a busy controller is no reason to end a job that is running there.
- *
- * Returns:
- *   {failed: function, ok: function}: failed() counts a failure and answers { giveUp, waitMs } ;
- *     ok() starts the count again.
- */
-export function contactTolerance(lostMinutes = Math.max(0, parseFloat(process.env.AWX_LOST_MINUTES ?? 5) || 0), now = Date.now) {
-  let since = null;
-  let failures = 0;
-  return {
-    failed() {
-      failures++;
-      if (since === null) since = now();
-      const giveUp = failures >= AWX_MAX_RETRIES && now() - since >= lostMinutes * 60 * 1000;
-      return { giveUp, waitMs: Math.min(30000, 1000 * 2 ** Math.min(failures - 1, 5)), failures };
-    },
-    ok() {
-      since = null;
-      failures = 0;
-    },
-  };
-}
+const AWX_TIMEOUT_MS = REMOTE_TIMEOUT_MS;
 
 // Above STDOUT_MAX_BYTES_DISPLAY (1 MB by default), AWX refuses the display formats of a
 // job's stdout : it answers 200 with this placeholder instead of the log (issue #733). The
@@ -127,17 +92,8 @@ export function getAuthorization(awx) {
 
 // AWX stopped answering while a job was followed : end ours, rather than leave it 'running'
 // until the daily sweep. The job in AWX may well go on.
-// an error thrown after the job was ended : who catches it must not end it again
-function jobEnded(err) {
-  err.jobEnded = true;
-  return err;
-}
-
-async function lostContact(jobid, counter, job, message) {
-  const line = `[ERROR]: lost contact with AWX while following AWX job ${job?.id} (${message}) : it may still be running, check it in AWX`;
-  await Job.resetAbortRequested(jobid).catch(() => {});
-  await Job.endJobStatus(jobid, counter, "stderr", "failed", line);
-  return line;
+function lostContact(jobid, counter, job, message) {
+  return endLost(jobid, counter, `[ERROR]: lost contact with AWX while following AWX job ${job?.id} (${message}) : it may still be running, check it in AWX`);
 }
 
 /** proves the connection works : it lists the job templates the credentials can see */

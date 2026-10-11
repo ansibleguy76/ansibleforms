@@ -437,6 +437,13 @@ describe("which runner runs a playbook job", () => {
     assert.equal(byDefault.row.name, "rte-default");
   });
 
+  test("a template form may name a semaphore runner ; a playbook form may not", async () => {
+    runnerRows = [{ name: "sem", type: "semaphore" }];
+    const picked = await resolveRunner({ jobType: "awx", extravars: { __runner__: "sem" } });
+    assert.equal(picked.impl.type, "semaphore");
+    await assert.rejects(resolveRunner({ jobType: "ansible", extravars: { __runner__: "sem" } }), /Runner 'sem' \(semaphore\) cannot run a playbook/);
+  });
+
   test("a runner the form names but nobody added fails the job with a line that says so", async () => {
     row({ __playbook__: "site.yml", __runner__: "rte-nope" });
     const ok = await dispatch({ jobId: 11, jobType: "ansible", extravars: { __runner__: "rte-nope" } });

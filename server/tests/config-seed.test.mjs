@@ -429,6 +429,13 @@ describe("runners are seedable", () => {
     assert.ok(keys.includes("runners"));
   });
 
+  test("a semaphore runner is seedable, with its project", () => {
+    assert.doesNotThrow(() => validateSeed({ runners: { items: [
+      { name: "sem", type: "semaphore", uri: "https://semaphore:3000", token: "${SEMAPHORE_TOKEN}", project: "1" },
+    ] } }));
+    assert.throws(() => validateSeed({ runners: { items: [{ name: "x", type: "jenkins", uri: "u" }] } }), /validation failed/);
+  });
+
   test("a runner needs name, type and uri ; an unknown field is rejected", () => {
     assert.throws(() => validateSeed({ runners: { items: [{ name: "x", type: "rte" }] } }), /validation failed/);
     assert.throws(() => validateSeed({ runners: { items: [{ name: "x", type: "rte", uri: "u", url: "u" }] } }), /validation failed/);

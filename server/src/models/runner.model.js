@@ -9,6 +9,8 @@ import { stripTrailingSlashes } from '../lib/url.js';
 
 // the flavours of an awx runner (none is AWX) : which product it is (its uri carries its API path)
 export const RUNNER_FLAVOURS = ['aap', 'ascender'];
+// the runners that sign in with a token and launch in one project of their server
+const TOKEN_AND_PROJECT = ['semaphore', 'rundeck'];
 import { NODE_DEAD_SECONDS } from '../lib/role.js';
 
 // the secret the api shows instead of a stored token ; sent back it means "unchanged"
@@ -33,6 +35,10 @@ class Runner extends CrudModel {
     if (data.token === SECRET_MASK) delete data.token;
     if (data.password === SECRET_MASK) delete data.password;
     if (typeof data.uri === 'string') data.uri = stripTrailingSlashes(data.uri.trim());
+    // a semaphore or rundeck runner signs in with its token only : a user and password are
+    // an awx runner's choice
+    if (TOKEN_AND_PROJECT.includes(data.type)) data.use_credentials = 0;
+    if (typeof data.project === 'string') data.project = data.project.trim() || null;
     // the flavour of an awx runner : 'aap', 'ascender', or none (AWX) - which product it is
     if (data.flavour !== undefined) {
       if (data.flavour === '' || data.flavour === null) data.flavour = null;
@@ -48,6 +54,10 @@ class Runner extends CrudModel {
     const missing = (field) => { throw new Errors.BadRequestError(`A runner of type ${row.type} needs ${field}`); };
     if (!row.uri) missing('a uri');
     if (row.type === 'rte' && !row.token) missing('a token (the RTE_TOKEN of the RTE)');
+    if (TOKEN_AND_PROJECT.includes(row.type)) {
+      if (!row.token) missing('an API token');
+      if (!row.project) missing(row.type === 'semaphore' ? 'a project (the project id)' : 'a project (the project name)');
+    }
     if (row.type === 'awx') {
       if (row.use_credentials) {
         if (!row.username || !row.password) missing('a username and a password (use credentials is on)');

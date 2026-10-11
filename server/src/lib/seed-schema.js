@@ -95,15 +95,16 @@ const secretStoreItem = {
   },
 };
 
-// Where a job runs : an RTE (type rte, `token` is its RTE_TOKEN) or AWX/AAP/Ascender
-// (type awx : a token, or use_credentials with username and password)
+// Where a job runs : an RTE (type rte, `token` is its RTE_TOKEN), AWX/AAP/Ascender
+// (type awx : a token, or use_credentials with username and password), or Semaphore
+// (type semaphore : a token and a project)
 const runnerItem = {
   type: "object",
   additionalProperties: false,
   required: ["name", "type", "uri"],
   properties: {
     name: str,
-    type: { type: "string", enum: ["rte", "awx"] },
+    type: { type: "string", enum: ["rte", "awx", "semaphore"] },
     description: str,
     uri: str,
     token: str,
@@ -115,6 +116,8 @@ const runnerItem = {
     is_default: bool,
     // an awx runner that is an AAP or an Ascender ; none is AWX
     flavour: { type: "string", enum: ["aap", "ascender"] },
+    // a semaphore runner's project id
+    project: str,
   },
 };
 

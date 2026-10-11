@@ -70,6 +70,8 @@ const crudConfigs = {
       { name: 'is_default', isBoolean: true },
       // an awx runner : AWX (none), 'aap' or 'ascender' - which product it is
       { name: 'flavour' },
+      // a semaphore runner : the project id ; a rundeck runner : the project name
+      { name: 'project' },
       { name: 'managed', isBoolean: true },
       { name: 'node_id' }
     ],
