@@ -122,8 +122,10 @@ const userSchedules = computed(() => {
   });
 });
 
-// the Cron column only when one of the user's schedules repeats : one-time runs have no cron
-const anyRecurring = computed(() => userSchedules.value.some((s) => !s.one_time_run));
+// a one-time run's Schedule cell : it has no cron, it runs once (escaped : it goes to v-html)
+const oneTimeCell = computed(() =>
+  t('settings.schedules.oneTimeRun').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'),
+);
 
 /**
  * When a schedule runs : a one-time run at its Run at, a recurring one at its cron's next time.
@@ -475,7 +477,7 @@ onMounted(async () => {
                 <tr>
                   <th>{{ t('settings.fields.name') }}</th>
                   <th>{{ t('settings.fields.form') }}</th>
-                  <th v-if="anyRecurring">{{ t('settings.schedules.cronShort') }}</th>
+                  <th>{{ t('settings.schedules.stepSchedule') }}</th>
                   <th>{{ t('settings.schedules.nextRun') }}</th>
                 </tr>
               </thead>
@@ -488,9 +490,9 @@ onMounted(async () => {
                 >
                   <td class="af-row-open">{{ s.name }}</td>
                   <td>{{ s.form || '–' }}</td>
-                  <!-- a recurring schedule's cron ; a one-time run has none, its cell left empty -->
+                  <!-- how it runs : a recurring schedule's cron, its meaning on hover ; or once -->
                   <!-- eslint-disable-next-line vue/no-v-html -- cronCell escapes it -->
-                  <td v-if="anyRecurring" class="text-nowrap" v-html="s.one_time_run ? '' : cronCell(s.cron)"></td>
+                  <td class="text-nowrap" v-html="s.one_time_run ? oneTimeCell : cronCell(s.cron)"></td>
                   <!-- when it runs : a one-time run its Run at, a recurring one its cron's next time -->
                   <td>{{ nextRunOf(s) ? Helpers.formatServerDate(nextRunOf(s)) : '–' }}</td>
                 </tr>
