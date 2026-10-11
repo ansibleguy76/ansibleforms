@@ -699,6 +699,9 @@ export default {
     // Settings > Appearance > Interface
     interface: {
       tabDefaults: 'Valors predeterminats',
+      tabHeader: 'Capçalera',
+      designer: 'Dissenyador',
+      designerHelp: 'Mostra el dissenyador a la capçalera',
       description:
         "Com es veu l'aplicació per a tothom per defecte: el tema i el seu color, l'idioma i si es mostra el dissenyador. L'elecció pròpia d'un usuari preval.",
     },

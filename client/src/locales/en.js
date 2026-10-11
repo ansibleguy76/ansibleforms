@@ -693,6 +693,9 @@ export default {
     // Settings > Appearance > Interface
     interface: {
       tabDefaults: 'Defaults',
+      tabHeader: 'Header',
+      designer: 'Designer',
+      designerHelp: 'Show the designer in the header',
       description:
         "How the app looks for everyone by default: the theme and its color, the language, and whether the designer shows. A user's own choice wins over them.",
     },

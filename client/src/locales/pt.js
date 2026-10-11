@@ -699,6 +699,9 @@ export default {
     // Settings > Appearance > Interface
     interface: {
       tabDefaults: 'Predefinições',
+      tabHeader: 'Cabeçalho',
+      designer: 'Designer',
+      designerHelp: 'Mostrar o designer no cabeçalho',
       description:
         'Como a aplicação aparece para todos por predefinição: o tema e a sua cor, o idioma e se o designer é mostrado. A escolha de um utilizador prevalece.',
     },

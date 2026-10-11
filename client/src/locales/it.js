@@ -699,6 +699,9 @@ export default {
     // Settings > Appearance > Interface
     interface: {
       tabDefaults: 'Valori predefiniti',
+      tabHeader: 'Intestazione',
+      designer: 'Designer',
+      designerHelp: "Mostra il designer nell'intestazione",
       description:
         "L'aspetto predefinito dell'app per tutti: il tema e il suo colore, la lingua e se il designer è visibile. La scelta di un utente ha la precedenza.",
     },

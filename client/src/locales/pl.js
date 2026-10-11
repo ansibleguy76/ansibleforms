@@ -697,6 +697,9 @@ export default {
     // Settings > Appearance > Interface
     interface: {
       tabDefaults: 'Wartości domyślne',
+      tabHeader: 'Nagłówek',
+      designer: 'Projektant',
+      designerHelp: 'Pokaż projektanta w nagłówku',
       description:
         'Domyślny wygląd aplikacji dla wszystkich: motyw i jego kolor, język oraz to, czy projektant jest widoczny. Własny wybór użytkownika ma pierwszeństwo.',
     },

@@ -3,11 +3,12 @@
 /*                                                                */
 /*  Settings > Appearance > Interface, in tabs (the tab kept in    */
 /*  the address) :                                                */
-/*    Defaults : how the app looks for everyone by default - the   */
-/*      theme and its colour (in the database), the language and  */
-/*      whether the designer shows (environment variables,        */
-/*      applied without a restart). A user's own choice (the top  */
-/*      bar, the profile) wins over them.                         */
+/*    Defaults : how the app looks for everyone by default - the  */
+/*      theme and its colour (in the database), the language (an */
+/*      environment variable). A user's own choice (the top bar,  */
+/*      the profile) wins over them.                              */
+/*    Header : whether the designer shows in the header (an       */
+/*      environment variable, applied without a restart).         */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted } from 'vue';
@@ -26,7 +27,18 @@ const { t } = useI18n();
 const authenticated = ref(false);
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
-const tabs = computed(() => [{ key: 'defaults', label: t('settings.interface.tabDefaults'), icon: 'sliders' }]);
+const tabs = computed(() => [
+  { key: 'defaults', label: t('settings.interface.tabDefaults'), icon: 'sliders' },
+  { key: 'header', label: t('settings.interface.tabHeader'), icon: 'window-maximize' },
+]);
+// the variables of each tab : the language with the defaults, the designer's switch in the header
+const defaultsEnv = computed(() => envItems.value.filter((e) => e.name === 'DEFAULT_LANGUAGE'));
+const headerEnv = computed(() =>
+  envItems.value
+    .filter((e) => e.name === 'SHOW_DESIGNER')
+    // said as the header shows it : the designer's link, there or not
+    .map((e) => ({ ...e, short: t('settings.interface.designer'), hint: t('settings.interface.designerHelp') })),
+);
 const { activeTab, tabLink } = useRouteTab('defaults', (key) => tabs.value.some((x) => x.key === key));
 // the title names the tab : Interface › Default, each step a link
 const crumbs = computed(() => {
@@ -156,12 +168,12 @@ onMounted(async () => {
         }}</BsButton>
       </template>
       <template #default>
-        <!-- Defaults : the theme, the language and the designer for everyone -->
+        <div v-if="envRestartPending.length" class="alert alert-warning py-2">
+          <FaIcon icon="triangle-exclamation" class="me-2" />
+          {{ t('settings.settingsPage.envRestartPending', { names: envRestartPending.join(', ') }) }}
+        </div>
+        <!-- Defaults : the theme and the language for everyone -->
         <div v-show="activeTab === 'defaults'">
-          <div v-if="envRestartPending.length" class="alert alert-warning py-2">
-            <FaIcon icon="triangle-exclamation" class="me-2" />
-            {{ t('settings.settingsPage.envRestartPending', { names: envRestartPending.join(', ') }) }}
-          </div>
           <!-- the theme : no environment variable, kept in the database -->
           <BsInput
             class="af-interface-field"
@@ -191,11 +203,15 @@ onMounted(async () => {
               </button>
             </div>
           </div>
-          <!-- the language and the designer : environment variables -->
-          <template v-for="e in envItems" :key="e.name">
+          <!-- the language : an environment variable -->
+          <template v-for="e in defaultsEnv" :key="e.name">
             <div class="mt-4"></div>
-            <AppEnvField v-model="envEdits[e.name]" :e="e" :asSwitch="e.name === 'SHOW_DESIGNER'" />
+            <AppEnvField v-model="envEdits[e.name]" :e="e" />
           </template>
+        </div>
+        <!-- Header : what the header shows, the designer's link -->
+        <div v-show="activeTab === 'header'">
+          <AppEnvField v-for="e in headerEnv" :key="e.name" v-model="envEdits[e.name]" :e="e" :asSwitch="true" />
         </div>
       </template>
     </AppSettings>

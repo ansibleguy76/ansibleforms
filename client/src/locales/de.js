@@ -703,6 +703,9 @@ export default {
     // Settings > Appearance > Interface
     interface: {
       tabDefaults: 'Standardwerte',
+      tabHeader: 'Kopfzeile',
+      designer: 'Designer',
+      designerHelp: 'Den Designer in der Kopfzeile anzeigen',
       description:
         'Wie die App standardmäßig für alle aussieht: das Design und seine Farbe, die Sprache und ob der Designer angezeigt wird. Die eigene Wahl eines Benutzers hat Vorrang.',
     },
