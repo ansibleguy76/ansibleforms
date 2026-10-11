@@ -36,6 +36,8 @@ const mcpSettings = () => import('@/pages/admin/mcp.vue');
 const mailSettings = () => import('@/pages/admin/mailSettings.vue');
 const mailServer = () => import('@/pages/admin/mail-server.vue');
 const logo = () => import('@/pages/admin/logo.vue');
+const favicon = () => import('@/pages/admin/favicon.vue');
+const interfacePage = () => import('@/pages/admin/interface.vue');
 const repositories = () => import('@/pages/admin/repositories.vue');
 const repository = () => import('@/pages/admin/repository.vue');
 const schedules = () => import('@/pages/admin/schedules.vue');
@@ -198,6 +200,14 @@ const routes = [
     meta: { permission: 'showSettings' },
   },
   { path: '/settings/logo/:tab?', name: '/settings/logo', component: logo, meta: { permission: 'showSettings' } },
+  // Settings > Appearance : the website icon, and the theme and language by default
+  { path: '/settings/icon', name: '/settings/icon', component: favicon, meta: { permission: 'showSettings' } },
+  {
+    path: '/settings/interface',
+    name: '/settings/interface',
+    component: interfacePage,
+    meta: { permission: 'showSettings' },
+  },
   {
     path: '/settings/repositories',
     name: '/settings/repositories',

@@ -20,6 +20,7 @@ export const useAppStore = defineStore('app', () => {
   const version = ref('');
   const customLogo = ref(null); // logo data url shown in the navbar
   const logoIsDefault = ref(true); // true while the seeded default logo is active
+  const customFavicon = ref(null); // the website icon's data url ; null : the bundled one
   const serverBuild = ref(null);
   const clientBuild = ref(null);
   const approvals = ref(0);
@@ -50,6 +51,7 @@ export const useAppStore = defineStore('app', () => {
     version,
     customLogo,
     logoIsDefault,
+    customFavicon,
     serverBuild,
     clientBuild,
     approvals,

@@ -243,6 +243,8 @@ CREATE TABLE `settings` (
   `url` varchar(250) DEFAULT NULL,
   `forms_yaml` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `logo` longtext DEFAULT NULL,
+  -- the website icon (browser tab), a data url ; NULL : the bundled one
+  `favicon` longtext DEFAULT NULL,
   `config_source` varchar(20) DEFAULT NULL,
   `default_language` varchar(5) DEFAULT NULL,
   `default_theme` varchar(10) DEFAULT NULL,

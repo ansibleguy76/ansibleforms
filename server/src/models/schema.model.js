@@ -551,7 +551,7 @@ const SCHEMA_MANIFEST = {
                                'credentials.credential_type', 'repositories.credential', 'groups.description',
                                'secret_stores.credential', 'credentials.client_cert', 'credentials.client_key',
                                'chat_settings.credential',
-                               'users.description', 'schedule.raw_form_data', 'users.blocked'] },
+                               'users.description', 'schedule.raw_form_data', 'users.blocked', 'settings.favicon'] },
   },
 };
 
@@ -906,6 +906,8 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addColumn("users", "description", "varchar(250)", true, "NULL"), messages, success, failed);
   // a local user's sign-in blocked by an admin, as an LDAP or SSO user's (lib/signInGate.js)
   await checkPromise(addColumn("users", "blocked", "tinyint(4)", false, "0"), messages, success, failed);
+  // the website icon (Settings > Appearance > Icon), a data url like the logo
+  await checkPromise(addColumn("settings", "favicon", "longtext", true, "NULL"), messages, success, failed);
   await checkPromise(copyAwxToRunners(), messages, success, failed);
   await checkPromise(addColumn("jobs", "job_log", "longtext", true, "NULL"), messages, success, failed);
 

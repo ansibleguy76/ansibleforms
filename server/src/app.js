@@ -69,6 +69,7 @@ import auditRoutesv2 from "./routes/v2/audit.routes.js";
 import directoryRoutesv2 from "./routes/v2/directory.routes.js";
 import auditMiddleware from "./lib/auditMiddleware.js";
 import logoRoutesv2 from "./routes/v2/logo.routes.js";
+import faviconRoutesv2 from "./routes/v2/favicon.routes.js";
 import sshRoutesv2 from "./routes/v2/ssh.routes.js";
 import logRoutesv2 from "./routes/v2/log.routes.js";
 import repositoryRoutesv2 from "./routes/v2/repository.routes.js";
@@ -242,6 +243,8 @@ const load = async (app) => {
   app.use(`/api/v2/directory`, cors(), authobj, Middleware.checkSettingsMiddleware, directoryRoutesv2);
   // custom logo ; reading is public (header and login page), changing it is guarded in the routes
   app.use(`/api/v2/logo`, cors(), logoRoutesv2);
+  // the website icon : the same rules as the logo (public to read, settings to change)
+  app.use(`/api/v2/favicon`, cors(), faviconRoutesv2);
   app.use(`/api/v2/sshkey`, cors(), authobj, Middleware.checkSettingsMiddleware, sshRoutesv2);
   app.use(`/api/v2/ldap`, cors(), authobj, Middleware.checkSettingsMiddleware, ldapRoutes);
   app.use(`/api/v2/chatsettings`, cors(), authobj, Middleware.checkSettingsMiddleware, chatSettingsRoutes);

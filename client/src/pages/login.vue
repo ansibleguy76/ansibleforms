@@ -204,6 +204,7 @@ onMounted(() => {
   }
   State.loadVersion();
   State.loadLogo();
+  State.loadFavicon();
 });
 </script>
 

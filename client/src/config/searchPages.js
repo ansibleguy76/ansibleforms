@@ -53,7 +53,9 @@ export function searchPages(t, options) {
       icon: 'toolbox',
       link: '/settings/general',
     },
+    { title: t('sidebar.interface'), section: settings, icon: 'palette', link: '/settings/interface' },
     { title: t('sidebar.logo'), section: settings, icon: 'image', link: '/settings/logo' },
+    { title: t('sidebar.icon'), section: settings, icon: 'star', link: '/settings/icon' },
     {
       title: t('sidebar.status'),
       section: settings,

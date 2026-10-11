@@ -197,6 +197,11 @@ const SIGNATURES = [
   {
     mime: "image/svg+xml",
     check: isSvg
+  },
+  {
+    // the classic favicon : an icon directory, reserved 0 and type 1
+    mime: "image/x-icon",
+    check: (b) => b.length >= 6 && b[0] === 0 && b[1] === 0 && b[2] === 1 && b[3] === 0 && (b[4] | b[5]) !== 0
   }
 ];
 

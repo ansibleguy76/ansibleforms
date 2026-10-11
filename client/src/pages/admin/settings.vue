@@ -7,7 +7,6 @@ import axios from 'axios';
 import { toast } from 'vue-sonner';
 import Helpers from '@/lib/Helpers';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
-import Theme from '@/lib/Theme';
 import { useI18n } from 'vue-i18n';
 import { useRouteTab } from '@/composables/useRouteTab';
 
@@ -137,12 +136,6 @@ const envGroupOrder = [
     prefix: ['YTT_'],
     exact: ['USE_YTT'],
   },
-  {
-    key: 'ui',
-    label: () => t('settings.settingsPage.envGroupUi'),
-    icon: 'palette',
-    exact: ['DEFAULT_LANGUAGE', 'SHOW_DESIGNER'],
-  },
   // LOG_RETENTION_DAYS is Retention's, with the other retentions
   {
     key: 'logging',
@@ -214,9 +207,10 @@ function envHelp(e) {
 // (the designer lock is in the database since 7). ANSIBLE_PATH and
 // PROCESS_MAX_BUFFER are read by an RTE only : since 7 the app runs no playbook itself.
 // the MCP server's switch and options (Settings > Connections > MCP) and the chat assistant's
-// switch (Settings > Connections > Chat assistant)
+// switch (Settings > Connections > Chat assistant) ; the default language and the designer's
+// switch (Settings > Appearance > Interface)
 const OWNED_ELSEWHERE =
-  /^(VAULT|RTE|MCP)_|^(ENABLE_(MCP|CHAT|SSO)|SSO_AUTO_LOGIN|BASE_URL|AF_ROLE|LOCK_PATH|ANSIBLE_PATH|PROCESS_MAX_BUFFER)$/;
+  /^(VAULT|RTE|MCP)_|^(ENABLE_(MCP|CHAT|SSO)|SSO_AUTO_LOGIN|BASE_URL|AF_ROLE|LOCK_PATH|ANSIBLE_PATH|PROCESS_MAX_BUFFER|DEFAULT_LANGUAGE|SHOW_DESIGNER)$/;
 
 const envGroups = computed(() => {
   if (!env.value || !Array.isArray(env.value)) return [];
@@ -243,41 +237,6 @@ const originalItem = ref(null);
 const showImportConfirm = ref(false);
 const showExportConfirm = ref(false);
 
-const themeOptions = Theme.themes().map((th) => ({ value: th.value, label: th.title }));
-
-const colorPalette = [
-  { label: 'Blue', hex: '#008cba' },
-  { label: 'Cyan', hex: '#0369a1' },
-  { label: 'Navy', hex: '#1b2a4a' },
-  { label: 'Indigo', hex: '#521ea6' },
-  { label: 'Purple', hex: '#4a2a8f' },
-  { label: 'Pink', hex: '#bb1c5e' },
-  { label: 'Red', hex: '#b92d34' },
-  { label: 'Orange', hex: '#c2570c' },
-  { label: 'Green', hex: '#198754' },
-  { label: 'Teal', hex: '#0f766e' },
-  { label: 'Slate', hex: '#475569' },
-  { label: 'Brown', hex: '#795548' },
-];
-
-const effectiveTheme = computed({
-  get() {
-    return item.value.default_theme || 'light';
-  },
-  set(val) {
-    item.value.default_theme = val;
-  },
-});
-
-const effectiveThemeColor = computed({
-  get() {
-    return Theme.current(item.value.default_theme_color || '#008cba');
-  },
-  set(val) {
-    item.value.default_theme_color = val;
-  },
-});
-
 const rules = computed(() => ({
   item: {
     url: { required: helpers.withMessage(`${t('settings.settingsPage.publicRootUrl')} is required`, required) },
@@ -293,22 +252,12 @@ function resolveLanguage(obj) {
   return obj.default_language || 'en';
 }
 
-function resolveTheme(obj) {
-  return obj.default_theme || 'light';
-}
-
-function resolveThemeColor(obj) {
-  return Theme.current(obj.default_theme_color || '#008cba');
-}
-
 const settingsDirty = computed(() => {
   if (originalItem.value === null) return false;
   return (
     item.value.url !== originalItem.value.url ||
     resolveConfigSource(item.value) !== resolveConfigSource(originalItem.value) ||
-    resolveLanguage(item.value) !== resolveLanguage(originalItem.value) ||
-    resolveTheme(item.value) !== resolveTheme(originalItem.value) ||
-    resolveThemeColor(item.value) !== resolveThemeColor(originalItem.value)
+    resolveLanguage(item.value) !== resolveLanguage(originalItem.value)
   );
 });
 
@@ -333,8 +282,9 @@ async function saveSettings() {
     return false;
   }
   try {
-    const { url, config_source, default_language, default_theme, default_theme_color } = item.value;
-    await axios.put('/api/v2/settings/', { url, config_source, default_language, default_theme, default_theme_color });
+    // the theme and its colour are Settings > Appearance > Interface's
+    const { url, config_source, default_language } = item.value;
+    await axios.put('/api/v2/settings/', { url, config_source, default_language });
     toast.success(t('settings.settingsPage.label') + ' ' + t('settings.common.isUpdated'));
     await loadItem();
     return true;
@@ -483,39 +433,6 @@ onMounted(async () => {
                 :hasError="$v.item.url.$invalid && $v.item.url.$dirty"
                 :errors="$v.item.url.$errors"
               />
-              <div class="mt-4"></div>
-            </template>
-            <template v-if="group.key === 'ui'">
-              <!-- no language field here : DEFAULT_LANGUAGE below is the one control for it.
-                 Theme and colour have no environment variable, so they stay database
-                 backed. -->
-              <BsInput
-                :isFloating="false"
-                type="select"
-                icon="palette"
-                v-model="effectiveTheme"
-                :values="themeOptions"
-                valueKey="value"
-                labelKey="label"
-                :label="t('settings.settingsPage.defaultTheme')"
-                :help="t('settings.settingsPage.defaultThemeHelp')"
-              />
-              <div v-if="effectiveTheme === 'color'" class="mt-2 ms-1">
-                <div class="d-flex flex-wrap gap-2">
-                  <button
-                    v-for="c in colorPalette"
-                    :key="c.hex"
-                    type="button"
-                    class="settings-color-swatch"
-                    :style="{ backgroundColor: c.hex }"
-                    :class="{ 'settings-color-swatch-active': effectiveThemeColor === c.hex }"
-                    :title="c.label"
-                    @click="effectiveThemeColor = c.hex"
-                  >
-                    <FaIcon v-if="effectiveThemeColor === c.hex" icon="check" class="settings-swatch-check" />
-                  </button>
-                </div>
-              </div>
               <div class="mt-4"></div>
             </template>
             <div v-if="envRestartPending.length" class="alert alert-warning py-2">
@@ -669,32 +586,5 @@ onMounted(async () => {
   min-height: calc(1.5em + 0.75rem + 2px);
   word-break: break-all;
   font-family: var(--bs-font-monospace);
-}
-.settings-color-swatch {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  transition:
-    transform 0.15s,
-    border-color 0.15s;
-}
-.settings-color-swatch:hover {
-  transform: scale(1.15);
-  border-color: rgba(255, 255, 255, 0.5);
-}
-.settings-color-swatch-active {
-  border-color: var(--bs-body-color);
-  box-shadow: 0 0 0 2px var(--bs-body-bg);
-}
-.settings-swatch-check {
-  color: #fff;
-  font-size: 0.65rem;
-  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.5));
 }
 </style>

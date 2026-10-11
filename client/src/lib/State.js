@@ -47,6 +47,26 @@ var State = {
       store.logoIsDefault = true;
     }
   },
+  // the website icon (Settings > Appearance > Icon) : the stored one in the browser tab, or
+  // the bundled favicon.svg of index.html
+  async loadFavicon() {
+    const store = useAppStore();
+    try {
+      const result = await axios.get(`/api/v2/favicon`);
+      store.customFavicon = result.data?.favicon || null;
+    } catch (err) {
+      store.customFavicon = null;
+    }
+    let link = document.querySelector("link[rel~='icon']");
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+    // the bundled one is remembered once, to come back to when the stored one is removed
+    if (!link.dataset.bundled) link.dataset.bundled = link.getAttribute('href') || 'favicon.svg';
+    link.setAttribute('href', store.customFavicon || link.dataset.bundled);
+  },
   // whether the chat button may show : the server says so (ENABLE_CHAT and a provider)
   async loadChatConfig() {
     const store = useAppStore();
@@ -116,6 +136,7 @@ var State = {
       State.loadProfile();
       State.loadVersion();
       State.loadLogo();
+      State.loadFavicon();
       State.loadChatConfig();
       State.refreshApprovals();
       Navigate.toOrigin(router, route);

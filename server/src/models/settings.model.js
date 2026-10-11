@@ -130,6 +130,15 @@ Settings.setLogo = async function (logo) {
   // empty-table case), rather than duplicating the COUNT-then-INSERT pattern.
   await Settings.update({ logo })
 };
+// the website icon (browser tab) : a data url, or null for the bundled one
+Settings.getFavicon = function () {
+  return mysql.do("SELECT favicon FROM AnsibleForms.`settings` limit 1;")
+    .then((res) => (res.length > 0 && res[0].favicon) ? res[0].favicon : null)
+};
+Settings.setFavicon = async function (favicon) {
+  logger.info(`Updating the website icon`)
+  await Settings.update({ favicon })
+};
 // backstop against overwriting the config while the designer holds the lock.
 // The controllers pre-check this and return a clean 423 ; the check also lives here so
 // no caller of the model can skip it.
