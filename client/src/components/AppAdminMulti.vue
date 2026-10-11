@@ -62,6 +62,7 @@
 /*      gets `created` with its name                              */
 /*  field.createDefaults: what a New record is preset with, or    */
 /*      (item) => that, from the record being edited              */
+/*  field.rows: the lines of a textarea field (3 when not given)  */
 /*  field.columnLabel: the column's title, when shorter than the  */
 /*      field's label in the dialog                               */
 /*  action.to: (item) => route - the action goes to a page        */
@@ -1746,6 +1747,8 @@ defineExpose({
             action == 'edit' && field.onEdit ? field.keepHelp || t('settings.common.passwordKeep') : textOf(field.help)
           "
           :readonly="field.readonly"
+          :disabled="!!field.readonly"
+          :rows="field.rows || 3"
           v-model="$v.item[field.key].$model"
           :isFloating="false"
           :required="field.required"

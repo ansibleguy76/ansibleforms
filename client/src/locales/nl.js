@@ -1010,6 +1010,11 @@ export default {
       description:
         'Voorwaarden die iedereen één keer accepteert voordat de app gebruikt wordt, vastgelegd met wie welke versie wanneer accepteerde.',
       preview: 'Voorbeeld',
+      tabVersions: 'Versies',
+      versionLabel: 'Versie',
+      versionsDescription: 'Elke tekst van de disclaimer zoals hij werd geaccepteerd, de nieuwste eerst.',
+      publishedBy: 'Gepubliceerd door',
+      publishedAt: 'Gepubliceerd',
       tabAcceptances: 'Acceptaties',
       acceptance: 'Acceptatie',
       acceptancesDescription: 'Wie welke versie van de disclaimer accepteerde, wanneer en vanaf waar.',

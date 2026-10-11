@@ -999,6 +999,11 @@ export default {
       description:
         'Terms everyone accepts once before using the app, recorded with who accepted which version and when.',
       preview: 'Preview',
+      tabVersions: 'Versions',
+      versionLabel: 'Version',
+      versionsDescription: 'Every text of the disclaimer as it was agreed to, the latest first.',
+      publishedBy: 'Published by',
+      publishedAt: 'Published',
       tabAcceptances: 'Acceptances',
       acceptance: 'Acceptance',
       acceptancesDescription: 'Who accepted which version of the disclaimer, when and from where.',

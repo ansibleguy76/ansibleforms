@@ -1020,6 +1020,11 @@ export default {
       description:
         "Des conditions que chacun accepte une fois avant d'utiliser l'application, enregistrées avec qui a accepté quelle version et quand.",
       preview: 'Aperçu',
+      tabVersions: 'Versions',
+      versionLabel: 'Version',
+      versionsDescription: "Chaque texte de l'avertissement tel qu'il a été accepté, le plus récent d'abord.",
+      publishedBy: 'Publiée par',
+      publishedAt: 'Publiée',
       tabAcceptances: 'Acceptations',
       acceptance: 'Acceptation',
       acceptancesDescription: "Qui a accepté quelle version de l'avertissement, quand et d'où.",

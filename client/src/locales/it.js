@@ -1012,6 +1012,11 @@ export default {
       description:
         "Condizioni che tutti accettano una volta prima di usare l'applicazione, registrate con chi ha accettato quale versione e quando.",
       preview: 'Anteprima',
+      tabVersions: 'Versioni',
+      versionLabel: 'Versione',
+      versionsDescription: 'Ogni testo del disclaimer così come è stato accettato, il più recente per primo.',
+      publishedBy: 'Pubblicata da',
+      publishedAt: 'Pubblicata',
       tabAcceptances: 'Accettazioni',
       acceptance: 'Accettazione',
       acceptancesDescription: 'Chi ha accettato quale versione del disclaimer, quando e da dove.',

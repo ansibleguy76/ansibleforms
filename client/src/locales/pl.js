@@ -946,6 +946,12 @@ export default {
       description:
         'Warunki, które każdy akceptuje raz przed użyciem aplikacji, zapisywane z tym, kto zaakceptował którą wersję i kiedy.',
       preview: 'Podgląd',
+      tabVersions: 'Wersje',
+      versionLabel: 'Wersja',
+      versionsDescription:
+        'Każdy tekst zastrzeżenia w takiej postaci, w jakiej został zaakceptowany, najnowszy pierwszy.',
+      publishedBy: 'Opublikował',
+      publishedAt: 'Opublikowano',
       tabAcceptances: 'Akceptacje',
       acceptance: 'Akceptacja',
       acceptancesDescription: 'Kto zaakceptował którą wersję zastrzeżenia, kiedy i skąd.',

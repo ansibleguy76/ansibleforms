@@ -953,6 +953,11 @@ export default {
       description:
         "Condicions que tothom accepta una vegada abans d'usar l'aplicació, registrades amb qui ha acceptat quina versió i quan.",
       preview: 'Previsualització',
+      tabVersions: 'Versions',
+      versionLabel: 'Versió',
+      versionsDescription: "Cada text de l'avís legal tal com es va acceptar, el més recent primer.",
+      publishedBy: 'Publicat per',
+      publishedAt: 'Publicat',
       tabAcceptances: 'Acceptacions',
       acceptance: 'Acceptació',
       acceptancesDescription: "Qui ha acceptat quina versió de l'avís legal, quan i des d'on.",

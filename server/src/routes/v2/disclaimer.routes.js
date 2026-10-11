@@ -12,6 +12,11 @@ export const disclaimerSettingsRouter = express.Router();
 disclaimerSettingsRouter.get('/', disclaimerController.settings);
 disclaimerSettingsRouter.put('/', disclaimerController.saveSettings);
 
+// Settings > Access > Disclaimer > Versions : each text as it was agreed to
+export const disclaimerVersionRouter = express.Router();
+disclaimerVersionRouter.get('/', disclaimerController.versions);
+disclaimerVersionRouter.get('/:id', disclaimerController.version);
+
 // Settings > Access > Disclaimer > Acceptances : who accepted which version
 export const disclaimerAcceptanceRouter = express.Router();
 disclaimerAcceptanceRouter.get('/', disclaimerController.acceptances);

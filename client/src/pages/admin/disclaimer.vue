@@ -7,6 +7,8 @@
 /*                and the label of the checkbox users tick. A     */
 /*                changed text asks : everyone again (a new       */
 /*                version) or a correction (the same version)     */
+/*  Versions    - each text as it was agreed to, who published it */
+/*                and when, how many accepted it                  */
 /*  Acceptances - who accepted which version, when, from where    */
 /*                (models/disclaimer.model.js)                    */
 /*                                                                */
@@ -29,9 +31,14 @@ const title = computed(() => t('sidebar.disclaimer'));
 // ─── tabs ─────────────────────────────────────────────────────────────────────
 const pageTabs = computed(() => [
   { key: 'general', label: t('settings.common.tabGeneral'), icon: 'sliders' },
+  { key: 'versions', label: t('settings.disclaimer.tabVersions'), icon: 'layer-group' },
   { key: 'acceptances', label: t('settings.disclaimer.tabAcceptances'), icon: 'file-signature' },
 ]);
-const { activeTab, tabLink } = useRouteTab('general', (key) => ['general', 'acceptances'].includes(key));
+const { activeTab, tabLink } = useRouteTab('general', (key) => ['general', 'versions', 'acceptances'].includes(key));
+// the lists of the tabs : Versions, Acceptances
+const listOf = computed(() =>
+  activeTab.value === 'versions' ? settings.value.disclaimerVersions : settings.value.disclaimerAcceptances,
+);
 // the title says the tab : Disclaimer › General, Disclaimer › Acceptances, each step a link
 const crumbs = computed(() => {
   const tab = pageTabs.value.find((x) => x.key === activeTab.value);
@@ -132,11 +139,13 @@ onMounted(async () => {
 </script>
 <template>
   <AppSettingsPage>
-    <!-- ACCEPTANCES : who accepted which version ; the page's tabs above it -->
+    <!-- VERSIONS : each text as it was agreed to ; ACCEPTANCES : who accepted which version ; the
+         page's tabs above them -->
     <AppAdminMulti
-      v-if="authenticated && activeTab === 'acceptances'"
+      v-if="authenticated && activeTab !== 'general'"
+      :key="activeTab"
       :apiVersion="2"
-      :settings="settings.disclaimerAcceptances"
+      :settings="listOf"
       :crumbs="crumbs"
       readOnly
     >

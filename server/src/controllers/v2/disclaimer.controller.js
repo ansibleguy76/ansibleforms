@@ -58,6 +58,22 @@ const saveSettings = async (req, res) => {
   }
 };
 
+const versions = async (req, res) => {
+  try {
+    return res.json(RestResult.list(await Disclaimer.versions()));
+  } catch (err) {
+    Errors.ReturnError(res, err);
+  }
+};
+
+const version = async (req, res) => {
+  try {
+    return res.json(RestResult.single(await Disclaimer.version(req.params.id)));
+  } catch (err) {
+    Errors.ReturnError(res, err);
+  }
+};
+
 const acceptances = async (req, res) => {
   try {
     return res.json(RestResult.list(await Disclaimer.acceptances()));
@@ -66,4 +82,4 @@ const acceptances = async (req, res) => {
   }
 };
 
-export default { current, accept, decline, settings, saveSettings, acceptances };
+export default { current, accept, decline, settings, saveSettings, versions, version, acceptances };

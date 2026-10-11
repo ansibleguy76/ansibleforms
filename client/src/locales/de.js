@@ -1020,6 +1020,11 @@ export default {
       description:
         'Bedingungen, die jeder einmal akzeptiert, bevor er die Anwendung nutzt, festgehalten mit wer welche Version wann akzeptiert hat.',
       preview: 'Vorschau',
+      tabVersions: 'Versionen',
+      versionLabel: 'Version',
+      versionsDescription: 'Jeder Text des Haftungsausschlusses, wie ihm zugestimmt wurde, der neueste zuerst.',
+      publishedBy: 'Veröffentlicht von',
+      publishedAt: 'Veröffentlicht',
       tabAcceptances: 'Zustimmungen',
       acceptance: 'Zustimmung',
       acceptancesDescription: 'Wer welche Version des Haftungsausschlusses wann und von wo akzeptiert hat.',

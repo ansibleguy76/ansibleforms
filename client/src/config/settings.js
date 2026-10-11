@@ -2440,6 +2440,49 @@ export default function getSettings(t) {
         },
       ],
     },
+    disclaimerVersions: {
+      // the page title is the menu entry's label (AppSidebar), so the two always match
+      pageTitle: t('sidebar.disclaimer'),
+      type: 'disclaimerversion',
+      label: t('settings.disclaimer.versionLabel'),
+      labelPlural: t('settings.disclaimer.tabVersions'),
+      description: t('settings.disclaimer.versionsDescription'),
+      icon: 'layer-group',
+      selectable: false,
+      // a record, never changed : opened, its text as it was agreed to
+      noCreate: true,
+      actions: [],
+      fields: [
+        { key: 'id', hidden: true, noInput: true, noTable: true },
+        { key: 'version', label: t('settings.disclaimer.version'), icon: 'hashtag', readonly: true },
+        { key: 'title', label: t('settings.disclaimer.title'), icon: 'heading', readonly: true },
+        {
+          key: 'text',
+          label: t('settings.disclaimer.text'),
+          type: 'textarea',
+          rows: 10,
+          icon: 'file-lines',
+          readonly: true,
+          noTable: true,
+        },
+        {
+          key: 'checkbox_label',
+          label: t('settings.disclaimer.checkbox'),
+          icon: 'square-check',
+          noTable: true,
+          readonly: true,
+        },
+        { key: 'created_by', label: t('settings.disclaimer.publishedBy'), noInput: true },
+        {
+          key: 'created_at',
+          label: t('settings.disclaimer.publishedAt'),
+          type: 'datetime',
+          noInput: true,
+          render: (v) => (v ? Helpers.formatServerDate(v) : '–'),
+        },
+        { key: 'acceptances', label: t('settings.disclaimer.tabAcceptances'), noInput: true, align: 'end' },
+      ],
+    },
     disclaimerAcceptances: {
       // the page title is the menu entry's label (AppSidebar), so the two always match
       pageTitle: t('sidebar.disclaimer'),

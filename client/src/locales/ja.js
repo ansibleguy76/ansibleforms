@@ -941,6 +941,11 @@ export default {
     disclaimer: {
       description: 'アプリを使う前に全員が一度だけ同意する条件。誰がどの版にいつ同意したかを記録します。',
       preview: 'プレビュー',
+      tabVersions: '版',
+      versionLabel: '版',
+      versionsDescription: '同意された時点の免責事項の各本文。新しい順。',
+      publishedBy: '公開者',
+      publishedAt: '公開日時',
       tabAcceptances: '同意記録',
       acceptance: '同意',
       acceptancesDescription: '誰が免責事項のどの版に、いつ、どこから同意したか。',

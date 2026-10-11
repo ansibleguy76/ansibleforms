@@ -918,6 +918,11 @@ export default {
     disclaimer: {
       description: '每个人在使用应用前接受一次的条款，记录谁在何时接受了哪个版本。',
       preview: '预览',
+      tabVersions: '版本',
+      versionLabel: '版本',
+      versionsDescription: '免责声明每个版本被接受时的正文，最新的在前。',
+      publishedBy: '发布者',
+      publishedAt: '发布时间',
       tabAcceptances: '接受记录',
       acceptance: '接受',
       acceptancesDescription: '谁在何时、从何处接受了哪个版本的免责声明。',

@@ -1013,6 +1013,11 @@ export default {
       description:
         'Condiciones que todos aceptan una vez antes de usar la aplicación, registradas con quién aceptó qué versión y cuándo.',
       preview: 'Vista previa',
+      tabVersions: 'Versiones',
+      versionLabel: 'Versión',
+      versionsDescription: 'Cada texto del aviso legal tal como se aceptó, el más reciente primero.',
+      publishedBy: 'Publicado por',
+      publishedAt: 'Publicado',
       tabAcceptances: 'Aceptaciones',
       acceptance: 'Aceptación',
       acceptancesDescription: 'Quién aceptó qué versión del aviso legal, cuándo y desde dónde.',

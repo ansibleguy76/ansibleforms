@@ -57,7 +57,7 @@ import secretStoreRoutesv2 from "./routes/v2/secretStore.routes.js";
 import runnerRoutesv2 from "./routes/v2/runner.routes.js";
 import mailServerRoutesv2 from "./routes/v2/mailServer.routes.js";
 import announcementRoutesv2 from "./routes/v2/announcement.routes.js";
-import disclaimerRoutesv2, { disclaimerSettingsRouter, disclaimerAcceptanceRouter } from "./routes/v2/disclaimer.routes.js";
+import disclaimerRoutesv2, { disclaimerSettingsRouter, disclaimerVersionRouter, disclaimerAcceptanceRouter } from "./routes/v2/disclaimer.routes.js";
 import eventsRoutesv2 from "./routes/v2/events.routes.js";
 import knownhostsRoutes from "./routes/v2/knownhosts.routes.js";
 import scheduleRoutes from "./routes/v2/schedule.routes.js";
@@ -263,6 +263,7 @@ const load = async (app) => {
   // in Settings > Access > Disclaimer
   app.use(`/api/v2/disclaimer`, cors(), authobj, disclaimerRoutesv2);
   app.use(`/api/v2/disclaimersettings`, cors(), authobj, Middleware.checkSettingsMiddleware, disclaimerSettingsRouter);
+  app.use(`/api/v2/disclaimerversion`, cors(), authobj, Middleware.checkSettingsMiddleware, disclaimerVersionRouter);
   app.use(`/api/v2/disclaimeracceptance`, cors(), authobj, Middleware.checkSettingsMiddleware, disclaimerAcceptanceRouter);
   app.use(`/api/v2/knownhosts`, cors(), authobj, Middleware.checkSettingsMiddleware, knownhostsRoutes);
   // allowScheduledJobs for everything ; allowPlannedJobs only for creating a one-time run

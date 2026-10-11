@@ -244,6 +244,39 @@ const Disclaimer = {
   },
 
   /**
+   * Every version, the latest first : its text as it was agreed to, who made it, when, and how
+   * many accepted it.
+   *
+   * Returns:
+   *   Promise<object[]>: the versions, each with its id (its number) and its acceptances.
+   */
+  async versions() {
+    return mysql.do(
+      'SELECT v.version AS id, v.version, v.title, v.text, v.checkbox_label, v.created_by, v.created_at, ' +
+        '(SELECT COUNT(*) FROM AnsibleForms.`disclaimer_acceptances` a WHERE a.version = v.version) AS acceptances ' +
+        'FROM AnsibleForms.`disclaimer_versions` v ORDER BY v.version DESC',
+    );
+  },
+
+  /**
+   * One version, as versions() lists it.
+   *
+   * Args:
+   *   version (number|string): its number.
+   *
+   * Returns:
+   *   Promise<object>: the version.
+   *
+   * Raises:
+   *   NotFoundError: no version has that number.
+   */
+  async version(version) {
+    const found = (await this.versions()).find((v) => String(v.version) === String(version));
+    if (!found) throw new Errors.NotFoundError(`No disclaimer version ${version}`);
+    return found;
+  },
+
+  /**
    * Every acceptance, the latest first : who, which version, when, from where.
    *
    * Returns:
