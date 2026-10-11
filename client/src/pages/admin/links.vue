@@ -549,9 +549,10 @@ onMounted(async () => {
   padding-left: 0;
   padding-right: 0;
 }
-/* a move that may not be pressed : the light grey of the fields' borders and icons */
+/* a move that may not be pressed : its arrow a very light grey (Bootstrap's own border grey,
+   lighter than the fields'), its outline the fields' */
 .af-link-btn:disabled {
-  color: var(--af-field-icon);
+  color: var(--bs-border-color);
   border-color: var(--af-field-border);
   opacity: 1;
 }
