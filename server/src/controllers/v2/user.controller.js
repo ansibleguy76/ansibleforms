@@ -8,6 +8,7 @@ import { assertMayTouchAdmin } from '../../lib/adminGrants.js';
 import { unlockAccount } from '../../lib/loginThrottle.js';
 import Group from '../../models/group.model.js';
 import { withUserRoleCounts } from '../../lib/roleCounts.js';
+import { withUserJobCounts } from '../../lib/jobCounts.js';
 import authConfig from '../../../config/auth.config.js';
 import Token from '../../models/token.model.js';
 import { revokeUser } from '../../lib/tokenRevocation.js';
@@ -59,8 +60,10 @@ const findAllOr1 = async function(req, res) {
       users.forEach(u => {
         if (u.password) u.password = '**********';
       });
-      // and how many roles each has, for the list's Roles column (lib/roleCounts.js)
-      res.json(RestResult.list(await withUserRoleCounts(users, await Group.findAll())));
+      // and how many roles each has, for the list's Roles column (lib/roleCounts.js), and how
+      // many stored jobs and planned jobs it keeps, for its optional columns (lib/jobCounts.js)
+      const counted = await withUserRoleCounts(users, await Group.findAll());
+      res.json(RestResult.list(await withUserJobCounts(counted)));
     }
   } catch(err) {
     res.status(500).json(RestResult.error(err.toString()));

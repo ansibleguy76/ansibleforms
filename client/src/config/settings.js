@@ -307,6 +307,30 @@ export default function getSettings(t) {
           filterType: 'number',
           render: (v) => (v ? String(v) : '–'),
         },
+        // how many stored jobs it keeps, and how many jobs it planned with Run later (the server
+        // counts them, lib/jobCounts.js) : off by default, the Columns menu shows them
+        {
+          key: 'stored_job_count',
+          label: t('settings.storedJobs.labelPlural'),
+          noInput: true,
+          hidden: true,
+          align: 'end',
+          width: headerWidth(t('settings.storedJobs.labelPlural'), true, '8rem', true),
+          filterable: false,
+          filterType: 'number',
+          render: (v) => (v ? String(v) : '–'),
+        },
+        {
+          key: 'schedule_count',
+          label: t('settings.schedules.labelPlural'),
+          noInput: true,
+          hidden: true,
+          align: 'end',
+          width: headerWidth(t('settings.schedules.labelPlural'), true, '8rem', true),
+          filterable: false,
+          filterType: 'number',
+          render: (v) => (v ? String(v) : '–'),
+        },
       ],
     },
     groups: {
