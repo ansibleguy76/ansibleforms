@@ -33,9 +33,26 @@ const filterMatcher = computed(() => {
   }
 });
 
+// Clear empties the view, never the log : the last line shown then is remembered, and only the
+// lines after it are shown from there on. Not among the lines read any more (more than LINES
+// were written since), every line read is newer. Reloading the page shows the last lines again.
+const clearedAfter = ref(null);
+
+/**
+ * Empties the view : from now on only the lines written after this moment are shown.
+ */
+function clearView() {
+  const lines = log.value.split('\n').filter((x) => x != '');
+  clearedAfter.value = lines.length ? lines[lines.length - 1] : '';
+}
+
 const filtered = computed(() => {
   const match = filterMatcher.value;
-  const lines = log.value.split('\n').filter((x) => x != '');
+  let lines = log.value.split('\n').filter((x) => x != '');
+  if (clearedAfter.value !== null) {
+    const at = clearedAfter.value === '' ? -1 : lines.lastIndexOf(clearedAfter.value);
+    if (at >= 0) lines = lines.slice(at + 1);
+  }
   return (match ? lines.filter(match) : lines).map((x) => ansiParse(x));
 });
 async function scrollToBottom() {
@@ -142,6 +159,10 @@ onUnmounted(() => {
           <!-- view controls only : these decide WHAT the card shows. Refresh re-reads the same
                view, it does not act on anything ; the download follows, with the page's buttons -->
           <BsButton class="ms-2 text-nowrap" icon="refresh" @click="load(true)">{{ t('jobs.refresh') }}</BsButton>
+          <!-- empties the view, not the log : only the lines written after it show from then on -->
+          <BsButton class="ms-2 text-nowrap" icon="eraser" :title="t('logs.clearHint')" @click="clearView()">{{
+            t('logs.clear')
+          }}</BsButton>
         </template>
         <template #actions>
           <BsButton class="text-nowrap" icon="download" @click="download()">{{ t('logs.download') }}</BsButton>
@@ -158,6 +179,9 @@ onUnmounted(() => {
             role="region"
             :aria-label="t('logs.title')"
           >
+            <div v-if="clearedAfter !== null && !filtered.length" class="text-body-secondary fst-italic py-2">
+              {{ t('logs.cleared') }}
+            </div>
             <div v-for="(t, i) in filtered" :key="i">
               <div class="text-end pe-1 me-3 d-inline-block af-line-no" style="width: 40px">{{ i + 1 }}</div>
               <span v-for="(s, si) in t" :key="si" v-text="s.text" :class="s.foreground || ''"></span>

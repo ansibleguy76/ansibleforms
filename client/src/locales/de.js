@@ -2144,6 +2144,9 @@ export default {
     description:
       'Das eigene Protokoll des AnsibleForms-Servers: Anmeldungen, Laden der Konfiguration, Anfragen und Fehler. Die neuesten Zeilen stehen unten.',
     autoRefresh: 'Automatisch aktualisieren',
+    clear: 'Leeren',
+    clearHint: 'Leert die Ansicht, nicht das Log: nur die ab jetzt geschriebenen Zeilen werden angezeigt',
+    cleared: 'Geleert: neue Zeilen erscheinen hier, sobald sie geschrieben werden.',
     download: 'Herunterladen',
   },
 };
