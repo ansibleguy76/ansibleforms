@@ -8,7 +8,7 @@ every job runs on a **runner**, a row of the `runners` table with a type.
 | `rte` | playbooks (`type: ansible` forms) | a runtime environment container: this server started with `AF_ROLE=rte`, image `ghcr.io/ansibleforms/ansibleforms-rte-full` (or `-rte-core`, `-rte-base`) |
 | `awx` | templates (`type: awx` forms) | AWX / Ansible Automation Platform / Ascender |
 | `semaphore` | templates (`type: awx` forms that name it with `runner:`) | Semaphore UI, one project per runner (`project` is its id), signed in with an API token |
-| later: `rundeck` | | one adapter file |
+| `rundeck` | jobs (`type: awx` forms that name it with `runner:`) | Rundeck, one project per runner (`project` is its name), signed in with an API token, API v41 |
 
 ## Why
 
@@ -57,12 +57,13 @@ Three choices carry the design:
 
 | File | What it does |
 |---|---|
-| `runners/index.js` | The registry: `RUNNERS = { awx, rte, semaphore }`, `RUNNER_TYPES`, `getRunner(type)`. |
+| `runners/index.js` | The registry: `RUNNERS = { awx, rte, semaphore, rundeck }`, `RUNNER_TYPES`, `getRunner(type)`. |
 | `runners/orchestrator.js` | Between "the job may start" and "a runner runs it": the approval gate (the `APPROVE [...]` line, status `approve`, the notification), `resolveRunner`, `dispatch` (writes `jobs.runner`). |
 | `runners/rte.js` | App side of an RTE: health/version check, hand-over (`POST /rte/v1/jobs`), wait for the row's status, cancel. |
 | `runners/awx/index.js` | The awx runner: launch, cancel, check. |
 | `runners/awx/api.js` | The AWX API calls and the output tracking (`Awx.launch`, `launchTemplate`, `trackJob`, `trackWorkflowJob`, `abortJob`, the `find*ByName` lookups), all taking the runner row. |
 | `runners/semaphore.js` | The semaphore runner: a Semaphore UI template in the runner's `project`, found by name or id, launched with the form's values as extra vars (`environment`), its task followed once a second (output lines, `success` / `error` / `stopped`), stopped on abort. |
+| `runners/rundeck.js` | The rundeck runner: a Rundeck job in the runner's `project`, found by `group/name`, name or uuid, run with only the options it declares, its output read on by offset and lastmod (ERROR lines as stderr), `succeeded` / `aborted` / anything else failed, aborted on abort. |
 | `runners/common.js` | What the runners that follow a remote job share: `clientFor` (axios with the runner's certificate settings), `contactTolerance`, `lostContact`, `jobEnded`, `delay`. |
 | `rte/server.js` | The RTE: its API, the job claim, its own clean-up. |
 | `rte/ansible-core.js` | The one place a playbook runs: `runAnsibleJob`, `buildAnsibleArgs` (no shell), `executeCommand` (process group, abort flag, output limit, job log). |
@@ -93,7 +94,7 @@ so steps can name different runners.
 
 | The form says | A runner of the job's type is *Default* | The job runs |
 |---|---|---|
-| `runner: <name>` (or the deprecated `awx: <name>`) | (ignored) | on that runner; it must be able to run the job (an rte runs playbooks, an awx or a semaphore runs templates), and a name nobody added fails the job with "No runner named ..." |
+| `runner: <name>` (or the deprecated `awx: <name>`) | (ignored) | on that runner; it must be able to run the job (an rte runs playbooks, an awx, a semaphore or a rundeck runs templates), and a name nobody added fails the job with "No runner named ..." |
 | nothing | yes | on the default runner of the matching type (`rte` for playbooks, `awx` for templates) |
 | nothing | no | nowhere: the job fails with "No runner to run this playbook : add one of type rte ..." |
 
@@ -271,16 +272,17 @@ See [examples/rte](../../../examples/rte).
   database, the RTE cloning the playbooks repository itself.)
 - A form's `playbookSubPath` must exist on the RTE; a missing folder fails the job with the
   folder's name and what to mount.
-- A multistep job, an AWX job and a Semaphore job are followed by the app node that started
-  them: when that node goes, the job is abandoned (within two minutes on a cluster, at its
-  restart otherwise). A step already handed to an RTE still finishes; an AWX or Semaphore job
-  goes on over there.
-- A Semaphore runner has no default: a template form that names no runner goes to the default
-  awx runner, so a Semaphore form names its runner. Its task id is kept in `jobs.awx_id`.
+- A multistep job, an AWX, a Semaphore and a Rundeck job are followed by the app node that
+  started them: when that node goes, the job is abandoned (within two minutes on a cluster, at
+  its restart otherwise). A step already handed to an RTE still finishes; the others go on over
+  there.
+- Semaphore and Rundeck runners have no default: a template form that names no runner goes to
+  the default awx runner, so such a form names its runner. The task / execution id is kept in
+  `jobs.awx_id`.
 
 ## Later
 
-A Rundeck adapter; `findDefault` by capability (a default per playbook / template rather than
+`findDefault` by capability (a default per playbook / template rather than
 per type); following multistep and AWX jobs from the worker, so they survive the app node that
 started them. (The worker role and several app nodes exist since 7: see
 [examples/scale](../../../examples/scale).)
@@ -295,6 +297,8 @@ started them. (The worker role and several app nodes exist since 7: see
 - `tests/awx-workflow.test.mjs` - AWX tracking against a fake AWX, incl. the 405 cancel.
 - `tests/semaphore-runner.test.mjs` - the semaphore runner against a fake Semaphore: template by
   name or id, extra vars, output once per line, the status map, stop, launch refusals, lost contact.
+- `tests/rundeck-runner.test.mjs` - the rundeck runner against a fake Rundeck: the job by group/name
+  or uuid, only declared options, output read on by offset, the status map, abort, lost contact.
 - `tests/runner-model.test.mjs` - per-type validation and default, masked secrets.
 - `tests/schema-awx-to-runners.test.mjs` - the awx table moving into runners.
 - `tests/rte-server.test.mjs` - the RTE API : the token, which jobs it takes, the contract.
