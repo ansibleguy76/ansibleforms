@@ -740,7 +740,7 @@ export default {
       dateFormatHelp: 'Jak wyświetlane są daty dla użytkowników bez własnego wyboru.',
       envLabel: 'Tekst etykiety',
       envLabelHelp: 'Etykieta obok logo, np. PRODUKCJA lub TEST ; pusta, brak.',
-      envLabelShow: 'Etykieta środowiska',
+      envLabelShow: 'Pokaż etykietę środowiska',
       envLabelShowHelp: 'Pokaż etykietę środowiska obok logo, np. Produkcja.',
       envLabelPreview: 'Podgląd',
       envLabelColor: 'Kolor etykiety',

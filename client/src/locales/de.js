@@ -747,7 +747,7 @@ export default {
       dateFormatHelp: 'Wie Daten angezeigt werden, für Benutzer ohne eigene Wahl.',
       envLabel: 'Labeltext',
       envLabelHelp: 'Ein Label neben dem Logo, z. B. PRODUKTION oder TEST ; leer, keines.',
-      envLabelShow: 'Umgebungslabel',
+      envLabelShow: 'Umgebungslabel anzeigen',
       envLabelShowHelp: 'Ein Umgebungslabel neben dem Logo anzeigen, z. B. Produktion.',
       envLabelPreview: 'Vorschau',
       envLabelColor: 'Labelfarbe',

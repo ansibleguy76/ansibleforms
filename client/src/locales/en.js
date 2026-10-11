@@ -737,7 +737,7 @@ export default {
       dateFormatHelp: 'How dates read, for users who have not picked their own.',
       envLabel: 'Label text',
       envLabelHelp: 'A label beside the logo, such as PRODUCTION or TEST. Leave empty for none.',
-      envLabelShow: 'Environment label',
+      envLabelShow: 'Show environment label',
       envLabelShowHelp: 'Show an environment label beside the logo, e.g. Production.',
       envLabelPreview: 'Preview',
       envLabelColor: 'Label color',

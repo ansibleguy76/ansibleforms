@@ -742,7 +742,7 @@ export default {
       dateFormatHelp: 'Cómo se leen las fechas, para los usuarios que no eligieron el suyo.',
       envLabel: 'Texto de la etiqueta',
       envLabelHelp: 'Una etiqueta junto al logotipo, como PRODUCCIÓN o TEST ; vacía, ninguna.',
-      envLabelShow: 'Etiqueta de entorno',
+      envLabelShow: 'Mostrar etiqueta de entorno',
       envLabelShowHelp: 'Mostrar una etiqueta de entorno junto al logotipo, p. ej. Producción.',
       envLabelPreview: 'Vista previa',
       envLabelColor: 'Color de la etiqueta',

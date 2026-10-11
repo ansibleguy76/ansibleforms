@@ -744,7 +744,7 @@ export default {
       dateFormatHelp: "Com es llegeixen les dates, per als usuaris que no n'han triat el seu.",
       envLabel: "Text de l'etiqueta",
       envLabelHelp: 'Una etiqueta al costat del logotip, com PRODUCCIÓ o TEST ; buida, cap.',
-      envLabelShow: "Etiqueta d'entorn",
+      envLabelShow: "Mostrar etiqueta d'entorn",
       envLabelShowHelp: "Mostrar una etiqueta d'entorn al costat del logotip, p. ex. Producció.",
       envLabelPreview: 'Previsualització',
       envLabelColor: "Color de l'etiqueta",

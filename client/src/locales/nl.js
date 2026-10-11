@@ -740,7 +740,7 @@ export default {
       dateFormatHelp: 'Hoe datums worden getoond, voor gebruikers zonder eigen keuze.',
       envLabel: 'Labeltekst',
       envLabelHelp: 'Een label naast het logo, zoals PRODUCTIE of TEST ; leeg, geen.',
-      envLabelShow: 'Omgevingslabel',
+      envLabelShow: 'Omgevingslabel tonen',
       envLabelShowHelp: 'Een omgevingslabel naast het logo tonen, bijv. Productie.',
       envLabelPreview: 'Voorbeeld',
       envLabelColor: 'Labelkleur',

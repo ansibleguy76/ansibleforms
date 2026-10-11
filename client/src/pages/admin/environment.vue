@@ -11,6 +11,8 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import { PILL } from '@/lib/tableCells';
+import Theme from '@/lib/Theme';
+import { useAppStore } from '@/stores/app';
 import { useSettingsRow } from '@/composables/useSettingsRow';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 
@@ -40,20 +42,16 @@ function labelOf(row) {
 const { edit: look, dirty, load, save } = useSettingsRow(labelOf);
 useUnsavedGuard(dirty, () => t('settings.common.unsavedChanges'));
 
-// the header as it is (its background, its logo's image) : the preview shows it so
-const headerLook = ref({ background: '', logo: '' });
-
-/**
- * Reads the header's background and logo, for the preview.
- */
-function readHeaderLook() {
-  const header = document.querySelector('nav.af-header');
-  const logo = header?.querySelector('.af-brand img');
-  headerLook.value = {
-    background: header ? getComputedStyle(header).backgroundColor : '',
-    logo: logo ? logo.currentSrc || logo.src : '',
-  };
-}
+// the header's logo, as the header picks it (BsNavBar) : the uploaded one, else the theme's own
+// (the default upload is the light theme's, so it never stands in for the dark and colour
+// themes'). Worked out from the theme, so the preview follows a theme switched while the page
+// is open ; its background is the header's own variable (styles below), which follows alike
+const store = useAppStore();
+const previewLogo = computed(() => {
+  if (!store.logoIsDefault && store.customLogo) return store.customLogo;
+  const theme = store.theme || Theme.load();
+  return `img/logo_${theme === 'dark' || theme === 'light' ? theme : 'color'}.svg`;
+});
 
 const title = computed(() => t('sidebar.environment'));
 
@@ -61,7 +59,6 @@ onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
   await load();
-  readHeaderLook();
 });
 </script>
 <template>
@@ -123,8 +120,8 @@ onMounted(async () => {
         </div>
         <!-- the preview : the header's logo and the label, as the header shows them -->
         <label class="form-label fw-bold mt-4 d-block">{{ t('settings.interface.envLabelPreview') }}</label>
-        <div class="af-label-preview" :style="{ backgroundColor: headerLook.background }">
-          <img v-if="headerLook.logo" :src="headerLook.logo" class="af-label-preview-logo" alt="" />
+        <div class="af-label-preview">
+          <img :src="previewLogo" class="af-label-preview-logo" alt="" />
           <span
             class="badge rounded-pill fw-semibold af-pill af-label-preview-pill"
             :class="PILL[look.env_label_color] || PILL.grey"
@@ -154,8 +151,10 @@ onMounted(async () => {
     0 0 0 2px var(--bs-body-bg),
     0 0 0 4px var(--bs-body-color);
 }
-/* the label's preview : the header's background, its logo, the label 20px from it, as there */
+/* the label's preview : the header's background (the current theme's, live), its logo, the
+   label 20px from it, as there */
 .af-label-preview {
+  background-color: var(--af-bg-navbar);
   display: inline-flex;
   /* a little room under it : the card's other pages end on a line of help text, lighter */
   margin-bottom: 0.5rem;

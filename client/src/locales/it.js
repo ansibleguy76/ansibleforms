@@ -744,7 +744,7 @@ export default {
       dateFormatHelp: 'Come vengono mostrate le date, per gli utenti che non hanno scelto il proprio.',
       envLabel: "Testo dell'etichetta",
       envLabelHelp: "Un'etichetta accanto al logo, come PRODUZIONE o TEST ; vuota, nessuna.",
-      envLabelShow: "Etichetta d'ambiente",
+      envLabelShow: "Mostra etichetta d'ambiente",
       envLabelShowHelp: "Mostrare un'etichetta d'ambiente accanto al logo, ad es. Produzione.",
       envLabelPreview: 'Anteprima',
       envLabelColor: "Colore dell'etichetta",

@@ -744,7 +744,7 @@ export default {
       dateFormatHelp: 'Como as datas são mostradas, para utilizadores sem escolha própria.',
       envLabel: 'Texto da etiqueta',
       envLabelHelp: 'Uma etiqueta junto ao logótipo, como PRODUÇÃO ou TEST ; vazia, nenhuma.',
-      envLabelShow: 'Etiqueta de ambiente',
+      envLabelShow: 'Mostrar etiqueta de ambiente',
       envLabelShowHelp: 'Mostrar uma etiqueta de ambiente junto ao logótipo, p. ex. Produção.',
       envLabelPreview: 'Pré-visualização',
       envLabelColor: 'Cor da etiqueta',

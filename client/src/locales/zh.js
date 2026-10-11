@@ -723,7 +723,7 @@ export default {
       dateFormatHelp: '日期的显示方式（适用于未自行选择的用户）。',
       envLabel: '标签文字',
       envLabelHelp: '显示在徽标旁的标签，例如 PRODUCTION 或 TEST；留空则不显示。',
-      envLabelShow: '环境标签',
+      envLabelShow: '显示环境标签',
       envLabelShowHelp: '在徽标旁显示环境标签，例如 Production。',
       envLabelPreview: '预览',
       envLabelColor: '标签颜色',

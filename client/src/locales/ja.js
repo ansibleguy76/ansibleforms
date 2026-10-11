@@ -741,7 +741,7 @@ export default {
       dateFormatHelp: '日付の表示形式（自分で選んでいないユーザー向け）。',
       envLabel: 'ラベルの文字',
       envLabelHelp: 'ロゴの横のラベル（PRODUCTION、TEST など）。空の場合はなし。',
-      envLabelShow: '環境ラベル',
+      envLabelShow: '環境ラベルを表示',
       envLabelShowHelp: 'ロゴの横に環境ラベルを表示します（例: Production）。',
       envLabelPreview: 'プレビュー',
       envLabelColor: 'ラベルの色',
