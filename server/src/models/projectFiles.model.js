@@ -1,7 +1,7 @@
 'use strict';
 // The designer's Playbooks and Vars files sections : the files of the playbooks folder and of
-// the vars files folder, each either a repository's (use_for_playbooks, use_for_vars_files)
-// or the local folder (ANSIBLE_PATH, VARS_FILES_PATH). Listed, read, written and deleted
+// the vars files folder - the playbooks repository's (use_for_playbooks), the vars folder of the
+// forms repository - or the local folder (ANSIBLE_PATH, VARS_FILES_PATH). Listed, read, written and deleted
 // here ; a repository's are then pushed to its remote (Push, as the forms' Save to repo).
 import fs from "fs";
 import path from "path";

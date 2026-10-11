@@ -433,35 +433,25 @@ class Repository extends CrudModel {
     }
   }
 
+  // the vars files the forms load (a form's varsFiles) : the vars folder of the first forms
+  // repository that has one, else the local folder (VARS_FILES_PATH). They are the forms' own, so
+  // they come from - and are pushed back to - the forms repository ; 7 has no repository usage
+  // of their own any more.
   static async getVarsFilesPath() {
-  try{
-    var repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_vars_files")
-    
-    if(repositories.length === 0){
-      // No repository configured, return default local path
+    try {
+      const repositories = await Repository.findFormsRepositories()
+      for (const repo of repositories) {
+        const varsPath = path.join(appConfig.repoPath, repo.name, "vars")
+        if (fs.existsSync(varsPath)) {
+          logger.debug(`Using the vars folder of forms repository '${repo.name}': ${varsPath}`)
+          return varsPath
+        }
+      }
+      return appConfig.varsFilesPath
+    } catch (e) {
+      logger.error("Failed to get vars files path : ", e)
       return appConfig.varsFilesPath
     }
-    
-    if(repositories.length > 1){
-      const repoNames = repositories.map(r => r.name).join(", ")
-      logger.warning(`Multiple repositories are marked as 'use_for_vars_files': ${repoNames}. Only one should be enabled. Using first one: ${repositories[0].name}`)
-    }
-    
-    const repoPath = path.join(appConfig.repoPath, repositories[0].name)
-    const varsSubPath = path.join(repoPath, "vars")
-    
-    // Check if vars subfolder exists
-    if(fs.existsSync(varsSubPath)){
-      logger.debug(`Using vars subfolder for repository '${repositories[0].name}': ${varsSubPath}`)
-      return varsSubPath
-    } else {
-      logger.debug(`Vars subfolder not found for repository '${repositories[0].name}', using root path: ${repoPath}`)
-      return repoPath
-    }
-  }catch(e){
-    logger.error("Failed to get vars files path : ",e)
-    return appConfig.varsFilesPath
-  }
   }
 
   // migration path (issue #414) : when the only forms repository is cloned and
@@ -758,8 +748,8 @@ class Repository extends CrudModel {
   // commit & push the working tree of a forms repository (issue #414) ; the
   // designer saves into the tree, this publishes those saves to the remote.
   // New forms staged in the designer are assigned to this repository first.
-  // The designer's playbooks and vars files are pushed the same way, from their
-  // repository (use_for_playbooks, use_for_vars_files), with their own message.
+  // The designer's playbooks are pushed the same way, from their repository
+  // (use_for_playbooks), with their own message ; its vars files from the forms repository.
   static async sync(name, triggeredBy, message = undefined) {
     var output, status, head, syncRepo = null
     // atomic check-and-set : refuse concurrent syncs of the same repository
@@ -772,8 +762,8 @@ class Repository extends CrudModel {
       syncRepo = await Repository.withCredential(await Repository.findByName(name))
       // a forms repo (read+write forms) or the config-origin repo (so config
       // edits can be committed even when config lives in a separate repo)
-      if (!syncRepo.use_for_forms && !syncRepo.use_for_config && !syncRepo.use_for_playbooks && !syncRepo.use_for_vars_files) {
-        throw new Error(`Repository '${name}' is not a forms, config, playbooks or vars files repository`)
+      if (!syncRepo.use_for_forms && !syncRepo.use_for_config && !syncRepo.use_for_playbooks && !syncRepo.use_for_workflows) {
+        throw new Error(`Repository '${name}' is not a forms, config, playbooks or workflows repository`)
       }
       const repoDir = path.join(appConfig.repoPath, name)
       if (!fs.existsSync(repoDir)) {

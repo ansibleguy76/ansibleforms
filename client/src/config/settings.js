@@ -575,12 +575,12 @@ export default function getSettings(t) {
           dividerBefore: true,
         },
         {
-          // only a repository the app writes to (forms, settings) is pushed back
+          // only a repository the designer writes to (forms, settings, playbooks, workflows) is pushed back
           name: 'sync',
           icon: 'upload',
           title: t('settings.repositories.push'),
           color: 'test',
-          dependency: ['use_for_forms', 'use_for_config'],
+          dependency: ['use_for_forms', 'use_for_config', 'use_for_playbooks', 'use_for_workflows'],
         },
         { name: 'reset', icon: 'redo', title: t('settings.repositories.reset'), color: 'refresh' },
         {
@@ -776,18 +776,17 @@ export default function getSettings(t) {
           hidden: true,
         },
         {
-          key: 'use_for_vars_files',
+          key: 'use_for_workflows',
           step: 'usage',
-          // the app uses one repository for it
-          oneOnly: true,
-          shortLabel: t('settings.repositories.useVarsFilesShort'),
-          shortHint: t('settings.repositories.useVarsFilesHint'),
+          // several repositories may hold workflows, as forms
+          shortLabel: t('settings.repositories.useWorkflowsShort'),
+          shortHint: t('settings.repositories.useWorkflowsHint'),
           isSwitch: false,
           type: 'checkbox',
-          label: t('settings.repositories.useForVarsFiles'),
+          label: t('settings.repositories.useForWorkflows'),
           // the column : its short name, as on the Usage step
-          columnLabel: t('settings.repositories.useVarsFilesShort'),
-          help: t('settings.repositories.helpUseForVarsFiles'),
+          columnLabel: t('settings.repositories.useWorkflowsShort'),
+          help: t('settings.repositories.helpUseForWorkflows'),
           hidden: true,
         },
       ],

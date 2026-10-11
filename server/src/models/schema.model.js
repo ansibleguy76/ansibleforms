@@ -291,6 +291,27 @@ function addColumn(table, name, fieldtype, nullable, defaultvalue) {
 }
 
 
+// PATCHING : drop a column when it is still there (a column 7 no longer uses)
+function dropColumn(table, name) {
+  var db = "AnsibleForms";
+  var checksql = "SHOW COLUMNS FROM ??.?? WHERE Field = ?";
+  var sql = "ALTER TABLE ??.?? DROP COLUMN ??";
+  logger.debug(`dropping column '${name}' on table '${table}'`);
+  return mysql
+    .do(checksql, [db, table, name])
+    .then((checkres) => (checkres.length ? mysql.do(sql, [db, table, name]) : false))
+    .then((res) => {
+      if (!res) {
+        const gone = `Column '${name}' is already gone from '${table}'`;
+        logger.debug(gone);
+        return gone;
+      }
+      const message = `dropped column '${name}' from '${table}'`;
+      logger.warning(message);
+      return message;
+    });
+}
+
 // PATCHING : Add a table to the schema
 // Add an index when it is not already there. SHOW INDEX is the cheap existence check ;
 // ALTER TABLE ADD KEY has no IF NOT EXISTS in mysql.
@@ -528,7 +549,7 @@ const SCHEMA_MANIFEST = {
     patchVersion6: { tables: ['oauth2_providers', 'stored_jobs',
                               'audit', 'chat_settings'],
                      columns: ['oauth2_providers.tenant_id', 'jobs.raw_form_data', 'repositories.use_for_config',
-                               'repositories.use_for_vars_files', 'jobs.pid', 'jobs.host', 'schedule.one_time_run',
+                               'jobs.pid', 'jobs.host', 'schedule.one_time_run',
                                'schedule.run_at', 'credentials.vault_path', 'jobs.awx_workflow', 'settings.logo',
                                'settings.config_source', 'settings.default_language',
                                'settings.default_theme', 'settings.default_theme_color',
@@ -547,6 +568,7 @@ const SCHEMA_MANIFEST = {
                      columns: ['schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'jobs.runner',
                                'runners.username', 'runners.password', 'runners.use_credentials', 'runners.node_id', 'jobs.job_log',
                                'jobs.tracker', 'repositories.claim_node', 'repositories.claim_since',
+                               'repositories.use_for_workflows',
                                'schedule.claim_node', 'schedule.claim_since', 'runners.flavour', 'runners.project',
                                'credentials.credential_type', 'repositories.credential', 'groups.description',
                                'secret_stores.credential', 'credentials.client_cert', 'credentials.client_key',
@@ -715,9 +737,8 @@ async function patchVersion6(messages, success, failed) {
   // This allows a repository to be marked for config.yaml specifically
   await checkPromise(addColumn("repositories", "use_for_config", "tinyint(4)", true, "0"), messages, success, failed);
   
-  // Add use_for_vars_files column to repositories table (6.1.0+)
-  // This allows a repository to be marked for vars files specifically
-  await checkPromise(addColumn("repositories", "use_for_vars_files", "tinyint(4)", true, "0"), messages, success, failed);
+  // (6.1.0 added repositories.use_for_vars_files : 7 drops it, the vars files are the forms
+  // repository's - see patchVersion7)
   
   // Add pid column to jobs table (6.1.4)
   // This stores the process ID for running jobs to allow direct process control
@@ -950,6 +971,10 @@ async function patchVersion7(messages, success, failed) {
     await checkPromise(addColumn(table, "claim_node", "varchar(250)", true, "NULL"), messages, success, failed);
     await checkPromise(addColumn(table, "claim_since", "datetime", true, "NULL"), messages, success, failed);
   }
+  // a repository for the workflows the designer builds ; the vars files are no longer a usage of
+  // their own : they are the forms repository's (its vars folder, Repository.getVarsFilesPath)
+  await checkPromise(addColumn("repositories", "use_for_workflows", "tinyint(4)", true, "0"), messages, success, failed);
+  await checkPromise(dropColumn("repositories", "use_for_vars_files"), messages, success, failed);
 }
 
 // Idempotent by its WHERE clause : only a credential without a valid type gets one
