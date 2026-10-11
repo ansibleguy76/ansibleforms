@@ -253,9 +253,6 @@ CREATE TABLE `settings` (
   `env_label_show` tinyint(4) NOT NULL DEFAULT 1,
   `env_label_color` varchar(20) DEFAULT NULL,
   `banner_show` tinyint(4) NOT NULL DEFAULT 1,
-  `banner_message` text DEFAULT NULL,
-  `banner_level` varchar(10) DEFAULT NULL,
-  `banner_until` datetime DEFAULT NULL,
   `forms_view` varchar(10) DEFAULT NULL,
   `default_timezone` varchar(64) DEFAULT NULL,
   `default_date_format` varchar(20) DEFAULT NULL,
@@ -463,6 +460,20 @@ CREATE TABLE `schema_migrations` (
   `version` varchar(32) NOT NULL,
   `applied_at` datetime NOT NULL,
   PRIMARY KEY (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- the announcements under the header : models/announcement.model.js
+-- (keep in sync with src/db/create_announcements_table.sql)
+DROP TABLE IF EXISTS `announcements`;
+CREATE TABLE `announcements` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `message` varchar(500) NOT NULL,
+  `level` varchar(10) NOT NULL DEFAULT 'info',
+  `start_at` datetime DEFAULT NULL,
+  `end_at` datetime DEFAULT NULL,
+  `created_by` varchar(250) DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- enable foreign key checks

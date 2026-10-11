@@ -145,17 +145,22 @@ function colWidth(col) {
 // as every table of the app : these widths, a cap of 50 characters, the spacer after them.
 const naturalWidths = computed(() => {
   const out = {};
-  for (const c of visibleColumns.value) {
-    if (c.width) continue;
-    // the cell as it shows (cellHtml) : a pill's or a badge's padding counted
+  visibleColumns.value.forEach((c, index) => {
+    if (c.width) return;
+    // the cell as it shows (cellHtml) : a pill's or a badge's padding counted, and the link
+    // column (the row's name, af-row-open) in its heavier weight - measured at the normal one,
+    // a long name came out too narrow and was cut with room to spare
+    const link = !props.rowClickSelects && isLinkColumn(c, index);
     const cells = widestCell(
-      filteredItems.value.map((i) => cellHtml(i, c)),
+      filteredItems.value.map((i) =>
+        link ? `<span style="font-weight:500">${cellHtml(i, c)}</span>` : cellHtml(i, c),
+      ),
       true,
     );
     // its header in full : its label, its sort icon, a right-aligned column's wider padding
     const header = parseFloat(headerWidth(c.label, !!c.sortable, '8rem', c.align === 'end')) || 0;
     out[c.key] = Math.max(cells, header);
-  }
+  });
   return out;
 });
 // what the columns are fitted to : refitted when it changes (v-fit-columns' key)

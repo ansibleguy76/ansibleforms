@@ -56,6 +56,7 @@ import credentialRoutesv2 from "./routes/v2/credential.routes.js";
 import secretStoreRoutesv2 from "./routes/v2/secretStore.routes.js";
 import runnerRoutesv2 from "./routes/v2/runner.routes.js";
 import mailServerRoutesv2 from "./routes/v2/mailServer.routes.js";
+import announcementRoutesv2 from "./routes/v2/announcement.routes.js";
 import eventsRoutesv2 from "./routes/v2/events.routes.js";
 import knownhostsRoutes from "./routes/v2/knownhosts.routes.js";
 import scheduleRoutes from "./routes/v2/schedule.routes.js";
@@ -255,6 +256,8 @@ const load = async (app) => {
   app.use(`/api/v2/secretstore`, cors(), authobj, Middleware.checkSettingsMiddleware, secretStoreRoutesv2);
   app.use(`/api/v2/runner`, cors(), authobj, Middleware.checkSettingsMiddleware, runnerRoutesv2);
   app.use(`/api/v2/mailserver`, cors(), authobj, Middleware.checkSettingsMiddleware, mailServerRoutesv2);
+  // Settings > Appearance > Announcements
+  app.use(`/api/v2/announcement`, cors(), authobj, Middleware.checkSettingsMiddleware, announcementRoutesv2);
   app.use(`/api/v2/knownhosts`, cors(), authobj, Middleware.checkSettingsMiddleware, knownhostsRoutes);
   // allowScheduledJobs for everything ; allowPlannedJobs only for creating a one-time run
   app.use(`/api/v2/schedule`, cors(), authobj, Middleware.checkScheduleOrPlannedJobsMiddleware, Middleware.resourceScope, scheduleRoutes);
