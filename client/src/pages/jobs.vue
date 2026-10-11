@@ -1958,11 +1958,19 @@ onMounted(async () => {
   /* the row's three dots, as the other tables' */
   width: 3.5rem;
 }
-/* the caret column of a multistep job : as wide as the caret, no room of its own around it, and
-   never an ellipsis (an icon is not cut) */
-.custom-table.af-table .af-jobs-expand {
+/* a right-aligned column right before the caret (the id) : the caret already keeps the number
+   from the form, so only the cells' usual room after it, the caret then halfway between both */
+.custom-table.af-table th.af-col-end:not(:first-child):not(:last-child):has(+ .af-jobs-expand),
+.custom-table.af-table td.af-col-end:not(:first-child):not(:last-child):has(+ .af-jobs-expand) {
+  padding-right: 0.6rem;
+}
+/* the caret column of a multistep job : as wide as the caret and a little room after it (a
+   touch more than the id's before it, the caret then reads with its form), and never an ellipsis
+   (an icon is not cut) ; over the table's own cell padding */
+.custom-table.af-table th.af-jobs-expand:not(:first-child):not(:last-child),
+.custom-table.af-table td.af-jobs-expand:not(:first-child):not(:last-child) {
   padding-left: 0;
-  padding-right: 0;
+  padding-right: 0.25rem;
   text-overflow: clip;
 }
 /* the checkbox column : as wide as a checkbox and the first cell's padding */
