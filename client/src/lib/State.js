@@ -79,7 +79,7 @@ var State = {
     }
   },
   // what /api/v2/app/config says, into the app : the switches, and Settings > Appearance >
-  // Interface's name (the browser tab), label, announcement and forms view
+  // Interface's name (the browser tab), label, announcements and forms view
   applyAppConfig(data) {
     const store = useAppStore();
     store.chatEnabled = !!data.chatEnabled;
@@ -87,7 +87,7 @@ var State = {
     store.appName = data.appName || null;
     store.envLabel = data.envLabel || null;
     store.envLabelColor = data.envLabelColor || null;
-    store.banner = data.banner || null;
+    store.announcements = Array.isArray(data.announcements) ? data.announcements : [];
     store.formsView = data.formsView || null;
     // the time zone for everyone : only while this browser has not chosen its own (the profile)
     if (!Time.hasOwnPreference()) store.timezone = data.timezone || 'UTC';

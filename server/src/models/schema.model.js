@@ -505,7 +505,7 @@ const SCHEMA_MANIFEST = {
     tables: ['groups', 'users', 'tokens', 'credentials', 'ldap', 'jobs', 'job_output',
              'settings', 'repositories', 'schedule', 'audit', 'chat_settings', 'secret_stores', 'runners',
              'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'mail_servers', 'login_failures', 'token_revocations', 'schema_migrations',
-             'directory_users'],
+             'directory_users', 'announcements'],
   },
   patches: {
     patchVersion4: { columns: ['ldap.groups_search_base', 'ldap.groups_attribute', 'ldap.group_class',
@@ -543,7 +543,7 @@ const SCHEMA_MANIFEST = {
     // and the worker and several app nodes : the processes on the database, what changed
     // between them, the designer lock, and the node that follows a job
     patchVersion7: { tables: ['secret_stores', 'runners', 'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'mail_servers', 'login_failures', 'token_revocations', 'schema_migrations',
-                              'directory_users'],
+                              'directory_users', 'announcements'],
                      columns: ['schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'jobs.runner',
                                'runners.username', 'runners.password', 'runners.use_credentials', 'runners.node_id', 'jobs.job_log',
                                'jobs.tracker', 'repositories.claim_node', 'repositories.claim_since',
@@ -553,7 +553,7 @@ const SCHEMA_MANIFEST = {
                                'chat_settings.credential',
                                'users.description', 'schedule.raw_form_data', 'users.blocked', 'settings.favicon',
                                'settings.app_name', 'settings.env_label', 'settings.env_label_show', 'settings.env_label_color',
-                               'settings.banner_show', 'settings.banner_message', 'settings.banner_level', 'settings.banner_until',
+                               'settings.banner_show',
                                'settings.forms_view', 'settings.default_timezone', 'settings.default_date_format', 'settings.header_links'] },
   },
 };
@@ -914,14 +914,17 @@ async function patchVersion7(messages, success, failed) {
   // Settings > Appearance : the name, the environment label, the announcement and
   // the forms list's view, the time zone and the date format for everyone, the header's own links
   for (const [name, type] of [["app_name", "varchar(100)"], ["env_label", "varchar(40)"], ["env_label_color", "varchar(20)"],
-    ["banner_message", "text"], ["banner_level", "varchar(10)"], ["banner_until", "datetime"], ["forms_view", "varchar(10)"],
+    ["forms_view", "varchar(10)"],
     ["default_timezone", "varchar(64)"], ["default_date_format", "varchar(20)"], ["header_links", "text"]]) {
     await checkPromise(addColumn("settings", name, type, true, "NULL"), messages, success, failed);
   }
   // the environment label shown or not (Settings > Appearance > Environment) : shown
   await checkPromise(addColumn("settings", "env_label_show", "tinyint(4)", false, "1"), messages, success, failed);
-  // the announcement shown or not (Settings > Appearance > Announcement) : shown
+  // the announcements shown or not (Settings > Appearance > Announcements) : shown ; and the
+  // announcements themselves, each with its start and its end
   await checkPromise(addColumn("settings", "banner_show", "tinyint(4)", false, "1"), messages, success, failed);
+  const announcements = fs.readFileSync(`${__dirname}/../db/create_announcements_table.sql`);
+  await checkPromise(addTable("announcements", announcements.toString()), messages, success, failed);
   await checkPromise(copyAwxToRunners(), messages, success, failed);
   await checkPromise(addColumn("jobs", "job_log", "longtext", true, "NULL"), messages, success, failed);
 

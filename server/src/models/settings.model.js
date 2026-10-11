@@ -10,6 +10,7 @@ import { configRepoFromPath } from "../lib/forms-git.js";
 import fs from 'fs';
 import path from 'path';
 import yaml from "yaml";
+import Announcement from './announcement.model.js';
 
 //mail object create
 var Settings=function(settings){
@@ -76,19 +77,9 @@ var Settings=function(settings){
     if(settings.env_label_color !== undefined){
       this.env_label_color = oneOf(settings.env_label_color, LABEL_COLORS);
     }
-    // the announcement shown or not : kept while hidden, so it comes back as it was
+    // the announcements shown or not : kept while hidden, so they come back as they were
     if(settings.banner_show !== undefined){
       this.banner_show = settings.banner_show === false || settings.banner_show === 0 || settings.banner_show === '0' ? 0 : 1;
-    }
-    if(settings.banner_message !== undefined){
-      this.banner_message = text(settings.banner_message, 500);
-    }
-    if(settings.banner_level !== undefined){
-      this.banner_level = oneOf(settings.banner_level, BANNER_LEVELS);
-    }
-    if(settings.banner_until !== undefined){
-      const until = settings.banner_until ? new Date(settings.banner_until) : null;
-      this.banner_until = until && !isNaN(until.getTime()) ? until.toISOString().slice(0, 19).replace('T', ' ') : null;
     }
     if(settings.forms_view !== undefined){
       this.forms_view = oneOf(settings.forms_view, FORMS_VIEWS);
@@ -227,9 +218,8 @@ export function validTimezone(value){
   }
 }
 // what Settings > Appearance offers : the environment label's colours (the app's
-// pill tones), the announcement's levels, the forms list's views
+// pill tones), the forms list's views
 export const LABEL_COLORS = ['blue', 'green', 'amber', 'orange', 'red', 'grey'];
-export const BANNER_LEVELS = ['info', 'warning', 'danger'];
 export const FORMS_VIEWS = ['tiles', 'list'];
 // the date formats offered, as dayjs writes them : digits and separators only
 export const DATE_FORMATS = ['YYYY-MM-DD', 'DD/MM/YYYY', 'MM/DD/YYYY', 'DD.MM.YYYY'];
@@ -533,9 +523,13 @@ Settings.findUrl = function () {
 // endpoint blocks the SPA from rendering even the login page, so a MySQL outage
 // must cost one connectTimeout, not one per setting.
 Settings.findAppDefaults = function () {
-  return mysql.do("SELECT default_language, default_theme, default_theme_color, app_name, env_label, env_label_show, env_label_color, banner_show, banner_message, banner_level, banner_until, forms_view, default_timezone, default_date_format, header_links FROM AnsibleForms.`settings` LIMIT 1")
-    .then((res) => {
+  return mysql.do("SELECT default_language, default_theme, default_theme_color, app_name, env_label, env_label_show, env_label_color, banner_show, forms_view, default_timezone, default_date_format, header_links FROM AnsibleForms.`settings` LIMIT 1")
+    .then(async (res) => {
       const r = res[0] || {};
+      // the announcements not ended yet (Settings > Appearance > Announcements), none while
+      // switched off ; which run now is decided per request (routes/v2/app.routes.js). A
+      // table not there yet (a database before its patch) : none
+      const announcements = r.banner_show === 0 ? [] : await Announcement.findNotEnded().catch(() => []);
       return {
         language: r.default_language || null,
         theme: r.default_theme || null,
@@ -545,8 +539,7 @@ Settings.findAppDefaults = function () {
         // hidden (the switch off) : none
         envLabel: r.env_label_show === 0 ? null : r.env_label || null,
         envLabelColor: r.env_label_color || null,
-        // switched off (Settings > Appearance > Announcement) : none
-        banner: r.banner_message && r.banner_show !== 0 ? { message: r.banner_message, level: r.banner_level || 'info', until: r.banner_until || null } : null,
+        announcements,
         formsView: r.forms_view || null,
         timezone: r.default_timezone || null,
         dateFormat: r.default_date_format || null,

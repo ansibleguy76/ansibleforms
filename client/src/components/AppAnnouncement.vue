@@ -1,12 +1,11 @@
 <script setup>
 /******************************************************************/
 /*                                                                */
-/*  The announcement under the header (Maintenance Sunday 22:00)  */
-/*  : Settings > Appearance > Announcement, in its                */
-/*  level's colour, until its end date (the server stops sending  */
-/*  it).                                                          */
-/*  Closed, it stays closed for this tab's session - until the    */
-/*  message changes.                                              */
+/*  The announcements under the header (Maintenance Sunday 22:00) */
+/*  : Settings > Appearance > Announcements, each in its type's   */
+/*  colour, from its start until its end (the server sends those  */
+/*  running now). Closed, one stays closed for this tab's session */
+/*  - until its message or its end changes.                       */
 /*                                                                */
 /******************************************************************/
 import { ref, computed } from 'vue';
@@ -15,52 +14,58 @@ import { useAppStore } from '@/stores/app';
 
 const { t } = useI18n();
 const store = useAppStore();
-// the message closed in this session, by its text and end : a new one shows again
-const KEY = 'af_announcement_closed';
-const keyOf = (b) => (b ? `${b.message}|${b.until || ''}` : '');
+// the announcements closed in this session, each by its id, text and end : a changed one shows again
+const KEY = 'af_announcements_closed';
+const keyOf = (a) => `${a.id}|${a.message}|${a.end_at || ''}`;
 const closed = ref(readClosed());
 
 /**
- * The announcement closed in this session, when the browser keeps it.
+ * The announcements closed in this session, when the browser keeps them.
  *
  * Returns:
- *   string: its key, or empty.
+ *   string[]: their keys.
  */
 function readClosed() {
   try {
-    return sessionStorage.getItem(KEY) || '';
+    const list = JSON.parse(sessionStorage.getItem(KEY) || '[]');
+    return Array.isArray(list) ? list : [];
   } catch {
-    return '';
+    return [];
   }
 }
 
 /**
- * Closes the announcement for this session.
+ * Closes an announcement for this session.
+ *
+ * Args:
+ *   a (object): the announcement.
  */
-function close() {
-  closed.value = keyOf(store.banner);
+function close(a) {
+  // only the keys of those still running are kept, so the list does not grow
+  const running = new Set(store.announcements.map(keyOf));
+  closed.value = [...closed.value.filter((k) => running.has(k)), keyOf(a)];
   try {
-    sessionStorage.setItem(KEY, closed.value);
+    sessionStorage.setItem(KEY, JSON.stringify(closed.value));
   } catch {
     // no storage : closed until the page reloads
   }
 }
 
-const shown = computed(() => !!store.banner?.message && closed.value !== keyOf(store.banner));
-// its level's icon
+// its type's icon
 const ICONS = { info: 'circle-info', warning: 'triangle-exclamation', danger: 'circle-exclamation' };
-const level = computed(() => (ICONS[store.banner?.level] ? store.banner.level : 'info'));
+const levelOf = (a) => (ICONS[a.level] ? a.level : 'info');
+const shown = computed(() => (store.announcements || []).filter((a) => a?.message && !closed.value.includes(keyOf(a))));
 </script>
 <template>
-  <div v-if="shown" class="af-announcement" :class="`af-announcement-${level}`" role="status">
-    <FaIcon :icon="ICONS[level]" class="me-2" />
-    <span class="af-announcement-text">{{ store.banner.message }}</span>
+  <div v-for="a in shown" :key="a.id" class="af-announcement" :class="`af-announcement-${levelOf(a)}`" role="status">
+    <FaIcon :icon="ICONS[levelOf(a)]" class="me-2" />
+    <span class="af-announcement-text">{{ a.message }}</span>
     <button
       type="button"
       class="btn-close ms-auto"
       :aria-label="t('settings.interface.bannerClose')"
       :title="t('settings.interface.bannerClose')"
-      @click="close"
+      @click="close(a)"
     ></button>
   </div>
 </template>

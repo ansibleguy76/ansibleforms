@@ -141,6 +141,40 @@ export function registrationPill(t, state) {
   return `<span class="badge rounded-pill fw-semibold af-pill ${known[state] || PILL.grey}"><span class="af-pill-label">${escapeHtml(label)}</span></span>`;
 }
 
+/**
+ * An announcement's state, as plain text : scheduled (its start ahead) or showing. An ended one
+ * is deleted (models/announcement.model.js), so none is listed.
+ *
+ * Args:
+ *   t (function): the translation function.
+ *   row (object): the announcement, its start_at from the server (UTC).
+ *   now (number): the moment, epoch ms.
+ *
+ * Returns:
+ *   string: the state, escaped.
+ */
+export function announcementState(t, row, now = Date.now()) {
+  const start = row?.start_at ? new Date(row.start_at).getTime() : null;
+  const state = start !== null && start > now ? 'scheduled' : 'showing';
+  return escapeHtml(t(`settings.interface.announcement_${state}`));
+}
+
+/**
+ * An announcement's type as a pill, in its colour : info blue, warning amber, danger red.
+ *
+ * Args:
+ *   t (function): the translation function.
+ *   level (string): info, warning or danger.
+ *
+ * Returns:
+ *   string: the pill's HTML, escaped.
+ */
+export function announcementLevelPill(t, level) {
+  const known = { info: PILL.blue, warning: PILL.amber, danger: PILL.red };
+  const key = known[level] ? level : 'info';
+  return `<span class="badge rounded-pill fw-semibold af-pill ${known[key]}"><span class="af-pill-label">${escapeHtml(t(`settings.interface.banner_${key}`))}</span></span>`;
+}
+
 // what a credential is for (its type), in the order the dialog offers them
 export const CREDENTIAL_TYPES = ['ssh', 'git', 'api', 'database', 'cyberark', 'smtp'];
 
@@ -2319,6 +2353,87 @@ export default function getSettings(t) {
           createWith: 'credentials',
           createLabel: t('settings.repositories.newCredential'),
           createDefaults: { credential_type: 'smtp' },
+        },
+      ],
+    },
+    announcements: {
+      // the page title is the menu entry's label (AppSidebar), so the two always match
+      pageTitle: t('sidebar.announcement'),
+      type: 'announcement',
+      label: t('settings.interface.announcementLabel'),
+      labelPlural: t('settings.interface.announcementPlural'),
+      description: t('settings.interface.announcementDescription'),
+      icon: 'bullhorn',
+      selectable: false,
+      // New opens the wizard : what it says, then when it shows
+      steps: [
+        { key: 'message', label: t('settings.interface.announcementStepMessage') },
+        { key: 'when', label: t('settings.interface.announcementStepWhen') },
+      ],
+      actions: [
+        { name: 'edit', title: t('settings.interface.announcementEdit'), icon: 'pencil', color: 'edit' },
+        { name: 'delete', title: t('settings.interface.announcementDelete'), icon: 'trash', color: 'delete' },
+      ],
+      fields: [
+        { key: 'id', hidden: true, noInput: true, noTable: true },
+        {
+          key: 'message',
+          label: t('settings.interface.banner'),
+          help: t('settings.interface.bannerHelp'),
+          required: true,
+          icon: 'bullhorn',
+        },
+        {
+          // its colour and icon under the header
+          key: 'level',
+          label: t('settings.interface.bannerLevel'),
+          help: t('settings.interface.bannerLevelHelp'),
+          icon: 'circle-info',
+          type: 'select',
+          // its choices (a select reads them from a parent list)
+          parent: 'announcementLevels',
+          values: ['info', 'warning', 'danger'].map((value) => ({
+            value,
+            label: t(`settings.interface.banner_${value}`),
+          })),
+          valueKey: 'value',
+          labelKey: 'label',
+          initial: (r) => r?.level || 'info',
+          render: (v) => announcementLevelPill(t, v),
+        },
+        {
+          key: 'start_at',
+          step: 'when',
+          icon: 'calendar',
+          label: t('settings.interface.bannerStart'),
+          help: t('settings.interface.bannerStartHelp'),
+          type: 'datetime',
+          convertToUtc: true,
+          render: (v) => (v ? Helpers.formatServerDate(v) : '–'),
+        },
+        {
+          key: 'end_at',
+          step: 'when',
+          icon: 'calendar',
+          label: t('settings.interface.bannerEnd'),
+          help: t('settings.interface.bannerEndHelp'),
+          type: 'datetime',
+          convertToUtc: true,
+          render: (v) => (v ? Helpers.formatServerDate(v) : '–'),
+        },
+        {
+          // scheduled or showing : from its start, now
+          key: 'status',
+          label: t('settings.interface.announcementStatus'),
+          noInput: true,
+          render: (v, row) => announcementState(t, row),
+        },
+        {
+          key: 'created_by',
+          label: t('settings.interface.announcementCreatedBy'),
+          noInput: true,
+          hideBelow: 1200,
+          render: (v) => (v ? escapeHtml(v) : '–'),
         },
       ],
     },

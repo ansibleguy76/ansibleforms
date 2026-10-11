@@ -41,7 +41,7 @@ const defaultsPage = () => import('@/pages/admin/defaults.vue');
 const linksPage = () => import('@/pages/admin/links.vue');
 const namePage = () => import('@/pages/admin/name.vue');
 const environmentPage = () => import('@/pages/admin/environment.vue');
-const announcementPage = () => import('@/pages/admin/announcement.vue');
+const announcementsPage = () => import('@/pages/admin/announcements.vue');
 const repositories = () => import('@/pages/admin/repositories.vue');
 const repository = () => import('@/pages/admin/repository.vue');
 const schedules = () => import('@/pages/admin/schedules.vue');
@@ -216,7 +216,7 @@ const routes = [
     meta: { permission: 'showSettings' },
   },
   // Settings > Appearance : the app's name, the header's links, the label beside the logo, the
-  // announcement
+  // announcements
   { path: '/settings/name', name: '/settings/name', component: namePage, meta: { permission: 'showSettings' } },
   {
     path: '/settings/links/:tab?',
@@ -231,11 +231,13 @@ const routes = [
     meta: { permission: 'showSettings' },
   },
   {
-    path: '/settings/announcement',
-    name: '/settings/announcement',
-    component: announcementPage,
+    path: '/settings/announcements/:tab?',
+    name: '/settings/announcements',
+    component: announcementsPage,
     meta: { permission: 'showSettings' },
   },
+  // its address before it held several
+  { path: '/settings/announcement', redirect: '/settings/announcements' },
   {
     path: '/settings/repositories',
     name: '/settings/repositories',

@@ -5,6 +5,7 @@ import logConfig from "../../../config/log.config.js";
 import appConfig from "../../../config/app.config.js";
 import ChatSettings from "../../models/chatSettings.model.js";
 import { onLive } from "../../lib/liveEvents.js";
+import { isRunning } from "../../models/announcement.model.js";
 const router = express.Router();
 
 // /config is an unauthenticated bootstrap endpoint the SPA hits on every load,
@@ -22,7 +23,7 @@ async function resolveDefaults() {
   // default_language column, and the settings page greys that field out to say so.
   // (Before 6.3.0 the database value won and the variable was only a fallback.)
   const languageFromEnv = process.env.DEFAULT_LANGUAGE || null;
-  let result = { language: languageFromEnv || "en", theme: null, color: null, appName: null, envLabel: null, envLabelColor: null, banner: null, formsView: null, timezone: null, dateFormat: null, headerLinks: [] };
+  let result = { language: languageFromEnv || "en", theme: null, color: null, appName: null, envLabel: null, envLabelColor: null, announcements: [], formsView: null, timezone: null, dateFormat: null, headerLinks: [] };
   try {
     // language, theme and theme color all live on the same single settings row, so
     // they are read in ONE query : this endpoint blocks the SPA from rendering even
@@ -38,7 +39,7 @@ async function resolveDefaults() {
     result.appName = defaults.appName;
     result.envLabel = defaults.envLabel;
     result.envLabelColor = defaults.envLabelColor;
-    result.banner = defaults.banner;
+    result.announcements = defaults.announcements || [];
     result.formsView = defaults.formsView;
     result.timezone = defaults.timezone;
     result.dateFormat = defaults.dateFormat;
@@ -68,18 +69,20 @@ export function forgetAppDefaults() {
 onLive("appearance", forgetAppDefaults);
 
 /**
- * The announcement while it runs : none once its end date has passed.
+ * The announcements running now : started (or no start) and not ended (or no end), as the
+ * header shows them.
  *
  * Args:
- *   banner (object|null): { message, level, until }.
+ *   announcements (object[]): those not ended, { id, message, level, start_at, end_at }.
  *
  * Returns:
- *   object|null: the banner, or null.
+ *   object[]: { id, message, level, end_at } of each.
  */
-function runningBanner(banner) {
-  if (!banner) return null;
-  if (banner.until && new Date(banner.until).getTime() <= Date.now()) return null;
-  return banner;
+function runningAnnouncements(announcements) {
+  const now = Date.now();
+  return (announcements || [])
+    .filter((a) => isRunning(a, now))
+    .map((a) => ({ id: a.id, message: a.message, level: a.level, end_at: a.end_at || null }));
 }
 
 router.get("/config", async (req, res) => {
@@ -96,12 +99,12 @@ router.get("/config", async (req, res) => {
     // the header's Designer link needs it as well as the user's showDesigner option
     designerEnabled: !!appConfig.showDesigner,
     // Settings > Appearance : the name in the browser tab and on the sign-in page,
-    // the label beside the logo, the announcement under the header while it runs, the forms
+    // the label beside the logo, the announcements under the header while they run, the forms
     // list's view for whoever has not chosen one
     appName: defaults.appName,
     envLabel: defaults.envLabel,
     envLabelColor: defaults.envLabelColor,
-    banner: runningBanner(defaults.banner),
+    announcements: runningAnnouncements(defaults.announcements),
     formsView: defaults.formsView,
     timezone: defaults.timezone,
     dateFormat: defaults.dateFormat,
