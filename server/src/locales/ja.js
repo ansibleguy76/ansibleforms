@@ -93,6 +93,8 @@ export default {
     directoryTypeUnknown: "LDAP、Entra ID、OIDC のユーザーまたはグループではありません",
     directoryUserKept: "管理者がこのユーザーをブロックしています。忘れる前にサインインを許可してください",
     failedDirectoryUser: "LDAP または SSO ユーザーを読み取りまたは変更できませんでした",
+    cantBlockAdmin: "admin ユーザーはブロックできません。復帰するための手段です",
+    cantBlockYourself: "自分自身のサインインはブロックできません",
     groupNotFound: "該当するグループが見つかりません",
     groupHasUsers: "不明なグループか、グループにユーザーが所属しています",
     failedFindGroup: "グループの検索に失敗しました",

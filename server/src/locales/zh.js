@@ -93,6 +93,8 @@ export default {
     directoryTypeUnknown: "不是 LDAP、Entra ID 或 OIDC 用户或组",
     directoryUserKept: "管理员已阻止此用户：请先允许其登录再忘记它",
     failedDirectoryUser: "无法读取或更改 LDAP 或 SSO 用户",
+    cantBlockAdmin: "admin 用户不能被阻止：它是重新进入的途径",
+    cantBlockYourself: "你不能阻止自己的登录",
     groupNotFound: "未找到该组",
     groupHasUsers: "组未知或组中仍有用户",
     failedFindGroup: "查找组失败",

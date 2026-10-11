@@ -12,7 +12,8 @@
 /*  Roles - the roles it has, and how                             */
 /*  Forms, Jobs, Stored jobs, Schedules, Activity - as a local    */
 /*          user's (composables/useUserLinks.js)                  */
-/*  Block or Allow sign-in, End sessions and Forget top right.    */
+/*  Its Sign-in switch in Details (off : blocked, asked first) ;  */
+/*  End sessions and Forget top right.                            */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted } from 'vue';
@@ -24,6 +25,7 @@ import Profile from '@/lib/Profile';
 import Helpers from '@/lib/Helpers';
 import { formPath } from '@/lib/formsPath';
 import { sourceLabel } from '@/config/settings';
+import { setSignInBlocked } from '@/lib/signIn';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { useRoleAssignments } from '@/composables/useRoleAssignments';
 import { useFormLinks } from '@/composables/useFormLinks';
@@ -222,7 +224,29 @@ async function setBlocked(blocked) {
   confirming.value = null;
   const name = user.value.username;
   const done = blocked ? t('settings.directory.nowBlocked', { name }) : t('settings.directory.nowAllowed', { name });
-  if (await act('post', '/block', { blocked }, done)) await load();
+  try {
+    await setSignInBlocked({ source: source.value, username: user.value.username }, blocked);
+    toast.success(done);
+    await load();
+  } catch (err) {
+    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+  }
+}
+
+/**
+ * The Sign-in switch turned : on allows at once ; off asks first (its sessions end), the switch
+ * staying on until confirmed.
+ *
+ * Args:
+ *   event (Event): the switch's change.
+ */
+function onSignInSwitch(event) {
+  if (event.target.checked) {
+    setBlocked(false);
+    return;
+  }
+  event.target.checked = true;
+  confirming.value = 'block';
 }
 
 /**
@@ -250,15 +274,12 @@ onMounted(async () => {
 });
 </script>
 <template>
-  <BsModal v-if="confirming === 'block'" size="md" @close="confirming = null" icon="ban">
-    <template #title> {{ t('settings.directory.blockSignIn') }} </template>
-    <template #default>
-      <p class="mb-0 fs-6 user-select-none">{{ t('settings.directory.blockConfirm', { name: user?.username }) }}</p>
-    </template>
-    <template #footer>
-      <BsButton icon="ban" @click="setBlocked(true)">{{ t('settings.directory.blockSignIn') }}</BsButton>
-    </template>
-  </BsModal>
+  <AppBlockSignInDialog
+    v-if="confirming === 'block'"
+    :name="user?.username || username"
+    @confirm="setBlocked(true)"
+    @close="confirming = null"
+  />
   <BsModal v-if="confirming === 'forget'" size="md" @close="confirming = null" icon="eraser">
     <template #title> {{ t('settings.directory.forget') }} {{ user?.username }} </template>
     <template #default>
@@ -299,14 +320,32 @@ onMounted(async () => {
         </div>
         <!-- Details : what was recorded at its last sign-in, read only -->
         <div v-else-if="user && activeTab === 'details'" class="af-user-details">
-          <div v-if="user.blocked" class="alert alert-danger py-2">
-            <FaIcon icon="ban" class="me-2" />{{ t('settings.directory.blockedNote') }}
-          </div>
-          <div v-else-if="!user.seen" class="alert alert-secondary py-2">
+          <div v-if="!user.seen" class="alert alert-secondary py-2">
             <FaIcon icon="circle-info" class="me-2" />{{ t('settings.directory.neverNote') }}
           </div>
           <div v-else class="alert alert-secondary py-2">
             <FaIcon icon="circle-info" class="me-2" />{{ t('settings.directory.readOnlyNote', { source: sourceName }) }}
+          </div>
+          <!-- Sign-in : allowed, or blocked by an admin ; saved at once, as a runner's Default -->
+          <div class="mb-3">
+            <label class="form-label fw-bold d-block" for="af-sign-in">{{ t('settings.directory.allowSignIn') }}</label>
+            <div class="form-check form-switch mb-0">
+              <input
+                id="af-sign-in"
+                class="form-check-input"
+                type="checkbox"
+                role="switch"
+                :checked="!user.blocked"
+                @change="onSignInSwitch"
+              />
+            </div>
+            <div class="form-text">
+              {{
+                user.blocked
+                  ? t('settings.directory.blockedNote')
+                  : t('settings.directory.signInHelp', { source: sourceName })
+              }}
+            </div>
           </div>
           <BsInput
             v-for="d in details"
@@ -374,10 +413,6 @@ onMounted(async () => {
         />
       </template>
       <template v-if="user" #actions>
-        <BsButton v-if="user.blocked" icon="circle-check" @click="setBlocked(false)">{{
-          t('settings.directory.allowSignIn')
-        }}</BsButton>
-        <BsButton v-else icon="ban" @click="confirming = 'block'">{{ t('settings.directory.blockSignIn') }}</BsButton>
         <BsButton icon="right-from-bracket" :disabled="!user.seen" @click="endSessions()">{{
           t('settings.directory.endSessions')
         }}</BsButton>
@@ -396,9 +431,6 @@ onMounted(async () => {
 }
 .af-user-details {
   padding-bottom: 0.5rem;
-}
-.af-user-details .alert {
-  max-width: 40rem;
 }
 /* the count of a tab : small and grey, as the menus' badges */
 .af-tab-count {

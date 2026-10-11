@@ -68,6 +68,11 @@ const setBlocked = async function (req, res) {
   if (!id) return;
   try {
     const blocked = !!req.body?.blocked;
+    // never the user asking : it would lock itself out
+    const me = req.user?.user;
+    if (blocked && me?.type === id.type && String(me.username).toLowerCase() === id.name.toLowerCase()) {
+      return res.status(400).json(RestResult.error(i18n.t(req, 'resources.cantBlockYourself')));
+    }
     await DirectoryUser.setBlocked(id.type, id.name, blocked);
     if (blocked) await endSessions(id);
     res.json(RestResult.single({ blocked }));

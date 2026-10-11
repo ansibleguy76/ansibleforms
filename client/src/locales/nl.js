@@ -281,6 +281,7 @@ export default {
       user_update: 'Gebruiker bijgewerkt',
       user_password_update: 'Wachtwoord gewijzigd',
       user_delete: 'Gebruiker verwijderd',
+      user_block_create: 'Aanmelden van gebruiker geblokkeerd of toegestaan',
       directory_users_block_create: 'Aanmelden van directorygebruiker geblokkeerd of toegestaan',
       directory_users_delete: 'Directorygebruiker vergeten',
       directory_users_end_sessions_create: 'Sessies van directorygebruiker beëindigd',
@@ -617,8 +618,7 @@ export default {
       displayName: 'Naam',
       firstSeen: 'Eerst gezien',
       lastLogin: 'Laatst aangemeld',
-      signIn: 'Aanmelden',
-      signInAllowed: 'Toegestaan',
+      signInHelp: 'Aan: aanmelden via {source}. Uit: de sessies eindigen nu en elke aanmelding wordt geweigerd.',
       blockSignIn: 'Aanmelden blokkeren',
       allowSignIn: 'Aanmelden toestaan',
       endSessions: 'Sessies beëindigen',
@@ -681,6 +681,8 @@ export default {
       stepGroup: 'Groep',
       deleteUser: 'Gebruiker verwijderen',
       noGroup: 'Nog geen groep.',
+      signInHelp:
+        'Aan: aanmelden met het eigen wachtwoord. Uit: de sessies eindigen nu en elke aanmelding wordt geweigerd.',
       noStoredJob: 'Nog geen opgeslagen job.',
       noSchedule:
         "Nog geen geplande job: de schema's van een gebruiker zijn de jobs die hij plant met Later uitvoeren.",

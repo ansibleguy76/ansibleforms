@@ -143,7 +143,10 @@ const crudConfigs = {
       { name: 'email', setDefault: true }, // Default to empty string
       // who the user is or what the account is for (a service account)
       { name: 'description' },
-      { name: 'group_id', required: true }
+      { name: 'group_id', required: true },
+      // its sign-in blocked by an admin : read with the user, written by User.setBlocked alone
+      // (POST /api/v2/user/:id/block), never by a create or an update
+      { name: 'blocked' }
     ],
     allowCache: false
   },

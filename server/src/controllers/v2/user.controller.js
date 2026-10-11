@@ -179,6 +179,32 @@ const addGroup = async function(req, res) {
 };
 
 /**
+ * Blocks or allows a local user's sign-in (POST /api/v2/user/:id/block, body { blocked }) :
+ * blocked, its sessions end at once and every sign-in is refused (lib/signInGate.js). Never the
+ * admin user - the way back in - nor the user asking ; an admin account by an admin only.
+ */
+const setBlocked = async function(req, res) {
+  try {
+    await assertMayTouchAdmin(req, { userId: req.params.id });
+    const target = await User.findById(req.params.id);
+    const blocked = !!req.body?.blocked;
+    if (blocked && target.username === 'admin') {
+      return res.status(400).json(RestResult.error(i18n.t(req, 'resources.cantBlockAdmin')));
+    }
+    const me = req.user?.user;
+    if (blocked && me?.type === 'local' && me.username === target.username) {
+      return res.status(400).json(RestResult.error(i18n.t(req, 'resources.cantBlockYourself')));
+    }
+    await User.setBlocked(req.params.id, blocked);
+    if (blocked) await endSessions(target.username);
+    res.json(RestResult.single({ blocked }));
+  } catch(err) {
+      if (refused(res, err)) return;
+    res.status(err instanceof Errors.NotFoundError ? 404 : 400).json(RestResult.error(err.message || err.toString()));
+  }
+};
+
+/**
  * Removes a group from a user (DELETE /api/v2/user/:id/groups/:groupId) ; a user keeps one.
  */
 const removeGroup = async function(req, res) {
@@ -274,5 +300,6 @@ export default {
   find,
   delete: deleteUser,
   addGroup,
-  removeGroup
+  removeGroup,
+  setBlocked
 };

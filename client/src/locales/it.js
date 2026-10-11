@@ -284,6 +284,7 @@ export default {
       user_update: 'Utente aggiornato',
       user_password_update: 'Password modificata',
       user_delete: 'Utente eliminato',
+      user_block_create: 'Accesso utente bloccato o consentito',
       directory_users_block_create: 'Accesso di un utente di directory bloccato o consentito',
       directory_users_delete: 'Utente di directory dimenticato',
       directory_users_end_sessions_create: 'Sessioni di un utente di directory terminate',
@@ -619,8 +620,8 @@ export default {
       displayName: 'Nome',
       firstSeen: 'Visto la prima volta',
       lastLogin: 'Ultimo accesso',
-      signIn: 'Accesso',
-      signInAllowed: 'Consentito',
+      signInHelp:
+        'Attivo: accede tramite {source}. Disattivo: le sue sessioni terminano ora e ogni accesso viene rifiutato.',
       blockSignIn: 'Blocca accesso',
       allowSignIn: 'Consenti accesso',
       endSessions: 'Termina sessioni',
@@ -682,6 +683,8 @@ export default {
       stepGroup: 'Gruppo',
       deleteUser: 'Elimina utente',
       noGroup: 'Nessun gruppo ancora.',
+      signInHelp:
+        'Attivo: accede con la propria password. Disattivo: le sue sessioni terminano ora e ogni accesso viene rifiutato.',
       noStoredJob: 'Nessun job salvato ancora.',
       noSchedule:
         'Nessun job pianificato ancora: le pianificazioni di un utente sono i job che pianifica con Esegui piu tardi.',

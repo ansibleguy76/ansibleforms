@@ -65,6 +65,9 @@
 /*  field.columnLabel: the column's title, when shorter than the  */
 /*      field's label in the dialog                               */
 /*  action.to: (item) => route - the action goes to a page        */
+/*  action.shownWhen: (item) => boolean - the action is in the    */
+/*      menu of the records it returns true for only (an LDAP     */
+/*      user's Block sign-in ; a local user's Change password)    */
 /*  action.update: (item) => object - the action saves those      */
 /*      fields of the record (Use for sign-in), then reloads      */
 /*  action.dividerBefore: a line above it in the row menu, apart  */
@@ -104,7 +107,7 @@ const toolsId = `af-tools-${Math.random().toString(36).slice(2, 10)}`;
 const pagerId = `af-pager-${Math.random().toString(36).slice(2, 10)}`;
 const { t, locale } = useI18n();
 const router = useRouter();
-const emit = defineEmits(['test', 'preview', 'trigger', 'reset', 'sync', 'created']);
+const emit = defineEmits(['test', 'preview', 'trigger', 'reset', 'sync', 'created', 'block_sign_in', 'allow_sign_in']);
 
 // PROPS
 
@@ -1067,6 +1070,19 @@ function busyLabel(item) {
   return props.busyItems?.[item.id] ?? props.busyItems?.[item[idKey]] ?? '';
 }
 
+/**
+ * The actions of a record's menu : those it has (action.shownWhen), in their order.
+ *
+ * Args:
+ *   item (object): the record.
+ *
+ * Returns:
+ *   object[]: the actions.
+ */
+function actionsFor(item) {
+  return actions.value.filter((a) => typeof a.shownWhen !== 'function' || a.shownWhen(item));
+}
+
 function isActionEnabled(action, item) {
   if (isManaged(item) && MANAGED_BLOCKS.has(action.name)) return false;
   // read only : nothing that ends in a write, the change_* actions (their page's forms) too
@@ -1431,7 +1447,7 @@ defineExpose({
               <font-awesome-icon icon="ellipsis-vertical" />
             </a>
             <ul class="dropdown-menu dropdown-menu-end">
-              <template v-for="(action, idx) in actions" :key="action.name + idx">
+              <template v-for="(action, idx) in actionsFor(item)" :key="action.name + idx">
                 <li v-if="(action.name === 'delete' || action.dividerBefore) && idx > 0">
                   <hr class="dropdown-divider" />
                 </li>

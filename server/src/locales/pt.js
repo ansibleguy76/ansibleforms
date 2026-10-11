@@ -93,6 +93,8 @@ export default {
     directoryTypeUnknown: "Não é um utilizador ou grupo LDAP, Entra ID ou OIDC",
     directoryUserKept: "Um administrador bloqueou este utilizador: permita o início de sessão antes de o esquecer",
     failedDirectoryUser: "Não foi possível ler ou alterar o utilizador LDAP ou SSO",
+    cantBlockAdmin: "O utilizador admin não pode ser bloqueado: é a forma de voltar a entrar",
+    cantBlockYourself: "Não pode bloquear o seu próprio início de sessão",
     groupNotFound: "Grupo não encontrado",
     groupHasUsers: "Grupo desconhecido ou o grupo tem utilizadores",
     failedFindGroup: "Falha ao encontrar o grupo",

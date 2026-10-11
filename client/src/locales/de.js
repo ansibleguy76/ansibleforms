@@ -285,6 +285,7 @@ export default {
       user_update: 'Benutzer aktualisiert',
       user_password_update: 'Passwort geändert',
       user_delete: 'Benutzer gelöscht',
+      user_block_create: 'Benutzeranmeldung gesperrt oder erlaubt',
       directory_users_block_create: 'Anmeldung eines Verzeichnisbenutzers gesperrt oder erlaubt',
       directory_users_delete: 'Verzeichnisbenutzer vergessen',
       directory_users_end_sessions_create: 'Sitzungen eines Verzeichnisbenutzers beendet',
@@ -623,8 +624,7 @@ export default {
       displayName: 'Name',
       firstSeen: 'Zuerst gesehen',
       lastLogin: 'Letzte Anmeldung',
-      signIn: 'Anmeldung',
-      signInAllowed: 'Erlaubt',
+      signInHelp: 'An: Anmeldung über {source}. Aus: die Sitzungen enden jetzt und jede Anmeldung wird abgelehnt.',
       blockSignIn: 'Anmeldung sperren',
       allowSignIn: 'Anmeldung erlauben',
       endSessions: 'Sitzungen beenden',
@@ -687,6 +687,8 @@ export default {
       stepGroup: 'Gruppe',
       deleteUser: 'Benutzer loeschen',
       noGroup: 'Noch keine Gruppe.',
+      signInHelp:
+        'An: Anmeldung mit dem eigenen Passwort. Aus: die Sitzungen enden jetzt und jede Anmeldung wird abgelehnt.',
       noStoredJob: 'Noch kein gespeicherter Job.',
       noSchedule:
         'Noch kein geplanter Job: die Zeitpläne eines Benutzers sind die Jobs, die er mit Spaeter ausfuehren plant.',

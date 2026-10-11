@@ -216,8 +216,8 @@ export default function getSettings(t) {
           color: 'edit',
           dividerBefore: true,
           to: (u) => ({ path: `/settings/users/${u.id}/groups`, query: { add: '1' } }),
-          // its groups come from its directory
-          enabledWhen: (u) => !u.source || u.source === 'local',
+          // a local user's : an LDAP or SSO user's groups come from its directory
+          shownWhen: (u) => !u.source || u.source === 'local',
         },
         {
           name: 'change_password',
@@ -225,8 +225,26 @@ export default function getSettings(t) {
           icon: 'lock',
           color: 'change',
           dividerBefore: true,
-          // its password is its directory's
-          enabledWhen: (u) => !u.source || u.source === 'local',
+          // a local user's : an LDAP or SSO user's password is its directory's
+          shownWhen: (u) => !u.source || u.source === 'local',
+        },
+        // its sign-in, for every user : blocked (asked first, users.vue) or allowed again ; never
+        // the admin user, the way back in
+        {
+          name: 'block_sign_in',
+          title: t('settings.directory.blockSignIn'),
+          icon: 'ban',
+          color: 'change',
+          dividerBefore: true,
+          shownWhen: (u) => !u.blocked && !(u.username === 'admin' && (!u.source || u.source === 'local')),
+        },
+        {
+          name: 'allow_sign_in',
+          title: t('settings.directory.allowSignIn'),
+          icon: 'circle-check',
+          color: 'change',
+          dividerBefore: true,
+          shownWhen: (u) => !!u.blocked,
         },
         {
           name: 'delete',
@@ -236,6 +254,7 @@ export default function getSettings(t) {
           // the admin user is the way back in : never deleted (the server refuses it too) ; an
           // LDAP or SSO user is forgotten from its page, never deleted here
           enabledWhen: (u) => u.username !== 'admin' && (!u.source || u.source === 'local'),
+          shownWhen: (u) => !u.source || u.source === 'local',
         },
       ],
       fields: [

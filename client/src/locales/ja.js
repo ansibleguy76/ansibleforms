@@ -281,6 +281,7 @@ export default {
       user_update: 'ユーザーを更新',
       user_password_update: 'パスワードを変更',
       user_delete: 'ユーザーを削除',
+      user_block_create: 'ユーザーのサインインをブロックまたは許可',
       directory_users_block_create: 'ディレクトリユーザーのサインインをブロックまたは許可',
       directory_users_delete: 'ディレクトリユーザーを削除',
       directory_users_end_sessions_create: 'ディレクトリユーザーのセッションを終了',
@@ -615,8 +616,8 @@ export default {
       displayName: '名前',
       firstSeen: '初回確認',
       lastLogin: '最終サインイン',
-      signIn: 'サインイン',
-      signInAllowed: '許可',
+      signInHelp:
+        'オン：{source} 経由でサインインします。オフ：セッションは直ちに終了し、すべてのサインインが拒否されます。',
       blockSignIn: 'サインインをブロック',
       allowSignIn: 'サインインを許可',
       endSessions: 'セッションを終了',
@@ -679,6 +680,8 @@ export default {
       stepGroup: 'グループ',
       deleteUser: 'ユーザーを削除',
       noGroup: 'まだグループがありません。',
+      signInHelp:
+        'オン：パスワードでサインインします。オフ：セッションは直ちに終了し、すべてのサインインが拒否されます。',
       noStoredJob: '保存されたジョブはまだありません。',
       noSchedule: '計画されたジョブはまだありません。ユーザーのスケジュールは「後で実行」で計画したジョブです。',
       removeFromUser: 'ユーザーから削除',

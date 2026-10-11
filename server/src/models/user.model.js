@@ -71,6 +71,8 @@ class User extends CrudModel {
 
   // Override create to hash password
   static async create(data) {
+    // a new user signs in : its sign-in is blocked by setBlocked alone
+    delete data.blocked;
     logger.info(`Creating user ${data.username}`);
     // Hash password before storing
     const hash = await crypto.hashPassword(data.password);
@@ -81,6 +83,8 @@ class User extends CrudModel {
   // Override update to conditionally hash password
   static async update(data, id) {
     logger.info(`Updating user ${data.username ? data.username : id}`);
+    // its sign-in is blocked or allowed by setBlocked alone (its own route, its own checks)
+    delete data.blocked;
     // the admin user keeps its name : renamed, it would no longer be the account to sign in with
     if (data.username !== undefined && data.username !== 'admin') {
       const current = await super.findById(this.modelName, id);
@@ -129,6 +133,34 @@ class User extends CrudModel {
 
   static async findAll() {
     return withGroupIds(await super.findAll(this.modelName));
+  }
+
+  /**
+   * Blocks or allows a local user's sign-in.
+   *
+   * Args:
+   *   id (number): the user.
+   *   blocked (boolean): true to block.
+   *
+   * Returns:
+   *   Promise<void>: settles once written.
+   */
+  static async setBlocked(id, blocked) {
+    await mysql.do('UPDATE AnsibleForms.`users` SET blocked = ? WHERE id = ?', [blocked ? 1 : 0, id]);
+  }
+
+  /**
+   * Whether an admin blocked a local user's sign-in.
+   *
+   * Args:
+   *   username (string): the username.
+   *
+   * Returns:
+   *   Promise<boolean>: true when blocked.
+   */
+  static async isBlocked(username) {
+    const rows = await mysql.do('SELECT blocked FROM AnsibleForms.`users` WHERE username = ?', [username]);
+    return !!rows?.[0]?.blocked;
   }
 
   static async findById(id) {

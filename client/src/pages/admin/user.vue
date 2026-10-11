@@ -4,7 +4,8 @@
 /*  A local user's page (/settings/users/<id>), opened from the   */
 /*  users list, in tabs, the tab kept in the address              */
 /*  (/groups, /roles...) ; a row of a tab opens its item :        */
-/*  Details - username, description, email                        */
+/*  Details - its Allow sign-in switch (off : blocked, asked      */
+/*            first), username, description, email               */
 /*  Groups - the groups it belongs to : Add group, and a row's    */
 /*           menu or the checkboxes remove one, never the last    */
 /*  Roles - the roles it has, and how (by name, through a group,  */
@@ -27,6 +28,7 @@ import Profile from '@/lib/Profile';
 import { formPath } from '@/lib/formsPath';
 import { useFormLinks } from '@/composables/useFormLinks';
 import { useUserLinks } from '@/composables/useUserLinks';
+import { setSignInBlocked } from '@/lib/signIn';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { useRoleAssignments } from '@/composables/useRoleAssignments';
@@ -278,6 +280,46 @@ async function savePassword(password) {
   }
 }
 
+// ─── Allow sign-in ────────────────────────────────────────────────────────────
+// on : it signs in ; off : blocked, its sessions end and every sign-in is refused (asked first,
+// the switch staying on until confirmed). Never the admin user, the way back in.
+const confirmBlock = ref(false);
+
+/**
+ * The Allow sign-in switch turned : on allows at once ; off asks first.
+ *
+ * Args:
+ *   event (Event): the switch's change.
+ */
+function onSignInSwitch(event) {
+  if (event.target.checked) {
+    setBlocked(false);
+    return;
+  }
+  event.target.checked = true;
+  confirmBlock.value = true;
+}
+
+/**
+ * Blocks or allows the user's sign-in, then reloads it ; a refusal (its own sign-in) in a toast.
+ *
+ * Args:
+ *   blocked (boolean): true to block.
+ */
+async function setBlocked(blocked) {
+  confirmBlock.value = false;
+  const name = user.value.username;
+  try {
+    await setSignInBlocked({ id: userId.value, username: name, source: 'local' }, blocked);
+    toast.success(
+      blocked ? t('settings.directory.nowBlocked', { name }) : t('settings.directory.nowAllowed', { name }),
+    );
+    await load();
+  } catch (err) {
+    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+  }
+}
+
 // ─── Delete ───────────────────────────────────────────────────────────────────
 const confirmDelete = ref(false);
 
@@ -310,6 +352,12 @@ onMounted(async () => {
 });
 </script>
 <template>
+  <AppBlockSignInDialog
+    v-if="confirmBlock"
+    :name="user?.username || ''"
+    @confirm="setBlocked(true)"
+    @close="confirmBlock = false"
+  />
   <BsModal v-if="confirmDelete" size="md" @close="confirmDelete = false" icon="trash">
     <template #title> {{ t('common.delete') }} {{ user?.username }} </template>
     <template #default>
@@ -368,6 +416,24 @@ onMounted(async () => {
         </div>
         <!-- Details : the username, its description and email -->
         <div v-else-if="user && activeTab === 'details'" class="af-user-details">
+          <!-- Allow sign-in : saved at once, as a runner's Default ; never off for the admin user -->
+          <div class="mb-3">
+            <label class="form-label fw-bold d-block" for="af-sign-in">{{ t('settings.directory.allowSignIn') }}</label>
+            <div class="form-check form-switch mb-0">
+              <input
+                id="af-sign-in"
+                class="form-check-input"
+                type="checkbox"
+                role="switch"
+                :checked="!user.blocked"
+                :disabled="isAdminUser && !user.blocked"
+                @change="onSignInSwitch"
+              />
+            </div>
+            <div class="form-text">
+              {{ user.blocked ? t('settings.directory.blockedNote') : t('settings.users.signInHelp') }}
+            </div>
+          </div>
           <BsInput
             class="af-user-field"
             v-model="edit.username"

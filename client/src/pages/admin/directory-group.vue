@@ -128,7 +128,7 @@ onMounted(async () => {
         </div>
         <template v-else-if="group">
           <!-- where it comes from : its users are those seen in it -->
-          <div class="alert alert-secondary py-2 af-directory-note">
+          <div class="alert alert-secondary py-2">
             <FaIcon icon="circle-info" class="me-2" />{{
               t('settings.directory.groupReadOnlyNote', { source: sourceName })
             }}
@@ -163,9 +163,6 @@ onMounted(async () => {
   </AppSettingsPage>
 </template>
 <style scoped>
-.af-directory-note {
-  max-width: 40rem;
-}
 /* the count of a tab : small and grey, as the menus' badges */
 .af-tab-count {
   background: var(--bs-secondary-bg);

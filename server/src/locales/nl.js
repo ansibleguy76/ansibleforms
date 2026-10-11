@@ -93,6 +93,8 @@ export default {
     directoryTypeUnknown: "Geen LDAP-, Entra ID- of OIDC-gebruiker of -groep",
     directoryUserKept: "Een beheerder heeft deze gebruiker geblokkeerd: sta het aanmelden toe voordat je hem vergeet",
     failedDirectoryUser: "De LDAP- of SSO-gebruiker kon niet worden gelezen of gewijzigd",
+    cantBlockAdmin: "De gebruiker admin kan niet worden geblokkeerd: het is de weg terug",
+    cantBlockYourself: "Je kunt je eigen aanmelding niet blokkeren",
     groupNotFound: "Groep niet gevonden",
     groupHasUsers: "Onbekende groep of groep heeft gebruikers",
     failedFindGroup: "Kan groep niet vinden",

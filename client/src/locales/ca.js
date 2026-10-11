@@ -283,6 +283,7 @@ export default {
       user_update: 'Usuari actualitzat',
       user_password_update: 'Contrasenya canviada',
       user_delete: 'Usuari suprimit',
+      user_block_create: "Inici de sessió d'usuari bloquejat o permès",
       directory_users_block_create: "Inici de sessió d'usuari de directori bloquejat o permès",
       directory_users_delete: 'Usuari de directori oblidat',
       directory_users_end_sessions_create: "Sessions d'usuari de directori finalitzades",
@@ -618,8 +619,8 @@ export default {
       displayName: 'Nom',
       firstSeen: 'Vist per primer cop',
       lastLogin: 'Darrer inici de sessió',
-      signIn: 'Inici de sessió',
-      signInAllowed: 'Permès',
+      signInHelp:
+        'Activat: inicia sessió a través de {source}. Desactivat: les seves sessions acaben ara i es rebutja cada inici de sessió.',
       blockSignIn: "Bloqueja l'inici de sessió",
       allowSignIn: "Permet l'inici de sessió",
       endSessions: 'Tanca les sessions',
@@ -682,6 +683,8 @@ export default {
       stepGroup: 'Grup',
       deleteUser: "Suprimeix l'usuari",
       noGroup: 'Encara sense grup.',
+      signInHelp:
+        'Activat: inicia sessió amb la seva contrasenya. Desactivat: les seves sessions acaben ara i es rebutja cada inici de sessió.',
       noStoredJob: 'Encara sense treballs desats.',
       noSchedule:
         "Encara sense treballs planificats: les programacions d'un usuari són els treballs que planifica amb Executa més tard.",

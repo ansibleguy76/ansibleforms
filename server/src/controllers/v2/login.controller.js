@@ -19,7 +19,7 @@ import Audit from "../../models/audit.model.js";
 import { claimsDisplayName } from "../../lib/displayName.js";
 import { loginBlocked, loginFailed, loginSucceeded } from "../../lib/loginThrottle.js";
 import { newSessionId, revokeSession, consumeOnce } from "../../lib/tokenRevocation.js";
-import { admitDirectorySignIn } from "../../lib/directorySignIn.js";
+import { admitSignIn } from "../../lib/signInGate.js";
 
 // Login is audited here rather than by the blanket middleware, which deliberately
 // skips /auth : on a failed attempt there is no req.user, so that layer could only
@@ -73,8 +73,9 @@ function hasValidLoginOption(user) {
 }
 
 /**
- * The last check of an LDAP, Entra ID or OIDC sign-in (lib/directorySignIn.js) : refused, audited
- * and answered when an admin blocked the user ; else recorded for its page in Settings > Users.
+ * The last check of a sign-in (lib/signInGate.js) : refused, audited and answered when an admin
+ * blocked the user ; else it goes on (an LDAP or SSO user recorded for its page in Settings >
+ * Users).
  *
  * Args:
  *   req (object): the request, for the audit entry.
@@ -85,8 +86,8 @@ function hasValidLoginOption(user) {
  * Returns:
  *   Promise<boolean>: true when the sign-in may go on ; false once refused (answered).
  */
-async function admitDirectoryUser(req, res, user, extra = {}) {
-  if (await admitDirectorySignIn(user, extra)) return true;
+async function admitUser(req, res, user, extra = {}) {
+  if (await admitSignIn(user, extra)) return true;
   auditLogin(req, 'denied', user.type, 'sign-in blocked', user.username);
   res.status(401).json({ error: i18n.t(req, 'auth.signInBlocked') });
   return false;
@@ -222,6 +223,8 @@ const basic = async function(req, res,next) {
                 auditLogin(req, 'denied', user.type, 'login disabled for this user', user.username);
                 return res.status(401).json({ error: i18n.t(req, 'auth.loginDisabled') });
               }
+              // blocked by an admin : refused
+              if (!(await admitUser(req, res, user))) return;
               auditLogin(req, 'success', user.type, null, user.username);
               await loginSucceeded(attemptedUsername(req));
               // send the tokens to the requester
@@ -281,7 +284,7 @@ const basic_ldap = async function(req, res,next) {
               return res.status(401).json({ error: i18n.t(req, 'auth.loginDisabled') });
             }
             // blocked by an admin : refused ; else recorded for its page in Settings > Users
-            if (!(await admitDirectoryUser(req, res, user))) return;
+            if (!(await admitUser(req, res, user))) return;
             auditLogin(req, 'success', user.type, null, user.username);
             await loginSucceeded(attemptedUsername(req));
             // send the tokens to the requester
@@ -494,7 +497,7 @@ const azureadoauth2login = async function(req, res,_next) {
       return res.status(401).json({ error: i18n.t(req, 'auth.loginDisabled') });
     }
     // blocked by an admin : refused ; else recorded for its page in Settings > Users
-    if (!(await admitDirectoryUser(req, res, user, { email: payload.email }))) return;
+    if (!(await admitUser(req, res, user, { email: payload.email }))) return;
     // Audited like every other way in. These two paths recorded NOTHING - and /auth is
     // deliberately skipped by the blanket middleware, so an SSO login left no trace at all,
     // successful or refused. The audit trail is the control that would surface a problem here.
@@ -542,7 +545,7 @@ const oidcLogin = async function(req, res, _next) {
     }
     // blocked by an admin : refused ; else recorded for its page in Settings > Users (the
     // subject : the provider's stable id of the user)
-    if (!(await admitDirectoryUser(req, res, user, { id: payload.sub, email: payload.email }))) return;
+    if (!(await admitUser(req, res, user, { id: payload.sub, email: payload.email }))) return;
     // Audited like every other way in. These two paths recorded NOTHING - and /auth is
     // deliberately skipped by the blanket middleware, so an SSO login left no trace at all,
     // successful or refused. The audit trail is the control that would surface a problem here.

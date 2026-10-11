@@ -93,6 +93,8 @@ export default {
     directoryTypeUnknown: "Not an LDAP, Entra ID or OIDC user or group",
     directoryUserKept: "An administrator blocked this user : allow its sign-in before forgetting it",
     failedDirectoryUser: "The LDAP or SSO user could not be read or changed",
+    cantBlockAdmin: "The admin user cannot be blocked : it is the way back in",
+    cantBlockYourself: "You cannot block your own sign-in",
     groupNotFound: "No such group found",
     groupHasUsers: "Unknown group or group has users",
     failedFindGroup: "Failed to find group",

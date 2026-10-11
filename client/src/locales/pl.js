@@ -281,6 +281,7 @@ export default {
       user_update: 'Zaktualizowano użytkownika',
       user_password_update: 'Zmieniono hasło',
       user_delete: 'Usunięto użytkownika',
+      user_block_create: 'Logowanie użytkownika zablokowane lub dozwolone',
       directory_users_block_create: 'Logowanie użytkownika katalogu zablokowane lub dozwolone',
       directory_users_delete: 'Użytkownik katalogu zapomniany',
       directory_users_end_sessions_create: 'Sesje użytkownika katalogu zakończone',
@@ -616,8 +617,8 @@ export default {
       displayName: 'Nazwa',
       firstSeen: 'Pierwszy raz widziany',
       lastLogin: 'Ostatnie logowanie',
-      signIn: 'Logowanie',
-      signInAllowed: 'Dozwolone',
+      signInHelp:
+        'Włączone: logowanie przez {source}. Wyłączone: sesje kończą się teraz, a każde logowanie jest odrzucane.',
       blockSignIn: 'Zablokuj logowanie',
       allowSignIn: 'Zezwól na logowanie',
       endSessions: 'Zakończ sesje',
@@ -680,6 +681,8 @@ export default {
       stepGroup: 'Grupa',
       deleteUser: 'Usuń użytkownika',
       noGroup: 'Brak grupy.',
+      signInHelp:
+        'Włączone: logowanie własnym hasłem. Wyłączone: sesje kończą się teraz, a każde logowanie jest odrzucane.',
       noStoredJob: 'Brak zapisanych zadań.',
       noSchedule: 'Brak zaplanowanych zadań: harmonogramy użytkownika to zadania zaplanowane przez Uruchom później.',
       removeFromUser: 'Usuń z użytkownika',

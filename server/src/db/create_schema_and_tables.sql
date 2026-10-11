@@ -22,6 +22,8 @@ CREATE TABLE `users`(
   `email` varchar(255) NOT NULL,
   `description` varchar(250) DEFAULT NULL,
   `group_id` int(11) NOT NULL,
+  -- an admin blocked its sign-in (lib/signInGate.js)
+  `blocked` tinyint(4) NOT NULL DEFAULT 0,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_AnsibleForms_users_natural_key` (`username`),
     KEY `FK_users_group` (`group_id`),

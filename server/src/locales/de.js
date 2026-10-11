@@ -93,6 +93,8 @@ export default {
     directoryTypeUnknown: "Kein LDAP-, Entra-ID- oder OIDC-Benutzer bzw. -Gruppe",
     directoryUserKept: "Ein Administrator hat diesen Benutzer gesperrt: erlaube die Anmeldung, bevor du ihn vergisst",
     failedDirectoryUser: "Der LDAP- oder SSO-Benutzer konnte nicht gelesen oder geändert werden",
+    cantBlockAdmin: "Der Benutzer admin kann nicht gesperrt werden: er ist der Weg zurück",
+    cantBlockYourself: "Du kannst deine eigene Anmeldung nicht sperren",
     groupNotFound: "Keine passende Gruppe gefunden",
     groupHasUsers: "Unbekannte Gruppe oder Gruppe mit Benutzern",
     failedFindGroup: "Gruppe konnte nicht gefunden werden",

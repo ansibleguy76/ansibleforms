@@ -281,6 +281,7 @@ export default {
       user_update: 'Usuario actualizado',
       user_password_update: 'Contraseña cambiada',
       user_delete: 'Usuario eliminado',
+      user_block_create: 'Inicio de sesión de usuario bloqueado o permitido',
       directory_users_block_create: 'Inicio de sesión de usuario de directorio bloqueado o permitido',
       directory_users_delete: 'Usuario de directorio olvidado',
       directory_users_end_sessions_create: 'Sesiones de usuario de directorio finalizadas',
@@ -616,8 +617,8 @@ export default {
       displayName: 'Nombre',
       firstSeen: 'Visto por primera vez',
       lastLogin: 'Último inicio de sesión',
-      signIn: 'Inicio de sesión',
-      signInAllowed: 'Permitido',
+      signInHelp:
+        'Activado: inicia sesión a través de {source}. Desactivado: sus sesiones terminan ahora y se rechaza cada inicio de sesión.',
       blockSignIn: 'Bloquear inicio de sesión',
       allowSignIn: 'Permitir inicio de sesión',
       endSessions: 'Cerrar sesiones',
@@ -680,6 +681,8 @@ export default {
       stepGroup: 'Grupo',
       deleteUser: 'Eliminar usuario',
       noGroup: 'Aún sin grupo.',
+      signInHelp:
+        'Activado: inicia sesión con su contraseña. Desactivado: sus sesiones terminan ahora y se rechaza cada inicio de sesión.',
       noStoredJob: 'Aún sin trabajos guardados.',
       noSchedule:
         'Aún sin trabajos planificados: las programaciones de un usuario son los trabajos que planifica con Ejecutar más tarde.',

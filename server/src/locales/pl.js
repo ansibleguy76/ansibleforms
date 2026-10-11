@@ -93,6 +93,8 @@ export default {
     directoryTypeUnknown: "To nie jest użytkownik ani grupa LDAP, Entra ID lub OIDC",
     directoryUserKept: "Administrator zablokował tego użytkownika: zezwól na logowanie, zanim go zapomnisz",
     failedDirectoryUser: "Nie udało się odczytać ani zmienić użytkownika LDAP lub SSO",
+    cantBlockAdmin: "Użytkownika admin nie można zablokować: to droga powrotu",
+    cantBlockYourself: "Nie możesz zablokować własnego logowania",
     groupNotFound: "Nie znaleziono takiej grupy",
     groupHasUsers: "Nieznana grupa lub grupa ma użytkowników",
     failedFindGroup: "Nie udało się znaleźć grupy",
