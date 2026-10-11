@@ -125,3 +125,26 @@ describe('a role keeps its description', () => {
     }
   });
 });
+
+// 3. What a role may use (credentials, secretStores, runners : lib/resourceScope.js) survives an
+//    edit. They were dropped by the round trip, so saving any role from Settings > Roles or the
+//    designer removed every role's limits - widening what its users may use.
+describe('a role keeps what it may use through an edit', () => {
+  it('its credentials, secret stores and runners come back as they were', () => {
+    const r = {
+      name: 'ops',
+      groups: ['local/ops'],
+      credentials: ['db-.*'],
+      secretStores: ['vault'],
+      runners: ['rte-1'],
+    };
+    expect(serializeRole(roleToEditable(r))).toEqual(r);
+  });
+
+  it('none listed : none written, the role limits nothing', () => {
+    const out = serializeRole(roleToEditable({ name: 'ops', groups: [] }));
+    expect(out).not.toHaveProperty('credentials');
+    expect(out).not.toHaveProperty('secretStores');
+    expect(out).not.toHaveProperty('runners');
+  });
+});
