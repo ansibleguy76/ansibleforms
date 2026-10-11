@@ -12,15 +12,9 @@ const isLoading = ref(false);
 const filter = ref('');
 const scroller = ref(null);
 const refresh = ref(false);
-const lines = ref(100);
-const lineOptions = [
-  { value: 100, label: '100' },
-  { value: 200, label: '200' },
-  { value: 300, label: '300' },
-  { value: 400, label: '400' },
-  { value: 500, label: '500' },
-  { value: 1000, label: '1000' },
-];
+// the last lines of the log : enough to look back through with the search, small enough to read
+// every 2 seconds while the auto refresh is on ; the whole log is its download
+const LINES = 1000;
 
 // The filter is a REGEX, which is the useful thing for a log - but String.match compiles
 // its string argument, so a half typed one ('[', '(', '*', 'a{2,1}') threw a SyntaxError
@@ -51,9 +45,6 @@ async function scrollToBottom() {
     behavior: 'smooth',
   });
 }
-watch(lines, async () => {
-  await load(true);
-});
 watch(refresh, async () => {
   if (refresh.value) {
     await load(true);
@@ -85,7 +76,7 @@ async function load(force = false) {
   if (isLoading.value || !(refresh.value || force)) return;
   isLoading.value = true;
   try {
-    const result = await axios.get(`/api/v2/log?lines=${lines.value || 100}`);
+    const result = await axios.get(`/api/v2/log?lines=${LINES}`);
     if (result.data != '...') {
       log.value = result.data;
       await scrollToBottom();
@@ -141,17 +132,6 @@ onUnmounted(() => {
               type="checkbox"
               v-model="refresh"
               :label="t('logs.autoRefresh')"
-              :isInline="true"
-            ></BsInput>
-          </div>
-          <div class="ms-2">
-            <BsInput
-              :isFloating="false"
-              type="select"
-              icon="arrows-up-down"
-              v-model="lines"
-              :values="lineOptions"
-              label=""
               :isInline="true"
             ></BsInput>
           </div>
