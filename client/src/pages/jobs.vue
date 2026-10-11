@@ -1279,12 +1279,12 @@ onMounted(async () => {
                       @click="j.job_type == 'multistep' ? toggleCollapse(j.id) : openRow(j)"
                     >
                       <!-- one line, to the right : a multistep's caret before its number, so every
-                           number ends at the same place ; down while its steps are folded, up once
+                           number ends at the same place ; right while its steps are folded, down once
                            they show -->
                       <span class="d-flex align-items-center justify-content-end">
                         <font-awesome-icon
                           v-if="j.job_type == 'multistep'"
-                          :icon="collapsed[j.id] ? 'angle-up' : 'angle-down'"
+                          :icon="collapsed[j.id] ? 'angle-down' : 'angle-right'"
                           fixed-width
                           class="me-1"
                         />
