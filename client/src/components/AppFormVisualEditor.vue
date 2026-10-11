@@ -24,7 +24,8 @@
 /*      update:modelValue - the YAML, edited                      */
 /*                                                                */
 /******************************************************************/
-import { ref, shallowRef, computed, watch } from 'vue';
+import { ref, shallowRef, computed, watch, onMounted } from 'vue';
+import axios from 'axios';
 import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner';
 import YAML from 'yaml';
@@ -213,14 +214,43 @@ const runs = computed(() => ['ansible', 'awx'].includes(form.value?.type));
 // the text settings : the key, its label, its icon, when it shows, its help
 const textSettings = computed(() =>
   [
-    { key: 'runner', label: 'designer.formRunner', icon: 'server', show: runs.value, help: 'designer.formRunnerHelp' },
-    { key: 'inventory', label: 'designer.formInventory', icon: 'list', show: allows('inventory') },
-    { key: 'scm_branch', label: 'designer.formScmBranch', icon: 'code-branch', show: awx.value },
-    { key: 'executionEnvironment', label: 'designer.formExecEnv', icon: 'cube', show: awx.value },
-    { key: 'ansibleCredentials', label: 'designer.formAnsibleCreds', icon: 'key', show: allows('ansibleCredentials') },
-    { key: 'vaultCredentials', label: 'designer.formVaultCreds', icon: 'lock', show: allows('vaultCredentials') },
-    { key: 'tags', label: 'designer.formTags', icon: 'tags', show: allows('tags') },
-    { key: 'limit', label: 'designer.formLimit', icon: 'filter', show: allows('limit') },
+    {
+      key: 'inventory',
+      label: 'designer.formInventory',
+      icon: 'list',
+      show: allows('inventory'),
+      help: 'designer.helpInventory',
+    },
+    {
+      key: 'scm_branch',
+      label: 'designer.formScmBranch',
+      icon: 'code-branch',
+      show: awx.value,
+      help: 'designer.helpScmBranch',
+    },
+    {
+      key: 'executionEnvironment',
+      label: 'designer.formExecEnv',
+      icon: 'cube',
+      show: awx.value,
+      help: 'designer.helpExecEnv',
+    },
+    {
+      key: 'ansibleCredentials',
+      label: 'designer.formAnsibleCreds',
+      icon: 'key',
+      show: allows('ansibleCredentials'),
+      help: 'designer.helpAnsibleCreds',
+    },
+    {
+      key: 'vaultCredentials',
+      label: 'designer.formVaultCreds',
+      icon: 'lock',
+      show: allows('vaultCredentials'),
+      help: 'designer.helpVaultCreds',
+    },
+    { key: 'tags', label: 'designer.formTags', icon: 'tags', show: allows('tags'), help: 'designer.helpTags' },
+    { key: 'limit', label: 'designer.formLimit', icon: 'filter', show: allows('limit'), help: 'designer.helpLimit' },
   ].filter((x) => x.show),
 );
 // ─── the user in the extravars : the instance's default, all, none, or only some keys ───
@@ -250,6 +280,26 @@ function setUserMode(mode) {
   }
   setText('userExtravars', mode);
 }
+
+// ─── the runner : one of the instance's, of the type the form needs ───────────
+// (an ansible form's jobs run on an rte, an awx form's on an awx : server/src/lib/formLinks.js) ;
+// the list needs the settings' permission : without it, the name is typed
+const runners = ref(null);
+onMounted(async () => {
+  try {
+    const res = await axios.get('/api/v2/runner/');
+    runners.value = (res.data?.records || res.data || [])
+      .filter((r) => r && r.name)
+      .map((r) => ({ name: String(r.name), type: String(r.type || '') }));
+  } catch {
+    runners.value = null;
+  }
+});
+const runnerChoices = computed(() => {
+  if (!runners.value) return null;
+  const need = form.value?.type === 'awx' ? 'awx' : 'rte';
+  return runners.value.filter((r) => r.type === need).map((r) => r.name);
+});
 
 // the switches : true, or no key
 const flagSettings = computed(() =>
@@ -547,6 +597,37 @@ defineExpose({
         </div>
         <!-- the rest of the settings : the texts, then AWX's instance groups, the order, the launch
              validation, the help, the switches - only what the type allows -->
+        <!-- the runner : picked from the instance's, of the type the form needs ; typed when the
+             list cannot be read -->
+        <div v-if="runs">
+          <label class="form-label fw-bold">{{ t('designer.formRunner') }}</label>
+          <div class="input-group">
+            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="server" /></span>
+            <select
+              v-if="runnerChoices"
+              class="form-select"
+              :value="setting('runner')"
+              :disabled="locked"
+              @change="setText('runner', $event.target.value)"
+            >
+              <option value="">{{ t('designer.runnerDefault') }}</option>
+              <!-- a runner the list does not have (another type, or gone) : offered, so it shows -->
+              <option v-if="setting('runner') && !runnerChoices.includes(setting('runner'))" :value="setting('runner')">
+                {{ setting('runner') }}
+              </option>
+              <option v-for="r in runnerChoices" :key="r" :value="r">{{ r }}</option>
+            </select>
+            <input
+              v-else
+              class="form-control"
+              :value="setting('runner')"
+              :disabled="locked"
+              spellcheck="false"
+              @change="setText('runner', $event.target.value)"
+            />
+          </div>
+          <div class="form-text">{{ t('designer.formRunnerHelp') }}</div>
+        </div>
         <div v-for="x in textSettings" :key="x.key">
           <label class="form-label fw-bold">{{ t(x.label) }}</label>
           <div class="input-group">
@@ -559,8 +640,7 @@ defineExpose({
               @change="setText(x.key, $event.target.value)"
             />
           </div>
-          <!-- a help on two lines : its line breaks kept -->
-          <div v-if="x.help" class="form-text af-pre-line">{{ t(x.help) }}</div>
+          <div v-if="x.help" class="form-text">{{ t(x.help) }}</div>
         </div>
         <!-- the user in the extravars : a choice, and the keys when only some -->
         <div v-if="allows('userExtravars')">
@@ -611,6 +691,7 @@ defineExpose({
               @change="setInstanceGroups($event.target.value)"
             />
           </div>
+          <div class="form-text">{{ t('designer.helpInstanceGroups') }}</div>
         </div>
         <div v-if="allows('order')">
           <label class="form-label fw-bold">{{ t('designer.formOrder') }}</label>
@@ -624,6 +705,7 @@ defineExpose({
               @change="setOrder($event.target.value)"
             />
           </div>
+          <div class="form-text">{{ t('designer.helpOrder') }}</div>
         </div>
         <div v-if="allows('launchValidation')">
           <label class="form-label fw-bold">{{ t('designer.formLaunchValidation') }}</label>
@@ -899,10 +981,6 @@ defineExpose({
 }
 .af-field-values {
   grid-column: 1 / -1;
-}
-/* a help text written on two lines */
-.af-pre-line {
-  white-space: pre-line;
 }
 /* the form's switches : side by side, wrapping */
 .af-form-flags {
