@@ -8,6 +8,8 @@
 /*      name: String                                              */
 /*      dateType: String                                          */
 /*      icon: String                                              */
+/*      placeholder: String - shown while empty ; none, the       */
+/*         format of its type (YYYY-MM-DD HH:mm for datetime)     */
 /*      teleport: Boolean - the calendar opened on the page's     */
 /*         body : in a dialog, whose scrolling body would cut it  */
 /*         off                                                    */
@@ -19,6 +21,7 @@
 
 import { computed, ref, watch } from 'vue';
 import { useAppStore } from '@/stores/app';
+import { useI18n } from 'vue-i18n';
 
 // MODEL
 
@@ -43,6 +46,14 @@ const props = defineProps({
 
 // DATA
 
+const { t, te } = useI18n();
+// empty, the field shows what it takes, as it will show it (YYYY-MM-DD HH:mm for a date and
+// time) : the placeholder given, or the one of its type
+const shownPlaceholder = computed(() => {
+  if (props.placeholder) return props.placeholder;
+  const key = `settings.common.datePlaceholders.${props.dateType}`;
+  return te(key) ? t(key) : '';
+});
 const hasFocus = ref(false);
 const tempValue = ref('');
 const pickerModel = ref(null); // Local timezone Date for picker
@@ -448,7 +459,7 @@ watch(
           :class="{ 'is-invalid': hasError }"
           class="form-control"
           type="text"
-          :placeholder="placeholder"
+          :placeholder="shownPlaceholder"
           :name="name"
         />
       </div>

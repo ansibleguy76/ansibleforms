@@ -561,6 +561,15 @@ export default {
       presetMonthly: 'Mensualment',
     },
     common: {
+      // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
+      datePlaceholders: {
+        date: 'AAAA-MM-DD',
+        datetime: 'AAAA-MM-DD HH:mm',
+        time: 'HH:mm',
+        month: 'AAAA-MM',
+        year: 'AAAA',
+        week: 'AAAA-S##',
+      },
       changePassword: 'Canvia la contrasenya',
       repeatPassword: 'Repeteix la contrasenya',
       passwordsDiffer: 'Les dues contrasenyes no coincideixen',
@@ -633,7 +642,7 @@ export default {
       enable: 'Activa',
       certificate: 'Certificat',
       caBundle: 'Paquet de CA',
-      cronSchedule: 'Programació cron',
+      schedule: 'Programació',
       cronRegexDescription: 'Ha de ser una programació cron vàlida',
       extraVars: 'Extra vars (YAML)',
       lastRun: 'Darrera execució',
@@ -871,6 +880,9 @@ export default {
       notFound: "No hi ha cap repositori anomenat '{name}'.",
       ownUser: 'Encara té el seu propi usuari ({user}): trieu una credencial per substituir-lo.',
       pull: 'Pull',
+      pullAll: 'Pull de tots',
+      pullAllDone: '{n} repositori actualitzat | {n} repositoris actualitzats',
+      pullAllFailed: 'Ha fallat el pull de: {names}',
       push: 'Push',
       pushHint:
         'Només es torna a enviar un repositori on escriu el dissenyador (formularis, configuració, playbooks, workflows).',

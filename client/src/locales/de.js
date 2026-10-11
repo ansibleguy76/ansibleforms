@@ -566,6 +566,15 @@ export default {
       presetMonthly: 'Monatlich',
     },
     common: {
+      // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
+      datePlaceholders: {
+        date: 'JJJJ-MM-TT',
+        datetime: 'JJJJ-MM-TT HH:mm',
+        time: 'HH:mm',
+        month: 'JJJJ-MM',
+        year: 'JJJJ',
+        week: 'JJJJ-KW##',
+      },
       changePassword: 'Passwort aendern',
       repeatPassword: 'Passwort wiederholen',
       passwordsDiffer: 'Die beiden Passwörter unterscheiden sich',
@@ -638,7 +647,7 @@ export default {
       enable: 'Aktivieren',
       certificate: 'Zertifikat',
       caBundle: 'CA-Bundle',
-      cronSchedule: 'Cron-Zeitplan',
+      schedule: 'Zeitplan',
       cronRegexDescription: 'Muss ein gueltiger Cron-Zeitplan sein',
       extraVars: 'Extra-Variablen (YAML)',
       lastRun: 'Letzter Lauf',
@@ -873,6 +882,9 @@ export default {
       notFound: "Es gibt kein Repository mit dem Namen '{name}'.",
       ownUser: 'Es hat noch einen eigenen Benutzer ({user}): wählen Sie eine Anmeldeinformation, um ihn zu ersetzen.',
       pull: 'Pull',
+      pullAll: 'Alle pullen',
+      pullAllDone: '{n} Repository gepullt | {n} Repositories gepullt',
+      pullAllFailed: 'Pull fehlgeschlagen für: {names}',
       push: 'Push',
       pushHint:
         'Nur ein Repository, in das der Designer schreibt (Formulare, Einstellungen, Playbooks, Workflows), wird zurückgepusht.',

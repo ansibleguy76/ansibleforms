@@ -18,8 +18,9 @@ import getSettings from '@/config/settings';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { useSettingsRow } from '@/composables/useSettingsRow';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
+import { inSentence } from '@/lib/inSentence';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const settings = computed(() => getSettings(t));
 const authenticated = ref(false);
 const title = computed(() => t('sidebar.announcement'));
@@ -117,7 +118,7 @@ onMounted(async () => {
       <template #actions>
         <!-- the wizard, as the list's Add ; once added, the list shows the new one -->
         <BsButton icon="plus" @click="wizard?.newItem()">{{
-          t('settings.common.addItem', { item: t('settings.interface.announcementLabel') })
+          t('settings.common.addItem', { item: inSentence(t('settings.interface.announcementLabel'), locale) })
         }}</BsButton>
         <BsButton icon="save" :disabled="!dirty" @click="save(`${title} ${t('settings.common.isUpdated')}`)">{{
           t('settings.common.save')

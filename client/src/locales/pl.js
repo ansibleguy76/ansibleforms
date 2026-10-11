@@ -559,6 +559,15 @@ export default {
       presetMonthly: 'Co miesiąc',
     },
     common: {
+      // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
+      datePlaceholders: {
+        date: 'RRRR-MM-DD',
+        datetime: 'RRRR-MM-DD GG:mm',
+        time: 'GG:mm',
+        month: 'RRRR-MM',
+        year: 'RRRR',
+        week: 'RRRR-T##',
+      },
       changePassword: 'Zmień hasło',
       repeatPassword: 'Powtórz hasło',
       passwordsDiffer: 'Hasła różnią się',
@@ -631,7 +640,7 @@ export default {
       enable: 'Włącz',
       certificate: 'Certyfikat',
       caBundle: 'Pakiet CA',
-      cronSchedule: 'Harmonogram cron',
+      schedule: 'Harmonogram',
       cronRegexDescription: 'Musi być prawidłowym harmonogramem cron',
       extraVars: 'Extra vars (YAML)',
       lastRun: 'Ostatnie uruchomienie',
@@ -865,6 +874,9 @@ export default {
       notFound: "Nie ma repozytorium o nazwie '{name}'.",
       ownUser: 'Ma jeszcze własnego użytkownika ({user}): wybierz poświadczenie, aby go zastąpić.',
       pull: 'Pull',
+      pullAll: 'Pull wszystkich',
+      pullAllDone: 'Pobrano {n} repozytorium | Pobrano {n} repozytoria | Pobrano {n} repozytoriów',
+      pullAllFailed: 'Pull nie powiódł się dla: {names}',
       push: 'Push',
       pushHint:
         'Wypychane jest tylko repozytorium, do którego pisze projektant (formularze, ustawienia, playbooki, workflowy).',

@@ -2345,7 +2345,16 @@ onBeforeUnmount(() => {
 
       <div class="mb-3" v-if="scheduleAction === 'run-later'">
         <label class="form-label">{{ t('form.runAt') }} <span class="text-danger">*</span></label>
-        <VueDatePicker v-model="scheduleForm.run_at" :disabled="scheduleSubmitting" :dark="store.theme === 'dark'" />
+        <!-- the same picker as a schedule's and an announcement's (its time in the user's zone, sent
+             as UTC) -->
+        <BsDateTime
+          v-model="scheduleForm.run_at"
+          icon="calendar"
+          dateType="datetime"
+          :convertToUtc="true"
+          teleport
+          :disabled="scheduleSubmitting"
+        />
         <small class="form-text text-muted">Select the date and time to run this job once</small>
       </div>
     </template>
@@ -2395,7 +2404,14 @@ onBeforeUnmount(() => {
 
       <div class="mb-3">
         <label class="form-label">{{ t('form.expiresAt') }}</label>
-        <VueDatePicker v-model="storeForm.expires_at" :disabled="storeSubmitting" :dark="store.theme === 'dark'" />
+        <BsDateTime
+          v-model="storeForm.expires_at"
+          icon="calendar"
+          dateType="datetime"
+          :convertToUtc="true"
+          teleport
+          :disabled="storeSubmitting"
+        />
       </div>
     </template>
     <template #actions>
