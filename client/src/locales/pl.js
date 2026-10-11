@@ -14,6 +14,7 @@ export default {
     always: 'zawsze',
   },
   nav: {
+    links: 'Linki',
     // the lock on the Designer link while someone holds the designer, in its tooltip
     designerLockedByMe: 'Projektant jest zablokowany przez ciebie',
     designerLockedBy: 'Projektant jest zablokowany przez użytkownika {user}',
@@ -702,6 +703,18 @@ export default {
     interface: {
       description: 'Jak aplikacja domyślnie wygląda dla wszystkich. Własny wybór użytkownika ma pierwszeństwo.',
       linksDescription: 'Linki nagłówka dla wszystkich, np. link Projektanta.',
+      tabBuiltin: 'Wbudowane',
+      tabCustom: 'Własne',
+      addLink: 'Dodaj link',
+      noLinks: 'Brak własnych linków.',
+      linkIcon: 'Ikona',
+      linkLabel: 'Etykieta',
+      linkUrl: 'Adres',
+      linkNewTab: 'Nowa karta',
+      linkUp: 'W górę',
+      linkDown: 'W dół',
+      linksHelp:
+        'Własne linki w nagłówku, po wbudowanych, najwyżej {max}. Adres to witryna (https://…) lub strona aplikacji (/forms/all). Ikona to nazwa Font Awesome, np. book lub life-ring.',
       nameDescription: 'Nazwa aplikacji, na karcie przeglądarki i na stronie logowania.',
       environmentDescription: 'Etykieta obok logo, która mówi, która to instancja, np. PRODUKCJA lub TEST.',
       announcementDescription: 'Wiadomość pod nagłówkiem dla wszystkich, np. okno serwisowe, do wybranej daty.',

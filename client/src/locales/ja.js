@@ -14,6 +14,7 @@ export default {
     always: '常に',
   },
   nav: {
+    links: 'リンク',
     // the lock on the Designer link while someone holds the designer, in its tooltip
     designerLockedByMe: 'デザイナーはあなたがロックしています',
     designerLockedBy: 'デザイナーは {user} がロックしています',
@@ -702,6 +703,18 @@ export default {
     interface: {
       description: '全員に対するアプリの既定の見た目。ユーザー自身の選択が優先されます。',
       linksDescription: '全員に対するヘッダーのリンク（デザイナーなど）。',
+      tabBuiltin: '組み込み',
+      tabCustom: 'カスタム',
+      addLink: 'リンクを追加',
+      noLinks: '独自のリンクはまだありません。',
+      linkIcon: 'アイコン',
+      linkLabel: 'ラベル',
+      linkUrl: 'アドレス',
+      linkNewTab: '新しいタブ',
+      linkUp: '上へ',
+      linkDown: '下へ',
+      linksHelp:
+        'ヘッダーに表示する独自のリンク（組み込みのリンクの後、最大 {max} 件）。アドレスはサイト（https://…）またはアプリのページ（/forms/all）。アイコンは Font Awesome の名前（book、life-ring など）。',
       nameDescription: 'アプリケーションの名前。ブラウザーのタブとサインインページに表示されます。',
       environmentDescription: 'ロゴの横に表示し、どのインスタンスかを示すラベル（PRODUCTION、TEST など）。',
       announcementDescription:

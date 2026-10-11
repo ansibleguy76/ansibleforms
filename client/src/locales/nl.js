@@ -14,6 +14,7 @@ export default {
     always: 'altijd',
   },
   nav: {
+    links: 'Links',
     // the lock on the Designer link while someone holds the designer, in its tooltip
     designerLockedByMe: 'De ontwerper is door u vergrendeld',
     designerLockedBy: 'De ontwerper is vergrendeld door {user}',
@@ -702,6 +703,18 @@ export default {
     interface: {
       description: 'Hoe de app er standaard voor iedereen uitziet. De eigen keuze van een gebruiker gaat voor.',
       linksDescription: 'De links van de kop voor iedereen, zoals die van de Designer.',
+      tabBuiltin: 'Ingebouwd',
+      tabCustom: 'Eigen',
+      addLink: 'Link toevoegen',
+      noLinks: 'Nog geen eigen links.',
+      linkIcon: 'Pictogram',
+      linkLabel: 'Label',
+      linkUrl: 'Adres',
+      linkNewTab: 'Nieuw tabblad',
+      linkUp: 'Omhoog',
+      linkDown: 'Omlaag',
+      linksHelp:
+        'Je eigen links in de kop, na de ingebouwde, hoogstens {max}. Een adres is een site (https://…) of een pagina van de app (/forms/all). Het pictogram is een Font Awesome-naam, zoals book of life-ring.',
       nameDescription: 'De naam van de applicatie, in het browsertabblad en op de aanmeldpagina.',
       environmentDescription: 'Een label naast het logo dat aangeeft welke instantie dit is, zoals PRODUCTIE of TEST.',
       announcementDescription:

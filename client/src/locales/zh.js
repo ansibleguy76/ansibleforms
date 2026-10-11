@@ -14,6 +14,7 @@ export default {
     always: '始终',
   },
   nav: {
+    links: '链接',
     // the lock on the Designer link while someone holds the designer, in its tooltip
     designerLockedByMe: '设计器已由您锁定',
     designerLockedBy: '设计器已由 {user} 锁定',
@@ -686,6 +687,18 @@ export default {
     interface: {
       description: '应用对所有人的默认外观。用户自己的选择优先。',
       linksDescription: '所有人的页眉链接，例如设计器的链接。',
+      tabBuiltin: '内置',
+      tabCustom: '自定义',
+      addLink: '添加链接',
+      noLinks: '还没有自定义链接。',
+      linkIcon: '图标',
+      linkLabel: '标签',
+      linkUrl: '地址',
+      linkNewTab: '新标签页',
+      linkUp: '上移',
+      linkDown: '下移',
+      linksHelp:
+        '页眉中的自定义链接，位于内置链接之后，最多 {max} 个。地址可以是网站（https://…）或应用页面（/forms/all）。图标是 Font Awesome 名称，例如 book 或 life-ring。',
       nameDescription: '应用程序的名称，显示在浏览器标签页和登录页面。',
       environmentDescription: '显示在徽标旁、标明这是哪个实例的标签，例如 PRODUCTION 或 TEST。',
       announcementDescription: '在页眉下方向所有人显示的消息，例如维护窗口，直到你选择的日期。',

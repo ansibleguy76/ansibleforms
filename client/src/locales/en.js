@@ -14,6 +14,7 @@ export default {
     always: 'always',
   },
   nav: {
+    links: 'Links',
     // the lock on the Designer link while someone holds the designer, in its tooltip
     designerLockedByMe: 'The designer is locked by you',
     designerLockedBy: 'The designer is locked by {user}',
@@ -698,6 +699,18 @@ export default {
     interface: {
       description: "How the app looks for everyone by default. A user's own choice wins over the defaults.",
       linksDescription: "The links of the header for everyone, such as the Designer's.",
+      tabBuiltin: 'Built-in',
+      tabCustom: 'Custom',
+      addLink: 'Add link',
+      noLinks: 'No links of your own yet.',
+      linkIcon: 'Icon',
+      linkLabel: 'Label',
+      linkUrl: 'Address',
+      linkNewTab: 'New tab',
+      linkUp: 'Move up',
+      linkDown: 'Move down',
+      linksHelp:
+        'Your own links in the header, after the built-in ones, at most {max}. An address is a site (https://…) or a page of the app (/forms/all). The icon is a Font Awesome name, such as book or life-ring.',
       nameDescription: 'The name of the application, in the browser tab and on the sign-in page.',
       environmentDescription: 'A label beside the logo that says which instance this is, such as PRODUCTION or TEST.',
       announcementDescription:

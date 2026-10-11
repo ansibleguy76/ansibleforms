@@ -14,6 +14,7 @@ export default {
     always: 'siempre',
   },
   nav: {
+    links: 'Enlaces',
     // the lock on the Designer link while someone holds the designer, in its tooltip
     designerLockedByMe: 'El diseñador está bloqueado por ti',
     designerLockedBy: 'El diseñador está bloqueado por {user}',
@@ -702,6 +703,18 @@ export default {
     interface: {
       description: 'Cómo se ve la aplicación para todos por defecto. La elección propia de un usuario prevalece.',
       linksDescription: 'Los enlaces de la cabecera para todos, como el del Diseñador.',
+      tabBuiltin: 'Integrados',
+      tabCustom: 'Personalizados',
+      addLink: 'Añadir enlace',
+      noLinks: 'Aún no hay enlaces propios.',
+      linkIcon: 'Icono',
+      linkLabel: 'Etiqueta',
+      linkUrl: 'Dirección',
+      linkNewTab: 'Nueva pestaña',
+      linkUp: 'Subir',
+      linkDown: 'Bajar',
+      linksHelp:
+        'Tus propios enlaces en la cabecera, tras los integrados, como máximo {max}. Una dirección es un sitio (https://…) o una página de la aplicación (/forms/all). El icono es un nombre de Font Awesome, como book o life-ring.',
       nameDescription: 'El nombre de la aplicación, en la pestaña del navegador y en la página de inicio de sesión.',
       environmentDescription: 'Una etiqueta junto al logotipo que indica qué instancia es, como PRODUCCIÓN o TEST.',
       announcementDescription:

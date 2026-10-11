@@ -94,6 +94,17 @@ var State = {
     store.appConfigLoaded = true;
     document.title = data.appName || 'Ansible Forms';
   },
+  // the header's own links (Settings > Appearance > Links > Custom) : signed in only, so not
+  // in the public /api/v2/app/config
+  async loadHeaderLinks() {
+    try {
+      const result = await axios.get('/api/v2/app/links');
+      useAppStore().headerLinks = Array.isArray(result.data) ? result.data : [];
+    } catch (err) {
+      // not signed in (any more) or the server is down : none
+      useAppStore().headerLinks = [];
+    }
+  },
   async refreshApprovals() {
     const store = useAppStore();
     const res = await axios.get('/api/v2/job/approvals');

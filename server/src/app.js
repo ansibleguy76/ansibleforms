@@ -60,7 +60,7 @@ import eventsRoutesv2 from "./routes/v2/events.routes.js";
 import knownhostsRoutes from "./routes/v2/knownhosts.routes.js";
 import scheduleRoutes from "./routes/v2/schedule.routes.js";
 import storedJobsRoutes from "./routes/v2/stored-jobs.routes.js";
-import appRoutes from "./routes/v2/app.routes.js";
+import appRoutes, { linksRouter as appLinksRoutes } from "./routes/v2/app.routes.js";
 import backupRoutes from "./routes/v2/backup.routes.js";
 import groupRoutesv2 from "./routes/v2/group.routes.js";
 import settingsRoutesv2 from "./routes/v2/settings.routes.js";
@@ -228,6 +228,8 @@ const load = async (app) => {
   app.use(`/api/v2/token`, cors(), authLimiter, tokenRoutesv2);
 
   // api routes for the vue3 app
+  // the header's own links : signed in only, before the public /api/v2/app
+  app.use(`/api/v2/app/links`, cors(), authobj, appLinksRoutes);
   app.use(`/api/v2/app`, cors(), appRoutes);
 
   // api routes for admin management

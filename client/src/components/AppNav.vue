@@ -6,7 +6,7 @@
 /*                                                                */
 /******************************************************************/
 
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import { useAppStore } from '@/stores/app';
 import { useI18n } from 'vue-i18n';
 import Theme from '@/lib/Theme';
@@ -31,6 +31,7 @@ import axios from 'axios';
 import Time from '@/lib/Time';
 import { useLiveEvent } from '@/composables/useLiveEvent';
 import { jobsPath } from '@/lib/jobsPath';
+import { iconOrDefault } from '@/lib/iconName';
 
 onMounted(async () => {
   try {
@@ -76,15 +77,85 @@ function refreshApprovals() {
 useLiveEvent('jobs', refreshApprovals);
 // Settings > Appearance saved (here, in another tab, by another admin) : the announcement, the
 // label, the name and the Designer link follow at once
-useLiveEvent('appearance', () => State.loadAppConfig());
+useLiveEvent('appearance', () => {
+  State.loadAppConfig();
+  State.loadHeaderLinks();
+});
 // the designer lock on the Designer link, once a minute (the designer page itself refreshes
 // it every few seconds while it is open) ; and Settings > Appearance once a minute too, so an
 // open tab gets a new announcement and drops one whose end has passed (the server stops
 // sending it), as the label and the name changed meanwhile
 let lockTimer = null;
 let configTimer = null;
+
+// ─── the primary links : centred, after the logo, or their icons only ────────
+// Centred in the bar on a wide screen ; but the logo and its environment label on the left, the
+// own links menu and the buttons on the right change what fits. Measured : centred when they
+// clear the logo and the buttons by 16 px ; else after the logo, closer together when needed ;
+// else only their icons (their names as tooltips) - never under the buttons, never pushing them
+// out.
+const primaryNav = ref(null);
+const navFit = ref('flow'); // 'centred', 'flow', 'tight' or 'compact'
+const FIT_CLASSES = { centred: 'af-nav-centred', tight: 'af-nav-tight', compact: 'af-nav-compact' };
+
+/**
+ * Decides how the primary links sit, from their width with their names.
+ */
+function fitPrimaryNav() {
+  const nav = primaryNav.value;
+  const bar = nav?.closest('.af-header-inner');
+  const utility = bar?.querySelector('.af-nav-utility');
+  // the collapsed menu of a phone : a list, nothing to fit
+  if (!nav || !bar || !utility || window.innerWidth < 768) {
+    navFit.value = 'flow';
+    return;
+  }
+  // their width in each way, measured before the frame is drawn ; the class put back after
+  // (centred or after the logo, the same width)
+  const widthAs = (fit) => {
+    for (const c of Object.values(FIT_CLASSES)) nav.classList.remove(c);
+    if (FIT_CLASSES[fit]) nav.classList.add(FIT_CLASSES[fit]);
+    return nav.getBoundingClientRect().width;
+  };
+  const navWidth = widthAs('flow');
+  const tightWidth = widthAs('tight');
+  widthAs(navFit.value);
+  const box = bar.getBoundingClientRect();
+  const brand = bar.querySelector('.af-env-label') || bar.querySelector('.af-brand');
+  const leftEnd = brand ? brand.getBoundingClientRect().right : box.left;
+  // where the buttons start when nothing pushes them : the bar's end less its padding and them
+  const rightStart = box.right - (parseFloat(getComputedStyle(bar).paddingRight) || 0) - utility.offsetWidth;
+  const middle = box.left + box.width / 2;
+  if (window.innerWidth >= 1200 && middle - navWidth / 2 >= leftEnd + 16 && middle + navWidth / 2 <= rightStart - 16) {
+    navFit.value = 'centred';
+  } else if (leftEnd + 16 + navWidth + 16 <= rightStart) {
+    navFit.value = 'flow';
+  } else if (leftEnd + 16 + tightWidth + 16 <= rightStart) {
+    navFit.value = 'tight';
+  } else {
+    navFit.value = 'compact';
+  }
+}
+const refit = () => nextTick(fitPrimaryNav);
+// what changes the room : the own links, the label, the Designer link, the language, the logo
+watch(() => [store.headerLinks?.length, store.envLabel, store.designerEnabled, locale.value, store.customLogo], refit);
+let navObserver = null;
+onMounted(() => {
+  refit();
+  window.addEventListener('resize', fitPrimaryNav);
+  // the links' own width changing (a label loaded, a font) : measured again
+  if (typeof ResizeObserver !== 'undefined' && primaryNav.value) {
+    navObserver = new ResizeObserver(fitPrimaryNav);
+    navObserver.observe(primaryNav.value);
+  }
+});
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', fitPrimaryNav);
+  navObserver?.disconnect();
+});
 onMounted(() => {
   refreshApprovals();
+  State.loadHeaderLinks();
   State.refreshDesignerLock();
   lockTimer = setInterval(() => State.refreshDesignerLock(), 60000);
   configTimer = setInterval(() => State.loadAppConfig(), 60000);
@@ -248,8 +319,52 @@ const buildMismatch = computed(() => {
   <BsNavBar :currentTheme="currentTheme">
     <!-- primary navigation, next to the logo -->
     <template #start>
-      <ul class="navbar-nav af-nav-primary me-auto">
+      <ul ref="primaryNav" class="navbar-nav af-nav-primary me-auto" :class="FIT_CLASSES[navFit]">
         <BsNavLink v-for="m in menu" :key="m.link" :link="m" />
+        <!-- the instance's own links (Settings > Appearance > Links > Custom), under one menu :
+             five more links would push the buttons on the right out of the header -->
+        <li v-if="store.headerLinks?.length" class="nav-item dropdown">
+          <a
+            class="nav-link icon-link link-body-emphasis dropdown-toggle"
+            href="#"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+            :title="t('nav.links')"
+            @click.prevent
+          >
+            <span class="af-nav-link-icon"><font-awesome-icon icon="link" /></span>
+            <span class="af-nav-text">{{ t('nav.links') }}</span>
+          </a>
+          <ul class="dropdown-menu">
+            <li v-for="l in store.headerLinks" :key="`${l.label}|${l.url}`">
+              <!-- a page of the app in this tab : the router's ; a site, or a new tab : a plain link -->
+              <router-link
+                v-if="l.url.startsWith('/') && !l.newTab"
+                class="dropdown-item d-flex align-items-center"
+                :to="l.url"
+              >
+                <span class="icon"><font-awesome-icon :icon="iconOrDefault(l.icon)" fixed-width /></span>
+                <span class="ms-2">{{ l.label }}</span>
+              </router-link>
+              <a
+                v-else
+                class="dropdown-item d-flex align-items-center"
+                :href="l.url"
+                :target="l.newTab ? '_blank' : '_self'"
+                :rel="l.newTab ? 'noopener noreferrer' : undefined"
+              >
+                <span class="icon"><font-awesome-icon :icon="iconOrDefault(l.icon)" fixed-width /></span>
+                <span class="ms-2">{{ l.label }}</span>
+                <font-awesome-icon
+                  v-if="l.newTab"
+                  icon="arrow-up-right-from-square"
+                  class="ms-auto ps-3 af-menu-meta"
+                />
+              </a>
+            </li>
+          </ul>
+        </li>
       </ul>
     </template>
 
@@ -417,6 +532,8 @@ const buildMismatch = computed(() => {
     gap: 0.55rem;
     font-size: 1.0625rem;
     font-weight: 500;
+    // a label of two words (My jobs) stays on one line
+    white-space: nowrap;
     padding: 0.45rem 0.85rem !important;
     margin: 0 0.9rem;
     border-radius: 6px;
@@ -460,11 +577,23 @@ const buildMismatch = computed(() => {
 
   // on wide screens the primary links sit in the middle of the bar, independent of how
   // wide the logo and the user menu are ; narrower screens keep them next to the logo
+  // (only when they fit : measured, see fitPrimaryNav)
   @media (min-width: 1200px) {
-    .af-nav-primary {
+    .af-nav-primary.af-nav-centred {
       position: absolute;
       left: 50%;
       transform: translateX(-50%);
+    }
+  }
+  // little room : closer together ; no room for their names : their icons only (their names
+  // as tooltips)
+  @media (min-width: 768px) {
+    .af-nav-primary.af-nav-tight .nav-link,
+    .af-nav-primary.af-nav-compact .nav-link {
+      margin: 0 0.15rem;
+    }
+    .af-nav-primary.af-nav-compact .af-nav-text {
+      display: none;
     }
   }
 

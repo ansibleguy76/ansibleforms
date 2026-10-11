@@ -14,6 +14,7 @@ export default {
     always: 'sempre',
   },
   nav: {
+    links: 'Enllaços',
     // the lock on the Designer link while someone holds the designer, in its tooltip
     designerLockedByMe: 'Tens bloquejat el dissenyador',
     designerLockedBy: '{user} té bloquejat el dissenyador',
@@ -704,6 +705,18 @@ export default {
     interface: {
       description: "Com es veu l'aplicació per a tothom per defecte. L'elecció pròpia d'un usuari preval.",
       linksDescription: 'Els enllaços de la capçalera per a tothom, com el del Dissenyador.',
+      tabBuiltin: 'Integrats',
+      tabCustom: 'Personalitzats',
+      addLink: 'Afegir enllaç',
+      noLinks: 'Encara no hi ha enllaços propis.',
+      linkIcon: 'Icona',
+      linkLabel: 'Etiqueta',
+      linkUrl: 'Adreça',
+      linkNewTab: 'Pestanya nova',
+      linkUp: 'Pujar',
+      linkDown: 'Baixar',
+      linksHelp:
+        "Els teus enllaços a la capçalera, després dels integrats, com a màxim {max}. Una adreça és un lloc (https://…) o una pàgina de l'aplicació (/forms/all). La icona és un nom de Font Awesome, com book o life-ring.",
       nameDescription: "El nom de l'aplicació, a la pestanya del navegador i a la pàgina d'inici de sessió.",
       environmentDescription: 'Una etiqueta al costat del logotip que indica quina instància és, com PRODUCCIÓ o TEST.',
       announcementDescription:

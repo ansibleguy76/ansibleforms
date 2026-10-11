@@ -14,6 +14,7 @@ export default {
     always: 'immer',
   },
   nav: {
+    links: 'Links',
     // the lock on the Designer link while someone holds the designer, in its tooltip
     designerLockedByMe: 'Der Designer ist von Ihnen gesperrt',
     designerLockedBy: 'Der Designer ist von {user} gesperrt',
@@ -708,6 +709,18 @@ export default {
     interface: {
       description: 'Wie die App standardmäßig für alle aussieht. Die eigene Wahl eines Benutzers hat Vorrang.',
       linksDescription: 'Die Links der Kopfzeile für alle, z. B. der des Designers.',
+      tabBuiltin: 'Integriert',
+      tabCustom: 'Eigene',
+      addLink: 'Link hinzufügen',
+      noLinks: 'Noch keine eigenen Links.',
+      linkIcon: 'Symbol',
+      linkLabel: 'Bezeichnung',
+      linkUrl: 'Adresse',
+      linkNewTab: 'Neuer Tab',
+      linkUp: 'Nach oben',
+      linkDown: 'Nach unten',
+      linksHelp:
+        'Eigene Links in der Kopfzeile, nach den integrierten, höchstens {max}. Eine Adresse ist eine Website (https://…) oder eine Seite der App (/forms/all). Das Symbol ist ein Font-Awesome-Name, z. B. book oder life-ring.',
       nameDescription: 'Der Name der Anwendung, im Browser-Tab und auf der Anmeldeseite.',
       environmentDescription: 'Ein Label neben dem Logo, das die Instanz kennzeichnet, z. B. PRODUKTION oder TEST.',
       announcementDescription:

@@ -22,7 +22,7 @@ async function resolveDefaults() {
   // default_language column, and the settings page greys that field out to say so.
   // (Before 6.3.0 the database value won and the variable was only a fallback.)
   const languageFromEnv = process.env.DEFAULT_LANGUAGE || null;
-  let result = { language: languageFromEnv || "en", theme: null, color: null, appName: null, envLabel: null, envLabelColor: null, banner: null, formsView: null, timezone: null };
+  let result = { language: languageFromEnv || "en", theme: null, color: null, appName: null, envLabel: null, envLabelColor: null, banner: null, formsView: null, timezone: null, headerLinks: [] };
   try {
     // language, theme and theme color all live on the same single settings row, so
     // they are read in ONE query : this endpoint blocks the SPA from rendering even
@@ -41,6 +41,7 @@ async function resolveDefaults() {
     result.banner = defaults.banner;
     result.formsView = defaults.formsView;
     result.timezone = defaults.timezone;
+    result.headerLinks = defaults.headerLinks;
   } catch (e) {
     logger.debug("Could not read the defaults from database, using env var fallback")
   }
@@ -103,6 +104,13 @@ router.get("/config", async (req, res) => {
     formsView: defaults.formsView,
     timezone: defaults.timezone,
   });
+});
+
+// ─── the header's own links : for who is signed in only (app.js mounts it behind the login) ───
+export const linksRouter = express.Router();
+linksRouter.get("/", async (req, res) => {
+  const defaults = await resolveDefaults();
+  res.json(defaults.headerLinks || []);
 });
 
 export default router;

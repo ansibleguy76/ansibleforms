@@ -14,6 +14,7 @@ export default {
     always: 'toujours',
   },
   nav: {
+    links: 'Liens',
     // the lock on the Designer link while someone holds the designer, in its tooltip
     designerLockedByMe: 'Le concepteur est verrouillé par vous',
     designerLockedBy: 'Le concepteur est verrouillé par {user}',
@@ -708,6 +709,18 @@ export default {
     interface: {
       description: "L'apparence par défaut de l'application pour tous. Le choix propre d'un utilisateur l'emporte.",
       linksDescription: "Les liens de l'en-tête pour tous, comme celui du Designer.",
+      tabBuiltin: 'Intégrés',
+      tabCustom: 'Personnalisés',
+      addLink: 'Ajouter un lien',
+      noLinks: 'Aucun lien personnalisé pour le moment.',
+      linkIcon: 'Icône',
+      linkLabel: 'Libellé',
+      linkUrl: 'Adresse',
+      linkNewTab: 'Nouvel onglet',
+      linkUp: 'Monter',
+      linkDown: 'Descendre',
+      linksHelp:
+        "Vos propres liens dans l'en-tête, après les intégrés, {max} au plus. Une adresse est un site (https://…) ou une page de l'application (/forms/all). L'icône est un nom Font Awesome, comme book ou life-ring.",
       nameDescription: "Le nom de l'application, dans l'onglet du navigateur et sur la page de connexion.",
       environmentDescription:
         "Une étiquette à côté du logo qui indique de quelle instance il s'agit, comme PRODUCTION ou TEST.",

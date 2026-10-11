@@ -41,6 +41,8 @@ export const useAppStore = defineStore('app', () => {
   const envLabelColor = ref(null);
   const banner = ref(null);
   const formsView = ref(null);
+  // the header's own links (Settings > Appearance > Links > Custom), for who is signed in
+  const headerLinks = ref([]);
   // the time zone dates are shown in : 'UTC', 'browser' or an IANA zone (lib/Time.js) ; read
   // here so every page re-renders its dates when the user picks another one
   const timezone = ref(loadTimezone());
@@ -77,6 +79,7 @@ export const useAppStore = defineStore('app', () => {
     envLabelColor,
     banner,
     formsView,
+    headerLinks,
     timezone,
     newVersionAvailable,
     newVersionDismissed,

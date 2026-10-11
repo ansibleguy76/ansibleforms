@@ -39,7 +39,12 @@ const active = computed(() => {
 </script>
 <template>
   <li class="nav-item">
-    <router-link :to="link.link" class="nav-link icon-link" :class="{ active, 'link-body-emphasis': !active }">
+    <router-link
+      :to="link.link"
+      class="nav-link icon-link"
+      :class="{ active, 'link-body-emphasis': !active }"
+      :title="link.title"
+    >
       <span class="af-nav-link-icon" :class="{ 'af-has-indicator': link.indicator }">
         <font-awesome-icon :icon="link.icon" />
         <!-- a small state icon on the link's icon (the designer lock), explained by its tooltip -->
@@ -53,7 +58,7 @@ const active = computed(() => {
           ><font-awesome-icon :icon="link.indicator.icon"
         /></span>
       </span>
-      {{ link.title }}
+      <span class="af-nav-text">{{ link.title }}</span>
       <span v-if="link.badge && link.badge > 0" class="badge rounded-pill bg-danger ms-2 align-middle">{{
         link.badge
       }}</span>

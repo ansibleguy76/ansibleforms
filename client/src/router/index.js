@@ -216,7 +216,12 @@ const routes = [
   // Settings > Appearance : the app's name, the header's links, the label beside the logo, the
   // announcement
   { path: '/settings/name', name: '/settings/name', component: namePage, meta: { permission: 'showSettings' } },
-  { path: '/settings/links', name: '/settings/links', component: linksPage, meta: { permission: 'showSettings' } },
+  {
+    path: '/settings/links/:tab?',
+    name: '/settings/links',
+    component: linksPage,
+    meta: { permission: 'showSettings' },
+  },
   {
     path: '/settings/environment',
     name: '/settings/environment',

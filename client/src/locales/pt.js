@@ -14,6 +14,7 @@ export default {
     always: 'sempre',
   },
   nav: {
+    links: 'Ligações',
     // the lock on the Designer link while someone holds the designer, in its tooltip
     designerLockedByMe: 'O designer está bloqueado por si',
     designerLockedBy: 'O designer está bloqueado por {user}',
@@ -705,6 +706,18 @@ export default {
       description:
         'Como a aplicação se apresenta a todos por predefinição. A escolha própria de um utilizador prevalece.',
       linksDescription: 'As ligações do cabeçalho para todos, como a do Designer.',
+      tabBuiltin: 'Integradas',
+      tabCustom: 'Personalizadas',
+      addLink: 'Adicionar ligação',
+      noLinks: 'Ainda não há ligações próprias.',
+      linkIcon: 'Ícone',
+      linkLabel: 'Etiqueta',
+      linkUrl: 'Endereço',
+      linkNewTab: 'Novo separador',
+      linkUp: 'Subir',
+      linkDown: 'Descer',
+      linksHelp:
+        'As suas ligações no cabeçalho, após as integradas, no máximo {max}. Um endereço é um site (https://…) ou uma página da aplicação (/forms/all). O ícone é um nome do Font Awesome, como book ou life-ring.',
       nameDescription: 'O nome da aplicação, no separador do navegador e na página de início de sessão.',
       environmentDescription: 'Uma etiqueta junto ao logótipo que indica que instância é, como PRODUÇÃO ou TEST.',
       announcementDescription:

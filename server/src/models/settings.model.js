@@ -93,7 +93,66 @@ var Settings=function(settings){
     if(settings.default_timezone !== undefined){
       this.default_timezone = validTimezone(settings.default_timezone);
     }
+    // the header's own links (Settings > Appearance > Links > Custom), kept as JSON ; none : null
+    if(settings.header_links !== undefined){
+      const links = validHeaderLinks(settings.header_links);
+      this.header_links = links.length ? JSON.stringify(links) : null;
+    }
 };
+// the most links the header takes, and the longest label : it has room for a few short ones
+export const MAX_HEADER_LINKS = 5;
+const MAX_LINK_LABEL = 30;
+/**
+ * The header's own links, as Settings > Appearance > Links keeps them : each a label, an http
+ * or https address or a path of the app (/forms/all), a Font Awesome icon's name and whether it
+ * opens in a new tab. A link without a label or a valid address is left out ; any other address
+ * (javascript:, data:, //host) never reaches the header.
+ *
+ * Args:
+ *   value (Array|string|null): the links, or their JSON.
+ *
+ * Returns:
+ *   Array: the valid links, at most MAX_HEADER_LINKS.
+ */
+export function validHeaderLinks(value){
+  let list = value;
+  if(typeof list === 'string'){
+    try { list = JSON.parse(list); } catch { return []; }
+  }
+  if(!Array.isArray(list)) return [];
+  const links = [];
+  for(const item of list){
+    if(!item || typeof item !== 'object') continue;
+    const label = String(item.label ?? '').trim().slice(0, MAX_LINK_LABEL);
+    const url = String(item.url ?? '').trim();
+    if(!label || !isLinkUrl(url)) continue;
+    const icon = /^[a-z0-9-]{1,40}$/.test(String(item.icon ?? '')) ? String(item.icon) : 'link';
+    links.push({ label, url, icon, newTab: !!item.newTab });
+    if(links.length >= MAX_HEADER_LINKS) break;
+  }
+  return links;
+}
+/**
+ * Whether an address may be a header link : http or https with a host, or a path of the app
+ * (one leading slash, not two : //host is another site ; no backslash : browsers read /\\host
+ * as //host).
+ *
+ * Args:
+ *   url (string): the address.
+ *
+ * Returns:
+ *   boolean: true when it may.
+ */
+export function isLinkUrl(url){
+  if(!url || url.length > 500 || /[\s\\]/.test(url)) return false;
+  if(/^\/(?!\/)/.test(url)) return true;
+  try {
+    const u = new URL(url);
+    return (u.protocol === 'http:' || u.protocol === 'https:') && !!u.hostname;
+  } catch {
+    return false;
+  }
+}
 /**
  * A default time zone as Settings > Appearance > Defaults keeps it : UTC, browser (each
  * browser's own zone) or a zone name this server knows ; anything else is none.
@@ -419,7 +478,7 @@ Settings.findUrl = function () {
 // endpoint blocks the SPA from rendering even the login page, so a MySQL outage
 // must cost one connectTimeout, not one per setting.
 Settings.findAppDefaults = function () {
-  return mysql.do("SELECT default_language, default_theme, default_theme_color, app_name, env_label, env_label_show, env_label_color, banner_message, banner_level, banner_until, forms_view, default_timezone FROM AnsibleForms.`settings` LIMIT 1")
+  return mysql.do("SELECT default_language, default_theme, default_theme_color, app_name, env_label, env_label_show, env_label_color, banner_message, banner_level, banner_until, forms_view, default_timezone, header_links FROM AnsibleForms.`settings` LIMIT 1")
     .then((res) => {
       const r = res[0] || {};
       return {
@@ -434,6 +493,8 @@ Settings.findAppDefaults = function () {
         banner: r.banner_message ? { message: r.banner_message, level: r.banner_level || 'info', until: r.banner_until || null } : null,
         formsView: r.forms_view || null,
         timezone: r.default_timezone || null,
+        // only for who is signed in (GET /api/v2/app/links), never the public /config
+        headerLinks: validHeaderLinks(r.header_links),
       };
     })
 }

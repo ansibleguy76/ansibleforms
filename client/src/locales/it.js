@@ -14,6 +14,7 @@ export default {
     always: 'sempre',
   },
   nav: {
+    links: 'Collegamenti',
     // the lock on the Designer link while someone holds the designer, in its tooltip
     designerLockedByMe: 'Il designer è bloccato da te',
     designerLockedBy: 'Il designer è bloccato da {user}',
@@ -704,6 +705,18 @@ export default {
     interface: {
       description: "L'aspetto predefinito dell'app per tutti. La scelta di un utente prevale.",
       linksDescription: "I collegamenti dell'intestazione per tutti, come quello del Designer.",
+      tabBuiltin: 'Integrati',
+      tabCustom: 'Personalizzati',
+      addLink: 'Aggiungi collegamento',
+      noLinks: 'Nessun collegamento personalizzato.',
+      linkIcon: 'Icona',
+      linkLabel: 'Etichetta',
+      linkUrl: 'Indirizzo',
+      linkNewTab: 'Nuova scheda',
+      linkUp: 'Su',
+      linkDown: 'Giù',
+      linksHelp:
+        "I tuoi collegamenti nell'intestazione, dopo quelli integrati, al massimo {max}. Un indirizzo è un sito (https://…) o una pagina dell'app (/forms/all). L'icona è un nome Font Awesome, come book o life-ring.",
       nameDescription: "Il nome dell'applicazione, nella scheda del browser e nella pagina di accesso.",
       environmentDescription:
         "Un'etichetta accanto al logo che indica di quale istanza si tratta, come PRODUZIONE o TEST.",
