@@ -203,7 +203,7 @@ const routes = [
   // Settings > Appearance : the website icon, and the theme and language by default
   { path: '/settings/icon', name: '/settings/icon', component: favicon, meta: { permission: 'showSettings' } },
   {
-    path: '/settings/interface',
+    path: '/settings/interface/:tab?',
     name: '/settings/interface',
     component: interfacePage,
     meta: { permission: 'showSettings' },

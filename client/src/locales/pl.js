@@ -696,6 +696,7 @@ export default {
     },
     // Settings > Appearance > Interface
     interface: {
+      tabDefault: 'Domyślne',
       description:
         'Domyślny wygląd aplikacji dla wszystkich: motyw i jego kolor, język oraz to, czy projektant jest widoczny. Własny wybór użytkownika ma pierwszeństwo.',
     },

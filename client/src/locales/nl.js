@@ -696,6 +696,7 @@ export default {
     },
     // Settings > Appearance > Interface
     interface: {
+      tabDefault: 'Standaard',
       description:
         'Hoe de app er standaard voor iedereen uitziet: het thema en de kleur, de taal en of de designer zichtbaar is. De eigen keuze van een gebruiker gaat voor.',
     },

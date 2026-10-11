@@ -698,6 +698,7 @@ export default {
     },
     // Settings > Appearance > Interface
     interface: {
+      tabDefault: 'Predefinito',
       description:
         "L'aspetto predefinito dell'app per tutti: il tema e il suo colore, la lingua e se il designer è visibile. La scelta di un utente ha la precedenza.",
     },

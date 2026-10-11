@@ -1,11 +1,13 @@
 <script setup>
 /******************************************************************/
 /*                                                                */
-/*  Settings > Appearance > Interface : how the app looks for     */
-/*  everyone by default - the theme and its colour (in the        */
-/*  database), the language and whether the designer shows        */
-/*  (environment variables, applied without a restart). A user's  */
-/*  own choice (the top bar, the profile) wins over them.         */
+/*  Settings > Appearance > Interface, in tabs (the tab kept in    */
+/*  the address) :                                                */
+/*    Default : how the app looks for everyone by default - the   */
+/*      theme and its colour (in the database), the language and  */
+/*      whether the designer shows (environment variables,        */
+/*      applied without a restart). A user's own choice (the top  */
+/*      bar, the profile) wins over them.                         */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted } from 'vue';
@@ -17,9 +19,20 @@ import Helpers from '@/lib/Helpers';
 import Theme from '@/lib/Theme';
 import { useEnvVars } from '@/composables/useEnvVars';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
+import { useRouteTab } from '@/composables/useRouteTab';
 
 const { t } = useI18n();
 const authenticated = ref(false);
+
+// ─── tabs ─────────────────────────────────────────────────────────────────────
+const tabs = computed(() => [{ key: 'default', label: t('settings.interface.tabDefault'), icon: 'sliders' }]);
+const { activeTab, tabLink } = useRouteTab('default', (key) => tabs.value.some((x) => x.key === key));
+// the title names the tab : Interface › Default, each step a link
+const crumbs = computed(() => {
+  const tab = tabs.value.find((x) => x.key === activeTab.value);
+  const base = [{ title: t('sidebar.interface'), icon: 'palette', to: tabLink('default') }];
+  return tab ? [...base, { title: tab.label, icon: tab.icon, to: tabLink(tab.key) }] : base;
+});
 
 // ─── the theme and its colour : the settings row ──────────────────────────────
 const theme = ref({ default_theme: 'light', default_theme_color: '#008cba' }); // as edited
@@ -114,52 +127,71 @@ onMounted(async () => {
       v-if="authenticated"
       icon="palette"
       :title="t('sidebar.interface')"
+      :crumbs="crumbs"
       :description="t('settings.interface.description')"
     >
+      <template #tabs>
+        <ul class="nav nav-tabs mb-0">
+          <li v-for="tab in tabs" :key="tab.key" class="nav-item">
+            <a
+              class="nav-link"
+              :class="{ active: activeTab === tab.key }"
+              href="#"
+              @click.prevent="activeTab = tab.key"
+            >
+              <FaIcon :icon="tab.icon" class="me-1" />
+              {{ tab.label }}
+            </a>
+          </li>
+        </ul>
+      </template>
       <template #actions>
         <BsButton icon="save" :colorClass="dirty ? 'primary' : 'secondary'" :disabled="!dirty" @click="save()">{{
           t('settings.common.save')
         }}</BsButton>
       </template>
       <template #default>
-        <div v-if="envRestartPending.length" class="alert alert-warning py-2">
-          <FaIcon icon="triangle-exclamation" class="me-2" />
-          {{ t('settings.settingsPage.envRestartPending', { names: envRestartPending.join(', ') }) }}
-        </div>
-        <!-- the theme : no environment variable, kept in the database -->
-        <BsInput
-          class="af-interface-field"
-          :isFloating="false"
-          type="select"
-          icon="palette"
-          v-model="theme.default_theme"
-          :values="themeOptions"
-          valueKey="value"
-          labelKey="label"
-          :label="t('settings.settingsPage.defaultTheme')"
-          :help="t('settings.settingsPage.defaultThemeHelp')"
-        />
-        <div v-if="theme.default_theme === 'color'" class="mt-2 ms-1">
-          <div class="d-flex flex-wrap gap-2">
-            <button
-              v-for="c in colorPalette"
-              :key="c.hex"
-              type="button"
-              class="settings-color-swatch"
-              :style="{ backgroundColor: c.hex }"
-              :class="{ 'settings-color-swatch-active': theme.default_theme_color === c.hex }"
-              :title="c.label"
-              @click="theme.default_theme_color = c.hex"
-            >
-              <FaIcon v-if="theme.default_theme_color === c.hex" icon="check" class="settings-swatch-check" />
-            </button>
+        <!-- Default : the theme, the language and the designer for everyone -->
+        <div v-show="activeTab === 'default'">
+          <div v-if="envRestartPending.length" class="alert alert-warning py-2">
+            <FaIcon icon="triangle-exclamation" class="me-2" />
+            {{ t('settings.settingsPage.envRestartPending', { names: envRestartPending.join(', ') }) }}
           </div>
+          <!-- the theme : no environment variable, kept in the database -->
+          <BsInput
+            class="af-interface-field"
+            :isFloating="false"
+            type="select"
+            icon="palette"
+            v-model="theme.default_theme"
+            :values="themeOptions"
+            valueKey="value"
+            labelKey="label"
+            :label="t('settings.settingsPage.defaultTheme')"
+            :help="t('settings.settingsPage.defaultThemeHelp')"
+          />
+          <div v-if="theme.default_theme === 'color'" class="mt-2 ms-1">
+            <div class="d-flex flex-wrap gap-2">
+              <button
+                v-for="c in colorPalette"
+                :key="c.hex"
+                type="button"
+                class="settings-color-swatch"
+                :style="{ backgroundColor: c.hex }"
+                :class="{ 'settings-color-swatch-active': theme.default_theme_color === c.hex }"
+                :title="c.label"
+                @click="theme.default_theme_color = c.hex"
+              >
+                <FaIcon v-if="theme.default_theme_color === c.hex" icon="check" class="settings-swatch-check" />
+              </button>
+            </div>
+          </div>
+          <!-- the language and the designer : environment variables -->
+          <template v-for="e in envItems" :key="e.name">
+            <div class="mt-4"></div>
+            <AppEnvField v-model="envEdits[e.name]" :e="e" :asSwitch="e.name === 'SHOW_DESIGNER'" />
+          </template>
         </div>
-        <!-- the language and the designer : environment variables -->
-        <template v-for="e in envItems" :key="e.name">
-          <div class="mt-4"></div>
-          <AppEnvField v-model="envEdits[e.name]" :e="e" :asSwitch="e.name === 'SHOW_DESIGNER'" />
-        </template>
       </template>
     </AppSettings>
   </AppSettingsPage>

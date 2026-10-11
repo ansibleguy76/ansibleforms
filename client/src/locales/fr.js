@@ -702,6 +702,7 @@ export default {
     },
     // Settings > Appearance > Interface
     interface: {
+      tabDefault: 'Par défaut',
       description:
         "L'apparence de l'application pour tous par défaut : le thème et sa couleur, la langue et l'affichage du designer. Le choix d'un utilisateur l'emporte.",
     },
