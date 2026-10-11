@@ -50,9 +50,9 @@ const sections = computed(() =>
       // the icon in the browser tab
       title: t('sidebar.sections.appearance'),
       items: [
-        { title: t('sidebar.interface'), icon: 'palette', link: '/settings/interface' },
+        { title: t('sidebar.interface'), icon: 'display', link: '/settings/interface' },
         { title: t('sidebar.logo'), icon: 'image', link: '/settings/logo' },
-        { title: t('sidebar.icon'), icon: 'star', link: '/settings/icon' },
+        { title: t('sidebar.icon'), icon: 'bookmark', link: '/settings/icon' },
       ],
     },
     {

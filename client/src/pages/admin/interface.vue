@@ -43,7 +43,7 @@ const { activeTab, tabLink } = useRouteTab('defaults', (key) => tabs.value.some(
 // the title names the tab : Interface › Default, each step a link
 const crumbs = computed(() => {
   const tab = tabs.value.find((x) => x.key === activeTab.value);
-  const base = [{ title: t('sidebar.interface'), icon: 'palette', to: tabLink('defaults') }];
+  const base = [{ title: t('sidebar.interface'), icon: 'display', to: tabLink('defaults') }];
   return tab ? [...base, { title: tab.label, icon: tab.icon, to: tabLink(tab.key) }] : base;
 });
 
@@ -142,7 +142,7 @@ onMounted(async () => {
   <AppSettingsPage>
     <AppSettings
       v-if="authenticated"
-      icon="palette"
+      icon="display"
       :title="t('sidebar.interface')"
       :crumbs="crumbs"
       :description="t('settings.interface.description')"

@@ -127,7 +127,12 @@ onMounted(async () => {
 </script>
 <template>
   <AppSettingsPage>
-    <AppSettings v-if="authenticated" icon="star" :title="t('sidebar.icon')" :description="t('favicon.description')">
+    <AppSettings
+      v-if="authenticated"
+      icon="bookmark"
+      :title="t('sidebar.icon')"
+      :description="t('favicon.description')"
+    >
       <template #actions>
         <BsButton
           icon="upload"
