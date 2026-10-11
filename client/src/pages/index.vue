@@ -264,14 +264,15 @@ onMounted(async () => {
                 </TransitionGroup>
               </div>
               <div v-else class="table-responsive af-list-frame">
-                <table class="table table-bordered table-hover mb-0">
+                <table v-fit-columns class="table table-bordered table-hover mb-0">
                   <thead>
                     <tr>
                       <!-- the icon column : only when a listed form has an icon or image ; no
                            separator between it and the name, the icon belongs with the name -->
-                      <th v-if="listHasIcons" class="af-icon-cell"></th>
+                      <th v-if="listHasIcons" class="af-icon-cell" data-fit-keep="4rem"></th>
                       <th class="af-name-cell" :class="{ 'af-after-icon': listHasIcons }">{{ t('forms.name') }}</th>
                       <th class="af-desc-cell">{{ t('forms.description') }}</th>
+                      <th class="af-fit-spacer"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -303,6 +304,7 @@ onMounted(async () => {
                       <td class="af-desc-cell" :class="getFormClass(form)" :title="form.description">
                         {{ form.description }}
                       </td>
+                      <td class="af-fit-spacer"></td>
                     </tr>
                   </tbody>
                 </table>
@@ -379,20 +381,17 @@ onMounted(async () => {
   padding-left: 1rem !important;
   padding-right: 0.25rem !important;
 }
-// the description stays on one line : cut off with "..." (the full text is its tooltip) ;
-// max-width 0 lets the cell shrink to the room the table leaves it instead of growing
+// the description stays on one line : cut off with "..." (the full text is its tooltip) ; the
+// widths are v-fit-columns' (directives/fitColumns.js), a spacer after the description
 .af-desc-cell {
-  max-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   padding-left: 1rem !important;
   padding-right: 1.5rem !important; // the same room after the "..." as after the longest name
 }
-// the name column is as wide as the longest name (names never wrap) ; the description
-// takes the rest of the width
+// the name column is as wide as the longest name (names never wrap)
 .af-name-cell {
-  width: 1%;
   white-space: nowrap;
   padding-right: 1.5rem !important; // room between the longest name and the description
 }

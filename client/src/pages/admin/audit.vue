@@ -216,16 +216,17 @@ onMounted(async () => {
              edges, a grey header bar, the pager in a footer bar -->
           <div class="af-table-frame">
             <div class="table-responsive" style="overflow: visible">
-              <table class="table table-sm table-hover mb-0 af-table audit-table">
+              <table v-fit-columns class="table table-sm table-hover mb-0 af-table audit-table">
                 <thead>
                   <tr>
-                    <th style="width: 14rem">{{ t('audit.time') }}</th>
-                    <th style="width: 15rem">{{ t('audit.actor') }}</th>
+                    <th data-fit-keep="14rem">{{ t('audit.time') }}</th>
+                    <th>{{ t('audit.actor') }}</th>
                     <th>{{ t('audit.action') }}</th>
-                    <th style="width: 18rem">{{ t('audit.target') }}</th>
-                    <th style="width: 7rem">{{ t('audit.outcome') }}</th>
-                    <th style="width: 10rem">{{ t('audit.ip') }}</th>
-                    <th style="width: 3rem"></th>
+                    <th>{{ t('audit.target') }}</th>
+                    <th data-fit-keep="7rem">{{ t('audit.outcome') }}</th>
+                    <th data-fit-keep="10rem">{{ t('audit.ip') }}</th>
+                    <th class="af-fit-spacer"></th>
+                    <th data-fit-keep="3rem"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -244,6 +245,7 @@ onMounted(async () => {
                         >
                       </td>
                       <td class="font-monospace small text-muted">{{ r.ip }}</td>
+                      <td class="af-fit-spacer"></td>
                       <td class="text-end">
                         <!-- a plain icon : a button would make the rows with a detail taller -->
                         <a
@@ -256,7 +258,7 @@ onMounted(async () => {
                       </td>
                     </tr>
                     <tr v-if="expanded[r.id] && r.detail">
-                      <td colspan="7" class="bg-body-tertiary">
+                      <td colspan="8" class="bg-body-tertiary">
                         <pre class="mb-0 font-monospace fs-6 audit-detail">{{ JSON.stringify(r.detail, null, 2) }}</pre>
                       </td>
                     </tr>
@@ -295,11 +297,6 @@ onMounted(async () => {
 }
 .audit-row td {
   white-space: nowrap;
-}
-/* the target may be long : it wraps, the other cells stay on one line */
-.audit-row td.audit-target {
-  white-space: normal;
-  overflow-wrap: anywhere;
 }
 .af-audit-toggle {
   padding: 0 0.25rem;

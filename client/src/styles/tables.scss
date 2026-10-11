@@ -306,10 +306,9 @@
 .af-fit .bs-dt-row-actions {
   overflow: visible;
 }
-/* the spacer of a record page's table : no content, no padding ; the room left (the table's
-   classes twice : the first and last cells' padding rules must not reach it) */
-.af-table.af-fit th.af-fit-spacer,
-.af-table.af-fit td.af-fit-spacer {
+/* the spacer of a table (v-fit-columns) : no content, no padding ; the room left */
+table.af-fit th.af-fit-spacer,
+table.af-fit td.af-fit-spacer {
   /* over any table's own cell padding (the jobs list's narrower one) */
   padding: 0 !important;
 }
