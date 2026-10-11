@@ -369,7 +369,6 @@ onMounted(async () => {
           <BsInput
             class="af-interface-wide"
             :isFloating="false"
-            type="textarea"
             icon="bullhorn"
             v-model="theme.banner_message"
             :label="t('settings.interface.banner')"
@@ -417,7 +416,7 @@ onMounted(async () => {
 .af-interface-field :deep(.input-group) {
   max-width: 20rem;
 }
-/* the announcement's message : wider, as a sentence or two */
+/* the announcement's message : wider, a sentence or two on one line */
 .af-interface-wide :deep(.input-group) {
   max-width: 40rem;
 }
