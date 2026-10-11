@@ -748,7 +748,7 @@ export default {
       dateFormat: 'Standard-Datumsformat',
       dateFormatHelp: 'Wie Daten angezeigt werden, für Benutzer ohne eigene Wahl.',
       envLabel: 'Labeltext',
-      envLabelHelp: 'Ein Label neben dem Logo, z. B. PRODUKTION oder TEST. Leer lassen für keines.',
+      envLabelHelp: 'Ein Label neben dem Logo, z. B. PRODUKTION oder TEST.',
       envLabelShow: 'Umgebungslabel anzeigen',
       envLabelShowHelp: 'Ein Umgebungslabel neben dem Logo anzeigen, z. B. Produktion.',
       envLabelPreview: 'Vorschau',
@@ -756,7 +756,7 @@ export default {
       banner: 'Nachricht',
       bannerShow: 'Ankündigung anzeigen',
       bannerShowHelp: 'Eine Ankündigung unter der Kopfzeile für alle anzeigen.',
-      bannerHelp: 'Eine Nachricht unter der Kopfzeile für alle, z. B. ein Wartungsfenster. Leer lassen für keine.',
+      bannerHelp: 'Eine Nachricht unter der Kopfzeile für alle, z. B. ein Wartungsfenster.',
       bannerLevel: 'Typ',
       bannerLevelHelp:
         'Legt Farbe und Symbol der Ankündigung fest: blau für Info, gelb für eine Warnung, rot für Gefahr.',

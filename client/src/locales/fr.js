@@ -749,7 +749,7 @@ export default {
       dateFormat: 'Format de date par défaut',
       dateFormatHelp: 'Comment les dates sont affichées, pour les utilisateurs sans choix propre.',
       envLabel: "Texte de l'étiquette",
-      envLabelHelp: "Une étiquette à côté du logo, comme PRODUCTION ou TEST. Laissez vide pour n'en afficher aucune.",
+      envLabelHelp: 'Une étiquette à côté du logo, comme PRODUCTION ou TEST.',
       envLabelShow: "Afficher l'étiquette d'environnement",
       envLabelShowHelp: "Afficher une étiquette d'environnement à côté du logo, p. ex. Production.",
       envLabelPreview: 'Aperçu',
@@ -757,8 +757,7 @@ export default {
       banner: 'Message',
       bannerShow: "Afficher l'annonce",
       bannerShowHelp: "Afficher une annonce sous l'en-tête pour tous.",
-      bannerHelp:
-        "Un message sous l'en-tête pour tous, comme une fenêtre de maintenance. Laissez vide pour n'en afficher aucun.",
+      bannerHelp: "Un message sous l'en-tête pour tous, comme une fenêtre de maintenance.",
       bannerLevel: 'Type',
       bannerLevelHelp:
         "Définit la couleur et l'icône de l'annonce : bleu pour une info, ambre pour un avertissement, rouge pour un danger.",

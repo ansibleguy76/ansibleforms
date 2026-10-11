@@ -743,7 +743,7 @@ export default {
       dateFormat: 'Formato de fecha predeterminado',
       dateFormatHelp: 'Cómo se leen las fechas, para los usuarios que no eligieron el suyo.',
       envLabel: 'Texto de la etiqueta',
-      envLabelHelp: 'Una etiqueta junto al logotipo, como PRODUCCIÓN o TEST. Déjalo vacío para no mostrar ninguna.',
+      envLabelHelp: 'Una etiqueta junto al logotipo, como PRODUCCIÓN o TEST.',
       envLabelShow: 'Mostrar etiqueta de entorno',
       envLabelShowHelp: 'Mostrar una etiqueta de entorno junto al logotipo, p. ej. Producción.',
       envLabelPreview: 'Vista previa',
@@ -751,8 +751,7 @@ export default {
       banner: 'Mensaje',
       bannerShow: 'Mostrar anuncio',
       bannerShowHelp: 'Mostrar un anuncio bajo la cabecera para todos.',
-      bannerHelp:
-        'Un mensaje bajo la cabecera para todos, como una ventana de mantenimiento. Déjalo vacío para no mostrar ninguno.',
+      bannerHelp: 'Un mensaje bajo la cabecera para todos, como una ventana de mantenimiento.',
       bannerLevel: 'Tipo',
       bannerLevelHelp:
         'Define el color y el icono del anuncio: azul para información, ámbar para una advertencia, rojo para peligro.',

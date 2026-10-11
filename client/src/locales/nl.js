@@ -741,7 +741,7 @@ export default {
       dateFormat: 'Standaard datumnotatie',
       dateFormatHelp: 'Hoe datums worden getoond, voor gebruikers zonder eigen keuze.',
       envLabel: 'Labeltekst',
-      envLabelHelp: 'Een label naast het logo, zoals PRODUCTIE of TEST. Laat leeg voor geen.',
+      envLabelHelp: 'Een label naast het logo, zoals PRODUCTIE of TEST.',
       envLabelShow: 'Omgevingslabel tonen',
       envLabelShowHelp: 'Een omgevingslabel naast het logo tonen, bijv. Productie.',
       envLabelPreview: 'Voorbeeld',
@@ -749,7 +749,7 @@ export default {
       banner: 'Bericht',
       bannerShow: 'Aankondiging tonen',
       bannerShowHelp: 'Een aankondiging onder de kop voor iedereen tonen.',
-      bannerHelp: 'Een bericht onder de kop voor iedereen, zoals een onderhoudsvenster. Laat leeg voor geen.',
+      bannerHelp: 'Een bericht onder de kop voor iedereen, zoals een onderhoudsvenster.',
       bannerLevel: 'Type',
       bannerLevelHelp:
         'Bepaalt de kleur en het pictogram van de aankondiging: blauw voor info, oranje voor een waarschuwing, rood voor gevaar.',

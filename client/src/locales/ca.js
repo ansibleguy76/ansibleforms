@@ -745,7 +745,7 @@ export default {
       dateFormat: 'Format de data predeterminat',
       dateFormatHelp: "Com es llegeixen les dates, per als usuaris que no n'han triat el seu.",
       envLabel: "Text de l'etiqueta",
-      envLabelHelp: 'Una etiqueta al costat del logotip, com PRODUCCIÓ o TEST. Deixa-ho buit per no mostrar-ne cap.',
+      envLabelHelp: 'Una etiqueta al costat del logotip, com PRODUCCIÓ o TEST.',
       envLabelShow: "Mostrar etiqueta d'entorn",
       envLabelShowHelp: "Mostrar una etiqueta d'entorn al costat del logotip, p. ex. Producció.",
       envLabelPreview: 'Previsualització',
@@ -753,8 +753,7 @@ export default {
       banner: 'Missatge',
       bannerShow: "Mostrar l'avís",
       bannerShowHelp: 'Mostrar un avís sota la capçalera per a tothom.',
-      bannerHelp:
-        'Un missatge sota la capçalera per a tothom, com una finestra de manteniment. Deixa-ho buit per no mostrar-ne cap.',
+      bannerHelp: 'Un missatge sota la capçalera per a tothom, com una finestra de manteniment.',
       bannerLevel: 'Tipus',
       bannerLevelHelp:
         "Defineix el color i la icona de l'avís: blau per a informació, ambre per a una advertència, vermell per a perill.",

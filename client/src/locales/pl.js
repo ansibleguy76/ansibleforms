@@ -741,7 +741,7 @@ export default {
       dateFormat: 'Domyślny format daty',
       dateFormatHelp: 'Jak wyświetlane są daty dla użytkowników bez własnego wyboru.',
       envLabel: 'Tekst etykiety',
-      envLabelHelp: 'Etykieta obok logo, np. PRODUKCJA lub TEST. Zostaw puste, aby jej nie pokazywać.',
+      envLabelHelp: 'Etykieta obok logo, np. PRODUKCJA lub TEST.',
       envLabelShow: 'Pokaż etykietę środowiska',
       envLabelShowHelp: 'Pokaż etykietę środowiska obok logo, np. Produkcja.',
       envLabelPreview: 'Podgląd',
@@ -749,7 +749,7 @@ export default {
       banner: 'Wiadomość',
       bannerShow: 'Pokaż ogłoszenie',
       bannerShowHelp: 'Pokaż ogłoszenie pod nagłówkiem dla wszystkich.',
-      bannerHelp: 'Wiadomość pod nagłówkiem dla wszystkich, np. okno serwisowe. Zostaw puste, aby jej nie pokazywać.',
+      bannerHelp: 'Wiadomość pod nagłówkiem dla wszystkich, np. okno serwisowe.',
       bannerLevel: 'Typ',
       bannerLevelHelp:
         'Ustala kolor i ikonę ogłoszenia: niebieski dla informacji, bursztynowy dla ostrzeżenia, czerwony dla zagrożenia.',

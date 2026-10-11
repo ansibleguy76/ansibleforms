@@ -745,7 +745,7 @@ export default {
       dateFormat: 'Formato de data predefinido',
       dateFormatHelp: 'Como as datas são mostradas, para utilizadores sem escolha própria.',
       envLabel: 'Texto da etiqueta',
-      envLabelHelp: 'Uma etiqueta junto ao logótipo, como PRODUÇÃO ou TEST. Deixe vazio para não mostrar nenhuma.',
+      envLabelHelp: 'Uma etiqueta junto ao logótipo, como PRODUÇÃO ou TEST.',
       envLabelShow: 'Mostrar etiqueta de ambiente',
       envLabelShowHelp: 'Mostrar uma etiqueta de ambiente junto ao logótipo, p. ex. Produção.',
       envLabelPreview: 'Pré-visualização',
@@ -753,8 +753,7 @@ export default {
       banner: 'Mensagem',
       bannerShow: 'Mostrar anúncio',
       bannerShowHelp: 'Mostrar um anúncio sob o cabeçalho para todos.',
-      bannerHelp:
-        'Uma mensagem sob o cabeçalho para todos, como uma janela de manutenção. Deixe vazio para não mostrar nenhuma.',
+      bannerHelp: 'Uma mensagem sob o cabeçalho para todos, como uma janela de manutenção.',
       bannerLevel: 'Tipo',
       bannerLevelHelp:
         'Define a cor e o ícone do anúncio: azul para informação, âmbar para um aviso, vermelho para perigo.',
