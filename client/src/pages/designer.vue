@@ -7080,7 +7080,10 @@ onBeforeUnmount(() => {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding-right: 0.5rem;
+  /* room for a field's focus ring, which a scrolling pane would cut at its edges ; pulled back
+     by as much, so the fields stay where they were */
+  padding: 0.25rem 0.5rem 0.25rem 0.25rem;
+  margin-left: -0.25rem;
 }
 /* a form's preview : a bar (what it is, refresh, a new window) over the form page in a frame,
    the editor's height ; as far down as the editor and the file explorer beside it */
