@@ -208,6 +208,10 @@ const saveEnv = async function(req,res){
 // too, for the same reason : PASSWORD_MIN_LENGTH is a number, and it was hidden as a secret.
 const SECRET_ENV_NAME = /_PASSWORD$|_SECRET$|_TOKEN$/;
 const MASK = "*** NOT REVEALED ***";
+// the local admin's first start : not shown on the settings page (see env)
+const BOOTSTRAP_ONLY = new Set(['ADMIN_USERNAME', 'ADMIN_PASSWORD', 'REINIT_ADMIN']);
+// the state an unset secret is in : the page says it instead of the mask
+const SECRET_STATES = { ENCRYPTION_SECRET: 'default', ACCESS_TOKEN_SECRET: 'random' };
 
 // Deprecated since 7 (removed in 8) : the Vault page these served is replaced by the
 // secret stores page (/api/v2/secretstore/:id/check and /mounts). They now answer for the
@@ -264,7 +268,11 @@ const env = async function(req,res){
     help = envSection.items
     const managed = await EnvSettings.readManaged()
     // cleanup a bit (hide passwords and secrets and set default values)
-    var env = help.map(x => {
+    // Not on the page at all : the local admin's first start (ADMIN_USERNAME, ADMIN_PASSWORD and
+    // REINIT_ADMIN create it, or create it again). Read-only there, the password masked and the
+    // username out of date once the account is renamed, they said nothing an admin can use :
+    // the account is the Users page's. Documented still, for docker-compose and kubernetes.
+    var env = help.filter(x => !BOOTSTRAP_ONLY.has(x.name)).map(x => {
       var item={}
       item.name = x.name
       if(process.env[x.name]){
@@ -283,6 +291,12 @@ const env = async function(req,res){
       item.secret = SECRET_ENV_NAME.test(x.name)
       if(item.secret){
         item.value = item.set ? MASK : null
+      }
+      // the two secrets an admin should see the state of, never the value : set, or the
+      // public default (ENCRYPTION_SECRET : stored passwords readable with the source code), or
+      // a random one each start (ACCESS_TOKEN_SECRET : every session ends at a restart)
+      if(SECRET_STATES[x.name]){
+        item.secretState = item.set ? 'set' : SECRET_STATES[x.name]
       }
       // The documentation from help.yaml, which the settings page renders under each
       // variable. It is public by nature - help.yaml ships in the repo and is published

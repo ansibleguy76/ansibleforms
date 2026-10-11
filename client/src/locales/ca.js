@@ -1366,6 +1366,11 @@ export default {
       envOverridden: "Definit a l'entorn, així que no es pot canviar aquí.",
       envSecretUnchanged: 'Deixa-ho en blanc per mantenir el valor actual',
       envRestartRequired: "Els canvis desats tenen efecte després d'un reinici.",
+      secretState_set: 'Definit',
+      secretState_default:
+        'Per defecte (insegur): les contrasenyes desades es poden llegir amb la clau pública per defecte',
+      secretState_random:
+        "Sense definir: un d'aleatori a cada inici, de manera que totes les sessions acaben en reiniciar",
       envRteOnly: "El llegeix un RTE del seu propi entorn: defineix-lo on s'executa el RTE.",
       envRelocates: 'Els fitxers que ja hi ha a la ubicació antiga no es mouen.',
       envRestartPending: 'Desat. Cal un reinici per a: {names}',

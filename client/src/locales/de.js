@@ -1376,6 +1376,10 @@ export default {
       envOverridden: 'In der Umgebung gesetzt und hier nicht änderbar.',
       envSecretUnchanged: 'Leer lassen, um den aktuellen Wert zu behalten',
       envRestartRequired: 'Gespeicherte Änderungen gelten nach einem Neustart.',
+      secretState_set: 'Gesetzt',
+      secretState_default:
+        'Standard (unsicher): gespeicherte Passwörter sind mit dem öffentlichen Standardschlüssel lesbar',
+      secretState_random: 'Nicht gesetzt: bei jedem Start ein zufälliger, daher endet jede Sitzung bei einem Neustart',
       envRteOnly: 'Wird von einem RTE aus seiner eigenen Umgebung gelesen: dort setzen, wo das RTE läuft.',
       envRelocates: 'Bereits am alten Ort gespeicherte Dateien werden nicht verschoben.',
       envRestartPending: 'Gespeichert. Ein Neustart ist nötig für: {names}',

@@ -498,7 +498,16 @@ onMounted(async () => {
                       <span class="input-group-text text-gray-500">
                         <FaIcon :fixedwidth="true" :icon="e.editable === 'refused' ? 'lock' : 'shield-halved'" />
                       </span>
-                      <div class="form-control env-value" :title="e.value ? String(e.value) : e.name">
+                      <!-- a secret whose state matters says it (set, the public default, random
+                           each start), never its value -->
+                      <div
+                        v-if="e.secretState"
+                        class="form-control env-value"
+                        :class="{ 'env-unsafe': e.secretState !== 'set' }"
+                      >
+                        {{ t(`settings.settingsPage.secretState_${e.secretState}`) }}
+                      </div>
+                      <div v-else class="form-control env-value" :title="e.value ? String(e.value) : e.name">
                         {{ e.value === null || e.value === '' ? '—' : e.value }}
                       </div>
                     </div>
@@ -616,6 +625,9 @@ onMounted(async () => {
   font-style: italic;
 }
 .env-restart {
+  color: var(--af-warning-text, var(--bs-warning-text-emphasis));
+}
+.env-unsafe {
   color: var(--af-warning-text, var(--bs-warning-text-emphasis));
 }
 .env-value {

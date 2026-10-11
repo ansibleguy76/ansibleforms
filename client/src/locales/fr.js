@@ -1370,6 +1370,11 @@ export default {
       envOverridden: "Définie dans l'environnement, non modifiable ici.",
       envSecretUnchanged: 'Laisser vide pour conserver la valeur actuelle',
       envRestartRequired: 'Les modifications prennent effet après un redémarrage.',
+      secretState_set: 'Défini',
+      secretState_default:
+        'Par défaut (non sûr) : les mots de passe stockés sont lisibles avec la clé publique par défaut',
+      secretState_random:
+        'Non défini : un aléatoire à chaque démarrage, donc toutes les sessions se terminent au redémarrage',
       envRteOnly: "Lu par un RTE dans son propre environnement : définissez-le là où le RTE s'exécute.",
       envRelocates: "Les fichiers déjà présents à l'ancien emplacement ne sont pas déplacés.",
       envRestartPending: 'Enregistré. Un redémarrage est nécessaire pour : {names}',

@@ -1363,6 +1363,10 @@ export default {
       envOverridden: 'Definido no ambiente, por isso não pode ser alterado aqui.',
       envSecretUnchanged: 'Deixe em branco para manter o valor atual',
       envRestartRequired: 'As alterações guardadas têm efeito após um reinício.',
+      secretState_set: 'Definido',
+      secretState_default:
+        'Predefinido (inseguro): as palavras-passe guardadas podem ser lidas com a chave pública predefinida',
+      secretState_random: 'Não definido: um aleatório a cada arranque, por isso todas as sessões terminam ao reiniciar',
       envRteOnly: 'Lido por um RTE do seu próprio ambiente: defina-o onde o RTE é executado.',
       envRelocates: 'Os ficheiros já guardados na localização antiga não são movidos.',
       envRestartPending: 'Guardado. É necessário reiniciar para: {names}',

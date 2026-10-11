@@ -1357,6 +1357,10 @@ export default {
       envOverridden: "Impostata nell'ambiente, non modificabile qui.",
       envSecretUnchanged: 'Lascia vuoto per mantenere il valore attuale',
       envRestartRequired: 'Le modifiche salvate si applicano dopo un riavvio.',
+      secretState_set: 'Impostato',
+      secretState_default:
+        'Predefinito (non sicuro): le password salvate si possono leggere con la chiave pubblica predefinita',
+      secretState_random: 'Non impostato: uno casuale a ogni avvio, quindi ogni sessione termina al riavvio',
       envRteOnly: "Letto da un RTE dal proprio ambiente: impostalo dove gira l'RTE.",
       envRelocates: 'I file già presenti nella posizione precedente non vengono spostati.',
       envRestartPending: 'Salvato. È necessario un riavvio per: {names}',
