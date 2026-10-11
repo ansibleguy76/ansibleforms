@@ -1278,16 +1278,16 @@ onMounted(async () => {
                       class="text-end af-col-end"
                       @click="j.job_type == 'multistep' ? toggleCollapse(j.id) : openRow(j)"
                     >
-                      <!-- one line, to the right : the number, then a multistep's caret in a slot every
-                           row keeps, so the numbers line up -->
+                      <!-- one line, to the right : a multistep's caret before its number, so every
+                           number ends at the same place -->
                       <span class="d-flex align-items-center justify-content-end">
-                        <span>{{ j.id }}</span>
                         <font-awesome-icon
+                          v-if="j.job_type == 'multistep'"
                           :icon="collapsed[j.id] ? 'angle-down' : 'angle-right'"
                           fixed-width
-                          class="ms-1"
-                          :class="{ invisible: j.job_type != 'multistep' }"
+                          class="me-1"
                         />
+                        <span>{{ j.id }}</span>
                       </span>
                     </td>
                     <td v-else-if="col.key === 'status'" role="button" class="text-start" @click="openRow(j)">
@@ -1386,12 +1386,9 @@ onMounted(async () => {
                   <tr :class="jobBackground(c)">
                     <td class="table-info" role="button" @click="getJob(c.id)"></td>
                     <template v-for="col in visibleColumns" :key="col.key">
-                      <!-- a step's number under its job's, the caret's slot kept -->
+                      <!-- a step's number under its job's -->
                       <td v-if="col.key === 'id'" role="button" class="text-end af-col-end" @click="getJob(c.id)">
-                        <span class="d-flex align-items-center justify-content-end">
-                          <span>{{ c.id }}</span>
-                          <font-awesome-icon icon="angle-right" fixed-width class="ms-1 invisible" />
-                        </span>
+                        {{ c.id }}
                       </td>
                       <td
                         v-else-if="col.key === 'form'"
