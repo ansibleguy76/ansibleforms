@@ -469,6 +469,7 @@ onMounted(async () => {
                   <th>{{ t('settings.common.role') }}</th>
                   <th>{{ t('settings.common.roleGivenBy') }}</th>
                   <th>{{ t('settings.fields.description') }}</th>
+                  <th class="af-fit-spacer"></th>
                 </tr>
               </thead>
               <tbody>
@@ -481,6 +482,7 @@ onMounted(async () => {
                   <td class="af-row-open">{{ r.name }}</td>
                   <td>{{ givenBy(r) }}</td>
                   <td>{{ r.description || '–' }}</td>
+                  <td class="af-fit-spacer"></td>
                 </tr>
               </tbody>
             </table>
@@ -548,6 +550,7 @@ onMounted(async () => {
                   </th>
                   <th>{{ t('settings.fields.name') }}</th>
                   <th>{{ t('settings.fields.description') }}</th>
+                  <th class="af-fit-spacer"></th>
                   <th class="af-group-menu-col"></th>
                 </tr>
               </thead>
@@ -571,6 +574,7 @@ onMounted(async () => {
                   <td class="af-row-open">{{ g.name }}</td>
                   <!-- an en dash when the group says nothing -->
                   <td>{{ g.description || '–' }}</td>
+                  <td class="af-fit-spacer"></td>
                   <td class="bs-dt-row-actions" @click.stop>
                     <div class="dropdown">
                       <a

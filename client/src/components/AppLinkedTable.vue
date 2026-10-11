@@ -81,6 +81,8 @@ function text(col, row) {
           <th v-for="col in columns" :key="col.key" :class="col.class" :data-fit-keep="col.keep ? '' : null">
             {{ col.label }}
           </th>
+          <!-- the room left, after the last column (v-fit-columns) -->
+          <th class="af-fit-spacer"></th>
         </tr>
       </thead>
       <tbody>
@@ -97,6 +99,7 @@ function text(col, row) {
               <template v-else>{{ text(col, row) }}</template>
             </slot>
           </td>
+          <td class="af-fit-spacer"></td>
         </tr>
       </tbody>
     </table>

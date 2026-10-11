@@ -319,6 +319,7 @@ onMounted(async () => {
                 <tr>
                   <th>{{ t('settings.common.role') }}</th>
                   <th>{{ t('settings.fields.description') }}</th>
+                  <th class="af-fit-spacer"></th>
                 </tr>
               </thead>
               <tbody>
@@ -330,6 +331,7 @@ onMounted(async () => {
                 >
                   <td class="af-row-open">{{ r.name }}</td>
                   <td>{{ r.description || '–' }}</td>
+                  <td class="af-fit-spacer"></td>
                 </tr>
               </tbody>
             </table>
@@ -357,6 +359,7 @@ onMounted(async () => {
                   <th>{{ t('settings.fields.username') }}</th>
                   <th>{{ t('settings.fields.description') }}</th>
                   <th>{{ t('settings.fields.email') }}</th>
+                  <th class="af-fit-spacer"></th>
                   <th class="af-group-menu-col"></th>
                 </tr>
               </thead>
@@ -383,6 +386,7 @@ onMounted(async () => {
                   <td class="af-row-open">{{ u.username }}</td>
                   <td>{{ u.description || '–' }}</td>
                   <td>{{ u.email || '–' }}</td>
+                  <td class="af-fit-spacer"></td>
                   <td class="bs-dt-row-actions" @click.stop>
                     <div class="dropdown">
                       <a

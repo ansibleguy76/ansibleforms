@@ -6,7 +6,10 @@
 /*  the widest share what is left fairly and a cell too long for  */
 /*  its column ends in "…", its whole text on hover. A checkbox   */
 /*  or a row menu column keeps its own width. When everything     */
-/*  fits, the last column with content takes the room left.       */
+/*  fits, the spacer column takes the room left : an empty        */
+/*  <th class="af-fit-spacer"> and <td> after the last column     */
+/*  with content (before a row menu) ; a table without one gives  */
+/*  that room to its last column with content.                    */
 /*                                                                */
 /*  Measured again when the table's frame changes width and when  */
 /*  its rows change (a tab's rows loaded, a row removed).         */
@@ -15,6 +18,8 @@
 
 // the columns that keep their own width : a row's checkbox, its menu
 const FIXED = ['bs-dt-select', 'bs-dt-row-actions', 'af-role-remove-col', 'af-group-menu-col'];
+// the air after a column that gives way when everything fits, in px (2rem)
+const AIR = 32;
 
 /**
  * Whether a column keeps its own width : its header asks to (data-fit-keep), or it or its first
@@ -45,6 +50,8 @@ function isFixed(table, index) {
  */
 function isControl(table, index) {
   const th = table.tHead?.rows[0]?.cells[index];
+  // the spacer : no content, it takes the room left (or none)
+  if (th?.classList.contains('af-fit-spacer')) return true;
   const td = table.tBodies[0]?.rows[0]?.cells[index];
   return [th, td].some((cell) => cell && FIXED.some((c) => cell.classList.contains(c)));
 }
@@ -95,7 +102,10 @@ function fit(table) {
   for (const th of ths) th.style.width = '';
   table.style.tableLayout = 'auto';
   table.style.width = 'max-content';
-  const natural = [...ths].map((th) => Math.ceil(th.getBoundingClientRect().width));
+  // a spacer has no width of its own : it only takes the room left
+  const natural = [...ths].map((th) =>
+    th.classList.contains('af-fit-spacer') ? 0 : Math.ceil(th.getBoundingClientRect().width),
+  );
   table.style.width = '100%';
   table.style.tableLayout = 'fixed';
 
@@ -109,12 +119,16 @@ function fit(table) {
   // all fit : each its own width, and the room left to the last column with content (a kept one
   // too : a duration at the far right) ; not to a checkbox or a row menu
   const content = natural.map((_, i) => i).filter((i) => !isControl(table, i));
-  const takesRest = shared ? -1 : content[content.length - 1];
+  const spacer = natural.findIndex((_, i) => ths[i].classList.contains('af-fit-spacer'));
+  const takesRest = shared ? -1 : spacer >= 0 ? spacer : content[content.length - 1];
   natural.forEach((w, i) => {
     if (fixed[i]) ths[i].style.width = i === takesRest ? '' : `${w}px`;
   });
+  // and, when the room allows, a little air after the columns that give way (a form's name)
+  const used = natural.reduce((a, b) => a + b, 0);
+  const air = !shared && used + AIR * flex.length <= frame.clientWidth ? AIR : 0;
   flex.forEach((col, k) => {
-    if (!shared) ths[col].style.width = col === takesRest ? '' : `${natural[col]}px`;
+    if (!shared) ths[col].style.width = col === takesRest ? '' : `${natural[col] + air}px`;
     else ths[col].style.width = `${shared[k]}px`;
   });
 

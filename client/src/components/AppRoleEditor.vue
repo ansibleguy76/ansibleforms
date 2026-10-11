@@ -226,6 +226,7 @@ function removeUser(index) {
               <th>{{ t('settings.settingsPage.name') }}</th>
               <th>{{ t('settings.settingsPage.provider') }}</th>
               <th>{{ t('settings.settingsPage.roleMemberFrom') }}</th>
+              <th class="af-fit-spacer"></th>
               <th class="af-role-remove-col"></th>
             </tr>
           </thead>
@@ -248,6 +249,7 @@ function removeUser(index) {
               <td>{{ usr.provider }}</td>
               <!-- named in the role itself : no group -->
               <td class="text-muted">–</td>
+              <td class="af-fit-spacer"></td>
               <td class="bs-dt-row-actions">
                 <!-- its menu, as the rows of the other tables -->
                 <div v-if="!readOnly" class="dropdown">
@@ -275,6 +277,7 @@ function removeUser(index) {
               <td>{{ m.username }}</td>
               <td>local</td>
               <td>{{ m.group }}</td>
+              <td class="af-fit-spacer"></td>
               <td></td>
             </tr>
           </tbody>
@@ -339,6 +342,7 @@ function removeUser(index) {
               </th>
               <th>{{ t('settings.settingsPage.name') }}</th>
               <th>{{ t('settings.settingsPage.provider') }}</th>
+              <th class="af-fit-spacer"></th>
               <th class="af-role-remove-col"></th>
             </tr>
           </thead>
@@ -359,6 +363,7 @@ function removeUser(index) {
               </td>
               <td>{{ grp.name }}</td>
               <td>{{ grp.provider }}</td>
+              <td class="af-fit-spacer"></td>
               <td class="bs-dt-row-actions">
                 <!-- its menu, as the rows of the other tables -->
                 <div v-if="!readOnly" class="dropdown">
