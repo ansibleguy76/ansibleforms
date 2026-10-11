@@ -151,8 +151,9 @@ const tableItems = computed(() =>
 const columns = computed(() => [
   {
     key: 'name',
-    // a share of the width, so it follows the screen : the description gets the rest
-    width: '30%',
+    // room for a role's name and its Required badge : the description gets the rest (a longer
+    // name is cut, whole in its tooltip)
+    width: '14rem',
     label: t('settings.settingsPage.name'),
     sortable: true,
     filterable: true,
