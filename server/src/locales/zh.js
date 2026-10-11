@@ -111,7 +111,7 @@ export default {
     failedCloneRepository: "克隆仓库失败",
     failedResetRepository: "重置仓库失败",
     failedPullRepository: "拉取仓库失败",
-    failedSyncRepository: "同步仓库失败",
+    failedSyncRepository: "推送仓库失败",
     noFormsRepositories: "未配置表单仓库",
     failedApplyConfigSeed: "应用配置种子失败",
     noConfigSeed: "未配置配置种子（CONFIG_SEED_PATH 为空）",

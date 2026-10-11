@@ -111,7 +111,7 @@ export default {
     failedCloneRepository: "リポジトリのクローンに失敗しました",
     failedResetRepository: "リポジトリのリセットに失敗しました",
     failedPullRepository: "リポジトリの pull に失敗しました",
-    failedSyncRepository: "リポジトリの同期に失敗しました",
+    failedSyncRepository: "リポジトリをプッシュできませんでした",
     noFormsRepositories: "フォームリポジトリが設定されていません",
     failedApplyConfigSeed: "config seed の適用に失敗しました",
     noConfigSeed: "config seed が設定されていません (CONFIG_SEED_PATH が空です)",

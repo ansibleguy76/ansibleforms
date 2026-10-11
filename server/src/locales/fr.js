@@ -111,7 +111,7 @@ export default {
     failedCloneRepository: "Echec du clonage du depot",
     failedResetRepository: "Echec de la reinitialisation du depot",
     failedPullRepository: "Echec du pull du depot",
-    failedSyncRepository: "Échec de la synchronisation du dépôt",
+    failedSyncRepository: "Le push du dépôt a échoué",
     noFormsRepositories: "Aucun dépôt de formulaires configuré",
     failedApplyConfigSeed: "Echec de l'application du seed de configuration",
     noConfigSeed: "Aucun seed de configuration n'est configure (CONFIG_SEED_PATH est vide)",

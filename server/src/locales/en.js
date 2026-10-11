@@ -111,7 +111,7 @@ export default {
     failedCloneRepository: "Failed to clone repository",
     failedResetRepository: "Failed to reset repository",
     failedPullRepository: "Failed to pull repository",
-    failedSyncRepository: "Failed to sync repository",
+    failedSyncRepository: "Failed to push the repository",
     noFormsRepositories: "No forms repositories configured",
     failedApplyConfigSeed: "Failed to apply the config seed",
     noConfigSeed: "No config seed is configured (CONFIG_SEED_PATH is empty)",
