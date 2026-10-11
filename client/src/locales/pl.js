@@ -1624,6 +1624,7 @@ export default {
     visualFieldDetails: 'Pomoc, wartość domyślna, wyjście i wartości',
     visualValuesHelp: 'Lista YAML: jedna wartość w wierszu (- dev) lub obiekty (- name: Rome).',
     visualNotANumber: 'to nie liczba',
+    visualDeleteField: 'Usuń pole',
     visualYamlError: 'Nie można tu pokazać YAML : popraw go w karcie YAML',
     visualNotAList: 'to nie lista',
     visualNotAMap: 'to nie mapa',

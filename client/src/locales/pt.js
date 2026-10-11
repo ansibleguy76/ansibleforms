@@ -1638,6 +1638,7 @@ export default {
     visualFieldDetails: 'Ajuda, valor predefinido, saída e valores',
     visualValuesHelp: 'Uma lista YAML: um valor por linha (- dev), ou objetos (- name: Rome).',
     visualNotANumber: 'não é um número',
+    visualDeleteField: 'Eliminar campo',
     visualYamlError: 'O YAML não pode ser mostrado aqui : corrija-o no separador YAML',
     visualNotAList: 'não é uma lista',
     visualNotAMap: 'não é um mapa',

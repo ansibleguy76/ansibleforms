@@ -617,8 +617,14 @@ function addProp(f, key) {
  *   row (object): the field's row.
  *   index (number): its position.
  */
+// a field deleted after the designer's own confirmation (its modal, below)
+const rowToDelete = ref(null);
 function removeRow(row, index) {
-  if (!confirm(`${t('settings.common.deleteConfirm')} ${row.name || '?'}?`)) return;
+  rowToDelete.value = { name: row.name, index };
+}
+function confirmRemoveRow() {
+  const { index } = rowToDelete.value;
+  rowToDelete.value = null;
   change((d) => removeField(d, index));
 }
 
@@ -1482,6 +1488,19 @@ defineExpose({
         </template>
       </div>
     </template>
+    <!-- Modal - delete field verify -->
+    <BsModal v-if="rowToDelete" @close="rowToDelete = null" icon="trash">
+      <template #title> {{ t('designer.visualDeleteField') }} </template>
+      <template #default>
+        <p class="mt-3 fs-6 user-select-none">
+          {{ t('designer.deleteConfirm') }} <strong>{{ rowToDelete.name || '?' }}</strong
+          >?
+        </p>
+      </template>
+      <template #footer>
+        <BsButton icon="trash" @click="confirmRemoveRow()">{{ t('common.delete') }}</BsButton>
+      </template>
+    </BsModal>
   </div>
 </template>
 <style scoped lang="scss">

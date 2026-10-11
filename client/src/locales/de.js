@@ -1651,6 +1651,7 @@ export default {
     visualFieldDetails: 'Hilfe, Standardwert, Ausgabe und Werte',
     visualValuesHelp: 'Eine YAML-Liste: ein Wert pro Zeile (- dev) oder Objekte (- name: Rome).',
     visualNotANumber: 'keine Zahl',
+    visualDeleteField: 'Feld löschen',
     visualYamlError: 'Das YAML kann hier nicht angezeigt werden : im Tab YAML korrigieren',
     visualNotAList: 'keine Liste',
     visualNotAMap: 'keine Zuordnung',

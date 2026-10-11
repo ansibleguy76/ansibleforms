@@ -1630,6 +1630,7 @@ export default {
     visualFieldDetails: 'Help, standaardwaarde, uitvoer en waarden',
     visualValuesHelp: 'Een YAML-lijst: één waarde per regel (- dev), of objecten (- name: Rome).',
     visualNotANumber: 'geen getal',
+    visualDeleteField: 'Veld verwijderen',
     visualYamlError: 'De YAML kan hier niet worden getoond : corrigeer hem in het tabblad YAML',
     visualNotAList: 'geen lijst',
     visualNotAMap: 'geen map',

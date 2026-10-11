@@ -1611,6 +1611,7 @@ export default {
     visualFieldDetails: 'ヘルプ、既定値、出力、値',
     visualValuesHelp: 'YAML のリスト：1 行に 1 つの値（- dev）、またはオブジェクト（- name: Rome）。',
     visualNotANumber: '数値ではありません',
+    visualDeleteField: 'フィールドを削除',
     visualYamlError: 'ここでは YAML を表示できません：YAML タブで修正してください',
     visualNotAList: 'リストではありません',
     visualNotAMap: 'マップではありません',
