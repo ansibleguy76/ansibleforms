@@ -374,6 +374,7 @@ export default {
     checkConfigSeed: 'Config seed',
     checkSecretStores: 'Magatzems de secrets',
     checkExpressions: 'Expressions del servidor',
+    checkSecrets: 'Secrets',
     checkLdap: 'LDAP',
     checkStorage: 'Emmagatzematge de tasques',
     checkWritable: "Carpetes amb permís d'escriptura",

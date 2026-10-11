@@ -372,6 +372,7 @@ export default {
     checkConfigSeed: 'Config seed',
     checkSecretStores: 'シークレットストア',
     checkExpressions: 'サーバー式',
+    checkSecrets: 'シークレット',
     checkLdap: 'LDAP',
     checkStorage: 'ジョブストレージ',
     checkWritable: '書き込み可能なフォルダー',

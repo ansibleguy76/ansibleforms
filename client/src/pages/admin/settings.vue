@@ -148,7 +148,15 @@ const envGroupOrder = [
     label: () => t('settings.settingsPage.envGroupLogging'),
     icon: 'file-alt',
     prefix: ['LOG_'],
-    except: ['LOG_RETENTION_DAYS'],
+    // the console's colour codes are not shown (OWNED_ELSEWHERE)
+    except: [
+      'LOG_RETENTION_DAYS',
+      'LOG_COLOR_ERROR',
+      'LOG_COLOR_WARN',
+      'LOG_COLOR_NOTICE',
+      'LOG_COLOR_INFO',
+      'LOG_COLOR_DEBUG',
+    ],
   },
 ];
 
@@ -177,6 +185,41 @@ function envInGroup(group, name) {
 // multi-paragraph description; take its first sentence. The split requires a capital
 // after the period, so 'e.g. `https://...`' and 'i.e. /dev/log' are not cut in half.
 // a documented enum ('true, false', '1, 2') becomes a dropdown
+// ─── fields their switch turns off ────────────────────────────────────────────
+/**
+ * A variable's value as the page has it : as edited, else as the server reported it.
+ *
+ * Args:
+ *   name (string): the variable.
+ *
+ * Returns:
+ *   string: the value, '' when none.
+ */
+function envValueOf(name) {
+  if (envEdits.value[name] !== undefined) return String(envEdits.value[name] ?? '');
+  const e = (env.value || []).find((x) => x.name === name);
+  return String(e?.value ?? '');
+}
+const isOn = (name) => ['1', 'true'].includes(envValueOf(name).trim().toLowerCase());
+
+/**
+ * Whether a field does nothing as the page stands : its switch is off - HTTPS's key and
+ * certificate without HTTPS, ytt's settings without ytt, the syslog's without a syslog host.
+ * Greyed out, its value kept, as the announcement's and the environment label's.
+ *
+ * Args:
+ *   e (object): the variable.
+ *
+ * Returns:
+ *   boolean: true when it does nothing now.
+ */
+function envOff(e) {
+  if (e.name === 'HTTPS_KEY' || e.name === 'HTTPS_CERT') return !isOn('HTTPS');
+  if (e.name.startsWith('YTT_')) return !isOn('USE_YTT');
+  if (e.name.startsWith('LOG_SYSLOG_') && e.name !== 'LOG_SYSLOG_HOST') return !envValueOf('LOG_SYSLOG_HOST').trim();
+  return false;
+}
+
 // a documented enum becomes a dropdown ; a yes / no reads so, and still sends its own value
 function envOptions(e) {
   const options = Helpers.envAllowedOptions(e?.allowed);
@@ -222,9 +265,10 @@ function envHelp(e) {
 // The local admin's first start (ADMIN_USERNAME, ADMIN_PASSWORD, REINIT_ADMIN) : the account is
 // the Users page's once it exists. NODE_ENV and ALLOW_ENV_EDIT decide how the process boots and
 // whether this page writes at all (it says so when it does not) : the deployment's.
-// YTT_LIB_DATA_<name> is a prefix, not a variable : documented, nothing to show.
+// YTT_LIB_DATA_<name> is a prefix, not a variable : documented, nothing to show. LOG_COLOR_* are
+// the console's ANSI colour codes : rarely changed, documented.
 const OWNED_ELSEWHERE =
-  /^(VAULT|MCP)_|^RTE_(?!QUEUE_MINUTES$)|^(ENABLE_(MCP|CHAT|SSO)|SSO_AUTO_LOGIN|BASE_URL|AF_ROLE|ANSIBLE_PATH|PROCESS_MAX_BUFFER|DEFAULT_LANGUAGE|SHOW_DESIGNER|ADMIN_USERNAME|ADMIN_PASSWORD|REINIT_ADMIN|NODE_ENV|ALLOW_ENV_EDIT|YTT_LIB_DATA_\{dynamic\})$/;
+  /^(VAULT|MCP|LOG_COLOR)_|^RTE_(?!QUEUE_MINUTES$)|^(ENABLE_(MCP|CHAT|SSO)|SSO_AUTO_LOGIN|BASE_URL|AF_ROLE|ANSIBLE_PATH|PROCESS_MAX_BUFFER|DEFAULT_LANGUAGE|SHOW_DESIGNER|ADMIN_USERNAME|ADMIN_PASSWORD|REINIT_ADMIN|NODE_ENV|ALLOW_ENV_EDIT|YTT_LIB_DATA_\{dynamic\})$/;
 
 const envGroups = computed(() => {
   if (!env.value || !Array.isArray(env.value)) return [];
@@ -503,6 +547,7 @@ onMounted(async () => {
                   :placeholder="e.secret && e.set ? t('settings.settingsPage.envSecretUnchanged') : ''"
                   :label="e.short || e.name"
                   :help="envHelp(e)"
+                  :disabled="envOff(e)"
                   v-model="envEdits[e.name]"
                 />
                 <template v-else>

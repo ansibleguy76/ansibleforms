@@ -340,8 +340,30 @@ describe("health reports problems, not just ok", () => {
     };
     const r = await Health.check();
     assert.equal(statusOf(r, "database"), "error");
-    // every other check still reported (18 : runners and nodes joined in 7, then the database user)
-    assert.equal(r.checks.length, 18);
+    // every other check still reported (19 : runners and nodes joined in 7, then the database user
+    // and the secrets)
+    assert.equal(r.checks.length, 19);
+  });
+
+  test("secrets : the public encryption key or no token key is a warning that names it", async () => {
+    const saved = { def: appConfig.encryptionSecretIsDefault, tok: process.env.ACCESS_TOKEN_SECRET };
+    try {
+      appConfig.encryptionSecretIsDefault = true;
+      process.env.ACCESS_TOKEN_SECRET = "a-stable-secret";
+      let r = await Health.check();
+      assert.equal(statusOf(r, "secrets"), "warning");
+      assert.match(checkOf(r, "secrets").detail.problems.join(" "), /ENCRYPTION_SECRET/);
+      appConfig.encryptionSecretIsDefault = false;
+      r = await Health.check();
+      assert.equal(statusOf(r, "secrets"), "ok");
+      delete process.env.ACCESS_TOKEN_SECRET;
+      r = await Health.check();
+      assert.match(checkOf(r, "secrets").detail.problems.join(" "), /ACCESS_TOKEN_SECRET/);
+    } finally {
+      appConfig.encryptionSecretIsDefault = saved.def;
+      if (saved.tok === undefined) delete process.env.ACCESS_TOKEN_SECRET;
+      else process.env.ACCESS_TOKEN_SECRET = saved.tok;
+    }
   });
 
   // Since 7 jobs run on runners : none at all means no form can run a job
@@ -549,7 +571,7 @@ describe("health reports problems, not just ok", () => {
     // runtime moved to `info` because they have no failing value.
     assert.deepEqual(keys, [
       "backupTooling", "configSeed", "database", "databaseUser", "designerLock", "disk", "expressions",
-      "jobs", "lastBackup", "ldap", "nodes", "repositories", "runners", "scheduler", "schema", "secretStores", "storage", "writable",
+      "jobs", "lastBackup", "ldap", "nodes", "repositories", "runners", "scheduler", "schema", "secretStores", "secrets", "storage", "writable",
     ]);
     // and every info entry is status-free by construction
     assert.ok(r.info.length > 0);

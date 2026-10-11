@@ -368,6 +368,7 @@ export default {
     checkConfigSeed: '配置种子',
     checkSecretStores: '密钥库',
     checkExpressions: '服务器表达式',
+    checkSecrets: '密钥',
     checkLdap: 'LDAP',
     checkStorage: '作业存储',
     checkWritable: '可写文件夹',

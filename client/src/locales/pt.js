@@ -374,6 +374,7 @@ export default {
     checkConfigSeed: 'Config seed',
     checkSecretStores: 'Cofres de segredos',
     checkExpressions: 'Expressões do servidor',
+    checkSecrets: 'Segredos',
     checkLdap: 'LDAP',
     checkStorage: 'Armazenamento de tarefas',
     checkWritable: 'Pastas com permissão de escrita',

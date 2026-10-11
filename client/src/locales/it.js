@@ -375,6 +375,7 @@ export default {
     checkSecretStores: 'Archivi di segreti',
     checkRunners: 'Runner',
     checkExpressions: 'Espressioni server',
+    checkSecrets: 'Segreti',
     checkLdap: 'LDAP',
     checkStorage: 'Archiviazione job',
     checkWritable: 'Cartelle scrivibili',
