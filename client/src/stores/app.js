@@ -1,7 +1,10 @@
 // Utilities
+//
+// pinia and vue only : the bundler keeps its own helpers in this store's chunk, so an import of
+// anything from the vendor chunk here (axios) makes a loop that leaves the page blank - see
+// designerSwitchedOffNow in router/index.js
 import { defineStore, getActivePinia } from 'pinia';
 import { ref } from 'vue';
-import axios from 'axios';
 
 // the user's time zone preference, kept in this browser like the theme ; storage can be
 // unavailable (private mode), then the default applies
@@ -109,32 +112,4 @@ export const useAppStore = defineStore('app', () => {
 export function designerSwitchedOff() {
   if (!getActivePinia()) return false;
   return useAppStore().designerEnabled === false;
-}
-
-// the one read of /api/v2/app/config a route check may wait for, shared by the checks of one load
-let appConfigRead = null;
-
-/**
- * Whether the designer is switched off for the instance, read from the server first when the app
- * has not read it yet (a fresh tab opened on /designer).
- *
- * Returns:
- *   Promise<boolean>: true when switched off.
- */
-export async function designerSwitchedOffNow() {
-  if (!getActivePinia()) return false;
-  const store = useAppStore();
-  if (!store.appConfigLoaded) {
-    appConfigRead =
-      appConfigRead ||
-      axios
-        .get('/api/v2/app/config')
-        .then((res) => {
-          store.designerEnabled = res.data?.designerEnabled !== false;
-          store.appConfigLoaded = true;
-        })
-        .catch(() => {});
-    await appConfigRead;
-  }
-  return store.designerEnabled === false;
 }
