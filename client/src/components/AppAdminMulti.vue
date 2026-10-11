@@ -99,6 +99,7 @@ import { required, helpers, email, sameAs } from '@vuelidate/validators';
 import { useI18n } from 'vue-i18n';
 import BsDataTable from './BsDataTable.vue';
 import getSettings from '@/config/settings';
+import { inSentence } from '@/lib/inSentence';
 
 // INIT
 
@@ -164,6 +165,8 @@ const removeDoubles = props.settings.removeDoubles || false;
 const idKey = props.settings.idKey || 'id';
 const objectType = props.settings.type;
 const objectLabel = computed(() => props.settings.label || '');
+// in a sentence (Add repository, Edit repository) : lowered, but an acronym or a German noun
+const objectLabelInSentence = computed(() => inSentence(objectLabel.value, locale.value));
 const objectLabelPlural = computed(() => props.settings.labelPlural || `${objectLabel.value}s`);
 const objectIcon = computed(() => props.settings.icon);
 const objectDescription = computed(() => props.settings.description || '');
@@ -712,9 +715,9 @@ const title = computed(() => {
     return t('settings.common.changePassword');
   }
   if (action.value == 'new') {
-    return t('settings.common.newItem', { item: objectLabel.value });
+    return t('settings.common.newItem', { item: objectLabelInSentence.value });
   } else if (action.value == 'edit') {
-    return `${t('settings.common.edit')} ${objectLabel.value}`;
+    return `${t('settings.common.edit')} ${objectLabelInSentence.value}`;
   } else {
     return objectLabel.value;
   }
@@ -1386,7 +1389,7 @@ defineExpose({
 </script>
 <template>
   <BsModal v-if="action == 'delete'" size="md" @close="unselectItem" icon="trash">
-    <template #title> {{ t('common.delete') }} {{ objectLabel }} </template>
+    <template #title> {{ t('common.delete') }} {{ objectLabelInSentence }} </template>
     <template #default>
       <p class="mb-0 fs-6 user-select-none">
         {{ t('settings.common.deleteConfirm') }} <strong>{{ deleteLabel }}</strong
@@ -1484,14 +1487,16 @@ defineExpose({
     <!-- the page's own tabs (the SSO page : General, Providers), above the card -->
     <template v-if="$slots.tabs" #tabs><slot name="tabs"></slot></template>
     <!-- action buttons go BELOW the card, never in the header : see AppSettings -->
-    <template v-if="!noCreate || defaultPicker" #actions>
+    <template v-if="!noCreate || defaultPicker || $slots.actionsBefore" #actions>
+      <!-- the page's own actions, before the defaults and Add (the repositories' Pull all) -->
+      <slot name="actionsBefore"></slot>
       <!-- the defaults : a dialog to choose them -->
       <BsButton v-if="defaultPicker" cssClass="text-nowrap" icon="pencil" @click="editDefaults()">{{
         defaultPicker.editLabel
       }}</BsButton>
       <!-- Add : the page's main action, last on the right -->
       <BsButton v-if="!noCreate" icon="plus" @click="newItem()">{{
-        t('settings.common.addItem', { item: objectLabel })
+        t('settings.common.addItem', { item: objectLabelInSentence })
       }}</BsButton>
     </template>
   </AppSettings>

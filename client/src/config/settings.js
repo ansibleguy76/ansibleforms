@@ -1066,7 +1066,7 @@ export default function getSettings(t) {
           columnLabel: t('settings.schedules.stepSchedule'),
           step: 'when',
           icon: 'stopwatch',
-          label: t('settings.fields.cronSchedule'),
+          label: t('settings.fields.schedule'),
           type: 'cron',
           // a recurring schedule needs its cron ; hidden (one time run), it is not checked
           required: true,

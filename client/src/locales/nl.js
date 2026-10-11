@@ -560,6 +560,15 @@ export default {
       presetMonthly: 'Maandelijks',
     },
     common: {
+      // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
+      datePlaceholders: {
+        date: 'JJJJ-MM-DD',
+        datetime: 'JJJJ-MM-DD UU:mm',
+        time: 'UU:mm',
+        month: 'JJJJ-MM',
+        year: 'JJJJ',
+        week: 'JJJJ-W##',
+      },
       changePassword: 'Wachtwoord wijzigen',
       repeatPassword: 'Herhaal wachtwoord',
       passwordsDiffer: 'De twee wachtwoorden verschillen',
@@ -632,7 +641,7 @@ export default {
       enable: 'Inschakelen',
       certificate: 'Certificaat',
       caBundle: 'CA-bundel',
-      cronSchedule: 'Cron schema',
+      schedule: 'Schema',
       cronRegexDescription: 'Moet een geldig cron schema zijn',
       extraVars: 'Extra vars (YAML)',
       lastRun: 'Laatste uitvoering',
@@ -864,6 +873,9 @@ export default {
       notFound: "Er is geen repository met de naam '{name}'.",
       ownUser: 'Het heeft nog een eigen gebruiker ({user}): kies een referentie om die te vervangen.',
       pull: 'Pull',
+      pullAll: 'Alles pullen',
+      pullAllDone: '{n} repository gepulld | {n} repository’s gepulld',
+      pullAllFailed: 'Pull mislukt voor: {names}',
       push: 'Push',
       pushHint:
         'Alleen een repository waarin de designer schrijft (formulieren, instellingen, playbooks, workflows) wordt teruggepusht.',

@@ -559,6 +559,15 @@ export default {
       presetMonthly: 'Mensual',
     },
     common: {
+      // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
+      datePlaceholders: {
+        date: 'AAAA-MM-DD',
+        datetime: 'AAAA-MM-DD HH:mm',
+        time: 'HH:mm',
+        month: 'AAAA-MM',
+        year: 'AAAA',
+        week: 'AAAA-S##',
+      },
       changePassword: 'Cambiar contraseña',
       repeatPassword: 'Repetir contraseña',
       passwordsDiffer: 'Las dos contraseñas no coinciden',
@@ -631,7 +640,7 @@ export default {
       enable: 'Habilitar',
       certificate: 'Certificado',
       caBundle: 'Paquete CA',
-      cronSchedule: 'Programación Cron',
+      schedule: 'Programación',
       cronRegexDescription: 'Debe ser una programación cron válida',
       extraVars: 'Variables extra (YAML)',
       lastRun: 'Última ejecución',
@@ -868,6 +877,9 @@ export default {
       notFound: "No hay ningún repositorio llamado '{name}'.",
       ownUser: 'Todavía tiene su propio usuario ({user}): elige una credencial para reemplazarlo.',
       pull: 'Pull',
+      pullAll: 'Pull de todos',
+      pullAllDone: '{n} repositorio actualizado | {n} repositorios actualizados',
+      pullAllFailed: 'Falló el pull de: {names}',
       push: 'Push',
       pushHint:
         'Solo se envía de vuelta un repositorio en el que escribe el diseñador (formularios, ajustes, playbooks, workflows).',
