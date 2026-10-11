@@ -705,7 +705,7 @@ export default {
       tabBuiltin: 'Built-in',
       tabCustom: 'Custom',
       addLink: 'Add link',
-      noLinks: 'No links of your own yet.',
+      noLinks: 'No custom links yet.',
       linkIcon: 'Icon',
       linkLabel: 'Label',
       linkUrl: 'Address',

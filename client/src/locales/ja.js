@@ -709,7 +709,7 @@ export default {
       tabBuiltin: '組み込み',
       tabCustom: 'カスタム',
       addLink: 'リンクを追加',
-      noLinks: '独自のリンクはまだありません。',
+      noLinks: 'カスタムリンクはまだありません。',
       linkIcon: 'アイコン',
       linkLabel: 'ラベル',
       linkUrl: 'アドレス',

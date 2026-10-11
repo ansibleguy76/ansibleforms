@@ -711,7 +711,7 @@ export default {
       tabBuiltin: 'Integrati',
       tabCustom: 'Personalizzati',
       addLink: 'Aggiungi collegamento',
-      noLinks: 'Nessun collegamento personalizzato.',
+      noLinks: 'Ancora nessun collegamento personalizzato.',
       linkIcon: 'Icona',
       linkLabel: 'Etichetta',
       linkUrl: 'Indirizzo',

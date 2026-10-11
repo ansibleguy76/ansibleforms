@@ -709,7 +709,7 @@ export default {
       tabBuiltin: 'Ingebouwd',
       tabCustom: 'Eigen',
       addLink: 'Link toevoegen',
-      noLinks: 'Nog geen eigen links.',
+      noLinks: 'Nog geen aangepaste links.',
       linkIcon: 'Pictogram',
       linkLabel: 'Label',
       linkUrl: 'Adres',

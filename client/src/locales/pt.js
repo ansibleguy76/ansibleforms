@@ -712,7 +712,7 @@ export default {
       tabBuiltin: 'Integradas',
       tabCustom: 'Personalizadas',
       addLink: 'Adicionar ligação',
-      noLinks: 'Ainda não há ligações próprias.',
+      noLinks: 'Ainda não há ligações personalizadas.',
       linkIcon: 'Ícone',
       linkLabel: 'Etiqueta',
       linkUrl: 'Endereço',
