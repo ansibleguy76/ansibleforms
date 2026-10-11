@@ -1499,7 +1499,6 @@ export default {
     previewNotRun: "Questa è un'anteprima : il modulo non è stato eseguito",
     visual: 'Visuale',
     visualOptions: 'Opzioni',
-    visualForm: 'Modulo',
     visualCategories: 'Categorie',
     visualRoles: 'Ruoli',
     visualIcon: 'Icona',

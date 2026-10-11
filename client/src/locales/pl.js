@@ -1495,7 +1495,6 @@ export default {
     previewNotRun: 'To jest podgląd : formularz nie został uruchomiony',
     visual: 'Wizualny',
     visualOptions: 'Opcje',
-    visualForm: 'Formularz',
     visualCategories: 'Kategorie',
     visualRoles: 'Role',
     visualIcon: 'Ikona',

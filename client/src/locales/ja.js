@@ -1481,7 +1481,6 @@ export default {
     previewNotRun: 'これはプレビューです：フォームは実行されていません',
     visual: 'ビジュアル',
     visualOptions: 'オプション',
-    visualForm: 'フォーム',
     visualCategories: 'カテゴリ',
     visualRoles: 'ロール',
     visualIcon: 'アイコン',

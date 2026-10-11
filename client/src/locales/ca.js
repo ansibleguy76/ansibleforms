@@ -1509,7 +1509,6 @@ export default {
     previewNotRun: "Això és una previsualització : el formulari no s'ha executat",
     visual: 'Visual',
     visualOptions: 'Opcions',
-    visualForm: 'Formulari',
     visualCategories: 'Categories',
     visualRoles: 'Rols',
     visualIcon: 'Icona',

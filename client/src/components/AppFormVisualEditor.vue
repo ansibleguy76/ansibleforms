@@ -418,7 +418,6 @@ defineExpose({
     </div>
     <template v-else-if="form">
       <!-- ─── Form : edited in place ─── -->
-      <h6 class="fw-bold mb-3">{{ t('designer.visualForm') }}</h6>
       <div class="af-form-grid">
         <div>
           <label class="form-label fw-bold">{{ t('designer.formName') }}</label>

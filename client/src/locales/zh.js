@@ -1445,7 +1445,6 @@ export default {
     previewNotRun: '这是预览：表单未执行',
     visual: '可视化',
     visualOptions: '选项',
-    visualForm: '表单',
     visualCategories: '类别',
     visualRoles: '角色',
     visualIcon: '图标',

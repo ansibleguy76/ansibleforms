@@ -1508,7 +1508,6 @@ export default {
     previewNotRun: 'Isto é uma pré-visualização : o formulário não foi executado',
     visual: 'Visual',
     visualOptions: 'Opções',
-    visualForm: 'Formulário',
     visualCategories: 'Categorias',
     visualRoles: 'Funções',
     visualIcon: 'Ícone',

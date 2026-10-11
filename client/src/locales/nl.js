@@ -1500,7 +1500,6 @@ export default {
     previewNotRun: 'Dit is een voorbeeld : het formulier is niet uitgevoerd',
     visual: 'Visueel',
     visualOptions: 'Opties',
-    visualForm: 'Formulier',
     visualCategories: 'Categorieën',
     visualRoles: 'Rollen',
     visualIcon: 'Pictogram',

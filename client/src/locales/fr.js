@@ -1514,7 +1514,6 @@ export default {
     previewNotRun: "Ceci est un aperçu : le formulaire n'a pas été lancé",
     visual: 'Visuel',
     visualOptions: 'Options',
-    visualForm: 'Formulaire',
     visualCategories: 'Catégories',
     visualRoles: 'Rôles',
     visualIcon: 'Icône',

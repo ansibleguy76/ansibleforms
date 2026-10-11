@@ -1521,7 +1521,6 @@ export default {
     previewNotRun: 'Dies ist eine Vorschau : das Formular wurde nicht ausgeführt',
     visual: 'Visuell',
     visualOptions: 'Optionen',
-    visualForm: 'Formular',
     visualCategories: 'Kategorien',
     visualRoles: 'Rollen',
     visualIcon: 'Symbol',
