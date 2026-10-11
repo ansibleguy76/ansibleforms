@@ -6,8 +6,7 @@
 /*  the widest share what is left fairly and a cell too long for  */
 /*  its column ends in "…", its whole text on hover. A checkbox   */
 /*  or a row menu column keeps its own width. When everything     */
-/*  fits, the column whose header has data-fit-grow (a job's      */
-/*  form) takes the room left, else the last one.                 */
+/*  fits, the last column with content takes the room left.       */
 /*                                                                */
 /*  Measured again when the table's frame changes width and when  */
 /*  its rows change (a tab's rows loaded, a row removed).         */
@@ -29,9 +28,23 @@ const FIXED = ['bs-dt-select', 'bs-dt-row-actions', 'af-role-remove-col', 'af-gr
  *   boolean: true for a fixed column.
  */
 function isFixed(table, index) {
-  const th = table.tHead?.rows[0]?.cells[index];
   // a column asking to keep its width (a date, a status : never cut)
-  if (th?.hasAttribute('data-fit-keep')) return true;
+  if (table.tHead?.rows[0]?.cells[index]?.hasAttribute('data-fit-keep')) return true;
+  return isControl(table, index);
+}
+
+/**
+ * Whether a column is a row's checkbox or its menu : its header or its first row's cell says so.
+ *
+ * Args:
+ *   table (HTMLTableElement): the table.
+ *   index (number): the column.
+ *
+ * Returns:
+ *   boolean: true for a checkbox or a menu column.
+ */
+function isControl(table, index) {
+  const th = table.tHead?.rows[0]?.cells[index];
   const td = table.tBodies[0]?.rows[0]?.cells[index];
   return [th, td].some((cell) => cell && FIXED.some((c) => cell.classList.contains(c)));
 }
@@ -88,19 +101,20 @@ function fit(table) {
 
   const fixed = natural.map((_, i) => isFixed(table, i));
   const flex = natural.map((_, i) => i).filter((i) => !fixed[i]);
-  // the column that takes the room left when everything fits : the one asking, else the last
-  const grow = flex.find((i) => ths[i].hasAttribute('data-fit-grow')) ?? flex[flex.length - 1];
   const room = frame.clientWidth - natural.reduce((sum, w, i) => sum + (fixed[i] ? w : 0), 0);
   const shared = shareWidths(
     flex.map((i) => natural[i]),
     room,
   );
+  // all fit : each its own width, and the room left to the last column with content (a kept one
+  // too : a duration at the far right) ; not to a checkbox or a row menu
+  const content = natural.map((_, i) => i).filter((i) => !isControl(table, i));
+  const takesRest = shared ? -1 : content[content.length - 1];
   natural.forEach((w, i) => {
-    if (fixed[i]) ths[i].style.width = `${w}px`;
+    if (fixed[i]) ths[i].style.width = i === takesRest ? '' : `${w}px`;
   });
   flex.forEach((col, k) => {
-    // all fit : each its own width, the growing one the rest
-    if (!shared) ths[col].style.width = col === grow ? '' : `${natural[col]}px`;
+    if (!shared) ths[col].style.width = col === takesRest ? '' : `${natural[col]}px`;
     else ths[col].style.width = `${shared[k]}px`;
   });
 

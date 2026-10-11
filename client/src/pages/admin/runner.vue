@@ -172,7 +172,7 @@ const jobs = ref([]);
 const runnerJobs = computed(() => jobs.value.filter((j) => !j.parent_id));
 const jobColumns = computed(() => [
   { key: 'id', label: t('settings.linked.job'), keep: true, class: 'text-end', value: (j) => `#${j.id}` },
-  { key: 'form', label: t('settings.fields.form'), grow: true },
+  { key: 'form', label: t('settings.fields.form') },
   { key: 'status', label: t('settings.linked.status'), keep: true },
   // its times as the jobs page shows them (the server sends them in its own zone)
   { key: 'start', label: t('jobs.startTime'), keep: true, value: (j) => j.start && Time.format(j.start) },

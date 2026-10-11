@@ -7,9 +7,8 @@
 /*  none linked, a short note says so.                            */
 /*                                                                */
 /*  columns: [{ key, label, value?(row), html?(row), class?,      */
-/*    grow?, keep? }] - grow : the column that takes the room     */
-/*    left ; keep : never cut (a date, a status), the others give */
-/*    way                                                         */
+/*    keep? }] - keep : never cut (a date, a status), the others  */
+/*    give way                                                    */
 /*    value - the cell's text (default row[key]) ; html - its     */
 /*    html instead, escaped by the caller (a cron and its hover)  */
 /*    a cell slot #cell-<key>="{ row }" draws a cell itself (a    */
@@ -79,13 +78,7 @@ function text(col, row) {
     <table v-fit-columns class="table af-table" @mouseover="onCellHover">
       <thead>
         <tr>
-          <th
-            v-for="col in columns"
-            :key="col.key"
-            :class="col.class"
-            :data-fit-grow="col.grow ? '' : null"
-            :data-fit-keep="col.keep ? '' : null"
-          >
+          <th v-for="col in columns" :key="col.key" :class="col.class" :data-fit-keep="col.keep ? '' : null">
             {{ col.label }}
           </th>
         </tr>
