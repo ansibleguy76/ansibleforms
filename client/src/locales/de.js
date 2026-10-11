@@ -585,6 +585,8 @@ export default {
       addItem: '{item} hinzufügen',
       edit: 'Bearbeiten',
       save: 'Speichern',
+      unsavedSaveLeave: 'Speichern und verlassen',
+      unsavedSaveQuestion: 'Du hast ungespeicherte Änderungen. Vor dem Verlassen speichern?',
       unsavedLeave: 'Ohne Speichern verlassen',
       unsavedTitle: 'Ungespeicherte Änderungen',
       unsavedChanges: 'Sie haben ungespeicherte Änderungen. Diese Seite verlassen und sie verwerfen?',

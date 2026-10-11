@@ -40,7 +40,11 @@ function labelOf(row) {
   };
 }
 const { edit: look, dirty, load, save } = useSettingsRow(labelOf);
-useUnsavedGuard(dirty, () => t('settings.common.unsavedChanges'));
+useUnsavedGuard(
+  dirty,
+  () => t('settings.common.unsavedChanges'),
+  () => save(`${title.value} ${t('settings.common.isUpdated')}`),
+);
 
 // the header's logo, as the header picks it (BsNavBar) : the uploaded one, else the theme's own
 // (the default upload is the light theme's, so it never stands in for the dark and colour

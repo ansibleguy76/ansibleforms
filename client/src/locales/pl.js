@@ -578,6 +578,8 @@ export default {
       addItem: 'Dodaj {item}',
       edit: 'Edytuj',
       save: 'Zapisz',
+      unsavedSaveLeave: 'Zapisz i wyjdź',
+      unsavedSaveQuestion: 'Masz niezapisane zmiany. Zapisać je przed wyjściem?',
       unsavedLeave: 'Wyjdź bez zapisywania',
       unsavedTitle: 'Niezapisane zmiany',
       unsavedChanges: 'Masz niezapisane zmiany. Opuścić tę stronę i je utracić?',

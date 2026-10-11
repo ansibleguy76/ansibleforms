@@ -584,6 +584,8 @@ export default {
       addItem: 'Ajouter {item}',
       edit: 'Modifier',
       save: 'Enregistrer',
+      unsavedSaveLeave: 'Enregistrer et quitter',
+      unsavedSaveQuestion: 'Vous avez des modifications non enregistrées. Les enregistrer avant de quitter ?',
       unsavedLeave: 'Quitter sans enregistrer',
       unsavedTitle: 'Modifications non enregistrées',
       unsavedChanges: 'Vous avez des modifications non enregistrées. Quitter cette page et les perdre ?',

@@ -77,7 +77,11 @@ const dirty = computed(
   () => !!stored.value && EDITED.some((k) => String(edit.value[k] ?? '') !== String(editable(stored.value)[k] ?? '')),
 );
 // leaving with the stored job changed and unsaved asks first
-useUnsavedGuard(dirty, () => t('settings.common.unsavedChanges'));
+useUnsavedGuard(
+  dirty,
+  () => t('settings.common.unsavedChanges'),
+  () => save(),
+);
 
 // the values typed are YAML : a mistake is said under the editor, and nothing is saved
 const valuesError = computed(() => {

@@ -581,6 +581,8 @@ export default {
       addItem: 'Aggiungi {item}',
       edit: 'Modifica',
       save: 'Salva',
+      unsavedSaveLeave: 'Salva ed esci',
+      unsavedSaveQuestion: 'Hai modifiche non salvate. Salvarle prima di uscire?',
       unsavedLeave: 'Esci senza salvare',
       unsavedTitle: 'Modifiche non salvate',
       unsavedChanges: 'Ci sono modifiche non salvate. Uscire da questa pagina e perderle?',

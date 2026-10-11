@@ -571,6 +571,8 @@ export default {
       addItem: '添加{item}',
       edit: '编辑',
       save: '保存',
+      unsavedSaveLeave: '保存并离开',
+      unsavedSaveQuestion: '有未保存的更改。离开前保存吗？',
       unsavedLeave: '不保存并离开',
       unsavedTitle: '未保存的更改',
       unsavedChanges: '您有未保存的更改。确定离开此页面并放弃这些更改？',

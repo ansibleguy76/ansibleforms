@@ -579,6 +579,8 @@ export default {
       addItem: '{item} toevoegen',
       edit: 'Bewerken',
       save: 'Opslaan',
+      unsavedSaveLeave: 'Opslaan en verlaten',
+      unsavedSaveQuestion: 'Je hebt niet-opgeslagen wijzigingen. Opslaan voordat je weggaat?',
       unsavedLeave: 'Verlaten zonder opslaan',
       unsavedTitle: 'Niet-opgeslagen wijzigingen',
       unsavedChanges: 'Er zijn niet-opgeslagen wijzigingen. Deze pagina verlaten en ze verliezen?',

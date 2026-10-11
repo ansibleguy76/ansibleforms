@@ -580,6 +580,8 @@ export default {
       addItem: 'Afegeix {item}',
       edit: 'Edita',
       save: 'Desa',
+      unsavedSaveLeave: 'Desar i sortir',
+      unsavedSaveQuestion: 'Tens canvis sense desar. Els vols desar abans de sortir?',
       unsavedLeave: 'Surt sense desar',
       unsavedTitle: 'Canvis sense desar',
       unsavedChanges: "Tens canvis sense desar. Vols sortir d'aquesta pàgina i perdre'ls?",

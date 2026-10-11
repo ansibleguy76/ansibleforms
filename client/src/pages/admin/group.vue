@@ -48,7 +48,11 @@ const dirty = computed(
     ['name', 'description'].some((k) => (edit.value[k] || '') !== (group.value[k] || '')),
 );
 // leaving with the details changed and unsaved asks first
-useUnsavedGuard(dirty, () => t('settings.common.unsavedChanges'));
+useUnsavedGuard(
+  dirty,
+  () => t('settings.common.unsavedChanges'),
+  () => saveDetails(),
+);
 
 // the users in the group (as their first group or another one), and the others
 const members = computed(() => users.value.filter((u) => (u.group_ids || []).includes(groupIdNumber.value)));

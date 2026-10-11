@@ -578,6 +578,8 @@ export default {
       addItem: 'Añadir {item}',
       edit: 'Editar',
       save: 'Guardar',
+      unsavedSaveLeave: 'Guardar y salir',
+      unsavedSaveQuestion: 'Tienes cambios sin guardar. ¿Guardarlos antes de salir?',
       unsavedLeave: 'Salir sin guardar',
       unsavedTitle: 'Cambios sin guardar',
       unsavedChanges: 'Tiene cambios sin guardar. ¿Salir de esta página y perderlos?',

@@ -576,6 +576,8 @@ export default {
       addItem: 'Add {item}',
       edit: 'Edit',
       save: 'Save',
+      unsavedSaveLeave: 'Save and leave',
+      unsavedSaveQuestion: 'You have unsaved changes. Save them before you leave?',
       unsavedLeave: 'Leave without saving',
       unsavedTitle: 'Unsaved changes',
       unsavedChanges: 'You have unsaved changes. Leave this page and lose them?',

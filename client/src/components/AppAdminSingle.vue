@@ -229,6 +229,7 @@ const isManaged = computed(() => !!item.value?.managed);
 useUnsavedGuard(
   computed(() => (isDirty.value && !isManaged.value) || props.extraDirty),
   () => t('settings.common.unsavedChanges'),
+  () => saveAll(),
 );
 
 const disabledFields = computed(() => {

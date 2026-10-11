@@ -578,6 +578,8 @@ export default {
       addItem: '{item}を追加',
       edit: '編集',
       save: '保存',
+      unsavedSaveLeave: '保存して移動',
+      unsavedSaveQuestion: '保存されていない変更があります。移動する前に保存しますか？',
       unsavedLeave: '保存せずに移動',
       unsavedTitle: '未保存の変更',
       unsavedChanges: '保存されていない変更があります。このページを離れて変更を破棄しますか?',

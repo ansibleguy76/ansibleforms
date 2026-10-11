@@ -64,7 +64,11 @@ const {
   ...fields,
   banner_until: fields.banner_until ? new Date(fields.banner_until).toISOString() : null,
 }));
-useUnsavedGuard(dirty, () => t('settings.common.unsavedChanges'));
+useUnsavedGuard(
+  dirty,
+  () => t('settings.common.unsavedChanges'),
+  () => save(`${title.value} ${t('settings.common.isUpdated')}`),
+);
 
 const title = computed(() => t('sidebar.announcement'));
 
