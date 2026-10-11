@@ -112,9 +112,6 @@ export function stepModel(field, prefix) {
   return prefix ? `${prefix}.${field.name}` : field.name;
 }
 
-// the keys a merge never copies : through them, a value reaches Object.prototype
-const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
-
 /**
  * Deep-merge `src` into `dst`, as the wizard combines its steps' output (Helpers.deepMerge) :
  * plain objects recurse, arrays and scalars overwrite, and a key that reaches the prototype
@@ -132,8 +129,9 @@ export function deepMerge(dst, src) {
   if (dst == null || typeof dst !== 'object' || Array.isArray(dst)) dst = {};
   for (const [k, v] of Object.entries(src)) {
     // a key that reaches the prototype (a JSON '__proto__' is an own key) : never merged, it
-    // would change every object of the process
-    if (UNSAFE_KEYS.has(k)) continue;
+    // would change every object of the process. Compared one by one, as code scanning
+    // recognizes the guard (a Set lookup it does not)
+    if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
     const plain = (o) => o && typeof o === 'object' && !Array.isArray(o);
     dst[k] = plain(v) && plain(dst[k]) ? deepMerge(dst[k], v) : JSON.parse(JSON.stringify(v ?? null));
   }
