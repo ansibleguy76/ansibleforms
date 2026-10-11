@@ -453,6 +453,18 @@ function setFlag(key, on) {
   change((d) => setFormValue(d, key, on ? true : undefined));
 }
 
+/**
+ * Puts a dropdown's chosen text in its tooltip as the pointer enters it : a long one ends in
+ * '...' in the box, and is read in full there.
+ *
+ * Args:
+ *   event (MouseEvent): the pointer entering the dropdown.
+ */
+function fullTitle(event) {
+  const el = event.target;
+  el.title = el.selectedOptions?.[0]?.text?.trim() || '';
+}
+
 // ─── its place in the forms list : picked, its order worked out (lib/formDoc.js) ───
 const placesAfter = computed(() => orderedForms(props.otherForms));
 const place = computed(() =>
@@ -681,6 +693,7 @@ defineExpose({
             </span>
             <span v-if="!form[key].length && key === 'categories'" class="text-body-secondary">Default</span>
             <select
+              @mouseenter="fullTitle"
               class="form-select form-select-sm af-form-add"
               :disabled="locked || !(key === 'categories' ? categoryChoices : roleChoices).length"
               :value="''"
@@ -703,6 +716,7 @@ defineExpose({
               ><FaIcon :fixedwidth="true" :icon="form.icon || 'square'" :class="{ 'opacity-25': !form.icon }"
             /></span>
             <select
+              @mouseenter="fullTitle"
               class="form-select"
               :value="form.icon"
               :disabled="locked"
@@ -753,6 +767,7 @@ defineExpose({
           <div class="input-group">
             <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="server" /></span>
             <select
+              @mouseenter="fullTitle"
               v-if="runnerChoices"
               class="form-select"
               :value="setting('runner')"
@@ -783,6 +798,7 @@ defineExpose({
             <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" :icon="x.icon" /></span>
             <!-- a credential's name : picked from those the instance keeps, when it may read them -->
             <select
+              @mouseenter="fullTitle"
               v-if="x.choices && credentialNames.length"
               class="form-select"
               :value="setting(x.key)"
@@ -883,6 +899,7 @@ defineExpose({
           <div class="input-group">
             <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="shield-halved" /></span>
             <select
+              @mouseenter="fullTitle"
               class="form-select"
               :value="setting('launchValidation')"
               :disabled="locked"
@@ -1059,6 +1076,7 @@ defineExpose({
                   ></button>
                 </span>
                 <select
+                  @mouseenter="fullTitle"
                   class="form-select form-select-sm af-form-add"
                   :disabled="locked"
                   :value="''"
@@ -1141,6 +1159,7 @@ defineExpose({
               <div class="input-group">
                 <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="key" /></span>
                 <select
+                  @mouseenter="fullTitle"
                   v-if="credentialNames.length"
                   class="form-select"
                   :value="cred"
@@ -1252,6 +1271,7 @@ defineExpose({
             <div class="input-group">
               <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="shapes" /></span>
               <select
+                @mouseenter="fullTitle"
                 class="form-select"
                 :value="f.type"
                 :disabled="!fieldsEditable"
@@ -1396,6 +1416,7 @@ defineExpose({
                 />
               </div>
               <select
+                @mouseenter="fullTitle"
                 v-else-if="pr.kind === 'select'"
                 class="form-select"
                 :value="fieldPropValue(f.node, pr)"
@@ -1435,6 +1456,7 @@ defineExpose({
             <!-- what else its type takes : added from a list, its description beside each -->
             <div v-if="fieldsEditable && addableProps(f).length" class="af-field-values">
               <select
+                @mouseenter="fullTitle"
                 class="form-select af-form-add"
                 :value="''"
                 @change="
