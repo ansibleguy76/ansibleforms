@@ -224,7 +224,7 @@ function moves(row) {
 defineExpose({ add: addCategory, locked });
 </script>
 <template>
-  <BsModal v-if="newCategory" size="lg" @close="newCategory = null" icon="sitemap">
+  <BsModal v-if="newCategory" size="lg" @close="newCategory = null" icon="folder-tree">
     <template #title> {{ t('settings.settingsPage.newCategory') }} </template>
     <template #default>
       <BsInput :isFloating="false" v-model="newCategory.name" :label="t('settings.settingsPage.name')" />
@@ -257,7 +257,7 @@ defineExpose({ add: addCategory, locked });
       {{ t('settings.settingsPage.categoryPathsChanged', { paths: movedPaths.join(', ') }) }}
     </div>
     <div v-if="categories.length === 0" class="empty-state">
-      <FaIcon icon="sitemap" class="empty-state-icon" />
+      <FaIcon icon="folder-tree" class="empty-state-icon" />
       <span>{{ t('settings.settingsPage.noCategories') }}</span>
     </div>
     <!-- an outline, as Settings > Appearance > Links : a row per category, its standard fields,

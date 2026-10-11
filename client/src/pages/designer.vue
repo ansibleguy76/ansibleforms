@@ -2,6 +2,7 @@
 import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue';
 import Form from '@/lib/Form';
 import { slugOf } from '@/lib/formsPath';
+import { DESIGNER_TABS } from '@/config/designerTabs';
 import Lock from '@/lib/Lock';
 import { useAppStore } from '@/stores/app';
 import Backup from '@/lib/Backup';
@@ -16,15 +17,6 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { availableIcons } from '@/config/icons';
 import { editorStyle } from '@/config/editorStyle';
-import {
-  authProviders,
-  roleOptionKeys,
-  roleOptionDefaults,
-  roleOptionLabel as roleOptionLabelFor,
-  roleToEditable,
-  serializeRole,
-  requiredRoleDescription,
-} from '@/config/roles';
 import {
   coerceConstantValue,
   constantValueError,
@@ -69,13 +61,7 @@ const tabs = [
     name: 'Categories',
     label: () => t('sidebar.categories'),
     description: () => t('settings.settingsPage.categoriesDescription'),
-    icon: 'sitemap',
-  },
-  {
-    name: 'Roles',
-    label: () => t('sidebar.roles'),
-    description: () => t('settings.settingsPage.rolesDescription'),
-    icon: 'user-shield',
+    icon: 'folder-tree',
   },
   {
     name: 'Constants',
@@ -89,7 +75,32 @@ const tabs = [
     description: () => t('designer.formsDescription'),
     icon: 'far,rectangle-list',
   }, // the header's Forms icon, outlined : the solid one is a dark blob at menu size
+  // the sections still to build : an empty text area each for now, nothing saved
+  {
+    // a file of code
+    name: 'Playbooks',
+    label: () => t('designer.playbooks'),
+    description: () => t('designer.playbooksDescription'),
+    icon: 'file-code',
+  },
+  {
+    // the YAML files a form loads (varsFiles)
+    name: 'VarsFiles',
+    label: () => t('designer.varsFiles'),
+    description: () => t('designer.varsFilesDescription'),
+    icon: 'file-lines',
+  },
+  {
+    // nodes joined by lines, as AWX draws a workflow
+    name: 'Workflows',
+    label: () => t('designer.workflows'),
+    description: () => t('designer.workflowsDescription'),
+    icon: 'diagram-project',
+  },
 ];
+// the sections still to build (workflows) : every section but the ones built
+const BUILT_SECTIONS = ['Categories', 'Constants', 'Forms', 'Playbooks', 'VarsFiles'];
+const draftSections = tabs.map((x) => x.name).filter((name) => !BUILT_SECTIONS.includes(name));
 // the views in the menu, alphabetically by their (translated) label
 const sortedTabs = computed(() => [...tabs].sort((a, b) => a.label().localeCompare(b.label(), locale.value)));
 // The designer's addresses : a view at /designer/<view> (/designer/categories), the form being
@@ -162,6 +173,19 @@ const themeObserver = new MutationObserver(() => {
   editorTheme.value = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'monokai' : 'chrome';
 });
 
+// the playbooks and the vars files : their files (AppProjectFiles), driven by the toolbar, its
+// text editor's buttons too (textEditorButtons)
+const FILE_SECTIONS = { Playbooks: 'playbooks', VarsFiles: 'vars' };
+const projectFiles = ref(null);
+const textEditorButtons = computed(() => [
+  { icon: 'rotate-left', title: t('designer.undo'), run: editorUndo },
+  { icon: 'rotate-right', title: t('designer.redo'), run: editorRedo },
+  { icon: 'scissors', title: t('designer.cut'), run: editorCut },
+  { icon: 'copy', title: t('designer.copy'), run: editorCopy },
+  { icon: 'paste', title: t('designer.paste'), run: editorPaste },
+  { icon: 'magnifying-glass', title: t('designer.findReplace'), run: editorFind },
+]);
+
 const activeEditor = ref(null);
 function onEditorInit(editor) {
   activeEditor.value = editor;
@@ -204,9 +228,6 @@ function editorFormat() {
   if (currentTab.value === 'Categories') {
     const r = fmt(categories.value);
     if (r) categories.value = r;
-  } else if (currentTab.value === 'Roles') {
-    const r = fmt(roles.value);
-    if (r) roles.value = r;
   } else if (currentTab.value === 'Constants') {
     const r = fmt(constants.value);
     if (r) constants.value = r;
@@ -313,8 +334,6 @@ function isFormDirty(id) {
 function editorRevert() {
   if (currentTab.value === 'Categories') {
     categories.value = baselineRaw.value.categories;
-  } else if (currentTab.value === 'Roles') {
-    roles.value = baselineRaw.value.roles;
   } else if (currentTab.value === 'Constants') {
     constants.value = baselineRaw.value.constants;
   } else if (currentTab.value === 'Forms' && currentForm.value) {
@@ -791,39 +810,6 @@ function applyEditCategories() {
   showEditCategories.value = false;
 }
 
-// Roles : add / edit modals that read-modify-write the raw `roles` YAML string,
-// exactly like the category modals do. isDirty/validate/save then react to the
-// text change automatically.
-
-// The role option labels are derived from the option name by the shared helper
-// (both role editors use the same settings.settingsPage.roleOption<Key> keys).
-function roleOptionLabel(key) {
-  return roleOptionLabelFor(t, key);
-}
-
-function isRequiredRole(name) {
-  return name === 'admin' || name === 'public';
-}
-
-// The 'public' role applies to everyone; the schema pins it to no groups/users.
-function isPublicRole(name) {
-  return name === 'public';
-}
-
-function blankRole() {
-  return {
-    name: '',
-    groups: [],
-    users: [],
-    // start from the effective defaults : that is what a role without an
-    // options block gets from the server. Starting all-off would now write an
-    // explicit false for every flag (serializeRole spells them all out), which
-    // silently takes permissions away - allowLogin: false even locks out every
-    // member of the new role.
-    options: roleOptionDefaults(''),
-  };
-}
-
 // Parse a raw yaml sequence: [] when empty, null when unparsable or not a
 // sequence (callers must abort then instead of silently wiping the section).
 function parseSeqYaml(raw) {
@@ -858,111 +844,6 @@ function appendToSeqYaml(raw, item) {
   return doc.toString();
 }
 
-function parseRolesYaml() {
-  return parseSeqYaml(roles.value);
-}
-
-// Local directory : the same live lists the settings roles page offers
-// (pages/admin/roles.vue). Only the 'local' provider has a directory to pick a
-// member from, so a typo'd 'local/admins' grants nothing ; ldap/azuread/oidc
-// have no such list here and stay free text. A failed fetch (a designer without
-// user administration rights) leaves the lists empty, which degrades every
-// picker back to a free text input instead of breaking the modal.
-const localGroups = ref([]);
-const localUsers = ref([]);
-const sortedLocalGroups = computed(() => [...localGroups.value].sort());
-const sortedLocalUsers = computed(() => [...localUsers.value].sort());
-
-async function loadLocalGroups() {
-  try {
-    const result = await axios.get('/api/v2/group/');
-    localGroups.value = (result.data.records || result.data).map((g) => g.name);
-  } catch {
-    localGroups.value = [];
-  }
-}
-
-async function loadLocalUsers() {
-  try {
-    const result = await axios.get('/api/v2/user/');
-    localUsers.value = (result.data.records || result.data).map((u) => u.username);
-  } catch {
-    localUsers.value = [];
-  }
-}
-
-// The name a role already carries is always offered, even when the local
-// directory no longer holds it : a select without a matching option shows blank
-// and would write that blank back, silently dropping a member the designer only
-// meant to look at.
-function localGroupOptions(current) {
-  const opts = sortedLocalGroups.value;
-  return current && !opts.includes(current) ? [current, ...opts] : opts;
-}
-function localUserOptions(current) {
-  const opts = sortedLocalUsers.value;
-  return current && !opts.includes(current) ? [current, ...opts] : opts;
-}
-// a picked name belongs to the provider it was picked from : switching provider
-// resets it (the same reset the settings roles page does)
-function onRoleProviderChange(entry, type) {
-  entry.name =
-    entry.provider === 'local' ? (type === 'group' ? sortedLocalGroups.value[0] : sortedLocalUsers.value[0]) || '' : '';
-}
-
-// shared member-row helpers, used by both the add and edit modals
-function roleAddGroup(role) {
-  role.groups.push({ provider: 'local', name: sortedLocalGroups.value[0] || '' });
-}
-function roleRemoveGroup(role, idx) {
-  role.groups.splice(idx, 1);
-}
-function roleAddUser(role) {
-  role.users.push({ provider: 'local', name: sortedLocalUsers.value[0] || '' });
-}
-function roleRemoveUser(role, idx) {
-  role.users.splice(idx, 1);
-}
-
-// Add role
-const showAddRole = ref(false);
-const newRole = ref(blankRole());
-
-function openAddRole() {
-  newRole.value = blankRole();
-  showAddRole.value = true;
-}
-
-function doAddRole() {
-  const name = newRole.value.name.trim();
-  if (!name) {
-    toast.warning(t('designer.roleNameRequired'));
-    return;
-  }
-  const list = parseRolesYaml();
-  // bad/typed-wrong yaml must abort, not silently replace the whole section
-  if (list === null) {
-    toast.error(t('designer.badYamlUpdate'));
-    return;
-  }
-  if (list.some((r) => r && r.name === name)) {
-    toast.warning(t('designer.roleExists'));
-    return;
-  }
-  // Same rule as the roles editor (admin/roles.vue): 'admin' is a privilege bypass by
-  // NAME - middleware.js and job.model.js test roles.includes("admin") regardless of the
-  // option flags - so adding one here would grant admin to whatever groups were typed in.
-  // The duplicate check above only catches it when the config already has an admin role.
-  // 'public' is deliberately NOT blocked: the schema requires one, so a config that lost
-  // it has to be repairable from here.
-  if (name === 'admin') {
-    toast.warning(t('settings.settingsPage.reservedRoleName', { name }));
-    return;
-  }
-  roles.value = appendToSeqYaml(roles.value, serializeRole({ ...newRole.value, name }));
-  showAddRole.value = false;
-}
-
 // the edit modals only make sense when the raw yaml actually holds content ;
 // (categoriesObj/rolesObj/constantsObj can't be used here : they inject
 // defaults for an empty editor). Bad yaml also disables : the raw editor is
@@ -978,73 +859,16 @@ function parsedOrNull(raw) {
 // the Add modals can only append to a parsable section (empty is fine) ;
 // bad yaml disables Add so the modal can never wipe hand-edited content
 const canAddCategories = computed(() => parseSeqYaml(categories.value) !== null);
-// the roles decide who is an admin : only an admin changes them (the server refuses a save of a
-// designer without the admin role whose roles differ from the active ones)
-const rolesReadOnly = computed(() => !store.isAdmin);
-const canAddRoles = computed(() => !rolesReadOnly.value && parseSeqYaml(roles.value) !== null);
 const canAddConstants = computed(() => parseConstantsYaml() !== null);
 
 const hasEditableCategories = computed(() => {
   const v = parsedOrNull(categories.value);
   return Array.isArray(v) && v.length > 0;
 });
-const hasEditableRoles = computed(() => {
-  if (rolesReadOnly.value) return false;
-  const v = parsedOrNull(roles.value);
-  return Array.isArray(v) && v.length > 0;
-});
 const hasEditableConstants = computed(() => {
   const v = parsedOrNull(constants.value);
   return !!v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length > 0;
 });
-
-// Edit roles
-const showEditRoles = ref(false);
-const editRoles = ref([]);
-const expandedEditRoles = ref({});
-let editRoleUid = 0;
-
-function openEditRoles() {
-  // _required/_public are stamped ONCE at open (never evaluated against the
-  // name being typed : a live check would disable the input mid-keystroke when
-  // a custom name passes through 'admin'/'public')
-  editRoles.value = (parseRolesYaml() || []).map((r) => ({
-    _uid: ++editRoleUid,
-    _required: isRequiredRole(r.name),
-    _public: isPublicRole(r.name),
-    ...roleToEditable(r),
-  }));
-  // all roles start collapsed ; the header row toggles each one
-  expandedEditRoles.value = {};
-  showEditRoles.value = true;
-}
-
-function toggleEditRole(uid) {
-  expandedEditRoles.value[uid] = !expandedEditRoles.value[uid];
-}
-
-function editRoleRemove(idx) {
-  editRoles.value.splice(idx, 1);
-}
-
-function applyEditRoles() {
-  const names = editRoles.value.map((r) => r.name.trim());
-  if (names.some((n) => !n)) {
-    toast.warning(t('designer.roleNameRequired'));
-    return;
-  }
-  if (new Set(names).size !== names.length) {
-    toast.warning(t('designer.roleExists'));
-    return;
-  }
-  // a custom role must not take over a built-in name
-  if (editRoles.value.some((r) => !r._required && isRequiredRole(r.name.trim()))) {
-    toast.warning(t('designer.roleExists'));
-    return;
-  }
-  roles.value = YAML.stringify(editRoles.value.map((r) => serializeRole({ ...r, name: r.name.trim() })));
-  showEditRoles.value = false;
-}
 
 // Constants : add / edit modals that read-modify-write the raw `constants` YAML
 // string (a free-form key -> value object). Values round-trip through the same
@@ -1453,9 +1277,6 @@ function downloadYaml() {
   if (currentTab.value === 'Categories') {
     content = categories.value;
     filename = 'categories.yaml';
-  } else if (currentTab.value === 'Roles') {
-    content = roles.value;
-    filename = 'roles.yaml';
   } else if (currentTab.value === 'Constants') {
     content = constants.value;
     filename = 'constants.yaml';
@@ -1771,11 +1592,15 @@ function previewForm() {
 const visualEditor = ref(null);
 // which tab shows : 'yaml' (the editor and its toolbar), 'visual' (the categories, the constants
 // or a form, as an outline) or 'preview' (the form, rendered) ; a link may open the visual one
-const hasVisual = (view) => view === 'Categories' || view === 'Constants' || view === 'Forms';
+// a section still to build has its Visual tab too, empty for now
+// the tabs of each section (config/designerTabs.js, the router's list as well)
+const hasVisual = (view) => !!DESIGNER_TABS[slugOf(view)]?.includes('visual');
 // the editor shown : the YAML until the designer has read its config, then what the address
 // names (applyEditor)
 const editorView = ref('yaml');
-const hasPreview = (view) => view === 'Forms' || view === 'Categories';
+// a preview : a form as users see it, the categories as the forms list ; and, still to build, a
+// workflow drawn, an inventory as its tree of groups and hosts, the schedules' next runs in time
+const hasPreview = (view) => !!DESIGNER_TABS[slugOf(view)]?.includes('preview');
 // the preview's address, and its key : a new key reloads it with the YAML as it is now
 const previewUrl = ref('');
 const previewKey = ref(0);
@@ -1797,6 +1622,12 @@ function refreshPreview() {
  *   view (string): 'yaml' or 'preview'.
  */
 function showView(view) {
+  // the playbooks or the vars files : a file with changes is asked about first when it would close
+  // (their YAML and Visual tabs show the same file : no question between them)
+  if (projectFiles.value?.dirty && view !== editorView.value && !FILE_SECTIONS[currentTab.value]) {
+    projectFiles.value.leave(() => showView(view));
+    return;
+  }
   editorView.value = view;
   if (view === 'preview' && currentTab.value === 'Forms') refreshPreview();
 }
@@ -1897,9 +1728,6 @@ function editorDiff() {
   if (currentTab.value === 'Categories') {
     diffSaved.value = baselineRaw.value.categories || '';
     diffCurrent.value = categories.value;
-  } else if (currentTab.value === 'Roles') {
-    diffSaved.value = baselineRaw.value.roles || '';
-    diffCurrent.value = roles.value;
   } else if (currentTab.value === 'Constants') {
     diffSaved.value = baselineRaw.value.constants || '';
     diffCurrent.value = constants.value;
@@ -2280,7 +2108,8 @@ const warnings = computed(() => {
     );
   }
   if (!rolesObj.value) {
-    warnings.push(tabWarning(warning(t('designer.warnBadRoles'), t('designer.warnBadRolesHint')), 'Roles'));
+    // the roles are edited in Settings > Roles : no section here to send the warning to
+    warnings.push(tabWarning(warning(t('designer.warnBadRoles'), t('designer.warnBadRolesHint')), null));
   }
   if (!constantsObj.value) {
     warnings.push(tabWarning(warning(t('designer.warnBadConstants'), t('designer.warnBadConstantsHint')), 'Constants'));
@@ -2394,6 +2223,10 @@ function isCurrentTab(name) {
 }
 
 function selectTab(name) {
+  if (projectFiles.value?.dirty && name !== currentTab.value) {
+    projectFiles.value.leave(() => selectTab(name));
+    return;
+  }
   currentTab.value = name;
 }
 
@@ -3195,7 +3028,7 @@ const configRepo = ref(''); // the repository that holds config.yaml
 const stagedForms = ref(false); // new forms saved but not yet pushed to a repo
 const configInDatabase = ref(false); // true when forms_yaml is stored in and served from the database
 
-const isConfigTab = computed(() => ['Categories', 'Roles', 'Constants'].includes(currentTab.value));
+const isConfigTab = computed(() => ['Categories', 'Constants'].includes(currentTab.value));
 // whether an editor is currently mounted and targeting real content : config
 // tabs always mount one once loaded ; the Forms tab only when a form is
 // selected. Gates the editor toolbar actions (undo/cut/format/diff/...), which
@@ -3462,6 +3295,10 @@ async function saveForms(close = false) {
     return;
   }
   try {
+    // the roles are Settings' (Settings > Roles) : the ones stored now go back as they are, so
+    // a role changed there while the designer was open is never written over with the copy it
+    // read at its start
+    roles.value = YAML.stringify((await Form.loadAll()).roles);
     const formConfig = assembleForms();
     // Capture the baseline BEFORE awaiting, from the same buffers that were just
     // assembled into formConfig. It used to be taken after the save resolved, reading the
@@ -3584,7 +3421,7 @@ onMounted(async () => {
     return;
   }
   await loadAll();
-  await Promise.all([loadFormsRepos(), loadConfigMode(), loadConfigTemplated(), loadLocalGroups(), loadLocalUsers()]);
+  await Promise.all([loadFormsRepos(), loadConfigMode(), loadConfigTemplated()]);
   // The awaits above mean onBeforeUnmount can already have run - leaving the designer
   // before those requests finish is easy, and the route guard allows it because
   // dirtyBaseline is still null. It cleared a lockInterval that did not exist yet, and
@@ -4084,7 +3921,7 @@ onBeforeUnmount(() => {
       </BsModal>
 
       <!-- Modal - add category -->
-      <BsModal v-if="showAddCategory" @close="showAddCategory = false" icon="sitemap">
+      <BsModal v-if="showAddCategory" @close="showAddCategory = false" icon="folder-tree">
         <template #title> {{ t('designer.addCategory') }} </template>
         <template #default>
           <BsInput
@@ -4099,7 +3936,7 @@ onBeforeUnmount(() => {
             v-if="parentCatOptions.length > 1"
             :isFloating="false"
             type="select"
-            icon="sitemap"
+            icon="folder-tree"
             v-model="newCatParent"
             :values="parentCatOptions"
             valueKey="value"
@@ -4144,7 +3981,7 @@ onBeforeUnmount(() => {
       </BsModal>
 
       <!-- Modal - edit categories -->
-      <BsModal v-if="showEditCategories" @close="showEditCategories = false" icon="sitemap">
+      <BsModal v-if="showEditCategories" @close="showEditCategories = false" icon="folder-tree">
         <template #title> {{ t('designer.editCategories') }} </template>
         <template #default>
           <div v-if="editCats.length === 0" class="text-muted text-center py-3">{{ t('designer.noCategories') }}</div>
@@ -4301,222 +4138,6 @@ onBeforeUnmount(() => {
         </template>
         <template #footer>
           <BsButton icon="check" @click="applyEditCategories()">{{ t('common.apply') }}</BsButton>
-        </template>
-      </BsModal>
-
-      <!-- Modal - add role -->
-      <BsModal v-if="showAddRole" @close="showAddRole = false" icon="user-shield">
-        <template #title> {{ t('designer.addRole') }} </template>
-        <template #default>
-          <BsInput :isFloating="false" v-model="newRole.name" :label="t('designer.roleName')" icon="tag" class="mb-3" />
-          <label class="form-label fw-bold">{{ t('settings.settingsPage.groups') }}</label>
-          <div
-            v-for="(grp, gIdx) in newRole.groups"
-            :key="'addgrp-' + gIdx"
-            class="d-flex align-items-center gap-2 mb-2"
-          >
-            <select
-              class="form-select provider-select"
-              v-model="grp.provider"
-              @change="onRoleProviderChange(grp, 'group')"
-            >
-              <option v-for="p in authProviders" :key="p" :value="p">{{ p }}</option>
-            </select>
-            <!-- only 'local' has a directory to pick from ; ldap/azuread/oidc
-                 stay free text, and so does local when the list could not be
-                 fetched (a designer without user administration rights) -->
-            <select v-if="grp.provider === 'local' && sortedLocalGroups.length" class="form-select" v-model="grp.name">
-              <option v-for="g in localGroupOptions(grp.name)" :key="'addgrpopt-' + gIdx + '-' + g" :value="g">
-                {{ g }}
-              </option>
-            </select>
-            <input v-else class="form-control" v-model="grp.name" placeholder="groupname" />
-            <button class="btn btn-sm btn-outline-danger" @click="roleRemoveGroup(newRole, gIdx)">
-              <FaIcon icon="times" />
-            </button>
-          </div>
-          <div :class="[newRole.groups.length > 0 ? 'mt-3' : 'mt-1', 'mb-4']">
-            <BsButton icon="plus" @click="roleAddGroup(newRole)">{{ t('settings.settingsPage.addGroup') }}</BsButton>
-          </div>
-          <label class="form-label fw-bold">{{ t('settings.settingsPage.users') }}</label>
-          <div
-            v-for="(usr, uIdx) in newRole.users"
-            :key="'adduser-' + uIdx"
-            class="d-flex align-items-center gap-2 mb-2"
-          >
-            <select
-              class="form-select provider-select"
-              v-model="usr.provider"
-              @change="onRoleProviderChange(usr, 'user')"
-            >
-              <option v-for="p in authProviders" :key="p" :value="p">{{ p }}</option>
-            </select>
-            <select v-if="usr.provider === 'local' && sortedLocalUsers.length" class="form-select" v-model="usr.name">
-              <option v-for="u in localUserOptions(usr.name)" :key="'adduseropt-' + uIdx + '-' + u" :value="u">
-                {{ u }}
-              </option>
-            </select>
-            <input v-else class="form-control" v-model="usr.name" placeholder="username" />
-            <button class="btn btn-sm btn-outline-danger" @click="roleRemoveUser(newRole, uIdx)">
-              <FaIcon icon="times" />
-            </button>
-          </div>
-          <div :class="[newRole.users.length > 0 ? 'mt-3' : 'mt-1', 'mb-4']">
-            <BsButton icon="plus" @click="roleAddUser(newRole)">{{ t('settings.settingsPage.addUser') }}</BsButton>
-          </div>
-          <label class="form-label fw-bold">{{ t('settings.settingsPage.options') }}</label>
-          <div class="row row-cols-2 row-cols-md-3 g-0 role-options mb-3">
-            <div v-for="optKey in roleOptionKeys" :key="'addopt-' + optKey" class="col">
-              <BsInput
-                type="checkbox"
-                :isSwitch="true"
-                v-model="newRole.options[optKey]"
-                :label="roleOptionLabel(optKey)"
-              />
-            </div>
-          </div>
-        </template>
-        <template #footer>
-          <BsButton icon="plus" @click="doAddRole()">{{ t('designer.addRole') }}</BsButton>
-        </template>
-      </BsModal>
-
-      <!-- Modal - edit roles -->
-      <BsModal v-if="showEditRoles" @close="showEditRoles = false" icon="user-shield">
-        <template #title> {{ t('designer.editRoles') }} </template>
-        <template #default>
-          <div v-if="editRoles.length === 0" class="text-muted text-center py-3">{{ t('designer.noRoles') }}</div>
-          <div v-for="(role, rIdx) in editRoles" :key="'editrole-' + role._uid" class="border rounded mb-2">
-            <div
-              class="d-flex align-items-center justify-content-between px-3 py-2 role-header"
-              @click="toggleEditRole(role._uid)"
-            >
-              <div class="d-flex align-items-center gap-2">
-                <FaIcon :icon="expandedEditRoles[role._uid] ? 'chevron-down' : 'chevron-right'" class="text-muted" />
-                <strong>{{ role.name || '(unnamed)' }}</strong>
-                <span v-if="role._required" class="badge bg-secondary-subtle text-muted">{{
-                  t('settings.settingsPage.requiredItem')
-                }}</span>
-              </div>
-              <button
-                v-if="!role._required"
-                class="btn btn-sm btn-outline-danger"
-                @click.stop="editRoleRemove(rIdx)"
-                :title="t('common.delete')"
-              >
-                <FaIcon icon="trash" />
-              </button>
-            </div>
-            <div v-show="expandedEditRoles[role._uid]" class="px-3 pb-3">
-              <div class="mb-3">
-                <label class="form-label fw-bold">{{ t('designer.roleName') }}</label>
-                <input type="text" class="form-control" v-model="role.name" :disabled="role._required" />
-              </div>
-              <div class="mb-3">
-                <label class="form-label fw-bold">{{ t('settings.fields.description') }}</label>
-                <!-- admin and public : a fixed description, greyed out as their name -->
-                <input
-                  v-if="role._required"
-                  type="text"
-                  class="form-control"
-                  :value="requiredRoleDescription(t, role.name)"
-                  disabled
-                />
-                <input
-                  v-else
-                  type="text"
-                  class="form-control"
-                  v-model="role.description"
-                  :placeholder="t('settings.settingsPage.roleDescriptionPlaceholder')"
-                />
-              </div>
-              <template v-if="!role._public">
-                <label class="form-label fw-bold">{{ t('settings.settingsPage.groups') }}</label>
-                <div
-                  v-for="(grp, gIdx) in role.groups"
-                  :key="'egrp-' + rIdx + '-' + gIdx"
-                  class="d-flex align-items-center gap-2 mb-2"
-                >
-                  <select
-                    class="form-select provider-select"
-                    v-model="grp.provider"
-                    @change="onRoleProviderChange(grp, 'group')"
-                  >
-                    <option v-for="p in authProviders" :key="p" :value="p">{{ p }}</option>
-                  </select>
-                  <select
-                    v-if="grp.provider === 'local' && sortedLocalGroups.length"
-                    class="form-select"
-                    v-model="grp.name"
-                  >
-                    <option
-                      v-for="g in localGroupOptions(grp.name)"
-                      :key="'egrpopt-' + rIdx + '-' + gIdx + '-' + g"
-                      :value="g"
-                    >
-                      {{ g }}
-                    </option>
-                  </select>
-                  <input v-else class="form-control" v-model="grp.name" placeholder="groupname" />
-                  <button class="btn btn-sm btn-outline-danger" @click="roleRemoveGroup(role, gIdx)">
-                    <FaIcon icon="times" />
-                  </button>
-                </div>
-                <div :class="[role.groups.length > 0 ? 'mt-3' : 'mt-1', 'mb-4']">
-                  <BsButton icon="plus" @click="roleAddGroup(role)">{{ t('settings.settingsPage.addGroup') }}</BsButton>
-                </div>
-                <label class="form-label fw-bold">{{ t('settings.settingsPage.users') }}</label>
-                <div
-                  v-for="(usr, uIdx) in role.users"
-                  :key="'euser-' + rIdx + '-' + uIdx"
-                  class="d-flex align-items-center gap-2 mb-2"
-                >
-                  <select
-                    class="form-select provider-select"
-                    v-model="usr.provider"
-                    @change="onRoleProviderChange(usr, 'user')"
-                  >
-                    <option v-for="p in authProviders" :key="p" :value="p">{{ p }}</option>
-                  </select>
-                  <select
-                    v-if="usr.provider === 'local' && sortedLocalUsers.length"
-                    class="form-select"
-                    v-model="usr.name"
-                  >
-                    <option
-                      v-for="u in localUserOptions(usr.name)"
-                      :key="'euseropt-' + rIdx + '-' + uIdx + '-' + u"
-                      :value="u"
-                    >
-                      {{ u }}
-                    </option>
-                  </select>
-                  <input v-else class="form-control" v-model="usr.name" placeholder="username" />
-                  <button class="btn btn-sm btn-outline-danger" @click="roleRemoveUser(role, uIdx)">
-                    <FaIcon icon="times" />
-                  </button>
-                </div>
-                <div :class="[role.users.length > 0 ? 'mt-3' : 'mt-1', 'mb-4']">
-                  <BsButton icon="plus" @click="roleAddUser(role)">{{ t('settings.settingsPage.addUser') }}</BsButton>
-                </div>
-              </template>
-              <p v-else class="text-muted small mt-1 mb-4">{{ t('settings.settingsPage.publicRoleNote') }}</p>
-              <label class="form-label fw-bold">{{ t('settings.settingsPage.options') }}</label>
-              <div class="row row-cols-2 row-cols-md-3 g-0 role-options mb-2">
-                <div v-for="optKey in roleOptionKeys" :key="'eopt-' + rIdx + '-' + optKey" class="col">
-                  <BsInput
-                    type="checkbox"
-                    :isSwitch="true"
-                    v-model="role.options[optKey]"
-                    :label="roleOptionLabel(optKey)"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </template>
-        <template #footer>
-          <BsButton icon="check" @click="applyEditRoles()">{{ t('common.apply') }}</BsButton>
         </template>
       </BsModal>
 
@@ -4680,7 +4301,7 @@ onBeforeUnmount(() => {
       <!-- Modal - form settings -->
 
       <!-- Modal - categories picker -->
-      <BsModal v-if="showCatPicker" @close="showCatPicker = false" size="lg" icon="sitemap">
+      <BsModal v-if="showCatPicker" @close="showCatPicker = false" size="lg" icon="folder-tree">
         <template #title> {{ t('designer.assignCategories') }} </template>
         <template #default>
           <div v-if="flatCategoriesForPicker && flatCategoriesForPicker.length" class="d-flex flex-column gap-2">
@@ -4881,10 +4502,7 @@ onBeforeUnmount(() => {
               </a>
             </li>
             <!-- the categories, the constants and a form as outlines, on the same YAML -->
-            <li
-              v-if="currentTab == 'Categories' || currentTab == 'Constants' || (currentTab == 'Forms' && currentForm)"
-              class="nav-item"
-            >
+            <li v-if="hasVisual(currentTab) && (currentTab != 'Forms' || currentForm)" class="nav-item">
               <a
                 class="nav-link"
                 :class="{ active: editorView === 'visual' }"
@@ -4896,8 +4514,9 @@ onBeforeUnmount(() => {
               </a>
             </li>
             <!-- a form's preview : the form rendered from its YAML as it is now ; the categories' :
-                 the Forms page's menu, from them -->
-            <li v-if="(currentTab == 'Forms' && currentForm) || currentTab == 'Categories'" class="nav-item">
+                 the Forms page's menu, from them ; a workflow drawn, an inventory's tree, the
+                 schedules' next runs (still to build) -->
+            <li v-if="hasPreview(currentTab) && (currentTab != 'Forms' || currentForm)" class="nav-item">
               <a
                 class="nav-link"
                 :class="{ active: editorView === 'preview' }"
@@ -5014,7 +4633,72 @@ onBeforeUnmount(() => {
                 >{{ t('settings.settingsPage.configTemplated') }}</small
               >
               <template v-if="lock && lock.match && editorView !== 'preview'">
-                <div class="d-flex gap-1 flex-wrap designer-toolbar">
+                <!-- a section of records : its YAML applied through the records' API, its page
+                     (the Visual tab) with its own buttons -->
+                <!-- the playbooks and the vars files : the file open saved, the repository pushed, a
+                     new file ; the explorer beside the editor deletes one. The text's own buttons on
+                     the YAML tab, a new variable on a vars file's Visual tab -->
+                <div v-if="FILE_SECTIONS[currentTab]" class="d-flex gap-1 flex-wrap designer-toolbar">
+                  <template v-if="projectFiles">
+                    <BsButton
+                      icon="save"
+                      :isIconButton="true"
+                      @click="projectFiles.save()"
+                      :disabled="!projectFiles.dirty || projectFiles.busy"
+                      :title="projectFiles.repository ? t('designer.saveLocal') : t('designer.save')"
+                    />
+                    <BsButton
+                      v-if="projectFiles.repository"
+                      :colorClass="projectFiles.unpushed ? 'orange' : 'primary'"
+                      icon="code-branch"
+                      :isIconButton="true"
+                      @click="projectFiles.push()"
+                      :disabled="projectFiles.dirty || projectFiles.busy || !projectFiles.unpushed"
+                      :title="t('designer.files.push', { repository: projectFiles.repository })"
+                    />
+                    <BsButton
+                      icon="file-circle-plus"
+                      :isIconButton="true"
+                      @click="projectFiles.newFile()"
+                      :disabled="projectFiles.busy"
+                      :title="t('designer.newFile')"
+                    />
+                    <template v-if="editorView === 'yaml'">
+                      <BsButton
+                        v-for="b in textEditorButtons"
+                        :key="b.icon"
+                        :icon="b.icon"
+                        :isIconButton="true"
+                        @click="b.run()"
+                        :disabled="projectFiles.busy || !projectFiles.selected"
+                        :title="b.title"
+                      />
+                    </template>
+                    <BsButton
+                      v-else-if="projectFiles.canAddVar"
+                      icon="plus"
+                      :isIconButton="true"
+                      @click="projectFiles.addVar()"
+                      :disabled="projectFiles.busy || !(lock && lock.match)"
+                      :title="t('designer.files.addKey')"
+                    />
+                    <BsButton
+                      icon="arrows-rotate"
+                      :isIconButton="true"
+                      @click="projectFiles.reload()"
+                      :disabled="projectFiles.busy"
+                      :title="t('designer.files.reload')"
+                    />
+                    <BsButton
+                      icon="clock-rotate-left"
+                      :isIconButton="true"
+                      @click="projectFiles.revert()"
+                      :disabled="!projectFiles.dirty || projectFiles.busy"
+                      :title="t('designer.revert')"
+                    />
+                  </template>
+                </div>
+                <div v-else class="d-flex gap-1 flex-wrap designer-toolbar">
                   <template v-if="dbOnlyMode && isConfigTab">
                     <BsButton
                       :colorClass="busy ? 'secondary' : 'primary'"
@@ -5206,24 +4890,6 @@ onBeforeUnmount(() => {
                       :title="t('designer.editCategories')"
                     />
                   </template>
-                  <template v-if="currentTab === 'Roles'">
-                    <BsButton
-                      :colorClass="busyOrTemplated || !canAddRoles ? 'secondary' : 'primary'"
-                      icon="plus"
-                      :isIconButton="true"
-                      @click="openAddRole"
-                      :disabled="busyOrTemplated || !canAddRoles"
-                      :title="t('designer.addRole')"
-                    />
-                    <BsButton
-                      :colorClass="busyOrTemplated || !hasEditableRoles ? 'secondary' : 'primary'"
-                      icon="pencil"
-                      :isIconButton="true"
-                      @click="openEditRoles"
-                      :disabled="busyOrTemplated || !hasEditableRoles"
-                      :title="t('designer.editRoles')"
-                    />
-                  </template>
                   <template v-if="currentTab === 'Constants' && editorView === 'yaml'">
                     <BsButton
                       :colorClass="busyOrTemplated || !canAddConstants ? 'secondary' : 'primary'"
@@ -5282,7 +4948,7 @@ onBeforeUnmount(() => {
                     />
                     <BsButton
                       :colorClass="busyOrTemplated || !currentForm || currentFormIsSubform ? 'secondary' : 'primary'"
-                      icon="th-list"
+                      icon="folder-tree"
                       :isIconButton="true"
                       @click="openCatPicker"
                       :disabled="busyOrTemplated || !currentForm || currentFormIsSubform"
@@ -5386,19 +5052,47 @@ onBeforeUnmount(() => {
                     :style="editorStyle('100%')"
                   />
                 </div>
-                <div v-if="loaded && currentTab == 'Roles'">
-                  <BsInput
-                    type="editor"
-                    :isFloating="false"
-                    :readonly="rolesReadOnly"
-                    v-model="roles"
-                    @save="saveForms()"
-                    @init="onEditorInit"
-                    lang="yaml"
+                <!-- a section still to build : its Visual tab empty, its YAML an empty text area, nothing
+                     saved -->
+                <!-- the playbooks and the vars files : one explorer and the file open for the YAML and the
+                     Visual tab alike (switching keeps the file and its changes) -->
+                <div v-if="loaded && FILE_SECTIONS[currentTab]" class="designer-files">
+                  <AppProjectFiles
+                    ref="projectFiles"
+                    :kind="FILE_SECTIONS[currentTab]"
+                    :view="editorView"
+                    :readOnly="!(lock && lock.match)"
                     :theme="editorTheme"
-                    :liveSync="true"
-                    :style="editorStyle('100%')"
+                    :editorStyle="editorStyle('100%')"
+                    @init="onEditorInit"
+                    @reveal="showView('yaml')"
                   />
+                </div>
+                <!-- a section's preview, still to build -->
+                <div
+                  v-else-if="loaded && draftSections.includes(currentTab) && editorView === 'preview'"
+                  class="designer-visual"
+                >
+                  <div class="empty-state">
+                    <FaIcon icon="eye" class="empty-state-icon" />
+                    <span>{{ t('designer.sectionToBuild') }}</span>
+                  </div>
+                </div>
+                <div
+                  v-else-if="loaded && draftSections.includes(currentTab) && editorView === 'visual'"
+                  class="designer-visual"
+                >
+                  <div class="empty-state">
+                    <FaIcon :icon="tabs.find((x) => x.name === currentTab)?.icon" class="empty-state-icon" />
+                    <span>{{ t('designer.sectionToBuild') }}</span>
+                  </div>
+                </div>
+                <!-- a section still to build : nothing to edit yet, nothing typed to lose -->
+                <div v-else-if="loaded && draftSections.includes(currentTab)" class="designer-visual">
+                  <div class="empty-state">
+                    <FaIcon :icon="tabs.find((x) => x.name === currentTab)?.icon" class="empty-state-icon" />
+                    <span>{{ t('designer.sectionToBuild') }}</span>
+                  </div>
                 </div>
                 <!-- Visual : the constants as a table, on the same YAML (saved with Save) -->
                 <div v-if="loaded && currentTab == 'Constants' && editorView === 'visual'" class="designer-visual">
@@ -5665,23 +5359,6 @@ onBeforeUnmount(() => {
   </div>
 </template>
 <style lang="scss" scoped>
-.role-header {
-  cursor: pointer;
-  user-select: none;
-}
-.role-header:hover {
-  background-color: var(--bs-tertiary-bg);
-}
-.provider-select {
-  width: 130px;
-  flex-shrink: 0;
-}
-.role-options {
-  margin-top: -0.5rem;
-}
-.role-options :deep(.mb-3) {
-  margin-bottom: -0.5rem !important;
-}
 .designer-layout {
   display: grid;
   grid-template-columns: 1fr 1rem 25%;
@@ -6030,6 +5707,11 @@ onBeforeUnmount(() => {
   flex: 1 1 auto;
   min-height: 0;
   align-items: stretch;
+}
+/* the playbooks and the vars files : their editor and explorer side by side (AppProjectFiles),
+   a grid the rule above would make a column ; its editor's column still fills the height */
+.designer-page .designer-editor .designer-files > .af-files {
+  display: grid;
 }
 /* the editor's BsInput wrapper keeps no bottom margin : the card body's own padding is
    the gap under the editor, the same as the card's side padding */
