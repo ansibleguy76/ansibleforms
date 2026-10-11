@@ -177,8 +177,12 @@ function envInGroup(group, name) {
 // multi-paragraph description; take its first sentence. The split requires a capital
 // after the period, so 'e.g. `https://...`' and 'i.e. /dev/log' are not cut in half.
 // a documented enum ('true, false', '1, 2') becomes a dropdown
+// a documented enum becomes a dropdown ; a yes / no reads so, and still sends its own value
 function envOptions(e) {
-  return Helpers.envAllowedOptions(e?.allowed);
+  const options = Helpers.envAllowedOptions(e?.allowed);
+  return (
+    options?.map((o) => (o.boolean ? { ...o, label: o.label === 'yes' ? t('common.yes') : t('common.no') } : o)) || null
+  );
 }
 
 function envHelp(e) {
