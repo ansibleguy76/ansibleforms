@@ -76,15 +76,14 @@
 /*      (a user's) : its row and its Edit open that page instead  */
 /*      of the record dialog ; New still opens the dialog         */
 /*  a cell's [data-af-popover] : its text in a popover on hover   */
-/*      (a cron's meaning in words, config/settings.js cronCell)  */
+/*      (a cron's meaning in words, lib/cronCell.js)              */
 /*                                                                */
 /******************************************************************/
 
 import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
 import { watch } from 'vue';
 import { toast } from 'vue-sonner';
-import { Popover } from 'bootstrap';
-import { disposeWhenHidden } from '@/lib/popoverDispose';
+import { useCellPopovers } from '@/composables/useCellPopovers';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import Helpers from '@/lib/Helpers';
@@ -1351,39 +1350,10 @@ onMounted(async () => {
 });
 
 // ─── cell popovers ─────────────────────────────────────────────────────────────
-// A cell's render() is html, so it cannot hold a component : a cell that has more to say marks
-// an element with data-af-popover, and hovering it opens that text in the app's popover (the
-// look of the page title's info popover). Created on the first hover, so a table of a
-// thousand rows makes none until one is needed.
-// each with the element it is attached to, for disposeWhenHidden
-const cellPopovers = new Map();
-
-/**
- * Opens the popover of the element hovered, when it has one (data-af-popover).
- *
- * Args:
- *   event (MouseEvent): a mouseover in the table.
- */
-function onCellHover(event) {
-  const el = event.target?.closest?.('[data-af-popover]');
-  if (!el || Popover.getInstance(el)) return;
-  const popover = new Popover(el, {
-    content: el.getAttribute('data-af-popover'),
-    trigger: 'hover focus',
-    placement: 'top',
-    // the text as text, never as html
-    html: false,
-    customClass: 'af-info-popover',
-  });
-  cellPopovers.set(popover, el);
-  popover.show();
-}
+// a cell that has more to say (data-af-popover, a cron's meaning) : its text on hover
+const { onCellHover } = useCellPopovers();
 
 onBeforeUnmount(() => {
-  // the table's rows go with the page : their popovers too, the one under the mouse after its
-  // fade (lib/popoverDispose.js)
-  for (const [popover, el] of cellPopovers) disposeWhenHidden(popover, el);
-  cellPopovers.clear();
   if (interval.value) {
     clearInterval(interval.value);
     interval.value = null;
@@ -1834,10 +1804,6 @@ defineExpose({
 }
 .af-nested-dialogs :deep(.modal-backdrop) {
   z-index: 1060;
-}
-/* a cell with a popover (data-af-popover) : the pointer says there is more to read */
-:deep(.af-has-popover) {
-  cursor: help;
 }
 /* the help of a wizard step : compact, its list close to its title */
 .af-wizard-note {

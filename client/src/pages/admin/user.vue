@@ -22,6 +22,8 @@ import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import Helpers from '@/lib/Helpers';
+import { cronCell } from '@/lib/cronCell';
+import { useCellPopovers } from '@/composables/useCellPopovers';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { useRoleAssignments } from '@/composables/useRoleAssignments';
@@ -101,6 +103,8 @@ async function update(data) {
 // what the user keeps to run : the form values it stored (their user written type/name), and the
 // jobs it planned with Run later (the schedules that run as it : their owner) ; a schedule an
 // admin made runs as no one, and is nobody's here. A row opens the stored job or the schedule.
+// a cron's meaning in words on hover, as the schedules list has it
+const { onCellHover } = useCellPopovers();
 const storedJobs = ref([]);
 const schedules = ref([]);
 const userStoredJobs = computed(() =>
@@ -450,13 +454,14 @@ onMounted(async () => {
         <template v-else-if="user && activeTab === 'schedules'">
           <p v-if="!userSchedules.length" class="text-muted small mb-0">{{ t('settings.users.noSchedule') }}</p>
           <div v-else class="af-table-frame">
-            <table class="table af-table">
+            <table class="table af-table" @mouseover="onCellHover">
               <thead>
                 <tr>
                   <th>{{ t('settings.fields.name') }}</th>
                   <th>{{ t('settings.fields.form') }}</th>
                   <th>{{ t('settings.schedules.cronShort') }}</th>
                   <th>{{ t('settings.schedules.runAt') }}</th>
+                  <th>{{ t('settings.schedules.nextRun') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -469,8 +474,11 @@ onMounted(async () => {
                   <td class="af-row-open">{{ s.name }}</td>
                   <td>{{ s.form || '–' }}</td>
                   <!-- a one-time run has no cron : its Run at says when -->
-                  <td class="font-monospace">{{ s.cron || '–' }}</td>
+                  <!-- eslint-disable-next-line vue/no-v-html -- cronCell escapes it -->
+                  <td class="text-nowrap" v-html="s.cron ? cronCell(s.cron) : '–'"></td>
                   <td>{{ s.run_at ? Helpers.formatServerDate(s.run_at) : '–' }}</td>
+                  <!-- when it runs next : its cron's next time, or its Run at while ahead -->
+                  <td>{{ s.next_run ? Helpers.formatServerDate(s.next_run) : '–' }}</td>
                 </tr>
               </tbody>
             </table>

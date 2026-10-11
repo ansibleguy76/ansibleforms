@@ -3,8 +3,7 @@
 import { editorStyle } from './editorStyle';
 import YAML from 'yaml';
 import Helpers from '@/lib/Helpers';
-import i18n from '@/plugins/i18n';
-import { describeCron } from '@/config/cronDescribe';
+import { cronCell } from '@/lib/cronCell';
 import { cronValidationMessage } from './cron';
 import { headerWidth, PILL, shareUpTo, pxOf } from '@/lib/tableCells';
 import { formPath } from '@/lib/formsPath';
@@ -43,23 +42,6 @@ export const CHAT_PROVIDERS = [
 // for render() output, which goes to v-html : nothing reaches it unescaped, a locale string included
 const escapeHtml = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
-/**
- * A cron in a table cell, with what it means in words in a popover (describeCron), in the
- * app's language : hovering '0 6 * * 0' says 'At 06:00 AM, only on Sunday'.
- *
- * Args:
- *   value (string): the cron expression.
- *
- * Returns:
- *   string: the cell's HTML, escaped.
- */
-function cronCell(value) {
-  const words = describeCron(value, i18n.global.locale.value);
-  if (!words) return escapeHtml(value ?? '');
-  // the popover AppAdminMulti opens on hover (data-af-popover), the look of the info popovers
-  return `<span class="af-has-popover" data-af-popover="${escapeHtml(words)}">${escapeHtml(value ?? '')}</span>`;
-}
 
 /**
  * The empty value of a pill column (a schedule that never ran) : an en dash in a pill with no
