@@ -548,9 +548,10 @@ onMounted(async () => {
         <template v-for="(group, gIdx) in shownGroups" :key="group.key">
           <div v-show="searching || activeTab === group.key">
             <!-- searching : the matches of every tab, each under its tab's name -->
-            <!-- a line between the tabs' matches, and under each tab's name the space between fields -->
-            <hr v-if="searching && gIdx > 0" class="my-4" />
-            <h6 v-if="searching" class="fw-bold text-body-secondary mb-4">
+            <!-- a line between the tabs' matches, and one under each tab's name, from side to side of
+                 the card ; under it the space between fields -->
+            <hr v-if="searching && gIdx > 0" class="my-4 af-search-line" />
+            <h6 v-if="searching" class="fw-bold text-body-secondary af-search-tab">
               <FaIcon :icon="group.icon" class="me-1" />{{ group.label }}
             </h6>
             <!-- The editable, database-backed settings live with their subject rather than
@@ -707,6 +708,22 @@ onMounted(async () => {
   </AppSettingsPage>
 </template>
 <style scoped>
+/* the search's results : a line from side to side of the card under each tab's name and between
+   the tabs (the card body's padding taken back), the space between fields under it */
+.af-search-line,
+.af-search-tab {
+  margin-left: calc(-1 * var(--bs-card-spacer-x));
+  margin-right: calc(-1 * var(--bs-card-spacer-x));
+}
+.af-search-line {
+  opacity: 1;
+  border-color: var(--bs-border-color);
+}
+.af-search-tab {
+  padding: 0 var(--bs-card-spacer-x) 0.75rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--bs-border-color);
+}
 /* the variables' fields one width, as on the other settings pages (AppEnvField) : across the
    whole card, a number or a yes / no sat far from its label. A tab holding a long value (a
    path, a command, an address) has all its fields wider, wide enough to read it : the fields
