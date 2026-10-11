@@ -1061,7 +1061,7 @@ export default {
       label: 'Amfitrió conegut',
       description:
         "Els servidors en què l'aplicació confia per SSH. L'amfitrió d'un repositori s'afegeix en clonar-lo per primer cop; els playbooks s'executen en un RTE, que té els seus.",
-      showEntry: "Mostra l'entrada de l'amfitrió",
+      showEntry: "Copia l'amfitrió al porta-retalls",
       deleteEntry: "Suprimeix l'entrada de l'amfitrió",
       hostEntry: "Entrada de l'amfitrió",
     },

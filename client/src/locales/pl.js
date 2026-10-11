@@ -1054,7 +1054,7 @@ export default {
       label: 'Znany host',
       description:
         'Serwery, którym aplikacja ufa przez SSH. Host repozytorium jest dodawany przy pierwszym klonowaniu; playbooki działają na RTE, które ma własne.',
-      showEntry: 'Pokaż wpis hosta',
+      showEntry: 'Kopiuj hosta do schowka',
       deleteEntry: 'Usuń wpis hosta',
       hostEntry: 'Wpis hosta',
     },

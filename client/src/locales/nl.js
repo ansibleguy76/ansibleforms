@@ -1119,7 +1119,7 @@ export default {
       label: 'Known host',
       description:
         'De servers die de app via SSH vertrouwt. De host van een repository wordt bij de eerste kloon toegevoegd; playbooks draaien op een RTE, die zijn eigen heeft.',
-      showEntry: 'Host entry tonen',
+      showEntry: 'Host naar klembord kopiëren',
       deleteEntry: 'Host entry verwijderen',
       hostEntry: 'Host entry',
     },

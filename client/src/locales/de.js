@@ -1132,7 +1132,7 @@ export default {
       label: 'Bekannter Host',
       description:
         'Die Server, denen die App per SSH vertraut. Der Host eines Repositorys wird beim ersten Klonen hinzugefügt; Playbooks laufen auf einem RTE, das seine eigenen hat.',
-      showEntry: 'Host-Eintrag anzeigen',
+      showEntry: 'Host in die Zwischenablage kopieren',
       deleteEntry: 'Host-Eintrag loeschen',
       hostEntry: 'Host-Eintrag',
     },

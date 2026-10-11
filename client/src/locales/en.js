@@ -1107,7 +1107,7 @@ export default {
       label: 'Known host',
       description:
         "The servers the app trusts over SSH. A repository's host is added when it is first cloned; playbooks run on an RTE, which keeps its own.",
-      showEntry: 'Show host entry',
+      showEntry: 'Copy host to clipboard',
       deleteEntry: 'Delete host entry',
       hostEntry: 'Host entry',
     },

@@ -1059,7 +1059,7 @@ export default {
       label: 'Host conhecido',
       description:
         'Os servidores em que a aplicação confia por SSH. O anfitrião de um repositório é adicionado ao ser clonado pela primeira vez; os playbooks correm num RTE, que tem os seus.',
-      showEntry: 'Mostrar entrada de host',
+      showEntry: 'Copiar o anfitrião para a área de transferência',
       deleteEntry: 'Eliminar entrada de host',
       hostEntry: 'Entrada de host',
     },

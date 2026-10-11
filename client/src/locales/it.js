@@ -1120,7 +1120,7 @@ export default {
       label: 'Host conosciuto',
       description:
         "I server di cui l'app si fida via SSH. L'host di un repository viene aggiunto al primo clone; i playbook girano su un RTE, che ha i propri.",
-      showEntry: 'Mostra voce host',
+      showEntry: "Copia l'host negli appunti",
       deleteEntry: 'Elimina voce host',
       hostEntry: 'Voce host',
     },

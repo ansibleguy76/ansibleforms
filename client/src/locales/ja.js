@@ -1046,7 +1046,7 @@ export default {
       label: '既知のホスト',
       description:
         'アプリが SSH で信頼するサーバー。リポジトリのホストは初回のクローン時に追加されます。プレイブックは RTE で実行され、RTE は独自のものを持ちます。',
-      showEntry: 'ホストエントリを表示',
+      showEntry: 'ホストをクリップボードにコピー',
       deleteEntry: 'ホストエントリを削除',
       hostEntry: 'ホストエントリ',
     },

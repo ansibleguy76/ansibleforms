@@ -1132,7 +1132,7 @@ export default {
       label: 'Hote connu',
       description:
         "Les serveurs auxquels l'application fait confiance en SSH. L'hôte d'un dépôt est ajouté à son premier clonage ; les playbooks s'exécutent sur un RTE, qui a les siens.",
-      showEntry: "Afficher l'entree d'hote",
+      showEntry: "Copier l'hôte dans le presse-papiers",
       deleteEntry: "Supprimer l'entree d'hote",
       hostEntry: "Entree d'hote",
     },

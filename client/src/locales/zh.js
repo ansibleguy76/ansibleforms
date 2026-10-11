@@ -1018,7 +1018,7 @@ export default {
     knownhosts: {
       label: '已知主机',
       description: '应用通过 SSH 信任的服务器。仓库的主机在首次克隆时添加；剧本在 RTE 上运行，RTE 有自己的列表。',
-      showEntry: '显示主机条目',
+      showEntry: '复制主机到剪贴板',
       deleteEntry: '删除主机条目',
       hostEntry: '主机条目',
     },

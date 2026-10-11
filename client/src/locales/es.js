@@ -1122,7 +1122,7 @@ export default {
       label: 'Host conocido',
       description:
         'Los servidores en los que la aplicación confía por SSH. El host de un repositorio se añade al clonarlo por primera vez; los playbooks se ejecutan en un RTE, que tiene los suyos.',
-      showEntry: 'Mostrar entrada de host',
+      showEntry: 'Copiar el host al portapapeles',
       deleteEntry: 'Eliminar entrada de host',
       hostEntry: 'Entrada de host',
     },
