@@ -454,12 +454,14 @@ onMounted(async () => {
                 />
               </div>
               <div class="d-flex gap-2 justify-content-end">
-                <!-- the moves : one group of outlined buttons, as tall as the fields -->
+                <!-- the moves : one group of outlined buttons, as tall as the fields ; blue as the page's
+                     buttons when they may be pressed, grey when not -->
                 <div class="btn-group" role="group" :aria-label="t('settings.interface.linkMoves')">
                   <!-- ← out of its menu, → inside the header link above -->
                   <button
                     type="button"
-                    class="btn btn-outline-secondary af-link-btn"
+                    class="btn af-link-btn"
+                    :class="!l.parent ? 'btn-outline-secondary' : 'btn-outline-primary'"
                     :disabled="!l.parent"
                     :title="t('settings.interface.linkOutdent')"
                     @click="outdentLink(i)"
@@ -468,7 +470,8 @@ onMounted(async () => {
                   </button>
                   <button
                     type="button"
-                    class="btn btn-outline-secondary af-link-btn"
+                    class="btn af-link-btn"
+                    :class="!canIndent(i) ? 'btn-outline-secondary' : 'btn-outline-primary'"
                     :disabled="!canIndent(i)"
                     :title="holdsLinks(l) ? t('settings.interface.linkHoldsLinks') : t('settings.interface.linkIndent')"
                     @click="indentLink(i)"
@@ -477,7 +480,8 @@ onMounted(async () => {
                   </button>
                   <button
                     type="button"
-                    class="btn btn-outline-secondary af-link-btn"
+                    class="btn af-link-btn"
+                    :class="!canMove(i, -1) ? 'btn-outline-secondary' : 'btn-outline-primary'"
                     :disabled="!canMove(i, -1)"
                     :title="t('settings.interface.linkUp')"
                     @click="moveLink(i, -1)"
@@ -486,7 +490,8 @@ onMounted(async () => {
                   </button>
                   <button
                     type="button"
-                    class="btn btn-outline-secondary af-link-btn"
+                    class="btn af-link-btn"
+                    :class="!canMove(i, 1) ? 'btn-outline-secondary' : 'btn-outline-primary'"
                     :disabled="!canMove(i, 1)"
                     :title="t('settings.interface.linkDown')"
                     @click="moveLink(i, 1)"
