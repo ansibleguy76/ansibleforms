@@ -4,6 +4,9 @@ import RestResult from '../../models/restResult.model.v2.js';
 import i18n from '../../lib/i18n.js';
 import Errors from '../../lib/errors.js';
 import { assertMayTouchAdmin } from '../../lib/adminGrants.js';
+import { withGroupRoleCounts, configRoles } from '../../lib/roleCounts.js';
+import DirectoryUser from '../../models/directoryUser.model.js';
+import { directoryGroupRows } from '../../lib/directoryViews.js';
 
 // a change only an admin may make (lib/adminGrants.js) : 403, with the reason
 function refused(res, err) {
@@ -23,7 +26,14 @@ const find = async function(req, res) {
       }
     }else{
       const groups = await Group.findAll();
-      res.json(RestResult.list(groups));
+      // and how many roles name each, for the list's Roles column (lib/roleCounts.js)
+      const local = (await withGroupRoleCounts(groups)).map((g) => ({ ...g, source: 'local' }));
+      // ?directory=1 (the Groups list) : the LDAP and SSO groups beside them, seen at a sign-in
+      // or named by a role (lib/directoryViews.js)
+      const directory = req.query.directory
+        ? directoryGroupRows(await DirectoryUser.findAll(), await configRoles())
+        : [];
+      res.json(RestResult.list([...local, ...directory]));
     }
   } catch(err) {
     res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedFindGroup'), err.toString()));

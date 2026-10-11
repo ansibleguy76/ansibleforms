@@ -10,10 +10,11 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import YAML from 'yaml';
 import Time from '@/lib/Time';
+import { durationSeconds as runSeconds, formatDuration } from '@/lib/jobTime';
 import { useLiveEvent } from '@/composables/useLiveEvent';
 import { useFollowOutput } from '@/composables/useFollowOutput';
 import BsColumnPicker from '@/components/BsColumnPicker.vue';
-import { headerWidth } from '@/lib/tableCells';
+import { headerWidth, pillWidth, pxOf } from '@/lib/tableCells';
 import { jobsPath, statusFromSlug } from '@/lib/jobsPath';
 import { formPath } from '@/lib/formsPath';
 
@@ -42,6 +43,18 @@ function toggleOutput(key) {
 const isLoading = ref(false);
 const jobId = ref(null);
 const displayedJobs = ref([]);
+// what the list's columns are fitted to (v-fit-columns) : its jobs and their status, the columns
+// shown, the steps unfolded - not a running job's duration, which changes every second
+const fitKey = computed(
+  () =>
+    displayedJobs.value.map((j) => `${j.id}:${j.status}`).join(',') +
+    '|' +
+    visibleColumns.value.map((c) => c.key).join(',') +
+    '|' +
+    Object.keys(collapsed.value || {})
+      .filter((k) => collapsed.value[k])
+      .join(','),
+);
 const showExtraVars = ref(false);
 const showArtifacts = ref(false);
 const viewAsYaml = ref(false);
@@ -87,40 +100,32 @@ function backToJobs() {
 // to the top when a job opens or closes : the page scrolls in #app, below the header
 watch(isJobPage, () => document.getElementById('app')?.scrollTo({ top: 0 }));
 
+// where a multistep job's caret goes : before the form, or after the checkbox when the form is
+// hidden (the column picker)
+const caretBefore = computed(() => (visibleColumns.value.some((c) => c.key === 'form') ? 'form' : null));
+
+// how long a job ran (lib/jobTime.js), a running one counted up with the page's clock
+const durationSeconds = (j) => runSeconds(j, now.value);
+
 /**
- * How long a job ran, from its start to its end : 6s, 2m 05s, 1h 02m 05s ; none while it has
- * no end (running, waiting).
- *
- * Args:
- *   j (object): the job.
+ * The status column's width : its widest pill, in the language shown, with the cell's padding
+ * (0.6rem each side, .custom-table), never narrower than its header.
  *
  * Returns:
- *   number|null: the seconds, or null.
+ *   string: a CSS width in px.
  */
-function durationSeconds(j) {
-  if (!j.start) return null;
-  // a job still running : to now, counting up with the page's clock
-  if (!j.end && j.status !== 'running') return null;
-  const end = j.end ? new Date(j.end) : now.value;
-  const s = Math.round((end - new Date(j.start)) / 1000);
-  return Number.isFinite(s) && s >= 0 ? s : null;
-}
-function formatDuration(seconds) {
-  if (seconds == null) return '–';
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const sec = seconds % 60;
-  const two = (n) => String(n).padStart(2, '0');
-  if (h) return `${h}h ${two(m)}m ${two(sec)}s`;
-  if (m) return `${m}m ${two(sec)}s`;
-  return `${sec}s`;
+function statusWidth() {
+  const labels = ['running', 'approve', 'success', 'failed', 'aborted'].map((s) => t(`jobs.menu.${s}`));
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize || '16');
+  return `${Math.max(pxOf(pillWidth(labels, 1.2 * rem)), pxOf(headerWidth(t('jobs.status'))))}px`;
 }
 
 // ─── DataTable-style state (sort / column visibility) ─────────────────────
 // the table fits its frame (a fixed layout) : the short columns a width of their own, the form
 // and the user share the rest, a long value cut with an ellipsis (its full text in the tooltip)
 const columnDefs = computed(() => [
-  { key: 'id', label: t('jobs.id'), filterable: true, sortable: true, type: 'number', width: '4.5rem' },
+  // a number : to the right, as every count
+  { key: 'id', label: t('jobs.id'), filterable: true, sortable: true, type: 'number', width: '4.5rem', align: 'end' },
   { key: 'form', label: t('jobs.form'), filterable: true, sortable: true },
   {
     key: 'job_type',
@@ -131,7 +136,9 @@ const columnDefs = computed(() => [
     width: headerWidth(t('jobs.jobType')),
     render: (j) => j.job_type || 'ansible',
   },
-  { key: 'status', label: t('jobs.status'), filterable: true, sortable: true, width: '10.25rem' },
+  // as wide as its widest pill in the language shown (or its header) : no room kept for a
+  // longer translation
+  { key: 'status', label: t('jobs.status'), filterable: true, sortable: true, width: statusWidth() },
   {
     key: 'start',
     label: t('jobs.startTime'),
@@ -1229,7 +1236,9 @@ onMounted(async () => {
         </template>
         <!-- the list : table and pager framed like the other tables, running to the card's edges -->
         <div v-if="!isJobPage" class="af-table-frame">
-          <table class="custom-table af-table table-sm">
+          <!-- the columns fit their values, a spacer after them (directives/fitColumns.js) ; refitted
+               when the rows change, not at every tick of a running job's duration -->
+          <table v-fit-columns="fitKey" class="custom-table af-table table-sm">
             <thead>
               <tr class="text-start">
                 <!-- tick every job of the page that can be deleted -->
@@ -1243,24 +1252,34 @@ onMounted(async () => {
                     @change="togglePage()"
                   />
                 </th>
-                <th
-                  v-for="col in visibleColumns"
-                  :key="col.key"
-                  :class="{ 'is-clickable': col.sortable, [col.key]: true, 'text-end af-col-end': col.align === 'end' }"
-                  :style="{ userSelect: 'none', whiteSpace: 'nowrap', width: col.width || null }"
-                  @click="col.sortable ? toggleSort(col.key) : undefined"
-                >
-                  {{ col.label }}
-                  <span v-if="col.sortable" class="text-muted ms-1" style="font-size: 0.7em">
-                    <template v-if="sortKey === col.key">
-                      <font-awesome-icon :icon="sortDir === 1 ? 'sort-up' : 'sort-down'" />
-                    </template>
-                    <template v-else>
-                      <font-awesome-icon icon="sort" class="opacity-25" />
-                    </template>
-                  </span>
-                </th>
-                <!-- the row's actions, at the right -->
+                <!-- a multistep job's caret : a column of its own, the ids never moved by it, just
+                     before the form (after the checkbox when the form is hidden) -->
+                <th v-if="!caretBefore" class="af-jobs-expand" data-fit-keep="1.75rem"></th>
+                <template v-for="col in visibleColumns" :key="col.key">
+                  <th v-if="col.key === caretBefore" class="af-jobs-expand" data-fit-keep="1.75rem"></th>
+                  <th
+                    :class="{
+                      'is-clickable': col.sortable,
+                      [col.key]: true,
+                      'text-end af-col-end': col.align === 'end',
+                    }"
+                    :data-fit-keep="col.width || null"
+                    :style="{ userSelect: 'none', whiteSpace: 'nowrap' }"
+                    @click="col.sortable ? toggleSort(col.key) : undefined"
+                  >
+                    {{ col.label }}
+                    <span v-if="col.sortable" class="text-muted ms-1" style="font-size: 0.7em">
+                      <template v-if="sortKey === col.key">
+                        <font-awesome-icon :icon="sortDir === 1 ? 'sort-up' : 'sort-down'" />
+                      </template>
+                      <template v-else>
+                        <font-awesome-icon icon="sort" class="opacity-25" />
+                      </template>
+                    </span>
+                  </th>
+                </template>
+                <!-- the room left, then the row's actions at the right -->
+                <th class="af-fit-spacer"></th>
                 <th class="action"></th>
               </tr>
             </thead>
@@ -1279,23 +1298,37 @@ onMounted(async () => {
                       @change="toggleSelected(j.id)"
                     />
                   </td>
+                  <!-- a multistep job's caret (before the form, or here when it is hidden) : right
+                       while its steps are folded, down once they show ; its cell unfolds them,
+                       another job's opens it as the rest of the row -->
+                  <td
+                    v-if="!caretBefore"
+                    class="af-jobs-expand text-center"
+                    role="button"
+                    @click="j.job_type == 'multistep' ? toggleCollapse(j.id) : openRow(j)"
+                  >
+                    <font-awesome-icon
+                      v-if="j.job_type == 'multistep'"
+                      :icon="collapsed[j.id] ? 'angle-down' : 'angle-right'"
+                      fixed-width
+                    />
+                  </td>
                   <template v-for="col in visibleColumns" :key="col.key">
                     <td
-                      v-if="col.key === 'id'"
+                      v-if="col.key === caretBefore"
+                      class="af-jobs-expand text-center"
                       role="button"
-                      class="text-start"
                       @click="j.job_type == 'multistep' ? toggleCollapse(j.id) : openRow(j)"
                     >
-                      <!-- one line : the number where every job's is, a multistep's caret at the cell's end -->
-                      <span class="d-flex align-items-center">
-                        <span>{{ j.id }}</span>
-                        <font-awesome-icon
-                          v-if="j.job_type == 'multistep'"
-                          :icon="collapsed[j.id] ? 'angle-down' : 'angle-right'"
-                          fixed-width
-                          class="ms-auto"
-                        />
-                      </span>
+                      <font-awesome-icon
+                        v-if="j.job_type == 'multistep'"
+                        :icon="collapsed[j.id] ? 'angle-down' : 'angle-right'"
+                        fixed-width
+                      />
+                    </td>
+                    <!-- its number, to the right as every count -->
+                    <td v-if="col.key === 'id'" role="button" class="text-end af-col-end" @click="openRow(j)">
+                      {{ j.id }}
                     </td>
                     <td v-else-if="col.key === 'status'" role="button" class="text-start" @click="openRow(j)">
                       <AppStatusPill :status="j.status" />
@@ -1315,6 +1348,7 @@ onMounted(async () => {
                       {{ cellText(j, col) }}
                     </td>
                   </template>
+                  <td class="af-fit-spacer"></td>
                   <!-- the row's menu, as every table's : what can be done with the job, Delete last -->
                   <td class="bs-dt-row-actions">
                     <div class="dropdown">
@@ -1391,8 +1425,18 @@ onMounted(async () => {
                 <template v-for="c in childJobs(j.id)" :key="c.id">
                   <tr :class="jobBackground(c)">
                     <td class="table-info" role="button" @click="getJob(c.id)"></td>
+                    <td v-if="!caretBefore" class="af-jobs-expand" role="button" @click="getJob(c.id)"></td>
                     <template v-for="col in visibleColumns" :key="col.key">
-                      <td v-if="col.key === 'id'" role="button" class="text-end" @click="getJob(c.id)">{{ c.id }}</td>
+                      <td
+                        v-if="col.key === caretBefore"
+                        class="af-jobs-expand"
+                        role="button"
+                        @click="getJob(c.id)"
+                      ></td>
+                      <!-- a step's number under its job's -->
+                      <td v-if="col.key === 'id'" role="button" class="text-end af-col-end" @click="getJob(c.id)">
+                        {{ c.id }}
+                      </td>
                       <td
                         v-else-if="col.key === 'form'"
                         role="button"
@@ -1415,6 +1459,7 @@ onMounted(async () => {
                         {{ cellText(c, col) }}
                       </td>
                     </template>
+                    <td class="af-fit-spacer"></td>
                     <td role="button" @click="getJob(c.id)"></td>
                   </tr>
                 </template>
@@ -1423,7 +1468,7 @@ onMounted(async () => {
               <tr v-if="!isLoading && parentJobs.length === 0" class="af-empty-row">
                 <!-- as much room under the text as above it : the message centred between the
                    table's header and its frame -->
-                <td :colspan="visibleColumns.length + 2" class="text-center text-body-secondary py-4">
+                <td :colspan="visibleColumns.length + 4" class="text-center text-body-secondary py-4">
                   <FaIcon icon="circle-info" class="me-2" />{{ emptyMessage }}
                 </td>
               </tr>
@@ -1874,8 +1919,9 @@ onMounted(async () => {
   /* 20px lines : every row a whole 45px (12px padding twice, a 1px border). At 1.2 a row was
      44.19px, and the browser rounding each row's edges made one row in five a pixel taller */
   line-height: 1.25;
-  /* the table fits its frame : the short columns their own width (columnDefs), the form and
-     the user share the rest */
+  /* the columns are laid out by v-fit-columns : the short ones their own width, the form and the
+     user as wide as their values, a spacer the rest ; too narrow, the form and the user give way
+     with an ellipsis, as every table */
   table-layout: fixed;
   width: 100%;
   /* the form and the user keep some room : on a screen too narrow for it the table scrolls
@@ -1911,6 +1957,32 @@ onMounted(async () => {
 .custom-table th.action {
   /* the row's three dots, as the other tables' */
   width: 3.5rem;
+}
+/* a right-aligned column right before the caret (the id) : the caret already keeps the number
+   from the form, so only the cells' usual room after it, the caret then halfway between both */
+.custom-table.af-table th.af-col-end:not(:first-child):not(:last-child):has(+ .af-jobs-expand),
+.custom-table.af-table td.af-col-end:not(:first-child):not(:last-child):has(+ .af-jobs-expand) {
+  padding-right: 0.6rem;
+}
+/* the caret itself : lighter than the row's text (already the secondary grey), the text's colour
+   when hovered, the row's own on a selected row */
+.custom-table td.af-jobs-expand svg {
+  color: var(--bs-tertiary-color);
+}
+.custom-table td.af-jobs-expand:hover svg {
+  color: var(--bs-body-color);
+}
+.custom-table tr.table-selected td.af-jobs-expand svg {
+  color: inherit;
+}
+/* the caret column of a multistep job : as wide as the caret and a little room on each side
+   (1.75rem : the caret's 1.25rem and its padding), and never an ellipsis
+   (an icon is not cut) ; over the table's own cell padding */
+.custom-table.af-table th.af-jobs-expand:not(:first-child):not(:last-child),
+.custom-table.af-table td.af-jobs-expand:not(:first-child):not(:last-child) {
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+  text-overflow: clip;
 }
 /* the checkbox column : as wide as a checkbox and the first cell's padding */
 .custom-table .af-jobs-select {

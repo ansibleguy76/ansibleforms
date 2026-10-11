@@ -66,6 +66,7 @@ import groupRoutesv2 from "./routes/v2/group.routes.js";
 import settingsRoutesv2 from "./routes/v2/settings.routes.js";
 import healthRoutesv2 from "./routes/v2/health.routes.js";
 import auditRoutesv2 from "./routes/v2/audit.routes.js";
+import directoryRoutesv2 from "./routes/v2/directory.routes.js";
 import auditMiddleware from "./lib/auditMiddleware.js";
 import logoRoutesv2 from "./routes/v2/logo.routes.js";
 import sshRoutesv2 from "./routes/v2/ssh.routes.js";
@@ -237,6 +238,8 @@ const load = async (app) => {
   app.use(`/api/v2/settings`, cors(), authobj, Middleware.checkSettingsMiddleware, settingsRoutesv2);
   app.use(`/api/v2/health`, cors(), authobj, Middleware.checkSettingsMiddleware, healthRoutesv2);
   app.use(`/api/v2/audit`, cors(), authobj, Middleware.checkSettingsMiddleware, auditRoutesv2);
+  // the LDAP and SSO users and groups of Settings > Users and Groups (models/directoryUser.model.js)
+  app.use(`/api/v2/directory`, cors(), authobj, Middleware.checkSettingsMiddleware, directoryRoutesv2);
   // custom logo ; reading is public (header and login page), changing it is guarded in the routes
   app.use(`/api/v2/logo`, cors(), logoRoutesv2);
   app.use(`/api/v2/sshkey`, cors(), authobj, Middleware.checkSettingsMiddleware, sshRoutesv2);

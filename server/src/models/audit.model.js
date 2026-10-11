@@ -184,6 +184,7 @@ Audit.find = async function (filter = {}) {
   const where = [];
   const vars = [];
   const actor = one(filter.actor);
+  const actorType = one(filter.actorType);
   const action = one(filter.action);
   const targetType = one(filter.targetType);
   const target = one(filter.target);
@@ -191,6 +192,7 @@ Audit.find = async function (filter = {}) {
   const from = when(filter.from);
   const to = when(filter.to);
   if (actor) { where.push('actor = ?'); vars.push(actor); }
+  if (actorType) { where.push('actor_type = ?'); vars.push(actorType); }
   if (action) { where.push('action = ?'); vars.push(action); }
   if (targetType) { where.push('target_type = ?'); vars.push(targetType); }
   if (target) { where.push('target LIKE ?'); vars.push(`%${target}%`); }

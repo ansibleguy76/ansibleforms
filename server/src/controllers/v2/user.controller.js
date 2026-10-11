@@ -6,6 +6,12 @@ import Errors from '../../lib/errors.js';
 import i18n from '../../lib/i18n.js';
 import { assertMayTouchAdmin } from '../../lib/adminGrants.js';
 import { unlockAccount } from '../../lib/loginThrottle.js';
+import Group from '../../models/group.model.js';
+import { withUserRoleCounts } from '../../lib/roleCounts.js';
+import { withUserJobCounts } from '../../lib/jobCounts.js';
+import DirectoryUser from '../../models/directoryUser.model.js';
+import { directoryUserRows } from '../../lib/directoryViews.js';
+import { configRoles } from '../../lib/roleCounts.js';
 import authConfig from '../../../config/auth.config.js';
 import Token from '../../models/token.model.js';
 import { revokeUser } from '../../lib/tokenRevocation.js';
@@ -57,7 +63,16 @@ const findAllOr1 = async function(req, res) {
       users.forEach(u => {
         if (u.password) u.password = '**********';
       });
-      res.json(RestResult.list(users));
+      // and how many roles each has, for the list's Roles column (lib/roleCounts.js), and how
+      // many stored jobs and planned jobs it keeps, for its optional columns (lib/jobCounts.js)
+      const counted = (await withUserRoleCounts(users, await Group.findAll())).map((u) => ({ ...u, source: 'local' }));
+      // ?directory=1 (the Users list) : the LDAP and SSO users beside them, those seen at
+      // sign-in and those the roles name (lib/directoryViews.js) ; every other caller keeps
+      // the local users only
+      const directory = req.query.directory
+        ? directoryUserRows(await DirectoryUser.findAll(), await configRoles())
+        : [];
+      res.json(RestResult.list(await withUserJobCounts([...counted, ...directory])));
     }
   } catch(err) {
     res.status(500).json(RestResult.error(err.toString()));
@@ -164,6 +179,32 @@ const addGroup = async function(req, res) {
 };
 
 /**
+ * Blocks or allows a local user's sign-in (POST /api/v2/user/:id/block, body { blocked }) :
+ * blocked, its sessions end at once and every sign-in is refused (lib/signInGate.js). Never the
+ * admin user - the way back in - nor the user asking ; an admin account by an admin only.
+ */
+const setBlocked = async function(req, res) {
+  try {
+    await assertMayTouchAdmin(req, { userId: req.params.id });
+    const target = await User.findById(req.params.id);
+    const blocked = !!req.body?.blocked;
+    if (blocked && target.username === 'admin') {
+      return res.status(400).json(RestResult.error(i18n.t(req, 'resources.cantBlockAdmin')));
+    }
+    const me = req.user?.user;
+    if (blocked && me?.type === 'local' && me.username === target.username) {
+      return res.status(400).json(RestResult.error(i18n.t(req, 'resources.cantBlockYourself')));
+    }
+    await User.setBlocked(req.params.id, blocked);
+    if (blocked) await endSessions(target.username);
+    res.json(RestResult.single({ blocked }));
+  } catch(err) {
+      if (refused(res, err)) return;
+    res.status(err instanceof Errors.NotFoundError ? 404 : 400).json(RestResult.error(err.message || err.toString()));
+  }
+};
+
+/**
  * Removes a group from a user (DELETE /api/v2/user/:id/groups/:groupId) ; a user keeps one.
  */
 const removeGroup = async function(req, res) {
@@ -259,5 +300,6 @@ export default {
   find,
   delete: deleteUser,
   addGroup,
-  removeGroup
+  removeGroup,
+  setBlocked
 };

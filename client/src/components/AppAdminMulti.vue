@@ -65,6 +65,9 @@
 /*  field.columnLabel: the column's title, when shorter than the  */
 /*      field's label in the dialog                               */
 /*  action.to: (item) => route - the action goes to a page        */
+/*  action.shownWhen: (item) => boolean - the action is in the    */
+/*      menu of the records it returns true for only (an LDAP     */
+/*      user's Block sign-in ; a local user's Change password)    */
 /*  action.update: (item) => object - the action saves those      */
 /*      fields of the record (Use for sign-in), then reloads      */
 /*  action.dividerBefore: a line above it in the row menu, apart  */
@@ -72,19 +75,20 @@
 /*  action.enabledWhen: (item) => boolean - the action is off for */
 /*      the records it returns false for (greyed out ; a delete's */
 /*      also greys the record's checkbox)                         */
+/*  settings.listQuery: '?directory=1' - added to the list's read */
+/*      (the LDAP and SSO users beside the local ones)            */
 /*  settings.openPage: (item) => path - a record has its own page */
 /*      (a user's) : its row and its Edit open that page instead  */
 /*      of the record dialog ; New still opens the dialog         */
 /*  a cell's [data-af-popover] : its text in a popover on hover   */
-/*      (a cron's meaning in words, config/settings.js cronCell)  */
+/*      (a cron's meaning in words, lib/cronCell.js)              */
 /*                                                                */
 /******************************************************************/
 
 import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
 import { watch } from 'vue';
 import { toast } from 'vue-sonner';
-import { Popover } from 'bootstrap';
-import { disposeWhenHidden } from '@/lib/popoverDispose';
+import { useCellPopovers } from '@/composables/useCellPopovers';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import Helpers from '@/lib/Helpers';
@@ -103,7 +107,7 @@ const toolsId = `af-tools-${Math.random().toString(36).slice(2, 10)}`;
 const pagerId = `af-pager-${Math.random().toString(36).slice(2, 10)}`;
 const { t, locale } = useI18n();
 const router = useRouter();
-const emit = defineEmits(['test', 'preview', 'trigger', 'reset', 'sync', 'created']);
+const emit = defineEmits(['test', 'preview', 'trigger', 'reset', 'sync', 'created', 'block_sign_in', 'allow_sign_in']);
 
 // PROPS
 
@@ -287,7 +291,7 @@ async function loadItems(force = true) {
   // this was the other half.) Assigning the new list when it arrives also removes
   // the "no data" flicker.
   resetSelection();
-  itemList.value = await loadList(objectType, isFlat);
+  itemList.value = await loadList(objectType, isFlat, undefined, props.settings.listQuery || '');
   // Drop selected rows that are no longer there. resetSelection() clears the SINGLE
   // item selection (the offcanvas), not the multi-select set, so without this the
   // toolbar kept counting rows that had been deleted - by this admin elsewhere, by
@@ -329,10 +333,10 @@ function flatRow(value) {
   const name = String(value);
   return { id: name, name };
 }
-async function loadList(type, isFlat = false, version = undefined) {
+async function loadList(type, isFlat = false, version = undefined, query = '') {
   const apiVersion = version || props.apiVersion;
   try {
-    const result = await axios.get(`/api/v${apiVersion}/${type}/`);
+    const result = await axios.get(`/api/v${apiVersion}/${type}/${query}`);
     if (apiVersion == 2) {
       if (isFlat) {
         const records = Array.isArray(result.data.records) ? result.data.records : [];
@@ -1064,6 +1068,19 @@ function busyLabel(item) {
   return props.busyItems?.[item.id] ?? props.busyItems?.[item[idKey]] ?? '';
 }
 
+/**
+ * The actions of a record's menu : those it has (action.shownWhen), in their order.
+ *
+ * Args:
+ *   item (object): the record.
+ *
+ * Returns:
+ *   object[]: the actions.
+ */
+function actionsFor(item) {
+  return actions.value.filter((a) => typeof a.shownWhen !== 'function' || a.shownWhen(item));
+}
+
 function isActionEnabled(action, item) {
   if (isManaged(item) && MANAGED_BLOCKS.has(action.name)) return false;
   // read only : nothing that ends in a write, the change_* actions (their page's forms) too
@@ -1349,39 +1366,10 @@ onMounted(async () => {
 });
 
 // ─── cell popovers ─────────────────────────────────────────────────────────────
-// A cell's render() is html, so it cannot hold a component : a cell that has more to say marks
-// an element with data-af-popover, and hovering it opens that text in the app's popover (the
-// look of the page title's info popover). Created on the first hover, so a table of a
-// thousand rows makes none until one is needed.
-// each with the element it is attached to, for disposeWhenHidden
-const cellPopovers = new Map();
-
-/**
- * Opens the popover of the element hovered, when it has one (data-af-popover).
- *
- * Args:
- *   event (MouseEvent): a mouseover in the table.
- */
-function onCellHover(event) {
-  const el = event.target?.closest?.('[data-af-popover]');
-  if (!el || Popover.getInstance(el)) return;
-  const popover = new Popover(el, {
-    content: el.getAttribute('data-af-popover'),
-    trigger: 'hover focus',
-    placement: 'top',
-    // the text as text, never as html
-    html: false,
-    customClass: 'af-info-popover',
-  });
-  cellPopovers.set(popover, el);
-  popover.show();
-}
+// a cell that has more to say (data-af-popover, a cron's meaning) : its text on hover
+const { onCellHover } = useCellPopovers();
 
 onBeforeUnmount(() => {
-  // the table's rows go with the page : their popovers too, the one under the mouse after its
-  // fade (lib/popoverDispose.js)
-  for (const [popover, el] of cellPopovers) disposeWhenHidden(popover, el);
-  cellPopovers.clear();
   if (interval.value) {
     clearInterval(interval.value);
     interval.value = null;
@@ -1457,7 +1445,7 @@ defineExpose({
               <font-awesome-icon icon="ellipsis-vertical" />
             </a>
             <ul class="dropdown-menu dropdown-menu-end">
-              <template v-for="(action, idx) in actions" :key="action.name + idx">
+              <template v-for="(action, idx) in actionsFor(item)" :key="action.name + idx">
                 <li v-if="(action.name === 'delete' || action.dividerBefore) && idx > 0">
                   <hr class="dropdown-divider" />
                 </li>
@@ -1832,10 +1820,6 @@ defineExpose({
 }
 .af-nested-dialogs :deep(.modal-backdrop) {
   z-index: 1060;
-}
-/* a cell with a popover (data-af-popover) : the pointer says there is more to read */
-:deep(.af-has-popover) {
-  cursor: help;
 }
 /* the help of a wizard step : compact, its list close to its title */
 .af-wizard-note {

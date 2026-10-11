@@ -1,12 +1,22 @@
 <script setup>
 /******************************************************************/
 /*                                                                */
-/*  A local user's page (/settings/users/<id>), opened from the      */
-/*  users list : its Details tab (username, description, email)  */
-/*  and its Groups tab (the groups it belongs to : Add group, and */
-/*  a row's menu or the checkboxes remove one, never the last),   */
-/*  the tab kept in the address (/groups). Change password and    */
-/*  Delete top right, as the list's row menu has them.            */
+/*  A local user's page (/settings/users/<id>), opened from the   */
+/*  users list, in tabs, the tab kept in the address              */
+/*  (/groups, /roles...) ; a row of a tab opens its item :        */
+/*  Details - its Allow sign-in switch (off : blocked, asked      */
+/*            first), username, description, email               */
+/*  Groups - the groups it belongs to : Add group, and a row's    */
+/*           menu or the checkboxes remove one, never the last    */
+/*  Roles - the roles it has, and how (by name, through a group,  */
+/*          public as everyone's)                                 */
+/*  Forms - the forms its roles open                              */
+/*  Jobs - the jobs it launched, the latest first                 */
+/*  Stored jobs - the form values it stored to run again          */
+/*  Schedules - the jobs it planned with Run later                */
+/*  Activity - what the audit log recorded it doing               */
+/*  Change password and Delete top right, as the list's row menu  */
+/*  has them.                                                     */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted } from 'vue';
@@ -15,8 +25,13 @@ import axios from 'axios';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
+import { formPath } from '@/lib/formsPath';
+import { useFormLinks } from '@/composables/useFormLinks';
+import { useUserLinks } from '@/composables/useUserLinks';
+import { setSignInBlocked } from '@/lib/signIn';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
+import { useRoleAssignments } from '@/composables/useRoleAssignments';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -89,12 +104,76 @@ async function update(data) {
   }
 }
 
+// ─── Forms, Jobs, Stored jobs, Schedules, Activity ─────────────────────────────
+// the forms its roles open (the admin role, every form) ; a row opens the form
+const { loadForms, formsOfRoles } = useFormLinks();
+const userForms = computed(() => formsOfRoles(userRoles.value.map((r) => r.name)));
+const formColumns = computed(() => [
+  { key: 'name', label: t('settings.fields.form') },
+  { key: 'through', label: t('settings.linked.throughRoles'), value: (f) => f.through.join(', ') },
+  { key: 'description', label: t('settings.fields.description') },
+]);
+// what it launched, keeps and did (composables/useUserLinks.js), as an LDAP or SSO user's page
+const who = computed(() => (user.value ? { type: 'local', username: user.value.username } : null));
+const {
+  jobs: userJobs,
+  storedJobs: userStoredJobs,
+  schedules: userSchedules,
+  activity,
+  loadUserLinks,
+  jobColumns,
+  storedJobColumns,
+  scheduleColumns,
+  activityColumns,
+} = useUserLinks(who);
+
 // ─── tabs ─────────────────────────────────────────────────────────────────────
-// Details (username, description, email), Groups ; the tab kept in the url
+// Details (username, description, email), Groups, Roles, Forms, Jobs, Stored jobs, Schedules,
+// Activity ; the tab kept in the url
 const tabs = computed(() => [
   { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
-  { key: 'groups', label: t('settings.settingsPage.groups'), icon: 'users' },
+  { key: 'groups', label: t('settings.settingsPage.groups'), icon: 'users', count: userGroups.value.length },
+  { key: 'roles', label: t('settings.settingsPage.roles'), icon: 'user-shield', count: userRoles.value.length },
+  { key: 'forms', label: t('settings.linked.forms'), icon: 'rectangle-list', count: userForms.value.length },
+  { key: 'jobs', label: t('settings.linked.jobs'), icon: 'history', count: userJobs.value.length },
+  {
+    key: 'stored-jobs',
+    label: t('settings.storedJobs.labelPlural'),
+    icon: 'floppy-disk',
+    count: userStoredJobs.value.length,
+  },
+  { key: 'schedules', label: t('settings.schedules.labelPlural'), icon: 'clock', count: userSchedules.value.length },
+  { key: 'activity', label: t('settings.linked.activity'), icon: 'clipboard-list', count: activity.value.length },
 ]);
+
+// ─── Roles ────────────────────────────────────────────────────────────────────
+// the roles the user has : by its name, through its groups, public as everyone's ; a row opens
+// the role's page
+const { loadRoles, rolesOfUser } = useRoleAssignments();
+const userRoles = computed(() =>
+  user.value
+    ? rolesOfUser(
+        user.value.username,
+        userGroups.value.map((g) => g.name),
+      )
+    : [],
+);
+/**
+ * How a role is the user's, in words : directly, through which groups, or everyone's.
+ *
+ * Args:
+ *   r (object): a row of userRoles.
+ *
+ * Returns:
+ *   string: the Given by cell.
+ */
+function givenBy(r) {
+  if (r.everyone) return t('settings.common.roleEveryone');
+  const parts = [];
+  if (r.direct) parts.push(t('settings.common.roleDirectly'));
+  if (r.groups.length) parts.push(t('settings.common.roleThroughGroups', { groups: r.groups.join(', ') }));
+  return parts.join(' · ');
+}
 const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
 // the title : Users › <username>, each step a link : Users back to the list, the name to this page
@@ -201,6 +280,46 @@ async function savePassword(password) {
   }
 }
 
+// ─── Allow sign-in ────────────────────────────────────────────────────────────
+// on : it signs in ; off : blocked, its sessions end and every sign-in is refused (asked first,
+// the switch staying on until confirmed). Never the admin user, the way back in.
+const confirmBlock = ref(false);
+
+/**
+ * The Allow sign-in switch turned : on allows at once ; off asks first.
+ *
+ * Args:
+ *   event (Event): the switch's change.
+ */
+function onSignInSwitch(event) {
+  if (event.target.checked) {
+    setBlocked(false);
+    return;
+  }
+  event.target.checked = true;
+  confirmBlock.value = true;
+}
+
+/**
+ * Blocks or allows the user's sign-in, then reloads it ; a refusal (its own sign-in) in a toast.
+ *
+ * Args:
+ *   blocked (boolean): true to block.
+ */
+async function setBlocked(blocked) {
+  confirmBlock.value = false;
+  const name = user.value.username;
+  try {
+    await setSignInBlocked({ id: userId.value, username: name, source: 'local' }, blocked);
+    toast.success(
+      blocked ? t('settings.directory.nowBlocked', { name }) : t('settings.directory.nowAllowed', { name }),
+    );
+    await load();
+  } catch (err) {
+    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+  }
+}
+
 // ─── Delete ───────────────────────────────────────────────────────────────────
 const confirmDelete = ref(false);
 
@@ -220,7 +339,8 @@ async function deleteUser() {
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
-  await load();
+  await Promise.all([load(), loadRoles(), loadForms()]);
+  await loadUserLinks();
   // opened from the list's Add to group : the dialog open at once, the url left clean
   if (route.query.add && user.value) {
     // in every group already : the dialog says so, its Save off
@@ -232,6 +352,12 @@ onMounted(async () => {
 });
 </script>
 <template>
+  <AppBlockSignInDialog
+    v-if="confirmBlock"
+    :name="user?.username || ''"
+    @confirm="setBlocked(true)"
+    @close="confirmBlock = false"
+  />
   <BsModal v-if="confirmDelete" size="md" @close="confirmDelete = false" icon="trash">
     <template #title> {{ t('common.delete') }} {{ user?.username }} </template>
     <template #default>
@@ -278,7 +404,7 @@ onMounted(async () => {
             >
               <FaIcon :icon="tab.icon" class="me-1" />
               {{ tab.label }}
-              <span v-if="tab.key === 'groups'" class="badge af-tab-count ms-1">{{ userGroups.length }}</span>
+              <span v-if="tab.count !== undefined" class="badge af-tab-count ms-1">{{ tab.count }}</span>
             </a>
           </li>
         </ul>
@@ -290,6 +416,24 @@ onMounted(async () => {
         </div>
         <!-- Details : the username, its description and email -->
         <div v-else-if="user && activeTab === 'details'" class="af-user-details">
+          <!-- Allow sign-in : saved at once, as a runner's Default ; never off for the admin user -->
+          <div class="mb-3">
+            <label class="form-label fw-bold d-block" for="af-sign-in">{{ t('settings.directory.allowSignIn') }}</label>
+            <div class="form-check form-switch mb-0">
+              <input
+                id="af-sign-in"
+                class="form-check-input"
+                type="checkbox"
+                role="switch"
+                :checked="!user.blocked"
+                :disabled="isAdminUser && !user.blocked"
+                @change="onSignInSwitch"
+              />
+            </div>
+            <div class="form-text">
+              {{ user.blocked ? t('settings.directory.blockedNote') : t('settings.users.signInHelp') }}
+            </div>
+          </div>
           <BsInput
             class="af-user-field"
             v-model="edit.username"
@@ -316,10 +460,80 @@ onMounted(async () => {
           />
         </div>
         <!-- Groups : the group it belongs to, as the app's other tables -->
+        <!-- Roles : the roles the user has, and how ; a row opens the role -->
+        <template v-else-if="user && activeTab === 'roles'">
+          <div class="af-table-frame">
+            <table v-fit-columns class="table af-table">
+              <thead>
+                <tr>
+                  <th>{{ t('settings.common.role') }}</th>
+                  <th>{{ t('settings.common.roleGivenBy') }}</th>
+                  <th>{{ t('settings.fields.description') }}</th>
+                  <th class="af-fit-spacer"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="r in userRoles"
+                  :key="r.name"
+                  role="button"
+                  @click="router.push(`/settings/roles/${encodeURIComponent(r.name)}`)"
+                >
+                  <td class="af-row-open">{{ r.name }}</td>
+                  <td>{{ givenBy(r) }}</td>
+                  <td>{{ r.description || '–' }}</td>
+                  <td class="af-fit-spacer"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
+        <!-- Forms : the forms its roles open ; a row opens the form -->
+        <AppLinkedTable
+          v-else-if="user && activeTab === 'forms'"
+          :columns="formColumns"
+          :rows="userForms"
+          rowKey="name"
+          :to="(f) => formPath(f.name)"
+          :empty="t('settings.linked.noFormUser')"
+        />
+        <!-- Jobs : the jobs it launched, the latest first ; a row opens the job -->
+        <AppLinkedTable
+          v-else-if="user && activeTab === 'jobs'"
+          :columns="jobColumns"
+          :rows="userJobs"
+          :to="(j) => `/jobs/${j.id}`"
+          :empty="t('settings.linked.noJob')"
+        >
+          <template #cell-status="{ row }"><AppStatusPill :status="row.status" /></template>
+        </AppLinkedTable>
+        <!-- Stored jobs : the form values it stored ; a row opens the stored job -->
+        <AppLinkedTable
+          v-else-if="user && activeTab === 'stored-jobs'"
+          :columns="storedJobColumns"
+          :rows="userStoredJobs"
+          :to="(j) => `/jobs/stored/${j.id}`"
+          :empty="t('settings.users.noStoredJob')"
+        />
+        <!-- Schedules : the jobs it planned with Run later ; a row opens the schedule -->
+        <AppLinkedTable
+          v-else-if="user && activeTab === 'schedules'"
+          :columns="scheduleColumns"
+          :rows="userSchedules"
+          :to="(s) => `/jobs/schedules/${s.id}`"
+          :empty="t('settings.users.noSchedule')"
+        />
+        <!-- Activity : what the audit log recorded it doing, the latest first -->
+        <AppLinkedTable
+          v-else-if="user && activeTab === 'activity'"
+          :columns="activityColumns"
+          :rows="activity"
+          :empty="t('settings.linked.noActivity')"
+        />
         <template v-else-if="user">
           <p v-if="!userGroups.length" class="text-muted small mb-0">{{ t('settings.users.noGroup') }}</p>
           <div v-else class="af-table-frame">
-            <table class="table af-table">
+            <table v-fit-columns class="table af-table">
               <thead>
                 <tr>
                   <th class="text-center bs-dt-select">
@@ -336,12 +550,20 @@ onMounted(async () => {
                   </th>
                   <th>{{ t('settings.fields.name') }}</th>
                   <th>{{ t('settings.fields.description') }}</th>
+                  <th class="af-fit-spacer"></th>
                   <th class="af-group-menu-col"></th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="g in userGroups" :key="g.id" :class="{ 'bs-dt-selected': selectedGroups.includes(g.id) }">
-                  <td class="text-center bs-dt-select">
+                <!-- a row opens the group's page, as every list ; its box and its menu do their own -->
+                <tr
+                  v-for="g in userGroups"
+                  :key="g.id"
+                  role="button"
+                  :class="{ 'bs-dt-selected': selectedGroups.includes(g.id) }"
+                  @click="router.push(`/settings/groups/${g.id}`)"
+                >
+                  <td class="text-center bs-dt-select" @click.stop>
                     <input
                       type="checkbox"
                       class="form-check-input"
@@ -349,10 +571,11 @@ onMounted(async () => {
                       @change="toggleGroup(g.id)"
                     />
                   </td>
-                  <td>{{ g.name }}</td>
+                  <td class="af-row-open">{{ g.name }}</td>
                   <!-- an en dash when the group says nothing -->
                   <td>{{ g.description || '–' }}</td>
-                  <td class="bs-dt-row-actions">
+                  <td class="af-fit-spacer"></td>
+                  <td class="bs-dt-row-actions" @click.stop>
                     <div class="dropdown">
                       <a
                         role="button"

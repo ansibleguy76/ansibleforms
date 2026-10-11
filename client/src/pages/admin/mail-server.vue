@@ -4,7 +4,7 @@
 /*  A mail server's page (/settings/mail/<id>), opened from  */
 /*  the mail servers' list : the steps of its dialog as tabs, and */
 /*  a test mail, the tab kept in the url -                        */
-/*    Server      its name, description, and whether it is the    */
+/*    Details     its name, description, and whether it is the    */
 /*                one the app sends with (Active)                 */
 /*    Connection  its host, port and TLS                          */
 /*    Sender      the from address, and the smtp credential it    */
@@ -131,12 +131,12 @@ async function onCredentialCreated(name) {
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
 const tabs = computed(() => [
-  { key: 'server', label: t('settings.mailServers.stepServer'), icon: 'envelope' },
+  { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
   { key: 'connection', label: t('settings.mailServers.stepConnection'), icon: 'server' },
   { key: 'sender', label: t('settings.mailServers.stepSender'), icon: 'key' },
   { key: 'test', label: t('settings.mailServers.stepTest'), icon: 'paper-plane' },
 ]);
-const { activeTab, tabLink } = useRouteTab('server', (key) => tabs.value.some((x) => x.key === key));
+const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
 // the title : Mail › <name>, each step a link
 const pageCrumbs = computed(() => [
@@ -303,8 +303,8 @@ onMounted(async () => {
             }}</BsButton>
           </template>
           <fieldset v-else :disabled="managed">
-            <!-- Server : what it is called, and whether the app sends with it -->
-            <template v-if="activeTab === 'server'">
+            <!-- Details : what it is called, and whether the app sends with it -->
+            <template v-if="activeTab === 'details'">
               <BsInput
                 class="af-mail-field"
                 v-model="edit.name"

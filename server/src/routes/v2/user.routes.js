@@ -13,6 +13,8 @@ router.put('/:id', userController.update);
 router.delete('/:id', userController.delete);
 // A user's groups besides its first one : add one, remove one (a user keeps one)
 router.post('/:id/groups', userController.addGroup);
+// block (body { blocked: true }) or allow its sign-in
+router.post('/:id/block', userController.setBlocked);
 router.delete('/:id/groups/:groupId', userController.removeGroup);
 
 export default router

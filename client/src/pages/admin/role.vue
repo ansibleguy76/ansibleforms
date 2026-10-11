@@ -2,8 +2,9 @@
 /******************************************************************/
 /*                                                                */
 /*  A role's page (/settings/roles/<name>), opened from the roles    */
-/*  list : its General tab (name and options), its Users and its  */
-/*  Groups, the tab kept in the address (/users). Saving writes   */
+/*  list : its General tab (name and options), its Users, its     */
+/*  Groups and the Forms that name it, the tab kept in the        */
+/*  address (/users). Saving writes                               */
 /*  the forms config, as the list does ; a renamed role's page    */
 /*  follows its new name.                                         */
 /*                                                                */
@@ -16,6 +17,8 @@ import { useFormsConfig } from '@/composables/useFormsConfig';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRoleSupport } from '@/composables/useRoleSupport';
 import { useRouteTab } from '@/composables/useRouteTab';
+import { useFormLinks } from '@/composables/useFormLinks';
+import { formPath } from '@/lib/formsPath';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -61,11 +64,32 @@ const userCount = computed(() => {
 });
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
-// Details (the name, its description and the options), Users, Groups ; the tab kept in the url
+// Details (the name, its description and the options), Users, Groups, Forms ; the tab kept in
+// the url. Public has no count of users or groups : it is everyone's.
 const tabs = computed(() => [
   { key: 'general', label: t('settings.common.tabDetails'), icon: 'sliders' },
-  { key: 'users', label: t('settings.settingsPage.users'), icon: 'user' },
-  { key: 'groups', label: t('settings.settingsPage.groups'), icon: 'users' },
+  {
+    key: 'users',
+    label: t('settings.settingsPage.users'),
+    icon: 'user',
+    count: role.value?._public ? null : userCount.value,
+  },
+  {
+    key: 'groups',
+    label: t('settings.settingsPage.groups'),
+    icon: 'users',
+    count: role.value?._public ? null : role.value?.groups.length,
+  },
+  { key: 'forms', label: t('settings.linked.forms'), icon: 'rectangle-list', count: roleForms.value.length },
+]);
+
+// ─── Forms ────────────────────────────────────────────────────────────────────
+// the forms that name the role (the admin role : every form) ; a row opens the form
+const { loadForms, formsOfRoles } = useFormLinks();
+const roleForms = computed(() => (role.value ? formsOfRoles([roleName.value]) : []));
+const formColumns = computed(() => [
+  { key: 'name', label: t('settings.fields.form') },
+  { key: 'description', label: t('settings.fields.description') },
 ]);
 const { activeTab, tabLink } = useRouteTab('general', (key) => tabs.value.some((x) => x.key === key));
 
@@ -189,7 +213,7 @@ async function deleteRole() {
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
-  await Promise.all([load(), loadLocalNames()]);
+  await Promise.all([load(), loadLocalNames(), loadForms()]);
   stampRoleFlags();
   loaded.value = true;
 });
@@ -265,8 +289,8 @@ onMounted(async () => {
             >
               <FaIcon :icon="tab.icon" class="me-1" />
               {{ tab.label }}
-              <span v-if="tab.key !== 'general' && !role._public" class="badge af-tab-count ms-1">{{
-                tab.key === 'users' ? userCount : role.groups.length
+              <span v-if="tab.count !== undefined && tab.count !== null" class="badge af-tab-count ms-1">{{
+                tab.count
               }}</span>
             </a>
           </li>
@@ -280,6 +304,15 @@ onMounted(async () => {
           <FaIcon icon="user-shield" class="empty-state-icon" />
           <span>{{ t('settings.settingsPage.roleNotFound', { name: roleName }) }}</span>
         </div>
+        <!-- Forms : the forms that name the role ; a row opens the form -->
+        <AppLinkedTable
+          v-else-if="role && activeTab === 'forms'"
+          :columns="formColumns"
+          :rows="roleForms"
+          rowKey="name"
+          :to="(f) => formPath(f.name)"
+          :empty="t('settings.linked.noFormRole')"
+        />
         <AppRoleEditor
           v-else-if="role"
           v-model:role="roles[roleIndex]"

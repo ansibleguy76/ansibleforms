@@ -1,4 +1,5 @@
 <script setup>
+import { headerWidth, shareUpTo, pxOf } from '@/lib/tableCells';
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import Profile from '@/lib/Profile';
@@ -143,13 +144,23 @@ const tableItems = computed(() =>
     required: role._required,
     // the public role is everyone's : no count
     users: role._public ? null : roleUserCount(role),
+    // the groups it names, of every provider (local, LDAP, SSO) ; public's : none to name
+    groups: role._public ? null : role.groups.length,
   })),
 );
+// the room the checkbox, the two counts and the row menu take : the name and the description share
+// the rest
+const reserved = () =>
+  44 +
+  56 +
+  pxOf(headerWidth(t('settings.settingsPage.users'), true, '8rem', true)) +
+  pxOf(headerWidth(t('settings.settingsPage.groups'), true, '8rem', true));
 const columns = computed(() => [
   {
     key: 'name',
-    // a share of the width, so it follows the screen : the description gets the rest
-    width: '30%',
+    // room for a role's name and its Required badge : the description gets the rest (a longer
+    // name is cut, whole in its tooltip)
+    width: shareUpTo(0.4, 256, reserved()),
     label: t('settings.settingsPage.name'),
     sortable: true,
     filterable: true,
@@ -172,12 +183,24 @@ const columns = computed(() => [
   {
     key: 'users',
     label: t('settings.settingsPage.users'),
-    width: '7rem',
+    // as wide as its header, in the language shown
+    width: headerWidth(t('settings.settingsPage.users'), true, '8rem', true),
     align: 'end',
     sortable: true,
     filterable: false,
     sortValue: (row) => (row.users === null ? Number.MAX_SAFE_INTEGER : row.users),
     // none : an en dash, as the other empty cells
+    render: (v) => (v === null ? escapeHtml(t('settings.settingsPage.roleUsersAll')) : v ? String(v) : '–'),
+  },
+  // how many groups it names ; public, everyone's, names none : All, as its users
+  {
+    key: 'groups',
+    label: t('settings.settingsPage.groups'),
+    width: headerWidth(t('settings.settingsPage.groups'), true, '8rem', true),
+    align: 'end',
+    sortable: true,
+    filterable: false,
+    sortValue: (row) => (row.groups === null ? Number.MAX_SAFE_INTEGER : row.groups),
     render: (v) => (v === null ? escapeHtml(t('settings.settingsPage.roleUsersAll')) : v ? String(v) : '–'),
   },
 ]);

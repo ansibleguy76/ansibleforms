@@ -22,6 +22,8 @@ CREATE TABLE `users`(
   `email` varchar(255) NOT NULL,
   `description` varchar(250) DEFAULT NULL,
   `group_id` int(11) NOT NULL,
+  -- an admin blocked its sign-in (lib/signInGate.js)
+  `blocked` tinyint(4) NOT NULL DEFAULT 0,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_AnsibleForms_users_natural_key` (`username`),
     KEY `FK_users_group` (`group_id`),
@@ -414,6 +416,25 @@ CREATE TABLE `token_revocations` (
   `revoked_before` bigint DEFAULT NULL,
   `expires_at` datetime NOT NULL,
   PRIMARY KEY (`key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- the LDAP and SSO users seen at sign-in : models/directoryUser.model.js
+-- (keep in sync with src/db/create_directory_users_table.sql)
+DROP TABLE IF EXISTS `directory_users`;
+CREATE TABLE `directory_users` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `type` varchar(20) NOT NULL,
+  `username` varchar(250) NOT NULL,
+  `external_id` varchar(250) DEFAULT NULL,
+  `display_name` varchar(250) DEFAULT NULL,
+  `email` varchar(250) DEFAULT NULL,
+  `groups` longtext DEFAULT NULL,
+  `roles` longtext DEFAULT NULL,
+  `first_seen` datetime DEFAULT NULL,
+  `last_login` datetime DEFAULT NULL,
+  `blocked` tinyint(4) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_directory_users_type_username` (`type`, `username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- the patches applied, and by which release : models/schema.model.js

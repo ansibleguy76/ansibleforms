@@ -28,6 +28,7 @@ const sso = () => import('@/pages/admin/sso.vue');
 const ssoProvider = () => import('@/pages/admin/sso-provider.vue');
 const groups = () => import('@/pages/admin/groups.vue');
 const group = () => import('@/pages/admin/group.vue');
+const directoryGroup = () => import('@/pages/admin/directory-group.vue');
 const knownHosts = () => import('@/pages/admin/knownHosts.vue');
 const ldap = () => import('@/pages/admin/ldap.vue');
 const chatSettings = () => import('@/pages/admin/chat.vue');
@@ -53,6 +54,7 @@ const role = () => import('@/pages/admin/role.vue');
 const ssh = () => import('@/pages/admin/ssh.vue');
 const users = () => import('@/pages/admin/users.vue');
 const user = () => import('@/pages/admin/user.vue');
+const directoryUser = () => import('@/pages/admin/directory-user.vue');
 const backups = () => import('@/pages/admin/backups.vue');
 
 import TokenStorage from '@/lib/TokenStorage.js';
@@ -162,6 +164,13 @@ const routes = [
     component: group,
     meta: { permission: 'showSettings' },
   },
+  // an LDAP or SSO group's page : its source and its name (url-encoded)
+  {
+    path: '/settings/groups/:type(ldap|azuread|oidc)/:name/:tab?',
+    name: '/settings/groups/:type/:name',
+    component: directoryGroup,
+    meta: { permission: 'showSettings' },
+  },
   {
     path: '/settings/known-hosts/:tab?',
     name: '/settings/known-hosts',
@@ -222,6 +231,13 @@ const routes = [
     path: '/settings/users/:id(\\d+)/:tab?',
     name: '/settings/users/:id',
     component: user,
+    meta: { permission: 'showSettings' },
+  },
+  // an LDAP or SSO user's page : its source and its username (url-encoded)
+  {
+    path: '/settings/users/:type(ldap|azuread|oidc)/:name/:tab?',
+    name: '/settings/users/:type/:name',
+    component: directoryUser,
     meta: { permission: 'showSettings' },
   },
   {

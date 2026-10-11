@@ -3,10 +3,9 @@
 import { editorStyle } from './editorStyle';
 import YAML from 'yaml';
 import Helpers from '@/lib/Helpers';
-import i18n from '@/plugins/i18n';
-import { describeCron } from '@/config/cronDescribe';
+import { cronCell } from '@/lib/cronCell';
 import { cronValidationMessage } from './cron';
-import { headerWidth, PILL } from '@/lib/tableCells';
+import { headerWidth, PILL, shareUpTo, pxOf } from '@/lib/tableCells';
 import { formPath } from '@/lib/formsPath';
 
 // A cron field is validated with the SAME check the editor uses (config/cron.js), which
@@ -45,20 +44,33 @@ const escapeHtml = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /**
- * A cron in a table cell, with what it means in words in a popover (describeCron), in the
- * app's language : hovering '0 6 * * 0' says 'At 06:00 AM, only on Sunday'.
+ * Where a user or a group comes from, in words : Local, LDAP, Entra ID, OIDC.
  *
  * Args:
- *   value (string): the cron expression.
+ *   t (function): the vue-i18n translate function.
+ *   source (string): local, ldap, azuread or oidc.
  *
  * Returns:
- *   string: the cell's HTML, escaped.
+ *   string: its name ; the source itself when unknown.
  */
-function cronCell(value) {
-  const words = describeCron(value, i18n.global.locale.value);
-  if (!words) return escapeHtml(value ?? '');
-  // the popover AppAdminMulti opens on hover (data-af-popover), the look of the info popovers
-  return `<span class="af-has-popover" data-af-popover="${escapeHtml(words)}">${escapeHtml(value ?? '')}</span>`;
+export function sourceLabel(t, source) {
+  const key = { local: 'sourceLocal', ldap: 'sourceLdap', azuread: 'sourceAzuread', oidc: 'sourceOidc' }[source];
+  return key ? t(`settings.directory.${key}`) : String(source ?? '');
+}
+
+/**
+ * The page of a user or a group from a directory (LDAP, Entra ID, OIDC) : its source and name in
+ * the address, the name url-encoded (an Entra ID upn holds an @).
+ *
+ * Args:
+ *   kind (string): users or groups.
+ *   item (object): the row, { source, username or name }.
+ *
+ * Returns:
+ *   string: /settings/<kind>/<source>/<name>.
+ */
+export function directoryPath(kind, item) {
+  return `/settings/${kind}/${item.source}/${encodeURIComponent(item.username ?? item.name)}`;
 }
 
 /**
@@ -180,8 +192,12 @@ export default function getSettings(t) {
       description: t('settings.users.description'),
       icon: 'user',
       selectable: false,
-      // a user has its own page (pages/admin/user.vue) : its row and Edit open it, New the wizard
-      openPage: (item) => `/settings/users/${item.id}`,
+      // the LDAP and SSO users beside the local ones (seen at sign-in, or named by a role)
+      listQuery: '?directory=1',
+      // a user has its own page (pages/admin/user.vue ; an LDAP or SSO user's
+      // pages/admin/directory-user.vue) : its row and Edit open it, New the wizard
+      openPage: (item) =>
+        !item.source || item.source === 'local' ? `/settings/users/${item.id}` : directoryPath('users', item),
       // the dialog in steps : who the user is, the password (editing : left empty, it stays), the
       // group that gives the roles
       steps: [
@@ -200,6 +216,8 @@ export default function getSettings(t) {
           color: 'edit',
           dividerBefore: true,
           to: (u) => ({ path: `/settings/users/${u.id}/groups`, query: { add: '1' } }),
+          // a local user's : an LDAP or SSO user's groups come from its directory
+          shownWhen: (u) => !u.source || u.source === 'local',
         },
         {
           name: 'change_password',
@@ -207,14 +225,36 @@ export default function getSettings(t) {
           icon: 'lock',
           color: 'change',
           dividerBefore: true,
+          // a local user's : an LDAP or SSO user's password is its directory's
+          shownWhen: (u) => !u.source || u.source === 'local',
+        },
+        // its sign-in, for every user : blocked (asked first, users.vue) or allowed again ; never
+        // the admin user, the way back in
+        {
+          name: 'block_sign_in',
+          title: t('settings.directory.blockSignIn'),
+          icon: 'ban',
+          color: 'change',
+          dividerBefore: true,
+          shownWhen: (u) => !u.blocked && !(u.username === 'admin' && (!u.source || u.source === 'local')),
+        },
+        {
+          name: 'allow_sign_in',
+          title: t('settings.directory.allowSignIn'),
+          icon: 'circle-check',
+          color: 'change',
+          dividerBefore: true,
+          shownWhen: (u) => !!u.blocked,
         },
         {
           name: 'delete',
           title: t('settings.users.deleteUser'),
           icon: 'trash',
           color: 'delete',
-          // the admin user is the way back in : never deleted (the server refuses it too)
-          enabledWhen: (u) => u.username !== 'admin',
+          // the admin user is the way back in : never deleted (the server refuses it too) ; an
+          // LDAP or SSO user is forgotten from its page, never deleted here
+          enabledWhen: (u) => u.username !== 'admin' && (!u.source || u.source === 'local'),
+          shownWhen: (u) => !u.source || u.source === 'local',
         },
       ],
       fields: [
@@ -235,6 +275,23 @@ export default function getSettings(t) {
           required: true,
           filterable: true,
           icon: 'user',
+        },
+        // where the user comes from : local, or its directory (LDAP, Entra ID, OIDC) ; an LDAP or
+        // SSO user's sign-in blocked, or never signed in, said beside it
+        {
+          key: 'source',
+          label: t('settings.directory.source'),
+          noInput: true,
+          sortable: true,
+          filterable: true,
+          width: '12rem',
+          render: (v, row) =>
+            escapeHtml(sourceLabel(t, v || 'local')) +
+            (row?.blocked
+              ? ` <span class="badge af-blocked-badge ms-2">${escapeHtml(t('settings.directory.blockedShort'))}</span>`
+              : v && v !== 'local' && !row?.seen
+                ? ` <span class="badge af-required-badge ms-2">${escapeHtml(t('settings.directory.neverSignedIn'))}</span>`
+                : ''),
         },
         // who the user is, or what the account is for (a service account)
         {
@@ -289,12 +346,47 @@ export default function getSettings(t) {
           label: t('sidebar.groups'),
           noInput: true,
           align: 'end',
-          // narrow, beside the row menu : the other columns take the room
-          width: '8.5rem',
+          // as wide as its header, in the language shown : the other columns take the room
+          width: headerWidth(t('sidebar.groups'), true, '8rem', true),
           filterable: false,
           filterType: 'number',
           sortValue: (row) => (row.group_ids || []).length,
           render: (v) => String((v || []).length),
+        },
+        // how many roles the user has, public included (the server counts them, lib/roleCounts.js)
+        {
+          key: 'role_count',
+          label: t('settings.settingsPage.roles'),
+          noInput: true,
+          align: 'end',
+          width: headerWidth(t('settings.settingsPage.roles'), true, '8rem', true),
+          filterable: false,
+          filterType: 'number',
+          render: (v) => (v ? String(v) : '–'),
+        },
+        // how many stored jobs it keeps, and how many jobs it planned with Run later (the server
+        // counts them, lib/jobCounts.js) : off by default, the Columns menu shows them
+        {
+          key: 'stored_job_count',
+          label: t('settings.storedJobs.labelPlural'),
+          noInput: true,
+          hidden: true,
+          align: 'end',
+          width: headerWidth(t('settings.storedJobs.labelPlural'), true, '8rem', true),
+          filterable: false,
+          filterType: 'number',
+          render: (v) => (v ? String(v) : '–'),
+        },
+        {
+          key: 'schedule_count',
+          label: t('settings.schedules.labelPlural'),
+          noInput: true,
+          hidden: true,
+          align: 'end',
+          width: headerWidth(t('settings.schedules.labelPlural'), true, '8rem', true),
+          filterable: false,
+          filterType: 'number',
+          render: (v) => (v ? String(v) : '–'),
         },
       ],
     },
@@ -314,8 +406,12 @@ export default function getSettings(t) {
           key: 'group_ids',
         },
       ],
-      // a group has its own page (pages/admin/group.vue) : its row and Edit open it, New the dialog
-      openPage: (item) => `/settings/groups/${item.id}`,
+      // the LDAP and SSO groups beside the local ones (seen at a sign-in, or named by a role)
+      listQuery: '?directory=1',
+      // a group has its own page (pages/admin/group.vue ; an LDAP or SSO group's
+      // pages/admin/directory-group.vue) : its row and Edit open it, New the dialog
+      openPage: (item) =>
+        !item.source || item.source === 'local' ? `/settings/groups/${item.id}` : directoryPath('groups', item),
       // in the row menu : editing, its users, then Delete last, each apart
       actions: [
         { name: 'edit', title: t('settings.groups.editGroup'), icon: 'pencil', color: 'edit' },
@@ -327,14 +423,17 @@ export default function getSettings(t) {
           color: 'edit',
           dividerBefore: true,
           to: (g) => ({ path: `/settings/groups/${g.id}/users`, query: { add: '1' } }),
+          // its users come from its directory
+          enabledWhen: (g) => !g.source || g.source === 'local',
         },
         {
           name: 'delete',
           title: t('settings.groups.deleteGroup'),
           icon: 'trash',
           color: 'delete',
-          // the admins group is never deleted (the server refuses it too)
-          enabledWhen: (g) => g.name !== 'admins',
+          // the admins group is never deleted (the server refuses it too) ; an LDAP or SSO group
+          // lives in its directory
+          enabledWhen: (g) => g.name !== 'admins' && (!g.source || g.source === 'local'),
         },
       ],
       fields: [
@@ -350,11 +449,32 @@ export default function getSettings(t) {
         },
         {
           key: 'name',
+          // room for a group's name : the table's spacer takes what is left (the checkbox, the
+          // source, the counts and the row menu are reserved)
+          width: shareUpTo(
+            0.4,
+            256,
+            44 +
+              56 +
+              128 +
+              pxOf(headerWidth(t('settings.users.labelPlural'), true, '8rem', true)) +
+              pxOf(headerWidth(t('settings.settingsPage.roles'), true, '8rem', true)),
+          ),
           label: t('settings.fields.name'),
           sortable: true,
           required: true,
           filterable: true,
           icon: 'users',
+        },
+        // where the group comes from : local, or its directory (LDAP, Entra ID, OIDC)
+        {
+          key: 'source',
+          label: t('settings.directory.source'),
+          noInput: true,
+          sortable: true,
+          filterable: true,
+          width: '8rem',
+          render: (v) => escapeHtml(sourceLabel(t, v || 'local')),
         },
         // what the group is for, or who owns it
         {
@@ -371,11 +491,22 @@ export default function getSettings(t) {
           label: t('settings.users.labelPlural'),
           noInput: true,
           align: 'end',
-          // narrow, beside the row menu : the other columns take the room
-          width: '7rem',
+          // as wide as its header, in the language shown : the other columns take the room
+          width: headerWidth(t('settings.users.labelPlural'), true, '8rem', true),
           filterable: false,
           filterType: 'number',
           // none : an en dash, as the other empty cells
+          render: (v) => (v ? String(v) : '–'),
+        },
+        // how many roles name the group (the server counts them, lib/roleCounts.js)
+        {
+          key: 'role_count',
+          label: t('settings.settingsPage.roles'),
+          noInput: true,
+          align: 'end',
+          width: headerWidth(t('settings.settingsPage.roles'), true, '8rem', true),
+          filterable: false,
+          filterType: 'number',
           render: (v) => (v ? String(v) : '–'),
         },
       ],
@@ -915,18 +1046,19 @@ export default function getSettings(t) {
         },
         {
           key: 'cron',
-          // the column : a short title, the dialog keeps the full one
-          columnLabel: t('settings.schedules.cronShort'),
-          // room for a five-field cron (0 2 * * *)
-          width: '7.5rem',
+          // the column : how it runs, its cron or once ; the dialog keeps the full title
+          columnLabel: t('settings.schedules.stepSchedule'),
+          // room for a five-field cron (0 2 * * *) and One time run
+          width: '9rem',
           step: 'when',
           icon: 'stopwatch',
           label: t('settings.fields.cronSchedule'),
           type: 'cron',
           // a recurring schedule needs its cron ; hidden (one time run), it is not checked
           required: true,
-          // in the table : hovering the cron says it in words, in the app's language
-          render: cronCell,
+          // in the table : hovering the cron says it in words, in the app's language ; a one-time
+          // run has none, it runs once
+          render: (v, row) => (row?.one_time_run ? escapeHtml(t('settings.schedules.oneTimeRun')) : cronCell(v)),
           validator: cronValidator(t),
           negateDependency: true,
           dependency: 'one_time_run',
@@ -951,6 +1083,9 @@ export default function getSettings(t) {
         {
           key: 'last_run',
           width: '14rem',
+          // left out on a narrow table, so the name and the form keep their room (Next run says
+          // more ; the Columns menu still shows it)
+          hideBelow: 1200,
           label: t('settings.fields.lastRun'),
           type: 'datetime',
           noInput: true,

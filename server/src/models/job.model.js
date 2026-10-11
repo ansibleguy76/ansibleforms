@@ -733,17 +733,24 @@ Job.checkExists = async function (id) {
     throw new Errors.NotFoundError(`Job ${id} not found`);
   }
 };
-Job.findAll = async function (user, records) {
+Job.findAll = async function (user, records, filter = {}) {
   logger.info("Finding all jobs");
+  // narrowed to one user's jobs (user and user_type) or one runner's (a settings page's Jobs
+  // tab) ; within what the caller may see either way
+  const where = [];
+  const vars = [];
+  if (filter.user) { where.push("user=? AND user_type=?"); vars.push(String(filter.user), String(filter.userType || "local")); }
+  if (filter.runner) { where.push("runner=?"); vars.push(String(filter.runner)); }
+  const narrowed = where.length ? where.join(" AND ") : "1=1";
   var query;
   if (user.roles.includes("admin") || user.options?.showAllJobLogs) {
     query =
-      "SELECT id,form,target,status,CONVERT_TZ(start, 'UTC', ?) AS start,CONVERT_TZ(end, 'UTC', ?) AS end,user,user_type,job_type,parent_id,approval FROM AnsibleForms.`jobs` ORDER BY id DESC LIMIT ?";
-    return await mysql.do(query, [loggerConfig.tz, loggerConfig.tz, records], true);
+      "SELECT id,form,target,status,CONVERT_TZ(start, 'UTC', ?) AS start,CONVERT_TZ(end, 'UTC', ?) AS end,user,user_type,job_type,parent_id,approval,runner FROM AnsibleForms.`jobs` WHERE " + narrowed + " ORDER BY id DESC LIMIT ?";
+    return await mysql.do(query, [loggerConfig.tz, loggerConfig.tz, ...vars, records], true);
   } else {
     query =
-      "SELECT id,form,target,status,CONVERT_TZ(start, 'UTC', ?) AS start,CONVERT_TZ(end, 'UTC', ?) AS end,user,user_type,job_type,parent_id,approval FROM AnsibleForms.`jobs` WHERE (user=? AND user_type=?) OR (status='approve') ORDER BY id DESC LIMIT ?";
-    return await mysql.do(query, [loggerConfig.tz, loggerConfig.tz, user.username, user.type, records], true);
+      "SELECT id,form,target,status,CONVERT_TZ(start, 'UTC', ?) AS start,CONVERT_TZ(end, 'UTC', ?) AS end,user,user_type,job_type,parent_id,approval,runner FROM AnsibleForms.`jobs` WHERE ((user=? AND user_type=?) OR (status='approve')) AND " + narrowed + " ORDER BY id DESC LIMIT ?";
+    return await mysql.do(query, [loggerConfig.tz, loggerConfig.tz, user.username, user.type, ...vars, records], true);
   }
 };
 Job.findApprovals = async function (user) {

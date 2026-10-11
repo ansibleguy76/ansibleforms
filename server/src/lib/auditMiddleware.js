@@ -64,6 +64,24 @@ function actionFrom(baseUrl, path, method, routeMatched = true) {
   return (parts.join('.') || 'unknown') + '.' + verb;
 }
 
+/**
+ * A path segment as written, its %-escapes decoded (jane%40example.com : jane@example.com) ;
+ * as it came when it cannot be decoded.
+ *
+ * Args:
+ *   segment (string): the segment.
+ *
+ * Returns:
+ *   string: the segment, decoded.
+ */
+function decodeSegment(segment) {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+}
+
 // What the action was performed ON. With the route pattern in hand the parameter's value
 // is read positionally, which works for a name as well as an id - req.params is not used
 // because express may have restored it by the time the response settles.
@@ -72,7 +90,13 @@ function targetFrom(path, routePath, baseUrl) {
   if (routePath) {
     const pattern = String(routePath).split('/').filter(Boolean);
     for (let i = 0; i < pattern.length; i++) {
-      if (pattern[i].startsWith(':') && segments[i]) return segments[i];
+      if (!pattern[i].startsWith(':') || !segments[i]) continue;
+      // two parameters side by side name one thing, its type and its name (an LDAP or SSO
+      // user : /directory/users/:type/:name is ldap/jdoe), as the config writes it
+      if (pattern[i + 1]?.startsWith(':') && segments[i + 1]) {
+        return `${decodeSegment(segments[i])}/${decodeSegment(segments[i + 1])}`;
+      }
+      return segments[i];
     }
   }
   // No pattern. Either the path matched no route at all, or an app-level guard refused

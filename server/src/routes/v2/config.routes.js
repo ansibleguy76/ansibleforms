@@ -24,6 +24,8 @@ router.get('/templated', middleware.checkDesignerMiddleware, configController.co
 router.get('/', middleware.checkDesignerMiddleware, configController.findAll);
 // get list, just the icons and names (no admin)
 router.get('/formlist', configController.findList);
+// every form, its roles and its runners : the settings pages' Forms tabs
+router.get('/formslinked', middleware.checkSettingsMiddleware, configController.formsLinked);
 // flat list of form names (for dropdowns : datasources and schedules)
 router.get('/formnames', middleware.checkSettingsOrScheduledJobsMiddleware, configController.formNames);
 // get one config (no admin)

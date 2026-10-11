@@ -57,7 +57,8 @@ const findAllJobs = async function(req, res) {
     // more than MAX_JOBS_LIST, or ?records=10000000 read the whole table with its aggregates
     var records = Math.min(Math.max(parseInt(req.query.records, 10) || appConfig.jobsListSize || 1000, 1), Math.max(MAX_JOBS_LIST, Number(appConfig.jobsListSize) || 0))
     try{
-      const jobs = await Job.findAll(user,records)
+      // ?user=<name>&user_type=<type>, ?runner=<name> : one user's or one runner's jobs
+      const jobs = await Job.findAll(user,records,{ user: req.query.user, userType: req.query.user_type, runner: req.query.runner })
       res.status(200).json(RestResultv2.list(jobs));
     }catch(err){
       res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieveJobs'), err.toString()));
