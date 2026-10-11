@@ -1,5 +1,4 @@
 <script setup>
-import { headerWidth, shareUpTo, pxOf } from '@/lib/tableCells';
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import Profile from '@/lib/Profile';
@@ -148,19 +147,10 @@ const tableItems = computed(() =>
     groups: role._public ? null : role.groups.length,
   })),
 );
-// the room the checkbox, the two counts and the row menu take : the name and the description share
-// the rest
-const reserved = () =>
-  44 +
-  56 +
-  pxOf(headerWidth(t('settings.settingsPage.users'), true, '8rem', true)) +
-  pxOf(headerWidth(t('settings.settingsPage.groups'), true, '8rem', true));
 const columns = computed(() => [
   {
     key: 'name',
-    // room for a role's name and its Required badge : the description gets the rest (a longer
-    // name is cut, whole in its tooltip)
-    width: shareUpTo(0.4, 256, reserved()),
+    // as wide as the longest name and its Required badge (v-fit-columns)
     label: t('settings.settingsPage.name'),
     sortable: true,
     filterable: true,
@@ -183,8 +173,6 @@ const columns = computed(() => [
   {
     key: 'users',
     label: t('settings.settingsPage.users'),
-    // as wide as its header, in the language shown
-    width: headerWidth(t('settings.settingsPage.users'), true, '8rem', true),
     align: 'end',
     sortable: true,
     filterable: false,
@@ -196,7 +184,6 @@ const columns = computed(() => [
   {
     key: 'groups',
     label: t('settings.settingsPage.groups'),
-    width: headerWidth(t('settings.settingsPage.groups'), true, '8rem', true),
     align: 'end',
     sortable: true,
     filterable: false,

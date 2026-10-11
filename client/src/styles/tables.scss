@@ -17,7 +17,10 @@
 
 .af-table-frame {
   background: var(--bs-body-bg);
-  overflow: hidden;
+  /* the rounded corners clip the table ; a table wider than the frame (v-fit-columns : its
+     columns at their least) scrolls sideways in it */
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 /* inside a card : no box of its own, the bars run to the card's edges (the card's padding
    taken back) ; the card's border and corners frame it */
