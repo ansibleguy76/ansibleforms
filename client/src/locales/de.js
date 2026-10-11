@@ -1388,6 +1388,7 @@ export default {
       envOverridden: 'In der Umgebung gesetzt und hier nicht änderbar.',
       envSecretUnchanged: 'Leer lassen, um den aktuellen Wert zu behalten',
       envRestartRequired: 'Gespeicherte Änderungen gelten nach einem Neustart.',
+      envRteOnly: "Wird von einem RTE aus seiner eigenen Umgebung gelesen: dort setzen, wo das RTE läuft.",
       envRelocates: 'Bereits am alten Ort gespeicherte Dateien werden nicht verschoben.',
       envRestartPending: 'Gespeichert. Ein Neustart ist nötig für: {names}',
       mcpDescription:

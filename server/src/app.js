@@ -108,11 +108,15 @@ const load = async (app) => {
 
   // security headers with helmet, the Content-Security-Policy included (lib/csp.js) : scripts
   // from the app only, no framing by another site. CONTENT_SECURITY_POLICY=0 sends it report
-  // only : the browser says what it would block, and blocks nothing.
-  app.use(helmet({
-    contentSecurityPolicy: { useDefaults: false, directives: cspDirectives(), reportOnly: !appConfig.contentSecurityPolicy },
+  // only : the browser says what it would block, and blocks nothing. Both are built once and
+  // chosen per request, so the settings page switches it without a restart.
+  const securityHeaders = (reportOnly) => helmet({
+    contentSecurityPolicy: { useDefaults: false, directives: cspDirectives(), reportOnly },
     crossOriginEmbedderPolicy: false // allow embedding if needed
-  }));
+  });
+  const enforcing = securityHeaders(false);
+  const reporting = securityHeaders(true);
+  app.use((req, res, next) => (appConfig.contentSecurityPolicy ? enforcing : reporting)(req, res, next));
 
   // passport : the session only carries an SSO login's state, nonce and PKCE verifier across the
   // round trip to the provider. Signed with the app's own secret - a constant known to all let

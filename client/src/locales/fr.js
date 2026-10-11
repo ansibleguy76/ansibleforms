@@ -1381,6 +1381,7 @@ export default {
       envOverridden: "Définie dans l'environnement, non modifiable ici.",
       envSecretUnchanged: 'Laisser vide pour conserver la valeur actuelle',
       envRestartRequired: 'Les modifications prennent effet après un redémarrage.',
+      envRteOnly: "Lu par un RTE dans son propre environnement : définissez-le là où le RTE s'exécute.",
       envRelocates: "Les fichiers déjà présents à l'ancien emplacement ne sont pas déplacés.",
       envRestartPending: 'Enregistré. Un redémarrage est nécessaire pour : {names}',
       mcpDescription:

@@ -169,6 +169,10 @@ function envHelp(e) {
         {{ e.overridden ? t('settings.settingsPage.envOverridden') : e.refusedReason || '' }}
       </div>
     </template>
+    <!-- read by an RTE from its own environment : this page cannot reach it -->
+    <div v-if="editable && e.editable === 'rte'" class="form-text env-restart">
+      {{ t('settings.settingsPage.envRteOnly') }}
+    </div>
     <div v-if="editable && e.editable === 'restart'" class="form-text env-restart">
       {{ t('settings.settingsPage.envRestartRequired') }}
       <!-- for a path, 'takes effect after a restart' is true but misses the

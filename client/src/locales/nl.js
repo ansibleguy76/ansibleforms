@@ -1369,6 +1369,7 @@ export default {
       envOverridden: 'Ingesteld in de omgeving en hier niet aanpasbaar.',
       envSecretUnchanged: 'Laat leeg om de huidige waarde te behouden',
       envRestartRequired: 'Opgeslagen wijzigingen gelden na een herstart.',
+      envRteOnly: "Gelezen door een RTE uit zijn eigen omgeving: stel het in waar de RTE draait.",
       envRelocates: 'Bestanden op de oude locatie worden niet verplaatst.',
       envRestartPending: 'Opgeslagen. Een herstart is nodig voor: {names}',
       mcpDescription:

@@ -1367,6 +1367,7 @@ export default {
       envOverridden: 'Ustawione w środowisku, więc nie można tego tutaj zmienić.',
       envSecretUnchanged: 'Pozostaw puste, aby zachować bieżącą wartość',
       envRestartRequired: 'Zapisane zmiany zaczną obowiązywać po ponownym uruchomieniu.',
+      envRteOnly: "Odczytywane przez RTE z jego własnego środowiska: ustaw je tam, gdzie działa RTE.",
       envRelocates: 'Pliki zapisane już w starej lokalizacji nie są przenoszone.',
       envRestartPending: 'Zapisano. Ponowne uruchomienie jest wymagane dla: {names}',
       mcpDescription:

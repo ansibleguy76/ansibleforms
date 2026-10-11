@@ -1351,6 +1351,7 @@ export default {
       envOverridden: 'Set in the environment, so it cannot be changed here.',
       envSecretUnchanged: 'Leave blank to keep the current value',
       envRestartRequired: 'Saved changes take effect after a restart.',
+      envRteOnly: "Read by an RTE from its own environment: set it where the RTE runs.",
       envRelocates: 'Files already stored at the old location are not moved.',
       envRestartPending: 'Saved. A restart is needed for: {names}',
       mcpDescription:

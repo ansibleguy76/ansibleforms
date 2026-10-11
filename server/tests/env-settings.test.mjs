@@ -93,13 +93,39 @@ describe("editing environment variables", () => {
       assert.equal(Env.applyLive("JOB_RETENTION_DAYS", "45"), true);
       assert.equal(appConfig.jobRetentionDays, 45, "takes effect without a restart");
       assert.equal(Env.applyLive("PORT", "9999"), false, "PORT is captured before listen");
-      // VAULT_* are imported once when upgrading and ignored afterwards : nothing to apply
-      assert.equal(Env.applyLive("VAULT_TOKEN", "hvs.test"), false);
+      // VAULT_* are imported when saved, as a start would (a moment later, the fields saved
+      // together first) : without VAULT_ADDR there is nothing to import
+      assert.equal(Env.applyLive("VAULT_TOKEN", "hvs.test"), true);
       assert.equal(process.env.PORT, "9999", "still written to the environment");
     } finally {
       appConfig.jobRetentionDays = saved;
       delete process.env.PORT;
       delete process.env.VAULT_TOKEN;
+    }
+  });
+
+  test("what used to wait for a restart applies at once ; an RTE's own variables are the RTE's", async () => {
+    const authConfig = (await import("../config/auth.config.js")).default;
+    const savedDays = authConfig.apiTokenMaxDays;
+    const savedCsp = appConfig.contentSecurityPolicy;
+    try {
+      assert.equal(Env.applyLive("API_TOKEN_MAX_DAYS", "30"), true);
+      assert.equal(authConfig.apiTokenMaxDays, 30);
+      assert.equal(Env.applyLive("CONTENT_SECURITY_POLICY", "0"), true);
+      assert.equal(appConfig.contentSecurityPolicy, false);
+      for (const name of ["FORMS_BACKUP_PATH", "LOG_FORMAT", "ANSIBLE_PATH", "METRICS_TOKEN", "AWX_LOST_MINUTES", "UPGRADE_BACKUP"]) {
+        assert.equal(Env.classify(name), "live", name);
+      }
+      for (const name of ["RTE_MAX_JOBS", "RTE_TOKEN", "RTE_URL"]) assert.equal(Env.classify(name), "rte", name);
+      // how the process itself starts : still at the next start
+      for (const name of ["PORT", "HTTPS", "BASE_URL", "AF_ROLE", "DB_HOST", "DB_PASSWORD"]) {
+        assert.equal(Env.classify(name), "restart", name);
+      }
+    } finally {
+      authConfig.apiTokenMaxDays = savedDays;
+      appConfig.contentSecurityPolicy = savedCsp;
+      delete process.env.API_TOKEN_MAX_DAYS;
+      delete process.env.CONTENT_SECURITY_POLICY;
     }
   });
 

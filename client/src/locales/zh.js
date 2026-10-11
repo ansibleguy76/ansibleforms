@@ -1319,6 +1319,7 @@ export default {
       envOverridden: '已在环境变量中设置，因此无法在此处更改。',
       envSecretUnchanged: '留空则保留当前值',
       envRestartRequired: '保存的更改在重启后生效。',
+      envRteOnly: "由 RTE 从其自身环境读取：请在 RTE 运行的位置设置。",
       envRelocates: '已存储在旧位置的文件不会被移动。',
       envRestartPending: '已保存。以下设置需要重启：{names}',
       mcpDescription:

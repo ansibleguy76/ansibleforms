@@ -1376,6 +1376,7 @@ export default {
       envOverridden: 'Definido no ambiente, por isso não pode ser alterado aqui.',
       envSecretUnchanged: 'Deixe em branco para manter o valor atual',
       envRestartRequired: 'As alterações guardadas têm efeito após um reinício.',
+      envRteOnly: "Lido por um RTE do seu próprio ambiente: defina-o onde o RTE é executado.",
       envRelocates: 'Os ficheiros já guardados na localização antiga não são movidos.',
       envRestartPending: 'Guardado. É necessário reiniciar para: {names}',
       mcpDescription:

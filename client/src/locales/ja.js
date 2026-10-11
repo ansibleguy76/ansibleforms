@@ -1350,6 +1350,7 @@ export default {
       envOverridden: '環境で設定されているため、ここでは変更できません。',
       envSecretUnchanged: '現在の値を維持する場合は空欄のままにしてください',
       envRestartRequired: '保存した変更は再起動後に反映されます。',
+      envRteOnly: "RTE が自身の環境から読み取ります。RTE が動いている場所で設定してください。",
       envRelocates: '以前の場所に保存済みのファイルは移動されません。',
       envRestartPending: '保存しました。次の項目には再起動が必要です: {names}',
       mcpDescription:
