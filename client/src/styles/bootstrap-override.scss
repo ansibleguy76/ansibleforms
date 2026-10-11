@@ -453,12 +453,13 @@
   width: 14rem;
   white-space: nowrap;
 }
+// an empty list or a record not found : its card's padding already spaces it, so its own is small
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem 1rem;
+  padding: 0.75rem 1rem;
   color: var(--bs-secondary-color);
   font-style: italic;
 }

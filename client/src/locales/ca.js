@@ -711,7 +711,7 @@ export default {
       tabBuiltin: 'Integrats',
       tabCustom: 'Personalitzats',
       addLink: 'Afegir enllaç',
-      noLinks: 'Encara no hi ha enllaços propis.',
+      noLinks: 'Encara no hi ha enllaços personalitzats.',
       linkIcon: 'Icona',
       linkLabel: 'Etiqueta',
       linkUrl: 'Adreça',
