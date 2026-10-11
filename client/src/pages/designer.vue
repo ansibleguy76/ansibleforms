@@ -15,6 +15,14 @@ import axios from 'axios';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { availableIcons } from '@/config/icons';
+import {
+  fieldTypes,
+  forbiddenFieldKeys,
+  requiredFieldKeys,
+  fieldTypeAllows,
+  formTypes,
+  forbiddenFormKeys,
+} from '@/config/formFields';
 import { editorStyle } from '@/config/editorStyle';
 import {
   authProviders,
@@ -45,6 +53,7 @@ import {
   indentCategory,
   outdentCategory,
   movedCategoryPaths,
+  categoryPaths,
 } from '@/config/categories';
 import { formPath } from '@/lib/formsPath';
 
@@ -1672,586 +1681,8 @@ function doImport() {
 // Field properties editor
 const showFieldEditor = ref(false);
 const fieldEditorRows = ref([]);
-const fieldTypes = [
-  'text',
-  'textarea',
-  'password',
-  'checkbox',
-  'enum',
-  'number',
-  'radio',
-  'expression',
-  'local',
-  'local_out',
-  'credential',
-  'list',
-  'datetime',
-  'html',
-  'file',
-  'yaml',
-];
-
-// Mirror of the per-type `oneOf` of a FIELD in server/schema/form_schema.json,
-// the same idea as forbiddenFormKeys one level up : a field type FORBIDS a set of
-// keys, so a key the previous type left behind makes the whole config unsaveable
-// with an opaque AJV error, while the editor no longer renders an input to
-// remove it (eg an 'enum' turned into a 'text' keeps its `values`). A key is
-// listed here when EVERY schema branch that accepts the type forbids it.
-const forbiddenFieldKeys = {
-  text: [
-    'accept',
-    'allowDelete',
-    'allowInsert',
-    'convertToUtc',
-    'dateType',
-    'dbConfig',
-    'deleteMarker',
-    'editable',
-    'expression',
-    'filterColumns',
-    'horizontal',
-    'insertMarker',
-    'isHtml',
-    'jq',
-    'maxSize',
-    'maxValue',
-    'minSize',
-    'minValue',
-    'multiple',
-    'outputObject',
-    'pctColumns',
-    'query',
-    'refresh',
-    'runLocal',
-    'showDownloadButton',
-    'showLoadButton',
-    'sticky',
-    'switch',
-    'titleAdd',
-    'titleEdit',
-    'updateMarker',
-    'values',
-  ],
-  textarea: [
-    'accept',
-    'allowDelete',
-    'allowInsert',
-    'asCredential',
-    'convertToUtc',
-    'dateType',
-    'dbConfig',
-    'deleteMarker',
-    'editable',
-    'expression',
-    'filterColumns',
-    'hide',
-    'horizontal',
-    'icon',
-    'in',
-    'insertMarker',
-    'isHtml',
-    'jq',
-    'keydown',
-    'maxLength',
-    'maxSize',
-    'maxValue',
-    'minLength',
-    'minSize',
-    'minValue',
-    'multiple',
-    'notIn',
-    'outputObject',
-    'pctColumns',
-    'query',
-    'refresh',
-    'regex',
-    'runLocal',
-    'sameAs',
-    'showDownloadButton',
-    'showLoadButton',
-    'sticky',
-    'switch',
-    'titleAdd',
-    'titleEdit',
-    'updateMarker',
-    'values',
-  ],
-  password: [
-    'accept',
-    'allowDelete',
-    'allowInsert',
-    'convertToUtc',
-    'dateType',
-    'dbConfig',
-    'deleteMarker',
-    'editable',
-    'expression',
-    'filterColumns',
-    'horizontal',
-    'insertMarker',
-    'isHtml',
-    'jq',
-    'maxSize',
-    'maxValue',
-    'minSize',
-    'minValue',
-    'multiple',
-    'outputObject',
-    'pctColumns',
-    'query',
-    'refresh',
-    'runLocal',
-    'showDownloadButton',
-    'showLoadButton',
-    'sticky',
-    'switch',
-    'titleAdd',
-    'titleEdit',
-    'updateMarker',
-    'values',
-  ],
-  checkbox: [
-    'accept',
-    'allowDelete',
-    'allowInsert',
-    'asCredential',
-    'convertToUtc',
-    'dateType',
-    'dbConfig',
-    'deleteMarker',
-    'editable',
-    'expression',
-    'filterColumns',
-    'hide',
-    'horizontal',
-    'insertMarker',
-    'isHtml',
-    'jq',
-    'keydown',
-    'maxLength',
-    'maxSize',
-    'maxValue',
-    'minLength',
-    'minSize',
-    'minValue',
-    'multiple',
-    'outputObject',
-    'pctColumns',
-    'query',
-    'refresh',
-    'regex',
-    'runLocal',
-    'showDownloadButton',
-    'showLoadButton',
-    'sticky',
-    'titleAdd',
-    'titleEdit',
-    'updateMarker',
-    'values',
-  ],
-  enum: [
-    'allowDelete',
-    'allowInsert',
-    'convertToUtc',
-    'dateType',
-    'deleteMarker',
-    'editable',
-    'hide',
-    'insertMarker',
-    'isHtml',
-    'keydown',
-    'maxLength',
-    'maxSize',
-    'maxValue',
-    'minLength',
-    'minSize',
-    'minValue',
-    'regex',
-    'showDownloadButton',
-    'showLoadButton',
-    'switch',
-    'titleAdd',
-    'titleEdit',
-    'updateMarker',
-  ],
-  number: [
-    'accept',
-    'allowDelete',
-    'allowInsert',
-    'asCredential',
-    'convertToUtc',
-    'dateType',
-    'dbConfig',
-    'deleteMarker',
-    'editable',
-    'expression',
-    'filterColumns',
-    'hide',
-    'horizontal',
-    'insertMarker',
-    'isHtml',
-    'jq',
-    'maxLength',
-    'maxSize',
-    'minLength',
-    'minSize',
-    'multiple',
-    'outputObject',
-    'pctColumns',
-    'query',
-    'refresh',
-    'runLocal',
-    'showDownloadButton',
-    'showLoadButton',
-    'sticky',
-    'switch',
-    'titleAdd',
-    'titleEdit',
-    'updateMarker',
-    'values',
-  ],
-  radio: [
-    'accept',
-    'allowDelete',
-    'allowInsert',
-    'asCredential',
-    'convertToUtc',
-    'dateType',
-    'dbConfig',
-    'deleteMarker',
-    'editable',
-    'expression',
-    'filterColumns',
-    'hide',
-    'horizontal',
-    'icon',
-    'insertMarker',
-    'isHtml',
-    'jq',
-    'keydown',
-    'maxLength',
-    'maxSize',
-    'maxValue',
-    'minLength',
-    'minSize',
-    'minValue',
-    'multiple',
-    'outputObject',
-    'pctColumns',
-    'query',
-    'refresh',
-    'regex',
-    'runLocal',
-    'showDownloadButton',
-    'showLoadButton',
-    'sticky',
-    'switch',
-    'titleAdd',
-    'titleEdit',
-    'updateMarker',
-  ],
-  expression: [
-    'accept',
-    'allowDelete',
-    'allowInsert',
-    'deleteMarker',
-    'filterColumns',
-    'horizontal',
-    'insertMarker',
-    'keydown',
-    'maxSize',
-    'maxValue',
-    'minSize',
-    'minValue',
-    'multiple',
-    'outputObject',
-    'pctColumns',
-    'showDownloadButton',
-    'showLoadButton',
-    'sticky',
-    'switch',
-    'titleAdd',
-    'titleEdit',
-    'updateMarker',
-  ],
-  local: [
-    'accept',
-    'allowDelete',
-    'allowInsert',
-    'dbConfig',
-    'deleteMarker',
-    'filterColumns',
-    'horizontal',
-    'insertMarker',
-    'keydown',
-    'maxSize',
-    'maxValue',
-    'minSize',
-    'minValue',
-    'multiple',
-    'outputObject',
-    'pctColumns',
-    'showDownloadButton',
-    'showLoadButton',
-    'sticky',
-    'switch',
-    'titleAdd',
-    'titleEdit',
-    'updateMarker',
-  ],
-  local_out: [
-    'accept',
-    'allowDelete',
-    'allowInsert',
-    'dbConfig',
-    'deleteMarker',
-    'filterColumns',
-    'horizontal',
-    'insertMarker',
-    'keydown',
-    'maxSize',
-    'maxValue',
-    'minSize',
-    'minValue',
-    'multiple',
-    'outputObject',
-    'pctColumns',
-    'showDownloadButton',
-    'showLoadButton',
-    'sticky',
-    'switch',
-    'titleAdd',
-    'titleEdit',
-    'updateMarker',
-  ],
-  credential: [
-    'accept',
-    'allowDelete',
-    'allowInsert',
-    'dbConfig',
-    'deleteMarker',
-    'filterColumns',
-    'horizontal',
-    'insertMarker',
-    'keydown',
-    'maxSize',
-    'maxValue',
-    'minSize',
-    'minValue',
-    'multiple',
-    'outputObject',
-    'pctColumns',
-    'showDownloadButton',
-    'showLoadButton',
-    'sticky',
-    'switch',
-    'titleAdd',
-    'titleEdit',
-    'updateMarker',
-    'values',
-  ],
-  list: [
-    'accept',
-    'asCredential',
-    'convertToUtc',
-    'dateType',
-    'editable',
-    'horizontal',
-    'icon',
-    'in',
-    'isHtml',
-    'keydown',
-    'maxLength',
-    'maxSize',
-    'maxValue',
-    'minLength',
-    'minSize',
-    'minValue',
-    'multiple',
-    'notIn',
-    'outputObject',
-    'refresh',
-    'regex',
-    'sameAs',
-    'sticky',
-    'switch',
-    'values',
-  ],
-  datetime: [
-    'accept',
-    'columns',
-    'filterColumns',
-    'from',
-    'maxLength',
-    'maxSize',
-    'maxValue',
-    'minLength',
-    'minSize',
-    'minValue',
-    'outputObject',
-    'pctColumns',
-    'previewColumn',
-    'showDownloadButton',
-    'showLoadButton',
-    'switch',
-    'titleAdd',
-    'titleEdit',
-    'valueColumn',
-    'values',
-  ],
-  html: [
-    'accept',
-    'allowDelete',
-    'allowInsert',
-    'asCredential',
-    'columns',
-    'convertToUtc',
-    'dateType',
-    'dbConfig',
-    'deleteMarker',
-    'editable',
-    'filterColumns',
-    'help',
-    'hide',
-    'horizontal',
-    'icon',
-    'in',
-    'insertMarker',
-    'isHtml',
-    'jq',
-    'keydown',
-    'maxLength',
-    'maxSize',
-    'maxValue',
-    'minLength',
-    'minSize',
-    'minValue',
-    'model',
-    'multiple',
-    'notIn',
-    'outputObject',
-    'pctColumns',
-    'placeholder',
-    'placeholderColumn',
-    'previewColumn',
-    'query',
-    'refresh',
-    'regex',
-    'required',
-    'sameAs',
-    'showDownloadButton',
-    'showLoadButton',
-    'size',
-    'sticky',
-    'switch',
-    'updateMarker',
-    'validIf',
-    'validIfNot',
-    'valueColumn',
-    'values',
-  ],
-  file: [
-    'allowDelete',
-    'allowInsert',
-    'asCredential',
-    'columns',
-    'convertToUtc',
-    'dateType',
-    'dbConfig',
-    'deleteMarker',
-    'editable',
-    'filterColumns',
-    'hide',
-    'horizontal',
-    'in',
-    'insertMarker',
-    'isHtml',
-    'jq',
-    'keydown',
-    'maxLength',
-    'maxValue',
-    'minLength',
-    'minValue',
-    'multiple',
-    'notIn',
-    'outputObject',
-    'pctColumns',
-    'placeholderColumn',
-    'previewColumn',
-    'query',
-    'refresh',
-    'runLocal',
-    'sameAs',
-    'showDownloadButton',
-    'showLoadButton',
-    'size',
-    'sticky',
-    'switch',
-    'updateMarker',
-    'validIf',
-    'validIfNot',
-    'valueColumn',
-    'values',
-  ],
-  yaml: [
-    'accept',
-    'allowDelete',
-    'allowInsert',
-    'asCredential',
-    'convertToUtc',
-    'dateType',
-    'deleteMarker',
-    'editable',
-    'filterColumns',
-    'horizontal',
-    'in',
-    'insertMarker',
-    'isHtml',
-    'keydown',
-    'maxLength',
-    'maxSize',
-    'maxValue',
-    'minLength',
-    'minSize',
-    'minValue',
-    'multiple',
-    'notIn',
-    'outputObject',
-    'pctColumns',
-    'regex',
-    'sameAs',
-    'sticky',
-    'switch',
-    'titleAdd',
-    'titleEdit',
-    'updateMarker',
-    'values',
-  ],
-};
-
-// Same source, the other way round : these types need at least one of the listed
-// key sets ('enum' needs `values`, or `query` + `dbConfig`, or `expression`). The
-// table cannot supply any of them - they are edited in the yaml - so a type
-// change that leaves a field incomplete is reported instead of silently
-// producing a config the server refuses. Types with a branch that requires
-// nothing (text, textarea, password, checkbox, number, file, yaml) are absent.
-const requiredFieldKeys = {
-  enum: [['values'], ['query', 'dbConfig'], ['expression']],
-  radio: [['values']],
-  expression: [['expression'], ['value'], ['query', 'dbConfig']],
-  local: [['expression'], ['value']],
-  local_out: [['expression'], ['value']],
-  credential: [['expression']],
-  list: [['subform']],
-  datetime: [['dateType']],
-  html: [['expression']],
-};
-
 // also used by the template : a column for a key the row's type forbids must not
-// render, it would only write a key the apply has to delete again
-function fieldTypeAllows(type, key) {
-  return !(forbiddenFieldKeys[type] || []).includes(key);
-}
+// render, it would only write a key the apply has to delete again (config/formFields.js)
 
 // The apply REPLACES the whole 'fields' sequence with what the table holds, so
 // the editor may only open on a list it can read back faithfully. Read it as a
@@ -2606,9 +2037,9 @@ function previewForm() {
 // ─── the card's tabs : the item's YAML, the categories' and constants' tables, a form's preview
 // the visual tab's table, for the toolbar's + button
 const visualEditor = ref(null);
-// which tab shows : 'yaml' (the editor and its toolbar), 'visual' (the categories or constants
-// as a table) or 'preview' (the form, rendered) ; a link may open the visual one (?tab=visual)
-const hasVisual = (view) => view === 'Categories' || view === 'Constants';
+// which tab shows : 'yaml' (the editor and its toolbar), 'visual' (the categories, the constants
+// or a form, as an outline) or 'preview' (the form, rendered) ; a link may open the visual one
+const hasVisual = (view) => view === 'Categories' || view === 'Constants' || view === 'Forms';
 // the editor shown : the YAML until the designer has read its config, then what the address
 // names (applyEditor)
 const editorView = ref('yaml');
@@ -2705,14 +2136,24 @@ watch(
     });
   },
 );
-// another view opens on its YAML ; the preview is a form's : no form goes back to the YAML,
-// another form is previewed in its place (the visual tab is not a form's : left as it is)
+// another view opens on its YAML ; the preview and the visual tab are a form's : no form goes
+// back to the YAML, another form is previewed (or shown in the visual tab) in its place
 watch(currentTab, () => (editorView.value = 'yaml'));
 watch(currentForm, (form) => {
-  if (editorView.value !== 'preview' || currentTab.value !== 'Forms') return;
+  if (currentTab.value !== 'Forms' || editorView.value === 'yaml') return;
   if (!form) editorView.value = 'yaml';
-  else refreshPreview();
+  else if (editorView.value === 'preview') refreshPreview();
 });
+
+// what a form's Visual tab may add : the categories' paths, the roles' names, as they are now
+const visualCategoryOptions = computed(() =>
+  categoryPaths(Array.isArray(categoriesObj.value) ? categoriesObj.value : []),
+);
+const visualRoleOptions = computed(() =>
+  (Array.isArray(rolesObj.value) ? rolesObj.value : [])
+    .map((r) => (r && typeof r === 'object' ? String(r.name ?? '').trim() : ''))
+    .filter(Boolean),
+);
 
 function openFieldEditor() {
   const src = fieldEditorSource.value;
@@ -2864,98 +2305,7 @@ function applyFieldEditor() {
 
 // Form settings editor
 const showFormSettings = ref(false);
-const formTypes = ['ansible', 'awx', 'multistep', 'subform'];
 const formSettings = ref({});
-
-// Mirror of the per-type `oneOf` in server/schema/form_schema.json : every form
-// type FORBIDS a set of keys, so a key left behind by a type change makes the
-// whole config unsaveable (with an opaque AJV error) while its input is no
-// longer rendered to remove it. The modal therefore only writes the keys the
-// selected type allows, and drops the ones it forbids.
-const forbiddenFormKeys = {
-  ansible: [
-    'template',
-    'awx',
-    'steps',
-    'awxCredentials',
-    'executionEnvironment',
-    'scm_branch',
-    'instanceGroups',
-    'expression',
-  ],
-  awx: ['playbook', 'playbookSubPath', 'ansibleCredentials', 'vaultCredentials', 'steps', 'expression'],
-  multistep: [
-    'playbook',
-    'playbookSubPath',
-    'runner',
-    'template',
-    'awx',
-    'inventory',
-    'tags',
-    'limit',
-    'check',
-    'diff',
-    'scm_branch',
-    'executionEnvironment',
-    'instanceGroups',
-    'ansibleCredentials',
-    'awxCredentials',
-    'vaultCredentials',
-    'key',
-    'expression',
-  ],
-  subform: [
-    'playbook',
-    'playbookSubPath',
-    'runner',
-    'template',
-    'awx',
-    'steps',
-    'expression',
-    'roles',
-    'categories',
-    'notifications',
-    'approval',
-    'hasApproval',
-    'onSubmit',
-    'onSuccess',
-    'onFailure',
-    'onAbort',
-    'onFinish',
-    'inventory',
-    'tags',
-    'limit',
-    'check',
-    'diff',
-    'scm_branch',
-    'executionEnvironment',
-    'instanceGroups',
-    'ansibleCredentials',
-    'awxCredentials',
-    'vaultCredentials',
-    'credentials',
-    'abortable',
-    'allowRelaunch',
-    'launchValidation',
-    'enableForChat',
-    'verbose',
-    'keepExtravars',
-    'userExtravars',
-    'image',
-    'icon',
-    'iconColor',
-    'iconSize',
-    'overlayIcon',
-    'overlayIconTransform',
-    'overlayIconColor',
-    'overlayIconCircle',
-    'overlayIconText',
-    'overlayIconTextPosition',
-    'overlayIconTextColor',
-    'tileClass',
-    'order',
-  ],
-};
 
 // also used by the template : an input for a key the selected type forbids must
 // not render, it would only write a key the apply has to delete again
@@ -6500,8 +5850,11 @@ onBeforeUnmount(() => {
                 YAML
               </a>
             </li>
-            <!-- the categories and constants as tables, on the same YAML -->
-            <li v-if="currentTab == 'Categories' || currentTab == 'Constants'" class="nav-item">
+            <!-- the categories, the constants and a form as outlines, on the same YAML -->
+            <li
+              v-if="currentTab == 'Categories' || currentTab == 'Constants' || (currentTab == 'Forms' && currentForm)"
+              class="nav-item"
+            >
               <a
                 class="nav-link"
                 :class="{ active: editorView === 'visual' }"
@@ -6791,15 +6144,21 @@ onBeforeUnmount(() => {
                     :disabled="busy || !isDirty || !editorTarget"
                     :title="t('designer.diff')"
                   />
-                  <!-- the visual tab : a row added to its table (the categories' or constants') -->
+                  <!-- the visual tab : a row added to its outline (a category, a constant, a field) -->
                   <BsButton
-                    v-if="editorView === 'visual' && (currentTab === 'Categories' || currentTab === 'Constants')"
+                    v-if="editorView === 'visual' && ['Categories', 'Constants', 'Forms'].includes(currentTab)"
                     :colorClass="busyOrTemplated || visualEditor?.locked ? 'secondary' : 'primary'"
                     icon="plus"
                     :isIconButton="true"
                     @click="visualEditor?.add()"
                     :disabled="busyOrTemplated || !!visualEditor?.locked"
-                    :title="currentTab === 'Categories' ? t('designer.addCategory') : t('designer.addConstant')"
+                    :title="
+                      currentTab === 'Categories'
+                        ? t('designer.addCategory')
+                        : currentTab === 'Forms'
+                          ? t('designer.addField')
+                          : t('designer.addConstant')
+                    "
                   />
                   <template v-if="currentTab === 'Categories' && editorView === 'yaml'">
                     <BsButton
@@ -7085,6 +6444,18 @@ onBeforeUnmount(() => {
                         class="designer-preview-frame"
                         :title="t('designer.preview')"
                       ></iframe>
+                    </div>
+                    <!-- the Visual tab : what the form is, and its fields as an outline, on the same
+                         YAML (saved with Save) -->
+                    <div v-else-if="editorTarget && editorView === 'visual'" class="designer-visual">
+                      <AppFormVisualEditor
+                        :key="'formvisual-' + currentForm"
+                        ref="visualEditor"
+                        v-model="forms[currentForm]"
+                        :readOnly="!(lock && lock.match) || configTemplated"
+                        :categoryOptions="visualCategoryOptions"
+                        :roleOptions="visualRoleOptions"
+                      />
                     </div>
                     <div v-else-if="editorTarget" :key="'formeditor-' + currentForm">
                       <BsInput
@@ -7617,7 +6988,8 @@ onBeforeUnmount(() => {
 .designer-page > main > .section > .container-fluid > .card > .card-body > div,
 .designer-page .designer-editor,
 .designer-page .designer-editor div:has(.ace_editor),
-.designer-page .designer-editor div:has(.designer-preview) {
+.designer-page .designer-editor div:has(.designer-preview),
+.designer-page .designer-editor div:has(.designer-visual) {
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
@@ -7701,9 +7073,14 @@ onBeforeUnmount(() => {
 .designer-tabs {
   flex-shrink: 0;
 }
-/* the visual editors (categories, constants) : as far down as the YAML editor */
+/* the visual editors (categories, constants, a form) : as far down as the YAML editor, and
+   scrolling inside themselves as it does - the file explorer beside them stays where it is */
 .designer-visual {
   margin-top: 0.5rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.5rem;
 }
 /* a form's preview : a bar (what it is, refresh, a new window) over the form page in a frame,
    the editor's height ; as far down as the editor and the file explorer beside it */
