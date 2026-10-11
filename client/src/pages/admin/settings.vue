@@ -30,15 +30,16 @@ const envGroupOrder = [
   // and it belongs beside the import/export actions that move the configuration between disk
   // and database. The database `config_source` column stays as a fallback for instances that
   // set it before 6.3.0, but nothing writes it any more - one control, one store.
-  // CONFIG_SEED_PATH and ALLOW_ENV_EDIT sit here because both answer "where does the
-  // configuration come from". Both are refused (see REFUSED in lib/envSettings.js), so
-  // they render read-only with their reason - which is the point: an operator needs to
-  // see that a seed is in force, and that is exactly why this page cannot be saved.
+  // CONFIG_SEED_PATH sits here because it answers "where does the configuration come
+  // from". It is refused (see REFUSED in lib/envSettings.js), so it renders read-only with
+  // its reason - which is the point: an operator needs to see that a seed is in force.
+  // ALLOW_ENV_EDIT is not shown : switched off, every variable says so in its own row.
   {
     key: 'configuration',
     label: () => t('settings.settingsPage.tabConfiguration'),
     icon: 'right-left',
-    exact: ['ENABLE_CONFIG_IN_DATABASE', 'CONFIG_SEED_PATH', 'CONFIG_SEED_RELOAD_SECONDS', 'ALLOW_ENV_EDIT'],
+    // config.yaml's path with the rest of where the configuration comes from
+    exact: ['CONFIG_PATH', 'ENABLE_CONFIG_IN_DATABASE', 'CONFIG_SEED_PATH', 'CONFIG_SEED_RELOAD_SECONDS'],
   },
   {
     key: 'server',
@@ -46,7 +47,7 @@ const envGroupOrder = [
     icon: 'globe',
     // no BASE_URL : it is in OWNED_ELSEWHERE, which is filtered out before the groups are
     // consulted, so listing it here only claimed a variable this page never renders
-    exact: ['NODE_ENV', 'PORT', 'HTTPS', 'HTTPS_KEY', 'HTTPS_CERT', 'TRUST_PROXY', 'API_BODY_LIMIT_MB'],
+    exact: ['PORT', 'HTTPS', 'HTTPS_KEY', 'HTTPS_CERT', 'TRUST_PROXY', 'API_BODY_LIMIT_MB'],
   },
   {
     key: 'database',
@@ -84,8 +85,8 @@ const envGroupOrder = [
     key: 'authentication',
     label: () => t('settings.settingsPage.envGroupAuthentication'),
     icon: 'user-shield',
-    prefix: ['ADMIN_', 'ACCESS_TOKEN_', 'LOGIN_', 'AUTH_', 'PASSWORD_'],
-    exact: ['REINIT_ADMIN', 'AZURE_GRAPH_URI', 'API_TOKEN_MAX_DAYS'],
+    prefix: ['ACCESS_TOKEN_', 'LOGIN_', 'AUTH_', 'PASSWORD_'],
+    exact: ['AZURE_GRAPH_URI', 'API_TOKEN_MAX_DAYS'],
   },
   {
     key: 'security',
@@ -106,8 +107,12 @@ const envGroupOrder = [
     key: 'jobs',
     label: () => t('settings.settingsPage.envGroupJobs'),
     icon: 'fac,ansible',
+    // the forms' folders with the jobs' : where the forms that launch them live
     exact: [
+      'FORMS_FOLDER_PATH',
+      'FORMS_STAGING_PATH',
       'JOBS_LIST_SIZE',
+      'RTE_QUEUE_MINUTES',
       'REGEX_FILTER_JOB_OUTPUT',
       'UPLOAD_PATH',
       'UPLOAD_MAX_GB',
@@ -115,12 +120,6 @@ const envGroupOrder = [
       'AWX_API_PREFIX',
       'AWX_LOST_MINUTES',
     ],
-  },
-  {
-    key: 'forms',
-    label: () => t('settings.settingsPage.envGroupFormsConfig'),
-    icon: 'file-code',
-    exact: ['CONFIG_PATH', 'FORMS_FOLDER_PATH', 'FORMS_STAGING_PATH'],
   },
   {
     key: 'git',
@@ -133,8 +132,13 @@ const envGroupOrder = [
     key: 'ytt',
     label: () => t('settings.settingsPage.envGroupYtt'),
     icon: 'code',
-    prefix: ['YTT_'],
-    exact: ['USE_YTT'],
+    // by name : YTT_LIB_DATA_<name> is a prefix, not a variable, and is not shown
+    exact: [
+      'USE_YTT',
+      'YTT_ALLOW_SYMLINK_DESTINATIONS',
+      'YTT_DANGEROUS_ALLOW_ALL_SYMLINK_DESTINATIONS',
+      'YTT_VARS_PREFIX',
+    ],
   },
   // LOG_RETENTION_DAYS is Retention's, with the other retentions
   {
@@ -142,7 +146,15 @@ const envGroupOrder = [
     label: () => t('settings.settingsPage.envGroupLogging'),
     icon: 'file-alt',
     prefix: ['LOG_'],
-    except: ['LOG_RETENTION_DAYS'],
+    // the console's colour codes are not shown (OWNED_ELSEWHERE)
+    except: [
+      'LOG_RETENTION_DAYS',
+      'LOG_COLOR_ERROR',
+      'LOG_COLOR_WARN',
+      'LOG_COLOR_NOTICE',
+      'LOG_COLOR_INFO',
+      'LOG_COLOR_DEBUG',
+    ],
   },
 ];
 
@@ -152,6 +164,8 @@ const envGroupOrder = [
 const { activeTab, tabLink } = useRouteTab('configuration', (key) => envGroupOrder.some((g) => g.key === key));
 // the title names the tab : General › Server, each step a link (the page to its plain address)
 const titleCrumbs = computed(() => {
+  // searching : every tab's matches, so the title names none of them
+  if (searching.value) return [];
   const group = envGroupOrder.find((g) => g.key === activeTab.value);
   if (!group) return [];
   return [
@@ -171,8 +185,88 @@ function envInGroup(group, name) {
 // multi-paragraph description; take its first sentence. The split requires a capital
 // after the period, so 'e.g. `https://...`' and 'i.e. /dev/log' are not cut in half.
 // a documented enum ('true, false', '1, 2') becomes a dropdown
+// ─── search ──────────────────────────────────────────────────────────────────
+// A word typed in the header's search narrows every tab at once : the settings that match it,
+// by label, variable name or help, each under its tab's name, the tabs set aside meanwhile.
+const search = ref('');
+const searching = computed(() => !!search.value.trim());
+
+/**
+ * Whether a variable matches the search : its label, its name or its help.
+ *
+ * Args:
+ *   e (object): the variable.
+ *
+ * Returns:
+ *   boolean: true when it matches, or when nothing is searched.
+ */
+function envMatches(e) {
+  const q = search.value.trim().toLowerCase();
+  if (!q) return true;
+  return [e.short, e.name, envHelp(e)].some((x) =>
+    String(x || '')
+      .toLowerCase()
+      .includes(q),
+  );
+}
+// the public root url, the one setting on the Server tab that is no variable
+const urlMatches = computed(() => {
+  const q = search.value.trim().toLowerCase();
+  return (
+    !q ||
+    [t('settings.settingsPage.publicRootUrl'), t('settings.settingsPage.publicRootUrlHelp'), 'url'].some((x) =>
+      x.toLowerCase().includes(q),
+    )
+  );
+});
+// the tabs with a match, their matching settings only
+const shownGroups = computed(() =>
+  envGroups.value
+    .map((g) => ({ ...g, items: g.items.filter(envMatches) }))
+    .filter((g) => !searching.value || g.items.length || (g.key === 'server' && urlMatches.value)),
+);
+
+// ─── fields their switch turns off ────────────────────────────────────────────
+/**
+ * A variable's value as the page has it : as edited, else as the server reported it.
+ *
+ * Args:
+ *   name (string): the variable.
+ *
+ * Returns:
+ *   string: the value, '' when none.
+ */
+function envValueOf(name) {
+  if (envEdits.value[name] !== undefined) return String(envEdits.value[name] ?? '');
+  const e = (env.value || []).find((x) => x.name === name);
+  return String(e?.value ?? '');
+}
+const isOn = (name) => ['1', 'true'].includes(envValueOf(name).trim().toLowerCase());
+
+/**
+ * Whether a field does nothing as the page stands : its switch is off - HTTPS's key and
+ * certificate without HTTPS, ytt's settings without ytt, the syslog's without a syslog host.
+ * Greyed out, its value kept, as the announcement's and the environment label's.
+ *
+ * Args:
+ *   e (object): the variable.
+ *
+ * Returns:
+ *   boolean: true when it does nothing now.
+ */
+function envOff(e) {
+  if (e.name === 'HTTPS_KEY' || e.name === 'HTTPS_CERT') return !isOn('HTTPS');
+  if (e.name.startsWith('YTT_')) return !isOn('USE_YTT');
+  if (e.name.startsWith('LOG_SYSLOG_') && e.name !== 'LOG_SYSLOG_HOST') return !envValueOf('LOG_SYSLOG_HOST').trim();
+  return false;
+}
+
+// a documented enum becomes a dropdown ; a yes / no reads so, and still sends its own value
 function envOptions(e) {
-  return Helpers.envAllowedOptions(e?.allowed);
+  const options = Helpers.envAllowedOptions(e?.allowed);
+  return (
+    options?.map((o) => (o.boolean ? { ...o, label: o.label === 'yes' ? t('common.yes') : t('common.no') } : o)) || null
+  );
 }
 
 function envHelp(e) {
@@ -203,14 +297,19 @@ function envHelp(e) {
 // Showing it on a page of editable settings would only offer an edit that cannot work; it is
 // reported as a fact on the Status page instead.
 // AF_ROLE and RTE_* describe which process this is and where its RTE lives : set in
-// the environment of the container, not edited from inside the app. LOCK_PATH is no longer read
-// (the designer lock is in the database since 7). ANSIBLE_PATH and
+// the environment of the container, not edited from inside the app - but RTE_QUEUE_MINUTES, how
+// long the app's job waits for a busy RTE, which the app reads (Jobs). ANSIBLE_PATH and
 // PROCESS_MAX_BUFFER are read by an RTE only : since 7 the app runs no playbook itself.
 // the MCP server's switch and options (Settings > Connections > MCP) and the chat assistant's
 // switch (Settings > Connections > Chat assistant) ; the default language (Settings > Appearance >
-// Defaults) and the designer's switch (Settings > Appearance > Links)
+// Defaults) and the designer's switch (Settings > Appearance > Links).
+// The local admin's first start (ADMIN_USERNAME, ADMIN_PASSWORD, REINIT_ADMIN) : the account is
+// the Users page's once it exists. NODE_ENV and ALLOW_ENV_EDIT decide how the process boots and
+// whether this page writes at all (it says so when it does not) : the deployment's.
+// YTT_LIB_DATA_<name> is a prefix, not a variable : documented, nothing to show. LOG_COLOR_* are
+// the console's ANSI colour codes : rarely changed, documented.
 const OWNED_ELSEWHERE =
-  /^(VAULT|RTE|MCP)_|^(ENABLE_(MCP|CHAT|SSO)|SSO_AUTO_LOGIN|BASE_URL|AF_ROLE|LOCK_PATH|ANSIBLE_PATH|PROCESS_MAX_BUFFER|DEFAULT_LANGUAGE|SHOW_DESIGNER)$/;
+  /^(VAULT|MCP|LOG_COLOR)_|^RTE_(?!QUEUE_MINUTES$)|^(ENABLE_(MCP|CHAT|SSO)|SSO_AUTO_LOGIN|BASE_URL|AF_ROLE|ANSIBLE_PATH|PROCESS_MAX_BUFFER|DEFAULT_LANGUAGE|SHOW_DESIGNER|ADMIN_USERNAME|ADMIN_PASSWORD|REINIT_ADMIN|NODE_ENV|ALLOW_ENV_EDIT|YTT_LIB_DATA_\{dynamic\})$/;
 
 const envGroups = computed(() => {
   if (!env.value || !Array.isArray(env.value)) return [];
@@ -420,7 +519,11 @@ onMounted(async () => {
       :crumbs="titleCrumbs"
       :description="t('settings.settingsPage.description')"
     >
-      <template #tabs>
+      <template #headerActions>
+        <!-- narrows every tab at once ; the search box of the other pages -->
+        <BsSearch v-model="search" style="width: 16rem" />
+      </template>
+      <template v-if="!searching" #tabs>
         <ul class="nav nav-tabs mb-0">
           <li v-for="group in envGroups" :key="group.key" class="nav-item">
             <a
@@ -437,13 +540,27 @@ onMounted(async () => {
       </template>
       <template #default>
         <!-- Environment Variable tabs -->
-        <template v-for="group in envGroups" :key="group.key">
-          <div v-show="activeTab === group.key">
+        <div v-if="searching && !shownGroups.length" class="text-body-secondary fst-italic">
+          {{ t('settings.settingsPage.searchNone') }}
+        </div>
+        <template v-for="(group, gIdx) in shownGroups" :key="group.key">
+          <div v-show="searching || activeTab === group.key">
+            <!-- searching : the matches of every tab, each under its tab's name -->
+            <!-- a line between the tabs' matches, and one under each tab's name, from side to side of
+                 the card ; under it the space between fields -->
+            <hr v-if="searching && gIdx > 0" class="mt-4 mb-0 af-search-line" />
+            <h6
+              v-if="searching"
+              class="fw-bold text-body-secondary af-search-tab"
+              :class="{ 'af-search-first': gIdx === 0 }"
+            >
+              <FaIcon :icon="group.icon" class="me-1" />{{ group.label }}
+            </h6>
             <!-- The editable, database-backed settings live with their subject rather than
                in a general tab: the public url is a server property, the language and
                theme defaults are UI ones. They save through saveSettings(), the fields
                below through the env endpoint - the one Save button covers both. -->
-            <template v-if="group.key === 'server'">
+            <template v-if="group.key === 'server' && urlMatches">
               <BsInput
                 class="af-env-field af-env-wide"
                 :isFloating="false"
@@ -474,7 +591,10 @@ onMounted(async () => {
                  <input>: it looks like the fields beside it, but nothing writes these
                  - they come from the process environment - so an input would promise
                  an edit that cannot happen. -->
-              <div class="mb-3 af-env-field" :class="{ 'af-env-wide': group.items.some(envWide) }">
+              <div
+                class="mb-3 af-env-field"
+                :class="{ 'af-env-wide': envGroups.find((g) => g.key === group.key)?.items.some(envWide) }"
+              >
                 <!-- an editable variable gets a real BsInput, so it is identical to the
                    Settings tab. One that cannot be written keeps the read-only box and
                    says why, rather than offering an edit that would not take. -->
@@ -489,6 +609,7 @@ onMounted(async () => {
                   :placeholder="e.secret && e.set ? t('settings.settingsPage.envSecretUnchanged') : ''"
                   :label="e.short || e.name"
                   :help="envHelp(e)"
+                  :disabled="envOff(e)"
                   v-model="envEdits[e.name]"
                 />
                 <template v-else>
@@ -498,7 +619,16 @@ onMounted(async () => {
                       <span class="input-group-text text-gray-500">
                         <FaIcon :fixedwidth="true" :icon="e.editable === 'refused' ? 'lock' : 'shield-halved'" />
                       </span>
-                      <div class="form-control env-value" :title="e.value ? String(e.value) : e.name">
+                      <!-- a secret whose state matters says it (set, the public default, random
+                           each start), never its value -->
+                      <div
+                        v-if="e.secretState"
+                        class="form-control env-value"
+                        :class="{ 'env-unsafe': e.secretState !== 'set' }"
+                      >
+                        {{ t(`settings.settingsPage.secretState_${e.secretState}`) }}
+                      </div>
+                      <div v-else class="form-control env-value" :title="e.value ? String(e.value) : e.name">
                         {{ e.value === null || e.value === '' ? '—' : e.value }}
                       </div>
                     </div>
@@ -526,12 +656,12 @@ onMounted(async () => {
                field, and a small mb-2 so they do not sit hard against the card edge -
                deliberately smaller than a field's mb-3, which the :last-child rule below
                zeroes precisely because it stacks on the card's own padding. -->
-            <template v-if="group.key === 'configuration'">
+            <template v-if="group.key === 'configuration' && !searching">
               <div class="mt-4 mb-2 d-flex align-items-center">
-                <BsButton icon="file-import" colorClass="secondary" @click="showImportConfirm = true">{{
+                <BsButton icon="file-import" @click="showImportConfirm = true">{{
                   t('settings.settingsPage.importToDatabase')
                 }}</BsButton>
-                <BsButton icon="file-export" colorClass="secondary" cssClass="ms-3" @click="showExportConfirm = true">{{
+                <BsButton icon="file-export" cssClass="ms-3" @click="showExportConfirm = true">{{
                   t('settings.settingsPage.exportToFile')
                 }}</BsButton>
               </div>
@@ -542,13 +672,7 @@ onMounted(async () => {
       <template #actions>
         <!-- one button : a tab can now hold both database-backed settings and environment
            variables, so Save applies whichever of the two is pending -->
-        <BsButton
-          icon="save"
-          :colorClass="anyDirty ? 'primary' : 'secondary'"
-          :disabled="!anyDirty"
-          @click="saveActiveTab()"
-          >{{ t('settings.common.save') }}</BsButton
-        >
+        <BsButton icon="save" :disabled="!anyDirty" @click="saveActiveTab()">{{ t('settings.common.save') }}</BsButton>
       </template>
     </AppSettings>
 
@@ -580,6 +704,32 @@ onMounted(async () => {
   </AppSettingsPage>
 </template>
 <style scoped>
+/* the search's results : a line from side to side of the card under each tab's name and between
+   the tabs (the card body's padding taken back), the space between fields under it */
+.af-search-line,
+.af-search-tab {
+  margin-left: calc(-1 * var(--bs-card-spacer-x));
+  margin-right: calc(-1 * var(--bs-card-spacer-x));
+}
+.af-search-line {
+  opacity: 1;
+  border-color: var(--bs-border-color);
+}
+.af-search-tab {
+  /* as much space above the name as under it, between the two lines : its icon and its text one
+     centred line */
+  display: flex;
+  align-items: center;
+  line-height: 1.2;
+  /* the pixel of the line above given back, so both sides measure the same */
+  padding: calc(0.75rem + 3px) var(--bs-card-spacer-x) calc(0.75rem + 2px);
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--bs-border-color);
+}
+/* the first : the card's own padding above it */
+.af-search-tab.af-search-first {
+  padding-top: 0;
+}
 /* the variables' fields one width, as on the other settings pages (AppEnvField) : across the
    whole card, a number or a yes / no sat far from its label. A tab holding a long value (a
    path, a command, an address) has all its fields wider, wide enough to read it : the fields
@@ -616,6 +766,9 @@ onMounted(async () => {
   font-style: italic;
 }
 .env-restart {
+  color: var(--af-warning-text, var(--bs-warning-text-emphasis));
+}
+.env-unsafe {
   color: var(--af-warning-text, var(--bs-warning-text-emphasis));
 }
 .env-value {

@@ -446,14 +446,9 @@ onMounted(async () => {
           @click="confirmDelete = true"
           >{{ t('common.delete') }}</BsButton
         >
-        <BsButton
-          v-if="activeTab === 'details'"
-          icon="save"
-          :colorClass="dirty ? 'primary' : 'secondary'"
-          :disabled="!dirty"
-          @click="saveDetails()"
-          >{{ t('settings.common.save') }}</BsButton
-        >
+        <BsButton v-if="activeTab === 'details'" icon="save" :disabled="!dirty" @click="saveDetails()">{{
+          t('settings.common.save')
+        }}</BsButton>
       </template>
     </AppSettings>
   </AppSettingsPage>

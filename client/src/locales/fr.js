@@ -377,6 +377,7 @@ export default {
     checkSecretStores: 'Coffres de secrets',
     checkRunners: 'Runners',
     checkExpressions: 'Expressions serveur',
+    checkSecrets: 'Secrets',
     checkLdap: 'LDAP',
     checkStorage: 'Stockage des tâches',
     checkWritable: 'Dossiers accessibles en écriture',
@@ -1366,10 +1367,15 @@ export default {
       envGroupBackups: 'Sauvegardes',
       envGroupAuthentication: 'Authentification',
       envGroupJobs: 'Tâches',
-      envGroupFormsConfig: 'Formulaires',
       envOverridden: "Définie dans l'environnement, non modifiable ici.",
       envSecretUnchanged: 'Laisser vide pour conserver la valeur actuelle',
       envRestartRequired: 'Les modifications prennent effet après un redémarrage.',
+      searchNone: 'Aucun paramètre ne correspond.',
+      secretState_set: 'Défini',
+      secretState_default:
+        'Par défaut (non sûr) : les mots de passe stockés sont lisibles avec la clé publique par défaut',
+      secretState_random:
+        'Non défini : un aléatoire à chaque démarrage, donc toutes les sessions se terminent au redémarrage',
       envRteOnly: "Lu par un RTE dans son propre environnement : définissez-le là où le RTE s'exécute.",
       envRelocates: "Les fichiers déjà présents à l'ancien emplacement ne sont pas déplacés.",
       envRestartPending: 'Enregistré. Un redémarrage est nécessaire pour : {names}',
@@ -2135,7 +2141,11 @@ export default {
     title: 'Journal du serveur',
     description:
       'Le journal propre du serveur AnsibleForms : connexions, chargements de la configuration, requêtes et erreurs. Les lignes les plus récentes sont en bas.',
-    autoRefresh: 'Actualisation automatique',
+    newLines: 'Nouvelles lignes',
+    latest: 'Aller aux dernières',
+    clear: 'Effacer',
+    clearHint: "Vide l'affichage, pas le journal : seules les lignes écrites à partir de maintenant s'affichent",
+    cleared: "Effacé : les nouvelles lignes s'affichent ici à mesure qu'elles sont écrites.",
     download: 'Telecharger',
   },
 };

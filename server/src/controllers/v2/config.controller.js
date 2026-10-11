@@ -208,6 +208,8 @@ const saveEnv = async function(req,res){
 // too, for the same reason : PASSWORD_MIN_LENGTH is a number, and it was hidden as a secret.
 const SECRET_ENV_NAME = /_PASSWORD$|_SECRET$|_TOKEN$/;
 const MASK = "*** NOT REVEALED ***";
+// the state an unset secret is in : the page says it instead of the mask
+const SECRET_STATES = { ENCRYPTION_SECRET: 'default', ACCESS_TOKEN_SECRET: 'random' };
 
 // Deprecated since 7 (removed in 8) : the Vault page these served is replaced by the
 // secret stores page (/api/v2/secretstore/:id/check and /mounts). They now answer for the
@@ -283,6 +285,12 @@ const env = async function(req,res){
       item.secret = SECRET_ENV_NAME.test(x.name)
       if(item.secret){
         item.value = item.set ? MASK : null
+      }
+      // the two secrets an admin should see the state of, never the value : set, or the
+      // public default (ENCRYPTION_SECRET : stored passwords readable with the source code), or
+      // a random one each start (ACCESS_TOKEN_SECRET : every session ends at a restart)
+      if(SECRET_STATES[x.name]){
+        item.secretState = item.set ? 'set' : SECRET_STATES[x.name]
       }
       // The documentation from help.yaml, which the settings page renders under each
       // variable. It is public by nature - help.yaml ships in the repo and is published

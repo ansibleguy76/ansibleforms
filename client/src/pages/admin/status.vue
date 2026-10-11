@@ -24,7 +24,7 @@ const titleCrumbs = computed(() => [
   { title: t('health.title'), icon: 'heart-pulse', to: tabLink('checks') },
   activeTab.value === 'information'
     ? { title: t('health.sectionInfo'), icon: 'circle-info', to: tabLink('information') }
-    : { title: t('health.sectionChecks'), icon: 'heart-pulse', to: tabLink('checks') },
+    : { title: t('health.sectionChecks'), icon: 'list-check', to: tabLink('checks') },
 ]);
 
 // the check keys come from the server (see health.model.js) and are turned into
@@ -126,7 +126,7 @@ onMounted(async () => {
               href="#"
               @click.prevent="activeTab = 'checks'"
             >
-              <FaIcon icon="heart-pulse" class="me-1" />
+              <FaIcon icon="list-check" class="me-1" />
               {{ t('health.sectionChecks') }}
               <span v-if="attention" class="badge ms-1" :class="summary.error ? 'text-bg-danger' : 'text-bg-warning'">{{
                 attention
@@ -161,6 +161,15 @@ onMounted(async () => {
                 <td style="width: 2.5rem">
                   <span class="badge rounded-pill" :class="indicatorClass(c.status)">&nbsp;</span>
                 </td>
+                <!-- a check with a detail unfolds it : its caret between the dot and the name, as the
+                     jobs list's (styles/tables.scss) -->
+                <td
+                  class="af-expand-col text-center health-caret"
+                  :role="c.detail ? 'button' : null"
+                  @click="c.detail && toggle(c.key)"
+                >
+                  <FaIcon v-if="c.detail" :icon="expanded[c.key] ? 'angle-down' : 'angle-right'" :fixedwidth="true" />
+                </td>
                 <td class="fw-bold" style="width: 16rem">{{ checkLabel(c.key) }}</td>
                 <td>
                   {{ displayValue(c.value) }}
@@ -176,16 +185,6 @@ onMounted(async () => {
                       :style="{ width: c.detail.usedPercent + '%' }"
                     ></div>
                   </div>
-                </td>
-                <td class="text-end health-action" style="width: 3rem">
-                  <BsButton
-                    v-if="c.detail"
-                    :isIconButton="true"
-                    colorClass="secondary"
-                    cssClass="btn-sm"
-                    :icon="expanded[c.key] ? 'chevron-up' : 'chevron-down'"
-                    @click="toggle(c.key)"
-                  />
                 </td>
               </tr>
               <!-- the detail row has to sit inside this same v-for, or every
@@ -208,18 +207,20 @@ onMounted(async () => {
             <tbody>
               <template v-for="i in info" :key="i.key">
                 <tr>
-                  <td class="fw-bold" style="width: 18.5rem">{{ infoLabel(i.key) }}</td>
-                  <td>{{ displayValue(i.value) }}</td>
-                  <td class="text-end health-action" style="width: 3rem">
-                    <BsButton
+                  <!-- a fact with a detail unfolds it : its caret before the name -->
+                  <td
+                    class="af-expand-col text-center health-caret"
+                    :role="i.detail ? 'button' : null"
+                    @click="i.detail && toggle('i-' + i.key)"
+                  >
+                    <FaIcon
                       v-if="i.detail"
-                      :isIconButton="true"
-                      colorClass="secondary"
-                      cssClass="btn-sm"
-                      :icon="expanded['i-' + i.key] ? 'chevron-up' : 'chevron-down'"
-                      @click="toggle('i-' + i.key)"
+                      :icon="expanded['i-' + i.key] ? 'angle-down' : 'angle-right'"
+                      :fixedwidth="true"
                     />
                   </td>
+                  <td class="fw-bold" style="width: 18.5rem">{{ infoLabel(i.key) }}</td>
+                  <td>{{ displayValue(i.value) }}</td>
                 </tr>
                 <tr v-if="expanded['i-' + i.key] && i.detail">
                   <td colspan="3" class="bg-body-tertiary">
@@ -264,11 +265,9 @@ onMounted(async () => {
 .health-ind-unknown {
   background-color: #6c757d !important;
 }
-/* Every row is the same height whether or not it carries an expand button. Without this
-   a row with a chevron is 40px and one without is 33px, so the list looks ragged.
-   `height` on a table cell behaves as a minimum, so this lifts the short rows without
-   capping the taller ones. */
-.health-table tbody td.health-action {
+/* Every row the same height, as when an expand button lifted them : `height` on a table cell
+   behaves as a minimum, so this lifts the short rows without capping the taller ones. */
+.health-table tbody td.health-caret {
   height: 40px;
 }
 /* Bootstrap draws a bottom border on every row. On the last one there is nothing left

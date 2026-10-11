@@ -719,6 +719,26 @@ async function expressionsCheck() {
   return check('expressions', OK, values[mode], { mode });
 }
 
+// The two secrets the app cannot be safe without, as Settings > General shows them : the
+// encryption key still the public default (every stored password readable with the source
+// code), the token key unset (a random one each start : every session ends at a restart).
+async function secretsCheck() {
+  const problems = [];
+  if (appConfig.encryptionSecretIsDefault) {
+    problems.push('ENCRYPTION_SECRET is the public default : stored passwords can be read with the source code');
+  }
+  if (!process.env.ACCESS_TOKEN_SECRET) {
+    problems.push('ACCESS_TOKEN_SECRET is not set : a random one each start, so every session ends at a restart');
+  }
+  if (problems.length) {
+    return check('secrets', WARNING, problems.length === 2 ? 'both unsafe' : 'one unsafe', {
+      problems,
+      note: 'Set them in the environment (docker-compose, kubernetes) : changing ENCRYPTION_SECRET later makes the stored passwords unreadable, so set it before storing any',
+    });
+  }
+  return check('secrets', OK, 'set');
+}
+
 /**
  * The declarative config seed. A bad seed refuses to START, so a file that never applied
  * cannot be reported from here - the process would not be up to answer. A bad RELOAD is
@@ -814,6 +834,8 @@ Health.check = async function () {
     safely('secretStores', secretStoresCheck),
     safely('runners', runnersCheck),
     safely('expressions', expressionsCheck),
+    // next to the expressions : both are about how safe the instance is
+    safely('secrets', secretsCheck),
     safely('ldap', ldapCheck),
     safely('storage', storageCheck),
     safely('writable', writableCheck),

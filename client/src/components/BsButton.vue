@@ -66,13 +66,18 @@ const props = defineProps({
 // a delete button (its trash icon) is red everywhere - its border, icon and words - whatever
 // colour the page passed : one rule, so no Delete is ever blue beside its Save
 const DELETE_ICONS = ['trash', 'trash-can', 'trash-alt'];
+// a save button (its save icon) is orange everywhere, as the designer's - and grey while there is
+// nothing to save (disabled, below) : one rule, so no page needs to pass a colour for its Save
+const SAVE_ICONS = ['save', 'floppy-disk'];
 
 // a disabled button is grey, whatever its colour : a faded blue still read as clickable (Delete
 // next to a grey Save). `disabled` passes through as an attribute, so it is read from there.
 const attrs = useAttrs();
 const color = computed(() => {
   if (attrs.disabled !== undefined && attrs.disabled !== false) return 'secondary';
-  return DELETE_ICONS.includes(props.icon) ? 'danger' : props.colorClass;
+  if (DELETE_ICONS.includes(props.icon)) return 'danger';
+  if (SAVE_ICONS.includes(props.icon)) return 'orange';
+  return props.colorClass;
 });
 
 const classes = computed(() => {

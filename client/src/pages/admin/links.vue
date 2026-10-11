@@ -364,13 +364,9 @@ onMounted(async () => {
           @click="addLink()"
           >{{ t('settings.interface.addLink') }}</BsButton
         >
-        <BsButton
-          icon="save"
-          :colorClass="dirty && !anyInvalid ? 'primary' : 'secondary'"
-          :disabled="!dirty || anyInvalid"
-          @click="save()"
-          >{{ t('settings.common.save') }}</BsButton
-        >
+        <BsButton icon="save" :disabled="!dirty || anyInvalid" @click="save()">{{
+          t('settings.common.save')
+        }}</BsButton>
       </template>
       <template #default>
         <div v-if="envRestartPending.length" class="alert alert-warning py-2">

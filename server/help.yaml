@@ -18,7 +18,7 @@
   - name: DB_HOST
     type: string
     allowed: a valid IP or FQDN
-    short: The database host
+    short: Database host
     hint: Host name or IP address of the MySQL server.
     required: true
     description: |
@@ -37,7 +37,7 @@
   - name: DB_USER
     type: string
     allowed: a valid mysql user
-    short: The database user
+    short: Database user
     hint: User name Ansible Forms connects to the database with.
     required: true
     description: |
@@ -55,7 +55,7 @@
   - name: DB_PASSWORD
     type: string
     allowed: a valid mysql password
-    short: The database password
+    short: Database password
     hint: Password for that database user.
     required: true
     description: |
@@ -63,7 +63,7 @@
   - name: DB_POOL_SIZE
     type: number
     allowed: a positive integer
-    short: MySQL connection pool size
+    short: Database connection pool size
     required: false
     default: 20
     description: |
@@ -183,7 +183,7 @@
   - name: HTTPS
     type: number
     allowed: 0, 1
-    short: Enables HTTPS
+    short: Enable HTTPS
     choices:
     - name: 0
       description: Disables https
@@ -194,13 +194,13 @@
   - name: HTTPS_KEY
     type: string
     allowed: a valid file path
-    short: Private key
+    short: HTTPS private key
     default: "%PERSISTENT_FOLDER%/certificates/key.pem"
     description: The path to the private key of the server certificate, in BASE64/PEM format.
   - name: HTTPS_CERT
     type: string
     allowed: a valid file path
-    short: Certificate
+    short: HTTPS certificate
     default: "%PERSISTENT_FOLDER%/certificates/cert.pem"
     description: The path to the server certificate, in BASE64/PEM format.
   - name: ADMIN_USERNAME
@@ -226,7 +226,7 @@
   - name: BACKUP_PATH
     type: string
     allowed: a valid directory path
-    short: Backup path
+    short: Backups folder
     default: "%PERSISTENT_FOLDER%/backups"
     description: |
       Ansible Forms can backup the database and forms.  This is the path where the backups are stored.
@@ -258,7 +258,7 @@
     version: 6.3.0
     type: integer
     allowed: 0 or a number of seconds
-    short: Config seed reload interval
+    short: Config seed reload interval (seconds)
     hint: How often the seed file is re-read, so a change in git reaches a running instance
     default: 60
     description: |
@@ -287,7 +287,7 @@
     version: 6.1.0
     type: string
     allowed: a valid directory path
-    short: Forms folder path
+    short: Forms folder
     default: "%PERSISTENT_FOLDER%/forms"
     description: | 
       The directory where individual form YAML files are stored.
@@ -296,27 +296,18 @@
     version: 6.1.0
     type: string
     allowed: a valid directory path
-    short: Forms staging folder path
+    short: Forms staging folder
     hint: Where forms live that are not yet committed to a repository.
     default: "%PERSISTENT_FOLDER%/forms_staging"
     description: |
       When forms come from a git repository, a form created or edited in the designer is written
       here first and only lands in the repository once it is pushed. The loader reads this folder
       alongside the repository ones, so a staged form is usable immediately.
-  - name: LOCK_PATH
-    type: string
-    allowed: a valid file path
-    short: Designer lock file path (deprecated)
-    hint: No longer used - the designer lock is kept in the database.
-    default: "%PERSISTENT_FOLDER%/ansibleForms.lock"
-    description: |
-      Deprecated since 7.0.0 and ignored : the designer lock (who is editing the forms) is kept
-      in the database, so every app node sees the same lock. Removed in 8.0.0.
   - name: FORMS_BACKUP_PATH
     version: 4.0.3
     type: string
     allowed: a valid directory path
-    short: Backup path for form backups
+    short: Form backups folder
     default: "%PERSISTENT_FOLDER%/forms_backups"
     description: | 
       When backups are made, they end up in this path    
@@ -324,7 +315,7 @@
     version: 4.0.3
     type: number
     allowed: a whole number where 0 disables the cleanup
-    short: Backup retention days
+    short: Backup retention (days)
     hint: How long a config restore point is kept. 0 keeps them for ever.
     default: "60"
     description: |
@@ -338,7 +329,7 @@
     version: 6.1.0
     type: number
     allowed: a whole number where 0 disables the cleanup
-    short: Nightly backup retention count
+    short: Nightly backups kept
     default: "7"
     description: | 
       Number of automated nightly backups to retain.
@@ -351,7 +342,7 @@
     version: 6.3.0
     type: number
     allowed: a whole number where 0 keeps every entry
-    short: Audit trail retention in days
+    short: Audit log retention (days)
     default: "365"
     description: |
       How long entries in the audit trail are kept.
@@ -436,7 +427,7 @@
     type: number
     allowed: 0 or a positive integer
     default: 60
-    short: How long a job waits for a busy RTE
+    short: Wait for a busy RTE (minutes)
     hint: Read by the app nodes and the worker
     description: |
       A job handed to an RTE that is full (RTE_MAX_JOBS) or stopping waits for it, asking again
@@ -460,7 +451,7 @@
     version: 6.3.0
     type: number
     allowed: a whole number where 0 keeps jobs for ever
-    short: Job history retention in days
+    short: Job history retention (days)
     default: "0"
     description: |
       How long finished jobs and their output are kept. Job output can be large, so this is
@@ -474,7 +465,7 @@
     version: 4.0.3
     type: string
     allowed: a valid base URI without slash on the end
-    short: The Azure Graph API base URI
+    short: Azure Graph API base URI
     default: https://graph.microsoft.com
     description: |
       The Microsoft Graph endpoint the server calls at an Azure AD login to read the user's
@@ -491,7 +482,7 @@
     - name: 1
       description: Enables schema creation
     default: 1    
-    short: Enable the schema creation
+    short: Allow schema creation
     hint: Allows the database schema to be created on a fresh install.
     description: | 
       When you start Ansible Forms for the first time and there is no database, Ansible Forms will present you the option to create the schema. 
@@ -505,7 +496,7 @@
     type: number
     allowed: 0, 1
     default: 1
-    short: Back up the database before an upgrade changes it
+    short: Back up the database before an upgrade
     hint: 0 upgrades without a backup
     description: |
       When a new release's upgrade would lose data - the tables 7.0.0 drops (staging, datasource,
@@ -537,7 +528,7 @@
   - name: API_BODY_LIMIT_MB
     type: number
     default: 50
-    short: Maximum JSON / urlencoded request body size (MB)
+    short: Request body size limit (MB)
     description: |
       Cap on the size of JSON and urlencoded request bodies accepted by the AnsibleForms API.
       Default is 50 MB, generous enough for large form designs and heavy job extravars.
@@ -547,7 +538,7 @@
   - name: UPLOAD_MAX_GB
     type: number
     default: 10
-    short: Maximum size of a single uploaded file (GB)
+    short: Upload size limit (GB)
     description: |
       Cap on the size of a single file uploaded through the form upload field, in gigabytes.
       Default is 10 GB to accommodate large artifacts (e.g. firmware images, upgrade bundles).
@@ -556,7 +547,7 @@
   - name: REST_ALLOWED_HOSTS
     type: string
     default: ""
-    short: Whitelist of hosts/CIDRs reachable from REST expressions
+    short: Allowed hosts for REST expressions
     hint: Hosts and CIDR ranges that REST expressions are allowed to reach.
     description: |
       Comma-separated list of hostnames and/or CIDR ranges that REST helper functions
@@ -577,7 +568,7 @@
   - name: REST_DENIED_HOSTS
     type: string
     default: ""
-    short: Blacklist of hosts/CIDRs unreachable from REST expressions
+    short: Blocked hosts for REST expressions
     hint: Hosts and CIDR ranges that REST expressions may never reach.
     description: |
       Comma-separated list of hostnames and/or CIDR ranges that REST helper functions
@@ -608,7 +599,7 @@
     - name: legacy
       description: The 6.2.1 rules - unsafe, only settable in the real environment
     default: strict
-    short: Strictness of the server-side expression sanitizer
+    short: Server expression sanitizer
     hint: How strictly server expressions (without runLocal) are checked before they run.
     description: |
       Server expressions (fields of type `expression` without `runLocal`) are evaluated on
@@ -712,7 +703,7 @@
     type: number
     allowed: a positive integer
     default: 90
-    short: The longest an api token lives, in days
+    short: API token maximum life (days)
     hint: A login with ?expiryDays= longer than this is cut to it
     description: |
       A role with the `extendedTokenExpiration` option may log in with `?expiryDays=<n>` and get
@@ -724,7 +715,7 @@
     type: number
     allowed: 0 or a positive integer
     default: 8
-    short: The shortest password a person may set
+    short: Minimum password length
     hint: 0 checks no length
     description: |
       A local password set through the application - a new user, an admin setting it, a user
@@ -752,7 +743,7 @@
     type: number
     allowed: 0 or a positive integer
     default: 120
-    short: Requests a minute from one address on the login and token routes
+    short: Sign-in requests a minute from one address
     hint: 0 turns it off
     description: |
       A ceiling on the authentication endpoints - the login, the logout, the token refresh and the
@@ -765,7 +756,7 @@
     type: number
     allowed: 0 or a positive integer
     default: 5
-    short: Failed logins before an account locks
+    short: Failed sign-ins before an account locks
     hint: 0 turns the account lockout off
     description: |
       After this many failed logins in a row, an account (local or LDAP) is locked for
@@ -778,7 +769,7 @@
     type: number
     allowed: 0 or a positive integer
     default: 30
-    short: Failed logins from one address before it is held back
+    short: Failed sign-ins from one address before it is held back
     hint: 0 turns the per-address limit off
     description: |
       One address trying many accounts : after this many failed logins within
@@ -790,7 +781,7 @@
     type: number
     allowed: 0 or a positive integer
     default: 15
-    short: How long a locked account stays locked
+    short: Account lockout (minutes)
     hint: Also the window the failures are counted in ; 0 turns both limits off
     description: |
       How long an account stays locked after LOGIN_MAX_FAILURES failed logins, and the window
@@ -808,7 +799,7 @@
     - name: enforce
       description: Launches whose field values break the form's rules are refused
     default: enforce
-    short: Check the field values of every launch against the form's validation rules
+    short: Validate every launch
     hint: off does nothing, log logs what would be refused, enforce refuses the launch
     description: |
       Checks every launch from the browser or the REST API (`POST /api/v2/job`) on the
@@ -866,7 +857,7 @@
     - name: 1
       description: Enables the database query logging
     default: 0
-    short: Enable the database query logging
+    short: Log database queries
     hint: Logs every database query. Very noisy, for debugging only.
     description: | 
       When you want to see the database queries that are executed, you can enable this option by setting this variable to 1.  
@@ -995,7 +986,7 @@
     type: string
     allowed: a long random string
     default: none (metrics off)
-    short: The bearer token of the Prometheus metrics
+    short: Prometheus metrics token
     hint: Unset, /api/v2/metrics answers 404 ; needs a restart
     description: |
       Set, an app node or the worker serves Prometheus metrics at `/api/v2/metrics` and an RTE at
@@ -1012,7 +1003,7 @@
     type: string
     allowed: text, json
     default: text
-    short: The format of the log lines
+    short: Log format
     hint: json writes one JSON object a line ; needs a restart
     description: |
       `text` (default) : `<time> <level>: <message>`, colored in the console and the log file.
@@ -1046,7 +1037,7 @@
     version: 7.0.0
     type: number
     allowed: a whole number where 0 keeps the log files for ever
-    short: Log file retention in days
+    short: Log file retention (days)
     hint: How many days of server log files are kept (0 keeps them all)
     default: "30"
     description: |
@@ -1057,7 +1048,7 @@
     type: string
     allowed: a valid folder path
     default: "%PERSISTENT_FOLDER%/logs"
-    short: Path for logfiles
+    short: Logs folder
     description: | 
       Ansible Forms maintains 2 logfiles.  `ansibleforms.log` and `ansibleforms.errors.log`   
     changelog:
@@ -1087,7 +1078,7 @@
   - name: LOG_TZ
     type: string
     allowed: a valid timezone string
-    short: Log timezone
+    short: Log time zone
     default: UTC
     version: 5.0.10
     description: |
@@ -1152,7 +1143,7 @@
   - name: LOG_SYSLOG_SOURCE
     type: string
     allowed: hostname
-    short: Source hostname
+    short: Syslog source hostname
     default: localhost
     version: 3.0.1
     description: Host to indicate where log messages are coming from      
@@ -1177,7 +1168,7 @@
   - name: LOG_SYSLOG_APPNAME
     type: string
     allowed: free text
-    short: App name
+    short: Syslog app name
     default: AnsibleForms
     version: 3.0.1
     description: The name of the application    
@@ -1219,7 +1210,7 @@
   - name: ACCESS_TOKEN_SECRET
     type: string
     allowed: a hard secret string
-    short: Secret to encrypt access tokens
+    short: Access token secret
     default: "*** NOT REVEALED ***"
     description: |
       AnsibleForm uses Basic Authentication as authentication mechanism.  
@@ -1248,7 +1239,7 @@
   - name: ACCESS_TOKEN_ISSUER
     type: string
     allowed: a valid issuer string
-    short: Issuer of the access token
+    short: Access token issuer
     default: ansibleforms
     version: 5.0.8
     description: |
@@ -1258,7 +1249,7 @@
   - name: HOME_PATH
     type: string
     allowed: a valid path
-    short: The users home directory
+    short: Home folder
     hint: Home directory used for the generated SSH key and git credentials.
     default: OS Homedir path
     version: 3.0.0
@@ -1268,7 +1259,7 @@
   - name: REPO_PATH
     type: string
     allowed: a valid path
-    short: Repositories path
+    short: Repositories folder
     hint: Root folder where git repositories are cloned.
     default: "%PERSISTENT_FOLDER%/repositories"
     version: 3.0.0
@@ -1277,7 +1268,7 @@
   - name: VARS_FILES_PATH
     type: string
     allowed: a valid directory path
-    short: Base path for vars files
+    short: Vars files folder
     default: "%PERSISTENT_FOLDER%/vars"
     version: 6.1.0
     description: |
@@ -1288,7 +1279,7 @@
   - name: ENCRYPTION_SECRET
     type: string
     allowed: a strong encryption string
-    short: Database encryption secret
+    short: Encryption secret
     default: "*** NOT REVEALED ***"
     description: |
       Ansible Forms encrypts passwords in the database using this secret.  
@@ -1306,7 +1297,7 @@
   - name: REGEX_FILTER_JOB_OUTPUT
     type: string
     allowed: an escaped regular expression
-    short: Filter out job output tasks
+    short: Job output filter (regex)
     hint: Job output lines matching this regex are hidden.
     default: "\\[low\\]"
     description: |
@@ -1316,7 +1307,7 @@
     version: 7.0.0
     type: number
     allowed: a whole number from 10 to 10000
-    short: Jobs shown in the jobs list
+    short: Jobs in the jobs list
     hint: How many of the newest jobs the jobs list loads; its pages and search cover these.
     default: "1000"
     description: |
@@ -1327,7 +1318,7 @@
   - name: MASK_EXTRAVARS_REGEX
     type: string
     allowed: an escaped regular expression
-    short: Regex to mask extravars values
+    short: Extravars to mask (regex)
     hint: Extravars whose name matches this regex are masked in job output.
     default: "password|secret|token"
     description: |
@@ -1340,7 +1331,7 @@
   - name: EXTRAVARS_USER_FIELDS
     type: string
     allowed: empty, all, none, or a comma separated list of keys
-    short: Which keys of the user go into the extravars
+    short: User fields in the extravars
     hint: Trims the ansibleforms_user object sent to the playbook.
     default: ""
     description: |
@@ -1355,7 +1346,7 @@
     type: string
     version: 4.0.16
     allowed: a valid path
-    short: The path for file uploads
+    short: Uploads folder
     default: "%PERSISTENT_FOLDER%/uploads"
     description: |
       Since 4.0.16, a new field type is introduced that allows file uploads.  The files are uploaded in this path.
@@ -1364,7 +1355,7 @@
     type: number
     allowed: a positive number
     default: 5
-    short: How long AWX may not answer before a followed job is given up
+    short: AWX silence before a job is given up (minutes)
     hint: Read by the app node or worker following the job
     description: |
       While an AWX job runs, the app asks AWX for its status and output every second. When AWX
@@ -1375,7 +1366,7 @@
     type: string
     version: 5.0.9
     allowed: a relative url path
-    short: The prefix for the AWX API
+    short: AWX API prefix
     default: /api/v2
     description: |
       The prefix of the AWX / AAP API on the runners of type awx, typically `/api/v2`.
@@ -1400,7 +1391,7 @@
     description:
       MySQL restore commands and MySQL/MariaDB flavours differ, hence the need for a configurable command.
   - name: BACKUP_COMMAND_TIMEOUT_SECONDS
-    short: Backup/restore command timeout
+    short: Backup and restore timeout (seconds)
     hint: Seconds the database dump and restore commands are allowed to run.
     type: number
     version: 6.3.0

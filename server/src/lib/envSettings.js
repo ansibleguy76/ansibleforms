@@ -41,6 +41,9 @@ export const REFUSED = {
   REINIT_ADMIN: 'This recreates the local admin account at startup - a password reset backdoor',
   ALLOW_SCHEMA_CREATION: 'This re-opens the endpoint that drops and recreates every table',
   NODE_ENV: 'This decides how the application boots and must come from the environment',
+  // which process this is (app, worker, rte) : saved here, the next start would turn the app into
+  // another process and this page with it
+  AF_ROLE: 'This decides which process this is (app, worker, rte) and must come from the environment',
   // Both of these decide where configuration comes from. Editing them through the very
   // page they govern is a way to lock yourself out of it, and CONFIG_SEED_PATH would
   // change the source of truth without re-applying it.
@@ -133,8 +136,6 @@ const LIVE = {
   FORMS_BACKUP_PATH: { key: 'formsBackupPath', parse: v => v },
   // app.js builds the security headers both ways and picks one per request from this
   CONTENT_SECURITY_POLICY: { key: 'contentSecurityPolicy', parse: v => String(v ?? 1).trim() !== '0' },
-  // no longer read : the designer lock lives in the database since 7 (models/lock.model.js)
-  LOCK_PATH: { key: 'lockPath', parse: v => v },
 };
 
 // Read straight from process.env at call time by their consumer rather than captured into

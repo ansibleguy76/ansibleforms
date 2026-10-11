@@ -45,13 +45,9 @@ onMounted(async () => {
   <AppSettingsPage>
     <AppSettings v-if="authenticated" icon="font" :title="title" :description="t('settings.interface.nameDescription')">
       <template #actions>
-        <BsButton
-          icon="save"
-          :colorClass="dirty ? 'primary' : 'secondary'"
-          :disabled="!dirty"
-          @click="save(`${title} ${t('settings.common.isUpdated')}`)"
-          >{{ t('settings.common.save') }}</BsButton
-        >
+        <BsButton icon="save" :disabled="!dirty" @click="save(`${title} ${t('settings.common.isUpdated')}`)">{{
+          t('settings.common.save')
+        }}</BsButton>
       </template>
       <template #default>
         <BsInput

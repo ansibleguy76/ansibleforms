@@ -119,13 +119,9 @@ onMounted(async () => {
         <BsButton icon="plus" @click="wizard?.newItem()">{{
           t('settings.common.addItem', { item: t('settings.interface.announcementLabel') })
         }}</BsButton>
-        <BsButton
-          icon="save"
-          :colorClass="dirty ? 'primary' : 'secondary'"
-          :disabled="!dirty"
-          @click="save(`${title} ${t('settings.common.isUpdated')}`)"
-          >{{ t('settings.common.save') }}</BsButton
-        >
+        <BsButton icon="save" :disabled="!dirty" @click="save(`${title} ${t('settings.common.isUpdated')}`)">{{
+          t('settings.common.save')
+        }}</BsButton>
       </template>
       <template #default>
         <label class="form-label fw-bold af-switch-title" for="af-banner-show">{{

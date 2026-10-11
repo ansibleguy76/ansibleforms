@@ -20,12 +20,16 @@ const Helpers = {
     // eleven protocol strings. Both are real enums a dropdown should offer in full.
     if (parts.length < 2 || parts.length > 12) return null;
     if (!parts.every((p) => /^[\w.:-]{1,12}$/.test(p))) return null;
-    // A documented `0, 1` enum is a boolean: show it as such and keep submitting 0/1,
-    // because the code tests these with `== 1` (SHOW_DESIGNER, USE_YTT, ENABLE_*). Only an
-    // exact 0/1 pair is treated this way - VAULT_KV_VERSION is also two numbers, but 1 and
-    // 2 are versions, not a truth value.
-    const isBoolean = parts.length === 2 && parts[0] === '0' && parts[1] === '1';
-    return parts.map((p) => ({ value: p, label: isBoolean ? (p === '1' ? 'true' : 'false') : p }));
+    // A documented `0, 1` or `true, false` enum is a yes / no : it reads so (label 'yes' or
+    // 'no', boolean : the caller says it in the app's language) and keeps submitting its own
+    // value, because the code tests these with `== 1` or against 'true' (SHOW_DESIGNER, USE_YTT,
+    // ENABLE_*). Only an exact pair is treated this way - VAULT_KV_VERSION is also two numbers,
+    // but 1 and 2 are versions, not a truth value.
+    const pair = parts.length === 2 ? [...parts].sort().join(',') : '';
+    const isBoolean = pair === '0,1' || pair === 'false,true';
+    return parts.map((p) =>
+      isBoolean ? { value: p, label: p === '1' || p === 'true' ? 'yes' : 'no', boolean: true } : { value: p, label: p },
+    );
   },
 
   findDuplicates(arry) {

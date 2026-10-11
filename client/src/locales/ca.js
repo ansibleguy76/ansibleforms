@@ -374,6 +374,7 @@ export default {
     checkConfigSeed: 'Config seed',
     checkSecretStores: 'Magatzems de secrets',
     checkExpressions: 'Expressions del servidor',
+    checkSecrets: 'Secrets',
     checkLdap: 'LDAP',
     checkStorage: 'Emmagatzematge de tasques',
     checkWritable: "Carpetes amb permís d'escriptura",
@@ -1362,10 +1363,15 @@ export default {
       envGroupBackups: 'Còpies de seguretat',
       envGroupAuthentication: 'Autenticació',
       envGroupJobs: 'Tasques',
-      envGroupFormsConfig: 'Formularis',
       envOverridden: "Definit a l'entorn, així que no es pot canviar aquí.",
       envSecretUnchanged: 'Deixa-ho en blanc per mantenir el valor actual',
       envRestartRequired: "Els canvis desats tenen efecte després d'un reinici.",
+      searchNone: 'Cap ajust coincideix.',
+      secretState_set: 'Definit',
+      secretState_default:
+        'Per defecte (insegur): les contrasenyes desades es poden llegir amb la clau pública per defecte',
+      secretState_random:
+        "Sense definir: un d'aleatori a cada inici, de manera que totes les sessions acaben en reiniciar",
       envRteOnly: "El llegeix un RTE del seu propi entorn: defineix-lo on s'executa el RTE.",
       envRelocates: 'Els fitxers que ja hi ha a la ubicació antiga no es mouen.',
       envRestartPending: 'Desat. Cal un reinici per a: {names}',
@@ -2128,7 +2134,11 @@ export default {
     title: 'Registre del servidor',
     description:
       "El registre propi del servidor d'AnsibleForms: inicis de sessió, càrregues de configuració, peticions i errors. Les línies més noves són a baix.",
-    autoRefresh: 'Actualització automàtica',
+    newLines: 'Línies noves',
+    latest: 'Ves al més recent',
+    clear: 'Neteja',
+    clearHint: "Buida la vista, no el registre: només es mostren les línies escrites a partir d'ara",
+    cleared: "Net: les línies noves apareixen aquí a mesura que s'escriuen.",
     download: 'Baixa',
   },
 };

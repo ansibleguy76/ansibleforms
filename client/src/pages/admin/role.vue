@@ -356,13 +356,9 @@ onMounted(async () => {
         <BsButton v-if="!role._required" icon="trash" :disabled="readOnly" @click="confirmDelete = true">{{
           t('common.delete')
         }}</BsButton>
-        <BsButton
-          icon="save"
-          :colorClass="isRolesDirty ? 'primary' : 'secondary'"
-          :disabled="!isRolesDirty || readOnly"
-          @click="saveRole()"
-          >{{ t('settings.common.save') }}</BsButton
-        >
+        <BsButton icon="save" :disabled="!isRolesDirty || readOnly" @click="saveRole()">{{
+          t('settings.common.save')
+        }}</BsButton>
       </template>
     </AppSettings>
   </AppSettingsPage>

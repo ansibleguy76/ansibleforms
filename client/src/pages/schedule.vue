@@ -355,9 +355,7 @@ onMounted(async () => {
             t('settings.schedules.runSchedule')
           }}</BsButton>
           <BsButton icon="trash" @click="confirmDelete = true">{{ t('common.delete') }}</BsButton>
-          <BsButton icon="save" :colorClass="dirty ? 'primary' : 'secondary'" :disabled="!dirty" @click="save()">{{
-            t('settings.common.save')
-          }}</BsButton>
+          <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
         </template>
       </AppSettings>
     </main>

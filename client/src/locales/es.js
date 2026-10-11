@@ -372,6 +372,7 @@ export default {
     checkSecretStores: 'Almacenes de secretos',
     checkRunners: 'Runners',
     checkExpressions: 'Expresiones del servidor',
+    checkSecrets: 'Secretos',
     checkLdap: 'LDAP',
     checkStorage: 'Almacenamiento de trabajos',
     checkWritable: 'Carpetas con permiso de escritura',
@@ -1355,10 +1356,15 @@ export default {
       envGroupBackups: 'Copias de seguridad',
       envGroupAuthentication: 'Autenticación',
       envGroupJobs: 'Trabajos',
-      envGroupFormsConfig: 'Formularios',
       envOverridden: 'Definida en el entorno, no se puede cambiar aquí.',
       envSecretUnchanged: 'Déjelo en blanco para mantener el valor actual',
       envRestartRequired: 'Los cambios guardados se aplican tras un reinicio.',
+      searchNone: 'Ningún ajuste coincide.',
+      secretState_set: 'Definido',
+      secretState_default:
+        'Por defecto (inseguro): las contraseñas guardadas se pueden leer con la clave pública por defecto',
+      secretState_random:
+        'Sin definir: uno aleatorio en cada arranque, así que todas las sesiones terminan al reiniciar',
       envRteOnly: 'Lo lee un RTE de su propio entorno: defínelo donde se ejecuta el RTE.',
       envRelocates: 'Los archivos ya guardados en la ubicación anterior no se mueven.',
       envRestartPending: 'Guardado. Se necesita un reinicio para: {names}',
@@ -2121,7 +2127,11 @@ export default {
     title: 'Registro del servidor',
     description:
       'El registro propio del servidor AnsibleForms: inicios de sesión, cargas de la configuración, peticiones y errores. Las líneas más recientes están abajo.',
-    autoRefresh: 'Actualización automática',
+    newLines: 'Líneas nuevas',
+    latest: 'Ir a lo último',
+    clear: 'Limpiar',
+    clearHint: 'Vacía la vista, no el registro: solo se muestran las líneas escritas a partir de ahora',
+    cleared: 'Limpio: las líneas nuevas aparecen aquí a medida que se escriben.',
     download: 'Descargar',
   },
 };

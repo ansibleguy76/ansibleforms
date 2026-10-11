@@ -336,9 +336,7 @@ onMounted(async () => {
       <template v-if="provider" #actions>
         <BsButton icon="lock" @click="changingSecret = true">{{ t('settings.oauth2.changeSecret') }}</BsButton>
         <BsButton icon="trash" @click="confirmDelete = true">{{ t('common.delete') }}</BsButton>
-        <BsButton icon="save" :colorClass="dirty ? 'primary' : 'secondary'" :disabled="!dirty" @click="save()">{{
-          t('settings.common.save')
-        }}</BsButton>
+        <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
       </template>
     </AppSettings>
   </AppSettingsPage>
