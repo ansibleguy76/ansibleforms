@@ -14,7 +14,7 @@ import { durationSeconds as runSeconds, formatDuration } from '@/lib/jobTime';
 import { useLiveEvent } from '@/composables/useLiveEvent';
 import { useFollowOutput } from '@/composables/useFollowOutput';
 import BsColumnPicker from '@/components/BsColumnPicker.vue';
-import { headerWidth } from '@/lib/tableCells';
+import { headerWidth, pillWidth, pxOf } from '@/lib/tableCells';
 import { jobsPath, statusFromSlug } from '@/lib/jobsPath';
 import { formPath } from '@/lib/formsPath';
 
@@ -103,6 +103,19 @@ watch(isJobPage, () => document.getElementById('app')?.scrollTo({ top: 0 }));
 // how long a job ran (lib/jobTime.js), a running one counted up with the page's clock
 const durationSeconds = (j) => runSeconds(j, now.value);
 
+/**
+ * The status column's width : its widest pill, in the language shown, with the cell's padding
+ * (0.6rem each side, .custom-table), never narrower than its header.
+ *
+ * Returns:
+ *   string: a CSS width in px.
+ */
+function statusWidth() {
+  const labels = ['running', 'approve', 'success', 'failed', 'aborted'].map((s) => t(`jobs.menu.${s}`));
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize || '16');
+  return `${Math.max(pxOf(pillWidth(labels, 1.2 * rem)), pxOf(headerWidth(t('jobs.status'))))}px`;
+}
+
 // ─── DataTable-style state (sort / column visibility) ─────────────────────
 // the table fits its frame (a fixed layout) : the short columns a width of their own, the form
 // and the user share the rest, a long value cut with an ellipsis (its full text in the tooltip)
@@ -119,7 +132,9 @@ const columnDefs = computed(() => [
     width: headerWidth(t('jobs.jobType')),
     render: (j) => j.job_type || 'ansible',
   },
-  { key: 'status', label: t('jobs.status'), filterable: true, sortable: true, width: '10.25rem' },
+  // as wide as its widest pill in the language shown (or its header) : no room kept for a
+  // longer translation
+  { key: 'status', label: t('jobs.status'), filterable: true, sortable: true, width: statusWidth() },
   {
     key: 'start',
     label: t('jobs.startTime'),

@@ -74,6 +74,34 @@ export function headerWidth(label, sortable = true, fallback = '8rem', end = fal
 }
 
 /**
+ * The width a column of pills needs : its widest pill (the app's .af-pill, as AppStatusPill
+ * draws it) and the cell's padding, so a language with short labels gets a narrow column.
+ *
+ * Args:
+ *   labels (string[]): every label the column may show, in the language shown.
+ *   padding (number): the cell's left and right padding together, in px.
+ *   fallback (string): the width when nothing can be measured (no document).
+ *
+ * Returns:
+ *   string: a CSS width in px.
+ */
+export function pillWidth(labels, padding, fallback = '10rem') {
+  if (typeof document === 'undefined' || !document.body) return fallback;
+  const box = document.createElement('div');
+  box.style.cssText = 'position:absolute;visibility:hidden;left:-9999px;top:0;white-space:nowrap';
+  box.innerHTML = labels
+    .map(
+      (l) => `<span class="badge rounded-pill fw-semibold af-pill"><span class="af-pill-label">${esc(l)}</span></span>`,
+    )
+    .join('<br>');
+  document.body.appendChild(box);
+  const widest = Math.max(0, ...[...box.querySelectorAll('.af-pill')].map((el) => el.getBoundingClientRect().width));
+  box.remove();
+  // a little slack : fonts differ a little between systems
+  return widest > 0 ? `${Math.ceil(widest + padding) + 4}px` : fallback;
+}
+
+/**
  * A column width that follows the table : a share of the room the other columns leave, never
  * more than a cap. A wide screen keeps the column at the cap (the table's spacer takes the
  * rest), a narrow one shrinks it, so the table never gets wider than its frame.
