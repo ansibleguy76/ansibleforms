@@ -136,6 +136,7 @@ CREATE TABLE `runners` (
   `ca_bundle` text DEFAULT NULL,
   `is_default` tinyint(4) DEFAULT 0,
   `flavour` varchar(20) DEFAULT NULL,
+  `project` varchar(255) DEFAULT NULL,
   `managed` tinyint(4) DEFAULT 0,
   `node_id` varchar(250) DEFAULT NULL,
   PRIMARY KEY (`id`),

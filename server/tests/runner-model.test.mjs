@@ -73,6 +73,15 @@ describe("what each type needs", () => {
     await Runner.create({ name: "y", type: "awx", uri: "https://y", use_credentials: 1, username: "u", password: "p" });
   });
 
+  test("a semaphore needs a token and a project, and signs in with the token only", async () => {
+    await assert.rejects(Runner.create({ name: "s", type: "semaphore", uri: "https://s", project: "1" }), /needs an API token/);
+    await assert.rejects(Runner.create({ name: "s", type: "semaphore", uri: "https://s", token: "t" }), /needs a project \(the project id\)/);
+    await assert.rejects(Runner.create({ name: "s", type: "semaphore", uri: "https://s", token: "t", project: "  " }), /needs a project/);
+    await Runner.create({ name: "s", type: "semaphore", uri: "https://s/", token: "t", project: " 1 ", use_credentials: 1 });
+    assert.equal(rows.at(-1).project, "1");
+    assert.equal(rows.at(-1).use_credentials, 0);
+  });
+
   test("an unknown type is refused", async () => {
     await assert.rejects(Runner.create({ name: "z", type: "local", uri: "x" }), /Unknown runner type 'local'/);
   });

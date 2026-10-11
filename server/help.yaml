@@ -2462,10 +2462,20 @@
         description: |
           The runner that runs this form's job : a runner of type rte (a runtime environment
           container) for a playbook, a runner of type awx (AWX / Ansible Automation Platform /
-          Ascender) for a template. Runners are added under Connections > Runners.
+          Ascender) or semaphore (Semaphore UI) for a template. Runners are added under
+          Connections > Runners.
           Without this property the default runner of the matching type is used ; without a
           default the job fails and says how to add one. Since 7 AnsibleForms runs no
           playbook itself.
+
+          **Semaphore** : a form of type awx whose `runner` is a runner of type semaphore runs
+          the Semaphore template named by `template` (its name, or its id) in the runner's
+          project. The form's values and its resolved `credentials` are its extra vars ; `limit`,
+          `check`, `diff` and `verbose` are passed on (`verbose` only when the template allows
+          debug in Semaphore). `inventory`, `awxCredentials`,
+          `executionEnvironment`, `instanceGroups` and `scm_branch` are AWX's and are not used :
+          the template's own inventory and keys are. Name the runner on the form : a template
+          form without `runner` goes to the default awx runner.
         examples:
         - name: Run on the vmware runtime
           code: |
@@ -2479,6 +2489,12 @@
               type: awx
               template: deploy
               runner: aap-prod
+        - name: Run a Semaphore template
+          code: |
+            - name: Deploy
+              type: awx
+              template: deploy
+              runner: semaphore-ops
       - name: awx
         type: string
         with_types: awx
