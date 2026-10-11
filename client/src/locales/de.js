@@ -1377,6 +1377,7 @@ export default {
       envOverridden: 'In der Umgebung gesetzt und hier nicht änderbar.',
       envSecretUnchanged: 'Leer lassen, um den aktuellen Wert zu behalten',
       envRestartRequired: 'Gespeicherte Änderungen gelten nach einem Neustart.',
+      searchNone: 'Keine Einstellung passt.',
       secretState_set: 'Gesetzt',
       secretState_default:
         'Standard (unsicher): gespeicherte Passwörter sind mit dem öffentlichen Standardschlüssel lesbar',

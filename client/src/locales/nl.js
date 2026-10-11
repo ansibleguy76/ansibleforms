@@ -1358,6 +1358,7 @@ export default {
       envOverridden: 'Ingesteld in de omgeving en hier niet aanpasbaar.',
       envSecretUnchanged: 'Laat leeg om de huidige waarde te behouden',
       envRestartRequired: 'Opgeslagen wijzigingen gelden na een herstart.',
+      searchNone: 'Geen instelling komt overeen.',
       secretState_set: 'Ingesteld',
       secretState_default:
         'Standaard (onveilig): opgeslagen wachtwoorden zijn leesbaar met de openbare standaardsleutel',

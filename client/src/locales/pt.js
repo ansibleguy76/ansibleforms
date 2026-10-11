@@ -1364,6 +1364,7 @@ export default {
       envOverridden: 'Definido no ambiente, por isso não pode ser alterado aqui.',
       envSecretUnchanged: 'Deixe em branco para manter o valor atual',
       envRestartRequired: 'As alterações guardadas têm efeito após um reinício.',
+      searchNone: 'Nenhuma definição corresponde.',
       secretState_set: 'Definido',
       secretState_default:
         'Predefinido (inseguro): as palavras-passe guardadas podem ser lidas com a chave pública predefinida',

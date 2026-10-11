@@ -1367,6 +1367,7 @@ export default {
       envOverridden: "Definit a l'entorn, així que no es pot canviar aquí.",
       envSecretUnchanged: 'Deixa-ho en blanc per mantenir el valor actual',
       envRestartRequired: "Els canvis desats tenen efecte després d'un reinici.",
+      searchNone: 'Cap ajust coincideix.',
       secretState_set: 'Definit',
       secretState_default:
         'Per defecte (insegur): les contrasenyes desades es poden llegir amb la clau pública per defecte',

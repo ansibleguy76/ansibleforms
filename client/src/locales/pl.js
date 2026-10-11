@@ -1356,6 +1356,7 @@ export default {
       envOverridden: 'Ustawione w środowisku, więc nie można tego tutaj zmienić.',
       envSecretUnchanged: 'Pozostaw puste, aby zachować bieżącą wartość',
       envRestartRequired: 'Zapisane zmiany zaczną obowiązywać po ponownym uruchomieniu.',
+      searchNone: 'Żadne ustawienie nie pasuje.',
       secretState_set: 'Ustawiony',
       secretState_default: 'Domyślny (niebezpieczny): zapisane hasła można odczytać publicznym kluczem domyślnym',
       secretState_random: 'Nieustawiony: przy każdym starcie losowy, więc każda sesja kończy się przy restarcie',

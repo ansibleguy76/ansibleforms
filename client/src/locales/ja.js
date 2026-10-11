@@ -1338,6 +1338,7 @@ export default {
       envOverridden: '環境で設定されているため、ここでは変更できません。',
       envSecretUnchanged: '現在の値を維持する場合は空欄のままにしてください',
       envRestartRequired: '保存した変更は再起動後に反映されます。',
+      searchNone: '一致する設定はありません。',
       secretState_set: '設定済み',
       secretState_default: '既定（安全ではありません）：保存されたパスワードは公開された既定キーで読み取れます',
       secretState_random: '未設定：起動ごとにランダムなため、再起動ですべてのセッションが終了します',

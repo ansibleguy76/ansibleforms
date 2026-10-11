@@ -1306,6 +1306,7 @@ export default {
       envOverridden: '已在环境变量中设置，因此无法在此处更改。',
       envSecretUnchanged: '留空则保留当前值',
       envRestartRequired: '保存的更改在重启后生效。',
+      searchNone: '没有匹配的设置。',
       secretState_set: '已设置',
       secretState_default: '默认（不安全）：存储的密码可用公开的默认密钥读取',
       secretState_random: '未设置：每次启动随机生成，因此重启会结束所有会话',

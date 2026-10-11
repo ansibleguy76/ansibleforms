@@ -1340,6 +1340,7 @@ export default {
       envOverridden: 'Set in the environment, so it cannot be changed here.',
       envSecretUnchanged: 'Leave blank to keep the current value',
       envRestartRequired: 'Saved changes take effect after a restart.',
+      searchNone: 'No setting matches.',
       secretState_set: 'Set',
       secretState_default: 'Default (unsafe): stored passwords can be read with the public default key',
       secretState_random: 'Not set: a random one each start, so every session ends at a restart',

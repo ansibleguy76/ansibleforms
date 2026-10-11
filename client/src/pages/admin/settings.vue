@@ -166,6 +166,8 @@ const envGroupOrder = [
 const { activeTab, tabLink } = useRouteTab('configuration', (key) => envGroupOrder.some((g) => g.key === key));
 // the title names the tab : General › Server, each step a link (the page to its plain address)
 const titleCrumbs = computed(() => {
+  // searching : every tab's matches, so the title names none of them
+  if (searching.value) return [];
   const group = envGroupOrder.find((g) => g.key === activeTab.value);
   if (!group) return [];
   return [
@@ -185,6 +187,47 @@ function envInGroup(group, name) {
 // multi-paragraph description; take its first sentence. The split requires a capital
 // after the period, so 'e.g. `https://...`' and 'i.e. /dev/log' are not cut in half.
 // a documented enum ('true, false', '1, 2') becomes a dropdown
+// ─── search ──────────────────────────────────────────────────────────────────
+// A word typed in the header's search narrows every tab at once : the settings that match it,
+// by label, variable name or help, each under its tab's name, the tabs set aside meanwhile.
+const search = ref('');
+const searching = computed(() => !!search.value.trim());
+
+/**
+ * Whether a variable matches the search : its label, its name or its help.
+ *
+ * Args:
+ *   e (object): the variable.
+ *
+ * Returns:
+ *   boolean: true when it matches, or when nothing is searched.
+ */
+function envMatches(e) {
+  const q = search.value.trim().toLowerCase();
+  if (!q) return true;
+  return [e.short, e.name, envHelp(e)].some((x) =>
+    String(x || '')
+      .toLowerCase()
+      .includes(q),
+  );
+}
+// the public root url, the one setting on the Server tab that is no variable
+const urlMatches = computed(() => {
+  const q = search.value.trim().toLowerCase();
+  return (
+    !q ||
+    [t('settings.settingsPage.publicRootUrl'), t('settings.settingsPage.publicRootUrlHelp'), 'url'].some((x) =>
+      x.toLowerCase().includes(q),
+    )
+  );
+});
+// the tabs with a match, their matching settings only
+const shownGroups = computed(() =>
+  envGroups.value
+    .map((g) => ({ ...g, items: g.items.filter(envMatches) }))
+    .filter((g) => !searching.value || g.items.length || (g.key === 'server' && urlMatches.value)),
+);
+
 // ─── fields their switch turns off ────────────────────────────────────────────
 /**
  * A variable's value as the page has it : as edited, else as the server reported it.
@@ -478,7 +521,11 @@ onMounted(async () => {
       :crumbs="titleCrumbs"
       :description="t('settings.settingsPage.description')"
     >
-      <template #tabs>
+      <template #headerActions>
+        <!-- narrows every tab at once ; the search box of the other pages -->
+        <BsSearch v-model="search" style="width: 16rem" />
+      </template>
+      <template v-if="!searching" #tabs>
         <ul class="nav nav-tabs mb-0">
           <li v-for="group in envGroups" :key="group.key" class="nav-item">
             <a
@@ -495,13 +542,22 @@ onMounted(async () => {
       </template>
       <template #default>
         <!-- Environment Variable tabs -->
-        <template v-for="group in envGroups" :key="group.key">
-          <div v-show="activeTab === group.key">
+        <div v-if="searching && !shownGroups.length" class="text-body-secondary fst-italic">
+          {{ t('settings.settingsPage.searchNone') }}
+        </div>
+        <template v-for="(group, gIdx) in shownGroups" :key="group.key">
+          <div v-show="searching || activeTab === group.key">
+            <!-- searching : the matches of every tab, each under its tab's name -->
+            <!-- a line between the tabs' matches, and under each tab's name the space between fields -->
+            <hr v-if="searching && gIdx > 0" class="my-4" />
+            <h6 v-if="searching" class="fw-bold text-body-secondary mb-4">
+              <FaIcon :icon="group.icon" class="me-1" />{{ group.label }}
+            </h6>
             <!-- The editable, database-backed settings live with their subject rather than
                in a general tab: the public url is a server property, the language and
                theme defaults are UI ones. They save through saveSettings(), the fields
                below through the env endpoint - the one Save button covers both. -->
-            <template v-if="group.key === 'server'">
+            <template v-if="group.key === 'server' && urlMatches">
               <BsInput
                 class="af-env-field af-env-wide"
                 :isFloating="false"
@@ -532,7 +588,10 @@ onMounted(async () => {
                  <input>: it looks like the fields beside it, but nothing writes these
                  - they come from the process environment - so an input would promise
                  an edit that cannot happen. -->
-              <div class="mb-3 af-env-field" :class="{ 'af-env-wide': group.items.some(envWide) }">
+              <div
+                class="mb-3 af-env-field"
+                :class="{ 'af-env-wide': envGroups.find((g) => g.key === group.key)?.items.some(envWide) }"
+              >
                 <!-- an editable variable gets a real BsInput, so it is identical to the
                    Settings tab. One that cannot be written keeps the read-only box and
                    says why, rather than offering an edit that would not take. -->
@@ -594,7 +653,7 @@ onMounted(async () => {
                field, and a small mb-2 so they do not sit hard against the card edge -
                deliberately smaller than a field's mb-3, which the :last-child rule below
                zeroes precisely because it stacks on the card's own padding. -->
-            <template v-if="group.key === 'configuration'">
+            <template v-if="group.key === 'configuration' && !searching">
               <div class="mt-4 mb-2 d-flex align-items-center">
                 <BsButton icon="file-import" colorClass="secondary" @click="showImportConfirm = true">{{
                   t('settings.settingsPage.importToDatabase')

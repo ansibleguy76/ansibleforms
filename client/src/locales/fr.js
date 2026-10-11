@@ -1371,6 +1371,7 @@ export default {
       envOverridden: "Définie dans l'environnement, non modifiable ici.",
       envSecretUnchanged: 'Laisser vide pour conserver la valeur actuelle',
       envRestartRequired: 'Les modifications prennent effet après un redémarrage.',
+      searchNone: 'Aucun paramètre ne correspond.',
       secretState_set: 'Défini',
       secretState_default:
         'Par défaut (non sûr) : les mots de passe stockés sont lisibles avec la clé publique par défaut',

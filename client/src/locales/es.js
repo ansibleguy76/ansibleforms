@@ -1360,6 +1360,7 @@ export default {
       envOverridden: 'Definida en el entorno, no se puede cambiar aquí.',
       envSecretUnchanged: 'Déjelo en blanco para mantener el valor actual',
       envRestartRequired: 'Los cambios guardados se aplican tras un reinicio.',
+      searchNone: 'Ningún ajuste coincide.',
       secretState_set: 'Definido',
       secretState_default:
         'Por defecto (inseguro): las contraseñas guardadas se pueden leer con la clave pública por defecto',
