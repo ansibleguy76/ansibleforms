@@ -750,7 +750,9 @@ export default {
       envLabelShowHelp: "Mostrar una etiqueta d'entorn al costat del logotip, p. ex. Producció.",
       envLabelPreview: 'Previsualització',
       envLabelColor: "Color de l'etiqueta",
-      banner: 'Avís',
+      banner: 'Missatge',
+      bannerShow: "Mostrar l'avís",
+      bannerShowHelp: 'Mostrar un avís sota la capçalera per a tothom.',
       bannerHelp:
         'Un missatge sota la capçalera per a tothom, com una finestra de manteniment. Deixa-ho buit per no mostrar-ne cap.',
       bannerLevel: 'Tipus',

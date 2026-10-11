@@ -110,3 +110,8 @@ test("a date format is one of those offered, anything else none", () => {
   expect(new Settings({ default_date_format: "" }).default_date_format).toBe(null);
 });
 
+
+test("the announcement switched off : kept, not shown", () => {
+  expect(new Settings({ banner_show: false }).banner_show).toBe(0);
+  expect(new Settings({ banner_show: true }).banner_show).toBe(1);
+});

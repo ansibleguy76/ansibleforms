@@ -750,7 +750,9 @@ export default {
       envLabelShowHelp: "Mostrare un'etichetta d'ambiente accanto al logo, ad es. Produzione.",
       envLabelPreview: 'Anteprima',
       envLabelColor: "Colore dell'etichetta",
-      banner: 'Annuncio',
+      banner: 'Messaggio',
+      bannerShow: 'Mostra annuncio',
+      bannerShowHelp: "Mostrare un annuncio sotto l'intestazione per tutti.",
       bannerHelp:
         "Un messaggio sotto l'intestazione per tutti, come una finestra di manutenzione. Lascia vuoto per non mostrarne nessuno.",
       bannerLevel: 'Tipo',

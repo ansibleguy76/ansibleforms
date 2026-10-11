@@ -252,6 +252,7 @@ CREATE TABLE `settings` (
   `env_label` varchar(40) DEFAULT NULL,
   `env_label_show` tinyint(4) NOT NULL DEFAULT 1,
   `env_label_color` varchar(20) DEFAULT NULL,
+  `banner_show` tinyint(4) NOT NULL DEFAULT 1,
   `banner_message` text DEFAULT NULL,
   `banner_level` varchar(10) DEFAULT NULL,
   `banner_until` datetime DEFAULT NULL,

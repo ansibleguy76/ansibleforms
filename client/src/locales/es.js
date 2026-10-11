@@ -748,7 +748,9 @@ export default {
       envLabelShowHelp: 'Mostrar una etiqueta de entorno junto al logotipo, p. ej. Producción.',
       envLabelPreview: 'Vista previa',
       envLabelColor: 'Color de la etiqueta',
-      banner: 'Anuncio',
+      banner: 'Mensaje',
+      bannerShow: 'Mostrar anuncio',
+      bannerShowHelp: 'Mostrar un anuncio bajo la cabecera para todos.',
       bannerHelp:
         'Un mensaje bajo la cabecera para todos, como una ventana de mantenimiento. Déjalo vacío para no mostrar ninguno.',
       bannerLevel: 'Tipo',

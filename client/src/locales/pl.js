@@ -746,7 +746,9 @@ export default {
       envLabelShowHelp: 'Pokaż etykietę środowiska obok logo, np. Produkcja.',
       envLabelPreview: 'Podgląd',
       envLabelColor: 'Kolor etykiety',
-      banner: 'Ogłoszenie',
+      banner: 'Wiadomość',
+      bannerShow: 'Pokaż ogłoszenie',
+      bannerShowHelp: 'Pokaż ogłoszenie pod nagłówkiem dla wszystkich.',
       bannerHelp: 'Wiadomość pod nagłówkiem dla wszystkich, np. okno serwisowe. Zostaw puste, aby jej nie pokazywać.',
       bannerLevel: 'Typ',
       bannerLevelHelp:

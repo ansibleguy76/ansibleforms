@@ -753,7 +753,9 @@ export default {
       envLabelShowHelp: 'Ein Umgebungslabel neben dem Logo anzeigen, z. B. Produktion.',
       envLabelPreview: 'Vorschau',
       envLabelColor: 'Labelfarbe',
-      banner: 'Ankündigung',
+      banner: 'Nachricht',
+      bannerShow: 'Ankündigung anzeigen',
+      bannerShowHelp: 'Eine Ankündigung unter der Kopfzeile für alle anzeigen.',
       bannerHelp: 'Eine Nachricht unter der Kopfzeile für alle, z. B. ein Wartungsfenster. Leer lassen für keine.',
       bannerLevel: 'Typ',
       bannerLevelHelp:

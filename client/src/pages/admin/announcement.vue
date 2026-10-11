@@ -49,6 +49,8 @@ function toLocalInput(value) {
  */
 function bannerOf(row) {
   return {
+    // shown unless switched off
+    banner_show: row?.banner_show !== 0 && row?.banner_show !== false,
     banner_message: row?.banner_message || '',
     banner_level: row?.banner_level || 'info',
     banner_until: toLocalInput(row?.banner_until),
@@ -95,10 +97,25 @@ onMounted(async () => {
         >
       </template>
       <template #default>
+        <!-- shown or not ; switched off, the message, its type and its end are kept, greyed out -->
+        <label class="form-label fw-bold af-switch-title" for="af-banner-show">{{
+          t('settings.interface.bannerShow')
+        }}</label>
+        <div class="form-check form-switch mb-0">
+          <input
+            id="af-banner-show"
+            v-model="look.banner_show"
+            class="form-check-input"
+            type="checkbox"
+            role="switch"
+          />
+        </div>
+        <div class="form-text">{{ t('settings.interface.bannerShowHelp') }}</div>
         <BsInput
-          class="af-interface-wide"
+          class="af-interface-wide mt-4"
           :isFloating="false"
           icon="bullhorn"
+          :disabled="!look.banner_show"
           v-model="look.banner_message"
           :label="t('settings.interface.banner')"
           :help="t('settings.interface.bannerHelp')"
@@ -108,6 +125,7 @@ onMounted(async () => {
           :isFloating="false"
           type="select"
           icon="circle-info"
+          :disabled="!look.banner_show"
           v-model="look.banner_level"
           :values="bannerLevels"
           valueKey="value"
@@ -120,6 +138,7 @@ onMounted(async () => {
           :isFloating="false"
           type="datetime-local"
           icon="calendar"
+          :disabled="!look.banner_show"
           v-model="look.banner_until"
           :label="t('settings.interface.bannerUntil')"
           :help="t('settings.interface.bannerUntilHelp')"

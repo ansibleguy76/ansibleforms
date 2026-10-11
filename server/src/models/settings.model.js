@@ -76,6 +76,10 @@ var Settings=function(settings){
     if(settings.env_label_color !== undefined){
       this.env_label_color = oneOf(settings.env_label_color, LABEL_COLORS);
     }
+    // the announcement shown or not : kept while hidden, so it comes back as it was
+    if(settings.banner_show !== undefined){
+      this.banner_show = settings.banner_show === false || settings.banner_show === 0 || settings.banner_show === '0' ? 0 : 1;
+    }
     if(settings.banner_message !== undefined){
       this.banner_message = text(settings.banner_message, 500);
     }
@@ -529,7 +533,7 @@ Settings.findUrl = function () {
 // endpoint blocks the SPA from rendering even the login page, so a MySQL outage
 // must cost one connectTimeout, not one per setting.
 Settings.findAppDefaults = function () {
-  return mysql.do("SELECT default_language, default_theme, default_theme_color, app_name, env_label, env_label_show, env_label_color, banner_message, banner_level, banner_until, forms_view, default_timezone, default_date_format, header_links FROM AnsibleForms.`settings` LIMIT 1")
+  return mysql.do("SELECT default_language, default_theme, default_theme_color, app_name, env_label, env_label_show, env_label_color, banner_show, banner_message, banner_level, banner_until, forms_view, default_timezone, default_date_format, header_links FROM AnsibleForms.`settings` LIMIT 1")
     .then((res) => {
       const r = res[0] || {};
       return {
@@ -541,7 +545,8 @@ Settings.findAppDefaults = function () {
         // hidden (the switch off) : none
         envLabel: r.env_label_show === 0 ? null : r.env_label || null,
         envLabelColor: r.env_label_color || null,
-        banner: r.banner_message ? { message: r.banner_message, level: r.banner_level || 'info', until: r.banner_until || null } : null,
+        // switched off (Settings > Appearance > Announcement) : none
+        banner: r.banner_message && r.banner_show !== 0 ? { message: r.banner_message, level: r.banner_level || 'info', until: r.banner_until || null } : null,
         formsView: r.forms_view || null,
         timezone: r.default_timezone || null,
         dateFormat: r.default_date_format || null,

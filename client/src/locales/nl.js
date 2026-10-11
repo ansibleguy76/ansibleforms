@@ -746,7 +746,9 @@ export default {
       envLabelShowHelp: 'Een omgevingslabel naast het logo tonen, bijv. Productie.',
       envLabelPreview: 'Voorbeeld',
       envLabelColor: 'Labelkleur',
-      banner: 'Aankondiging',
+      banner: 'Bericht',
+      bannerShow: 'Aankondiging tonen',
+      bannerShowHelp: 'Een aankondiging onder de kop voor iedereen tonen.',
       bannerHelp: 'Een bericht onder de kop voor iedereen, zoals een onderhoudsvenster. Laat leeg voor geen.',
       bannerLevel: 'Type',
       bannerLevelHelp:

@@ -754,7 +754,9 @@ export default {
       envLabelShowHelp: "Afficher une étiquette d'environnement à côté du logo, p. ex. Production.",
       envLabelPreview: 'Aperçu',
       envLabelColor: "Couleur de l'étiquette",
-      banner: 'Annonce',
+      banner: 'Message',
+      bannerShow: "Afficher l'annonce",
+      bannerShowHelp: "Afficher une annonce sous l'en-tête pour tous.",
       bannerHelp:
         "Un message sous l'en-tête pour tous, comme une fenêtre de maintenance. Laissez vide pour n'en afficher aucun.",
       bannerLevel: 'Type',
