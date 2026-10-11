@@ -2493,12 +2493,12 @@ export default function getSettings(t) {
       description: t('settings.disclaimer.acceptancesDescription'),
       icon: 'file-signature',
       selectable: false,
-      // a record, never changed : no Add, no Edit, no Delete
+      // a record, never changed : no Add, no Edit, no Delete ; opened, shown in full
       noCreate: true,
       actions: [],
       fields: [
         { key: 'id', hidden: true, noInput: true, noTable: true },
-        { key: 'username', label: t('settings.disclaimer.user'), noInput: true },
+        { key: 'username', label: t('settings.disclaimer.user'), icon: 'user', readonly: true },
         {
           // how they signed in : local, LDAP or a single sign-on provider
           key: 'user_type',
@@ -2506,7 +2506,16 @@ export default function getSettings(t) {
           noInput: true,
           render: (v) => escapeHtml(SIGN_IN_TYPES[v] || v || '–'),
         },
-        { key: 'version', label: t('settings.disclaimer.version'), noInput: true },
+        {
+          // the same, in the dialog : as the table says it
+          key: 'sign_in',
+          label: t('settings.disclaimer.signIn'),
+          icon: 'right-to-bracket',
+          noTable: true,
+          readonly: true,
+          initial: (r) => SIGN_IN_TYPES[r?.user_type] || r?.user_type || '',
+        },
+        { key: 'version', label: t('settings.disclaimer.version'), icon: 'hashtag', readonly: true },
         {
           key: 'accepted_at',
           label: t('settings.disclaimer.acceptedAt'),
@@ -2514,11 +2523,30 @@ export default function getSettings(t) {
           noInput: true,
           render: (v) => (v ? Helpers.formatServerDate(v) : '–'),
         },
-        { key: 'ip', label: t('settings.disclaimer.ip'), noInput: true, render: (v) => escapeHtml(v || '–') },
         {
+          // the same, in the dialog : its date and time in the user's zone, as text
+          key: 'accepted',
+          label: t('settings.disclaimer.acceptedAt'),
+          icon: 'calendar',
+          noTable: true,
+          readonly: true,
+          initial: (r) => (r?.accepted_at ? Helpers.formatServerDate(r.accepted_at) : ''),
+        },
+        {
+          key: 'ip',
+          label: t('settings.disclaimer.ip'),
+          icon: 'network-wired',
+          readonly: true,
+          render: (v) => escapeHtml(v || '–'),
+        },
+        {
+          // in full in the dialog : the table cuts it
           key: 'user_agent',
           label: t('settings.disclaimer.browser'),
-          noInput: true,
+          icon: 'globe',
+          type: 'textarea',
+          rows: 3,
+          readonly: true,
           hideBelow: 1200,
           render: (v) => escapeHtml(v || '–'),
         },

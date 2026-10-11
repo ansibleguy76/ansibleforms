@@ -82,4 +82,12 @@ const acceptances = async (req, res) => {
   }
 };
 
-export default { current, accept, decline, settings, saveSettings, versions, version, acceptances };
+const acceptance = async (req, res) => {
+  try {
+    return res.json(RestResult.single(await Disclaimer.acceptance(req.params.id)));
+  } catch (err) {
+    Errors.ReturnError(res, err);
+  }
+};
+
+export default { current, accept, decline, settings, saveSettings, versions, version, acceptances, acceptance };

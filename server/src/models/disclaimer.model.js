@@ -289,6 +289,27 @@ const Disclaimer = {
     // those recorded with the prefix, shown without it
     return rows.map((r) => ({ ...r, ip: r.ip ? plainIp(r.ip) : r.ip }));
   },
+
+  /**
+   * One acceptance, as acceptances() lists it.
+   *
+   * Args:
+   *   id (number|string): its id.
+   *
+   * Returns:
+   *   Promise<object>: the acceptance.
+   *
+   * Raises:
+   *   NotFoundError: no acceptance has that id.
+   */
+  async acceptance(id) {
+    const res = await mysql.do(
+      'SELECT id, username, user_type, version, accepted_at, ip, user_agent FROM AnsibleForms.`disclaimer_acceptances` WHERE id = ?',
+      [id],
+    );
+    if (!res.length) throw new Errors.NotFoundError(`No disclaimer acceptance ${id}`);
+    return { ...res[0], ip: res[0].ip ? plainIp(res[0].ip) : res[0].ip };
+  },
 };
 
 export default Disclaimer;
