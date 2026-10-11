@@ -21,10 +21,10 @@ const tone = computed(() => PILL[store.envLabelColor] || PILL.grey);
 </template>
 <style scoped>
 /* close to the logo, centred on it : over the room the brand keeps on its right (its padding
-   and margin, 36px), 12px from the logo, that room then kept after the label */
+   and margin, 36px), 16px from the logo, that room then kept after the label */
 .af-env-label {
-  margin-left: -1.5rem;
-  margin-right: 1.5rem;
+  margin-left: -1.25rem;
+  margin-right: 1.25rem;
   align-self: center;
 }
 </style>

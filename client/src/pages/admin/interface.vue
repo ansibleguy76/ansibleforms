@@ -287,7 +287,7 @@ onMounted(async () => {
         <div v-show="activeTab === 'header'">
           <AppEnvField v-for="e in headerEnv" :key="e.name" v-model="envEdits[e.name]" :e="e" :asSwitch="true" />
           <!-- the label beside the logo, and its colour (a pill, shown as the header shows it) -->
-          <label class="form-label fw-bold af-switch-title mt-4" for="af-env-label-show">{{
+          <label class="form-label fw-bold af-switch-title mt-2" for="af-env-label-show">{{
             t('settings.interface.envLabelShow')
           }}</label>
           <div class="form-check form-switch mb-0">
