@@ -123,6 +123,19 @@ const userSchedules = computed(() => {
 });
 
 /**
+ * When a schedule runs : a one-time run at its Run at, a recurring one at its cron's next time.
+ *
+ * Args:
+ *   s (object): a schedule row, with run_at and next_run.
+ *
+ * Returns:
+ *   string|null: the date, as the server sent it ; null when there is none.
+ */
+function nextRunOf(s) {
+  return (s.one_time_run ? s.run_at : s.next_run) || null;
+}
+
+/**
  * Loads every stored job and schedule : the tabs keep the user's. Either may be refused (the
  * stored jobs or the schedules switched off) : its tab stays empty.
  */
@@ -460,7 +473,6 @@ onMounted(async () => {
                   <th>{{ t('settings.fields.name') }}</th>
                   <th>{{ t('settings.fields.form') }}</th>
                   <th>{{ t('settings.schedules.cronShort') }}</th>
-                  <th>{{ t('settings.schedules.runAt') }}</th>
                   <th>{{ t('settings.schedules.nextRun') }}</th>
                 </tr>
               </thead>
@@ -476,9 +488,8 @@ onMounted(async () => {
                   <!-- a one-time run has no cron : its Run at says when -->
                   <!-- eslint-disable-next-line vue/no-v-html -- cronCell escapes it -->
                   <td class="text-nowrap" v-html="s.cron ? cronCell(s.cron) : '–'"></td>
-                  <td>{{ s.run_at ? Helpers.formatServerDate(s.run_at) : '–' }}</td>
-                  <!-- when it runs next : its cron's next time, or its Run at while ahead -->
-                  <td>{{ s.next_run ? Helpers.formatServerDate(s.next_run) : '–' }}</td>
+                  <!-- when it runs : a one-time run its Run at, a recurring one its cron's next time -->
+                  <td>{{ nextRunOf(s) ? Helpers.formatServerDate(nextRunOf(s)) : '–' }}</td>
                 </tr>
               </tbody>
             </table>
