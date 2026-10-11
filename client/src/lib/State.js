@@ -67,12 +67,15 @@ var State = {
     if (!link.dataset.bundled) link.dataset.bundled = link.getAttribute('href') || 'favicon.svg';
     link.setAttribute('href', store.customFavicon || link.dataset.bundled);
   },
-  // whether the chat button may show : the server says so (ENABLE_CHAT and a provider)
-  async loadChatConfig() {
+  // what the instance switches on : the chat button (ENABLE_CHAT and a provider) and the
+  // designer (SHOW_DESIGNER), as the server says
+  async loadAppConfig() {
     const store = useAppStore();
     try {
       const result = await axios.get(`/api/v2/app/config`);
       store.chatEnabled = !!result.data?.chatEnabled;
+      store.designerEnabled = result.data?.designerEnabled !== false;
+      store.appConfigLoaded = true;
     } catch (err) {
       store.chatEnabled = false;
     }
@@ -87,7 +90,7 @@ var State = {
   // a user who sees the designer (the lock api answers 403 to the others)
   async refreshDesignerLock() {
     const store = useAppStore();
-    if (!store.profile?.options?.showDesigner) {
+    if (!store.profile?.options?.showDesigner || !store.designerEnabled) {
       store.designerLock = null;
       return;
     }
@@ -137,7 +140,7 @@ var State = {
       State.loadVersion();
       State.loadLogo();
       State.loadFavicon();
-      State.loadChatConfig();
+      State.loadAppConfig();
       State.refreshApprovals();
       Navigate.toOrigin(router, route);
     }

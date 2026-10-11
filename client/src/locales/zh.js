@@ -680,7 +680,7 @@ export default {
     },
     // Settings > Appearance > Interface
     interface: {
-      tabDefault: '默认',
+      tabDefaults: '默认值',
       description: '应用对所有人的默认外观：主题及其颜色、语言以及是否显示设计器。用户自己的选择优先。',
     },
     users: {

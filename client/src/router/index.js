@@ -60,6 +60,7 @@ const directoryUser = () => import('@/pages/admin/directory-user.vue');
 const backups = () => import('@/pages/admin/backups.vue');
 
 import TokenStorage from '@/lib/TokenStorage.js';
+import { designerSwitchedOff, designerSwitchedOffNow } from '@/stores/app';
 
 // Every route that needs a role option says which, as `meta.permission` : the one guard below
 // checks it, and the left menus and the header search read it from the route a link resolves to
@@ -302,8 +303,16 @@ const router = createRouter({
 export function permissionGuard(to) {
   const permission = to.meta?.permission;
   if (!permission) return true;
+  // the designer switched off for the instance (SHOW_DESIGNER) : for no one
+  if (permission === 'showDesigner' && designerSwitchedOff()) return { name: '/' };
   return TokenStorage.getPayload()?.user?.options?.[permission] ? true : { name: '/' };
 }
 router.beforeEach(permissionGuard);
+// the designer switched off for the instance : its page refused for everyone, the switch read from
+// the server first when this tab has not read it yet (a link or a bookmark straight to /designer)
+router.beforeEach(async (to) => {
+  if (to.meta?.permission !== 'showDesigner') return true;
+  return (await designerSwitchedOffNow()) ? { name: '/' } : true;
+});
 
 export default router;

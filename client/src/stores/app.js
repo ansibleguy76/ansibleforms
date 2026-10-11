@@ -1,6 +1,7 @@
 // Utilities
-import { defineStore } from 'pinia';
+import { defineStore, getActivePinia } from 'pinia';
 import { ref } from 'vue';
+import axios from 'axios';
 
 // the user's time zone preference, kept in this browser like the theme ; storage can be
 // unavailable (private mode), then the default applies
@@ -30,6 +31,8 @@ export const useAppStore = defineStore('app', () => {
   const errorMessage = ref('');
   const schemaData = ref(null);
   const chatEnabled = ref(false); // ENABLE_CHAT and a configured provider (/api/v2/app/config)
+  const designerEnabled = ref(true); // SHOW_DESIGNER : the designer there at all (/api/v2/app/config)
+  const appConfigLoaded = ref(false); // /api/v2/app/config read at least once (State.loadAppConfig)
   // the time zone dates are shown in : 'UTC', 'browser' or an IANA zone (lib/Time.js) ; read
   // here so every page re-renders its dates when the user picks another one
   const timezone = ref(loadTimezone());
@@ -59,8 +62,51 @@ export const useAppStore = defineStore('app', () => {
     errorMessage,
     schemaData,
     chatEnabled,
+    designerEnabled,
+    appConfigLoaded,
     timezone,
     newVersionAvailable,
     newVersionDismissed,
   };
 });
+
+/**
+ * Whether the designer is switched off for the instance (SHOW_DESIGNER, /api/v2/app/config) : then
+ * no one sees it, whatever their role options. False before the store exists (a test, an early
+ * route check).
+ *
+ * Returns:
+ *   boolean: true when switched off.
+ */
+export function designerSwitchedOff() {
+  if (!getActivePinia()) return false;
+  return useAppStore().designerEnabled === false;
+}
+
+// the one read of /api/v2/app/config a route check may wait for, shared by the checks of one load
+let appConfigRead = null;
+
+/**
+ * Whether the designer is switched off for the instance, read from the server first when the app
+ * has not read it yet (a fresh tab opened on /designer).
+ *
+ * Returns:
+ *   Promise<boolean>: true when switched off.
+ */
+export async function designerSwitchedOffNow() {
+  if (!getActivePinia()) return false;
+  const store = useAppStore();
+  if (!store.appConfigLoaded) {
+    appConfigRead =
+      appConfigRead ||
+      axios
+        .get('/api/v2/app/config')
+        .then((res) => {
+          store.designerEnabled = res.data?.designerEnabled !== false;
+          store.appConfigLoaded = true;
+        })
+        .catch(() => {});
+    await appConfigRead;
+  }
+  return store.designerEnabled === false;
+}

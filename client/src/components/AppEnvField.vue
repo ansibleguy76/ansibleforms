@@ -94,8 +94,10 @@ function envHelp(e) {
       <label class="form-label fw-bold">{{ e.short || e.name }}</label>
       <div class="input-group">
         <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="language" /></span>
+        <!-- rounded at its right : its menu comes after it in the group, which Bootstrap takes
+             for a field after it and squares its corners off -->
         <button
-          class="form-select d-flex align-items-center gap-2 text-start"
+          class="form-select d-flex align-items-center gap-2 text-start rounded-end"
           type="button"
           data-bs-toggle="dropdown"
           aria-expanded="false"

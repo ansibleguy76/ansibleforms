@@ -59,6 +59,9 @@ router.get("/config", async (req, res) => {
     // previews in it, so a cron shown in the UI matches when the job really runs
     logTz: logConfig.tz,
     chatEnabled: await chatEnabled(),
+    // whether the designer is there at all (SHOW_DESIGNER, Settings > Appearance > Interface) :
+    // the header's Designer link needs it as well as the user's showDesigner option
+    designerEnabled: !!appConfig.showDesigner,
   });
 });
 

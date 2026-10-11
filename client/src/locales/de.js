@@ -702,7 +702,7 @@ export default {
     },
     // Settings > Appearance > Interface
     interface: {
-      tabDefault: 'Standard',
+      tabDefaults: 'Standardwerte',
       description:
         'Wie die App standardmäßig für alle aussieht: das Design und seine Farbe, die Sprache und ob der Designer angezeigt wird. Die eigene Wahl eines Benutzers hat Vorrang.',
     },

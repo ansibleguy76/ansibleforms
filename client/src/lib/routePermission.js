@@ -8,6 +8,7 @@
 /*                                                                */
 /******************************************************************/
 import router from '@/router';
+import { designerSwitchedOff } from '@/stores/app';
 
 /**
  * The role option the route of a link needs.
@@ -38,6 +39,8 @@ export function routePermission(link) {
  */
 export function mayOpen(link, options) {
   const permission = routePermission(link);
+  // the designer switched off for the instance (SHOW_DESIGNER) : for no one
+  if (permission === 'showDesigner' && designerSwitchedOff()) return false;
   return !permission || !!options?.[permission];
 }
 

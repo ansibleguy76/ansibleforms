@@ -692,7 +692,7 @@ export default {
     },
     // Settings > Appearance > Interface
     interface: {
-      tabDefault: 'Default',
+      tabDefaults: 'Defaults',
       description:
         "How the app looks for everyone by default: the theme and its color, the language, and whether the designer shows. A user's own choice wins over them.",
     },

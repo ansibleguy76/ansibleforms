@@ -145,7 +145,8 @@ const menu = computed(() => {
   if (!store?.profile?.options?.showSettings) {
     m = m.filter((m) => m.link != '/settings/general');
   }
-  if (!store?.profile?.options?.showDesigner) {
+  // the designer : switched on for the instance (Settings > Appearance > Interface) and for the user
+  if (!store?.profile?.options?.showDesigner || !store.designerEnabled) {
     m = m.filter((m) => m.link != '/designer');
   }
   // a lock on the Designer link while someone holds the designer : one color for the user

@@ -30,7 +30,7 @@ const chatOn = computed(() => String(envEdits.value.ENABLE_CHAT ?? '0') === '1')
 // Save : the switch, then the chat button of the header follows without a reload
 async function saveSwitch() {
   await saveEnvironmentVariables();
-  State.loadChatConfig();
+  State.loadAppConfig();
 }
 
 // one round trip to the provider with what is on the page (a masked key means the stored one)
@@ -61,7 +61,7 @@ onMounted(async () => {
       :locked="!chatOn"
       :extraDirty="envDirty"
       @test="testProvider"
-      @saved="State.loadChatConfig()"
+      @saved="State.loadAppConfig()"
       @saveExtra="saveSwitch()"
     >
       <!-- General : the switch first, as on the MCP page ; the settings wait for it -->

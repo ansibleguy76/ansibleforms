@@ -698,7 +698,7 @@ export default {
     },
     // Settings > Appearance > Interface
     interface: {
-      tabDefault: 'Predeterminat',
+      tabDefaults: 'Valors predeterminats',
       description:
         "Com es veu l'aplicació per a tothom per defecte: el tema i el seu color, l'idioma i si es mostra el dissenyador. L'elecció pròpia d'un usuari preval.",
     },

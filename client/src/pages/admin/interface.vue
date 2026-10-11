@@ -3,7 +3,7 @@
 /*                                                                */
 /*  Settings > Appearance > Interface, in tabs (the tab kept in    */
 /*  the address) :                                                */
-/*    Default : how the app looks for everyone by default - the   */
+/*    Defaults : how the app looks for everyone by default - the   */
 /*      theme and its colour (in the database), the language and  */
 /*      whether the designer shows (environment variables,        */
 /*      applied without a restart). A user's own choice (the top  */
@@ -17,6 +17,7 @@ import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import Helpers from '@/lib/Helpers';
 import Theme from '@/lib/Theme';
+import State from '@/lib/State';
 import { useEnvVars } from '@/composables/useEnvVars';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
@@ -25,12 +26,12 @@ const { t } = useI18n();
 const authenticated = ref(false);
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
-const tabs = computed(() => [{ key: 'default', label: t('settings.interface.tabDefault'), icon: 'sliders' }]);
-const { activeTab, tabLink } = useRouteTab('default', (key) => tabs.value.some((x) => x.key === key));
+const tabs = computed(() => [{ key: 'defaults', label: t('settings.interface.tabDefaults'), icon: 'sliders' }]);
+const { activeTab, tabLink } = useRouteTab('defaults', (key) => tabs.value.some((x) => x.key === key));
 // the title names the tab : Interface › Default, each step a link
 const crumbs = computed(() => {
   const tab = tabs.value.find((x) => x.key === activeTab.value);
-  const base = [{ title: t('sidebar.interface'), icon: 'palette', to: tabLink('default') }];
+  const base = [{ title: t('sidebar.interface'), icon: 'palette', to: tabLink('defaults') }];
   return tab ? [...base, { title: tab.label, icon: tab.icon, to: tabLink(tab.key) }] : base;
 });
 
@@ -112,7 +113,11 @@ async function save() {
       return;
     }
   }
-  if (envDirty.value) await saveEnvironmentVariables();
+  if (envDirty.value) {
+    await saveEnvironmentVariables();
+    // the designer switched on or off : the header's Designer link follows at once
+    await State.loadAppConfig();
+  }
 }
 
 onMounted(async () => {
@@ -151,8 +156,8 @@ onMounted(async () => {
         }}</BsButton>
       </template>
       <template #default>
-        <!-- Default : the theme, the language and the designer for everyone -->
-        <div v-show="activeTab === 'default'">
+        <!-- Defaults : the theme, the language and the designer for everyone -->
+        <div v-show="activeTab === 'defaults'">
           <div v-if="envRestartPending.length" class="alert alert-warning py-2">
             <FaIcon icon="triangle-exclamation" class="me-2" />
             {{ t('settings.settingsPage.envRestartPending', { names: envRestartPending.join(', ') }) }}
@@ -197,9 +202,9 @@ onMounted(async () => {
   </AppSettingsPage>
 </template>
 <style scoped>
-/* the wide fields' width of the settings pages */
+/* as wide as the language below it (AppEnvField : a dropdown's width on the settings pages) */
 .af-interface-field :deep(.input-group) {
-  max-width: 40rem;
+  max-width: 20rem;
 }
 /* a colour of the Color theme : a round swatch, the chosen one ringed and ticked */
 .settings-color-swatch {

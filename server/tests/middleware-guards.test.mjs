@@ -26,6 +26,10 @@ vi.mock("../src/lib/i18n.js", () => ({
 }));
 
 const Middleware = (await import("../src/lib/middleware.js")).default;
+// the app config the middleware reads in the tests (vitest.config.js aliases it to this mock) :
+// the designer switched on for the instance, as a default install ; the switch has a test of its
+// own below
+const appConfig = (await import("./__mocks__/app.config.js")).default;
 
 // Minimal express-shaped double. `status()` must be chainable, and recording both parts lets
 // a test assert the code AND that a body was actually sent.
@@ -88,6 +92,17 @@ describe("a permission failure is 403, never 401", () => {
       assert.equal(res.statusCode, null, "a permitted request must not get a response here");
     });
   }
+
+  test("checkDesignerMiddleware answers 403 when the designer is switched off, whatever the user's option", () => {
+    appConfig.showDesigner = false;
+    try {
+      const { res, nexted } = run(Middleware.checkDesignerMiddleware, withOption("showDesigner", true));
+      assert.equal(res.statusCode, 403);
+      assert.equal(nexted, false);
+    } finally {
+      appConfig.showDesigner = true;
+    }
+  });
 
   test("checkAdminMiddleware answers 403 for a non-admin and passes an admin", () => {
     let r = run(Middleware.checkAdminMiddleware, { roles: ["public"], options: {} });
