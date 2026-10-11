@@ -101,13 +101,20 @@ onMounted(async () => {
           class="af-interface-field mt-4"
           :isFloating="false"
           icon="tag"
+          :disabled="!look.env_label_show"
           v-model="look.env_label"
           :label="t('settings.interface.envLabel')"
           :help="t('settings.interface.envLabelHelp')"
         />
-        <!-- its colour : round swatches, as the Color theme's -->
+        <!-- its colour : round swatches, as the Color theme's ; switched off, the text, the
+             colour and the preview are greyed out and kept as they are -->
         <label class="form-label fw-bold mt-4 d-block">{{ t('settings.interface.envLabelColor') }}</label>
-        <div class="d-flex flex-wrap gap-2 ms-1" role="radiogroup" :aria-label="t('settings.interface.envLabelColor')">
+        <div
+          class="d-flex flex-wrap gap-2 ms-1"
+          :class="{ 'af-off': !look.env_label_show }"
+          role="radiogroup"
+          :aria-label="t('settings.interface.envLabelColor')"
+        >
           <button
             v-for="c in LABEL_COLORS"
             :key="c"
@@ -117,6 +124,7 @@ onMounted(async () => {
             :title="c"
             role="radio"
             :aria-checked="look.env_label_color === c"
+            :disabled="!look.env_label_show"
             @click="look.env_label_color = c"
           >
             <FaIcon v-if="look.env_label_color === c" icon="check" class="settings-swatch-check" />
@@ -124,12 +132,11 @@ onMounted(async () => {
         </div>
         <!-- the preview : the header's logo and the label, as the header shows them -->
         <label class="form-label fw-bold mt-4 d-block">{{ t('settings.interface.envLabelPreview') }}</label>
-        <div class="af-label-preview">
+        <div class="af-label-preview" :class="{ 'af-off': !look.env_label_show }">
           <img :src="previewLogo" class="af-label-preview-logo" alt="" />
           <span
             class="badge rounded-pill fw-semibold af-pill af-label-preview-pill"
             :class="PILL[look.env_label_color] || PILL.grey"
-            :style="{ opacity: look.env_label_show ? 1 : 0.35 }"
           >
             <span class="af-pill-label">{{ look.env_label || 'PRODUCTION' }}</span>
           </span>
@@ -179,6 +186,14 @@ onMounted(async () => {
 /* its letters apart, as the header's (AppEnvLabel) */
 .af-label-preview-pill .af-pill-label {
   letter-spacing: 0.06em;
+}
+/* switched off : the swatches and the preview greyed out, as a disabled field (its title stays) */
+.af-off {
+  opacity: 0.5;
+}
+.af-off .settings-color-swatch {
+  cursor: default;
+  pointer-events: none;
 }
 </style>
 <route lang="yaml">
