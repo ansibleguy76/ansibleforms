@@ -1,7 +1,7 @@
 <script setup>
 import axios from 'axios';
 import ansiParse from '@/lib/AnsiParse';
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
+import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { toast } from 'vue-sonner';
 import Helpers from '@/lib/Helpers';
 
@@ -11,9 +11,8 @@ const log = ref('');
 const isLoading = ref(false);
 const filter = ref('');
 const scroller = ref(null);
-const refresh = ref(false);
 // the last lines of the log : enough to look back through with the search, small enough to read
-// every 2 seconds while the auto refresh is on ; the whole log is its download
+// every 2 seconds, as the page follows the log ; the whole log is its download
 const LINES = 1000;
 
 // The filter is a REGEX, which is the useful thing for a log - but String.match compiles
@@ -55,61 +54,106 @@ const filtered = computed(() => {
   }
   return (match ? lines.filter(match) : lines).map((x) => ansiParse(x));
 });
-async function scrollToBottom() {
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  const lastChildElement = scroller.value?.lastElementChild;
-  lastChildElement?.scrollIntoView({
-    behavior: 'smooth',
-  });
-}
-watch(refresh, async () => {
-  if (refresh.value) {
-    await load(true);
-  } else {
-    stopAutoRefresh();
-  }
-});
-// The auto refresh is a timer we own, not a recursive chain we can't stop : it
-// is cleared when the switch goes off and when the page is left, otherwise the
-// polling keeps running for the rest of the session.
-let refreshTimer = null;
+// ─── following the log ────────────────────────────────────────────────────────
+// The log is read again every 2 seconds, as a terminal follows a file : while the view is at
+// its bottom it follows the new lines ; scrolled up to read an older one, it stays where it is
+// and 'New lines' takes it back down. A failing read stops it, Refresh starts it again.
+const POLL_MS = 2000;
+const following = ref(true);
+const newLines = ref(false);
+let pollTimer = null;
 let stopped = false;
+let failed = false;
 
-function stopAutoRefresh() {
-  if (refreshTimer) clearTimeout(refreshTimer);
-  refreshTimer = null;
+/**
+ * The box that scrolls the log : the card body around it (the first scrolling ancestor).
+ *
+ * Returns:
+ *   HTMLElement|null: the box.
+ */
+function scrollBox() {
+  let el = scroller.value?.parentElement;
+  while (el && el !== document.body) {
+    const overflow = getComputedStyle(el).overflowY;
+    if ((overflow === 'auto' || overflow === 'scroll') && el.scrollHeight > el.clientHeight) return el;
+    el = el.parentElement;
+  }
+  return document.scrollingElement;
 }
 
-function scheduleAutoRefresh() {
-  stopAutoRefresh();
-  if (stopped || !refresh.value) return;
-  refreshTimer = setTimeout(() => {
-    refreshTimer = null;
+/**
+ * Whether the view is at the bottom of the log, a few pixels spared.
+ *
+ * Returns:
+ *   boolean: true at the bottom.
+ */
+function atBottom() {
+  const box = scrollBox();
+  return !box || box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+}
+
+/**
+ * Follows again from the bottom : the newest line in view.
+ */
+async function followBottom() {
+  await nextTick();
+  const box = scrollBox();
+  if (box) box.scrollTop = box.scrollHeight;
+  following.value = true;
+  newLines.value = false;
+}
+
+// scrolled by the user : following while at the bottom, not when scrolled up
+function onScroll() {
+  following.value = atBottom();
+  if (following.value) newLines.value = false;
+}
+
+function stopPolling() {
+  if (pollTimer) clearTimeout(pollTimer);
+  pollTimer = null;
+}
+
+function schedulePoll() {
+  stopPolling();
+  if (stopped || failed) return;
+  pollTimer = setTimeout(() => {
+    pollTimer = null;
     load();
-  }, 2000);
+  }, POLL_MS);
 }
 
+/**
+ * Reads the last lines of the log, then the next read in 2 seconds.
+ *
+ * Args:
+ *   force (boolean): Refresh : read again after a failed read too.
+ */
 async function load(force = false) {
-  if (isLoading.value || !(refresh.value || force)) return;
+  if (force) failed = false;
+  if (isLoading.value || failed) return;
+  // a hidden tab reads nothing : the next visible poll catches up
+  if (!force && document.hidden) return schedulePoll();
   isLoading.value = true;
   try {
     const result = await axios.get(`/api/v2/log?lines=${LINES}`);
-    if (result.data != '...') {
+    if (result.data != '...' && result.data !== log.value) {
+      const first = !log.value;
       log.value = result.data;
-      await scrollToBottom();
+      if (first || following.value) await followBottom();
+      else newLines.value = true;
     }
   } catch (err) {
-    // a failing log endpoint must not leave the page loading forever (that
-    // disables both the refresh button and the auto refresh)
+    // a failing log endpoint stops the reading, once said ; Refresh starts it again
     if (!stopped) {
-      refresh.value = false;
+      failed = true;
       toast.error(Helpers.parseAxiosResponseError(err));
     }
   } finally {
     // always released, also when the server answered the "..." placeholder
     isLoading.value = false;
   }
-  scheduleAutoRefresh();
+  schedulePoll();
 }
 async function downloadWithAxios(url, authHeaders) {
   const response = await axios({
@@ -128,12 +172,16 @@ async function download() {
     toast.error(err.message);
   }
 }
+let box = null;
 onMounted(async () => {
   await load(true);
+  box = scrollBox();
+  box?.addEventListener('scroll', onScroll, { passive: true });
 });
 onUnmounted(() => {
   stopped = true;
-  stopAutoRefresh();
+  stopPolling();
+  box?.removeEventListener('scroll', onScroll);
 });
 </script>
 <template>
@@ -143,16 +191,7 @@ onUnmounted(() => {
       <AppSidebar />
       <AppSettings :title="t('logs.title')" :description="t('logs.description')" icon="file-lines">
         <template #headerActions>
-          <div class="ms-2">
-            <BsInput
-              :isFloating="false"
-              type="checkbox"
-              v-model="refresh"
-              :label="t('logs.autoRefresh')"
-              :isInline="true"
-            ></BsInput>
-          </div>
-          <div class="ms-2">
+          <div>
             <!-- the search box of the other pages : the placeholder goes on click, an X clears it -->
             <BsSearch v-model="filter" style="width: 16rem" />
           </div>
@@ -186,6 +225,12 @@ onUnmounted(() => {
               <div class="text-end pe-1 me-3 d-inline-block af-line-no" style="width: 40px">{{ i + 1 }}</div>
               <span v-for="(s, si) in t" :key="si" v-text="s.text" :class="s.foreground || ''"></span>
             </div>
+            <!-- scrolled up while new lines came : back to the bottom, following again -->
+            <div v-if="!following" class="af-log-follow">
+              <BsButton icon="arrow-down" colorClass="primary" @click="followBottom()">{{
+                newLines ? t('logs.newLines') : t('logs.latest')
+              }}</BsButton>
+            </div>
           </div>
         </template>
       </AppSettings>
@@ -193,6 +238,21 @@ onUnmounted(() => {
   </div>
 </template>
 <style scoped>
+/* 'New lines' : over the bottom of the log while it is scrolled up, centred */
+.af-log-follow {
+  position: sticky;
+  bottom: 0.75rem;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.af-log-follow :deep(.btn) {
+  pointer-events: auto;
+  /* a button's font, not the log's */
+  font-family: var(--bs-body-font-family);
+  background-color: var(--bs-body-bg);
+  box-shadow: var(--bs-box-shadow-sm);
+}
 /* The viewport is filled by `af-fill-page` (the card body is the scrolling
    area), so the log itself only has to keep long lines from widening the page. */
 #scroller {

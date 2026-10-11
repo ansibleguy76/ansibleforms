@@ -2128,7 +2128,8 @@ export default {
     title: 'Registre del servidor',
     description:
       "El registre propi del servidor d'AnsibleForms: inicis de sessió, càrregues de configuració, peticions i errors. Les línies més noves són a baix.",
-    autoRefresh: 'Actualització automàtica',
+    newLines: 'Línies noves',
+    latest: 'Ves al més recent',
     clear: 'Neteja',
     clearHint: "Buida la vista, no el registre: només es mostren les línies escrites a partir d'ara",
     cleared: "Net: les línies noves apareixen aquí a mesura que s'escriuen.",

@@ -2047,7 +2047,8 @@ export default {
   logs: {
     title: '服务器日志',
     description: 'AnsibleForms 服务器自身的日志：登录、配置加载、请求和错误。最新的行位于底部。',
-    autoRefresh: '自动刷新',
+    newLines: '新行',
+    latest: '跳到最新',
     clear: '清空',
     clearHint: '清空视图而不是日志：只显示从现在起写入的行',
     cleared: '已清空：新行写入后会显示在这里。',

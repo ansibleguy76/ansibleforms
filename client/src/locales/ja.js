@@ -2095,7 +2095,8 @@ export default {
     title: 'サーバーログ',
     description:
       'AnsibleForms サーバー自身のログです。ログイン、設定の読み込み、リクエスト、エラーが記録されます。最新の行は一番下にあります。',
-    autoRefresh: '自動更新',
+    newLines: '新しい行',
+    latest: '最新へ移動',
     clear: 'クリア',
     clearHint: 'ログではなく表示を空にします。今後書き込まれる行だけが表示されます',
     cleared: 'クリアしました。新しい行は書き込まれるとここに表示されます。',

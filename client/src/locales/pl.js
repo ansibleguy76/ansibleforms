@@ -2117,7 +2117,8 @@ export default {
     title: 'Dziennik serwera',
     description:
       'Własny dziennik serwera AnsibleForms: logowania, wczytania konfiguracji, żądania i błędy. Najnowsze wiersze są na dole.',
-    autoRefresh: 'Automatyczne odświeżanie',
+    newLines: 'Nowe wiersze',
+    latest: 'Przejdź do najnowszych',
     clear: 'Wyczyść',
     clearHint: 'Czyści widok, nie log: widoczne są tylko wiersze zapisane od teraz',
     cleared: 'Wyczyszczono: nowe wiersze pojawiają się tutaj w miarę zapisywania.',
