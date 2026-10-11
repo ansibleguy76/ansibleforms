@@ -660,10 +660,10 @@ onMounted(async () => {
                zeroes precisely because it stacks on the card's own padding. -->
             <template v-if="group.key === 'configuration' && !searching">
               <div class="mt-4 mb-2 d-flex align-items-center">
-                <BsButton icon="file-import" colorClass="secondary" @click="showImportConfirm = true">{{
+                <BsButton icon="file-import" @click="showImportConfirm = true">{{
                   t('settings.settingsPage.importToDatabase')
                 }}</BsButton>
-                <BsButton icon="file-export" colorClass="secondary" cssClass="ms-3" @click="showExportConfirm = true">{{
+                <BsButton icon="file-export" cssClass="ms-3" @click="showExportConfirm = true">{{
                   t('settings.settingsPage.exportToFile')
                 }}</BsButton>
               </div>
