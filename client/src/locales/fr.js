@@ -2,8 +2,8 @@ export default {
   workflowEditor: {
     convergeHint:
       "Désactivé : il s'exécute dès qu'un lien vers lui se déclenche. Activé : seulement quand tous l'ont fait.",
-    linkExisting: 'Lier un nœud existant :',
-    newAfter: 'Ou un nouveau nœud après, en cas de :',
+    linkExisting: 'Lier à un nœud existant :',
+    newAfter: 'Lier à un nouveau nœud :',
     parents: 'Parents',
     newNode: 'Nouveau nœud',
     nodeTitle: 'Nœud {identifier}',

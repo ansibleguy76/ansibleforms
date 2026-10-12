@@ -1,8 +1,8 @@
 export default {
   workflowEditor: {
     convergeHint: 'Aus: er läuft, sobald eine Verbindung zu ihm auslöst. An: erst, wenn alle ausgelöst haben.',
-    linkExisting: 'Einen vorhandenen Knoten verbinden:',
-    newAfter: 'Oder ein neuer Knoten danach, bei:',
+    linkExisting: 'Mit einem vorhandenen Knoten verbinden:',
+    newAfter: 'Mit einem neuen Knoten verbinden:',
     parents: 'Eltern',
     newNode: 'Neuer Knoten',
     nodeTitle: 'Knoten {identifier}',

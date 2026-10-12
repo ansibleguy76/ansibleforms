@@ -1,8 +1,8 @@
 export default {
   workflowEditor: {
     convergeHint: 'Off: it runs as soon as one link into it fires. On: only once every link into it has.',
-    linkExisting: 'Link a node already there:',
-    newAfter: 'Or a new node after it, on:',
+    linkExisting: 'Link to an existing node:',
+    newAfter: 'Link to a new node:',
     parents: 'Parents',
     newNode: 'New node',
     nodeTitle: 'Node {identifier}',

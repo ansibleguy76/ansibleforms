@@ -1,8 +1,8 @@
 export default {
   workflowEditor: {
     convergeHint: 'Desligado: corre assim que uma ligação para ele dispara. Ligado: só quando todas tiverem disparado.',
-    linkExisting: 'Ligar um nó que já existe:',
-    newAfter: 'Ou um novo nó depois, em caso de:',
+    linkExisting: 'Ligar a um nó existente:',
+    newAfter: 'Ligar a um novo nó:',
     parents: 'Pais',
     newNode: 'Novo nó',
     nodeTitle: 'Nó {identifier}',

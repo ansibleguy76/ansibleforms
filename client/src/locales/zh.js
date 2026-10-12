@@ -2,7 +2,7 @@ export default {
   workflowEditor: {
     convergeHint: '关闭：任一指向它的连接触发即运行。开启：所有指向它的连接都触发后才运行。',
     linkExisting: '连接到已有节点：',
-    newAfter: '或在其后新建节点，条件：',
+    newAfter: '连接到新节点：',
     parents: '父节点',
     newNode: '新建节点',
     nodeTitle: '节点 {identifier}',

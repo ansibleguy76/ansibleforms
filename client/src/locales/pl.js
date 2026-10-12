@@ -2,8 +2,8 @@ export default {
   workflowEditor: {
     convergeHint:
       'Wyłączone: uruchamia się, gdy tylko zadziała jedno połączenie do niego. Włączone: dopiero gdy zadziałają wszystkie.',
-    linkExisting: 'Połącz istniejący węzeł:',
-    newAfter: 'Lub nowy węzeł po nim, przy:',
+    linkExisting: 'Połącz z istniejącym węzłem:',
+    newAfter: 'Połącz z nowym węzłem:',
     parents: 'Rodzice',
     newNode: 'Nowy węzeł',
     nodeTitle: 'Węzeł {identifier}',
