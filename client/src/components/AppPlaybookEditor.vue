@@ -286,6 +286,14 @@ const sectionToAdd = ref({});
                   >
                     <FaIcon icon="arrow-down" />
                   </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm af-pbe-move af-pbe-delete"
+                    :title="t('playbookEditor.removeTask')"
+                    @click.stop="apply((text) => editRemoveTask(text, pi, section, ti))"
+                  >
+                    <FaIcon icon="trash" />
+                  </button>
                 </template>
               </li>
               <li v-if="!play.sections[section].length" class="list-group-item text-muted">
@@ -470,6 +478,9 @@ const sectionToAdd = ref({});
   &:hover:not(:disabled) {
     color: var(--bs-primary);
   }
+}
+.af-pbe-delete:hover:not(:disabled) {
+  color: var(--bs-danger) !important;
 }
 .af-pbe-role {
   display: inline-flex;
