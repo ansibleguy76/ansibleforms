@@ -253,27 +253,32 @@ const sectionToAdd = ref({});
                 }}</span>
                 <span v-else-if="tk.module" class="badge af-pbe-module">{{ tk.module }}</span>
                 <template v-if="!readOnly">
+                  <!-- move it, remove it : as the constants' rows -->
+                  <div class="btn-group" role="group" @click.stop>
+                    <button
+                      type="button"
+                      class="btn af-row-btn"
+                      :class="ti > 0 ? 'btn-outline-primary' : 'btn-outline-secondary'"
+                      :disabled="ti === 0"
+                      :title="t('playbookEditor.up')"
+                      @click="apply((text) => editMoveTask(text, pi, section, ti, -1))"
+                    >
+                      <FaIcon icon="arrow-up" />
+                    </button>
+                    <button
+                      type="button"
+                      class="btn af-row-btn"
+                      :class="ti < play.sections[section].length - 1 ? 'btn-outline-primary' : 'btn-outline-secondary'"
+                      :disabled="ti === play.sections[section].length - 1"
+                      :title="t('playbookEditor.down')"
+                      @click="apply((text) => editMoveTask(text, pi, section, ti, 1))"
+                    >
+                      <FaIcon icon="arrow-down" />
+                    </button>
+                  </div>
                   <button
                     type="button"
-                    class="btn btn-sm af-pbe-move"
-                    :disabled="ti === 0"
-                    :title="t('playbookEditor.up')"
-                    @click.stop="apply((text) => editMoveTask(text, pi, section, ti, -1))"
-                  >
-                    <FaIcon icon="arrow-up" />
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-sm af-pbe-move"
-                    :disabled="ti === play.sections[section].length - 1"
-                    :title="t('playbookEditor.down')"
-                    @click.stop="apply((text) => editMoveTask(text, pi, section, ti, 1))"
-                  >
-                    <FaIcon icon="arrow-down" />
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-sm af-pbe-move af-pbe-delete"
+                    class="btn af-row-btn btn-outline-danger"
                     :title="t('playbookEditor.removeTask')"
                     @click.stop="apply((text) => editRemoveTask(text, pi, section, ti))"
                   >
@@ -452,20 +457,6 @@ const sectionToAdd = ref({});
   border: 1px solid var(--bs-border-color);
   font-family: var(--bs-font-monospace);
   font-weight: 400;
-}
-.af-pbe-move {
-  color: var(--bs-secondary-color);
-  padding: 0 0.35rem;
-  border: 0;
-  &:disabled {
-    opacity: 0.3;
-  }
-  &:hover:not(:disabled) {
-    color: var(--bs-primary);
-  }
-}
-.af-pbe-delete:hover:not(:disabled) {
-  color: var(--bs-danger) !important;
 }
 .af-pbe-role {
   display: inline-flex;
