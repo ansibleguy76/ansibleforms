@@ -1578,6 +1578,8 @@ export default {
     playbooksDescription: 'De Ansible-playbooks die de formulieren uitvoeren.',
     sectionToBuild: 'Hier staat nog niets.',
     files: {
+      hideExplorer: 'Bestandsverkenner verbergen',
+      showExplorer: 'Bestandsverkenner tonen',
       showInYaml: 'Tonen in de YAML',
       noVars: 'Nog geen variabelen: voeg er een toe met +.',
       keysCount: '{n} sleutel | {n} sleutels',

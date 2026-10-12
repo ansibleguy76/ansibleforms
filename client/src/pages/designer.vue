@@ -3,7 +3,7 @@ import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
 import Form from '@/lib/Form';
 import { slugOf } from '@/lib/formsPath';
 import { DESIGNER_TABS } from '@/config/designerTabs';
-import { EXPLORER_WIDTH, explorerWidthAfterDrag } from '@/config/fileExplorer';
+import { EXPLORER_WIDTH, explorerWidthAfterDrag, explorerFolded, explorerColumns } from '@/config/fileExplorer';
 import Lock from '@/lib/Lock';
 import { useAppStore } from '@/stores/app';
 import Backup from '@/lib/Backup';
@@ -5009,7 +5009,7 @@ onBeforeUnmount(() => {
             <div
               class="designer-layout"
               :class="{ 'designer-layout-preview': editorView === 'preview' }"
-              :style="currentTab == 'Forms' ? { gridTemplateColumns: `1fr 1rem ${treeWidthPct}%` } : undefined"
+              :style="currentTab == 'Forms' ? { gridTemplateColumns: explorerColumns(treeWidthPct) } : undefined"
             >
               <div class="designer-editor">
                 <!-- Preview : the Forms page's menu, from the categories as they are now -->
@@ -5196,11 +5196,33 @@ onBeforeUnmount(() => {
                   </template>
                 </div>
               </div>
-              <div v-if="currentTab == 'Forms'" class="designer-resize" @mousedown="startResize"></div>
-              <div v-if="currentTab == 'Forms'" class="designer-tree">
+              <div
+                v-if="currentTab == 'Forms'"
+                class="designer-resize"
+                @mousedown="!explorerFolded && startResize($event)"
+              ></div>
+              <!-- folded away : only its < remains, to bring it back -->
+              <div v-if="currentTab == 'Forms' && explorerFolded" class="designer-explorer-folded">
+                <span
+                  role="button"
+                  class="tree-add-btn"
+                  :title="t('designer.files.showExplorer')"
+                  @click="explorerFolded = false"
+                  ><FaIcon icon="chevron-left"
+                /></span>
+              </div>
+              <div v-else-if="currentTab == 'Forms'" class="designer-tree">
                 <div class="file-tree-panel">
                   <div class="file-tree-header d-flex justify-content-between align-items-center">
-                    <span><FaIcon icon="folder-tree" class="me-2" size="sm" />{{ t('designer.fileExplorer') }}</span>
+                    <span class="d-flex align-items-center"
+                      ><span
+                        role="button"
+                        class="tree-add-btn me-2"
+                        :title="t('designer.files.hideExplorer')"
+                        @click="explorerFolded = true"
+                        ><FaIcon icon="chevron-right" /></span
+                      >{{ t('designer.fileExplorer') }}</span
+                    >
                     <span class="d-flex gap-2">
                       <span
                         role="button"
@@ -5395,6 +5417,11 @@ onBeforeUnmount(() => {
   &:hover::after {
     background: var(--bs-border-color);
   }
+}
+.designer-explorer-folded {
+  margin-top: 0.5rem;
+  display: flex;
+  justify-content: center;
 }
 .designer-tree {
   max-height: 80vh;

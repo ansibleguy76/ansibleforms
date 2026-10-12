@@ -27,7 +27,7 @@ import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import Helpers from '@/lib/Helpers';
 import { varsKind } from '@/config/varsFile';
-import { EXPLORER_WIDTH, explorerWidthAfterDrag } from '@/config/fileExplorer';
+import { EXPLORER_WIDTH, explorerWidthAfterDrag, explorerFolded, explorerColumns } from '@/config/fileExplorer';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -395,7 +395,7 @@ defineExpose({
 });
 </script>
 <template>
-  <div class="af-files" :style="{ gridTemplateColumns: `1fr 1rem ${treeWidthPct}%` }">
+  <div class="af-files" :style="{ gridTemplateColumns: explorerColumns(treeWidthPct) }">
     <div class="af-files-editor">
       <div v-if="!selected" class="af-files-empty text-muted">
         <FaIcon :icon="kind === 'playbooks' ? 'file-code' : 'file-lines'" class="mb-3 af-files-empty-icon" />
@@ -448,14 +448,26 @@ defineExpose({
         @init="onEditorInit"
       />
     </div>
-    <div class="af-files-resize" @mousedown="startResize"></div>
-    <div class="af-files-tree">
+    <div class="af-files-resize" @mousedown="!explorerFolded && startResize($event)"></div>
+    <!-- folded away : only its < remains, to bring it back -->
+    <div v-if="explorerFolded" class="af-explorer-folded">
+      <span role="button" class="tree-add-btn" :title="t('designer.files.showExplorer')" @click="explorerFolded = false"
+        ><FaIcon icon="chevron-left"
+      /></span>
+    </div>
+    <div v-else class="af-files-tree">
       <div class="file-tree-panel">
         <div class="file-tree-header d-flex justify-content-between align-items-center">
-          <span class="text-truncate" :title="listing.repository || ''">
-            <FaIcon :icon="listing.repository ? ['fab', 'git-alt'] : 'folder-tree'" class="me-2" size="sm" />{{
-              listing.repository || t('designer.fileExplorer')
-            }}
+          <span class="d-flex align-items-center min-w-0" :title="listing.repository || ''">
+            <!-- > folds it away -->
+            <span
+              role="button"
+              class="tree-add-btn me-2"
+              :title="t('designer.files.hideExplorer')"
+              @click="explorerFolded = true"
+              ><FaIcon icon="chevron-right"
+            /></span>
+            <span class="text-truncate">{{ listing.repository || t('designer.fileExplorer') }}</span>
           </span>
           <span class="d-flex gap-2">
             <span
@@ -652,6 +664,11 @@ defineExpose({
   &:hover::after {
     background: var(--bs-border-color);
   }
+}
+.af-explorer-folded {
+  margin-top: 0.5rem;
+  display: flex;
+  justify-content: center;
 }
 .af-files-tree {
   max-height: 80vh;

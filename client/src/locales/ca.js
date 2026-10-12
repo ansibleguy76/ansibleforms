@@ -1590,6 +1590,8 @@ export default {
     playbooksDescription: "Els playbooks d'Ansible que executen els formularis.",
     sectionToBuild: 'Encara no hi ha res aquí.',
     files: {
+      hideExplorer: "Amaga l'explorador de fitxers",
+      showExplorer: "Mostra l'explorador de fitxers",
       showInYaml: 'Mostra al YAML',
       noVars: 'Encara no hi ha variables: afegeix-ne una amb +.',
       keysCount: '{n} clau | {n} claus',

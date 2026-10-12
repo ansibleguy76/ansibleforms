@@ -1515,6 +1515,8 @@ export default {
     playbooksDescription: '表单运行的 Ansible playbook。',
     sectionToBuild: '这里还没有内容。',
     files: {
+      hideExplorer: '隐藏文件资源管理器',
+      showExplorer: '显示文件资源管理器',
       showInYaml: '在 YAML 中显示',
       noVars: '还没有变量: 用 + 添加。',
       keysCount: '{n} 个键',

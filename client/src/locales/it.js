@@ -1577,6 +1577,8 @@ export default {
     playbooksDescription: 'I playbook Ansible eseguiti dai form.',
     sectionToBuild: 'Ancora niente qui.',
     files: {
+      hideExplorer: "Nascondi l'esploratore dei file",
+      showExplorer: "Mostra l'esploratore dei file",
       showInYaml: 'Mostra nello YAML',
       noVars: 'Ancora nessuna variabile: aggiungine una con +.',
       keysCount: '{n} chiave | {n} chiavi',

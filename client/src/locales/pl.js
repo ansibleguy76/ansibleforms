@@ -1572,6 +1572,8 @@ export default {
     playbooksDescription: 'Playbooki Ansible uruchamiane przez formularze.',
     sectionToBuild: 'Na razie nic tu nie ma.',
     files: {
+      hideExplorer: 'Ukryj eksplorator plików',
+      showExplorer: 'Pokaż eksplorator plików',
       showInYaml: 'Pokaż w YAML',
       noVars: 'Brak zmiennych: dodaj zmienną przyciskiem +.',
       keysCount: '{n} klucz | {n} klucze | {n} kluczy',
