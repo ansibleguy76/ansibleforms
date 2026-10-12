@@ -211,8 +211,8 @@ function leaveVar(event) {
           /></span>
           <span v-else class="af-ie-caret"></span>
           <FaIcon
-            :icon="row.type === 'group' ? 'layer-group' : 'server'"
-            :class="row.type === 'group' ? 'af-ie-group' : 'text-secondary'"
+            :icon="row.type === 'group' ? (folded.has(row.id) ? 'folder' : 'folder-open') : 'server'"
+            :class="row.type === 'group' ? 'af-ie-folder' : 'text-secondary'"
           />
           <span class="flex-grow-1" :class="{ 'fw-semibold': row.type === 'group' }">{{ row.name }}</span>
           <span v-if="row.vars" class="badge af-ie-badge">{{ t('designer.files.varsCount', row.vars) }}</span>
@@ -232,7 +232,7 @@ function leaveVar(event) {
                 :title="t('inventoryEditor.addChild')"
                 @click="askName('group', pathOf(row.id))"
               >
-                <FaIcon icon="layer-group" />
+                <FaIcon icon="folder-plus" />
               </button>
             </div>
             <button
@@ -256,7 +256,7 @@ function leaveVar(event) {
     <BsModal
       v-if="naming"
       size="md"
-      :icon="naming.kind === 'group' ? 'layer-group' : 'server'"
+      :icon="naming.kind === 'group' ? 'folder-plus' : 'server'"
       :footerClose="false"
       @close="naming = null"
     >
@@ -288,7 +288,7 @@ function leaveVar(event) {
     <BsModal
       v-if="open"
       size="lg"
-      :icon="open.host ? 'server' : 'layer-group'"
+      :icon="open.host ? 'server' : 'folder-open'"
       :footerClose="false"
       @close="open = null"
     >
@@ -395,10 +395,9 @@ function leaveVar(event) {
   text-align: center;
   color: var(--bs-secondary-color);
 }
-/* a group : a set of hosts, not a folder on disk (its fold is the caret beside it) ; the
-   link blue, apart from the explorer's yellow folders */
-.af-ie-group {
-  color: var(--bs-primary);
+/* a folder is folder yellow in every theme, as the explorer's */
+.af-ie-folder {
+  color: #f0b429;
 }
 .af-ie-badge {
   background: var(--bs-secondary-bg);
