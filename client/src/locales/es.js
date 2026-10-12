@@ -15,7 +15,7 @@ export default {
     group: 'Grupo {name}',
     variables: 'Variables',
     removeVar: 'Quitar variable',
-    noVar: 'No hay variables aquí.',
+    noVar: '{name} aún no tiene variables.',
     addVar: 'Añadir variable',
     varsHint: 'Definidas en el propio inventario; los archivos group_vars y host_vars están en el explorador.',
   },

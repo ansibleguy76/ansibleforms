@@ -15,7 +15,7 @@ export default {
     group: 'Group {name}',
     variables: 'Variables',
     removeVar: 'Remove variable',
-    noVar: 'No variable set here.',
+    noVar: "{name} doesn't have any variables set yet.",
     addVar: 'Add variable',
     varsHint: 'Set in the inventory itself; group_vars and host_vars files are in the explorer.',
   },

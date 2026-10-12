@@ -15,7 +15,7 @@ export default {
     group: 'グループ {name}',
     variables: '変数',
     removeVar: '変数を削除',
-    noVar: 'ここには変数がありません。',
+    noVar: '{name} にはまだ変数がありません。',
     addVar: '変数を追加',
     varsHint: 'インベントリ自体で設定します。group_vars と host_vars のファイルはエクスプローラーにあります。',
   },
