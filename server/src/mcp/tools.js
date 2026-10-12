@@ -188,6 +188,8 @@ export function createHandlers({ user, deps, policy = {} }) {
       if (res.complete && !args.subform && !args.field) {
         const payload = launchPayload(res, formObj);
         out.modeledExtravars = payload.preview;
+        // the same, the word a Rundeck job uses
+        out.modeledPayload = payload.preview;
         out.credentials = payload.credentials;
         out.payloadHash = payload.payloadHash;
       }
@@ -273,7 +275,7 @@ export function createHandlers({ user, deps, policy = {} }) {
       const out = await Job.relaunchWithValues({ user, id, values: values || {}, verbose: !!verbose, preview: !!preview, expectedPayloadHash });
       if (preview) {
         const { extravars, ...rest } = out;
-        return { job: id, ...rest, modeledExtravars: extravars };
+        return { job: id, ...rest, modeledExtravars: extravars, modeledPayload: extravars };
       }
       return { id: out?.id, relaunchOf: id, payloadHash: out?.payloadHash, warnings: out?.warnings || [] };
     },
@@ -297,6 +299,8 @@ export function createHandlers({ user, deps, policy = {} }) {
         subjobs: String(job.subjobs || '').split(',').filter((x) => x !== '').map((x) => parseInt(x, 10)),
         // masked by findById(logSafe) ; credentials are never part of the answer
         extravars: parseJson(job.extravars, {}),
+        // the same, the word a Rundeck job uses
+        payload: parseJson(job.extravars, {}),
         output: lastLines(job.output || '', tail),
       };
     },

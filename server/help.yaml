@@ -2632,6 +2632,8 @@
           AnsibleForms. `limit` becomes the node filter, `verbose` the DEBUG log level ; the
           AWX properties are not used. The job's output is shown as Rundeck logs it, its error
           lines in red ; once it comes from several nodes, each line starts with its `[node]`.
+          What the form sends is shown as the job's **payload** (Rundeck's word ; the other
+          types call it extravars) ; the API takes and answers both names.
 
           **Jenkins** : a form of type jenkins builds the
           Jenkins job named by `job` (or `template`) - its name, or its path when it is in a folder

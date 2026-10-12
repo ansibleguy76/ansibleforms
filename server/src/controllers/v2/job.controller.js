@@ -34,6 +34,8 @@ const getJob = async function(req, res) {
     const job = await Job.findById(user, req.params.id, (req.query.text == "true"), true)
     var restData = job
     restData.extravars = JSON.parse(job.extravars || "{}")
+    // `payload` : the same, the word a Rundeck job uses
+    restData.payload = restData.extravars
     restData.credentials = JSON.parse(job.credentials || "{}")
     restData.approval = JSON.parse(job.approval || "{}")
     restData.notifications = JSON.parse(job.notifications || "{}")
@@ -154,7 +156,8 @@ const launch = async function(req, res) {
         // the client may not choose the playbook, credentials or working directory unless
         // the form declares a field of that name - stripped inside Job.launch, which is the
         // first place the form definition is known (see stripReservedExtravars)
-        var extravars = req.body.extravars || {}
+        // `payload` says the same : the word a Rundeck job uses
+        var extravars = req.body.extravars ?? req.body.payload ?? {}
         var creds = req.body.credentials || {}
         var rawFormData = req.body.rawFormData || {}
         // the uploads of the form's file fields, as POST /api/v2/job/upload returned them

@@ -679,14 +679,16 @@ const displayedOutputYaml = computed(() => {
     : displayedOutput.value;
   return YAML.stringify(masked);
 });
+// a Rundeck form calls what it sends its payload ; the others, Ansible's word, extravars
+const saysPayload = computed(() => currentForm.value?.type === 'rundeck');
 const displayedOutputTitle = computed(() => {
   if (activeEntry.value) return `${t('form.subformOutput')} - ${activeEntry.value.title}`;
   if (wizardActive.value) {
     const step = activeWizardStep.value;
-    if (step?.isSummary) return t('form.extraVars');
+    if (step?.isSummary) return t(saysPayload.value ? 'form.payload' : 'form.extraVars');
     return `${t('form.subformOutput')} - ${step?.title || ''}`;
   }
-  return t('form.extraVars');
+  return t(saysPayload.value ? 'form.payload' : 'form.extraVars');
 });
 
 // filter job output
@@ -1877,7 +1879,8 @@ onBeforeUnmount(() => {
                   iconToggle="eye-slash"
                   :toggle="showExtraVars"
                   @click="toggleShowExtraVars()"
-                  >{{ t('form.showExtravars') }}<template #toggle>{{ t('form.hideExtravars') }}</template>
+                  >{{ t(saysPayload ? 'form.showPayload' : 'form.showExtravars')
+                  }}<template #toggle>{{ t(saysPayload ? 'form.hidePayload' : 'form.hideExtravars') }}</template>
                 </BsButton>
                 <BsButton v-if="!isEmbedded" cssClass="text-nowrap" icon="redo" @click="reloadForm">
                   {{ t('form.reloadForm') }}

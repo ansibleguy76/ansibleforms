@@ -2630,6 +2630,7 @@
         "properties": {
           "formName": { "type": "string", "description": "Name of the form to launch.", "example": "Create Virtual Machine" },
           "extravars": { "type": "object", "description": "Extra variables for the job.", "example": { "vm_name": "test-vm", "datacenter": "dc1" } },
+          "payload": { "type": "object", "description": "The same as extravars, the word a Rundeck job uses ; when both are sent, extravars wins.", "example": { "vm_name": "test-vm", "datacenter": "dc1" } },
           "credentials": { "type": "object", "description": "Credentials for the job.", "example": { "vcenter": "VCENTER_CRED" } },
           "notifications": { "type": "object", "description": "Notification settings for the job.", "example": { "email": "user@example.com" } },
           "job_type": { "type": "string", "description": "Type of job (e.g., ansible, awx, multistep).", "example": "ansible" },
