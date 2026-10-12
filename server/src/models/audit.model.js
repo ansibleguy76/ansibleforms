@@ -1,5 +1,6 @@
 import mysql from './db.model.js';
-import logger from '../lib/logger.js';
+import logger, { sendAuditLine } from '../lib/logger.js';
+import { currentRequest } from '../lib/requestContext.js';
 
 // The audit trail : who did what, when, and whether it worked.
 //
@@ -19,6 +20,11 @@ import logger from '../lib/logger.js';
 // 2. NEVER break the caller. Auditing is observability, not a transaction : a full
 //    disk must not turn a working request into a 500. Failures are logged loudly
 //    instead, so a silently empty audit log is not a thing that can happen.
+//
+// Every entry also goes to the syslog servers that get the audit entries (Settings >
+// Connections > Syslog), as one line - `audit` and the entry as JSON, scrubbed the same way -
+// so a SIEM has them as they happen, and keeps them when the database copy is swept or
+// restored. Sent first : a database that refuses the row does not keep the line from going.
 var Audit = function(){}
 
 // Anything whose KEY looks like it holds a secret is dropped, at any depth. Value
@@ -113,6 +119,41 @@ function plainIp(ip) {
 }
 
 /**
+ * An entry as the syslog servers get it : what the database row holds, the time it happened and
+ * the request it came from, the detail as an object (already scrubbed and capped).
+ *
+ * Args:
+ *   parts (object): { actor, actor_type, entry (as Audit.log was given it), detail (its JSON) }.
+ *
+ * Returns:
+ *   object: the line's fields.
+ */
+export function auditLine({ actor, actor_type, entry, detail }) {
+  let parsed = null;
+  if (detail) {
+    try {
+      parsed = JSON.parse(detail);
+    } catch {
+      // cut short (MAX_DETAIL) : its text, as the row has it
+      parsed = detail;
+    }
+  }
+  const requestId = currentRequest()?.requestId;
+  return {
+    time: new Date().toISOString(),
+    actor,
+    actor_type,
+    ip: plainIp(entry.ip) ?? null,
+    action: entry.action || 'unknown',
+    target_type: entry.targetType ?? null,
+    target: entry.target ?? null,
+    outcome: entry.outcome || 'success',
+    ...(requestId ? { request_id: requestId } : {}),
+    ...(parsed !== null ? { detail: parsed } : {}),
+  };
+}
+
+/**
  * Record one event. Fire and forget : callers do not await this for correctness,
  * and it never throws.
  *
@@ -132,6 +173,8 @@ Audit.log = async function (entry) {
     // STRICT_TRANS_TABLES, so one over-long value fails the whole INSERT and the event
     // vanishes - which turns "log a 300 character username" into audit evasion.
     const clamp = (v, n) => (v === null || v === undefined ? null : String(v).slice(0, n));
+    const detail = serializeDetail(entry.detail);
+    sendAuditLine(auditLine({ actor, actor_type, entry, detail }));
     await mysql.do(
       'INSERT INTO AnsibleForms.`audit` (actor, actor_type, ip, action, target_type, target, outcome, detail) VALUES (?,?,?,?,?,?,?,?)',
       [
@@ -142,7 +185,7 @@ Audit.log = async function (entry) {
         clamp(entry.targetType, 64),
         clamp(entry.target, 255),
         clamp(entry.outcome || 'success', 16),
-        serializeDetail(entry.detail),
+        detail,
       ]
     );
   } catch (e) {

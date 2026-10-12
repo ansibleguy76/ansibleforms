@@ -1086,10 +1086,12 @@
   - name: LOG_SYSLOG_HOST
     type: string
     allowed: a valid IP or FQDN
-    short: Syslog host
+    short: Syslog host (deprecated)
     version: 3.0.1
     default: ""
-    description: Setting the syslog host enables the logging to a syslog server. Without it, nothing is sent to syslog.
+    description: |
+      **Deprecated since 7, removed in 8.** The first 7.x start that finds `LOG_SYSLOG_HOST` set imports the `LOG_SYSLOG_*` variables once as the syslog server `syslog`, getting the server log; after that they are ignored. Manage syslog servers under Connections > Syslog.
+      Setting the syslog host enables the logging to a syslog server. Without it, nothing is sent to syslog.
   - name: LOG_SYSLOG_LEVEL
     type: string
     allowed: emerg, alert, crit, error, warning, notice, info, debug
@@ -1105,20 +1107,24 @@
     - name: debug
       description: Debug message, if you really want to know more details
     default: debug  
-    short: Syslog level
+    short: Syslog level (deprecated)
     version: 3.0.1
-    description: The logging level for the syslog server  
+    description: |
+      **Deprecated since 7, removed in 8.** The first 7.x start that finds `LOG_SYSLOG_HOST` set imports the `LOG_SYSLOG_*` variables once as the syslog server `syslog`, getting the server log; after that they are ignored. Manage syslog servers under Connections > Syslog.
+      The logging level for the syslog server
   - name: LOG_SYSLOG_PORT
     type: number
     allowed: valid tcp/udp port number
-    short: Syslog port
+    short: Syslog port (deprecated)
     default: 514
     version: 3.0.1
-    description: The port on which the syslog server is listening
+    description: |
+      **Deprecated since 7, removed in 8.** The first 7.x start that finds `LOG_SYSLOG_HOST` set imports the `LOG_SYSLOG_*` variables once as the syslog server `syslog`, getting the server log; after that they are ignored. Manage syslog servers under Connections > Syslog.
+      The port on which the syslog server is listening
   - name: LOG_SYSLOG_PROTOCOL
     type: string
     allowed: udp, udp4, udp6, tcp, tcp4, tcp6, tls, tls4, tls6, unix, unix-connect
-    short: Syslog protocol
+    short: Syslog protocol (deprecated)
     choices:
     - name: tcp4
       description: Syslog protocol tcp4
@@ -1132,21 +1138,27 @@
       description: Syslog protocol unix-connect
     default: udp4
     version: 3.0.1
-    description: The syslog protocol to use  
+    description: |
+      **Deprecated since 7, removed in 8.** The first 7.x start that finds `LOG_SYSLOG_HOST` set imports the `LOG_SYSLOG_*` variables once as the syslog server `syslog`, getting the server log; after that they are ignored. Manage syslog servers under Connections > Syslog.
+      The syslog protocol to use
   - name: LOG_SYSLOG_PATH
     type: string
     allowed: valid syslog path
-    short: Syslog path
+    short: Syslog path (deprecated)
     default: /dev/log
     version: 3.0.1
-    description: The path to the syslog dgram socket (i.e. `/dev/log` or `/var/run/syslog` for OS X)         
+    description: |
+      **Deprecated since 7, removed in 8.** The first 7.x start that finds `LOG_SYSLOG_HOST` set imports the `LOG_SYSLOG_*` variables once as the syslog server `syslog`, getting the server log; after that they are ignored. Manage syslog servers under Connections > Syslog.
+      The path to the syslog dgram socket (i.e. `/dev/log` or `/var/run/syslog` for OS X)
   - name: LOG_SYSLOG_SOURCE
     type: string
     allowed: hostname
-    short: Syslog source hostname
+    short: Syslog source hostname (deprecated)
     default: localhost
     version: 3.0.1
-    description: Host to indicate where log messages are coming from      
+    description: |
+      **Deprecated since 7, removed in 8.** The first 7.x start that finds `LOG_SYSLOG_HOST` set imports the `LOG_SYSLOG_*` variables once as the syslog server `syslog`, getting the server log; after that they are ignored. Manage syslog servers under Connections > Syslog.
+      Host to indicate where log messages are coming from
   - name: LOG_SYSLOG_TYPE
     type: string
     allowed: BSD, 5424
@@ -1161,17 +1173,21 @@
       description: Syslog type RFC3164
     - name: RFC5424
       description: Syslog type RFC5424
-    short: Syslog protocol type
+    short: Syslog protocol type (deprecated)
     default: BSD
     version: 3.0.1
-    description: The type of the syslog protocol to use   
+    description: |
+      **Deprecated since 7, removed in 8.** The first 7.x start that finds `LOG_SYSLOG_HOST` set imports the `LOG_SYSLOG_*` variables once as the syslog server `syslog`, getting the server log; after that they are ignored. Manage syslog servers under Connections > Syslog.
+      The type of the syslog protocol to use
   - name: LOG_SYSLOG_APPNAME
     type: string
     allowed: free text
-    short: Syslog app name
+    short: Syslog app name (deprecated)
     default: AnsibleForms
     version: 3.0.1
-    description: The name of the application    
+    description: |
+      **Deprecated since 7, removed in 8.** The first 7.x start that finds `LOG_SYSLOG_HOST` set imports the `LOG_SYSLOG_*` variables once as the syslog server `syslog`, getting the server log; after that they are ignored. Manage syslog servers under Connections > Syslog.
+      The name of the application
   - name: LOG_COLOR_ERROR
     type: string
     allowed: valid escape color code

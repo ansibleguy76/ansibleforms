@@ -160,6 +160,8 @@ export default {
     failedFindSettings: "Echec de la recherche des parametres",
     mailCheckFailed: "Echec de la verification mail",
     mailSent: "Mail envoye avec l'id {id}",
+    syslogSent: "Message syslog envoye a {where}",
+    syslogCheckFailed: "Echec du message syslog",
     failedUpdateSettings: "Echec de la mise a jour des parametres",
     configLockedByDesigner:
       "La configuration est verrouillee par une session de designer active{username}",

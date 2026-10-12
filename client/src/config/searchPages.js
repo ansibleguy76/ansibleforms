@@ -161,6 +161,7 @@ export function searchPages(t, options) {
       link: '/settings/chat',
     },
     { title: t('sidebar.mcp'), section: settings, icon: 'robot', link: '/settings/mcp' },
+    { title: t('sidebar.syslog'), section: settings, icon: 'tower-broadcast', link: '/settings/syslog' },
     {
       title: t('sidebar.audit'),
       section: settings,

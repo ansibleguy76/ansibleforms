@@ -9,6 +9,7 @@ import { holdsWorkerLock } from "../lib/workerLock.js";
 import EnvSettings from "../lib/envSettings.js";
 import { reloadConfigSeed, getSeedState } from "../lib/seed.js";
 import { clearSecretCache } from "../secrets/cache.js";
+import { startSyslogServers, reloadSyslogServers } from "../lib/syslogServers.js";
 import CrudModel from "../models/crud.model.js";
 import Help from "../models/help.model.js";
 import cronService from "../services/cron.service.js";
@@ -60,10 +61,13 @@ export async function startCluster() {
   onEpoch("*", (name) => CrudModel.flushLocal(name));
   onEpoch("secretstore", () => clearSecretCache());
   onEpoch("env", () => applyChangedEnv());
+  // the syslog servers changed on another node : this process's logger follows
+  onEpoch("syslogserver", () => reloadSyslogServers());
   // a database restore replaced every row
   onEpoch("restore", async () => {
     CrudModel.flushAllLocal();
     clearSecretCache();
+    await reloadSyslogServers();
     if (runsWeb) await rebuildLoginStrategies();
     await cronService.resync();
   });
@@ -83,6 +87,8 @@ export async function startCluster() {
     setWorkerInfo(() => ({ scheduler: cronService.describe(), seed: getSeedState() }));
   }
 
+  // the server log and the audit entries to the syslog servers of Connections > Syslog
+  await startSyslogServers();
   startHeartbeat();
   startEpochs();
 }

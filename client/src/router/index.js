@@ -35,6 +35,8 @@ const chatSettings = () => import('@/pages/admin/chat.vue');
 const mcpSettings = () => import('@/pages/admin/mcp.vue');
 const mailSettings = () => import('@/pages/admin/mailSettings.vue');
 const mailServer = () => import('@/pages/admin/mail-server.vue');
+const syslogServers = () => import('@/pages/admin/syslogServers.vue');
+const syslogServer = () => import('@/pages/admin/syslog-server.vue');
 const logo = () => import('@/pages/admin/logo.vue');
 const favicon = () => import('@/pages/admin/favicon.vue');
 const defaultsPage = () => import('@/pages/admin/defaults.vue');
@@ -197,6 +199,19 @@ const routes = [
     meta: { permission: 'showSettings' },
   },
   { path: '/settings/mcp/:tab?', name: '/settings/mcp', component: mcpSettings, meta: { permission: 'showSettings' } },
+  // Settings > Connections > Syslog : the syslog servers, and a server's own page
+  {
+    path: '/settings/syslog',
+    name: '/settings/syslog',
+    component: syslogServers,
+    meta: { permission: 'showSettings' },
+  },
+  {
+    path: '/settings/syslog/:id(\\d+)/:tab?',
+    name: '/settings/syslog/:id',
+    component: syslogServer,
+    meta: { permission: 'showSettings' },
+  },
   {
     path: '/settings/mail',
     name: '/settings/mail',

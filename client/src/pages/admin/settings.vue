@@ -148,9 +148,18 @@ const envGroupOrder = [
     label: () => t('settings.settingsPage.envGroupLogging'),
     icon: 'file-alt',
     prefix: ['LOG_'],
-    // the console's colour codes are not shown (OWNED_ELSEWHERE)
+    // the console's colour codes are not shown (OWNED_ELSEWHERE), and syslog is Settings >
+    // Connections > Syslog's (the LOG_SYSLOG_* variables are imported once as a server there)
     except: [
       'LOG_RETENTION_DAYS',
+      'LOG_SYSLOG_HOST',
+      'LOG_SYSLOG_PORT',
+      'LOG_SYSLOG_PROTOCOL',
+      'LOG_SYSLOG_PATH',
+      'LOG_SYSLOG_LEVEL',
+      'LOG_SYSLOG_SOURCE',
+      'LOG_SYSLOG_TYPE',
+      'LOG_SYSLOG_APPNAME',
       'LOG_COLOR_ERROR',
       'LOG_COLOR_WARN',
       'LOG_COLOR_NOTICE',
@@ -247,7 +256,7 @@ const isOn = (name) => ['1', 'true'].includes(envValueOf(name).trim().toLowerCas
 
 /**
  * Whether a field does nothing as the page stands : its switch is off - HTTPS's key and
- * certificate without HTTPS, ytt's settings without ytt, the syslog's without a syslog host.
+ * certificate without HTTPS, ytt's settings without ytt.
  * Greyed out, its value kept, as the announcement's and the environment label's.
  *
  * Args:
@@ -259,7 +268,6 @@ const isOn = (name) => ['1', 'true'].includes(envValueOf(name).trim().toLowerCas
 function envOff(e) {
   if (e.name === 'HTTPS_KEY' || e.name === 'HTTPS_CERT') return !isOn('HTTPS');
   if (e.name.startsWith('YTT_')) return !isOn('USE_YTT');
-  if (e.name.startsWith('LOG_SYSLOG_') && e.name !== 'LOG_SYSLOG_HOST') return !envValueOf('LOG_SYSLOG_HOST').trim();
   return false;
 }
 
@@ -309,9 +317,10 @@ function envHelp(e) {
 // the Users page's once it exists. NODE_ENV and ALLOW_ENV_EDIT decide how the process boots and
 // whether this page writes at all (it says so when it does not) : the deployment's.
 // YTT_LIB_DATA_<name> is a prefix, not a variable : documented, nothing to show. LOG_COLOR_* are
-// the console's ANSI colour codes : rarely changed, documented.
+// the console's ANSI colour codes : rarely changed, documented. LOG_SYSLOG_* are imported once as a
+// syslog server (Settings > Connections > Syslog), as VAULT_* as a secret store.
 const OWNED_ELSEWHERE =
-  /^(VAULT|MCP|LOG_COLOR)_|^RTE_(?!QUEUE_MINUTES$)|^(ENABLE_(MCP|CHAT|SSO)|SSO_AUTO_LOGIN|BASE_URL|AF_ROLE|ANSIBLE_PATH|PROCESS_MAX_BUFFER|DEFAULT_LANGUAGE|SHOW_DESIGNER|ADMIN_USERNAME|ADMIN_PASSWORD|REINIT_ADMIN|NODE_ENV|ALLOW_ENV_EDIT|YTT_LIB_DATA_\{dynamic\})$/;
+  /^(VAULT|MCP|LOG_COLOR|LOG_SYSLOG)_|^RTE_(?!QUEUE_MINUTES$)|^(ENABLE_(MCP|CHAT|SSO)|SSO_AUTO_LOGIN|BASE_URL|AF_ROLE|ANSIBLE_PATH|PROCESS_MAX_BUFFER|DEFAULT_LANGUAGE|SHOW_DESIGNER|ADMIN_USERNAME|ADMIN_PASSWORD|REINIT_ADMIN|NODE_ENV|ALLOW_ENV_EDIT|YTT_LIB_DATA_\{dynamic\})$/;
 
 const envGroups = computed(() => {
   if (!env.value || !Array.isArray(env.value)) return [];

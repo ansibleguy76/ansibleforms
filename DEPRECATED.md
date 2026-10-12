@@ -5,6 +5,7 @@ Removed in 8.0.0. Each logs a warning when it is used.
 | Deprecated | Replacement | Since |
 |---|---|---|
 | `VAULT_*` environment variables (imported once at the first 7.x start, then ignored) | a secret store named `vault` (Connections > Secret stores) | 7.0.0 |
+| `LOG_SYSLOG_*` environment variables (imported once as the syslog server `syslog` when `LOG_SYSLOG_HOST` is set, then ignored) | a syslog server (Connections > Syslog) | 7.0.0 |
 | `vault_path` on a credential (API, seed) | `secret_store` + `secret_ref` | 7.0.0 |
 | the role `public` in `config.yaml` (renamed `default` in the file when the config loads ; a ytt template is renamed by hand, 8 refuses it there ; `public` in a form's `roles:` keeps matching) | the role `default` | 7.0.0 |
 | `POST /api/v2/config/vault/check`, `GET /api/v2/config/vault/mounts` | `POST /api/v2/secretstore/{id}/check`, `GET /api/v2/secretstore/{id}/mounts` | 7.0.0 |
@@ -26,6 +27,7 @@ the removals below, this is what a 6.5 install changes when it moves to 7.
 | `ANSIBLE_PATH`, `PROCESS_MAX_BUFFER` are read by the RTE, not the app | set them in the RTE container's environment |
 | the `awx` table, `/api/v2/awx` and the A.A.P. page are gone | nothing : the upgrade moves every AWX/AAP connection to Runners (type `awx`) ; forms with `awx:` keep working |
 | HashiCorp Vault through `VAULT_*` | nothing : the first start imports them once as the secret store `vault` |
+| syslog through `LOG_SYSLOG_*` | nothing : the first start imports them once as the syslog server `syslog`, which gets the server log as before ; to send the audit entries too, set it to receive both (Connections > Syslog) |
 | images are on `ghcr.io/ansibleforms` only | pull `ghcr.io/ansibleforms/ansibleforms:7` (and `ansibleforms-rte-full:7` or `ansibleforms-rte-core:7`) |
 | launch validation is on : `LAUNCH_VALIDATION` defaults to `enforce` (6.5 : `off`). Every launch is checked against the form's rules and runs the extravars and credentials the server builds ; a REST launch must send `rawFormData` (the raw field values, as the browser does) | REST callers that send only `extravars` : add `rawFormData`. To see what would be refused first, set `LAUNCH_VALIDATION=log` and read the warnings ; `off` restores 6.5's behaviour |
 | a playbook no longer inherits AnsibleForms' own environment variables (`ENCRYPTION_SECRET`, `DB_*`, `ACCESS_TOKEN_SECRET`, `RTE_TOKEN`, `VAULT_*` and every other documented one) ; the rest of the RTE's environment is passed | a playbook that read one of them with `lookup('env', ...)` : pass the value as an extravar or a credential, or set it under another name on the RTE |

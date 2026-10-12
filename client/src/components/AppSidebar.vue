@@ -97,6 +97,8 @@ const sections = computed(() =>
         { title: t('sidebar.mail'), icon: 'envelope', link: '/settings/mail' },
         { title: t('sidebar.chat'), icon: 'comments', link: '/settings/chat' },
         { title: t('sidebar.mcp'), icon: 'robot', link: '/settings/mcp' },
+        // where the server log and the audit entries are sent
+        { title: t('sidebar.syslog'), icon: 'tower-broadcast', link: '/settings/syslog' },
       ],
     },
     {

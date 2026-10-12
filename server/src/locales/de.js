@@ -157,6 +157,8 @@ export default {
     failedFindSettings: "Einstellungen konnten nicht gefunden werden",
     mailCheckFailed: "Mail-Pruefung fehlgeschlagen",
     mailSent: "Mail mit ID {id} gesendet",
+    syslogSent: "Syslog-Nachricht an {where} gesendet",
+    syslogCheckFailed: "Syslog-Nachricht fehlgeschlagen",
     failedUpdateSettings: "Einstellungen konnten nicht aktualisiert werden",
     configLockedByDesigner:
       "Die Konfiguration ist durch eine aktive Designer-Sitzung gesperrt{username}",

@@ -144,6 +144,8 @@ export default {
     failedFindSettings: "Failed to find settings",
     mailCheckFailed: "Mail check failed",
     mailSent: "Mail sent with id {id}",
+    syslogSent: "Syslog message sent to {where}",
+    syslogCheckFailed: "Syslog message failed",
     failedUpdateSettings: "Failed to update settings",
     configLockedByDesigner:
       "Configuration is locked by an active designer session{username}",

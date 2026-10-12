@@ -525,7 +525,7 @@ const SCHEMA_MANIFEST = {
   base: {
     tables: ['groups', 'users', 'tokens', 'credentials', 'ldap', 'jobs', 'job_output',
              'settings', 'repositories', 'schedule', 'audit', 'chat_settings', 'secret_stores', 'runners',
-             'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'mail_servers', 'login_failures', 'token_revocations', 'schema_migrations',
+             'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'mail_servers', 'syslog_servers', 'login_failures', 'token_revocations', 'schema_migrations',
              'directory_users', 'announcements', 'disclaimer_versions', 'disclaimer_acceptances'],
   },
   patches: {
@@ -563,9 +563,9 @@ const SCHEMA_MANIFEST = {
     // dropped), and the job log a playbook writes is stored on the job
     // and the worker and several app nodes : the processes on the database, what changed
     // between them, the designer lock, and the node that follows a job
-    patchVersion7: { tables: ['secret_stores', 'runners', 'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'mail_servers', 'login_failures', 'token_revocations', 'schema_migrations',
+    patchVersion7: { tables: ['secret_stores', 'runners', 'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'mail_servers', 'syslog_servers', 'login_failures', 'token_revocations', 'schema_migrations',
                               'directory_users', 'announcements', 'disclaimer_versions', 'disclaimer_acceptances'],
-                     columns: ['schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'jobs.runner', 'jobs.runner_kind',
+                     columns: ['schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'settings.syslog_env_imported_at', 'jobs.runner', 'jobs.runner_kind',
                                'runners.username', 'runners.password', 'runners.use_credentials', 'runners.node_id', 'jobs.job_log',
                                'jobs.tracker', 'repositories.claim_node', 'repositories.claim_since',
                                'repositories.use_for_workflows', 'repositories.use_for_inventories',
@@ -918,6 +918,11 @@ async function patchVersion7(messages, success, failed) {
   const mailBuffer = fs.readFileSync(`${__dirname}/../db/create_mail_servers_table.sql`);
   await checkPromise(addTable("mail_servers", mailBuffer.toString()), messages, success, failed);
   await checkPromise(copyMailSettingsToServers(), messages, success, failed);
+  // the syslog servers the server log and the audit entries go to (Connections > Syslog) ; the
+  // LOG_SYSLOG_* variables of before become the first, once (lib/syslogServers.js)
+  const syslogBuffer = fs.readFileSync(`${__dirname}/../db/create_syslog_servers_table.sql`);
+  await checkPromise(addTable("syslog_servers", syslogBuffer.toString()), messages, success, failed);
+  await checkPromise(addColumn("settings", "syslog_env_imported_at", "datetime", true, "NULL"), messages, success, failed);
   // failed logins, for the account lockout (lib/loginThrottle.js)
   const loginFailures = fs.readFileSync(`${__dirname}/../db/create_login_failures_table.sql`);
   await checkPromise(addTable("login_failures", loginFailures.toString()), messages, success, failed);

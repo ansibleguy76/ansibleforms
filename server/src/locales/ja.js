@@ -150,6 +150,8 @@ export default {
     failedFindSettings: "設定の検索に失敗しました",
     mailCheckFailed: "メールの確認に失敗しました",
     mailSent: "メールを送信しました (ID: {id})",
+    syslogSent: "syslog メッセージを {where} に送信しました",
+    syslogCheckFailed: "syslog メッセージの送信に失敗しました",
     failedUpdateSettings: "設定の更新に失敗しました",
     configLockedByDesigner:
       "設定はアクティブなデザイナーセッションによってロックされています{username}",
