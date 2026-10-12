@@ -4124,7 +4124,11 @@
               - name: and
                 description: Uses the logical `and` operand to evaluate multiple dependencies
               - name: or
-                description: Uses the logical `and` operand to evaluate multiple dependencies
+                description: Uses the logical `or` operand to evaluate multiple dependencies
+              - name: nand
+                description: The inverse of `and`, the field shows unless all dependencies match
+              - name: nor
+                description: The inverse of `or`, the field shows only when no dependency matches
             short: The dependency logical function
             default: and
             description: This attribute represents the logical function between multiple dependencies.
