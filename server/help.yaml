@@ -2222,6 +2222,12 @@
                     type: text
         - name: multistep
           description: |
+            **Deprecated since 7, removed in 8 : use `workflow`.** A workflow does all a multistep
+            does - its nodes run on any runner (`runner:`), with a condition (`if_extra_var`, as
+            `ifExtraVar`) and their own values (`extra_vars_key`, as `key`), with approval nodes -
+            and runs branches side by side. Until 8 a multistep runs as it did, and the log says
+            it is deprecated.
+
             Executes multiple jobs sequentially.  
             Each step can be a different type (ansible, awx, semaphore, rundeck, jenkins ...).
           examples:
@@ -2492,6 +2498,7 @@
         docsObjectLink: "multistep"
         short: Multistep steps
         description: |
+          **Deprecated since 7, removed in 8**, with the multistep type : a workflow's nodes do what steps do.  
           A multistep form is basically an array of multiple form type destinations, defined here as steps.
       - name: wizard
         type: array

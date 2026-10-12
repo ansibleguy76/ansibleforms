@@ -2029,6 +2029,9 @@ export default {
     visualFieldsInYaml:
       "Els camps d'aquest formulari no es poden mostrar aquí (un àlies, o no és una llista): edita'ls a la pestanya YAML.",
     visualStepsInYaml: "Els passos d'aquest formulari s'editen a la pestanya YAML.",
+    typeDeprecated: '{type} (obsolet)',
+    multistepDeprecated:
+      "Multistep és obsolet des de 7 i s'elimina a 8: fes servir un workflow (Designer > Workflows). Els seus nodes s'executen a qualsevol runner, amb una condició i valors propis, com els passos.",
     visualNoFields: "Encara no hi ha camps. Afegeix-ne un amb + a la barra d'eines.",
     visualRequired: 'Obligatori',
     visualDuplicateField: 'Un altre camp té aquest nom.',

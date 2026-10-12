@@ -1068,8 +1068,22 @@ export function deprecatedIn7_3(form){
   }
   return found
 }
+// Deprecated in 7.0.0, removed in 8.0.0 (DEPRECATED.md) : a multistep form. A workflow does what
+// it does - nodes on any runner (runner), a condition (if_extra_var), a step's own values
+// (extra_vars_key), approval nodes - and more. Until 8 a multistep runs as it did ; the log says
+// so once per form, not on every read of it.
+const warnedMultistep = new Set()
+export function deprecatedMultistep(form){
+  if (form?.type !== 'multistep') return null
+  return `Form '${form.name}' : type multistep is ${DEPRECATED_IN_7} - use type workflow (Designer > Workflows), whose nodes run on any runner, with a condition (if_extra_var) and their own values (extra_vars_key)`
+}
 Form.validateForm = function(obj){
   if(obj){
+    const multistep = deprecatedMultistep(obj)
+    if (multistep && !warnedMultistep.has(obj.name)) {
+      warnedMultistep.add(obj.name)
+      logger.warning(multistep)
+    }
 
     const removed = removedIn7(obj)
     if (removed.length) {

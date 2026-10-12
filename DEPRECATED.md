@@ -10,6 +10,7 @@ Removed in 8.0.0. Each logs a warning when it is used.
 | `POST /api/v2/config/vault/check`, `GET /api/v2/config/vault/mounts` | `POST /api/v2/secretstore/{id}/check`, `GET /api/v2/secretstore/{id}/mounts` | 7.0.0 |
 | `hasApproval` on a form or a step (it has no effect) | `approval` | 7.0.0 |
 | `awx: <name>` on a form | `runner: <name>` (an AWX connection is a runner of type `awx`) | 7.0.0 |
+| `type: multistep` on a form (its `steps`) | `type: workflow` : nodes with `runner`, `if_extra_var` (for `ifExtraVar`), `extra_vars_key` (for `key`), approval nodes | 7.0.0 |
 | the config seed's `awx:` section | `runners:` items with `type: awx` | 7.0.0 |
 | `LOCK_PATH` (no longer read) | nothing: the designer lock is kept in the database | 7.0.0 |
 

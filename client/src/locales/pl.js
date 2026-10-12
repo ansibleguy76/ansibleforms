@@ -2008,6 +2008,9 @@ export default {
     visualFields: 'Pola',
     visualFieldsInYaml: 'Pól tego formularza nie można tu pokazać (alias lub nie lista): edytuj je w karcie YAML.',
     visualStepsInYaml: 'Kroki tego formularza edytujesz w karcie YAML.',
+    typeDeprecated: '{type} (przestarzały)',
+    multistepDeprecated:
+      'Multistep jest przestarzały od 7 i zostanie usunięty w 8: użyj workflow (Designer > Workflows). Jego węzły działają na dowolnym runnerze, z warunkiem i własnymi wartościami, jak kroki.',
     visualNoFields: 'Brak pól. Dodaj pole przyciskiem + na pasku narzędzi.',
     visualRequired: 'Wymagane',
     visualDuplicateField: 'Inne pole ma tę nazwę.',

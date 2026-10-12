@@ -13,7 +13,7 @@ const logger = (await import("./__mocks__/logger.js")).default;
 const warnings = [];
 vi.spyOn(logger, "warning").mockImplementation((m) => { warnings.push(String(m)); });
 
-const { deprecatedIn7_3 } = await import("../src/models/form.model.js");
+const { deprecatedIn7_3, deprecatedMultistep } = await import("../src/models/form.model.js");
 const Form = (await import("../src/models/form.model.js")).default;
 
 const form = (extra = {}) => ({ name: "Approve firmware", type: "ansible", playbook: "p.yml", roles: ["default"], categories: [], fields: [], ...extra });
@@ -42,5 +42,21 @@ describe("hasApproval is deprecated, not removed", () => {
     expect(deprecatedIn7_3(null)).toEqual([]);
     Form.validateForm(form());
     expect(warnings).toEqual([]);
+  });
+});
+
+describe("multistep is deprecated, not removed", () => {
+  const multistep = (name) => ({ name, type: "multistep", roles: ["default"], categories: [], fields: [], steps: [{ name: "One", type: "ansible", playbook: "p.yml" }] });
+
+  test("the line points to a workflow", () => {
+    expect(deprecatedMultistep(multistep("Build"))).toMatch(/type multistep is deprecated since 7 and removed in 8 - use type workflow/);
+    expect(deprecatedMultistep(form())).toBe(null);
+  });
+
+  test("a multistep still validates, and the log says it once per form", () => {
+    expect(Form.validateForm(multistep("Build and deploy"))).toBeTruthy();
+    expect(Form.validateForm(multistep("Build and deploy"))).toBeTruthy();
+    expect(Form.validateForm(multistep("Another one"))).toBeTruthy();
+    expect(warnings.filter((w) => /type multistep is deprecated/.test(w))).toHaveLength(2);
   });
 });

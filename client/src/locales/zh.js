@@ -1945,6 +1945,9 @@ export default {
     visualFields: '字段',
     visualFieldsInYaml: '此表单的字段无法在此显示（别名或不是列表）：请在 YAML 标签页中编辑。',
     visualStepsInYaml: '此表单的步骤在 YAML 标签页中编辑。',
+    typeDeprecated: '{type}（已弃用）',
+    multistepDeprecated:
+      'Multistep 自 7 起已弃用，并将在 8 中移除：请使用工作流（Designer > Workflows）。其节点可在任意运行器上运行，并像步骤一样带有条件和自己的值。',
     visualNoFields: '还没有字段。使用工具栏中的 + 添加。',
     visualRequired: '必填',
     visualDuplicateField: '另一个字段使用了此名称。',
