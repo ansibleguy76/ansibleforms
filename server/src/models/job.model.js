@@ -850,6 +850,22 @@ async function maskPasswordFields(formName, extravarsText) {
 }
 
 /**
+ * Stored extravars (JSON text) as they may leave the server : the keys that look like a
+ * secret masked (Helpers.logSafe), then the form's password fields at their model path. What
+ * Job.findById does for a job read logSafe ; a workflow node's child job goes through it too.
+ *
+ * Args:
+ *   formName (string): the form the job ran, whose password fields are masked.
+ *   extravarsText (string): the extravars as stored.
+ *
+ * Returns:
+ *   Promise<string>: the masked JSON text ('' for none).
+ */
+Job.maskExtravars = async function (formName, extravarsText) {
+  return maskPasswordFields(formName, Helpers.logSafe(extravarsText));
+};
+
+/**
  * The strings of `original` that `masked` replaced, at any depth : the values maskPasswords
  * hid.
  *
