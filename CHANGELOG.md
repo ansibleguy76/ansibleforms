@@ -7,17 +7,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [7.0.0](https://github.com/ansibleforms/ansibleforms/compare/6.5.5...7.0.0) (2026-10-12)
 
+AnsibleForms 7 is a major release: forms run on more than Ansible and AWX, workflows run in AnsibleForms itself, the interface is new, and the security model is tightened. Coming from 6, read [Upgrading to 7](https://ansibleforms.com/upgrade-7) first: it lists what to change before you switch the image.
 
-### ⚠ BREAKING CHANGES
+### ⚠ Breaking changes
 
-* entra id on openid-client, pinned to the tenant ([#893](https://github.com/ansibleforms/ansibleforms/issues/893))
-* the rte gets each job's secrets sealed from the app ([#887](https://github.com/ansibleforms/ansibleforms/issues/887))
-* images run as a non-root user ([#885](https://github.com/ansibleforms/ansibleforms/issues/885))
-* playbooks run without the app's environment ([#884](https://github.com/ansibleforms/ansibleforms/issues/884))
-* launch validation enforced by default ([#880](https://github.com/ansibleforms/ansibleforms/issues/880))
-* runners, app nodes, secret stores and a new interface ([#740](https://github.com/ansibleforms/ansibleforms/issues/740))
+* **The images run as a non-root user** (#885). The persistent volume must be writable by that user.
+* **Playbooks run without the app's environment** (#884). A playbook that read the app's environment variables no longer sees them; pass what it needs as extravars.
+* **The RTE gets each job's secrets sealed from the app** (#887). The RTE is a container of its own with a token; the app never hands it a secret in the clear.
+* **Launch validation is enforced by default** (#880). A launch that does not pass the form's rules is refused, from the browser, the API and MCP alike.
+* **Entra ID on openid-client, pinned to the tenant** (#893). The provider's settings change; a login from another tenant is refused.
+* **Runners, app nodes, secret stores and a new interface** (#740). The AWX settings became runners, the app can be split into app nodes and a worker, and Vault became a secret store.
 
-### Added
+### Runners
+
+* A form runs a playbook on an RTE, a template on AWX, AAP, Ascender or Semaphore, or a job on Rundeck or Jenkins. A form has a type per product and each type has a default runner (#941, #943, #950, #951, #956).
+* An RTE registers itself as a runner (#763), runs a bounded number of playbooks and drains when stopped (#900). RTE replicas behind one address keep their running jobs (#899).
+* AWX not answering for a moment no longer fails the job (#901); instance groups, early cancel and AAP 2.5 are handled (#903).
+
+### Workflows
+
+* Workflows in AWX's syntax run in AnsibleForms, by AWX's rules: nodes on any runner, conditions, approvals, nested workflows and repository updates (#955, #960, #970). The job page draws the graph live and opens a node's output on a click.
+* What a node gathers with set_stats goes to the nodes after it (#964), and every node shows its own extravars and artifacts (#968).
+* Multistep forms are deprecated in favour of workflows (#963).
+
+### Security
+
+* Local accounts get a password policy (#897), failed logins lock the account (#890), and the default admin password must be changed at first login (#891).
+* Logout and password changes end the tokens, API tokens are bounded (#892), the SSO handoff travels in the fragment and is taken once (#894), and SSO groups come from the provider's token only (#991).
+* Roles limit the credentials, secret stores and runners a user may use (#888); only an admin grants admin (#889).
+* Secrets are masked in job output and in workflow nodes' extravars (#881, #972); a connection check sends the stored password to the stored server only (#883); a masked secret sent back keeps the stored one (#882).
+* A content security policy and a session cookie of the app's own (#895), a least-privilege database user (#886).
+
+### Designer
+
+* The designer edits playbooks, vars files, inventories and workflows, with Visual and Preview tabs for every section, and keeps only what is designed (#947, #953, #955, #868).
+* A designer lock is released by its holder or an admin only (#953); a role option allowPlaybookDesign shows the playbooks read-only without it (#971).
+
+### Settings and connections
+
+* Settings live under /settings, with a page per user, group, role, credential, runner, secret store, repository, schedule, stored job and SSO provider, and every dialog as a wizard.
+* Connections: notification channels of five types (mail, Slack, Teams, Telegram, webhook) used by job notifications and approvals (#969), syslog servers that receive the audit log (#966), several mail servers (#837), an MCP page (#787), and secret stores that log in with a credential, CyberArk included (#834).
+* Most settings apply without a restart (#942, #826, #812, #766).
+* Several scheduled announcements (#937), a disclaimer every user accepts once per version (#938), and the role every user has is called default (#958).
+
+### Jobs
+
+* A redesigned job page: a summary, sectioned output with line numbers and folding, the output as Ansible prints it, and everything updated live (#856, #861, #847).
+* An approval is reviewed in one modal (#922), the jobs of a status are at /jobs/<status> (#870), the jobs list is bounded (#911), and a job ends once whoever races to end it (#898).
+* Launch validation covers wizard forms and run later (#877, #879); form values reach playbooks as text, never as Jinja templates (#874).
+
+### Operations
+
+* Prometheus metrics (#906), liveness and readiness probes that know the database (#904), request ids in the log and JSON log lines (#905).
+* An upgrade backs up the database first and records what it applied (#908, #914); an uncaught exception restarts the process (#912).
+* Playbook output is written in batches, and too much of it no longer kills the playbook (#902); every SQL server gets a pool of its own (#910); dates are read as UTC whatever the server's timezone (#804).
+
+### Interface
+
+* One look across the app: framed tables with a toolbar, column presets and a pager, status pills, row menus, wizards, a calmer palette with the colour theme on every blue, and the single sign-on as a row of provider buttons.
+* Every page and tab has its own address and title, the left menus stay steady between pages, and the title line's search filters the whole table.
+
+<details>
+<summary>Every change, as merged</summary>
+
+#### Added
 
 * a click on an awx workflow node opens its output ([#857](https://github.com/ansibleforms/ansibleforms/issues/857)) ([922c356](https://github.com/ansibleforms/ansibleforms/commit/922c3564baa7f956b9f4f83184352de6b0b71d74))
 * a content security policy, and a session cookie of the app's own ([#895](https://github.com/ansibleforms/ansibleforms/issues/895)) ([5cad78b](https://github.com/ansibleforms/ansibleforms/commit/5cad78bbc41b3443271547a301cc141495646027))
@@ -161,7 +214,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * workflows run on the RTE as in AWX, and every designer section has Visual and Preview tabs ([#955](https://github.com/ansibleforms/ansibleforms/issues/955)) ([89309f1](https://github.com/ansibleforms/ansibleforms/commit/89309f1bd15029fd18792703151cc80d4fd3b041))
 
 
-### Fixed
+#### Fixed
 
 * a connection check sends the stored password to the stored server only ([#883](https://github.com/ansibleforms/ansibleforms/issues/883)) ([baa81be](https://github.com/ansibleforms/ansibleforms/commit/baa81be630c8fb24826cd35692681be682dd6725))
 * a cron's words read as a repeating schedule ([#865](https://github.com/ansibleforms/ansibleforms/issues/865)) ([fea94a7](https://github.com/ansibleforms/ansibleforms/commit/fea94a7ff401da036127fd754e0ee4042ad13857))
@@ -237,7 +290,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * turning the designer off keeps it off ([#954](https://github.com/ansibleforms/ansibleforms/issues/954)) ([8a61711](https://github.com/ansibleforms/ansibleforms/commit/8a61711c2fb54dce2a147c8564e7c5efa23746e3))
 
 
-### Changed
+#### Changed
 
 * form files are parsed and validated once per content ([#909](https://github.com/ansibleforms/ansibleforms/issues/909)) ([b76fe88](https://github.com/ansibleforms/ansibleforms/commit/b76fe88f67498c600f54617c8b441e5869a5f416))
 * one frame for the settings pages ([#916](https://github.com/ansibleforms/ansibleforms/issues/916)) ([4b2f6f0](https://github.com/ansibleforms/ansibleforms/commit/4b2f6f0b5cb40a3aefad03b928faf9ae9301a984))
@@ -247,10 +300,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * the role every user has is default in the code, and an old config's public is renamed ([#961](https://github.com/ansibleforms/ansibleforms/issues/961)) ([fdfd949](https://github.com/ansibleforms/ansibleforms/commit/fdfd949c16c3b9af6a3a16604350f9aa1b99e723))
 
 
-### Security
+#### Security
 
 * a workflow node's extravars are masked as the job's are, password fields included ([#972](https://github.com/ansibleforms/ansibleforms/issues/972)) ([edfaf95](https://github.com/ansibleforms/ansibleforms/commit/edfaf9525fcf4d9f15beb1f752720a213d2ef555))
 * the sso groups come from the handoff token only, the list the browser posts is ignored ([#991](https://github.com/ansibleforms/ansibleforms/issues/991)) ([353588b](https://github.com/ansibleforms/ansibleforms/commit/353588bf0985aef2aa7f2d3d19785301df9c97c2))
+
+</details>
 
 ## [6.5.5](https://github.com/ansibleforms/ansibleforms/compare/6.5.4...6.5.5) (2026-10-06)
 
