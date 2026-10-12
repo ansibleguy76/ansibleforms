@@ -161,6 +161,14 @@ export default {
     skipTags: 'Tag da saltare',
     check: 'Modalità check',
     diff: 'Modalità diff',
+    runner: 'Runner',
+    runnerNone: "L'RTE (un playbook del designer)",
+    runnerHint: 'Su un runner gira invece il suo template o job: AWX, Semaphore, Rundeck, Jenkins.',
+    condition: 'Gira quando',
+    conditionHint:
+      'Un extravar che deve essere true perché il nodo giri; vuoto: gira sempre. Non soddisfatto: il nodo viene saltato e ciò che segue gira.',
+    valuesKey: 'Valori da',
+    valuesKeyHint: "Solo questa chiave degli extravars arriva al nodo, con l'utente copiato; vuoto: tutte.",
     workflow: 'Workflow',
     description: 'Descrizione',
     selectHint: 'Fai clic su un nodo o un collegamento per modificarlo; START aggiunge un primo nodo.',
@@ -176,6 +184,7 @@ export default {
       workflow_job_template: 'Workflow',
       workflow_approval_template: "Nome dell'approvazione",
       project: 'Repository',
+      template: 'Template o job',
     },
     kinds: {
       success: 'In caso di successo',
@@ -205,6 +214,7 @@ export default {
       linkUnknown: "Il nodo '{identifier}' è collegato a '{to}', che non è un nodo",
       loop: "Il workflow '{workflow}' va in ciclo su '{identifier}': un workflow va solo avanti",
       nodeUnknownPlaybook: "Nodo '{identifier}': nessun playbook '{name}'",
+      nodeUnknownRunner: "Nodo '{identifier}': nessun runner '{runner}'",
     },
   },
   workflow: {

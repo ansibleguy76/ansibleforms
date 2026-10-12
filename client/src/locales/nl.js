@@ -160,6 +160,15 @@ export default {
     skipTags: 'Over te slaan tags',
     check: 'Check-modus',
     diff: 'Diff-modus',
+    runner: 'Runner',
+    runnerNone: 'De RTE (een playbook van de designer)',
+    runnerHint: 'Op een runner draait in plaats daarvan zijn sjabloon of job: AWX, Semaphore, Rundeck, Jenkins.',
+    condition: 'Draait als',
+    conditionHint:
+      'Een extravar die true moet zijn om het knooppunt te laten draaien; leeg: het draait altijd. Niet voldaan: het knooppunt wordt overgeslagen en wat erna komt draait.',
+    valuesKey: 'Waarden uit',
+    valuesKeyHint:
+      'Alleen deze sleutel van de extravars bereikt het knooppunt, de gebruiker meegekopieerd; leeg: allemaal.',
     workflow: 'Workflow',
     description: 'Beschrijving',
     selectHint: 'Klik op een knooppunt of een koppeling om het te bewerken; START voegt een eerste knooppunt toe.',
@@ -175,6 +184,7 @@ export default {
       workflow_job_template: 'Workflow',
       workflow_approval_template: 'Naam van de goedkeuring',
       project: 'Repository',
+      template: 'Sjabloon of job',
     },
     kinds: {
       success: 'Bij succes',
@@ -204,6 +214,7 @@ export default {
       linkUnknown: "Knooppunt '{identifier}' koppelt naar '{to}', dat geen knooppunt is",
       loop: "Workflow '{workflow}' loopt in een kring via '{identifier}': een workflow gaat alleen vooruit",
       nodeUnknownPlaybook: "Knooppunt '{identifier}': geen playbook '{name}'",
+      nodeUnknownRunner: "Knooppunt '{identifier}': geen runner '{runner}'",
     },
   },
   workflow: {

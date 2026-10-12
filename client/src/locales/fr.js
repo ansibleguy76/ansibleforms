@@ -160,6 +160,14 @@ export default {
     skipTags: 'Tags à ignorer',
     check: 'Mode check',
     diff: 'Mode diff',
+    runner: 'Runner',
+    runnerNone: 'Le RTE (un playbook du designer)',
+    runnerHint: "Sur un runner, c'est son modèle ou son job qui s'exécute : AWX, Semaphore, Rundeck, Jenkins.",
+    condition: "S'exécute si",
+    conditionHint:
+      "Un extravar qui doit être true pour que le nœud s'exécute ; vide : il s'exécute toujours. Non rempli : le nœud est ignoré, et ce qui suit s'exécute.",
+    valuesKey: 'Valeurs de',
+    valuesKeyHint: "Seule cette clé des extravars atteint le nœud, l'utilisateur copié avec ; vide : toutes.",
     workflow: 'Workflow',
     description: 'Description',
     selectHint: 'Cliquez sur un nœud ou un lien pour le modifier ; START ajoute un premier nœud.',
@@ -175,6 +183,7 @@ export default {
       workflow_job_template: 'Workflow',
       workflow_approval_template: "Nom de l'approbation",
       project: 'Dépôt',
+      template: 'Modèle ou job',
     },
     kinds: {
       success: 'En cas de succès',
@@ -204,6 +213,7 @@ export default {
       linkUnknown: "Le nœud '{identifier}' est lié à '{to}', qui n'est pas un nœud",
       loop: "Le workflow '{workflow}' boucle par '{identifier}' : un workflow ne fait qu'avancer",
       nodeUnknownPlaybook: "Nœud '{identifier}' : pas de playbook '{name}'",
+      nodeUnknownRunner: "Nœud '{identifier}' : aucun runner '{runner}'",
     },
   },
   workflow: {

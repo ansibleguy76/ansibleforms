@@ -87,7 +87,7 @@ function apply(fn) {
 
 // ─── what the instance has : the names a job template, a node may use ─────────
 // null : unknown (the list needs a permission the user lacks) - then nothing is checked
-const refs = ref({ playbooks: null, inventories: null, credentials: null, repositories: null });
+const refs = ref({ playbooks: null, inventories: null, credentials: null, repositories: null, runners: null });
 /**
  * Reads a list the panel offers, null when it cannot.
  *
@@ -106,7 +106,7 @@ async function names(url, pick) {
   }
 }
 onMounted(async () => {
-  const [playbooks, inventories, credentials, repositories] = await Promise.all([
+  const [playbooks, inventories, credentials, repositories, runners] = await Promise.all([
     names('/api/v2/files/playbooks', (d) => (d?.files || []).map((f) => f.path).filter((p) => /\.ya?ml$/i.test(p))),
     names('/api/v2/files/inventories', (d) => [
       ...new Set(
@@ -118,8 +118,13 @@ onMounted(async () => {
     ]),
     names('/api/v2/credential/', (d) => (d?.records || d || []).map((c) => c?.name).filter(Boolean)),
     names('/api/v2/repository/', (d) => (d?.records || d || []).map((r) => r?.name).filter(Boolean)),
+    // the runners a node may run on : each with its type (an RTE runs a playbook, the others a
+    // template or job)
+    names('/api/v2/runner/', (d) =>
+      (d?.records || d || []).filter((r) => r?.name).map((r) => ({ name: r.name, type: r.type })),
+    ),
   ]);
-  refs.value = { playbooks, inventories, credentials, repositories };
+  refs.value = { playbooks, inventories, credentials, repositories, runners };
 });
 const sorted = (list) => [...(list || [])].sort((a, b) => a.localeCompare(b));
 
@@ -202,6 +207,9 @@ const EMPTY_DRAFT = {
   job_type: '',
   diff_mode: false,
   converge: false,
+  runner: '',
+  if_extra_var: '',
+  extra_vars_key: '',
 };
 /**
  * Opens the new node wizard, the node to run after a node when one is given.
@@ -285,8 +293,15 @@ function createNode() {
       w.parent ? { identifier: w.parent, kind: w.kind } : null,
     );
     let next = added.text;
+    // a condition and the values it gets : any node that runs something
+    if (d.type !== 'workflow_approval_template') {
+      for (const key of ['if_extra_var', 'extra_vars_key']) {
+        if (d[key]) next = editNode(next, w.wi, added.identifier, key, d[key]);
+      }
+    }
     if (d.type === 'job_template') {
       for (const key of [
+        'runner',
         'inventory',
         'credentials',
         'limit',
