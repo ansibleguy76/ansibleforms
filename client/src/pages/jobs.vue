@@ -1190,6 +1190,7 @@ onMounted(async () => {
             <AppAnsibleOutput
               :output="nodeShown.html"
               :workflow="job?.awx_workflow"
+              :jobId="jobId"
               :copyLabel="t('jobs.copy')"
               numbered
               @copy="(text) => clip(text, true)"
@@ -1729,6 +1730,7 @@ onMounted(async () => {
                       :jobLog="job?.job_log"
                       :workflow="job?.awx_workflow"
                       :title="job.job_type == 'awx' ? job.target : jobPlaybook || job.form"
+                      :jobId="jobId"
                       numbered
                     />
                   </div>

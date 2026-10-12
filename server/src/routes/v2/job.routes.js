@@ -9,6 +9,8 @@ router.get('/approvals', jobControllerv2.findApprovals);
 router.post('/upload',uploadController.upload)
 // get a job
 router.get('/:id', jobControllerv2.getJob);
+// a workflow job's node : its variables and its artifacts
+router.get('/:id/node/:nodeId', jobControllerv2.getWorkflowNode);
 // get raw form data for a job
 router.get('/:id/rawformdata', jobControllerv2.getRawFormData);
 // download a job
