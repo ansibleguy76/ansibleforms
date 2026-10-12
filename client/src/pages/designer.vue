@@ -5118,7 +5118,7 @@ onBeforeUnmount(() => {
                   ><FaIcon icon="chevron-left"
                 /></span>
               </div>
-              <div v-else-if="currentTab == 'Forms'" class="designer-tree">
+              <AppExplorerColumn v-else-if="currentTab == 'Forms'" class="designer-tree">
                 <div class="file-tree-panel">
                   <div class="file-tree-header d-flex justify-content-between align-items-center">
                     <span class="d-flex align-items-center"
@@ -5279,7 +5279,7 @@ onBeforeUnmount(() => {
                     </template>
                   </div>
                 </div>
-              </div>
+              </AppExplorerColumn>
             </div>
           </div>
         </template>
@@ -5344,13 +5344,8 @@ onBeforeUnmount(() => {
   justify-content: center;
 }
 .designer-tree {
-  max-height: 80vh;
-  // the panel scrolls its file list, not itself : the header with its buttons (and the
-  // search bar) stay in place, and the scrollbar starts below them
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
+  // its height is the editor's column (AppExplorerColumn) : the panel scrolls its file list,
+  // not itself, the header with its buttons (and the search bar) staying in place
   // see .designer-resize : aligns the panel's top edge with the ace box
   margin-top: 0.5rem;
   // its bottom edge already lines up : the editor's wrapper has no bottom margin here (see
