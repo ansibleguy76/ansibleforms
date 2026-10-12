@@ -182,6 +182,27 @@ const repositoryItem = {
   },
 };
 
+// a syslog server of Connections > Syslog : where the server log and the audit entries go
+const syslogServerItem = {
+  type: "object",
+  additionalProperties: false,
+  required: ["name"],
+  properties: {
+    name: str,
+    description: str,
+    host: str,
+    port: strOrInt,
+    protocol: { type: "string", enum: ["udp4", "udp6", "tcp4", "tcp6", "tls4", "tls6", "unix", "unix-connect"] },
+    path: str,
+    level: { type: "string", enum: ["emerg", "alert", "crit", "error", "warning", "notice", "info", "debug"] },
+    type: { type: "string", enum: ["BSD", "5424"] },
+    app_name: str,
+    source: str,
+    receives: { type: "string", enum: ["log", "audit", "both"] },
+    enabled: bool,
+  },
+};
+
 const listSection = (item) => ({
   type: "object",
   additionalProperties: false,
@@ -297,6 +318,7 @@ export const seedSchema = {
     credentials: listSection(credentialItem),
     oauth2: listSection(oauth2Item),
     repositories: listSection(repositoryItem),
+    syslog_servers: listSection(syslogServerItem),
     ldap: ldapSection,
     settings: settingsSection,
     chat: chatSection,
@@ -310,7 +332,7 @@ const validator = ajv.compile(seedSchema);
 // typo here : the second entry silently wins the upsert while the first is counted
 // as declared, so a prune would spare a record nobody can see in the file.
 function assertUniqueNames(doc) {
-  for (const key of ["runners", "secret_stores", "credentials", "oauth2", "repositories"]) {
+  for (const key of ["runners", "secret_stores", "credentials", "oauth2", "repositories", "syslog_servers"]) {
     const items = doc[key]?.items;
     if (!Array.isArray(items)) continue;
     const seen = new Set();

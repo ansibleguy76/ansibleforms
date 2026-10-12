@@ -4,6 +4,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { chatButtonShown } from '../src/lib/chatButton';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(path.join(here, '../src/components/AppChat.vue'), 'utf8');
@@ -11,14 +12,19 @@ const app = readFileSync(path.join(here, '../src/App.vue'), 'utf8');
 
 describe('the chat panel', () => {
   it('shows only for a logged-in user, with the chat enabled on the server, and allowChat not off', () => {
-    expect(src).toMatch(
-      /const visible = computed\(\s*\(\) =>\s*store\.authenticated &&\s*store\.chatEnabled &&\s*store\.profile\?\.options\?\.allowChat !== false &&\s*!NO_CHAT_ROUTES\.has\(route\.name\),?\s*\)/,
-    );
+    expect(src).toMatch(/const visible = computed\(\(\) => chatButtonShown\(store, route\.name\)\);/);
+    const on = { authenticated: true, chatEnabled: true, profile: { options: {} } };
+    expect(chatButtonShown(on, '/forms')).toBe(true);
+    expect(chatButtonShown({ ...on, authenticated: false }, '/forms')).toBe(false);
+    expect(chatButtonShown({ ...on, chatEnabled: false }, '/forms')).toBe(false);
+    expect(chatButtonShown({ ...on, profile: { options: { allowChat: false } } }, '/forms')).toBe(false);
     // an expired session lands on the login page with store.authenticated still true
-    expect(src).toMatch(/NO_CHAT_ROUTES = new Set\(\['\/login', '\/logout', '\/error', '\/schema'\]\)/);
+    for (const page of ['/login', '/logout', '/error', '/schema']) expect(chatButtonShown(on, page)).toBe(false);
     expect(src).toMatch(/watch\(visible, \(shown\) => \{\n +if \(shown\) return;\n +open\.value = false;/);
     expect(src).toMatch(/<template v-if="visible">/);
     expect(app).toMatch(/<AppChat \/>/);
+    // the toasts sit above its button only while it shows
+    expect(app).toMatch(/bottom: chatButtonShown\(appStore, route\.name\) \? '5\.5rem' : '1\.25rem'/);
   });
 
   it('approves with the plan id only - never a payload the page could have changed', () => {

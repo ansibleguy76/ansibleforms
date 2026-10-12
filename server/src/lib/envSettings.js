@@ -176,6 +176,21 @@ function importVaultSoon() {
   vaultImport.unref?.();
 }
 
+// the LOG_SYSLOG_* variables are imported once, as the syslog server 'syslog' (lib/syslogServers.js)
+// : imported when saved, as a start would, a moment later so that the fields saved together are
+// all there first. Imported before, it only warns.
+let syslogImport = null;
+function importSyslogSoon() {
+  clearTimeout(syslogImport);
+  syslogImport = setTimeout(() => {
+    import('./syslogServers.js')
+      .then(({ importSyslogFromEnvOnce }) => importSyslogFromEnvOnce())
+      .catch((err) => logger.error(`Could not import the LOG_SYSLOG_* variables : ${err.message || err}`));
+  }, 500);
+  // a pending import never keeps the process alive
+  syslogImport.unref?.();
+}
+
 // Live, but needing more than an appConfig field or process.env : a function that
 // reconfigures something already constructed.
 const LIVE_CUSTOM = {
@@ -190,7 +205,9 @@ const LIVE_CUSTOM = {
   // the level changes while the page keeps claiming the old one.
   LOG_LEVEL: (v) => { logger.level = v; setLogLevel('file', v); logConfig.level = v; },
   LOG_CONSOLE_LEVEL: (v) => { setLogLevel('console', v); logConfig.consolelevel = v; },
-  LOG_SYSLOG_LEVEL: (v) => { setLogLevel('syslog', v); logConfig.sysloglevel = v; },
+  // the LOG_SYSLOG_* variables of before 7 : imported once as the syslog server `syslog`
+  // (lib/syslogServers.js) - until then they still drive the transport they built
+  LOG_SYSLOG_LEVEL: (v) => { setLogLevel('syslog', v); logConfig.sysloglevel = v; importSyslogSoon(); },
   // the colour map is built at import but looked up per log line, so mutating it is enough
   LOG_COLOR_ERROR: (v) => setLogColor('error', v),
   LOG_COLOR_WARN: (v) => setLogColor('warn', v),
@@ -235,8 +252,9 @@ const LIVE_CUSTOM = {
   // /api/v2/app/config reads process.env per request, but i18n captured its fallback at
   // import - update both or the visible default changes while server messages do not
   DEFAULT_LANGUAGE: (v) => { setDefaultLocale(v); },
-  // seven settings feeding one transport : each rebuilds it
-  LOG_SYSLOG_HOST: (v) => { logConfig.sysloghost = v; return rebuildSyslogTransport(); },
+  // seven settings feeding one transport : each rebuilds it, then they are imported as the
+  // syslog server `syslog` (once : after that the transport is retired and they are ignored)
+  LOG_SYSLOG_HOST: (v) => { logConfig.sysloghost = v; importSyslogSoon(); return rebuildSyslogTransport(); },
   LOG_SYSLOG_PORT: (v) => { logConfig.syslogport = v; return rebuildSyslogTransport(); },
   LOG_SYSLOG_PROTOCOL: (v) => { logConfig.syslogprotocol = v; return rebuildSyslogTransport(); },
   LOG_SYSLOG_PATH: (v) => { logConfig.syslogpath = v; return rebuildSyslogTransport(); },

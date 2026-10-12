@@ -92,6 +92,31 @@ CREATE TABLE `mail_servers` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_AnsibleForms_mail_servers_natural_key` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+-- create syslog_servers table : the syslog servers the server log and the audit entries go to
+-- keep in sync with create_syslog_servers_table.sql, which the upgrade patch uses
+DROP TABLE IF EXISTS `syslog_servers`;
+CREATE TABLE `syslog_servers` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(250) NOT NULL,
+  `description` text DEFAULT NULL,
+  -- where it listens : a host and port (udp, tcp, tls), or a socket path (unix)
+  `host` varchar(250) DEFAULT NULL,
+  `port` int(11) DEFAULT NULL,
+  `protocol` varchar(20) NOT NULL DEFAULT 'udp4',
+  `path` varchar(250) DEFAULT NULL,
+  -- the lowest level of the server log it gets ; audit entries are always sent
+  `level` varchar(20) NOT NULL DEFAULT 'info',
+  -- BSD (RFC 3164) or 5424, the name it gives the app, the host it says lines come from
+  `type` varchar(20) DEFAULT NULL,
+  `app_name` varchar(100) DEFAULT NULL,
+  `source` varchar(250) DEFAULT NULL,
+  -- what it gets : the server log (log), the audit entries (audit), or both
+  `receives` varchar(10) NOT NULL DEFAULT 'both',
+  `enabled` tinyint(4) DEFAULT 1,
+  `managed` tinyint(4) DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_AnsibleForms_syslog_servers_natural_key` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 -- create secret_stores table : HashiCorp Vault, CyberArk, ... (one row per store)
 -- keep in sync with create_secret_stores_table.sql, which the upgrade patch uses
 DROP TABLE IF EXISTS `secret_stores`;
@@ -267,6 +292,7 @@ CREATE TABLE `settings` (
   `default_theme` varchar(10) DEFAULT NULL,
   `default_theme_color` varchar(7) DEFAULT NULL,
   `vault_env_imported_at` datetime DEFAULT NULL,
+  `syslog_env_imported_at` datetime DEFAULT NULL,
   `managed` tinyint(4) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 -- oauth2 providers table

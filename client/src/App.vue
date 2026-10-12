@@ -1,8 +1,9 @@
 <script setup>
-import { onMounted, watch } from 'vue';
+import { computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import { Toaster } from 'vue-sonner';
+import { chatButtonShown } from '@/lib/chatButton';
 
 import TokenStorage from '@/lib/TokenStorage';
 import Navigate from '@/lib/Navigate';
@@ -15,6 +16,12 @@ import { preloadMenus } from '@/lib/menuPreload';
 const route = useRoute();
 const router = useRouter();
 const appStore = useAppStore();
+// the toasts' place in the bottom-right corner : above the chat button (1.25rem from the bottom,
+// 3.5rem tall, AppChat) when it shows there, else as far from the bottom as from the side
+const toastOffset = computed(() => ({
+  bottom: chatButtonShown(appStore, route.name) ? '5.5rem' : '1.25rem',
+  right: '1.25rem',
+}));
 const isLoaded = ref(false);
 const initComplete = ref(false);
 // const theme = useTheme();
@@ -206,14 +213,14 @@ onMounted(async () => {
 </script>
 
 <template>
-  <!-- lifted above the chat button, which shares the bottom-right corner -->
+  <!-- in the bottom-right corner ; lifted above the chat button when it shows there -->
   <Toaster
     position="bottom-right"
     :duration="5000"
     :close-button="true"
     :theme="appStore.theme"
     :expand="true"
-    :offset="{ bottom: '6rem', right: '1.25rem' }"
+    :offset="toastOffset"
   />
   <AppChat />
   <!-- asked when a page with unsaved changes is left (useUnsavedGuard) -->

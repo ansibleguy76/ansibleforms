@@ -16,6 +16,7 @@ import Group from "../models/group.model.js";
 import Token from "../models/token.model.js";
 import { applyConfigSeed } from "../lib/seed.js";
 import { importVaultFromEnvOnce } from "../secrets/importVaultEnv.js";
+import { importSyslogFromEnvOnce } from "../lib/syslogServers.js";
 import { nodeId } from "../lib/role.js";
 import { die } from "../lib/die.js";
 
@@ -301,6 +302,12 @@ const initOnce = async function({ boot = false } = {}){
       await importVaultFromEnvOnce()
     }catch(err){
       logger.error("Could not import the VAULT_* environment variables : " + (err.message || err))
+    }
+    // the LOG_SYSLOG_* variables of before 7 become the syslog server `syslog`, once
+    try{
+      await importSyslogFromEnvOnce()
+    }catch(err){
+      logger.error("Could not import the LOG_SYSLOG_* environment variables : " + (err.message || err))
     }
   }
 

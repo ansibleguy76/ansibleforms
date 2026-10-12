@@ -153,6 +153,8 @@ export default {
     failedFindSettings: "No s'ha pogut trobar la configuració",
     mailCheckFailed: "La comprovació del correu ha fallat",
     mailSent: "Correu enviat amb l'id {id}",
+    syslogSent: "Missatge de syslog enviat a {where}",
+    syslogCheckFailed: "L'enviament del missatge de syslog ha fallat",
     failedUpdateSettings: "No s'ha pogut actualitzar la configuració",
     configLockedByDesigner:
       "La configuració està bloquejada per una sessió activa del dissenyador{username}",

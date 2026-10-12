@@ -134,6 +134,8 @@ export default {
     failedFindSettings: "查找设置失败",
     mailCheckFailed: "邮件检查失败",
     mailSent: "邮件已发送，ID 为 {id}",
+    syslogSent: "syslog 消息已发送到 {where}",
+    syslogCheckFailed: "syslog 消息发送失败",
     failedUpdateSettings: "更新设置失败",
     configLockedByDesigner: "配置已被活动的设计器会话锁定{username}",
     configChangedElsewhere: "配置已在其他地方被更改，请重新加载后再保存",

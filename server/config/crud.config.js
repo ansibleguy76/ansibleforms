@@ -96,6 +96,29 @@ const crudConfigs = {
     allowCache: true,
     cacheTTL: 3600
   },
+  // the syslog servers the server log and the audit entries are sent to (Connections > Syslog,
+  // lib/syslogServers.js)
+  syslogserver: {
+    table: 'AnsibleForms.syslog_servers',
+    fields: [
+      { name: 'id', isKey: true },
+      { name: 'name', isNaturalKey: true, required: true },
+      { name: 'description' },
+      { name: 'host' },
+      { name: 'port' },
+      { name: 'protocol' },
+      { name: 'path' },
+      { name: 'level' },
+      { name: 'type' },
+      { name: 'app_name' },
+      { name: 'source' },
+      { name: 'receives' },
+      { name: 'enabled', isBoolean: true },
+      { name: 'managed', isBoolean: true }
+    ],
+    allowCache: true,
+    cacheTTL: 3600
+  },
   // HashiCorp Vault, CyberArk, ... : where credentials read their user and password from.
   // Which fields a type uses is up to its provider in src/secrets/providers.
   secretstore: {

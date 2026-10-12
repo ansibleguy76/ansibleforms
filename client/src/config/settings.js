@@ -5,7 +5,7 @@ import YAML from 'yaml';
 import Helpers from '@/lib/Helpers';
 import { cronCell } from '@/lib/cronCell';
 import { cronValidationMessage } from './cron';
-import { PILL, pill } from '@/lib/tableCells';
+import { PILL, pill, esc } from '@/lib/tableCells';
 import { formPath } from '@/lib/formsPath';
 
 // A cron field is validated with the SAME check the editor uses (config/cron.js), which
@@ -165,6 +165,35 @@ export function schedulePill(t, state) {
   const known = { running: PILL.blue, queued: PILL.amber, idle: PILL.grey };
   const label = known[state] ? t(`settings.schedules.state_${state}`) : state;
   return pill(known[state], label);
+}
+
+/**
+ * What a syslog server gets, as text : the audit log, the server log, or both.
+ *
+ * Args:
+ *   t (function): the translation function.
+ *   value (string): log, audit or both.
+ *
+ * Returns:
+ *   string: the label, escaped.
+ */
+export function syslogReceivesText(t, value) {
+  const key = ['log', 'audit', 'both'].includes(value) ? value : 'both';
+  return esc(t(`settings.syslogServers.receives_${key}`));
+}
+
+/**
+ * Where a syslog server listens, as its table shows it : host:port, or the socket's path.
+ *
+ * Args:
+ *   server (object): the server.
+ *
+ * Returns:
+ *   string: the address.
+ */
+export function syslogAddress(server) {
+  if (String(server?.protocol || '').startsWith('unix')) return server?.path || '';
+  return server?.host ? `${server.host}:${server.port || 514}` : '';
 }
 
 export function registrationPill(t, state) {
@@ -2443,6 +2472,194 @@ export default function getSettings(t) {
           createWith: 'credentials',
           createLabel: t('settings.repositories.newCredential'),
           createDefaults: { credential_type: 'smtp' },
+        },
+      ],
+    },
+    syslogServers: {
+      // the page title is the menu entry's label (AppSidebar), so the two always match
+      pageTitle: t('sidebar.syslog'),
+      type: 'syslogserver',
+      label: t('settings.syslogServers.label'),
+      labelPlural: t('settings.syslogServers.labelPlural'),
+      description: t('settings.syslogServers.description'),
+      icon: 'tower-broadcast',
+      selectable: false,
+      // a server has its own page (pages/admin/syslog-server.vue) : its row and Edit open it, Add
+      // the wizard
+      openPage: (item) => `/settings/syslog/${item.id}`,
+      // the dialog in steps : the server, where it listens, what it gets and how it is written
+      steps: [
+        { key: 'server', label: t('settings.syslogServers.stepServer') },
+        { key: 'connection', label: t('settings.syslogServers.stepConnection') },
+        { key: 'messages', label: t('settings.syslogServers.stepMessages') },
+      ],
+      // in the row menu : editing, turning it on or off, a test message (on its page), then
+      // Delete last, each apart
+      actions: [
+        { name: 'edit', title: t('settings.syslogServers.editServer'), icon: 'pencil', color: 'edit' },
+        {
+          name: 'enable',
+          title: t('settings.syslogServers.enable'),
+          icon: 'toggle-on',
+          color: 'edit',
+          dividerBefore: true,
+          // only the one that changes it : Enable on a disabled server, Disable on an enabled one
+          shownWhen: (m) => !m.enabled,
+          update: () => ({ enabled: 1 }),
+        },
+        {
+          name: 'disable',
+          title: t('settings.syslogServers.disable'),
+          icon: 'toggle-off',
+          color: 'edit',
+          dividerBefore: true,
+          shownWhen: (m) => !!m.enabled,
+          update: () => ({ enabled: 0 }),
+        },
+        {
+          name: 'send_test',
+          title: t('settings.syslogServers.sendTest'),
+          icon: 'paper-plane',
+          color: 'test',
+          dividerBefore: true,
+          to: (m) => `/settings/syslog/${m.id}/test`,
+        },
+        { name: 'delete', title: t('settings.syslogServers.deleteServer'), icon: 'trash', color: 'delete' },
+      ],
+      fields: [
+        { key: 'id', hidden: true, noInput: true, noTable: true },
+        {
+          // sending or not : a yes / no column ; a new server is enabled, the row menu turns it
+          // on or off
+          key: 'enabled',
+          label: t('settings.syslogServers.enabled'),
+          type: 'checkbox',
+          noInput: true,
+        },
+        { key: 'name', label: t('settings.fields.name'), required: true, icon: 'heading' },
+        { key: 'description', label: t('settings.fields.description'), icon: 'info-circle', hidden: true },
+        {
+          // where it listens, as the table shows it : not a field of the dialog
+          key: 'address',
+          label: t('settings.syslogServers.address'),
+          noInput: true,
+          render: (v, row) => esc(syslogAddress(row)),
+          sortValue: (r) => syslogAddress(r),
+        },
+        {
+          key: 'protocol',
+          step: 'connection',
+          label: t('settings.syslogServers.protocol'),
+          help: t('settings.syslogServers.protocolHelp'),
+          icon: 'network-wired',
+          type: 'select',
+          parent: 'syslogProtocols',
+          values: ['udp4', 'tcp4', 'tls4', 'udp6', 'tcp6', 'tls6', 'unix', 'unix-connect'].map((value) => ({
+            value,
+            label: value,
+          })),
+          valueKey: 'value',
+          labelKey: 'label',
+          initial: (r) => r?.protocol || 'udp4',
+          hideBelow: 740,
+        },
+        {
+          key: 'host',
+          step: 'connection',
+          label: t('settings.syslogServers.host'),
+          help: t('settings.syslogServers.hostHelp'),
+          placeholder: 'syslog.example.com',
+          icon: 'server',
+          hidden: true,
+          showWhen: (i) => !String(i?.protocol || 'udp4').startsWith('unix'),
+        },
+        {
+          key: 'port',
+          step: 'connection',
+          type: 'number',
+          label: t('settings.syslogServers.port'),
+          help: t('settings.syslogServers.portHelp'),
+          initial: (r) => r?.port ?? 514,
+          icon: 'arrows-alt-v',
+          hidden: true,
+          showWhen: (i) => !String(i?.protocol || 'udp4').startsWith('unix'),
+        },
+        {
+          key: 'path',
+          step: 'connection',
+          label: t('settings.syslogServers.path'),
+          help: t('settings.syslogServers.pathHelp'),
+          placeholder: '/dev/log',
+          icon: 'folder',
+          hidden: true,
+          showWhen: (i) => String(i?.protocol || '').startsWith('unix'),
+        },
+        {
+          // the server log, the audit entries, or both
+          key: 'receives',
+          step: 'messages',
+          label: t('settings.syslogServers.receives'),
+          help: t('settings.syslogServers.receivesHelp'),
+          icon: 'inbox',
+          type: 'select',
+          parent: 'syslogReceives',
+          values: ['both', 'audit', 'log'].map((value) => ({
+            value,
+            label: t(`settings.syslogServers.receives_${value}`),
+          })),
+          valueKey: 'value',
+          labelKey: 'label',
+          initial: (r) => r?.receives || 'both',
+          render: (v) => syslogReceivesText(t, v),
+        },
+        {
+          key: 'level',
+          step: 'messages',
+          label: t('settings.syslogServers.level'),
+          help: t('settings.syslogServers.levelHelp'),
+          icon: 'signal',
+          type: 'select',
+          parent: 'syslogLevels',
+          values: ['error', 'warning', 'notice', 'info', 'debug'].map((value) => ({ value, label: value })),
+          valueKey: 'value',
+          labelKey: 'label',
+          initial: (r) => r?.level || 'info',
+          hideBelow: 900,
+        },
+        {
+          key: 'type',
+          step: 'messages',
+          label: t('settings.syslogServers.type'),
+          help: t('settings.syslogServers.typeHelp'),
+          icon: 'file-lines',
+          type: 'select',
+          parent: 'syslogTypes',
+          values: [
+            { value: 'BSD', label: 'BSD (RFC 3164)' },
+            { value: '5424', label: 'RFC 5424' },
+          ],
+          valueKey: 'value',
+          labelKey: 'label',
+          initial: (r) => r?.type || 'BSD',
+          hidden: true,
+        },
+        {
+          key: 'app_name',
+          step: 'messages',
+          label: t('settings.syslogServers.appName'),
+          help: t('settings.syslogServers.appNameHelp'),
+          placeholder: 'AnsibleForms',
+          icon: 'tag',
+          hidden: true,
+        },
+        {
+          key: 'source',
+          step: 'messages',
+          label: t('settings.syslogServers.source'),
+          help: t('settings.syslogServers.sourceHelp'),
+          placeholder: 'localhost',
+          icon: 'desktop',
+          hidden: true,
         },
       ],
     },

@@ -477,8 +477,9 @@ Settings.find = function () {
           res[0].mail_password=""
         }
         res[0].enableConfigInDatabase = appConfig.enableConfigInDatabase
-        // internal bookkeeping (secrets/importVaultEnv.js), not a setting
+        // internal bookkeeping (secrets/importVaultEnv.js, lib/syslogServers.js), not settings
         delete res[0].vault_env_imported_at
+        delete res[0].syslog_env_imported_at
         return res[0]
       }else{
         logger.error("No settings record in the database, something is wrong")

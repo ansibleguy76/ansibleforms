@@ -151,6 +151,8 @@ export default {
     failedFindSettings: "Kan instellingen niet vinden",
     mailCheckFailed: "Mail controle mislukt",
     mailSent: "Mail verzonden met id {id}",
+    syslogSent: "Syslog-bericht verzonden naar {where}",
+    syslogCheckFailed: "Syslog-bericht mislukt",
     failedUpdateSettings: "Kan instellingen niet bijwerken",
     configLockedByDesigner:
       "De configuratie is vergrendeld door een actieve designersessie{username}",

@@ -34,6 +34,7 @@ import { onShutdown, stopWithin, isStopping } from "../lib/shutdown.js";
 import { appVersion as version } from "../lib/version.js";
 import { startHeartbeat } from "../lib/nodes.js";
 import { registerSelf } from "./register.js";
+import { startSyslogServers } from "../lib/syslogServers.js";
 
 
 // the jobs this process is running ; a job is only ever run by the RTE that claimed it
@@ -195,6 +196,9 @@ export async function startRte() {
   stopWithin((drainSeconds() + 8) * 1000);
   onShutdown("running jobs", drainJobs);
   await abandonOwnJobs();
+  // its log to the syslog servers of Connections > Syslog : an RTE follows no epochs, so it
+  // reads them again every minute
+  await startSyslogServers({ pollMs: 60000 });
   // its row in `nodes` : the Status page lists it, and when it stops answering the worker ends
   // the jobs it was running (Job.abandonDeadNodes) - a pod replaced under a new name included
   startHeartbeat();

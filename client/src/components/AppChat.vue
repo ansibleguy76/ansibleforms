@@ -11,6 +11,7 @@
 /*  plan id - never the payload - to /chat/approve.               */
 /*                                                                */
 /******************************************************************/
+import { chatButtonShown } from '@/lib/chatButton';
 import axios from 'axios';
 import showdown from 'showdown';
 import { useI18n } from 'vue-i18n';
@@ -26,16 +27,9 @@ const route = useRoute();
 const SESSION_KEY = 'af_chat_session';
 const MAX_SHOWN_CHOICES = 12;
 
-// an expired session sends the user to the login page without resetting store.authenticated :
-// the chat goes away on the pages outside a login too
-const NO_CHAT_ROUTES = new Set(['/login', '/logout', '/error', '/schema']);
-const visible = computed(
-  () =>
-    store.authenticated &&
-    store.chatEnabled &&
-    store.profile?.options?.allowChat !== false &&
-    !NO_CHAT_ROUTES.has(route.name),
-);
+// signed in, enabled, allowed, on a page inside a login (lib/chatButton.js, which App.vue also
+// asks, to lift the toasts above the button)
+const visible = computed(() => chatButtonShown(store, route.name));
 const open = ref(false);
 const fullscreen = ref(false);
 const busy = ref(false);

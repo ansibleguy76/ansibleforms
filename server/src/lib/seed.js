@@ -34,6 +34,7 @@ import Credential from "../models/credential.model.v2.js";
 import SecretStore from "../models/secretStore.model.js";
 import Runner from "../models/runner.model.js";
 import Repository from "../models/repository.model.js";
+import SyslogServer from "../models/syslogServer.model.js";
 import Ldap from "../models/ldap.model.js";
 import Settings from "../models/settings.model.js";
 import ChatSettings, { normaliseExtraHeaders } from "../models/chatSettings.model.js";
@@ -98,6 +99,16 @@ const listSections = [
     // URL. Going through CrudModel writes the empty value, which is what was declared.
     update: (d, row) => CrudModel.update("repositories", d, row.id, seedOpts),
     remove: (row) => Repository.delete(row.name, seedOpts),
+  },
+  {
+    // where the server log and the audit entries go (Connections > Syslog)
+    key: "syslog_servers",
+    modelName: "syslogserver",
+    label: "syslog server",
+    defaults: { description: "" },
+    create: (d) => SyslogServer.create(d, seedOpts),
+    update: (d, row) => SyslogServer.update(d, row.id, seedOpts),
+    remove: (row) => SyslogServer.delete(row.id, seedOpts),
   },
 ];
 
