@@ -308,21 +308,6 @@ function startAt(i) {
       <BsButton icon="code" @click="emit('reveal', file.line)">{{ t('designer.files.showInYaml') }}</BsButton>
     </div>
     <template v-else>
-      <!-- the links' colours -->
-      <div class="af-wf-head">
-        <span class="af-wf-legend"
-          ><span class="af-wf-line" :style="{ background: LINK_COLORS.success }"></span
-          >{{ t('workflow.onSuccess') }}</span
-        >
-        <span class="af-wf-legend"
-          ><span class="af-wf-line" :style="{ background: LINK_COLORS.failure }"></span
-          >{{ t('workflow.onFailure') }}</span
-        >
-        <span class="af-wf-legend"
-          ><span class="af-wf-line" :style="{ background: LINK_COLORS.always }"></span>{{ t('workflow.always') }}</span
-        >
-      </div>
-
       <!-- what AWX would refuse, or the instance lacks : each opens the YAML on its line -->
       <div v-if="problems.length" class="af-wf-problems">
         <div v-for="(p, i) in problems" :key="i" class="af-wf-problem">
@@ -378,7 +363,22 @@ function startAt(i) {
           </div>
         </div>
         <div class="af-wf-canvas">
-          <svg :width="graphs[wi].width + 40" :height="Math.max(graphs[wi].height, 120)" class="af-wf-svg">
+          <!-- the links' colours, in the graph's corner -->
+          <div class="af-wf-legends">
+            <span class="af-wf-legend"
+              ><span class="af-wf-line" :style="{ background: LINK_COLORS.success }"></span
+              >{{ t('workflow.onSuccess') }}</span
+            >
+            <span class="af-wf-legend"
+              ><span class="af-wf-line" :style="{ background: LINK_COLORS.failure }"></span
+              >{{ t('workflow.onFailure') }}</span
+            >
+            <span class="af-wf-legend"
+              ><span class="af-wf-line" :style="{ background: LINK_COLORS.always }"></span
+              >{{ t('workflow.always') }}</span
+            >
+          </div>
+          <svg :width="graphs[wi].width + 40" :height="graphs[wi].height" class="af-wf-svg">
             <path
               v-for="(l, i) in graphs[wi].links"
               :key="'l' + i"
@@ -461,6 +461,14 @@ function startAt(i) {
       <div v-if="node || link" class="af-wf-main">
         <!-- the panel : what is selected, else the workflow itself -->
         <div class="af-wf-panel">
+          <!-- closes the panel : nothing selected -->
+          <button
+            type="button"
+            class="btn-close af-wf-panel-close"
+            :aria-label="t('common.close')"
+            :title="t('common.close')"
+            @click="selected = null"
+          ></button>
           <!-- a node -->
           <template v-if="node">
             <div class="af-wf-panel-title">
@@ -719,18 +727,14 @@ function startAt(i) {
   </div>
 </template>
 <style lang="scss" scoped>
-.af-wf-head {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-.af-wf-head {
-  justify-content: flex-end;
-}
 .af-wf-block {
   margin-bottom: 1rem;
+}
+.af-wf-legends {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-bottom: -0.5rem;
 }
 .af-wf-legend {
   white-space: nowrap;
@@ -770,7 +774,6 @@ function startAt(i) {
   background-color: var(--af-bg-light-subtle-color, var(--bs-body-bg));
   overflow: auto;
   padding: 0.5rem;
-  min-height: 12rem;
 }
 .af-wf-none {
   display: flex;
@@ -833,10 +836,16 @@ function startAt(i) {
   margin-bottom: 1rem;
 }
 .af-wf-panel {
+  position: relative;
   border: 1px solid var(--af-field-border);
   border-radius: 0.5rem;
   padding: 1rem;
   background: var(--bs-tertiary-bg);
+}
+.af-wf-panel-close {
+  position: absolute;
+  top: 0.875rem;
+  right: 0.875rem;
 }
 .af-wf-panel-title {
   display: flex;
