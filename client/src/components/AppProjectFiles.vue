@@ -318,7 +318,7 @@ const createValue = computed(() => String((asksName.value ? creating.value?.name
 const CREATE_LOOK = {
   file: { icon: 'file', title: 'designer.newFile', help: 'designer.files.pathHelp' },
   folder: { icon: 'folder', title: 'designer.newFolder', help: 'designer.files.folderHelp' },
-  group_vars: { icon: 'folder', title: 'designer.files.newGroupVars', help: 'designer.files.groupVarsHelp' },
+  group_vars: { icon: 'layer-group', title: 'designer.files.newGroupVars', help: 'designer.files.groupVarsHelp' },
   host_vars: { icon: 'server', title: 'designer.files.newHostVars', help: 'designer.files.hostVarsHelp' },
   // a new workflow : a new file, an empty workflow named after it (createFile)
   workflow: { icon: 'diagram-project', title: 'designer.files.newWorkflow', help: 'designer.files.pathHelp' },
@@ -757,7 +757,7 @@ defineExpose({
                   class="tree-add-btn"
                   @click.stop="startCreate('group_vars', item.path)"
                   :title="t('designer.files.newGroupVars')"
-                  ><FaIcon icon="folder"
+                  ><FaIcon icon="layer-group"
                 /></span>
                 <span
                   role="button"
