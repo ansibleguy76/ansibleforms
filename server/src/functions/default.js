@@ -154,8 +154,10 @@ const fnSort=function(input,sort){
               k=(ks)[0];
               // get value of key
               v=e[k];
-              // empty key : flat array ; use 0
-              if(k=="")k=0
+              // empty key : flat array ; sort on the item itself.
+              // a property name (or index 0) would compare strings on their
+              // first character only and numbers not at all (5[0] is undefined)
+              if(k=="")k=(item)=>item
               // if value if empty, return key, otherwise return key and value
               return (v)?[k,v]:[k]
           }
