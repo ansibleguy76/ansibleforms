@@ -222,7 +222,10 @@ export async function send(channel, message, recipients = []) {
         headers.Authorization = `Bearer ${cred.password}`;
       }
       const body = renderPayload(channel.payload, payloadValues(message));
-      const httpsAgent = channel.verify_tls === 0 || channel.verify_tls === false ? new https.Agent({ rejectUnauthorized: false }) : undefined;
+      // the certificate checked unless the channel turns it off (an endpoint with a self-signed
+      // certificate), as a runner's ignore_certs does
+      const verifyTls = !(channel.verify_tls === 0 || channel.verify_tls === false);
+      const httpsAgent = new https.Agent({ rejectUnauthorized: verifyTls });
       return post(channel.url, body, { method: channel.method || "POST", headers, httpsAgent });
     }
     default:

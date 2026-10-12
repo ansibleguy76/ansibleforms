@@ -143,7 +143,7 @@ describe("the body each type sends", () => {
   test("telegram : HTML, escaped, the chat, a link, and cut to Telegram's length", () => {
     const body = notifiers.telegramBody({ ...message, text: "<script>" }, "-100", "Open");
     expect(body).toMatchObject({ chat_id: "-100", parse_mode: "HTML", disable_web_page_preview: true });
-    expect(body.text).toBe(`<b>${message.title.replace(/'/g, "'")}</b>\n&lt;script&gt;\n<a href="${message.link}">Open</a>`);
+    expect(body.text).toBe(`<b>${message.title}</b>\n&lt;script&gt;\n<a href="${message.link}">Open</a>`);
     const long = notifiers.telegramBody({ ...message, text: "x".repeat(10000) }, "1");
     expect(long.text.length).toBeLessThanOrEqual(4096);
     expect(long.text).toContain("...");
