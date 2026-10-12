@@ -8,6 +8,8 @@ export default {
     newNode: 'Nouveau nœud',
     nodeTitle: 'Nœud {identifier}',
     steps: {
+      after: "S'exécute après",
+      next: 'Exécute ensuite',
       runs: "Ce qu'il exécute",
       settings: "Comment il s'exécute",
       where: 'Où il va',

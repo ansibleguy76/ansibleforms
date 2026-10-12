@@ -7,6 +7,8 @@ export default {
     newNode: 'Nieuw knooppunt',
     nodeTitle: 'Knooppunt {identifier}',
     steps: {
+      after: 'Draait na',
+      next: 'Daarna',
       runs: 'Wat het uitvoert',
       settings: 'Hoe het draait',
       where: 'Waar het heen gaat',

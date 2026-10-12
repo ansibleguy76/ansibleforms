@@ -7,6 +7,8 @@ export default {
     newNode: '新建节点',
     nodeTitle: '节点 {identifier}',
     steps: {
+      after: '在其后运行',
+      next: '之后运行',
       runs: '运行什么',
       settings: '如何运行',
       where: '去向',

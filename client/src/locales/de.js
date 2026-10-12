@@ -7,6 +7,8 @@ export default {
     newNode: 'Neuer Knoten',
     nodeTitle: 'Knoten {identifier}',
     steps: {
+      after: 'Läuft nach',
+      next: 'Danach',
       runs: 'Was er ausführt',
       settings: 'Wie er läuft',
       where: 'Wohin er führt',

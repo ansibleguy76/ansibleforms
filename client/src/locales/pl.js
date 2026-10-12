@@ -8,6 +8,8 @@ export default {
     newNode: 'Nowy węzeł',
     nodeTitle: 'Węzeł {identifier}',
     steps: {
+      after: 'Uruchamia się po',
+      next: 'Uruchamia potem',
       runs: 'Co uruchamia',
       settings: 'Jak działa',
       where: 'Dokąd prowadzi',

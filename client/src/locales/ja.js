@@ -7,6 +7,8 @@ export default {
     newNode: '新しいノード',
     nodeTitle: 'ノード {identifier}',
     steps: {
+      after: '次の後に実行',
+      next: '次に実行',
       runs: '実行するもの',
       settings: '実行のしかた',
       where: 'つなぎ先',

@@ -7,6 +7,8 @@ export default {
     newNode: 'New node',
     nodeTitle: 'Node {identifier}',
     steps: {
+      after: 'Runs after',
+      next: 'Runs next',
       runs: 'What it runs',
       settings: 'How it runs',
       where: 'Where it goes',

@@ -8,6 +8,8 @@ export default {
     newNode: 'Nuovo nodo',
     nodeTitle: 'Nodo {identifier}',
     steps: {
+      after: 'Esegue dopo',
+      next: 'Esegue dopo di sé',
       runs: 'Cosa esegue',
       settings: 'Come viene eseguito',
       where: 'Dove va',

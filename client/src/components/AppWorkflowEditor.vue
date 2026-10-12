@@ -386,7 +386,7 @@ watch(
   },
 );
 const nodeTabs = computed(() =>
-  node.value?.type === 'job_template' ? ['runs', 'settings', 'where'] : ['runs', 'where'],
+  node.value?.type === 'job_template' ? ['runs', 'settings', 'after', 'next'] : ['runs', 'after', 'next'],
 );
 
 // ─── a link ───────────────────────────────────────────────────────────────────
@@ -771,7 +771,7 @@ function startAt(i) {
             </li>
           </ul>
           <AppWorkflowNodeFields
-            v-if="nodeTab !== 'where' && nodeTabs.includes(nodeTab)"
+            v-if="(nodeTab === 'runs' || nodeTab === 'settings') && nodeTabs.includes(nodeTab)"
             :node="node"
             :section="nodeTab"
             :choices="choicesFor"
@@ -779,10 +779,9 @@ function startAt(i) {
             :readOnly="readOnly"
             @set="setNode"
           />
-          <!-- where it goes : what it runs after (and whether all of it must), what runs after it -->
-          <template v-else>
-            <div class="af-wf-section">
-              <div class="fw-bold mb-2">{{ t('workflowEditor.runsAfter') }}</div>
+          <!-- what it runs after, and whether all of it must -->
+          <template v-else-if="nodeTab === 'after'">
+            <div>
               <ul class="list-group mb-2">
                 <li v-for="p in parentsOf(node.identifier)" :key="p.from + p.kind" class="list-group-item af-wf-item">
                   <span class="af-wf-line" :style="{ background: LINK_COLORS[p.kind] }"></span>
@@ -808,8 +807,10 @@ function startAt(i) {
               </div>
               <div class="form-text">{{ t('workflowEditor.convergeHint') }}</div>
             </div>
-            <div class="af-wf-section">
-              <div class="fw-bold mb-2">{{ t('workflowEditor.next') }}</div>
+          </template>
+          <!-- what runs after it : its links, a node there already linked, or a new one -->
+          <template v-else>
+            <div>
               <ul class="list-group mb-3">
                 <template v-for="kind in LINK_KINDS" :key="kind">
                   <li v-for="to in node[kind]" :key="kind + to" class="list-group-item af-wf-item">
