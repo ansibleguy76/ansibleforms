@@ -108,8 +108,6 @@ and with the same tags as the app :
   registry that lives only for the job. Built by hand, they default to the published `:7`.
 - The app (`Dockerfile`) needs only node, git, ssh, the mariadb client and ytt, and builds from
   `node:26-trixie-slim` (pinned by digest, moved by Dependabot).
-- `ghcr.io/ansibleforms/base-server` ([ansibleforms/base-images](https://github.com/ansibleforms/base-images))
-  is the base of the 6.x line only.
 
 ## A patch release of 6.x
 
