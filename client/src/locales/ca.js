@@ -875,6 +875,9 @@ export default {
       usePlaybooksShort: 'Playbooks',
       useWorkflowsHint: 'Workflows que construeix el dissenyador, editats i enviats de tornada pel dissenyador',
       useWorkflowsShort: 'Workflows',
+      notPushed: 'Sense enviar',
+      notPushedHint:
+        "Hi ha canvis desats aquí que encara no s'han enviat al remot: envia'ls des del dissenyador o amb Push.",
       useForInventories: 'Fer servir per a inventaris?',
       helpUseForInventories:
         "Aquest repositori és un inventari, amb el seu nom: la seva arrel conté inventory.yaml, group_vars i host_vars. Un formulari de playbook el nomena amb inventory: <nom del repositori>; el dissenyador l'edita i el torna a enviar.",

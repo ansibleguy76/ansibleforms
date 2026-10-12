@@ -845,6 +845,8 @@ export default {
       usePlaybooksShort: 'Playbook',
       useWorkflowsHint: '设计器构建的工作流,由设计器编辑并推送回去',
       useWorkflowsShort: '工作流',
+      notPushed: '未推送',
+      notPushedHint: '此处保存的更改尚未推送到远程: 请在设计器中或用推送进行推送。',
       useForInventories: '用于清单?',
       helpUseForInventories:
         '此仓库即一个以其名称命名的清单: 根目录包含 inventory.yaml、group_vars 和 host_vars。playbook 表单用 inventory: <仓库名称> 指定它;设计器编辑并推送回去。',

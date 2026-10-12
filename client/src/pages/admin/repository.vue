@@ -20,7 +20,7 @@ import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import TokenStorage from '@/lib/TokenStorage';
-import { statusPill } from '@/config/settings';
+import { statusPill, notPushedPill } from '@/config/settings';
 import { cronValidationMessage } from '@/config/cron';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
@@ -400,6 +400,8 @@ onMounted(async () => {
             <div class="mb-3">
               <div class="form-label fw-bold">{{ t('settings.fields.status') }}</div>
               <span v-html="statusPill(t, repo.status)"></span>
+              <!-- changes saved here (the designer's Save) and not pushed yet -->
+              <span v-if="repo.unpushed" class="ms-1" v-html="notPushedPill(t)"></span>
             </div>
             <div class="mb-3">
               <div class="form-label fw-bold">{{ t('settings.fields.head') }}</div>

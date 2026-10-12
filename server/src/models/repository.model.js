@@ -648,6 +648,21 @@ class Repository extends CrudModel {
     return { repositories: withDirty, configRepo, staged: Repository.hasStagedForms() }
   }
 
+  // each repository with `unpushed` : its working tree has changes not committed, or commits not
+  // pushed yet (the designer saved, nobody pushed) - the repositories list and page say so. One
+  // not cloned, or whose git does not answer, has none to say.
+  static async withUnpushed(repositories) {
+    return Promise.all((repositories || []).map(async (repo) => {
+      if (!repo?.name || !fs.existsSync(path.join(appConfig.repoPath, repo.name))) return { ...repo, unpushed: false }
+      try {
+        return { ...repo, unpushed: await Repo.hasChanges(repo.name) }
+      } catch (e) {
+        logger.debug(`Cannot tell whether '${repo.name}' has changes to push : ${e.message}`)
+        return { ...repo, unpushed: false }
+      }
+    }))
+  }
+
   // true when the working tree has uncommitted or unpushed changes ; used to
   // skip background pulls that would otherwise fail noisily while the designer
   // is mid-edit (issue #414)

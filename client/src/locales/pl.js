@@ -869,6 +869,9 @@ export default {
       usePlaybooksShort: 'Playbooki',
       useWorkflowsHint: 'Workflowy budowane w projektancie, edytowane i wypychane z powrotem przez projektanta',
       useWorkflowsShort: 'Workflowy',
+      notPushed: 'Niewypchnięte',
+      notPushedHint:
+        'Zmiany zapisane tutaj nie zostały jeszcze wypchnięte do zdalnego repozytorium: wypchnij je z projektanta lub przyciskiem Push.',
       useForInventories: 'Używać do inwentarzy?',
       helpUseForInventories:
         'To repozytorium jest inwentarzem o jego nazwie: katalog główny zawiera inventory.yaml, group_vars i host_vars. Formularz playbooka wskazuje go przez inventory: <nazwa repozytorium>; projektant go edytuje i wypycha z powrotem.',

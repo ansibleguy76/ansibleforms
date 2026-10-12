@@ -873,6 +873,8 @@ export default {
       usePlaybooksShort: 'Playbook',
       useWorkflowsHint: 'Workflow che il designer costruisce, modificati e reinviati dal designer',
       useWorkflowsShort: 'Workflow',
+      notPushed: 'Non inviato',
+      notPushedHint: 'Ci sono modifiche salvate qui non ancora inviate al remoto: inviale dal designer o con Push.',
       useForInventories: 'Usare per gli inventari?',
       helpUseForInventories:
         'Questo repository è un inventario, con il suo nome: la radice contiene inventory.yaml, group_vars e host_vars. Un modulo playbook lo nomina con inventory: <nome del repository>; il designer lo modifica e lo reinvia.',

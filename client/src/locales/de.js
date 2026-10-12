@@ -877,6 +877,9 @@ export default {
       usePlaybooksShort: 'Playbooks',
       useWorkflowsHint: 'Workflows, die der Designer erstellt, bearbeitet und zurückpusht',
       useWorkflowsShort: 'Workflows',
+      notPushed: 'Nicht gepusht',
+      notPushedHint:
+        'Hier gespeicherte Änderungen sind noch nicht zum Remote gepusht: pushe sie im Designer oder mit Push.',
       useForInventories: 'Für Inventare verwenden?',
       helpUseForInventories:
         'Dieses Repository ist ein Inventar mit seinem Namen: seine Wurzel enthält inventory.yaml, group_vars und host_vars. Ein Playbook-Formular nennt es mit inventory: <Repository-Name>; der Designer bearbeitet es und pusht es zurück.',

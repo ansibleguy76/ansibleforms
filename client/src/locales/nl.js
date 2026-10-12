@@ -868,6 +868,9 @@ export default {
       usePlaybooksShort: 'Playbooks',
       useWorkflowsHint: 'Workflows die de designer bouwt, bewerkt en teruggepusht door de designer',
       useWorkflowsShort: 'Workflows',
+      notPushed: 'Niet gepusht',
+      notPushedHint:
+        'Hier opgeslagen wijzigingen zijn nog niet naar de remote gepusht: push ze vanuit de designer, of met Push.',
       useForInventories: 'Gebruiken voor inventarissen?',
       helpUseForInventories:
         'Deze repository is een inventaris, met zijn naam: de hoofdmap bevat inventory.yaml, group_vars en host_vars. Een playbookformulier noemt hem met inventory: <repositorynaam>; de designer bewerkt en pusht hem terug.',

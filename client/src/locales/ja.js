@@ -866,6 +866,9 @@ export default {
       usePlaybooksShort: 'Playbook',
       useWorkflowsHint: 'デザイナーで作るワークフロー。デザイナーで編集してプッシュします',
       useWorkflowsShort: 'ワークフロー',
+      notPushed: '未プッシュ',
+      notPushedHint:
+        'ここで保存された変更がまだリモートにプッシュされていません: デザイナーまたはプッシュでプッシュしてください。',
       useForInventories: 'インベントリに使用しますか?',
       helpUseForInventories:
         'このリポジトリはその名前のインベントリです: ルートに inventory.yaml、group_vars、host_vars があります。プレイブックのフォームは inventory: <リポジトリ名> で指定し、デザイナーで編集してプッシュします。',

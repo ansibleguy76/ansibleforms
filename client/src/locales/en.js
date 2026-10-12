@@ -861,6 +861,8 @@ export default {
       usePlaybooksShort: 'Playbooks',
       useWorkflowsHint: 'Workflows the designer builds, edited and pushed back by the designer',
       useWorkflowsShort: 'Workflows',
+      notPushed: 'Not pushed',
+      notPushedHint: 'Changes saved here are not pushed to the remote yet: push them from the designer, or with Push.',
       useForInventories: 'Use for inventories ?',
       helpUseForInventories:
         'This repository is an inventory, named after it: its root holds inventory.yaml, group_vars and host_vars. A playbook form names it with inventory: <repository name>; the designer edits it and pushes it back.',

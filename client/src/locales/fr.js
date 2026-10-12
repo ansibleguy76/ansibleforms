@@ -877,6 +877,9 @@ export default {
       usePlaybooksShort: 'Playbooks',
       useWorkflowsHint: 'Workflows que construit le designer, modifiés et repoussés par le designer',
       useWorkflowsShort: 'Workflows',
+      notPushed: 'Non poussé',
+      notPushedHint:
+        'Des changements enregistrés ici ne sont pas encore poussés vers le dépôt distant : poussez-les depuis le designer, ou avec Push.',
       useForInventories: 'Utiliser pour les inventaires ?',
       helpUseForInventories:
         'Ce dépôt est un inventaire, à son nom : sa racine contient inventory.yaml, group_vars et host_vars. Un formulaire de playbook le nomme avec inventory: <nom du dépôt> ; le designer le modifie et le repousse.',

@@ -104,6 +104,19 @@ export function statusPill(t, value) {
 }
 
 /**
+ * A repository with changes saved here and not pushed yet, as a pill (amber : something waits).
+ *
+ * Args:
+ *   t (function): the translation function.
+ *
+ * Returns:
+ *   string: the pill's markup.
+ */
+export function notPushedPill(t) {
+  return `<span class="badge rounded-pill fw-semibold af-pill ${PILL.amber}" title="${escapeHtml(t('settings.repositories.notPushedHint'))}"><span class="af-pill-label">${escapeHtml(t('settings.repositories.notPushed'))}</span></span>`;
+}
+
+/**
  * A runner's registration as a pill, as a repository's status : automatic (its RTE registered
  * it and writes its heartbeat) blue, unresponsive (the heartbeat stopped, removed after 10
  * minutes) amber, manual (added by hand, through the api or by the config seed) grey.
@@ -638,12 +651,13 @@ export default function getSettings(t) {
         },
         // a commit's 7 characters
         { key: 'head', label: t('settings.fields.head'), noInput: true, hideBelow: 900 },
-        // the last sync's status, as the audit log shows an outcome
+        // the last sync's status, as the audit log shows an outcome ; and, beside it, changes saved
+        // here (the designer's Save) and not pushed yet
         {
           key: 'status',
           label: t('settings.fields.status'),
           noInput: true,
-          render: (v) => statusPill(t, v),
+          render: (v, row) => statusPill(t, v) + (row?.unpushed ? ' ' + notPushedPill(t) : ''),
         },
         {
           // a credential of Connections > Credentials, or a New one : the user and password git
