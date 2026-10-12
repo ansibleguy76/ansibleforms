@@ -129,11 +129,14 @@ function jobTypeLabel(j) {
   return j?.job_type || 'ansible';
 }
 /**
- * Whether a job has AWX artifacts to show : a template job that ran on an AWX, AAP or Ascender
- * (or a runner since removed) ; Semaphore, Rundeck and Jenkins have none.
+ * Whether a job has artifacts to show : a template job that ran on an AWX, AAP or Ascender (or a
+ * runner since removed) - Semaphore, Rundeck and Jenkins have none ; any other job whose
+ * playbook gathered some with set_stats (a playbook on the RTE, a workflow : all its nodes').
  */
 function hasArtifacts(j) {
-  return j?.job_type === 'awx' && !['semaphore', 'rundeck', 'jenkins'].includes(j.runner_kind);
+  if (j?.job_type === 'awx') return !['semaphore', 'rundeck', 'jenkins'].includes(j.runner_kind);
+  const artifacts = j?.awx_artifacts;
+  return !!artifacts && typeof artifacts === 'object' && Object.keys(artifacts).length > 0;
 }
 function statusWidth() {
   const labels = ['running', 'approve', 'success', 'failed', 'aborted'].map((s) => t(`jobs.menu.${s}`));

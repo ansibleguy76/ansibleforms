@@ -259,6 +259,28 @@ function fires(kind, parent) {
 }
 
 /**
+ * The artifacts a node gets from the nodes before it, AWX's way : what each parent whose link
+ * into it fired passes on (its own ancestors' artifacts, and its job's set_stats data over them),
+ * merged in the order the parents are written - a later one wins a key both set.
+ *
+ * Args:
+ *   nodes (object[]): the workflow's nodes.
+ *   state (Map): identifier -> { status, doNotRun, artifacts (what it passes on) }.
+ *   identifier (string): the node.
+ *
+ * Returns:
+ *   object: the artifacts.
+ */
+export function ancestorArtifacts(nodes, state, identifier) {
+  const out = {};
+  for (const { from, kind } of parentsOf(nodes).get(identifier) || []) {
+    const parent = state.get(from);
+    if (parent && fires(kind, parent) === true) Object.assign(out, parent.artifacts || {});
+  }
+  return out;
+}
+
+/**
  * The next step of a workflow, by AWX's rules : a node without a parent starts at once ; one
  * with parents starts when a link into it fires (all of them when its parents must converge),
  * and will never run (do not run) once that cannot happen any more.

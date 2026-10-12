@@ -2158,6 +2158,11 @@
             tags ; an approval node holds the job for approval. The form's fields reach every
             node as extra vars. The jobs page draws the workflow, live.
 
+            What a node's playbook gathers with `set_stats` goes to the nodes after it as extra
+            vars, AWX's way : from the parents whose link fired, over the node's `extra_data`,
+            under the workflow's `extra_vars` and the form's values. It is the node job's
+            artifacts (Show artifacts, on its page) ; the workflow job keeps all of them.
+
             Three keys of a node are AnsibleForms' own (AWX ignores them), so a workflow does what
             a multistep does :
             - `runner: <name>` on a job template node runs that runner's template or job instead

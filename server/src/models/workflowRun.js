@@ -16,6 +16,10 @@
 //   - The workflow job stores its graph as an AWX workflow's (jobs.awx_workflow), so the jobs page
 //     draws it, live ; a finished node's output is copied under a WORKFLOW NODE banner, which
 //     the graph opens on a click.
+//   - What a node's playbook gathered with set_stats (its job's artifacts : an RTE's plugin
+//     writes them, an AWX job has its own) goes to the nodes after it as extra vars, with what
+//     came to the node from before it - AWX's way : over the node's extra_data, under the
+//     workflow's extra_vars and the form's values. The workflow job keeps them all, as its own.
 //   - It failed when a node failed and nothing handled it (AWX's rule) ; an abort stops it : the
 //     running jobs are aborted, nothing more starts.
 import fs from "fs";
@@ -25,7 +29,7 @@ import mysql from "./db.model.js";
 import Repository from "./repository.model.js";
 import Errors from "../lib/errors.js";
 import Runner from "./runner.model.js";
-import { workflowsOf, workflowErrors, nextStep, workflowFailed, varsOf } from "../lib/workflowDefs.js";
+import { workflowsOf, workflowErrors, nextStep, workflowFailed, varsOf, ancestorArtifacts } from "../lib/workflowDefs.js";
 
 // how often the run looks at its jobs, its approval and an abort
 const TICK_MS = 1000;
@@ -137,17 +141,19 @@ export async function findWorkflow(name) {
 /**
  * The extravars a node's job gets : the workflow job's own (the form's fields, the user), without
  * its reserved keys (__playbook__, __inventory__... : the node's job sets its own), over the
- * node's extra_data and the workflow's extra_vars - the form's values win, as a survey's do in AWX.
+ * workflow's extra_vars, over the artifacts from the nodes before it (set_stats), over the
+ * node's extra_data - AWX's order : the form's values win, as a survey's do.
  *
  * Args:
  *   parent (object): the workflow job's extravars.
  *   workflow (object): the workflow.
  *   node (object): the node.
+ *   artifacts (object): what the nodes before it passed on (ancestorArtifacts).
  *
  * Returns:
  *   object: the extravars.
  */
-export function nodeExtravars(parent, workflow, node) {
+export function nodeExtravars(parent, workflow, node, artifacts = {}) {
   let source = parent || {};
   // one key of the extravars only (extra_vars_key), as a multistep's step key : its value, with the
   // user copied in - when the key is there and is a map ; else all of them, as without one
@@ -158,7 +164,7 @@ export function nodeExtravars(parent, workflow, node) {
     else delete source.ansibleforms_user;
   }
   const own = Object.fromEntries(Object.entries(source).filter(([k]) => !/^__.*__$/.test(k)));
-  return { ...varsOf(node.extra_data), ...varsOf(workflow.extra_vars), ...own };
+  return { ...varsOf(node.extra_data), ...(artifacts || {}), ...varsOf(workflow.extra_vars), ...own };
 }
 
 /**
@@ -300,7 +306,8 @@ async function credentialTypes(workflow) {
 export async function runWorkflow({ Job, form, formObj, user, extravars, credentials, jobid }) {
   let counter = await Job.lastOrder(jobid);
   const print = (line, stream = "stdout") => Job.printJobOutput(line, stream, jobid, ++counter);
-  const end = (status, message) => Job.endJobStatus(jobid, ++counter, status === "success" ? "stdout" : "stderr", status, message);
+  // the workflow job's artifacts : all its nodes' (allArtifacts), as a nested workflow passes them on
+  const end = (status, message) => Job.endJobStatus(jobid, ++counter, status === "success" ? "stdout" : "stderr", status, message, allArtifacts());
 
   let found;
   try {
@@ -319,7 +326,9 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
   await print(`ok: [Running workflow ${workflow.name} from ${path.basename(file)}]`);
 
   // ─── its state, and its graph as an AWX workflow's ───
-  const state = new Map(nodes.map((n) => [n.identifier, { status: "pending", doNotRun: false, job: null, started: 0, elapsed: 0 }]));
+  // artifacts : what a node passes on to the nodes after it (what came to it, and its job's)
+  const state = new Map(nodes.map((n) => [n.identifier, { status: "pending", doNotRun: false, job: null, started: 0, elapsed: 0, artifacts: {} }]));
+  const allArtifacts = () => Object.assign({}, ...nodes.map((n) => state.get(n.identifier).artifacts));
   const ids = new Map(nodes.map((n, i) => [n.identifier, i + 1]));
   let wfStatus = "running";
   let lastGraph = "";
@@ -413,6 +422,16 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
     ((await mysql.do("SELECT output, output_type FROM AnsibleForms.`job_output` WHERE job_id=? ORDER BY `order`", [id])) || []).filter(
       (l) => !/^ok: \[[^\]]*\s[^\]]*\]/.test(String(l.output || "")),
     );
+  // a node job's artifacts (what its set_stats gathered), {} when it has none
+  const artifactsOf = async (id) => {
+    const raw = (await mysql.do("SELECT awx_artifacts FROM AnsibleForms.`jobs` WHERE id=?", [id]))?.[0]?.awx_artifacts;
+    try {
+      const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+    } catch {
+      return {};
+    }
+  };
   const statusOfJob = (status) => (status === "success" || status === "warning" ? "successful" : status === "aborted" ? "canceled" : "failed");
 
   const runChild = async (node, childForm, childExtravars) => {
@@ -424,13 +443,22 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
     if (await Job.isAbortRequested(jobid)) await Job.requestAbort(launched.id);
     await launched.completionPromise;
     const status = statusOfJob(await jobStatusOf(launched.id));
-    await finish(node, status, await outputOf(launched.id));
+    // its set_stats data, passed on over what came to it ; said by name (the values may be secret)
+    const own = await artifactsOf(launched.id);
+    Object.assign(s.artifacts, own);
+    const lines = await outputOf(launched.id);
+    if (Object.keys(own).length) lines.push({ output: `ok: [set_stats passed on : ${Object.keys(own).join(", ")}]`, output_type: "stdout" });
+    await finish(node, status, lines);
   };
 
   const run = async (node) => {
     const s = state.get(node.identifier);
     s.status = "running";
     s.started = Date.now();
+    // what the nodes before it passed on : its job gets it, and it passes it on (an approval, a
+    // skipped node, a project too)
+    const inherited = ancestorArtifacts(nodes, state, node.identifier);
+    s.artifacts = { ...inherited };
     await saveGraph();
     try {
       // a condition not met : skipped, what follows it runs as after a success
@@ -446,10 +474,10 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
           if (!row) throw new Error(`no runner named '${node.runner}' - add it under Connections > Runners`);
           runnerType = row.type;
         }
-        await runChild(node, nodeForm(workflow, node, types, runnerType), nodeExtravars(extravars, workflow, node));
+        await runChild(node, nodeForm(workflow, node, types, runnerType), nodeExtravars(extravars, workflow, node, inherited));
       } else if (node.type === "workflow_job_template") {
         const child = { type: "workflow", name: `${workflow.name} - ${node.identifier}`, workflow: node.name, __workflowDepth: (Number(formObj.__workflowDepth) || 0) + 1 };
-        await runChild(node, child, nodeExtravars(extravars, workflow, node));
+        await runChild(node, child, nodeExtravars(extravars, workflow, node, inherited));
       } else if (node.type === "project") {
         let lines = [];
         let status = "successful";
