@@ -94,6 +94,21 @@ rewrites the files it names. Both sides are lint-clean and green, and the intent
 them that way. The server
 suite needs no database — it runs against the stubs in `server/tests/__mocks__`.
 
+## Browser tests
+
+`client/e2e` holds a smoke test of the pages in a real browser, with Playwright. CI's *Browser*
+job runs it on a fresh install ; locally, build the client into `server/views`, start the server,
+and point the tests at it :
+
+```bash
+cd client && npx playwright install chromium     # once
+E2E_BASE_URL=https://localhost:8443 E2E_USERNAME=admin E2E_PASSWORD='<password>' npm run test:e2e
+```
+
+The designer test turns the designer on and off, so it takes the designer lock : against an
+instance someone else designs on, set `E2E_SKIP_DESIGNER=1`. Every test fails on a page error or
+a console error, so a page that logs one is a broken page.
+
 ## Things that are easy to get wrong
 
 **Every locale file, always.** Every UI string goes through `t('key')`, and

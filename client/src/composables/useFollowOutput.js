@@ -64,42 +64,37 @@ function viewBottom(scroller) {
 export function useFollowOutput(target, size, running) {
   const following = ref(true);
   const newLines = ref(false);
-  let scroller = null;
-  // our own scrolls : not the reader's, they do not pause it
-  let ownScrollUntil = 0;
+  // our own scroll : where it put the box, so its event does not pause it. A time window instead
+  // (300 ms) also swallowed a reader's scroll that came within it
+  let ownScroll = null;
 
-  // the reader scrolled : following again at the output's end, paused above it
-  function onScroll() {
-    if (Date.now() < ownScrollUntil || !target.value) return;
+  // the reader scrolled : following again at the output's end, paused above it. Heard in the
+  // capture phase on the document, so whatever scrolls the output is heard : the box that
+  // scrolls it is only known once it overflows (a log, a card body), which may come after the
+  // first follow - a listener put on the box found then stayed on the window, and a quiet log
+  // never showed the button
+  function onScroll(e) {
+    if (!target.value) return;
+    const from = e?.target;
+    const isPage = !from || from === document || from === document.documentElement || from === document.body;
+    if (!isPage && !(from instanceof Element && from.contains(target.value))) return;
+    const scroller = scrollerOf(target.value);
+    if (ownScroll?.el === scroller && Math.abs(scroller.scrollTop - ownScroll.top) < 2) return;
+    ownScroll = null;
     const gap = target.value.getBoundingClientRect().bottom - viewBottom(scroller);
     following.value = gap < NEAR_END;
     if (following.value) newLines.value = false;
   }
-
-  // the scroller to listen to : found again when the output appears or moves to another one
-  function attach() {
-    const next = target.value ? scrollerOf(target.value) : null;
-    if (next === scroller) return;
-    detach();
-    scroller = next;
-    const where = scroller === document.scrollingElement || scroller === document.documentElement ? window : scroller;
-    where?.addEventListener('scroll', onScroll, { passive: true });
-  }
-  function detach() {
-    if (!scroller) return;
-    const where = scroller === document.scrollingElement || scroller === document.documentElement ? window : scroller;
-    where.removeEventListener('scroll', onScroll);
-    scroller = null;
-  }
+  document.addEventListener('scroll', onScroll, { capture: true, passive: true });
 
   // the end of the output in view : the scroller moved by what hides it
   function follow() {
     if (!target.value) return;
-    attach();
+    const scroller = scrollerOf(target.value);
     const gap = target.value.getBoundingClientRect().bottom + 16 - viewBottom(scroller);
     if (gap <= 0) return;
-    ownScrollUntil = Date.now() + 300;
     scroller.scrollTop += gap;
+    ownScroll = { el: scroller, top: scroller.scrollTop };
   }
 
   /**
@@ -134,7 +129,7 @@ export function useFollowOutput(target, size, running) {
     await nextTick();
     follow();
   });
-  onBeforeUnmount(detach);
+  onBeforeUnmount(() => document.removeEventListener('scroll', onScroll, { capture: true }));
 
   // the button back down : while live and scrolled up (an ended job's output is only read)
   const paused = computed(() => !following.value && !!running());
