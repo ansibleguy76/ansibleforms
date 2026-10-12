@@ -159,6 +159,14 @@ export default {
     skipTags: 'Etiquetas a ignorar',
     check: 'Modo check',
     diff: 'Modo diff',
+    runner: 'Runner',
+    runnerNone: 'O RTE (um playbook do designer)',
+    runnerHint: 'Num runner corre antes o seu modelo ou job: AWX, Semaphore, Rundeck, Jenkins.',
+    condition: 'Corre quando',
+    conditionHint:
+      'Um extravar que tem de ser true para o nó correr; vazio: corre sempre. Não cumprido: o nó é ignorado e o que se segue corre.',
+    valuesKey: 'Valores de',
+    valuesKeyHint: 'Só esta chave dos extravars chega ao nó, com o utilizador copiado; vazio: todas.',
     workflow: 'Workflow',
     description: 'Descrição',
     selectHint: 'Clique num nó ou numa ligação para o editar; START adiciona um primeiro nó.',
@@ -174,6 +182,7 @@ export default {
       workflow_job_template: 'Workflow',
       workflow_approval_template: 'Nome da aprovação',
       project: 'Repositório',
+      template: 'Modelo ou job',
     },
     kinds: {
       success: 'Em caso de sucesso',
@@ -203,6 +212,7 @@ export default {
       linkUnknown: "O nó '{identifier}' liga a '{to}', que não é um nó",
       loop: "O workflow '{workflow}' faz um ciclo por '{identifier}': um workflow só avança",
       nodeUnknownPlaybook: "Nó '{identifier}': não existe o playbook '{name}'",
+      nodeUnknownRunner: "Nó '{identifier}': nenhum runner '{runner}'",
     },
   },
   workflow: {

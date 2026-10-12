@@ -160,6 +160,14 @@ export default {
     skipTags: 'Zu überspringende Tags',
     check: 'Check-Modus',
     diff: 'Diff-Modus',
+    runner: 'Runner',
+    runnerNone: 'Das RTE (ein Playbook des Designers)',
+    runnerHint: 'Auf einem Runner läuft stattdessen seine Vorlage oder sein Job: AWX, Semaphore, Rundeck, Jenkins.',
+    condition: 'Läuft, wenn',
+    conditionHint:
+      'Eine Extravar, die true sein muss, damit der Knoten läuft; leer: er läuft immer. Nicht erfüllt: der Knoten wird übersprungen, und was folgt, läuft.',
+    valuesKey: 'Werte aus',
+    valuesKeyHint: 'Nur dieser Schlüssel der Extravars erreicht den Knoten, der Benutzer wird mitkopiert; leer: alle.',
     workflow: 'Workflow',
     description: 'Beschreibung',
     selectHint:
@@ -176,6 +184,7 @@ export default {
       workflow_job_template: 'Workflow',
       workflow_approval_template: 'Name der Genehmigung',
       project: 'Repository',
+      template: 'Vorlage oder Job',
     },
     kinds: {
       success: 'Bei Erfolg',
@@ -205,6 +214,7 @@ export default {
       linkUnknown: "Knoten '{identifier}' verbindet zu '{to}', das kein Knoten ist",
       loop: "Workflow '{workflow}' läuft im Kreis über '{identifier}': ein Workflow läuft nur vorwärts",
       nodeUnknownPlaybook: "Knoten '{identifier}': kein Playbook '{name}'",
+      nodeUnknownRunner: "Knoten '{identifier}': kein Runner '{runner}'",
     },
   },
   workflow: {

@@ -12,8 +12,10 @@ export const NODE_TYPES = ["job_template", "workflow_job_template", "workflow_ap
 // a node's links, by what makes them fire : its success, its failure, either
 export const LINK_KINDS = ["success", "failure", "always"];
 
-// a node's statuses, as AWX names them (the jobs page colours them) ; finished ones are final
-export const FINISHED = ["successful", "failed", "canceled"];
+// a node's statuses, as AWX names them (the jobs page colours them) ; finished ones are final.
+// skipped is AnsibleForms' own : a node whose condition (if_extra_var) was not met - it counts
+// as a success for what comes after it, as a skipped multistep step does
+export const FINISHED = ["successful", "failed", "canceled", "skipped"];
 
 // an identifier : what AWX's export writes (a uuid) or a name a person types
 const IDENTIFIER = /^[A-Za-z0-9_.:-]+$/;
@@ -102,7 +104,11 @@ function linksOf(node, kind) {
  * Returns:
  *   object[]: { name, description, extra_vars, nodes : [{ identifier, type, name, description,
  *     timeout, converge, success, failure, always, extra_data, inventory, credentials, limit,
- *     job_tags, skip_tags, verbosity, diff_mode, job_type }] }.
+ *     job_tags, skip_tags, verbosity, diff_mode, job_type, runner, if_extra_var,
+ *     extra_vars_key }] }. The last three are AnsibleForms' own (AWX ignores them) : the runner a
+ *     job template node runs a template or job on (none : a designer playbook on the RTE), the
+ *     extravar that must be true for the node to run, the extravar whose value is all the node
+ *     gets.
  *
  * Raises:
  *   Error: the text is not YAML.
@@ -137,6 +143,9 @@ export function workflowsOf(text) {
             verbosity: Number(n.verbosity) || 0,
             diff_mode: n.diff_mode === true,
             job_type: n.job_type ? String(n.job_type) : "",
+            runner: n.runner ? String(n.runner) : "",
+            if_extra_var: n.if_extra_var ? String(n.if_extra_var) : "",
+            extra_vars_key: n.extra_vars_key ? String(n.extra_vars_key) : "",
           };
         });
       return { name: String(wf.name ?? ""), description: String(wf.description ?? ""), extra_vars: wf.extra_vars ?? {}, nodes };
@@ -244,6 +253,8 @@ function fires(kind, parent) {
   if (!FINISHED.includes(parent.status)) return null;
   if (parent.status === "canceled") return false;
   if (kind === "always") return true;
+  // a node skipped on its condition lets what follows it run, as a success
+  if (parent.status === "skipped") return kind === "success";
   return kind === "success" ? parent.status === "successful" : parent.status === "failed";
 }
 

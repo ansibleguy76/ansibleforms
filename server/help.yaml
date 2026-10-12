@@ -2157,6 +2157,16 @@
             on the RTE as a job of its own, with the node's inventory, credentials, limit and
             tags ; an approval node holds the job for approval. The form's fields reach every
             node as extra vars. The jobs page draws the workflow, live.
+
+            Three keys of a node are AnsibleForms' own (AWX ignores them), so a workflow does what
+            a multistep does :
+            - `runner: <name>` on a job template node runs that runner's template or job instead
+              of a designer playbook - AWX, Semaphore, Rundeck, Jenkins - so one workflow mixes
+              them ; an RTE runner runs the node's playbook there.
+            - `if_extra_var: <key>` : the node runs only when that extravar is true (as a step's
+              `ifExtraVar`) ; not met, it is skipped, and what follows it runs as after a success.
+            - `extra_vars_key: <key>` : the node gets only that key of the extravars, the user
+              copied in (as a step's `key`).
           examples:
           - name: Deploy through a workflow
             code: |

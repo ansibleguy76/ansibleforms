@@ -20,8 +20,14 @@ export const NODE_TYPES = ['job_template', 'workflow_job_template', 'workflow_ap
 // a node's links, by what makes them run : its success, its failure, either
 export const LINK_KINDS = ['success', 'failure', 'always'];
 
-// what a job template node sets for its playbook's run, as AWX's node prompts
+// what a job template node sets for its playbook's run, as AWX's node prompts ; and AnsibleForms'
+// own (AWX ignores them) : the runner a node runs a template or job on (none : a designer
+// playbook on the RTE), the extravar that must be true for it to run, the extravar whose value is
+// all it gets - as a multistep's step runner, ifExtraVar and key
 export const NODE_RUN_KEYS = [
+  'runner',
+  'if_extra_var',
+  'extra_vars_key',
   'inventory',
   'credentials',
   'limit',
@@ -185,6 +191,9 @@ export function workflowFileOf(text) {
         verbosity: textOf(n.get('verbosity', true)),
         diff_mode: textOf(n.get('diff_mode', true)),
         job_type: textOf(n.get('job_type', true)),
+        runner: textOf(n.get('runner', true)),
+        if_extra_var: textOf(n.get('if_extra_var', true)),
+        extra_vars_key: textOf(n.get('extra_vars_key', true)),
         line: lineOf(lineCounter, n),
       };
     });
@@ -245,6 +254,23 @@ function loopIn(nodes) {
 }
 
 /**
+ * Whether a job template node runs a template or job on a runner (AWX, Semaphore, Rundeck,
+ * Jenkins) rather than a designer playbook on an RTE.
+ *
+ * Args:
+ *   n (object): the node.
+ *   refs (object): { runners : [{ name, type }] } - null when unknown.
+ *
+ * Returns:
+ *   boolean: true on a template runner ; a runner of unknown type counts as one.
+ */
+export function onTemplateRunner(n, refs = {}) {
+  if (!n?.runner) return false;
+  const type = (refs.runners || []).find((r) => r.name === n.runner)?.type;
+  return type !== 'rte';
+}
+
+/**
  * What is wrong in a workflow file : what AWX would refuse, and what the instance does not
  * have (a playbook, an inventory, a credential, a repository).
  *
@@ -275,7 +301,14 @@ export function workflowProblems(file, refs = {}) {
       ids.add(n.identifier);
       if (!NODE_TYPES.includes(n.type)) add('nodeBadType', { identifier: n.identifier, type: n.type || '-' }, n.line);
       else if (!n.name) add('nodeNoName', { identifier: n.identifier }, n.line);
-      else if (n.type === 'job_template' && refs.playbooks && !refs.playbooks.includes(n.name))
+      else if (n.type === 'job_template' && n.runner && refs.runners && !refs.runners.some((r) => r.name === n.runner))
+        add('nodeUnknownRunner', { identifier: n.identifier, runner: n.runner }, n.line);
+      else if (
+        n.type === 'job_template' &&
+        !onTemplateRunner(n, refs) &&
+        refs.playbooks &&
+        !refs.playbooks.includes(n.name)
+      )
         add('nodeUnknownPlaybook', { identifier: n.identifier, name: n.name }, n.line);
       else if (n.type === 'workflow_job_template') {
         if (!wfNames.has(n.name)) add('nodeUnknownWf', { identifier: n.identifier, name: n.name }, n.line);
@@ -283,8 +316,9 @@ export function workflowProblems(file, refs = {}) {
       } else if (n.type === 'project' && refs.repositories && !refs.repositories.includes(n.name)) {
         add('nodeUnknownRepo', { identifier: n.identifier, name: n.name }, n.line);
       }
-      // a playbook's run : the inventory and the credentials the instance has
-      if (n.type === 'job_template') {
+      // a playbook's run : the inventory and the credentials the instance has (a node on a
+      // template runner names the runner's, which the instance does not list)
+      if (n.type === 'job_template' && !onTemplateRunner(n, refs)) {
         if (n.inventory && refs.inventories && !refs.inventories.includes(n.inventory)) {
           add('unknownInventory', { identifier: n.identifier, inventory: n.inventory }, n.line);
         }
@@ -885,6 +919,7 @@ export function workflowGraph(nodes) {
  */
 function fires(kind, parent) {
   if (parent.doNotRun) return false;
+  if (parent.status === 'skipped') return kind !== 'failure';
   if (parent.status !== 'successful' && parent.status !== 'failed') return null;
   if (kind === 'always') return true;
   return kind === 'success' ? parent.status === 'successful' : parent.status === 'failed';

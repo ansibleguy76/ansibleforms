@@ -6,7 +6,11 @@
 //     by side ; a node that can no longer run is marked do not run.
 //   - A job template node runs one of the designer's playbooks as a job of its own on the RTE (a
 //     child of the workflow job, as a multistep's steps), with the node's inventory, credentials,
-//     limit, tags... ; a nested workflow is a child workflow job ; a project node pulls a
+//     limit, tags... ; one that names a runner (runner: <name>) runs that runner's template or
+//     job instead - AWX, Semaphore, Rundeck, Jenkins - as a form of the runner's type ; a node
+//     with a condition (if_extra_var) runs only when that extravar is true, else it is skipped ;
+//     a node may get one key of the extravars only (extra_vars_key), as a multistep's step ;
+//     a nested workflow is a child workflow job ; a project node pulls a
 //     repository ; an approval node holds the workflow job for approval (the bell, the job's
 //     page), approved or rejected the usual way.
 //   - The workflow job stores its graph as an AWX workflow's (jobs.awx_workflow), so the jobs page
@@ -20,6 +24,7 @@ import logger from "../lib/logger.js";
 import mysql from "./db.model.js";
 import Repository from "./repository.model.js";
 import Errors from "../lib/errors.js";
+import Runner from "./runner.model.js";
 import { workflowsOf, workflowErrors, nextStep, workflowFailed, varsOf } from "../lib/workflowDefs.js";
 
 // how often the run looks at its jobs, its approval and an abort
@@ -143,9 +148,37 @@ export async function findWorkflow(name) {
  *   object: the extravars.
  */
 export function nodeExtravars(parent, workflow, node) {
-  const own = Object.fromEntries(Object.entries(parent || {}).filter(([k]) => !/^__.*__$/.test(k)));
+  let source = parent || {};
+  // one key of the extravars only (extra_vars_key), as a multistep's step key : its value, with the
+  // user copied in - when the key is there and is a map ; else all of them, as without one
+  const slice = node.extra_vars_key ? source[node.extra_vars_key] : undefined;
+  if (slice && typeof slice === "object" && !Array.isArray(slice)) {
+    source = { ...slice };
+    if (parent?.ansibleforms_user !== undefined) source.ansibleforms_user = parent.ansibleforms_user;
+    else delete source.ansibleforms_user;
+  }
+  const own = Object.fromEntries(Object.entries(source).filter(([k]) => !/^__.*__$/.test(k)));
   return { ...varsOf(node.extra_data), ...varsOf(workflow.extra_vars), ...own };
 }
+
+/**
+ * Whether a node runs : without a condition always ; with one (if_extra_var) when that extravar
+ * of the workflow job is true, exactly - as a multistep's step ifExtraVar.
+ *
+ * Args:
+ *   parent (object): the workflow job's extravars.
+ *   node (object): the node.
+ *
+ * Returns:
+ *   boolean: true when it runs.
+ */
+export function nodeRuns(parent, node) {
+  return !node.if_extra_var || parent?.[node.if_extra_var] === true;
+}
+
+// the form type a runner's template or job is run with : an awx runner's an awx form (aap and
+// ascender are the same) ; an RTE's a playbook form
+const FORM_TYPE_OF_RUNNER = { rte: "ansible", awx: "awx", semaphore: "semaphore", rundeck: "rundeck", jenkins: "jenkins" };
 
 /**
  * How a node's credentials reach its playbook : a vault one opens the vaults, the first ssh one
@@ -179,9 +212,13 @@ export function credentialRoles(credentials, types) {
  * Returns:
  *   object: the step's form (as a multistep's step).
  */
-export function nodeForm(workflow, node, types) {
+export function nodeForm(workflow, node, types, runnerType = "") {
+  const formType = node.runner ? FORM_TYPE_OF_RUNNER[runnerType] : "ansible";
+  if (!formType) throw new Error(`node '${node.identifier}' names runner '${node.runner}', which is no runner a node can run on`);
+  if (formType !== "ansible") return templateNodeForm(workflow, node, formType);
   const roles = credentialRoles(node.credentials, types);
   const form = { type: "ansible", name: `${workflow.name} - ${node.identifier}`, playbook: node.name };
+  if (node.runner) form.runner = node.runner;
   if (node.inventory) form.inventory = node.inventory;
   if (node.limit) form.limit = node.limit;
   if (node.job_tags) form.tags = node.job_tags;
@@ -192,6 +229,37 @@ export function nodeForm(workflow, node, types) {
   if (roles.ansibleCredentials) form.ansibleCredentials = roles.ansibleCredentials;
   if (roles.vaultCredentials) form.vaultCredentials = roles.vaultCredentials;
   if (Object.keys(roles.credentials).length) form.credentials = roles.credentials;
+  return form;
+}
+
+/**
+ * The form a job template node that names a template runner runs : the runner's template or job
+ * by the node's name, with what of the node's run that runner takes (an awx runner AWX's
+ * credentials, the others the node's credentials as a form's). The type check, the launch and
+ * the output are a form's of that type, as a multistep's step.
+ *
+ * Args:
+ *   workflow (object): the workflow.
+ *   node (object): the node.
+ *   formType (string): awx, semaphore, rundeck or jenkins.
+ *
+ * Returns:
+ *   object: the step's form.
+ */
+function templateNodeForm(workflow, node, formType) {
+  const form = { type: formType, name: `${workflow.name} - ${node.identifier}`, template: node.name, runner: node.runner };
+  const names = (node.credentials || []).map((c) => c.name);
+  if (formType === "awx") {
+    if (node.inventory) form.inventory = node.inventory;
+    if (names.length) form.awxCredentials = names;
+  } else if (names.length) {
+    form.credentials = Object.fromEntries(names.map((n) => [n, n]));
+  }
+  if (node.limit) form.limit = node.limit;
+  if (node.job_tags) form.tags = node.job_tags;
+  if (node.verbosity) form.verbose = true;
+  if (node.job_type === "check") form.check = true;
+  if (node.diff_mode) form.diff = true;
   return form;
 }
 
@@ -365,8 +433,20 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
     s.started = Date.now();
     await saveGraph();
     try {
+      // a condition not met : skipped, what follows it runs as after a success
+      if (node.type !== "workflow_approval_template" && !nodeRuns(extravars, node)) {
+        await finish(node, "skipped", [{ output: `skipped: due to condition (${node.if_extra_var} is not true)`, output_type: "stdout" }]);
+        return;
+      }
       if (node.type === "job_template") {
-        await runChild(node, nodeForm(workflow, node, types), nodeExtravars(extravars, workflow, node));
+        // a runner named : its template or job, as a form of its type
+        let runnerType = "";
+        if (node.runner) {
+          const row = await Runner.findByName(node.runner);
+          if (!row) throw new Error(`no runner named '${node.runner}' - add it under Connections > Runners`);
+          runnerType = row.type;
+        }
+        await runChild(node, nodeForm(workflow, node, types, runnerType), nodeExtravars(extravars, workflow, node));
       } else if (node.type === "workflow_job_template") {
         const child = { type: "workflow", name: `${workflow.name} - ${node.identifier}`, workflow: node.name, __workflowDepth: (Number(formObj.__workflowDepth) || 0) + 1 };
         await runChild(node, child, nodeExtravars(extravars, workflow, node));

@@ -161,6 +161,14 @@ export default {
     skipTags: 'Pomijane tagi',
     check: 'Tryb check',
     diff: 'Tryb diff',
+    runner: 'Runner',
+    runnerNone: 'RTE (playbook z designera)',
+    runnerHint: 'Na runnerze uruchamia się zamiast tego jego szablon lub zadanie: AWX, Semaphore, Rundeck, Jenkins.',
+    condition: 'Działa, gdy',
+    conditionHint:
+      'Extravar, który musi być true, aby węzeł się uruchomił; puste: zawsze działa. Niespełnione: węzeł jest pomijany, a to, co po nim, działa.',
+    valuesKey: 'Wartości z',
+    valuesKeyHint: 'Tylko ten klucz extravars trafia do węzła, wraz z kopią użytkownika; puste: wszystkie.',
     workflow: 'Workflow',
     description: 'Opis',
     selectHint: 'Kliknij węzeł lub połączenie, aby go edytować; START dodaje pierwszy węzeł.',
@@ -176,6 +184,7 @@ export default {
       workflow_job_template: 'Workflow',
       workflow_approval_template: 'Nazwa zatwierdzenia',
       project: 'Repozytorium',
+      template: 'Szablon lub zadanie',
     },
     kinds: {
       success: 'Przy sukcesie',
@@ -204,6 +213,7 @@ export default {
       linkUnknown: "Węzeł '{identifier}' łączy się z '{to}', który nie jest węzłem",
       loop: "Workflow '{workflow}' zapętla się przez '{identifier}': workflow idzie tylko do przodu",
       nodeUnknownPlaybook: "Węzeł '{identifier}': brak playbooka '{name}'",
+      nodeUnknownRunner: "Węzeł '{identifier}': brak runnera '{runner}'",
     },
   },
   workflow: {

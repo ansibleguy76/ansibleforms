@@ -14,8 +14,9 @@
 /*      section: String - 'runs' or 'settings'                    */
 /*      choices: Function - type -> the names it may run, or null */
 /*         (then typed)                                           */
-/*      refs: Object - { inventories, credentials } : the         */
-/*         instance's names, null when unknown                    */
+/*      refs: Object - { inventories, credentials, runners } :    */
+/*         the instance's names (runners : { name, type }), null  */
+/*         when unknown                                           */
 /*      readOnly: Boolean - shown, not editable                   */
 /*      identifierError: String - why the identifier cannot be    */
 /*         (shown under it)                                       */
@@ -25,7 +26,7 @@
 /******************************************************************/
 import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { NODE_TYPES } from '@/config/workflowFile';
+import { NODE_TYPES, onTemplateRunner } from '@/config/workflowFile';
 
 const props = defineProps({
   node: { type: Object, required: true },
@@ -41,7 +42,12 @@ const { t } = useI18n();
 const sorted = (list) => [...(list || [])].sort((a, b) => a.localeCompare(b));
 // a name the node uses that the instance lacks : still offered, so the field shows it
 const withCurrent = (list, current) => (current && list && !list.includes(current) ? [current, ...list] : list || []);
-const runChoices = computed(() => props.choices(props.node.type));
+// a job template node on a template runner (AWX, Semaphore, Rundeck, Jenkins) runs that runner's
+// template or job : its name is typed, the designer's playbooks are not it
+const onRunner = computed(() => props.node.type === 'job_template' && onTemplateRunner(props.node, props.refs));
+const runChoices = computed(() => (onRunner.value ? null : props.choices(props.node.type)));
+// what the runner choice offers : every runner, by name (its type beside it)
+const runnerChoices = computed(() => [...(props.refs.runners || [])].sort((a, b) => a.name.localeCompare(b.name)));
 const isTrue = (v) => v === true || v === 'true';
 
 // ─── its credentials : those it has (each removable), one more picked and added ───
@@ -100,7 +106,11 @@ function removeCredential(name) {
       </select>
     </div>
     <div class="af-wf-half">
-      <label class="form-label fw-bold">{{ t(`workflowEditor.runName.${node.type}`, t('workflowEditor.name')) }}</label>
+      <label class="form-label fw-bold">{{
+        onRunner
+          ? t('workflowEditor.runName.template')
+          : t(`workflowEditor.runName.${node.type}`, t('workflowEditor.name'))
+      }}</label>
       <select
         v-if="runChoices"
         class="form-select"
@@ -121,6 +131,57 @@ function removeCredential(name) {
         @change="emit('set', 'name', $event.target.value)"
       />
     </div>
+    <!-- a playbook node : on an RTE (a designer playbook), or a runner's template or job -->
+    <div v-if="node.type === 'job_template'" class="af-wf-half">
+      <label class="form-label fw-bold">{{ t('workflowEditor.runner') }}</label>
+      <select
+        v-if="refs.runners"
+        class="form-select"
+        :value="node.runner || ''"
+        :disabled="readOnly"
+        @change="emit('set', 'runner', $event.target.value)"
+      >
+        <option value="">{{ t('workflowEditor.runnerNone') }}</option>
+        <option v-if="node.runner && !runnerChoices.some((r) => r.name === node.runner)" :value="node.runner">
+          {{ node.runner }}
+        </option>
+        <option v-for="r in runnerChoices" :key="r.name" :value="r.name">{{ r.name }} ({{ r.type }})</option>
+      </select>
+      <input
+        v-else
+        class="form-control"
+        :value="node.runner"
+        :disabled="readOnly"
+        spellcheck="false"
+        @change="emit('set', 'runner', $event.target.value.trim())"
+      />
+      <div class="form-text">{{ t('workflowEditor.runnerHint') }}</div>
+    </div>
+    <!-- when it runs, and what it gets : as a multistep's step ifExtraVar and key -->
+    <template v-if="node.type !== 'workflow_approval_template'">
+      <div class="af-wf-half">
+        <label class="form-label fw-bold">{{ t('workflowEditor.condition') }}</label>
+        <input
+          class="form-control"
+          :value="node.if_extra_var"
+          :disabled="readOnly"
+          spellcheck="false"
+          @change="emit('set', 'if_extra_var', $event.target.value.trim())"
+        />
+        <div class="form-text">{{ t('workflowEditor.conditionHint') }}</div>
+      </div>
+      <div class="af-wf-half">
+        <label class="form-label fw-bold">{{ t('workflowEditor.valuesKey') }}</label>
+        <input
+          class="form-control"
+          :value="node.extra_vars_key"
+          :disabled="readOnly"
+          spellcheck="false"
+          @change="emit('set', 'extra_vars_key', $event.target.value.trim())"
+        />
+        <div class="form-text">{{ t('workflowEditor.valuesKeyHint') }}</div>
+      </div>
+    </template>
     <!-- an approval : how long it waits -->
     <div v-if="node.type === 'workflow_approval_template'" class="af-wf-half">
       <label class="form-label fw-bold">{{ t('workflowEditor.timeout') }}</label>
@@ -142,7 +203,7 @@ function removeCredential(name) {
       <div class="col-md-6">
         <label class="form-label fw-bold">{{ t('workflowEditor.inventory') }}</label>
         <select
-          v-if="refs.inventories"
+          v-if="refs.inventories && !onRunner"
           class="form-select"
           :value="node.inventory"
           :disabled="readOnly"

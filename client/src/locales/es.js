@@ -160,6 +160,14 @@ export default {
     skipTags: 'Etiquetas a omitir',
     check: 'Modo check',
     diff: 'Modo diff',
+    runner: 'Runner',
+    runnerNone: 'El RTE (un playbook del diseñador)',
+    runnerHint: 'En un runner se ejecuta su plantilla o job: AWX, Semaphore, Rundeck, Jenkins.',
+    condition: 'Se ejecuta si',
+    conditionHint:
+      'Un extravar que debe ser true para que el nodo se ejecute; vacío: se ejecuta siempre. Si no se cumple: el nodo se omite y lo que sigue se ejecuta.',
+    valuesKey: 'Valores de',
+    valuesKeyHint: 'Solo esta clave de los extravars llega al nodo, con el usuario copiado; vacío: todas.',
     workflow: 'Workflow',
     description: 'Descripción',
     selectHint: 'Haz clic en un nodo o un enlace para editarlo; START añade un primer nodo.',
@@ -175,6 +183,7 @@ export default {
       workflow_job_template: 'Workflow',
       workflow_approval_template: 'Nombre de la aprobación',
       project: 'Repositorio',
+      template: 'Plantilla o job',
     },
     kinds: {
       success: 'Si tiene éxito',
@@ -204,6 +213,7 @@ export default {
       linkUnknown: "El nodo '{identifier}' enlaza con '{to}', que no es un nodo",
       loop: "El workflow '{workflow}' hace un bucle por '{identifier}': un workflow solo avanza",
       nodeUnknownPlaybook: "Nodo '{identifier}': no existe el playbook '{name}'",
+      nodeUnknownRunner: "Nodo '{identifier}': no hay runner '{runner}'",
     },
   },
   workflow: {

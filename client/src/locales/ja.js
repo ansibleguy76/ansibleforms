@@ -159,6 +159,14 @@ export default {
     skipTags: 'スキップするタグ',
     check: 'チェックモード',
     diff: '差分モード',
+    runner: 'ランナー',
+    runnerNone: 'RTE（デザイナーの playbook）',
+    runnerHint: 'ランナーではそのテンプレートまたはジョブが代わりに実行されます：AWX、Semaphore、Rundeck、Jenkins。',
+    condition: '実行条件',
+    conditionHint:
+      'ノードを実行するために true でなければならない extravar。空：常に実行。満たされない場合はノードをスキップし、後続が実行されます。',
+    valuesKey: '値の取得元',
+    valuesKeyHint: 'extravars のこのキーだけがノードに渡されます（ユーザーはコピー）。空：すべて。',
     workflow: 'ワークフロー',
     description: '説明',
     selectHint: 'ノードやリンクをクリックして編集します。START で最初のノードを追加します。',
@@ -174,6 +182,7 @@ export default {
       workflow_job_template: 'ワークフロー',
       workflow_approval_template: '承認の名前',
       project: 'リポジトリ',
+      template: 'テンプレートまたはジョブ',
     },
     kinds: {
       success: '成功時',
@@ -203,6 +212,7 @@ export default {
       linkUnknown: "ノード '{identifier}' は存在しないノード '{to}' にリンクしています",
       loop: "ワークフロー '{workflow}' は '{identifier}' でループしています: ワークフローは前にしか進みません",
       nodeUnknownPlaybook: "ノード '{identifier}': playbook '{name}' がありません",
+      nodeUnknownRunner: "ノード '{identifier}': ランナー '{runner}' がありません",
     },
   },
   workflow: {

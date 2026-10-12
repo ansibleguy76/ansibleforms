@@ -159,6 +159,14 @@ export default {
     skipTags: 'Skip tags',
     check: 'Check mode',
     diff: 'Diff mode',
+    runner: 'Runner',
+    runnerNone: 'The RTE (a playbook of the designer)',
+    runnerHint: 'On a runner its template or job runs instead: AWX, Semaphore, Rundeck, Jenkins.',
+    condition: 'Runs when',
+    conditionHint:
+      'An extravar that must be true for the node to run; empty: it always runs. Not met: the node is skipped, and what follows it runs.',
+    valuesKey: 'Values from',
+    valuesKeyHint: 'Only this key of the extravars reaches the node, the user copied in; empty: all of them.',
     workflow: 'Workflow',
     description: 'Description',
     selectHint: 'Click a node or a link to edit it; START adds a first node.',
@@ -174,6 +182,7 @@ export default {
       workflow_job_template: 'Workflow',
       workflow_approval_template: 'Approval name',
       project: 'Repository',
+      template: 'Template or job',
     },
     kinds: {
       success: 'On success',
@@ -202,6 +211,7 @@ export default {
       linkUnknown: "Node '{identifier}' links to '{to}', which is not a node",
       loop: "Workflow '{workflow}' loops through '{identifier}': a workflow runs forward only",
       nodeUnknownPlaybook: "Node '{identifier}': no playbook '{name}'",
+      nodeUnknownRunner: "Node '{identifier}': no runner '{runner}'",
     },
   },
   workflow: {
