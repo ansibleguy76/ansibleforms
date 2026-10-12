@@ -1,5 +1,6 @@
 export default {
   playbookEditor: {
+    enable: '有効にする',
     play: 'プレイ {n}',
     other: 'プレイではありません: YAML で編集してください',
     name: '名前',

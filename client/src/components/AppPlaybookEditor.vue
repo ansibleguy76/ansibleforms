@@ -182,28 +182,21 @@ const sectionToAdd = ref({});
               />
             </div>
           </div>
-          <div class="d-flex flex-wrap gap-4 mb-3">
+          <!-- become, gather facts : a line each, titled as a field is -->
+          <div v-for="key in ['become', 'gather_facts']" :key="key" class="mb-3">
+            <label class="form-label fw-bold" :for="`pb-${key}-${pi}`">{{
+              key === 'become' ? t('playbookEditor.become') : t('playbookEditor.gatherFacts')
+            }}</label>
             <div class="form-check form-switch">
               <input
-                :id="`pb-become-${pi}`"
+                :id="`pb-${key}-${pi}`"
                 class="form-check-input"
                 type="checkbox"
-                :checked="play.become"
+                :checked="play[key]"
                 :disabled="readOnly"
-                @change="apply((text) => editPlay(text, pi, 'become', $event.target.checked))"
+                @change="apply((text) => editPlay(text, pi, key, $event.target.checked))"
               />
-              <label class="form-check-label" :for="`pb-become-${pi}`">{{ t('playbookEditor.become') }}</label>
-            </div>
-            <div class="form-check form-switch">
-              <input
-                :id="`pb-facts-${pi}`"
-                class="form-check-input"
-                type="checkbox"
-                :checked="play.gather_facts"
-                :disabled="readOnly"
-                @change="apply((text) => editPlay(text, pi, 'gather_facts', $event.target.checked))"
-              />
-              <label class="form-check-label" :for="`pb-facts-${pi}`">{{ t('playbookEditor.gatherFacts') }}</label>
+              <label class="form-check-label" :for="`pb-${key}-${pi}`">{{ t('playbookEditor.enable') }}</label>
             </div>
           </div>
           <!-- its roles : pills to remove, one more typed -->

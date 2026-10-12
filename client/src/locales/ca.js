@@ -1,5 +1,6 @@
 export default {
   playbookEditor: {
+    enable: 'Activar',
     play: 'Play {n}',
     other: "No és un play: edita'l al YAML",
     name: 'Nom',

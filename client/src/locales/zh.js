@@ -1,5 +1,6 @@
 export default {
   playbookEditor: {
+    enable: '启用',
     play: 'Play {n}',
     other: '不是 play：请在 YAML 中编辑',
     name: '名称',
