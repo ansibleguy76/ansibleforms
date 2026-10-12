@@ -3,7 +3,7 @@
   "info": {
     "title": "AnsibleForms API v2",
     "version": "0.0.0",
-    "description": "API documentation for AnsibleForms v2 endpoints: Authentication, Query, Expression, AWX, Job, Backup, Credential, and Known Hosts management."
+    "description": "API documentation for AnsibleForms v2 endpoints: authentication, system and health, users, groups and roles, settings, runners, credentials, secret stores, SSO providers, repositories, SSH and known hosts, notification channels, syslog servers, queries and expressions, jobs, backups, logs and the audit log."
   },
   "tags": [
     { "name": "authentication", "description": "Authentication and refresh tokens" },
