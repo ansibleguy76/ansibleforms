@@ -62,32 +62,19 @@ function authOidc() {
   window.location.replace(`${BaseUrl}/api/v2/auth/oidc`); // redirect to oidc
 }
 function getGroupsAndLogin(token, url, type = 'azuread') {
-  if (type === 'azuread') {
-    // The token in the url is OUR handoff, not an Azure access token (6.3.0) : the server
-    // fetches the groups from Microsoft Graph itself at the login step (#548)
-    tokenLogin(token, []);
-  } else {
-    // OIDC branch for now => specify type in the future?
-    // decode the token (TokenStorage.decode)
-    const payload = TokenStorage.decode(token);
-
-    if (!payload) {
-      toast.error('Failed to decode login token');
-      return;
-    }
-
-    tokenLogin(token, payload.groups || [], 'oidc');
-  }
+  // The token in the url is OUR handoff, not the provider's token (6.3.0) : the server reads
+  // the groups itself at the login step - Microsoft Graph for Entra ID (#548), the handoff's
+  // claim for OIDC
+  tokenLogin(token, type === 'azuread' ? 'azuread' : 'oidc');
 }
-async function tokenLogin(token, allGroups, type = 'azuread') {
-  // No group filter here : the server applies the provider's group filter to the groups
-  // it trusts (the claim in the handoff token), for Entra ID and OIDC alike. Filtering
-  // in the browser only ever touched the posted list, which the server ignores whenever
-  // the token carries a groups claim.
+async function tokenLogin(token, type = 'azuread') {
+  // The groups are the server's business : the claim in the handoff token (OIDC) or Microsoft
+  // Graph (Entra ID), through the provider's group filter. The browser posts none - a list it
+  // chose was never to be trusted.
   const loginProvider = type === 'azuread' ? 'azureadoauth2' : 'oidc';
 
   try {
-    const result = await axios.post(`/api/v2/auth/${loginProvider}/login`, { token: token, groups: allGroups });
+    const result = await axios.post(`/api/v2/auth/${loginProvider}/login`, { token });
     processLogin(result.data);
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err, 'Identity Provider Login failed'));

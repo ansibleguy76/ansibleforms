@@ -405,11 +405,10 @@ async function assertProviderEnabled(model, name) {
 
 /**
  * The Azure groups, by name, from Graph - with the access token the handoff carries
- * sealed. A handoff without one (minted before 6.5.3) falls back to the groups claim and
- * the client's list, as before.
+ * sealed. A handoff without one (minted before 6.5.3) falls back to the groups claim.
  */
-async function azureGroups(payload, bodyGroups, groupfilter) {
-  if (!payload.at) return filterGroups(ssoGroups(payload, bodyGroups, 'azuread'), groupfilter);
+async function azureGroups(payload, groupfilter) {
+  if (!payload.at) return filterGroups(ssoGroups(payload, 'azuread'), groupfilter);
   const groups = await fetchAzureGroups(openToken(payload.at), authConfig.azureGraphUrl, { withIds: true });
   // the group filter is on the names, as it always was ; a kept group is known by its object id
   // (unique, the way to name it in a role) and by its name (as roles named it before 7)
@@ -420,22 +419,17 @@ async function azureGroups(payload, bodyGroups, groupfilter) {
 }
 
 /**
- * The groups to trust.
- *
- * The provider's own claim wins whenever it is present, because it is inside the token we
- * signed. `req.body.groups` is whatever the browser chose to send, so it is used ONLY
- * when the provider returned none, and that fallback is logged: a caller can otherwise
- * name any group and getRolesAndOptions will grant the roles that match it. Either way
- * the caller passes the result through the provider's group filter (filterGroups).
+ * The groups to trust : the provider's claim, inside the handoff we signed, and nothing else.
+ * The list the browser posts (`req.body.groups`) is never read : it used to stand in when
+ * the provider sent no groups claim, and a caller could then name any group and be granted
+ * the roles that match it - with the handoff from the login page, from any account. No
+ * claim is no groups, and the provider is to be configured to emit them. The caller passes
+ * the result through the provider's group filter (filterGroups).
  */
-function ssoGroups(payload, bodyGroups, type) {
-  const fromToken = payload.groups;
-  if (Array.isArray(fromToken)) return fromToken;
-  const fromBody = Array.isArray(bodyGroups) ? bodyGroups : [];
-  if (fromBody.length) {
-    logger.warning(`${type} login: the provider returned no groups claim, falling back to the groups the client reported - configure the provider to emit groups so this is not client controlled`);
-  }
-  return fromBody;
+function ssoGroups(payload, type) {
+  if (Array.isArray(payload.groups)) return payload.groups;
+  logger.warning(`${type} login: the provider returned no groups claim, the user gets no groups - configure the provider to emit groups`);
+  return [];
 }
 
 const extractAzureUser = async function(payload, groups) {
@@ -493,7 +487,7 @@ const azureadoauth2login = async function(req, res,_next) {
     if (payload.tid && /^[0-9a-f-]{36}$/i.test(String(azureConfig.tenant_id).trim()) && String(payload.tid).toLowerCase() !== String(azureConfig.tenant_id).trim().toLowerCase()) {
       throw new Error('This Entra ID login is of another tenant')
     }
-    const user = await extractAzureUser(payload, await azureGroups(payload, req.body.groups, provider.groupfilter))
+    const user = await extractAzureUser(payload, await azureGroups(payload, provider.groupfilter))
     user.type = "azuread"
     const ro = await User.getRolesAndOptions(user.groups,user)
     user.roles = ro.roles
@@ -533,12 +527,12 @@ const oidcLogin = async function(req, res, _next) {
   try {
     const payload = await verifyHandoff(req.body.token, 'oidc')
     const provider = await assertProviderEnabled(OIDC, 'oidc')
-    // The provider's group filter is applied HERE, on the groups we trust. It used to be
-    // applied only by the browser, to the list it posts - but ssoGroups ignores that list
-    // whenever the token carries a groups claim, so the filter had no effect at all and
-    // every group of the user ended up in the jwt. Same semantics as Entra ID and
-    // LDAP : a regular expression, an invalid one keeps every group and is logged.
-    const groups = filterGroups(ssoGroups(payload, req.body.groups, 'oidc'), provider.groupfilter)
+    // The provider's group filter is applied HERE, on the groups we trust (the claim in the
+    // handoff). It used to be applied only by the browser, to a list it posted and the
+    // server ignored whenever the token carried a groups claim, so the filter had no effect
+    // at all and every group of the user ended up in the jwt. Same semantics as Entra ID
+    // and LDAP : a regular expression, an invalid one keeps every group and is logged.
+    const groups = filterGroups(ssoGroups(payload, 'oidc'), provider.groupfilter)
     logger.debug(`oidc login: ${groups.length} groups after the group filter`)
     const user = await extractOidcUser(payload, groups)
     user.type = "oidc"
