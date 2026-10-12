@@ -2452,7 +2452,9 @@
           **Note** : that this also works in steps, so each step can have its own set of credentials.  
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
           **Note** : The credential can be a regex
-          **Note** : A second, fallback, credential kan be passed using a comma
+          **Note** : A second, fallback, credential kan be passed using a comma  
+          **Note** : The value `__self__` sends the connection of Ansible Forms' own database (host, port, user and password).  
+          **Note** : A value can also read a secret store directly, without a stored credential : `vault:<path>` reads the store named `vault`, `secret:<store>:<ref>` any store. The role property `secretStores` limits the stores a user may read this way.
         examples:
         - name: Send vmware and microsoft credentials
           code: |
@@ -2461,6 +2463,9 @@
               cred_ms: ad_creds # will take the credentials called ad_creds and send them in the object `cred_ms`
               cred_netapp: cluster1,clusters2 # will first search for cluster1 and as fallback to cluster2
               cred_veeam: veeam_server[0-9],veeam # will first search for a credential matching the regex, and as fallback search for veeam
+              cred_af: __self__ # the connection of the Ansible Forms database
+              cred_dns: vault:infra/dns # read straight from the secret store `vault`
+              cred_ipam: secret:cyberark:ipam-admin # read straight from the secret store `cyberark`
         - name: Dynamically send credentials
           code: |
             fields:
