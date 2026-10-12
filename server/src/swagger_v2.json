@@ -1550,6 +1550,20 @@
         }
       }
     },
+    "/job/{id}/node/{nodeId}": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["job"],
+        "summary": "A workflow node's extravars and artifacts",
+        "description": "For a workflow job (one the RTE ran, or an AWX, AAP or Ascender workflow): the extravars and the artifacts (set_stats data) of the job one of its nodes ran, by the node's id in the job's graph. An AWX node's job is read from that AWX. A node not run yet, an approval or a project update returns empty objects.",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": {
+          "200": { "description": "{ node, job, extravars, artifacts }" },
+          "403": { "description": "The job is not the user's" },
+          "404": { "description": "No such job or node, or the AWX runner it ran on is gone" }
+        }
+      }
+    },
     "/job/{id}/approve": {
       "post": {
         "security": [ { "bearerAuth": [] } ],

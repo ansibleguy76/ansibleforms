@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
+import { useAppStore } from '@/stores/app';
 
 /******************************************************************/
 /*                                                                */
@@ -48,7 +49,28 @@ const props = defineProps({
     type: Object,
     default: null,
   },
+  // the workflow job (a workflow's output) : each node's card offers its extravars and its
+  // artifacts (AppNodeData), as the user's options allow
+  jobId: {
+    type: [Number, String],
+    default: null,
+  },
 });
+const store = useAppStore();
+const { t } = useI18n();
+// a node's card's extravars or artifacts, open : its head line's index -> 'extravars' or 'artifacts'
+const nodeData = ref({});
+
+/**
+ * Shows a node's extravars or artifacts under its header, or hides them when they show.
+ *
+ * Args:
+ *   index (number): the node's head line.
+ *   kind (string): 'extravars' or 'artifacts'.
+ */
+function toggleNodeData(index, kind) {
+  nodeData.value = { ...nodeData.value, [index]: nodeData.value[index] === kind ? null : kind };
+}
 
 // ─── numbered : the output as lines, the PLAYs and TASKs foldable ────────────
 
@@ -187,6 +209,8 @@ function headerOf(line) {
       : props.workflow?.nodes?.find((n) => (id !== null ? Number(n.id) === id : n.name === m[2]));
     return {
       id,
+      // the node's id in the graph : what its extravars and artifacts are read by
+      graphId: graphNode?.id ?? null,
       name: m[2],
       kind: summary ? 'summary' : 'node',
       // AWX's words as the app's own (its pills' labels) : successful a success, canceled aborted
@@ -430,6 +454,39 @@ const jobLogHtml = computed(() => ansiToHtml(props.jobLog));
         <span class="af-node-name">{{ group.node.name }}</span>
         <AppStatusPill v-if="group.node.status" :status="group.node.status" />
         <span class="af-node-meta">
+          <!-- a workflow node : its extravars and its artifacts (always offered, {} when none),
+               then a bar, then its numbers -->
+          <template v-if="jobId && group.node.kind === 'node' && group.node.graphId != null">
+            <span class="af-node-tools">
+              <button
+                v-if="store.profile.options?.showExtraVars"
+                type="button"
+                class="af-node-tool"
+                :class="{ active: nodeData[group.node.index] === 'extravars' }"
+                @click.stop="toggleNodeData(group.node.index, 'extravars')"
+              >
+                <FaIcon :icon="nodeData[group.node.index] === 'extravars' ? 'eye-slash' : 'eye'" />{{
+                  nodeData[group.node.index] === 'extravars' ? t('jobs.hideExtravars') : t('jobs.showExtravars')
+                }}
+              </button>
+              <button
+                v-if="store.profile.options?.showArtifacts"
+                type="button"
+                class="af-node-tool"
+                :class="{ active: nodeData[group.node.index] === 'artifacts' }"
+                @click.stop="toggleNodeData(group.node.index, 'artifacts')"
+              >
+                <FaIcon
+                  :icon="nodeData[group.node.index] === 'artifacts' ? 'square-poll-horizontal' : 'square-poll-vertical'"
+                />{{ nodeData[group.node.index] === 'artifacts' ? t('jobs.hideArtifacts') : t('jobs.showArtifacts') }}
+              </button>
+            </span>
+            <span
+              v-if="store.profile.options?.showExtraVars || store.profile.options?.showArtifacts"
+              class="af-node-sep"
+              aria-hidden="true"
+            ></span>
+          </template>
           <span v-if="group.node.elapsed"><FaIcon icon="stopwatch" />{{ shortDuration(group.node.elapsed) }}</span>
           <span><FaIcon icon="list-ol" />{{ group.node.count }}</span>
           <button
@@ -443,6 +500,14 @@ const jobLogHtml = computed(() => ansiToHtml(props.jobLog));
           </button>
         </span>
       </div>
+      <AppNodeData
+        v-if="group.node && nodeData[group.node.index]"
+        :jobId="jobId"
+        :nodeId="group.node.graphId"
+        :kind="nodeData[group.node.index]"
+        @close="toggleNodeData(group.node.index, nodeData[group.node.index])"
+        @copy="(text) => emit('copy', text)"
+      />
       <div v-if="group.lines.length" class="ansible af-ansible-lines">
         <div
           v-for="line in group.lines"
@@ -679,6 +744,37 @@ const jobLogHtml = computed(() => ansiToHtml(props.jobLog));
     outline: 0;
     box-shadow: 0 0 0 0.2rem var(--bs-focus-ring-color);
   }
+}
+/* a node's Show extravars and Show artifacts : text buttons, the copy button's look */
+.af-node-tools {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+.af-node-tool {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.45rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: none;
+  color: inherit;
+  white-space: nowrap;
+  &:hover,
+  &.active {
+    background: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+  }
+  &:focus-visible {
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem var(--bs-focus-ring-color);
+  }
+}
+/* the bar between them and the node's numbers */
+.af-node-sep {
+  align-self: stretch;
+  width: 1px;
+  margin: 0.15rem 0;
+  background: var(--af-field-border, var(--bs-border-color));
 }
 .af-node-chevron {
   width: 0.75rem;

@@ -1,5 +1,6 @@
 'use strict';
 import Job from '../../models/job.model.js';
+import { workflowNodeData } from '../../lib/workflowNodeData.js';
 import RestResultv2 from '../../models/restResult.model.v2.js';
 import logger from "../../lib/logger.js";
 import stream from 'stream';
@@ -41,6 +42,23 @@ const getJob = async function(req, res) {
     restData.notifications = JSON.parse(job.notifications || "{}")
     restData.subjobs = (job.subjobs || "").split(",").filter(x => x != "").map(x => parseInt(x))
     res.status(200).json(RestResultv2.single(restData));
+  } catch (err) {
+    if (err.name === 'NotFoundError') {
+      res.status(404).json(RestResultv2.error(err.message));
+    } else if (err.name === 'AccessDeniedError') {
+      res.status(403).json(RestResultv2.error(err.message));
+    } else {
+      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieve'), err.toString()));
+    }
+  }
+};
+// a workflow node's variables and artifacts (the job page's node : Show variables, Show
+// artifacts) : the job read as getJob reads it, so only who may see the job sees them
+const getWorkflowNode = async function(req, res) {
+  var user = req.user.user
+  try {
+    const job = await Job.findById(user, req.params.id, false, true)
+    res.status(200).json(RestResultv2.single(await workflowNodeData(job, req.params.nodeId)));
   } catch (err) {
     if (err.name === 'NotFoundError') {
       res.status(404).json(RestResultv2.error(err.message));
@@ -297,6 +315,7 @@ export { MAX_JOBS_LIST };
 export default {
   abortJob,
   getJob,
+  getWorkflowNode,
   findAllJobs,
   findApprovals,
   download,

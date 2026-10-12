@@ -2239,6 +2239,7 @@ onBeforeUnmount(() => {
                   :jobLog="job.job_log"
                   :workflow="job.awx_workflow"
                   :title="outputTitle"
+                  :jobId="job.id"
                   :copyLabel="t('jobs.copy')"
                   numbered
                   @copy="(text) => clip(text, true)"

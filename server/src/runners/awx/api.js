@@ -685,6 +685,36 @@ Awx.getWorkflowNodes = async function (awx, job) {
     do_not_run: n.do_not_run || false,
   }));
 };
+/**
+ * The extra vars and the artifacts of one node's job of an AWX workflow : what the job page's
+ * node shows (Show variables, Show artifacts). An approval or a project update has neither : {}.
+ *
+ * Args:
+ *   awx (object): the runner.
+ *   node (object): the node, as getWorkflowNodes stored it ({ job, job_url, type }).
+ *
+ * Returns:
+ *   Promise<object>: { extravars, artifacts } - both objects, {} when there are none.
+ */
+Awx.getNodeJobData = async function (awx, node) {
+  if (!awx) throw new Errors.ApiError("No AWX runner given");
+  if (!node?.job) return { extravars: {}, artifacts: {} };
+  // its own link, else the job's (a graph stored before the link was kept)
+  const url = node.job_url ? serverOf(awx) + node.job_url : awx.uri + apiPrefix(awx) + "/jobs/" + node.job + "/";
+  const { data } = await axios.get(url, getAuthorization(awx));
+  const asObject = (value) => {
+    if (value && typeof value === "object" && !Array.isArray(value)) return value;
+    if (typeof value !== "string" || !value.trim()) return {};
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+    } catch {
+      // AWX keeps a job's extra_vars as JSON ; anything else is not shown
+      return {};
+    }
+  };
+  return { extravars: asObject(data?.extra_vars), artifacts: asObject(data?.artifacts) };
+};
 // track an awx workflow job ; poll the workflow nodes, dump the output of every
 // finished node and store the workflow graph as json for visualization
 Awx.trackWorkflowJob = async function (
