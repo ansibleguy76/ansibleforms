@@ -1766,7 +1766,7 @@
       - name: roles
         type: array
         required: true
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         group: basic
         allowed: valid role names
         short: Who has access
@@ -1784,7 +1784,7 @@
       - name: categories
         type: array
         allowed: valid category name
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         group: basic
         short: Categories
         description: | 
@@ -1821,14 +1821,14 @@
             >  *Everything* is going according to **plan**.     
       - name: showHelp
         type: boolean
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         short: Show Help
         group: visualization
         default: true
         description: Show the help by default or collapse the help.  
       - name: icon
         type: string
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         group: visualization
         allowed: Free fontawesome 6 icon
         short: Form icon
@@ -1843,7 +1843,7 @@
             icon: trash
       - name: iconColor
         type: string
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         allowed: valid color name
         group: visualization
         short: Icon color
@@ -1857,7 +1857,7 @@
             iconColor: danger
       - name: iconSize
         type: string
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         allowed: xs, sm, lg, 2x, 3x, 5x, 7x, 10x
         group: visualization
         short: Icon size
@@ -1872,7 +1872,7 @@
             iconSize: 5x
       - name: overlayIcon
         type: string
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         allowed: valid fontawesome icon name
         group: visualization
         short: Overlay icon on main icon
@@ -1888,7 +1888,7 @@
             overlayIconTransform: shrink-6 up-7 right-7
       - name: overlayIconTransform
         type: string
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         allowed: valid fontawesome transform
         group: visualization
         short: Transform for overlay icon
@@ -1905,7 +1905,7 @@
             overlayIconTransform: shrink-8 down-2
       - name: overlayIconColor
         type: string
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         allowed: valid color name
         group: visualization
         short: Color for overlay icon
@@ -1921,7 +1921,7 @@
             overlayIconColor: danger
       - name: overlayIconCircle
         type: boolean
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         group: visualization
         short: Show circle background behind overlay icon
         default: true
@@ -1939,7 +1939,7 @@
             overlayIconColor: success
       - name: overlayIconText
         type: string
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         allowed: any text
         group: visualization
         short: Text overlay on icon
@@ -1955,7 +1955,7 @@
             overlayIconTextColor: warning
       - name: overlayIconTextPosition
         type: string
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         allowed: top-left, top-right, bottom-left, bottom-right
         group: visualization
         short: Position for text overlay
@@ -1971,7 +1971,7 @@
             overlayIconTextPosition: top-right
       - name: overlayIconTextColor
         type: string
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         allowed: valid color name
         group: visualization
         short: Color for text overlay
@@ -1987,7 +1987,7 @@
             overlayIconTextColor: warning
       - name: image
         type: string
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         allowed: valid image url
         group: visualization
         short: Form image
@@ -2017,7 +2017,7 @@
             image: /assets/images/netapp.svg # the docker compose has a few brand images, feel free to add your own
       - name: tileClass
         type: string
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         allowed: valid bootstrap background class
         group: visualization
         short: Form tile background colour
@@ -2040,7 +2040,7 @@
             tileClass: bg-success-subtle text-dark  
       - name: fieldGroupClasses
         type: object
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         allowed: key-value pairs
         group: visualization
         short: Fieldgroup background color
@@ -2440,7 +2440,7 @@
                 default: helloworld.yaml # this will overwrite the playbook name
       - name: credentials
         type: object
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, workflow
         group: basic
         version: 4.0.16
         allowed: key-value pairs
@@ -2525,7 +2525,7 @@
           A multistep form is basically an array of multiple form type destinations, defined here as steps.
       - name: wizard
         type: array
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         group: basic
         version: 6.4.0
         allowed: a wizard step object
@@ -2802,7 +2802,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: verbose
         type: boolean
-        with_types: ansible
+        with_types: ansible, workflow
         version: 4.0.0
         group: workflow
         short: Run in verbose mode
@@ -2813,7 +2813,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: keepExtravars
         type: boolean
-        with_types: ansible
+        with_types: ansible, workflow
         short: Do not remove the extarvars json file
         group: workflow
         version: 4.0.0
@@ -2824,7 +2824,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: allowJinjaInExtravars
         type: boolean
-        with_types: ansible
+        with_types: ansible, workflow
         short: Let ansible template Jinja in the form's values
         group: workflow
         version: 7.0.1
@@ -2836,7 +2836,7 @@
           **Note** : You can also dynamically set this property by using a field called `__allowJinjaInExtravars__`. The field must result in a boolean `true`.
       - name: userExtravars
         type: string
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         short: Which keys of the user go into the extravars
         group: workflow
         description: |
@@ -2847,7 +2847,7 @@
           **Note** : a multistep applies the form's value to every step, including the partial extravars a step receives through `key`.
       - name: abortable
         type: boolean
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         short: Allow aborting the job
         group: workflow
         version: 5.0.8
@@ -2856,7 +2856,7 @@
           By default you can allow the user to abort the job.  Use this attribute to disable this behaviour.
       - name: allowRelaunch
         type: boolean
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         short: Allow relaunching the job
         group: workflow
         version: 6.2.0
@@ -2871,7 +2871,7 @@
                 allowRelaunch: false
       - name: launchValidation
         type: string
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         short: Check every launch of this form on the server
         group: workflow
         version: 6.4.1
@@ -2909,7 +2909,7 @@
                 launchValidation: enforce
       - name: enableForChat
         type: boolean
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         short: Offer this form in the chat assistant
         group: workflow
         version: 6.5.0
@@ -2935,7 +2935,7 @@
                 enableForChat: true
       - name: order
         type: integer
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         group: visualization
         version: 5.1.0
         short: Order of the form in the list
@@ -2955,7 +2955,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.            
       - name: approval
         type: object
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         allowed: valid approval object
         group: interaction
         objectLink: forms/form/approval
@@ -2966,7 +2966,7 @@
           An approval link is sent by email to a specific approver who can then approve or reject the job, and to the notification channels it names (`channels`: Slack, Microsoft Teams, Telegram, a webhook - Connections > Notifications).
       - name: notifications
         type: object
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         group: interaction
         allowed: valid notification object
         objectLink: forms/form/notifications
@@ -2993,7 +2993,7 @@
             
       - name: onSubmit
         type: array
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         group: interaction
         allowed: valid job status action objects
         short: Events on submit
@@ -3018,7 +3018,7 @@
             # more examples on the job-status-event page
       - name: onSuccess
         type: array
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         group: interaction
         allowed: valid job status action objects
         short: Events on success
@@ -3042,7 +3042,7 @@
             # more examples on the job-status-event page  
       - name: onFailure
         type: array
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         group: interaction
         allowed: valid job status action objects
         short: Events on failure
@@ -3066,7 +3066,7 @@
             # more examples on the job-status-event page  
       - name: onAbort
         type: array
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         group: interaction
         allowed: valid job status action objects
         short: Events on abort
@@ -3090,7 +3090,7 @@
             # more examples on the job-status-event page   
       - name: onFinish
         type: array
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
         group: interaction
         allowed: valid job status action objects
         short: Events on finished
@@ -3117,7 +3117,7 @@
             # more examples on the job-status-event page                                                  
       - name: varsFiles
         type: array
-        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins
+        with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, workflow
         group: basic
         allowed: list of file paths (absolute or relative)
         short: Load YAML files as constants
