@@ -82,9 +82,9 @@ function toggle(id) {
           /></span>
           <span v-else class="af-inv-caret"></span>
           <FaIcon
-            :icon="row.type === 'group' ? (folded.has(row.id) ? 'folder' : 'folder-open') : 'server'"
+            :icon="row.type === 'group' ? 'layer-group' : 'server'"
             class="me-2"
-            :class="row.type === 'group' ? 'af-inv-folder' : 'text-secondary'"
+            :class="row.type === 'group' ? 'af-inv-group' : 'text-secondary'"
           />
           <span
             role="button"
@@ -157,9 +157,10 @@ function toggle(id) {
   color: var(--bs-secondary-color);
   margin-right: 0.25rem;
 }
-/* a folder is folder yellow in every theme, as the explorer's */
-.af-inv-folder {
-  color: #f0b429;
+/* a group : a set of hosts, not a folder on disk (its fold is the caret beside it) ; the
+   link blue, apart from the explorer's yellow folders */
+.af-inv-group {
+  color: var(--bs-primary);
 }
 .af-badge {
   background: var(--bs-secondary-bg);
