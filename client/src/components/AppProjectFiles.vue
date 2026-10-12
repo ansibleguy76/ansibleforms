@@ -51,6 +51,8 @@ const props = defineProps({
   readOnly: { type: Boolean, default: false },
   theme: { type: String, default: null },
   editorStyle: { type: [String, Object], default: 'width: 100%;height: 75vh;font-size:1rem' },
+  // the designer's forms ({ name, text }) : a vars file's Preview says which load it
+  forms: { type: Array, default: () => [] },
 });
 
 // ─── state ────────────────────────────────────────────────────────────────────
@@ -150,8 +152,10 @@ const inventoryDepth = computed(() => 0);
 const repositoryInventories = computed(() => (listing.value.repositories || []).map((r) => r.name));
 // what the file open is in its inventory : the inventory, a group's or a host's vars, other
 const fileRole = computed(() => (isInventories.value ? inventoryFileRole(selected.value) : null));
+// the inventory file open : edited in the Visual tab, drawn as a tree in the Preview
+const isInventoryFile = computed(() => fileRole.value?.role === 'inventory');
 const inventory = computed(() =>
-  props.view === 'visual' && fileRole.value?.role === 'inventory' ? inventoryOf(content.value) : null,
+  props.view === 'preview' && isInventoryFile.value ? inventoryOf(content.value) : null,
 );
 // the groups and hosts of the inventory open that have a vars file
 const varsFilesOf = (role) =>
@@ -564,24 +568,13 @@ defineExpose({
       <div v-else-if="view === 'preview' && kind === 'playbooks'" class="af-files-visual">
         <AppPlaybookOutline :modelValue="content" @reveal="reveal" />
       </div>
-      <!-- the Preview tab of a workflow file : a dry run of its workflows -->
-      <AppWorkflowEditor v-else-if="view === 'preview' && isWorkflows" :modelValue="content" readOnly preview />
-      <!-- the Visual tab : a vars file as its variables -->
-      <div v-else-if="view === 'visual'" class="af-files-visual">
+      <!-- the Preview tab of an inventory : its groups and hosts as a tree ; a vars file's (an
+           inventory's, or one of Vars files) : its variables, as a playbook reads them -->
+      <div v-else-if="view === 'preview' && (isInventories || kind === 'vars')" class="af-files-visual">
         <div v-if="lang !== 'yaml'" class="empty-state">
           <FaIcon icon="file-lines" class="empty-state-icon" />
           <span>{{ t('designer.files.visualNotYaml') }}</span>
         </div>
-        <!-- a playbook : its plays and tasks, field by field -->
-        <AppPlaybookEditor v-else-if="kind === 'playbooks'" v-model="content" :readOnly="readOnly" @reveal="reveal" />
-        <!-- a workflow file : its workflows as graphs, its job templates -->
-        <AppWorkflowEditor v-else-if="isWorkflows" v-model="content" :readOnly="readOnly" @reveal="reveal" />
-        <div v-else-if="fileKind.kind === 'invalid'" class="alert alert-warning d-flex align-items-center gap-2">
-          <FaIcon icon="triangle-exclamation" />
-          <span class="flex-grow-1">{{ t('designer.files.visualInvalid', { error: fileKind.error }) }}</span>
-          <BsButton icon="code" @click="reveal(fileKind.line)">{{ t('designer.files.showInYaml') }}</BsButton>
-        </div>
-        <!-- an inventory : its groups and hosts -->
         <AppInventoryTree
           v-else-if="inventory && inventory.kind !== 'invalid'"
           :inventory="inventory"
@@ -594,6 +587,27 @@ defineExpose({
           <FaIcon icon="triangle-exclamation" />
           <span class="flex-grow-1">{{ t('designer.files.visualInvalid', { error: inventory.error }) }}</span>
           <BsButton icon="code" @click="reveal(inventory.line)">{{ t('designer.files.showInYaml') }}</BsButton>
+        </div>
+        <AppValuesPreview v-else :text="content" mode="vars" :file="selected" :forms="forms" @reveal="reveal" />
+      </div>
+      <!-- the Preview tab of a workflow file : a dry run of its workflows -->
+      <AppWorkflowEditor v-else-if="view === 'preview' && isWorkflows" :modelValue="content" readOnly preview />
+      <!-- the Visual tab : a vars file as its variables -->
+      <div v-else-if="view === 'visual'" class="af-files-visual">
+        <div v-if="lang !== 'yaml'" class="empty-state">
+          <FaIcon icon="file-lines" class="empty-state-icon" />
+          <span>{{ t('designer.files.visualNotYaml') }}</span>
+        </div>
+        <!-- a playbook : its plays and tasks, field by field -->
+        <AppPlaybookEditor v-else-if="kind === 'playbooks'" v-model="content" :readOnly="readOnly" @reveal="reveal" />
+        <!-- a workflow file : its workflows as graphs, its job templates -->
+        <AppWorkflowEditor v-else-if="isWorkflows" v-model="content" :readOnly="readOnly" @reveal="reveal" />
+        <!-- an inventory : its groups and hosts, edited -->
+        <AppInventoryEditor v-else-if="isInventoryFile" v-model="content" :readOnly="readOnly" @reveal="reveal" />
+        <div v-else-if="fileKind.kind === 'invalid'" class="alert alert-warning d-flex align-items-center gap-2">
+          <FaIcon icon="triangle-exclamation" />
+          <span class="flex-grow-1">{{ t('designer.files.visualInvalid', { error: fileKind.error }) }}</span>
+          <BsButton icon="code" @click="reveal(fileKind.line)">{{ t('designer.files.showInYaml') }}</BsButton>
         </div>
         <AppVarsEditor
           v-else-if="fileKind.kind === 'vars' || fileKind.kind === 'empty'"

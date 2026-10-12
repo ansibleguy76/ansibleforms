@@ -5,13 +5,16 @@
 /** Each section's tabs : its YAML always, its Visual and its Preview when it has them. */
 export const DESIGNER_TABS = {
   categories: ['yaml', 'visual', 'preview'],
-  constants: ['yaml', 'visual'],
+  // the constants as a table (Visual), each with its reference and the forms using it (Preview)
+  constants: ['yaml', 'visual', 'preview'],
   forms: ['yaml', 'visual', 'preview'],
-  // an inventory's groups and hosts, its vars files' variables
-  inventories: ['yaml', 'visual'],
+  // an inventory's groups and hosts edited (Visual), shown as a tree (Preview) ; its vars files'
+  // variables edited, shown with how a playbook reads them
+  inventories: ['yaml', 'visual', 'preview'],
   // a playbook : its YAML, its plays and tasks as fields (Visual), its outline (Preview)
   playbooks: ['yaml', 'visual', 'preview'],
-  varsfiles: ['yaml', 'visual'],
+  // a vars file's variables edited (Visual), shown with how a playbook reads them (Preview)
+  varsfiles: ['yaml', 'visual', 'preview'],
   // a workflow as its graph (the Visual tab), and a dry run of it (the Preview tab)
   workflows: ['yaml', 'visual', 'preview'],
 };

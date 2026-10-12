@@ -2045,6 +2045,11 @@ const currentFormName = computed(() => {
   return idmapping.value.find((x) => x.id == currentForm.value)?.name || null;
 });
 
+// the forms as the Previews read them : their names, their YAML as it is now
+const formsForPreview = computed(() =>
+  (idmapping.value || []).map((m) => ({ name: m.name, text: forms.value[m.id] || '' })),
+);
+
 const lockAge = computed(() => {
   if (lock.value?.lock) {
     return dayjs(lock.value.lock.created).fromNow();
@@ -4938,6 +4943,7 @@ onBeforeUnmount(() => {
                   <AppProjectFiles
                     ref="projectFiles"
                     :kind="FILE_SECTIONS[currentTab]"
+                    :forms="formsForPreview"
                     :view="editorView"
                     :readOnly="!(lock && lock.match)"
                     :theme="editorTheme"
@@ -4985,8 +4991,12 @@ onBeforeUnmount(() => {
                     :text="t('designer.sectionToBuild')"
                   />
                 </div>
+                <!-- Preview : each constant, its reference ($(NAME)) and the forms using it -->
+                <div v-if="loaded && currentTab == 'Constants' && editorView === 'preview'" class="designer-visual">
+                  <AppValuesPreview :text="constants" mode="constants" :forms="formsForPreview" />
+                </div>
                 <!-- Visual : the constants as a table, on the same YAML (saved with Save) -->
-                <div v-if="loaded && currentTab == 'Constants' && editorView === 'visual'" class="designer-visual">
+                <div v-else-if="loaded && currentTab == 'Constants' && editorView === 'visual'" class="designer-visual">
                   <AppConstantsEditor
                     ref="visualEditor"
                     v-model="constants"
