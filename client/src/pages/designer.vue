@@ -3,6 +3,7 @@ import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
 import Form from '@/lib/Form';
 import { slugOf } from '@/lib/formsPath';
 import { DESIGNER_TABS } from '@/config/designerTabs';
+import { EXPLORER_WIDTH, explorerWidthAfterDrag } from '@/config/fileExplorer';
 import Lock from '@/lib/Lock';
 import { useAppStore } from '@/stores/app';
 import Backup from '@/lib/Backup';
@@ -241,7 +242,7 @@ const route = useRoute();
 const router = useRouter();
 const store = useAppStore();
 
-const treeWidthPct = ref(25);
+const treeWidthPct = ref(EXPLORER_WIDTH.start);
 function startResize(e) {
   e.preventDefault();
   const layout = e.target.closest('.designer-layout');
@@ -251,8 +252,7 @@ function startResize(e) {
   const startPct = treeWidthPct.value;
   function onMove(ev) {
     const dx = ev.clientX - startX;
-    const dPct = (dx / layoutRect.width) * 100;
-    treeWidthPct.value = Math.min(50, Math.max(15, startPct - dPct));
+    treeWidthPct.value = explorerWidthAfterDrag(startPct, dx, layoutRect.width);
     layout.style.gridTemplateColumns = `1fr 1rem ${treeWidthPct.value}%`;
   }
   function onUp() {
@@ -5361,7 +5361,9 @@ onBeforeUnmount(() => {
 <style lang="scss" scoped>
 .designer-layout {
   display: grid;
-  grid-template-columns: 1fr 1rem 25%;
+  /* the explorer's width when it opens : EXPLORER_WIDTH.start (config/fileExplorer.js), set
+     inline as soon as the forms show it */
+  grid-template-columns: 1fr 1rem 30%;
   align-items: start;
 }
 .designer-layout:not(:has(.designer-tree)) {

@@ -27,6 +27,7 @@ import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import Helpers from '@/lib/Helpers';
 import { varsKind } from '@/config/varsFile';
+import { EXPLORER_WIDTH, explorerWidthAfterDrag } from '@/config/fileExplorer';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -292,7 +293,7 @@ async function remove() {
 }
 
 // ─── the explorer's width (as the forms') ─────────────────────────────────────
-const treeWidthPct = ref(25);
+const treeWidthPct = ref(EXPLORER_WIDTH.start);
 function startResize(e) {
   e.preventDefault();
   const layout = e.target.closest('.af-files');
@@ -300,7 +301,7 @@ function startResize(e) {
   const width = layout.getBoundingClientRect().width;
   const startPct = treeWidthPct.value;
   const onMove = (ev) => {
-    treeWidthPct.value = Math.min(50, Math.max(15, startPct - ((ev.clientX - startX) / width) * 100));
+    treeWidthPct.value = explorerWidthAfterDrag(startPct, ev.clientX - startX, width);
   };
   const onUp = () => {
     document.removeEventListener('mousemove', onMove);
