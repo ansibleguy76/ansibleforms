@@ -838,7 +838,7 @@ function startAt(i) {
               </ul>
               <template v-if="!readOnly">
                 <!-- a node there already : linked -->
-                <label class="form-label small text-muted mb-1">{{ t('workflowEditor.linkExisting') }}</label>
+                <label class="form-label small text-muted mb-2">{{ t('workflowEditor.linkExisting') }}</label>
                 <div class="d-flex align-items-center gap-2 mb-3">
                   <select v-model="linkKind" class="form-select af-wf-kind">
                     <option v-for="kind in LINK_KINDS" :key="kind" :value="kind">
@@ -854,7 +854,7 @@ function startAt(i) {
                   }}</BsButton>
                 </div>
                 <!-- a new node : the wizard, linked after this one -->
-                <label class="form-label small text-muted mb-1">{{ t('workflowEditor.newAfter') }}</label>
+                <label class="form-label small text-muted mb-2">{{ t('workflowEditor.newAfter') }}</label>
                 <div class="d-flex flex-wrap gap-2">
                   <BsButton
                     v-for="kind in LINK_KINDS"
