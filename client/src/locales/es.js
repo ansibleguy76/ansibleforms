@@ -1632,7 +1632,6 @@ export default {
       saved: '{path} guardado',
       deleted: '{path} borrado',
       pushed: 'Enviado a {repository}',
-      push: 'Confirmar y enviar a {repository}',
       path: 'Ruta',
       pathHelp: 'La ruta del archivo en la carpeta, con sus subcarpetas (roles/web/tasks/main.yml).',
       folderHelp: 'La ruta de la carpeta; se conserva cuando se guarda un archivo en ella.',

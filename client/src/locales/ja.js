@@ -1601,7 +1601,6 @@ export default {
       saved: '{path} を保存しました',
       deleted: '{path} を削除しました',
       pushed: '{repository} にプッシュしました',
-      push: 'コミットして {repository} にプッシュ',
       path: 'パス',
       pathHelp: 'フォルダー内のファイルのパス (サブフォルダーを含む、roles/web/tasks/main.yml)。',
       folderHelp: 'フォルダーのパス。ファイルを保存すると残ります。',

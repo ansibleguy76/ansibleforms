@@ -1627,7 +1627,6 @@ export default {
       saved: '{path} opgeslagen',
       deleted: '{path} verwijderd',
       pushed: 'Gepusht naar {repository}',
-      push: 'Committen en pushen naar {repository}',
       path: 'Pad',
       pathHelp: 'Het pad van het bestand in de map, met submappen (roles/web/tasks/main.yml).',
       folderHelp: 'Het pad van de map; hij blijft zodra er een bestand in is opgeslagen.',

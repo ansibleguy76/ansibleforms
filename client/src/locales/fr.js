@@ -1642,7 +1642,6 @@ export default {
       saved: '{path} enregistré',
       deleted: '{path} supprimé',
       pushed: 'Poussé vers {repository}',
-      push: 'Valider et pousser vers {repository}',
       path: 'Chemin',
       pathHelp: 'Le chemin du fichier dans le dossier, avec ses sous-dossiers (roles/web/tasks/main.yml).',
       folderHelp: "Le chemin du dossier ; il est gardé dès qu'un fichier y est enregistré.",

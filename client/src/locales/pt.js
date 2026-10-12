@@ -1634,7 +1634,6 @@ export default {
       saved: '{path} guardado',
       deleted: '{path} eliminado',
       pushed: 'Enviado para {repository}',
-      push: 'Fazer commit e enviar para {repository}',
       path: 'Caminho',
       pathHelp: 'O caminho do ficheiro na pasta, com as subpastas (roles/web/tasks/main.yml).',
       folderHelp: 'O caminho da pasta; mantém-se quando um ficheiro é guardado nela.',

@@ -4661,7 +4661,7 @@ onBeforeUnmount(() => {
                       :isIconButton="true"
                       @click="projectFiles.push()"
                       :disabled="projectFiles.dirty || projectFiles.busy || !projectFiles.unpushed"
-                      :title="t('designer.files.push', { repository: projectFiles.repository })"
+                      :title="t('designer.saveRepository')"
                     />
                     <BsButton
                       icon="file-circle-plus"

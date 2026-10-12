@@ -1626,7 +1626,6 @@ export default {
       saved: '{path} salvato',
       deleted: '{path} eliminato',
       pushed: 'Inviato a {repository}',
-      push: 'Commit e push su {repository}',
       path: 'Percorso',
       pathHelp: 'Il percorso del file nella cartella, con le sottocartelle (roles/web/tasks/main.yml).',
       folderHelp: 'Il percorso della cartella; resta quando vi si salva un file.',

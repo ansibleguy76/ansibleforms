@@ -1562,7 +1562,6 @@ export default {
       saved: '已保存 {path}',
       deleted: '已删除 {path}',
       pushed: '已推送到 {repository}',
-      push: '提交并推送到 {repository}',
       path: '路径',
       pathHelp: '文件在文件夹中的路径,含子文件夹 (roles/web/tasks/main.yml)。',
       folderHelp: '文件夹的路径;在其中保存文件后会保留。',

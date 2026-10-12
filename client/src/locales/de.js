@@ -1648,7 +1648,6 @@ export default {
       saved: '{path} gespeichert',
       deleted: '{path} gelöscht',
       pushed: 'Nach {repository} gepusht',
-      push: 'Committen und nach {repository} pushen',
       path: 'Pfad',
       pathHelp: 'Der Pfad der Datei im Ordner, mit Unterordnern (roles/web/tasks/main.yml).',
       folderHelp: 'Der Pfad des Ordners; er bleibt, sobald eine Datei darin gespeichert ist.',

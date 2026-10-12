@@ -1638,7 +1638,6 @@ export default {
       saved: '{path} desat',
       deleted: '{path} esborrat',
       pushed: 'Enviat a {repository}',
-      push: 'Confirma i envia a {repository}',
       path: 'Ruta',
       pathHelp: 'La ruta del fitxer a la carpeta, amb les subcarpetes (roles/web/tasks/main.yml).',
       folderHelp: "La ruta de la carpeta; es conserva quan s'hi desa un fitxer.",

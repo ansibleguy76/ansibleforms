@@ -1604,7 +1604,6 @@ export default {
       saved: '{path} saved',
       deleted: '{path} deleted',
       pushed: 'Pushed to {repository}',
-      push: 'Commit and push to {repository}',
       path: 'Path',
       pathHelp: "The file's path in the folder, with its subfolders (roles/web/tasks/main.yml).",
       folderHelp: "The folder's path; it is kept once a file is saved in it.",

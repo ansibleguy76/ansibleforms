@@ -1620,7 +1620,6 @@ export default {
       saved: 'Zapisano {path}',
       deleted: 'Usunięto {path}',
       pushed: 'Wypchnięto do {repository}',
-      push: 'Zatwierdź i wypchnij do {repository}',
       path: 'Ścieżka',
       pathHelp: 'Ścieżka pliku w folderze, z podfolderami (roles/web/tasks/main.yml).',
       folderHelp: 'Ścieżka folderu; zostaje, gdy zapiszesz w nim plik.',
