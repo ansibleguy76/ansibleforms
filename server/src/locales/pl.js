@@ -6,10 +6,12 @@ export default {
     noDesignerAccess: "Nie masz dostępu do projektanta",
     noLogsAccess: "Nie masz dostępu do dzienników",
     noDatabaseAccess: "Nie masz dostępu do operacji na bazie danych",
-    noScheduleAccess: "Nie masz uprawnień do zarządzania zaplanowanymi zadaniami",
+    noScheduleAccess:
+      "Nie masz uprawnień do zarządzania zaplanowanymi zadaniami",
     noChatAccess: "Nie masz uprawnień do korzystania z asystenta czatu",
     noMcpAccess: "Nie masz uprawnień do korzystania z serwera MCP",
-    noStoredJobsAccess: "Nie masz uprawnień do zarządzania zapisanymi zadaniami",
+    noStoredJobsAccess:
+      "Nie masz uprawnień do zarządzania zapisanymi zadaniami",
     noDataSent: "Nie wysłano żadnych danych",
     missingDbConfig: "Brak konfiguracji bazy danych",
     provideRefreshToken: "Podaj refresh token",
@@ -17,17 +19,22 @@ export default {
     refreshTokenExpired: "Refresh token wygasł",
     refreshTokenUnknown: "Nieznany refresh token",
     requiredFields: "Wypełnij wszystkie wymagane pola",
-    noVerbosePermission: "Nie masz uprawnień do korzystania z trybu szczegółowego (verbose)",
+    noVerbosePermission:
+      "Nie masz uprawnień do korzystania z trybu szczegółowego (verbose)",
   },
   auth: {
     authFailed: "Uwierzytelnianie nie powiodło się",
     invalidCredentials: "Nieprawidłowe dane logowania",
-    tooManyFailures: "Zbyt wiele nieudanych logowań : spróbuj ponownie za {minutes} min",
-    passwordChangeRequired: "Najpierw zmień hasło : to publicznie znane hasło domyślne",
+    tooManyFailures:
+      "Zbyt wiele nieudanych logowań : spróbuj ponownie za {minutes} min",
+    passwordChangeRequired:
+      "Najpierw zmień hasło : to publicznie znane hasło domyślne",
     disclaimerRequired: "Najpierw zaakceptuj zastrzeżenie",
     disclaimerAccepted: "Zastrzeżenie zostało zaakceptowane",
-    loginDisabled: "Brak uwierzytelnienia, logowanie nie jest włączone dla tego użytkownika.",
-    signInBlocked: "Brak uwierzytelnienia, administrator zablokował logowanie tego użytkownika.",
+    loginDisabled:
+      "Brak uwierzytelnienia, logowanie nie jest włączone dla tego użytkownika.",
+    signInBlocked:
+      "Brak uwierzytelnienia, administrator zablokował logowanie tego użytkownika.",
     azureFailed: "Uwierzytelnianie Azure AD nie powiodło się",
     oidcFailed: "Uwierzytelnianie OIDC nie powiodło się",
   },
@@ -47,7 +54,8 @@ export default {
     failedGetFormsList: "Nie udało się pobrać listy formularzy",
     formNameNotProvided: "Nie podano nazwy formularza",
     failedGetFormConfig: "Nie udało się pobrać konfiguracji formularza",
-    onlyAdminsOrDesigners: "Tylko administratorzy i projektanci mają dostęp do pełnej konfiguracji formularzy",
+    onlyAdminsOrDesigners:
+      "Tylko administratorzy i projektanci mają dostęp do pełnej konfiguracji formularzy",
     failedGetFormsConfig: "Nie udało się pobrać konfiguracji formularzy",
     failedGetBackups: "Nie udało się pobrać kopii zapasowych",
     failedGetEnvVars: "Nie udało się pobrać zmiennych środowiskowych",
@@ -56,14 +64,18 @@ export default {
     failedVaultMounts: "Nie udało się wyświetlić punktów montowania Vault",
     noEnvVarsGiven: "Nie podano żadnych zmiennych środowiskowych",
     envVarsSaved: "Zapisano ustawienia środowiska",
-    envVarsNotFound: "Nie znaleziono sekcji zmiennych środowiskowych w help.yaml",
+    envVarsNotFound:
+      "Nie znaleziono sekcji zmiennych środowiskowych w help.yaml",
     failedRestoreForms: "Nie udało się przywrócić formularzy",
-    failedRestoreNoName: "Nie udało się przywrócić, nie podano nazwy kopii zapasowej",
+    failedRestoreNoName:
+      "Nie udało się przywrócić, nie podano nazwy kopii zapasowej",
     failedRestoreBackup: "Nie udało się przywrócić '{name}'",
     designerLocked: "Projektant jest zablokowany",
-    designerLockedBy: "Projektant jest zablokowany przez użytkownika {username}",
+    designerLockedBy:
+      "Projektant jest zablokowany przez użytkownika {username}",
     failedSaveForms: "Nie udało się zapisać formularzy",
-    failedValidateForms: "Nie udało się zweryfikować nowej konfiguracji formularzy",
+    failedValidateForms:
+      "Nie udało się zweryfikować nowej konfiguracji formularzy",
     failedGetLock: "Nie udało się pobrać blokady",
   },
   resources: {
@@ -80,7 +92,8 @@ export default {
     oauth2Added: "Dodano dostawcę OAuth2",
     runnerAdded: "Dodano runner",
     runnerNotFound: "Nie znaleziono runnera",
-    runnerAdminOnly: "Tylko admin może dodać, zmienić lub usunąć runner : runner otrzymuje poświadczenia zadań, które uruchamia",
+    runnerAdminOnly:
+      "Tylko admin może dodać, zmienić lub usunąć runner : runner otrzymuje poświadczenia zadań, które uruchamia",
     defaultPasswordRefused: "Wybierz inne hasło niż publiczne hasło domyślne",
     passwordTooShort: "Hasło musi mieć co najmniej {min} znaków",
     passwordIsUsername: "Hasło nie może być nazwą użytkownika",
@@ -92,9 +105,12 @@ export default {
     currentPasswordRequired: "Aby ustawić nowe hasło, podaj obecne hasło",
     currentPasswordWrong: "Obecne hasło jest nieprawidłowe",
     cantChangePasswordLdap: "Nie można zmienić hasła użytkownika LDAP",
-    directoryTypeUnknown: "To nie jest użytkownik ani grupa LDAP, Entra ID lub OIDC",
-    directoryUserKept: "Administrator zablokował tego użytkownika: zezwól na logowanie, zanim go zapomnisz",
-    failedDirectoryUser: "Nie udało się odczytać ani zmienić użytkownika LDAP lub SSO",
+    directoryTypeUnknown:
+      "To nie jest użytkownik ani grupa LDAP, Entra ID lub OIDC",
+    directoryUserKept:
+      "Administrator zablokował tego użytkownika: zezwól na logowanie, zanim go zapomnisz",
+    failedDirectoryUser:
+      "Nie udało się odczytać ani zmienić użytkownika LDAP lub SSO",
     cantBlockAdmin: "Użytkownika admin nie można zablokować: to droga powrotu",
     cantBlockYourself: "Nie możesz zablokować własnego logowania",
     groupNotFound: "Nie znaleziono takiej grupy",
@@ -114,27 +130,34 @@ export default {
     failedSyncRepository: "Nie udało się wypchnąć repozytorium",
     noFormsRepositories: "Nie skonfigurowano repozytoriów formularzy",
     failedApplyConfigSeed: "Nie udało się zastosować config seed",
-    noConfigSeed: "Nie skonfigurowano config seed (CONFIG_SEED_PATH jest pusty)",
+    noConfigSeed:
+      "Nie skonfigurowano config seed (CONFIG_SEED_PATH jest pusty)",
     failedFindSsh: "Nie udało się znaleźć klucza SSH",
     failedUpdateSsh: "Nie udało się zaktualizować klucza SSH",
     failedFindChatSettings: "Nie udało się znaleźć ustawień czatu",
     failedUpdateChatSettings: "Nie udało się zaktualizować ustawień czatu",
-    seedManagedChatSettings: "Ustawieniami czatu zarządza config seed, są tylko do odczytu",
+    seedManagedChatSettings:
+      "Ustawieniami czatu zarządza config seed, są tylko do odczytu",
     chatSettingsUpdated: "Zaktualizowano ustawienia czatu",
     chatCheckFailed: "Sprawdzenie dostawcy czatu nie powiodło się",
     failedFindLdap: "Nie udało się znaleźć LDAP",
     ldapCheckFailed: "Sprawdzenie LDAP nie powiodło się",
-    storedPasswordOtherServer: "Zapisane hasło jest używane tylko dla zapisanego serwera : wpisz hasło, aby sprawdzić inny",
+    storedPasswordOtherServer:
+      "Zapisane hasło jest używane tylko dla zapisanego serwera : wpisz hasło, aby sprawdzić inny",
     ldapUpdated: "Zaktualizowano LDAP",
     failedUpdateLdap: "Nie udało się zaktualizować LDAP",
-    seedManagedSettings: "Ustawieniami zarządza config seed, są tylko do odczytu",
-    seedManagedLdap: "Konfiguracją LDAP zarządza config seed, jest tylko do odczytu",
+    seedManagedSettings:
+      "Ustawieniami zarządza config seed, są tylko do odczytu",
+    seedManagedLdap:
+      "Konfiguracją LDAP zarządza config seed, jest tylko do odczytu",
     failedFindSettings: "Nie udało się znaleźć ustawień",
     mailCheckFailed: "Sprawdzenie poczty nie powiodło się",
     mailSent: "Wysłano wiadomość o identyfikatorze {id}",
     failedUpdateSettings: "Nie udało się zaktualizować ustawień",
-    configLockedByDesigner: "Konfiguracja jest zablokowana przez aktywną sesję projektanta{username}",
-    configChangedElsewhere: "Konfiguracja została zmieniona w innym miejscu, przeładuj przed zapisaniem",
+    configLockedByDesigner:
+      "Konfiguracja jest zablokowana przez aktywną sesję projektanta{username}",
+    configChangedElsewhere:
+      "Konfiguracja została zmieniona w innym miejscu, przeładuj przed zapisaniem",
     failedImportConfig: "Nie udało się zaimportować konfiguracji",
     failedExportConfig: "Nie udało się wyeksportować konfiguracji",
     failedLegacyCheck: "Nie udało się sprawdzić starszego pliku forms.yaml",
@@ -147,12 +170,15 @@ export default {
     failedFindLogo: "Nie udało się pobrać logo",
     failedUpdateLogo: "Nie udało się zaktualizować logo",
     logoNoFile: "Nie przesłano żadnego pliku",
-    logoInvalidImage: "Nieprawidłowy lub nieobsługiwany obraz, dozwolone typy to png, jpeg, webp, gif i svg",
+    logoInvalidImage:
+      "Nieprawidłowy lub nieobsługiwany obraz, dozwolone typy to png, jpeg, webp, gif i svg",
     failedFindFavicon: "Nie udało się pobrać ikony witryny",
     failedUpdateFavicon: "Nie udało się zaktualizować ikony witryny",
-    faviconInvalidImage: "Nieprawidłowy lub nieobsługiwany obraz, dozwolone typy to png, ico, svg, webp, gif i jpeg",
+    faviconInvalidImage:
+      "Nieprawidłowy lub nieobsługiwany obraz, dozwolone typy to png, ico, svg, webp, gif i jpeg",
     hostValueRequired: "Wymagana wartość hosta",
-    hostNameRequired: "Wymagana nazwa hosta (parametr zapytania \"name\" lub \"host\")",
+    hostNameRequired:
+      'Wymagana nazwa hosta (parametr zapytania "name" lub "host")',
   },
   jobs: {
     mustProvideJobId: "Musisz podać jobid",
@@ -160,7 +186,8 @@ export default {
     failedAbort: "Nie udało się przerwać zadania",
     failedRetrieve: "Nie udało się pobrać zadania",
     failedRetrieveJobs: "Nie udało się pobrać zadań",
-    failedRetrieveApprovals: "Nie udało się pobrać zadań oczekujących na zatwierdzenie",
+    failedRetrieveApprovals:
+      "Nie udało się pobrać zadań oczekujących na zatwierdzenie",
     failedDelete: "Nie udało się usunąć zadania",
     deleted: "Usunięto zadanie",
     failedLaunch: "Nie udało się uruchomić formularza",
@@ -200,7 +227,8 @@ export default {
       launchBy: "Zadanie zostało uruchomione przez {user}.",
       relaunchBy: "Zadanie zostało ponownie uruchomione przez {user}.",
       deleteBy: "Zadanie zostało usunięte przez {user}.",
-      approveBy: "Zadanie zostało zatwierdzone przez {user} i będzie kontynuowane.",
+      approveBy:
+        "Zadanie zostało zatwierdzone przez {user} i będzie kontynuowane.",
       rejectBy: "Zadanie zostało odrzucone przez {user}.",
     },
     // the subjects : "AnsibleForms '<form>' [<type>] (<id>) - <one of these>", and the
@@ -229,4 +257,4 @@ export default {
       body: "<p>To jest wiadomość testowa z AnsibleForms</p>",
     },
   },
-}
+};

@@ -9,7 +9,8 @@ export default {
     noScheduleAccess: "U heeft geen toestemming om schedules te beheren",
     noChatAccess: "Je hebt geen toestemming om de chat-assistent te gebruiken",
     noMcpAccess: "Je hebt geen toestemming om de MCP-server te gebruiken",
-    noStoredJobsAccess: "U heeft geen toestemming om opgeslagen invoer te beheren",
+    noStoredJobsAccess:
+      "U heeft geen toestemming om opgeslagen invoer te beheren",
     noDataSent: "Er zijn geen gegevens verstuurd",
     missingDbConfig: "Database configuratie ontbreekt",
     provideRefreshToken: "Geef een refresh token op",
@@ -17,17 +18,22 @@ export default {
     refreshTokenExpired: "Refresh token is verlopen",
     refreshTokenUnknown: "Refresh token is onbekend",
     requiredFields: "Vul alle verplichte velden in",
-    noVerbosePermission: "U heeft geen toestemming om de verbose modus te gebruiken",
+    noVerbosePermission:
+      "U heeft geen toestemming om de verbose modus te gebruiken",
   },
   auth: {
     authFailed: "Authenticatie mislukt",
     invalidCredentials: "Ongeldige inloggegevens",
-    tooManyFailures: "Te veel mislukte aanmeldingen : probeer het over {minutes} minuut/minuten opnieuw",
-    passwordChangeRequired: "Wijzig eerst uw wachtwoord : het is het publiek bekende standaardwachtwoord",
+    tooManyFailures:
+      "Te veel mislukte aanmeldingen : probeer het over {minutes} minuut/minuten opnieuw",
+    passwordChangeRequired:
+      "Wijzig eerst uw wachtwoord : het is het publiek bekende standaardwachtwoord",
     disclaimerRequired: "Accepteer eerst de disclaimer",
     disclaimerAccepted: "De disclaimer is geaccepteerd",
-    loginDisabled: "Niet geauthenticeerd, inloggen is niet ingeschakeld voor deze gebruiker.",
-    signInBlocked: "Niet geauthenticeerd, een beheerder heeft het aanmelden van deze gebruiker geblokkeerd.",
+    loginDisabled:
+      "Niet geauthenticeerd, inloggen is niet ingeschakeld voor deze gebruiker.",
+    signInBlocked:
+      "Niet geauthenticeerd, een beheerder heeft het aanmelden van deze gebruiker geblokkeerd.",
     azureFailed: "Azure AD authenticatie mislukt",
     oidcFailed: "OIDC authenticatie mislukt",
   },
@@ -47,7 +53,8 @@ export default {
     failedGetFormsList: "Kan formulierlijst niet ophalen",
     formNameNotProvided: "Formuliernaam niet opgegeven",
     failedGetFormConfig: "Kan formulierconfiguratie niet ophalen",
-    onlyAdminsOrDesigners: "Alleen beheerders of designers hebben toegang tot de volledige formulierconfiguratie",
+    onlyAdminsOrDesigners:
+      "Alleen beheerders of designers hebben toegang tot de volledige formulierconfiguratie",
     failedGetFormsConfig: "Kan formulierconfiguratie niet ophalen",
     failedGetBackups: "Kan backups niet ophalen",
     failedGetEnvVars: "Kan omgevingsvariabelen niet ophalen",
@@ -83,19 +90,26 @@ export default {
     secretStoreConnectionOk: "Secret store verbinding is OK",
     runnerAdded: "Runner toegevoegd",
     runnerNotFound: "Runner niet gevonden",
-    runnerAdminOnly: "Alleen een admin kan een runner toevoegen, wijzigen of verwijderen : een runner ontvangt de credentials van de jobs die hij uitvoert",
-    defaultPasswordRefused: "Kies een ander wachtwoord dan het publieke standaardwachtwoord",
+    runnerAdminOnly:
+      "Alleen een admin kan een runner toevoegen, wijzigen of verwijderen : een runner ontvangt de credentials van de jobs die hij uitvoert",
+    defaultPasswordRefused:
+      "Kies een ander wachtwoord dan het publieke standaardwachtwoord",
     passwordTooShort: "Het wachtwoord heeft minstens {min} tekens nodig",
     passwordIsUsername: "Het wachtwoord mag niet de gebruikersnaam zijn",
     runnerConnectionOk: "Runner verbinding is OK",
     userNotFound: "Gebruiker niet gevonden",
-    currentPasswordRequired: "Uw huidige wachtwoord is vereist om een nieuw wachtwoord in te stellen",
+    currentPasswordRequired:
+      "Uw huidige wachtwoord is vereist om een nieuw wachtwoord in te stellen",
     currentPasswordWrong: "Het huidige wachtwoord is niet juist",
-    cantChangePasswordLdap: "U kunt het wachtwoord van een LDAP gebruiker niet wijzigen",
+    cantChangePasswordLdap:
+      "U kunt het wachtwoord van een LDAP gebruiker niet wijzigen",
     directoryTypeUnknown: "Geen LDAP-, Entra ID- of OIDC-gebruiker of -groep",
-    directoryUserKept: "Een beheerder heeft deze gebruiker geblokkeerd: sta het aanmelden toe voordat je hem vergeet",
-    failedDirectoryUser: "De LDAP- of SSO-gebruiker kon niet worden gelezen of gewijzigd",
-    cantBlockAdmin: "De gebruiker admin kan niet worden geblokkeerd: het is de weg terug",
+    directoryUserKept:
+      "Een beheerder heeft deze gebruiker geblokkeerd: sta het aanmelden toe voordat je hem vergeet",
+    failedDirectoryUser:
+      "De LDAP- of SSO-gebruiker kon niet worden gelezen of gewijzigd",
+    cantBlockAdmin:
+      "De gebruiker admin kan niet worden geblokkeerd: het is de weg terug",
     cantBlockYourself: "Je kunt je eigen aanmelding niet blokkeren",
     groupNotFound: "Groep niet gevonden",
     groupHasUsers: "Onbekende groep of groep heeft gebruikers",
@@ -114,27 +128,34 @@ export default {
     failedSyncRepository: "Pushen van de repository mislukt",
     noFormsRepositories: "Geen forms repositories geconfigureerd",
     failedApplyConfigSeed: "Kan de configuratie-seed niet toepassen",
-    noConfigSeed: "Er is geen configuratie-seed geconfigureerd (CONFIG_SEED_PATH is leeg)",
+    noConfigSeed:
+      "Er is geen configuratie-seed geconfigureerd (CONFIG_SEED_PATH is leeg)",
     failedFindSsh: "Kan SSH sleutel niet vinden",
     failedUpdateSsh: "Kan SSH sleutel niet bijwerken",
     failedFindChatSettings: "Kan de chat-instellingen niet vinden",
     failedUpdateChatSettings: "Kan de chat-instellingen niet bijwerken",
-    seedManagedChatSettings: "De chat-instellingen worden beheerd door de config seed en zijn alleen-lezen",
+    seedManagedChatSettings:
+      "De chat-instellingen worden beheerd door de config seed en zijn alleen-lezen",
     chatSettingsUpdated: "Chat-instellingen bijgewerkt",
     chatCheckFailed: "De test van de chatprovider is mislukt",
     failedFindLdap: "Kan LDAP niet vinden",
     ldapCheckFailed: "LDAP controle mislukt",
-    storedPasswordOtherServer: "Het opgeslagen wachtwoord wordt alleen voor de opgeslagen server gebruikt : typ het wachtwoord om een andere te controleren",
+    storedPasswordOtherServer:
+      "Het opgeslagen wachtwoord wordt alleen voor de opgeslagen server gebruikt : typ het wachtwoord om een andere te controleren",
     ldapUpdated: "LDAP bijgewerkt",
     failedUpdateLdap: "Kan LDAP niet bijwerken",
-    seedManagedSettings: "De instellingen worden beheerd door de configuratie-seed en zijn alleen-lezen",
-    seedManagedLdap: "De LDAP-configuratie wordt beheerd door de configuratie-seed en is alleen-lezen",
+    seedManagedSettings:
+      "De instellingen worden beheerd door de configuratie-seed en zijn alleen-lezen",
+    seedManagedLdap:
+      "De LDAP-configuratie wordt beheerd door de configuratie-seed en is alleen-lezen",
     failedFindSettings: "Kan instellingen niet vinden",
     mailCheckFailed: "Mail controle mislukt",
     mailSent: "Mail verzonden met id {id}",
     failedUpdateSettings: "Kan instellingen niet bijwerken",
-    configLockedByDesigner: "De configuratie is vergrendeld door een actieve designersessie{username}",
-    configChangedElsewhere: "De configuratie is elders gewijzigd, herlaad voor het opslaan",
+    configLockedByDesigner:
+      "De configuratie is vergrendeld door een actieve designersessie{username}",
+    configChangedElsewhere:
+      "De configuratie is elders gewijzigd, herlaad voor het opslaan",
     failedImportConfig: "Kan configuratie niet importeren",
     failedExportConfig: "Kan configuratie niet exporteren",
     failedLegacyCheck: "Kan niet controleren op verouderde forms.yaml",
@@ -147,12 +168,14 @@ export default {
     failedFindLogo: "Logo ophalen mislukt",
     failedUpdateLogo: "Logo bijwerken mislukt",
     logoNoFile: "Er werd geen bestand geüpload",
-    logoInvalidImage: "Ongeldige of niet-ondersteunde afbeelding, toegestane types zijn png, jpeg, webp, gif en svg",
+    logoInvalidImage:
+      "Ongeldige of niet-ondersteunde afbeelding, toegestane types zijn png, jpeg, webp, gif en svg",
     failedFindFavicon: "Kan het websitepictogram niet ophalen",
     failedUpdateFavicon: "Kan het websitepictogram niet bijwerken",
-    faviconInvalidImage: "Ongeldige of niet-ondersteunde afbeelding, toegestaan zijn png, ico, svg, webp, gif en jpeg",
+    faviconInvalidImage:
+      "Ongeldige of niet-ondersteunde afbeelding, toegestaan zijn png, ico, svg, webp, gif en jpeg",
     hostValueRequired: "Host waarde vereist",
-    hostNameRequired: "Host naam (query param \"name\" of \"host\") vereist",
+    hostNameRequired: 'Host naam (query param "name" of "host") vereist',
   },
   jobs: {
     mustProvideJobId: "U moet een job-id opgeven",
@@ -229,4 +252,4 @@ export default {
       body: "<p>Dit is een testbericht van AnsibleForms</p>",
     },
   },
-}
+};

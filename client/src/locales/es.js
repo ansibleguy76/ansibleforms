@@ -1189,10 +1189,16 @@ export default {
       caBundleHelp:
         'Los certificados PEM de la autoridad que firmó el certificado del runner: su raíz y luego los intermedios.',
       customCa: 'Usar un certificado de CA personalizado',
-      default_playbook: 'Formularios de playbook',
-      default_playbookHelp: 'Dónde se ejecuta un formulario de playbook que no nombra runner.',
-      default_template: 'Formularios de plantilla',
-      default_templateHelp: 'Dónde se ejecuta un formulario de plantilla que no nombra runner.',
+      default_rte: 'Formularios de playbook',
+      default_rteHelp: 'Dónde se ejecuta un formulario ansible que no nombra ningún runner.',
+      default_awx: 'Formularios AWX, AAP y Ascender',
+      default_awxHelp: 'Dónde se ejecuta un formulario awx, aap o ascender que no nombra ningún runner.',
+      default_semaphore: 'Formularios Semaphore',
+      default_semaphoreHelp: 'Dónde se ejecuta un formulario semaphore que no nombra ningún runner.',
+      default_rundeck: 'Formularios Rundeck',
+      default_rundeckHelp: 'Dónde se ejecuta un formulario rundeck que no nombra ningún runner.',
+      default_jenkins: 'Formularios Jenkins',
+      default_jenkinsHelp: 'Dónde se ejecuta un formulario jenkins que no nombra ningún runner.',
       defaultsTitle: 'Runners predeterminados',
       editDefaults: 'Editar predeterminados',
       flavour: 'Producto',
@@ -1250,8 +1256,6 @@ export default {
       tokenHelp_jenkins: 'Un token de API del usuario de Jenkins: menú del usuario, Security, API Token.',
       usernameHelp_jenkins:
         'El usuario de Jenkins al que pertenece el token de API; los jobs se ejecutan como este usuario.',
-      noDefaultHelp:
-        'Nunca un predeterminado: un formulario de plantilla que no nombra ningún runner se ejecuta en el AWX predeterminado, así que un formulario nombra este runner con runner: <name>.',
     },
     disclaimer: {
       description:
@@ -1887,7 +1891,10 @@ export default {
     helpPlaybook: 'El playbook que ejecuta.',
     formWorkflow: 'Workflow',
     helpWorkflow: 'El workflow que ejecuta, uno de Diseñador > Workflows.',
-    helpTemplate: 'La plantilla de trabajo de AWX que lanza.',
+    helpTemplate:
+      'La plantilla que lanza en el runner: una plantilla de job o de workflow de AWX, una plantilla de Semaphore.',
+    formJob: 'Job',
+    helpJob: 'El job que ejecuta en el runner: su nombre, o grupo/nombre (Rundeck), carpeta/nombre (Jenkins).',
     helpInventory: 'El inventario sobre el que se ejecutan sus trabajos.',
     helpScmBranch: 'La rama que AWX usa para la plantilla.',
     helpExecEnv: 'El entorno de ejecución de AWX de sus trabajos.',

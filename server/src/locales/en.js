@@ -22,12 +22,15 @@ export default {
   auth: {
     authFailed: "Authentication failed",
     invalidCredentials: "Invalid credentials",
-    tooManyFailures: "Too many failed logins : try again in {minutes} minute(s)",
-    passwordChangeRequired: "Change your password first : it is the public default password",
+    tooManyFailures:
+      "Too many failed logins : try again in {minutes} minute(s)",
+    passwordChangeRequired:
+      "Change your password first : it is the public default password",
     disclaimerRequired: "Accept the disclaimer first",
     disclaimerAccepted: "The disclaimer is accepted",
     loginDisabled: "Not authenticated, login is not enabled for this user.",
-    signInBlocked: "Not authenticated, an administrator blocked the sign-in of this user.",
+    signInBlocked:
+      "Not authenticated, an administrator blocked the sign-in of this user.",
     azureFailed: "Azure AD authentication failed",
     oidcFailed: "OIDC authentication failed",
   },
@@ -47,7 +50,8 @@ export default {
     failedGetFormsList: "Failed to get forms list",
     formNameNotProvided: "Form name not provided",
     failedGetFormConfig: "Failed to get form config",
-    onlyAdminsOrDesigners: "Only admins or designers can access the full forms configuration",
+    onlyAdminsOrDesigners:
+      "Only admins or designers can access the full forms configuration",
     failedGetFormsConfig: "Failed to get forms configuration",
     failedGetBackups: "Failed to get backups",
     failedGetEnvVars: "Failed to get environment variables",
@@ -83,17 +87,21 @@ export default {
     secretStoreConnectionOk: "Secret store connection is OK",
     runnerAdded: "Runner added",
     runnerNotFound: "Runner not found",
-    runnerAdminOnly: "Only an admin can add, change or delete a runner : a runner receives the credentials of the jobs it runs",
-    defaultPasswordRefused: "Choose another password than the public default one",
+    runnerAdminOnly:
+      "Only an admin can add, change or delete a runner : a runner receives the credentials of the jobs it runs",
+    defaultPasswordRefused:
+      "Choose another password than the public default one",
     passwordTooShort: "The password needs at least {min} characters",
     passwordIsUsername: "The password cannot be the username",
     runnerConnectionOk: "Runner connection is OK",
     userNotFound: "User not found",
-    currentPasswordRequired: "Your current password is required to set a new one",
+    currentPasswordRequired:
+      "Your current password is required to set a new one",
     currentPasswordWrong: "The current password is not correct",
     cantChangePasswordLdap: "You can't change the password for an LDAP user",
     directoryTypeUnknown: "Not an LDAP, Entra ID or OIDC user or group",
-    directoryUserKept: "An administrator blocked this user : allow its sign-in before forgetting it",
+    directoryUserKept:
+      "An administrator blocked this user : allow its sign-in before forgetting it",
     failedDirectoryUser: "The LDAP or SSO user could not be read or changed",
     cantBlockAdmin: "The admin user cannot be blocked : it is the way back in",
     cantBlockYourself: "You cannot block your own sign-in",
@@ -119,22 +127,28 @@ export default {
     failedUpdateSsh: "Failed to update SSH key",
     failedFindChatSettings: "Failed to find the chat settings",
     failedUpdateChatSettings: "Failed to update the chat settings",
-    seedManagedChatSettings: "The chat settings are managed by the config seed and are read only",
+    seedManagedChatSettings:
+      "The chat settings are managed by the config seed and are read only",
     chatSettingsUpdated: "Chat settings updated",
     chatCheckFailed: "The chat provider check failed",
     failedFindLdap: "Failed to find LDAP",
     ldapCheckFailed: "LDAP check failed",
-    storedPasswordOtherServer: "The stored password is only used for the stored server : type the password to check another one",
+    storedPasswordOtherServer:
+      "The stored password is only used for the stored server : type the password to check another one",
     ldapUpdated: "LDAP updated",
     failedUpdateLdap: "Failed to update LDAP",
-    seedManagedSettings: "Settings are managed by the config seed and are read only",
-    seedManagedLdap: "The LDAP configuration is managed by the config seed and is read only",
+    seedManagedSettings:
+      "Settings are managed by the config seed and are read only",
+    seedManagedLdap:
+      "The LDAP configuration is managed by the config seed and is read only",
     failedFindSettings: "Failed to find settings",
     mailCheckFailed: "Mail check failed",
     mailSent: "Mail sent with id {id}",
     failedUpdateSettings: "Failed to update settings",
-    configLockedByDesigner: "Configuration is locked by an active designer session{username}",
-    configChangedElsewhere: "The configuration was changed elsewhere, reload before saving",
+    configLockedByDesigner:
+      "Configuration is locked by an active designer session{username}",
+    configChangedElsewhere:
+      "The configuration was changed elsewhere, reload before saving",
     failedImportConfig: "Failed to import config",
     failedExportConfig: "Failed to export config",
     failedLegacyCheck: "Failed to check for legacy forms.yaml",
@@ -147,12 +161,14 @@ export default {
     failedFindLogo: "Failed to get the logo",
     failedUpdateLogo: "Failed to update the logo",
     logoNoFile: "No file was uploaded",
-    logoInvalidImage: "Invalid or unsupported image, allowed types are png, jpeg, webp, gif and svg",
+    logoInvalidImage:
+      "Invalid or unsupported image, allowed types are png, jpeg, webp, gif and svg",
     failedFindFavicon: "Failed to get the website icon",
     failedUpdateFavicon: "Failed to update the website icon",
-    faviconInvalidImage: "Invalid or unsupported image, allowed types are png, ico, svg, webp, gif and jpeg",
+    faviconInvalidImage:
+      "Invalid or unsupported image, allowed types are png, ico, svg, webp, gif and jpeg",
     hostValueRequired: "Host value required",
-    hostNameRequired: "Host name (query param \"name\" or \"host\") required",
+    hostNameRequired: 'Host name (query param "name" or "host") required',
   },
   jobs: {
     mustProvideJobId: "You must provide a jobid",
@@ -229,4 +245,4 @@ export default {
       body: "<p>This is a test message from AnsibleForms</p>",
     },
   },
-}
+};

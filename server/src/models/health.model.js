@@ -513,7 +513,7 @@ async function secretStoresCheck() {
 async function runnersCheck() {
   const runners = await Runner.findAll() || [];
   if (!runners.length) {
-    return check('runners', WARNING, 'none configured', { reason: 'Since 7 jobs run on runners : add one under Connections > Runners (an RTE for playbooks ; AWX/AAP, Semaphore or Rundeck for templates)' });
+    return check('runners', WARNING, 'none configured', { reason: 'Since 7 jobs run on runners : add one under Connections > Runners (an RTE for playbooks ; AWX/AAP, Semaphore, Rundeck or Jenkins for templates)' });
   }
   const results = await Promise.all(runners.map(async (runner) => {
     const base = { name: runner.name, type: runner.type, uri: runner.uri, isDefault: !!runner.is_default };

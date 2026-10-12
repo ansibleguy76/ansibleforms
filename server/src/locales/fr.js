@@ -6,10 +6,13 @@ export default {
     noDesignerAccess: "Vous n'avez pas acces au concepteur",
     noLogsAccess: "Vous n'avez pas acces aux journaux",
     noDatabaseAccess: "Vous n'avez pas acces aux operations de base de donnees",
-    noScheduleAccess: "Vous n'avez pas la permission de gerer les taches planifiees",
-    noChatAccess: "Vous n'avez pas l'autorisation d'utiliser l'assistant de chat",
+    noScheduleAccess:
+      "Vous n'avez pas la permission de gerer les taches planifiees",
+    noChatAccess:
+      "Vous n'avez pas l'autorisation d'utiliser l'assistant de chat",
     noMcpAccess: "Vous n'avez pas l'autorisation d'utiliser le serveur MCP",
-    noStoredJobsAccess: "Vous n'avez pas la permission de gerer les taches enregistrees",
+    noStoredJobsAccess:
+      "Vous n'avez pas la permission de gerer les taches enregistrees",
     noDataSent: "Aucune donnee n'a ete envoyee",
     missingDbConfig: "Configuration de base de donnees manquante",
     provideRefreshToken: "Veuillez fournir un jeton de rafraichissement",
@@ -17,17 +20,22 @@ export default {
     refreshTokenExpired: "Le jeton de rafraichissement a expire",
     refreshTokenUnknown: "Jeton de rafraichissement inconnu",
     requiredFields: "Veuillez fournir tous les champs obligatoires",
-    noVerbosePermission: "Vous n'avez pas la permission d'utiliser le mode verbeux",
+    noVerbosePermission:
+      "Vous n'avez pas la permission d'utiliser le mode verbeux",
   },
   auth: {
     authFailed: "Echec de l'authentification",
     invalidCredentials: "Identifiants invalides",
-    tooManyFailures: "Trop de connexions échouées : réessayez dans {minutes} minute(s)",
-    passwordChangeRequired: "Changez d'abord votre mot de passe : c'est le mot de passe par défaut, public",
+    tooManyFailures:
+      "Trop de connexions échouées : réessayez dans {minutes} minute(s)",
+    passwordChangeRequired:
+      "Changez d'abord votre mot de passe : c'est le mot de passe par défaut, public",
     disclaimerRequired: "Acceptez d'abord l'avertissement",
     disclaimerAccepted: "L'avertissement est accepté",
-    loginDisabled: "Non authentifie, la connexion n'est pas activee pour cet utilisateur.",
-    signInBlocked: "Non authentifié, un administrateur a bloqué la connexion de cet utilisateur.",
+    loginDisabled:
+      "Non authentifie, la connexion n'est pas activee pour cet utilisateur.",
+    signInBlocked:
+      "Non authentifié, un administrateur a bloqué la connexion de cet utilisateur.",
     azureFailed: "Echec de l'authentification Azure AD",
     oidcFailed: "Echec de l'authentification OIDC",
   },
@@ -46,19 +54,25 @@ export default {
   config: {
     failedGetFormsList: "Echec de la recuperation de la liste des formulaires",
     formNameNotProvided: "Nom du formulaire non fourni",
-    failedGetFormConfig: "Echec de la recuperation de la configuration du formulaire",
-    onlyAdminsOrDesigners: "Seuls les administrateurs ou concepteurs peuvent acceder a la configuration complete",
-    failedGetFormsConfig: "Echec de la recuperation de la configuration des formulaires",
+    failedGetFormConfig:
+      "Echec de la recuperation de la configuration du formulaire",
+    onlyAdminsOrDesigners:
+      "Seuls les administrateurs ou concepteurs peuvent acceder a la configuration complete",
+    failedGetFormsConfig:
+      "Echec de la recuperation de la configuration des formulaires",
     failedGetBackups: "Echec de la recuperation des sauvegardes",
     failedGetEnvVars: "Echec de la recuperation des variables d'environnement",
-    failedSaveEnvVars: "Échec de l'enregistrement des paramètres d'environnement",
+    failedSaveEnvVars:
+      "Échec de l'enregistrement des paramètres d'environnement",
     failedVaultCheck: "Échec du test de connexion Vault",
     failedVaultMounts: "Impossible de lister les points de montage Vault",
     noEnvVarsGiven: "Aucune variable d'environnement fournie",
     envVarsSaved: "Paramètres d'environnement enregistrés",
-    envVarsNotFound: "Section des variables d'environnement introuvable dans help.yaml",
+    envVarsNotFound:
+      "Section des variables d'environnement introuvable dans help.yaml",
     failedRestoreForms: "Echec de la restauration des formulaires",
-    failedRestoreNoName: "Echec de la restauration, aucun nom de sauvegarde fourni",
+    failedRestoreNoName:
+      "Echec de la restauration, aucun nom de sauvegarde fourni",
     failedRestoreBackup: "Echec de la restauration de '{name}'",
     designerLocked: "Le concepteur est verrouille",
     designerLockedBy: "Le concepteur est verrouille par {username}",
@@ -83,19 +97,27 @@ export default {
     secretStoreConnectionOk: "La connexion au coffre de secrets est OK",
     runnerAdded: "Runner ajouté",
     runnerNotFound: "Runner introuvable",
-    runnerAdminOnly: "Seul un admin peut ajouter, modifier ou supprimer un runner : un runner recoit les identifiants des jobs qu'il execute",
-    defaultPasswordRefused: "Choisissez un autre mot de passe que le mot de passe par défaut, public",
+    runnerAdminOnly:
+      "Seul un admin peut ajouter, modifier ou supprimer un runner : un runner recoit les identifiants des jobs qu'il execute",
+    defaultPasswordRefused:
+      "Choisissez un autre mot de passe que le mot de passe par défaut, public",
     passwordTooShort: "Le mot de passe doit compter au moins {min} caractères",
     passwordIsUsername: "Le mot de passe ne peut pas être le nom d'utilisateur",
     runnerConnectionOk: "La connexion au runner est OK",
     userNotFound: "Utilisateur introuvable",
-    currentPasswordRequired: "Votre mot de passe actuel est requis pour en définir un nouveau",
+    currentPasswordRequired:
+      "Votre mot de passe actuel est requis pour en définir un nouveau",
     currentPasswordWrong: "Le mot de passe actuel est incorrect",
-    cantChangePasswordLdap: "Vous ne pouvez pas changer le mot de passe d'un utilisateur LDAP",
-    directoryTypeUnknown: "Pas un utilisateur ou un groupe LDAP, Entra ID ou OIDC",
-    directoryUserKept: "Un administrateur a bloqué cet utilisateur : autorisez sa connexion avant de l'oublier",
-    failedDirectoryUser: "L'utilisateur LDAP ou SSO n'a pas pu être lu ou modifié",
-    cantBlockAdmin: "L'utilisateur admin ne peut pas être bloqué : c'est le moyen de revenir",
+    cantChangePasswordLdap:
+      "Vous ne pouvez pas changer le mot de passe d'un utilisateur LDAP",
+    directoryTypeUnknown:
+      "Pas un utilisateur ou un groupe LDAP, Entra ID ou OIDC",
+    directoryUserKept:
+      "Un administrateur a bloqué cet utilisateur : autorisez sa connexion avant de l'oublier",
+    failedDirectoryUser:
+      "L'utilisateur LDAP ou SSO n'a pas pu être lu ou modifié",
+    cantBlockAdmin:
+      "L'utilisateur admin ne peut pas être bloqué : c'est le moyen de revenir",
     cantBlockYourself: "Vous ne pouvez pas bloquer votre propre connexion",
     groupNotFound: "Aucun groupe trouve",
     groupHasUsers: "Groupe inconnu ou groupe contenant des utilisateurs",
@@ -114,27 +136,35 @@ export default {
     failedSyncRepository: "Le push du dépôt a échoué",
     noFormsRepositories: "Aucun dépôt de formulaires configuré",
     failedApplyConfigSeed: "Echec de l'application du seed de configuration",
-    noConfigSeed: "Aucun seed de configuration n'est configure (CONFIG_SEED_PATH est vide)",
+    noConfigSeed:
+      "Aucun seed de configuration n'est configure (CONFIG_SEED_PATH est vide)",
     failedFindSsh: "Echec de la recherche de la cle SSH",
     failedUpdateSsh: "Echec de la mise a jour de la cle SSH",
     failedFindChatSettings: "Impossible de trouver les paramètres du chat",
-    failedUpdateChatSettings: "Impossible de mettre à jour les paramètres du chat",
-    seedManagedChatSettings: "Les paramètres du chat sont gérés par le config seed et sont en lecture seule",
+    failedUpdateChatSettings:
+      "Impossible de mettre à jour les paramètres du chat",
+    seedManagedChatSettings:
+      "Les paramètres du chat sont gérés par le config seed et sont en lecture seule",
     chatSettingsUpdated: "Paramètres du chat mis à jour",
     chatCheckFailed: "La vérification du fournisseur de chat a échoué",
     failedFindLdap: "Echec de la recherche LDAP",
     ldapCheckFailed: "Verification LDAP echouee",
-    storedPasswordOtherServer: "Le mot de passe enregistre ne sert qu'au serveur enregistre : saisissez le mot de passe pour en verifier un autre",
+    storedPasswordOtherServer:
+      "Le mot de passe enregistre ne sert qu'au serveur enregistre : saisissez le mot de passe pour en verifier un autre",
     ldapUpdated: "LDAP mis a jour",
     failedUpdateLdap: "Echec de la mise a jour LDAP",
-    seedManagedSettings: "Les paramètres sont gérés par le seed de configuration et sont en lecture seule",
-    seedManagedLdap: "La configuration LDAP est gérée par le seed de configuration et est en lecture seule",
+    seedManagedSettings:
+      "Les paramètres sont gérés par le seed de configuration et sont en lecture seule",
+    seedManagedLdap:
+      "La configuration LDAP est gérée par le seed de configuration et est en lecture seule",
     failedFindSettings: "Echec de la recherche des parametres",
     mailCheckFailed: "Echec de la verification mail",
     mailSent: "Mail envoye avec l'id {id}",
     failedUpdateSettings: "Echec de la mise a jour des parametres",
-    configLockedByDesigner: "La configuration est verrouillee par une session de designer active{username}",
-    configChangedElsewhere: "La configuration a ete modifiee ailleurs, rechargez avant d'enregistrer",
+    configLockedByDesigner:
+      "La configuration est verrouillee par une session de designer active{username}",
+    configChangedElsewhere:
+      "La configuration a ete modifiee ailleurs, rechargez avant d'enregistrer",
     failedImportConfig: "Echec de l'import de la configuration",
     failedExportConfig: "Echec de l'export de la configuration",
     failedLegacyCheck: "Echec de la verification de forms.yaml (ancien format)",
@@ -147,12 +177,15 @@ export default {
     failedFindLogo: "Échec de la récupération du logo",
     failedUpdateLogo: "Échec de la mise à jour du logo",
     logoNoFile: "Aucun fichier n'a été envoyé",
-    logoInvalidImage: "Image invalide ou non supportée, les types autorisés sont png, jpeg, webp, gif et svg",
+    logoInvalidImage:
+      "Image invalide ou non supportée, les types autorisés sont png, jpeg, webp, gif et svg",
     failedFindFavicon: "Impossible d'obtenir l'icône du site",
     failedUpdateFavicon: "Impossible de mettre à jour l'icône du site",
-    faviconInvalidImage: "Image invalide ou non prise en charge, types autorisés : png, ico, svg, webp, gif et jpeg",
+    faviconInvalidImage:
+      "Image invalide ou non prise en charge, types autorisés : png, ico, svg, webp, gif et jpeg",
     hostValueRequired: "Valeur d'hote requise",
-    hostNameRequired: "Nom d'hote requis (parametre de requete \"name\" ou \"host\")",
+    hostNameRequired:
+      'Nom d\'hote requis (parametre de requete "name" ou "host")',
   },
   jobs: {
     mustProvideJobId: "Vous devez fournir un jobid",
@@ -160,7 +193,8 @@ export default {
     failedAbort: "Echec de l'arret de la tache",
     failedRetrieve: "Echec de la recuperation de la tache",
     failedRetrieveJobs: "Echec de la recuperation des taches",
-    failedRetrieveApprovals: "Echec de la recuperation des taches d'approbation",
+    failedRetrieveApprovals:
+      "Echec de la recuperation des taches d'approbation",
     failedDelete: "Echec de la suppression de la tache",
     deleted: "Tache supprimee",
     failedLaunch: "Echec du lancement du formulaire",
@@ -171,7 +205,8 @@ export default {
     approved: "La tache {id} a ete approuvee",
     rejected: "La tache {id} a ete rejetee",
     relaunched: "La tache a ete relancee avec l'id {id}",
-    failedRetrieveRawData: "Echec de la recuperation des donnees brutes du formulaire",
+    failedRetrieveRawData:
+      "Echec de la recuperation des donnees brutes du formulaire",
   },
   email: {
     approval: {
@@ -182,7 +217,8 @@ export default {
     },
     jobstatus: {
       heading: "Mise a jour du statut de la tache",
-      subtitle: "Les informations ci-dessous sont communiquees a titre informatif",
+      subtitle:
+        "Les informations ci-dessous sont communiquees a titre informatif",
       button: "Statut de la tache",
       runDetails: "Details d'execution :",
       regards: "Cordialement,<br>AnsibleForms",
@@ -200,7 +236,8 @@ export default {
       launchBy: "La tache a ete lancee par {user}.",
       relaunchBy: "La tache a ete relancee par {user}.",
       deleteBy: "La tache a ete supprimee par {user}.",
-      approveBy: "La tache a ete approuvee par {user} et continuera son execution.",
+      approveBy:
+        "La tache a ete approuvee par {user} et continuera son execution.",
       rejectBy: "La tache a ete rejetee par {user}.",
     },
     // the subjects : "AnsibleForms '<form>' [<type>] (<id>) - <one of these>", and the
@@ -229,4 +266,4 @@ export default {
       body: "<p>Ceci est un message de test d'AnsibleForms</p>",
     },
   },
-}
+};

@@ -1195,10 +1195,16 @@ export default {
       caBundleHelp:
         "Les certificats PEM de l'autorité qui a signé le certificat du runner : sa racine, puis les intermédiaires.",
       customCa: 'Utiliser un certificat CA personnalisé',
-      default_playbook: 'Formulaires de playbook',
-      default_playbookHelp: "Où s'exécute un formulaire de playbook qui ne nomme aucun runner.",
-      default_template: 'Formulaires de modèle',
-      default_templateHelp: "Où s'exécute un formulaire de modèle qui ne nomme aucun runner.",
+      default_rte: 'Formulaires playbook',
+      default_rteHelp: "Où s'exécute un formulaire ansible qui ne nomme aucun runner.",
+      default_awx: 'Formulaires AWX, AAP et Ascender',
+      default_awxHelp: "Où s'exécute un formulaire awx, aap ou ascender qui ne nomme aucun runner.",
+      default_semaphore: 'Formulaires Semaphore',
+      default_semaphoreHelp: "Où s'exécute un formulaire semaphore qui ne nomme aucun runner.",
+      default_rundeck: 'Formulaires Rundeck',
+      default_rundeckHelp: "Où s'exécute un formulaire rundeck qui ne nomme aucun runner.",
+      default_jenkins: 'Formulaires Jenkins',
+      default_jenkinsHelp: "Où s'exécute un formulaire jenkins qui ne nomme aucun runner.",
       defaultsTitle: 'Runners par défaut',
       editDefaults: 'Modifier les défauts',
       flavour: 'Produit',
@@ -1256,8 +1262,6 @@ export default {
       tokenHelp_jenkins: "Un jeton d'API de l'utilisateur Jenkins : menu de l'utilisateur, Security, API Token.",
       usernameHelp_jenkins:
         "L'utilisateur Jenkins auquel appartient le jeton d'API ; les jobs tournent sous cet utilisateur.",
-      noDefaultHelp:
-        "Jamais un défaut : un formulaire de modèle qui ne nomme aucun runner s'exécute sur l'AWX par défaut, un formulaire nomme donc ce runner avec runner: <name>.",
     },
     disclaimer: {
       description:
@@ -1897,7 +1901,9 @@ export default {
     helpPlaybook: "Le playbook qu'il exécute.",
     formWorkflow: 'Workflow',
     helpWorkflow: "Le workflow qu'il exécute, un de Designer > Workflows.",
-    helpTemplate: "Le modèle de tâche AWX qu'il lance.",
+    helpTemplate: "Le modèle qu'il lance sur le runner : un modèle de job ou de workflow AWX, un modèle Semaphore.",
+    formJob: 'Job',
+    helpJob: "Le job qu'il exécute sur le runner : son nom, ou groupe/nom (Rundeck), dossier/nom (Jenkins).",
     helpInventory: "L'inventaire sur lequel s'exécutent ses tâches.",
     helpScmBranch: "La branche qu'AWX utilise pour le modèle.",
     helpExecEnv: "L'environnement d'exécution AWX de ses tâches.",

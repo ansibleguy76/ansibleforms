@@ -80,7 +80,8 @@ export default {
     oauth2Added: "OAuth2 提供商已添加",
     runnerAdded: "运行器已添加",
     runnerNotFound: "未找到运行器",
-    runnerAdminOnly: "只有 admin 可以添加、更改或删除运行器 : 运行器会收到它运行的作业的凭据",
+    runnerAdminOnly:
+      "只有 admin 可以添加、更改或删除运行器 : 运行器会收到它运行的作业的凭据",
     defaultPasswordRefused: "请选择公开默认密码以外的密码",
     passwordTooShort: "密码至少需要 {min} 个字符",
     passwordIsUsername: "密码不能是用户名",
@@ -124,7 +125,8 @@ export default {
     chatCheckFailed: "聊天提供商检查失败",
     failedFindLdap: "查找 LDAP 失败",
     ldapCheckFailed: "LDAP 检查失败",
-    storedPasswordOtherServer: "已保存的密码只用于已保存的服务器 : 要检查其他服务器，请输入密码",
+    storedPasswordOtherServer:
+      "已保存的密码只用于已保存的服务器 : 要检查其他服务器，请输入密码",
     ldapUpdated: "LDAP 已更新",
     failedUpdateLdap: "更新 LDAP 失败",
     seedManagedSettings: "设置由配置种子管理，为只读",
@@ -147,12 +149,14 @@ export default {
     failedFindLogo: "获取徽标失败",
     failedUpdateLogo: "更新徽标失败",
     logoNoFile: "未上传任何文件",
-    logoInvalidImage: "图片无效或不受支持，允许的类型为 png、jpeg、webp、gif 和 svg",
+    logoInvalidImage:
+      "图片无效或不受支持，允许的类型为 png、jpeg、webp、gif 和 svg",
     failedFindFavicon: "无法获取网站图标",
     failedUpdateFavicon: "无法更新网站图标",
-    faviconInvalidImage: "图像无效或不受支持，允许的类型为 png、ico、svg、webp、gif 和 jpeg",
+    faviconInvalidImage:
+      "图像无效或不受支持，允许的类型为 png、ico、svg、webp、gif 和 jpeg",
     hostValueRequired: "需要提供主机值",
-    hostNameRequired: "需要提供主机名（查询参数 \"name\" 或 \"host\"）",
+    hostNameRequired: '需要提供主机名（查询参数 "name" 或 "host"）',
   },
   jobs: {
     mustProvideJobId: "您必须提供作业 ID",
@@ -229,4 +233,4 @@ export default {
       body: "<p>这是一封来自 AnsibleForms 的测试邮件。</p>",
     },
   },
-}
+};

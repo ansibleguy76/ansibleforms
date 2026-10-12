@@ -230,12 +230,8 @@ const crumbs = computed(() => {
   return tab ? [...pageCrumbs.value, { title: tab.label, icon: tab.icon, to: tabLink(tab.key) }] : pageCrumbs.value;
 });
 
-// the forms it is the default for : playbook forms (an RTE), template forms (an awx runner) ; a
-// Semaphore or a Rundeck is never one, a form names it
-const canBeDefault = computed(() => ['rte', 'awx'].includes(runner.value?.type));
-const defaultFor = computed(() =>
-  runner.value?.type === 'rte' ? t('settings.runners.default_playbook') : t('settings.runners.default_template'),
-);
+// the forms it is the default for : those of its type (an awx runner : awx, aap and ascender forms)
+const defaultFor = computed(() => t(`settings.runners.default_${runner.value?.type || 'rte'}`));
 
 // ─── actions ──────────────────────────────────────────────────────────────────
 /**
@@ -433,11 +429,7 @@ onMounted(async () => {
                 :isFloating="false"
                 :label="t('settings.fields.description')"
               />
-              <div v-if="!canBeDefault" class="mb-3">
-                <div class="form-label fw-bold">{{ t('settings.runners.isDefault') }}</div>
-                <div class="form-text mt-0">{{ t('settings.runners.noDefaultHelp') }}</div>
-              </div>
-              <div v-else class="mb-3">
+              <div class="mb-3">
                 <label class="form-label fw-bold d-block" for="af-runner-default">{{
                   t('settings.runners.isDefault')
                 }}</label>

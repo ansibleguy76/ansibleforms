@@ -82,14 +82,17 @@ describe("what each type needs", () => {
     assert.equal(rows.at(-1).use_credentials, 0);
   });
 
-  test("a semaphore or a rundeck is never a default : no form falls back to one", async () => {
+  test("the first semaphore, rundeck or jenkins runner is its type's default, as an rte or an awx", async () => {
     await Runner.create({ name: "s1", type: "semaphore", uri: "https://s", token: "t", project: "1" });
-    assert.equal(rows.at(-1).is_default, 0, "not even the first of its type");
-    await Runner.create({ name: "r1", type: "rundeck", uri: "https://r", token: "t", project: "af", is_default: 1 });
-    assert.equal(rows.at(-1).is_default, 0, "not when asked");
-    const id = rows.at(-1).id;
-    await Runner.update({ is_default: 1 }, id);
-    assert.equal(rows.find((r) => r.id === id).is_default, 0, "not by an update");
+    assert.equal(rows.at(-1).is_default, 1, "the first of its type");
+    await Runner.create({ name: "s2", type: "semaphore", uri: "https://s2", token: "t", project: "1" });
+    assert.equal(rows.at(-1).is_default || 0, 0, "the second is not");
+    await Runner.create({ name: "r1", type: "rundeck", uri: "https://r", token: "t", project: "af" });
+    assert.equal(rows.at(-1).is_default, 1, "a type of its own");
+    const s2 = rows.find((r) => r.name === "s2").id;
+    await Runner.update({ is_default: 1 }, s2);
+    assert.equal(rows.find((r) => r.id === s2).is_default, 1);
+    assert.equal(rows.find((r) => r.name === "s1").is_default, 0, "one default per type");
   });
 
   test("a rundeck needs a token and a project name", async () => {
@@ -99,12 +102,12 @@ describe("what each type needs", () => {
     assert.equal(rows.at(-1).project, "af");
   });
 
-  test("a jenkins needs a user and its API token ; its folder is optional, and it is never a default", async () => {
+  test("a jenkins needs a user and its API token ; its folder is optional", async () => {
     await assert.rejects(Runner.create({ name: "j", type: "jenkins", uri: "https://j", token: "t" }), /needs a username/);
     await assert.rejects(Runner.create({ name: "j", type: "jenkins", uri: "https://j", username: "af" }), /needs an API token/);
     await Runner.create({ name: "j", type: "jenkins", uri: "https://j", username: "af", token: "t", is_default: 1 });
     assert.equal(rows.at(-1).project ?? null, null);
-    assert.equal(rows.at(-1).is_default, 0);
+    assert.equal(rows.at(-1).is_default, 1);
     assert.equal(rows.at(-1).use_credentials, 0);
   });
 

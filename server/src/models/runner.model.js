@@ -11,9 +11,6 @@ import { stripTrailingSlashes } from '../lib/url.js';
 export const RUNNER_FLAVOURS = ['aap', 'ascender'];
 // the runners that sign in with a token and launch in one project of their server
 const TOKEN_AND_PROJECT = ['semaphore', 'rundeck'];
-// the runners a form names, never a default : a template form that names no runner runs on the
-// default awx runner
-const NEVER_DEFAULT = ['semaphore', 'rundeck', 'jenkins'];
 import { NODE_DEAD_SECONDS } from '../lib/role.js';
 
 // the secret the api shows instead of a stored token ; sent back it means "unchanged"
@@ -101,13 +98,10 @@ class Runner extends CrudModel {
     CrudModel.assertRequired(this.modelName, data);
     data = this.normalize(data, opts);
     this.assertComplete(data);
-    // a semaphore, rundeck or jenkins runner is never a default : no form falls back to one (a
-    // template form that names no runner runs on the default awx runner), a form names it
-    if (NEVER_DEFAULT.includes(data.type)) data.is_default = 0;
-    // The first runner of a type is its default : forms that name no runner need one, and
-    // nobody should have to remember the tick. Not for the seed, which declares the flag
-    // itself - setting it here would flip it back on every start.
-    else if (!data.is_default && !opts.fromSeed && !(await this.findDefault(data.type))) {
+    // The first runner of a type is its default : forms of that type that name no runner need
+    // one, and nobody should have to remember the tick. Not for the seed, which declares the
+    // flag itself - setting it here would flip it back on every start.
+    if (!data.is_default && !opts.fromSeed && !(await this.findDefault(data.type))) {
       data.is_default = 1;
     }
     await this.assertDefaultAllowed(data, data.type, opts);
@@ -122,7 +116,6 @@ class Runner extends CrudModel {
     data = this.normalize(data, opts);
     // the stored row decides what is missing : an update may send only what changed
     const current = await this.findById(id);
-    if (NEVER_DEFAULT.includes({ ...current, ...data }.type)) data.is_default = 0;
     const merged = { ...current, ...data };
     this.assertComplete(merged);
     await this.assertDefaultAllowed(data, merged.type, opts);

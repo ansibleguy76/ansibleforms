@@ -76,6 +76,8 @@ function pushForminfoToExtravars(formObj, extravars, creds = {}) {
   }
   // the form schema spells it scm_branch ; the reserved key stayed __scmBranch__
   if (extravars.__scmBranch__ === undefined && formObj.scm_branch !== undefined) extravars.__scmBranch__ = formObj.scm_branch;
+  // `job:` is `template:` in a Rundeck's or a Jenkins' words : the runners read __template__
+  if (extravars.__template__ === undefined && formObj.job !== undefined) extravars.__template__ = formObj.job;
   extravars["__credentials__"] = { ...extravars["__credentials__"], ...creds };
   // console.log(extravars)
 }
@@ -279,7 +281,7 @@ async function scopeOfUser(user) {
  * Raises:
  *   Errors.AccessDeniedError: a credential, a secret store or the runner is not allowed.
  */
-async function assertLaunchScope(user, jobType, extravars, creds) {
+async function assertLaunchScope(user, jobType, extravars, creds, formType) {
   const scope = await scopeOfUser(user);
   if (!scope) return;
   const specs = [...Object.values(extravars.__credentials__ || creds || {}), extravars.__ansibleCredentials__, extravars.__vaultCredentials__];
@@ -287,7 +289,7 @@ async function assertLaunchScope(user, jobType, extravars, creds) {
   if (scope.runners && (jobType === "ansible" || jobType === "awx")) {
     let runner = null;
     try {
-      runner = (await resolveRunner({ jobType, extravars }))?.row || null;
+      runner = (await resolveRunner({ jobType, formType, extravars }))?.row || null;
     } catch {
       // no runner at all : the dispatch fails the job and says why
     }
@@ -1172,7 +1174,7 @@ Job.launch = async function ({
   pushForminfoToExtravars(formObj, extravars, creds);
 
   // the credentials and the runner this job would use, as the user's roles allow them
-  await assertLaunchScope(user, jobTypeOf(formObj.type), extravars, creds);
+  await assertLaunchScope(user, jobTypeOf(formObj.type), extravars, creds, formObj.type);
 
   // we have form and we have access
   var notifications = formObj.notifications || {};
@@ -1250,6 +1252,7 @@ Job.launch = async function ({
       return await runWithScope(null, () => dispatch({
         jobId: jobid,
         jobType: jobtype,
+        formType: formObj.type,
         extravars,
         credentialMap: creds,
         approval: parentId ? null : formObj.approval, // if multistep: no individual approvals checks
@@ -1309,7 +1312,7 @@ Job.continue = async function ({ form, user, credentials = {}, extravars = {}, j
     target = formObj.playbook;
   }
   if (jobtype == "awx") {
-    target = formObj.template;
+    target = formObj.template ?? formObj.job;
   }
   if (jobtype == "multistep") {
     target = formObj.name;
@@ -1356,6 +1359,7 @@ Job.continue = async function ({ form, user, credentials = {}, extravars = {}, j
       return await runWithScope(null, () => dispatch({
         jobId: jobid,
         jobType: jobtype,
+        formType: formObj.type,
         extravars,
         credentialMap: creds,
         approval: formObj.approval,

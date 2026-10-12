@@ -1,5 +1,6 @@
-// The semaphore runner : a template on Semaphore UI (semaphoreui.com). A form of type awx names
-// it with `runner: <name>` and its template with `template: <name or id>` ; the task's output
+// The semaphore runner : a template on Semaphore UI (semaphoreui.com). A form of type semaphore
+// names it with `runner: <name>` (or runs on the default one) and its template with
+// `template: <name or id>` ; the task's output
 // is followed back into the job, as an AWX job's is.
 //
 // The runner row : uri (the Semaphore server, e.g. https://semaphore.example.com), token (an

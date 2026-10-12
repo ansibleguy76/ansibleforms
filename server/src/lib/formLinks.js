@@ -1,12 +1,11 @@
 // What the settings pages link to a form : the roles that open it and the runners its jobs
 // run on, for the Forms tabs of a role, a group, a user and a runner. A form runs where it
 // names (`runner: <name>`, `awx: <name>` its deprecated alias), a multistep form where each
-// step names ; what names none runs on the default runner of the type it needs (an
-// ansible job a playbook : rte, an awx job a template : awx), as runners/orchestrator.js.
+// step names ; what names none runs on the default runner of its type (lib/jobTypes.js
+// RUNNER_TYPE_OF), as runners/orchestrator.js.
+import { RUNNER_TYPE_OF } from './jobTypes.js';
 
-// the runner type each form type needs, as runners/orchestrator.js NEEDS (a template form, or
-// awx its old name, a template runner)
-const DEFAULT_TYPE = { ansible: 'rte', template: 'awx', awx: 'awx' };
+const DEFAULT_TYPE = RUNNER_TYPE_OF;
 
 /**
  * Where one form or one step runs : the runner it names, or the type of the default it takes.

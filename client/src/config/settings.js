@@ -2034,30 +2034,21 @@ export default function getSettings(t) {
       description: t('settings.runners.description'),
       icon: 'rocket',
       selectable: false,
-      // the defaults, chosen in a dialog (Edit defaults) : one for playbook forms (an RTE), one
-      // for template forms (AWX, AAP or Ascender)
+      // the defaults, chosen in a dialog (Edit defaults) : one per runner type, where the forms
+      // of that type (ansible on an RTE ; awx, aap and ascender on an awx runner ; semaphore,
+      // rundeck, jenkins on theirs) run when they name no runner
       defaultPicker: {
         key: 'is_default',
-        // a Semaphore, Rundeck or Jenkins runner is no group's : a form that names no runner never runs on one
-        groupBy: (r) => (r?.type === 'rte' ? 'playbook' : r?.type === 'awx' ? 'template' : null),
+        groupBy: (r) => r?.type || null,
         title: t('settings.runners.defaultsTitle'),
         editLabel: t('settings.runners.editDefaults'),
-        groups: [
-          {
-            key: 'playbook',
-            label: t('settings.runners.default_playbook'),
-            help: t('settings.runners.default_playbookHelp'),
-            icon: 'fac,ansible',
-            describe: (r) => t(`settings.runners.kind_${runnerKind(r)}`),
-          },
-          {
-            key: 'template',
-            label: t('settings.runners.default_template'),
-            help: t('settings.runners.default_templateHelp'),
-            icon: 'rocket',
-            describe: (r) => t(`settings.runners.kind_${runnerKind(r)}`),
-          },
-        ],
+        groups: ['rte', 'awx', 'semaphore', 'rundeck', 'jenkins'].map((type) => ({
+          key: type,
+          label: t(`settings.runners.default_${type}`),
+          help: t(`settings.runners.default_${type}Help`),
+          icon: type === 'rte' ? 'fac,ansible' : 'rocket',
+          describe: (r) => t(`settings.runners.kind_${runnerKind(r)}`),
+        })),
       },
       // the dialog in steps : what the runner is, its kind, where it is, how the app logs in
       steps: [
