@@ -31,7 +31,13 @@ import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import Helpers from '@/lib/Helpers';
 import { varsKind } from '@/config/varsFile';
-import { EXPLORER_WIDTH, explorerWidthAfterDrag, explorerFolded, explorerColumns } from '@/config/fileExplorer';
+import {
+  EXPLORER_WIDTH,
+  explorerWidthAfterDrag,
+  explorerFolded,
+  explorerColumns,
+  firstExplorerFile,
+} from '@/config/fileExplorer';
 import { inventoryOf, inventoryFileRole } from '@/config/inventoryTree';
 
 const { t } = useI18n();
@@ -471,16 +477,16 @@ function discardAndGo() {
 }
 
 /**
- * Loads the files and, for the inventories, opens the first inventory's inventory.yaml : the
- * section opens on an inventory rather than on nothing.
+ * Loads the files and opens the first the explorer lists (for the inventories, the first
+ * inventory's inventory.yaml) : the section opens on a file rather than on nothing.
  */
 async function loadAndOpen() {
   await loadList();
-  if (!isInventories.value || selected.value) return;
-  const first = listing.value.files
-    .map((f) => f.path)
-    .filter((p) => inventoryFileRole(p).role === 'inventory')
-    .sort((a, b) => a.localeCompare(b))[0];
+  if (selected.value) return;
+  const first = firstExplorerFile(
+    listing.value.files.map((f) => f.path),
+    isInventories.value ? (p) => inventoryFileRole(p).role === 'inventory' : undefined,
+  );
   if (first) await open(first, true);
 }
 
