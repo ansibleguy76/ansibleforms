@@ -164,6 +164,7 @@ describe("MCP tools", () => {
     const r = await call(client, "get_job", { id: 42, tail: 2 });
     expect(deps.Job.findById).toHaveBeenCalledWith(user, 42, true, true);
     expect(r.data.extravars).toEqual({ volume: { name: "v1" }, password: "**NOLOG**" });
+    expect(r.data.payload).toEqual(r.data.extravars);
     expect(r.data.output).toBe("line2\nline3");
     expect(r.text).not.toContain("credentials");
     expect(r.text).not.toContain("cluster_c1");
@@ -175,6 +176,7 @@ describe("MCP tools", () => {
     const r = await call(client, "resolve_field", { form: "Create volume", values });
     expect(r.data.complete).toBe(true);
     expect(r.data.modeledExtravars).toEqual({ cluster: "c1", volume: { name: "v1", size: 10 }, secret: "********", cred: "cluster_c1" });
+    expect(r.data.modeledPayload).toEqual(r.data.modeledExtravars);
     expect(r.data.credentials).toEqual({ cred: "cluster_c1" });
     expect(r.data.payloadHash).toMatch(/^sha256:[0-9a-f]{64}$/);
     expect(r.data.formFingerprint).toMatch(/^sha256:/);

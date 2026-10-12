@@ -468,6 +468,8 @@ onMounted(() => window.addEventListener('keydown', onNodeKey, true));
 onBeforeUnmount(() => window.removeEventListener('keydown', onNodeKey, true));
 
 // the playbook it ran, when it ran one
+// a Rundeck job calls what the form sent its payload ; the others, Ansible's word, extravars
+const saysPayload = computed(() => job.value?.runner_kind === 'rundeck');
 const jobPlaybook = computed(() => job.value?.extravars?.__playbook__ || '');
 
 // the hosts an ansible job ran on : its limit (--limit), else all of its inventories, else the
@@ -1610,7 +1612,11 @@ onMounted(async () => {
                     "
                   >
                     <FaIcon :icon="showExtraVars ? 'eye-slash' : 'eye'" />
-                    {{ showExtraVars ? t('jobs.hideExtravars') : t('jobs.showExtravars') }}
+                    {{
+                      showExtraVars
+                        ? t(saysPayload ? 'jobs.hidePayload' : 'jobs.hideExtravars')
+                        : t(saysPayload ? 'jobs.showPayload' : 'jobs.showExtravars')
+                    }}
                   </button>
                   <button
                     v-if="store.profile.options?.showArtifacts && hasArtifacts(job)"
@@ -1642,7 +1648,7 @@ onMounted(async () => {
                 <div class="af-data-head">
                   <span class="af-data-title">
                     <FaIcon :icon="showExtraVars ? 'eye' : 'square-poll-vertical'" />
-                    {{ showExtraVars ? t('jobs.extravars') : t('jobs.artifacts') }}
+                    {{ showExtraVars ? t(saysPayload ? 'jobs.payload' : 'jobs.extravars') : t('jobs.artifacts') }}
                   </span>
                   <div class="af-data-tools">
                     <div class="af-segmented" role="group">
