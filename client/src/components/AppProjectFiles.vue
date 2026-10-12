@@ -12,7 +12,8 @@
 /*      kind: String - 'playbooks', 'vars' or 'inventories'       */
 /*         (/api/v2/files/...) ; the inventories one folder each  */
 /*         (inventory.yaml, group_vars/, host_vars/)              */
-/*      readOnly: Boolean - the designer lock is not ours         */
+/*      readOnly: Boolean - the designer lock is not ours, or a   */
+/*         playbook without the role's allowPlaybookDesign        */
 /*      theme: String - the editor's theme                        */
 /*      editorStyle: String|Object - the editor's size            */
 /*      view: String - 'yaml' (the text) or 'visual' (a           */

@@ -125,7 +125,7 @@ const PERMISSION_GROUPS = [
   {
     name: 'pages',
     title: () => t('profilePage.groupPages'),
-    keys: ['showSettings', 'showDesigner', 'showLogs', 'showJobs', 'showDebugButtons'],
+    keys: ['showSettings', 'showDesigner', 'allowPlaybookDesign', 'showLogs', 'showJobs', 'showDebugButtons'],
   },
   {
     name: 'jobs',
@@ -151,6 +151,7 @@ const PERMISSION_GROUPS = [
 const OPTION_DESCRIPTIONS = {
   showSettings: () => t('profilePage.optionDescription.showSettings'),
   showDesigner: () => t('profilePage.optionDescription.showDesigner'),
+  allowPlaybookDesign: () => t('profilePage.optionDescription.allowPlaybookDesign'),
   showLogs: () => t('profilePage.optionDescription.showLogs'),
   showJobs: () => t('profilePage.optionDescription.showJobs'),
   showDebugButtons: () => t('profilePage.optionDescription.showDebugButtons'),

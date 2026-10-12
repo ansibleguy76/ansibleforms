@@ -313,6 +313,7 @@ export default {
     optionDescription: {
       showSettings: 'Veure les pàgines de configuració.',
       showDesigner: 'Veure i utilitzar el dissenyador.',
+      allowPlaybookDesign: 'Modificar els playbooks al dissenyador (sense: només lectura).',
       showLogs: 'Veure el registre del servidor.',
       showJobs: 'Veure la pàgina de tasques.',
       showDebugButtons: "Veure els botons de depuració d'un formulari.",
@@ -1819,6 +1820,7 @@ export default {
       noRoles: 'No hi ha cap rol configurat',
       noConstants: 'No hi ha cap constant configurada',
       roleOptionShowDesigner: 'Mostra el dissenyador',
+      roleOptionAllowPlaybookDesign: 'Modificar playbooks',
       roleOptionShowLogs: 'Mostra els registres',
       roleOptionShowDebugButtons: 'Mostra els botons de depuració',
       roleOptionShowSettings: 'Mostra la configuració',

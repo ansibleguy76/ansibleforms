@@ -4,6 +4,7 @@ export default {
     notAdmin: "Nie jesteś administratorem",
     noSettingsAccess: "Nie masz dostępu do ustawień",
     noDesignerAccess: "Nie masz dostępu do projektanta",
+    noPlaybookDesignAccess: "Nie możesz zmieniać playbooków w designerze",
     noLogsAccess: "Nie masz dostępu do dzienników",
     noDatabaseAccess: "Nie masz dostępu do operacji na bazie danych",
     noScheduleAccess:

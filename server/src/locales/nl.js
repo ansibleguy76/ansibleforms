@@ -4,6 +4,7 @@ export default {
     notAdmin: "U bent geen beheerder",
     noSettingsAccess: "U heeft geen toegang tot instellingen",
     noDesignerAccess: "U heeft geen toegang tot de designer",
+    noPlaybookDesignAccess: "Je mag de playbooks in de designer niet wijzigen",
     noLogsAccess: "U heeft geen toegang tot logs",
     noDatabaseAccess: "U heeft geen toegang tot database bewerkingen",
     noScheduleAccess: "U heeft geen toestemming om schedules te beheren",

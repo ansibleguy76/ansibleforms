@@ -22,6 +22,9 @@ function applyOptionDefaults(options, isAdmin) {
   if (options.allowVerboseMode === undefined) options.allowVerboseMode = true;
   if (options.showSettings === undefined) options.showSettings = isAdmin;
   if (options.showDesigner === undefined) options.showDesigner = isAdmin;
+  // in the designer, the playbooks written (saved, new, removed, pushed) : on for every designer
+  // unless a role says otherwise
+  if (options.allowPlaybookDesign === undefined) options.allowPlaybookDesign = true;
   if (options.showLogs === undefined) options.showLogs = isAdmin;
   if (options.allowBackupOps === undefined) options.allowBackupOps = isAdmin;
   if (options.showJobs === undefined) options.showJobs = true;

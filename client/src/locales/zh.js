@@ -305,6 +305,7 @@ export default {
     optionDescription: {
       showSettings: '查看设置页面。',
       showDesigner: '查看和使用设计器。',
+      allowPlaybookDesign: '在设计器中修改 playbook（否则：只读）。',
       showLogs: '查看服务器日志。',
       showJobs: '查看作业页面。',
       showDebugButtons: '查看表单上的调试按钮。',
@@ -1739,6 +1740,7 @@ export default {
       noRoles: '未配置角色',
       noConstants: '未配置常量',
       roleOptionShowDesigner: '显示设计器',
+      roleOptionAllowPlaybookDesign: '修改 playbook',
       roleOptionShowLogs: '显示日志',
       roleOptionShowDebugButtons: '显示调试按钮',
       roleOptionShowSettings: '显示设置',

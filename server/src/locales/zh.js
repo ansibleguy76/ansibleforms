@@ -4,6 +4,7 @@ export default {
     notAdmin: "您不是管理员",
     noSettingsAccess: "您无权访问设置",
     noDesignerAccess: "您无权访问设计器",
+    noPlaybookDesignAccess: "您不能在设计器中修改 playbook",
     noLogsAccess: "您无权访问日志",
     noDatabaseAccess: "您无权执行数据库操作",
     noScheduleAccess: "您无权管理已调度的作业",

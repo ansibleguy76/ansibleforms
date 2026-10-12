@@ -225,3 +225,25 @@ describe("the chat and MCP guards follow their own option", () => {
     });
   }
 });
+
+describe("the designer's playbooks are written only with allowPlaybookDesign", () => {
+  const runKind = (kind, user) => {
+    const res = makeRes();
+    let nexted = false;
+    Middleware.checkPlaybookDesignMiddleware({ params: { kind }, user: { user } }, res, () => { nexted = true; });
+    return { res, nexted };
+  };
+
+  test("a playbook write is refused (403) without it, passes with it", () => {
+    const denied = runKind("playbooks", withOption("allowPlaybookDesign", false));
+    assert.equal(denied.res.statusCode, 403);
+    assert.equal(denied.nexted, false);
+    assert.equal(runKind("playbooks", withOption("allowPlaybookDesign", true)).nexted, true);
+  });
+
+  test("the other kinds of files pass whatever the option", () => {
+    for (const kind of ["vars", "inventories", "workflows"]) {
+      assert.equal(runKind(kind, withOption("allowPlaybookDesign", false)).nexted, true, kind);
+    }
+  });
+});
