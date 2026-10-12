@@ -3688,10 +3688,10 @@ onBeforeUnmount(() => {
            the settings pages, listed once the designer is started -->
       <BsSidebar :sections="sidebarSections" storageKey="af_designer_sidebar_collapsed" />
       <!-- Modal - delete verify -->
-      <BsModal v-if="action == 'delete'" @close="resetAction()" icon="trash">
+      <BsModal v-if="action == 'delete'" size="md" @close="resetAction()" icon="trash">
         <template #title> {{ t('designer.deleteForm') }} {{ currentFormName }} </template>
         <template #default>
-          <p class="mt-3 fs-6 user-select-none">
+          <p class="mb-0 fs-6 user-select-none">
             {{ t('designer.deleteConfirm') }} <strong>{{ currentFormName }}</strong
             >?
           </p>
@@ -3704,6 +3704,7 @@ onBeforeUnmount(() => {
       <!-- Modal - delete file verify -->
       <BsModal
         v-if="action == 'deleteFile'"
+        size="md"
         @close="
           resetAction();
           fileToDelete = null;
@@ -3712,7 +3713,7 @@ onBeforeUnmount(() => {
       >
         <template #title> {{ t('designer.deleteFile') }} </template>
         <template #default>
-          <p class="mt-3 fs-6 user-select-none">
+          <p class="mb-0 fs-6 user-select-none">
             {{ t('designer.deleteFileConfirm') }} <strong>{{ fileToDelete }}</strong
             >?
           </p>
@@ -3725,6 +3726,7 @@ onBeforeUnmount(() => {
       <!-- Modal - delete folder verify -->
       <BsModal
         v-if="action == 'deleteFolder'"
+        size="md"
         @close="
           resetAction();
           fileToDelete = null;
@@ -3733,7 +3735,7 @@ onBeforeUnmount(() => {
       >
         <template #title> {{ t('designer.deleteFolder') }} </template>
         <template #default>
-          <p class="mt-3 fs-6 user-select-none">
+          <p class="mb-0 fs-6 user-select-none">
             {{ t('designer.deleteFolderConfirm') }} <strong>{{ fileToDelete }}</strong
             >?
           </p>
@@ -3842,12 +3844,13 @@ onBeforeUnmount(() => {
       </BsModal>
 
       <!-- Modal - an admin releases somebody else's lock -->
-      <BsModal v-if="action == 'forceRelease'" @close="resetAction()" icon="unlock" :footerClose="false">
+      <BsModal v-if="action == 'forceRelease'" size="md" @close="resetAction()" icon="unlock" :footerClose="false">
         <template #title>{{ t('designer.releaseTitle') }}</template>
         <template #default>
-          <p class="mt-3 fs-6">
+          <p class="mb-0 fs-6">
             {{ t('designer.releaseAdminOnly') }}<br /><br />
-            {{ t('designer.releaseConfirm', { user: lock?.lock?.username }) }}
+            {{ t('designer.releaseConfirm', { user: lock?.lock?.username }) }}<br /><br />
+            {{ t('designer.releaseLoss', { user: lock?.lock?.username }) }}
           </p>
         </template>
         <template #footer>
@@ -3857,10 +3860,17 @@ onBeforeUnmount(() => {
       </BsModal>
 
       <!-- modal - dirty -->
-      <BsModal v-if="action == 'dirty'" @close="resetAction()" icon="triangle-exclamation" iconClass="text-warning">
+      <BsModal
+        v-if="action == 'dirty'"
+        size="md"
+        dialogClass="af-unsaved-dialog"
+        @close="resetAction()"
+        icon="triangle-exclamation"
+        iconClass="text-warning"
+      >
         <template #title> {{ t('designer.unsavedChanges') }} </template>
         <template #default>
-          <p class="mt-3 fs-6 user-select-none">
+          <p class="mb-0 fs-6 user-select-none">
             {{ t('designer.unsavedConfirm') }}<br />{{ t('designer.unsavedNote') }}
           </p>
         </template>
@@ -3876,10 +3886,10 @@ onBeforeUnmount(() => {
       </BsModal>
 
       <!-- modal - confirm reload (discards unsaved changes) -->
-      <BsModal v-if="action == 'confirmReload'" @close="nextAction(false)" icon="download">
+      <BsModal v-if="action == 'confirmReload'" size="md" @close="nextAction(false)" icon="download">
         <template #title> {{ t('designer.reloadTitle') }} </template>
         <template #default>
-          <p class="mt-3 fs-6 user-select-none">{{ t('designer.reloadConfirm') }}</p>
+          <p class="mb-0 fs-6 user-select-none">{{ t('designer.reloadConfirm') }}</p>
         </template>
         <template #footer>
           <BsButton icon="times" @click="nextAction(false)">{{ t('common.cancel') }}</BsButton>
