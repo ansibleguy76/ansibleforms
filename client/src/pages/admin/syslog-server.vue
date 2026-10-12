@@ -236,6 +236,11 @@ onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
   await load();
+  // the list's Send test : the message sent at once, as the button sends it
+  if (server.value && route.query.test) {
+    router.replace({ query: { ...route.query, test: undefined } });
+    await sendTest();
+  }
 });
 </script>
 <template>

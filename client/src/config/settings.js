@@ -2810,7 +2810,8 @@ export default function getSettings(t) {
           icon: 'paper-plane',
           color: 'test',
           dividerBefore: true,
-          to: (m) => `/settings/syslog/${m.id}/test`,
+          // its page, the message sent there once it is open (a tab of its own no more)
+          to: (m) => ({ path: `/settings/syslog/${m.id}`, query: { test: '1' } }),
         },
         { name: 'delete', title: t('settings.syslogServers.deleteServer'), icon: 'trash', color: 'delete' },
       ],
