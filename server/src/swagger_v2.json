@@ -1813,6 +1813,87 @@
         }
       }
     },
+    "/live": {
+      "get": {
+        "tags": ["system"],
+        "summary": "Liveness probe",
+        "description": "Answers 200 while the process runs, for a load balancer or a Kubernetes liveness probe. No authentication.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "The process is alive",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "status": { "type": "string", "enum": ["live"] } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "tags": ["system"],
+        "summary": "Readiness probe",
+        "description": "Answers 200 when the database answers and its schema is complete, 503 otherwise (the process is stopping, the database is unreachable, or the schema is not provisioned or not upgraded). For a load balancer or a Kubernetes readiness probe. No authentication.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Ready to serve",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "status": { "type": "string", "enum": ["ready"] } } }
+              }
+            }
+          },
+          "503": {
+            "description": "Not ready",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["not ready"] },
+                    "reason": { "type": "string", "enum": ["stopping", "database unreachable", "schema not provisioned", "schema unreadable", "schema not upgraded"] }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "tags": ["system"],
+        "summary": "Prometheus metrics",
+        "description": "The metrics in the Prometheus text format. Only when the METRICS_TOKEN environment variable is set : the request sends it as a bearer token (not a login JWT). Without METRICS_TOKEN the endpoint answers 404.",
+        "security": [ { "metricsToken": [] } ],
+        "responses": {
+          "200": {
+            "description": "The metrics",
+            "content": { "text/plain": { "schema": { "type": "string" } } }
+          },
+          "401": { "description": "Missing or wrong token" },
+          "404": { "description": "METRICS_TOKEN is not set" }
+        }
+      }
+    },
+    "/events": {
+      "get": {
+        "tags": ["system"],
+        "summary": "Live events (server-sent events)",
+        "description": "A server-sent events stream that says what changed, as it changes. It opens with a `hello` event, then sends `changed` events whose data names what changed, e.g. `{\"name\":\"jobs\"}` (also `designer` and `appearance`). An event carries a name only, never data : re-read what you show through the normal API. A comment line every 15 seconds keeps the stream open ; reconnect when it closes.",
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "The event stream, kept open",
+            "content": { "text/event-stream": { "schema": { "type": "string" } } }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -2634,6 +2715,11 @@
         "scheme": "bearer",
         "bearerFormat": "JWT",
         "description": "JWT Bearer token. Authenticate via /auth/login, then use 'Authorize' here."
+      },
+      "metricsToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "The value of the METRICS_TOKEN environment variable, for /metrics only."
       }
     },
     "schemas": {
