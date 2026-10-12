@@ -418,9 +418,12 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
     }
     // an approval : asked, then answered
     if (!aborted) {
-      if (!waiting && approvals.length) await askApproval(approvals[0]);
-      if (waiting) {
-        const outcome = await approvalOutcome(jobStatus);
+      if (!waiting && approvals.length) {
+        // asked now : answered on a later tick, from the status as it is then (the one read
+        // above is from before the asking, running - it would read as approved)
+        await askApproval(approvals[0]);
+      } else if (waiting) {
+        const outcome = await approvalOutcome(await jobStatusOf(jobid));
         if (outcome) {
           const node = approvals.shift();
           waiting = null;
