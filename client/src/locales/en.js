@@ -1,5 +1,20 @@
 export default {
   workflowEditor: {
+    convergeHint: 'Off: it runs as soon as one link into it fires. On: only once every link into it has.',
+    linkExisting: 'Link a node already there',
+    newAfter: 'Or a new node after it, on',
+    parents: 'Parents',
+    newNode: 'New node',
+    nodeTitle: 'Node {identifier}',
+    steps: {
+      runs: 'What it runs',
+      settings: 'How it runs',
+      where: 'Where it goes',
+    },
+    runsAfter: 'Runs after',
+    atStart: 'At the start (no parent)',
+    create: 'Create',
+    nothingNext: 'Nothing runs after it yet.',
     previewHint: 'Click a node that runs to make it fail, or succeed again. Nothing is launched.',
     previewReset: 'Reset',
     run: {

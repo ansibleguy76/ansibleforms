@@ -1,5 +1,21 @@
 export default {
   workflowEditor: {
+    convergeHint:
+      "Désactivé : il s'exécute dès qu'un lien vers lui se déclenche. Activé : seulement quand tous l'ont fait.",
+    linkExisting: 'Lier un nœud existant',
+    newAfter: 'Ou un nouveau nœud après, en cas de',
+    parents: 'Parents',
+    newNode: 'Nouveau nœud',
+    nodeTitle: 'Nœud {identifier}',
+    steps: {
+      runs: "Ce qu'il exécute",
+      settings: "Comment il s'exécute",
+      where: 'Où il va',
+    },
+    runsAfter: "S'exécute après",
+    atStart: 'Au début (sans parent)',
+    create: 'Créer',
+    nothingNext: "Rien ne s'exécute après lui pour l'instant.",
     previewHint: "Cliquez sur un nœud qui s'exécute pour le faire échouer, ou réussir à nouveau. Rien n'est lancé.",
     previewReset: 'Réinitialiser',
     run: {

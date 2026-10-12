@@ -1,5 +1,21 @@
 export default {
   workflowEditor: {
+    convergeHint:
+      'Disattivato: viene eseguito appena un collegamento verso di esso scatta. Attivato: solo quando sono scattati tutti.',
+    linkExisting: 'Collega un nodo già presente',
+    newAfter: 'Oppure un nuovo nodo dopo, in caso di',
+    parents: 'Genitori',
+    newNode: 'Nuovo nodo',
+    nodeTitle: 'Nodo {identifier}',
+    steps: {
+      runs: 'Cosa esegue',
+      settings: 'Come viene eseguito',
+      where: 'Dove va',
+    },
+    runsAfter: 'Esegue dopo',
+    atStart: "All'inizio (senza genitore)",
+    create: 'Crea',
+    nothingNext: 'Ancora niente viene eseguito dopo.',
     previewHint:
       'Fai clic su un nodo che viene eseguito per farlo fallire, o riuscire di nuovo. Non viene lanciato nulla.',
     previewReset: 'Ripristina',

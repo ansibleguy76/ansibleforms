@@ -1,5 +1,20 @@
 export default {
   workflowEditor: {
+    convergeHint: '关闭：任一指向它的连接触发即运行。开启：所有指向它的连接都触发后才运行。',
+    linkExisting: '连接到已有节点',
+    newAfter: '或在其后新建节点，条件',
+    parents: '父节点',
+    newNode: '新建节点',
+    nodeTitle: '节点 {identifier}',
+    steps: {
+      runs: '运行什么',
+      settings: '如何运行',
+      where: '去向',
+    },
+    runsAfter: '在其后运行',
+    atStart: '开始时（无父节点）',
+    create: '创建',
+    nothingNext: '之后还没有要运行的内容。',
     previewHint: '点击会运行的节点使其失败，再点一次恢复成功。不会启动任何内容。',
     previewReset: '重置',
     run: {

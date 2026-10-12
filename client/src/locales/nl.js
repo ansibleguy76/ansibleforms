@@ -1,5 +1,20 @@
 export default {
   workflowEditor: {
+    convergeHint: 'Uit: het draait zodra één koppeling ernaartoe afgaat. Aan: pas als ze allemaal afgegaan zijn.',
+    linkExisting: 'Een bestaand knooppunt koppelen',
+    newAfter: 'Of een nieuw knooppunt erna, bij',
+    parents: 'Ouders',
+    newNode: 'Nieuw knooppunt',
+    nodeTitle: 'Knooppunt {identifier}',
+    steps: {
+      runs: 'Wat het uitvoert',
+      settings: 'Hoe het draait',
+      where: 'Waar het heen gaat',
+    },
+    runsAfter: 'Draait na',
+    atStart: 'Aan het begin (geen ouder)',
+    create: 'Aanmaken',
+    nothingNext: 'Er draait nog niets na.',
     previewHint:
       'Klik op een knooppunt dat draait om het te laten mislukken, of weer te laten slagen. Er wordt niets gestart.',
     previewReset: 'Herstellen',

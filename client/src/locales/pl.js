@@ -1,5 +1,21 @@
 export default {
   workflowEditor: {
+    convergeHint:
+      'Wyłączone: uruchamia się, gdy tylko zadziała jedno połączenie do niego. Włączone: dopiero gdy zadziałają wszystkie.',
+    linkExisting: 'Połącz istniejący węzeł',
+    newAfter: 'Lub nowy węzeł po nim, przy',
+    parents: 'Rodzice',
+    newNode: 'Nowy węzeł',
+    nodeTitle: 'Węzeł {identifier}',
+    steps: {
+      runs: 'Co uruchamia',
+      settings: 'Jak działa',
+      where: 'Dokąd prowadzi',
+    },
+    runsAfter: 'Uruchamia się po',
+    atStart: 'Na początku (bez rodzica)',
+    create: 'Utwórz',
+    nothingNext: 'Po nim jeszcze nic się nie uruchamia.',
     previewHint:
       'Kliknij węzeł, który się uruchamia, aby zakończył się błędem lub znów sukcesem. Nic nie jest uruchamiane.',
     previewReset: 'Resetuj',

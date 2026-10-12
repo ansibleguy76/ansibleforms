@@ -1,5 +1,20 @@
 export default {
   workflowEditor: {
+    convergeHint: 'Aus: er läuft, sobald eine Verbindung zu ihm auslöst. An: erst, wenn alle ausgelöst haben.',
+    linkExisting: 'Einen vorhandenen Knoten verbinden',
+    newAfter: 'Oder ein neuer Knoten danach, bei',
+    parents: 'Eltern',
+    newNode: 'Neuer Knoten',
+    nodeTitle: 'Knoten {identifier}',
+    steps: {
+      runs: 'Was er ausführt',
+      settings: 'Wie er läuft',
+      where: 'Wohin er führt',
+    },
+    runsAfter: 'Läuft nach',
+    atStart: 'Am Anfang (ohne Eltern)',
+    create: 'Erstellen',
+    nothingNext: 'Danach läuft noch nichts.',
     previewHint:
       'Klicke auf einen Knoten, der läuft, damit er fehlschlägt oder wieder gelingt. Es wird nichts gestartet.',
     previewReset: 'Zurücksetzen',

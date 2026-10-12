@@ -1,5 +1,20 @@
 export default {
   workflowEditor: {
+    convergeHint: 'オフ: 入ってくるリンクのどれか一つが発火した時点で実行。オン: すべてのリンクが発火した時だけ実行。',
+    linkExisting: '既存のノードにリンク',
+    newAfter: 'または、このあとに新しいノード:',
+    parents: '親ノード',
+    newNode: '新しいノード',
+    nodeTitle: 'ノード {identifier}',
+    steps: {
+      runs: '実行するもの',
+      settings: '実行のしかた',
+      where: 'つなぎ先',
+    },
+    runsAfter: '次の後に実行',
+    atStart: '最初に (親なし)',
+    create: '作成',
+    nothingNext: 'このあとに実行されるものはまだありません。',
     previewHint: '実行されるノードをクリックすると失敗に、もう一度クリックすると成功に戻ります。何も起動されません。',
     previewReset: 'リセット',
     run: {

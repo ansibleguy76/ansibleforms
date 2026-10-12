@@ -1,5 +1,21 @@
 export default {
   workflowEditor: {
+    convergeHint:
+      "Desactivat: s'executa tan bon punt un enllaç cap a ell s'activa. Activat: només quan tots ho han fet.",
+    linkExisting: 'Enllaçar un node que ja hi és',
+    newAfter: 'O un node nou després, si',
+    parents: 'Pares',
+    newNode: 'Node nou',
+    nodeTitle: 'Node {identifier}',
+    steps: {
+      runs: 'Què executa',
+      settings: "Com s'executa",
+      where: 'On va',
+    },
+    runsAfter: "S'executa després de",
+    atStart: "A l'inici (sense pare)",
+    create: 'Crear',
+    nothingNext: "Encara no s'executa res després.",
     previewHint: "Fes clic en un node que s'executa perquè falli, o torni a tenir èxit. No es llança res.",
     previewReset: 'Restablir',
     run: {

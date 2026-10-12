@@ -1,5 +1,20 @@
 export default {
   workflowEditor: {
+    convergeHint: 'Desligado: corre assim que uma ligação para ele dispara. Ligado: só quando todas tiverem disparado.',
+    linkExisting: 'Ligar um nó que já existe',
+    newAfter: 'Ou um novo nó depois, em caso de',
+    parents: 'Pais',
+    newNode: 'Novo nó',
+    nodeTitle: 'Nó {identifier}',
+    steps: {
+      runs: 'O que executa',
+      settings: 'Como corre',
+      where: 'Para onde vai',
+    },
+    runsAfter: 'Corre depois de',
+    atStart: 'No início (sem pai)',
+    create: 'Criar',
+    nothingNext: 'Ainda nada corre depois.',
     previewHint: 'Clique num nó que corre para o fazer falhar, ou ter sucesso de novo. Nada é lançado.',
     previewReset: 'Repor',
     run: {
