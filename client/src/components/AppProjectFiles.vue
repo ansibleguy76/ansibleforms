@@ -125,27 +125,6 @@ const allCollapsed = computed(
   () => allFolders.value.length > 0 && allFolders.value.every((p) => collapsed.value.has(p)),
 );
 
-/**
- * A folder's icon in the explorer : in the inventories, an inventory, its group_vars and its
- * host_vars say what they hold (as the inventory's tree draws a group and a host) ; any other
- * folder is a folder, open or closed.
- *
- * Args:
- *   item (object): the folder's row { name, path, depth }.
- *
- * Returns:
- *   object: { icon, cls } - the Font Awesome icon and its class.
- */
-function folderLook(item) {
-  if (isInventories.value) {
-    if (item.depth === inventoryDepth.value) return { icon: 'sitemap', cls: 'tree-inventory-icon' };
-    if (item.depth === inventoryDepth.value + 1 && item.name === 'group_vars')
-      return { icon: 'layer-group', cls: 'tree-inventory-icon' };
-    if (item.depth === inventoryDepth.value + 1 && item.name === 'host_vars')
-      return { icon: 'server', cls: 'tree-inventory-icon' };
-  }
-  return { icon: collapsed.value.has(item.path) && !filter.value ? 'folder' : 'folder-open', cls: 'tree-folder-icon' };
-}
 function toggleFolder(path) {
   const next = new Set(collapsed.value);
   if (next.has(path)) next.delete(path);
@@ -761,7 +740,11 @@ defineExpose({
                   class="text-secondary me-2 flex-shrink-0"
                   :title="t('designer.files.inventoryRepository')"
                 />
-                <FaIcon v-else :icon="folderLook(item).icon" :class="[folderLook(item).cls, 'me-2 flex-shrink-0']" />
+                <FaIcon
+                  v-else
+                  :icon="collapsed.has(item.path) && !filter ? 'folder' : 'folder-open'"
+                  class="tree-folder-icon me-2 flex-shrink-0"
+                />
                 <span class="text-truncate" :title="item.name">{{ item.name }}</span>
               </span>
               <!-- an inventory's folder : its group vars and its host vars ; any other : a new file -->
@@ -1056,9 +1039,5 @@ defineExpose({
 }
 .tree-folder-icon {
   color: #f0b429;
-}
-/* an inventory, its group_vars and its host_vars : the link blue of the inventory's groups */
-.tree-inventory-icon {
-  color: var(--bs-primary);
 }
 </style>
