@@ -1,4 +1,22 @@
 export default {
+  playbookOutline: {
+    empty: 'Dit playbook heeft nog geen play.',
+    plays: '{n} play | {n} plays',
+    tasks: '{n} taak | {n} taken',
+    unnamed: '(geen naam)',
+    noFacts: 'zonder facts',
+    import: 'importeert {name}',
+    sections: {
+      roles: 'Rollen',
+      pre_tasks: 'Voorafgaande taken',
+      tasks: 'Taken',
+      post_tasks: 'Afsluitende taken',
+      handlers: 'Handlers',
+      block: 'Blok',
+      rescue: 'Rescue',
+      always: 'Always',
+    },
+  },
   workflowEditor: {
     convergeHint: 'Uit: het draait zodra één koppeling ernaartoe afgaat. Aan: pas als ze allemaal afgegaan zijn.',
     linkExisting: 'Koppelen aan een bestaand knooppunt:',

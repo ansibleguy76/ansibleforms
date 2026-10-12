@@ -1,4 +1,22 @@
 export default {
+  playbookOutline: {
+    empty: 'Aquest playbook encara no té cap play.',
+    plays: '{n} play | {n} plays',
+    tasks: '{n} tasca | {n} tasques',
+    unnamed: '(sense nom)',
+    noFacts: 'sense facts',
+    import: 'importa {name}',
+    sections: {
+      roles: 'Rols',
+      pre_tasks: 'Tasques prèvies',
+      tasks: 'Tasques',
+      post_tasks: 'Tasques posteriors',
+      handlers: 'Handlers',
+      block: 'Bloc',
+      rescue: 'Rescue',
+      always: 'Always',
+    },
+  },
   workflowEditor: {
     convergeHint:
       "Desactivat: s'executa tan bon punt un enllaç cap a ell s'activa. Activat: només quan tots ho han fet.",

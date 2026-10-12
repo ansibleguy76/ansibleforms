@@ -271,6 +271,7 @@ describe('the designer address names a section and a tab it has', () => {
     expect(designerAddressExists({})).toBe(true);
     expect(designerAddressExists({ view: 'playbooks' })).toBe(true);
     expect(designerAddressExists({ view: 'playbooks', item: 'yaml' })).toBe(true);
+    expect(designerAddressExists({ view: 'playbooks', item: 'preview' })).toBe(true);
     expect(designerAddressExists({ view: 'varsfiles', item: 'visual' })).toBe(true);
     expect(designerAddressExists({ view: 'forms', item: 'approval-demo' })).toBe(true);
     expect(designerAddressExists({ view: 'forms', item: 'approval-demo', editor: 'preview' })).toBe(true);

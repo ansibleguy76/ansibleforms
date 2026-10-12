@@ -1,4 +1,22 @@
 export default {
+  playbookOutline: {
+    empty: 'このプレイブックにはまだプレイがありません。',
+    plays: 'プレイ {n} 個',
+    tasks: 'タスク {n} 個',
+    unnamed: '(名前なし)',
+    noFacts: 'facts なし',
+    import: '{name} をインポート',
+    sections: {
+      roles: 'ロール',
+      pre_tasks: '事前タスク',
+      tasks: 'タスク',
+      post_tasks: '事後タスク',
+      handlers: 'ハンドラー',
+      block: 'ブロック',
+      rescue: 'rescue',
+      always: 'always',
+    },
+  },
   workflowEditor: {
     convergeHint: 'オフ: 入ってくるリンクのどれか一つが発火した時点で実行。オン: すべてのリンクが発火した時だけ実行。',
     linkExisting: '既存のノードにリンク:',

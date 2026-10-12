@@ -1,4 +1,22 @@
 export default {
+  playbookOutline: {
+    empty: 'Este playbook ainda não tem nenhum play.',
+    plays: '{n} play | {n} plays',
+    tasks: '{n} tarefa | {n} tarefas',
+    unnamed: '(sem nome)',
+    noFacts: 'sem facts',
+    import: 'importa {name}',
+    sections: {
+      roles: 'Roles',
+      pre_tasks: 'Tarefas prévias',
+      tasks: 'Tarefas',
+      post_tasks: 'Tarefas finais',
+      handlers: 'Handlers',
+      block: 'Bloco',
+      rescue: 'Rescue',
+      always: 'Always',
+    },
+  },
   workflowEditor: {
     convergeHint: 'Desligado: corre assim que uma ligação para ele dispara. Ligado: só quando todas tiverem disparado.',
     linkExisting: 'Ligar a um nó existente:',

@@ -763,111 +763,114 @@ function startAt(i) {
       >
         <template #title>{{ t('workflowEditor.nodeTitle', { identifier: node.identifier }) }}</template>
         <template #default>
-          <ul class="nav nav-tabs mb-3">
+          <ul class="nav nav-tabs">
             <li v-for="tab in nodeTabs" :key="tab" class="nav-item">
               <a class="nav-link" :class="{ active: nodeTab === tab }" href="#" @click.prevent="nodeTab = tab">{{
                 t(`workflowEditor.steps.${tab}`)
               }}</a>
             </li>
           </ul>
-          <AppWorkflowNodeFields
-            v-if="(nodeTab === 'runs' || nodeTab === 'settings') && nodeTabs.includes(nodeTab)"
-            :node="node"
-            :section="nodeTab"
-            :choices="choicesFor"
-            :refs="refs"
-            :readOnly="readOnly"
-            @set="setNode"
-          />
-          <!-- what it runs after, and whether all of it must -->
-          <template v-else-if="nodeTab === 'after'">
-            <div>
-              <ul class="list-group mb-2">
-                <li v-for="p in parentsOf(node.identifier)" :key="p.from + p.kind" class="list-group-item af-wf-item">
-                  <span class="af-wf-line" :style="{ background: LINK_COLORS[p.kind] }"></span>
-                  <span class="flex-grow-1 fw-semibold">{{ p.from }}</span>
-                  <span class="badge rounded-pill af-wf-kind-pill" :class="`af-wf-kind-${p.kind}`">{{
-                    t(`workflowEditor.kinds.${p.kind}`)
-                  }}</span>
-                </li>
-                <li v-if="!parentsOf(node.identifier).length" class="list-group-item text-muted">
-                  {{ t('workflowEditor.atStart') }}
-                </li>
-              </ul>
-              <div class="form-check form-switch">
-                <input
-                  id="wf-node-converge"
-                  class="form-check-input"
-                  type="checkbox"
-                  :checked="node.converge"
-                  :disabled="readOnly"
-                  @change="setNode('converge', $event.target.checked)"
-                />
-                <label class="form-check-label" for="wf-node-converge">{{ t('workflowEditor.converge') }}</label>
-              </div>
-              <div class="form-text">{{ t('workflowEditor.convergeHint') }}</div>
-            </div>
-          </template>
-          <!-- what runs after it : its links, a node there already linked, or a new one -->
-          <template v-else>
-            <div>
-              <ul class="list-group mb-3">
-                <template v-for="kind in LINK_KINDS" :key="kind">
-                  <li v-for="to in node[kind]" :key="kind + to" class="list-group-item af-wf-item">
-                    <span class="af-wf-line" :style="{ background: LINK_COLORS[kind] }"></span>
-                    <span class="flex-grow-1 fw-semibold">{{ to }}</span>
-                    <span class="badge rounded-pill af-wf-kind-pill" :class="`af-wf-kind-${kind}`">{{
-                      t(`workflowEditor.kinds.${kind}`)
+          <!-- the tab's content : a card joined to its tabs -->
+          <div class="af-wf-tab-card">
+            <AppWorkflowNodeFields
+              v-if="(nodeTab === 'runs' || nodeTab === 'settings') && nodeTabs.includes(nodeTab)"
+              :node="node"
+              :section="nodeTab"
+              :choices="choicesFor"
+              :refs="refs"
+              :readOnly="readOnly"
+              @set="setNode"
+            />
+            <!-- what it runs after, and whether all of it must -->
+            <template v-else-if="nodeTab === 'after'">
+              <div>
+                <ul class="list-group mb-2">
+                  <li v-for="p in parentsOf(node.identifier)" :key="p.from + p.kind" class="list-group-item af-wf-item">
+                    <span class="af-wf-line" :style="{ background: LINK_COLORS[p.kind] }"></span>
+                    <span class="flex-grow-1 fw-semibold">{{ p.from }}</span>
+                    <span class="badge rounded-pill af-wf-kind-pill" :class="`af-wf-kind-${p.kind}`">{{
+                      t(`workflowEditor.kinds.${p.kind}`)
                     }}</span>
-                    <button
-                      v-if="!readOnly"
-                      type="button"
-                      class="btn-close af-wf-unlink"
-                      :title="t('workflowEditor.unlink')"
-                      :aria-label="t('workflowEditor.unlink')"
-                      @click="apply((text) => editUnlink(text, wfIndex, node.identifier, to))"
-                    ></button>
                   </li>
-                </template>
-                <li
-                  v-if="!node.success.length && !node.failure.length && !node.always.length"
-                  class="list-group-item text-muted"
-                >
-                  {{ t('workflowEditor.nothingNext') }}
-                </li>
-              </ul>
-              <template v-if="!readOnly">
-                <!-- a node there already : linked -->
-                <label class="form-label mb-2">{{ t('workflowEditor.linkExisting') }}</label>
-                <div class="d-flex align-items-center gap-2 mb-3">
-                  <select v-model="linkKind" class="form-select af-wf-kind">
-                    <option v-for="kind in LINK_KINDS" :key="kind" :value="kind">
-                      {{ t(`workflowEditor.kinds.${kind}`) }}
-                    </option>
-                  </select>
-                  <select v-model="linkTo" class="form-select">
-                    <option value="">{{ t('workflowEditor.linkTo') }}</option>
-                    <option v-for="id in linkTargets" :key="id" :value="id">{{ id }}</option>
-                  </select>
-                  <BsButton icon="link" cssClass="text-nowrap" @click="addLink()">{{
-                    t('workflowEditor.link')
-                  }}</BsButton>
+                  <li v-if="!parentsOf(node.identifier).length" class="list-group-item text-muted">
+                    {{ t('workflowEditor.atStart') }}
+                  </li>
+                </ul>
+                <div class="form-check form-switch">
+                  <input
+                    id="wf-node-converge"
+                    class="form-check-input"
+                    type="checkbox"
+                    :checked="node.converge"
+                    :disabled="readOnly"
+                    @change="setNode('converge', $event.target.checked)"
+                  />
+                  <label class="form-check-label" for="wf-node-converge">{{ t('workflowEditor.converge') }}</label>
                 </div>
-                <!-- a new node : the wizard, linked after this one -->
-                <label class="form-label mb-2">{{ t('workflowEditor.newAfter') }}</label>
-                <div class="d-flex flex-wrap gap-2">
-                  <BsButton
-                    v-for="kind in LINK_KINDS"
-                    :key="kind"
-                    icon="plus"
-                    :colorClass="{ success: 'success', failure: 'danger', always: 'info' }[kind]"
-                    @click="addNode({ identifier: node.identifier, kind })"
-                    >{{ t(`workflowEditor.kinds.${kind}`) }}</BsButton
+                <div class="form-text">{{ t('workflowEditor.convergeHint') }}</div>
+              </div>
+            </template>
+            <!-- what runs after it : its links, a node there already linked, or a new one -->
+            <template v-else>
+              <div>
+                <ul class="list-group mb-3">
+                  <template v-for="kind in LINK_KINDS" :key="kind">
+                    <li v-for="to in node[kind]" :key="kind + to" class="list-group-item af-wf-item">
+                      <span class="af-wf-line" :style="{ background: LINK_COLORS[kind] }"></span>
+                      <span class="flex-grow-1 fw-semibold">{{ to }}</span>
+                      <span class="badge rounded-pill af-wf-kind-pill" :class="`af-wf-kind-${kind}`">{{
+                        t(`workflowEditor.kinds.${kind}`)
+                      }}</span>
+                      <button
+                        v-if="!readOnly"
+                        type="button"
+                        class="btn-close af-wf-unlink"
+                        :title="t('workflowEditor.unlink')"
+                        :aria-label="t('workflowEditor.unlink')"
+                        @click="apply((text) => editUnlink(text, wfIndex, node.identifier, to))"
+                      ></button>
+                    </li>
+                  </template>
+                  <li
+                    v-if="!node.success.length && !node.failure.length && !node.always.length"
+                    class="list-group-item text-muted"
                   >
-                </div>
-              </template>
-            </div>
-          </template>
+                    {{ t('workflowEditor.nothingNext') }}
+                  </li>
+                </ul>
+                <template v-if="!readOnly">
+                  <!-- a node there already : linked -->
+                  <label class="form-label mb-2">{{ t('workflowEditor.linkExisting') }}</label>
+                  <div class="d-flex align-items-center gap-2 mb-3">
+                    <select v-model="linkKind" class="form-select af-wf-kind">
+                      <option v-for="kind in LINK_KINDS" :key="kind" :value="kind">
+                        {{ t(`workflowEditor.kinds.${kind}`) }}
+                      </option>
+                    </select>
+                    <select v-model="linkTo" class="form-select">
+                      <option value="">{{ t('workflowEditor.linkTo') }}</option>
+                      <option v-for="id in linkTargets" :key="id" :value="id">{{ id }}</option>
+                    </select>
+                    <BsButton icon="link" cssClass="text-nowrap" @click="addLink()">{{
+                      t('workflowEditor.link')
+                    }}</BsButton>
+                  </div>
+                  <!-- a new node : the wizard, linked after this one -->
+                  <label class="form-label mb-2">{{ t('workflowEditor.newAfter') }}</label>
+                  <div class="d-flex flex-wrap gap-2">
+                    <BsButton
+                      v-for="kind in LINK_KINDS"
+                      :key="kind"
+                      icon="plus"
+                      :colorClass="{ success: 'success', failure: 'danger', always: 'info' }[kind]"
+                      @click="addNode({ identifier: node.identifier, kind })"
+                      >{{ t(`workflowEditor.kinds.${kind}`) }}</BsButton
+                    >
+                  </div>
+                </template>
+              </div>
+            </template>
+          </div>
         </template>
         <template #footer>
           <BsButton icon="code" @click="emit('reveal', node.line)">{{ t('designer.files.showInYaml') }}</BsButton>
@@ -1101,5 +1104,11 @@ function startAt(i) {
 .af-wf-kind-always {
   background: var(--bs-info-bg-subtle);
   color: var(--bs-info-text-emphasis);
+}
+.af-wf-tab-card {
+  border: 1px solid var(--bs-border-color);
+  border-top: 0;
+  border-radius: 0 0 0.375rem 0.375rem;
+  padding: 1rem;
 }
 </style>

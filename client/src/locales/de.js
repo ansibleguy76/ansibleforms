@@ -1,4 +1,22 @@
 export default {
+  playbookOutline: {
+    empty: 'Dieses Playbook hat noch kein Play.',
+    plays: '{n} Play | {n} Plays',
+    tasks: '{n} Task | {n} Tasks',
+    unnamed: '(ohne Namen)',
+    noFacts: 'ohne Facts',
+    import: 'importiert {name}',
+    sections: {
+      roles: 'Rollen',
+      pre_tasks: 'Vorab-Tasks',
+      tasks: 'Tasks',
+      post_tasks: 'Abschluss-Tasks',
+      handlers: 'Handler',
+      block: 'Block',
+      rescue: 'Rescue',
+      always: 'Always',
+    },
+  },
   workflowEditor: {
     convergeHint: 'Aus: er läuft, sobald eine Verbindung zu ihm auslöst. An: erst, wenn alle ausgelöst haben.',
     linkExisting: 'Mit einem vorhandenen Knoten verbinden:',

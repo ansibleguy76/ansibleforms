@@ -560,6 +560,10 @@ defineExpose({
             : t('designer.files.noFolder')
         "
       />
+      <!-- the Preview tab of a playbook : its outline, read only -->
+      <div v-else-if="view === 'preview' && kind === 'playbooks'" class="af-files-visual">
+        <AppPlaybookOutline :modelValue="content" @reveal="reveal" />
+      </div>
       <!-- the Preview tab of a workflow file : a dry run of its workflows -->
       <AppWorkflowEditor v-else-if="view === 'preview' && isWorkflows" :modelValue="content" readOnly preview />
       <!-- the Visual tab : a vars file as its variables -->

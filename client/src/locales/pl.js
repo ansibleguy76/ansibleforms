@@ -1,4 +1,22 @@
 export default {
+  playbookOutline: {
+    empty: 'Ten playbook nie ma jeszcze żadnego play.',
+    plays: '{n} play | {n} play | {n} play',
+    tasks: '{n} zadanie | {n} zadania | {n} zadań',
+    unnamed: '(bez nazwy)',
+    noFacts: 'bez faktów',
+    import: 'importuje {name}',
+    sections: {
+      roles: 'Role',
+      pre_tasks: 'Zadania wstępne',
+      tasks: 'Zadania',
+      post_tasks: 'Zadania końcowe',
+      handlers: 'Handlery',
+      block: 'Blok',
+      rescue: 'Rescue',
+      always: 'Always',
+    },
+  },
   workflowEditor: {
     convergeHint:
       'Wyłączone: uruchamia się, gdy tylko zadziała jedno połączenie do niego. Włączone: dopiero gdy zadziałają wszystkie.',

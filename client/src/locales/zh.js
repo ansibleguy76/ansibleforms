@@ -1,4 +1,22 @@
 export default {
+  playbookOutline: {
+    empty: '此 playbook 还没有 play。',
+    plays: '{n} 个 play',
+    tasks: '{n} 个任务',
+    unnamed: '（无名称）',
+    noFacts: '不收集 facts',
+    import: '导入 {name}',
+    sections: {
+      roles: '角色',
+      pre_tasks: '前置任务',
+      tasks: '任务',
+      post_tasks: '后置任务',
+      handlers: '处理程序',
+      block: '块',
+      rescue: 'rescue',
+      always: 'always',
+    },
+  },
   workflowEditor: {
     convergeHint: '关闭：任一指向它的连接触发即运行。开启：所有指向它的连接都触发后才运行。',
     linkExisting: '连接到已有节点：',

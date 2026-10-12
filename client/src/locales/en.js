@@ -1,4 +1,22 @@
 export default {
+  playbookOutline: {
+    empty: 'This playbook has no play yet.',
+    plays: '{n} play | {n} plays',
+    tasks: '{n} task | {n} tasks',
+    unnamed: '(no name)',
+    noFacts: 'no facts',
+    import: 'imports {name}',
+    sections: {
+      roles: 'Roles',
+      pre_tasks: 'Pre tasks',
+      tasks: 'Tasks',
+      post_tasks: 'Post tasks',
+      handlers: 'Handlers',
+      block: 'Block',
+      rescue: 'Rescue',
+      always: 'Always',
+    },
+  },
   workflowEditor: {
     convergeHint: 'Off: it runs as soon as one link into it fires. On: only once every link into it has.',
     linkExisting: 'Link to an existing node:',
