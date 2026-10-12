@@ -26,7 +26,7 @@
 /******************************************************************/
 import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { NODE_TYPES, onTemplateRunner } from '@/config/workflowFile';
+import { NODE_TYPES, RUN_TARGETS, nodeRunsOn, runnerForTarget } from '@/config/workflowFile';
 
 const props = defineProps({
   node: { type: Object, required: true },
@@ -42,12 +42,61 @@ const { t } = useI18n();
 const sorted = (list) => [...(list || [])].sort((a, b) => a.localeCompare(b));
 // a name the node uses that the instance lacks : still offered, so the field shows it
 const withCurrent = (list, current) => (current && list && !list.includes(current) ? [current, ...list] : list || []);
+// ─── where a playbook node runs : "Runs" says it (a playbook on the RTE, a template on AWX ...) ───
+// the choice made, for when the runners cannot be listed (their name typed, their type unknown)
+const picked = ref(null);
+// where it runs : its runner's type when the runners are listed, else the choice made ; '?' for a
+// runner of unknown type ; null for no job template node
+const target = computed(() => {
+  if (props.node.type !== 'job_template') return null;
+  const on = nodeRunsOn(props.node, props.refs);
+  if (props.refs.runners && on) return on;
+  return picked.value || on || '?';
+});
+// the places offered : the RTE always, a runner type when the instance has one of it (all of them
+// when the runners cannot be listed)
+const targets = computed(() =>
+  RUN_TARGETS.filter((t) => t === 'rte' || !props.refs.runners || props.refs.runners.some((r) => r.type === t)),
+);
+// what "Runs" shows : a playbook node by where it runs, the other kinds by their kind
+const runsValue = computed(() => (target.value ? `job_template:${target.value}` : props.node.type));
+/**
+ * What "Runs" picked : a kind of node, or for a playbook node where it runs - the type's default
+ * runner given (none on the RTE), and what it runs chosen again.
+ *
+ * Args:
+ *   value (string): a node type, or job_template:<target>.
+ */
+function setRuns(value) {
+  const [type, where] = value.split(':');
+  if (type !== props.node.type) emit('set', 'type', type);
+  if (!where) return;
+  picked.value = where;
+  if (where === target.value) return;
+  emit('set', 'runner', runnerForTarget(where, props.refs.runners));
+  if (type === props.node.type) emit('set', 'name', '');
+}
 // a job template node on a template runner (AWX, Semaphore, Rundeck, Jenkins) runs that runner's
 // template or job : its name is typed, the designer's playbooks are not it
-const onRunner = computed(() => props.node.type === 'job_template' && onTemplateRunner(props.node, props.refs));
+const onRunner = computed(() => !!target.value && target.value !== 'rte');
 const runChoices = computed(() => (onRunner.value ? null : props.choices(props.node.type)));
-// what the runner choice offers : every runner, by name (its type beside it)
-const runnerChoices = computed(() => [...(props.refs.runners || [])].sort((a, b) => a.name.localeCompare(b.name)));
+// what it runs is called after where : a playbook, a template (AWX, Semaphore), a job (Rundeck, Jenkins)
+const runNameLabel = computed(() => {
+  if (!target.value) return t(`workflowEditor.runName.${props.node.type}`, t('workflowEditor.name'));
+  if (target.value === 'rte') return t('workflowEditor.runName.job_template');
+  if (target.value === '?') return t('workflowEditor.runName.templateOrJob');
+  return t(`workflowEditor.runName.${['rundeck', 'jenkins'].includes(target.value) ? 'job' : 'template'}`);
+});
+// what the runner choice offers : the runners of where it runs, by name (an awx runner's flavour beside it)
+const runnerChoices = computed(() =>
+  (props.refs.runners || [])
+    .filter((r) => r.type === (target.value === '?' ? r.type : target.value))
+    .sort((a, b) => a.name.localeCompare(b.name)),
+);
+const runnerLabel = (r) => {
+  const what = r.type === 'awx' ? r.flavour || 'awx' : r.type;
+  return `${r.name} (${what}${r.is_default ? `, ${t('workflowEditor.runnerIsDefault')}` : ''})`;
+};
 const isTrue = (v) => v === true || v === 'true';
 
 // ─── its credentials : those it has (each removable), one more picked and added ───
@@ -96,21 +145,20 @@ function removeCredential(name) {
     </div>
     <div class="af-wf-half">
       <label class="form-label fw-bold">{{ t('workflowEditor.runs') }}</label>
-      <select
-        class="form-select"
-        :value="node.type"
-        :disabled="readOnly"
-        @change="emit('set', 'type', $event.target.value)"
-      >
-        <option v-for="type in NODE_TYPES" :key="type" :value="type">{{ t(`workflowEditor.types.${type}`) }}</option>
+      <select class="form-select" :value="runsValue" :disabled="readOnly" @change="setRuns($event.target.value)">
+        <option v-for="where in targets" :key="where" :value="`job_template:${where}`">
+          {{ t(`workflowEditor.runsOn.${where}`) }}
+        </option>
+        <option v-if="target === '?'" value="job_template:?">
+          {{ t('workflowEditor.runsOn.unknown', { runner: node.runner }) }}
+        </option>
+        <option v-for="type in NODE_TYPES.filter((n) => n !== 'job_template')" :key="type" :value="type">
+          {{ t(`workflowEditor.types.${type}`) }}
+        </option>
       </select>
     </div>
     <div class="af-wf-half">
-      <label class="form-label fw-bold">{{
-        onRunner
-          ? t('workflowEditor.runName.template')
-          : t(`workflowEditor.runName.${node.type}`, t('workflowEditor.name'))
-      }}</label>
+      <label class="form-label fw-bold">{{ runNameLabel }}</label>
       <select
         v-if="runChoices"
         class="form-select"
@@ -131,7 +179,7 @@ function removeCredential(name) {
         @change="emit('set', 'name', $event.target.value)"
       />
     </div>
-    <!-- a playbook node : on an RTE (a designer playbook), or a runner's template or job -->
+    <!-- a playbook node : the runner of where it runs (on the RTE : the default one, or one named) -->
     <div v-if="node.type === 'job_template'" class="af-wf-half">
       <label class="form-label fw-bold">{{ t('workflowEditor.runner') }}</label>
       <select
@@ -141,11 +189,11 @@ function removeCredential(name) {
         :disabled="readOnly"
         @change="emit('set', 'runner', $event.target.value)"
       >
-        <option value="">{{ t('workflowEditor.runnerNone') }}</option>
+        <option v-if="target === 'rte'" value="">{{ t('workflowEditor.runnerNone') }}</option>
         <option v-if="node.runner && !runnerChoices.some((r) => r.name === node.runner)" :value="node.runner">
           {{ node.runner }}
         </option>
-        <option v-for="r in runnerChoices" :key="r.name" :value="r.name">{{ r.name }} ({{ r.type }})</option>
+        <option v-for="r in runnerChoices" :key="r.name" :value="r.name">{{ runnerLabel(r) }}</option>
       </select>
       <input
         v-else
@@ -155,7 +203,6 @@ function removeCredential(name) {
         spellcheck="false"
         @change="emit('set', 'runner', $event.target.value.trim())"
       />
-      <div class="form-text">{{ t('workflowEditor.runnerHint') }}</div>
     </div>
     <!-- when it runs, and what it gets : as a multistep's step ifExtraVar and key -->
     <template v-if="node.type !== 'workflow_approval_template'">

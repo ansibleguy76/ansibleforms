@@ -2,7 +2,15 @@
 // template or job on, its condition and the extravars key it gets - read, written as the file
 // keeps them, checked against the instance's runners, and a skipped node in the dry run.
 import { describe, it, expect } from 'vitest';
-import { workflowFileOf, workflowProblems, editNode, onTemplateRunner, nextStep } from '@/config/workflowFile';
+import {
+  workflowFileOf,
+  workflowProblems,
+  editNode,
+  onTemplateRunner,
+  nextStep,
+  nodeRunsOn,
+  runnerForTarget,
+} from '@/config/workflowFile';
 
 const FILE = `workflow_job_templates:
   - name: mixed
@@ -70,5 +78,34 @@ describe('a skipped node in the dry run', () => {
     state.get('provision').status = 'successful';
     state.get('configure').status = 'skipped';
     expect(nextStep(wf.nodes, state).start).toEqual(['notify']);
+  });
+});
+
+describe('where a playbook node runs, as "Runs" offers it', () => {
+  const runners = [
+    { name: 'rte-1', type: 'rte', is_default: true },
+    { name: 'aap-prod', type: 'awx', flavour: 'aap', is_default: false },
+    { name: 'awx-lab', type: 'awx', is_default: true },
+    { name: 'rd-b', type: 'rundeck', is_default: false },
+    { name: 'rd-a', type: 'rundeck', is_default: false },
+  ];
+  const node = (over) => ({ type: 'job_template', name: 'x', ...over });
+
+  it('is the RTE without a runner, else its runner type ; unknown for a runner it does not know', () => {
+    expect(nodeRunsOn(node({}), { runners })).toBe('rte');
+    expect(nodeRunsOn(node({ runner: 'rte-1' }), { runners })).toBe('rte');
+    expect(nodeRunsOn(node({ runner: 'aap-prod' }), { runners })).toBe('awx');
+    expect(nodeRunsOn(node({ runner: 'rd-a' }), { runners })).toBe('rundeck');
+    expect(nodeRunsOn(node({ runner: 'gone' }), { runners })).toBe(null);
+    expect(nodeRunsOn(node({ runner: 'rd-a' }), { runners: null })).toBe(null);
+    expect(nodeRunsOn({ type: 'project', name: 'r' }, { runners })).toBe(null);
+  });
+
+  it("picking where gives the type's default runner, or its first by name ; none on the RTE", () => {
+    expect(runnerForTarget('rte', runners)).toBe('');
+    expect(runnerForTarget('awx', runners)).toBe('awx-lab');
+    expect(runnerForTarget('rundeck', runners)).toBe('rd-a');
+    expect(runnerForTarget('jenkins', runners)).toBe('');
+    expect(runnerForTarget('semaphore', null)).toBe('');
   });
 });
