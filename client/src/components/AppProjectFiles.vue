@@ -477,8 +477,12 @@ function leave(go) {
   leavingTo.value = go;
   return false;
 }
-function guard(to) {
+function guard(to, from) {
   if (!dirty.value) return true;
+  // the YAML, Visual and Preview tabs of a section show the same file : only their address changes
+  // (/designer/inventories/yaml, /visual), so no question, and the tab never moves without it
+  const section = (r) => r.path.split('/')[2];
+  if (section(to) === section(from) && to.path.startsWith('/designer/')) return true;
   leavingTo.value = () => router.push(to.fullPath);
   return false;
 }
@@ -489,6 +493,16 @@ function onBeforeUnload(e) {
 }
 window.addEventListener('beforeunload', onBeforeUnload);
 onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnload));
+
+/** Saves the changes, then goes where the dialog was opened for ; a failed save stays. */
+async function saveAndGo() {
+  await save();
+  if (dirty.value) return;
+  if (leavingFor.value) return open(leavingFor.value, true);
+  const go = leavingTo.value;
+  leavingTo.value = null;
+  go();
+}
 
 /** Drops the changes and goes where the dialog was opened for : a file, or a page. */
 function discardAndGo() {
@@ -848,7 +862,11 @@ defineExpose({
         <p class="mb-0 fs-6">{{ t('designer.files.leaveConfirm', { path: selected }) }}</p>
       </template>
       <template #footer>
-        <BsButton icon="xmark" @click="discardAndGo()">{{ t('designer.files.discard') }}</BsButton>
+        <!-- the likely answer first : keep the changes -->
+        <BsButton v-if="!readOnly" icon="save" colorClass="primary" :disabled="working" @click="saveAndGo()">{{
+          t('designer.saveAndClose')
+        }}</BsButton>
+        <BsButton icon="xmark" :disabled="working" @click="discardAndGo()">{{ t('designer.files.discard') }}</BsButton>
       </template>
     </BsModal>
   </div>
