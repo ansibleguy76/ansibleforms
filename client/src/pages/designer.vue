@@ -2234,6 +2234,9 @@ async function loadForms() {
   }
 }
 
+// the user turning the designer off : their lock going free is no lock left behind to take back
+const releasing = ref(false);
+
 async function loadLock() {
   try {
     const before = lock.value;
@@ -2241,7 +2244,7 @@ async function loadLock() {
     // ours a moment ago, free now : it was left behind (the computer asleep past
     // LOCK_STALE_SECONDS, server/src/models/lock.model.js) and nobody took it - taken back, so
     // the edits open here go on ; somebody else's by now shows who
-    if (before?.match && lock.value?.free) {
+    if (before?.match && lock.value?.free && !releasing.value) {
       try {
         await Lock.set();
         lock.value = await Lock.get();
@@ -3076,9 +3079,11 @@ async function deleteLock(proceed = true) {
     return;
   }
   try {
-    // release the lock and reload the data
+    // release the lock and reload the data ; released on purpose : never taken back (loadLock)
     loaded.value = false;
+    releasing.value = true;
     await Lock.release();
+    lock.value = { free: true };
     await loadAll();
   } catch (err) {
     toast.error(err.message);
@@ -3086,6 +3091,8 @@ async function deleteLock(proceed = true) {
     // same as setLock : a failed release must not leave the editor behind a spinner with
     // the in-memory buffers unreachable
     loaded.value = true;
+  } finally {
+    releasing.value = false;
   }
 }
 
