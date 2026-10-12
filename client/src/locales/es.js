@@ -1594,11 +1594,10 @@ export default {
     add: 'Añadir',
     edit: 'Editar',
     files: {
+      inventoryCloneFailed: 'No se pudo clonar el repositorio {name}: mira su última salida en Ajustes > Repositorios.',
       hideExplorer: 'Ocultar el explorador de archivos',
       showExplorer: 'Mostrar el explorador de archivos',
       newInventory: 'Nuevo inventario',
-      inventoryNameHelp:
-        'El nombre de su carpeta (production, staging): recibe un inventory.yaml y group_vars/all.yaml. Un formulario de playbook lo nombra con inventory: <nombre>.',
       newGroupVars: 'Nuevo archivo de variables de grupo',
       groupVarsHelp: 'El nombre del grupo: sus variables van en {inventory}/group_vars/<nombre>.yaml.',
       newHostVars: 'Nuevo archivo de variables de host',

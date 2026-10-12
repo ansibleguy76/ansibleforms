@@ -210,12 +210,20 @@ defineExpose({ add: () => startAdd() });
       <template #title>{{ adding.isList ? t('designer.files.addItem') : t('designer.files.addKey') }}</template>
       <template #default>
         <p class="text-body-secondary mb-3">{{ t('designer.files.addTo', { where: addTarget }) }}</p>
-        <BsInput v-if="!adding.isList" v-model="adding.key" :label="t('settings.settingsPage.key')" icon="key" />
         <BsInput
+          v-if="!adding.isList"
+          :isFloating="false"
+          v-model="adding.key"
+          :label="t('settings.settingsPage.key')"
+          icon="key"
+        />
+        <BsInput
+          :isFloating="false"
           v-model="adding.value"
           :label="t('settings.settingsPage.value')"
+          icon="pen"
           :help="t('designer.files.valueHelp')"
-          @keyup.enter="add()"
+          @keyup_enter="add()"
         />
       </template>
       <template #footer>

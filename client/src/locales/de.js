@@ -1611,11 +1611,11 @@ export default {
     add: 'Hinzufügen',
     edit: 'Bearbeiten',
     files: {
+      inventoryCloneFailed:
+        'Repository {name} konnte nicht geklont werden: siehe seine letzte Ausgabe unter Einstellungen > Repositories.',
       hideExplorer: 'Datei-Explorer ausblenden',
       showExplorer: 'Datei-Explorer einblenden',
       newInventory: 'Neues Inventar',
-      inventoryNameHelp:
-        'Der Name seines Ordners (production, staging): er bekommt eine inventory.yaml und group_vars/all.yaml. Ein Playbook-Formular nennt es mit inventory: <name>.',
       newGroupVars: 'Neue Gruppenvariablen-Datei',
       groupVarsHelp: 'Der Name der Gruppe: ihre Variablen kommen in {inventory}/group_vars/<name>.yaml.',
       newHostVars: 'Neue Host-Variablen-Datei',

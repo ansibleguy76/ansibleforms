@@ -1601,11 +1601,11 @@ export default {
     add: 'Afegeix',
     edit: 'Edita',
     files: {
+      inventoryCloneFailed:
+        "No s'ha pogut clonar el repositori {name}: mira la seva darrera sortida a Configuració > Repositoris.",
       hideExplorer: "Amaga l'explorador de fitxers",
       showExplorer: "Mostra l'explorador de fitxers",
       newInventory: 'Inventari nou',
-      inventoryNameHelp:
-        'El nom de la seva carpeta (production, staging): rep un inventory.yaml i group_vars/all.yaml. Un formulari de playbook el nomena amb inventory: <nom>.',
       newGroupVars: 'Fitxer nou de variables de grup',
       groupVarsHelp: 'El nom del grup: les seves variables van a {inventory}/group_vars/<nom>.yaml.',
       newHostVars: 'Fitxer nou de variables de host',

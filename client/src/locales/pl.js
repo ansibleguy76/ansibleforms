@@ -1583,11 +1583,11 @@ export default {
     add: 'Dodaj',
     edit: 'Edytuj',
     files: {
+      inventoryCloneFailed:
+        'Nie udało się sklonować repozytorium {name}: zobacz jego ostatnie wyjście w Ustawienia > Repozytoria.',
       hideExplorer: 'Ukryj eksplorator plików',
       showExplorer: 'Pokaż eksplorator plików',
       newInventory: 'Nowy inwentarz',
-      inventoryNameHelp:
-        'Nazwa jego folderu (production, staging): dostaje inventory.yaml i group_vars/all.yaml. Formularz playbooka wskazuje go przez inventory: <nazwa>.',
       newGroupVars: 'Nowy plik zmiennych grupy',
       groupVarsHelp: 'Nazwa grupy: jej zmienne trafiają do {inventory}/group_vars/<nazwa>.yaml.',
       newHostVars: 'Nowy plik zmiennych hosta',

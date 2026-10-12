@@ -3,6 +3,7 @@ import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
 import Form from '@/lib/Form';
 import { slugOf } from '@/lib/formsPath';
 import { DESIGNER_TABS } from '@/config/designerTabs';
+import getSettings from '@/config/settings';
 import { EXPLORER_WIDTH, explorerWidthAfterDrag, explorerFolded, explorerColumns } from '@/config/fileExplorer';
 import Lock from '@/lib/Lock';
 import { useAppStore } from '@/stores/app';
@@ -185,6 +186,43 @@ const themeObserver = new MutationObserver(() => {
 // the toolbar
 const FILE_SECTIONS = { Inventories: 'inventories', Playbooks: 'playbooks', VarsFiles: 'vars' };
 const projectFiles = ref(null);
+
+// a new inventory is a new repository : the repositories' New dialog (Settings > Repositories),
+// used for inventories - ticked, and its usage not to change here
+const inventoryRepoDialog = ref(null);
+const inventoryRepoSettings = computed(() => {
+  const repositories = getSettings(t).repositories;
+  return {
+    ...repositories,
+    fields: repositories.fields.map((f) => (f.step === 'usage' ? { ...f, readonly: true } : f)),
+  };
+});
+function newInventory() {
+  inventoryRepoDialog.value?.newItem({ use_for_inventories: true });
+}
+/**
+ * The new inventory's repository is created : once cloned, its first files are added and it opens
+ * (seedInventory) ; a clone that failed is said.
+ *
+ * Args:
+ *   name (string): the repository's name.
+ */
+async function onInventoryRepoCreated(name) {
+  for (let i = 0; i < 60; i++) {
+    let status;
+    try {
+      status = (await axios.get(`/api/v2/repository/${encodeURIComponent(name)}`)).data?.status;
+    } catch {
+      status = null;
+    }
+    if (status === 'success') return projectFiles.value?.seedInventory(name);
+    if (status === 'failed') {
+      toast.error(t('designer.files.inventoryCloneFailed', { name }));
+      return projectFiles.value?.reload();
+    }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+}
 
 const activeEditor = ref(null);
 function onEditorInit(editor) {
@@ -4854,6 +4892,16 @@ onBeforeUnmount(() => {
                     :editorStyle="editorStyle('100%')"
                     @init="onEditorInit"
                     @reveal="showView('yaml')"
+                    @newInventory="newInventory"
+                  />
+                  <!-- a new inventory : the repositories' New dialog, used for inventories -->
+                  <AppAdminMulti
+                    v-if="currentTab === 'Inventories'"
+                    ref="inventoryRepoDialog"
+                    :apiVersion="2"
+                    :settings="inventoryRepoSettings"
+                    dialogOnly
+                    @created="onInventoryRepoCreated"
                   />
                 </div>
                 <!-- a section's preview, still to build -->

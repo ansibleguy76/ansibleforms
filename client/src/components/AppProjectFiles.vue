@@ -36,7 +36,7 @@ import { inventoryOf, inventoryFileRole } from '@/config/inventoryTree';
 
 const { t } = useI18n();
 const router = useRouter();
-const emit = defineEmits(['init', 'reveal']);
+const emit = defineEmits(['init', 'reveal', 'newInventory']);
 const props = defineProps({
   kind: { type: String, required: true },
   // the tab shown : 'yaml' (the text) or 'visual' (a vars file's variables)
@@ -284,26 +284,45 @@ async function push() {
 function startCreate(kind, folder = '') {
   if (props.readOnly) return;
   if (kind === 'inventory') {
-    // a new inventory is a folder of the local inventories folder ; a repository is added in
-    // Settings > Repositories
-    creating.value = { kind, name: '' };
+    // a new inventory is a new repository : the designer opens the repositories' New dialog,
+    // used for inventories (newInventory), then seeds it (seedInventory)
+    emit('newInventory');
   } else if (kind === 'group_vars' || kind === 'host_vars') {
     creating.value = { kind, name: '', inventory: folder };
   } else {
     creating.value = { kind, path: folder ? `${folder}/` : '' };
   }
 }
-// what the dialog asks : a path, or a name (an inventory's, a group's, a host's)
-const asksName = computed(() => ['inventory', 'group_vars', 'host_vars'].includes(creating.value?.kind));
+// what the dialog asks : a path, or a name (a group's, a host's)
+const asksName = computed(() => ['group_vars', 'host_vars'].includes(creating.value?.kind));
 const createValue = computed(() => String((asksName.value ? creating.value?.name : creating.value?.path) || '').trim());
 const CREATE_LOOK = {
   file: { icon: 'file', title: 'designer.newFile', help: 'designer.files.pathHelp' },
   folder: { icon: 'folder', title: 'designer.newFolder', help: 'designer.files.folderHelp' },
-  inventory: { icon: 'sitemap', title: 'designer.files.newInventory', help: 'designer.files.inventoryNameHelp' },
   group_vars: { icon: 'folder', title: 'designer.files.newGroupVars', help: 'designer.files.groupVarsHelp' },
   host_vars: { icon: 'server', title: 'designer.files.newHostVars', help: 'designer.files.hostVarsHelp' },
 };
 const createLook = computed(() => CREATE_LOOK[creating.value?.kind] || CREATE_LOOK.file);
+
+/**
+ * A new inventory's repository, once cloned : its inventory.yaml and group_vars/all.yaml when it
+ * has none yet, then opened - ready to save and push.
+ *
+ * Args:
+ *   name (string): the repository (the inventory's name).
+ */
+async function seedInventory(name) {
+  await loadList();
+  const has = (p) => listing.value.files.some((f) => f.path === p);
+  try {
+    if (!has(`${name}/inventory.yaml`)) await postFile(`${name}/inventory.yaml`, INVENTORY_SKELETON);
+    if (!has(`${name}/group_vars/all.yaml`)) await postFile(`${name}/group_vars/all.yaml`, '---\n');
+  } catch (err) {
+    toast.error(Helpers.parseAxiosResponseError(err, 'Failed to start the inventory'));
+  }
+  await loadList();
+  await open(`${name}/inventory.yaml`, true);
+}
 
 /** Posts a new file (its folders made by the server) ; its path as the server stored it. */
 async function postFile(path, content) {
@@ -318,13 +337,7 @@ async function create() {
     if (!name) return;
     working.value = true;
     try {
-      let opened;
-      if (c.kind === 'inventory') {
-        opened = await postFile(`${name}/inventory.yaml`, INVENTORY_SKELETON);
-        await postFile(`${name}/group_vars/all.yaml`, '---\n');
-      } else {
-        opened = await postFile(`${c.inventory}/${c.kind}/${name}.yaml`, '---\n');
-      }
+      const opened = await postFile(`${c.inventory}/${c.kind}/${name}.yaml`, '---\n');
       creating.value = null;
       await loadList();
       await open(opened, true);
@@ -480,6 +493,7 @@ defineExpose({
   reload,
   revert,
   newFile: () => startCreate(isInventories.value ? 'inventory' : 'file'),
+  seedInventory,
   // the file open's text, as the toolbar's format, compare and download need it
   getText: () => content.value,
   setText: (text) => {
@@ -726,19 +740,24 @@ defineExpose({
     <BsModal v-if="creating" size="md" :icon="createLook.icon" @close="creating = null">
       <template #title>{{ t(createLook.title) }}</template>
       <template #default>
+        <!-- the label above a field of the usual height, as the designer's other dialogs -->
         <BsInput
           v-if="asksName"
+          :isFloating="false"
           v-model="creating.name"
           :label="t('settings.fields.name')"
+          :icon="createLook.icon"
           :help="t(createLook.help, { inventory: creating.inventory })"
-          @keyup.enter="create()"
+          @keyup_enter="create()"
         />
         <BsInput
           v-else
+          :isFloating="false"
           v-model="creating.path"
           :label="t('designer.files.path')"
+          :icon="createLook.icon"
           :help="t(createLook.help)"
-          @keyup.enter="create()"
+          @keyup_enter="create()"
         />
       </template>
       <template #footer>

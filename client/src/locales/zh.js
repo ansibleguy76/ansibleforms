@@ -1525,11 +1525,10 @@ export default {
     add: '添加',
     edit: '编辑',
     files: {
+      inventoryCloneFailed: '无法克隆仓库 {name}: 请在 设置 > 仓库 中查看其最后输出。',
       hideExplorer: '隐藏文件资源管理器',
       showExplorer: '显示文件资源管理器',
       newInventory: '新建清单',
-      inventoryNameHelp:
-        '其文件夹名称 (production、staging):会生成 inventory.yaml 和 group_vars/all.yaml。playbook 表单用 inventory: <名称> 指定它。',
       newGroupVars: '新建组变量文件',
       groupVarsHelp: '组名称:其变量放在 {inventory}/group_vars/<名称>.yaml。',
       newHostVars: '新建主机变量文件',

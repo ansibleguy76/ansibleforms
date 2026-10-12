@@ -1564,11 +1564,11 @@ export default {
     add: '追加',
     edit: '編集',
     files: {
+      inventoryCloneFailed:
+        'リポジトリ {name} をクローンできませんでした: 設定 > リポジトリ で最後の出力を確認してください。',
       hideExplorer: 'ファイルエクスプローラーを隠す',
       showExplorer: 'ファイルエクスプローラーを表示',
       newInventory: '新しいインベントリ',
-      inventoryNameHelp:
-        'フォルダー名 (production、staging など)。inventory.yaml と group_vars/all.yaml が作られます。プレイブックのフォームは inventory: <名前> で指定します。',
       newGroupVars: '新しいグループ変数ファイル',
       groupVarsHelp: 'グループ名。変数は {inventory}/group_vars/<名前>.yaml に入ります。',
       newHostVars: '新しいホスト変数ファイル',
