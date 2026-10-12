@@ -1,7 +1,7 @@
 /******************************************************************/
 /*                                                                */
-/*  Prometheus metrics : GET /api/v2/metrics (an app node or the  */
-/*  worker) and GET /metrics (an RTE), served only when           */
+/*  Prometheus metrics : GET /api/v2/metrics (an app node) and    */
+/*  GET /metrics (an RTE), served only when                       */
 /*  METRICS_TOKEN is set, to a caller that sends it as a bearer   */
 /*  token. What a dashboard or an alert needs :                   */
 /*    - the process : cpu, memory, event loop lag, gc (prom-client */

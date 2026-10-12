@@ -989,9 +989,10 @@
     short: Prometheus metrics token
     hint: Unset, /api/v2/metrics answers 404 ; needs a restart
     description: |
-      Set, an app node or the worker serves Prometheus metrics at `/api/v2/metrics` and an RTE at
-      `/metrics`, to a scraper that sends `Authorization: Bearer <METRICS_TOKEN>`. Unset, they
-      answer 404.
+      Set, an app node (`AF_ROLE` `all` or `app`) serves Prometheus metrics at `/api/v2/metrics`
+      and an RTE at `/metrics`, to a scraper that sends `Authorization: Bearer <METRICS_TOKEN>`.
+      Unset, they answer 404. A worker (`AF_ROLE=worker`) serves no metrics : it answers only
+      `/api/v2/version` and `/health`, for its container healthcheck.
 
       - the process : cpu, memory, event loop lag, garbage collection (`af_process_*`, `af_nodejs_*`) ;
       - `af_http_requests_total{route,method,status}`, `af_http_request_duration_seconds{route}` ;
