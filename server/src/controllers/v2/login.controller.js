@@ -161,7 +161,9 @@ const settings = async function(req, res) {
       oidcIssuer: oidc.issuer,
       oidcGroupfilter: oidc.groupfilter,
       // the login page goes straight to the provider when it is the only one active (SSO_AUTO_LOGIN)
-      ssoAutoLogin: !!appConfig.ssoAutoLogin && (azure.enable !== oidc.enabled)
+      ssoAutoLogin: !!appConfig.ssoAutoLogin && (azure.enable !== oidc.enabled),
+      // the profile page offers api token lifetimes up to this cap (API_TOKEN_MAX_DAYS)
+      apiTokenMaxDays: authConfig.apiTokenMaxDays
     };
     res.json(RestResult.single(settings));
   } catch (err) {

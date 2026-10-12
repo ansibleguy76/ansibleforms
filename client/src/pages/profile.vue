@@ -216,10 +216,27 @@ const canSavePassword = computed(() => {
 });
 
 // the api token : a login with the user's password and a longer expiry (the login endpoint's
-// expiryDays, honoured for roles with extendedTokenExpiration). Shown once : the token is a
-// self-contained jwt, nothing on the server can revoke it before it expires.
-const TOKEN_LIFETIMES = [30, 90, 180, 365];
+// expiryDays, honoured for roles with extendedTokenExpiration). Shown once ; it ends at its expiry,
+// a logout of its session or a password change.
+// The server caps the expiry at API_TOKEN_MAX_DAYS : only the lifetimes up to that cap are offered,
+// plus the cap itself, so a longer choice is never silently shortened.
+const tokenMaxDays = ref(90);
+const TOKEN_LIFETIMES = computed(() => {
+  const max = tokenMaxDays.value;
+  const list = [30, 90, 180, 365].filter((d) => d <= max);
+  if (!list.includes(max)) list.push(max);
+  return list;
+});
 const tokenForm = ref({ days: 90, password: '' });
+axios
+  .get('/api/v2/auth/settings')
+  .then((result) => {
+    const max = parseInt(result.data?.apiTokenMaxDays, 10);
+    if (!max) return;
+    tokenMaxDays.value = max;
+    if (tokenForm.value.days > max) tokenForm.value.days = Math.min(90, max);
+  })
+  .catch(() => {});
 const tokenResult = ref(null);
 const creatingToken = ref(false);
 // a token is created with a password, so only for the accounts that sign in with one
