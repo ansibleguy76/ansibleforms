@@ -1235,10 +1235,12 @@ export default {
       stepServer: 'Servidor',
       stepConnection: 'Connexió',
       stepSender: 'Remitent',
-      stepTest: 'Prova',
       credential: 'Credencial',
       helpCredential: 'Una credencial smtp de Connexions > Credencials. Buida per a un relay sense accés.',
       sendTest: 'Envia un correu de prova',
+      testSaveFirst: 'Deseu primer: el correu de prova passa pel servidor tal com està desat',
+      testHelp: "S'envia un correu a través de {name}, tal com està desat, a aquesta adreça.",
+      send: 'Envia',
       notFound: "No hi ha cap servidor de correu amb l'id '{id}'.",
       fieldsRequired: "El nom, el servidor i l'adreça del remitent són obligatoris.",
       fromSeed:

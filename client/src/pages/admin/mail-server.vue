@@ -2,16 +2,16 @@
 /******************************************************************/
 /*                                                                */
 /*  A mail server's page (/settings/mail/<id>), opened from  */
-/*  the mail servers' list : the steps of its dialog as tabs, and */
-/*  a test mail, the tab kept in the url -                        */
+/*  the mail servers' list : the steps of its dialog as tabs, the */
+/*  tab kept in the url -                                         */
 /*    Details     its name, description, and whether it is the    */
 /*                one the app sends with (Active)                 */
 /*    Connection  its host, port and TLS                          */
 /*    Sender      the from address, and the smtp credential it    */
 /*                logs in with (or a new one)                     */
-/*    Test        a test mail through it, as saved                */
-/*  Delete top right, beside Save. A server of the config seed is */
-/*  read only.                                                    */
+/*  Send test mail (a dialog asks to whom ; through it, as        */
+/*  saved), Delete and Save top right, as a syslog server's page. */
+/*  A server of the config seed is read only, and can be tested.  */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted } from 'vue';
@@ -138,7 +138,6 @@ const tabs = computed(() => [
   { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
   { key: 'connection', label: t('settings.mailServers.stepConnection'), icon: 'server' },
   { key: 'sender', label: t('settings.mailServers.stepSender'), icon: 'key' },
-  { key: 'test', label: t('settings.mailServers.stepTest'), icon: 'paper-plane' },
 ]);
 const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
@@ -186,8 +185,18 @@ async function makeActive() {
   await load();
 }
 
-// Test : a mail through the server as saved, to the address typed
-const testTo = ref('');
+// Send test mail : a dialog asks to whom, then a mail goes through the server as saved. The
+// address typed last is offered again (this browser only : a convenience, never needed)
+const TEST_TO_KEY = 'af.mailTestTo';
+const readTestTo = () => {
+  try {
+    return localStorage.getItem(TEST_TO_KEY) || '';
+  } catch {
+    return '';
+  }
+};
+const testOpen = ref(false);
+const testTo = ref(readTestTo());
 const testing = ref(false);
 
 /**
@@ -204,6 +213,12 @@ async function sendTest() {
       to: testTo.value.trim(),
     });
     toast.success(res.data.message || res.data.result?.message);
+    try {
+      localStorage.setItem(TEST_TO_KEY, testTo.value.trim());
+    } catch {
+      // no storage here : the address is asked again next time
+    }
+    testOpen.value = false;
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err));
   } finally {
@@ -235,6 +250,29 @@ onMounted(async () => {
 });
 </script>
 <template>
+  <!-- Send test mail : to whom, then Send -->
+  <BsModal v-if="testOpen" size="md" @close="testOpen = false" icon="paper-plane">
+    <template #title>{{ t('settings.mailServers.sendTest') }}</template>
+    <template #default>
+      <form @submit.prevent="sendTest()">
+        <BsInput
+          v-model="testTo"
+          type="email"
+          icon="envelope"
+          placeholder="you@example.com"
+          :isFloating="false"
+          :required="true"
+          :label="t('admin.mail.mailTo')"
+          :help="t('settings.mailServers.testHelp', { name: server?.name })"
+        />
+      </form>
+    </template>
+    <template #footer>
+      <BsButton icon="paper-plane" :disabled="testing || !testTo.trim()" @click="sendTest()">{{
+        t('settings.mailServers.send')
+      }}</BsButton>
+    </template>
+  </BsModal>
   <BsModal v-if="confirmDelete" size="md" @close="confirmDelete = false" icon="trash">
     <template #title> {{ t('common.delete') }} {{ server?.name }} </template>
     <template #default>
@@ -290,23 +328,7 @@ onMounted(async () => {
           <div v-if="managed" class="alert alert-secondary py-2">
             <FaIcon icon="lock" class="me-2" />{{ t('settings.common.seedManagedNotice') }}
           </div>
-          <!-- Test : a mail through the server as saved -->
-          <template v-if="activeTab === 'test'">
-            <BsInput
-              class="af-mail-field"
-              v-model="testTo"
-              type="email"
-              icon="envelope"
-              placeholder="you@example.com"
-              :isFloating="false"
-              :required="true"
-              :label="t('admin.mail.mailTo')"
-            />
-            <BsButton icon="paper-plane" :disabled="testing || dirty" @click="sendTest()">{{
-              t('settings.mailServers.sendTest')
-            }}</BsButton>
-          </template>
-          <fieldset v-else :disabled="managed">
+          <fieldset :disabled="managed">
             <!-- Details : what it is called, and whether the app sends with it -->
             <template v-if="activeTab === 'details'">
               <BsInput
@@ -402,9 +424,20 @@ onMounted(async () => {
           </fieldset>
         </div>
       </template>
-      <template v-if="server && !managed" #actions>
-        <BsButton icon="trash" @click="confirmDelete = true">{{ t('common.delete') }}</BsButton>
-        <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
+      <template v-if="server" #actions>
+        <!-- a mail through it, as saved : unsaved changes are saved first -->
+        <BsButton
+          icon="paper-plane"
+          cssClass="text-nowrap"
+          :disabled="dirty"
+          :title="dirty ? t('settings.mailServers.testSaveFirst') : ''"
+          @click="testOpen = true"
+          >{{ t('settings.mailServers.sendTest') }}</BsButton
+        >
+        <template v-if="!managed">
+          <BsButton icon="trash" @click="confirmDelete = true">{{ t('common.delete') }}</BsButton>
+          <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
+        </template>
       </template>
     </AppSettings>
   </AppSettingsPage>

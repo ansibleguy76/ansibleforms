@@ -1333,11 +1333,13 @@ export default {
       stepServer: 'Server',
       stepConnection: 'Verbindung',
       stepSender: 'Absender',
-      stepTest: 'Test',
       credential: 'Anmeldeinformation',
       helpCredential:
         'Eine SMTP-Anmeldeinformation aus Verbindungen > Anmeldeinformationen. Leer für ein Relay ohne Anmeldung.',
       sendTest: 'Testmail senden',
+      testSaveFirst: 'Zuerst speichern: die Testmail geht über den Server, wie er gespeichert ist',
+      testHelp: 'Eine Mail wird über {name}, wie gespeichert, an diese Adresse gesendet.',
+      send: 'Senden',
       notFound: "Es gibt keinen Mailserver mit der ID '{id}'.",
       fieldsRequired: 'Name, Server und Absenderadresse sind erforderlich.',
       fromSeed:

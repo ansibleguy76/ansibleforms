@@ -1332,10 +1332,12 @@ export default {
       stepServer: 'Serveur',
       stepConnection: 'Connexion',
       stepSender: 'Expéditeur',
-      stepTest: 'Test',
       credential: 'Identifiant',
       helpCredential: 'Un identifiant smtp de Connexions > Identifiants. Vide pour un relais sans connexion.',
       sendTest: 'Envoyer un mail de test',
+      testSaveFirst: "Enregistrez d'abord : le mail de test passe par le serveur tel qu'il est enregistré",
+      testHelp: "Un mail est envoyé via {name}, tel qu'il est enregistré, à cette adresse.",
+      send: 'Envoyer',
       notFound: "Aucun serveur mail avec l'id '{id}'.",
       fieldsRequired: "Le nom, le serveur et l'adresse d'expéditeur sont obligatoires.",
       fromSeed:
