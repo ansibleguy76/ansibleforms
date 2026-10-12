@@ -214,8 +214,10 @@ function leaveVar(event) {
             :icon="row.type === 'group' ? 'layer-group' : 'server'"
             :class="row.type === 'group' ? 'af-ie-group' : 'text-secondary'"
           />
-          <span class="flex-grow-1" :class="{ 'fw-semibold': row.type === 'group' }">{{ row.name }}</span>
+          <span :class="{ 'fw-semibold': row.type === 'group' }">{{ row.name }}</span>
+          <!-- its variables' count beside its name ; the row's buttons stay on the right -->
           <span v-if="row.vars" class="badge af-ie-badge">{{ t('designer.files.varsCount', row.vars) }}</span>
+          <span class="flex-grow-1"></span>
           <template v-if="!readOnly">
             <div v-if="row.type === 'group'" class="btn-group" role="group" @click.stop>
               <button
