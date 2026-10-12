@@ -19,7 +19,9 @@ function docOf(text) {
   return doc;
 }
 /** The document as text. */
-const textOfDoc = (doc) => doc.toString({ lineWidth: 0 });
+// a host without variables, new or emptied, written `web1:` as people write it, not `web1: null` ;
+// a null the file spells out (null, ~) keeps its spelling
+const textOfDoc = (doc) => doc.toString({ lineWidth: 0, nullStr: '' });
 
 /**
  * A map under a key of a map, made when missing (a null value too : `web:`).
@@ -298,8 +300,13 @@ export function editRemoveVar(text, target, key) {
   map.delete(key);
   if (!map.items.length) {
     const { group } = groupAt(doc, target.path, true);
-    if (target.host) group.get('hosts', true).set(target.host, null);
-    else group.delete('vars');
+    if (target.host) {
+      // a new pair, not the parsed one with its value nulled : the yaml library writes that one as
+      // an explicit key (`? web1`) rather than as `web1:`
+      const hosts = group.get('hosts', true);
+      const i = hosts.items.findIndex((pair) => String(pair.key?.value ?? pair.key) === target.host);
+      hosts.items[i] = doc.createPair(target.host, null);
+    } else group.delete('vars');
   }
   return textOfDoc(doc);
 }
