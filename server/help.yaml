@@ -4004,6 +4004,8 @@
                 description: A time
               - name: month
                 description: A month
+              - name: week
+                description: A week (ISO week number)
               - name: year
                 description: A year
             short: DateType of the datetime picker
