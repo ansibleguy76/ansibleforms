@@ -1289,6 +1289,16 @@
       with `inventory: <name>`.
       Read by the RTE as well, where the playbook runs : set it there too (or mount the same
       folder) when the RTE runs elsewhere.
+  - name: WORKFLOWS_PATH
+    type: string
+    allowed: a valid directory path
+    short: Workflows folder
+    default: "%PERSISTENT_FOLDER%/workflows"
+    version: 7.0.0
+    description: |
+      The local workflows folder : workflow files in the AWX export syntax (job_templates and
+      workflow_job_templates), edited in the designer's Workflows section, next to the
+      repositories used for workflows. A workflow form runs one with `workflow: <name>`.
   - name: ENCRYPTION_SECRET
     type: string
     allowed: a strong encryption string

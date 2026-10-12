@@ -469,6 +469,20 @@ class Repository extends CrudModel {
     }
   }
 
+  // where the workflow files are (the AWX export syntax : job_templates and
+  // workflow_job_templates) : the local folder (WORKFLOWS_PATH), then each repository used for
+  // workflows, its files under its name
+  static async getWorkflowsRoots() {
+    const local = { repository: null, root: appConfig.workflowsPath }
+    try {
+      const repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_workflows ORDER BY name")
+      return [local, ...repositories.map((repo) => ({ repository: repo.name, root: path.join(appConfig.repoPath, repo.name) }))]
+    } catch (e) {
+      logger.error("Failed to get the workflows repositories : ", e)
+      return [local]
+    }
+  }
+
   // migration path (issue #414) : when the only forms repository is cloned and
   // contains no forms content yet, its working tree is seeded with the local
   // designer forms (config.yaml + forms folder) ; nothing is pushed until the

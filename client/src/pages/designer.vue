@@ -108,8 +108,8 @@ const tabs = [
     icon: 'diagram-project',
   },
 ];
-// the sections still to build (workflows) : every section but the ones built
-const BUILT_SECTIONS = ['Categories', 'Constants', 'Forms', 'Inventories', 'Playbooks', 'VarsFiles'];
+// the sections still to build : every section but the ones built
+const BUILT_SECTIONS = ['Categories', 'Constants', 'Forms', 'Inventories', 'Playbooks', 'VarsFiles', 'Workflows'];
 const draftSections = tabs.map((x) => x.name).filter((name) => !BUILT_SECTIONS.includes(name));
 // the views in the menu, alphabetically by their (translated) label
 const sortedTabs = computed(() => [...tabs].sort((a, b) => a.label().localeCompare(b.label(), locale.value)));
@@ -183,9 +183,9 @@ const themeObserver = new MutationObserver(() => {
   editorTheme.value = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'monokai' : 'chrome';
 });
 
-// the playbooks, the vars files and the inventories : their files (AppProjectFiles), driven by
-// the toolbar
-const FILE_SECTIONS = { Inventories: 'inventories', Playbooks: 'playbooks', VarsFiles: 'vars' };
+// the playbooks, the vars files, the inventories and the workflows : their files
+// (AppProjectFiles), driven by the toolbar
+const FILE_SECTIONS = { Inventories: 'inventories', Playbooks: 'playbooks', VarsFiles: 'vars', Workflows: 'workflows' };
 const projectFiles = ref(null);
 
 // a new inventory is a new repository : the repositories' New dialog (Settings > Repositories),

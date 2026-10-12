@@ -672,6 +672,7 @@ async function writableCheck() {
     ['uploads', appConfig.uploadPath],
     ['vars', appConfig.varsFilesPath],
     ['inventories', appConfig.inventoryPath],
+    ['workflows', appConfig.workflowsPath],
     ['repositories', appConfig.repoPath],
     ['logs', logConfig.path],
   ].filter(([, dir]) => !!dir);

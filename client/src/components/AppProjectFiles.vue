@@ -31,6 +31,7 @@ import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import Helpers from '@/lib/Helpers';
 import { varsKind } from '@/config/varsFile';
+import { workflowSkeleton } from '@/config/workflowFile';
 import {
   EXPLORER_WIDTH,
   explorerWidthAfterDrag,
@@ -142,6 +143,8 @@ const fileKind = computed(() => (props.view === 'visual' && lang.value === 'yaml
 // one folder per inventory at the top (production/inventory.yaml, group_vars/, host_vars/) : a
 // folder of the local inventories folder, or a repository that is an inventory
 const isInventories = computed(() => props.kind === 'inventories');
+// the workflows : a file is job templates and workflows (the AWX export syntax), drawn as a graph
+const isWorkflows = computed(() => props.kind === 'workflows');
 const inventoryDepth = computed(() => 0);
 // the inventories that are repositories : their folder shows git's mark
 const repositoryInventories = computed(() => (listing.value.repositories || []).map((r) => r.name));
@@ -370,7 +373,20 @@ async function create() {
   }
   working.value = true;
   try {
-    const result = await axios.post(`${api.value}/file`, { path, content: /\.ya?ml$/i.test(path) ? '---\n' : '' });
+    // a new workflow file starts as one workflow (named after the file), to add nodes to
+    const yaml = /\.ya?ml$/i.test(path);
+    const content =
+      yaml && isWorkflows.value
+        ? workflowSkeleton(
+            path
+              .split('/')
+              .pop()
+              .replace(/\.ya?ml$/i, ''),
+          )
+        : yaml
+          ? '---\n'
+          : '';
+    const result = await axios.post(`${api.value}/file`, { path, content });
     creating.value = null;
     await loadList();
     await open(result.data.path, true);
@@ -548,6 +564,8 @@ defineExpose({
           <FaIcon icon="file-lines" class="empty-state-icon" />
           <span>{{ t('designer.files.visualNotYaml') }}</span>
         </div>
+        <!-- a workflow file : its workflows as graphs, its job templates -->
+        <AppWorkflowEditor v-else-if="isWorkflows" v-model="content" :readOnly="readOnly" @reveal="reveal" />
         <div v-else-if="fileKind.kind === 'invalid'" class="alert alert-warning d-flex align-items-center gap-2">
           <FaIcon icon="triangle-exclamation" />
           <span class="flex-grow-1">{{ t('designer.files.visualInvalid', { error: fileKind.error }) }}</span>
