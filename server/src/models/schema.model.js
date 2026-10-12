@@ -887,7 +887,6 @@ async function patchVersion7(messages, success, failed) {
   // so a runner removed or renamed later does not change it ; the jobs before it, once, from their
   // runner as it is now
   await checkPromise(addColumn("jobs", "runner_kind", "varchar(20)", true, "NULL"), messages, success, failed);
-  await checkPromise(fillJobRunnerKinds(), messages, success, failed);
   // AWX/AAP/Ascender connections are runners of type awx : the awx table is copied into
   // runners once, then dropped ; the job log a playbook writes is stored on the job
   await checkPromise(addColumn("runners", "username", "varchar(250)", true, "NULL"), messages, success, failed);
@@ -899,6 +898,10 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addColumn("runners", "flavour", "varchar(20)", true, "NULL"), messages, success, failed);
   // the project a semaphore runner (its id) or a rundeck runner (its name) launches in
   await checkPromise(addColumn("runners", "project", "varchar(255)", true, "NULL"), messages, success, failed);
+  // the jobs' runner kind, from their runner's type and flavour : after every runners column it
+  // reads is there - on a database from before flavour, filling it earlier failed (Unknown
+  // column 'r.flavour') and left the old jobs without a kind until the next start
+  await checkPromise(fillJobRunnerKinds(), messages, success, failed);
   // what a credential is for : ssh, git, api or database ; the existing ones from their
   // is_database flag
   await checkPromise(addColumn("credentials", "credential_type", "varchar(20)", true, "NULL"), messages, success, failed);
@@ -1241,6 +1244,8 @@ async function checkAll({ patch = true } = {}) {
 }
 
 export { SCHEMA_MANIFEST };
+// the 7 patch on its own, for the test that runs it on a database from before its columns
+export { patchVersion7 };
 export default Schema;
 
 // function addRecord(table,names,values){
