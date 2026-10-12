@@ -660,7 +660,7 @@ defineExpose({
         ><FaIcon icon="chevron-left"
       /></span>
     </div>
-    <div v-else-if="!sectionEmpty" class="af-files-tree">
+    <AppExplorerColumn v-else-if="!sectionEmpty" class="af-files-tree">
       <div class="file-tree-panel">
         <div class="file-tree-header d-flex justify-content-between align-items-center">
           <span class="d-flex align-items-center min-w-0" :title="listing.repository || ''">
@@ -805,7 +805,7 @@ defineExpose({
           </template>
         </div>
       </div>
-    </div>
+    </AppExplorerColumn>
 
     <!-- a new file or folder : its path in the section's folder -->
     <BsModal v-if="creating" size="md" :icon="createLook.icon" @close="creating = null">
@@ -924,15 +924,8 @@ defineExpose({
   display: flex;
   justify-content: center;
 }
+/* its height is the editor's column (AppExplorerColumn), never more : a long list scrolls inside */
 .af-files-tree {
-  /* at the top, however tall the editor's column grows */
-  align-self: start;
-  max-height: 80vh;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
   margin-top: 0.5rem;
 }
 @media (max-width: 991.98px) {
