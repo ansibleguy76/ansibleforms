@@ -1589,6 +1589,7 @@ export default {
     inventoriesDescription:
       'De inventarissen waartegen de playbooks draaien: één map per inventaris, met zijn groeps- en hostvariabelen.',
     sectionToBuild: 'Hier staat nog niets.',
+    noFiles: 'Geen bestanden',
     // the toolbar's generic add and edit (config/designerActions.js), when a section gives no words
     add: 'Toevoegen',
     edit: 'Bewerken',

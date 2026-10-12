@@ -1611,6 +1611,7 @@ export default {
     inventoriesDescription:
       'Die Inventare, gegen die die Playbooks laufen: ein Ordner je Inventar, mit seinen Gruppen- und Host-Variablen.',
     sectionToBuild: 'Hier ist noch nichts.',
+    noFiles: 'Keine Dateien',
     // the toolbar's generic add and edit (config/designerActions.js), when a section gives no words
     add: 'Hinzufügen',
     edit: 'Bearbeiten',

@@ -4908,28 +4908,30 @@ onBeforeUnmount(() => {
                 <!-- a section's preview, still to build -->
                 <div
                   v-else-if="loaded && draftSections.includes(currentTab) && editorView === 'preview'"
-                  class="designer-visual"
+                  class="designer-visual d-flex flex-column"
                 >
-                  <div class="empty-state">
-                    <FaIcon icon="eye" class="empty-state-icon" />
-                    <span>{{ t('designer.sectionToBuild') }}</span>
-                  </div>
+                  <AppDesignerEmpty :icon="'eye'" :title="t('designer.noFiles')" :text="t('designer.sectionToBuild')" />
                 </div>
                 <div
                   v-else-if="loaded && draftSections.includes(currentTab) && editorView === 'visual'"
-                  class="designer-visual"
+                  class="designer-visual d-flex flex-column"
                 >
-                  <div class="empty-state">
-                    <FaIcon :icon="tabs.find((x) => x.name === currentTab)?.icon" class="empty-state-icon" />
-                    <span>{{ t('designer.sectionToBuild') }}</span>
-                  </div>
+                  <AppDesignerEmpty
+                    :icon="tabs.find((x) => x.name === currentTab)?.icon"
+                    :title="t('designer.noFiles')"
+                    :text="t('designer.sectionToBuild')"
+                  />
                 </div>
                 <!-- a section still to build : nothing to edit yet, nothing typed to lose -->
-                <div v-else-if="loaded && draftSections.includes(currentTab)" class="designer-visual">
-                  <div class="empty-state">
-                    <FaIcon :icon="tabs.find((x) => x.name === currentTab)?.icon" class="empty-state-icon" />
-                    <span>{{ t('designer.sectionToBuild') }}</span>
-                  </div>
+                <div
+                  v-else-if="loaded && draftSections.includes(currentTab)"
+                  class="designer-visual d-flex flex-column"
+                >
+                  <AppDesignerEmpty
+                    :icon="tabs.find((x) => x.name === currentTab)?.icon"
+                    :title="t('designer.noFiles')"
+                    :text="t('designer.sectionToBuild')"
+                  />
                 </div>
                 <!-- Visual : the constants as a table, on the same YAML (saved with Save) -->
                 <div v-if="loaded && currentTab == 'Constants' && editorView === 'visual'" class="designer-visual">
@@ -5576,6 +5578,13 @@ onBeforeUnmount(() => {
 }
 /* the playbooks and the vars files : their editor and explorer side by side (AppProjectFiles),
    a grid the rule above would make a column ; its editor's column still fills the height */
+/* a file section takes the editor's whole height, so its empty message stands in the card's middle */
+.designer-page .designer-editor .designer-files {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
 .designer-page .designer-editor .designer-files > .af-files {
   display: grid;
 }

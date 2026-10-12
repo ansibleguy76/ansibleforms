@@ -1566,6 +1566,7 @@ export default {
     inventoriesDescription:
       'The inventories the playbooks run against: one folder per inventory, with its group and host variables.',
     sectionToBuild: 'Nothing here yet.',
+    noFiles: 'No files',
     // the toolbar's generic add and edit (config/designerActions.js), when a section gives no words
     add: 'Add',
     edit: 'Edit',

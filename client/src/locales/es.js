@@ -1594,6 +1594,7 @@ export default {
     inventoriesDescription:
       'Los inventarios contra los que corren los playbooks: una carpeta por inventario, con sus variables de grupo y de host.',
     sectionToBuild: 'Aún no hay nada aquí.',
+    noFiles: 'No hay archivos',
     // the toolbar's generic add and edit (config/designerActions.js), when a section gives no words
     add: 'Añadir',
     edit: 'Editar',

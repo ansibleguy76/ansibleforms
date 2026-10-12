@@ -1564,6 +1564,7 @@ export default {
     inventoriesDescription:
       'プレイブックの対象となるインベントリ。インベントリごとに 1 フォルダー、グループとホストの変数付き。',
     sectionToBuild: 'まだ何もありません。',
+    noFiles: 'ファイルがありません',
     // the toolbar's generic add and edit (config/designerActions.js), when a section gives no words
     add: '追加',
     edit: '編集',

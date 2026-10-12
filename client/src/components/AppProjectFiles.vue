@@ -57,6 +57,10 @@ const loading = ref(false);
 const working = ref(false);
 const dirty = computed(() => !!selected.value && content.value !== loadedContent.value);
 const busy = computed(() => loading.value || working.value);
+// listed at least once : until then, an empty listing only means not loaded yet
+const listed = ref(false);
+// a section with nothing in it shows no explorer (its New file is in the toolbar)
+const sectionEmpty = computed(() => listed.value && !listing.value.files.length && !extraFolders.value.length);
 
 // the dialogs : a new file, a new folder, a delete, leaving a file with changes
 // { kind: 'file' | 'folder', path } ; an inventory's : { kind: 'inventory', name, repo }, or
@@ -185,6 +189,7 @@ async function loadList() {
   try {
     const result = await axios.get(api.value);
     listing.value = result.data;
+    listed.value = true;
     const paths = new Set(result.data.files.map((f) => f.path));
     extraFolders.value = extraFolders.value.filter((d) => ![...paths].some((p) => p.startsWith(`${d}/`)));
     if (selected.value && !paths.has(selected.value)) {
@@ -515,23 +520,22 @@ defineExpose({
 });
 </script>
 <template>
-  <div class="af-files" :style="{ gridTemplateColumns: explorerColumns(treeWidthPct) }">
+  <div class="af-files" :style="{ gridTemplateColumns: sectionEmpty ? '1fr' : explorerColumns(treeWidthPct) }">
     <div class="af-files-editor">
-      <div v-if="!selected" class="af-files-empty text-muted">
-        <FaIcon :icon="kind === 'playbooks' ? 'file-code' : 'file-lines'" class="mb-3 af-files-empty-icon" />
-        <p class="mb-2 fw-semibold fs-5">{{ t('designer.files.noneOpen') }}</p>
-        <p class="mb-0">
-          {{
-            listing.exists
-              ? listing.files.length
-                ? t('designer.files.pickOne')
-                : isInventories
-                  ? t('designer.files.noInventories')
-                  : t('designer.files.noFiles')
-              : t('designer.files.noFolder')
-          }}
-        </p>
-      </div>
+      <AppDesignerEmpty
+        v-if="!selected"
+        :icon="kind === 'playbooks' ? 'file-code' : 'file-lines'"
+        :title="sectionEmpty ? t('designer.noFiles') : t('designer.files.noneOpen')"
+        :text="
+          listing.exists
+            ? listing.files.length
+              ? t('designer.files.pickOne')
+              : isInventories
+                ? t('designer.files.noInventories')
+                : t('designer.files.noFiles')
+            : t('designer.files.noFolder')
+        "
+      />
       <!-- the Visual tab : a vars file as its variables -->
       <div v-else-if="view === 'visual'" class="af-files-visual">
         <div v-if="lang !== 'yaml'" class="empty-state">
@@ -584,14 +588,15 @@ defineExpose({
         @init="onEditorInit"
       />
     </div>
-    <div class="af-files-resize" @mousedown="!explorerFolded && startResize($event)"></div>
+    <!-- nothing in the section : no explorer at all -->
+    <div v-if="!sectionEmpty" class="af-files-resize" @mousedown="!explorerFolded && startResize($event)"></div>
     <!-- folded away : only its < remains, to bring it back -->
-    <div v-if="explorerFolded" class="af-explorer-folded">
+    <div v-if="!sectionEmpty && explorerFolded" class="af-explorer-folded">
       <span role="button" class="tree-add-btn" :title="t('designer.files.showExplorer')" @click="explorerFolded = false"
         ><FaIcon icon="chevron-left"
       /></span>
     </div>
-    <div v-else class="af-files-tree">
+    <div v-else-if="!sectionEmpty" class="af-files-tree">
       <div class="file-tree-panel">
         <div class="file-tree-header d-flex justify-content-between align-items-center">
           <span class="d-flex align-items-center min-w-0" :title="listing.repository || ''">
@@ -809,6 +814,9 @@ defineExpose({
 }
 .af-files-editor {
   min-width: 0;
+  /* a column, so the empty message can fill it and sit in its middle */
+  display: flex;
+  flex-direction: column;
 }
 /* the Visual tab : as tall as the editor, scrolling inside itself ; room for a field's focus ring */
 .af-files-visual {
@@ -817,18 +825,6 @@ defineExpose({
   overflow-y: auto;
   padding: 0.25rem 0.5rem 0.25rem 0.25rem;
   margin-left: -0.25rem;
-}
-.af-files-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem 0;
-  margin-top: 0.5rem;
-}
-.af-files-empty-icon {
-  font-size: 2.5rem;
-  opacity: 0.3;
 }
 .af-files-resize {
   cursor: col-resize;
@@ -857,6 +853,8 @@ defineExpose({
   justify-content: center;
 }
 .af-files-tree {
+  /* at the top, however tall the editor's column grows */
+  align-self: start;
   max-height: 80vh;
   min-width: 0;
   display: flex;
