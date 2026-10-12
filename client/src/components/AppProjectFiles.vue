@@ -337,7 +337,9 @@ async function create() {
     if (!name) return;
     working.value = true;
     try {
-      const opened = await postFile(`${c.inventory}/${c.kind}/${name}.yaml`, '---\n');
+      // web or web.yaml : web.yaml, never web.yaml.yaml
+      const file = /\.ya?ml$/i.test(name) ? name : `${name}.yaml`;
+      const opened = await postFile(`${c.inventory}/${c.kind}/${file}`, '---\n');
       creating.value = null;
       await loadList();
       await open(opened, true);
@@ -745,7 +747,8 @@ defineExpose({
           v-if="asksName"
           :isFloating="false"
           v-model="creating.name"
-          :label="t('settings.fields.name')"
+          :label="t('designer.newFileLabel')"
+          placeholder="file.yaml"
           :icon="createLook.icon"
           :help="t(createLook.help, { inventory: creating.inventory })"
           @keyup_enter="create()"
