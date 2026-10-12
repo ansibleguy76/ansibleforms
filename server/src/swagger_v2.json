@@ -1146,22 +1146,9 @@
         "tags": ["authentication"],
         "summary": "Get authorization bearer token",
         "description": "Use basic authentication to obtain a JWT token. Then use the access token, prefixed with 'Bearer', to use all other APIs. The access token is limited in time. You can login again to get a new set of tokens or use the /token API and the refresh token to obtain a new set (preferred).",
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "expiryDays": {
-                    "type": "integer",
-                    "description": "Expiry days, requires extendedTokenExpiration option to be set to true in role-options"
-                  }
-                }
-              }
-            }
-          }
-        },
+        "parameters": [
+          { "name": "expiryDays", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1 }, "description": "Expiry days of the access token (an api token), capped at API_TOKEN_MAX_DAYS. Requires the extendedTokenExpiration option to be set to true in role-options" }
+        ],
         "responses": {
           "200": {
             "description": "successful operation",
