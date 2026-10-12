@@ -62,6 +62,8 @@
 /*  dialogOnly (prop): no list, only the record dialogs : another */
 /*      dialog opens newItem() (exposed) to create a record, and  */
 /*      gets `created` with its name                              */
+/*  canCreateChoices (prop): a dialogOnly dialog that keeps its   */
+/*      dropdowns' New buttons (a page opens it, not a dialog)    */
 /*  field.createDefaults: what a New record is preset with, or    */
 /*      (item) => that, from the record being edited              */
 /*  field.rows: the lines of a textarea field (3 when not given)  */
@@ -136,6 +138,13 @@ const props = defineProps({
   },
   // no list, only the record dialogs : another dialog's New button creates a record with it
   dialogOnly: {
+    type: Boolean,
+    default: false,
+  },
+  // a dialogOnly dialog a page opens (the designer's New inventory), not another dialog : its
+  // dropdowns keep their New buttons (a repository's New credential). The dialogs those open
+  // are dialogOnly without it, so nothing opens without end.
+  canCreateChoices: {
     type: Boolean,
     default: false,
   },
@@ -750,8 +759,9 @@ const allSettings = computed(() => getSettings(t));
 // A dialog opened from another one (dialogOnly) creates nothing itself : two lists that can
 // create each other's records (a credential its secret store, a secret store its credential)
 // would otherwise mount each other's dialogs without end, and the page would never render.
+const createsChoices = computed(() => !props.dialogOnly || props.canCreateChoices);
 const createFields = computed(() =>
-  props.dialogOnly ? [] : fields.value.filter((f) => f.createWith && allSettings.value[f.createWith]),
+  createsChoices.value ? fields.value.filter((f) => f.createWith && allSettings.value[f.createWith]) : [],
 );
 const creators = {};
 
@@ -766,7 +776,7 @@ const creators = {};
  *   boolean: true when only its New button is worth showing.
  */
 function noChoices(field) {
-  if (props.dialogOnly || !field.createWith || !allSettings.value[field.createWith] || !field.parent) return false;
+  if (!createsChoices.value || !field.createWith || !allSettings.value[field.createWith] || !field.parent) return false;
   return !getParentValues(field.parent).some((v) => v?.[field.valueKey]);
 }
 
@@ -1770,7 +1780,7 @@ defineExpose({
         <div
           v-if="
             showField(field) &&
-            !dialogOnly &&
+            createsChoices &&
             field.createWith &&
             allSettings[field.createWith] &&
             action !== 'select' &&

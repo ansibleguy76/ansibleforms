@@ -4901,6 +4901,7 @@ onBeforeUnmount(() => {
                     :apiVersion="2"
                     :settings="inventoryRepoSettings"
                     dialogOnly
+                    canCreateChoices
                     @created="onInventoryRepoCreated"
                   />
                 </div>
