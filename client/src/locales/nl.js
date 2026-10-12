@@ -1,8 +1,8 @@
 export default {
   workflowEditor: {
     convergeHint: 'Uit: het draait zodra één koppeling ernaartoe afgaat. Aan: pas als ze allemaal afgegaan zijn.',
-    linkExisting: 'Een bestaand knooppunt koppelen',
-    newAfter: 'Of een nieuw knooppunt erna, bij',
+    linkExisting: 'Een bestaand knooppunt koppelen:',
+    newAfter: 'Of een nieuw knooppunt erna, bij:',
     parents: 'Ouders',
     newNode: 'Nieuw knooppunt',
     nodeTitle: 'Knooppunt {identifier}',

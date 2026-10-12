@@ -1,7 +1,7 @@
 export default {
   workflowEditor: {
     convergeHint: 'オフ: 入ってくるリンクのどれか一つが発火した時点で実行。オン: すべてのリンクが発火した時だけ実行。',
-    linkExisting: '既存のノードにリンク',
+    linkExisting: '既存のノードにリンク:',
     newAfter: 'または、このあとに新しいノード:',
     parents: '親ノード',
     newNode: '新しいノード',

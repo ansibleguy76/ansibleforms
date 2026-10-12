@@ -2,8 +2,8 @@ export default {
   workflowEditor: {
     convergeHint:
       'Desactivado: se ejecuta en cuanto un enlace hacia él se activa. Activado: solo cuando todos lo han hecho.',
-    linkExisting: 'Enlazar un nodo que ya existe',
-    newAfter: 'O un nodo nuevo después, si',
+    linkExisting: 'Enlazar un nodo que ya existe:',
+    newAfter: 'O un nodo nuevo después, si:',
     parents: 'Padres',
     newNode: 'Nodo nuevo',
     nodeTitle: 'Nodo {identifier}',
