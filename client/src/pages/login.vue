@@ -218,7 +218,7 @@ onMounted(() => {
 
     <div class="card form-signin w-100 m-auto">
       <div class="card-body">
-        <div class="login-logo">
+        <div class="login-logo" :class="{ 'login-logo-instance': store.appName || store.envLabel }">
           <!-- an uploaded logo ; not the server's built-in default, which is the light logo and
                would replace the dark theme's own -->
           <img v-if="store.customLogo && !store.logoIsDefault" :src="store.customLogo" alt="AnsibleForms" />
@@ -328,14 +328,18 @@ onMounted(() => {
   }
 }
 
-/* centered under the logo, with more room above it (the logo's margin) than below it */
-/* which instance : its name and its environment's label, between the logo and the title */
+/* which instance : its name and its environment's label, between the logo and the title.
+   It belongs to the logo, so it sits close under it, and keeps the logo's own room
+   (1.625rem) to the title : the title is as far from it as from the logo without one. */
+.login-logo.login-logo-instance {
+  margin-bottom: 0.75rem;
+}
 .login-instance {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1.625rem;
 }
 .login-app-name {
   font-size: 1.1rem;
