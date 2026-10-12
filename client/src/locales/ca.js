@@ -655,6 +655,8 @@ export default {
       'Aquesta pàgina encara executa una compilació més antiga que la del servidor. Torna a carregar la pàgina per obtenir la versió nova.',
   },
   common: {
+    jumpToLatest: 'Ves al més recent',
+    newLines: 'Línies noves',
     filter: 'Filtre',
     // the info icon after a page title, that shows the page's description
     aboutThisPage: 'Quant a aquesta pàgina',
@@ -2479,8 +2481,6 @@ export default {
     title: 'Registre del servidor',
     description:
       "El registre propi del servidor d'AnsibleForms: inicis de sessió, càrregues de configuració, peticions i errors. Les línies més noves són a baix.",
-    newLines: 'Línies noves',
-    latest: 'Ves al més recent',
     clear: 'Neteja',
     clearHint: "Buida la vista, no el registre: només es mostren les línies escrites a partir d'ara",
     cleared: "Net: les línies noves apareixen aquí a mesura que s'escriuen.",

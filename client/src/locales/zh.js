@@ -644,6 +644,8 @@ export default {
     cacheMismatchMsg: '此页面运行的构建仍比服务器的旧。请重新加载页面以获取新版本。',
   },
   common: {
+    jumpToLatest: '跳到最新',
+    newLines: '新行',
     filter: '筛选',
     // the info icon after a page title, that shows the page's description
     aboutThisPage: '关于此页面',
@@ -2384,8 +2386,6 @@ export default {
   logs: {
     title: '服务器日志',
     description: 'AnsibleForms 服务器自身的日志：登录、配置加载、请求和错误。最新的行位于底部。',
-    newLines: '新行',
-    latest: '跳到最新',
     clear: '清空',
     clearHint: '清空视图而不是日志：只显示从现在起写入的行',
     cleared: '已清空：新行写入后会显示在这里。',

@@ -755,7 +755,11 @@ const filteredSubJobOutput = computed(() => {
 
 // a running job's output followed down as it comes in, while the reader is at its end
 const outputPanel = ref(null);
-useFollowOutput(
+const {
+  paused: outputPaused,
+  newLines: outputNewLines,
+  jumpToEnd: jumpToOutputEnd,
+} = useFollowOutput(
   outputPanel,
   () => (filteredJobOutput.value?.length || 0) + (filteredSubJobOutput.value?.length || 0),
   () => status.value === 'running',
@@ -2265,6 +2269,14 @@ onBeforeUnmount(() => {
                 </AppAnsibleOutput>
               </div>
             </div>
+            <!-- scrolled up while it runs : back to its end, following again ; above the bar of
+                 Abort that sticks to the window's bottom under it -->
+            <AppFollowButton
+              :show="outputPaused"
+              :new-lines="outputNewLines"
+              bottom="5.75rem"
+              @click="jumpToOutputEnd"
+            />
           </div>
 
           <!-- the run's status and its actions : under the output, held at the window's bottom while
@@ -2298,11 +2310,20 @@ onBeforeUnmount(() => {
           <span class="visually-hidden">{{ t('form.loading') }}</span>
         </div>
       </div>
-      <div v-else class="alert alert-danger mt-5" role="alert">
-        <h4 class="alert-heading">{{ t('form.formNotFound') }}</h4>
-        <p>
-          {{ loadError || t('form.formNotFoundMsg') }}
-        </p>
+      <!-- not found : the page's title and its divider, as a form's, then why on one line -->
+      <div v-else class="section container-fluid w-100 mt-3">
+        <div class="d-flex flex-wrap align-items-center border-bottom mb-3 pb-2 af-page-head">
+          <h3 class="mb-0 me-3">
+            <router-link :to="formsPath('')" class="af-crumb-link"
+              ><span class="me-2"><FaIcon icon="rectangle-list" /></span>{{ t('nav.forms') }}</router-link
+            ><span class="mx-2 text-body-secondary af-crumb-separator">›</span>
+            {{ t('form.formNotFound') }}
+          </h3>
+        </div>
+        <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+          <FaIcon icon="triangle-exclamation" />
+          <span>{{ loadError || t('form.formNotFoundMsg') }}</span>
+        </div>
       </div>
     </main>
   </div>

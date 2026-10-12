@@ -652,6 +652,8 @@ export default {
       'このページはサーバーより古いビルドで動作しています。ページを再読み込みして新しいバージョンを取得してください。',
   },
   common: {
+    jumpToLatest: '最新へ移動',
+    newLines: '新しい行',
     filter: 'フィルター',
     // the info icon after a page title, that shows the page's description
     aboutThisPage: 'このページについて',
@@ -2438,8 +2440,6 @@ export default {
     title: 'サーバーログ',
     description:
       'AnsibleForms サーバー自身のログです。ログイン、設定の読み込み、リクエスト、エラーが記録されます。最新の行は一番下にあります。',
-    newLines: '新しい行',
-    latest: '最新へ移動',
     clear: 'クリア',
     clearHint: 'ログではなく表示を空にします。今後書き込まれる行だけが表示されます',
     cleared: 'クリアしました。新しい行は書き込まれるとここに表示されます。',

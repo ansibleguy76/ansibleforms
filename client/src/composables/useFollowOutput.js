@@ -1,14 +1,15 @@
-import { ref, watch, nextTick, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 
 /******************************************************************/
 /*                                                                */
-/*  Follows a running job's output down as it comes in, as a      */
-/*  terminal's `tail -f` : on the form's page after a submit, and */
-/*  on the job's page for who follows it there.                   */
+/*  Follows an output down as it comes in, as a terminal's        */
+/*  `tail -f` : a running job's on the form's page after a        */
+/*  submit and on the job's page, the server's log on its page.   */
 /*                                                                */
 /*  It follows while the reader is at the output's end : a scroll */
 /*  up to read pauses it, a scroll back down to the end resumes   */
-/*  it. A new run starts followed.                                */
+/*  it. While paused, AppFollowButton offers to jump back down -  */
+/*  'New lines' once more came in. A new run starts followed.     */
 /*                                                                */
 /******************************************************************/
 
@@ -48,18 +49,21 @@ function viewBottom(scroller) {
 }
 
 /**
- * Follows an output down while its job runs.
+ * Follows an output down while it is live (its job runs, the log is read).
  *
  * Args:
  *   target (Ref<HTMLElement>): the output (its panel) to keep the end of in view.
- *   size (function): what grows as the output comes in - its length.
- *   running (function): whether the job still runs.
+ *   size (function): what changes as the output comes in - its length, or its text.
+ *   running (function): whether it is live : the job still runs ; always true for a log.
  *
  * Returns:
- *   object: { following } - a ref, false while the reader scrolled up.
+ *   object: { following (a ref, false while the reader scrolled up), newLines (a ref, true once
+ *   more came in while paused), paused (a computed : live and scrolled up - AppFollowButton
+ *   shows), jumpToEnd (a function : back to the end, following again) }.
  */
 export function useFollowOutput(target, size, running) {
   const following = ref(true);
+  const newLines = ref(false);
   let scroller = null;
   // our own scrolls : not the reader's, they do not pause it
   let ownScrollUntil = 0;
@@ -69,6 +73,7 @@ export function useFollowOutput(target, size, running) {
     if (Date.now() < ownScrollUntil || !target.value) return;
     const gap = target.value.getBoundingClientRect().bottom - viewBottom(scroller);
     following.value = gap < NEAR_END;
+    if (following.value) newLines.value = false;
   }
 
   // the scroller to listen to : found again when the output appears or moves to another one
@@ -97,23 +102,44 @@ export function useFollowOutput(target, size, running) {
     scroller.scrollTop += gap;
   }
 
+  /**
+   * Back to the output's end, following it again : AppFollowButton's click.
+   */
+  async function jumpToEnd() {
+    following.value = true;
+    newLines.value = false;
+    await nextTick();
+    follow();
+  }
+
   // a new run : followed from its start ; an ended one a few seconds more - its status turns
   // before its last lines arrive
   let endedAt = 0;
   watch(running, (now, before) => {
-    if (now && !before) following.value = true;
+    if (now && !before) {
+      following.value = true;
+      newLines.value = false;
+    }
     if (!now && before) endedAt = Date.now();
   });
   const live = () => running() || Date.now() - endedAt < 5000;
-  // more output : followed when the reader is at its end and the job runs (or just ended)
+  // more output : followed when the reader is at its end and the job runs (or just ended) ;
+  // scrolled up, it says new lines came
   watch(size, async () => {
-    if (!live() || !following.value) return;
+    if (!live()) return;
+    if (!following.value) {
+      newLines.value = true;
+      return;
+    }
     await nextTick();
     follow();
   });
   onBeforeUnmount(detach);
 
-  return { following };
+  // the button back down : while live and scrolled up (an ended job's output is only read)
+  const paused = computed(() => !following.value && !!running());
+
+  return { following, newLines, paused, jumpToEnd };
 }
 
 export default useFollowOutput;

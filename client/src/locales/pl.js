@@ -653,6 +653,8 @@ export default {
       'Ta strona nadal działa na starszej kompilacji niż serwer. Przeładuj stronę, aby uzyskać nową wersję.',
   },
   common: {
+    jumpToLatest: 'Przejdź do najnowszych',
+    newLines: 'Nowe wiersze',
     filter: 'Filtr',
     // the info icon after a page title, that shows the page's description
     aboutThisPage: 'O tej stronie',
@@ -2460,8 +2462,6 @@ export default {
     title: 'Dziennik serwera',
     description:
       'Własny dziennik serwera AnsibleForms: logowania, wczytania konfiguracji, żądania i błędy. Najnowsze wiersze są na dole.',
-    newLines: 'Nowe wiersze',
-    latest: 'Przejdź do najnowszych',
     clear: 'Wyczyść',
     clearHint: 'Czyści widok, nie log: widoczne są tylko wiersze zapisane od teraz',
     cleared: 'Wyczyszczono: nowe wiersze pojawiają się tutaj w miarę zapisywania.',
