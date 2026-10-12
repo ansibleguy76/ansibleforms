@@ -85,6 +85,13 @@ const tabs = [
     icon: 'file-code',
   },
   {
+    // groups and hosts, as a tree
+    name: 'Inventories',
+    label: () => t('designer.inventories'),
+    description: () => t('designer.inventoriesDescription'),
+    icon: 'sitemap',
+  },
+  {
     // the YAML files a form loads (varsFiles)
     name: 'VarsFiles',
     label: () => t('designer.varsFiles'),
@@ -100,7 +107,7 @@ const tabs = [
   },
 ];
 // the sections still to build (workflows) : every section but the ones built
-const BUILT_SECTIONS = ['Categories', 'Constants', 'Forms', 'Playbooks', 'VarsFiles'];
+const BUILT_SECTIONS = ['Categories', 'Constants', 'Forms', 'Inventories', 'Playbooks', 'VarsFiles'];
 const draftSections = tabs.map((x) => x.name).filter((name) => !BUILT_SECTIONS.includes(name));
 // the views in the menu, alphabetically by their (translated) label
 const sortedTabs = computed(() => [...tabs].sort((a, b) => a.label().localeCompare(b.label(), locale.value)));
@@ -176,7 +183,7 @@ const themeObserver = new MutationObserver(() => {
 
 // the playbooks and the vars files : their files (AppProjectFiles), driven by the toolbar, its
 // text editor's buttons too (textEditorButtons)
-const FILE_SECTIONS = { Playbooks: 'playbooks', VarsFiles: 'vars' };
+const FILE_SECTIONS = { Inventories: 'inventories', Playbooks: 'playbooks', VarsFiles: 'vars' };
 const projectFiles = ref(null);
 const textEditorButtons = computed(() => [
   { icon: 'rotate-left', title: t('designer.undo'), run: editorUndo },
@@ -4661,7 +4668,7 @@ onBeforeUnmount(() => {
                       :isIconButton="true"
                       @click="projectFiles.newFile()"
                       :disabled="projectFiles.busy"
-                      :title="t('designer.newFile')"
+                      :title="currentTab === 'Inventories' ? t('designer.files.newInventory') : t('designer.newFile')"
                     />
                     <template v-if="editorView === 'yaml'">
                       <BsButton

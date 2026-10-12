@@ -309,6 +309,8 @@ CREATE TABLE `repositories` (
   `use_for_config` tinyint(4) DEFAULT 0,
   -- the workflows the designer builds (one repository only)
   `use_for_workflows` tinyint(4) DEFAULT 0,
+  -- the inventories the playbook forms name (inventory: <name>)
+  `use_for_inventories` tinyint(4) DEFAULT 0,
   `credential` varchar(250) DEFAULT NULL,
   `cron` varchar(50) DEFAULT NULL,
   `status` varchar(50) DEFAULT NULL,

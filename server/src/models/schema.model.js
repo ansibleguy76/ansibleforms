@@ -568,7 +568,7 @@ const SCHEMA_MANIFEST = {
                      columns: ['schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'jobs.runner', 'jobs.runner_kind',
                                'runners.username', 'runners.password', 'runners.use_credentials', 'runners.node_id', 'jobs.job_log',
                                'jobs.tracker', 'repositories.claim_node', 'repositories.claim_since',
-                               'repositories.use_for_workflows',
+                               'repositories.use_for_workflows', 'repositories.use_for_inventories',
                                'schedule.claim_node', 'schedule.claim_since', 'runners.flavour', 'runners.project',
                                'credentials.credential_type', 'repositories.credential', 'groups.description',
                                'secret_stores.credential', 'credentials.client_cert', 'credentials.client_key',
@@ -979,6 +979,8 @@ async function patchVersion7(messages, success, failed) {
   // a repository for the workflows the designer builds ; the vars files are no longer a usage of
   // their own : they are the forms repository's (its vars folder, Repository.getVarsFilesPath)
   await checkPromise(addColumn("repositories", "use_for_workflows", "tinyint(4)", true, "0"), messages, success, failed);
+  // a repository for the inventories the playbook forms name (inventory: <name>)
+  await checkPromise(addColumn("repositories", "use_for_inventories", "tinyint(4)", true, "0"), messages, success, failed);
   await checkPromise(dropColumn("repositories", "use_for_vars_files"), messages, success, failed);
 }
 

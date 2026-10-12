@@ -3,9 +3,10 @@
 // access so they can be unit tested (tests/project-files.test.mjs).
 import path from "path";
 
-// the folders the sections browse : the playbooks (the playbooks repository, else ANSIBLE_PATH)
-// and the vars files (the vars files repository, else VARS_FILES_PATH)
-export const FILE_KINDS = ["playbooks", "vars"];
+// the folders the sections browse : the playbooks (the playbooks repository, else ANSIBLE_PATH),
+// the vars files (a forms repository's vars folder, else VARS_FILES_PATH) and the inventories
+// (the inventories repositories, else INVENTORY_PATH)
+export const FILE_KINDS = ["playbooks", "vars", "inventories"];
 
 // the largest file the designer opens or saves : an editor is no place for anything bigger
 export const MAX_FILE_BYTES = 2 * 1024 * 1024;

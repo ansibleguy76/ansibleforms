@@ -872,6 +872,12 @@ export default {
       usePlaybooksShort: 'Playbooks',
       useWorkflowsHint: 'Workflows que construye el diseñador, editados y enviados de vuelta por el diseñador',
       useWorkflowsShort: 'Workflows',
+      useForInventories: '¿Usar para inventarios?',
+      helpUseForInventories:
+        "Los inventarios que nombran los formularios de playbook (inventory: <nombre>) se leen de este repositorio (subcarpeta 'inventories' o raíz) y el diseñador los envía de vuelta.",
+      useInventoriesHint:
+        'Inventarios contra los que corren los playbooks, editados y enviados de vuelta por el diseñador',
+      useInventoriesShort: 'Inventarios',
       fieldsRequired: 'El nombre, la URI y la descripción son obligatorios.',
       noOutput: 'Aún no hay salida: haz pull del repositorio para ver lo que dice git.',
       notFound: "No hay ningún repositorio llamado '{name}'.",
@@ -1581,10 +1587,30 @@ export default {
       'Edita los formularios en YAML. El explorador de la derecha lista los archivos de formularios y los formularios dentro de cada archivo.',
     playbooks: 'Playbooks',
     playbooksDescription: 'Los playbooks de Ansible que ejecutan los formularios.',
+    inventories: 'Inventarios',
+    inventoriesDescription:
+      'Los inventarios contra los que corren los playbooks: una carpeta por inventario, con sus variables de grupo y de host.',
     sectionToBuild: 'Aún no hay nada aquí.',
     files: {
       hideExplorer: 'Ocultar el explorador de archivos',
       showExplorer: 'Mostrar el explorador de archivos',
+      newInventory: 'Nuevo inventario',
+      inventoryNameHelp:
+        'El nombre de su carpeta (production, staging): recibe un inventory.yaml y group_vars/all.yaml. Un formulario de playbook lo nombra con inventory: <nombre>.',
+      newGroupVars: 'Nuevas variables de grupo',
+      groupVarsHelp: 'El nombre del grupo: sus variables van en {inventory}/group_vars/<nombre>.yaml.',
+      newHostVars: 'Nuevas variables de host',
+      hostVarsHelp:
+        'El nombre del host, como en el inventario: sus variables van en {inventory}/host_vars/<nombre>.yaml.',
+      repository: 'Repositorio',
+      noInventories: 'Aún no hay inventarios: crea uno con Nuevo inventario.',
+      inventoryPlugin: 'Un inventario dinámico: el plugin {plugin} lee sus hosts cuando corre el playbook.',
+      inventoryEmpty: 'Aún no hay grupos ni hosts: añádelos en la pestaña YAML.',
+      groupsCount: '{n} grupo | {n} grupos',
+      hostsCount: '{n} host | {n} hosts',
+      varsCount: '{n} variable | {n} variables',
+      groupVars: 'variables de grupo',
+      hostVars: 'variables de host',
       showInYaml: 'Ver en el YAML',
       noVars: 'Aún no hay variables: añade una con +.',
       keysCount: '{n} clave | {n} claves',

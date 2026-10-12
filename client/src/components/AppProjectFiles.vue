@@ -1,19 +1,23 @@
 <script setup>
 /******************************************************************/
 /*                                                                */
-/*  The designer's Playbooks and Vars files sections : the files  */
-/*  of their folder (or of their repository) in an explorer on    */
+/*  The designer's Playbooks, Vars files and Inventories          */
+/*  sections : the files of their folder (or of their             */
+/*  repositories) in an explorer on                               */
 /*  the right, the file chosen in the editor. Its actions sit in  */
 /*  the designer's toolbar (exposed) : save, push, new file,      */
 /*  reload, revert ; a file is deleted from its row.              */
 /*                                                                */
 /*  @props:                                                       */
-/*      kind: String - 'playbooks' or 'vars' (/api/v2/files/...)  */
+/*      kind: String - 'playbooks', 'vars' or 'inventories'       */
+/*         (/api/v2/files/...) ; the inventories one folder each  */
+/*         (inventory.yaml, group_vars/, host_vars/)              */
 /*      readOnly: Boolean - the designer lock is not ours         */
 /*      theme: String - the editor's theme                        */
 /*      editorStyle: String|Object - the editor's size            */
 /*      view: String - 'yaml' (the text) or 'visual' (a           */
-/*         vars file's variables)                                 */
+/*         vars file's variables, an inventory's groups and       */
+/*         hosts)                                                 */
 /*                                                                */
 /*  @emit:                                                        */
 /*      init: the editor, for the toolbar's undo, find ...        */
@@ -28,6 +32,7 @@ import { useI18n } from 'vue-i18n';
 import Helpers from '@/lib/Helpers';
 import { varsKind } from '@/config/varsFile';
 import { EXPLORER_WIDTH, explorerWidthAfterDrag, explorerFolded, explorerColumns } from '@/config/fileExplorer';
+import { inventoryOf, inventoryFileRole } from '@/config/inventoryTree';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -54,7 +59,9 @@ const dirty = computed(() => !!selected.value && content.value !== loadedContent
 const busy = computed(() => loading.value || working.value);
 
 // the dialogs : a new file, a new folder, a delete, leaving a file with changes
-const creating = ref(null); // { kind: 'file' | 'folder', path }
+// { kind: 'file' | 'folder', path } ; an inventory's : { kind: 'inventory', name, repo }, or
+// { kind: 'group_vars' | 'host_vars', inventory, name }
+const creating = ref(null);
 const deleting = ref('');
 const leavingFor = ref(null); // the file to open once the changes are dropped
 const leavingTo = ref(null); // what to do once the changes are dropped : go to a page, a section
@@ -120,6 +127,35 @@ const lang = computed(() => (/\.ya?ml$/i.test(selected.value) ? 'yaml' : 'text')
 // ─── the Visual tab ───────────────────────────────────────────────────────────
 // what the file open is : variables the Visual tab shows, or not
 const fileKind = computed(() => (props.view === 'visual' && lang.value === 'yaml' ? varsKind(content.value) : null));
+
+// ─── the inventories ──────────────────────────────────────────────────────────
+// one folder per inventory (production/inventory.yaml, group_vars/, host_vars/) ; under its
+// repository's name when several repositories hold inventories
+const isInventories = computed(() => props.kind === 'inventories');
+const prefixed = computed(() => (listing.value.roots || []).some(Boolean));
+// the folders' depth the inventories are at : under the repositories' folders, or at the top
+const inventoryDepth = computed(() => (prefixed.value ? 1 : 0));
+// what the file open is in its inventory : the inventory, a group's or a host's vars, other
+const fileRole = computed(() => (isInventories.value ? inventoryFileRole(selected.value, prefixed.value) : null));
+const inventory = computed(() =>
+  props.view === 'visual' && fileRole.value?.role === 'inventory' ? inventoryOf(content.value) : null,
+);
+// the groups and hosts of the inventory open that have a vars file
+const varsFilesOf = (role) =>
+  listing.value.files
+    .map((f) => inventoryFileRole(f.path, prefixed.value))
+    .filter((r) => r.role === role && r.inventory === fileRole.value?.inventory)
+    .map((r) => r.name);
+const groupVars = computed(() => (inventory.value ? varsFilesOf('group_vars') : []));
+const hostVars = computed(() => (inventory.value ? varsFilesOf('host_vars') : []));
+/** Opens a group's or a host's vars file of the inventory open. */
+function openVars({ role, name }) {
+  const base = `${fileRole.value.inventory}/${role}/${name}`;
+  const file = listing.value.files.find((f) => f.path === `${base}.yaml` || f.path === `${base}.yml`);
+  if (file) open(file.path);
+}
+// a new inventory : its file and the variables of all its hosts
+const INVENTORY_SKELETON = 'all:\n  hosts: {}\n  children: {}\n';
 // a key's name opens the YAML on its line : the designer shows the YAML tab, whose new
 // editor goes to the line once it is there (onEditorInit)
 const pendingLine = ref(null);
@@ -247,14 +283,62 @@ async function push() {
  */
 function startCreate(kind, folder = '') {
   if (props.readOnly) return;
-  creating.value = { kind, path: folder ? `${folder}/` : '' };
+  if (kind === 'inventory') {
+    // in a repository's folder when it was clicked there, else the first repository's
+    const repo = folder || (listing.value.roots || []).find(Boolean) || '';
+    creating.value = { kind, name: '', repo };
+  } else if (kind === 'group_vars' || kind === 'host_vars') {
+    creating.value = { kind, name: '', inventory: folder };
+  } else {
+    creating.value = { kind, path: folder ? `${folder}/` : '' };
+  }
+}
+// what the dialog asks : a path, or a name (an inventory's, a group's, a host's)
+const asksName = computed(() => ['inventory', 'group_vars', 'host_vars'].includes(creating.value?.kind));
+const createValue = computed(() => String((asksName.value ? creating.value?.name : creating.value?.path) || '').trim());
+const CREATE_LOOK = {
+  file: { icon: 'file', title: 'designer.newFile', help: 'designer.files.pathHelp' },
+  folder: { icon: 'folder', title: 'designer.newFolder', help: 'designer.files.folderHelp' },
+  inventory: { icon: 'sitemap', title: 'designer.files.newInventory', help: 'designer.files.inventoryNameHelp' },
+  group_vars: { icon: 'folder', title: 'designer.files.newGroupVars', help: 'designer.files.groupVarsHelp' },
+  host_vars: { icon: 'server', title: 'designer.files.newHostVars', help: 'designer.files.hostVarsHelp' },
+};
+const createLook = computed(() => CREATE_LOOK[creating.value?.kind] || CREATE_LOOK.file);
+
+/** Posts a new file (its folders made by the server) ; its path as the server stored it. */
+async function postFile(path, content) {
+  return (await axios.post(`${api.value}/file`, { path, content })).data.path;
 }
 
 /** Creates the file (empty, or '---' for YAML) and opens it, or keeps the new folder. */
 async function create() {
-  const path = (creating.value.path || '').trim().replace(/^\/+|\/+$/g, '');
+  const c = creating.value;
+  if (asksName.value) {
+    const name = createValue.value;
+    if (!name) return;
+    working.value = true;
+    try {
+      let opened;
+      if (c.kind === 'inventory') {
+        const base = c.repo ? `${c.repo}/${name}` : name;
+        opened = await postFile(`${base}/inventory.yaml`, INVENTORY_SKELETON);
+        await postFile(`${base}/group_vars/all.yaml`, '---\n');
+      } else {
+        opened = await postFile(`${c.inventory}/${c.kind}/${name}.yaml`, '---\n');
+      }
+      creating.value = null;
+      await loadList();
+      await open(opened, true);
+    } catch (err) {
+      toast.error(Helpers.parseAxiosResponseError(err, 'Failed to create'));
+    } finally {
+      working.value = false;
+    }
+    return;
+  }
+  const path = (c.path || '').trim().replace(/^\/+|\/+$/g, '');
   if (!path) return;
-  if (creating.value.kind === 'folder') {
+  if (c.kind === 'folder') {
     extraFolders.value = [...new Set([...extraFolders.value, path])];
     creating.value = null;
     return;
@@ -382,7 +466,7 @@ defineExpose({
   push,
   reload,
   revert,
-  newFile: () => startCreate('file'),
+  newFile: () => startCreate(isInventories.value ? 'inventory' : 'file'),
   // the Visual tab of a vars file : a new key at its top
   addVar: () => varsEditor.value?.add(),
   canAddVar: computed(() => !!varsEditor.value),
@@ -405,7 +489,9 @@ defineExpose({
             listing.exists
               ? listing.files.length
                 ? t('designer.files.pickOne')
-                : t('designer.files.noFiles')
+                : isInventories
+                  ? t('designer.files.noInventories')
+                  : t('designer.files.noFiles')
               : t('designer.files.noFolder')
           }}
         </p>
@@ -420,6 +506,20 @@ defineExpose({
           <FaIcon icon="triangle-exclamation" />
           <span class="flex-grow-1">{{ t('designer.files.visualInvalid', { error: fileKind.error }) }}</span>
           <BsButton icon="code" @click="reveal(fileKind.line)">{{ t('designer.files.showInYaml') }}</BsButton>
+        </div>
+        <!-- an inventory : its groups and hosts -->
+        <AppInventoryTree
+          v-else-if="inventory && inventory.kind !== 'invalid'"
+          :inventory="inventory"
+          :groupVars="groupVars"
+          :hostVars="hostVars"
+          @reveal="reveal"
+          @open="openVars"
+        />
+        <div v-else-if="inventory" class="alert alert-warning d-flex align-items-center gap-2">
+          <FaIcon icon="triangle-exclamation" />
+          <span class="flex-grow-1">{{ t('designer.files.visualInvalid', { error: inventory.error }) }}</span>
+          <BsButton icon="code" @click="reveal(inventory.line)">{{ t('designer.files.showInYaml') }}</BsButton>
         </div>
         <AppVarsEditor
           v-else-if="fileKind.kind === 'vars' || fileKind.kind === 'empty'"
@@ -480,7 +580,16 @@ defineExpose({
             <span role="button" class="tree-add-btn" @click="toggleSearch()" :title="t('designer.search')"
               ><FaIcon icon="magnifying-glass"
             /></span>
-            <template v-if="!readOnly">
+            <template v-if="!readOnly && isInventories">
+              <span
+                role="button"
+                class="tree-add-btn"
+                @click="startCreate('inventory')"
+                :title="t('designer.files.newInventory')"
+                ><FaIcon icon="sitemap"
+              /></span>
+            </template>
+            <template v-else-if="!readOnly">
               <span role="button" class="tree-add-btn" @click="startCreate('folder')" :title="t('designer.newFolder')"
                 ><FaIcon icon="folder"
               /></span>
@@ -523,7 +632,40 @@ defineExpose({
                 />
                 <span class="text-truncate" :title="item.name">{{ item.name }}</span>
               </span>
-              <span v-if="!readOnly" class="d-flex gap-2 flex-shrink-0 ms-2">
+              <!-- an inventory's folder : its group vars and its host vars ; a repository's (several
+                   hold inventories) : a new inventory in it ; any other : a new file -->
+              <span
+                v-if="!readOnly && isInventories && item.depth === inventoryDepth"
+                class="d-flex gap-2 flex-shrink-0 ms-2"
+              >
+                <span
+                  role="button"
+                  class="tree-add-btn"
+                  @click.stop="startCreate('group_vars', item.path)"
+                  :title="t('designer.files.newGroupVars')"
+                  ><FaIcon icon="folder"
+                /></span>
+                <span
+                  role="button"
+                  class="tree-add-btn"
+                  @click.stop="startCreate('host_vars', item.path)"
+                  :title="t('designer.files.newHostVars')"
+                  ><FaIcon icon="server"
+                /></span>
+              </span>
+              <span
+                v-else-if="!readOnly && isInventories && prefixed && item.depth === 0"
+                class="d-flex gap-2 flex-shrink-0 ms-2"
+              >
+                <span
+                  role="button"
+                  class="tree-add-btn"
+                  @click.stop="startCreate('inventory', item.path)"
+                  :title="t('designer.files.newInventory')"
+                  ><FaIcon icon="sitemap"
+                /></span>
+              </span>
+              <span v-else-if="!readOnly" class="d-flex gap-2 flex-shrink-0 ms-2">
                 <span
                   role="button"
                   class="tree-add-btn"
@@ -564,23 +706,35 @@ defineExpose({
     </div>
 
     <!-- a new file or folder : its path in the section's folder -->
-    <BsModal v-if="creating" size="md" :icon="creating.kind === 'folder' ? 'folder' : 'file'" @close="creating = null">
-      <template #title>{{ creating.kind === 'folder' ? t('designer.newFolder') : t('designer.newFile') }}</template>
+    <BsModal v-if="creating" size="md" :icon="createLook.icon" @close="creating = null">
+      <template #title>{{ t(createLook.title) }}</template>
       <template #default>
+        <!-- a new inventory in one of the repositories that hold inventories -->
+        <div v-if="creating.kind === 'inventory' && prefixed" class="mb-3">
+          <label class="form-label fw-bold" for="af-inv-repo">{{ t('designer.files.repository') }}</label>
+          <select id="af-inv-repo" v-model="creating.repo" class="form-select">
+            <option v-for="r in listing.roots" :key="r" :value="r">{{ r }}</option>
+          </select>
+        </div>
         <BsInput
+          v-if="asksName"
+          v-model="creating.name"
+          :label="t('settings.fields.name')"
+          :help="t(createLook.help, { inventory: creating.inventory })"
+          @keyup.enter="create()"
+        />
+        <BsInput
+          v-else
           v-model="creating.path"
           :label="t('designer.files.path')"
-          :help="creating.kind === 'folder' ? t('designer.files.folderHelp') : t('designer.files.pathHelp')"
+          :help="t(createLook.help)"
           @keyup.enter="create()"
         />
       </template>
       <template #footer>
-        <BsButton
-          :icon="creating.kind === 'folder' ? 'folder' : 'file'"
-          :disabled="!creating.path.trim() || working"
-          @click="create()"
-          >{{ t('designer.files.create') }}</BsButton
-        >
+        <BsButton :icon="createLook.icon" :disabled="!createValue || working" @click="create()">{{
+          t('designer.files.create')
+        }}</BsButton>
       </template>
     </BsModal>
     <!-- a delete, asked first -->

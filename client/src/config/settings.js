@@ -583,7 +583,13 @@ export default function getSettings(t) {
           icon: 'upload',
           title: t('settings.repositories.push'),
           color: 'test',
-          dependency: ['use_for_forms', 'use_for_config', 'use_for_playbooks', 'use_for_workflows'],
+          dependency: [
+            'use_for_forms',
+            'use_for_config',
+            'use_for_playbooks',
+            'use_for_workflows',
+            'use_for_inventories',
+          ],
         },
         { name: 'reset', icon: 'redo', title: t('settings.repositories.reset'), color: 'refresh' },
         {
@@ -776,6 +782,20 @@ export default function getSettings(t) {
           // the column : its short name, as on the Usage step
           columnLabel: t('settings.repositories.usePlaybooksShort'),
           help: t('settings.repositories.helpUseForPlaybooks'),
+          hidden: true,
+        },
+        {
+          key: 'use_for_inventories',
+          step: 'usage',
+          // several repositories may hold inventories, each its own
+          shortLabel: t('settings.repositories.useInventoriesShort'),
+          shortHint: t('settings.repositories.useInventoriesHint'),
+          isSwitch: false,
+          type: 'checkbox',
+          label: t('settings.repositories.useForInventories'),
+          // the column : its short name, as on the Usage step
+          columnLabel: t('settings.repositories.useInventoriesShort'),
+          help: t('settings.repositories.helpUseForInventories'),
           hidden: true,
         },
         {

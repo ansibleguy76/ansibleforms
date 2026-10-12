@@ -113,6 +113,8 @@ var app_config = {
   homePath: process.env.HOME_PATH || os.homedir(),
   uploadPath: process.env.UPLOAD_PATH || path.resolve(__dirname + "/../persistent/uploads"),
   varsFilesPath: process.env.VARS_FILES_PATH || path.resolve(__dirname + "/../persistent/vars"),
+  // the inventories a playbook form names (inventory: <name>) when no repository holds them
+  inventoryPath: process.env.INVENTORY_PATH || path.resolve(__dirname + "/../persistent/inventories"),
   repoPath: process.env.REPO_PATH || path.resolve(__dirname + "/../persistent/repositories"),
   formsBackupPath: process.env.FORMS_BACKUP_PATH || path.resolve(__dirname + "/../persistent/forms_backups"),
   // parseInt : a string here makes the age comparison in Form.removeOld either NaN

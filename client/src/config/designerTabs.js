@@ -7,6 +7,8 @@ export const DESIGNER_TABS = {
   categories: ['yaml', 'visual', 'preview'],
   constants: ['yaml', 'visual'],
   forms: ['yaml', 'visual', 'preview'],
+  // an inventory's groups and hosts, its vars files' variables
+  inventories: ['yaml', 'visual'],
   // a playbook is code, edited as YAML
   playbooks: ['yaml'],
   varsfiles: ['yaml', 'visual'],

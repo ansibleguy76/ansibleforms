@@ -454,6 +454,24 @@ class Repository extends CrudModel {
     }
   }
 
+  // the inventories the playbook forms name (inventory: <name>) : each repository used for them
+  // (its inventories folder, or its root), else the local folder (INVENTORY_PATH). Read where the
+  // playbook runs as well (the RTE), from its own REPO_PATH and INVENTORY_PATH.
+  static async getInventoryRoots() {
+    try {
+      const repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_inventories ORDER BY name")
+      if (!repositories.length) return [{ repository: null, root: appConfig.inventoryPath }]
+      return repositories.map((repo) => {
+        const repoPath = path.join(appConfig.repoPath, repo.name)
+        const sub = path.join(repoPath, "inventories")
+        return { repository: repo.name, root: fs.existsSync(sub) ? sub : repoPath }
+      })
+    } catch (e) {
+      logger.error("Failed to get the inventories folders : ", e)
+      return [{ repository: null, root: appConfig.inventoryPath }]
+    }
+  }
+
   // migration path (issue #414) : when the only forms repository is cloned and
   // contains no forms content yet, its working tree is seeded with the local
   // designer forms (config.yaml + forms folder) ; nothing is pushed until the
@@ -762,8 +780,8 @@ class Repository extends CrudModel {
       syncRepo = await Repository.withCredential(await Repository.findByName(name))
       // a forms repo (read+write forms) or the config-origin repo (so config
       // edits can be committed even when config lives in a separate repo)
-      if (!syncRepo.use_for_forms && !syncRepo.use_for_config && !syncRepo.use_for_playbooks && !syncRepo.use_for_workflows) {
-        throw new Error(`Repository '${name}' is not a forms, config, playbooks or workflows repository`)
+      if (!syncRepo.use_for_forms && !syncRepo.use_for_config && !syncRepo.use_for_playbooks && !syncRepo.use_for_workflows && !syncRepo.use_for_inventories) {
+        throw new Error(`Repository '${name}' is not a forms, config, playbooks, workflows or inventories repository`)
       }
       const repoDir = path.join(appConfig.repoPath, name)
       if (!fs.existsSync(repoDir)) {

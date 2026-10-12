@@ -22,6 +22,7 @@ import { nodeId } from "../lib/role.js";
 import { registerJobSecrets, forgetJobSecrets, maskOutput } from "../lib/outputMask.js";
 import { playbookEnv } from "../lib/playbookEnv.js";
 import { createOutputBatcher } from "../lib/outputBatcher.js";
+import { resolveInventory } from "../lib/inventories.js";
 
 /** this RTE's name, stored in jobs.host on the jobs it claims : rte-<hostname>-<port> (lib/role.js) */
 export function runnerIdentity() {
@@ -194,6 +195,26 @@ async function launchPlaybook(ev, secrets, jobid, counter) {
       "[ERROR]: Failed to get vault credentials"
     );
     return false;
+  }
+  // an inventory the form names by its name (inventory: production) : that inventory's folder,
+  // here - in the inventories folder or an inventories repository, as this RTE sees them
+  if (extravars.__inventory__) {
+    try {
+      const roots = await Repository.getInventoryRoots();
+      const isDir = (p) => {
+        try {
+          return fs.statSync(p).isDirectory();
+        } catch {
+          return false;
+        }
+      };
+      extravars.__inventory__ = Array.isArray(extravars.__inventory__)
+        ? extravars.__inventory__.map((i) => resolveInventory(i, roots, isDir))
+        : resolveInventory(extravars.__inventory__, roots, isDir);
+    } catch (err) {
+      await Job.endJobStatus(jobid, counter + 1, "stderr", "failed", `[ERROR]: ${err.message}`);
+      return false;
+    }
   }
   const extravarsFileName = `extravars_${jobid}.json`;
   const hiddenExtravarsFileName = `he_${extravarsFileName}`;
