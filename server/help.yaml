@@ -3791,12 +3791,12 @@
                   code: |
                     since expressions are so diverse, there is a separate section on expressions with examples.
               - name: list
-                description: A list of structured rows edited through a reusable subform (supersedes `table`)
+                description: A list of structured rows edited through a reusable subform (replaces the `table` field, removed in 7.0.0)
                 extra: |
                   A `list` field shows a table of rows where each row is edited through a separate **subform** pane.  
                   The subform itself is a top-level form of type `subform`, referenced by name via the `subform` property.  
                   Subforms can be nested (a list field inside a subform) and can be reused across multiple forms (e.g. a single `Address` subform shared by customers, suppliers, ...).  
-                  Use the `columns` property to pick which subform fields appear in the table. Other properties (`allowInsert`, `allowDelete`, `insertMarker`, `deleteMarker`, `updateMarker`) behave the same as in the deprecated `table` field.
+                  Use the `columns` property to pick which subform fields appear in the table. Other properties (`allowInsert`, `allowDelete`, `insertMarker`, `deleteMarker`, `updateMarker`) control how rows are added, removed and marked as changed.
 
                   **Pre-population.** A list can be seeded with rows in three ways:
 
