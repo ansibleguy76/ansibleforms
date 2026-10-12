@@ -4,6 +4,7 @@ export default {
     notAdmin: "管理者ではありません",
     noSettingsAccess: "設定へのアクセス権がありません",
     noDesignerAccess: "デザイナーへのアクセス権がありません",
+    noPlaybookDesignAccess: "デザイナーで playbook を変更することはできません",
     noLogsAccess: "ログへのアクセス権がありません",
     noDatabaseAccess: "データベース操作へのアクセス権がありません",
     noScheduleAccess: "スケジュール済みジョブを管理する権限がありません",

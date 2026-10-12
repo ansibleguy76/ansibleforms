@@ -47,6 +47,12 @@ Middleware.checkSettingsMiddleware = permissionGuard(u => u.options.showSettings
 // applies at once, without signing in again) and the user's own showDesigner option
 Middleware.checkDesignerMiddleware = permissionGuard(u => appConfig.showDesigner && u.options.showDesigner, 'errors.noDesignerAccess')
 
+// the designer's playbooks : written (saved, new, removed, pushed) only with allowPlaybookDesign ;
+// read by every designer (a form or a workflow picks one), the other kinds of files pass
+const playbookDesignGuard = permissionGuard(u => u.options.allowPlaybookDesign, 'errors.noPlaybookDesignAccess')
+Middleware.checkPlaybookDesignMiddleware = (req, res, next) =>
+  req.params?.kind === 'playbooks' ? playbookDesignGuard(req, res, next) : next()
+
 Middleware.checkLogsMiddleware = permissionGuard(u => u.options.showLogs, 'errors.noLogsAccess')
 
 Middleware.checkBackupMiddleware = permissionGuard(u => u.options.allowBackupOps, 'errors.noDatabaseAccess')

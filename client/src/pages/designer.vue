@@ -187,6 +187,8 @@ const themeObserver = new MutationObserver(() => {
 // (AppProjectFiles), driven by the toolbar
 const FILE_SECTIONS = { Inventories: 'inventories', Playbooks: 'playbooks', VarsFiles: 'vars', Workflows: 'workflows' };
 const projectFiles = ref(null);
+// the playbooks are changed only with the role option allowPlaybookDesign (else shown read-only)
+const canDesignPlaybooks = computed(() => store.profile?.options?.allowPlaybookDesign !== false);
 
 // a new inventory is a new repository : the repositories' New dialog (Settings > Repositories),
 // used for inventories - ticked, and its usage not to change here
@@ -3506,10 +3508,12 @@ const toolbarActions = computed(() => {
     const none = f.busy || !f.selected;
     const inventories = currentTab.value === 'Inventories';
     const workflows = currentTab.value === 'Workflows';
+    // the playbooks without allowPlaybookDesign : read, not changed
+    const readOnly = currentTab.value === 'Playbooks' && !canDesignPlaybooks.value;
     return [
       // a new file ; on the + : in the inventories a new inventory (a repository), in the
       // workflows a new workflow (a file, an empty workflow in it), as the explorer's
-      { key: 'newFile', run: () => f.newFile(), show: !inventories && !workflows, disabled: f.busy },
+      { key: 'newFile', run: () => f.newFile(), show: !inventories && !workflows, disabled: f.busy || readOnly },
       {
         key: 'add',
         run: () => f.newFile(),
@@ -3520,14 +3524,14 @@ const toolbarActions = computed(() => {
       {
         key: 'save',
         run: () => f.save(),
-        disabled: !f.dirty || f.busy,
+        disabled: !f.dirty || f.busy || readOnly,
         title: f.repository ? t('designer.saveLocal') : undefined,
       },
       {
         key: 'push',
         run: () => f.push(),
         show: !!f.repository,
-        disabled: f.dirty || f.busy || !f.unpushed,
+        disabled: f.dirty || f.busy || !f.unpushed || readOnly,
         color: f.unpushed && !f.dirty ? 'orange' : undefined,
       },
       ...textActions(none, none || !f.dirty),
@@ -4945,7 +4949,9 @@ onBeforeUnmount(() => {
                     :kind="FILE_SECTIONS[currentTab]"
                     :forms="formsForPreview"
                     :view="editorView"
-                    :readOnly="!(lock && lock.match)"
+                    :readOnly="
+                      !(lock && lock.match) || (FILE_SECTIONS[currentTab] === 'playbooks' && !canDesignPlaybooks)
+                    "
                     :theme="editorTheme"
                     :editorStyle="editorStyle('100%')"
                     @init="onEditorInit"

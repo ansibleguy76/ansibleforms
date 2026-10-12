@@ -6,6 +6,7 @@ export const authProviders = ['local', 'ldap', 'azuread', 'oidc'];
 
 export const roleOptionKeys = [
   'showDesigner',
+  'allowPlaybookDesign',
   'showLogs',
   'showDebugButtons',
   'showSettings',
@@ -33,6 +34,7 @@ export const roleOptionKeys = [
 // variant is not exposed by this editor, so it is not listed here (unknown keys
 // found in hand-written yaml are preserved verbatim by serializeRole).
 const trueByDefaultOptions = [
+  'allowPlaybookDesign',
   'allowVerboseMode',
   'showJobs',
   'showDebugButtons',

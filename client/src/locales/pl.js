@@ -301,6 +301,7 @@ export default {
     optionDescription: {
       showSettings: 'Wyświetlanie stron ustawień.',
       showDesigner: 'Wyświetlanie projektanta i korzystanie z niego.',
+      allowPlaybookDesign: 'Zmieniać playbooki w designerze (bez tego: tylko odczyt).',
       showLogs: 'Wyświetlanie dziennika serwera.',
       showJobs: 'Wyświetlanie strony zadań.',
       showDebugButtons: 'Wyświetlanie przycisków debugowania w formularzu.',
@@ -1791,6 +1792,7 @@ export default {
       noRoles: 'Nie skonfigurowano ról',
       noConstants: 'Nie skonfigurowano stałych',
       roleOptionShowDesigner: 'Pokaż projektanta',
+      roleOptionAllowPlaybookDesign: 'Zmieniać playbooki',
       roleOptionShowLogs: 'Pokaż dzienniki',
       roleOptionShowDebugButtons: 'Pokaż przyciski debugowania',
       roleOptionShowSettings: 'Pokaż ustawienia',

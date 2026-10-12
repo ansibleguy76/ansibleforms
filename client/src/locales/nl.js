@@ -302,6 +302,7 @@ export default {
     optionDescription: {
       showSettings: "De instellingenpagina's zien.",
       showDesigner: 'De designer zien en gebruiken.',
+      allowPlaybookDesign: 'De playbooks in de designer wijzigen (zonder: alleen lezen).',
       showLogs: 'Het serverlog zien.',
       showJobs: 'De jobspagina zien.',
       showDebugButtons: 'De debugknoppen op een formulier zien.',
@@ -1798,6 +1799,7 @@ export default {
       noRoles: 'Geen rollen geconfigureerd',
       noConstants: 'Geen constanten geconfigureerd',
       roleOptionShowDesigner: 'Ontwerper tonen',
+      roleOptionAllowPlaybookDesign: 'Playbooks wijzigen',
       roleOptionShowLogs: 'Logs tonen',
       roleOptionShowDebugButtons: 'Debug-knoppen tonen',
       roleOptionShowSettings: 'Instellingen tonen',

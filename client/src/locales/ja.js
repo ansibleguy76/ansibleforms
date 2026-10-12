@@ -300,6 +300,7 @@ export default {
     optionDescription: {
       showSettings: '設定ページを表示します。',
       showDesigner: 'デザイナーを表示して使用します。',
+      allowPlaybookDesign: 'デザイナーで playbook を変更する（なしの場合：読み取り専用）。',
       showLogs: 'サーバーログを表示します。',
       showJobs: 'ジョブページを表示します。',
       showDebugButtons: 'フォームのデバッグボタンを表示します。',
@@ -1773,6 +1774,7 @@ export default {
       noRoles: 'ロールが設定されていません',
       noConstants: '定数が設定されていません',
       roleOptionShowDesigner: 'デザイナーを表示',
+      roleOptionAllowPlaybookDesign: 'playbook を変更',
       roleOptionShowLogs: 'ログを表示',
       roleOptionShowDebugButtons: 'デバッグボタンを表示',
       roleOptionShowSettings: '設定を表示',

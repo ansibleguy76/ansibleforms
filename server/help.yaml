@@ -1489,6 +1489,7 @@
       Since version 5.0.8 options are introduced to add specific role-options.  
 
       - showDesigner: The user can see the designer
+      - allowPlaybookDesign: The user can change the playbooks in the designer (save, new, remove, push). Without it the designer shows them read-only. Default true. (Added in 7.0.0)
       - showSettings: The user can see the settings page
       - showDebugButtons: The user can see the debug buttons on a form
       - showExtravars: The user can see the extravars on a form
@@ -1695,6 +1696,7 @@
           The options are:
 
           - showDesigner: The user can see the designer
+          - allowPlaybookDesign: The user can change the playbooks in the designer (save, new, remove, push). Without it the designer shows them read-only. Default true. (Added in 7.0.0)
           - showSettings: The user can see the settings page
           - showDebugButtons: The user can see the debug buttons on a form
           - showExtravars: The user can see the extravars on a form

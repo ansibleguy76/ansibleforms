@@ -301,6 +301,7 @@ export default {
     optionDescription: {
       showSettings: 'Ver las páginas de ajustes.',
       showDesigner: 'Ver y usar el designer.',
+      allowPlaybookDesign: 'Modificar los playbooks en el diseñador (sin ello: solo lectura).',
       showLogs: 'Ver el registro del servidor.',
       showJobs: 'Ver la página de jobs.',
       showDebugButtons: 'Ver los botones de depuración en un formulario.',
@@ -1804,6 +1805,7 @@ export default {
       noRoles: 'Sin roles configurados',
       noConstants: 'Sin constantes configuradas',
       roleOptionShowDesigner: 'Mostrar disenador',
+      roleOptionAllowPlaybookDesign: 'Modificar playbooks',
       roleOptionShowLogs: 'Mostrar logs',
       roleOptionShowDebugButtons: 'Mostrar botones de depuracion',
       roleOptionShowSettings: 'Mostrar configuracion',

@@ -4,6 +4,7 @@ export default {
     notAdmin: "No ets administrador",
     noSettingsAccess: "No tens accés a la configuració",
     noDesignerAccess: "No tens accés al dissenyador",
+    noPlaybookDesignAccess: "No podeu modificar els playbooks al dissenyador",
     noLogsAccess: "No tens accés als registres",
     noDatabaseAccess: "No tens accés a les operacions de base de dades",
     noScheduleAccess: "No tens permís per gestionar les tasques programades",
