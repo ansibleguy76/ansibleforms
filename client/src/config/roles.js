@@ -76,7 +76,7 @@ export function roleOptionDefaults(roleName) {
 // settings.settingsPage.roleOption<Key> convention, so derive the i18n key from
 // the option name instead of maintaining a second map per editor.
 /**
- * The description of a role the config must keep (admin, public) : fixed and translated, never
+ * The description of a role the config must keep (admin, default) : fixed and translated, never
  * typed or stored ; '' for any other role.
  *
  * Args:
@@ -88,7 +88,7 @@ export function roleOptionDefaults(roleName) {
  */
 export function requiredRoleDescription(t, name) {
   if (name === 'admin') return t('settings.settingsPage.roleDescriptionAdmin');
-  if (name === 'default' || name === 'public') return t('settings.settingsPage.roleDescriptionPublic');
+  if (name === 'default' || name === 'public') return t('settings.settingsPage.roleDescriptionDefault');
   return '';
 }
 
@@ -163,7 +163,7 @@ export function roleToEditable(r) {
 //  - groups is always present (empty array allowed),
 //  - users only when non-empty,
 //  - options only carries the flags this role has an opinion about,
-//  - the public role never carries groups/users (the schema pins it),
+//  - the default role never carries groups/users (the schema pins it),
 //  - the role name is trimmed, like the member names : a stray space is
 //    invisible in the editor but the server matches role names literally
 //    (`roles: [operators]` in a form, `roles.includes("admin")` in
@@ -187,18 +187,18 @@ export function roleToEditable(r) {
 // passed through untouched.
 export function serializeRole(r) {
   const name = (r.name || '').trim();
-  const isPublic = name === 'default' || name === 'public';
+  const isDefault = name === 'default' || name === 'public';
   const role = { name };
   // written only when there is one, so a role without stays as it was in the yaml ; admin and
-  // public have a fixed one (requiredRoleDescription), never stored
+  // default have a fixed one (requiredRoleDescription), never stored
   const description = (r.description || '').trim();
   if (description && name !== 'admin' && name !== 'default' && name !== 'public') role.description = description;
   const clean = (list) =>
     (list || [])
       .filter((e) => e && typeof e.name === 'string' && e.name.trim())
       .map((e) => formatProviderEntry({ provider: e.provider, name: e.name.trim() }));
-  role.groups = isPublic ? [] : clean(r.groups);
-  const users = isPublic ? [] : clean(r.users);
+  role.groups = isDefault ? [] : clean(r.groups);
+  const users = isDefault ? [] : clean(r.users);
   if (users.length) role.users = users;
   // what the role may use : written when it lists any. Left out, the role limits nothing - so
   // dropping them (as a save once did) widened what its users may use

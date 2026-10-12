@@ -1582,15 +1582,13 @@ export default {
         "No s'ha pogut analitzar la configuració dels formularis. Corregeix l'error de sintaxi YAML abans de fer canvis.",
       configTemplated:
         "Aquesta configuració utilitza plantilles ytt i no es pot editar aquí. Edita la plantilla d'origen.",
-      publicRoleNote:
-        "El rol default s'aplica automàticament a tothom (public és el seu nom antic); no se li poden assignar grups ni usuaris.",
-      publicEveryone: 'Tothom, automàticament',
+      defaultEveryone: 'Tothom, automàticament',
       roleNoUsers: 'Aquest rol encara no té usuaris.',
       roleNoGroups: 'Aquest rol encara no té grups.',
       roleNotFound: "No hi ha cap rol anomenat '{name}'.",
       roleDescriptionPlaceholder: 'Per a què serveix el rol, p. ex. Llança els formularis de xarxa',
       roleDescriptionAdmin: 'Accés total: tots els formularis, el dissenyador i la configuració.',
-      roleDescriptionPublic: 'Cada usuari, automàticament: el que tothom pot fer.',
+      roleDescriptionDefault: 'Cada usuari, automàticament: el que tothom pot fer.',
       roleMemberFrom: 'Del grup',
       roleUsersAll: 'Tots',
       removeFromRole: 'Treu del rol',

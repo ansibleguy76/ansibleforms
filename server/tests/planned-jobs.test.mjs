@@ -73,7 +73,7 @@ const { default: Schedule } = await import("../src/models/schedule.model.js");
 const { default: CrudModel } = await import("../src/models/crud.model.js");
 
 const planner = {
-  id: 2, username: "bob", type: "local", groups: ["local/users"], roles: ["users", "public"],
+  id: 2, username: "bob", type: "local", groups: ["local/users"], roles: ["users", "default"],
   options: { allowPlannedJobs: true, allowScheduledJobs: false, allowVerboseMode: false },
 };
 const scheduler = { ...planner, options: { allowPlannedJobs: true, allowScheduledJobs: true } };
@@ -140,7 +140,7 @@ describe("Schedule.plan", () => {
     assert.equal(created.run_at, runAt);
     const owner = JSON.parse(created.owner);
     assert.equal(owner.username, "bob");
-    assert.deepEqual(owner.roles, ["users", "public"]);
+    assert.deepEqual(owner.roles, ["users", "default"]);
   });
 
   test("a form the user may not run is refused", async () => {

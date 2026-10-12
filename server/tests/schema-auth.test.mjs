@@ -74,11 +74,11 @@ test('a provisioned database refuses a non-admin, and accepts an admin', async (
   create.mockClear();
   isProvisioned.mockResolvedValue(true);
 
-  const bad = await post({ Authorization: `Bearer ${token(['public'])}` });
+  const bad = await post({ Authorization: `Bearer ${token(['default'])}` });
   expect(bad.status).toBe(403);
   expect(create).not.toHaveBeenCalled();
 
-  const good = await post({ Authorization: `Bearer ${token(['admin', 'public'])}` });
+  const good = await post({ Authorization: `Bearer ${token(['admin', 'default'])}` });
   expect(good.status).toBe(200);
   expect(create).toHaveBeenCalled();
 });

@@ -50,7 +50,7 @@ const call = async (body, user, query = {}) => {
   return res;
 };
 
-const plainUser = { username: "bob", type: "local", roles: ["public"], options: {} };
+const plainUser = { username: "bob", type: "local", roles: ["default"], options: {} };
 const settingsUser = { username: "root", type: "local", roles: ["admin"], options: { showSettings: true } };
 const designerUser = { username: "ann", type: "local", roles: ["designers"], options: { showDesigner: true } };
 
@@ -108,7 +108,7 @@ describe("a form-bound expression comes from the definition, not the body", () =
 
   test("the form is loaded with the CALLER's roles", async () => {
     await call({ formName: "Servers", fieldName: "vms", values: { dc: "x" } }, plainUser);
-    assert.deepEqual(formLoadArgs.roles, ["public"]);
+    assert.deepEqual(formLoadArgs.roles, ["default"]);
     assert.equal(formLoadArgs.name, "Servers");
   });
 
@@ -214,7 +214,7 @@ describe("the server splice gives the expression the browser would have run", ()
     rows: [{ id: 1 }, { id: 2 }],
     tags: ["a", "b"],
     nothing: null,
-    __user__: { username: "bob", roles: ["public"] },
+    __user__: { username: "bob", roles: ["default"] },
   };
   const fieldOptions = {
     host: { type: "enum", placeholderColumn: "name" },

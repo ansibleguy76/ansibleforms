@@ -23,12 +23,12 @@ vi.mock("../src/models/db.model.js", () => ({
 }));
 vi.mock("../src/models/form.model.js", () => ({
   default: {
-    load: async () => ({ roles: [{ name: "admin", groups: ["local/admins", "local/superusers"], users: ["local/root"] }, { name: "public", groups: ["local/ops"] }] }),
+    load: async () => ({ roles: [{ name: "admin", groups: ["local/admins", "local/superusers"], users: ["local/root"] }, { name: "default", groups: ["local/ops"] }] }),
   },
 }));
 
 const { assertMayTouchAdmin, adminGrantsFromRoles } = await import("../src/lib/adminGrants.js");
-const settingsUser = { user: { user: { username: "ops", roles: ["public"] } } };
+const settingsUser = { user: { user: { username: "ops", roles: ["default"] } } };
 const admin = { user: { user: { username: "admin", roles: ["admin"] } } };
 
 describe("who grants admin", () => {
@@ -69,14 +69,14 @@ describe("a designer without the admin role", () => {
   test("saves a configuration whose roles are as they were, and only that", async () => {
     vi.resetModules();
     vi.doMock("../src/models/settings.model.js", () => ({
-      default: { getActiveConfig: async () => "roles:\n  - name: admin\n    groups: [local/admins]\n  - name: public\n    groups: [local/ops]\n" },
+      default: { getActiveConfig: async () => "roles:\n  - name: admin\n    groups: [local/admins]\n  - name: default\n    groups: [local/ops]\n" },
     }));
     const { assertRolesUnchanged } = await import("../src/controllers/v2/config.controller.js");
-    const designer = { user: { user: { username: "dee", roles: ["public"], options: { showDesigner: true } } } };
+    const designer = { user: { user: { username: "dee", roles: ["default"], options: { showDesigner: true } } } };
     // the same roles, keys in another order : unchanged
-    await expect(assertRolesUnchanged(designer, [{ groups: ["local/admins"], name: "admin" }, { name: "public", groups: ["local/ops"] }])).resolves.toBeUndefined();
+    await expect(assertRolesUnchanged(designer, [{ groups: ["local/admins"], name: "admin" }, { name: "default", groups: ["local/ops"] }])).resolves.toBeUndefined();
     // a group added to admin : refused
-    await expect(assertRolesUnchanged(designer, [{ name: "admin", groups: ["local/admins", "local/ops"] }, { name: "public", groups: ["local/ops"] }])).rejects.toThrow(/Only an admin can change the roles/);
+    await expect(assertRolesUnchanged(designer, [{ name: "admin", groups: ["local/admins", "local/ops"] }, { name: "default", groups: ["local/ops"] }])).rejects.toThrow(/Only an admin can change the roles/);
     // an admin may
     await expect(assertRolesUnchanged(admin, [{ name: "admin", groups: ["local/everyone"] }])).resolves.toBeUndefined();
     // a backup without a base configuration has nothing to check

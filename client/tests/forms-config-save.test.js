@@ -173,7 +173,7 @@ describe('saving', () => {
     http.get = okGet(YAML);
     const c = useFormsConfig();
     await c.load();
-    c.roles.value[0].name = 'public';
+    c.roles.value[0].name = 'default';
     http.put = () => Promise.reject({ response: { status: 423 }, message: 'locked' });
     expect(await c.save()).toBe(false);
   });

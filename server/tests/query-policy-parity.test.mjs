@@ -47,7 +47,7 @@ const call = async (controller, body, user) => {
   return res;
 };
 
-const plainUser = { username: "bob", type: "local", roles: ["public"], options: {} };
+const plainUser = { username: "bob", type: "local", roles: ["default"], options: {} };
 const settingsUser = { username: "root", type: "local", roles: ["admin"], options: { showSettings: true } };
 
 beforeEach(() => {

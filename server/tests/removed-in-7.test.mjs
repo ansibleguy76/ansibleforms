@@ -11,7 +11,7 @@ vi.mock("../src/models/db.model.js", () => ({ default: { do: async () => [] } })
 const { removedIn7 } = await import("../src/models/form.model.js");
 const Form = (await import("../src/models/form.model.js")).default;
 
-const form = (extra = {}, fields = []) => ({ name: "Upgrade firmware", type: "ansible", playbook: "p.yml", roles: ["public"], categories: [], fields, ...extra });
+const form = (extra = {}, fields = []) => ({ name: "Upgrade firmware", type: "ansible", playbook: "p.yml", roles: ["default"], categories: [], fields, ...extra });
 
 describe("what 7.0.0 removed is named, one line each", () => {
   test("a table field, tableFields, noOutput and disableRelaunch", () => {

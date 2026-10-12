@@ -1589,15 +1589,13 @@ export default {
         'Die Formularkonfiguration konnte nicht verarbeitet werden. Bitte beheben Sie den YAML-Syntaxfehler, bevor Sie Änderungen vornehmen.',
       configTemplated:
         'Diese Konfiguration verwendet ytt-Templating und kann hier nicht bearbeitet werden. Bearbeiten Sie stattdessen die Quellvorlage.',
-      publicRoleNote:
-        'Die Rolle default gilt automatisch für alle (public ist ihr alter Name); ihr können keine Gruppen und Benutzer zugewiesen werden.',
-      publicEveryone: 'Alle, automatisch',
+      defaultEveryone: 'Alle, automatisch',
       roleNoUsers: 'Diese Rolle hat noch keine Benutzer.',
       roleNoGroups: 'Diese Rolle hat noch keine Gruppen.',
       roleNotFound: "Es gibt keine Rolle namens '{name}'.",
       roleDescriptionPlaceholder: 'Wofür die Rolle ist, z. B. Startet die Netzwerkformulare',
       roleDescriptionAdmin: 'Voller Zugriff: alle Formulare, der Designer und die Einstellungen.',
-      roleDescriptionPublic: 'Jeder Benutzer, automatisch: was alle dürfen.',
+      roleDescriptionDefault: 'Jeder Benutzer, automatisch: was alle dürfen.',
       roleMemberFrom: 'Aus Gruppe',
       roleUsersAll: 'Alle',
       removeFromRole: 'Aus Rolle entfernen',

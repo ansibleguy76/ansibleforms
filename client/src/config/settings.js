@@ -430,7 +430,7 @@ export default function getSettings(t) {
           sortValue: (row) => (row.group_ids || []).length,
           render: (v) => String((v || []).length),
         },
-        // how many roles the user has, public included (the server counts them, lib/roleCounts.js)
+        // how many roles the user has, default included (the server counts them, lib/roleCounts.js)
         {
           key: 'role_count',
           label: t('settings.settingsPage.roles'),

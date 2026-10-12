@@ -2,6 +2,7 @@
 // one of the user's own roles sets wins over it, in either direction. `public` is its name before 7
 // and stays an alias for good : forms in git repositories, tokens and planned jobs carry it. There
 // is no anonymous access ; nobody gets this role without signing in.
+import yaml from "yaml";
 import logger from "./logger.js";
 
 export const DEFAULT_ROLE = "default";
@@ -54,4 +55,34 @@ export function assertOneEveryoneRole(roles) {
   }
 }
 
-export default { DEFAULT_ROLE, LEGACY_DEFAULT_ROLE, EVERYONE_ROLES, isEveryoneRole, everyoneEntry, everyoneName, assertOneEveryoneRole };
+/**
+ * A config's `public` role renamed `default`, in its text : only the role's name changes, its
+ * comments and the rest stay as written. Nothing to do (no `public` role, or a `default` one
+ * already - assertOneEveryoneRole refuses that) gives null.
+ *
+ * Args:
+ *   text (string): the config's YAML.
+ *
+ * Returns:
+ *   string|null: the config with the role renamed, or null when there is nothing to rename.
+ */
+export function renameLegacyRole(text) {
+  // most configs : no `public` anywhere, nothing to parse
+  if (!/\bpublic\b/.test(String(text || ""))) return null;
+  const doc = yaml.parseDocument(String(text));
+  if (doc.errors.length) return null;
+  const roles = doc.get("roles", true);
+  if (!yaml.isSeq(roles)) return null;
+  const nameOf = (item) => (yaml.isMap(item) ? String(item.get("name") ?? "").trim() : "");
+  if (roles.items.some((item) => nameOf(item) === DEFAULT_ROLE)) return null;
+  const legacy = roles.items.find((item) => nameOf(item) === LEGACY_DEFAULT_ROLE);
+  if (!legacy) return null;
+  // the name's own characters replaced in the text : a rewrite of the document would reformat
+  // the rest (a flow list [a] becomes [ a ])
+  const node = legacy.get("name", true);
+  if (!yaml.isScalar(node) || !node.range) return null;
+  const [start, end] = node.range;
+  return `${text.slice(0, start)}${DEFAULT_ROLE}${text.slice(end)}`;
+}
+
+export default { DEFAULT_ROLE, LEGACY_DEFAULT_ROLE, EVERYONE_ROLES, isEveryoneRole, everyoneEntry, everyoneName, assertOneEveryoneRole, renameLegacyRole };

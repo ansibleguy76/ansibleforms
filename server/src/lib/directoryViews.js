@@ -2,7 +2,7 @@
 // ones : the users seen at sign-in (models/directoryUser.model.js) and those the config's roles
 // name but who never signed in, the groups seen at a sign-in or named by a role. Each row with
 // its counts : its roles by the login's rule (User.getRolesAndOptions - by name, through a
-// group, public always), on the groups seen at its last sign-in.
+// group, default always), on the groups seen at its last sign-in.
 import { everyoneName } from "./defaultRole.js";
 import { DIRECTORY_TYPES } from './directoryTypes.js';
 

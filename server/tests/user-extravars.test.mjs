@@ -37,7 +37,7 @@ const USER = {
   email: "jane.doe@example.com",
   type: "ldap",
   groups: ["ldap/AF_Admins", "ldap/AZ_Everyone", "ldap/IT Services Community Hub"],
-  roles: ["admin", "public"],
+  roles: ["admin", "default"],
   options: { showDebugButtons: true, allowVerboseMode: true },
 };
 

@@ -6,13 +6,13 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createHandlers, registerTools } from "../src/mcp/tools.js";
 
-const user = { username: "bob", type: "local", roles: ["public"], options: {} };
+const user = { username: "bob", type: "local", roles: ["default"], options: {} };
 
 const volumeForm = {
   name: "Create volume",
   type: "ansible",
   playbook: "volume.yml",
-  roles: ["public"],
+  roles: ["default"],
   fields: [
     { name: "cluster", type: "enum", values: ["c1", "c2"], default: "__auto__", required: true },
     { name: "name", type: "text", required: true, model: "volume.name" },
@@ -76,7 +76,7 @@ describe("MCP tools", () => {
   test("list_forms asks Form.load with the user's roles", async () => {
     const client = await connect();
     const r = await call(client, "list_forms");
-    expect(deps.Form.load).toHaveBeenCalledWith(["public"]);
+    expect(deps.Form.load).toHaveBeenCalledWith(["default"]);
     // not flagged for the chat : enableForChat false
     expect(r.data.forms).toEqual([{ name: "Create volume", description: "Makes a volume", categories: ["Storage"], enableForChat: false }]);
   });
@@ -254,7 +254,7 @@ describe("MCP tools", () => {
       name: "Create vms",
       type: "ansible",
       playbook: "vms.yml",
-      roles: ["public"],
+      roles: ["default"],
       subforms: [
         { name: "vm", type: "subform", fields: [
           { name: "host", type: "text", required: true, regex: { expression: "^web", description: "web hosts only" } },
@@ -289,7 +289,7 @@ describe("MCP tools", () => {
 
     test("a yaml field with a subform takes a plain object and models it", async () => {
       deps.Form.load = vi.fn(async () => ({ constants: {}, errors: [], warnings: [], forms: [{
-        name: "Web", type: "ansible", playbook: "web.yml", roles: ["public"],
+        name: "Web", type: "ansible", playbook: "web.yml", roles: ["default"],
         subforms: [{ name: "cfg", type: "subform", fields: [
           { name: "port", type: "number", required: true, maxValue: 9000, model: "listen.port" },
           { name: "host", type: "text", required: true },
@@ -319,7 +319,7 @@ describe("MCP tools", () => {
       name: "Create host",
       type: "ansible",
       playbook: "host.yml",
-      roles: ["public"],
+      roles: ["default"],
       fields: [
         { name: "host", type: "text", required: true, regex: { expression: "^prod-", description: "Must start with prod-" } },
         { name: "pw", type: "password", label: "Password" },

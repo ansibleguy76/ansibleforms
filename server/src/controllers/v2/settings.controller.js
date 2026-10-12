@@ -202,7 +202,7 @@ const saveConfig = async function(req, res) {
         roles: parsed?.roles || [],
         constants: parsed?.constants || {}
       });
-      // a save must keep the admin and public roles (the load does not check it, so an
+      // a save must keep the admin and default roles (the load does not check it, so an
       // install that lost one still starts)
       Form.assertRequiredRoles({ roles: parsed?.roles });
     } catch(err) {

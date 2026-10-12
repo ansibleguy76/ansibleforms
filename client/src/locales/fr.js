@@ -1583,15 +1583,13 @@ export default {
         "Échec de l'analyse de la configuration des formulaires. Veuillez corriger l'erreur de syntaxe YAML avant d'effectuer des modifications.",
       configTemplated:
         'Cette configuration utilise le templating ytt et ne peut pas être modifiée ici. Modifiez plutôt le modèle source.',
-      publicRoleNote:
-        "Le rôle default s'applique automatiquement à tous (public est son ancien nom) ; on ne peut pas lui attribuer de groupes ni d'utilisateurs.",
-      publicEveryone: 'Tout le monde, automatiquement',
+      defaultEveryone: 'Tout le monde, automatiquement',
       roleNoUsers: "Ce rôle n'a pas encore d'utilisateurs.",
       roleNoGroups: "Ce rôle n'a pas encore de groupes.",
       roleNotFound: "Il n'y a pas de rôle nommé '{name}'.",
       roleDescriptionPlaceholder: 'À quoi sert le rôle, p. ex. Lance les formulaires réseau',
       roleDescriptionAdmin: 'Accès complet : tous les formulaires, le designer et les paramètres.',
-      roleDescriptionPublic: 'Chaque utilisateur, automatiquement : ce que tous peuvent faire.',
+      roleDescriptionDefault: 'Chaque utilisateur, automatiquement : ce que tous peuvent faire.',
       roleMemberFrom: 'Du groupe',
       roleUsersAll: 'Tous',
       removeFromRole: 'Retirer du rôle',

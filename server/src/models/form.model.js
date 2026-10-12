@@ -1,5 +1,5 @@
 'use strict';
-import { assertOneEveryoneRole } from "../lib/defaultRole.js";
+import { assertOneEveryoneRole, renameLegacyRole } from "../lib/defaultRole.js";
 import appConfig from './../../config/app.config.js';
 import logger from "../lib/logger.js";
 import fs from "fs";
@@ -284,7 +284,42 @@ function copyFormsDirectoryTemplate(toDir) {
 }
 
 // the base config last parsed, by its text's hash (getBaseConfig)
-let baseConfigCache = { hash: null, config: null };
+let baseConfigCache = { hash: null, config: null, retryAt: undefined };
+
+// a refused rename was said already (saveRenamedRole)
+let renameRetried = false
+
+/**
+ * Writes back a config whose `public` role renameLegacyRole renamed `default` : to the database
+ * or the file it is read from (a repository's working tree too, the change then waits to be
+ * pushed). A ytt template is never rewritten : its output only is renamed. The designer's lock
+ * does not hold it back ; only a failed write (a repository busy pulling, a full disk) does, and
+ * the next load a minute later tries again.
+ *
+ * Args:
+ *   renamed (string): the config, its role renamed.
+ *
+ * Returns:
+ *   Promise<object>: { text (the config to use, renamed whether or not it could be written),
+ *   saved (false : the write was refused) }.
+ */
+async function saveRenamedRole(renamed) {
+  if (appConfig.useYtt && !Settings.resolveConfigInDatabase(await Settings.findFormsYaml())) {
+    logger.warning("Role 'public' is renamed 'default' in the config loaded : rename it in the ytt template too")
+    return { text: renamed, saved: true }
+  }
+  try {
+    await Settings.saveActiveConfig(renamed, { ignoreDesignerLock: true })
+    logger.notice("Role 'public' renamed 'default' in the config ('public' is its name before 7)")
+    return { text: renamed, saved: true }
+  } catch (e) {
+    // said once, then quietly : until the write goes through, every minute tries again
+    const log = renameRetried ? logger.debug : logger.warning
+    renameRetried = true
+    log.call(logger, `Role 'public' could not be renamed 'default' in the config yet, tried again in a minute : ${e.message}`)
+    return { text: renamed, saved: false }
+  }
+}
 
 async function getBaseConfig() {
   var rawdata=''
@@ -340,10 +375,20 @@ async function getBaseConfig() {
   // config is read on every Form.load and every role check
   try{
     const hash = crypto.createHash("sha256").update(String(rawdata)).digest("hex")
-    if (baseConfigCache.hash === hash) return structuredClone(baseConfigCache.config)
+    if (baseConfigCache.hash === hash && !(baseConfigCache.retryAt <= Date.now())) return structuredClone(baseConfigCache.config)
+    // a config from before 7 names the role every user has `public` : renamed `default`, and
+    // written back where it came from - once per text, the cache below keeps the result ; a
+    // refused write is tried again a minute later
+    let retryAt
+    const renamed = renameLegacyRole(rawdata)
+    if (renamed !== null) {
+      const result = await saveRenamedRole(renamed)
+      rawdata = result.text
+      if (!result.saved) retryAt = Date.now() + 60000
+    }
     const config = yaml.parse(rawdata)
     logger.debug("Base config loaded and is valid YAML")
-    baseConfigCache = { hash, config: structuredClone(config) }
+    baseConfigCache = { hash, config: structuredClone(config), retryAt }
     return config;
   }catch(err){
     logger.error("Error",err)
@@ -738,7 +783,7 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
       //
       // It used to be claimed after, which made the two ways through this loop disagree.
       // With two files defining `Deploy`, the first restricted to `ops` and the second to
-      // `public`, a public user got: the LIST path skipped copy 1 without registering the
+      // `default`, any user got: the LIST path skipped copy 1 without registering the
       // name, so copy 2 passed the duplicate check and the tile appeared; the SINGLE-form
       // path hit copy 1 first and threw AccessDenied, so copy 2 was never reached. The
       // form was listed and then failed to open. Claiming the name first makes both paths
@@ -917,9 +962,9 @@ function assertNoDuplicateRoles(obj){
 }
 
 /**
- * Refuse a config that has lost the admin or the public role.
+ * Refuse a config that has lost the admin or the default role.
  *
- * The server derives admin rights from the role NAMED admin, and the schema requires a public
+ * The server derives admin rights from the role NAMED admin, and the schema requires a default
  * role : a save without one of them locks every administrator out, or breaks every config load.
  * The roles page greys them out, but the config can be written from the designer, the API or a
  * hand-edited YAML posted to the settings - so the save refuses it, whoever sends it.

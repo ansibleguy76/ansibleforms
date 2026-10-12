@@ -158,7 +158,7 @@ describe('the form itself, edited in place', () => {
   test('its categories and roles : strings kept as written, none in Default', () => {
     const doc = parse('name: X\ntype: ansible\nroles:\n  - "admin" # admins\ncategories:\n  - Demo\n');
     expect(formList(doc, 'roles')).toEqual(['admin']);
-    setFormList(doc, 'roles', ['admin', 'public']);
+    setFormList(doc, 'roles', ['admin', 'default']);
     expect(doc.toString()).toContain('- "admin" # admins');
     setFormList(doc, 'categories', []);
     expect(doc.toString()).not.toContain('categories');

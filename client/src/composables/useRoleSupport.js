@@ -80,7 +80,7 @@ export function useRoleSupport(roles, save) {
    *   object[]: { username, group }, sorted by username.
    */
   function usersThroughGroups(role) {
-    if (!role || role._public) return [];
+    if (!role || role._default) return [];
     const names = new Set(role.groups.filter((g) => g.provider === 'local').map((g) => g.name));
     const nameOf = new Map(groupIds.value);
     // a user in several of the role's groups : once, its groups together
@@ -99,15 +99,15 @@ export function useRoleSupport(roles, save) {
   // ─── the flags stamped as loaded ─────────────────────────────────────────────
   /**
    * Stamps each role's flags from its name as loaded. Must run after every load and every
-   * successful save. _required / _public are read off these, never off the name being typed :
+   * successful save. _required / _default are read off these, never off the name being typed :
    * a live check disabled the name input the instant a custom name passed through 'admin' or
-   * 'public', which trapped the value there. They are internal : serializeRole rebuilds the
+   * 'default', which trapped the value there. They are internal : serializeRole rebuilds the
    * role from known keys, so they never reach the yaml.
    */
   function stampRoleFlags() {
     for (const role of roles.value) {
       role._required = RESERVED_ROLES.includes(role.name);
-      role._public = EVERYONE_ROLES.includes(role.name);
+      role._default = EVERYONE_ROLES.includes(role.name);
       // the name the list is sorted on : the one loaded, so a role does not move while renamed
       role._sortName = role.name || '';
     }
@@ -118,7 +118,7 @@ export function useRoleSupport(roles, save) {
    * The first reason the roles cannot be saved, or null. The schema only requires `name` to be
    * a string, so an empty, duplicated or reserved name is refused here. Only 'admin' is
    * protected : the server treats the role NAME as a privilege bypass (roles.includes("admin")
-   * in middleware.js and job.model.js). 'public' is not, so a config that lost its public role
+   * in middleware.js and job.model.js). 'default' is not, so a config that lost its default role
    * can be repaired.
    *
    * Returns:

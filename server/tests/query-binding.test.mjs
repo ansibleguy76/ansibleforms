@@ -54,7 +54,7 @@ const call = async (body, user, query = {}) => {
   return res;
 };
 
-const plainUser = { username: "bob", type: "local", roles: ["public"], options: {} };
+const plainUser = { username: "bob", type: "local", roles: ["default"], options: {} };
 const settingsUser = { username: "root", type: "local", roles: ["admin"], options: { showSettings: true } };
 
 beforeEach(() => {
@@ -97,7 +97,7 @@ describe("a form-bound query comes from the definition, not the body", () => {
 
   test("the form is loaded with the CALLER's roles", async () => {
     await call({ formName: "Servers", fieldName: "host", values: {} }, plainUser);
-    assert.deepEqual(formLoadArgs.roles, ["public"], "a form they may not see must be unreachable");
+    assert.deepEqual(formLoadArgs.roles, ["default"], "a form they may not see must be unreachable");
     assert.equal(formLoadArgs.name, "Servers");
   });
 

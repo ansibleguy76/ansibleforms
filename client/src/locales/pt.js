@@ -1576,15 +1576,13 @@ export default {
         'Falha ao analisar a configuração dos formulários. Corrija o erro de sintaxe YAML antes de fazer alterações.',
       configTemplated:
         'Esta configuração usa templates ytt e não pode ser editada aqui. Edite antes o template de origem.',
-      publicRoleNote:
-        'A função default aplica-se automaticamente a todos (public é o seu nome antigo); não lhe podem ser atribuídos grupos nem utilizadores.',
-      publicEveryone: 'Todos, automaticamente',
+      defaultEveryone: 'Todos, automaticamente',
       roleNoUsers: 'Esta função ainda não tem utilizadores.',
       roleNoGroups: 'Esta função ainda não tem grupos.',
       roleNotFound: "Não existe nenhuma função chamada '{name}'.",
       roleDescriptionPlaceholder: 'Para que serve a função, p. ex. Lança os formulários de rede',
       roleDescriptionAdmin: 'Acesso total: todos os formulários, o designer e as definições.',
-      roleDescriptionPublic: 'Cada utilizador, automaticamente: o que todos podem fazer.',
+      roleDescriptionDefault: 'Cada utilizador, automaticamente: o que todos podem fazer.',
       roleMemberFrom: 'Do grupo',
       roleUsersAll: 'Todos',
       removeFromRole: 'Remover da função',

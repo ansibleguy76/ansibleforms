@@ -122,8 +122,8 @@ describe("a duplicated role name is never silently collapsed", () => {
     // the escalation: a second `- name: admin` grants admin to a different group,
     // while a Map keyed on name can only ever describe one of the two entries
     const d = diffRoles(
-      [role("public", {}), role("admin", {}, ["local/admins"])],
-      [role("public", {}), role("admin", {}, ["local/ops"]), role("admin", {}, ["local/admins"])]
+      [role("default", {}), role("admin", {}, ["local/admins"])],
+      [role("default", {}), role("admin", {}, ["local/ops"]), role("admin", {}, ["local/admins"])]
     );
     assert.deepEqual(d.duplicated, ["admin"]);
   });
@@ -144,7 +144,7 @@ describe("validateConfig rejects a duplicate role name (the escalation itself)",
     const cfg = (roles) => ({ categories: [{ name: "Default", icon: "bars" }], roles, constants: {} });
     assert.throws(
       () => Form.validateConfig(cfg([
-        { name: "public", groups: [] },
+        { name: "default", groups: [] },
         { name: "admin", groups: ["local/ops"] },
         { name: "admin", groups: ["local/admins"] },
       ])),
@@ -152,7 +152,7 @@ describe("validateConfig rejects a duplicate role name (the escalation itself)",
     );
     // and a legitimate config still passes
     assert.doesNotThrow(() => Form.validateConfig(cfg([
-      { name: "public", groups: [] },
+      { name: "default", groups: [] },
       { name: "admin", groups: ["local/admins"] },
       { name: "ops", groups: ["local/ops"] },
     ])));
@@ -181,7 +181,7 @@ describe("both validators reject duplicate role names", () => {
     // the schema requires this exact category to be present
     categories: [{ name: "Default", icon: "bars" }],
     constants: {},
-    roles: [{ name: "admin", groups: ["local/admins"] }, { name: "public", groups: [] }],
+    roles: [{ name: "admin", groups: ["local/admins"] }, { name: "default", groups: [] }],
   });
   const dup = () => {
     const c = base();
@@ -208,22 +208,22 @@ describe("both validators reject duplicate role names", () => {
   });
 });
 
-// The admin and public roles cannot be deleted : the server derives admin rights from the role
-// NAMED admin, and the schema requires public. The roles page greys them out, but the config
+// The admin and default roles cannot be deleted : the server derives admin rights from the role
+// NAMED admin, and the schema requires default. The roles page greys them out, but the config
 // can be written from the designer, the API or a posted YAML, so the SAVES refuse it. The LOAD
 // does not, so an install whose config already lacks one keeps starting and can be repaired.
-describe("the admin and public roles are kept by every save", () => {
+describe("the admin and default roles are kept by every save", () => {
   const config = (names) => ({
     categories: [{ name: "Default", icon: "bars" }],
     constants: {},
-    roles: names.map((name) => ({ name, groups: name === "public" ? [] : ["local/admins"] })),
+    roles: names.map((name) => ({ name, groups: name === "default" ? [] : ["local/admins"] })),
   });
 
   test("assertRequiredRoles refuses a config without admin, or without default (public its old name)", async () => {
     const Form = (await import("../src/models/form.model.js")).default;
-    assert.throws(() => Form.assertRequiredRoles(config(["public", "ops"])), /admin cannot be deleted/);
+    assert.throws(() => Form.assertRequiredRoles(config(["default", "ops"])), /admin cannot be deleted/);
     assert.throws(() => Form.assertRequiredRoles(config(["admin", "ops"])), /default cannot be deleted/);
-    assert.doesNotThrow(() => Form.assertRequiredRoles(config(["admin", "public", "ops"])));
+    assert.doesNotThrow(() => Form.assertRequiredRoles(config(["admin", "default", "ops"])));
   });
 
   test("a save that sends no roles at all is not refused for them", async () => {
@@ -233,11 +233,11 @@ describe("the admin and public roles are kept by every save", () => {
 
   test("the designer's save (Form.validate) refuses it", async () => {
     const Form = (await import("../src/models/form.model.js")).default;
-    assert.throws(() => Form.validate({ ...config(["public"]), forms: [] }), /admin cannot be deleted/);
+    assert.throws(() => Form.validate({ ...config(["default"]), forms: [] }), /admin cannot be deleted/);
   });
 
   test("the load (Form.validateConfig) still accepts a config without admin", async () => {
     const Form = (await import("../src/models/form.model.js")).default;
-    assert.doesNotThrow(() => Form.validateConfig(config(["public", "ops"])));
+    assert.doesNotThrow(() => Form.validateConfig(config(["default", "ops"])));
   });
 });
