@@ -1659,6 +1659,11 @@ export default {
     notLockedHint: 'Schakel de vergrendeling rechtsboven in om te beginnen met bewerken',
     inUseBy: 'De designer wordt gebruikt door {user}',
     inUseByHint: 'Je kunt bewerken zodra {user} de designer ontgrendelt',
+    release: 'Vrijgeven',
+    releaseTitle: 'Designer-vergrendeling vrijgeven',
+    releaseAdminOnly: 'Dit is een functie alleen voor beheerders.',
+    releaseConfirm:
+      'De vergrendeling van {user} vrijgeven? Wijzigingen die {user} niet heeft opgeslagen gaan verloren.',
     fileExplorer: 'Bestandsverkenner',
     search: 'Zoeken',
     previewForm: 'Formulier bekijken',

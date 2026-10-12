@@ -13,11 +13,12 @@ vi.mock("../src/models/lock.model.js", () => ({
 
 const { default: lockController } = await import("../src/controllers/v2/lock.controller.js");
 
-/** Runs the release endpoint as alice and returns the status code it answered. */
-async function release() {
+/** Runs the release endpoint as alice (an admin when roles say so) and returns the status code. */
+async function release({ force = false, roles = [] } = {}) {
   let code = 200;
   const res = { json: () => res, status: (c) => ((code = c), res) };
-  await lockController.delete({ user: { user: { username: "alice", type: "local" } }, headers: {} }, res);
+  const req = { user: { user: { username: "alice", type: "local", roles } }, headers: {}, query: force ? { force: "true" } : {} };
+  await lockController.delete(req, res);
   return code;
 }
 
@@ -36,7 +37,19 @@ describe("releasing the designer lock", () => {
   test("releases the holder's own lock, only while it is theirs", async () => {
     status.mockResolvedValue({ lock: { username: "alice", type: "local" }, match: true, free: false });
     expect(await release()).toBe(200);
-    expect(del).toHaveBeenCalledWith({ username: "alice", type: "local" }, { onlyMine: true });
+    expect(del).toHaveBeenCalledWith({ username: "alice", type: "local", roles: [] }, { onlyMine: true });
+  });
+
+  test("an admin releases somebody else's lock", async () => {
+    status.mockResolvedValue({ lock: { username: "bsmith", type: "ldap" }, match: false, free: false });
+    expect(await release({ force: true, roles: ["admin"] })).toBe(200);
+    expect(del).toHaveBeenCalledWith({ username: "alice", type: "local", roles: ["admin"] });
+  });
+
+  test("only an admin forces it", async () => {
+    status.mockResolvedValue({ lock: { username: "bsmith", type: "ldap" }, match: false, free: false });
+    expect(await release({ force: true, roles: ["designers"] })).toBe(403);
+    expect(del).not.toHaveBeenCalled();
   });
 
   test("answers a free lock as released", async () => {

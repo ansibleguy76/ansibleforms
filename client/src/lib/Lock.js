@@ -32,6 +32,15 @@ const Lock = {
       throw new Error(`Lock release failed: ${extractError(err)}`, { cause: err });
     }
   },
+  // an admin releases somebody else's lock (the server refuses anyone else)
+  async forceRelease() {
+    try {
+      const res = await axios.delete(`/api/v2/lock`, { params: { force: true } });
+      return res.data;
+    } catch (err) {
+      throw new Error(`Lock release failed: ${extractError(err)}`, { cause: err });
+    }
+  },
 };
 
 export default Lock;

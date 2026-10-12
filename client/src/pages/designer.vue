@@ -7,6 +7,7 @@ import getSettings from '@/config/settings';
 import { EXPLORER_WIDTH, explorerWidthAfterDrag, explorerFolded, explorerColumns } from '@/config/fileExplorer';
 import Lock from '@/lib/Lock';
 import { useAppStore } from '@/stores/app';
+import { useLiveEvent } from '@/composables/useLiveEvent';
 import Backup from '@/lib/Backup';
 import Profile from '@/lib/Profile';
 import YAML from 'yaml';
@@ -2235,7 +2236,19 @@ async function loadForms() {
 
 async function loadLock() {
   try {
+    const before = lock.value;
     lock.value = await Lock.get();
+    // ours a moment ago, free now : it was left behind (the computer asleep past
+    // LOCK_STALE_SECONDS, server/src/models/lock.model.js) and nobody took it - taken back, so
+    // the edits open here go on ; somebody else's by now shows who
+    if (before?.match && lock.value?.free) {
+      try {
+        await Lock.set();
+        lock.value = await Lock.get();
+      } catch {
+        // taken meanwhile : the next read shows who
+      }
+    }
     lockError.value = '';
     // the header's Designer link shows the lock too : keep it in step with this poll
     store.designerLock = lock.value;
@@ -2278,11 +2291,11 @@ function selectTab(name) {
   currentTab.value = name;
 }
 
-// the page title : the open view's name and icon once the designer is started ; before that,
-// the designer alone, as the header names it (the section, so the title is not Designer ›
+// the page title : the open view's name and icon once the designer is started (the lock ours) ;
+// before that, or while somebody else holds it, the designer alone, as the header names it (the section, so the title is not Designer ›
 // Designer)
 const pageTitle = computed(() => {
-  if (!lock.value || lock.value.free) return { title: t('nav.designer'), icon: 'pen-to-square' };
+  if (!lock.value?.match) return { title: t('nav.designer'), icon: 'pen-to-square' };
   const tab = tabs.find((x) => x.name === currentTab.value);
   return tab ? { title: tab.label(), icon: tab.icon } : { title: t('nav.designer'), icon: 'pen-to-square' };
 });
@@ -2291,7 +2304,7 @@ const pageTitle = computed(() => {
 // form in the forms view, the editor - Designer › Forms › Approval demo › Preview (the section
 // first, AppSettings)
 const titleCrumbs = computed(() => {
-  if (!lock.value || lock.value.free) return [];
+  if (!lock.value?.match) return [];
   const tab = tabs.find((x) => x.name === currentTab.value);
   if (!tab) return [];
   const formName = currentTab.value === 'Forms' ? currentFormName.value : '';
@@ -2310,14 +2323,15 @@ const titleCrumbs = computed(() => {
 // the line under the title describes the open view once the designer is started, and
 // what the designer is for until then
 const tabDescription = computed(() => {
-  if (!lock.value || lock.value.free) return t('designer.offDescription');
+  if (!lock.value?.match) return t('designer.offDescription');
   return tabs.find((tab) => tab.name === currentTab.value)?.description() || '';
 });
 
 // the left menu : one entry per view ; until the designer is started (locked) the entries
 // are shown greyed out, so it is clear what the designer holds but nothing can be opened
 const sidebarSections = computed(() => {
-  const started = !!lock.value && !lock.value.free;
+  // started : the lock is ours ; free or somebody else's, the sections are greyed out
+  const started = !!lock.value?.match;
   return [
     {
       title: '',
@@ -2942,6 +2956,29 @@ function assembleForms() {
 function resetAction() {
   action.value = null;
   nextAction.value = false; // clear any pending callback so a later flow can't fire a stale one
+}
+
+// somebody took or released the lock (here, in another tab, on another node) : shown at once
+useLiveEvent('designer', () => {
+  if (!busy.value) loadLock();
+});
+
+/**
+ * Releases somebody else's lock, as an admin, once confirmed : for a lock its holder cannot
+ * release any more (gone, or away) ; their unsaved changes are lost.
+ */
+function forceRelease() {
+  action.value = 'forceRelease';
+  nextAction.value = async (proceed) => {
+    resetAction();
+    if (!proceed) return;
+    try {
+      await Lock.forceRelease();
+    } catch (err) {
+      toast.error(err.message);
+    }
+    await loadLock();
+  };
 }
 
 async function setLock(proceed = true) {
@@ -3601,12 +3638,15 @@ onMounted(async () => {
   // rest of the SPA session, accumulated one per visit, popped its error toasts on
   // unrelated pages, and pinned the component and its buffers in memory.
   if (unmounted.value) return;
+  // the lock's changes come live (useLiveEvent below) ; this read is the holder's heartbeat :
+  // the server keeps a lock seen at least every LOCK_STALE_SECONDS (5 min), and a browser
+  // tab in the background still runs it once a minute
   lockInterval.value = setInterval(async () => {
     // skip the poll while a push/load is in flight : a lock refresh that races
     // a sync can pull the rug out from under the in-flight operation
     if (busy.value) return;
     await loadLock();
-  }, 5000);
+  }, 30000);
 });
 
 onBeforeUnmount(() => {
@@ -3774,6 +3814,21 @@ onBeforeUnmount(() => {
         <template #footer>
           <BsButton icon="cloud-arrow-down" @click="pullAndReload(loadRepo)">{{ t('designer.loadFromRepo') }}</BsButton>
           <BsButton icon="cloud-arrow-down" @click="pullAndReload()">{{ t('designer.loadAll') }}</BsButton>
+        </template>
+      </BsModal>
+
+      <!-- Modal - an admin releases somebody else's lock -->
+      <BsModal v-if="action == 'forceRelease'" @close="resetAction()" icon="unlock" :footerClose="false">
+        <template #title>{{ t('designer.releaseTitle') }}</template>
+        <template #default>
+          <p class="mt-3 fs-6">
+            {{ t('designer.releaseAdminOnly') }}<br /><br />
+            {{ t('designer.releaseConfirm', { user: lock?.lock?.username }) }}
+          </p>
+        </template>
+        <template #footer>
+          <BsButton icon="check" colorClass="danger" @click="nextAction(true)">{{ t('common.yes') }}</BsButton>
+          <BsButton icon="times" @click="resetAction()">{{ t('common.no') }}</BsButton>
         </template>
       </BsModal>
 
@@ -4650,7 +4705,7 @@ onBeforeUnmount(() => {
       >
         <!-- the item's views, on top of its card, once the designer runs : its YAML ; the categories
              and constants as tables (Visual) ; a form's preview -->
-        <template v-if="lock && !lock.free && loaded" #tabs>
+        <template v-if="lock && lock.match && loaded" #tabs>
           <ul class="nav nav-tabs mb-0 designer-tabs">
             <li class="nav-item">
               <a class="nav-link" :class="{ active: editorView === 'yaml' }" href="#" @click.prevent="showView('yaml')">
@@ -4705,11 +4760,11 @@ onBeforeUnmount(() => {
         <template #headerActions>
           <template v-if="lock">
             <popper v-if="lock.lock && !lock.match">
-              <!-- someone else's : the switch greyed out and disabled, the lock is theirs until they
+              <!-- someone else's : the switch on and disabled, the lock is theirs until they
                    turn the designer off -->
               <div class="form-check form-switch d-inline-flex align-items-center ms-3 mb-0 designer-switch-other">
                 <input class="form-check-input" type="checkbox" :checked="true" disabled />
-                <label class="form-check-label text-body-secondary" style="margin-left: 0.75rem">
+                <label class="form-check-label" style="margin-left: 0.75rem">
                   <font-awesome-icon icon="lock" size="sm" class="me-1" />{{
                     t('designer.lockedByUser', { user: lock.lock.username })
                   }}
@@ -4721,6 +4776,15 @@ onBeforeUnmount(() => {
                 {{ t('designer.created') }}: {{ lockAge }}
               </template>
             </popper>
+            <!-- an admin releases somebody else's lock (one its holder cannot release any more) -->
+            <BsButton
+              v-if="lock.lock && !lock.match && store.isAdmin"
+              icon="unlock"
+              cssClass="designer-release"
+              colorClass="danger"
+              @click="forceRelease()"
+              >{{ t('designer.release') }}</BsButton
+            >
             <div v-else class="form-check form-switch d-inline-flex align-items-center ms-3 mb-0">
               <input
                 class="form-check-input"
@@ -5206,11 +5270,18 @@ onBeforeUnmount(() => {
 .designer-editor {
   min-width: 0;
 }
-/* someone else holds the lock : the switch greyed out */
-.designer-switch-other .form-check-input:checked {
-  background-color: var(--bs-secondary-bg);
-  border-color: var(--bs-border-color);
-  filter: grayscale(1);
+/* someone else holds the lock : the switch on and disabled (Bootstrap's faded blue), its label
+   (the lock, who holds it) in the normal text colour, as Start designer - Bootstrap fades a
+   disabled switch's label too */
+/* the admin's Release stands a little apart from whose lock it is : more than the title
+   controls' gap, which otherwise zeroes a control's margin (bootstrap-override.scss) */
+.af-title-controls > .designer-release {
+  /* with the 8px gap, 14px from the lock's label */
+  margin-left: 6px !important;
+}
+.designer-switch-other .form-check-input:disabled ~ .form-check-label {
+  opacity: 1;
+  cursor: default;
 }
 .designer-resize {
   cursor: col-resize;
