@@ -31,6 +31,9 @@ export const DESIGNER_ACTIONS = {
   diff: { icon: 'right-left', title: 'designer.diff' },
   // its content : a row added, the rows edited ; a form's own
   add: { icon: 'plus', title: 'designer.add' },
+  // a variable added to the vars file open (its Visual tab) : apart from add, which in the
+  // inventories is a new inventory
+  addVar: { icon: 'square-plus', title: 'designer.files.addKey' },
   edit: { icon: 'pencil', title: 'designer.edit' },
   formSettings: { icon: 'pencil', title: 'designer.formSettings' },
   icon: { icon: 'icons', title: 'designer.chooseIcon' },

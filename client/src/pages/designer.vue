@@ -3489,12 +3489,16 @@ const toolbarActions = computed(() => {
     const f = projectFiles.value;
     if (!f) return [];
     const none = f.busy || !f.selected;
+    const inventories = currentTab.value === 'Inventories';
     return [
+      // a new file ; in the inventories a new inventory (a repository), as the explorer's, on the +
+      { key: 'newFile', run: () => f.newFile(), show: !inventories, disabled: f.busy },
       {
-        key: 'newFile',
+        key: 'add',
         run: () => f.newFile(),
+        show: inventories,
         disabled: f.busy,
-        title: currentTab.value === 'Inventories' ? t('designer.files.newInventory') : undefined,
+        title: t('designer.files.newInventory'),
       },
       {
         key: 'save',
@@ -3511,11 +3515,10 @@ const toolbarActions = computed(() => {
       },
       ...textActions(none, none || !f.dirty),
       {
-        key: 'add',
+        key: 'addVar',
         run: () => f.addVar(),
         show: visual && f.canAddVar,
         disabled: f.busy || !(lock.value && lock.value.match),
-        title: t('designer.files.addKey'),
       },
       { key: 'reload', run: () => f.reload(), disabled: f.busy },
       { key: 'download', run: downloadYaml, disabled: none },
