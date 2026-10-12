@@ -2,7 +2,9 @@ import express from 'express';
 const router = express.Router();
 import projectFilesController from '../../controllers/v2/projectFiles.controller.js';
 
-// the designer's playbooks and vars files : :kind is 'playbooks' or 'vars'
+// the workflows' names (a workflow form's workflow), before /:kind/... takes the path
+router.get('/workflows/names', projectFilesController.workflowNames);
+// the designer's playbooks, vars files, inventories and workflows : :kind is one of them
 router.get('/:kind', projectFilesController.list);
 router.get('/:kind/file', projectFilesController.read);
 router.put('/:kind/file', projectFilesController.save);

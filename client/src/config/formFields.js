@@ -600,7 +600,8 @@ export function fieldTypeAllows(type, key) {
 
 // the form types (server/schema/form_schema.json, its top-level type) : template runs a job on a
 // template runner (AWX, AAP, Ascender, Semaphore, Rundeck, Jenkins) ; awx is its old name
-export const formTypes = ['ansible', 'template', 'awx', 'multistep', 'subform'];
+// workflow runs one of the designer's workflows (Designer > Workflows), as AWX runs a workflow job
+export const formTypes = ['ansible', 'template', 'awx', 'multistep', 'subform', 'workflow'];
 // the form types that run a template : the same form either way
 export const TEMPLATE_FORM_TYPES = ['template', 'awx'];
 // the runner types a template form may run on
@@ -613,6 +614,7 @@ export const TEMPLATE_RUNNER_TYPES = ['awx', 'semaphore', 'rundeck', 'jenkins'];
 // selected type allows, and drops the ones it forbids.
 export const forbiddenFormKeys = {
   ansible: [
+    'workflow',
     'template',
     'awx',
     'steps',
@@ -622,9 +624,18 @@ export const forbiddenFormKeys = {
     'instanceGroups',
     'expression',
   ],
-  template: ['playbook', 'playbookSubPath', 'ansibleCredentials', 'vaultCredentials', 'steps', 'expression'],
-  awx: ['playbook', 'playbookSubPath', 'ansibleCredentials', 'vaultCredentials', 'steps', 'expression'],
+  template: [
+    'workflow',
+    'playbook',
+    'playbookSubPath',
+    'ansibleCredentials',
+    'vaultCredentials',
+    'steps',
+    'expression',
+  ],
+  awx: ['workflow', 'playbook', 'playbookSubPath', 'ansibleCredentials', 'vaultCredentials', 'steps', 'expression'],
   multistep: [
+    'workflow',
     'playbook',
     'playbookSubPath',
     'runner',
@@ -645,6 +656,7 @@ export const forbiddenFormKeys = {
     'expression',
   ],
   subform: [
+    'workflow',
     'playbook',
     'playbookSubPath',
     'runner',
@@ -694,5 +706,27 @@ export const forbiddenFormKeys = {
     'overlayIconTextColor',
     'tileClass',
     'order',
+  ],
+  // a workflow : its nodes say what runs, where and with what
+  workflow: [
+    'playbook',
+    'playbookSubPath',
+    'runner',
+    'template',
+    'awx',
+    'steps',
+    'inventory',
+    'awxCredentials',
+    'ansibleCredentials',
+    'vaultCredentials',
+    'tags',
+    'check',
+    'limit',
+    'scm_branch',
+    'diff',
+    'key',
+    'executionEnvironment',
+    'instanceGroups',
+    'expression',
   ],
 };

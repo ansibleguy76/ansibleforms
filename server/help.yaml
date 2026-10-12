@@ -2095,6 +2095,25 @@
                 runner: jenkins-ci
                 roles:
                 - admin
+        - name: workflow
+          description: |
+            Runs one of the designer's workflows (Designer > Workflows), named with `workflow:`,
+            as AWX runs a workflow job : its nodes run by AWX's rules (on success, on failure,
+            always, all parents must converge), side by side when they can. A playbook node runs
+            on the RTE as a job of its own, with the node's inventory, credentials, limit and
+            tags ; an approval node holds the job for approval. The form's fields reach every
+            node as extra vars. The jobs page draws the workflow, live.
+          examples:
+          - name: Deploy through a workflow
+            code: |
+              - name: Deploy the app
+                type: workflow
+                workflow: deploy-app
+                roles:
+                - admin
+                fields:
+                - name: release
+                  type: text
         - name: awx
           description: |
             The old name of `template`, kept so existing forms run as they did : a form of type
@@ -2269,6 +2288,27 @@
               - name: __template__
                 type: text
                 default: Foobar # this will overwrite the template name            
+      - name: workflow
+        type: string
+        with_types: workflow
+        group: basic
+        allowed: the name of one of the designer's workflows
+        short: Workflow
+        version: 7.0.0
+        description: |
+          The workflow a form of type `workflow` runs : a workflow_job_templates entry of a file in
+          the designer's Workflows section (the local workflows folder, WORKFLOWS_PATH, or a
+          repository used for workflows), in the AWX export syntax. Two workflows of one name
+          stop the job : rename one of them.
+        examples:
+        - name: Run the deploy-app workflow
+          code: |
+            name: Deploy
+            type: workflow
+            workflow: deploy-app
+            roles:
+              - admin
+            fields: []
       - name: playbook
         type: string
         with_types: ansible

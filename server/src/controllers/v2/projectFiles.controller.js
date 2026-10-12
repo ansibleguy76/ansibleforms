@@ -5,6 +5,7 @@
 import RestResult from '../../models/restResult.model.v2.js';
 import ProjectFiles from '../../models/projectFiles.model.js';
 import Lock from '../../models/lock.model.js';
+import { listWorkflows } from '../../models/workflowRun.js';
 import Errors from '../../lib/errors.js';
 import i18n from '../../lib/i18n.js';
 
@@ -31,6 +32,14 @@ async function holdsLock(req, res) {
 }
 
 const projectFilesController = {
+  // the designer's workflows by name, each with its file : what a workflow form may run
+  async workflowNames(req, res) {
+    try {
+      res.json(RestResult.list(await listWorkflows()));
+    } catch (err) {
+      Errors.ReturnError(res, err);
+    }
+  },
   async list(req, res) {
     try {
       res.json(RestResult.single(await ProjectFiles.list(req.params.kind)));

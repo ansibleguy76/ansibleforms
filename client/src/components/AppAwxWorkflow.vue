@@ -307,11 +307,30 @@ const graph = computed(() => {
     });
   });
   const start = { x: MARGIN, y: height / 2 - START_H / 2 };
-  // build the link paths
-  const links = edges.map((e) => ({
-    type: e.type,
-    d: linkPath(pos[e.from].x + NODE_W, pos[e.from].y + NODE_H / 2, pos[e.to].x, pos[e.to].y + NODE_H / 2),
-  }));
+  // build the link paths : a link over the columns between its nodes arcs above them, higher the
+  // more it skips, so it never runs through a node and hides the links that end there (the
+  // graph moved down by the room the arcs take above the top row)
+  const arcTop = (e) => Math.min(pos[e.from].y, pos[e.to].y) - 16 - 10 * (depth[e.to] - depth[e.from] - 2);
+  const skipping = edges.filter((e) => depth[e.to] - depth[e.from] > 1);
+  const lift = Math.max(0, ...skipping.map((e) => MARGIN - arcTop(e)));
+  if (lift) {
+    Object.values(pos).forEach((p) => (p.y += lift));
+    start.y += lift;
+  }
+  const links = edges.map((e) => {
+    const x1 = pos[e.from].x + NODE_W;
+    const y1 = pos[e.from].y + NODE_H / 2;
+    const x2 = pos[e.to].x;
+    const y2 = pos[e.to].y + NODE_H / 2;
+    if (depth[e.to] - depth[e.from] <= 1) return { type: e.type, d: linkPath(x1, y1, x2, y2) };
+    const top = arcTop(e);
+    return {
+      type: e.type,
+      d:
+        `M ${x1} ${y1} C ${x1 + GAP_X * 0.6} ${y1}, ${x1 + GAP_X * 0.4} ${top}, ${x1 + GAP_X} ${top} ` +
+        `L ${x2 - GAP_X} ${top} C ${x2 - GAP_X * 0.4} ${top}, ${x2 - GAP_X * 0.6} ${y2}, ${x2} ${y2}`,
+    };
+  });
   roots.forEach((r) => {
     links.push({
       type: 'start',
@@ -322,7 +341,7 @@ const graph = computed(() => {
     nodes: nodes.map((n) => ({ ...n, ...pos[n.id] })),
     links,
     width,
-    height,
+    height: height + lift,
     start,
   };
 });
