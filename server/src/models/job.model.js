@@ -1045,7 +1045,8 @@ Job.getRawFormData = async function (user, id) {
  *     fields, and for a valid one RETURNS the extravars and credentials the server built
  *     from the validated values : Job.launch runs those, not the client's. Otherwise valid
  *     rawFormData next to arbitrary extravars would pass. Computed fields are the server's
- *     evaluation. A wizard form cannot be checked yet, so it is refused.
+ *     evaluation. A wizard form is checked step by step from the step drafts it sends
+ *     (lib/launchValidation.js validateWizardLaunch) ; a wizard launch without them is refused.
  *
  * A launch without rawFormData (a raw REST call leaving it out) cannot be
  * validated, and with enforcement on that is itself a refusal : otherwise leaving it out
@@ -1444,8 +1445,10 @@ function codedError(ErrorClass, message, code, details = {}) {
  *
  * Passwords are never stored and never reused, so a form with a password field anywhere -
  * its subforms included - cannot be relaunched this way : the data lost the password. The uploads of file fields are reused (verified
- * again). A wizard form cannot be relaunched this way yet, and neither can a job from
- * before raw form data was stored.
+ * again). A wizard form is relaunched without changes only : under launch validation
+ * 'enforce' it is checked step by step from the step drafts the job stored, and a wizard job
+ * that did not store them (launched before 7) is refused. Neither can a job from before raw
+ * form data was stored be relaunched with changes.
  *
  * @param {object} args
  * @param {boolean} [args.preview]  resolve and build only : { form, extravars (passwords
