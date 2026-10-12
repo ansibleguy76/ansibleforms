@@ -469,24 +469,26 @@ function startAt(i) {
             :title="t('common.close')"
             @click="selected = null"
           ></button>
-          <!-- a node -->
+          <!-- a node : its fields two by two, then its credentials (left) and what runs after it (right) -->
           <template v-if="node">
             <div class="af-wf-panel-title">
               <FaIcon :icon="TYPE_ICONS[node.type] || 'circle'" />{{ t('workflowEditor.node') }}
             </div>
-            <div class="row g-4">
-              <div class="col-lg-6">
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
                 <label class="form-label fw-bold">{{ t('workflowEditor.identifier') }}</label>
                 <input
-                  class="form-control mb-3"
+                  class="form-control"
                   :value="node.identifier"
                   :disabled="readOnly"
                   spellcheck="false"
                   @change="setNode('identifier', $event.target.value)"
                 />
+              </div>
+              <div class="col-md-6">
                 <label class="form-label fw-bold">{{ t('workflowEditor.runs') }}</label>
                 <select
-                  class="form-select mb-3"
+                  class="form-select"
                   :value="node.type"
                   :disabled="readOnly"
                   @change="setNode('type', $event.target.value)"
@@ -495,12 +497,14 @@ function startAt(i) {
                     {{ t(`workflowEditor.types.${type}`) }}
                   </option>
                 </select>
+              </div>
+              <div class="col-md-6">
                 <label class="form-label fw-bold">{{
                   t(`workflowEditor.runName.${node.type}`, t('workflowEditor.name'))
                 }}</label>
                 <select
                   v-if="runChoices"
-                  class="form-select mb-3"
+                  class="form-select"
                   :value="node.name"
                   :disabled="readOnly"
                   @change="setNode('name', $event.target.value)"
@@ -510,37 +514,157 @@ function startAt(i) {
                 </select>
                 <input
                   v-else
-                  class="form-control mb-3"
+                  class="form-control"
                   :value="node.name"
                   :disabled="readOnly"
                   @change="setNode('name', $event.target.value)"
                 />
-                <template v-if="node.type === 'workflow_approval_template'">
-                  <label class="form-label fw-bold">{{ t('workflowEditor.timeout') }}</label>
-                  <input
-                    class="form-control mb-1"
-                    type="number"
-                    min="0"
-                    :value="node.timeout"
+              </div>
+              <!-- an approval : how long it waits -->
+              <div v-if="node.type === 'workflow_approval_template'" class="col-md-6">
+                <label class="form-label fw-bold">{{ t('workflowEditor.timeout') }}</label>
+                <input
+                  class="form-control"
+                  type="number"
+                  min="0"
+                  :value="node.timeout"
+                  :disabled="readOnly"
+                  @change="setNode('timeout', $event.target.value)"
+                />
+                <div class="form-text">{{ t('workflowEditor.timeoutHint') }}</div>
+              </div>
+              <!-- a playbook's run : what it uses -->
+              <template v-if="node.type === 'job_template'">
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">{{ t('workflowEditor.inventory') }}</label>
+                  <select
+                    v-if="refs.inventories"
+                    class="form-select"
+                    :value="node.inventory"
                     :disabled="readOnly"
-                    @change="setNode('timeout', $event.target.value)"
-                  />
-                  <div class="form-text mb-3">{{ t('workflowEditor.timeoutHint') }}</div>
-                </template>
-                <div class="form-check form-switch mb-3">
+                    @change="setNode('inventory', $event.target.value)"
+                  >
+                    <option value="">{{ t('designer.visualNoInventory') }}</option>
+                    <option v-for="i in withCurrent(sorted(refs.inventories), node.inventory)" :key="i" :value="i">
+                      {{ i }}
+                    </option>
+                  </select>
                   <input
-                    :id="'converge-' + node.identifier"
+                    v-else
+                    class="form-control"
+                    :value="node.inventory"
+                    :disabled="readOnly"
+                    @change="setNode('inventory', $event.target.value)"
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">{{ t('workflowEditor.limit') }}</label>
+                  <input
+                    class="form-control"
+                    :value="node.limit"
+                    :disabled="readOnly"
+                    @change="setNode('limit', $event.target.value)"
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">{{ t('workflowEditor.jobTags') }}</label>
+                  <input
+                    class="form-control"
+                    :value="node.job_tags"
+                    :disabled="readOnly"
+                    @change="setNode('job_tags', $event.target.value)"
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">{{ t('workflowEditor.skipTags') }}</label>
+                  <input
+                    class="form-control"
+                    :value="node.skip_tags"
+                    :disabled="readOnly"
+                    @change="setNode('skip_tags', $event.target.value)"
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">{{ t('workflowEditor.verbosity') }}</label>
+                  <select
+                    class="form-select"
+                    :value="node.verbosity"
+                    :disabled="readOnly"
+                    @change="setNode('verbosity', $event.target.value)"
+                  >
+                    <option value="">0</option>
+                    <option v-for="v in [1, 2, 3, 4, 5]" :key="v" :value="String(v)">{{ v }}</option>
+                  </select>
+                </div>
+              </template>
+            </div>
+            <!-- the switches -->
+            <div class="d-flex flex-wrap gap-4 mb-3">
+              <div class="form-check form-switch">
+                <input
+                  :id="'converge-' + node.identifier"
+                  class="form-check-input"
+                  type="checkbox"
+                  :checked="node.converge"
+                  :disabled="readOnly"
+                  @change="setNode('converge', $event.target.checked)"
+                />
+                <label class="form-check-label" :for="'converge-' + node.identifier">{{
+                  t('workflowEditor.converge')
+                }}</label>
+              </div>
+              <template v-if="node.type === 'job_template'">
+                <div class="form-check form-switch">
+                  <input
+                    id="wf-check"
                     class="form-check-input"
                     type="checkbox"
-                    :checked="node.converge"
+                    :checked="node.job_type === 'check'"
                     :disabled="readOnly"
-                    @change="setNode('converge', $event.target.checked)"
+                    @change="setNode('job_type', $event.target.checked ? 'check' : '')"
                   />
-                  <label class="form-check-label" :for="'converge-' + node.identifier">{{
-                    t('workflowEditor.converge')
-                  }}</label>
+                  <label class="form-check-label" for="wf-check">{{ t('workflowEditor.check') }}</label>
                 </div>
-                <!-- what runs after it -->
+                <div class="form-check form-switch">
+                  <input
+                    id="wf-diff"
+                    class="form-check-input"
+                    type="checkbox"
+                    :checked="node.diff_mode === 'true'"
+                    :disabled="readOnly"
+                    @change="setNode('diff_mode', $event.target.checked)"
+                  />
+                  <label class="form-check-label" for="wf-diff">{{ t('workflowEditor.diff') }}</label>
+                </div>
+              </template>
+            </div>
+            <div class="row g-3">
+              <!-- a playbook's credentials : every one, none hidden -->
+              <div v-if="node.type === 'job_template'" class="col-md-6">
+                <label class="form-label fw-bold">{{ t('workflowEditor.credentials') }}</label>
+                <div v-if="!(refs.credentials || []).length && !node.credentials.length" class="text-muted small">
+                  {{ t('workflowEditor.noCredentials') }}
+                </div>
+                <div
+                  v-for="c in withCurrent(sorted(refs.credentials), null).concat(
+                    node.credentials.filter((x) => !(refs.credentials || []).includes(x)),
+                  )"
+                  :key="c"
+                  class="form-check"
+                >
+                  <input
+                    :id="'wf-cred-' + c"
+                    class="form-check-input"
+                    type="checkbox"
+                    :checked="node.credentials.includes(c)"
+                    :disabled="readOnly"
+                    @change="toggleCredential(c, $event.target.checked)"
+                  />
+                  <label class="form-check-label" :for="'wf-cred-' + c">{{ c }}</label>
+                </div>
+              </div>
+              <!-- what runs after it -->
+              <div class="col-md-6">
                 <label class="form-label fw-bold">{{ t('workflowEditor.next') }}</label>
                 <div v-for="kind in LINK_KINDS" :key="kind">
                   <div v-for="to in node[kind]" :key="kind + to" class="af-wf-out">
@@ -581,125 +705,12 @@ function startAt(i) {
                       >{{ t(`workflowEditor.addAfter.${kind}`) }}</BsButton
                     >
                   </div>
-                  <div class="mt-4 d-flex gap-2">
-                    <BsButton icon="code" @click="emit('reveal', node.line)">{{
-                      t('designer.files.showInYaml')
-                    }}</BsButton>
-                    <BsButton icon="trash" @click="removeNode()">{{ t('workflowEditor.removeNode') }}</BsButton>
-                  </div>
                 </template>
               </div>
-              <!-- a job template node : what its playbook's run uses -->
-              <div v-if="node.type === 'job_template'" class="col-lg-6">
-                <label class="form-label fw-bold">{{ t('workflowEditor.inventory') }}</label>
-                <select
-                  v-if="refs.inventories"
-                  class="form-select mb-3"
-                  :value="node.inventory"
-                  :disabled="readOnly"
-                  @change="setNode('inventory', $event.target.value)"
-                >
-                  <option value="">{{ t('designer.visualNoInventory') }}</option>
-                  <option v-for="i in withCurrent(sorted(refs.inventories), node.inventory)" :key="i" :value="i">
-                    {{ i }}
-                  </option>
-                </select>
-                <input
-                  v-else
-                  class="form-control mb-3"
-                  :value="node.inventory"
-                  :disabled="readOnly"
-                  @change="setNode('inventory', $event.target.value)"
-                />
-                <label class="form-label fw-bold">{{ t('workflowEditor.credentials') }}</label>
-                <div class="af-wf-creds mb-3">
-                  <div v-if="!(refs.credentials || []).length && !node.credentials.length" class="text-muted small">
-                    {{ t('workflowEditor.noCredentials') }}
-                  </div>
-                  <div
-                    v-for="c in withCurrent(sorted(refs.credentials), null).concat(
-                      node.credentials.filter((x) => !(refs.credentials || []).includes(x)),
-                    )"
-                    :key="c"
-                    class="form-check"
-                  >
-                    <input
-                      :id="'wf-cred-' + c"
-                      class="form-check-input"
-                      type="checkbox"
-                      :checked="node.credentials.includes(c)"
-                      :disabled="readOnly"
-                      @change="toggleCredential(c, $event.target.checked)"
-                    />
-                    <label class="form-check-label" :for="'wf-cred-' + c">{{ c }}</label>
-                  </div>
-                </div>
-                <div class="row g-2 mb-3">
-                  <div class="col-6">
-                    <label class="form-label fw-bold">{{ t('workflowEditor.limit') }}</label>
-                    <input
-                      class="form-control"
-                      :value="node.limit"
-                      :disabled="readOnly"
-                      @change="setNode('limit', $event.target.value)"
-                    />
-                  </div>
-                  <div class="col-6">
-                    <label class="form-label fw-bold">{{ t('workflowEditor.verbosity') }}</label>
-                    <select
-                      class="form-select"
-                      :value="node.verbosity"
-                      :disabled="readOnly"
-                      @change="setNode('verbosity', $event.target.value)"
-                    >
-                      <option value="">0</option>
-                      <option v-for="v in [1, 2, 3, 4, 5]" :key="v" :value="String(v)">{{ v }}</option>
-                    </select>
-                  </div>
-                  <div class="col-6">
-                    <label class="form-label fw-bold">{{ t('workflowEditor.jobTags') }}</label>
-                    <input
-                      class="form-control"
-                      :value="node.job_tags"
-                      :disabled="readOnly"
-                      @change="setNode('job_tags', $event.target.value)"
-                    />
-                  </div>
-                  <div class="col-6">
-                    <label class="form-label fw-bold">{{ t('workflowEditor.skipTags') }}</label>
-                    <input
-                      class="form-control"
-                      :value="node.skip_tags"
-                      :disabled="readOnly"
-                      @change="setNode('skip_tags', $event.target.value)"
-                    />
-                  </div>
-                </div>
-                <div class="d-flex gap-4 mb-3">
-                  <div class="form-check form-switch">
-                    <input
-                      id="wf-check"
-                      class="form-check-input"
-                      type="checkbox"
-                      :checked="node.job_type === 'check'"
-                      :disabled="readOnly"
-                      @change="setNode('job_type', $event.target.checked ? 'check' : '')"
-                    />
-                    <label class="form-check-label" for="wf-check">{{ t('workflowEditor.check') }}</label>
-                  </div>
-                  <div class="form-check form-switch">
-                    <input
-                      id="wf-diff"
-                      class="form-check-input"
-                      type="checkbox"
-                      :checked="node.diff_mode === 'true'"
-                      :disabled="readOnly"
-                      @change="setNode('diff_mode', $event.target.checked)"
-                    />
-                    <label class="form-check-label" for="wf-diff">{{ t('workflowEditor.diff') }}</label>
-                  </div>
-                </div>
-              </div>
+            </div>
+            <div v-if="!readOnly" class="mt-4 d-flex gap-2">
+              <BsButton icon="code" @click="emit('reveal', node.line)">{{ t('designer.files.showInYaml') }}</BsButton>
+              <BsButton icon="trash" @click="removeNode()">{{ t('workflowEditor.removeNode') }}</BsButton>
             </div>
           </template>
 
@@ -862,10 +873,6 @@ function startAt(i) {
 }
 .af-wf-kind {
   max-width: 8.5rem;
-}
-.af-wf-creds {
-  max-height: 10rem;
-  overflow-y: auto;
 }
 @media (max-width: 1100px) {
   .af-wf-main {
