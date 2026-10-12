@@ -40,6 +40,10 @@ import { startSyslogServers } from "../lib/syslogServers.js";
 // the jobs this process is running ; a job is only ever run by the RTE that claimed it
 const activeJobs = new Set();
 
+// true from startRte until the database and its schema answered : the RTE listens meanwhile, but
+// /ready says "starting" and a job is refused with a 503 busy, so the app tries again later
+let starting = false;
+
 // how many playbooks run at once (RTE_MAX_JOBS, 0 : no limit), and how long a stop waits for
 // the running ones (RTE_DRAIN_SECONDS)
 const maxJobs = () => Math.max(0, parseInt(process.env.RTE_MAX_JOBS ?? 10, 10) || 0);
@@ -80,18 +84,6 @@ function bearer(token) {
   };
 }
 
-async function waitForDatabase() {
-  for (;;) {
-    try {
-      await mysql.do("SELECT 1");
-      return;
-    } catch {
-      logger.warning("RTE : database not ready yet");
-      await new Promise((r) => setTimeout(r, 5000));
-    }
-  }
-}
-
 // a job this RTE was running when it stopped cannot finish any more ; only its own jobs
 async function abandonOwnJobs() {
   const res = await mysql.do(
@@ -105,6 +97,48 @@ async function abandonOwnJobs() {
   }
 }
 
+/**
+ * Waits until the database answers and its schema is there, then abandons the jobs a previous
+ * start of this RTE left running. On a fresh install the app and the RTE start together (a helm
+ * sidecar, compose without depends_on) : the app is still creating the schema, the jobs table is
+ * not there yet, and this tries again - with a backoff and a line that says why - instead of
+ * failing the start. It gives up only when the process stops.
+ *
+ * Args:
+ *   options (object): { firstDelayMs : the first wait, doubled after each failure up to
+ *     maxDelayMs }.
+ *
+ * Returns:
+ *   Promise<boolean>: true when done, false when the process began to stop meanwhile.
+ */
+export async function prepareDatabase({ firstDelayMs = 1000, maxDelayMs = 15000 } = {}) {
+  let delay = firstDelayMs;
+  let failed = false;
+  for (;;) {
+    if (isStopping()) return false;
+    try {
+      await mysql.do("SELECT 1");
+    } catch (e) {
+      logger.warning(`RTE : database not ready yet (${e.message || e}), trying again in ${delay / 1000} seconds`);
+      failed = true;
+      await new Promise((r) => setTimeout(r, delay));
+      delay = Math.min(delay * 2, maxDelayMs);
+      continue;
+    }
+    try {
+      // the first query on the jobs table : it fails while the app has not created the schema
+      await abandonOwnJobs();
+      if (failed) logger.notice("RTE : the database and its schema are ready");
+      return true;
+    } catch (e) {
+      logger.warning(`RTE : database schema not ready yet (${e.message || e}) - the app creates it on its first start - trying again in ${delay / 1000} seconds`);
+      failed = true;
+      await new Promise((r) => setTimeout(r, delay));
+      delay = Math.min(delay * 2, maxDelayMs);
+    }
+  }
+}
+
 async function acceptJob(req, res) {
   const jobId = parseInt(req.body?.jobId, 10);
   if (!Number.isInteger(jobId) || jobId <= 0) return res.status(400).json({ error: "jobId is required" });
@@ -113,7 +147,8 @@ async function acceptJob(req, res) {
   if (req.body?.contract !== undefined && req.body.contract !== RTE_CONTRACT) {
     return res.status(409).json({ error: `this RTE speaks contract ${RTE_CONTRACT}, the app contract ${req.body.contract} : run the same contract on both` });
   }
-  // stopping, or full : not claimed, the app tries again (runners/rte.js)
+  // starting, stopping, or full : not claimed, the app tries again (runners/rte.js)
+  if (starting) return res.status(503).json({ error: "this RTE is starting : its database is not ready yet", busy: true });
   if (isStopping()) return res.status(503).json({ error: "this RTE is stopping", busy: true });
   if (maxJobs() && activeJobs.size >= maxJobs() && !activeJobs.has(jobId)) {
     return res.status(503).json({ error: `this RTE runs ${activeJobs.size} jobs already (RTE_MAX_JOBS)`, busy: true });
@@ -176,7 +211,20 @@ async function cancelJob(req, res) {
 // the handlers, for the tests
 export { acceptJob, jobStatus, cancelJob, activeJobs, bearer, drainJobs };
 
-export async function startRte() {
+/**
+ * Starts the RTE : it listens first, then waits for the database and its schema
+ * (prepareDatabase), then starts what needs them. Until then /live answers, /ready says
+ * "starting" and a job gets a 503 busy : a probe sees a process that is starting, not a hung one,
+ * and the app waits for it. Anything that fails after the listen exits non-zero, so the
+ * container restarts clean instead of staying up half started.
+ *
+ * Args:
+ *   options (object): { firstDelayMs, maxDelayMs : the backoff of prepareDatabase }.
+ *
+ * Returns:
+ *   Promise<void>: settles once the RTE is ready, or exiting.
+ */
+export async function startRte({ firstDelayMs, maxDelayMs } = {}) {
   const token = process.env.RTE_TOKEN || "";
   if (token.length < 16) {
     console.error("RTE : set RTE_TOKEN (at least 16 characters) ; refusing to start");
@@ -190,34 +238,12 @@ export async function startRte() {
   if (appConfig.encryptionSecretIsDefault && String(process.env.RTE_REGISTER ?? "").trim() !== "0") {
     logger.warning('[SECURITY] ENCRYPTION_SECRET is not set. This RTE registers itself and stores its token encrypted with the default key, which is public in the source code : set the same ENCRYPTION_SECRET as the app, or RTE_REGISTER=0 and add the runner under Connections > Runners or in the config seed.');
   }
-  await waitForDatabase();
+  // not ready until the database work below is done
+  starting = true;
   onShutdown("database", () => mysql.end());
   // registered after the database : run before it closes, the running playbooks still write
   stopWithin((drainSeconds() + 8) * 1000);
   onShutdown("running jobs", drainJobs);
-  await abandonOwnJobs();
-  // its log to the syslog servers of Connections > Syslog : an RTE follows no epochs, so it
-  // reads them again every minute
-  await startSyslogServers({ pollMs: 60000 });
-  // its row in `nodes` : the Status page lists it, and when it stops answering the worker ends
-  // the jobs it was running (Job.abandonDeadNodes) - a pod replaced under a new name included
-  startHeartbeat();
-  // and its row under Connections > Runners (rte/register.js), in the background : a database
-  // being upgraded may not have the runners table yet
-  const registering = registerSelf(process.env, { https: !!httpsConfig.https, port: appConfig.port });
-  if (registering) onShutdown("registration", () => registering.stop());
-  // the same check, hourly : nothing of ours should still say 'running' after a day - except
-  // what this RTE is running right now, which ends by itself
-  setInterval(() => {
-    const running = [...activeJobs];
-    mysql.do(
-      "UPDATE AnsibleForms.`jobs` SET status='abandoned', abort_requested=0 WHERE status='running' AND host=? AND start < (NOW() - INTERVAL 1 DAY)" +
-        (running.length ? " AND id NOT IN (?)" : ""),
-      running.length ? [runnerIdentity(), running] : [runnerIdentity()]
-    ).then((r) => {
-      if (r?.changedRows) publish("jobs");
-    }).catch((e) => logger.error(`RTE : hourly cleanup failed : ${e.message}`));
-  }, 3600 * 1000).unref();
 
   const app = express();
   app.disable("x-powered-by");
@@ -239,16 +265,18 @@ export async function startRte() {
     running: [...activeJobs],
     maxJobs: maxJobs(),
     stopping: isStopping(),
+    starting,
   })));
   api.post("/jobs", wrap(acceptJob));
   api.get("/jobs/:id", wrap(jobStatus));
   api.post("/jobs/:id/cancel", wrap(cancelJob));
   app.use("/rte/v1", api);
   // liveness and readiness, without the token : for a load balancer or kubernetes (lib/readiness.js).
-  // Ready is false while it stops (drain) : no new job is routed to it
+  // Live answers as soon as it listens. Ready is false while it starts (the database or its schema
+  // not there yet) and while it stops (drain) : no new job is routed to it
   const probes = readinessHandlers(mysql);
   app.get("/live", probes.live);
-  app.get("/ready", probes.ready);
+  app.get("/ready", (req, res) => (starting ? res.status(503).json({ status: "not ready", reason: "starting" }) : probes.ready(req, res)));
   // Prometheus metrics, with METRICS_TOKEN only (lib/metrics.js)
   addScrapeGauge("af_rte_running_jobs", "The playbooks this RTE runs now", [], async (g) => g.set(activeJobs.size));
   addScrapeGauge("af_rte_max_jobs", "How many playbooks this RTE runs at once (RTE_MAX_JOBS, 0 : no limit)", [], async (g) => g.set(maxJobs()));
@@ -266,7 +294,43 @@ export async function startRte() {
   // a stop : no new jobs. A playbook still running ends with the container ; this RTE abandons
   // it when it comes back under the same name, the worker when it does not
   onShutdown("server", () => new Promise((resolve) => server.close(() => resolve())));
-  server.listen(port, () => {
-    logger.notice(`RTE '${runnerIdentity()}' ${version} listening on ${httpsConfig.https ? "https" : "http"} port ${port}`);
-  });
+  // listening first : on a fresh install the app may still be creating the schema, and an RTE
+  // that waits for it without listening looks hung to its probes
+  await new Promise((resolve) => server.listen(port, resolve));
+  logger.notice(`RTE '${runnerIdentity()}' ${version} listening on ${httpsConfig.https ? "https" : "http"} port ${port}, waiting for the database`);
+
+  try {
+    // the database and its schema, then the jobs a previous start left running ; false : the
+    // process stops meanwhile, and the shutdown does the rest
+    if (!(await prepareDatabase({ firstDelayMs, maxDelayMs }))) return;
+    // its log to the syslog servers of Connections > Syslog : an RTE follows no epochs, so it
+    // reads them again every minute
+    await startSyslogServers({ pollMs: 60000 });
+    // its row in `nodes` : the Status page lists it, and when it stops answering the worker ends
+    // the jobs it was running (Job.abandonDeadNodes) - a pod replaced under a new name included
+    startHeartbeat();
+    // and its row under Connections > Runners (rte/register.js), in the background : a database
+    // being upgraded may not have the runners table yet
+    const registering = registerSelf(process.env, { https: !!httpsConfig.https, port: appConfig.port });
+    if (registering) onShutdown("registration", () => registering.stop());
+    // the same check, hourly : nothing of ours should still say 'running' after a day - except
+    // what this RTE is running right now, which ends by itself
+    setInterval(() => {
+      const running = [...activeJobs];
+      mysql.do(
+        "UPDATE AnsibleForms.`jobs` SET status='abandoned', abort_requested=0 WHERE status='running' AND host=? AND start < (NOW() - INTERVAL 1 DAY)" +
+          (running.length ? " AND id NOT IN (?)" : ""),
+        running.length ? [runnerIdentity(), running] : [runnerIdentity()]
+      ).then((r) => {
+        if (r?.changedRows) publish("jobs");
+      }).catch((e) => logger.error(`RTE : hourly cleanup failed : ${e.message}`));
+    }, 3600 * 1000).unref();
+  } catch (err) {
+    // a start that failed halfway : listening but never ready. Exit, the container restarts it
+    logger.crit(`RTE : start failed, exiting to restart clean : ${err?.stack || err}`);
+    process.exit(1);
+    return;
+  }
+  starting = false;
+  logger.notice(`RTE '${runnerIdentity()}' ready to run jobs`);
 }
