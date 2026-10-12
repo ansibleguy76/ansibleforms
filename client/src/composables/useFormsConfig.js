@@ -150,7 +150,7 @@ export function useFormsConfig() {
    * It used to swallow every error and return undefined, so a caller could not tell a
    * 423/409 from a success. roles.vue then re-stamped its reserved-name flags after a
    * FAILED save, which disabled the name input and the delete button on a role the user
-   * had just renamed to 'public' - unrecoverable without a reload, which discarded
+   * had just renamed to 'default' - unrecoverable without a reload, which discarded
    * everything.
    */
   async function save(successLabel) {

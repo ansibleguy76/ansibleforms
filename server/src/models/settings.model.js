@@ -426,8 +426,10 @@ Settings.getActiveConfig = async function() {
   }
   return fs.readFileSync(configPath, 'utf8')
 }
-Settings.saveActiveConfig = async function(yamlStr) {
-  await Settings.assertDesignerNotLocked()
+// options.ignoreDesignerLock : a write the app makes itself (the role `public` renamed `default`,
+// Form.getBaseConfig), one word the designer's editor cannot be in the middle of
+Settings.saveActiveConfig = async function(yamlStr, options = {}) {
+  if (!options.ignoreDesignerLock) await Settings.assertDesignerNotLocked()
   const settings = await Settings.findFormsYaml()
   const useDatabase = Settings.resolveConfigInDatabase(settings)
 

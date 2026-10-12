@@ -7,7 +7,7 @@
 /*  roles page, and in the New role dialog. The role is edited    */
 /*  in place.                                                     */
 /*                                                                */
-/*  @model role: the role edited ({ _uid, _required, _public,     */
+/*  @model role: the role edited ({ _uid, _required, _default,     */
 /*      name, groups, users, options })                           */
 /*  @emits removed: a user or a group was removed (the page saves)*/
 /*  @model selected: the rows ticked in the page's tables (_uid)  */
@@ -78,7 +78,7 @@ const { t } = useI18n();
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
 // the role in three tabs : General (its name and options), its users and its groups, each of
-// those with its count (the public role is everyone's : no count)
+// those with its count (the default role is everyone's : no count)
 const ownTab = ref('general');
 // the page's tab when it chooses one, else the editor's own strip
 const activeTab = computed({
@@ -90,12 +90,12 @@ const tabs = computed(() => [
   {
     key: 'users',
     label: t('settings.settingsPage.users'),
-    count: role.value._public ? undefined : role.value.users.length,
+    count: role.value._default ? undefined : role.value.users.length,
   },
   {
     key: 'groups',
     label: t('settings.settingsPage.groups'),
-    count: role.value._public ? undefined : role.value.groups.length,
+    count: role.value._default ? undefined : role.value.groups.length,
   },
 ]);
 
@@ -178,7 +178,7 @@ function removeUser(index) {
       :label="t('settings.settingsPage.name')"
       :disabled="role._required || readOnly"
     />
-    <!-- admin and public : a fixed description, greyed out as their name -->
+    <!-- admin and default : a fixed description, greyed out as their name -->
     <BsInput
       v-if="role._required"
       class="af-role-description"
@@ -212,7 +212,7 @@ function removeUser(index) {
 
   <!-- Users : the users of the role, each with the provider they sign in with -->
   <template v-else-if="activeTab === 'users'">
-    <p v-if="role._public" class="text-muted small mb-3">{{ t('settings.settingsPage.publicEveryone') }}</p>
+    <p v-if="role._default" class="text-muted small mb-3">{{ t('settings.settingsPage.defaultEveryone') }}</p>
     <!-- on the role's page : a table of its users, those named in it and those it gets through a
          group (read only, From says which), as the app's other lists -->
     <template v-else-if="tab">
@@ -303,7 +303,7 @@ function removeUser(index) {
       <select
         class="form-select provider-select"
         v-model="usr.provider"
-        :disabled="readOnly || role._public"
+        :disabled="readOnly || role._default"
         @change="onProviderChange(usr, 'user')"
       >
         <option v-for="p in authProviders" :key="p" :value="p">{{ p }}</option>
@@ -312,7 +312,7 @@ function removeUser(index) {
         v-if="usr.provider === 'local'"
         class="form-select"
         v-model="usr.name"
-        :disabled="readOnly || role._public"
+        :disabled="readOnly || role._default"
       >
         <option v-for="u in localUsers" :key="u" :value="u">{{ u }}</option>
       </select>
@@ -321,21 +321,21 @@ function removeUser(index) {
         class="form-control"
         v-model="usr.name"
         placeholder="username"
-        :disabled="readOnly || role._public"
+        :disabled="readOnly || role._default"
       />
       <button v-if="!readOnly" class="btn btn-outline-danger align-self-stretch af-remove" @click="removeUser(uIdx)">
         <FaIcon icon="times" />
       </button>
     </div>
     <!-- the page has its own Add user (top right) : the dialog keeps this one -->
-    <div v-if="!tab && !readOnly && !role._public" :class="[role.users.length > 0 ? 'mt-3' : 'mt-1', 'mb-3']">
+    <div v-if="!tab && !readOnly && !role._default" :class="[role.users.length > 0 ? 'mt-3' : 'mt-1', 'mb-3']">
       <BsButton icon="plus" @click="addUser()">{{ t('settings.settingsPage.addUser') }}</BsButton>
     </div>
   </template>
 
   <!-- Groups : the groups of the role, each with the provider it comes from -->
   <template v-else>
-    <p v-if="role._public" class="text-muted small mb-3">{{ t('settings.settingsPage.publicEveryone') }}</p>
+    <p v-if="role._default" class="text-muted small mb-3">{{ t('settings.settingsPage.defaultEveryone') }}</p>
     <!-- on the role's page : a table of its groups, as the users' -->
     <template v-else-if="tab">
       <p v-if="role.groups.length === 0" class="text-muted small mb-0">{{ t('settings.settingsPage.roleNoGroups') }}</p>
@@ -413,7 +413,7 @@ function removeUser(index) {
       <select
         class="form-select provider-select"
         v-model="grp.provider"
-        :disabled="readOnly || role._public"
+        :disabled="readOnly || role._default"
         @change="onProviderChange(grp, 'group')"
       >
         <option v-for="p in authProviders" :key="p" :value="p">{{ p }}</option>
@@ -422,7 +422,7 @@ function removeUser(index) {
         v-if="grp.provider === 'local'"
         class="form-select"
         v-model="grp.name"
-        :disabled="readOnly || role._public"
+        :disabled="readOnly || role._default"
       >
         <option v-for="g in localGroups" :key="g" :value="g">{{ g }}</option>
       </select>
@@ -431,13 +431,13 @@ function removeUser(index) {
         class="form-control"
         v-model="grp.name"
         placeholder="groupname"
-        :disabled="readOnly || role._public"
+        :disabled="readOnly || role._default"
       />
       <button v-if="!readOnly" class="btn btn-outline-danger align-self-stretch af-remove" @click="removeGroup(gIdx)">
         <FaIcon icon="times" />
       </button>
     </div>
-    <div v-if="!tab && !readOnly && !role._public" :class="[role.groups.length > 0 ? 'mt-3' : 'mt-1', 'mb-3']">
+    <div v-if="!tab && !readOnly && !role._default" :class="[role.groups.length > 0 ? 'mt-3' : 'mt-1', 'mb-3']">
       <BsButton icon="plus" @click="addGroup()">{{ t('settings.settingsPage.addGroup') }}</BsButton>
     </div>
   </template>

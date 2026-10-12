@@ -19,7 +19,7 @@ vi.mock("../src/models/form.model.js", async (importOriginal) => {
 
 const { default: User } = await import("../src/models/user.model.js");
 const { default: Form } = await vi.importActual("../src/models/form.model.js");
-const { isEveryoneRole, everyoneEntry } = await import("../src/lib/defaultRole.js");
+const { isEveryoneRole, everyoneEntry, renameLegacyRole } = await import("../src/lib/defaultRole.js");
 
 const user = { type: "local", username: "bob" };
 const admin = { name: "admin", groups: ["local/admins"] };
@@ -83,4 +83,26 @@ describe("the config", () => {
     expect(() => Form.validateConfig(base([admin, { name: "default", groups: [], users: ["local/bob"] }]))).toThrow();
     expect(() => Form.validateConfig(base([admin, { name: "public", groups: [], runners: ["x"] }]))).toThrow();
   });
+});
+
+// A config from before 7 has its `public` role renamed `default` in the file when it loads : only
+// the name changes, its comments and options stay as written.
+describe("an old config's public role is renamed default", () => {
+  test("only the name changes : comments, options and the other roles stay", () => {
+    const text = "# the roles\nroles:\n  - name: admin\n    groups: [local/admins]\n  # everyone's\n  - name: public # was public\n    groups: []\n    options:\n      allowChat: false\n";
+    const out = renameLegacyRole(text);
+    expect(out).toBe("# the roles\nroles:\n  - name: admin\n    groups: [local/admins]\n  # everyone's\n  - name: default # was public\n    groups: []\n    options:\n      allowChat: false\n");
+  });
+
+  test("nothing to rename : no public role, a default one already, no roles, or no YAML", () => {
+    expect(renameLegacyRole("roles:\n  - name: admin\n  - name: default\n")).toBe(null);
+    expect(renameLegacyRole("roles:\n  - name: default\n  - name: public\n")).toBe(null);
+    expect(renameLegacyRole("forms:\n  - name: public\n")).toBe(null);
+    expect(renameLegacyRole("roles: [")).toBe(null);
+    expect(renameLegacyRole("")).toBe(null);
+  });
+});
+
+test("a quoted name is renamed too, default needs no quotes", () => {
+  expect(renameLegacyRole("roles:\n  - name: admin\n  - name: \"public\"\n    groups: []\n")).toBe("roles:\n  - name: admin\n  - name: default\n    groups: []\n");
 });

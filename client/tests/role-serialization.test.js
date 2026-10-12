@@ -118,8 +118,8 @@ describe('a role keeps its description', () => {
     expect(roleToEditable({ name: 'ops' }).description).toBe('');
   });
 
-  it('admin and public never write one : theirs is fixed', () => {
-    for (const name of ['admin', 'public']) {
+  it('admin and default (public its old name) never write one : theirs is fixed', () => {
+    for (const name of ['admin', 'default', 'public']) {
       const out = serializeRole({ ...roleToEditable({ name, groups: [] }), description: 'typed by hand' });
       expect('description' in out).toBe(false);
     }

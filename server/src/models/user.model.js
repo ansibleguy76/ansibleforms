@@ -295,12 +295,12 @@ class User extends CrudModel {
       });
     });
 
-    // Collapse the two extravars spellings BEFORE the public merge : that merge
+    // Collapse the two extravars spellings BEFORE the default merge : that merge
     // only fills options nobody has an opinion about, and it can only see that
-    // through the key it is looking at. With mixed spellings (public role
-    // 'showExtravars: false', the user's own role 'showExtraVars: true') the public
+    // through the key it is looking at. With mixed spellings (default role
+    // 'showExtravars: false', the user's own role 'showExtraVars: true') the default
     // value used to land on the untouched lowercase key and the collapse then
-    // pulled the explicit 'true' down with it - the public role overruling the
+    // pulled the explicit 'true' down with it - the default role overruling the
     // user's own roles, which is exactly what "we don't overwrite" forbids.
     collapseExtravars(options);
 
@@ -322,7 +322,7 @@ class User extends CrudModel {
     result.roles = roles;
     result.options = options;
 
-    // and once more after the merge, for the case where ONLY the public role has
+    // and once more after the merge, for the case where ONLY the default role has
     // an opinion : it may have written a single spelling, which must still apply
     // to both before the defaults below fill the other one with true
     collapseExtravars(options);

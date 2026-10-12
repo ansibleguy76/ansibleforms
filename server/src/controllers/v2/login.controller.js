@@ -96,7 +96,7 @@ async function admitUser(req, res, user, extra = {}) {
 function userToJwt(user,expiryDays){
 
   // is something like
-  // {"username":"administrator","type":"local","roles":["public","admin"]}
+  // {"username":"administrator","type":"local","roles":["default","admin"]}
 
   var tokenExpiresIn
   // an api token (a script's, asked with expiryDays) : no one to accept the disclaimer, so it

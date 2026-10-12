@@ -6,7 +6,7 @@ Removed in 8.0.0. Each logs a warning when it is used.
 |---|---|---|
 | `VAULT_*` environment variables (imported once at the first 7.x start, then ignored) | a secret store named `vault` (Connections > Secret stores) | 7.0.0 |
 | `vault_path` on a credential (API, seed) | `secret_store` + `secret_ref` | 7.0.0 |
-| the role `public` in `config.yaml` (8 refuses it ; `public` in a form's `roles:` keeps matching) | the role `default` | 7.0.0 |
+| the role `public` in `config.yaml` (renamed `default` in the file when the config loads ; a ytt template is renamed by hand, 8 refuses it there ; `public` in a form's `roles:` keeps matching) | the role `default` | 7.0.0 |
 | `POST /api/v2/config/vault/check`, `GET /api/v2/config/vault/mounts` | `POST /api/v2/secretstore/{id}/check`, `GET /api/v2/secretstore/{id}/mounts` | 7.0.0 |
 | `hasApproval` on a form or a step (it has no effect) | `approval` | 7.0.0 |
 | `awx: <name>` on a form | `runner: <name>` (an AWX connection is a runner of type `awx`) | 7.0.0 |

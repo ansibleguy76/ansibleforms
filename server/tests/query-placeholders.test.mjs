@@ -62,7 +62,7 @@ const call = async (body, user) => {
 };
 const ranSql = (dialect) => substitute(ranWith.query, ranWith.values, dialect);
 
-const plainUser = { username: "bob", type: "local", roles: ["public"], options: {} };
+const plainUser = { username: "bob", type: "local", roles: ["default"], options: {} };
 
 beforeEach(() => {
   ranWith = null; formLoadArgs = null;

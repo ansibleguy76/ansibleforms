@@ -5,7 +5,7 @@
 /*                                                                */
 /*  For the Roles tab of a user's page and a group's page : the   */
 /*  roles of the config (config.yaml) that name the user, one of  */
-/*  its groups, or the group - and public, everyone's role. Read  */
+/*  its groups, or the group - and default, everyone's role. Read */
 /*  quietly : a config the roles editor warns about (a ytt        */
 /*  template) still lists its roles here.                         */
 /*                                                                */
@@ -46,7 +46,7 @@ export function useRoleAssignments() {
     }
   }
 
-  // a role as a row : its name and what it is for (admin's and public's own words)
+  // a role as a row : its name and what it is for (admin's and default's own words)
   const row = (r) => ({ name: r.name, description: requiredRoleDescription(t, r.name) || r.description || '' });
   const byName = (a, b) => a.name.localeCompare(b.name);
   const names = (list, provider, wanted) =>
@@ -54,7 +54,7 @@ export function useRoleAssignments() {
 
   /**
    * The roles a user has, each with how : by its name, through some of its groups, or as
-   * everyone's (public).
+   * everyone's (default).
    *
    * Args:
    *   username (string): the user's name.

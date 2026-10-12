@@ -556,7 +556,7 @@
   min-width: 10rem;
 }
 
-// the Required badge of an item the config must keep (the admin and public roles) : a border and
+// the Required badge of an item the config must keep (the admin and default roles) : a border and
 // darker text, so it reads on a white row as on a hovered one
 .af-required-badge {
   background-color: var(--bs-secondary-bg-subtle);

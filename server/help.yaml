@@ -1698,8 +1698,8 @@
           - allowMcp: The user can use the MCP server from an AI agent (when it is enabled). Defaults to the role's allowChat. (Added in 7.0.0)
 
           When options are not set, the admin role will have all options.  
-          When options are set on the public role, they will have the lowest precedence and can be used as default options for all roles.  
-          You can add options on role level, which will override the public role options.    
+          When options are set on the default role, they will have the lowest precedence and can be used as default options for all roles.  
+          You can add options on role level, which will override the default role options.    
       examples:
       - name: Roles
         language: YAML

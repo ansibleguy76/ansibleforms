@@ -1550,15 +1550,13 @@ export default {
         'Failed to parse the forms configuration. Please fix the YAML syntax error before making changes.',
       configTemplated:
         'This configuration uses ytt templating and cannot be edited here. Edit the source template instead.',
-      publicRoleNote:
-        'The default role applies to everyone automatically (public is its old name); groups and users cannot be assigned to it.',
-      publicEveryone: 'Everyone, automatically',
+      defaultEveryone: 'Everyone, automatically',
       roleNoUsers: 'No users in this role yet.',
       roleNoGroups: 'No groups in this role yet.',
       roleNotFound: "There is no role named '{name}'.",
       roleDescriptionPlaceholder: 'What the role is for, e.g. Launches the network forms',
       roleDescriptionAdmin: 'Full access: every form, the designer and the settings.',
-      roleDescriptionPublic: 'Every user, automatically: what everyone may do.',
+      roleDescriptionDefault: 'Every user, automatically: what everyone may do.',
       roleMemberFrom: 'From group',
       roleUsersAll: 'All',
       removeFromRole: 'Remove from role',

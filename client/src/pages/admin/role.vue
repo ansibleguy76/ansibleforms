@@ -69,20 +69,20 @@ const userCount = computed(() => {
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
 // Details (the name, its description and the options), Users, Groups, Forms ; the tab kept in
-// the url. Public has no count of users or groups : it is everyone's.
+// the url. Default has no count of users or groups : it is everyone's.
 const tabs = computed(() => [
   { key: 'general', label: t('settings.common.tabDetails'), icon: 'sliders' },
   {
     key: 'users',
     label: t('settings.settingsPage.users'),
     icon: 'user',
-    count: role.value?._public ? null : userCount.value,
+    count: role.value?._default ? null : userCount.value,
   },
   {
     key: 'groups',
     label: t('settings.settingsPage.groups'),
     icon: 'users',
-    count: role.value?._public ? null : role.value?.groups.length,
+    count: role.value?._default ? null : role.value?.groups.length,
   },
   { key: 'forms', label: t('settings.linked.forms'), icon: 'rectangle-list', count: roleForms.value.length },
 ]);
@@ -340,14 +340,14 @@ onMounted(async () => {
         >
         <!-- the tab's own add, top right as on the other pages -->
         <BsButton
-          v-if="activeTab === 'users' && !role._public"
+          v-if="activeTab === 'users' && !role._default"
           icon="plus"
           :disabled="readOnly"
           @click="openAdd('users')"
           >{{ t('settings.settingsPage.addUser') }}</BsButton
         >
         <BsButton
-          v-if="activeTab === 'groups' && !role._public"
+          v-if="activeTab === 'groups' && !role._default"
           icon="plus"
           :disabled="readOnly"
           @click="openAdd('groups')"

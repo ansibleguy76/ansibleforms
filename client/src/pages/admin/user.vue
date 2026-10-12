@@ -9,7 +9,7 @@
 /*  Groups - the groups it belongs to : Add group, and a row's    */
 /*           menu or the checkboxes remove one, never the last    */
 /*  Roles - the roles it has, and how (by name, through a group,  */
-/*          public as everyone's)                                 */
+/*          default as everyone's)                                */
 /*  Forms - the forms its roles open                              */
 /*  Jobs - the jobs it launched, the latest first                 */
 /*  Stored jobs - the form values it stored to run again          */
@@ -153,7 +153,7 @@ const tabs = computed(() => [
 ]);
 
 // ─── Roles ────────────────────────────────────────────────────────────────────
-// the roles the user has : by its name, through its groups, public as everyone's ; a row opens
+// the roles the user has : by its name, through its groups, default as everyone's ; a row opens
 // the role's page
 const { loadRoles, rolesOfUser } = useRoleAssignments();
 const userRoles = computed(() =>

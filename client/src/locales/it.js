@@ -1569,15 +1569,13 @@ export default {
         "Impossibile analizzare la configurazione dei moduli. Correggi l'errore di sintassi YAML prima di apportare modifiche.",
       configTemplated:
         'Questa configurazione utilizza il templating ytt e non può essere modificata qui. Modifica invece il modello di origine.',
-      publicRoleNote:
-        'Il ruolo default si applica automaticamente a tutti (public è il suo vecchio nome); non gli si possono assegnare gruppi né utenti.',
-      publicEveryone: 'Tutti, automaticamente',
+      defaultEveryone: 'Tutti, automaticamente',
       roleNoUsers: 'Questo ruolo non ha ancora utenti.',
       roleNoGroups: 'Questo ruolo non ha ancora gruppi.',
       roleNotFound: "Non esiste un ruolo chiamato '{name}'.",
       roleDescriptionPlaceholder: 'A cosa serve il ruolo, ad es. Avvia i moduli di rete',
       roleDescriptionAdmin: 'Accesso completo: tutti i moduli, il designer e le impostazioni.',
-      roleDescriptionPublic: 'Ogni utente, automaticamente: ciò che tutti possono fare.',
+      roleDescriptionDefault: 'Ogni utente, automaticamente: ciò che tutti possono fare.',
       roleMemberFrom: 'Dal gruppo',
       roleUsersAll: 'Tutti',
       removeFromRole: 'Rimuovi dal ruolo',

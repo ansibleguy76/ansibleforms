@@ -1550,15 +1550,13 @@ export default {
       configParseError: 'フォーム設定の解析に失敗しました。変更する前に YAML の構文エラーを修正してください。',
       configTemplated:
         'この設定は ytt テンプレートを使用しているため、ここでは編集できません。代わりにソーステンプレートを編集してください。',
-      publicRoleNote:
-        'ロール default は全員に自動的に適用されます（public は旧名）。グループやユーザーは割り当てられません。',
-      publicEveryone: '全員（自動）',
+      defaultEveryone: '全員（自動）',
       roleNoUsers: 'このロールにはまだユーザーがいません。',
       roleNoGroups: 'このロールにはまだグループがありません。',
       roleNotFound: "'{name}' という名前のロールはありません。",
       roleDescriptionPlaceholder: 'ロールの用途（例: ネットワークフォームを実行）',
       roleDescriptionAdmin: 'フルアクセス: すべてのフォーム、デザイナー、設定。',
-      roleDescriptionPublic: 'すべてのユーザーに自動で適用: 全員ができること。',
+      roleDescriptionDefault: 'すべてのユーザーに自動で適用: 全員ができること。',
       roleMemberFrom: '所属グループ',
       roleUsersAll: '全員',
       removeFromRole: 'ロールから削除',

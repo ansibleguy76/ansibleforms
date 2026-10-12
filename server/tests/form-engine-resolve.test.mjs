@@ -117,7 +117,7 @@ describe("resolveForm", () => {
       ] },
       constants: { CONST: "constant" },
       vars: { varkey: "v" },
-      user: { username: "bob", roles: ["public"] },
+      user: { username: "bob", roles: ["default"] },
       services: services(),
     });
     expect(byName(res).a.value).toBe("field-v-bob");

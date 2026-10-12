@@ -1566,15 +1566,13 @@ export default {
         'Nie udało się przetworzyć konfiguracji formularzy. Popraw błąd składni YAML przed wprowadzeniem zmian.',
       configTemplated:
         'Ta konfiguracja używa szablonów ytt i nie można jej tutaj edytować. Zamiast tego edytuj szablon źródłowy.',
-      publicRoleNote:
-        'Rola default dotyczy automatycznie wszystkich (public to jej stara nazwa); nie można do niej przypisać grup ani użytkowników.',
-      publicEveryone: 'Wszyscy, automatycznie',
+      defaultEveryone: 'Wszyscy, automatycznie',
       roleNoUsers: 'Ta rola nie ma jeszcze użytkowników.',
       roleNoGroups: 'Ta rola nie ma jeszcze grup.',
       roleNotFound: "Nie ma roli o nazwie '{name}'.",
       roleDescriptionPlaceholder: 'Do czego służy rola, np. Uruchamia formularze sieciowe',
       roleDescriptionAdmin: 'Pełny dostęp: wszystkie formularze, projektant i ustawienia.',
-      roleDescriptionPublic: 'Każdy użytkownik, automatycznie: to, co wolno wszystkim.',
+      roleDescriptionDefault: 'Każdy użytkownik, automatycznie: to, co wolno wszystkim.',
       roleMemberFrom: 'Z grupy',
       roleUsersAll: 'Wszyscy',
       removeFromRole: 'Usuń z roli',

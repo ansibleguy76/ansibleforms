@@ -1,7 +1,7 @@
 // The number of roles a local user or a local group has, for the users and groups lists : the
 // rule of the login (User.getRolesAndOptions), counted rather than applied. A role is a user's
 // when its users name `local/<username>` or its groups `local/<group>` of one of the user's
-// groups ; public is everyone's. A group's roles are those whose groups name `local/<group>`.
+// groups ; default is everyone's. A group's roles are those whose groups name `local/<group>`.
 import { everyoneName } from "./defaultRole.js";
 import Form from '../models/form.model.js';
 import logger from './logger.js';

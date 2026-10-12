@@ -16,7 +16,7 @@ vi.spyOn(logger, "warning").mockImplementation((m) => { warnings.push(String(m))
 const { deprecatedIn7_3 } = await import("../src/models/form.model.js");
 const Form = (await import("../src/models/form.model.js")).default;
 
-const form = (extra = {}) => ({ name: "Approve firmware", type: "ansible", playbook: "p.yml", roles: ["public"], categories: [], fields: [], ...extra });
+const form = (extra = {}) => ({ name: "Approve firmware", type: "ansible", playbook: "p.yml", roles: ["default"], categories: [], fields: [], ...extra });
 
 beforeEach(() => { warnings.length = 0; });
 

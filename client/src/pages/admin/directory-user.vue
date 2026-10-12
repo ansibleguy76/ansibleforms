@@ -367,7 +367,7 @@ onMounted(async () => {
           :to="(g) => `/settings/groups/${encodeURIComponent(source)}/${encodeURIComponent(g.name)}`"
           :empty="t('settings.directory.noGroupSeen')"
         />
-        <!-- Roles : the roles it has, and how (public always) ; a row opens the role -->
+        <!-- Roles : the roles it has, and how (default always) ; a row opens the role -->
         <AppLinkedTable
           v-else-if="user && activeTab === 'roles'"
           :columns="roleColumns"

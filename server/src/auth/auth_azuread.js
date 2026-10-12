@@ -2,7 +2,7 @@
 // PKCE, state and nonce, the ID token checked by the library (signature, issuer, audience,
 // expiry) - and the tenant pinned. The login is against the configured tenant's own v2.0
 // issuer, never the common endpoint, and the token's `tid` must be that tenant : a user of
-// another Microsoft tenant is refused, not let in as `public`.
+// another Microsoft tenant is refused, not let in as `default`.
 //
 // The access token the same login returns is for Microsoft Graph (User.Read,
 // GroupMember.Read.All) : the login step reads the user's groups with it (lib/azureGraph.js).

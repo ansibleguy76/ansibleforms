@@ -39,10 +39,10 @@ const { default: Credential } = await import("../src/models/credential.model.v2.
 const { assertLaunchScope } = await import("../src/models/job.model.js");
 const { default: Middleware } = await import("../src/lib/middleware.js");
 
-const ops = { username: "bob", roles: ["public", "ops"] };
+const ops = { username: "bob", roles: ["default", "ops"] };
 beforeEach(() => {
   configRoles = [
-    { name: "public", groups: [] },
+    { name: "default", groups: [] },
     { name: "ops", groups: [], credentials: ["vcenter", "cmdb-.*"], runners: ["rte-default"] },
     { name: "dba", groups: [], credentials: ["prod-.*"] },
   ];
@@ -50,7 +50,7 @@ beforeEach(() => {
 
 describe("the scope of a user", () => {
   test("nothing listed : no limit, as before", () => {
-    expect(scopeFromRoles({ roles: ["public"] }, configRoles)).toBe(null);
+    expect(scopeFromRoles({ roles: ["default"] }, configRoles)).toBe(null);
   });
 
   test("the admin role is never limited", () => {
@@ -58,7 +58,7 @@ describe("the scope of a user", () => {
   });
 
   test("the roles that list a kind are combined, the ones that do not add nothing", () => {
-    const scope = scopeFromRoles({ roles: ["public", "ops", "dba"] }, configRoles);
+    const scope = scopeFromRoles({ roles: ["default", "ops", "dba"] }, configRoles);
     expect(scope.credentials.some((re) => re.test("prod-root"))).toBe(true);
     expect(scope.credentials.some((re) => re.test("vcenter"))).toBe(true);
     expect(scope.secretStores).toBe(null);
@@ -124,7 +124,7 @@ describe("a launch", () => {
 
   test("an admin, or a user nothing limits, launches as before", async () => {
     await expect(assertLaunchScope({ roles: ["admin"] }, "ansible", { __credentials__: { db: "prod-root" }, __runner__: "x" }, {})).resolves.toBeUndefined();
-    await expect(assertLaunchScope({ roles: ["public"] }, "ansible", { __credentials__: { db: "prod-root" } }, {})).resolves.toBeUndefined();
+    await expect(assertLaunchScope({ roles: ["default"] }, "ansible", { __credentials__: { db: "prod-root" } }, {})).resolves.toBeUndefined();
   });
 });
 

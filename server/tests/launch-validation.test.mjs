@@ -19,7 +19,7 @@ const logger = (await import("./__mocks__/logger.js")).default;
 const { validateLaunch, verifyUploads, compareExtravars, describeLaunchErrors, describeRowErrors } = await import("../src/lib/launchValidation.js");
 const { evalSandbox } = await import("../src/lib/formEngine/node/sandbox.js");
 
-const user = { username: "bob", roles: ["public"], options: {} };
+const user = { username: "bob", roles: ["default"], options: {} };
 const formObj = {
   name: "Create host",
   fields: [
@@ -189,7 +189,7 @@ describe("per-form launchValidation", () => {
   });
 
   test("the form schema takes it on a form and a wizard form, refuses it on a subform", () => {
-    const base = { name: "F", type: "ansible", playbook: "p.yml", roles: ["public"], categories: [], fields: [{ name: "a", type: "text" }] };
+    const base = { name: "F", type: "ansible", playbook: "p.yml", roles: ["default"], categories: [], fields: [{ name: "a", type: "text" }] };
     expect(() => Form.validateForm({ ...base, launchValidation: "enforce" })).not.toThrow();
     expect(() => Form.validateForm({ ...base, launchValidation: "strict" })).toThrow();
     const wizard = { ...base, fields: undefined, wizard: [{ subform: "s1" }] };

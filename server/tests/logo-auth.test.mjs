@@ -43,7 +43,7 @@ afterAll(async () => {
   if (server) await new Promise((r) => server.close(r));
 });
 
-const token = (options) => jwt.sign({ access: true, user: { username: 'x', type: 'local', roles: ['public'], options } }, secret);
+const token = (options) => jwt.sign({ access: true, user: { username: 'x', type: 'local', roles: ['default'], options } }, secret);
 
 test('reading the logo needs no login : the login page shows it', async () => {
   const res = await fetch(baseUrl);

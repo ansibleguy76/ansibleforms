@@ -105,7 +105,7 @@ describe("a permission failure is 403, never 401", () => {
   });
 
   test("checkAdminMiddleware answers 403 for a non-admin and passes an admin", () => {
-    let r = run(Middleware.checkAdminMiddleware, { roles: ["public"], options: {} });
+    let r = run(Middleware.checkAdminMiddleware, { roles: ["default"], options: {} });
     assert.equal(r.res.statusCode, 403);
     assert.equal(r.nexted, false);
     r = run(Middleware.checkAdminMiddleware, { roles: ["admin"], options: {} });

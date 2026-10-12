@@ -1571,15 +1571,13 @@ export default {
         'Kan de formulierconfiguratie niet verwerken. Los de YAML-syntaxfout op voordat u wijzigingen aanbrengt.',
       configTemplated:
         'Deze configuratie gebruikt ytt-templating en kan hier niet worden bewerkt. Bewerk in plaats daarvan de bronsjabloon.',
-      publicRoleNote:
-        'De rol default geldt automatisch voor iedereen (public is de oude naam); er kunnen geen groepen of gebruikers aan worden toegewezen.',
-      publicEveryone: 'Iedereen, automatisch',
+      defaultEveryone: 'Iedereen, automatisch',
       roleNoUsers: 'Deze rol heeft nog geen gebruikers.',
       roleNoGroups: 'Deze rol heeft nog geen groepen.',
       roleNotFound: "Er is geen rol met de naam '{name}'.",
       roleDescriptionPlaceholder: 'Waar de rol voor is, bv. Start de netwerkformulieren',
       roleDescriptionAdmin: 'Volledige toegang: alle formulieren, de designer en de instellingen.',
-      roleDescriptionPublic: 'Elke gebruiker, automatisch: wat iedereen mag.',
+      roleDescriptionDefault: 'Elke gebruiker, automatisch: wat iedereen mag.',
       roleMemberFrom: 'Uit groep',
       roleUsersAll: 'Iedereen',
       removeFromRole: 'Uit rol verwijderen',

@@ -27,7 +27,7 @@ const Job = (await import("../src/models/job.model.js")).default;
 const Form = (await import("../src/models/form.model.js")).default;
 const { filterRawFormData } = await import("../src/lib/formEngine/output.js");
 
-const user = { username: "alice", type: "local", roles: ["public"], options: { allowJobRelaunch: true } };
+const user = { username: "alice", type: "local", roles: ["default"], options: { allowJobRelaunch: true } };
 const storedJob = () => ({
   id: 42, form: "Create host", status: "success", user: "alice", user_type: "local",
   extravars: JSON.stringify({ vm: { name: "prod-1" }, size: 10, acls: [{ who: "bob" }], __verbose__: true, ansibleforms_user: { username: "bob" } }),

@@ -82,7 +82,7 @@ function addRole() {
   newRole.value = {
     _uid: nextUid(),
     _required: false,
-    _public: false,
+    _default: false,
     name: '',
     groups: [],
     users: [],
@@ -142,13 +142,13 @@ const tableItems = computed(() =>
   sortedRoles.value.map(({ role }) => ({
     id: role._uid,
     name: role.name,
-    // admin and public : their fixed description
+    // admin and default : their fixed description
     description: role._required ? requiredRoleDescription(t, role.name) : role.description || '',
     required: role._required,
-    // the public role is everyone's : no count
-    users: role._public ? null : roleUserCount(role),
-    // the groups it names, of every provider (local, LDAP, SSO) ; public's : none to name
-    groups: role._public ? null : role.groups.length,
+    // the default role is everyone's : no count
+    users: role._default ? null : roleUserCount(role),
+    // the groups it names, of every provider (local, LDAP, SSO) ; default's : none to name
+    groups: role._default ? null : role.groups.length,
   })),
 );
 const columns = computed(() => [
@@ -158,7 +158,7 @@ const columns = computed(() => [
     label: t('settings.settingsPage.name'),
     sortable: true,
     filterable: true,
-    // admin and public : the config must keep them, said beside their name
+    // admin and default : the config must keep them, said beside their name
     render: (v, row) =>
       escapeHtml(v) +
       (row.required
@@ -173,7 +173,7 @@ const columns = computed(() => [
     filterable: true,
     render: (v) => (v ? escapeHtml(v) : '–'),
   },
-  // how many users it reaches (local ones : see roleUserCount) ; public, everyone's, says All
+  // how many users it reaches (local ones : see roleUserCount) ; default, everyone's, says All
   {
     key: 'users',
     label: t('settings.settingsPage.users'),
@@ -184,7 +184,7 @@ const columns = computed(() => [
     // none : an en dash, as the other empty cells
     render: (v) => (v === null ? escapeHtml(t('settings.settingsPage.roleUsersAll')) : v ? String(v) : '–'),
   },
-  // how many groups it names ; public, everyone's, names none : All, as its users
+  // how many groups it names ; default, everyone's, names none : All, as its users
   {
     key: 'groups',
     label: t('settings.settingsPage.groups'),
@@ -213,7 +213,7 @@ async function deleteRoles(uids) {
 }
 
 /**
- * Deletes the roles selected, after asking ; admin and public are left alone.
+ * Deletes the roles selected, after asking ; admin and default are left alone.
  */
 async function bulkDelete() {
   const present = new Map(tableItems.value.map((r) => [r.id, r]));

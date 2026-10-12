@@ -16,12 +16,12 @@ const { clearSessions } = await import("../src/chat/sessions.js");
 const { clearPlans } = await import("../src/chat/plans.js");
 const { TOOLS } = await import("../src/chat/tools.js");
 
-const user = { username: "alice", type: "local", roles: ["public"], options: { allowJobRelaunch: true } };
-const other = { username: "bob", type: "local", roles: ["public"], options: {} };
+const user = { username: "alice", type: "local", roles: ["default"], options: { allowJobRelaunch: true } };
+const other = { username: "bob", type: "local", roles: ["default"], options: {} };
 
 const FORMS = {
   "Create a snapshot": {
-    name: "Create a snapshot", type: "ansible", playbook: "snap.yml", roles: ["public"], enableForChat: true,
+    name: "Create a snapshot", type: "ansible", playbook: "snap.yml", roles: ["default"], enableForChat: true,
     description: "Take a snapshot of volumes",
     fields: [
       { name: "cluster", type: "enum", values: ["bb8", "r2d2"], default: "__auto__", required: true, label: "Cluster" },
@@ -34,12 +34,12 @@ const FORMS = {
     ],
   },
   "Health report": {
-    name: "Health report", type: "ansible", playbook: "health.yml", roles: ["public"], enableForChat: true,
+    name: "Health report", type: "ansible", playbook: "health.yml", roles: ["default"], enableForChat: true,
     description: "Report the health of the clusters",
     fields: [{ name: "scope", type: "text", default: "all" }],
   },
   "Delete everything": {
-    name: "Delete everything", type: "ansible", playbook: "rm.yml", roles: ["public"],
+    name: "Delete everything", type: "ansible", playbook: "rm.yml", roles: ["default"],
     fields: [{ name: "target", type: "text", required: true }],
   },
 };
