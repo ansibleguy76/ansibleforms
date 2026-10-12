@@ -1106,7 +1106,8 @@ function startAt(i) {
   color: var(--bs-info-text-emphasis);
 }
 .af-wf-tab-card {
-  border: 1px solid var(--bs-border-color);
+  /* the tabs' grey : the card is what the tabs open on */
+  border: 1px solid var(--af-field-border, var(--bs-border-color));
   border-top: 0;
   border-radius: 0 0 0.375rem 0.375rem;
   padding: 1rem;
