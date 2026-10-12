@@ -75,4 +75,14 @@ describe('an inventory edited', () => {
     expect(data.all.children.web.hosts['web2.example.com']).toBeNull();
     expect(data.all.children.web.vars).toBeUndefined();
   });
+
+  it('writes a host emptied of its variables, or a new one, as `host:`', () => {
+    const start = 'all:\n  children:\n    db:\n      hosts:\n        db1.example.com:\n          zz: ""\n';
+    let t = editRemoveVar(start, { path: ['all', 'db'], host: 'db1.example.com' }, 'zz');
+    expect(t).toBe('all:\n  children:\n    db:\n      hosts:\n        db1.example.com:\n');
+    t = editAddHost(t, ['all', 'db'], 'db2.example.com');
+    expect(t).toContain('        db2.example.com:\n');
+    // a null the file spells out keeps its spelling
+    expect(editSetVar('all:\n  vars:\n    a: ~\n', { path: ['all'] }, 'b', '1')).toContain('a: ~');
+  });
 });
