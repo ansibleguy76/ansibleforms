@@ -1,5 +1,14 @@
 export default {
   workflowEditor: {
+    previewHint:
+      'Fai clic su un nodo che viene eseguito per farlo fallire, o riuscire di nuovo. Non viene lanciato nulla.',
+    previewReset: 'Ripristina',
+    run: {
+      successful: 'riesce',
+      failed: 'fallisce',
+      do_not_run: 'non viene eseguito',
+      pending: 'mai raggiunto',
+    },
     badIdentifier: 'Un identificatore ha solo lettere, cifre, punti, trattini, due punti e trattini bassi',
     identifierTaken: "Un altro nodo è già '{identifier}'",
     noWorkflow: 'Nessun workflow',

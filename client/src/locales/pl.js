@@ -1,5 +1,14 @@
 export default {
   workflowEditor: {
+    previewHint:
+      'Kliknij węzeł, który się uruchamia, aby zakończył się błędem lub znów sukcesem. Nic nie jest uruchamiane.',
+    previewReset: 'Resetuj',
+    run: {
+      successful: 'kończy się sukcesem',
+      failed: 'kończy się błędem',
+      do_not_run: 'nie uruchamia się',
+      pending: 'nigdy nie osiągnięty',
+    },
     badIdentifier: 'Identyfikator ma tylko litery, cyfry, kropki, myślniki, dwukropki i podkreślenia',
     identifierTaken: "Inny węzeł to już '{identifier}'",
     noWorkflow: 'Brak workflow',

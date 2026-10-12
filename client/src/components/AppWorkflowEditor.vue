@@ -13,6 +13,9 @@
 /*      modelValue: String - the file's YAML (the AWX export      */
 /*         syntax : job_templates, workflow_job_templates)        */
 /*      readOnly: Boolean - shown, not editable                   */
+/*      preview: Boolean - a dry run : a click on a node that     */
+/*         runs makes it fail (or succeed again), the graph shows */
+/*         what runs then, and whether the workflow fails         */
 /*  @emits:                                                       */
 /*      update:modelValue - the file, changed                     */
 /*      reveal: the line to open the YAML on                      */
@@ -29,6 +32,7 @@ import {
   workflowFileOf,
   workflowProblems,
   workflowGraph,
+  dryRun,
   editWorkflow,
   editRemoveWorkflow,
   editAddNode,
@@ -41,6 +45,8 @@ import {
 const props = defineProps({
   modelValue: { type: String, default: '' },
   readOnly: { type: Boolean, default: false },
+  // the Preview tab : a dry run, nothing edited - a click makes a node fail or succeed
+  preview: { type: Boolean, default: false },
 });
 const emit = defineEmits(['update:modelValue', 'reveal']);
 const { t } = useI18n();
@@ -276,6 +282,55 @@ const withCurrent = (list, current) => (current && list && !list.includes(curren
 function truncate(s, len = 22) {
   return s && s.length > len ? s.slice(0, len - 1) + '…' : s;
 }
+// ─── the Preview tab : a dry run ──────────────────────────────────────────────
+// the nodes made to fail, per workflow (its place) ; every other node that runs succeeds
+const failing = ref({});
+const failingOf = (wi) => new Set(failing.value[wi] || []);
+const runs = computed(() => workflows.value.map((w, wi) => dryRun(w.nodes, failingOf(wi))));
+/**
+ * A click on a node in the preview : one that ran fails, or succeeds again.
+ *
+ * Args:
+ *   wi (number): the workflow's place.
+ *   n (object): the node.
+ */
+function toggleFail(wi, n) {
+  const status = runs.value[wi]?.status.get(n.identifier);
+  if (status !== 'successful' && status !== 'failed') return;
+  const set = failingOf(wi);
+  if (set.has(n.identifier)) set.delete(n.identifier);
+  else set.add(n.identifier);
+  failing.value = { ...failing.value, [wi]: [...set] };
+}
+function resetRun(wi) {
+  failing.value = { ...failing.value, [wi]: [] };
+}
+// a node's colour in the preview : by what it did
+const RUN_COLORS = {
+  successful: 'var(--bs-success)',
+  failed: 'var(--bs-danger)',
+  do_not_run: 'var(--bs-secondary)',
+  pending: 'var(--bs-warning)',
+};
+/**
+ * Whether a link fired in the dry run : its node ran and the link is the kind that follows.
+ *
+ * Args:
+ *   wi (number): the workflow's place.
+ *   l (object): the link.
+ *
+ * Returns:
+ *   boolean: true when it fired (START's links : when their node ran).
+ */
+function fired(wi, l) {
+  const status = runs.value[wi]?.status;
+  if (!status) return true;
+  if (l.kind === 'start') return status.get(l.to) === 'successful' || status.get(l.to) === 'failed';
+  const from = status.get(l.from);
+  if (l.kind === 'always') return from === 'successful' || from === 'failed';
+  return l.kind === 'success' ? from === 'successful' : from === 'failed';
+}
+
 // a node or a link is the selected one only in the workflow selected
 const isSelectedNode = (i, n) =>
   wfIndex.value === i && selected.value?.type === 'node' && selected.value.id === n.identifier;
@@ -336,7 +391,18 @@ function startAt(i) {
         <span>{{ t('workflowEditor.noWorkflowHint') }}</span>
       </div>
       <div v-for="(w, wi) in workflows" :key="wi" class="af-wf-block">
-        <div class="row g-3 mb-3 align-items-end">
+        <!-- the preview : the workflow, and how this run ends -->
+        <div v-if="preview" class="af-wf-run mb-3">
+          <span class="fw-bold"
+            ><FaIcon icon="diagram-project" class="me-2" />{{ w.name || t('workflowEditor.unnamed') }}</span
+          >
+          <AppStatusPill :status="runs[wi].failed ? 'failed' : 'success'" />
+          <span class="text-muted small flex-grow-1">{{ t('workflowEditor.previewHint') }}</span>
+          <BsButton icon="rotate-left" :disabled="!(failing[wi] || []).length" @click="resetRun(wi)">{{
+            t('workflowEditor.previewReset')
+          }}</BsButton>
+        </div>
+        <div v-else class="row g-3 mb-3 align-items-end">
           <div class="col-md-4">
             <label class="form-label fw-bold">{{ t('workflowEditor.name') }}</label>
             <div class="input-group">
@@ -397,7 +463,8 @@ function startAt(i) {
               fill="none"
               :stroke="LINK_COLORS[l.kind]"
               :stroke-width="isSelectedLink(wi, l) ? 4 : 2"
-              :opacity="isSelectedLink(wi, l) ? 1 : 0.8"
+              :opacity="preview ? (fired(wi, l) ? 1 : 0.2) : isSelectedLink(wi, l) ? 1 : 0.8"
+              :stroke-dasharray="preview && !fired(wi, l) ? '4 4' : null"
             />
             <!-- a link's wide invisible twin : easy to click -->
             <path
@@ -407,11 +474,15 @@ function startAt(i) {
               fill="none"
               stroke="transparent"
               stroke-width="12"
-              :class="{ 'af-wf-link': l.kind !== 'start' }"
-              @click="selectLink(wi, l)"
+              :class="{ 'af-wf-link': !preview && l.kind !== 'start' }"
+              @click="!preview && selectLink(wi, l)"
             />
             <!-- START : a click adds a first step -->
-            <g class="af-wf-start" :class="{ 'af-wf-clickable': !readOnly }" @click="startAt(wi)">
+            <g
+              class="af-wf-start"
+              :class="{ 'af-wf-clickable': !readOnly && !preview }"
+              @click="!preview && startAt(wi)"
+            >
               <rect
                 :x="graphs[wi].start.x"
                 :y="graphs[wi].start.y"
@@ -432,8 +503,11 @@ function startAt(i) {
               v-for="n in graphs[wi].nodes"
               :key="n.identifier"
               class="af-wf-node"
-              :class="{ 'af-wf-node-selected': isSelectedNode(wi, n) }"
-              @click="select(wi, { type: 'node', id: n.identifier })"
+              :class="{
+                'af-wf-node-selected': !preview && isSelectedNode(wi, n),
+                'af-wf-node-skipped': preview && runs[wi].status.get(n.identifier) === 'do_not_run',
+              }"
+              @click="preview ? toggleFail(wi, n) : select(wi, { type: 'node', id: n.identifier })"
             >
               <rect
                 :x="n.x"
@@ -443,11 +517,18 @@ function startAt(i) {
                 rx="6"
                 class="af-wf-node-rect"
                 :style="{
-                  stroke: badNodes.has(n.identifier)
-                    ? 'var(--bs-danger)'
-                    : TYPE_COLORS[n.type] || 'var(--bs-secondary)',
+                  stroke: preview
+                    ? RUN_COLORS[runs[wi].status.get(n.identifier)]
+                    : badNodes.has(n.identifier)
+                      ? 'var(--bs-danger)'
+                      : TYPE_COLORS[n.type] || 'var(--bs-secondary)',
                 }"
-                :stroke-dasharray="badNodes.has(n.identifier) ? '5 3' : null"
+                :stroke-dasharray="
+                  (preview && runs[wi].status.get(n.identifier) === 'do_not_run') ||
+                  (!preview && badNodes.has(n.identifier))
+                    ? '5 3'
+                    : null
+                "
               />
               <rect
                 :x="n.x"
@@ -458,7 +539,18 @@ function startAt(i) {
                 :style="{ fill: TYPE_COLORS[n.type] || 'var(--bs-secondary)' }"
               />
               <text :x="n.x + 14" :y="n.y + 22" class="af-wf-node-name">{{ truncate(n.identifier) }}</text>
-              <text :x="n.x + 14" :y="n.y + 41" class="af-wf-node-sub">{{ truncate(n.name || '?', 30) }}</text>
+              <text
+                :x="n.x + 14"
+                :y="n.y + 41"
+                class="af-wf-node-sub"
+                :style="preview ? { fill: RUN_COLORS[runs[wi].status.get(n.identifier)] } : null"
+              >
+                {{
+                  preview
+                    ? `${t(`workflowEditor.run.${runs[wi].status.get(n.identifier)}`)}${runs[wi].order.includes(n.identifier) ? ` · ${runs[wi].order.indexOf(n.identifier) + 1}` : ''}`
+                    : truncate(n.name || '?', 30)
+                }}
+              </text>
               <title>{{ n.identifier }} : {{ n.name }}</title>
             </g>
           </svg>
@@ -466,8 +558,10 @@ function startAt(i) {
       </div>
 
       <!-- under the graphs : the panel for what is selected ; nothing selected, what to do -->
-      <div v-if="workflows.length && !node && !link" class="form-text">{{ t('workflowEditor.selectHint') }}</div>
-      <div v-if="node || link" class="af-wf-main">
+      <div v-if="!preview && workflows.length && !node && !link" class="form-text">
+        {{ t('workflowEditor.selectHint') }}
+      </div>
+      <div v-if="!preview && (node || link)" class="af-wf-main">
         <!-- the panel : what is selected, else the workflow itself -->
         <div class="af-wf-panel">
           <!-- closes the panel : nothing selected -->
@@ -844,6 +938,15 @@ function startAt(i) {
 .af-wf-node-rect {
   fill: var(--bs-body-bg);
   stroke-width: 2;
+}
+.af-wf-node-skipped {
+  opacity: 0.55;
+}
+.af-wf-run {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
 }
 .af-wf-node-selected .af-wf-node-rect {
   stroke-width: 3.5;

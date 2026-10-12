@@ -1,5 +1,13 @@
 export default {
   workflowEditor: {
+    previewHint: 'Clique num nó que corre para o fazer falhar, ou ter sucesso de novo. Nada é lançado.',
+    previewReset: 'Repor',
+    run: {
+      successful: 'tem sucesso',
+      failed: 'falha',
+      do_not_run: 'não corre',
+      pending: 'nunca alcançado',
+    },
     badIdentifier: 'Um identificador só tem letras, dígitos, pontos, hífenes, dois pontos e sublinhados',
     identifierTaken: "Outro nó já é '{identifier}'",
     noWorkflow: 'Nenhum workflow',

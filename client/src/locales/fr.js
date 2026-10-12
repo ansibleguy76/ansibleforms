@@ -1,5 +1,13 @@
 export default {
   workflowEditor: {
+    previewHint: "Cliquez sur un nœud qui s'exécute pour le faire échouer, ou réussir à nouveau. Rien n'est lancé.",
+    previewReset: 'Réinitialiser',
+    run: {
+      successful: 'réussit',
+      failed: 'échoue',
+      do_not_run: "ne s'exécute pas",
+      pending: 'jamais atteint',
+    },
     badIdentifier: "Un identifiant n'a que des lettres, chiffres, points, tirets, deux-points et tirets bas",
     identifierTaken: "Un autre nœud est déjà '{identifier}'",
     noWorkflow: 'Aucun workflow',

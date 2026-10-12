@@ -1,5 +1,13 @@
 export default {
   workflowEditor: {
+    previewHint: "Fes clic en un node que s'executa perquè falli, o torni a tenir èxit. No es llança res.",
+    previewReset: 'Restablir',
+    run: {
+      successful: 'té èxit',
+      failed: 'falla',
+      do_not_run: "no s'executa",
+      pending: "mai s'hi arriba",
+    },
     badIdentifier: 'Un identificador només té lletres, dígits, punts, guions, dos punts i guions baixos',
     identifierTaken: "Un altre node ja és '{identifier}'",
     noWorkflow: 'Cap workflow',

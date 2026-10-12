@@ -1,5 +1,13 @@
 export default {
   workflowEditor: {
+    previewHint: '点击会运行的节点使其失败，再点一次恢复成功。不会启动任何内容。',
+    previewReset: '重置',
+    run: {
+      successful: '成功',
+      failed: '失败',
+      do_not_run: '不运行',
+      pending: '从未到达',
+    },
     badIdentifier: '标识符只能包含字母、数字、点、连字符、冒号和下划线',
     identifierTaken: "已有另一个节点为 '{identifier}'",
     noWorkflow: '没有工作流',

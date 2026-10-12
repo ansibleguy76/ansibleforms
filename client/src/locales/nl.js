@@ -1,5 +1,14 @@
 export default {
   workflowEditor: {
+    previewHint:
+      'Klik op een knooppunt dat draait om het te laten mislukken, of weer te laten slagen. Er wordt niets gestart.',
+    previewReset: 'Herstellen',
+    run: {
+      successful: 'slaagt',
+      failed: 'mislukt',
+      do_not_run: 'draait niet',
+      pending: 'nooit bereikt',
+    },
     badIdentifier: 'Een identifier heeft alleen letters, cijfers, punten, streepjes, dubbele punten en underscores',
     identifierTaken: "Een ander knooppunt is al '{identifier}'",
     noWorkflow: 'Geen workflow',

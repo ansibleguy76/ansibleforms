@@ -868,3 +868,91 @@ export function workflowGraph(nodes) {
   }
   return { nodes: nodes.map((n) => ({ ...n, ...pos.get(n.identifier) })), links, start, width, height: height + shift };
 }
+
+// ─── a dry run (the Preview tab) ──────────────────────────────────────────────
+// AWX's scheduling rules, as the RTE engine applies them (server/src/lib/workflowDefs.js) : the
+// same here, so the preview shows what a run would do.
+
+/**
+ * Whether a link fires : its node finished, and as the link asks.
+ *
+ * Args:
+ *   kind (string): 'success', 'failure' or 'always'.
+ *   parent (object): its node's state ({ status, doNotRun }).
+ *
+ * Returns:
+ *   boolean|null: true it fires, false it never will, null not known yet.
+ */
+function fires(kind, parent) {
+  if (parent.doNotRun) return false;
+  if (parent.status !== 'successful' && parent.status !== 'failed') return null;
+  if (kind === 'always') return true;
+  return kind === 'success' ? parent.status === 'successful' : parent.status === 'failed';
+}
+
+/**
+ * The next step of a run : the nodes that start (no parent, or a link into them fired - all of
+ * them when their parents must converge) and those that will never run.
+ *
+ * Args:
+ *   nodes (object[]): the workflow's nodes (workflowFileOf).
+ *   state (Map): identifier -> { status : 'pending' | 'successful' | 'failed', doNotRun }.
+ *
+ * Returns:
+ *   object: { start : [identifier], skip : [identifier] }.
+ */
+export function nextStep(nodes, state) {
+  const parents = new Map(nodes.map((n) => [n.identifier, []]));
+  for (const n of nodes)
+    for (const kind of LINK_KINDS) for (const to of n[kind] || []) parents.get(to)?.push({ from: n.identifier, kind });
+  const start = [];
+  const skip = [];
+  for (const n of nodes) {
+    const s = state.get(n.identifier);
+    if (s.status !== 'pending' || s.doNotRun) continue;
+    const links = parents.get(n.identifier).filter((l) => state.has(l.from));
+    if (!links.length) {
+      start.push(n.identifier);
+      continue;
+    }
+    const outcomes = links.map((l) => fires(l.kind, state.get(l.from)));
+    if (n.converge) {
+      if (outcomes.includes(false)) skip.push(n.identifier);
+      else if (outcomes.every((o) => o === true)) start.push(n.identifier);
+    } else if (outcomes.includes(true)) {
+      start.push(n.identifier);
+    } else if (outcomes.every((o) => o === false)) {
+      skip.push(n.identifier);
+    }
+  }
+  return { start, skip };
+}
+
+/**
+ * A dry run of a workflow : every node that runs succeeds, but the ones said to fail.
+ *
+ * Args:
+ *   nodes (object[]): the workflow's nodes (workflowFileOf).
+ *   failing (Set): the identifiers of the nodes that fail when they run.
+ *
+ * Returns:
+ *   object: { status : Map identifier -> 'successful' | 'failed' | 'do_not_run' | 'pending' (never
+ *     reached : a loop), order : [identifier] (in the order they ran), failed : whether the
+ *     workflow fails (a node failed with no failure and no always link out of it) }.
+ */
+export function dryRun(nodes, failing = new Set()) {
+  const state = new Map(nodes.map((n) => [n.identifier, { status: 'pending', doNotRun: false }]));
+  const order = [];
+  for (let guard = 0; guard <= nodes.length * 2; guard++) {
+    const { start, skip } = nextStep(nodes, state);
+    if (!start.length && !skip.length) break;
+    for (const id of skip) state.get(id).doNotRun = true;
+    for (const id of start) {
+      state.get(id).status = failing.has(id) ? 'failed' : 'successful';
+      order.push(id);
+    }
+  }
+  const status = new Map([...state].map(([id, s]) => [id, s.doNotRun ? 'do_not_run' : s.status]));
+  const failed = nodes.some((n) => status.get(n.identifier) === 'failed' && !n.failure.length && !n.always.length);
+  return { status, order, failed };
+}

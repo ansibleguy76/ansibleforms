@@ -12,8 +12,8 @@ export const DESIGNER_TABS = {
   // a playbook is code, edited as YAML
   playbooks: ['yaml'],
   varsfiles: ['yaml', 'visual'],
-  // a workflow as its graph (the Visual tab), its job templates under it
-  workflows: ['yaml', 'visual'],
+  // a workflow as its graph (the Visual tab), and a dry run of it (the Preview tab)
+  workflows: ['yaml', 'visual', 'preview'],
 };
 
 /** Every tab a section may have. */

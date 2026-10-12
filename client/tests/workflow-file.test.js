@@ -16,6 +16,7 @@ import {
   editRemoveNode,
   editWorkflow,
   workflowGraph,
+  dryRun,
 } from '@/config/workflowFile';
 
 // as `awx export` writes a workflow
@@ -228,5 +229,32 @@ describe('a workflow laid out', () => {
     expect(x.ask).toBe(x.ok);
     expect(g.links.filter((l) => l.kind === 'start').map((l) => l.to)).toEqual(['build']);
     expect(g.links.filter((l) => l.kind !== 'start')).toHaveLength(2);
+  });
+});
+
+describe('a dry run (the Preview tab)', () => {
+  const nodes = workflowFileOf(`workflow_job_templates:
+  - name: w
+    workflow_nodes:
+      - { identifier: build, unified_job_template: { name: a.yaml, type: job_template }, related: { success_nodes: [{ identifier: deploy }], failure_nodes: [{ identifier: notify }] } }
+      - { identifier: deploy, unified_job_template: { name: a.yaml, type: job_template }, related: { always_nodes: [{ identifier: notify }] } }
+      - { identifier: notify, unified_job_template: { name: a.yaml, type: job_template } }
+`).workflows[0].nodes;
+
+  it('all succeeding : every node on a success or always path runs', () => {
+    const r = dryRun(nodes);
+    expect(Object.fromEntries(r.status)).toEqual({ build: 'successful', deploy: 'successful', notify: 'successful' });
+    expect(r.order).toEqual(['build', 'deploy', 'notify']);
+    expect(r.failed).toBe(false);
+  });
+
+  it('a failure takes its failure path ; the success path never runs', () => {
+    const r = dryRun(nodes, new Set(['build']));
+    expect(Object.fromEntries(r.status)).toEqual({ build: 'failed', deploy: 'do_not_run', notify: 'successful' });
+    expect(r.failed).toBe(false);
+  });
+
+  it('a failure with nothing to handle it fails the workflow', () => {
+    expect(dryRun(nodes, new Set(['notify'])).failed).toBe(true);
   });
 });

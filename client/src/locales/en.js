@@ -1,5 +1,13 @@
 export default {
   workflowEditor: {
+    previewHint: 'Click a node that runs to make it fail, or succeed again. Nothing is launched.',
+    previewReset: 'Reset',
+    run: {
+      successful: 'succeeds',
+      failed: 'fails',
+      do_not_run: 'does not run',
+      pending: 'never reached',
+    },
     badIdentifier: 'An identifier has letters, digits, dots, dashes, colons and underscores only',
     identifierTaken: "Another node is already '{identifier}'",
     noWorkflow: 'No workflow',

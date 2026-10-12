@@ -1,5 +1,14 @@
 export default {
   workflowEditor: {
+    previewHint:
+      'Klicke auf einen Knoten, der läuft, damit er fehlschlägt oder wieder gelingt. Es wird nichts gestartet.',
+    previewReset: 'Zurücksetzen',
+    run: {
+      successful: 'gelingt',
+      failed: 'schlägt fehl',
+      do_not_run: 'läuft nicht',
+      pending: 'nie erreicht',
+    },
     badIdentifier: 'Ein Bezeichner hat nur Buchstaben, Ziffern, Punkte, Bindestriche, Doppelpunkte und Unterstriche',
     identifierTaken: "Ein anderer Knoten ist bereits '{identifier}'",
     noWorkflow: 'Kein Workflow',

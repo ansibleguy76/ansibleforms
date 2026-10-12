@@ -1,5 +1,13 @@
 export default {
   workflowEditor: {
+    previewHint: '実行されるノードをクリックすると失敗に、もう一度クリックすると成功に戻ります。何も起動されません。',
+    previewReset: 'リセット',
+    run: {
+      successful: '成功',
+      failed: '失敗',
+      do_not_run: '実行されない',
+      pending: '到達しない',
+    },
     badIdentifier: '識別子に使えるのは英字、数字、ドット、ハイフン、コロン、アンダースコアのみです',
     identifierTaken: "別のノードがすでに '{identifier}' です",
     noWorkflow: 'ワークフローなし',

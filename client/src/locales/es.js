@@ -1,5 +1,13 @@
 export default {
   workflowEditor: {
+    previewHint: 'Haz clic en un nodo que se ejecuta para que falle, o vuelva a tener éxito. No se lanza nada.',
+    previewReset: 'Restablecer',
+    run: {
+      successful: 'tiene éxito',
+      failed: 'falla',
+      do_not_run: 'no se ejecuta',
+      pending: 'nunca se alcanza',
+    },
     badIdentifier: 'Un identificador solo tiene letras, dígitos, puntos, guiones, dos puntos y guiones bajos',
     identifierTaken: "Otro nodo ya es '{identifier}'",
     noWorkflow: 'Ningún workflow',
