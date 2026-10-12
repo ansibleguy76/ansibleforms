@@ -104,23 +104,36 @@ export function statusPill(t, value) {
 }
 
 /**
- * A repository's status as a pill : its last pull or push running (blue) or failed (red) ; else
- * changes saved here and not pushed yet, in the designer's push orange (something waits) ; else
- * pushed, green (pushed, not up to date : the remote may hold newer commits).
+ * A repository's last pull as a pill : running blue, success green, failed red ; never pulled
+ * (no status yet) an en dash. Its clone, sync and reset write the same status.
  *
  * Args:
  *   t (function): the translation function.
- *   repo (object): the repository, with status (its last sync) and unpushed.
+ *   repo (object): the repository, with status (its last pull).
  *
  * Returns:
  *   string: the pill's markup.
  */
-export function repositoryStatusPill(t, repo) {
-  if (repo?.status === 'running' || repo?.status === 'failed') return statusPill(t, repo.status);
+export function repositoryPullPill(t, repo) {
+  return statusPill(t, repo?.status);
+}
+
+/**
+ * A repository's push as a pill : changes saved here and not pushed yet, pending changes in the
+ * designer's push orange (something waits) ; else nothing to push, success green.
+ *
+ * Args:
+ *   t (function): the translation function.
+ *   repo (object): the repository, with unpushed.
+ *
+ * Returns:
+ *   string: the pill's markup.
+ */
+export function repositoryPushPill(t, repo) {
   if (repo?.unpushed) {
     return pill(PILL.unpushed, t('settings.repositories.notPushed'), t('settings.repositories.notPushedHint'));
   }
-  return pill(PILL.green, t('settings.repositories.pushed'));
+  return statusPill(t, 'success');
 }
 
 /**
@@ -660,14 +673,21 @@ export default function getSettings(t) {
         },
         // a commit's 7 characters
         { key: 'head', label: t('settings.fields.head'), noInput: true, hideBelow: 900 },
-        // its status : the last sync running or failed, else changes saved here (the designer's
-        // Save) and not pushed yet, or pushed
+        // its last pull (clone, sync or reset) : running, success or failed
         {
           key: 'status',
-          label: t('settings.fields.status'),
+          label: t('settings.fields.pull'),
           noInput: true,
-          render: (v, row) => repositoryStatusPill(t, row),
-          sortValue: (r) => ({ failed: 0, running: 1 })[r.status] ?? (r.unpushed ? 2 : 3),
+          render: (v, row) => repositoryPullPill(t, row),
+          sortValue: (r) => ({ failed: 0, running: 1, success: 2 })[r.status] ?? 3,
+        },
+        // its push : changes saved here (the designer's Save) and not pushed yet, or none
+        {
+          key: 'unpushed',
+          label: t('settings.fields.push'),
+          noInput: true,
+          render: (v, row) => repositoryPushPill(t, row),
+          sortValue: (r) => (r.unpushed ? 0 : 1),
         },
         {
           // a credential of Connections > Credentials, or a New one : the user and password git

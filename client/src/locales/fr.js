@@ -848,6 +848,8 @@ export default {
       token: 'Jeton',
       branch: 'Branche',
       head: 'Head',
+      pull: 'Pull',
+      push: 'Push',
       form: 'Formulaire',
       date: 'Date',
       enable: 'Activer',
@@ -1084,8 +1086,7 @@ export default {
       usePlaybooksShort: 'Playbooks',
       useWorkflowsHint: 'Workflows que construit le designer, modifiés et repoussés par le designer',
       useWorkflowsShort: 'Workflows',
-      notPushed: 'Non poussé',
-      pushed: 'Poussé',
+      notPushed: 'Modifications en attente',
       notPushedHint:
         'Des changements enregistrés ici ne sont pas encore poussés vers le dépôt distant : poussez-les depuis le designer, ou avec Push.',
       useForInventories: 'Utiliser pour les inventaires ?',

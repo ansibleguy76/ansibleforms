@@ -841,6 +841,8 @@ export default {
       token: 'トークン',
       branch: 'ブランチ',
       head: 'HEAD',
+      pull: 'プル',
+      push: 'プッシュ',
       form: 'フォーム',
       date: '日付',
       enable: '有効化',
@@ -1072,8 +1074,7 @@ export default {
       usePlaybooksShort: 'Playbook',
       useWorkflowsHint: 'デザイナーで作るワークフロー。デザイナーで編集してプッシュします',
       useWorkflowsShort: 'ワークフロー',
-      notPushed: '未プッシュ',
-      pushed: 'プッシュ済み',
+      notPushed: '保留中の変更',
       notPushedHint:
         'ここで保存された変更がまだリモートにプッシュされていません: デザイナーまたはプッシュでプッシュしてください。',
       useForInventories: 'インベントリに使用しますか?',

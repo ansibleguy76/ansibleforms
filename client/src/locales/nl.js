@@ -843,6 +843,8 @@ export default {
       token: 'Token',
       branch: 'Branch',
       head: 'Head',
+      pull: 'Pull',
+      push: 'Push',
       form: 'Formulier',
       date: 'Datum',
       enable: 'Inschakelen',
@@ -1075,8 +1077,7 @@ export default {
       usePlaybooksShort: 'Playbooks',
       useWorkflowsHint: 'Workflows die de designer bouwt, bewerkt en teruggepusht door de designer',
       useWorkflowsShort: 'Workflows',
-      notPushed: 'Niet gepusht',
-      pushed: 'Gepusht',
+      notPushed: 'Openstaande wijzigingen',
       notPushedHint:
         'Hier opgeslagen wijzigingen zijn nog niet naar de remote gepusht: push ze vanuit de designer, of met Push.',
       useForInventories: 'Gebruiken voor inventarissen?',

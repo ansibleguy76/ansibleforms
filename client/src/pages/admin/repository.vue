@@ -20,7 +20,7 @@ import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import TokenStorage from '@/lib/TokenStorage';
-import { repositoryStatusPill } from '@/config/settings';
+import { repositoryPullPill, repositoryPushPill } from '@/config/settings';
 import { cronValidationMessage } from '@/config/cron';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
@@ -397,11 +397,16 @@ onMounted(async () => {
         <div v-else-if="repo && edit" class="af-repo-tab">
           <!-- Details : what it is, and where it stands -->
           <template v-if="activeTab === 'details'">
-            <!-- where it stands : its status and head, each a field of the column, read only -->
+            <!-- where it stands : its pull, push and head, each a field of the column, read only -->
             <div class="mb-3">
-              <div class="form-label fw-bold">{{ t('settings.fields.status') }}</div>
-              <!-- the last sync running or failed, else not pushed yet or pushed -->
-              <span v-html="repositoryStatusPill(t, repo)"></span>
+              <div class="form-label fw-bold">{{ t('settings.fields.pull') }}</div>
+              <!-- the last pull (clone, sync or reset) : running, success or failed -->
+              <span v-html="repositoryPullPill(t, repo)"></span>
+            </div>
+            <div class="mb-3">
+              <div class="form-label fw-bold">{{ t('settings.fields.push') }}</div>
+              <!-- changes saved here and not pushed yet, or none -->
+              <span v-html="repositoryPushPill(t, repo)"></span>
             </div>
             <div class="mb-3">
               <div class="form-label fw-bold">{{ t('settings.fields.head') }}</div>

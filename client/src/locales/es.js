@@ -842,6 +842,8 @@ export default {
       token: 'Token',
       branch: 'Rama',
       head: 'Cabeza',
+      pull: 'Pull',
+      push: 'Push',
       form: 'Formulario',
       date: 'Fecha',
       enable: 'Habilitar',
@@ -1079,8 +1081,7 @@ export default {
       usePlaybooksShort: 'Playbooks',
       useWorkflowsHint: 'Workflows que construye el diseñador, editados y enviados de vuelta por el diseñador',
       useWorkflowsShort: 'Workflows',
-      notPushed: 'Sin enviar',
-      pushed: 'Enviado',
+      notPushed: 'Cambios pendientes',
       notPushedHint:
         'Hay cambios guardados aquí que aún no se han enviado al remoto: envíalos desde el diseñador o con Push.',
       useForInventories: '¿Usar para inventarios?',

@@ -830,6 +830,8 @@ export default {
       token: 'Token',
       branch: '分支',
       head: 'Head',
+      pull: '拉取',
+      push: '推送',
       form: '表单',
       date: '日期',
       enable: '启用',
@@ -1049,8 +1051,7 @@ export default {
       usePlaybooksShort: 'Playbook',
       useWorkflowsHint: '设计器构建的工作流,由设计器编辑并推送回去',
       useWorkflowsShort: '工作流',
-      notPushed: '未推送',
-      pushed: '已推送',
+      notPushed: '待推送的更改',
       notPushedHint: '此处保存的更改尚未推送到远程: 请在设计器中或用推送进行推送。',
       useForInventories: '用于清单?',
       helpUseForInventories:
