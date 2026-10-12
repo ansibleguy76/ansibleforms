@@ -581,6 +581,7 @@ defineExpose({
           :inventory="inventory"
           :groupVars="groupVars"
           :hostVars="hostVars"
+          :fileName="selected.split('/').pop()"
           @reveal="reveal"
           @open="openVars"
         />
