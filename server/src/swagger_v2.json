@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "AnsibleForms API v2",
-    "version": "2.0.0",
+    "version": "0.0.0",
     "description": "API documentation for AnsibleForms v2 endpoints: Authentication, Query, Expression, AWX, Job, Backup, Credential, and Known Hosts management."
   },
   "tags": [

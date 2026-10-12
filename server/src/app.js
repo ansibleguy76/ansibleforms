@@ -17,6 +17,7 @@ import passport from "passport";
 import Middleware from "./lib/middleware.js";
 import { authRateLimit } from "./lib/authRateLimit.js";
 import { cspDirectives } from "./lib/csp.js";
+import { appVersion } from "./lib/version.js";
 import { readinessHandlers } from "./lib/readiness.js";
 import { requestContext } from "./lib/requestContext.js";
 import { installFatalHandlers } from "./lib/fatal.js";
@@ -87,6 +88,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const swaggerDocumentV2 = JSON.parse(fs.readFileSync(path.join(__dirname, "swagger_v2.json"), "utf8"));
+// the api docs carry the version of this build (build-info.json, else package.json) : the
+// file itself has no release step that would keep a version in it up to date
+swaggerDocumentV2.info.version = appVersion;
 
 // a small custom middleware to check whether the user has access to routes
 
