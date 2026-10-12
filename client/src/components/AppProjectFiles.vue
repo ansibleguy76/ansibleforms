@@ -839,6 +839,8 @@ defineExpose({
   align-items: stretch;
   flex: 1 1 auto;
   min-height: 0;
+  /* one row, as tall as the card leaves : the Visual tab scrolls inside it, never the card */
+  grid-template-rows: minmax(0, 1fr);
 }
 .af-files-editor {
   min-width: 0;
@@ -846,10 +848,12 @@ defineExpose({
   display: flex;
   flex-direction: column;
 }
-/* the Visual tab : as tall as the editor, scrolling inside itself ; room for a field's focus ring */
+/* the Visual tab : the height the card leaves (whatever the banners above take), scrolling inside
+   itself ; room for a field's focus ring */
 .af-files-visual {
   margin-top: 0.5rem;
-  max-height: calc(100vh - 16rem);
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   padding: 0.25rem 0.5rem 0.25rem 0.25rem;
   margin-left: -0.25rem;
