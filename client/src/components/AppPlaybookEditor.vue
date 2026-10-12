@@ -28,7 +28,6 @@ import {
   COMMON_MODULES,
   playbookFields,
   editAddPlay,
-  editRemovePlay,
   editPlay,
   editRoles,
   editAddTask,
@@ -152,13 +151,6 @@ const sectionToAdd = ref({});
             <span class="fw-bold flex-grow-1"
               ><FaIcon icon="play" class="me-2 text-success" />{{ t('playbookEditor.play', { n: pi + 1 }) }}</span
             >
-            <BsButton
-              v-if="!readOnly"
-              icon="trash"
-              :isIconButton="true"
-              :title="t('playbookEditor.removePlay')"
-              @click="apply((text) => editRemovePlay(text, pi))"
-            />
           </div>
           <div class="row g-3 mb-3">
             <div class="col-md-6">
