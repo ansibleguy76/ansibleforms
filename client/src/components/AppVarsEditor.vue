@@ -178,7 +178,18 @@ defineExpose({ add: () => startAdd() });
           @change="change(row, $event.target.value)"
           @keyup.enter="$event.target.blur()"
         />
-        <div class="d-flex gap-2 justify-content-end">
+        <!-- Delete first, so it stands in the same place on every row ; a list's or a map's + after it -->
+        <div class="d-flex gap-2">
+          <button
+            type="button"
+            class="btn af-row-btn"
+            :class="readOnly ? 'btn-outline-secondary' : 'btn-outline-danger'"
+            :disabled="readOnly"
+            :title="t('common.delete')"
+            @click="remove(row)"
+          >
+            <FaIcon icon="trash" />
+          </button>
           <button
             v-if="row.type === 'map' || row.type === 'seq'"
             type="button"
@@ -189,16 +200,6 @@ defineExpose({ add: () => startAdd() });
             @click="startAdd(row)"
           >
             <FaIcon icon="plus" />
-          </button>
-          <button
-            type="button"
-            class="btn af-row-btn"
-            :class="readOnly ? 'btn-outline-secondary' : 'btn-outline-danger'"
-            :disabled="readOnly"
-            :title="t('common.delete')"
-            @click="remove(row)"
-          >
-            <FaIcon icon="trash" />
           </button>
         </div>
       </div>
@@ -236,7 +237,8 @@ defineExpose({ add: () => startAdd() });
 }
 .af-vars-row {
   display: grid;
-  grid-template-columns: minmax(12rem, 1fr) minmax(14rem, 1.4fr) 5.5rem;
+  /* the key and the value take the room up to the buttons, which take what they need */
+  grid-template-columns: minmax(12rem, 1fr) minmax(14rem, 1.4fr) auto;
   gap: 0.75rem;
   align-items: center;
   min-width: 36rem;
