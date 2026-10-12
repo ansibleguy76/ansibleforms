@@ -4790,6 +4790,9 @@
               This is typically a classic SELECT statement.  
               However, in the case of mongodb, the query is slightly different.  See the examples.  
               An expression supports placeholders.  Read more about placeholders here. [TODO]
+
+              Every `$(...)` value is escaped for the database engine before it is pasted into the query : single quotes are doubled, backslashes are doubled too on mysql (postgres, mssql and oracle keep them as they are), and on mongodb the value is escaped as the body of a JSON string. An object or array value is pasted as json, escaped the same way.  
+              This protects a quoted placeholder (`where name='$(name)'`) only : an unquoted one (`limit $(n)`) is pasted as plain text, so quote your placeholders.
             examples:
             - name: get information from a mysql database
               code: |
