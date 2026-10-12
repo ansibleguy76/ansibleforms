@@ -874,9 +874,8 @@ export default {
       useWorkflowsShort: 'Workflows',
       useForInventories: '¿Usar para inventarios?',
       helpUseForInventories:
-        "Los inventarios que nombran los formularios de playbook (inventory: <nombre>) se leen de este repositorio (subcarpeta 'inventories' o raíz) y el diseñador los envía de vuelta.",
-      useInventoriesHint:
-        'Inventarios contra los que corren los playbooks, editados y enviados de vuelta por el diseñador',
+        'Este repositorio es un inventario, con su nombre: su raíz contiene inventory.yaml, group_vars y host_vars. Un formulario de playbook lo nombra con inventory: <nombre del repositorio>; el diseñador lo edita y lo envía de vuelta.',
+      useInventoriesHint: 'Un inventario: inventory.yaml, group_vars y host_vars en su raíz',
       useInventoriesShort: 'Inventarios',
       fieldsRequired: 'El nombre, la URI y la descripción son obligatorios.',
       noOutput: 'Aún no hay salida: haz pull del repositorio para ver lo que dice git.',
@@ -1602,7 +1601,7 @@ export default {
       newHostVars: 'Nuevas variables de host',
       hostVarsHelp:
         'El nombre del host, como en el inventario: sus variables van en {inventory}/host_vars/<nombre>.yaml.',
-      repository: 'Repositorio',
+      inventoryRepository: 'Un repositorio: se envía con Push',
       noInventories: 'Aún no hay inventarios: crea uno con Nuevo inventario.',
       inventoryPlugin: 'Un inventario dinámico: el plugin {plugin} lee sus hosts cuando corre el playbook.',
       inventoryEmpty: 'Aún no hay grupos ni hosts: añádelos en la pestaña YAML.',

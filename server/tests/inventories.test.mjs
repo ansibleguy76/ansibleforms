@@ -16,74 +16,77 @@ process.env.DB_PASSWORD = process.env.DB_PASSWORD || "test";
 const { resolveInventory } = await import("../src/lib/inventories.js");
 
 describe("an inventory by its name", () => {
-  const dirs = new Set(["/inv/production", "/repo-a/inventories/web", "/repo-b/web", "/repo-b/db"]);
+  const dirs = new Set(["/inv/staging", "/inv/lab", "/repos/production", "/repos/lab"]);
   const isDir = (p) => dirs.has(p);
-  const local = [{ repository: null, root: "/inv" }];
-  const repos = [
-    { repository: "repo-a", root: "/repo-a/inventories" },
-    { repository: "repo-b", root: "/repo-b" },
+  const roots = [
+    { repository: null, root: "/inv" },
+    { repository: "production", root: "/repos/production" },
   ];
 
-  test("a name is its folder", () => {
-    assert.equal(resolveInventory("production", local, isDir), "/inv/production");
-    assert.equal(resolveInventory("db", repos, isDir), "/repo-b/db");
+  test("a repository used for inventories is the inventory of its name ; a local folder too", () => {
+    assert.equal(resolveInventory("production", roots, isDir), "/repos/production");
+    assert.equal(resolveInventory("staging", roots, isDir), "/inv/staging");
   });
 
   test("anything else goes to ansible as it is", () => {
-    assert.equal(resolveInventory("hosts.yml", local, isDir), "hosts.yml");
-    assert.equal(resolveInventory("inventories/production/hosts.yml", local, isDir), "inventories/production/hosts.yml");
-    assert.equal(resolveInventory("staging", local, isDir), "staging", "no such inventory");
-    assert.equal(resolveInventory("../etc", local, isDir), "../etc");
-    assert.equal(resolveInventory(["x"], local, isDir).length, 1, "not a string : as it is");
+    assert.equal(resolveInventory("hosts.yml", roots, isDir), "hosts.yml");
+    assert.equal(resolveInventory("inventories/production/hosts.yml", roots, isDir), "inventories/production/hosts.yml");
+    assert.equal(resolveInventory("nope", roots, isDir), "nope", "no such inventory");
+    assert.equal(resolveInventory("..", roots, isDir), "..");
+    assert.equal(resolveInventory(["x"], roots, isDir).length, 1, "not a string : as it is");
   });
 
-  test("a name in two repositories must say which", () => {
-    assert.throws(() => resolveInventory("web", repos, isDir), /Inventory 'web' is in several repositories \(repo-a, repo-b\) : name it <repository>\/web/);
-    assert.equal(resolveInventory("repo-a/web", repos, isDir), "/repo-a/inventories/web");
-    assert.equal(resolveInventory("repo-b/web", repos, isDir), "/repo-b/web");
+  test("a name both a repository and a local folder must be renamed", () => {
+    const both = [...roots, { repository: "lab", root: "/repos/lab" }];
+    assert.throws(() => resolveInventory("lab", both, isDir), /Inventory 'lab' is both a repository and a folder/);
   });
 });
 
-describe("the inventories files of several repositories", () => {
+describe("the inventories : the local folder and the repositories that are inventories", () => {
   let base;
   let ProjectFiles;
   beforeAll(async () => {
     base = fs.mkdtempSync(path.join(os.tmpdir(), "af-inv-"));
-    fs.mkdirSync(path.join(base, "a/inventories/production/group_vars"), { recursive: true });
-    fs.writeFileSync(path.join(base, "a/inventories/production/inventory.yaml"), "all: {}\n");
-    fs.writeFileSync(path.join(base, "a/inventories/production/group_vars/all.yaml"), "x: 1\n");
-    fs.mkdirSync(path.join(base, "b/staging"), { recursive: true });
-    fs.writeFileSync(path.join(base, "b/staging/inventory.yaml"), "all: {}\n");
+    // the local folder : staging, and a folder hidden by the production repository
+    fs.mkdirSync(path.join(base, "local/staging"), { recursive: true });
+    fs.writeFileSync(path.join(base, "local/staging/inventory.yaml"), "all: {}\n");
+    fs.mkdirSync(path.join(base, "local/production"), { recursive: true });
+    fs.writeFileSync(path.join(base, "local/production/inventory.yaml"), "hidden: {}\n");
+    // the production repository : the inventory at its root
+    fs.mkdirSync(path.join(base, "repos/production/group_vars"), { recursive: true });
+    fs.writeFileSync(path.join(base, "repos/production/inventory.yaml"), "all: {}\n");
+    fs.writeFileSync(path.join(base, "repos/production/group_vars/all.yaml"), "x: 1\n");
     const { default: Repository } = await import("../src/models/repository.model.js");
     const { default: Repo } = await import("../src/models/repo.model.js");
     Repository.getInventoryRoots = async () => [
-      { repository: "a", root: path.join(base, "a/inventories") },
-      { repository: "b", root: path.join(base, "b") },
+      { repository: null, root: path.join(base, "local") },
+      { repository: "production", root: path.join(base, "repos/production") },
     ];
     Repository.claimForWrite = async () => undefined;
-    Repo.hasChanges = vi.fn(async (name) => name === "b");
+    Repo.hasChanges = vi.fn(async () => true);
     ({ default: ProjectFiles } = await import("../src/models/projectFiles.model.js"));
   });
   afterAll(() => fs.rmSync(base, { recursive: true, force: true }));
 
-  test("are listed under their repository's name", async () => {
+  test("are listed side by side, each inventory at the top", async () => {
     const list = await ProjectFiles.list("inventories");
     assert.deepEqual(list.files.map((f) => f.path).sort(), [
-      "a/production/group_vars/all.yaml",
-      "a/production/inventory.yaml",
-      "b/staging/inventory.yaml",
-    ]);
-    assert.deepEqual(list.roots, ["a", "b"]);
-    assert.equal(list.repository, "a, b");
-    assert.equal(list.dirty, true, "b has changes to push");
+      "production/group_vars/all.yaml",
+      "production/inventory.yaml",
+      "staging/inventory.yaml",
+    ], "the local production folder is hidden by the repository");
+    assert.deepEqual(list.repositories.map((r) => r.name), ["production"]);
+    assert.equal(list.dirty, true);
   });
 
-  test("are read, written and deleted in their repository", async () => {
-    assert.equal((await ProjectFiles.read("inventories", "a/production/group_vars/all.yaml")).content, "x: 1\n");
-    await ProjectFiles.write("inventories", "b/staging/host_vars/web1.yaml", "y: 2\n", true);
-    assert.equal(fs.readFileSync(path.join(base, "b/staging/host_vars/web1.yaml"), "utf8"), "y: 2\n");
-    await ProjectFiles.remove("inventories", "b/staging/host_vars/web1.yaml");
-    assert.equal(fs.existsSync(path.join(base, "b/staging/host_vars")), false, "the folder it leaves empty goes too");
-    await assert.rejects(ProjectFiles.read("inventories", "c/x.yaml"), /in none of the repositories/);
+  test("are read, written and deleted where they are", async () => {
+    assert.equal((await ProjectFiles.read("inventories", "production/group_vars/all.yaml")).content, "x: 1\n");
+    assert.equal((await ProjectFiles.read("inventories", "staging/inventory.yaml")).content, "all: {}\n");
+    await ProjectFiles.write("inventories", "production/host_vars/web1.yaml", "y: 2\n", true);
+    assert.equal(fs.readFileSync(path.join(base, "repos/production/host_vars/web1.yaml"), "utf8"), "y: 2\n");
+    await ProjectFiles.remove("inventories", "production/host_vars/web1.yaml");
+    assert.equal(fs.existsSync(path.join(base, "repos/production/host_vars")), false, "the folder it leaves empty goes too");
+    await ProjectFiles.write("inventories", "lab/inventory.yaml", "all: {}\n", true);
+    assert.equal(fs.existsSync(path.join(base, "local/lab/inventory.yaml")), true, "a new inventory : in the local folder");
   });
 });

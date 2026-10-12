@@ -877,9 +877,8 @@ export default {
       useWorkflowsShort: 'Workflows',
       useForInventories: 'Fer servir per a inventaris?',
       helpUseForInventories:
-        "Els inventaris que nomenen els formularis de playbook (inventory: <nom>) es llegeixen d'aquest repositori (subcarpeta 'inventories' o arrel) i el dissenyador els torna a enviar.",
-      useInventoriesHint:
-        'Inventaris contra els quals corren els playbooks, editats i enviats de tornada pel dissenyador',
+        "Aquest repositori és un inventari, amb el seu nom: la seva arrel conté inventory.yaml, group_vars i host_vars. Un formulari de playbook el nomena amb inventory: <nom del repositori>; el dissenyador l'edita i el torna a enviar.",
+      useInventoriesHint: 'Un inventari: inventory.yaml, group_vars i host_vars a la seva arrel',
       useInventoriesShort: 'Inventaris',
       fieldsRequired: 'El nom, la URI i la descripció són obligatoris.',
       noOutput: 'Encara no hi ha sortida: feu pull del repositori per veure què diu git.',
@@ -1608,7 +1607,7 @@ export default {
       groupVarsHelp: 'El nom del grup: les seves variables van a {inventory}/group_vars/<nom>.yaml.',
       newHostVars: 'Variables de host noves',
       hostVarsHelp: "El nom del host, com a l'inventari: les seves variables van a {inventory}/host_vars/<nom>.yaml.",
-      repository: 'Repositori',
+      inventoryRepository: "Un repositori: s'envia amb Push",
       noInventories: "Encara no hi ha inventaris: crea'n un amb Inventari nou.",
       inventoryPlugin: 'Un inventari dinàmic: el plugin {plugin} llegeix els seus hosts quan corre el playbook.',
       inventoryEmpty: 'Encara no hi ha grups ni hosts: afegeix-los a la pestanya YAML.',

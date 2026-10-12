@@ -6,8 +6,9 @@
 // Listed, read, written and deleted here ; a repository's are then pushed to its remote (Push,
 // as the forms' Save to repo).
 //
-// A kind has one root, or - the inventories of several repositories - one per repository : then
-// every path starts with its repository's name (ops-inventories/production/inventory.yaml).
+// A kind has one root ; the inventories have the local folder (one folder per inventory) and
+// a root per inventories repository, each an inventory of its own : its paths start with its name
+// (production/inventory.yaml), as a local inventory's start with its folder's.
 import fs from "fs";
 import path from "path";
 import logger from "../lib/logger.js";
@@ -31,8 +32,9 @@ const PUSH_LABEL = { playbooks: "Playbooks", vars: "Vars files", inventories: "I
  *   kind (string): 'playbooks', 'vars' or 'inventories'.
  *
  * Returns:
- *   object[]: { prefix (the name a path starts with : '' for a kind with one root, else the
- *     repository's), root (absolute folder), repository (its name, or null for a local folder) }.
+ *   object[]: { prefix (the name a path starts with : '' for a folder whose paths are its own,
+ *     an inventories repository's name), root (absolute folder), repository (its name, or null
+ *     for a local folder) }.
  *
  * Raises:
  *   BadRequestError: the kind is not one of FILE_KINDS.
@@ -40,17 +42,16 @@ const PUSH_LABEL = { playbooks: "Playbooks", vars: "Vars files", inventories: "I
 ProjectFiles.roots = async function (kind) {
   if (!FILE_KINDS.includes(kind)) throw new Errors.BadRequestError(`Unknown kind of files '${kind}'`);
   if (kind === "inventories") {
-    const roots = await Repository.getInventoryRoots();
-    const several = roots.length > 1;
-    return roots.map((r) => ({ prefix: several ? r.repository : "", root: path.resolve(r.root), repository: r.repository }));
+    // the local folder, then each repository that is an inventory
+    return (await Repository.getInventoryRoots()).map((r) => ({ prefix: r.repository || "", root: path.resolve(r.root), repository: r.repository }));
   }
   const root = path.resolve(kind === "playbooks" ? (await Repository.getAnsiblePath()) || ansibleConfig.path : await Repository.getVarsFilesPath());
   return [{ prefix: "", root, repository: configRepoFromPath(root, path.resolve(appConfig.repoPath)) }];
 };
 
 /**
- * The root a path of a kind is in, and the path inside it : its first part names the root when
- * the kind has several.
+ * The root a path of a kind is in, and the path inside it : a repository's when its first part
+ * names one, else the folder whose paths are its own.
  *
  * Args:
  *   kind (string): the kind.
@@ -64,11 +65,12 @@ ProjectFiles.roots = async function (kind) {
  */
 async function rootOf(kind, rel) {
   const roots = await ProjectFiles.roots(kind);
-  if (roots.length === 1 && !roots[0].prefix) return { ...roots[0], inner: rel };
   const parts = String(rel ?? "").replace(/^\/+/, "").split("/");
-  const found = roots.find((r) => r.prefix === parts[0]);
-  if (!found) throw new Errors.BadRequestError(`'${rel}' is in none of the repositories : start it with the repository's name`);
-  return { ...found, inner: parts.slice(1).join("/") };
+  const repo = roots.find((r) => r.prefix && r.prefix === parts[0]);
+  if (repo) return { ...repo, inner: parts.slice(1).join("/") };
+  const own = roots.find((r) => !r.prefix);
+  if (!own) throw new Errors.BadRequestError(`'${rel}' is in none of the folders`);
+  return { ...own, inner: rel };
 }
 
 /**
@@ -126,6 +128,8 @@ ProjectFiles.list = async function (kind) {
   const files = [];
   let truncated = false;
   // breadth first, one folder at a time, at most 12 deep
+  // a local inventory's folder named as an inventories repository is hidden by it
+  const repoNames = new Set(roots.map((r) => r.prefix).filter(Boolean));
   const walk = async (dir, rel, depth, prefix) => {
     if (depth > 12 || truncated) return;
     let entries;
@@ -138,6 +142,10 @@ ProjectFiles.list = async function (kind) {
     entries.sort((a, b) => a.name.localeCompare(b.name));
     for (const entry of entries) {
       if (entry.name.startsWith(".")) continue;
+      if (!prefix && depth === 0 && repoNames.has(entry.name)) {
+        logger.warning(`The folder ${entry.name} of ${dir} is hidden by the inventories repository of that name`);
+        continue;
+      }
       const childRel = rel ? `${rel}/${entry.name}` : entry.name;
       const childAbs = path.join(dir, entry.name);
       if (entry.isDirectory()) {

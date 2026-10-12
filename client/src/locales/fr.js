@@ -879,8 +879,8 @@ export default {
       useWorkflowsShort: 'Workflows',
       useForInventories: 'Utiliser pour les inventaires ?',
       helpUseForInventories:
-        "Les inventaires que nomment les formulaires de playbook (inventory: <nom>) sont lus depuis ce dépôt (sous-dossier 'inventories' ou racine) et repoussés par le designer.",
-      useInventoriesHint: 'Inventaires sur lesquels tournent les playbooks, modifiés et repoussés par le designer',
+        'Ce dépôt est un inventaire, à son nom : sa racine contient inventory.yaml, group_vars et host_vars. Un formulaire de playbook le nomme avec inventory: <nom du dépôt> ; le designer le modifie et le repousse.',
+      useInventoriesHint: 'Un inventaire : inventory.yaml, group_vars et host_vars à sa racine',
       useInventoriesShort: 'Inventaires',
       fieldsRequired: "Le nom, l'URI et la description sont obligatoires.",
       noOutput: 'Pas encore de sortie : faites un pull du dépôt pour voir ce que dit git.',
@@ -1611,7 +1611,7 @@ export default {
       newHostVars: "Nouvelles variables d'hôte",
       hostVarsHelp:
         "Le nom de l'hôte, comme dans l'inventaire : ses variables vont dans {inventory}/host_vars/<nom>.yaml.",
-      repository: 'Dépôt',
+      inventoryRepository: 'Un dépôt : poussé avec Push',
       noInventories: "Pas encore d'inventaire : créez-en un avec Nouvel inventaire.",
       inventoryPlugin: 'Un inventaire dynamique : le plugin {plugin} lit ses hôtes quand le playbook tourne.',
       inventoryEmpty: "Pas encore de groupes ni d'hôtes : ajoutez-les dans l'onglet YAML.",

@@ -871,9 +871,8 @@ export default {
       useWorkflowsShort: 'Workflowy',
       useForInventories: 'Używać do inwentarzy?',
       helpUseForInventories:
-        "Inwentarze wskazywane przez formularze playbooków (inventory: <nazwa>) są czytane z tego repozytorium (podfolder 'inventories' lub katalog główny) i wypychane z powrotem przez projektanta.",
-      useInventoriesHint:
-        'Inwentarze, na których działają playbooki, edytowane i wypychane z powrotem przez projektanta',
+        'To repozytorium jest inwentarzem o jego nazwie: katalog główny zawiera inventory.yaml, group_vars i host_vars. Formularz playbooka wskazuje go przez inventory: <nazwa repozytorium>; projektant go edytuje i wypycha z powrotem.',
+      useInventoriesHint: 'Inwentarz: inventory.yaml, group_vars i host_vars w katalogu głównym',
       useInventoriesShort: 'Inwentarze',
       fieldsRequired: 'Nazwa, URI i opis są wymagane.',
       noOutput: 'Brak wyniku: wykonaj pull repozytorium, aby zobaczyć komunikaty git.',
@@ -1590,7 +1589,7 @@ export default {
       groupVarsHelp: 'Nazwa grupy: jej zmienne trafiają do {inventory}/group_vars/<nazwa>.yaml.',
       newHostVars: 'Nowe zmienne hosta',
       hostVarsHelp: 'Nazwa hosta, jak w inwentarzu: jego zmienne trafiają do {inventory}/host_vars/<nazwa>.yaml.',
-      repository: 'Repozytorium',
+      inventoryRepository: 'Repozytorium: wypychane przez Push',
       noInventories: 'Brak inwentarzy: utwórz go przyciskiem Nowy inwentarz.',
       inventoryPlugin: 'Inwentarz dynamiczny: wtyczka {plugin} odczytuje hosty, gdy działa playbook.',
       inventoryEmpty: 'Brak grup i hostów: dodaj je na karcie YAML.',

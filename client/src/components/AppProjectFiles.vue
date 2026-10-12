@@ -129,21 +129,21 @@ const lang = computed(() => (/\.ya?ml$/i.test(selected.value) ? 'yaml' : 'text')
 const fileKind = computed(() => (props.view === 'visual' && lang.value === 'yaml' ? varsKind(content.value) : null));
 
 // ─── the inventories ──────────────────────────────────────────────────────────
-// one folder per inventory (production/inventory.yaml, group_vars/, host_vars/) ; under its
-// repository's name when several repositories hold inventories
+// one folder per inventory at the top (production/inventory.yaml, group_vars/, host_vars/) : a
+// folder of the local inventories folder, or a repository that is an inventory
 const isInventories = computed(() => props.kind === 'inventories');
-const prefixed = computed(() => (listing.value.roots || []).some(Boolean));
-// the folders' depth the inventories are at : under the repositories' folders, or at the top
-const inventoryDepth = computed(() => (prefixed.value ? 1 : 0));
+const inventoryDepth = computed(() => 0);
+// the inventories that are repositories : their folder shows git's mark
+const repositoryInventories = computed(() => (listing.value.repositories || []).map((r) => r.name));
 // what the file open is in its inventory : the inventory, a group's or a host's vars, other
-const fileRole = computed(() => (isInventories.value ? inventoryFileRole(selected.value, prefixed.value) : null));
+const fileRole = computed(() => (isInventories.value ? inventoryFileRole(selected.value) : null));
 const inventory = computed(() =>
   props.view === 'visual' && fileRole.value?.role === 'inventory' ? inventoryOf(content.value) : null,
 );
 // the groups and hosts of the inventory open that have a vars file
 const varsFilesOf = (role) =>
   listing.value.files
-    .map((f) => inventoryFileRole(f.path, prefixed.value))
+    .map((f) => inventoryFileRole(f.path))
     .filter((r) => r.role === role && r.inventory === fileRole.value?.inventory)
     .map((r) => r.name);
 const groupVars = computed(() => (inventory.value ? varsFilesOf('group_vars') : []));
@@ -284,9 +284,9 @@ async function push() {
 function startCreate(kind, folder = '') {
   if (props.readOnly) return;
   if (kind === 'inventory') {
-    // in a repository's folder when it was clicked there, else the first repository's
-    const repo = folder || (listing.value.roots || []).find(Boolean) || '';
-    creating.value = { kind, name: '', repo };
+    // a new inventory is a folder of the local inventories folder ; a repository is added in
+    // Settings > Repositories
+    creating.value = { kind, name: '' };
   } else if (kind === 'group_vars' || kind === 'host_vars') {
     creating.value = { kind, name: '', inventory: folder };
   } else {
@@ -320,9 +320,8 @@ async function create() {
     try {
       let opened;
       if (c.kind === 'inventory') {
-        const base = c.repo ? `${c.repo}/${name}` : name;
-        opened = await postFile(`${base}/inventory.yaml`, INVENTORY_SKELETON);
-        await postFile(`${base}/group_vars/all.yaml`, '---\n');
+        opened = await postFile(`${name}/inventory.yaml`, INVENTORY_SKELETON);
+        await postFile(`${name}/group_vars/all.yaml`, '---\n');
       } else {
         opened = await postFile(`${c.inventory}/${c.kind}/${name}.yaml`, '---\n');
       }
@@ -460,7 +459,7 @@ async function loadAndOpen() {
   if (!isInventories.value || selected.value) return;
   const first = listing.value.files
     .map((f) => f.path)
-    .filter((p) => inventoryFileRole(p, prefixed.value).role === 'inventory')
+    .filter((p) => inventoryFileRole(p).role === 'inventory')
     .sort((a, b) => a.localeCompare(b))[0];
   if (first) await open(first, true);
 }
@@ -581,7 +580,9 @@ defineExpose({
               @click="explorerFolded = true"
               ><FaIcon icon="chevron-right"
             /></span>
-            <span class="text-truncate">{{ listing.repository || t('designer.fileExplorer') }}</span>
+            <span class="text-truncate">{{
+              (!isInventories && listing.repository) || t('designer.fileExplorer')
+            }}</span>
           </span>
           <span class="d-flex gap-2">
             <span
@@ -640,14 +641,21 @@ defineExpose({
                   class="me-1 flex-shrink-0 tree-chevron"
                   size="xs"
                 />
+                <!-- an inventory that is a repository : git's mark -->
                 <FaIcon
+                  v-if="isInventories && item.depth === 0 && repositoryInventories.includes(item.name)"
+                  :icon="['fab', 'git-alt']"
+                  class="text-secondary me-2 flex-shrink-0"
+                  :title="t('designer.files.inventoryRepository')"
+                />
+                <FaIcon
+                  v-else
                   :icon="collapsed.has(item.path) && !filter ? 'folder' : 'folder-open'"
                   class="tree-folder-icon me-2 flex-shrink-0"
                 />
                 <span class="text-truncate" :title="item.name">{{ item.name }}</span>
               </span>
-              <!-- an inventory's folder : its group vars and its host vars ; a repository's (several
-                   hold inventories) : a new inventory in it ; any other : a new file -->
+              <!-- an inventory's folder : its group vars and its host vars ; any other : a new file -->
               <span
                 v-if="!readOnly && isInventories && item.depth === inventoryDepth"
                 class="d-flex gap-2 flex-shrink-0 ms-2"
@@ -665,18 +673,6 @@ defineExpose({
                   @click.stop="startCreate('host_vars', item.path)"
                   :title="t('designer.files.newHostVars')"
                   ><FaIcon icon="server"
-                /></span>
-              </span>
-              <span
-                v-else-if="!readOnly && isInventories && prefixed && item.depth === 0"
-                class="d-flex gap-2 flex-shrink-0 ms-2"
-              >
-                <span
-                  role="button"
-                  class="tree-add-btn"
-                  @click.stop="startCreate('inventory', item.path)"
-                  :title="t('designer.files.newInventory')"
-                  ><FaIcon icon="sitemap"
                 /></span>
               </span>
               <span v-else-if="!readOnly" class="d-flex gap-2 flex-shrink-0 ms-2">
@@ -723,13 +719,6 @@ defineExpose({
     <BsModal v-if="creating" size="md" :icon="createLook.icon" @close="creating = null">
       <template #title>{{ t(createLook.title) }}</template>
       <template #default>
-        <!-- a new inventory in one of the repositories that hold inventories -->
-        <div v-if="creating.kind === 'inventory' && prefixed" class="mb-3">
-          <label class="form-label fw-bold" for="af-inv-repo">{{ t('designer.files.repository') }}</label>
-          <select id="af-inv-repo" v-model="creating.repo" class="form-select">
-            <option v-for="r in listing.roots" :key="r" :value="r">{{ r }}</option>
-          </select>
-        </div>
         <BsInput
           v-if="asksName"
           v-model="creating.name"

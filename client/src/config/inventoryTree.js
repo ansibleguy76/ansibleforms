@@ -93,17 +93,17 @@ export function inventoryRows(groups) {
  * the file is in it.
  *
  * Args:
- *   path (string): the file's path, as the explorer shows it.
- *   prefixed (boolean): the paths start with a repository's name (several repositories).
+ *   path (string): the file's path, as the explorer shows it : the inventory's folder first (a
+ *     folder of the local inventories folder, or a repository that is an inventory).
  *
  * Returns:
  *   object: { inventory (its folder's path, or '' for a file outside any), role : 'inventory'
  *     (its inventory file), 'group_vars', 'host_vars' or 'other', name (the group or host a vars
  *     file is for) }.
  */
-export function inventoryFileRole(path, prefixed = false) {
+export function inventoryFileRole(path) {
   const parts = String(path || '').split('/');
-  const base = prefixed ? 2 : 1;
+  const base = 1;
   if (parts.length < base + 1) return { inventory: '', role: 'other' };
   const inventory = parts.slice(0, base).join('/');
   const rest = parts.slice(base);

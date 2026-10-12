@@ -454,21 +454,18 @@ class Repository extends CrudModel {
     }
   }
 
-  // the inventories the playbook forms name (inventory: <name>) : each repository used for them
-  // (its inventories folder, or its root), else the local folder (INVENTORY_PATH). Read where the
-  // playbook runs as well (the RTE), from its own REPO_PATH and INVENTORY_PATH.
+  // where the inventories the playbook forms name (inventory: <name>) are : the local folder
+  // (INVENTORY_PATH), one folder per inventory, and each repository used for inventories, which
+  // IS an inventory - named after it, its inventory.yaml, group_vars and host_vars at its root.
+  // Read where the playbook runs as well (the RTE), from its own REPO_PATH and INVENTORY_PATH.
   static async getInventoryRoots() {
+    const local = { repository: null, root: appConfig.inventoryPath }
     try {
       const repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_inventories ORDER BY name")
-      if (!repositories.length) return [{ repository: null, root: appConfig.inventoryPath }]
-      return repositories.map((repo) => {
-        const repoPath = path.join(appConfig.repoPath, repo.name)
-        const sub = path.join(repoPath, "inventories")
-        return { repository: repo.name, root: fs.existsSync(sub) ? sub : repoPath }
-      })
+      return [local, ...repositories.map((repo) => ({ repository: repo.name, root: path.join(appConfig.repoPath, repo.name) }))]
     } catch (e) {
-      logger.error("Failed to get the inventories folders : ", e)
-      return [{ repository: null, root: appConfig.inventoryPath }]
+      logger.error("Failed to get the inventories repositories : ", e)
+      return [local]
     }
   }
 

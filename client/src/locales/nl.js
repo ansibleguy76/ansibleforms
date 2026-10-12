@@ -870,8 +870,8 @@ export default {
       useWorkflowsShort: 'Workflows',
       useForInventories: 'Gebruiken voor inventarissen?',
       helpUseForInventories:
-        "De inventarissen die playbookformulieren noemen (inventory: <naam>) worden uit deze repository gelezen (submap 'inventories' of hoofdmap) en door de designer teruggepusht.",
-      useInventoriesHint: 'Inventarissen waartegen de playbooks draaien, bewerkt en teruggepusht door de designer',
+        'Deze repository is een inventaris, met zijn naam: de hoofdmap bevat inventory.yaml, group_vars en host_vars. Een playbookformulier noemt hem met inventory: <repositorynaam>; de designer bewerkt en pusht hem terug.',
+      useInventoriesHint: 'Een inventaris: inventory.yaml, group_vars en host_vars in de hoofdmap',
       useInventoriesShort: 'Inventarissen',
       fieldsRequired: 'Naam, URI en beschrijving zijn verplicht.',
       noOutput: 'Nog geen uitvoer: pull de repository om te zien wat git zegt.',
@@ -1596,7 +1596,7 @@ export default {
       newHostVars: 'Nieuwe hostvariabelen',
       hostVarsHelp:
         'De naam van de host, zoals in de inventaris: zijn variabelen komen in {inventory}/host_vars/<naam>.yaml.',
-      repository: 'Repository',
+      inventoryRepository: 'Een repository: gepusht met Push',
       noInventories: 'Nog geen inventarissen: maak er een met Nieuwe inventaris.',
       inventoryPlugin: 'Een dynamische inventaris: de plugin {plugin} leest zijn hosts als het playbook draait.',
       inventoryEmpty: 'Nog geen groepen of hosts: voeg ze toe in het YAML-tabblad.',

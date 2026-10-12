@@ -80,12 +80,4 @@ describe('inventoryFileRole', () => {
     expect(inventoryFileRole('production/notes.md')).toEqual({ inventory: 'production', role: 'other' });
     expect(inventoryFileRole('readme.md')).toEqual({ inventory: '', role: 'other' });
   });
-
-  it('with the repository first when there are several', () => {
-    expect(inventoryFileRole('ops/production/inventory.yaml', true)).toEqual({
-      inventory: 'ops/production',
-      role: 'inventory',
-    });
-    expect(inventoryFileRole('ops/production', true).role).toBe('other');
-  });
 });

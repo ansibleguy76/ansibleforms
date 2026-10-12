@@ -1283,9 +1283,10 @@
     default: "%PERSISTENT_FOLDER%/inventories"
     version: 7.0.0
     description: |
-      The inventories folder when no repository is used for inventories : one folder per
-      inventory (production/inventory.yaml, with its group_vars and host_vars), edited in the
-      designer's Inventories section. A playbook form names one with `inventory: <name>`.
+      The local inventories folder : one folder per inventory (staging/inventory.yaml, with its
+      group_vars and host_vars), edited in the designer's Inventories section, next to the
+      repositories used for inventories (each of them an inventory). A playbook form names one
+      with `inventory: <name>`.
       Read by the RTE as well, where the playbook runs : set it there too (or mount the same
       folder) when the RTE runs elsewhere.
   - name: ENCRYPTION_SECRET
@@ -2435,10 +2436,10 @@
           In both awx and ansible core you can pass an inventory.  In the case of ansible core, it will be a yaml file.  In case of awx it will be the inventory name.  
 
           **Ansible** : the name of an inventory of the designer's Inventories section (`inventory: production`)
-          runs the playbook against that inventory's folder - its inventory.yaml with the group_vars and host_vars
-          beside it - from the inventories repositories (`use_for_inventories`) or `INVENTORY_PATH`. When several
-          repositories hold an inventory of that name, name it `<repository>/<name>`. Anything else (a path, a file)
-          is passed to ansible as it is, relative to the playbooks folder.
+          runs the playbook against that inventory - its inventory.yaml with the group_vars and host_vars beside it :
+          the repository of that name used for inventories (`use_for_inventories`, the inventory at its root), or
+          the folder of that name in `INVENTORY_PATH`. Anything else (a path, a file) is passed to ansible as it is,
+          relative to the playbooks folder.
             
           **Note** : You can also dynamically set the inventory by using a field called `__inventory__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static inventory.  
           **Note** : Ansible core allows multiple inventories (so you can use an array), however awx does not support multiple inventories.

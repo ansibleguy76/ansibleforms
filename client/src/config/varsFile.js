@@ -132,3 +132,31 @@ export function addVar(text, path, key, value) {
   }
   return doc.toString();
 }
+
+/**
+ * The file with a key renamed, in place : its value, its comments and its place kept.
+ *
+ * Args:
+ *   text (string): the file.
+ *   path (Array): the keys down to it (its last, the key renamed).
+ *   newKey (string): its new name.
+ *
+ * Returns:
+ *   string: the file, changed.
+ *
+ * Raises:
+ *   Error: 'exists' when its map has that key already ; 'notAMap' when it is a list's item.
+ */
+export function renameVar(text, path, newKey) {
+  const doc = YAML.parseDocument(text || '');
+  const parentPath = path.slice(0, -1);
+  const parent = parentPath.length ? doc.getIn(parentPath, true) : doc.contents;
+  if (!YAML.isMap(parent)) throw new Error('notAMap');
+  const old = path[path.length - 1];
+  if (newKey === old) return text;
+  if (parent.has(newKey)) throw new Error('exists');
+  const pair = parent.items.find((p) => (YAML.isScalar(p.key) ? p.key.value : p.key) === old);
+  if (YAML.isScalar(pair.key)) pair.key.value = newKey;
+  else pair.key = doc.createNode(newKey);
+  return doc.toString();
+}
