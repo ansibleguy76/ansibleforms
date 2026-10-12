@@ -4,7 +4,8 @@ import globals from 'globals'
 
 export default defineConfig([
   // persistent/ is runtime state and schema/ is JSON, neither is source.
-  globalIgnores(['persistent/**', 'coverage/**']),
+  // views : the built client, copied in to be served (the Dockerfile, CI's Browser job)
+  globalIgnores(['persistent/**', 'coverage/**', 'views/**']),
   js.configs.recommended,
   {
     languageOptions: {

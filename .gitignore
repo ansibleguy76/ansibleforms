@@ -65,3 +65,10 @@ ansibleforms.tar
 # python bytecode, written next to the RTE callback plugin when ansible loads it
 __pycache__/
 *.pyc
+
+# the built client the server serves (CI's Browser job copies client/dist there)
+server/views
+
+# Playwright's results and report (client/e2e)
+test-results
+playwright-report

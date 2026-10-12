@@ -216,6 +216,91 @@ jobs:
         if: failure()
         run: tail -n 200 /tmp/af-first.log /tmp/af-second.log /tmp/af-upgrade.log || true
 
+  # The pages in a real browser : the built client served by the server, on a fresh install on a
+  # real database, driven by Playwright (client/e2e). A smoke test of what a release must not
+  # break - each page opens, does what it is for, and logs no error - not a second unit suite.
+  # ADMIN_PASSWORD gives the fresh install's admin a password of its own, so the tests sign in
+  # without the forced change of the default one.
+  browser:
+    name: Browser
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci-not-a-real-password
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+          --health-interval=5s --health-timeout=5s --health-retries=30
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_PASSWORD: ci-not-a-real-password
+      ACCESS_TOKEN_SECRET: ci-not-a-real-secret-0123456789
+      ENCRYPTION_SECRET: ci-not-a-real-secret-0123456789ab
+      ADMIN_PASSWORD: E2e-Browser-2026!
+      HTTPS: "0"
+      PORT: "8000"
+      LOG_PATH: /tmp/af-logs
+      E2E_BASE_URL: http://127.0.0.1:8000
+      E2E_PASSWORD: E2e-Browser-2026!
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            client/package-lock.json
+            server/package-lock.json
+
+      - name: Install
+        run: |
+          (cd client && npm ci)
+          (cd server && npm ci)
+
+      # the server serves the built client from server/views, as the image does
+      - name: Build the client
+        run: |
+          (cd client && npm run build)
+          rm -rf server/views && cp -r client/dist server/views
+
+      - name: Install Chromium
+        working-directory: client
+        run: npx playwright install --with-deps chromium
+
+      - name: Start the app
+        working-directory: server
+        run: |
+          node ./index.js > /tmp/af-browser.log 2>&1 &
+          for i in $(seq 1 90); do
+            if [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/api/v2/ready || true)" = "200" ]; then exit 0; fi
+            sleep 2
+          done
+          echo "::error::the app was not ready after 3 minutes"
+          exit 1
+
+      - name: Test
+        working-directory: client
+        run: npm run test:e2e
+
+      - name: The report, when it failed
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            client/playwright-report
+            client/test-results
+          retention-days: 7
+
+      - name: The app's log, when it failed
+        if: failure()
+        run: tail -n 200 /tmp/af-browser.log || true
+
   schema:
     name: Public schema is up to date
     runs-on: ubuntu-latest
