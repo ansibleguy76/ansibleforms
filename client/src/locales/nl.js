@@ -654,6 +654,8 @@ export default {
       'Deze pagina draait nog een oudere build dan de server. Herlaad de pagina om de nieuwe versie te krijgen.',
   },
   common: {
+    jumpToLatest: 'Naar nieuwste',
+    newLines: 'Nieuwe regels',
     filter: 'Filter',
     // the info icon after a page title, that shows the page's description
     aboutThisPage: 'Over deze pagina',
@@ -2469,8 +2471,6 @@ export default {
     title: 'Serverlog',
     description:
       'Het eigen log van de AnsibleForms-server: aanmeldingen, het laden van de configuratie, verzoeken en fouten. De nieuwste regels staan onderaan.',
-    newLines: 'Nieuwe regels',
-    latest: 'Naar nieuwste',
     clear: 'Wissen',
     clearHint: 'Wist de weergave, niet het log: alleen de regels die vanaf nu worden geschreven, worden getoond',
     cleared: 'Gewist: nieuwe regels verschijnen hier zodra ze worden geschreven.',

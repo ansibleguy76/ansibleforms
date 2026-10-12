@@ -658,6 +658,8 @@ export default {
       'Diese Seite läuft noch mit einem älteren Build als der Server. Laden Sie die Seite neu, um die neue Version zu erhalten.',
   },
   common: {
+    jumpToLatest: 'Zum Neuesten springen',
+    newLines: 'Neue Zeilen',
     filter: 'Filtern',
     // the info icon after a page title, that shows the page's description
     aboutThisPage: 'Über diese Seite',
@@ -2492,8 +2494,6 @@ export default {
     title: 'Serverprotokoll',
     description:
       'Das eigene Protokoll des AnsibleForms-Servers: Anmeldungen, Laden der Konfiguration, Anfragen und Fehler. Die neuesten Zeilen stehen unten.',
-    newLines: 'Neue Zeilen',
-    latest: 'Zum Neuesten springen',
     clear: 'Leeren',
     clearHint: 'Leert die Ansicht, nicht das Log: nur die ab jetzt geschriebenen Zeilen werden angezeigt',
     cleared: 'Geleert: neue Zeilen erscheinen hier, sobald sie geschrieben werden.',

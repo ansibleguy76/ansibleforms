@@ -658,6 +658,8 @@ export default {
       'Cette page utilise encore une build plus ancienne que le serveur. Rechargez la page pour obtenir la nouvelle version.',
   },
   common: {
+    jumpToLatest: 'Aller aux dernières',
+    newLines: 'Nouvelles lignes',
     filter: 'Filtrer',
     // the info icon after a page title, that shows the page's description
     aboutThisPage: 'À propos de cette page',
@@ -2481,8 +2483,6 @@ export default {
     title: 'Journal du serveur',
     description:
       'Le journal propre du serveur AnsibleForms : connexions, chargements de la configuration, requêtes et erreurs. Les lignes les plus récentes sont en bas.',
-    newLines: 'Nouvelles lignes',
-    latest: 'Aller aux dernières',
     clear: 'Effacer',
     clearHint: "Vide l'affichage, pas le journal : seules les lignes écrites à partir de maintenant s'affichent",
     cleared: "Effacé : les nouvelles lignes s'affichent ici à mesure qu'elles sont écrites.",

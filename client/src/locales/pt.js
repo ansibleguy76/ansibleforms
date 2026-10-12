@@ -654,6 +654,8 @@ export default {
       'Esta página ainda executa uma build mais antiga do que a do servidor. Recarregue a página para obter a nova versão.',
   },
   common: {
+    jumpToLatest: 'Ir para as mais recentes',
+    newLines: 'Linhas novas',
     filter: 'Filtrar',
     // the info icon after a page title, that shows the page's description
     aboutThisPage: 'Sobre esta página',
@@ -2474,8 +2476,6 @@ export default {
     title: 'Registo do servidor',
     description:
       'O registo do próprio servidor do AnsibleForms: inícios de sessão, carregamentos da configuração, pedidos e erros. As linhas mais recentes estão no fundo.',
-    newLines: 'Linhas novas',
-    latest: 'Ir para as mais recentes',
     clear: 'Limpar',
     clearHint: 'Esvazia a vista, não o registo: só se mostram as linhas escritas a partir de agora',
     cleared: 'Limpo: as novas linhas aparecem aqui à medida que são escritas.',

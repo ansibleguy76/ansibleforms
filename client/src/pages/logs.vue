@@ -1,7 +1,8 @@
 <script setup>
 import axios from 'axios';
 import ansiParse from '@/lib/AnsiParse';
-import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { useFollowOutput } from '@/composables/useFollowOutput';
 import { toast } from 'vue-sonner';
 import Helpers from '@/lib/Helpers';
 
@@ -57,57 +58,17 @@ const filtered = computed(() => {
 // ─── following the log ────────────────────────────────────────────────────────
 // The log is read again every 2 seconds, as a terminal follows a file : while the view is at
 // its bottom it follows the new lines ; scrolled up to read an older one, it stays where it is
-// and 'New lines' takes it back down. A failing read stops it, Refresh starts it again.
+// and AppFollowButton takes it back down (useFollowOutput, as a running job's output). A failing
+// read stops it, Refresh starts it again.
 const POLL_MS = 2000;
-const following = ref(true);
-const newLines = ref(false);
+const { newLines, paused, jumpToEnd } = useFollowOutput(
+  scroller,
+  () => log.value,
+  () => true,
+);
 let pollTimer = null;
 let stopped = false;
 let failed = false;
-
-/**
- * The box that scrolls the log : the card body around it (the first scrolling ancestor).
- *
- * Returns:
- *   HTMLElement|null: the box.
- */
-function scrollBox() {
-  let el = scroller.value?.parentElement;
-  while (el && el !== document.body) {
-    const overflow = getComputedStyle(el).overflowY;
-    if ((overflow === 'auto' || overflow === 'scroll') && el.scrollHeight > el.clientHeight) return el;
-    el = el.parentElement;
-  }
-  return document.scrollingElement;
-}
-
-/**
- * Whether the view is at the bottom of the log, a few pixels spared.
- *
- * Returns:
- *   boolean: true at the bottom.
- */
-function atBottom() {
-  const box = scrollBox();
-  return !box || box.scrollHeight - box.scrollTop - box.clientHeight < 40;
-}
-
-/**
- * Follows again from the bottom : the newest line in view.
- */
-async function followBottom() {
-  await nextTick();
-  const box = scrollBox();
-  if (box) box.scrollTop = box.scrollHeight;
-  following.value = true;
-  newLines.value = false;
-}
-
-// scrolled by the user : following while at the bottom, not when scrolled up
-function onScroll() {
-  following.value = atBottom();
-  if (following.value) newLines.value = false;
-}
 
 function stopPolling() {
   if (pollTimer) clearTimeout(pollTimer);
@@ -137,12 +98,8 @@ async function load(force = false) {
   isLoading.value = true;
   try {
     const result = await axios.get(`/api/v2/log?lines=${LINES}`);
-    if (result.data != '...' && result.data !== log.value) {
-      const first = !log.value;
-      log.value = result.data;
-      if (first || following.value) await followBottom();
-      else newLines.value = true;
-    }
+    // followed down by useFollowOutput, or said by AppFollowButton while scrolled up
+    if (result.data != '...' && result.data !== log.value) log.value = result.data;
   } catch (err) {
     // a failing log endpoint stops the reading, once said ; Refresh starts it again
     if (!stopped) {
@@ -172,16 +129,10 @@ async function download() {
     toast.error(err.message);
   }
 }
-let box = null;
-onMounted(async () => {
-  await load(true);
-  box = scrollBox();
-  box?.addEventListener('scroll', onScroll, { passive: true });
-});
+onMounted(() => load(true));
 onUnmounted(() => {
   stopped = true;
   stopPolling();
-  box?.removeEventListener('scroll', onScroll);
 });
 </script>
 <template>
@@ -225,12 +176,8 @@ onUnmounted(() => {
               <div class="text-end pe-1 me-3 d-inline-block af-line-no" style="width: 40px">{{ i + 1 }}</div>
               <span v-for="(s, si) in t" :key="si" v-text="s.text" :class="s.foreground || ''"></span>
             </div>
-            <!-- scrolled up while new lines came : back to the bottom, following again -->
-            <div v-if="!following" class="af-log-follow">
-              <BsButton icon="arrow-down" colorClass="primary" @click="followBottom()">{{
-                newLines ? t('logs.newLines') : t('logs.latest')
-              }}</BsButton>
-            </div>
+            <!-- scrolled up : back to the bottom, following again -->
+            <AppFollowButton :show="paused" :new-lines="newLines" @click="jumpToEnd" />
           </div>
         </template>
       </AppSettings>
@@ -238,21 +185,6 @@ onUnmounted(() => {
   </div>
 </template>
 <style scoped>
-/* 'New lines' : over the bottom of the log while it is scrolled up, centred */
-.af-log-follow {
-  position: sticky;
-  bottom: 0.75rem;
-  display: flex;
-  justify-content: center;
-  pointer-events: none;
-}
-.af-log-follow :deep(.btn) {
-  pointer-events: auto;
-  /* a button's font, not the log's */
-  font-family: var(--bs-body-font-family);
-  background-color: var(--bs-body-bg);
-  box-shadow: var(--bs-box-shadow-sm);
-}
 /* The viewport is filled by `af-fill-page` (the card body is the scrolling
    area), so the log itself only has to keep long lines from widening the page. */
 #scroller {

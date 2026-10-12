@@ -650,6 +650,8 @@ export default {
     cacheMismatchMsg: 'This page still runs an older build than the server. Reload the page to get the new version.',
   },
   common: {
+    jumpToLatest: 'Jump to latest',
+    newLines: 'New lines',
     filter: 'Filter',
     // the info icon after a page title, that shows the page's description
     aboutThisPage: 'About this page',
@@ -2438,8 +2440,6 @@ export default {
     title: 'Server log',
     description:
       "The AnsibleForms server's own log: logins, configuration loads, requests and errors. The newest lines are at the bottom.",
-    newLines: 'New lines',
-    latest: 'Jump to latest',
     clear: 'Clear',
     clearHint: 'Empties the view, not the log: only the lines written from now on are shown',
     cleared: 'Cleared: new lines show here as they are written.',

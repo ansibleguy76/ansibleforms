@@ -657,6 +657,8 @@ export default {
       'Questa pagina usa ancora una build più vecchia del server. Ricarica la pagina per ottenere la nuova versione.',
   },
   common: {
+    jumpToLatest: 'Vai alle ultime',
+    newLines: 'Nuove righe',
     filter: 'Filtra',
     // the info icon after a page title, that shows the page's description
     aboutThisPage: 'Informazioni su questa pagina',
@@ -2467,8 +2469,6 @@ export default {
     title: 'Log del server',
     description:
       'Il log del server AnsibleForms: accessi, caricamenti della configurazione, richieste ed errori. Le righe più recenti sono in fondo.',
-    newLines: 'Nuove righe',
-    latest: 'Vai alle ultime',
     clear: 'Pulisci',
     clearHint: 'Svuota la vista, non il log: si vedono solo le righe scritte da ora in poi',
     cleared: 'Pulito: le nuove righe compaiono qui man mano che vengono scritte.',

@@ -423,7 +423,11 @@ const subOutput = ref(null);
 
 // a running job's output followed down as it comes in, while the reader is at its end
 const outputPanel = ref(null);
-useFollowOutput(
+const {
+  paused: outputPaused,
+  newLines: outputNewLines,
+  jumpToEnd: jumpToOutputEnd,
+} = useFollowOutput(
   outputPanel,
   () => steps.value.reduce((n, step) => n + step.shown.length, filteredJobOutput.value?.length || 0),
   () => job.value?.status === 'running',
@@ -1749,6 +1753,8 @@ onMounted(async () => {
                       <AppAnsibleOutput :output="step.shown" :jobLog="step.job_log" numbered />
                     </div>
                   </div>
+                  <!-- scrolled up while it runs : back to its end, following again -->
+                  <AppFollowButton :show="outputPaused" :new-lines="outputNewLines" @click="jumpToOutputEnd" />
                 </div>
               </div>
             </div>
