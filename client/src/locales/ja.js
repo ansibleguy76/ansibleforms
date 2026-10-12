@@ -1676,6 +1676,7 @@ export default {
     visualCredentialVar: 'Extravar',
     visualCredentialName: '認証情報',
     visualNoCredential: 'なし',
+    visualNoInventory: 'なし',
     visualAddCredential: '認証情報を追加',
     // a form field's properties, one line each (the Visual tab, config/fieldProperties.js)
     fieldProp: {

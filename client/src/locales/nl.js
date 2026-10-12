@@ -1702,6 +1702,7 @@ export default {
     visualCredentialVar: 'Extravar',
     visualCredentialName: 'Referentie',
     visualNoCredential: 'Geen',
+    visualNoInventory: 'Geen',
     visualAddCredential: 'Referentie toevoegen',
     // a form field's properties, one line each (the Visual tab, config/fieldProperties.js)
     fieldProp: {

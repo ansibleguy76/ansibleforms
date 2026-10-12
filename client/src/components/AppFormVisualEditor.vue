@@ -243,6 +243,8 @@ const textSettings = computed(() =>
       icon: 'list',
       show: allows('inventory'),
       help: 'designer.helpInventory',
+      // an ansible form's : one of the designer's inventories ; a template's is the runner's, typed
+      choices: form.value?.type === 'ansible' ? 'inventories' : null,
     },
     {
       key: 'scm_branch',
@@ -264,7 +266,7 @@ const textSettings = computed(() =>
       icon: 'key',
       show: allows('ansibleCredentials'),
       help: 'designer.helpAnsibleCreds',
-      choices: true,
+      choices: 'credentials',
     },
     {
       key: 'vaultCredentials',
@@ -272,7 +274,7 @@ const textSettings = computed(() =>
       icon: 'lock',
       show: allows('vaultCredentials'),
       help: 'designer.helpVaultCreds',
-      choices: true,
+      choices: 'credentials',
     },
     { key: 'tags', label: 'designer.formTags', icon: 'tags', show: allows('tags'), help: 'designer.helpTags' },
     { key: 'limit', label: 'designer.formLimit', icon: 'filter', show: allows('limit'), help: 'designer.helpLimit' },
@@ -413,6 +415,24 @@ onMounted(async () => {
     credentialNames.value = [];
   }
 });
+
+// the inventories' names (the designer's Inventories : a folder with an inventory.yaml or
+// hosts.yaml, a repository's or a local one), offered as an ansible form's inventory
+const inventoryNames = ref([]);
+onMounted(async () => {
+  try {
+    const res = await axios.get('/api/v2/files/inventories');
+    const names = (res.data?.files || [])
+      .map((f) => String(f.path || '').split('/'))
+      .filter((parts) => parts.length === 2 && /^(inventory|hosts)\.ya?ml$/i.test(parts[1]))
+      .map((parts) => parts[0]);
+    inventoryNames.value = [...new Set(names)].sort((a, b) => a.localeCompare(b));
+  } catch {
+    inventoryNames.value = [];
+  }
+});
+// a setting's choices, by its kind ; none (an empty list) means it is typed
+const choicesOf = (kind) => ({ credentials: credentialNames.value, inventories: inventoryNames.value })[kind] || [];
 
 // the switches : true, or no key ; in the order of their columns (two to a column, the long
 // labels together, the short ones together)
@@ -819,20 +839,23 @@ defineExpose({
           <label class="form-label fw-bold">{{ t(x.label) }}</label>
           <div class="input-group">
             <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" :icon="x.icon" /></span>
-            <!-- a credential's name : picked from those the instance keeps, when it may read them -->
+            <!-- a credential's or an inventory's name : picked from those the instance keeps, when
+                 it may read them ; a name typed before stays offered -->
             <select
               @mouseenter="fullTitle"
-              v-if="x.choices && credentialNames.length"
+              v-if="x.choices && choicesOf(x.choices).length"
               class="form-select"
               :value="setting(x.key)"
               :disabled="locked"
               @change="setText(x.key, $event.target.value)"
             >
-              <option value="">{{ t('designer.visualNoCredential') }}</option>
-              <option v-if="setting(x.key) && !credentialNames.includes(setting(x.key))" :value="setting(x.key)">
+              <option value="">
+                {{ x.choices === 'inventories' ? t('designer.visualNoInventory') : t('designer.visualNoCredential') }}
+              </option>
+              <option v-if="setting(x.key) && !choicesOf(x.choices).includes(setting(x.key))" :value="setting(x.key)">
                 {{ setting(x.key) }}
               </option>
-              <option v-for="c in credentialNames" :key="c" :value="c">{{ c }}</option>
+              <option v-for="c in choicesOf(x.choices)" :key="c" :value="c">{{ c }}</option>
             </select>
             <input
               v-else

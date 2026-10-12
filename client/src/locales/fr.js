@@ -1717,6 +1717,7 @@ export default {
     visualCredentialVar: 'Extravar',
     visualCredentialName: 'Identifiant',
     visualNoCredential: 'Aucun',
+    visualNoInventory: 'Aucun',
     visualAddCredential: 'Ajouter un identifiant',
     // a form field's properties, one line each (the Visual tab, config/fieldProperties.js)
     fieldProp: {

@@ -1695,6 +1695,7 @@ export default {
     visualCredentialVar: 'Extravar',
     visualCredentialName: 'Poświadczenie',
     visualNoCredential: 'Brak',
+    visualNoInventory: 'Brak',
     visualAddCredential: 'Dodaj poświadczenie',
     // a form field's properties, one line each (the Visual tab, config/fieldProperties.js)
     fieldProp: {

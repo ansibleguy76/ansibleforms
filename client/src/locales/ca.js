@@ -1713,6 +1713,7 @@ export default {
     visualCredentialVar: 'Extravar',
     visualCredentialName: 'Credencial',
     visualNoCredential: 'Cap',
+    visualNoInventory: 'Cap',
     visualAddCredential: 'Afegir credencial',
     // a form field's properties, one line each (the Visual tab, config/fieldProperties.js)
     fieldProp: {
