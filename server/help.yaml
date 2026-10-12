@@ -3187,7 +3187,7 @@
             Use specific properties like `continue`, `always` and `ifExtraVar` to control the flow of a multistep form.  
             
             When a step has `type: ansible`, all [ansible-specific form properties](/forms/ansible.html) apply to that step (e.g. `playbook`, `playbookSubPath`, `ansibleCredentials`, `vaultCredentials`, `inventory`, `check`, `diff`, `tags`, `varsFiles`, `approval`, `notifications`, ...).  
-            When a step has `type: awx`, all [awx-specific form properties](/forms/awx.html) apply to that step (e.g. `template`, `awx`, `awxCredentials`, `executionEnvironment`, `instanceGroups`, `scmBranch`, `inventory`, `check`, `diff`, `tags`, `approval`, `notifications`, ...).
+            When a step has `type: awx`, the [awx-specific form properties](/forms/awx.html) apply to that step (e.g. `template`, `job`, `awx`, `awxCredentials`, `inventory`, `check`, `diff`, `tags`, `approval`, `notifications`, ...), except `executionEnvironment`, `instanceGroups` and `scm_branch` : a step does not accept them.
           items:
           - name: name
             type: string
