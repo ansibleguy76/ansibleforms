@@ -446,10 +446,8 @@ function startAt(i) {
                 rx="2"
                 :style="{ fill: TYPE_COLORS[n.type] || 'var(--bs-secondary)' }"
               />
-              <text :x="n.x + 14" :y="n.y + 22" class="af-wf-node-name">{{ truncate(n.name || '?') }}</text>
-              <text :x="n.x + 14" :y="n.y + 41" class="af-wf-node-sub">
-                {{ truncate(`${t(`workflowEditor.types.${n.type}`, n.type || '?')} · ${n.identifier}`, 30) }}
-              </text>
+              <text :x="n.x + 14" :y="n.y + 22" class="af-wf-node-name">{{ truncate(n.identifier) }}</text>
+              <text :x="n.x + 14" :y="n.y + 41" class="af-wf-node-sub">{{ truncate(n.name || '?', 30) }}</text>
               <title>{{ n.identifier }} : {{ n.name }}</title>
             </g>
           </svg>
@@ -498,6 +496,43 @@ function startAt(i) {
                   </option>
                 </select>
               </div>
+              <!-- left : what its run uses (an inventory ; an approval's wait), right : what it runs -->
+              <div v-if="node.type === 'job_template'" class="col-md-6">
+                <label class="form-label fw-bold">{{ t('workflowEditor.inventory') }}</label>
+                <select
+                  v-if="refs.inventories"
+                  class="form-select"
+                  :value="node.inventory"
+                  :disabled="readOnly"
+                  @change="setNode('inventory', $event.target.value)"
+                >
+                  <option value="">{{ t('designer.visualNoInventory') }}</option>
+                  <option v-for="i in withCurrent(sorted(refs.inventories), node.inventory)" :key="i" :value="i">
+                    {{ i }}
+                  </option>
+                </select>
+                <input
+                  v-else
+                  class="form-control"
+                  :value="node.inventory"
+                  :disabled="readOnly"
+                  @change="setNode('inventory', $event.target.value)"
+                />
+              </div>
+              <!-- an approval : how long it waits -->
+              <div v-else-if="node.type === 'workflow_approval_template'" class="col-md-6">
+                <label class="form-label fw-bold">{{ t('workflowEditor.timeout') }}</label>
+                <input
+                  class="form-control"
+                  type="number"
+                  min="0"
+                  :value="node.timeout"
+                  :disabled="readOnly"
+                  @change="setNode('timeout', $event.target.value)"
+                />
+                <div class="form-text">{{ t('workflowEditor.timeoutHint') }}</div>
+              </div>
+              <div v-else class="col-md-6 d-none d-md-block"></div>
               <div class="col-md-6">
                 <label class="form-label fw-bold">{{
                   t(`workflowEditor.runName.${node.type}`, t('workflowEditor.name'))
@@ -520,43 +555,8 @@ function startAt(i) {
                   @change="setNode('name', $event.target.value)"
                 />
               </div>
-              <!-- an approval : how long it waits -->
-              <div v-if="node.type === 'workflow_approval_template'" class="col-md-6">
-                <label class="form-label fw-bold">{{ t('workflowEditor.timeout') }}</label>
-                <input
-                  class="form-control"
-                  type="number"
-                  min="0"
-                  :value="node.timeout"
-                  :disabled="readOnly"
-                  @change="setNode('timeout', $event.target.value)"
-                />
-                <div class="form-text">{{ t('workflowEditor.timeoutHint') }}</div>
-              </div>
               <!-- a playbook's run : what it uses -->
               <template v-if="node.type === 'job_template'">
-                <div class="col-md-6">
-                  <label class="form-label fw-bold">{{ t('workflowEditor.inventory') }}</label>
-                  <select
-                    v-if="refs.inventories"
-                    class="form-select"
-                    :value="node.inventory"
-                    :disabled="readOnly"
-                    @change="setNode('inventory', $event.target.value)"
-                  >
-                    <option value="">{{ t('designer.visualNoInventory') }}</option>
-                    <option v-for="i in withCurrent(sorted(refs.inventories), node.inventory)" :key="i" :value="i">
-                      {{ i }}
-                    </option>
-                  </select>
-                  <input
-                    v-else
-                    class="form-control"
-                    :value="node.inventory"
-                    :disabled="readOnly"
-                    @change="setNode('inventory', $event.target.value)"
-                  />
-                </div>
                 <div class="col-md-6">
                   <label class="form-label fw-bold">{{ t('workflowEditor.limit') }}</label>
                   <input
