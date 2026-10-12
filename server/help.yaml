@@ -245,7 +245,7 @@
     type: string
     allowed: a valid file path
     short: Config seed file
-    hint: Declare awx, credentials, oauth2, repositories, ldap and mail in a file instead of clicking them together
+    hint: Declare runners, credentials, secret stores, SSO providers, repositories, LDAP, syslog servers, notification channels and settings in a file instead of clicking them together
     default: ""
     description: |
       Path to a declarative config seed. When set, the yaml file it points to is applied at
