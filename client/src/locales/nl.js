@@ -2020,6 +2020,9 @@ export default {
     visualFieldsInYaml:
       'De velden van dit formulier kunnen hier niet worden getoond (een alias, of geen lijst): bewerk ze op het YAML-tabblad.',
     visualStepsInYaml: 'De stappen van dit formulier bewerk je op het YAML-tabblad.',
+    typeDeprecated: '{type} (verouderd)',
+    multistepDeprecated:
+      'Multistep is verouderd sinds 7 en verdwijnt in 8: gebruik een workflow (Designer > Workflows). Zijn knooppunten draaien op elke runner, met een voorwaarde en eigen waarden, zoals stappen.',
     visualNoFields: 'Nog geen velden. Voeg er een toe met + in de werkbalk.',
     visualRequired: 'Verplicht',
     visualDuplicateField: 'Een ander veld heeft deze naam.',

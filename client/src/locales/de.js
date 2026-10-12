@@ -2041,6 +2041,9 @@ export default {
     visualFieldsInYaml:
       'Die Felder dieses Formulars können hier nicht angezeigt werden (ein Alias oder keine Liste): bearbeite sie im YAML-Tab.',
     visualStepsInYaml: 'Die Schritte dieses Formulars werden im YAML-Tab bearbeitet.',
+    typeDeprecated: '{type} (veraltet)',
+    multistepDeprecated:
+      'Multistep ist seit 7 veraltet und wird in 8 entfernt: verwenden Sie einen Workflow (Designer > Workflows). Seine Knoten laufen auf jedem Runner, mit Bedingung und eigenen Werten, wie Schritte.',
     visualNoFields: 'Noch keine Felder. Füge eines mit + in der Werkzeugleiste hinzu.',
     visualRequired: 'Pflichtfeld',
     visualDuplicateField: 'Ein anderes Feld hat diesen Namen.',

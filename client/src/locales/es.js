@@ -2024,6 +2024,9 @@ export default {
     visualFieldsInYaml:
       'Los campos de este formulario no se pueden mostrar aquí (un alias, o no es una lista): edítalos en la pestaña YAML.',
     visualStepsInYaml: 'Los pasos de este formulario se editan en la pestaña YAML.',
+    typeDeprecated: '{type} (obsoleto)',
+    multistepDeprecated:
+      'Multistep está obsoleto desde 7 y se elimina en 8: usa un workflow (Designer > Workflows). Sus nodos se ejecutan en cualquier runner, con una condición y valores propios, como los pasos.',
     visualNoFields: 'Aún no hay campos. Añade uno con + en la barra de herramientas.',
     visualRequired: 'Obligatorio',
     visualDuplicateField: 'Otro campo tiene este nombre.',

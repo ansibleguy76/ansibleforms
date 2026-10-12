@@ -728,7 +728,9 @@ defineExpose({
             <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="shapes" /></span>
             <select class="form-select" :value="form.type" :disabled="locked" @change="setType($event.target.value)">
               <option v-if="!formTypes.includes(form.type)" :value="form.type">{{ form.type }}</option>
-              <option v-for="ft in formTypes" :key="ft" :value="ft">{{ ft }}</option>
+              <option v-for="ft in formTypes" :key="ft" :value="ft">
+                {{ ft === 'multistep' ? t('designer.typeDeprecated', { type: ft }) : ft }}
+              </option>
             </select>
           </div>
         </div>
@@ -1356,6 +1358,10 @@ defineExpose({
       <h6 class="fw-bold mt-4 mb-2">{{ t('designer.visualFields') }}</h6>
       <!-- what is edited here, and where the rest is -->
       <p class="form-text mt-0 mb-2">{{ t('designer.visualFieldsHint') }}</p>
+      <!-- a multistep : deprecated since 7, a workflow does what it does -->
+      <div v-if="form.multistep" class="alert alert-warning py-2" role="alert">
+        <FaIcon icon="triangle-exclamation" class="me-2" />{{ t('designer.multistepDeprecated') }}
+      </div>
       <!-- a multistep form's steps, a wizard's : only in the YAML, said rather than left looking empty -->
       <div v-if="form.multistep || hasWizard" class="alert alert-info py-2" role="alert">
         <FaIcon icon="circle-info" class="me-2" />{{ t('designer.visualStepsInYaml') }}

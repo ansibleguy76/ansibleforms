@@ -1993,6 +1993,9 @@ export default {
     visualFieldsInYaml:
       'このフォームのフィールドはここでは表示できません（エイリアス、またはリストではありません）。YAML タブで編集してください。',
     visualStepsInYaml: 'このフォームのステップは YAML タブで編集します。',
+    typeDeprecated: '{type}（非推奨）',
+    multistepDeprecated:
+      'Multistep は 7 で非推奨になり、8 で削除されます：ワークフロー（Designer > Workflows）を使ってください。そのノードはステップと同様に、任意のランナーで、条件と独自の値で実行されます。',
     visualNoFields: 'フィールドはまだありません。ツールバーの + で追加してください。',
     visualRequired: '必須',
     visualDuplicateField: '別のフィールドがこの名前を使っています。',
