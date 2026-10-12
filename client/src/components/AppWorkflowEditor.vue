@@ -254,6 +254,17 @@ function removeLink() {
 }
 
 // ─── a playbook's run : what a job template node sets ─────────────────────────
+// the credential picked to add, and those it may be : the instance's the node has not yet
+const credentialToAdd = ref('');
+watch(node, () => (credentialToAdd.value = ''));
+const credentialChoices = computed(() =>
+  node.value ? sorted(refs.value.credentials).filter((c) => !node.value.credentials.includes(c)) : [],
+);
+function addCredential() {
+  if (!credentialToAdd.value) return;
+  toggleCredential(credentialToAdd.value, true);
+  credentialToAdd.value = '';
+}
 function toggleCredential(name, on) {
   const now = node.value.credentials || [];
   setNode('credentials', on ? [...now, name] : now.filter((c) => c !== name));
@@ -639,28 +650,31 @@ function startAt(i) {
               </template>
             </div>
             <div class="row g-3">
-              <!-- a playbook's credentials : every one, none hidden -->
+              <!-- a playbook's credentials : those it has (each removable), one more picked and added -->
               <div v-if="node.type === 'job_template'" class="col-md-6">
                 <label class="form-label fw-bold">{{ t('workflowEditor.credentials') }}</label>
-                <div v-if="!(refs.credentials || []).length && !node.credentials.length" class="text-muted small">
-                  {{ t('workflowEditor.noCredentials') }}
-                </div>
-                <div
-                  v-for="c in withCurrent(sorted(refs.credentials), null).concat(
-                    node.credentials.filter((x) => !(refs.credentials || []).includes(x)),
-                  )"
-                  :key="c"
-                  class="form-check"
-                >
-                  <input
-                    :id="'wf-cred-' + c"
-                    class="form-check-input"
-                    type="checkbox"
-                    :checked="node.credentials.includes(c)"
-                    :disabled="readOnly"
-                    @change="toggleCredential(c, $event.target.checked)"
+                <div v-for="c in node.credentials" :key="c" class="af-wf-out">
+                  <FaIcon icon="key" class="text-gray-500 me-1" />
+                  <span class="flex-grow-1">{{ c }}</span>
+                  <BsButton
+                    v-if="!readOnly"
+                    icon="xmark"
+                    colorClass="danger"
+                    :isIconButton="true"
+                    :title="t('workflowEditor.removeCredential')"
+                    @click="toggleCredential(c, false)"
                   />
-                  <label class="form-check-label" :for="'wf-cred-' + c">{{ c }}</label>
+                </div>
+                <div v-if="!readOnly" class="input-group mt-2">
+                  <select v-model="credentialToAdd" class="form-select" :disabled="!credentialChoices.length">
+                    <option value="">
+                      {{
+                        credentialChoices.length ? t('workflowEditor.credential') : t('workflowEditor.noCredentials')
+                      }}
+                    </option>
+                    <option v-for="c in credentialChoices" :key="c" :value="c">{{ c }}</option>
+                  </select>
+                  <BsButton icon="plus" :title="t('workflowEditor.addCredential')" @click="addCredential()" />
                 </div>
               </div>
               <!-- what runs after it -->
@@ -696,7 +710,8 @@ function startAt(i) {
                       t('workflowEditor.link')
                     }}</BsButton>
                   </div>
-                  <div class="d-flex flex-wrap gap-2 mt-3">
+                  <!-- a new node after this one : one button a line -->
+                  <div class="d-flex flex-column align-items-start gap-2 mt-3">
                     <BsButton
                       v-for="kind in LINK_KINDS"
                       :key="kind"
