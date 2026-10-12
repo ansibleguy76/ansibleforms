@@ -1569,9 +1569,9 @@ export default {
       newInventory: '新しいインベントリ',
       inventoryNameHelp:
         'フォルダー名 (production、staging など)。inventory.yaml と group_vars/all.yaml が作られます。プレイブックのフォームは inventory: <名前> で指定します。',
-      newGroupVars: '新しいグループ変数',
+      newGroupVars: '新しいグループ変数ファイル',
       groupVarsHelp: 'グループ名。変数は {inventory}/group_vars/<名前>.yaml に入ります。',
-      newHostVars: '新しいホスト変数',
+      newHostVars: '新しいホスト変数ファイル',
       hostVarsHelp: 'インベントリと同じホスト名。変数は {inventory}/host_vars/<名前>.yaml に入ります。',
       inventoryRepository: 'リポジトリ: プッシュで送信',
       noInventories: 'インベントリはまだありません: 新しいインベントリで作成してください。',

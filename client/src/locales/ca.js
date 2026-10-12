@@ -1606,9 +1606,9 @@ export default {
       newInventory: 'Inventari nou',
       inventoryNameHelp:
         'El nom de la seva carpeta (production, staging): rep un inventory.yaml i group_vars/all.yaml. Un formulari de playbook el nomena amb inventory: <nom>.',
-      newGroupVars: 'Variables de grup noves',
+      newGroupVars: 'Fitxer nou de variables de grup',
       groupVarsHelp: 'El nom del grup: les seves variables van a {inventory}/group_vars/<nom>.yaml.',
-      newHostVars: 'Variables de host noves',
+      newHostVars: 'Fitxer nou de variables de host',
       hostVarsHelp: "El nom del host, com a l'inventari: les seves variables van a {inventory}/host_vars/<nom>.yaml.",
       inventoryRepository: "Un repositori: s'envia amb Push",
       noInventories: "Encara no hi ha inventaris: crea'n un amb Inventari nou.",

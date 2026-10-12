@@ -1588,9 +1588,9 @@ export default {
       newInventory: 'Nowy inwentarz',
       inventoryNameHelp:
         'Nazwa jego folderu (production, staging): dostaje inventory.yaml i group_vars/all.yaml. Formularz playbooka wskazuje go przez inventory: <nazwa>.',
-      newGroupVars: 'Nowe zmienne grupy',
+      newGroupVars: 'Nowy plik zmiennych grupy',
       groupVarsHelp: 'Nazwa grupy: jej zmienne trafiają do {inventory}/group_vars/<nazwa>.yaml.',
-      newHostVars: 'Nowe zmienne hosta',
+      newHostVars: 'Nowy plik zmiennych hosta',
       hostVarsHelp: 'Nazwa hosta, jak w inwentarzu: jego zmienne trafiają do {inventory}/host_vars/<nazwa>.yaml.',
       inventoryRepository: 'Repozytorium: wypychane przez Push',
       noInventories: 'Brak inwentarzy: utwórz go przyciskiem Nowy inwentarz.',

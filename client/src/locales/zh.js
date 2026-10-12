@@ -1530,9 +1530,9 @@ export default {
       newInventory: '新建清单',
       inventoryNameHelp:
         '其文件夹名称 (production、staging):会生成 inventory.yaml 和 group_vars/all.yaml。playbook 表单用 inventory: <名称> 指定它。',
-      newGroupVars: '新建组变量',
+      newGroupVars: '新建组变量文件',
       groupVarsHelp: '组名称:其变量放在 {inventory}/group_vars/<名称>.yaml。',
-      newHostVars: '新建主机变量',
+      newHostVars: '新建主机变量文件',
       hostVarsHelp: '主机名称,与清单中一致:其变量放在 {inventory}/host_vars/<名称>.yaml。',
       inventoryRepository: '一个仓库: 通过推送发送',
       noInventories: '还没有清单: 用新建清单创建一个。',

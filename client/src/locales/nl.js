@@ -1594,9 +1594,9 @@ export default {
       newInventory: 'Nieuwe inventaris',
       inventoryNameHelp:
         'De naam van zijn map (production, staging): hij krijgt een inventory.yaml en group_vars/all.yaml. Een playbookformulier noemt hem met inventory: <naam>.',
-      newGroupVars: 'Nieuwe groepsvariabelen',
+      newGroupVars: 'Nieuw groepsvariabelenbestand',
       groupVarsHelp: 'De naam van de groep: haar variabelen komen in {inventory}/group_vars/<naam>.yaml.',
-      newHostVars: 'Nieuwe hostvariabelen',
+      newHostVars: 'Nieuw hostvariabelenbestand',
       hostVarsHelp:
         'De naam van de host, zoals in de inventaris: zijn variabelen komen in {inventory}/host_vars/<naam>.yaml.',
       inventoryRepository: 'Een repository: gepusht met Push',

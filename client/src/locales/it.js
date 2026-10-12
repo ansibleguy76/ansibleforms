@@ -1593,9 +1593,9 @@ export default {
       newInventory: 'Nuovo inventario',
       inventoryNameHelp:
         'Il nome della sua cartella (production, staging): riceve un inventory.yaml e group_vars/all.yaml. Un modulo playbook lo nomina con inventory: <nome>.',
-      newGroupVars: 'Nuove variabili di gruppo',
+      newGroupVars: 'Nuovo file di variabili di gruppo',
       groupVarsHelp: 'Il nome del gruppo: le sue variabili vanno in {inventory}/group_vars/<nome>.yaml.',
-      newHostVars: 'Nuove variabili di host',
+      newHostVars: 'Nuovo file di variabili di host',
       hostVarsHelp:
         "Il nome dell'host, come nell'inventario: le sue variabili vanno in {inventory}/host_vars/<nome>.yaml.",
       inventoryRepository: 'Un repository: inviato con Push',

@@ -1602,9 +1602,9 @@ export default {
       newInventory: 'Novo inventário',
       inventoryNameHelp:
         'O nome da sua pasta (production, staging): recebe um inventory.yaml e group_vars/all.yaml. Um formulário de playbook nomeia-o com inventory: <nome>.',
-      newGroupVars: 'Novas variáveis de grupo',
+      newGroupVars: 'Novo ficheiro de variáveis de grupo',
       groupVarsHelp: 'O nome do grupo: as suas variáveis vão para {inventory}/group_vars/<nome>.yaml.',
-      newHostVars: 'Novas variáveis de host',
+      newHostVars: 'Novo ficheiro de variáveis de host',
       hostVarsHelp: 'O nome do host, como no inventário: as suas variáveis vão para {inventory}/host_vars/<nome>.yaml.',
       inventoryRepository: 'Um repositório: enviado com Push',
       noInventories: 'Ainda não há inventários: crie um com Novo inventário.',
