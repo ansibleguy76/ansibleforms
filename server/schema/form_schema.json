@@ -40,6 +40,7 @@
         "type": {
           "enum": ["ansible"]
         },
+        "workflow": {"not":{}},
         "template": {"not":{}},
         "awx": {"not":{}},
         "steps": {"not":{}},
@@ -56,6 +57,7 @@
         "type": {
           "enum": ["template", "awx"]
         },
+        "workflow": {"not":{}},
         "vaultCredentials": {"not":{}},
         "playbook": {"not":{}},
         "ansibleCredentials": {"not":{}},
@@ -70,6 +72,7 @@
         "type": {
           "enum": ["multistep"]
         },
+        "workflow": {"not":{}},
         "playbook": {"not":{}},
         "runner": {"not":{}},
         "vaultCredentials": {"not":{}},
@@ -94,8 +97,36 @@
     {
       "properties": {
         "type": {
+          "enum": ["workflow"]
+        },
+        "playbook": {"not":{}},
+        "playbookSubPath": {"not":{}},
+        "runner": {"not":{}},
+        "template": {"not":{}},
+        "awx": {"not":{}},
+        "steps": {"not":{}},
+        "inventory": {"not":{}},
+        "awxCredentials": {"not":{}},
+        "ansibleCredentials": {"not":{}},
+        "vaultCredentials": {"not":{}},
+        "tags": {"not":{}},
+        "check": {"not":{}},
+        "limit": {"not":{}},
+        "scm_branch": {"not":{}},
+        "diff": {"not":{}},
+        "key": {"not":{}},
+        "executionEnvironment": {"not":{}},
+        "instanceGroups": {"not":{}},
+        "expression": {"not":{}}
+      },
+      "required": ["workflow", "roles"]
+    },
+    {
+      "properties": {
+        "type": {
           "enum": ["subform"]
         },
+        "workflow": {"not":{}},
         "playbook": {"not":{}},
         "playbookSubPath": {"not":{}},
         "runner": {"not":{}},
@@ -499,7 +530,7 @@
     },
     "type": {
       "type": "string",
-      "enum": ["ansible", "template", "awx", "multistep", "subform"]
+      "enum": ["ansible", "template", "awx", "multistep", "subform", "workflow"]
     },
     "hasApproval":{ "type": "boolean"},
     "approval":{
@@ -507,6 +538,7 @@
     },
     "playbook": {"type": "string"},
     "playbookSubPath": {"type": "string"},
+    "workflow": {"type": "string"},
     "key": {"type": "string"},
     "abortable": {"type": "boolean"},
     "template": {"type": "string"},

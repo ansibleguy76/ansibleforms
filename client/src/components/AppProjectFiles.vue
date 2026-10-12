@@ -31,6 +31,7 @@ import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import Helpers from '@/lib/Helpers';
 import { varsKind } from '@/config/varsFile';
+import { workflowSkeleton } from '@/config/workflowFile';
 import {
   EXPLORER_WIDTH,
   explorerWidthAfterDrag,
@@ -50,6 +51,8 @@ const props = defineProps({
   readOnly: { type: Boolean, default: false },
   theme: { type: String, default: null },
   editorStyle: { type: [String, Object], default: 'width: 100%;height: 75vh;font-size:1rem' },
+  // the designer's forms ({ name, text }) : a vars file's Preview says which load it
+  forms: { type: Array, default: () => [] },
 });
 
 // ─── state ────────────────────────────────────────────────────────────────────
@@ -142,13 +145,17 @@ const fileKind = computed(() => (props.view === 'visual' && lang.value === 'yaml
 // one folder per inventory at the top (production/inventory.yaml, group_vars/, host_vars/) : a
 // folder of the local inventories folder, or a repository that is an inventory
 const isInventories = computed(() => props.kind === 'inventories');
+// the workflows : a file is job templates and workflows (the AWX export syntax), drawn as a graph
+const isWorkflows = computed(() => props.kind === 'workflows');
 const inventoryDepth = computed(() => 0);
 // the inventories that are repositories : their folder shows git's mark
 const repositoryInventories = computed(() => (listing.value.repositories || []).map((r) => r.name));
 // what the file open is in its inventory : the inventory, a group's or a host's vars, other
 const fileRole = computed(() => (isInventories.value ? inventoryFileRole(selected.value) : null));
+// the inventory file open : edited in the Visual tab, drawn as a tree in the Preview
+const isInventoryFile = computed(() => fileRole.value?.role === 'inventory');
 const inventory = computed(() =>
-  props.view === 'visual' && fileRole.value?.role === 'inventory' ? inventoryOf(content.value) : null,
+  props.view === 'preview' && isInventoryFile.value ? inventoryOf(content.value) : null,
 );
 // the groups and hosts of the inventory open that have a vars file
 const varsFilesOf = (role) =>
@@ -312,6 +319,8 @@ const CREATE_LOOK = {
   folder: { icon: 'folder', title: 'designer.newFolder', help: 'designer.files.folderHelp' },
   group_vars: { icon: 'folder', title: 'designer.files.newGroupVars', help: 'designer.files.groupVarsHelp' },
   host_vars: { icon: 'server', title: 'designer.files.newHostVars', help: 'designer.files.hostVarsHelp' },
+  // a new workflow : a new file, an empty workflow named after it (createFile)
+  workflow: { icon: 'diagram-project', title: 'designer.files.newWorkflow', help: 'designer.files.pathHelp' },
 };
 const createLook = computed(() => CREATE_LOOK[creating.value?.kind] || CREATE_LOOK.file);
 
@@ -370,7 +379,20 @@ async function create() {
   }
   working.value = true;
   try {
-    const result = await axios.post(`${api.value}/file`, { path, content: /\.ya?ml$/i.test(path) ? '---\n' : '' });
+    // a new workflow file starts as one workflow (named after the file), to add nodes to
+    const yaml = /\.ya?ml$/i.test(path);
+    const content =
+      yaml && isWorkflows.value
+        ? workflowSkeleton(
+            path
+              .split('/')
+              .pop()
+              .replace(/\.ya?ml$/i, ''),
+          )
+        : yaml
+          ? '---\n'
+          : '';
+    const result = await axios.post(`${api.value}/file`, { path, content });
     creating.value = null;
     await loadList();
     await open(result.data.path, true);
@@ -505,7 +527,7 @@ defineExpose({
   push,
   reload,
   revert,
-  newFile: () => startCreate(isInventories.value ? 'inventory' : 'file'),
+  newFile: () => startCreate(isInventories.value ? 'inventory' : isWorkflows.value ? 'workflow' : 'file'),
   seedInventory,
   // the file open's text, as the toolbar's format, compare and download need it
   getText: () => content.value,
@@ -542,18 +564,17 @@ defineExpose({
             : t('designer.files.noFolder')
         "
       />
-      <!-- the Visual tab : a vars file as its variables -->
-      <div v-else-if="view === 'visual'" class="af-files-visual">
+      <!-- the Preview tab of a playbook : its outline, read only -->
+      <div v-else-if="view === 'preview' && kind === 'playbooks'" class="af-files-visual">
+        <AppPlaybookOutline :modelValue="content" @reveal="reveal" />
+      </div>
+      <!-- the Preview tab of an inventory : its groups and hosts as a tree ; a vars file's (an
+           inventory's, or one of Vars files) : its variables, as a playbook reads them -->
+      <div v-else-if="view === 'preview' && (isInventories || kind === 'vars')" class="af-files-visual">
         <div v-if="lang !== 'yaml'" class="empty-state">
           <FaIcon icon="file-lines" class="empty-state-icon" />
           <span>{{ t('designer.files.visualNotYaml') }}</span>
         </div>
-        <div v-else-if="fileKind.kind === 'invalid'" class="alert alert-warning d-flex align-items-center gap-2">
-          <FaIcon icon="triangle-exclamation" />
-          <span class="flex-grow-1">{{ t('designer.files.visualInvalid', { error: fileKind.error }) }}</span>
-          <BsButton icon="code" @click="reveal(fileKind.line)">{{ t('designer.files.showInYaml') }}</BsButton>
-        </div>
-        <!-- an inventory : its groups and hosts -->
         <AppInventoryTree
           v-else-if="inventory && inventory.kind !== 'invalid'"
           :inventory="inventory"
@@ -566,6 +587,27 @@ defineExpose({
           <FaIcon icon="triangle-exclamation" />
           <span class="flex-grow-1">{{ t('designer.files.visualInvalid', { error: inventory.error }) }}</span>
           <BsButton icon="code" @click="reveal(inventory.line)">{{ t('designer.files.showInYaml') }}</BsButton>
+        </div>
+        <AppValuesPreview v-else :text="content" mode="vars" :file="selected" :forms="forms" @reveal="reveal" />
+      </div>
+      <!-- the Preview tab of a workflow file : a dry run of its workflows -->
+      <AppWorkflowEditor v-else-if="view === 'preview' && isWorkflows" :modelValue="content" readOnly preview />
+      <!-- the Visual tab : a vars file as its variables -->
+      <div v-else-if="view === 'visual'" class="af-files-visual">
+        <div v-if="lang !== 'yaml'" class="empty-state">
+          <FaIcon icon="file-lines" class="empty-state-icon" />
+          <span>{{ t('designer.files.visualNotYaml') }}</span>
+        </div>
+        <!-- a playbook : its plays and tasks, field by field -->
+        <AppPlaybookEditor v-else-if="kind === 'playbooks'" v-model="content" :readOnly="readOnly" @reveal="reveal" />
+        <!-- a workflow file : its workflows as graphs, its job templates -->
+        <AppWorkflowEditor v-else-if="isWorkflows" v-model="content" :readOnly="readOnly" @reveal="reveal" />
+        <!-- an inventory : its groups and hosts, edited -->
+        <AppInventoryEditor v-else-if="isInventoryFile" v-model="content" :readOnly="readOnly" @reveal="reveal" />
+        <div v-else-if="fileKind.kind === 'invalid'" class="alert alert-warning d-flex align-items-center gap-2">
+          <FaIcon icon="triangle-exclamation" />
+          <span class="flex-grow-1">{{ t('designer.files.visualInvalid', { error: fileKind.error }) }}</span>
+          <BsButton icon="code" @click="reveal(fileKind.line)">{{ t('designer.files.showInYaml') }}</BsButton>
         </div>
         <AppVarsEditor
           v-else-if="fileKind.kind === 'vars' || fileKind.kind === 'empty'"
@@ -817,6 +859,8 @@ defineExpose({
   align-items: stretch;
   flex: 1 1 auto;
   min-height: 0;
+  /* one row, as tall as the card leaves : the Visual tab scrolls inside it, never the card */
+  grid-template-rows: minmax(0, 1fr);
 }
 .af-files-editor {
   min-width: 0;
@@ -824,10 +868,12 @@ defineExpose({
   display: flex;
   flex-direction: column;
 }
-/* the Visual tab : as tall as the editor, scrolling inside itself ; room for a field's focus ring */
+/* the Visual tab : the height the card leaves (whatever the banners above take), scrolling inside
+   itself ; room for a field's focus ring */
 .af-files-visual {
   margin-top: 0.5rem;
-  max-height: calc(100vh - 16rem);
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   padding: 0.25rem 0.5rem 0.25rem 0.25rem;
   margin-left: -0.25rem;

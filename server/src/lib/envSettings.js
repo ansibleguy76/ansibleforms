@@ -127,6 +127,7 @@ const LIVE = {
   FORMS_STAGING_PATH: { key: 'formsStagingPath', parse: v => v },
   VARS_FILES_PATH: { key: 'varsFilesPath', parse: v => v },
   INVENTORY_PATH: { key: 'inventoryPath', parse: v => v },
+  WORKFLOWS_PATH: { key: 'workflowsPath', parse: v => v },
   REPO_PATH: { key: 'repoPath', parse: v => v },
   // ssh.model computes the key paths from appConfig.homePath when used, not at import
   HOME_PATH: { key: 'homePath', parse: v => v },
@@ -261,7 +262,7 @@ const LIVE_CUSTOM = {
 // value but does NOT move what is already there, which is the part worth warning about.
 export const RELOCATES = new Set([
   'BACKUP_PATH', 'FORMS_BACKUP_PATH', 'CONFIG_PATH', 'FORMS_FOLDER_PATH',
-  'FORMS_STAGING_PATH', 'REPO_PATH', 'UPLOAD_PATH', 'VARS_FILES_PATH', 'INVENTORY_PATH', 'LOG_PATH',
+  'FORMS_STAGING_PATH', 'REPO_PATH', 'UPLOAD_PATH', 'VARS_FILES_PATH', 'INVENTORY_PATH', 'WORKFLOWS_PATH', 'LOG_PATH',
 ]);
 
 /**

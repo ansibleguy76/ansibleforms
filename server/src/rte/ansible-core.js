@@ -57,6 +57,9 @@ export function buildAnsibleArgs(extravars, { extravarsFileName, hiddenExtravars
     });
   }
   const tags = extravars?.__tags__ || "";
+  // a workflow node's (AWX's skip_tags, and its verbosity level 1 to 5)
+  const skipTags = extravars?.__skipTags__ || "";
+  const verbosity = Math.min(5, Math.max(0, Number(extravars?.__verbosity__) || 0));
   const check = extravars?.__check__ || false;
   const verbose = extravars?.__verbose__ || false;
   const limit = extravars?.__limit__ || "";
@@ -81,8 +84,13 @@ export function buildAnsibleArgs(extravars, { extravarsFileName, hiddenExtravars
   if (diff) {
     args.push("--diff");
   }
+  if (skipTags) {
+    args.push("--skip-tags", arg(skipTags));
+  }
   if (verbose) {
     args.push("-vvv");
+  } else if (verbosity) {
+    args.push(`-${"v".repeat(verbosity)}`);
   }
   if (limit) {
     args.push("--limit", arg(limit));

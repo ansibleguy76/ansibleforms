@@ -395,8 +395,10 @@ const parentJobs = computed(() => {
 
   return list;
 });
-// subjobs
+// subjobs : a multistep's steps ; a workflow's node jobs are not listed - their output is the
+// workflow job's own, under each node's banner, and its graph opens it
 const subjobs = computed(() => {
+  if (job.value?.job_type === 'workflow') return [];
   return job.value?.subjobs || [];
 });
 // every step read so far, in their order, each with its output as shown : one under the other
@@ -1524,6 +1526,16 @@ onMounted(async () => {
                   <dt><FaIcon icon="scroll" />{{ t('jobs.template') }}</dt>
                   <dd :title="job.target">
                     {{ job.target || '–' }}<span v-if="job.awx_id" class="af-job-fact-note">#{{ job.awx_id }}</span>
+                  </dd>
+                </div>
+                <!-- a workflow job : the workflow it ran, and how many nodes (where a playbook job's playbook is) -->
+                <div v-else-if="job.job_type == 'workflow' && job.awx_workflow" class="af-job-fact">
+                  <dt><FaIcon icon="diagram-project" />{{ t('workflow.title') }}</dt>
+                  <dd>
+                    {{ job.awx_workflow.name
+                    }}<span class="af-job-fact-note">{{
+                      t('workflow.nodes', { count: job.awx_workflow.nodes?.length || 0 })
+                    }}</span>
                   </dd>
                 </div>
                 <div v-else-if="jobPlaybook" class="af-job-fact">

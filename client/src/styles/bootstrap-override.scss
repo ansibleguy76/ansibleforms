@@ -347,6 +347,13 @@
   min-height: 12rem;
   overflow: auto;
 }
+// a full height page's left menu : as tall as the page leaves it, not the window less the navbar
+// (calc(100vh - header), which the announcements above the page do not count : with them it made
+// the page taller than the window, and the window scrolled)
+.af-fill-page > main > .af-sidebar {
+  height: auto;
+  align-self: stretch;
+}
 // the card clips its scrolling body to its rounded corners : the scrollbar otherwise fills
 // the top-right corner over the card's border
 .af-fill-page > main > .section > .container-fluid > .card {

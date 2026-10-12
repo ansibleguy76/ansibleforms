@@ -30,6 +30,7 @@ import Runner from "./runner.model.js";
 import { stripTrailingSlashes } from "../lib/url.js";
 import { nodeId } from "../lib/role.js";
 import { NODE_DEAD_SECONDS } from "../lib/nodes.js";
+import { runWorkflow } from "./workflowRun.js";
 import { jobTypeOf } from "../lib/jobTypes.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -59,7 +60,10 @@ function pushForminfoToExtravars(formObj, extravars, creds = {}) {
     "vaultCredentials",
     "instanceGroups",
     "scmBranch",
-    "playbookSubPath"
+    "playbookSubPath",
+    // a workflow node's run (models/workflowRun.js) : AWX's skip_tags and verbosity level
+    "skipTags",
+    "verbosity"
   ];
   for (const fieldName of topFields) {
     // Check if the field exists in formObj and if the property is not present in extravars
@@ -571,7 +575,8 @@ Job.abort = async function (user, id) {
 Job.requestAbort = async function (id) {
   // Set the abort_requested flag first (database as source of truth)
   const res = await mysql.do(
-    "UPDATE AnsibleForms.`jobs` set abort_requested=1 WHERE id=? AND status='running'",
+    // a workflow job waiting for an approval node is still under way : its run ends it
+    "UPDATE AnsibleForms.`jobs` set abort_requested=1 WHERE id=? AND (status='running' OR (status='approve' AND job_type='workflow'))",
     [id]
   );
   
@@ -1250,6 +1255,10 @@ Job.launch = async function ({
         approval: parentId ? null : formObj.approval, // if multistep: no individual approvals checks
       }));
     }
+    if (jobtype == "workflow") {
+      // one of the designer's workflows, run as AWX runs it : its nodes jobs of their own
+      return await runWorkflow({ Job, form, formObj, user, extravars, credentials: creds, jobid });
+    }
     if (jobtype == "multistep") {
       return await Multistep.launch({
         form,
@@ -1615,6 +1624,16 @@ Job.approve = async function (user, id) {
   }
   if (job.credentials) {
     credentials = safeParse(job.credentials, {}, `job.credentials id=${id}`);
+  }
+  // a workflow job waits on one of its approval nodes : approved, it runs on (its run sees it) -
+  // the form is not launched again
+  if (job.status == "approve" && job.job_type == "workflow") {
+    logger.notice(`Approving workflow job ${id}`);
+    await Job.printJobOutput(`changed: [approved by ${user.username}]`, "stdout", id, (await Job.lastOrder(id)) + 1);
+    const moved = await Job.transitionStatus(id, ["approve"], { status: "running", end: null });
+    if (!moved) throw new Errors.ConflictError(`Job ${id} is no longer awaiting approval`);
+    await Job.sendEventNotification(id, 'approve', user);
+    return { id };
   }
   if (job.status == "approve") {
     logger.notice(`Approving job ${id} with form ${job.form}`);

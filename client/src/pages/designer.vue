@@ -108,8 +108,8 @@ const tabs = [
     icon: 'diagram-project',
   },
 ];
-// the sections still to build (workflows) : every section but the ones built
-const BUILT_SECTIONS = ['Categories', 'Constants', 'Forms', 'Inventories', 'Playbooks', 'VarsFiles'];
+// the sections still to build : every section but the ones built
+const BUILT_SECTIONS = ['Categories', 'Constants', 'Forms', 'Inventories', 'Playbooks', 'VarsFiles', 'Workflows'];
 const draftSections = tabs.map((x) => x.name).filter((name) => !BUILT_SECTIONS.includes(name));
 // the views in the menu, alphabetically by their (translated) label
 const sortedTabs = computed(() => [...tabs].sort((a, b) => a.label().localeCompare(b.label(), locale.value)));
@@ -183,9 +183,9 @@ const themeObserver = new MutationObserver(() => {
   editorTheme.value = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'monokai' : 'chrome';
 });
 
-// the playbooks, the vars files and the inventories : their files (AppProjectFiles), driven by
-// the toolbar
-const FILE_SECTIONS = { Inventories: 'inventories', Playbooks: 'playbooks', VarsFiles: 'vars' };
+// the playbooks, the vars files, the inventories and the workflows : their files
+// (AppProjectFiles), driven by the toolbar
+const FILE_SECTIONS = { Inventories: 'inventories', Playbooks: 'playbooks', VarsFiles: 'vars', Workflows: 'workflows' };
 const projectFiles = ref(null);
 
 // a new inventory is a new repository : the repositories' New dialog (Settings > Repositories),
@@ -195,6 +195,9 @@ const inventoryRepoSettings = computed(() => {
   const repositories = getSettings(t).repositories;
   return {
     ...repositories,
+    // the dialog says what it makes here : a new inventory (a repository, but named as the section)
+    label: t('designer.formInventory'),
+    labelPlural: t('designer.inventories'),
     fields: repositories.fields.map((f) => (f.step === 'usage' ? { ...f, readonly: true } : f)),
   };
 });
@@ -2042,6 +2045,11 @@ const currentFormName = computed(() => {
   return idmapping.value.find((x) => x.id == currentForm.value)?.name || null;
 });
 
+// the forms as the Previews read them : their names, their YAML as it is now
+const formsForPreview = computed(() =>
+  (idmapping.value || []).map((m) => ({ name: m.name, text: forms.value[m.id] || '' })),
+);
+
 const lockAge = computed(() => {
   if (lock.value?.lock) {
     return dayjs(lock.value.lock.created).fromNow();
@@ -3497,15 +3505,17 @@ const toolbarActions = computed(() => {
     if (!f) return [];
     const none = f.busy || !f.selected;
     const inventories = currentTab.value === 'Inventories';
+    const workflows = currentTab.value === 'Workflows';
     return [
-      // a new file ; in the inventories a new inventory (a repository), as the explorer's, on the +
-      { key: 'newFile', run: () => f.newFile(), show: !inventories, disabled: f.busy },
+      // a new file ; on the + : in the inventories a new inventory (a repository), in the
+      // workflows a new workflow (a file, an empty workflow in it), as the explorer's
+      { key: 'newFile', run: () => f.newFile(), show: !inventories && !workflows, disabled: f.busy },
       {
         key: 'add',
         run: () => f.newFile(),
-        show: inventories,
+        show: inventories || workflows,
         disabled: f.busy,
-        title: t('designer.files.newInventory'),
+        title: inventories ? t('designer.files.newInventory') : t('designer.files.newWorkflow'),
       },
       {
         key: 'save',
@@ -4933,6 +4943,7 @@ onBeforeUnmount(() => {
                   <AppProjectFiles
                     ref="projectFiles"
                     :kind="FILE_SECTIONS[currentTab]"
+                    :forms="formsForPreview"
                     :view="editorView"
                     :readOnly="!(lock && lock.match)"
                     :theme="editorTheme"
@@ -4980,8 +4991,12 @@ onBeforeUnmount(() => {
                     :text="t('designer.sectionToBuild')"
                   />
                 </div>
+                <!-- Preview : each constant, its reference ($(NAME)) and the forms using it -->
+                <div v-if="loaded && currentTab == 'Constants' && editorView === 'preview'" class="designer-visual">
+                  <AppValuesPreview :text="constants" mode="constants" :forms="formsForPreview" />
+                </div>
                 <!-- Visual : the constants as a table, on the same YAML (saved with Save) -->
-                <div v-if="loaded && currentTab == 'Constants' && editorView === 'visual'" class="designer-visual">
+                <div v-else-if="loaded && currentTab == 'Constants' && editorView === 'visual'" class="designer-visual">
                   <AppConstantsEditor
                     ref="visualEditor"
                     v-model="constants"

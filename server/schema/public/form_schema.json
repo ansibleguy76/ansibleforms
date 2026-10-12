@@ -77,6 +77,9 @@
                 "ansible"
               ]
             },
+            "workflow": {
+              "not": {}
+            },
             "template": {
               "not": {}
             },
@@ -115,6 +118,9 @@
                 "awx"
               ]
             },
+            "workflow": {
+              "not": {}
+            },
             "vaultCredentials": {
               "not": {}
             },
@@ -145,6 +151,9 @@
               "enum": [
                 "multistep"
               ]
+            },
+            "workflow": {
+              "not": {}
             },
             "playbook": {
               "not": {}
@@ -210,8 +219,81 @@
           "properties": {
             "type": {
               "enum": [
+                "workflow"
+              ]
+            },
+            "playbook": {
+              "not": {}
+            },
+            "playbookSubPath": {
+              "not": {}
+            },
+            "runner": {
+              "not": {}
+            },
+            "template": {
+              "not": {}
+            },
+            "awx": {
+              "not": {}
+            },
+            "steps": {
+              "not": {}
+            },
+            "inventory": {
+              "not": {}
+            },
+            "awxCredentials": {
+              "not": {}
+            },
+            "ansibleCredentials": {
+              "not": {}
+            },
+            "vaultCredentials": {
+              "not": {}
+            },
+            "tags": {
+              "not": {}
+            },
+            "check": {
+              "not": {}
+            },
+            "limit": {
+              "not": {}
+            },
+            "scm_branch": {
+              "not": {}
+            },
+            "diff": {
+              "not": {}
+            },
+            "key": {
+              "not": {}
+            },
+            "executionEnvironment": {
+              "not": {}
+            },
+            "instanceGroups": {
+              "not": {}
+            },
+            "expression": {
+              "not": {}
+            }
+          },
+          "required": [
+            "workflow",
+            "roles"
+          ]
+        },
+        {
+          "properties": {
+            "type": {
+              "enum": [
                 "subform"
               ]
+            },
+            "workflow": {
+              "not": {}
             },
             "playbook": {
               "not": {}
@@ -1537,7 +1619,8 @@
             "template",
             "awx",
             "multistep",
-            "subform"
+            "subform",
+            "workflow"
           ]
         },
         "hasApproval": {
@@ -1573,6 +1656,9 @@
           "type": "string"
         },
         "playbookSubPath": {
+          "type": "string"
+        },
+        "workflow": {
           "type": "string"
         },
         "key": {
@@ -4298,6 +4384,9 @@
                   "ansible"
                 ]
               },
+              "workflow": {
+                "not": {}
+              },
               "template": {
                 "not": {}
               },
@@ -4336,6 +4425,9 @@
                   "awx"
                 ]
               },
+              "workflow": {
+                "not": {}
+              },
               "vaultCredentials": {
                 "not": {}
               },
@@ -4366,6 +4458,9 @@
                 "enum": [
                   "multistep"
                 ]
+              },
+              "workflow": {
+                "not": {}
               },
               "playbook": {
                 "not": {}
@@ -4431,8 +4526,81 @@
             "properties": {
               "type": {
                 "enum": [
+                  "workflow"
+                ]
+              },
+              "playbook": {
+                "not": {}
+              },
+              "playbookSubPath": {
+                "not": {}
+              },
+              "runner": {
+                "not": {}
+              },
+              "template": {
+                "not": {}
+              },
+              "awx": {
+                "not": {}
+              },
+              "steps": {
+                "not": {}
+              },
+              "inventory": {
+                "not": {}
+              },
+              "awxCredentials": {
+                "not": {}
+              },
+              "ansibleCredentials": {
+                "not": {}
+              },
+              "vaultCredentials": {
+                "not": {}
+              },
+              "tags": {
+                "not": {}
+              },
+              "check": {
+                "not": {}
+              },
+              "limit": {
+                "not": {}
+              },
+              "scm_branch": {
+                "not": {}
+              },
+              "diff": {
+                "not": {}
+              },
+              "key": {
+                "not": {}
+              },
+              "executionEnvironment": {
+                "not": {}
+              },
+              "instanceGroups": {
+                "not": {}
+              },
+              "expression": {
+                "not": {}
+              }
+            },
+            "required": [
+              "workflow",
+              "roles"
+            ]
+          },
+          {
+            "properties": {
+              "type": {
+                "enum": [
                   "subform"
                 ]
+              },
+              "workflow": {
+                "not": {}
               },
               "playbook": {
                 "not": {}
@@ -5758,7 +5926,8 @@
               "template",
               "awx",
               "multistep",
-              "subform"
+              "subform",
+              "workflow"
             ]
           },
           "hasApproval": {
@@ -5794,6 +5963,9 @@
             "type": "string"
           },
           "playbookSubPath": {
+            "type": "string"
+          },
+          "workflow": {
             "type": "string"
           },
           "key": {

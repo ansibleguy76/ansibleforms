@@ -23,7 +23,7 @@ import { FILE_KINDS, MAX_FILE_BYTES, MAX_LISTED_FILES, safeRelativePath, isInsid
 const ProjectFiles = {};
 
 // what a push of each kind says in its commit
-const PUSH_LABEL = { playbooks: "Playbooks", vars: "Vars files", inventories: "Inventories" };
+const PUSH_LABEL = { playbooks: "Playbooks", vars: "Vars files", inventories: "Inventories", workflows: "Workflows" };
 
 /**
  * The folders of a kind of files and the repository each belongs to.
@@ -44,6 +44,10 @@ ProjectFiles.roots = async function (kind) {
   if (kind === "inventories") {
     // the local folder, then each repository that is an inventory
     return (await Repository.getInventoryRoots()).map((r) => ({ prefix: r.repository || "", root: path.resolve(r.root), repository: r.repository }));
+  }
+  if (kind === "workflows") {
+    // the local folder, then each repository used for workflows, under its name
+    return (await Repository.getWorkflowsRoots()).map((r) => ({ prefix: r.repository || "", root: path.resolve(r.root), repository: r.repository }));
   }
   const root = path.resolve(kind === "playbooks" ? (await Repository.getAnsiblePath()) || ansibleConfig.path : await Repository.getVarsFilesPath());
   return [{ prefix: "", root, repository: configRepoFromPath(root, path.resolve(appConfig.repoPath)) }];

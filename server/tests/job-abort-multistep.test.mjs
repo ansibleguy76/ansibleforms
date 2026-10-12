@@ -25,7 +25,8 @@ vi.mock("../src/models/db.model.js", () => ({
       if (/SELECT abort_requested/.test(sql)) {
         return [{ abort_requested: row(params[0])?.abort_requested || 0 }];
       }
-      if (/set abort_requested=1 WHERE id=\? AND status='running'/.test(sql)) {
+      // (a workflow job waiting for approval is flagged too : not one of these)
+      if (/set abort_requested=1 WHERE id=\? AND \(status='running'/.test(sql)) {
         const j = row(params[0]);
         if (j && j.status === "running" && !j.abort_requested) {
           j.abort_requested = 1;

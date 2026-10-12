@@ -104,7 +104,9 @@ function headLevel(html) {
   const text = plain(html);
   // a workflow's banners (a node's output, the summary at the end) carry a row of stars ; the
   // summary's own line per node does not, and stays a plain line
-  if (/^WORKFLOW( NODE)? \[.*\] \([^)]*\) \*{5,}/.test(text)) return 1;
+  // a workflow's node or summary : its banner (its node's id after its status, #42, since the
+  // graph opens a node by it)
+  if (/^WORKFLOW( NODE)? \[.*\] \([^)]*\)( #\d+)? \*{5,}/.test(text)) return 1;
   if (/^(PLAY \[|PLAY RECAP)/.test(text)) return 2;
   if (/^(TASK|RUNNING HANDLER) \[/.test(text)) return 3;
   return 0;

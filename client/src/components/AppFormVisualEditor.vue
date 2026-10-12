@@ -153,6 +153,7 @@ const form = computed(() => {
     type,
     description: str('description'),
     playbook: str('playbook'),
+    workflow: str('workflow'),
     template: str('template'),
     icon: str('icon'),
     multistep: type === 'multistep',
@@ -429,6 +430,31 @@ onMounted(async () => {
     inventoryNames.value = [...new Set(names)].sort((a, b) => a.localeCompare(b));
   } catch {
     inventoryNames.value = [];
+  }
+});
+// the playbooks (the designer's Playbooks section : its YAML files), offered as an ansible form's
+// playbook ; none (the list needs the designer's permission) : the name is typed
+const playbookNames = ref([]);
+onMounted(async () => {
+  try {
+    const res = await axios.get('/api/v2/files/playbooks');
+    playbookNames.value = (res.data?.files || [])
+      .map((f) => String(f.path || ''))
+      .filter((p) => /\.ya?ml$/i.test(p))
+      .sort((a, b) => a.localeCompare(b));
+  } catch {
+    playbookNames.value = [];
+  }
+});
+// the designer's workflows (Designer > Workflows), offered as a workflow form's workflow ; none
+// (the list needs the designer's permission) : the name is typed
+const workflowNames = ref([]);
+onMounted(async () => {
+  try {
+    const res = await axios.get('/api/v2/files/workflows/names');
+    workflowNames.value = (res.data?.records || res.data || []).map((w) => w?.name).filter(Boolean);
+  } catch {
+    workflowNames.value = [];
   }
 });
 // a setting's choices, by its kind ; none (an empty list) means it is typed
@@ -778,7 +804,24 @@ defineExpose({
           <label class="form-label fw-bold">{{ t('designer.formPlaybook') }}</label>
           <div class="input-group">
             <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="file-code" /></span>
+            <!-- one of the designer's playbooks ; a name typed before stays offered -->
+            <select
+              v-if="playbookNames.length"
+              class="form-select"
+              :class="{ 'is-invalid': !form.playbook.trim() }"
+              :value="form.playbook"
+              :disabled="locked"
+              @mouseenter="fullTitle"
+              @change="setText('playbook', $event.target.value)"
+            >
+              <option value="">-</option>
+              <option v-if="form.playbook && !playbookNames.includes(form.playbook)" :value="form.playbook">
+                {{ form.playbook }}
+              </option>
+              <option v-for="p in playbookNames" :key="p" :value="p">{{ p }}</option>
+            </select>
             <input
+              v-else
               class="form-control"
               :class="{ 'is-invalid': !form.playbook.trim() }"
               :value="form.playbook"
@@ -788,6 +831,38 @@ defineExpose({
             />
           </div>
           <div class="form-text">{{ t('designer.helpPlaybook') }}</div>
+        </div>
+        <!-- a workflow form : the workflow it runs, one of the designer's -->
+        <div v-if="form.type === 'workflow'">
+          <label class="form-label fw-bold">{{ t('designer.formWorkflow') }}</label>
+          <div class="input-group">
+            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="diagram-project" /></span>
+            <select
+              v-if="workflowNames.length"
+              class="form-select"
+              :class="{ 'is-invalid': !form.workflow.trim() }"
+              :value="form.workflow"
+              :disabled="locked"
+              @mouseenter="fullTitle"
+              @change="setText('workflow', $event.target.value)"
+            >
+              <option value="">-</option>
+              <option v-if="form.workflow && !workflowNames.includes(form.workflow)" :value="form.workflow">
+                {{ form.workflow }}
+              </option>
+              <option v-for="w in workflowNames" :key="w" :value="w">{{ w }}</option>
+            </select>
+            <input
+              v-else
+              class="form-control"
+              :class="{ 'is-invalid': !form.workflow.trim() }"
+              :value="form.workflow"
+              :disabled="locked"
+              spellcheck="false"
+              @change="setText('workflow', $event.target.value)"
+            />
+          </div>
+          <div class="form-text">{{ t('designer.helpWorkflow') }}</div>
         </div>
         <div v-if="awx">
           <label class="form-label fw-bold">{{ t('designer.formTemplate') }}</label>

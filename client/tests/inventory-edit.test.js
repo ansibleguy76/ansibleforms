@@ -1,0 +1,78 @@
+// An inventory edited field by field, the designer's Inventories Visual tab
+// (config/inventoryEdit.js) : groups and child groups, hosts, the variables of a group or a host,
+// each edit only the keys it touches, comments kept.
+import { describe, it, expect } from 'vitest';
+import YAML from 'yaml';
+import {
+  varsOf,
+  editAddGroup,
+  editRenameGroup,
+  editRemoveGroup,
+  editAddHost,
+  editRenameHost,
+  editRemoveHost,
+  editSetVar,
+  editRenameVar,
+  editRemoveVar,
+} from '@/config/inventoryEdit';
+
+const INVENTORY = `# production
+all:
+  vars:
+    ntp: pool.ntp.org
+  children:
+    web:
+      hosts:
+        web1.example.com:
+          http_port: 8080
+        web2.example.com:
+    db:
+`;
+
+describe('an inventory edited', () => {
+  it("reads a group's and a host's variables", () => {
+    expect(varsOf(INVENTORY, { path: ['all'] })).toEqual([{ key: 'ntp', value: 'pool.ntp.org', complex: false }]);
+    expect(varsOf(INVENTORY, { path: ['all', 'web'], host: 'web1.example.com' })).toEqual([
+      { key: 'http_port', value: '8080', complex: false },
+    ]);
+    expect(varsOf(INVENTORY, { path: ['all', 'web'], host: 'web2.example.com' })).toEqual([]);
+  });
+
+  it('adds, renames and removes groups ; a child of a group written with no value', () => {
+    let t = editAddGroup(INVENTORY, ['all', 'db'], 'replicas');
+    t = editRenameGroup(t, ['all', 'web'], 'frontend');
+    t = editAddGroup(t, null, 'ungrouped');
+    const data = YAML.parse(t);
+    expect(data.all.children.db.children.replicas).toEqual({ hosts: {} });
+    expect(Object.keys(data.all.children)).toEqual(['frontend', 'db']);
+    expect(data.ungrouped).toEqual({ hosts: {} });
+    expect(t).toContain('# production');
+    expect(() => editAddGroup(INVENTORY, ['all'], 'web')).toThrow(/already/);
+    t = editRemoveGroup(t, ['all', 'db']);
+    expect(Object.keys(YAML.parse(t).all.children)).toEqual(['frontend']);
+  });
+
+  it('adds, renames and removes hosts', () => {
+    let t = editAddHost(INVENTORY, ['all', 'db'], 'db1.example.com');
+    t = editRenameHost(t, ['all', 'web'], 'web1.example.com', 'www1.example.com');
+    t = editRemoveHost(t, ['all', 'web'], 'web2.example.com');
+    const data = YAML.parse(t);
+    expect(data.all.children.db.hosts).toEqual({ 'db1.example.com': null });
+    expect(data.all.children.web.hosts).toEqual({ 'www1.example.com': { http_port: 8080 } });
+  });
+
+  it('sets, renames and removes variables ; an emptied host is a plain host again', () => {
+    let t = editSetVar(INVENTORY, { path: ['all', 'web'], host: 'web2.example.com' }, 'http_port', '80');
+    t = editSetVar(t, { path: ['all', 'web'] }, 'tls', 'true');
+    t = editRenameVar(t, { path: ['all'] }, 'ntp', 'ntp_server');
+    let data = YAML.parse(t);
+    expect(data.all.children.web.hosts['web2.example.com']).toEqual({ http_port: 80 });
+    expect(data.all.children.web.vars).toEqual({ tls: true });
+    expect(data.all.vars).toEqual({ ntp_server: 'pool.ntp.org' });
+    t = editRemoveVar(t, { path: ['all', 'web'], host: 'web2.example.com' }, 'http_port');
+    t = editRemoveVar(t, { path: ['all', 'web'] }, 'tls');
+    data = YAML.parse(t);
+    expect(data.all.children.web.hosts['web2.example.com']).toBeNull();
+    expect(data.all.children.web.vars).toBeUndefined();
+  });
+});
