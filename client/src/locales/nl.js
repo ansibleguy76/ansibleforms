@@ -2007,8 +2007,8 @@ export default {
     release: 'Vrijgeven',
     releaseTitle: 'Designer-vergrendeling vrijgeven',
     releaseAdminOnly: 'Dit is een functie alleen voor beheerders.',
-    releaseConfirm:
-      'De vergrendeling van {user} vrijgeven? Wijzigingen die {user} niet heeft opgeslagen gaan verloren.',
+    releaseConfirm: 'Weet je zeker dat je de vergrendeling van {user} wilt opheffen?',
+    releaseLoss: '{user} verliest al het werk dat nog niet is opgeslagen.',
     fileExplorer: 'Bestandsverkenner',
     search: 'Zoeken',
     previewForm: 'Formulier bekijken',
