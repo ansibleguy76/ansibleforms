@@ -1230,7 +1230,7 @@ export default {
       enable: 'Włącz',
       disable: 'Wyłącz',
       enabled: 'Włączony',
-      enabledHelp: 'Czy wysyłane są do niego powiadomienia: zapisywane od razu.',
+      enabledHelp: 'Czy wysyłane są do niego powiadomienia.',
       useForMail: 'Ustaw jako domyślny',
       active: 'Domyślny',
       activeHelp:
@@ -1303,7 +1303,7 @@ export default {
       enable: 'Włącz',
       disable: 'Wyłącz',
       enabled: 'Włączony',
-      enabledHelp: 'Czy wysyłane są do niego wiersze: zapisywane od razu.',
+      enabledHelp: 'Czy wysyłane są do niego wiersze.',
       address: 'Adres',
       protocol: 'Protokół',
       protocolHelp: 'udp wysyła bez połączenia, tcp je utrzymuje, tls je szyfruje; unix zapisuje do lokalnego gniazda.',

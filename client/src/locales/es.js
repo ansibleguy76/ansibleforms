@@ -1326,7 +1326,7 @@ export default {
       enable: 'Activar',
       disable: 'Desactivar',
       enabled: 'Activado',
-      enabledHelp: 'Si se le envían notificaciones: se guarda al momento.',
+      enabledHelp: 'Si se le envían notificaciones.',
       useForMail: 'Usar como predeterminado',
       active: 'Predeterminado',
       activeHelp:
@@ -1400,7 +1400,7 @@ export default {
       enable: 'Activar',
       disable: 'Desactivar',
       enabled: 'Activado',
-      enabledHelp: 'Si se le envían líneas: se guarda al momento.',
+      enabledHelp: 'Si se le envían líneas.',
       address: 'Dirección',
       protocol: 'Protocolo',
       protocolHelp: 'udp envía sin conexión, tcp mantiene una, tls la cifra; unix escribe en un socket local.',

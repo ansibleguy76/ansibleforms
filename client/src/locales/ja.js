@@ -1222,7 +1222,7 @@ export default {
       enable: '有効にする',
       disable: '無効にする',
       enabled: '有効',
-      enabledHelp: '通知を送信するかどうか: すぐに保存されます。',
+      enabledHelp: '通知を送信するかどうか。',
       useForMail: '既定にする',
       active: '既定',
       activeHelp:
@@ -1294,7 +1294,7 @@ export default {
       enable: '有効にする',
       disable: '無効にする',
       enabled: '有効',
-      enabledHelp: '行を送信するかどうか。すぐに保存されます。',
+      enabledHelp: '行を送信するかどうか。',
       address: 'アドレス',
       protocol: 'プロトコル',
       protocolHelp:

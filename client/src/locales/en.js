@@ -1306,7 +1306,7 @@ export default {
       enable: 'Enable',
       disable: 'Disable',
       enabled: 'Enabled',
-      enabledHelp: 'Whether notifications are sent to it: saved at once.',
+      enabledHelp: 'Whether notifications are sent to it.',
       useForMail: 'Make default',
       active: 'Default',
       activeHelp:
@@ -1379,7 +1379,7 @@ export default {
       enable: 'Enable',
       disable: 'Disable',
       enabled: 'Enabled',
-      enabledHelp: 'Whether lines are sent to it: saved at once.',
+      enabledHelp: 'Whether lines are sent to it.',
       address: 'Address',
       protocol: 'Protocol',
       protocolHelp: 'udp sends without a connection, tcp keeps one, tls encrypts it; unix writes to a local socket.',

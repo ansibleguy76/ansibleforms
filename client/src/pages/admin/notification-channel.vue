@@ -56,7 +56,14 @@ const EDITED_BY_TYPE = {
   telegram: ['token_credential', 'chat_id', 'api_url'],
   webhook: ['url', 'method', 'token_credential', 'verify_tls', 'headers', 'payload'],
 };
-const edited = computed(() => ['name', 'description', ...EDITED_BY_TYPE[type.value]]);
+// Enabled, and Default for mail, saved with Save as the rest
+const edited = computed(() => [
+  'name',
+  'description',
+  'enabled',
+  ...(type.value === 'mail' ? ['is_active'] : []),
+  ...EDITED_BY_TYPE[type.value],
+]);
 
 /**
  * The fields of a channel as this page edits them.
@@ -71,6 +78,8 @@ function editable(record) {
   return {
     name: record.name ?? '',
     description: record.description ?? '',
+    enabled: !!record.enabled,
+    is_active: !!record.is_active,
     server: record.server ?? '',
     port: record.port ?? '',
     secure: !!record.secure,
@@ -227,7 +236,9 @@ async function save() {
     toast.warning(t('settings.notificationChannels.fieldsRequired'));
     return;
   }
-  const data = { name: e.name.trim(), description: e.description.trim() };
+  const data = { name: e.name.trim(), description: e.description.trim(), enabled: e.enabled ? 1 : 0 };
+  // the default mail channel : made it here, the one before stops being it (never unmade here)
+  if (type.value === 'mail' && e.is_active && !channel.value.is_active) data.is_active = 1;
   for (const key of EDITED_BY_TYPE[type.value]) {
     const value = e[key];
     if (typeof value === 'boolean') data[key] = value ? 1 : 0;
@@ -237,25 +248,6 @@ async function save() {
     toast.success(`${data.name} ${t('settings.common.isUpdated')}`);
     await load();
   }
-}
-
-/**
- * Turns it on or off, saved at once.
- *
- * Args:
- *   on (boolean): on.
- */
-async function setEnabled(on) {
-  if (await update({ enabled: on ? 1 : 0 })) toast.success(`${channel.value.name} ${t('settings.common.isUpdated')}`);
-  await load();
-}
-
-/**
- * Makes a mail channel the one the app sends with, saved at once : the one before stops being it.
- */
-async function makeActive() {
-  if (await update({ is_active: 1 })) toast.success(`${channel.value.name} ${t('settings.common.isUpdated')}`);
-  await load();
 }
 
 // Send test : a dialog - for mail the address (the one typed last offered again, this browser
@@ -462,15 +454,14 @@ onMounted(async () => {
                 <label class="form-label fw-bold d-block" for="af-channel-enabled">{{
                   t('settings.notificationChannels.enabled')
                 }}</label>
-                <!-- saved at once -->
+                <!-- saved with Save -->
                 <div class="form-check form-switch mb-0">
                   <input
                     id="af-channel-enabled"
+                    v-model="edit.enabled"
                     class="form-check-input"
                     type="checkbox"
                     role="switch"
-                    :checked="!!channel.enabled"
-                    @change="setEnabled(!channel.enabled)"
                   />
                 </div>
                 <div class="form-text">{{ t('settings.notificationChannels.enabledHelp') }}</div>
@@ -479,16 +470,15 @@ onMounted(async () => {
                 <label class="form-label fw-bold d-block" for="af-channel-active">{{
                   t('settings.notificationChannels.active')
                 }}</label>
-                <!-- turned on, saved at once ; turned off by making another the active one -->
+                <!-- turned on, saved with Save ; turned off by making another the default -->
                 <div class="form-check form-switch mb-0">
                   <input
                     id="af-channel-active"
+                    v-model="edit.is_active"
                     class="form-check-input"
                     type="checkbox"
                     role="switch"
-                    :checked="!!channel.is_active"
                     :disabled="!!channel.is_active"
-                    @change="makeActive()"
                   />
                 </div>
                 <div class="form-text">{{ t('settings.notificationChannels.activeHelp') }}</div>

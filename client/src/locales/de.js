@@ -1333,7 +1333,7 @@ export default {
       enable: 'Aktivieren',
       disable: 'Deaktivieren',
       enabled: 'Aktiviert',
-      enabledHelp: 'Ob Benachrichtigungen an ihn gesendet werden: sofort gespeichert.',
+      enabledHelp: 'Ob Benachrichtigungen an ihn gesendet werden.',
       useForMail: 'Als Standard festlegen',
       active: 'Standard',
       activeHelp:
@@ -1407,7 +1407,7 @@ export default {
       enable: 'Aktivieren',
       disable: 'Deaktivieren',
       enabled: 'Aktiviert',
-      enabledHelp: 'Ob Zeilen an ihn gesendet werden: wird sofort gespeichert.',
+      enabledHelp: 'Ob Zeilen an ihn gesendet werden.',
       address: 'Adresse',
       protocol: 'Protokoll',
       protocolHelp:

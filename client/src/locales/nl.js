@@ -1322,7 +1322,7 @@ export default {
       enable: 'Inschakelen',
       disable: 'Uitschakelen',
       enabled: 'Ingeschakeld',
-      enabledHelp: 'Of er meldingen naartoe gaan: meteen opgeslagen.',
+      enabledHelp: 'Of er meldingen naartoe gaan.',
       useForMail: 'Als standaard instellen',
       active: 'Standaard',
       activeHelp:
@@ -1396,7 +1396,7 @@ export default {
       enable: 'Inschakelen',
       disable: 'Uitschakelen',
       enabled: 'Ingeschakeld',
-      enabledHelp: 'Of er regels naartoe worden verzonden: meteen opgeslagen.',
+      enabledHelp: 'Of er regels naartoe worden verzonden.',
       address: 'Adres',
       protocol: 'Protocol',
       protocolHelp:

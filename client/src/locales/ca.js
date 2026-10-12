@@ -1236,7 +1236,7 @@ export default {
       enable: 'Activa',
       disable: 'Desactiva',
       enabled: 'Activat',
-      enabledHelp: "Si se li envien notificacions: es desa a l'instant.",
+      enabledHelp: 'Si se li envien notificacions.',
       useForMail: 'Fes-lo predeterminat',
       active: 'Predeterminat',
       activeHelp:
@@ -1309,7 +1309,7 @@ export default {
       enable: 'Activa',
       disable: 'Desactiva',
       enabled: 'Activat',
-      enabledHelp: "Si s'hi envien línies: es desa de seguida.",
+      enabledHelp: "Si s'hi envien línies.",
       address: 'Adreça',
       protocol: 'Protocol',
       protocolHelp: 'udp envia sense connexió, tcp en manté una, tls la xifra; unix escriu en un sòcol local.',

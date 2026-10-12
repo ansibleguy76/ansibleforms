@@ -36,7 +36,9 @@ const loaded = ref(false);
 const serverId = computed(() => String(route.params.id || ''));
 const server = ref(null); // as saved
 const edit = ref(null); // as edited
+// Enabled too : saved with Save as the rest
 const EDITED = [
+  'enabled',
   'name',
   'description',
   'protocol',
@@ -77,6 +79,7 @@ function editable(record) {
   return {
     name: record.name ?? '',
     description: record.description ?? '',
+    enabled: !!record.enabled,
     protocol: record.protocol || 'udp4',
     host: record.host ?? '',
     port: record.port ?? '',
@@ -170,6 +173,7 @@ async function save() {
   const data = {
     name: e.name.trim(),
     description: e.description.trim(),
+    enabled: e.enabled ? 1 : 0,
     protocol: e.protocol,
     host: onSocket.value ? '' : e.host.trim(),
     port: onSocket.value ? '' : e.port,
@@ -184,17 +188,6 @@ async function save() {
     toast.success(`${data.name} ${t('settings.common.isUpdated')}`);
     await load();
   }
-}
-
-/**
- * Turns sending to it on or off, saved at once.
- *
- * Args:
- *   on (boolean): sending to it.
- */
-async function setEnabled(on) {
-  if (await update({ enabled: on ? 1 : 0 })) toast.success(`${server.value.name} ${t('settings.common.isUpdated')}`);
-  await load();
 }
 
 // Test : a message through the server as saved
@@ -311,15 +304,14 @@ onMounted(async () => {
                 <label class="form-label fw-bold d-block" for="af-syslog-enabled">{{
                   t('settings.syslogServers.enabled')
                 }}</label>
-                <!-- saved at once, as a mail server's Active -->
+                <!-- saved with Save -->
                 <div class="form-check form-switch mb-0">
                   <input
                     id="af-syslog-enabled"
+                    v-model="edit.enabled"
                     class="form-check-input"
                     type="checkbox"
                     role="switch"
-                    :checked="!!server.enabled"
-                    @change="setEnabled(!server.enabled)"
                   />
                 </div>
                 <div class="form-text">{{ t('settings.syslogServers.enabledHelp') }}</div>
