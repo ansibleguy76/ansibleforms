@@ -90,13 +90,14 @@ const server = http.createServer((req, res) => {
     if (p === "/me/api/json") return json(200, { id: "admin" });
     if (p === "/job/ci/api/json") return json(200, { fullName: "ci" });
     if ((m = p.match(/^\/queue\/item\/(\d+)\/api\/json$/))) {
-      const q = queue[m[1]];
+      const q = queue.get(m[1]);
       if (q.cancelled) return json(200, { cancelled: true, why: null });
       if (q.waits-- > 0) return json(200, { cancelled: false, why: "Waiting for next available executor" });
       return json(200, { cancelled: false, why: null, executable: { number: q.number } });
     }
     if (p === "/queue/cancelItem" && req.method === "POST") {
-      queue[url.searchParams.get("id")].cancelled = true;
+      const q = queue.get(url.searchParams.get("id"));
+      if (q) q.cancelled = true;
       return json(204, {});
     }
     // /job/ci/job/<name>[/job/<name>]... then an action
@@ -112,9 +113,9 @@ const server = http.createServer((req, res) => {
     }
     if ((rest[0] === "build" || rest[0] === "buildWithParameters") && req.method === "POST") {
       if (refuseBuild) return json(500, {});
-      const id = 40 + Object.keys(queue).length;
+      const id = 40 + queue.size;
       const number = 7 + Object.keys(builds).length;
-      queue[id] = { waits: queueWaits, number, cancelled: false };
+      queue.set(String(id), { waits: queueWaits, number, cancelled: false });
       builds[number] = { step: 0, text: "", aborted: false };
       res.writeHead(201, { Location: `http://jenkins/queue/item/${id}/` });
       return res.end();
@@ -157,7 +158,8 @@ beforeEach(() => {
   result = "SUCCESS";
   queueWaits = 1;
   builds = {};
-  queue = {};
+  // a Map : the queue item ids come from the request, never used as object keys
+  queue = new Map();
   requests = [];
   failLogReads = 0;
   refuseBuild = false;
