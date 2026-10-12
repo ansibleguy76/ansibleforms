@@ -3052,23 +3052,6 @@ async function deleteLock(proceed = true) {
   }
 }
 
-async function unLock() {
-  action.value = 'forceUnlock';
-  nextAction.value = async (proceed) => {
-    resetAction();
-    if (!proceed) return;
-    // the server takes the lock only when it is free (another user's answers 423), so a
-    // force unlock releases the other user's lock first, then takes it
-    try {
-      await Lock.release();
-    } catch (err) {
-      toast.error(err.message);
-      return;
-    }
-    await setLock(proceed);
-  };
-}
-
 // forms repositories (issue #414) : the forms live in git, the designer
 // saves into the working trees and 'Push to repo' commits & pushes them
 const formsRepos = ref([]);
@@ -3791,21 +3774,6 @@ onBeforeUnmount(() => {
         <template #footer>
           <BsButton icon="cloud-arrow-down" @click="pullAndReload(loadRepo)">{{ t('designer.loadFromRepo') }}</BsButton>
           <BsButton icon="cloud-arrow-down" @click="pullAndReload()">{{ t('designer.loadAll') }}</BsButton>
-        </template>
-      </BsModal>
-
-      <!-- Modal - force unlock-->
-      <BsModal v-if="action == 'forceUnlock'" @close="resetAction()" icon="unlock">
-        <template #title> {{ t('designer.forceUnlock') }} </template>
-        <template #default>
-          <p class="mt-3 fs-6 user-select-none">
-            {{ t('designer.forceUnlockConfirm') }}<br />
-            {{ t('designer.forceUnlockWarning') }}<br /><br />
-            {{ t('designer.forceUnlockCare') }}
-          </p>
-        </template>
-        <template #footer>
-          <BsButton icon="unlock" @click="nextAction(true)">{{ t('designer.forceUnlock') }}</BsButton>
         </template>
       </BsModal>
 
@@ -4737,22 +4705,20 @@ onBeforeUnmount(() => {
         <template #headerActions>
           <template v-if="lock">
             <popper v-if="lock.lock && !lock.match">
-              <div class="form-check form-switch d-inline-flex align-items-center ms-3 mb-0">
-                <input class="form-check-input" type="checkbox" :checked="true" @change="unLock()" role="button" />
-                <label
-                  class="form-check-label text-warning"
-                  style="margin-left: 0.75rem"
-                  role="button"
-                  @click="unLock()"
-                >
-                  <font-awesome-icon icon="lock" size="sm" class="me-1" />{{ lock.lock.username }}
+              <!-- someone else's : the switch greyed out and disabled, the lock is theirs until they
+                   turn the designer off -->
+              <div class="form-check form-switch d-inline-flex align-items-center ms-3 mb-0 designer-switch-other">
+                <input class="form-check-input" type="checkbox" :checked="true" disabled />
+                <label class="form-check-label text-body-secondary" style="margin-left: 0.75rem">
+                  <font-awesome-icon icon="lock" size="sm" class="me-1" />{{
+                    t('designer.lockedByUser', { user: lock.lock.username })
+                  }}
                 </label>
               </div>
               <template #content>
                 {{ t('designer.user') }}: {{ lock.lock.username }}<br />
                 {{ t('designer.type') }}: {{ lock.lock.type }}<br />
-                {{ t('designer.created') }}: {{ lockAge }}<br />
-                <small class="text-muted">{{ t('designer.clickToForceUnlock') }}</small>
+                {{ t('designer.created') }}: {{ lockAge }}
               </template>
             </popper>
             <div v-else class="form-check form-switch d-inline-flex align-items-center ms-3 mb-0">
@@ -4779,7 +4745,19 @@ onBeforeUnmount(() => {
         </template>
         <template #default>
           <!-- loading : the page's loading indicator, centered in the card, which fills the page -->
-          <AppPageLoading v-if="lockLoading || (lock && !lock.free && !loaded)" contained />
+          <AppPageLoading v-if="lockLoading" contained />
+          <!-- someone else holds the lock : nothing shown, only who, as when the designer is off -->
+          <div
+            v-else-if="lock && lock.lock && !lock.match"
+            class="d-flex flex-column align-items-center justify-content-center py-5 text-muted"
+          >
+            <FaIcon icon="lock" style="font-size: 2.5rem; opacity: 0.3" class="mb-3" />
+            <p class="mb-3 fw-semibold" style="font-size: 1.2rem">
+              {{ t('designer.inUseBy', { user: lock.lock.username }) }}
+            </p>
+            <p class="fs-6 mb-0">{{ t('designer.inUseByHint', { user: lock.lock.username }) }}</p>
+          </div>
+          <AppPageLoading v-else-if="lock && !lock.free && !loaded" contained />
           <div
             v-else-if="lock && lock.free"
             class="d-flex flex-column align-items-center justify-content-center py-5 text-muted"
@@ -4826,11 +4804,6 @@ onBeforeUnmount(() => {
                      the same in every section (toolbarActions says which and what they do) -->
                 <AppDesignerToolbar :actions="toolbarActions" />
               </template>
-              <small
-                v-if="lock && !lock.match && !lock.free"
-                class="d-inline-flex px-2 py-1 fw-semibold text-warning-emphasis bg-warning-subtle border border-warning-subtle rounded-2"
-                >{{ t('designer.readOnly') }}</small
-              >
             </div>
             <div
               class="designer-layout"
@@ -5232,6 +5205,12 @@ onBeforeUnmount(() => {
 }
 .designer-editor {
   min-width: 0;
+}
+/* someone else holds the lock : the switch greyed out */
+.designer-switch-other .form-check-input:checked {
+  background-color: var(--bs-secondary-bg);
+  border-color: var(--bs-border-color);
+  filter: grayscale(1);
 }
 .designer-resize {
   cursor: col-resize;

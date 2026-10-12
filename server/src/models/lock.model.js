@@ -53,8 +53,8 @@ Lock.status = async function(user){
 };
 // Exclusive : the lock is taken only when it is free, or already this user's (then its time
 // is refreshed). Two designers asking at once - on one node or on two - get one winner ; the
-// other is answered 423, which the designer shows as "locked by". Taking it from somebody else
-// is a deliberate delete first (the designer's force unlock), never a silent overwrite.
+// other is answered 423, which the designer shows as "locked by". Nobody takes it from somebody
+// else : only its holder releases it (lock.controller.js delete).
 Lock.set = async function (user) {
   if (config.showDesigner && user.options.showDesigner) {
     logger.notice(`Creating lock for user ${user.username}`);

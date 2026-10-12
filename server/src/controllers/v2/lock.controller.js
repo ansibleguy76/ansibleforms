@@ -43,7 +43,12 @@ const lockController = {
   },
   async delete(req, res) {
     try {
-      await Lock.delete(req.user.user);
+      // only its holder turns the designer off : somebody else's lock is theirs until they do
+      const current = await Lock.status(req.user.user);
+      if (!current.free && !current.match) {
+        throw new Errors.ApiError(`The designer is locked by ${current.lock?.username || 'another user'}`, 423);
+      }
+      await Lock.delete(req.user.user, { onlyMine: true });
       return res.json(RestResult.single({ message: i18n.t(req, 'resources.lockDeleted') }));
     } catch (err) {
       Errors.ReturnError(res, err);
