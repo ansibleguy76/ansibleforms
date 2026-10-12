@@ -3500,15 +3500,17 @@ const toolbarActions = computed(() => {
     if (!f) return [];
     const none = f.busy || !f.selected;
     const inventories = currentTab.value === 'Inventories';
+    const workflows = currentTab.value === 'Workflows';
     return [
-      // a new file ; in the inventories a new inventory (a repository), as the explorer's, on the +
-      { key: 'newFile', run: () => f.newFile(), show: !inventories, disabled: f.busy },
+      // a new file ; on the + : in the inventories a new inventory (a repository), in the
+      // workflows a new workflow (a file, an empty workflow in it), as the explorer's
+      { key: 'newFile', run: () => f.newFile(), show: !inventories && !workflows, disabled: f.busy },
       {
         key: 'add',
         run: () => f.newFile(),
-        show: inventories,
+        show: inventories || workflows,
         disabled: f.busy,
-        title: t('designer.files.newInventory'),
+        title: inventories ? t('designer.files.newInventory') : t('designer.files.newWorkflow'),
       },
       {
         key: 'save',

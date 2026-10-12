@@ -1,6 +1,7 @@
 // A workflow file of the designer's Workflows section (config/workflowFile.js) : the AWX export
-// syntax read (and the awx.awx collection's), what AWX would refuse found, its edits kept to the
-// keys they touch, and a workflow laid out as AWX's visualizer does.
+// syntax read (and the awx.awx collection's), a job template node running one of the designer's
+// playbooks with its own inventory and credentials, what AWX would refuse found, its edits kept
+// to the keys they touch, and a workflow laid out as AWX's visualizer does.
 import { describe, it, expect } from 'vitest';
 import YAML from 'yaml';
 import {
@@ -8,8 +9,6 @@ import {
   workflowProblems,
   isWorkflowFile,
   workflowSkeleton,
-  editAddJobTemplate,
-  editJobTemplate,
   editAddNode,
   editNode,
   editLink,
@@ -19,16 +18,8 @@ import {
   workflowGraph,
 } from '@/config/workflowFile';
 
-// as `awx export` writes it
+// as `awx export` writes a workflow
 const EXPORT = `# deploys the app
-job_templates:
-  - name: Build app
-    playbook: build.yaml
-    inventory:
-      name: production
-    related:
-      credentials:
-        - name: ssh-prod
 workflow_job_templates:
   - name: deploy-app
     description: Build, then deploy
@@ -36,9 +27,14 @@ workflow_job_templates:
       workflow_nodes:
         - identifier: build
           unified_job_template:
-            name: Build app
+            name: build.yaml
             type: job_template
+          inventory:
+            name: production
+          limit: web
           related:
+            credentials:
+              - name: ssh-prod
             success_nodes:
               - identifier: ok
             failure_nodes:
@@ -51,26 +47,23 @@ workflow_job_templates:
         - identifier: ok
           all_parents_must_converge: true
           unified_job_template:
-            name: Build app
+            name: build.yaml
             type: job_template
 `;
 
 // as the awx.awx collection's workflow_job_template module takes it
-const COLLECTION = `job_templates:
-  - name: Hello
-    playbook: hello.yaml
-    inventory: staging
-    credentials: [vault-prod]
-workflow_job_templates:
+const COLLECTION = `workflow_job_templates:
   - name: hello
     workflow_nodes:
       - identifier: one
-        unified_job_template: { name: Hello, type: job_template }
+        unified_job_template: { name: hello.yaml, type: job_template }
+        inventory: staging
+        credentials: [vault-prod]
         related:
           always_nodes:
             - identifier: two
       - identifier: two
-        unified_job_template: { name: Hello, type: job_template }
+        unified_job_template: { name: hello.yaml, type: job_template }
 `;
 
 const refs = {
@@ -84,16 +77,19 @@ describe('reading a workflow file', () => {
   it("reads the AWX export's shape", () => {
     const f = workflowFileOf(EXPORT);
     expect(f.kind).toBe('workflows');
-    expect(f.jobTemplates[0]).toMatchObject({
-      name: 'Build app',
-      playbook: 'build.yaml',
-      inventory: 'production',
-      credentials: ['ssh-prod'],
-    });
     const wf = f.workflows[0];
     expect(wf.name).toBe('deploy-app');
     expect(wf.nodes.map((n) => n.identifier)).toEqual(['build', 'ask', 'ok']);
-    expect(wf.nodes[0]).toMatchObject({ type: 'job_template', success: ['ok'], failure: ['ask'], always: [] });
+    expect(wf.nodes[0]).toMatchObject({
+      type: 'job_template',
+      name: 'build.yaml',
+      inventory: 'production',
+      credentials: ['ssh-prod'],
+      limit: 'web',
+      success: ['ok'],
+      failure: ['ask'],
+      always: [],
+    });
     expect(wf.nodes[1]).toMatchObject({ type: 'workflow_approval_template', timeout: '600' });
     expect(wf.nodes[2].converge).toBe(true);
     expect(workflowProblems(f, refs)).toEqual([]);
@@ -101,8 +97,11 @@ describe('reading a workflow file', () => {
 
   it("reads the awx.awx collection's shape", () => {
     const f = workflowFileOf(COLLECTION);
-    expect(f.jobTemplates[0]).toMatchObject({ inventory: 'staging', credentials: ['vault-prod'] });
-    expect(f.workflows[0].nodes[0].always).toEqual(['two']);
+    expect(f.workflows[0].nodes[0]).toMatchObject({
+      inventory: 'staging',
+      credentials: ['vault-prod'],
+      always: ['two'],
+    });
     expect(workflowProblems(f, refs)).toEqual([]);
   });
 
@@ -118,62 +117,65 @@ describe('what is wrong in it', () => {
   const keys = (text, r = refs) => workflowProblems(workflowFileOf(text), r).map((p) => p.key);
 
   it('finds what AWX would refuse', () => {
-    const text = `job_templates: [{ name: A, playbook: build.yaml }]
-workflow_job_templates:
+    const text = `workflow_job_templates:
   - name: w
     workflow_nodes:
       - identifier: x
-        unified_job_template: { name: Missing, type: job_template }
+        unified_job_template: { name: gone.yaml, type: job_template }
         related: { success_nodes: [{ identifier: nowhere }] }
       - identifier: x
         unified_job_template: { name: src, type: inventory_source }
 `;
     expect(keys(text)).toEqual(
-      expect.arrayContaining(['nodeUnknownJt', 'nodeDuplicate', 'nodeBadType', 'linkUnknown']),
+      expect.arrayContaining(['nodeUnknownPlaybook', 'nodeDuplicate', 'nodeBadType', 'linkUnknown']),
     );
   });
 
   it('finds a loop : a workflow is a DAG', () => {
-    const text = `job_templates: [{ name: A, playbook: build.yaml }]
-workflow_job_templates:
+    const text = `workflow_job_templates:
   - name: w
     workflow_nodes:
-      - { identifier: a, unified_job_template: { name: A, type: job_template }, related: { success_nodes: [{ identifier: b }] } }
-      - { identifier: b, unified_job_template: { name: A, type: job_template }, related: { always_nodes: [{ identifier: a }] } }
+      - { identifier: a, unified_job_template: { name: build.yaml, type: job_template }, related: { success_nodes: [{ identifier: b }] } }
+      - { identifier: b, unified_job_template: { name: build.yaml, type: job_template }, related: { always_nodes: [{ identifier: a }] } }
 `;
     expect(keys(text)).toContain('loop');
   });
 
   it('names what the instance does not have, and nothing when it cannot tell', () => {
-    const text = `job_templates: [{ name: A, playbook: gone.yaml, inventory: { name: nope }, related: { credentials: [{ name: nobody }] } }]`;
-    expect(keys(text)).toEqual(['unknownPlaybook', 'unknownInventory', 'unknownCredential']);
+    const text = `workflow_job_templates:
+  - name: w
+    workflow_nodes:
+      - identifier: a
+        unified_job_template: { name: gone.yaml, type: job_template }
+        inventory: { name: nope }
+        related: { credentials: [{ name: nobody }] }
+`;
+    expect(keys(text)).toEqual(['nodeUnknownPlaybook', 'unknownInventory', 'unknownCredential']);
     expect(keys(text, {})).toEqual([]);
   });
 });
 
 describe('its edits', () => {
   it('builds a workflow from a new file, as the export writes it', () => {
-    let text = workflowSkeleton('deploy');
-    const jt = editAddJobTemplate(text, 'Build');
-    text = editJobTemplate(jt.text, 0, 'playbook', 'build.yaml');
-    text = editJobTemplate(text, 0, 'inventory', 'production');
-    text = editJobTemplate(text, 0, 'credentials', ['ssh-prod']);
-    const a = editAddNode(text, 0, { identifier: 'build', type: 'job_template', name: 'Build' });
+    const text = workflowSkeleton('deploy');
+    expect(YAML.parse(text)).toEqual({
+      workflow_job_templates: [{ name: 'deploy', description: '', extra_vars: {}, related: { workflow_nodes: [] } }],
+    });
+    const a = editAddNode(text, 0, { identifier: 'build', type: 'job_template', name: 'build.yaml' });
+    let out = editNode(a.text, 0, 'build', 'inventory', 'production');
+    out = editNode(out, 0, 'build', 'credentials', ['ssh-prod']);
+    out = editNode(out, 0, 'build', 'limit', 'web');
     const b = editAddNode(
-      a.text,
+      out,
       0,
-      { identifier: 'notify', type: 'job_template', name: 'Build' },
+      { identifier: 'notify', type: 'job_template', name: 'hello.yaml' },
       { identifier: 'build', kind: 'failure' },
     );
-    const data = YAML.parse(b.text);
-    expect(data.job_templates[0]).toEqual({
-      name: 'Build',
-      playbook: 'build.yaml',
-      inventory: { name: 'production' },
-      related: { credentials: [{ name: 'ssh-prod' }] },
-    });
-    const nodes = data.workflow_job_templates[0].related.workflow_nodes;
-    expect(nodes[0].related.failure_nodes).toEqual([{ identifier: 'notify' }]);
+    const node = YAML.parse(b.text).workflow_job_templates[0].related.workflow_nodes[0];
+    expect(node.inventory).toEqual({ name: 'production' });
+    expect(node.limit).toBe('web');
+    expect(node.related.credentials).toEqual([{ name: 'ssh-prod' }]);
+    expect(node.related.failure_nodes).toEqual([{ identifier: 'notify' }]);
     expect(workflowProblems(workflowFileOf(b.text), refs)).toEqual([]);
   });
 
@@ -181,6 +183,12 @@ describe('its edits', () => {
     const text = editNode(EXPORT, 0, 'build', 'converge', true);
     expect(text).toContain('# deploys the app');
     expect(text).toContain('description: Build, then deploy');
+  });
+
+  it('an emptied run setting is removed', () => {
+    const text = editNode(EXPORT, 0, 'build', 'limit', '');
+    expect(workflowFileOf(text).workflows[0].nodes[0].limit).toBe('');
+    expect(text).not.toContain('limit:');
   });
 
   it('one link per pair : another kind replaces it ; unlinked, gone', () => {
@@ -192,11 +200,9 @@ describe('its edits', () => {
     expect(build.always).toEqual([]);
   });
 
-  it('a renamed node or job template : what points at it follows', () => {
+  it('a renamed node : the links to it follow', () => {
     let text = editNode(EXPORT, 0, 'ok', 'identifier', 'done');
     expect(workflowFileOf(text).workflows[0].nodes[0].success).toEqual(['done']);
-    text = editJobTemplate(text, 0, 'name', 'Compile app');
-    expect(workflowFileOf(text).workflows[0].nodes.filter((n) => n.name === 'Compile app')).toHaveLength(2);
     text = editWorkflow(text, 0, 'description', 'x');
     expect(workflowProblems(workflowFileOf(text), refs)).toEqual([]);
   });
@@ -209,7 +215,7 @@ describe('its edits', () => {
   });
 
   it('a new node gets a free identifier', () => {
-    const { identifier } = editAddNode(EXPORT, 0, { identifier: 'build', type: 'job_template', name: 'Build app' });
+    const { identifier } = editAddNode(EXPORT, 0, { identifier: 'build', type: 'job_template', name: 'build.yaml' });
     expect(identifier).toBe('build_2');
   });
 });

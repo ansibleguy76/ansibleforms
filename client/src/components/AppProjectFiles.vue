@@ -315,6 +315,8 @@ const CREATE_LOOK = {
   folder: { icon: 'folder', title: 'designer.newFolder', help: 'designer.files.folderHelp' },
   group_vars: { icon: 'folder', title: 'designer.files.newGroupVars', help: 'designer.files.groupVarsHelp' },
   host_vars: { icon: 'server', title: 'designer.files.newHostVars', help: 'designer.files.hostVarsHelp' },
+  // a new workflow : a new file, an empty workflow named after it (createFile)
+  workflow: { icon: 'diagram-project', title: 'designer.files.newWorkflow', help: 'designer.files.pathHelp' },
 };
 const createLook = computed(() => CREATE_LOOK[creating.value?.kind] || CREATE_LOOK.file);
 
@@ -521,7 +523,7 @@ defineExpose({
   push,
   reload,
   revert,
-  newFile: () => startCreate(isInventories.value ? 'inventory' : 'file'),
+  newFile: () => startCreate(isInventories.value ? 'inventory' : isWorkflows.value ? 'workflow' : 'file'),
   seedInventory,
   // the file open's text, as the toolbar's format, compare and download need it
   getText: () => content.value,

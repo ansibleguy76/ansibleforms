@@ -1,6 +1,7 @@
 // A workflow file of the designer's Workflows section : the AWX export syntax, as `awx export`
-// writes it - its job templates (job_templates : a playbook, an inventory, credentials) and its
-// workflows (workflow_job_templates : nodes linked on success, failure or always). The awx.awx
+// writes its workflows (workflow_job_templates : nodes linked on success, failure or always). A
+// job template node runs one of the designer's playbooks (unified_job_template.name), with the
+// node's own inventory, credentials, limit, tags... (AWX's node prompts). The awx.awx
 // collection's shape reads as well (workflow_nodes at the top of a workflow, credentials and
 // inventory by name) ; what the editor writes is the export's.
 //
@@ -11,17 +12,16 @@ import YAML from 'yaml';
 
 // ─── what a workflow file holds ───────────────────────────────────────────────
 
-// what a node runs (unified_job_template.type) : a job template of the file, another workflow,
-// an approval, a repository pulled (AWX's project update) ; AWX's inventory_source has no
-// meaning here
+// what a node runs (unified_job_template.type) : a playbook of the designer (a job template),
+// another workflow, an approval, a repository pulled (AWX's project update) ; AWX's
+// inventory_source has no meaning here
 export const NODE_TYPES = ['job_template', 'workflow_job_template', 'workflow_approval_template', 'project'];
 
 // a node's links, by what makes them run : its success, its failure, either
 export const LINK_KINDS = ['success', 'failure', 'always'];
 
-// the job template keys the editor offers, as AWX's : the ones a node of the RTE uses
-export const JOB_TEMPLATE_KEYS = [
-  'playbook',
+// what a job template node sets for its playbook's run, as AWX's node prompts
+export const NODE_RUN_KEYS = [
   'inventory',
   'credentials',
   'limit',
@@ -123,35 +123,33 @@ function linksOf(node, kind) {
 }
 
 /**
- * A job template's credentials : the export's related.credentials, or the collection's
- * credentials.
+ * A node's credentials : the export's related.credentials, or the collection's credentials.
  *
  * Args:
- *   jt (YAML.YAMLMap): the job template.
+ *   map (YAML.YAMLMap): the node.
  *
  * Returns:
  *   string[]: the credentials' names.
  */
-function credentialsOf(jt) {
-  const related = jt.get('related', true);
+function credentialsOf(map) {
+  const related = map.get('related', true);
   const inRelated = YAML.isMap(related) ? related.get('credentials', true) : null;
   if (YAML.isSeq(inRelated)) return namesOf(inRelated);
-  return namesOf(jt.get('credentials', true));
+  return namesOf(map.get('credentials', true));
 }
 
 /**
- * What a workflow file holds : its job templates and its workflows, each with the line it
- * starts on.
+ * What a workflow file holds : its workflows, each with the line it starts on.
  *
  * Args:
  *   text (string): the file, in YAML.
  *
  * Returns:
  *   object: { kind : 'workflows' (a workflow file), 'empty', or 'invalid' (with error and
- *     line), jobTemplates : [{ name, playbook, inventory, credentials, limit, job_tags,
- *     skip_tags, verbosity, diff_mode, job_type, line }], workflows : [{ name, description,
- *     line, nodes : [{ identifier, type, name, converge, success, failure, always, line,
- *     timeout }] }] }.
+ *     line), workflows : [{ name, description, line, nodes : [{ identifier, type, name
+ *     (what it runs : a playbook's path for a job template), timeout, converge, success,
+ *     failure, always, inventory, credentials, limit, job_tags, skip_tags, verbosity,
+ *     diff_mode, job_type, line }] }] }.
  */
 export function workflowFileOf(text) {
   const lineCounter = new YAML.LineCounter();
@@ -162,24 +160,10 @@ export function workflowFileOf(text) {
   }
   const root = doc.contents;
   if (root === null || root === undefined || (YAML.isScalar(root) && root.value === null)) {
-    return { kind: 'empty', jobTemplates: [], workflows: [] };
+    return { kind: 'empty', workflows: [] };
   }
   if (!YAML.isMap(root)) return { kind: 'invalid', error: 'A workflow file is a map', line: 1 };
-  const jts = root.get('job_templates', true);
   const wfs = root.get('workflow_job_templates', true);
-  const jobTemplates = (YAML.isSeq(jts) ? jts.items : []).filter(YAML.isMap).map((jt) => ({
-    name: textOf(jt.get('name', true)),
-    playbook: textOf(jt.get('playbook', true)),
-    inventory: nameOf(jt.get('inventory', true)),
-    credentials: credentialsOf(jt),
-    limit: textOf(jt.get('limit', true)),
-    job_tags: textOf(jt.get('job_tags', true)),
-    skip_tags: textOf(jt.get('skip_tags', true)),
-    verbosity: textOf(jt.get('verbosity', true)),
-    diff_mode: textOf(jt.get('diff_mode', true)),
-    job_type: textOf(jt.get('job_type', true)),
-    line: lineOf(lineCounter, jt),
-  }));
   const workflows = (YAML.isSeq(wfs) ? wfs.items : []).filter(YAML.isMap).map((wf) => {
     const seq = nodesSeqOf(wf);
     const nodes = (seq ? seq.items : []).filter(YAML.isMap).map((n) => {
@@ -193,6 +177,14 @@ export function workflowFileOf(text) {
         success: linksOf(n, 'success'),
         failure: linksOf(n, 'failure'),
         always: linksOf(n, 'always'),
+        inventory: nameOf(n.get('inventory', true)),
+        credentials: credentialsOf(n),
+        limit: textOf(n.get('limit', true)),
+        job_tags: textOf(n.get('job_tags', true)),
+        skip_tags: textOf(n.get('skip_tags', true)),
+        verbosity: textOf(n.get('verbosity', true)),
+        diff_mode: textOf(n.get('diff_mode', true)),
+        job_type: textOf(n.get('job_type', true)),
         line: lineOf(lineCounter, n),
       };
     });
@@ -203,11 +195,11 @@ export function workflowFileOf(text) {
       nodes,
     };
   });
-  return { kind: 'workflows', jobTemplates, workflows };
+  return { kind: 'workflows', workflows };
 }
 
 /**
- * Whether a text is a workflow file : a map with job_templates or workflow_job_templates.
+ * Whether a text is a workflow file : a map with workflow_job_templates.
  *
  * Args:
  *   text (string): the file.
@@ -217,7 +209,7 @@ export function workflowFileOf(text) {
  */
 export function isWorkflowFile(text) {
   const doc = YAML.parseDocument(text || '');
-  return YAML.isMap(doc.contents) && (doc.contents.has('job_templates') || doc.contents.has('workflow_job_templates'));
+  return YAML.isMap(doc.contents) && doc.contents.has('workflow_job_templates');
 }
 
 // ─── what is wrong in it ──────────────────────────────────────────────────────
@@ -259,7 +251,7 @@ function loopIn(nodes) {
  * Args:
  *   file (object): the file (workflowFileOf), kind 'workflows'.
  *   refs (object): what the instance has, each an array of names, or null when unknown (not
- *     checked) : { playbooks, inventories, credentials, repositories }.
+ *     checked) : { playbooks (the designer's), inventories, credentials, repositories }.
  *
  * Returns:
  *   object[]: { message (the problem, in English : a key and its values for the page to
@@ -269,22 +261,6 @@ export function workflowProblems(file, refs = {}) {
   const problems = [];
   const add = (key, values, line) => problems.push({ key, values, line });
   if (!file || file.kind !== 'workflows') return problems;
-  const jtNames = new Set();
-  for (const jt of file.jobTemplates) {
-    if (!jt.name) add('jtNoName', {}, jt.line);
-    else if (jtNames.has(jt.name)) add('jtDuplicate', { name: jt.name }, jt.line);
-    jtNames.add(jt.name);
-    if (!jt.playbook) add('jtNoPlaybook', { name: jt.name }, jt.line);
-    else if (refs.playbooks && !refs.playbooks.includes(jt.playbook))
-      add('unknownPlaybook', { name: jt.name, playbook: jt.playbook }, jt.line);
-    if (jt.inventory && refs.inventories && !refs.inventories.includes(jt.inventory)) {
-      add('unknownInventory', { name: jt.name, inventory: jt.inventory }, jt.line);
-    }
-    for (const c of jt.credentials) {
-      if (refs.credentials && !refs.credentials.includes(c))
-        add('unknownCredential', { name: jt.name, credential: c }, jt.line);
-    }
-  }
   const wfNames = new Set(file.workflows.map((w) => w.name).filter(Boolean));
   const seenWf = new Set();
   for (const wf of file.workflows) {
@@ -299,13 +275,23 @@ export function workflowProblems(file, refs = {}) {
       ids.add(n.identifier);
       if (!NODE_TYPES.includes(n.type)) add('nodeBadType', { identifier: n.identifier, type: n.type || '-' }, n.line);
       else if (!n.name) add('nodeNoName', { identifier: n.identifier }, n.line);
-      else if (n.type === 'job_template' && !jtNames.has(n.name))
-        add('nodeUnknownJt', { identifier: n.identifier, name: n.name }, n.line);
+      else if (n.type === 'job_template' && refs.playbooks && !refs.playbooks.includes(n.name))
+        add('nodeUnknownPlaybook', { identifier: n.identifier, name: n.name }, n.line);
       else if (n.type === 'workflow_job_template') {
         if (!wfNames.has(n.name)) add('nodeUnknownWf', { identifier: n.identifier, name: n.name }, n.line);
         else if (n.name === wf.name) add('nodeSelf', { identifier: n.identifier }, n.line);
       } else if (n.type === 'project' && refs.repositories && !refs.repositories.includes(n.name)) {
         add('nodeUnknownRepo', { identifier: n.identifier, name: n.name }, n.line);
+      }
+      // a playbook's run : the inventory and the credentials the instance has
+      if (n.type === 'job_template') {
+        if (n.inventory && refs.inventories && !refs.inventories.includes(n.inventory)) {
+          add('unknownInventory', { identifier: n.identifier, inventory: n.inventory }, n.line);
+        }
+        for (const c of n.credentials) {
+          if (refs.credentials && !refs.credentials.includes(c))
+            add('unknownCredential', { identifier: n.identifier, credential: c }, n.line);
+        }
       }
     }
     for (const n of wf.nodes) {
@@ -348,7 +334,7 @@ function textOfDoc(doc) {
  *
  * Args:
  *   doc (YAML.Document): the document.
- *   key (string): 'job_templates' or 'workflow_job_templates'.
+ *   key (string): 'workflow_job_templates'.
  *
  * Returns:
  *   YAML.YAMLSeq: the list.
@@ -469,7 +455,7 @@ export function freeName(base, taken) {
 }
 
 /**
- * A new workflow file : one job template and one workflow running it, to start from.
+ * A new workflow file : one workflow, its nodes to add.
  *
  * Args:
  *   name (string): the workflow's name.
@@ -480,93 +466,9 @@ export function freeName(base, taken) {
 export function workflowSkeleton(name = 'my-workflow') {
   return textOfDoc(
     new YAML.Document({
-      job_templates: [],
       workflow_job_templates: [{ name, description: '', extra_vars: {}, related: { workflow_nodes: [] } }],
     }),
   );
-}
-
-/**
- * Adds a job template.
- *
- * Args:
- *   text (string): the file.
- *   name (string): its name (made free of the others').
- *
- * Returns:
- *   object: { text (the file), name (the name given) }.
- */
-export function editAddJobTemplate(text, name) {
-  const doc = docOf(text);
-  const seq = rootSeq(doc, 'job_templates');
-  const taken = seq.items.filter(YAML.isMap).map((m) => textOf(m.get('name', true)));
-  const free = freeName(name || 'job-template', taken);
-  seq.items.push(doc.createNode({ name: free, playbook: '', inventory: { name: '' }, related: { credentials: [] } }));
-  return { text: textOfDoc(doc), name: free };
-}
-
-/**
- * Sets a key of a job template, as AWX's export writes it : the inventory as { name }, the
- * credentials under related as [{ name }], an empty value removed.
- *
- * Args:
- *   text (string): the file.
- *   jtIndex (number): the job template's place.
- *   key (string): one of JOB_TEMPLATE_KEYS, or 'name'.
- *   value (any): the value (credentials : an array of names).
- *
- * Returns:
- *   string: the file.
- */
-export function editJobTemplate(text, jtIndex, key, value) {
-  const doc = docOf(text);
-  const jt = rootSeq(doc, 'job_templates').items[jtIndex];
-  if (!YAML.isMap(jt)) throw new Error(`No job template at ${jtIndex}`);
-  const oldName = textOf(jt.get('name', true));
-  if (key === 'credentials') {
-    const names = (value || []).filter(Boolean);
-    // the collection's credentials at the top : replaced by the export's
-    if (jt.has('credentials')) jt.delete('credentials');
-    let related = jt.get('related', true);
-    if (!YAML.isMap(related)) {
-      related = doc.createNode({});
-      jt.set('related', related);
-    }
-    related.set('credentials', doc.createNode(names.map((n) => ({ name: n }))));
-  } else if (key === 'inventory') {
-    if (value) jt.set('inventory', doc.createNode({ name: value }));
-    else jt.delete('inventory');
-  } else if (key === 'verbosity') {
-    if (value === '' || value === null || value === undefined) jt.delete('verbosity');
-    else jt.set('verbosity', Number(value));
-  } else if (key === 'diff_mode') {
-    if (value) jt.set('diff_mode', true);
-    else jt.delete('diff_mode');
-  } else if (value === '' || value === null || value === undefined) {
-    if (key !== 'name' && key !== 'playbook') jt.delete(key);
-    else jt.set(key, '');
-  } else {
-    jt.set(key, value);
-  }
-  // renamed : the nodes running it follow
-  if (key === 'name' && oldName && value && oldName !== value) renameRefs(doc, 'job_template', oldName, value);
-  return textOfDoc(doc);
-}
-
-/**
- * Removes a job template ; the nodes running it stay (shown as wrong) until they are changed.
- *
- * Args:
- *   text (string): the file.
- *   jtIndex (number): its place.
- *
- * Returns:
- *   string: the file.
- */
-export function editRemoveJobTemplate(text, jtIndex) {
-  const doc = docOf(text);
-  rootSeq(doc, 'job_templates').items.splice(jtIndex, 1);
-  return textOfDoc(doc);
 }
 
 /**
@@ -574,7 +476,7 @@ export function editRemoveJobTemplate(text, jtIndex) {
  *
  * Args:
  *   doc (YAML.Document): the document.
- *   type (string): what was renamed ('job_template' or 'workflow_job_template').
+ *   type (string): what was renamed ('workflow_job_template').
  *   from (string): its old name.
  *   to (string): its new name.
  */
@@ -691,14 +593,16 @@ export function editAddNode(text, wfIndex, node, from = null) {
 }
 
 /**
- * Sets what a node runs, its identifier (a rename : the links to it follow), or whether all
- * its parents must converge.
+ * Sets what a node runs, its identifier (a rename : the links to it follow), whether all its
+ * parents must converge, or what its playbook's run uses (NODE_RUN_KEYS : the inventory as
+ * { name }, the credentials under related as [{ name }], as AWX's export writes them ; an empty
+ * value removed).
  *
  * Args:
  *   text (string): the file.
  *   wfIndex (number): the workflow's place.
  *   identifier (string): the node.
- *   key (string): 'identifier', 'type', 'name', 'timeout' or 'converge'.
+ *   key (string): 'identifier', 'type', 'name', 'timeout', 'converge' or one of NODE_RUN_KEYS.
  *   value (any): the value.
  *
  * Returns:
@@ -709,6 +613,8 @@ export function editNode(text, wfIndex, identifier, key, value) {
   const node = nodeOf(doc, wfIndex, identifier);
   if (key === 'converge') {
     node.set('all_parents_must_converge', !!value);
+  } else if (NODE_RUN_KEYS.includes(key)) {
+    setRunKey(doc, node, key, value);
   } else if (key === 'identifier') {
     node.set('identifier', value);
     for (const other of nodesSeq(doc, workflowAt(doc, wfIndex)).items.filter(YAML.isMap)) {
@@ -744,6 +650,42 @@ export function editNode(text, wfIndex, identifier, key, value) {
     }
   }
   return textOfDoc(doc);
+}
+
+/**
+ * Sets what a node's playbook run uses, as AWX's export writes it.
+ *
+ * Args:
+ *   doc (YAML.Document): the document.
+ *   node (YAML.YAMLMap): the node.
+ *   key (string): one of NODE_RUN_KEYS.
+ *   value (any): the value (credentials : an array of names) ; empty removes it.
+ */
+function setRunKey(doc, node, key, value) {
+  if (key === 'credentials') {
+    const names = (value || []).filter(Boolean);
+    // the collection's credentials at the top : replaced by the export's
+    if (node.has('credentials')) node.delete('credentials');
+    let related = node.get('related', true);
+    if (!YAML.isMap(related)) {
+      related = doc.createNode({});
+      node.set('related', related);
+    }
+    related.set('credentials', doc.createNode(names.map((n) => ({ name: n }))));
+  } else if (key === 'inventory') {
+    if (value) node.set('inventory', doc.createNode({ name: value }));
+    else node.delete('inventory');
+  } else if (key === 'verbosity') {
+    if (value === '' || value === null || value === undefined) node.delete('verbosity');
+    else node.set('verbosity', Number(value));
+  } else if (key === 'diff_mode') {
+    if (value) node.set('diff_mode', true);
+    else node.delete('diff_mode');
+  } else if (value === '' || value === null || value === undefined) {
+    node.delete(key);
+  } else {
+    node.set(key, value);
+  }
 }
 
 /**
@@ -880,6 +822,18 @@ export function workflowGraph(nodes) {
     const dx = Math.max(30, (x2 - x1) / 2);
     return `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
   };
+  // a link over the columns between its nodes : an arc above them, higher the more it skips, so
+  // it never runs through a node and hides the links that do end there
+  // (it climbs in the gap after its node, runs level over the others, comes down in the gap
+  // before its target)
+  const arc = (x1, y1, x2, y2, skipped) => {
+    const top = Math.min(y1, y2) - nodeH / 2 - 16 - 10 * (skipped - 1);
+    return (
+      `M ${x1} ${y1} C ${x1 + gapX * 0.6} ${y1}, ${x1 + gapX * 0.4} ${top}, ${x1 + gapX} ${top} ` +
+      `L ${x2 - gapX} ${top} C ${x2 - gapX * 0.4} ${top}, ${x2 - gapX * 0.6} ${y2}, ${x2} ${y2}`
+    );
+  };
+  let lift = 0;
   const links = edges.map((e) => {
     const a = pos.get(e.from);
     const b = pos.get(e.to);
@@ -887,6 +841,11 @@ export function workflowGraph(nodes) {
     const y1 = a.y + nodeH / 2;
     const x2 = b.x;
     const y2 = b.y + nodeH / 2;
+    const skipped = Math.round((b.x - a.x) / (nodeW + gapX)) - 1;
+    if (skipped > 0) {
+      lift = Math.max(lift, nodeH / 2 + 16 + 10 * (skipped - 1) - Math.min(y1, y2) + margin);
+      return { ...e, d: arc(x1, y1, x2, y2, skipped), mx: (x1 + x2) / 2, my: Math.min(y1, y2) - nodeH / 2 - 16 };
+    }
     return { ...e, d: curve(x1, y1, x2, y2), mx: (x1 + x2) / 2, my: (y1 + y2) / 2 };
   });
   const hasParent = new Set(edges.map((e) => e.to));
@@ -899,5 +858,13 @@ export function workflowGraph(nodes) {
       d: curve(start.x + startW, start.y + startH / 2, b.x, b.y + nodeH / 2),
     });
   }
-  return { nodes: nodes.map((n) => ({ ...n, ...pos.get(n.identifier) })), links, start, width, height };
+  // the arcs need room above the top row : everything moved down by as much
+  const shift = Math.max(0, Math.ceil(lift));
+  if (shift) {
+    for (const p of pos.values()) p.y += shift;
+    start.y += shift;
+    for (const l of links)
+      l.d = l.d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, (m, x, y) => `${x} ${Number(y) + shift}`);
+  }
+  return { nodes: nodes.map((n) => ({ ...n, ...pos.get(n.identifier) })), links, start, width, height: height + shift };
 }

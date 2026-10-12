@@ -29,10 +29,6 @@ import {
   workflowFileOf,
   workflowProblems,
   workflowGraph,
-  editAddJobTemplate,
-  editJobTemplate,
-  editRemoveJobTemplate,
-  editAddWorkflow,
   editWorkflow,
   editRemoveWorkflow,
   editAddNode,
@@ -52,14 +48,15 @@ const { t } = useI18n();
 // ─── the file ─────────────────────────────────────────────────────────────────
 const file = computed(() => workflowFileOf(props.modelValue));
 const workflows = computed(() => file.value.workflows || []);
-const jobTemplates = computed(() => file.value.jobTemplates || []);
 // the workflow shown : its place in the file
 const wfIndex = ref(0);
 watch(workflows, (list) => {
   if (wfIndex.value >= list.length) wfIndex.value = Math.max(0, list.length - 1);
 });
 const workflow = computed(() => workflows.value[wfIndex.value] || null);
-const graph = computed(() => workflowGraph(workflow.value?.nodes || []));
+// every workflow of the file, each its graph : one under the other (an AWX export may hold several)
+const graphs = computed(() => workflows.value.map((w) => workflowGraph(w.nodes)));
+const graph = computed(() => graphs.value[wfIndex.value] || workflowGraph([]));
 
 /**
  * Applies an edit : the file as the edit leaves it, or the edit's error.
@@ -125,8 +122,7 @@ const problems = computed(() => workflowProblems(file.value, refs.value));
 const badNodes = computed(() => new Set(problems.value.map((p) => p.values?.identifier).filter(Boolean)));
 
 // ─── what is selected : a node, a link, a job template, or the workflow ───────
-const selected = ref(null); // { type : 'node', id } | { type : 'link', from, to } | { type : 'jt', index }
-watch(wfIndex, () => (selected.value = null));
+const selected = ref(null); // { type : 'node', id } | { type : 'link', from, to }
 const node = computed(() =>
   selected.value?.type === 'node'
     ? workflow.value?.nodes.find((n) => n.identifier === selected.value.id) || null
@@ -137,19 +133,29 @@ const link = computed(() =>
     ? graph.value.links.find((l) => l.from === selected.value.from && l.to === selected.value.to) || null
     : null,
 );
-const jt = computed(() => (selected.value?.type === 'jt' ? jobTemplates.value[selected.value.index] || null : null));
 
 // ─── the workflows ────────────────────────────────────────────────────────────
-function addWorkflow() {
-  const out = apply((text) => editAddWorkflow(text, 'workflow'));
-  if (out) wfIndex.value = out.index;
+/**
+ * Sets a workflow's name or description.
+ *
+ * Args:
+ *   i (number): the workflow's place.
+ *   key (string): 'name' or 'description'.
+ *   value (string): the value.
+ */
+function setWorkflowAt(i, key, value) {
+  apply((text) => editWorkflow(text, i, key, value));
 }
-function setWorkflow(key, value) {
-  apply((text) => editWorkflow(text, wfIndex.value, key, value));
-}
-function removeWorkflow() {
-  apply((text) => editRemoveWorkflow(text, wfIndex.value));
+/**
+ * Removes a workflow of the file (one of several).
+ *
+ * Args:
+ *   i (number): the workflow's place.
+ */
+function removeWorkflowAt(i) {
+  apply((text) => editRemoveWorkflow(text, i));
   wfIndex.value = 0;
+  selected.value = null;
 }
 
 // ─── the nodes ────────────────────────────────────────────────────────────────
@@ -181,9 +187,8 @@ const LINK_COLORS = {
  *   from (object): { identifier, kind } : the node it runs after (optional : a first step).
  */
 function addNode(from = null) {
-  const first = jobTemplates.value[0]?.name || '';
   const out = apply((text) =>
-    editAddNode(text, wfIndex.value, { identifier: 'node', type: 'job_template', name: first }, from),
+    editAddNode(text, wfIndex.value, { identifier: 'node', type: 'job_template', name: '' }, from),
   );
   if (out) selected.value = { type: 'node', id: out.identifier };
 }
@@ -229,7 +234,8 @@ function addLink() {
 // the names a node may run, by what it runs
 const runChoices = computed(() => {
   const type = node.value?.type;
-  if (type === 'job_template') return jobTemplates.value.map((j) => j.name).filter(Boolean);
+  // a job template node runs one of the designer's playbooks
+  if (type === 'job_template') return refs.value.playbooks ? sorted(refs.value.playbooks) : null;
   if (type === 'workflow_job_template')
     return workflows.value.map((w) => w.name).filter((n) => n && n !== workflow.value?.name);
   if (type === 'project') return sorted(refs.value.repositories);
@@ -247,21 +253,10 @@ function removeLink() {
   selected.value = null;
 }
 
-// ─── the job templates ────────────────────────────────────────────────────────
-function addJobTemplate() {
-  const out = apply((text) => editAddJobTemplate(text, 'job-template'));
-  if (out) selected.value = { type: 'jt', index: jobTemplates.value.length };
-}
-function setJt(key, value) {
-  apply((text) => editJobTemplate(text, selected.value.index, key, value));
-}
-function removeJt() {
-  apply((text) => editRemoveJobTemplate(text, selected.value.index));
-  selected.value = null;
-}
+// ─── a playbook's run : what a job template node sets ─────────────────────────
 function toggleCredential(name, on) {
-  const now = jt.value.credentials || [];
-  setJt('credentials', on ? [...now, name] : now.filter((c) => c !== name));
+  const now = node.value.credentials || [];
+  setNode('credentials', on ? [...now, name] : now.filter((c) => c !== name));
 }
 // a name the file uses that the instance lacks : still offered, so the field shows it
 const withCurrent = (list, current) => (current && list && !list.includes(current) ? [current, ...list] : list || []);
@@ -270,11 +265,38 @@ const withCurrent = (list, current) => (current && list && !list.includes(curren
 function truncate(s, len = 22) {
   return s && s.length > len ? s.slice(0, len - 1) + '…' : s;
 }
-const isSelectedNode = (n) => selected.value?.type === 'node' && selected.value.id === n.identifier;
-const isSelectedLink = (l) =>
-  selected.value?.type === 'link' && selected.value.from === l.from && selected.value.to === l.to;
-function selectLink(l) {
-  if (l.kind !== 'start') selected.value = { type: 'link', from: l.from, to: l.to };
+// a node or a link is the selected one only in the workflow selected
+const isSelectedNode = (i, n) =>
+  wfIndex.value === i && selected.value?.type === 'node' && selected.value.id === n.identifier;
+const isSelectedLink = (i, l) =>
+  wfIndex.value === i &&
+  selected.value?.type === 'link' &&
+  selected.value.from === l.from &&
+  selected.value.to === l.to;
+/**
+ * Selects a node, a link or the workflow itself, in the workflow it is in.
+ *
+ * Args:
+ *   i (number): the workflow's place.
+ *   what (object|null): { type : 'node', id } | { type : 'link', from, to } ; null : the workflow.
+ */
+function select(i, what) {
+  wfIndex.value = i;
+  selected.value = what;
+}
+function selectLink(i, l) {
+  if (l.kind !== 'start') select(i, { type: 'link', from: l.from, to: l.to });
+}
+/**
+ * START of a workflow : a first node added there.
+ *
+ * Args:
+ *   i (number): the workflow's place.
+ */
+function startAt(i) {
+  if (props.readOnly) return;
+  wfIndex.value = i;
+  addNode();
 }
 </script>
 <template>
@@ -286,19 +308,8 @@ function selectLink(l) {
       <BsButton icon="code" @click="emit('reveal', file.line)">{{ t('designer.files.showInYaml') }}</BsButton>
     </div>
     <template v-else>
-      <!-- the workflow shown, and the file's others -->
+      <!-- the links' colours -->
       <div class="af-wf-head">
-        <div class="input-group af-wf-pick">
-          <span class="input-group-text text-gray-500"><FaIcon icon="diagram-project" /></span>
-          <select v-model.number="wfIndex" class="form-select" :disabled="!workflows.length">
-            <option v-if="!workflows.length" :value="0">{{ t('workflowEditor.noWorkflow') }}</option>
-            <option v-for="(w, i) in workflows" :key="i" :value="i">{{ w.name || t('workflowEditor.unnamed') }}</option>
-          </select>
-        </div>
-        <BsButton v-if="!readOnly" icon="plus" cssClass="text-nowrap" @click="addWorkflow()">{{
-          t('workflowEditor.addWorkflow')
-        }}</BsButton>
-        <span class="flex-grow-1"></span>
         <span class="af-wf-legend"
           ><span class="af-wf-line" :style="{ background: LINK_COLORS.success }"></span
           >{{ t('workflow.onSuccess') }}</span
@@ -323,114 +334,131 @@ function selectLink(l) {
         </div>
       </div>
 
-      <!-- the graph -->
-      <div class="af-wf-canvas">
-        <div v-if="!workflow" class="af-wf-none text-muted">
-          <FaIcon icon="diagram-project" class="mb-2 af-wf-none-icon" />
-          <span>{{ t('workflowEditor.noWorkflowHint') }}</span>
-        </div>
-        <svg v-else :width="graph.width + 40" :height="Math.max(graph.height, 120)" class="af-wf-svg">
-          <path
-            v-for="(l, i) in graph.links"
-            :key="'l' + i"
-            :d="l.d"
-            fill="none"
-            :stroke="LINK_COLORS[l.kind]"
-            :stroke-width="isSelectedLink(l) ? 4 : 2"
-            :opacity="isSelectedLink(l) ? 1 : 0.8"
-          />
-          <!-- a link's wide invisible twin : easy to click -->
-          <path
-            v-for="(l, i) in graph.links"
-            :key="'h' + i"
-            :d="l.d"
-            fill="none"
-            stroke="transparent"
-            stroke-width="12"
-            :class="{ 'af-wf-link': l.kind !== 'start' }"
-            @click="selectLink(l)"
-          />
-          <!-- START : a click adds a first step -->
-          <g class="af-wf-start" :class="{ 'af-wf-clickable': !readOnly }" @click="!readOnly && addNode()">
-            <rect
-              :x="graph.start.x"
-              :y="graph.start.y"
-              :width="GRAPH.startW"
-              :height="GRAPH.startH"
-              :rx="GRAPH.startH / 2"
-            />
-            <text :x="graph.start.x + GRAPH.startW / 2" :y="graph.start.y + GRAPH.startH / 2 + 4" text-anchor="middle">
-              START
-            </text>
-            <title>{{ t('workflowEditor.addFirst') }}</title>
-          </g>
-          <g
-            v-for="n in graph.nodes"
-            :key="n.identifier"
-            class="af-wf-node"
-            :class="{ 'af-wf-node-selected': isSelectedNode(n) }"
-            @click="selected = { type: 'node', id: n.identifier }"
-          >
-            <rect
-              :x="n.x"
-              :y="n.y"
-              :width="GRAPH.nodeW"
-              :height="GRAPH.nodeH"
-              rx="6"
-              class="af-wf-node-rect"
-              :style="{
-                stroke: badNodes.has(n.identifier) ? 'var(--bs-danger)' : TYPE_COLORS[n.type] || 'var(--bs-secondary)',
-              }"
-              :stroke-dasharray="badNodes.has(n.identifier) ? '5 3' : null"
-            />
-            <rect
-              :x="n.x"
-              :y="n.y"
-              width="5"
-              :height="GRAPH.nodeH"
-              rx="2"
-              :style="{ fill: TYPE_COLORS[n.type] || 'var(--bs-secondary)' }"
-            />
-            <text :x="n.x + 14" :y="n.y + 22" class="af-wf-node-name">{{ truncate(n.name || '?') }}</text>
-            <text :x="n.x + 14" :y="n.y + 41" class="af-wf-node-sub">
-              {{ truncate(`${t(`workflowEditor.types.${n.type}`, n.type || '?')} · ${n.identifier}`, 30) }}
-            </text>
-            <title>{{ n.identifier }} : {{ n.name }}</title>
-          </g>
-        </svg>
+      <!-- each workflow : its name and description, then its graph -->
+      <div v-if="!workflows.length" class="af-wf-canvas af-wf-none text-muted">
+        <FaIcon icon="diagram-project" class="mb-2 af-wf-none-icon" />
+        <span>{{ t('workflowEditor.noWorkflowHint') }}</span>
       </div>
-
-      <!-- under the graph : the job templates, and the panel for what is selected -->
-      <div class="af-wf-main">
-        <div class="af-wf-left">
-          <!-- the job templates : what a job node runs -->
-          <div class="af-wf-jts">
-            <div class="d-flex align-items-center gap-2">
-              <span class="fw-bold">{{ t('workflowEditor.jobTemplates') }}</span>
-              <span class="flex-grow-1"></span>
-              <BsButton v-if="!readOnly" icon="plus" @click="addJobTemplate()">{{
-                t('workflowEditor.addJobTemplate')
-              }}</BsButton>
-            </div>
-            <div class="text-muted small mb-2">{{ t('workflowEditor.jobTemplatesHint') }}</div>
-            <div v-if="!jobTemplates.length" class="text-muted small">{{ t('workflowEditor.noJobTemplates') }}</div>
-            <div class="af-wf-jt-list">
-              <button
-                v-for="(j, i) in jobTemplates"
-                :key="i"
-                type="button"
-                class="af-wf-jt"
-                :class="{ active: selected?.type === 'jt' && selected.index === i }"
-                @click="selected = { type: 'jt', index: i }"
-              >
-                <FaIcon icon="rocket" class="me-2 text-primary" />
-                <span class="fw-semibold">{{ j.name || t('workflowEditor.unnamed') }}</span>
-                <span class="text-muted ms-2 small">{{ j.playbook }}</span>
-              </button>
+      <div v-for="(w, wi) in workflows" :key="wi" class="af-wf-block">
+        <div class="row g-3 mb-3 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label fw-bold">{{ t('workflowEditor.name') }}</label>
+            <div class="input-group">
+              <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="diagram-project" /></span>
+              <input
+                class="form-control"
+                :class="{ 'is-invalid': !w.name }"
+                :value="w.name"
+                :disabled="readOnly"
+                spellcheck="false"
+                @change="setWorkflowAt(wi, 'name', $event.target.value.trim())"
+              />
             </div>
           </div>
+          <div class="col">
+            <label class="form-label fw-bold">{{ t('workflowEditor.description') }}</label>
+            <div class="input-group">
+              <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="align-left" /></span>
+              <input
+                class="form-control"
+                :value="w.description"
+                :disabled="readOnly"
+                @change="setWorkflowAt(wi, 'description', $event.target.value)"
+              />
+            </div>
+          </div>
+          <!-- one of several in the file (an AWX export) : it may go -->
+          <div v-if="!readOnly && workflows.length > 1" class="col-auto">
+            <BsButton
+              icon="trash"
+              :isIconButton="true"
+              :title="t('workflowEditor.removeWorkflow')"
+              @click="removeWorkflowAt(wi)"
+            />
+          </div>
         </div>
+        <div class="af-wf-canvas">
+          <svg :width="graphs[wi].width + 40" :height="Math.max(graphs[wi].height, 120)" class="af-wf-svg">
+            <path
+              v-for="(l, i) in graphs[wi].links"
+              :key="'l' + i"
+              :d="l.d"
+              fill="none"
+              :stroke="LINK_COLORS[l.kind]"
+              :stroke-width="isSelectedLink(wi, l) ? 4 : 2"
+              :opacity="isSelectedLink(wi, l) ? 1 : 0.8"
+            />
+            <!-- a link's wide invisible twin : easy to click -->
+            <path
+              v-for="(l, i) in graphs[wi].links"
+              :key="'h' + i"
+              :d="l.d"
+              fill="none"
+              stroke="transparent"
+              stroke-width="12"
+              :class="{ 'af-wf-link': l.kind !== 'start' }"
+              @click="selectLink(wi, l)"
+            />
+            <!-- START : a click adds a first step -->
+            <g class="af-wf-start" :class="{ 'af-wf-clickable': !readOnly }" @click="startAt(wi)">
+              <rect
+                :x="graphs[wi].start.x"
+                :y="graphs[wi].start.y"
+                :width="GRAPH.startW"
+                :height="GRAPH.startH"
+                :rx="GRAPH.startH / 2"
+              />
+              <text
+                :x="graphs[wi].start.x + GRAPH.startW / 2"
+                :y="graphs[wi].start.y + GRAPH.startH / 2 + 4"
+                text-anchor="middle"
+              >
+                START
+              </text>
+              <title>{{ t('workflowEditor.addFirst') }}</title>
+            </g>
+            <g
+              v-for="n in graphs[wi].nodes"
+              :key="n.identifier"
+              class="af-wf-node"
+              :class="{ 'af-wf-node-selected': isSelectedNode(wi, n) }"
+              @click="select(wi, { type: 'node', id: n.identifier })"
+            >
+              <rect
+                :x="n.x"
+                :y="n.y"
+                :width="GRAPH.nodeW"
+                :height="GRAPH.nodeH"
+                rx="6"
+                class="af-wf-node-rect"
+                :style="{
+                  stroke: badNodes.has(n.identifier)
+                    ? 'var(--bs-danger)'
+                    : TYPE_COLORS[n.type] || 'var(--bs-secondary)',
+                }"
+                :stroke-dasharray="badNodes.has(n.identifier) ? '5 3' : null"
+              />
+              <rect
+                :x="n.x"
+                :y="n.y"
+                width="5"
+                :height="GRAPH.nodeH"
+                rx="2"
+                :style="{ fill: TYPE_COLORS[n.type] || 'var(--bs-secondary)' }"
+              />
+              <text :x="n.x + 14" :y="n.y + 22" class="af-wf-node-name">{{ truncate(n.name || '?') }}</text>
+              <text :x="n.x + 14" :y="n.y + 41" class="af-wf-node-sub">
+                {{ truncate(`${t(`workflowEditor.types.${n.type}`, n.type || '?')} · ${n.identifier}`, 30) }}
+              </text>
+              <title>{{ n.identifier }} : {{ n.name }}</title>
+            </g>
+          </svg>
+        </div>
+      </div>
 
+      <!-- under the graphs : the panel for what is selected ; nothing selected, what to do -->
+      <div v-if="workflows.length && !node && !link" class="form-text">{{ t('workflowEditor.selectHint') }}</div>
+      <div v-if="node || link" class="af-wf-main">
         <!-- the panel : what is selected, else the workflow itself -->
         <div class="af-wf-panel">
           <!-- a node -->
@@ -438,114 +466,233 @@ function selectLink(l) {
             <div class="af-wf-panel-title">
               <FaIcon :icon="TYPE_ICONS[node.type] || 'circle'" />{{ t('workflowEditor.node') }}
             </div>
-            <label class="form-label fw-bold">{{ t('workflowEditor.identifier') }}</label>
-            <input
-              class="form-control mb-3"
-              :value="node.identifier"
-              :disabled="readOnly"
-              spellcheck="false"
-              @change="setNode('identifier', $event.target.value)"
-            />
-            <label class="form-label fw-bold">{{ t('workflowEditor.runs') }}</label>
-            <select
-              class="form-select mb-3"
-              :value="node.type"
-              :disabled="readOnly"
-              @change="setNode('type', $event.target.value)"
-            >
-              <option v-for="type in NODE_TYPES" :key="type" :value="type">
-                {{ t(`workflowEditor.types.${type}`) }}
-              </option>
-            </select>
-            <label class="form-label fw-bold">{{
-              t(`workflowEditor.runName.${node.type}`, t('workflowEditor.name'))
-            }}</label>
-            <select
-              v-if="runChoices"
-              class="form-select mb-3"
-              :value="node.name"
-              :disabled="readOnly"
-              @change="setNode('name', $event.target.value)"
-            >
-              <option value="">-</option>
-              <option v-for="c in withCurrent(runChoices, node.name)" :key="c" :value="c">{{ c }}</option>
-            </select>
-            <input
-              v-else
-              class="form-control mb-3"
-              :value="node.name"
-              :disabled="readOnly"
-              @change="setNode('name', $event.target.value)"
-            />
-            <template v-if="node.type === 'workflow_approval_template'">
-              <label class="form-label fw-bold">{{ t('workflowEditor.timeout') }}</label>
-              <input
-                class="form-control mb-1"
-                type="number"
-                min="0"
-                :value="node.timeout"
-                :disabled="readOnly"
-                @change="setNode('timeout', $event.target.value)"
-              />
-              <div class="form-text mb-3">{{ t('workflowEditor.timeoutHint') }}</div>
-            </template>
-            <div class="form-check form-switch mb-3">
-              <input
-                :id="'converge-' + node.identifier"
-                class="form-check-input"
-                type="checkbox"
-                :checked="node.converge"
-                :disabled="readOnly"
-                @change="setNode('converge', $event.target.checked)"
-              />
-              <label class="form-check-label" :for="'converge-' + node.identifier">{{
-                t('workflowEditor.converge')
-              }}</label>
-            </div>
-            <!-- what runs after it -->
-            <label class="form-label fw-bold">{{ t('workflowEditor.next') }}</label>
-            <div v-for="kind in LINK_KINDS" :key="kind">
-              <div v-for="to in node[kind]" :key="kind + to" class="af-wf-out">
-                <span class="af-wf-line" :style="{ background: LINK_COLORS[kind] }"></span>
-                <span class="flex-grow-1">{{ to }}</span>
-                <span class="text-muted small me-2">{{ t(`workflowEditor.kinds.${kind}`) }}</span>
-                <BsButton
-                  v-if="!readOnly"
-                  icon="xmark"
-                  colorClass="danger"
-                  :isIconButton="true"
-                  :title="t('workflowEditor.unlink')"
-                  @click="apply((text) => editUnlink(text, wfIndex, node.identifier, to))"
+            <div class="row g-4">
+              <div class="col-lg-6">
+                <label class="form-label fw-bold">{{ t('workflowEditor.identifier') }}</label>
+                <input
+                  class="form-control mb-3"
+                  :value="node.identifier"
+                  :disabled="readOnly"
+                  spellcheck="false"
+                  @change="setNode('identifier', $event.target.value)"
                 />
-              </div>
-            </div>
-            <template v-if="!readOnly">
-              <div class="input-group mt-2">
-                <select v-model="linkKind" class="form-select af-wf-kind">
-                  <option v-for="kind in LINK_KINDS" :key="kind" :value="kind">
-                    {{ t(`workflowEditor.kinds.${kind}`) }}
+                <label class="form-label fw-bold">{{ t('workflowEditor.runs') }}</label>
+                <select
+                  class="form-select mb-3"
+                  :value="node.type"
+                  :disabled="readOnly"
+                  @change="setNode('type', $event.target.value)"
+                >
+                  <option v-for="type in NODE_TYPES" :key="type" :value="type">
+                    {{ t(`workflowEditor.types.${type}`) }}
                   </option>
                 </select>
-                <select v-model="linkTo" class="form-select">
-                  <option value="">{{ t('workflowEditor.linkTo') }}</option>
-                  <option v-for="id in linkTargets" :key="id" :value="id">{{ id }}</option>
-                </select>
-                <BsButton icon="link" :disabled="!linkTo" @click="addLink()">{{ t('workflowEditor.link') }}</BsButton>
-              </div>
-              <div class="d-flex flex-wrap gap-2 mt-3">
-                <BsButton
-                  v-for="kind in LINK_KINDS"
-                  :key="kind"
-                  icon="plus"
-                  @click="addNode({ identifier: node.identifier, kind })"
-                  >{{ t(`workflowEditor.addAfter.${kind}`) }}</BsButton
+                <label class="form-label fw-bold">{{
+                  t(`workflowEditor.runName.${node.type}`, t('workflowEditor.name'))
+                }}</label>
+                <select
+                  v-if="runChoices"
+                  class="form-select mb-3"
+                  :value="node.name"
+                  :disabled="readOnly"
+                  @change="setNode('name', $event.target.value)"
                 >
+                  <option value="">-</option>
+                  <option v-for="c in withCurrent(runChoices, node.name)" :key="c" :value="c">{{ c }}</option>
+                </select>
+                <input
+                  v-else
+                  class="form-control mb-3"
+                  :value="node.name"
+                  :disabled="readOnly"
+                  @change="setNode('name', $event.target.value)"
+                />
+                <template v-if="node.type === 'workflow_approval_template'">
+                  <label class="form-label fw-bold">{{ t('workflowEditor.timeout') }}</label>
+                  <input
+                    class="form-control mb-1"
+                    type="number"
+                    min="0"
+                    :value="node.timeout"
+                    :disabled="readOnly"
+                    @change="setNode('timeout', $event.target.value)"
+                  />
+                  <div class="form-text mb-3">{{ t('workflowEditor.timeoutHint') }}</div>
+                </template>
+                <div class="form-check form-switch mb-3">
+                  <input
+                    :id="'converge-' + node.identifier"
+                    class="form-check-input"
+                    type="checkbox"
+                    :checked="node.converge"
+                    :disabled="readOnly"
+                    @change="setNode('converge', $event.target.checked)"
+                  />
+                  <label class="form-check-label" :for="'converge-' + node.identifier">{{
+                    t('workflowEditor.converge')
+                  }}</label>
+                </div>
+                <!-- what runs after it -->
+                <label class="form-label fw-bold">{{ t('workflowEditor.next') }}</label>
+                <div v-for="kind in LINK_KINDS" :key="kind">
+                  <div v-for="to in node[kind]" :key="kind + to" class="af-wf-out">
+                    <span class="af-wf-line" :style="{ background: LINK_COLORS[kind] }"></span>
+                    <span class="flex-grow-1">{{ to }}</span>
+                    <span class="text-muted small me-2">{{ t(`workflowEditor.kinds.${kind}`) }}</span>
+                    <BsButton
+                      v-if="!readOnly"
+                      icon="xmark"
+                      colorClass="danger"
+                      :isIconButton="true"
+                      :title="t('workflowEditor.unlink')"
+                      @click="apply((text) => editUnlink(text, wfIndex, node.identifier, to))"
+                    />
+                  </div>
+                </div>
+                <template v-if="!readOnly">
+                  <div class="input-group mt-2">
+                    <select v-model="linkKind" class="form-select af-wf-kind">
+                      <option v-for="kind in LINK_KINDS" :key="kind" :value="kind">
+                        {{ t(`workflowEditor.kinds.${kind}`) }}
+                      </option>
+                    </select>
+                    <select v-model="linkTo" class="form-select">
+                      <option value="">{{ t('workflowEditor.linkTo') }}</option>
+                      <option v-for="id in linkTargets" :key="id" :value="id">{{ id }}</option>
+                    </select>
+                    <BsButton icon="link" :disabled="!linkTo" @click="addLink()">{{
+                      t('workflowEditor.link')
+                    }}</BsButton>
+                  </div>
+                  <div class="d-flex flex-wrap gap-2 mt-3">
+                    <BsButton
+                      v-for="kind in LINK_KINDS"
+                      :key="kind"
+                      icon="plus"
+                      @click="addNode({ identifier: node.identifier, kind })"
+                      >{{ t(`workflowEditor.addAfter.${kind}`) }}</BsButton
+                    >
+                  </div>
+                  <div class="mt-4 d-flex gap-2">
+                    <BsButton icon="code" @click="emit('reveal', node.line)">{{
+                      t('designer.files.showInYaml')
+                    }}</BsButton>
+                    <BsButton icon="trash" @click="removeNode()">{{ t('workflowEditor.removeNode') }}</BsButton>
+                  </div>
+                </template>
               </div>
-              <div class="mt-4 d-flex gap-2">
-                <BsButton icon="code" @click="emit('reveal', node.line)">{{ t('designer.files.showInYaml') }}</BsButton>
-                <BsButton icon="trash" @click="removeNode()">{{ t('workflowEditor.removeNode') }}</BsButton>
+              <!-- a job template node : what its playbook's run uses -->
+              <div v-if="node.type === 'job_template'" class="col-lg-6">
+                <label class="form-label fw-bold">{{ t('workflowEditor.inventory') }}</label>
+                <select
+                  v-if="refs.inventories"
+                  class="form-select mb-3"
+                  :value="node.inventory"
+                  :disabled="readOnly"
+                  @change="setNode('inventory', $event.target.value)"
+                >
+                  <option value="">{{ t('designer.visualNoInventory') }}</option>
+                  <option v-for="i in withCurrent(sorted(refs.inventories), node.inventory)" :key="i" :value="i">
+                    {{ i }}
+                  </option>
+                </select>
+                <input
+                  v-else
+                  class="form-control mb-3"
+                  :value="node.inventory"
+                  :disabled="readOnly"
+                  @change="setNode('inventory', $event.target.value)"
+                />
+                <label class="form-label fw-bold">{{ t('workflowEditor.credentials') }}</label>
+                <div class="af-wf-creds mb-3">
+                  <div v-if="!(refs.credentials || []).length && !node.credentials.length" class="text-muted small">
+                    {{ t('workflowEditor.noCredentials') }}
+                  </div>
+                  <div
+                    v-for="c in withCurrent(sorted(refs.credentials), null).concat(
+                      node.credentials.filter((x) => !(refs.credentials || []).includes(x)),
+                    )"
+                    :key="c"
+                    class="form-check"
+                  >
+                    <input
+                      :id="'wf-cred-' + c"
+                      class="form-check-input"
+                      type="checkbox"
+                      :checked="node.credentials.includes(c)"
+                      :disabled="readOnly"
+                      @change="toggleCredential(c, $event.target.checked)"
+                    />
+                    <label class="form-check-label" :for="'wf-cred-' + c">{{ c }}</label>
+                  </div>
+                </div>
+                <div class="row g-2 mb-3">
+                  <div class="col-6">
+                    <label class="form-label fw-bold">{{ t('workflowEditor.limit') }}</label>
+                    <input
+                      class="form-control"
+                      :value="node.limit"
+                      :disabled="readOnly"
+                      @change="setNode('limit', $event.target.value)"
+                    />
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label fw-bold">{{ t('workflowEditor.verbosity') }}</label>
+                    <select
+                      class="form-select"
+                      :value="node.verbosity"
+                      :disabled="readOnly"
+                      @change="setNode('verbosity', $event.target.value)"
+                    >
+                      <option value="">0</option>
+                      <option v-for="v in [1, 2, 3, 4, 5]" :key="v" :value="String(v)">{{ v }}</option>
+                    </select>
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label fw-bold">{{ t('workflowEditor.jobTags') }}</label>
+                    <input
+                      class="form-control"
+                      :value="node.job_tags"
+                      :disabled="readOnly"
+                      @change="setNode('job_tags', $event.target.value)"
+                    />
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label fw-bold">{{ t('workflowEditor.skipTags') }}</label>
+                    <input
+                      class="form-control"
+                      :value="node.skip_tags"
+                      :disabled="readOnly"
+                      @change="setNode('skip_tags', $event.target.value)"
+                    />
+                  </div>
+                </div>
+                <div class="d-flex gap-4 mb-3">
+                  <div class="form-check form-switch">
+                    <input
+                      id="wf-check"
+                      class="form-check-input"
+                      type="checkbox"
+                      :checked="node.job_type === 'check'"
+                      :disabled="readOnly"
+                      @change="setNode('job_type', $event.target.checked ? 'check' : '')"
+                    />
+                    <label class="form-check-label" for="wf-check">{{ t('workflowEditor.check') }}</label>
+                  </div>
+                  <div class="form-check form-switch">
+                    <input
+                      id="wf-diff"
+                      class="form-check-input"
+                      type="checkbox"
+                      :checked="node.diff_mode === 'true'"
+                      :disabled="readOnly"
+                      @change="setNode('diff_mode', $event.target.checked)"
+                    />
+                    <label class="form-check-label" for="wf-diff">{{ t('workflowEditor.diff') }}</label>
+                  </div>
+                </div>
               </div>
-            </template>
+            </div>
           </template>
 
           <!-- a link -->
@@ -566,173 +713,6 @@ function selectLink(l) {
             </select>
             <BsButton v-if="!readOnly" icon="trash" @click="removeLink()">{{ t('workflowEditor.unlink') }}</BsButton>
           </template>
-
-          <!-- a job template -->
-          <template v-else-if="jt">
-            <div class="af-wf-panel-title"><FaIcon icon="rocket" />{{ t('workflowEditor.jobTemplate') }}</div>
-            <label class="form-label fw-bold">{{ t('workflowEditor.name') }}</label>
-            <input
-              class="form-control mb-3"
-              :value="jt.name"
-              :disabled="readOnly"
-              @change="setJt('name', $event.target.value.trim())"
-            />
-            <label class="form-label fw-bold">{{ t('workflowEditor.playbook') }}</label>
-            <select
-              v-if="refs.playbooks"
-              class="form-select mb-3"
-              :value="jt.playbook"
-              :disabled="readOnly"
-              @change="setJt('playbook', $event.target.value)"
-            >
-              <option value="">-</option>
-              <option v-for="p in withCurrent(sorted(refs.playbooks), jt.playbook)" :key="p" :value="p">{{ p }}</option>
-            </select>
-            <input
-              v-else
-              class="form-control mb-3"
-              :value="jt.playbook"
-              :disabled="readOnly"
-              @change="setJt('playbook', $event.target.value)"
-            />
-            <label class="form-label fw-bold">{{ t('workflowEditor.inventory') }}</label>
-            <select
-              v-if="refs.inventories"
-              class="form-select mb-3"
-              :value="jt.inventory"
-              :disabled="readOnly"
-              @change="setJt('inventory', $event.target.value)"
-            >
-              <option value="">{{ t('designer.visualNoInventory') }}</option>
-              <option v-for="i in withCurrent(sorted(refs.inventories), jt.inventory)" :key="i" :value="i">
-                {{ i }}
-              </option>
-            </select>
-            <input
-              v-else
-              class="form-control mb-3"
-              :value="jt.inventory"
-              :disabled="readOnly"
-              @change="setJt('inventory', $event.target.value)"
-            />
-            <label class="form-label fw-bold">{{ t('workflowEditor.credentials') }}</label>
-            <div class="af-wf-creds mb-3">
-              <div v-if="!(refs.credentials || []).length && !jt.credentials.length" class="text-muted small">
-                {{ t('workflowEditor.noCredentials') }}
-              </div>
-              <div
-                v-for="c in withCurrent(sorted(refs.credentials), null).concat(
-                  jt.credentials.filter((x) => !(refs.credentials || []).includes(x)),
-                )"
-                :key="c"
-                class="form-check"
-              >
-                <input
-                  :id="'cred-' + c"
-                  class="form-check-input"
-                  type="checkbox"
-                  :checked="jt.credentials.includes(c)"
-                  :disabled="readOnly"
-                  @change="toggleCredential(c, $event.target.checked)"
-                />
-                <label class="form-check-label" :for="'cred-' + c">{{ c }}</label>
-              </div>
-            </div>
-            <div class="row g-2 mb-3">
-              <div class="col-6">
-                <label class="form-label fw-bold">{{ t('workflowEditor.limit') }}</label>
-                <input
-                  class="form-control"
-                  :value="jt.limit"
-                  :disabled="readOnly"
-                  @change="setJt('limit', $event.target.value)"
-                />
-              </div>
-              <div class="col-6">
-                <label class="form-label fw-bold">{{ t('workflowEditor.verbosity') }}</label>
-                <select
-                  class="form-select"
-                  :value="jt.verbosity"
-                  :disabled="readOnly"
-                  @change="setJt('verbosity', $event.target.value)"
-                >
-                  <option value="">0</option>
-                  <option v-for="v in [1, 2, 3, 4, 5]" :key="v" :value="String(v)">{{ v }}</option>
-                </select>
-              </div>
-              <div class="col-6">
-                <label class="form-label fw-bold">{{ t('workflowEditor.jobTags') }}</label>
-                <input
-                  class="form-control"
-                  :value="jt.job_tags"
-                  :disabled="readOnly"
-                  @change="setJt('job_tags', $event.target.value)"
-                />
-              </div>
-              <div class="col-6">
-                <label class="form-label fw-bold">{{ t('workflowEditor.skipTags') }}</label>
-                <input
-                  class="form-control"
-                  :value="jt.skip_tags"
-                  :disabled="readOnly"
-                  @change="setJt('skip_tags', $event.target.value)"
-                />
-              </div>
-            </div>
-            <div class="d-flex gap-4 mb-3">
-              <div class="form-check form-switch">
-                <input
-                  id="jt-check"
-                  class="form-check-input"
-                  type="checkbox"
-                  :checked="jt.job_type === 'check'"
-                  :disabled="readOnly"
-                  @change="setJt('job_type', $event.target.checked ? 'check' : '')"
-                />
-                <label class="form-check-label" for="jt-check">{{ t('workflowEditor.check') }}</label>
-              </div>
-              <div class="form-check form-switch">
-                <input
-                  id="jt-diff"
-                  class="form-check-input"
-                  type="checkbox"
-                  :checked="jt.diff_mode === 'true'"
-                  :disabled="readOnly"
-                  @change="setJt('diff_mode', $event.target.checked)"
-                />
-                <label class="form-check-label" for="jt-diff">{{ t('workflowEditor.diff') }}</label>
-              </div>
-            </div>
-            <div v-if="!readOnly" class="d-flex gap-2">
-              <BsButton icon="code" @click="emit('reveal', jt.line)">{{ t('designer.files.showInYaml') }}</BsButton>
-              <BsButton icon="trash" @click="removeJt()">{{ t('workflowEditor.removeJobTemplate') }}</BsButton>
-            </div>
-          </template>
-
-          <!-- nothing selected : the workflow -->
-          <template v-else-if="workflow">
-            <div class="af-wf-panel-title"><FaIcon icon="diagram-project" />{{ t('workflowEditor.workflow') }}</div>
-            <label class="form-label fw-bold">{{ t('workflowEditor.name') }}</label>
-            <input
-              class="form-control mb-3"
-              :value="workflow.name"
-              :disabled="readOnly"
-              @change="setWorkflow('name', $event.target.value.trim())"
-            />
-            <label class="form-label fw-bold">{{ t('workflowEditor.description') }}</label>
-            <input
-              class="form-control mb-3"
-              :value="workflow.description"
-              :disabled="readOnly"
-              @change="setWorkflow('description', $event.target.value)"
-            />
-            <div class="form-text mb-3">{{ t('workflowEditor.selectHint') }}</div>
-            <div v-if="!readOnly" class="d-flex gap-2">
-              <BsButton icon="plus" @click="addNode()">{{ t('workflowEditor.addFirst') }}</BsButton>
-              <BsButton icon="trash" @click="removeWorkflow()">{{ t('workflowEditor.removeWorkflow') }}</BsButton>
-            </div>
-          </template>
-          <div v-else class="text-muted">{{ t('workflowEditor.noWorkflowHint') }}</div>
         </div>
       </div>
     </template>
@@ -746,8 +726,11 @@ function selectLink(l) {
   gap: 0.75rem;
   margin-bottom: 0.75rem;
 }
-.af-wf-pick {
-  max-width: 22rem;
+.af-wf-head {
+  justify-content: flex-end;
+}
+.af-wf-block {
+  margin-bottom: 1rem;
 }
 .af-wf-legend {
   white-space: nowrap;
@@ -777,7 +760,7 @@ function selectLink(l) {
 }
 .af-wf-main {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(18rem, 26rem);
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
   align-items: start;
 }
@@ -848,26 +831,6 @@ function selectLink(l) {
 }
 .af-wf-canvas {
   margin-bottom: 1rem;
-}
-.af-wf-jt-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-.af-wf-jt {
-  display: inline-flex;
-  align-items: center;
-  border: 1px solid var(--af-field-border);
-  border-radius: 0.375rem;
-  background: var(--bs-body-bg);
-  padding: 0.375rem 0.75rem;
-  &:hover {
-    background: var(--af-row-hover-bg);
-  }
-  &.active {
-    border-color: var(--bs-primary);
-    background: var(--bs-primary-bg-subtle);
-  }
 }
 .af-wf-panel {
   border: 1px solid var(--af-field-border);
