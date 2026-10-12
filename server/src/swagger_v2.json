@@ -1170,9 +1170,8 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "accessToken": { "type": "string" },
-                    "refreshToken": { "type": "string" },
-                    "expiresIn": { "type": "integer" }
+                    "token": { "type": "string", "description": "Access token, sent as 'Bearer <token>'" },
+                    "refreshtoken": { "type": "string", "description": "Refresh token, for the /token API" }
                   }
                 }
               }
@@ -1195,9 +1194,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "refreshToken": { "type": "string", "description": "Refresh token" }
+                  "refreshtoken": { "type": "string", "description": "Refresh token" }
                 },
-                "required": ["refreshToken"]
+                "required": ["refreshtoken"]
               }
             }
           }
@@ -1210,9 +1209,8 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "accessToken": { "type": "string" },
-                    "refreshToken": { "type": "string" },
-                    "expiresIn": { "type": "integer" }
+                    "token": { "type": "string", "description": "Access token, sent as 'Bearer <token>'" },
+                    "refreshtoken": { "type": "string", "description": "Refresh token, for the /token API" }
                   }
                 }
               }
