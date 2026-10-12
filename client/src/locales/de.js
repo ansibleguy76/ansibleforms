@@ -1196,10 +1196,16 @@ export default {
       caBundleHelp:
         'Die PEM-Zertifikate der Stelle, die das Zertifikat des Runners signiert hat: ihre Wurzel, dann die Zwischenzertifikate.',
       customCa: 'Eigenes CA-Zertifikat verwenden',
-      default_playbook: 'Playbook-Formulare',
-      default_playbookHelp: 'Wo ein Playbook-Formular ohne angegebenen Runner läuft.',
-      default_template: 'Vorlagen-Formulare',
-      default_templateHelp: 'Wo ein Vorlagen-Formular ohne angegebenen Runner läuft.',
+      default_rte: 'Playbook-Formulare',
+      default_rteHelp: 'Wo ein ansible-Formular ohne Runner läuft.',
+      default_awx: 'AWX-, AAP- und Ascender-Formulare',
+      default_awxHelp: 'Wo ein awx-, aap- oder ascender-Formular ohne Runner läuft.',
+      default_semaphore: 'Semaphore-Formulare',
+      default_semaphoreHelp: 'Wo ein semaphore-Formular ohne Runner läuft.',
+      default_rundeck: 'Rundeck-Formulare',
+      default_rundeckHelp: 'Wo ein rundeck-Formular ohne Runner läuft.',
+      default_jenkins: 'Jenkins-Formulare',
+      default_jenkinsHelp: 'Wo ein jenkins-Formular ohne Runner läuft.',
       defaultsTitle: 'Standard-Runner',
       editDefaults: 'Standards bearbeiten',
       flavour: 'Produkt',
@@ -1257,8 +1263,6 @@ export default {
       projectHelp_jenkins: 'Der Ordner der Jobs (ops oder ops/web); leer für die Jobs auf oberster Ebene.',
       tokenHelp_jenkins: 'Ein API-Token des Jenkins-Benutzers: Benutzermenü, Security, API Token.',
       usernameHelp_jenkins: 'Der Jenkins-Benutzer, zu dem das API-Token gehört; die Jobs laufen als dieser Benutzer.',
-      noDefaultHelp:
-        'Nie ein Standard: Ein Vorlagen-Formular ohne Runner läuft auf dem Standard-AWX, daher nennt ein Formular diesen Runner mit runner: <name>.',
     },
     disclaimer: {
       description:
@@ -1905,7 +1909,10 @@ export default {
     helpPlaybook: 'Das Playbook, das es ausführt.',
     formWorkflow: 'Workflow',
     helpWorkflow: 'Der Workflow, den es ausführt, einer aus Designer > Workflows.',
-    helpTemplate: 'Die AWX-Jobvorlage, die es startet.',
+    helpTemplate:
+      'Die Vorlage, die es auf dem Runner startet: eine AWX-Job- oder Workflow-Vorlage, eine Semaphore-Vorlage.',
+    formJob: 'Job',
+    helpJob: 'Der Job, den es auf dem Runner ausführt: sein Name oder Gruppe/Name (Rundeck), Ordner/Name (Jenkins).',
     helpInventory: 'Das Inventar, gegen das seine Jobs laufen.',
     helpScmBranch: 'Der Branch, den AWX für die Vorlage auscheckt.',
     helpExecEnv: 'Die AWX-Ausführungsumgebung seiner Jobs.',

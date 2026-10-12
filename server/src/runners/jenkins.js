@@ -1,5 +1,6 @@
-// The jenkins runner : a job on Jenkins (jenkins.io). A form of type awx names it with
-// `runner: <name>` and its job with `template: <job>` - its path when it is in a folder,
+// The jenkins runner : a job on Jenkins (jenkins.io). A form of type jenkins names it with
+// `runner: <name>` (or runs on the default one) and its job with `job: <name>` (`template:`
+// says the same) - its path when it is in a folder,
 // `ops/deploy` - under the runner's folder when the runner has one (`project`). The build's
 // console is followed back into the job, as an AWX job's output is.
 //
@@ -95,7 +96,7 @@ async function check(runner) {
  */
 async function findJob(http, runner, template) {
   const name = fullName(runner, template);
-  if (!String(template ?? "").trim()) throw new Errors.BadRequestError("The form names no job (template: <job>, or <folder>/<job>)");
+  if (!String(template ?? "").trim()) throw new Errors.BadRequestError("The form names no job (job: <name>, or <folder>/<name>)");
   let data;
   try {
     ({ data } = await http.get(`${jobPath(name)}/api/json`, {

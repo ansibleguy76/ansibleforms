@@ -62,12 +62,9 @@ describe('a runner kind and what is stored', () => {
     });
   });
 
-  it('a Semaphore, a Rundeck or a Jenkins is no default in the defaults dialog', () => {
-    const { groupBy } = runners.defaultPicker;
-    expect(groupBy({ type: 'rte' })).toBe('playbook');
-    expect(groupBy({ type: 'awx' })).toBe('template');
-    expect(groupBy({ type: 'semaphore' })).toBe(null);
-    expect(groupBy({ type: 'rundeck' })).toBe(null);
-    expect(groupBy({ type: 'jenkins' })).toBe(null);
+  it('the defaults dialog has a group per runner type', () => {
+    const { groupBy, groups } = runners.defaultPicker;
+    expect(groups.map((g) => g.key)).toEqual(['rte', 'awx', 'semaphore', 'rundeck', 'jenkins']);
+    for (const type of ['rte', 'awx', 'semaphore', 'rundeck', 'jenkins']) expect(groupBy({ type })).toBe(type);
   });
 });

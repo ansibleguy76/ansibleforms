@@ -7,9 +7,11 @@ export default {
     noLogsAccess: "Du hast keinen Zugriff auf Logs",
     noDatabaseAccess: "Du hast keinen Zugriff auf Datenbankoperationen",
     noScheduleAccess: "Du hast keine Berechtigung, geplante Jobs zu verwalten",
-    noChatAccess: "Sie haben keine Berechtigung, den Chat-Assistenten zu verwenden",
+    noChatAccess:
+      "Sie haben keine Berechtigung, den Chat-Assistenten zu verwenden",
     noMcpAccess: "Sie haben keine Berechtigung, den MCP-Server zu verwenden",
-    noStoredJobsAccess: "Du hast keine Berechtigung, gespeicherte Jobs zu verwalten",
+    noStoredJobsAccess:
+      "Du hast keine Berechtigung, gespeicherte Jobs zu verwalten",
     noDataSent: "Es wurden keine Daten gesendet",
     missingDbConfig: "Fehlende Datenbankkonfiguration",
     provideRefreshToken: "Bitte Refresh-Token angeben",
@@ -22,12 +24,16 @@ export default {
   auth: {
     authFailed: "Authentifizierung fehlgeschlagen",
     invalidCredentials: "Ungueltige Zugangsdaten",
-    tooManyFailures: "Zu viele fehlgeschlagene Anmeldungen : versuchen Sie es in {minutes} Minute(n) erneut",
-    passwordChangeRequired: "Ändern Sie zuerst Ihr Passwort : es ist das öffentlich bekannte Standardpasswort",
+    tooManyFailures:
+      "Zu viele fehlgeschlagene Anmeldungen : versuchen Sie es in {minutes} Minute(n) erneut",
+    passwordChangeRequired:
+      "Ändern Sie zuerst Ihr Passwort : es ist das öffentlich bekannte Standardpasswort",
     disclaimerRequired: "Akzeptieren Sie zuerst den Haftungsausschluss",
     disclaimerAccepted: "Der Haftungsausschluss ist akzeptiert",
-    loginDisabled: "Nicht authentifiziert, Login ist fuer diesen Benutzer nicht aktiviert.",
-    signInBlocked: "Nicht authentifiziert, ein Administrator hat die Anmeldung dieses Benutzers gesperrt.",
+    loginDisabled:
+      "Nicht authentifiziert, Login ist fuer diesen Benutzer nicht aktiviert.",
+    signInBlocked:
+      "Nicht authentifiziert, ein Administrator hat die Anmeldung dieses Benutzers gesperrt.",
     azureFailed: "Azure AD Authentifizierung fehlgeschlagen",
     oidcFailed: "OIDC Authentifizierung fehlgeschlagen",
   },
@@ -47,23 +53,28 @@ export default {
     failedGetFormsList: "Abrufen der Formularliste fehlgeschlagen",
     formNameNotProvided: "Formularname nicht angegeben",
     failedGetFormConfig: "Abrufen der Formularkonfiguration fehlgeschlagen",
-    onlyAdminsOrDesigners: "Nur Administratoren oder Designer koennen auf die vollstaendige Formularkonfiguration zugreifen",
+    onlyAdminsOrDesigners:
+      "Nur Administratoren oder Designer koennen auf die vollstaendige Formularkonfiguration zugreifen",
     failedGetFormsConfig: "Abrufen der Formularkonfiguration fehlgeschlagen",
     failedGetBackups: "Abrufen der Backups fehlgeschlagen",
     failedGetEnvVars: "Abrufen der Umgebungsvariablen fehlgeschlagen",
-    failedSaveEnvVars: "Umgebungseinstellungen konnten nicht gespeichert werden",
+    failedSaveEnvVars:
+      "Umgebungseinstellungen konnten nicht gespeichert werden",
     failedVaultCheck: "Vault-Verbindungstest fehlgeschlagen",
     failedVaultMounts: "Vault-Mounts konnten nicht aufgelistet werden",
     noEnvVarsGiven: "Es wurden keine Umgebungsvariablen angegeben",
     envVarsSaved: "Umgebungseinstellungen gespeichert",
-    envVarsNotFound: "Abschnitt fuer Umgebungsvariablen in help.yaml nicht gefunden",
+    envVarsNotFound:
+      "Abschnitt fuer Umgebungsvariablen in help.yaml nicht gefunden",
     failedRestoreForms: "Wiederherstellung der Formulare fehlgeschlagen",
-    failedRestoreNoName: "Wiederherstellung fehlgeschlagen, kein Backup-Name angegeben",
+    failedRestoreNoName:
+      "Wiederherstellung fehlgeschlagen, kein Backup-Name angegeben",
     failedRestoreBackup: "Wiederherstellung von '{name}' fehlgeschlagen",
     designerLocked: "Designer ist gesperrt",
     designerLockedBy: "Designer ist durch {username} gesperrt",
     failedSaveForms: "Speichern der Formulare fehlgeschlagen",
-    failedValidateForms: "Validierung der neuen Formularkonfiguration fehlgeschlagen",
+    failedValidateForms:
+      "Validierung der neuen Formularkonfiguration fehlgeschlagen",
     failedGetLock: "Abrufen der Sperre fehlgeschlagen",
   },
   resources: {
@@ -83,19 +94,27 @@ export default {
     secretStoreConnectionOk: "Verbindung zum Secret Store ist OK",
     runnerAdded: "Runner hinzugefügt",
     runnerNotFound: "Runner nicht gefunden",
-    runnerAdminOnly: "Nur ein Admin kann einen Runner hinzufuegen, aendern oder loeschen : ein Runner erhaelt die Zugangsdaten der Jobs, die er ausfuehrt",
-    defaultPasswordRefused: "Wählen Sie ein anderes Passwort als das öffentliche Standardpasswort",
+    runnerAdminOnly:
+      "Nur ein Admin kann einen Runner hinzufuegen, aendern oder loeschen : ein Runner erhaelt die Zugangsdaten der Jobs, die er ausfuehrt",
+    defaultPasswordRefused:
+      "Wählen Sie ein anderes Passwort als das öffentliche Standardpasswort",
     passwordTooShort: "Das Passwort braucht mindestens {min} Zeichen",
     passwordIsUsername: "Das Passwort darf nicht der Benutzername sein",
     runnerConnectionOk: "Runner-Verbindung ist OK",
     userNotFound: "Benutzer nicht gefunden",
-    currentPasswordRequired: "Zum Festlegen eines neuen Passworts ist Ihr aktuelles Passwort erforderlich",
+    currentPasswordRequired:
+      "Zum Festlegen eines neuen Passworts ist Ihr aktuelles Passwort erforderlich",
     currentPasswordWrong: "Das aktuelle Passwort ist nicht korrekt",
-    cantChangePasswordLdap: "Du kannst das Passwort fuer einen LDAP-Benutzer nicht aendern",
-    directoryTypeUnknown: "Kein LDAP-, Entra-ID- oder OIDC-Benutzer bzw. -Gruppe",
-    directoryUserKept: "Ein Administrator hat diesen Benutzer gesperrt: erlaube die Anmeldung, bevor du ihn vergisst",
-    failedDirectoryUser: "Der LDAP- oder SSO-Benutzer konnte nicht gelesen oder geändert werden",
-    cantBlockAdmin: "Der Benutzer admin kann nicht gesperrt werden: er ist der Weg zurück",
+    cantChangePasswordLdap:
+      "Du kannst das Passwort fuer einen LDAP-Benutzer nicht aendern",
+    directoryTypeUnknown:
+      "Kein LDAP-, Entra-ID- oder OIDC-Benutzer bzw. -Gruppe",
+    directoryUserKept:
+      "Ein Administrator hat diesen Benutzer gesperrt: erlaube die Anmeldung, bevor du ihn vergisst",
+    failedDirectoryUser:
+      "Der LDAP- oder SSO-Benutzer konnte nicht gelesen oder geändert werden",
+    cantBlockAdmin:
+      "Der Benutzer admin kann nicht gesperrt werden: er ist der Weg zurück",
     cantBlockYourself: "Du kannst deine eigene Anmeldung nicht sperren",
     groupNotFound: "Keine passende Gruppe gefunden",
     groupHasUsers: "Unbekannte Gruppe oder Gruppe mit Benutzern",
@@ -114,27 +133,35 @@ export default {
     failedSyncRepository: "Das Repository konnte nicht gepusht werden",
     noFormsRepositories: "Keine Forms-Repositories konfiguriert",
     failedApplyConfigSeed: "Konfigurations-Seed konnte nicht angewendet werden",
-    noConfigSeed: "Es ist kein Konfigurations-Seed konfiguriert (CONFIG_SEED_PATH ist leer)",
+    noConfigSeed:
+      "Es ist kein Konfigurations-Seed konfiguriert (CONFIG_SEED_PATH ist leer)",
     failedFindSsh: "SSH-Schluessel konnte nicht gefunden werden",
     failedUpdateSsh: "SSH-Schluessel konnte nicht aktualisiert werden",
     failedFindChatSettings: "Chat-Einstellungen konnten nicht gefunden werden",
-    failedUpdateChatSettings: "Chat-Einstellungen konnten nicht aktualisiert werden",
-    seedManagedChatSettings: "Die Chat-Einstellungen werden vom Config-Seed verwaltet und sind schreibgeschützt",
+    failedUpdateChatSettings:
+      "Chat-Einstellungen konnten nicht aktualisiert werden",
+    seedManagedChatSettings:
+      "Die Chat-Einstellungen werden vom Config-Seed verwaltet und sind schreibgeschützt",
     chatSettingsUpdated: "Chat-Einstellungen aktualisiert",
     chatCheckFailed: "Die Prüfung des Chat-Anbieters ist fehlgeschlagen",
     failedFindLdap: "LDAP konnte nicht gefunden werden",
     ldapCheckFailed: "LDAP-Pruefung fehlgeschlagen",
-    storedPasswordOtherServer: "Das gespeicherte Passwort gilt nur fuer den gespeicherten Server : geben Sie das Passwort ein, um einen anderen zu pruefen",
+    storedPasswordOtherServer:
+      "Das gespeicherte Passwort gilt nur fuer den gespeicherten Server : geben Sie das Passwort ein, um einen anderen zu pruefen",
     ldapUpdated: "LDAP aktualisiert",
     failedUpdateLdap: "LDAP-Aktualisierung fehlgeschlagen",
-    seedManagedSettings: "Die Einstellungen werden vom Konfigurations-Seed verwaltet und sind schreibgeschützt",
-    seedManagedLdap: "Die LDAP-Konfiguration wird vom Konfigurations-Seed verwaltet und ist schreibgeschützt",
+    seedManagedSettings:
+      "Die Einstellungen werden vom Konfigurations-Seed verwaltet und sind schreibgeschützt",
+    seedManagedLdap:
+      "Die LDAP-Konfiguration wird vom Konfigurations-Seed verwaltet und ist schreibgeschützt",
     failedFindSettings: "Einstellungen konnten nicht gefunden werden",
     mailCheckFailed: "Mail-Pruefung fehlgeschlagen",
     mailSent: "Mail mit ID {id} gesendet",
     failedUpdateSettings: "Einstellungen konnten nicht aktualisiert werden",
-    configLockedByDesigner: "Die Konfiguration ist durch eine aktive Designer-Sitzung gesperrt{username}",
-    configChangedElsewhere: "Die Konfiguration wurde an anderer Stelle geändert, vor dem Speichern neu laden",
+    configLockedByDesigner:
+      "Die Konfiguration ist durch eine aktive Designer-Sitzung gesperrt{username}",
+    configChangedElsewhere:
+      "Die Konfiguration wurde an anderer Stelle geändert, vor dem Speichern neu laden",
     failedImportConfig: "Import der Konfiguration fehlgeschlagen",
     failedExportConfig: "Export der Konfiguration fehlgeschlagen",
     failedLegacyCheck: "Prüfung auf veraltete forms.yaml fehlgeschlagen",
@@ -147,12 +174,15 @@ export default {
     failedFindLogo: "Logo konnte nicht geladen werden",
     failedUpdateLogo: "Logo konnte nicht aktualisiert werden",
     logoNoFile: "Es wurde keine Datei hochgeladen",
-    logoInvalidImage: "Ungültiges oder nicht unterstütztes Bild, erlaubte Typen sind png, jpeg, webp, gif und svg",
+    logoInvalidImage:
+      "Ungültiges oder nicht unterstütztes Bild, erlaubte Typen sind png, jpeg, webp, gif und svg",
     failedFindFavicon: "Das Website-Symbol konnte nicht abgerufen werden",
     failedUpdateFavicon: "Das Website-Symbol konnte nicht aktualisiert werden",
-    faviconInvalidImage: "Ungültiges oder nicht unterstütztes Bild, erlaubt sind png, ico, svg, webp, gif und jpeg",
+    faviconInvalidImage:
+      "Ungültiges oder nicht unterstütztes Bild, erlaubt sind png, ico, svg, webp, gif und jpeg",
     hostValueRequired: "Host-Wert erforderlich",
-    hostNameRequired: "Host-Name erforderlich (Query-Parameter \"name\" oder \"host\")",
+    hostNameRequired:
+      'Host-Name erforderlich (Query-Parameter "name" oder "host")',
   },
   jobs: {
     mustProvideJobId: "Du musst eine Job-ID angeben",
@@ -200,7 +230,8 @@ export default {
       launchBy: "Job wurde von {user} gestartet.",
       relaunchBy: "Job wurde von {user} neu gestartet.",
       deleteBy: "Job wurde von {user} geloescht.",
-      approveBy: "Job wurde von {user} freigegeben und wird weiter ausgefuehrt.",
+      approveBy:
+        "Job wurde von {user} freigegeben und wird weiter ausgefuehrt.",
       rejectBy: "Job wurde von {user} abgelehnt.",
     },
     // the subjects : "AnsibleForms '<form>' [<type>] (<id>) - <one of these>", and the
@@ -229,4 +260,4 @@ export default {
       body: "<p>Dies ist eine Testnachricht von AnsibleForms</p>",
     },
   },
-}
+};

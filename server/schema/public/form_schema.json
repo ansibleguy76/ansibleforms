@@ -114,8 +114,9 @@
           "properties": {
             "type": {
               "enum": [
-                "template",
-                "awx"
+                "awx",
+                "aap",
+                "ascender"
               ]
             },
             "workflow": {
@@ -141,8 +142,78 @@
             }
           },
           "required": [
-            "template",
             "roles"
+          ],
+          "oneOf": [
+            {
+              "required": [
+                "template"
+              ]
+            },
+            {
+              "required": [
+                "job"
+              ]
+            }
+          ]
+        },
+        {
+          "properties": {
+            "type": {
+              "enum": [
+                "semaphore",
+                "rundeck",
+                "jenkins"
+              ]
+            },
+            "workflow": {
+              "not": {}
+            },
+            "vaultCredentials": {
+              "not": {}
+            },
+            "playbook": {
+              "not": {}
+            },
+            "ansibleCredentials": {
+              "not": {}
+            },
+            "steps": {
+              "not": {}
+            },
+            "expression": {
+              "not": {}
+            },
+            "playbookSubPath": {
+              "not": {}
+            },
+            "awxCredentials": {
+              "not": {}
+            },
+            "executionEnvironment": {
+              "not": {}
+            },
+            "scm_branch": {
+              "not": {}
+            },
+            "instanceGroups": {
+              "not": {}
+            }
+          },
+          "required": [
+            "roles"
+          ],
+          "oneOf": [
+            {
+              "required": [
+                "template"
+              ]
+            },
+            {
+              "required": [
+                "job"
+              ]
+            }
           ]
         },
         {
@@ -1417,8 +1488,9 @@
                 "properties": {
                   "type": {
                     "enum": [
-                      "template",
-                      "awx"
+                      "awx",
+                      "aap",
+                      "ascender"
                     ]
                   },
                   "playbook": {
@@ -1434,8 +1506,64 @@
                     "not": {}
                   }
                 },
-                "required": [
-                  "template"
+                "oneOf": [
+                  {
+                    "required": [
+                      "template"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "job"
+                    ]
+                  }
+                ]
+              },
+              {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "semaphore",
+                      "rundeck",
+                      "jenkins"
+                    ]
+                  },
+                  "playbook": {
+                    "not": {}
+                  },
+                  "vaultCredentials": {
+                    "not": {}
+                  },
+                  "ansibleCredentials": {
+                    "not": {}
+                  },
+                  "steps": {
+                    "not": {}
+                  },
+                  "awxCredentials": {
+                    "not": {}
+                  },
+                  "executionEnvironment": {
+                    "not": {}
+                  },
+                  "instanceGroups": {
+                    "not": {}
+                  },
+                  "scm_branch": {
+                    "not": {}
+                  }
+                },
+                "oneOf": [
+                  {
+                    "required": [
+                      "template"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "job"
+                    ]
+                  }
                 ]
               }
             ],
@@ -1444,8 +1572,12 @@
                 "type": "string",
                 "enum": [
                   "ansible",
-                  "template",
-                  "awx"
+                  "awx",
+                  "aap",
+                  "ascender",
+                  "semaphore",
+                  "rundeck",
+                  "jenkins"
                 ]
               },
               "name": {
@@ -1465,6 +1597,9 @@
                 "pattern": "[A-Za-z0-9_\\-]+"
               },
               "template": {
+                "type": "string"
+              },
+              "job": {
                 "type": "string"
               },
               "varsFiles": {
@@ -1616,8 +1751,12 @@
           "type": "string",
           "enum": [
             "ansible",
-            "template",
             "awx",
+            "aap",
+            "ascender",
+            "semaphore",
+            "rundeck",
+            "jenkins",
             "multistep",
             "subform",
             "workflow"
@@ -1668,6 +1807,9 @@
           "type": "boolean"
         },
         "template": {
+          "type": "string"
+        },
+        "job": {
           "type": "string"
         },
         "awx": {
@@ -4421,8 +4563,9 @@
             "properties": {
               "type": {
                 "enum": [
-                  "template",
-                  "awx"
+                  "awx",
+                  "aap",
+                  "ascender"
                 ]
               },
               "workflow": {
@@ -4448,8 +4591,78 @@
               }
             },
             "required": [
-              "template",
               "roles"
+            ],
+            "oneOf": [
+              {
+                "required": [
+                  "template"
+                ]
+              },
+              {
+                "required": [
+                  "job"
+                ]
+              }
+            ]
+          },
+          {
+            "properties": {
+              "type": {
+                "enum": [
+                  "semaphore",
+                  "rundeck",
+                  "jenkins"
+                ]
+              },
+              "workflow": {
+                "not": {}
+              },
+              "vaultCredentials": {
+                "not": {}
+              },
+              "playbook": {
+                "not": {}
+              },
+              "ansibleCredentials": {
+                "not": {}
+              },
+              "steps": {
+                "not": {}
+              },
+              "expression": {
+                "not": {}
+              },
+              "playbookSubPath": {
+                "not": {}
+              },
+              "awxCredentials": {
+                "not": {}
+              },
+              "executionEnvironment": {
+                "not": {}
+              },
+              "scm_branch": {
+                "not": {}
+              },
+              "instanceGroups": {
+                "not": {}
+              }
+            },
+            "required": [
+              "roles"
+            ],
+            "oneOf": [
+              {
+                "required": [
+                  "template"
+                ]
+              },
+              {
+                "required": [
+                  "job"
+                ]
+              }
             ]
           },
           {
@@ -5724,8 +5937,9 @@
                   "properties": {
                     "type": {
                       "enum": [
-                        "template",
-                        "awx"
+                        "awx",
+                        "aap",
+                        "ascender"
                       ]
                     },
                     "playbook": {
@@ -5741,8 +5955,64 @@
                       "not": {}
                     }
                   },
-                  "required": [
-                    "template"
+                  "oneOf": [
+                    {
+                      "required": [
+                        "template"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "job"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "properties": {
+                    "type": {
+                      "enum": [
+                        "semaphore",
+                        "rundeck",
+                        "jenkins"
+                      ]
+                    },
+                    "playbook": {
+                      "not": {}
+                    },
+                    "vaultCredentials": {
+                      "not": {}
+                    },
+                    "ansibleCredentials": {
+                      "not": {}
+                    },
+                    "steps": {
+                      "not": {}
+                    },
+                    "awxCredentials": {
+                      "not": {}
+                    },
+                    "executionEnvironment": {
+                      "not": {}
+                    },
+                    "instanceGroups": {
+                      "not": {}
+                    },
+                    "scm_branch": {
+                      "not": {}
+                    }
+                  },
+                  "oneOf": [
+                    {
+                      "required": [
+                        "template"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "job"
+                      ]
+                    }
                   ]
                 }
               ],
@@ -5751,8 +6021,12 @@
                   "type": "string",
                   "enum": [
                     "ansible",
-                    "template",
-                    "awx"
+                    "awx",
+                    "aap",
+                    "ascender",
+                    "semaphore",
+                    "rundeck",
+                    "jenkins"
                   ]
                 },
                 "name": {
@@ -5772,6 +6046,9 @@
                   "pattern": "[A-Za-z0-9_\\-]+"
                 },
                 "template": {
+                  "type": "string"
+                },
+                "job": {
                   "type": "string"
                 },
                 "varsFiles": {
@@ -5923,8 +6200,12 @@
             "type": "string",
             "enum": [
               "ansible",
-              "template",
               "awx",
+              "aap",
+              "ascender",
+              "semaphore",
+              "rundeck",
+              "jenkins",
               "multistep",
               "subform",
               "workflow"
@@ -5975,6 +6256,9 @@
             "type": "boolean"
           },
           "template": {
+            "type": "string"
+          },
+          "job": {
             "type": "string"
           },
           "awx": {

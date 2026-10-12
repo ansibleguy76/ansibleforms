@@ -22,12 +22,16 @@ export default {
   auth: {
     authFailed: "認証に失敗しました",
     invalidCredentials: "認証情報が無効です",
-    tooManyFailures: "ログインの失敗が多すぎます : {minutes} 分後にもう一度お試しください",
-    passwordChangeRequired: "先にパスワードを変更してください : 公開されている既定のパスワードです",
+    tooManyFailures:
+      "ログインの失敗が多すぎます : {minutes} 分後にもう一度お試しください",
+    passwordChangeRequired:
+      "先にパスワードを変更してください : 公開されている既定のパスワードです",
     disclaimerRequired: "先に免責事項に同意してください",
     disclaimerAccepted: "免責事項に同意しました",
-    loginDisabled: "認証されていません。このユーザーはログインが有効になっていません。",
-    signInBlocked: "認証されていません。管理者がこのユーザーのサインインをブロックしました。",
+    loginDisabled:
+      "認証されていません。このユーザーはログインが有効になっていません。",
+    signInBlocked:
+      "認証されていません。管理者がこのユーザーのサインインをブロックしました。",
     azureFailed: "Azure AD 認証に失敗しました",
     oidcFailed: "OIDC 認証に失敗しました",
   },
@@ -47,7 +51,8 @@ export default {
     failedGetFormsList: "フォーム一覧の取得に失敗しました",
     formNameNotProvided: "フォーム名が指定されていません",
     failedGetFormConfig: "フォーム設定の取得に失敗しました",
-    onlyAdminsOrDesigners: "フォーム設定全体にアクセスできるのは管理者またはデザイナーのみです",
+    onlyAdminsOrDesigners:
+      "フォーム設定全体にアクセスできるのは管理者またはデザイナーのみです",
     failedGetFormsConfig: "フォーム設定の取得に失敗しました",
     failedGetBackups: "バックアップの取得に失敗しました",
     failedGetEnvVars: "環境変数の取得に失敗しました",
@@ -58,7 +63,8 @@ export default {
     envVarsSaved: "環境設定を保存しました",
     envVarsNotFound: "help.yaml に環境変数セクションが見つかりません",
     failedRestoreForms: "フォームの復元に失敗しました",
-    failedRestoreNoName: "復元に失敗しました。バックアップ名が指定されていません",
+    failedRestoreNoName:
+      "復元に失敗しました。バックアップ名が指定されていません",
     failedRestoreBackup: "'{name}' の復元に失敗しました",
     designerLocked: "デザイナーはロックされています",
     designerLockedBy: "デザイナーは {username} によってロックされています",
@@ -80,8 +86,10 @@ export default {
     oauth2Added: "OAuth2 プロバイダーを追加しました",
     runnerAdded: "ランナーを追加しました",
     runnerNotFound: "ランナーが見つかりません",
-    runnerAdminOnly: "ランナーを追加、変更、削除できるのは admin だけです : ランナーは実行するジョブの認証情報を受け取ります",
-    defaultPasswordRefused: "公開されている既定のパスワード以外を選んでください",
+    runnerAdminOnly:
+      "ランナーを追加、変更、削除できるのは admin だけです : ランナーは実行するジョブの認証情報を受け取ります",
+    defaultPasswordRefused:
+      "公開されている既定のパスワード以外を選んでください",
     passwordTooShort: "パスワードは {min} 文字以上必要です",
     passwordIsUsername: "パスワードにユーザー名は使えません",
     runnerConnectionOk: "ランナーの接続は正常です",
@@ -89,13 +97,18 @@ export default {
     secretStoreNotFound: "シークレットストアが見つかりません",
     secretStoreConnectionOk: "シークレットストアの接続は正常です",
     userNotFound: "ユーザーが見つかりません",
-    currentPasswordRequired: "新しいパスワードを設定するには現在のパスワードが必要です",
+    currentPasswordRequired:
+      "新しいパスワードを設定するには現在のパスワードが必要です",
     currentPasswordWrong: "現在のパスワードが正しくありません",
     cantChangePasswordLdap: "LDAP ユーザーのパスワードは変更できません",
-    directoryTypeUnknown: "LDAP、Entra ID、OIDC のユーザーまたはグループではありません",
-    directoryUserKept: "管理者がこのユーザーをブロックしています。忘れる前にサインインを許可してください",
-    failedDirectoryUser: "LDAP または SSO ユーザーを読み取りまたは変更できませんでした",
-    cantBlockAdmin: "admin ユーザーはブロックできません。復帰するための手段です",
+    directoryTypeUnknown:
+      "LDAP、Entra ID、OIDC のユーザーまたはグループではありません",
+    directoryUserKept:
+      "管理者がこのユーザーをブロックしています。忘れる前にサインインを許可してください",
+    failedDirectoryUser:
+      "LDAP または SSO ユーザーを読み取りまたは変更できませんでした",
+    cantBlockAdmin:
+      "admin ユーザーはブロックできません。復帰するための手段です",
     cantBlockYourself: "自分自身のサインインはブロックできません",
     groupNotFound: "該当するグループが見つかりません",
     groupHasUsers: "不明なグループか、グループにユーザーが所属しています",
@@ -114,27 +127,34 @@ export default {
     failedSyncRepository: "リポジトリをプッシュできませんでした",
     noFormsRepositories: "フォームリポジトリが設定されていません",
     failedApplyConfigSeed: "config seed の適用に失敗しました",
-    noConfigSeed: "config seed が設定されていません (CONFIG_SEED_PATH が空です)",
+    noConfigSeed:
+      "config seed が設定されていません (CONFIG_SEED_PATH が空です)",
     failedFindSsh: "SSH キーの検索に失敗しました",
     failedUpdateSsh: "SSH キーの更新に失敗しました",
     failedFindChatSettings: "チャット設定の検索に失敗しました",
     failedUpdateChatSettings: "チャット設定の更新に失敗しました",
-    seedManagedChatSettings: "チャット設定は config seed で管理されており、読み取り専用です",
+    seedManagedChatSettings:
+      "チャット設定は config seed で管理されており、読み取り専用です",
     chatSettingsUpdated: "チャット設定を更新しました",
     chatCheckFailed: "チャットプロバイダーの確認に失敗しました",
     failedFindLdap: "LDAP の検索に失敗しました",
     ldapCheckFailed: "LDAP の確認に失敗しました",
-    storedPasswordOtherServer: "保存されたパスワードは保存されたサーバーにのみ使用されます : 別のサーバーを確認するにはパスワードを入力してください",
+    storedPasswordOtherServer:
+      "保存されたパスワードは保存されたサーバーにのみ使用されます : 別のサーバーを確認するにはパスワードを入力してください",
     ldapUpdated: "LDAP を更新しました",
     failedUpdateLdap: "LDAP の更新に失敗しました",
-    seedManagedSettings: "設定は config seed で管理されており、読み取り専用です",
-    seedManagedLdap: "LDAP 設定は config seed で管理されており、読み取り専用です",
+    seedManagedSettings:
+      "設定は config seed で管理されており、読み取り専用です",
+    seedManagedLdap:
+      "LDAP 設定は config seed で管理されており、読み取り専用です",
     failedFindSettings: "設定の検索に失敗しました",
     mailCheckFailed: "メールの確認に失敗しました",
     mailSent: "メールを送信しました (ID: {id})",
     failedUpdateSettings: "設定の更新に失敗しました",
-    configLockedByDesigner: "設定はアクティブなデザイナーセッションによってロックされています{username}",
-    configChangedElsewhere: "設定が別の場所で変更されました。保存する前に再読み込みしてください",
+    configLockedByDesigner:
+      "設定はアクティブなデザイナーセッションによってロックされています{username}",
+    configChangedElsewhere:
+      "設定が別の場所で変更されました。保存する前に再読み込みしてください",
     failedImportConfig: "設定のインポートに失敗しました",
     failedExportConfig: "設定のエクスポートに失敗しました",
     failedLegacyCheck: "旧形式の forms.yaml の確認に失敗しました",
@@ -147,12 +167,15 @@ export default {
     failedFindLogo: "ロゴの取得に失敗しました",
     failedUpdateLogo: "ロゴの更新に失敗しました",
     logoNoFile: "ファイルがアップロードされていません",
-    logoInvalidImage: "画像が無効か、サポートされていない形式です。使用できる形式は png、jpeg、webp、gif、svg です",
+    logoInvalidImage:
+      "画像が無効か、サポートされていない形式です。使用できる形式は png、jpeg、webp、gif、svg です",
     failedFindFavicon: "サイトアイコンを取得できませんでした",
     failedUpdateFavicon: "サイトアイコンを更新できませんでした",
-    faviconInvalidImage: "無効またはサポートされていない画像です。使用できる形式は png、ico、svg、webp、gif、jpeg です",
+    faviconInvalidImage:
+      "無効またはサポートされていない画像です。使用できる形式は png、ico、svg、webp、gif、jpeg です",
     hostValueRequired: "ホストの値が必要です",
-    hostNameRequired: "ホスト名 (クエリパラメーター \"name\" または \"host\") が必要です",
+    hostNameRequired:
+      'ホスト名 (クエリパラメーター "name" または "host") が必要です',
   },
   jobs: {
     mustProvideJobId: "jobid を指定する必要があります",
@@ -229,4 +252,4 @@ export default {
       body: "<p>これは AnsibleForms からのテストメッセージです。</p>",
     },
   },
-}
+};

@@ -22,12 +22,16 @@ export default {
   auth: {
     authFailed: "L'autenticació ha fallat",
     invalidCredentials: "Les credencials no són vàlides",
-    tooManyFailures: "Massa inicis de sessió fallits : torneu-ho a provar d'aquí a {minutes} minut(s)",
-    passwordChangeRequired: "Canvieu primer la contrasenya : és la contrasenya per defecte, pública",
+    tooManyFailures:
+      "Massa inicis de sessió fallits : torneu-ho a provar d'aquí a {minutes} minut(s)",
+    passwordChangeRequired:
+      "Canvieu primer la contrasenya : és la contrasenya per defecte, pública",
     disclaimerRequired: "Primer accepta l'avís legal",
     disclaimerAccepted: "L'avís legal s'ha acceptat",
-    loginDisabled: "No autenticat, l'inici de sessió no està habilitat per a aquest usuari.",
-    signInBlocked: "No autenticat, un administrador ha bloquejat l'inici de sessió d'aquest usuari.",
+    loginDisabled:
+      "No autenticat, l'inici de sessió no està habilitat per a aquest usuari.",
+    signInBlocked:
+      "No autenticat, un administrador ha bloquejat l'inici de sessió d'aquest usuari.",
     azureFailed: "L'autenticació amb Azure AD ha fallat",
     oidcFailed: "L'autenticació OIDC ha fallat",
   },
@@ -47,8 +51,10 @@ export default {
     failedGetFormsList: "No s'ha pogut obtenir la llista de formularis",
     formNameNotProvided: "No s'ha indicat el nom del formulari",
     failedGetFormConfig: "No s'ha pogut obtenir la configuració del formulari",
-    onlyAdminsOrDesigners: "Només els administradors o els dissenyadors poden accedir a la configuració completa dels formularis",
-    failedGetFormsConfig: "No s'ha pogut obtenir la configuració dels formularis",
+    onlyAdminsOrDesigners:
+      "Només els administradors o els dissenyadors poden accedir a la configuració completa dels formularis",
+    failedGetFormsConfig:
+      "No s'ha pogut obtenir la configuració dels formularis",
     failedGetBackups: "No s'han pogut obtenir les còpies de seguretat",
     failedGetEnvVars: "No s'han pogut obtenir les variables d'entorn",
     failedSaveEnvVars: "No s'ha pogut desar la configuració de l'entorn",
@@ -56,14 +62,17 @@ export default {
     failedVaultMounts: "No s'han pogut llistar els punts de muntatge de Vault",
     noEnvVarsGiven: "No s'ha indicat cap variable d'entorn",
     envVarsSaved: "Configuració de l'entorn desada",
-    envVarsNotFound: "No s'ha trobat la secció Environment Variables a help.yaml",
+    envVarsNotFound:
+      "No s'ha trobat la secció Environment Variables a help.yaml",
     failedRestoreForms: "No s'han pogut restaurar els formularis",
-    failedRestoreNoName: "No s'ha pogut restaurar, no s'ha indicat el nom de la còpia de seguretat",
+    failedRestoreNoName:
+      "No s'ha pogut restaurar, no s'ha indicat el nom de la còpia de seguretat",
     failedRestoreBackup: "No s'ha pogut restaurar '{name}'",
     designerLocked: "El dissenyador està bloquejat",
     designerLockedBy: "El dissenyador està bloquejat per {username}",
     failedSaveForms: "No s'han pogut desar els formularis",
-    failedValidateForms: "No s'ha pogut validar la nova configuració dels formularis",
+    failedValidateForms:
+      "No s'ha pogut validar la nova configuració dels formularis",
     failedGetLock: "No s'ha pogut obtenir el bloqueig",
   },
   resources: {
@@ -80,22 +89,28 @@ export default {
     oauth2Added: "Proveïdor OAuth2 afegit",
     runnerAdded: "Runner afegit",
     runnerNotFound: "No s'ha trobat el runner",
-    runnerAdminOnly: "Només un admin pot afegir, canviar o eliminar un runner : un runner rep les credencials dels treballs que executa",
-    defaultPasswordRefused: "Trieu una altra contrasenya que no sigui la pública per defecte",
+    runnerAdminOnly:
+      "Només un admin pot afegir, canviar o eliminar un runner : un runner rep les credencials dels treballs que executa",
+    defaultPasswordRefused:
+      "Trieu una altra contrasenya que no sigui la pública per defecte",
     passwordTooShort: "La contrasenya necessita almenys {min} caràcters",
     passwordIsUsername: "La contrasenya no pot ser el nom d'usuari",
     runnerConnectionOk: "La connexió amb el runner és correcta",
     secretStoreAdded: "Magatzem de secrets afegit",
     secretStoreNotFound: "No s'ha trobat el magatzem de secrets",
-    secretStoreConnectionOk: "La connexió amb el magatzem de secrets és correcta",
+    secretStoreConnectionOk:
+      "La connexió amb el magatzem de secrets és correcta",
     userNotFound: "No s'ha trobat l'usuari",
-    currentPasswordRequired: "Cal la teva contrasenya actual per establir-ne una de nova",
+    currentPasswordRequired:
+      "Cal la teva contrasenya actual per establir-ne una de nova",
     currentPasswordWrong: "La contrasenya actual no és correcta",
     cantChangePasswordLdap: "No pots canviar la contrasenya d'un usuari LDAP",
     directoryTypeUnknown: "No és un usuari o grup LDAP, Entra ID o OIDC",
-    directoryUserKept: "Un administrador ha bloquejat aquest usuari: permet-ne l'inici de sessió abans d'oblidar-lo",
+    directoryUserKept:
+      "Un administrador ha bloquejat aquest usuari: permet-ne l'inici de sessió abans d'oblidar-lo",
     failedDirectoryUser: "No s'ha pogut llegir o canviar l'usuari LDAP o SSO",
-    cantBlockAdmin: "L'usuari admin no es pot bloquejar: és la manera de tornar a entrar",
+    cantBlockAdmin:
+      "L'usuari admin no es pot bloquejar: és la manera de tornar a entrar",
     cantBlockYourself: "No pots bloquejar el teu propi inici de sessió",
     groupNotFound: "No s'ha trobat aquest grup",
     groupHasUsers: "Grup desconegut o el grup té usuaris",
@@ -114,27 +129,35 @@ export default {
     failedSyncRepository: "No s’ha pogut fer push del repositori",
     noFormsRepositories: "No hi ha cap repositori de formularis configurat",
     failedApplyConfigSeed: "No s'ha pogut aplicar el config seed",
-    noConfigSeed: "No hi ha cap config seed configurat (CONFIG_SEED_PATH és buit)",
+    noConfigSeed:
+      "No hi ha cap config seed configurat (CONFIG_SEED_PATH és buit)",
     failedFindSsh: "No s'ha pogut trobar la clau SSH",
     failedUpdateSsh: "No s'ha pogut actualitzar la clau SSH",
     failedFindChatSettings: "No s'ha pogut trobar la configuració del xat",
-    failedUpdateChatSettings: "No s'ha pogut actualitzar la configuració del xat",
-    seedManagedChatSettings: "La configuració del xat la gestiona el config seed i és de només lectura",
+    failedUpdateChatSettings:
+      "No s'ha pogut actualitzar la configuració del xat",
+    seedManagedChatSettings:
+      "La configuració del xat la gestiona el config seed i és de només lectura",
     chatSettingsUpdated: "Configuració del xat actualitzada",
     chatCheckFailed: "La comprovació del proveïdor del xat ha fallat",
     failedFindLdap: "No s'ha pogut trobar l'LDAP",
     ldapCheckFailed: "La comprovació de l'LDAP ha fallat",
-    storedPasswordOtherServer: "La contrasenya desada només s'utilitza amb el servidor desat : escriviu la contrasenya per comprovar-ne un altre",
+    storedPasswordOtherServer:
+      "La contrasenya desada només s'utilitza amb el servidor desat : escriviu la contrasenya per comprovar-ne un altre",
     ldapUpdated: "LDAP actualitzat",
     failedUpdateLdap: "No s'ha pogut actualitzar l'LDAP",
-    seedManagedSettings: "La configuració la gestiona el config seed i és de només lectura",
-    seedManagedLdap: "La configuració de l'LDAP la gestiona el config seed i és de només lectura",
+    seedManagedSettings:
+      "La configuració la gestiona el config seed i és de només lectura",
+    seedManagedLdap:
+      "La configuració de l'LDAP la gestiona el config seed i és de només lectura",
     failedFindSettings: "No s'ha pogut trobar la configuració",
     mailCheckFailed: "La comprovació del correu ha fallat",
     mailSent: "Correu enviat amb l'id {id}",
     failedUpdateSettings: "No s'ha pogut actualitzar la configuració",
-    configLockedByDesigner: "La configuració està bloquejada per una sessió activa del dissenyador{username}",
-    configChangedElsewhere: "La configuració s'ha canviat en un altre lloc, torna-la a carregar abans de desar",
+    configLockedByDesigner:
+      "La configuració està bloquejada per una sessió activa del dissenyador{username}",
+    configChangedElsewhere:
+      "La configuració s'ha canviat en un altre lloc, torna-la a carregar abans de desar",
     failedImportConfig: "No s'ha pogut importar la configuració",
     failedExportConfig: "No s'ha pogut exportar la configuració",
     failedLegacyCheck: "No s'ha pogut comprovar si hi ha un forms.yaml antic",
@@ -147,12 +170,15 @@ export default {
     failedFindLogo: "No s'ha pogut obtenir el logotip",
     failedUpdateLogo: "No s'ha pogut actualitzar el logotip",
     logoNoFile: "No s'ha pujat cap fitxer",
-    logoInvalidImage: "La imatge no és vàlida o no és compatible, els tipus permesos són png, jpeg, webp, gif i svg",
+    logoInvalidImage:
+      "La imatge no és vàlida o no és compatible, els tipus permesos són png, jpeg, webp, gif i svg",
     failedFindFavicon: "No s'ha pogut obtenir la icona del lloc",
     failedUpdateFavicon: "No s'ha pogut actualitzar la icona del lloc",
-    faviconInvalidImage: "Imatge no vàlida o no compatible, els tipus permesos són png, ico, svg, webp, gif i jpeg",
+    faviconInvalidImage:
+      "Imatge no vàlida o no compatible, els tipus permesos són png, ico, svg, webp, gif i jpeg",
     hostValueRequired: "Cal un valor d'amfitrió",
-    hostNameRequired: "Cal el nom de l'amfitrió (paràmetre de consulta \"name\" o \"host\")",
+    hostNameRequired:
+      'Cal el nom de l\'amfitrió (paràmetre de consulta "name" o "host")',
   },
   jobs: {
     mustProvideJobId: "Has d'indicar un jobid",
@@ -160,7 +186,8 @@ export default {
     failedAbort: "No s'ha pogut avortar la tasca",
     failedRetrieve: "No s'ha pogut obtenir la tasca",
     failedRetrieveJobs: "No s'han pogut obtenir les tasques",
-    failedRetrieveApprovals: "No s'han pogut obtenir les tasques pendents d'aprovació",
+    failedRetrieveApprovals:
+      "No s'han pogut obtenir les tasques pendents d'aprovació",
     failedDelete: "No s'ha pogut suprimir la tasca",
     deleted: "Tasca suprimida",
     failedLaunch: "No s'ha pogut llançar el formulari",
@@ -171,7 +198,8 @@ export default {
     approved: "La tasca {id} s'ha aprovat",
     rejected: "La tasca {id} s'ha rebutjat",
     relaunched: "La tasca s'ha tornat a llançar amb l'id de tasca {id}",
-    failedRetrieveRawData: "No s'han pogut obtenir les dades en brut del formulari",
+    failedRetrieveRawData:
+      "No s'han pogut obtenir les dades en brut del formulari",
   },
   email: {
     approval: {
@@ -229,4 +257,4 @@ export default {
       body: "<p>Aquest és un missatge de prova d'AnsibleForms</p>",
     },
   },
-}
+};

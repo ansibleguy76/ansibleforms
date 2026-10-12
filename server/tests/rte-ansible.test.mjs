@@ -437,14 +437,29 @@ describe("which runner runs a playbook job", () => {
     assert.equal(byDefault.row.name, "rte-default");
   });
 
-  test("a template form may name a semaphore, a rundeck or a jenkins runner ; a playbook form may not", async () => {
-    runnerRows = [{ name: "sem", type: "semaphore" }, { name: "rd", type: "rundeck" }, { name: "ci", type: "jenkins" }];
+  test("a form's type names the runner type : its runner must be one, its default is that type's", async () => {
+    runnerRows = [
+      { name: "sem", type: "semaphore", is_default: 1 }, { name: "rd", type: "rundeck", is_default: 1 }, { name: "ci", type: "jenkins" },
+      { name: "aap-prod", type: "awx", flavour: "aap", is_default: 1 },
+    ];
+    assert.equal((await resolveRunner({ jobType: "awx", formType: "jenkins", extravars: { __runner__: "ci" } })).impl.type, "jenkins");
+    assert.equal((await resolveRunner({ jobType: "awx", formType: "semaphore", extravars: { __runner__: "sem" } })).impl.type, "semaphore");
+    // no runner named : the default of the form's type
+    assert.equal((await resolveRunner({ jobType: "awx", formType: "rundeck", extravars: {} })).row.name, "rd");
+    assert.equal((await resolveRunner({ jobType: "awx", formType: "aap", extravars: {} })).row.name, "aap-prod", "an aap form runs on the awx default");
+    assert.equal((await resolveRunner({ jobType: "awx", formType: "ascender", extravars: { __runner__: "aap-prod" } })).row.name, "aap-prod", "no flavour check");
+    // a runner of another type : refused, with the type to name
+    await assert.rejects(resolveRunner({ jobType: "awx", formType: "semaphore", extravars: { __runner__: "rd" } }), /Runner 'rd' is a rundeck runner, this form is of type semaphore : name a semaphore runner/);
+    await assert.rejects(resolveRunner({ jobType: "awx", formType: "awx", extravars: { __runner__: "sem" } }), /Runner 'sem' is a semaphore runner, this form is of type awx : name an awx runner/);
+    await assert.rejects(resolveRunner({ jobType: "ansible", formType: "ansible", extravars: { __runner__: "ci" } }), /Runner 'ci' is a jenkins runner, this form is of type ansible : name an RTE runner/);
+    // no default of its type : what to add
+    await assert.rejects(resolveRunner({ jobType: "awx", formType: "jenkins", extravars: {} }), /No runner for a form of type jenkins : add one of type jenkins/);
+  });
+
+  test("a job whose form type is not given is matched by capability, as before", async () => {
+    runnerRows = [{ name: "sem", type: "semaphore" }, { name: "ci", type: "jenkins" }];
     assert.equal((await resolveRunner({ jobType: "awx", extravars: { __runner__: "ci" } })).impl.type, "jenkins");
-    await assert.rejects(resolveRunner({ jobType: "ansible", extravars: { __runner__: "ci" } }), /Runner 'ci' \(jenkins\) cannot run a playbook/);
-    assert.equal((await resolveRunner({ jobType: "awx", extravars: { __runner__: "sem" } })).impl.type, "semaphore");
-    assert.equal((await resolveRunner({ jobType: "awx", extravars: { __runner__: "rd" } })).impl.type, "rundeck");
     await assert.rejects(resolveRunner({ jobType: "ansible", extravars: { __runner__: "sem" } }), /Runner 'sem' \(semaphore\) cannot run a playbook/);
-    await assert.rejects(resolveRunner({ jobType: "ansible", extravars: { __runner__: "rd" } }), /Runner 'rd' \(rundeck\) cannot run a playbook/);
   });
 
   test("a runner the form names but nobody added fails the job with a line that says so", async () => {

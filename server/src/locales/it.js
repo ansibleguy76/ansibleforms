@@ -22,12 +22,15 @@ export default {
   auth: {
     authFailed: "Autenticazione non riuscita",
     invalidCredentials: "Credenziali non valide",
-    tooManyFailures: "Troppi accessi non riusciti : riprova tra {minutes} minuto/i",
-    passwordChangeRequired: "Cambia prima la password : è la password predefinita pubblica",
+    tooManyFailures:
+      "Troppi accessi non riusciti : riprova tra {minutes} minuto/i",
+    passwordChangeRequired:
+      "Cambia prima la password : è la password predefinita pubblica",
     disclaimerRequired: "Accetta prima il disclaimer",
     disclaimerAccepted: "Il disclaimer è accettato",
     loginDisabled: "Non autenticato, login non abilitato per questo utente.",
-    signInBlocked: "Non autenticato, un amministratore ha bloccato l'accesso di questo utente.",
+    signInBlocked:
+      "Non autenticato, un amministratore ha bloccato l'accesso di questo utente.",
     azureFailed: "Autenticazione Azure AD non riuscita",
     oidcFailed: "Autenticazione OIDC non riuscita",
   },
@@ -47,7 +50,8 @@ export default {
     failedGetFormsList: "Impossibile ottenere l'elenco dei moduli",
     formNameNotProvided: "Nome modulo non fornito",
     failedGetFormConfig: "Impossibile ottenere la configurazione del modulo",
-    onlyAdminsOrDesigners: "Solo amministratori o designer possono accedere alla configurazione completa dei moduli",
+    onlyAdminsOrDesigners:
+      "Solo amministratori o designer possono accedere alla configurazione completa dei moduli",
     failedGetFormsConfig: "Impossibile ottenere la configurazione dei moduli",
     failedGetBackups: "Impossibile ottenere i backup",
     failedGetEnvVars: "Impossibile ottenere le variabili d'ambiente",
@@ -63,7 +67,8 @@ export default {
     designerLocked: "Designer bloccato",
     designerLockedBy: "Designer bloccato da {username}",
     failedSaveForms: "Impossibile salvare i moduli",
-    failedValidateForms: "Impossibile validare la nuova configurazione dei moduli",
+    failedValidateForms:
+      "Impossibile validare la nuova configurazione dei moduli",
     failedGetLock: "Impossibile ottenere il lock",
   },
   resources: {
@@ -83,19 +88,24 @@ export default {
     secretStoreConnectionOk: "Connessione all'archivio segreti OK",
     runnerAdded: "Runner aggiunto",
     runnerNotFound: "Runner non trovato",
-    runnerAdminOnly: "Solo un admin può aggiungere, modificare o eliminare un runner : un runner riceve le credenziali dei job che esegue",
-    defaultPasswordRefused: "Scegli una password diversa da quella predefinita pubblica",
+    runnerAdminOnly:
+      "Solo un admin può aggiungere, modificare o eliminare un runner : un runner riceve le credenziali dei job che esegue",
+    defaultPasswordRefused:
+      "Scegli una password diversa da quella predefinita pubblica",
     passwordTooShort: "La password deve avere almeno {min} caratteri",
     passwordIsUsername: "La password non può essere il nome utente",
     runnerConnectionOk: "La connessione al runner è OK",
     userNotFound: "Utente non trovato",
-    currentPasswordRequired: "Per impostare una nuova password è necessaria quella attuale",
+    currentPasswordRequired:
+      "Per impostare una nuova password è necessaria quella attuale",
     currentPasswordWrong: "La password attuale non è corretta",
     cantChangePasswordLdap: "Non puoi cambiare la password di un utente LDAP",
     directoryTypeUnknown: "Non è un utente o gruppo LDAP, Entra ID o OIDC",
-    directoryUserKept: "Un amministratore ha bloccato questo utente: consenti l'accesso prima di dimenticarlo",
+    directoryUserKept:
+      "Un amministratore ha bloccato questo utente: consenti l'accesso prima di dimenticarlo",
     failedDirectoryUser: "Impossibile leggere o modificare l'utente LDAP o SSO",
-    cantBlockAdmin: "L'utente admin non può essere bloccato: è la via per rientrare",
+    cantBlockAdmin:
+      "L'utente admin non può essere bloccato: è la via per rientrare",
     cantBlockYourself: "Non puoi bloccare il tuo stesso accesso",
     groupNotFound: "Gruppo non trovato",
     groupHasUsers: "Gruppo sconosciuto o gruppo con utenti",
@@ -114,27 +124,35 @@ export default {
     failedSyncRepository: "Push del repository non riuscito",
     noFormsRepositories: "Nessun repository di moduli configurato",
     failedApplyConfigSeed: "Impossibile applicare il seed di configurazione",
-    noConfigSeed: "Nessun seed di configurazione e configurato (CONFIG_SEED_PATH e vuoto)",
+    noConfigSeed:
+      "Nessun seed di configurazione e configurato (CONFIG_SEED_PATH e vuoto)",
     failedFindSsh: "Impossibile trovare la chiave SSH",
     failedUpdateSsh: "Impossibile aggiornare la chiave SSH",
     failedFindChatSettings: "Impossibile trovare le impostazioni della chat",
-    failedUpdateChatSettings: "Impossibile aggiornare le impostazioni della chat",
-    seedManagedChatSettings: "Le impostazioni della chat sono gestite dal config seed e sono di sola lettura",
+    failedUpdateChatSettings:
+      "Impossibile aggiornare le impostazioni della chat",
+    seedManagedChatSettings:
+      "Le impostazioni della chat sono gestite dal config seed e sono di sola lettura",
     chatSettingsUpdated: "Impostazioni della chat aggiornate",
     chatCheckFailed: "La verifica del fornitore della chat non è riuscita",
     failedFindLdap: "Impossibile trovare LDAP",
     ldapCheckFailed: "Verifica LDAP non riuscita",
-    storedPasswordOtherServer: "La password salvata si usa solo con il server salvato : digita la password per verificarne un altro",
+    storedPasswordOtherServer:
+      "La password salvata si usa solo con il server salvato : digita la password per verificarne un altro",
     ldapUpdated: "LDAP aggiornato",
     failedUpdateLdap: "Aggiornamento LDAP non riuscito",
-    seedManagedSettings: "Le impostazioni sono gestite dal seed di configurazione e sono di sola lettura",
-    seedManagedLdap: "La configurazione LDAP è gestita dal seed di configurazione ed è di sola lettura",
+    seedManagedSettings:
+      "Le impostazioni sono gestite dal seed di configurazione e sono di sola lettura",
+    seedManagedLdap:
+      "La configurazione LDAP è gestita dal seed di configurazione ed è di sola lettura",
     failedFindSettings: "Impossibile trovare le impostazioni",
     mailCheckFailed: "Verifica mail non riuscita",
     mailSent: "Mail inviata con id {id}",
     failedUpdateSettings: "Impossibile aggiornare le impostazioni",
-    configLockedByDesigner: "La configurazione e bloccata da una sessione designer attiva{username}",
-    configChangedElsewhere: "La configurazione è stata modificata altrove, ricaricare prima di salvare",
+    configLockedByDesigner:
+      "La configurazione e bloccata da una sessione designer attiva{username}",
+    configChangedElsewhere:
+      "La configurazione è stata modificata altrove, ricaricare prima di salvare",
     failedImportConfig: "Import configurazione non riuscito",
     failedExportConfig: "Export configurazione non riuscito",
     failedLegacyCheck: "Verifica di forms.yaml legacy non riuscita",
@@ -147,12 +165,14 @@ export default {
     failedFindLogo: "Impossibile recuperare il logo",
     failedUpdateLogo: "Impossibile aggiornare il logo",
     logoNoFile: "Nessun file caricato",
-    logoInvalidImage: "Immagine non valida o non supportata, i tipi consentiti sono png, jpeg, webp, gif e svg",
+    logoInvalidImage:
+      "Immagine non valida o non supportata, i tipi consentiti sono png, jpeg, webp, gif e svg",
     failedFindFavicon: "Impossibile ottenere l'icona del sito",
     failedUpdateFavicon: "Impossibile aggiornare l'icona del sito",
-    faviconInvalidImage: "Immagine non valida o non supportata, i tipi consentiti sono png, ico, svg, webp, gif e jpeg",
+    faviconInvalidImage:
+      "Immagine non valida o non supportata, i tipi consentiti sono png, ico, svg, webp, gif e jpeg",
     hostValueRequired: "Valore host richiesto",
-    hostNameRequired: "Nome host richiesto (parametro query \"name\" o \"host\")",
+    hostNameRequired: 'Nome host richiesto (parametro query "name" o "host")',
   },
   jobs: {
     mustProvideJobId: "Devi fornire un jobid",
@@ -200,7 +220,8 @@ export default {
       launchBy: "Il job e stato avviato da {user}.",
       relaunchBy: "Il job e stato riavviato da {user}.",
       deleteBy: "Il job e stato eliminato da {user}.",
-      approveBy: "Il job e stato approvato da {user} e continuera l'esecuzione.",
+      approveBy:
+        "Il job e stato approvato da {user} e continuera l'esecuzione.",
       rejectBy: "Il job e stato rifiutato da {user}.",
     },
     // the subjects : "AnsibleForms '<form>' [<type>] (<id>) - <one of these>", and the
@@ -229,4 +250,4 @@ export default {
       body: "<p>Questo è un messaggio di prova di AnsibleForms</p>",
     },
   },
-}
+};

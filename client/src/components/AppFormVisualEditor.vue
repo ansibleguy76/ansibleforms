@@ -35,7 +35,8 @@ import {
   forbiddenFormKeys,
   fieldTypeAllows,
   TEMPLATE_FORM_TYPES,
-  TEMPLATE_RUNNER_TYPES,
+  JOB_FORM_TYPES,
+  RUNNER_TYPE_OF,
 } from '@/config/formFields';
 import { fieldProperties } from '@/config/fieldProperties';
 import { availableIcons } from '@/config/icons';
@@ -232,8 +233,16 @@ function removeFrom(key, value) {
 function allows(key) {
   return !(forbiddenFormKeys[form.value?.type] || []).includes(key);
 }
-// a template form (or awx, its old name)
+// a form that runs a template or job on a runner (awx, aap, ascender, semaphore, rundeck, jenkins)
 const awx = computed(() => TEMPLATE_FORM_TYPES.includes(form.value?.type));
+// a Rundeck or a Jenkins form says `job:` for what it runs, the others `template:` ; a form
+// written with the other word keeps it
+const saysJob = computed(() => JOB_FORM_TYPES.includes(form.value?.type));
+const whatKey = computed(() => {
+  if (form.value?.template !== undefined) return 'template';
+  if (form.value?.job !== undefined) return 'job';
+  return saysJob.value ? 'job' : 'template';
+});
 const runs = computed(() => form.value?.type === 'ansible' || awx.value);
 // the text settings : the key, its label, its icon, when it shows, its help
 const textSettings = computed(() =>
@@ -325,9 +334,10 @@ onMounted(async () => {
 });
 const runnerChoices = computed(() => {
   if (!runners.value) return null;
-  // a template form : any runner that runs templates (AWX, Semaphore, Rundeck, Jenkins)
-  const needs = awx.value ? TEMPLATE_RUNNER_TYPES : ['rte'];
-  return runners.value.filter((r) => needs.includes(r.type)).map((r) => r.name);
+  // the runners of the type the form's type runs on (an aap form : the awx runners)
+  const needs = RUNNER_TYPE_OF[form.value?.type];
+  if (!needs) return [];
+  return runners.value.filter((r) => r.type === needs).map((r) => r.name);
 });
 
 // ─── notifications, approval, credentials : nested, each edited a key at a time ───
@@ -865,18 +875,20 @@ defineExpose({
           <div class="form-text">{{ t('designer.helpWorkflow') }}</div>
         </div>
         <div v-if="awx">
-          <label class="form-label fw-bold">{{ t('designer.formTemplate') }}</label>
+          <label class="form-label fw-bold">{{
+            t(whatKey === 'job' ? 'designer.formJob' : 'designer.formTemplate')
+          }}</label>
           <div class="input-group">
             <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="file-code" /></span>
             <input
               class="form-control"
-              :class="{ 'is-invalid': !form.template.trim() }"
-              :value="form.template"
+              :class="{ 'is-invalid': !String(form[whatKey] || '').trim() }"
+              :value="form[whatKey] || ''"
               :disabled="locked"
-              @change="setText('template', $event.target.value)"
+              @change="setText(whatKey, $event.target.value)"
             />
           </div>
-          <div class="form-text">{{ t('designer.helpTemplate') }}</div>
+          <div class="form-text">{{ t(whatKey === 'job' ? 'designer.helpJob' : 'designer.helpTemplate') }}</div>
         </div>
         <!-- the runner : picked from the instance's, of the type the form needs ; typed when the
              list cannot be read -->

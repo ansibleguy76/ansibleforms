@@ -7,7 +7,7 @@ import mysql from "../models/db.model.js";
 import Job from "../models/job.model.js";
 import Runner from "../models/runner.model.js";
 import { getRunner } from "./index.js";
-import { runnerKind } from "../lib/jobTypes.js";
+import { runnerKind, RUNNER_TYPE_OF } from "../lib/jobTypes.js";
 
 function getTimestamp() {
   return moment.utc(Date.now()).format("YYYY-MM-DD HH:mm:ss");
@@ -40,11 +40,15 @@ export async function approvalGate({ jobId, jobType, extravars, approval }) {
   return true;
 }
 
-// What a job of each form type needs from its runner, and whose default it falls back to
+// What a job of each job type needs from its runner : a job of a form that does not say its type
+// (an older caller) is matched by capability, and falls back to the default rte or awx
 const NEEDS = {
   ansible: { capability: "playbook", defaultType: "rte" },
   awx: { capability: "template", defaultType: "awx" },
 };
+
+// how the error names a runner type
+const RUNNER_LABEL = { rte: "an RTE", awx: "an awx", semaphore: "a semaphore", rundeck: "a rundeck", jenkins: "a jenkins" };
 
 // `awx: <name>` on a form is the 7.x way of naming the AWX connection : an alias of
 // `runner: <name>` since 7, removed in 8. Said once per name, not on every job.
@@ -56,16 +60,19 @@ function warnAwxAlias(name) {
 }
 
 /**
- * Where a job runs. A form names a runner with `runner: <name>` (extravar __runner__ ;
- * `awx: <name>` is a deprecated alias) ; without one, the default runner of the type the
- * job needs : rte for a playbook, awx for a template. Without that the job fails : since
- * 7 the app runs nothing itself.
+ * Where a job runs. A form's type names the product it runs on (RUNNER_TYPE_OF : ansible an
+ * RTE, awx, aap and ascender an awx runner, semaphore, rundeck, jenkins their own) ; the form
+ * names a runner of that type with `runner: <name>` (extravar __runner__ ; `awx: <name>` is a
+ * deprecated alias), or runs on its type's default. Without that the job fails : since 7 the
+ * app runs nothing itself.
  * Returns { impl, row } : the runner implementation and its row.
  */
-export async function resolveRunner({ jobType, extravars }) {
+export async function resolveRunner({ jobType, formType, extravars }) {
   const needs = NEEDS[jobType];
   if (!needs) throw new Errors.BadRequestError(`No runner for jobs of type '${jobType}'`);
   const what = needs.capability;
+  // the runner type the form's type asks for ; none when the caller did not say (by capability)
+  const runnerType = RUNNER_TYPE_OF[formType];
   let name = extravars?.__runner__;
   if (!name && extravars?.__awx__) {
     name = extravars.__awx__;
@@ -75,26 +82,31 @@ export async function resolveRunner({ jobType, extravars }) {
     const row = await Runner.findByName(name);
     if (!row) throw new Errors.NotFoundError(`No runner named '${name}' - add it under Connections > Runners`);
     const impl = getRunner(row.type);
+    if (runnerType && row.type !== runnerType) {
+      throw new Errors.BadRequestError(`Runner '${name}' is ${RUNNER_LABEL[row.type] || row.type} runner, this form is of type ${formType} : name ${RUNNER_LABEL[runnerType] || runnerType} runner`);
+    }
     if (!impl.capabilities[what]) throw new Errors.BadRequestError(`Runner '${name}' (${row.type}) cannot run a ${what}`);
     return { impl, row };
   }
-  const row = await Runner.findDefault(needs.defaultType);
+  const defaultType = runnerType || needs.defaultType;
+  const row = await Runner.findDefault(defaultType);
   if (row) return { impl: getRunner(row.type), row };
-  throw new Errors.NotFoundError(`No runner to run this ${what} : add one of type ${needs.defaultType} under Connections > Runners and mark it as default, or name it on the form with runner: <name>`);
+  const forms = runnerType ? `for a form of type ${formType}` : `to run this ${what}`;
+  throw new Errors.NotFoundError(`No runner ${forms} : add one of type ${defaultType} under Connections > Runners and mark it as default, or name it on the form with runner: <name>`);
 }
 
 /**
  * Runs an ansible or awx job : through the approval gate (unless approved, or a step of a
  * multistep, which approves as a whole), then on its runner. Resolves when the job ended.
  */
-export async function dispatch({ jobId, jobType, extravars, credentialMap, approval = null, approved = false }) {
+export async function dispatch({ jobId, jobType, formType, extravars, credentialMap, approval = null, approved = false }) {
   if (approval && !approved) {
     return approvalGate({ jobId, jobType, extravars, approval });
   }
   if (approval) logger.notice(`Continuing ${jobType} job ${jobId}, it has been approved`);
   let runner;
   try {
-    runner = await resolveRunner({ jobType, extravars });
+    runner = await resolveRunner({ jobType, formType, extravars });
   } catch (err) {
     await Job.endJobStatus(jobId, (await Job.lastOrder(jobId)) + 1, "stderr", "failed", `[ERROR]: ${err.message}`);
     return false;

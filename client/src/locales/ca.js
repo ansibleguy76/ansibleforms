@@ -1464,10 +1464,16 @@ export default {
       caBundleHelp:
         "Els certificats PEM de l'autoritat que va signar el certificat del runner: la seva arrel i després els intermedis.",
       customCa: 'Utilitza un certificat de CA personalitzat',
-      default_playbook: 'Formularis de playbook',
-      default_playbookHelp: "On s'executa un formulari de playbook que no anomena cap runner.",
-      default_template: 'Formularis de plantilla',
-      default_templateHelp: "On s'executa un formulari de plantilla que no anomena cap runner.",
+      default_rte: 'Formularis de playbook',
+      default_rteHelp: "On s'executa un formulari ansible que no anomena cap runner.",
+      default_awx: 'Formularis AWX, AAP i Ascender',
+      default_awxHelp: "On s'executa un formulari awx, aap o ascender que no anomena cap runner.",
+      default_semaphore: 'Formularis Semaphore',
+      default_semaphoreHelp: "On s'executa un formulari semaphore que no anomena cap runner.",
+      default_rundeck: 'Formularis Rundeck',
+      default_rundeckHelp: "On s'executa un formulari rundeck que no anomena cap runner.",
+      default_jenkins: 'Formularis Jenkins',
+      default_jenkinsHelp: "On s'executa un formulari jenkins que no anomena cap runner.",
       defaultsTitle: 'Runners predeterminats',
       editDefaults: 'Edita els predeterminats',
       flavour: 'Producte',
@@ -1525,8 +1531,6 @@ export default {
       tokenHelp_jenkins: "Un token d'API de l'usuari de Jenkins: menú de l'usuari, Security, API Token.",
       usernameHelp_jenkins:
         "L'usuari de Jenkins al qual pertany el token d'API; els jobs s'executen com aquest usuari.",
-      noDefaultHelp:
-        "Mai un predeterminat: un formulari de plantilla que no anomena cap runner s'executa a l'AWX predeterminat, així que un formulari anomena aquest runner amb runner: <name>.",
     },
     mail: {
       label: 'Configuració del correu',
@@ -1894,7 +1898,10 @@ export default {
     helpPlaybook: 'El playbook que executa.',
     formWorkflow: 'Workflow',
     helpWorkflow: 'El workflow que executa, un de Dissenyador > Workflows.',
-    helpTemplate: "La plantilla de tasca d'AWX que llança.",
+    helpTemplate:
+      "La plantilla que llança al runner: una plantilla de job o de workflow d'AWX, una plantilla de Semaphore.",
+    formJob: 'Job',
+    helpJob: 'El job que executa al runner: el seu nom, o grup/nom (Rundeck), carpeta/nom (Jenkins).',
     helpInventory: "L'inventari sobre el qual s'executen les tasques.",
     helpScmBranch: 'La branca que AWX fa servir per a la plantilla.',
     helpExecEnv: "L'entorn d'execució d'AWX de les seves tasques.",

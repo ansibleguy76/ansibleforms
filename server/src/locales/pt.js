@@ -22,12 +22,16 @@ export default {
   auth: {
     authFailed: "A autenticação falhou",
     invalidCredentials: "Credenciais inválidas",
-    tooManyFailures: "Demasiados inícios de sessão falhados : tente novamente dentro de {minutes} minuto(s)",
-    passwordChangeRequired: "Altere primeiro a sua palavra-passe : é a palavra-passe predefinida pública",
+    tooManyFailures:
+      "Demasiados inícios de sessão falhados : tente novamente dentro de {minutes} minuto(s)",
+    passwordChangeRequired:
+      "Altere primeiro a sua palavra-passe : é a palavra-passe predefinida pública",
     disclaimerRequired: "Aceite primeiro o aviso legal",
     disclaimerAccepted: "O aviso legal foi aceite",
-    loginDisabled: "Não autenticado, o início de sessão não está ativado para este utilizador.",
-    signInBlocked: "Não autenticado, um administrador bloqueou o início de sessão deste utilizador.",
+    loginDisabled:
+      "Não autenticado, o início de sessão não está ativado para este utilizador.",
+    signInBlocked:
+      "Não autenticado, um administrador bloqueou o início de sessão deste utilizador.",
     azureFailed: "A autenticação com o Azure AD falhou",
     oidcFailed: "A autenticação com OIDC falhou",
   },
@@ -47,7 +51,8 @@ export default {
     failedGetFormsList: "Falha ao obter a lista de formulários",
     formNameNotProvided: "Nome do formulário não indicado",
     failedGetFormConfig: "Falha ao obter a configuração do formulário",
-    onlyAdminsOrDesigners: "Só os administradores ou designers podem aceder à configuração completa dos formulários",
+    onlyAdminsOrDesigners:
+      "Só os administradores ou designers podem aceder à configuração completa dos formulários",
     failedGetFormsConfig: "Falha ao obter a configuração dos formulários",
     failedGetBackups: "Falha ao obter as cópias de segurança",
     failedGetEnvVars: "Falha ao obter as variáveis de ambiente",
@@ -58,7 +63,8 @@ export default {
     envVarsSaved: "Definições de ambiente guardadas",
     envVarsNotFound: "Secção Environment Variables não encontrada no help.yaml",
     failedRestoreForms: "Falha ao restaurar os formulários",
-    failedRestoreNoName: "Falha ao restaurar, não foi indicado o nome da cópia de segurança",
+    failedRestoreNoName:
+      "Falha ao restaurar, não foi indicado o nome da cópia de segurança",
     failedRestoreBackup: "Falha ao restaurar '{name}'",
     designerLocked: "O designer está bloqueado",
     designerLockedBy: "O designer está bloqueado por {username}",
@@ -80,8 +86,10 @@ export default {
     oauth2Added: "Fornecedor OAuth2 adicionado",
     runnerAdded: "Runner adicionado",
     runnerNotFound: "Runner não encontrado",
-    runnerAdminOnly: "Só um admin pode adicionar, alterar ou eliminar um runner : um runner recebe as credenciais dos trabalhos que executa",
-    defaultPasswordRefused: "Escolha outra palavra-passe que não a predefinida pública",
+    runnerAdminOnly:
+      "Só um admin pode adicionar, alterar ou eliminar um runner : um runner recebe as credenciais dos trabalhos que executa",
+    defaultPasswordRefused:
+      "Escolha outra palavra-passe que não a predefinida pública",
     passwordTooShort: "A palavra-passe precisa de pelo menos {min} caracteres",
     passwordIsUsername: "A palavra-passe não pode ser o nome de utilizador",
     runnerConnectionOk: "A ligação ao runner está OK",
@@ -89,13 +97,18 @@ export default {
     secretStoreNotFound: "Cofre de segredos não encontrado",
     secretStoreConnectionOk: "A ligação ao cofre de segredos está OK",
     userNotFound: "Utilizador não encontrado",
-    currentPasswordRequired: "A sua palavra-passe atual é necessária para definir uma nova",
+    currentPasswordRequired:
+      "A sua palavra-passe atual é necessária para definir uma nova",
     currentPasswordWrong: "A palavra-passe atual não está correta",
-    cantChangePasswordLdap: "Não pode alterar a palavra-passe de um utilizador LDAP",
+    cantChangePasswordLdap:
+      "Não pode alterar a palavra-passe de um utilizador LDAP",
     directoryTypeUnknown: "Não é um utilizador ou grupo LDAP, Entra ID ou OIDC",
-    directoryUserKept: "Um administrador bloqueou este utilizador: permita o início de sessão antes de o esquecer",
-    failedDirectoryUser: "Não foi possível ler ou alterar o utilizador LDAP ou SSO",
-    cantBlockAdmin: "O utilizador admin não pode ser bloqueado: é a forma de voltar a entrar",
+    directoryUserKept:
+      "Um administrador bloqueou este utilizador: permita o início de sessão antes de o esquecer",
+    failedDirectoryUser:
+      "Não foi possível ler ou alterar o utilizador LDAP ou SSO",
+    cantBlockAdmin:
+      "O utilizador admin não pode ser bloqueado: é a forma de voltar a entrar",
     cantBlockYourself: "Não pode bloquear o seu próprio início de sessão",
     groupNotFound: "Grupo não encontrado",
     groupHasUsers: "Grupo desconhecido ou o grupo tem utilizadores",
@@ -114,27 +127,34 @@ export default {
     failedSyncRepository: "Não foi possível fazer push do repositório",
     noFormsRepositories: "Não há repositórios de formulários configurados",
     failedApplyConfigSeed: "Falha ao aplicar o config seed",
-    noConfigSeed: "Não está configurado nenhum config seed (CONFIG_SEED_PATH está vazio)",
+    noConfigSeed:
+      "Não está configurado nenhum config seed (CONFIG_SEED_PATH está vazio)",
     failedFindSsh: "Falha ao encontrar a chave SSH",
     failedUpdateSsh: "Falha ao atualizar a chave SSH",
     failedFindChatSettings: "Falha ao encontrar as definições do chat",
     failedUpdateChatSettings: "Falha ao atualizar as definições do chat",
-    seedManagedChatSettings: "As definições do chat são geridas pelo config seed e são só de leitura",
+    seedManagedChatSettings:
+      "As definições do chat são geridas pelo config seed e são só de leitura",
     chatSettingsUpdated: "Definições do chat atualizadas",
     chatCheckFailed: "A verificação do fornecedor do chat falhou",
     failedFindLdap: "Falha ao encontrar o LDAP",
     ldapCheckFailed: "A verificação LDAP falhou",
-    storedPasswordOtherServer: "A palavra-passe guardada só é usada com o servidor guardado : escreva a palavra-passe para verificar outro",
+    storedPasswordOtherServer:
+      "A palavra-passe guardada só é usada com o servidor guardado : escreva a palavra-passe para verificar outro",
     ldapUpdated: "LDAP atualizado",
     failedUpdateLdap: "Falha ao atualizar o LDAP",
-    seedManagedSettings: "As definições são geridas pelo config seed e são só de leitura",
-    seedManagedLdap: "A configuração LDAP é gerida pelo config seed e é só de leitura",
+    seedManagedSettings:
+      "As definições são geridas pelo config seed e são só de leitura",
+    seedManagedLdap:
+      "A configuração LDAP é gerida pelo config seed e é só de leitura",
     failedFindSettings: "Falha ao encontrar as definições",
     mailCheckFailed: "A verificação do correio falhou",
     mailSent: "Correio enviado com o id {id}",
     failedUpdateSettings: "Falha ao atualizar as definições",
-    configLockedByDesigner: "A configuração está bloqueada por uma sessão ativa do designer{username}",
-    configChangedElsewhere: "A configuração foi alterada noutro local, recarregue antes de guardar",
+    configLockedByDesigner:
+      "A configuração está bloqueada por uma sessão ativa do designer{username}",
+    configChangedElsewhere:
+      "A configuração foi alterada noutro local, recarregue antes de guardar",
     failedImportConfig: "Falha ao importar a configuração",
     failedExportConfig: "Falha ao exportar a configuração",
     failedLegacyCheck: "Falha ao procurar o forms.yaml antigo",
@@ -147,12 +167,15 @@ export default {
     failedFindLogo: "Falha ao obter o logótipo",
     failedUpdateLogo: "Falha ao atualizar o logótipo",
     logoNoFile: "Não foi carregado nenhum ficheiro",
-    logoInvalidImage: "Imagem inválida ou não suportada, os tipos permitidos são png, jpeg, webp, gif e svg",
+    logoInvalidImage:
+      "Imagem inválida ou não suportada, os tipos permitidos são png, jpeg, webp, gif e svg",
     failedFindFavicon: "Não foi possível obter o ícone do site",
     failedUpdateFavicon: "Não foi possível atualizar o ícone do site",
-    faviconInvalidImage: "Imagem inválida ou não suportada, os tipos permitidos são png, ico, svg, webp, gif e jpeg",
+    faviconInvalidImage:
+      "Imagem inválida ou não suportada, os tipos permitidos são png, ico, svg, webp, gif e jpeg",
     hostValueRequired: "O valor do host é obrigatório",
-    hostNameRequired: "O nome do host (parâmetro de consulta \"name\" ou \"host\") é obrigatório",
+    hostNameRequired:
+      'O nome do host (parâmetro de consulta "name" ou "host") é obrigatório',
   },
   jobs: {
     mustProvideJobId: "Tem de indicar um jobid",
@@ -229,4 +252,4 @@ export default {
       body: "<p>Esta é uma mensagem de teste do AnsibleForms</p>",
     },
   },
-}
+};

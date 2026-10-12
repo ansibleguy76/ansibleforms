@@ -22,12 +22,16 @@ export default {
   auth: {
     authFailed: "Autenticación fallida",
     invalidCredentials: "Credenciales no válidas",
-    tooManyFailures: "Demasiados inicios de sesión fallidos : inténtelo de nuevo en {minutes} minuto(s)",
-    passwordChangeRequired: "Cambie primero su contraseña : es la contraseña predeterminada pública",
+    tooManyFailures:
+      "Demasiados inicios de sesión fallidos : inténtelo de nuevo en {minutes} minuto(s)",
+    passwordChangeRequired:
+      "Cambie primero su contraseña : es la contraseña predeterminada pública",
     disclaimerRequired: "Acepta primero el aviso legal",
     disclaimerAccepted: "El aviso legal está aceptado",
-    loginDisabled: "No autenticado, el inicio de sesión no está habilitado para este usuario.",
-    signInBlocked: "No autenticado, un administrador bloqueó el inicio de sesión de este usuario.",
+    loginDisabled:
+      "No autenticado, el inicio de sesión no está habilitado para este usuario.",
+    signInBlocked:
+      "No autenticado, un administrador bloqueó el inicio de sesión de este usuario.",
     azureFailed: "La autenticación con Azure AD ha fallado",
     oidcFailed: "La autenticación con OIDC ha fallado",
   },
@@ -47,8 +51,10 @@ export default {
     failedGetFormsList: "Error al obtener la lista de formularios",
     formNameNotProvided: "Nombre del formulario no proporcionado",
     failedGetFormConfig: "Error al obtener la configuración del formulario",
-    onlyAdminsOrDesigners: "Solo administradores o diseñadores pueden acceder a la configuración completa de los formularios",
-    failedGetFormsConfig: "Error al obtener la configuración de los formularios",
+    onlyAdminsOrDesigners:
+      "Solo administradores o diseñadores pueden acceder a la configuración completa de los formularios",
+    failedGetFormsConfig:
+      "Error al obtener la configuración de los formularios",
     failedGetBackups: "Error al obtener las copias de seguridad",
     failedGetEnvVars: "Error al obtener las variables de entorno",
     failedSaveEnvVars: "No se pudieron guardar los ajustes de entorno",
@@ -56,14 +62,17 @@ export default {
     failedVaultMounts: "No se pudieron listar los montajes de Vault",
     noEnvVarsGiven: "No se proporcionaron variables de entorno",
     envVarsSaved: "Ajustes de entorno guardados",
-    envVarsNotFound: "Sección de Variables de Entorno no encontrada en help.yaml",
+    envVarsNotFound:
+      "Sección de Variables de Entorno no encontrada en help.yaml",
     failedRestoreForms: "Error al restaurar los formularios",
-    failedRestoreNoName: "Error al restaurar, no se proporcionó nombre de copia",
+    failedRestoreNoName:
+      "Error al restaurar, no se proporcionó nombre de copia",
     failedRestoreBackup: "Error al restaurar '{name}'",
     designerLocked: "El diseñador está bloqueado",
     designerLockedBy: "El diseñador está bloqueado por {username}",
     failedSaveForms: "Error al guardar los formularios",
-    failedValidateForms: "Error al validar la nueva configuración de los formularios",
+    failedValidateForms:
+      "Error al validar la nueva configuración de los formularios",
     failedGetLock: "Error al obtener el bloqueo",
   },
   resources: {
@@ -80,22 +89,29 @@ export default {
     oauth2Added: "Proveedor OAuth2 añadido",
     secretStoreAdded: "Almacén de secretos añadido",
     secretStoreNotFound: "Almacén de secretos no encontrado",
-    secretStoreConnectionOk: "La conexión con el almacén de secretos es correcta",
+    secretStoreConnectionOk:
+      "La conexión con el almacén de secretos es correcta",
     runnerAdded: "Runner añadido",
     runnerNotFound: "Runner no encontrado",
-    runnerAdminOnly: "Solo un admin puede añadir, cambiar o eliminar un runner : un runner recibe las credenciales de los trabajos que ejecuta",
-    defaultPasswordRefused: "Elija otra contraseña distinta de la predeterminada pública",
+    runnerAdminOnly:
+      "Solo un admin puede añadir, cambiar o eliminar un runner : un runner recibe las credenciales de los trabajos que ejecuta",
+    defaultPasswordRefused:
+      "Elija otra contraseña distinta de la predeterminada pública",
     passwordTooShort: "La contraseña necesita al menos {min} caracteres",
     passwordIsUsername: "La contraseña no puede ser el nombre de usuario",
     runnerConnectionOk: "La conexión con el runner es correcta",
     userNotFound: "Usuario no encontrado",
-    currentPasswordRequired: "Se requiere su contraseña actual para establecer una nueva",
+    currentPasswordRequired:
+      "Se requiere su contraseña actual para establecer una nueva",
     currentPasswordWrong: "La contraseña actual no es correcta",
-    cantChangePasswordLdap: "No puedes cambiar la contraseña de un usuario LDAP",
+    cantChangePasswordLdap:
+      "No puedes cambiar la contraseña de un usuario LDAP",
     directoryTypeUnknown: "No es un usuario o grupo LDAP, Entra ID u OIDC",
-    directoryUserKept: "Un administrador bloqueó este usuario: permite su inicio de sesión antes de olvidarlo",
+    directoryUserKept:
+      "Un administrador bloqueó este usuario: permite su inicio de sesión antes de olvidarlo",
     failedDirectoryUser: "No se pudo leer o cambiar el usuario LDAP o SSO",
-    cantBlockAdmin: "El usuario admin no se puede bloquear: es la forma de volver a entrar",
+    cantBlockAdmin:
+      "El usuario admin no se puede bloquear: es la forma de volver a entrar",
     cantBlockYourself: "No puedes bloquear tu propio inicio de sesión",
     groupNotFound: "Grupo no encontrado",
     groupHasUsers: "Grupo desconocido o el grupo contiene usuarios",
@@ -114,27 +130,34 @@ export default {
     failedSyncRepository: "No se pudo hacer push del repositorio",
     noFormsRepositories: "No hay repositorios de formularios configurados",
     failedApplyConfigSeed: "Error al aplicar el seed de configuracion",
-    noConfigSeed: "No hay ningun seed de configuracion configurado (CONFIG_SEED_PATH esta vacio)",
+    noConfigSeed:
+      "No hay ningun seed de configuracion configurado (CONFIG_SEED_PATH esta vacio)",
     failedFindSsh: "Error al buscar la clave SSH",
     failedUpdateSsh: "Error al actualizar la clave SSH",
     failedFindChatSettings: "No se encontraron los ajustes del chat",
     failedUpdateChatSettings: "No se pudieron actualizar los ajustes del chat",
-    seedManagedChatSettings: "Los ajustes del chat los gestiona el config seed y son de solo lectura",
+    seedManagedChatSettings:
+      "Los ajustes del chat los gestiona el config seed y son de solo lectura",
     chatSettingsUpdated: "Ajustes del chat actualizados",
     chatCheckFailed: "La comprobación del proveedor de chat ha fallado",
     failedFindLdap: "Error al buscar LDAP",
     ldapCheckFailed: "La verificación de LDAP ha fallado",
-    storedPasswordOtherServer: "La contraseña guardada solo se usa con el servidor guardado : escriba la contraseña para comprobar otro",
+    storedPasswordOtherServer:
+      "La contraseña guardada solo se usa con el servidor guardado : escriba la contraseña para comprobar otro",
     ldapUpdated: "LDAP actualizado",
     failedUpdateLdap: "Error al actualizar LDAP",
-    seedManagedSettings: "Los ajustes están gestionados por el seed de configuración y son de solo lectura",
-    seedManagedLdap: "La configuración LDAP está gestionada por el seed de configuración y es de solo lectura",
+    seedManagedSettings:
+      "Los ajustes están gestionados por el seed de configuración y son de solo lectura",
+    seedManagedLdap:
+      "La configuración LDAP está gestionada por el seed de configuración y es de solo lectura",
     failedFindSettings: "Error al buscar la configuración",
     mailCheckFailed: "La verificación del correo ha fallado",
     mailSent: "Correo enviado con id {id}",
     failedUpdateSettings: "Error al actualizar la configuración",
-    configLockedByDesigner: "La configuración está bloqueada por una sesión de diseñador activa{username}",
-    configChangedElsewhere: "La configuración fue modificada en otro lugar, recargue antes de guardar",
+    configLockedByDesigner:
+      "La configuración está bloqueada por una sesión de diseñador activa{username}",
+    configChangedElsewhere:
+      "La configuración fue modificada en otro lugar, recargue antes de guardar",
     failedImportConfig: "Error al importar la configuración",
     failedExportConfig: "Error al exportar la configuración",
     failedLegacyCheck: "Error al comprobar forms.yaml heredado",
@@ -147,12 +170,15 @@ export default {
     failedFindLogo: "Error al obtener el logo",
     failedUpdateLogo: "Error al actualizar el logo",
     logoNoFile: "No se subió ningún archivo",
-    logoInvalidImage: "Imagen no válida o no soportada, los tipos permitidos son png, jpeg, webp, gif y svg",
+    logoInvalidImage:
+      "Imagen no válida o no soportada, los tipos permitidos son png, jpeg, webp, gif y svg",
     failedFindFavicon: "No se pudo obtener el icono del sitio",
     failedUpdateFavicon: "No se pudo actualizar el icono del sitio",
-    faviconInvalidImage: "Imagen no válida o no compatible, los tipos permitidos son png, ico, svg, webp, gif y jpeg",
+    faviconInvalidImage:
+      "Imagen no válida o no compatible, los tipos permitidos son png, ico, svg, webp, gif y jpeg",
     hostValueRequired: "Se requiere el valor del host",
-    hostNameRequired: "Se requiere el nombre del host (parámetro \"name\" o \"host\")",
+    hostNameRequired:
+      'Se requiere el nombre del host (parámetro "name" o "host")',
   },
   jobs: {
     mustProvideJobId: "Debes proporcionar un jobid",
@@ -171,7 +197,8 @@ export default {
     approved: "El trabajo {id} ha sido aprobado",
     rejected: "El trabajo {id} ha sido rechazado",
     relaunched: "El trabajo ha sido relanzado con el id {id}",
-    failedRetrieveRawData: "Error al recuperar los datos sin procesar del formulario",
+    failedRetrieveRawData:
+      "Error al recuperar los datos sin procesar del formulario",
   },
   email: {
     approval: {
@@ -200,7 +227,8 @@ export default {
       launchBy: "El trabajo ha sido lanzado por {user}.",
       relaunchBy: "El trabajo ha sido relanzado por {user}.",
       deleteBy: "El trabajo ha sido eliminado por {user}.",
-      approveBy: "El trabajo ha sido aprobado por {user} y continuará la ejecución.",
+      approveBy:
+        "El trabajo ha sido aprobado por {user} y continuará la ejecución.",
       rejectBy: "El trabajo ha sido rechazado por {user}.",
     },
     // the subjects : "AnsibleForms '<form>' [<type>] (<id>) - <one of these>", and the
@@ -229,4 +257,4 @@ export default {
       body: "<p>Este es un mensaje de prueba de AnsibleForms</p>",
     },
   },
-}
+};

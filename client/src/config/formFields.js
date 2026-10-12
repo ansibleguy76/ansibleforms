@@ -598,14 +598,36 @@ export function fieldTypeAllows(type, key) {
   return !(forbiddenFieldKeys[type] || []).includes(key);
 }
 
-// the form types (server/schema/form_schema.json, its top-level type) : template runs a job on a
-// template runner (AWX, AAP, Ascender, Semaphore, Rundeck, Jenkins) ; awx is its old name
+// the form types (server/schema/form_schema.json, its top-level type) : a type names the product
+// the job runs on - ansible a playbook on an RTE, awx (aap and ascender the same runner under
+// their own name), semaphore, rundeck and jenkins a template or job on a runner of that type ;
 // workflow runs one of the designer's workflows (Designer > Workflows), as AWX runs a workflow job
-export const formTypes = ['ansible', 'template', 'awx', 'multistep', 'subform', 'workflow'];
-// the form types that run a template : the same form either way
-export const TEMPLATE_FORM_TYPES = ['template', 'awx'];
-// the runner types a template form may run on
-export const TEMPLATE_RUNNER_TYPES = ['awx', 'semaphore', 'rundeck', 'jenkins'];
+export const formTypes = [
+  'ansible',
+  'awx',
+  'aap',
+  'ascender',
+  'semaphore',
+  'rundeck',
+  'jenkins',
+  'multistep',
+  'subform',
+  'workflow',
+];
+// the runner type each runner form type runs on (server/src/lib/jobTypes.js RUNNER_TYPE_OF)
+export const RUNNER_TYPE_OF = {
+  ansible: 'rte',
+  awx: 'awx',
+  aap: 'awx',
+  ascender: 'awx',
+  semaphore: 'semaphore',
+  rundeck: 'rundeck',
+  jenkins: 'jenkins',
+};
+// the form types that run a template or job on a runner
+export const TEMPLATE_FORM_TYPES = Object.keys(RUNNER_TYPE_OF).filter((t) => t !== 'ansible');
+// the types that say `job:` rather than `template:` for what they run
+export const JOB_FORM_TYPES = ['rundeck', 'jenkins'];
 
 // Mirror of the per-type `oneOf` in server/schema/form_schema.json : every form
 // type FORBIDS a set of keys, so a key left behind by a type change makes the
@@ -624,7 +646,9 @@ export const forbiddenFormKeys = {
     'instanceGroups',
     'expression',
   ],
-  template: [
+  awx: ['workflow', 'playbook', 'playbookSubPath', 'ansibleCredentials', 'vaultCredentials', 'steps', 'expression'],
+  aap: ['workflow', 'playbook', 'playbookSubPath', 'ansibleCredentials', 'vaultCredentials', 'steps', 'expression'],
+  ascender: [
     'workflow',
     'playbook',
     'playbookSubPath',
@@ -633,7 +657,46 @@ export const forbiddenFormKeys = {
     'steps',
     'expression',
   ],
-  awx: ['workflow', 'playbook', 'playbookSubPath', 'ansibleCredentials', 'vaultCredentials', 'steps', 'expression'],
+  // the AWX keys are AWX's : a Semaphore, a Rundeck or a Jenkins has none of them
+  semaphore: [
+    'workflow',
+    'playbook',
+    'playbookSubPath',
+    'ansibleCredentials',
+    'vaultCredentials',
+    'steps',
+    'expression',
+    'awxCredentials',
+    'executionEnvironment',
+    'scm_branch',
+    'instanceGroups',
+  ],
+  rundeck: [
+    'workflow',
+    'playbook',
+    'playbookSubPath',
+    'ansibleCredentials',
+    'vaultCredentials',
+    'steps',
+    'expression',
+    'awxCredentials',
+    'executionEnvironment',
+    'scm_branch',
+    'instanceGroups',
+  ],
+  jenkins: [
+    'workflow',
+    'playbook',
+    'playbookSubPath',
+    'ansibleCredentials',
+    'vaultCredentials',
+    'steps',
+    'expression',
+    'awxCredentials',
+    'executionEnvironment',
+    'scm_branch',
+    'instanceGroups',
+  ],
   multistep: [
     'workflow',
     'playbook',

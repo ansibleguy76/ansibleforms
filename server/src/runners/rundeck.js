@@ -1,5 +1,6 @@
-// The rundeck runner : a job on Rundeck (rundeck.com). A form of type awx names it with
-// `runner: <name>` and its job with `template: <group/name>`, `<name>` or the job's uuid ; the
+// The rundeck runner : a job on Rundeck (rundeck.com). A form of type rundeck names it with
+// `runner: <name>` (or runs on the default one) and its job with `job: <group/name>`, `<name>`
+// or the job's uuid (`template:` says the same) ; the
 // execution's output is followed back into the job, as an AWX job's is.
 //
 // The runner row : uri (the Rundeck server, e.g. https://rundeck.example.com), token (a user's
@@ -63,7 +64,7 @@ async function check(runner) {
  */
 async function findJob(http, runner, template) {
   const wanted = String(template ?? "").trim();
-  if (!wanted) throw new Errors.BadRequestError("The form names no job (template: <group/name>)");
+  if (!wanted) throw new Errors.BadRequestError("The form names no job (job: <group/name>)");
   if (UUID.test(wanted)) {
     const { data } = await http.get(`${API}/job/${wanted}/info`);
     return data;
