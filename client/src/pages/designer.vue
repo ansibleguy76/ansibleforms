@@ -195,6 +195,9 @@ const inventoryRepoSettings = computed(() => {
   const repositories = getSettings(t).repositories;
   return {
     ...repositories,
+    // the dialog says what it makes here : a new inventory (a repository, but named as the section)
+    label: t('designer.formInventory'),
+    labelPlural: t('designer.inventories'),
     fields: repositories.fields.map((f) => (f.step === 'usage' ? { ...f, readonly: true } : f)),
   };
 });
