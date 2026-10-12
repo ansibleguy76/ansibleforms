@@ -182,6 +182,67 @@ class Runner extends CrudModel {
     return n;
   }
 
+  /**
+   * The row an RTE registered itself (rte/register.js) at the address a seed item declares,
+   * or null. The seed adopts it instead of adding a second runner for the same RTE : an RTE
+   * starts with the app, so its first registration can land before the seed is applied.
+   * Only a registered row (node_id set, not managed) : a row added by hand is somebody's work.
+   *
+   * Args:
+   *   item (object): the declared runner, its `type` and `uri`.
+   *
+   * Returns:
+   *   object|null: the registered row at that address, or null.
+   */
+  static async findRegisteredAt(item) {
+    if (item?.type !== 'rte' || typeof item.uri !== 'string') return null;
+    const uri = stripTrailingSlashes(item.uri.trim());
+    const all = (await this.findAll()) || [];
+    return all.find((r) => r.type === 'rte' && r.node_id && !r.managed && stripTrailingSlashes(String(r.uri || '')) === uri) || null;
+  }
+
+  /**
+   * The seed takes over a row an RTE registered itself : the declared fields, the declared
+   * name, and no longer a registered row (node_id cleared), so the worker's sweep of
+   * unresponsive RTEs never removes it. The jobs that ran on it follow its new name.
+   *
+   * Args:
+   *   data (object): the record the seed writes (managed).
+   *   row (object): the registered row, from findRegisteredAt.
+   *   opts (object): { fromSeed: true }.
+   *
+   * Returns:
+   *   Promise<boolean>: whether the row was written.
+   */
+  static async adoptRegistered(data, row, opts = {}) {
+    const res = await this.update({ ...data, node_id: null }, row.id, { ...opts, fromRte: true });
+    if (data.name && data.name !== row.name) await this.moveJobs(row.name, data.name);
+    return res;
+  }
+
+  /**
+   * A row an RTE registered itself at the address of a seeded row : a second runner for one
+   * RTE, left by a registration that landed while the seed was creating its row. Removed, its
+   * jobs moved to the seeded row.
+   *
+   * Args:
+   *   row (object): the registered row.
+   *   keep (object): the seeded row at the same address.
+   *
+   * Returns:
+   *   Promise<boolean>: whether the row was removed.
+   */
+  static async removeDuplicate(row, keep) {
+    await this.moveJobs(row.name, keep.name);
+    return this.delete(row.id, { fromRte: true });
+  }
+
+  // jobs name their runner (jobs.runner) : the ones that ran on a runner that changes its
+  // name, or goes into another, name the runner it is now
+  static async moveJobs(from, to) {
+    await mysql.do('UPDATE AnsibleForms.`jobs` SET runner = ? WHERE runner = ?', [to, from]);
+  }
+
   /** proves the runner answers and accepts us ; what it reports is up to the runner type */
   static async check(runner) {
     const impl = getRunner(runner.type);

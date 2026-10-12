@@ -13,7 +13,8 @@
 //   - no row with this address : created ; the first rte runner becomes the default
 //   - a row this RTE (or one before it) registered : its token follows RTE_TOKEN
 //   - a row added by hand : its token follows RTE_TOKEN, it stays a hand-made row
-//   - a row from the config seed : left alone, the seed is authoritative
+//   - a row from the config seed : left alone, the seed is authoritative ; a row an RTE
+//     registered at its address too (written while the seed created its own) is removed
 //   - a row with this name but another address : never overwritten, logged
 //   - the default rte runner is a registered row whose RTE stopped answering : this one takes
 //     the default, so a recreated container does not leave the default on a dead address
@@ -80,16 +81,24 @@ export async function registerOnce(reg) {
   const opts = { fromRte: true };
   const rows = (await Runner.findAll()) || [];
   const others = rows.filter((r) => r.type === "rte" && r.is_default && r.node_id && r.node_id !== reg.nodeId);
-  let mine = rows.find((r) => r.type === "rte" && stripTrailingSlashes(String(r.uri || "")) === reg.uri);
-  const gone = await goneNodes([mine?.node_id, ...others.map((r) => r.node_id)]);
+  const atMyAddress = rows.filter((r) => r.type === "rte" && stripTrailingSlashes(String(r.uri || "")) === reg.uri);
+  // the seed's row first : it is the one this address is
+  let mine = atMyAddress.find((r) => r.managed) || atMyAddress[0];
   const said = [];
 
   if (mine?.managed) {
     if (mine.token !== reg.token) {
       logger.warning(`RTE : the config seed declares runner '${mine.name}' (${reg.uri}) with another token than this RTE's RTE_TOKEN : jobs on it will be refused`);
     }
-    return null;
+    // a row an RTE registered at the same address : written while the seed created its own
+    // (both found no row), so this RTE would be two runners. The seed's row stays.
+    for (const twin of atMyAddress.filter((r) => !r.managed && r.node_id)) {
+      await Runner.removeDuplicate(twin, mine);
+      said.push(`removed runner '${twin.name}', the config seed declares this RTE as '${mine.name}'`);
+    }
+    return said.length ? said.join(" ; ") : null;
   }
+  const gone = await goneNodes([mine?.node_id, ...others.map((r) => r.node_id)]);
   if (mine) {
     const change = {};
     if (mine.token !== reg.token) change.token = reg.token;
