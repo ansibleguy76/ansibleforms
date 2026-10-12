@@ -846,6 +846,8 @@ export default {
       token: 'Token',
       branch: 'Branch',
       head: 'Head',
+      pull: 'Pull',
+      push: 'Push',
       form: 'Modulo',
       date: 'Data',
       enable: 'Abilita',
@@ -1081,8 +1083,7 @@ export default {
       usePlaybooksShort: 'Playbook',
       useWorkflowsHint: 'Workflow che il designer costruisce, modificati e reinviati dal designer',
       useWorkflowsShort: 'Workflow',
-      notPushed: 'Non inviato',
-      pushed: 'Inviato',
+      notPushed: 'Modifiche in sospeso',
       notPushedHint: 'Ci sono modifiche salvate qui non ancora inviate al remoto: inviale dal designer o con Push.',
       useForInventories: 'Usare per gli inventari?',
       helpUseForInventories:

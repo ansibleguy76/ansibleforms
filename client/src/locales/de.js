@@ -850,6 +850,8 @@ export default {
       token: 'Token',
       branch: 'Branch',
       head: 'Head',
+      pull: 'Pull',
+      push: 'Push',
       form: 'Formular',
       date: 'Datum',
       enable: 'Aktivieren',
@@ -1085,8 +1087,7 @@ export default {
       usePlaybooksShort: 'Playbooks',
       useWorkflowsHint: 'Workflows, die der Designer erstellt, bearbeitet und zurückpusht',
       useWorkflowsShort: 'Workflows',
-      notPushed: 'Nicht gepusht',
-      pushed: 'Gepusht',
+      notPushed: 'Ausstehende Änderungen',
       notPushedHint:
         'Hier gespeicherte Änderungen sind noch nicht zum Remote gepusht: pushe sie im Designer oder mit Push.',
       useForInventories: 'Für Inventare verwenden?',

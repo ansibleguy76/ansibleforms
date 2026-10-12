@@ -844,6 +844,8 @@ export default {
       token: 'Token',
       branch: 'Branca',
       head: 'Head',
+      pull: 'Pull',
+      push: 'Push',
       form: 'Formulari',
       date: 'Data',
       enable: 'Activa',
@@ -1082,8 +1084,7 @@ export default {
       usePlaybooksShort: 'Playbooks',
       useWorkflowsHint: 'Workflows que construeix el dissenyador, editats i enviats de tornada pel dissenyador',
       useWorkflowsShort: 'Workflows',
-      notPushed: 'Sense enviar',
-      pushed: 'Enviat',
+      notPushed: 'Canvis pendents',
       notPushedHint:
         "Hi ha canvis desats aquí que encara no s'han enviat al remot: envia'ls des del dissenyador o amb Push.",
       useForInventories: 'Fer servir per a inventaris?',
