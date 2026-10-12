@@ -1216,17 +1216,17 @@ export default {
       label: '通知チャネル',
       labelPlural: '通知チャネル',
       description:
-        '通知の送信先: SMTP サーバー (そのうち 1 台がアクティブで、アプリはそれでメールを送信)、Slack、Microsoft Teams、Telegram、Webhook。フォームは通知と承認でチャネルを指定します。',
+        '通知の送信先: SMTP サーバー (そのうち 1 台が既定で、アプリはそれでメールを送信)、Slack、Microsoft Teams、Telegram、Webhook。フォームは通知と承認でチャネルを指定します。',
       editChannel: '通知チャネルを編集',
       deleteChannel: '通知チャネルを削除',
       enable: '有効にする',
       disable: '無効にする',
       enabled: '有効',
       enabledHelp: '通知を送信するかどうか: すぐに保存されます。',
-      useForMail: 'メールに使用',
-      active: 'アクティブ',
+      useForMail: '既定にする',
+      active: '既定',
       activeHelp:
-        'アプリがメールを送信するメールサーバー: ここでオンにし、別のものをアクティブにするとオフになります。',
+        'フォームがメールチャネルを指定しないときにアプリがメールを送信するメールサーバー: ここでオンにし、別のものを既定にするとオフになります。',
       stepChannel: 'チャネル',
       stepType: '種類',
       stepConnection: '接続',
@@ -1282,8 +1282,7 @@ export default {
       send: '送信',
       notFound: "ID '{id}' の通知チャネルはありません。",
       fieldsRequired: '名前は必須です。',
-      fromSeed:
-        '設定シードがメール設定を指定しています: メールチャネルがアクティブでない間、アプリはその設定で送信します。',
+      fromSeed: '設定シードがメール設定を指定しています: 既定のメールチャネルがない間、アプリはその設定で送信します。',
     },
     syslogServers: {
       label: 'syslog サーバー',

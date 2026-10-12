@@ -1326,17 +1326,17 @@ export default {
       label: 'Canal de notification',
       labelPlural: 'Canaux de notification',
       description:
-        "Où vont les notifications : des serveurs SMTP (l'un d'eux actif, celui avec lequel l'application envoie ses mails), Slack, Microsoft Teams, Telegram et des webhooks. Un formulaire nomme ses canaux dans ses notifications et son approbation.",
+        "Où vont les notifications : des serveurs SMTP (l'un d'eux par défaut, celui avec lequel l'application envoie ses mails), Slack, Microsoft Teams, Telegram et des webhooks. Un formulaire nomme ses canaux dans ses notifications et son approbation.",
       editChannel: 'Modifier le canal de notification',
       deleteChannel: 'Supprimer le canal de notification',
       enable: 'Activer',
       disable: 'Désactiver',
       enabled: 'Activé',
       enabledHelp: 'Si des notifications lui sont envoyées : enregistré aussitôt.',
-      useForMail: 'Utiliser pour les mails',
-      active: 'Actif',
+      useForMail: 'Définir par défaut',
+      active: 'Par défaut',
       activeHelp:
-        "Le serveur mail avec lequel l'application envoie ses mails : activé ici, désactivé en rendant un autre actif.",
+        "Le serveur mail avec lequel l'application envoie ses mails quand un formulaire ne nomme aucun canal mail : activé ici, désactivé en en définissant un autre par défaut.",
       stepChannel: 'Canal',
       stepType: 'Type',
       stepConnection: 'Connexion',
@@ -1394,7 +1394,7 @@ export default {
       notFound: "Il n'y a pas de canal de notification avec l'id '{id}'.",
       fieldsRequired: 'Le nom est requis.',
       fromSeed:
-        "Le seed de configuration fixe les paramètres mail : l'application envoie avec eux tant qu'aucun canal mail n'est actif.",
+        "Le seed de configuration fixe les paramètres mail : l'application envoie avec eux tant qu'aucun canal mail n'est défini par défaut.",
     },
     syslogServers: {
       label: 'Serveur syslog',

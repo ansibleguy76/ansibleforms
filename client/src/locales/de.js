@@ -1327,17 +1327,17 @@ export default {
       label: 'Benachrichtigungskanal',
       labelPlural: 'Benachrichtigungskanäle',
       description:
-        'Wohin Benachrichtigungen gehen: SMTP-Server (einer davon aktiv, über ihn sendet die App ihre Mails), Slack, Microsoft Teams, Telegram und Webhooks. Ein Formular nennt seine Kanäle in seinen Benachrichtigungen und seiner Genehmigung.',
+        'Wohin Benachrichtigungen gehen: SMTP-Server (einer davon der Standard, über ihn sendet die App ihre Mails), Slack, Microsoft Teams, Telegram und Webhooks. Ein Formular nennt seine Kanäle in seinen Benachrichtigungen und seiner Genehmigung.',
       editChannel: 'Benachrichtigungskanal bearbeiten',
       deleteChannel: 'Benachrichtigungskanal löschen',
       enable: 'Aktivieren',
       disable: 'Deaktivieren',
       enabled: 'Aktiviert',
       enabledHelp: 'Ob Benachrichtigungen an ihn gesendet werden: sofort gespeichert.',
-      useForMail: 'Für Mail verwenden',
-      active: 'Aktiv',
+      useForMail: 'Als Standard festlegen',
+      active: 'Standard',
       activeHelp:
-        'Der Mailserver, über den die App ihre Mails sendet: hier eingeschaltet, ausgeschaltet, indem ein anderer aktiv wird.',
+        'Der Mailserver, über den die App ihre Mails sendet, wenn ein Formular keinen Mailkanal nennt: hier eingeschaltet, ausgeschaltet, indem ein anderer zum Standard wird.',
       stepChannel: 'Kanal',
       stepType: 'Typ',
       stepConnection: 'Verbindung',
@@ -1395,7 +1395,7 @@ export default {
       notFound: "Es gibt keinen Benachrichtigungskanal mit der ID '{id}'.",
       fieldsRequired: 'Der Name ist erforderlich.',
       fromSeed:
-        'Der Config-Seed setzt die Mail-Einstellungen: die App sendet damit, solange kein Mail-Kanal aktiv ist.',
+        'Der Config-Seed setzt die Mail-Einstellungen: die App sendet damit, solange kein Mail-Kanal der Standard ist.',
     },
     syslogServers: {
       label: 'Syslog-Server',

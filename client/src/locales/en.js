@@ -1300,17 +1300,17 @@ export default {
       label: 'Notification channel',
       labelPlural: 'Notification channels',
       description:
-        'Where notifications go: SMTP servers (one of them active, the one the app sends its mail with), Slack, Microsoft Teams, Telegram and webhooks. A form names its channels in its notifications and its approval.',
+        'Where notifications go: SMTP servers (one of them the default, the one the app sends its mail with), Slack, Microsoft Teams, Telegram and webhooks. A form names its channels in its notifications and its approval.',
       editChannel: 'Edit notification channel',
       deleteChannel: 'Delete notification channel',
       enable: 'Enable',
       disable: 'Disable',
       enabled: 'Enabled',
       enabledHelp: 'Whether notifications are sent to it: saved at once.',
-      useForMail: 'Use for mail',
-      active: 'Active',
+      useForMail: 'Make default',
+      active: 'Default',
       activeHelp:
-        'The mail server the app sends its mail with: turned on here, turned off by making another one active.',
+        'The mail server the app sends its mail with when a form names no mail channel: turned on here, turned off by making another one the default.',
       stepChannel: 'Channel',
       stepType: 'Type',
       stepConnection: 'Connection',
@@ -1366,7 +1366,8 @@ export default {
       send: 'Send',
       notFound: "There is no notification channel with the id '{id}'.",
       fieldsRequired: 'The name is required.',
-      fromSeed: 'The config seed sets the mail settings: the app sends with those while no mail channel is active.',
+      fromSeed:
+        'The config seed sets the mail settings: the app sends with those while no mail channel is the default.',
     },
     syslogServers: {
       label: 'Syslog server',

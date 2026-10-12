@@ -1317,17 +1317,17 @@ export default {
       label: 'Canale di notifica',
       labelPlural: 'Canali di notifica',
       description:
-        "Dove vanno le notifiche: server SMTP (uno di essi attivo, quello con cui l'app invia le sue mail), Slack, Microsoft Teams, Telegram e webhook. Un modulo nomina i suoi canali nelle sue notifiche e nella sua approvazione.",
+        "Dove vanno le notifiche: server SMTP (uno di essi il predefinito, quello con cui l'app invia le sue mail), Slack, Microsoft Teams, Telegram e webhook. Un modulo nomina i suoi canali nelle sue notifiche e nella sua approvazione.",
       editChannel: 'Modifica canale di notifica',
       deleteChannel: 'Elimina canale di notifica',
       enable: 'Attiva',
       disable: 'Disattiva',
       enabled: 'Attivo',
       enabledHelp: 'Se gli vengono inviate notifiche: salvato subito.',
-      useForMail: 'Usa per la posta',
-      active: 'Attivo',
+      useForMail: 'Imposta come predefinito',
+      active: 'Predefinito',
       activeHelp:
-        "Il server di posta con cui l'app invia le sue mail: attivato qui, disattivato rendendone attivo un altro.",
+        "Il server di posta con cui l'app invia le sue mail quando un modulo non indica un canale di posta: attivato qui, disattivato impostandone un altro come predefinito.",
       stepChannel: 'Canale',
       stepType: 'Tipo',
       stepConnection: 'Connessione',
@@ -1385,7 +1385,7 @@ export default {
       notFound: "Non esiste un canale di notifica con l'id '{id}'.",
       fieldsRequired: 'Il nome è obbligatorio.',
       fromSeed:
-        "Il seed di configurazione imposta le impostazioni di posta: l'app invia con quelle finché nessun canale di posta è attivo.",
+        "Il seed di configurazione imposta le impostazioni di posta: l'app invia con quelle finché nessun canale di posta è predefinito.",
     },
     syslogServers: {
       label: 'Server syslog',

@@ -1320,17 +1320,17 @@ export default {
       label: 'Canal de notificación',
       labelPlural: 'Canales de notificación',
       description:
-        'A dónde van las notificaciones: servidores SMTP (uno de ellos activo, con el que la aplicación envía su correo), Slack, Microsoft Teams, Telegram y webhooks. Un formulario nombra sus canales en sus notificaciones y su aprobación.',
+        'A dónde van las notificaciones: servidores SMTP (uno de ellos el predeterminado, con el que la aplicación envía su correo), Slack, Microsoft Teams, Telegram y webhooks. Un formulario nombra sus canales en sus notificaciones y su aprobación.',
       editChannel: 'Editar canal de notificación',
       deleteChannel: 'Eliminar canal de notificación',
       enable: 'Activar',
       disable: 'Desactivar',
       enabled: 'Activado',
       enabledHelp: 'Si se le envían notificaciones: se guarda al momento.',
-      useForMail: 'Usar para el correo',
-      active: 'Activo',
+      useForMail: 'Usar como predeterminado',
+      active: 'Predeterminado',
       activeHelp:
-        'El servidor de correo con el que la aplicación envía su correo: se activa aquí, se desactiva activando otro.',
+        'El servidor de correo con el que la aplicación envía su correo cuando un formulario no indica ningún canal de correo: se activa aquí, se desactiva haciendo predeterminado otro.',
       stepChannel: 'Canal',
       stepType: 'Tipo',
       stepConnection: 'Conexión',
@@ -1388,7 +1388,7 @@ export default {
       notFound: "No hay ningún canal de notificación con el id '{id}'.",
       fieldsRequired: 'El nombre es obligatorio.',
       fromSeed:
-        'El seed de configuración fija los ajustes de correo: la aplicación envía con ellos mientras no haya un canal de correo activo.',
+        'El seed de configuración fija los ajustes de correo: la aplicación envía con ellos mientras no haya un canal de correo predeterminado.',
     },
     syslogServers: {
       label: 'Servidor syslog',

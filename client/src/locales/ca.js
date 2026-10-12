@@ -1230,17 +1230,17 @@ export default {
       label: 'Canal de notificació',
       labelPlural: 'Canals de notificació',
       description:
-        "On van les notificacions: servidors SMTP (un d'ells actiu, amb el qual l'aplicació envia el correu), Slack, Microsoft Teams, Telegram i webhooks. Un formulari anomena els seus canals a les notificacions i a l'aprovació.",
+        "On van les notificacions: servidors SMTP (un d'ells el predeterminat, amb el qual l'aplicació envia el correu), Slack, Microsoft Teams, Telegram i webhooks. Un formulari anomena els seus canals a les notificacions i a l'aprovació.",
       editChannel: 'Edita el canal de notificació',
       deleteChannel: 'Elimina el canal de notificació',
       enable: 'Activa',
       disable: 'Desactiva',
       enabled: 'Activat',
       enabledHelp: "Si se li envien notificacions: es desa a l'instant.",
-      useForMail: 'Fes servir per al correu',
-      active: 'Actiu',
+      useForMail: 'Fes-lo predeterminat',
+      active: 'Predeterminat',
       activeHelp:
-        "El servidor de correu amb què l'aplicació envia el correu: s'activa aquí, es desactiva activant-ne un altre.",
+        "El servidor de correu amb què l'aplicació envia el correu quan un formulari no indica cap canal de correu: s'activa aquí, es desactiva fent-ne predeterminat un altre.",
       stepChannel: 'Canal',
       stepType: 'Tipus',
       stepConnection: 'Connexió',
@@ -1297,7 +1297,7 @@ export default {
       notFound: "No hi ha cap canal de notificació amb l'id '{id}'.",
       fieldsRequired: 'El nom és obligatori.',
       fromSeed:
-        "El seed de configuració fixa els paràmetres de correu: l'aplicació envia amb ells mentre no hi hagi cap canal de correu actiu.",
+        "El seed de configuració fixa els paràmetres de correu: l'aplicació envia amb ells mentre no hi hagi cap canal de correu predeterminat.",
     },
     syslogServers: {
       label: 'Servidor syslog',

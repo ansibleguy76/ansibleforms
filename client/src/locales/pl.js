@@ -1224,17 +1224,17 @@ export default {
       label: 'Kanał powiadomień',
       labelPlural: 'Kanały powiadomień',
       description:
-        'Dokąd trafiają powiadomienia: serwery SMTP (jeden z nich aktywny, przez który aplikacja wysyła pocztę), Slack, Microsoft Teams, Telegram i webhooki. Formularz wymienia swoje kanały w powiadomieniach i w zatwierdzeniu.',
+        'Dokąd trafiają powiadomienia: serwery SMTP (jeden z nich domyślny, przez który aplikacja wysyła pocztę), Slack, Microsoft Teams, Telegram i webhooki. Formularz wymienia swoje kanały w powiadomieniach i w zatwierdzeniu.',
       editChannel: 'Edytuj kanał powiadomień',
       deleteChannel: 'Usuń kanał powiadomień',
       enable: 'Włącz',
       disable: 'Wyłącz',
       enabled: 'Włączony',
       enabledHelp: 'Czy wysyłane są do niego powiadomienia: zapisywane od razu.',
-      useForMail: 'Używaj do poczty',
-      active: 'Aktywny',
+      useForMail: 'Ustaw jako domyślny',
+      active: 'Domyślny',
       activeHelp:
-        'Serwer pocztowy, przez który aplikacja wysyła pocztę: włączany tutaj, wyłączany przez uaktywnienie innego.',
+        'Serwer pocztowy, przez który aplikacja wysyła pocztę, gdy formularz nie wskazuje kanału pocztowego: włączany tutaj, wyłączany przez ustawienie innego jako domyślny.',
       stepChannel: 'Kanał',
       stepType: 'Typ',
       stepConnection: 'Połączenie',
@@ -1291,7 +1291,7 @@ export default {
       notFound: "Nie ma kanału powiadomień o id '{id}'.",
       fieldsRequired: 'Nazwa jest wymagana.',
       fromSeed:
-        'Seed konfiguracji ustawia parametry poczty: aplikacja wysyła z nimi, dopóki żaden kanał pocztowy nie jest aktywny.',
+        'Seed konfiguracji ustawia parametry poczty: aplikacja wysyła z nimi, dopóki żaden kanał pocztowy nie jest domyślny.',
     },
     syslogServers: {
       label: 'Serwer syslog',

@@ -1316,17 +1316,17 @@ export default {
       label: 'Meldingskanaal',
       labelPlural: 'Meldingskanalen',
       description:
-        'Waar meldingen heen gaan: SMTP-servers (een ervan actief, waarmee de app haar mail verstuurt), Slack, Microsoft Teams, Telegram en webhooks. Een formulier noemt zijn kanalen in zijn meldingen en zijn goedkeuring.',
+        'Waar meldingen heen gaan: SMTP-servers (een ervan de standaard, waarmee de app haar mail verstuurt), Slack, Microsoft Teams, Telegram en webhooks. Een formulier noemt zijn kanalen in zijn meldingen en zijn goedkeuring.',
       editChannel: 'Meldingskanaal bewerken',
       deleteChannel: 'Meldingskanaal verwijderen',
       enable: 'Inschakelen',
       disable: 'Uitschakelen',
       enabled: 'Ingeschakeld',
       enabledHelp: 'Of er meldingen naartoe gaan: meteen opgeslagen.',
-      useForMail: 'Gebruiken voor mail',
-      active: 'Actief',
+      useForMail: 'Als standaard instellen',
+      active: 'Standaard',
       activeHelp:
-        'De mailserver waarmee de app haar mail verstuurt: hier ingeschakeld, uitgeschakeld door een andere actief te maken.',
+        'De mailserver waarmee de app haar mail verstuurt als een formulier geen mailkanaal noemt: hier ingeschakeld, uitgeschakeld door een andere de standaard te maken.',
       stepChannel: 'Kanaal',
       stepType: 'Type',
       stepConnection: 'Verbinding',
@@ -1384,7 +1384,7 @@ export default {
       notFound: "Er is geen meldingskanaal met de id '{id}'.",
       fieldsRequired: 'De naam is verplicht.',
       fromSeed:
-        'De config-seed stelt de mailinstellingen in: de app verstuurt daarmee zolang er geen mailkanaal actief is.',
+        'De config-seed stelt de mailinstellingen in: de app verstuurt daarmee zolang er geen mailkanaal de standaard is.',
     },
     syslogServers: {
       label: 'Syslog-server',
