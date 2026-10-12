@@ -870,6 +870,7 @@ export default {
       useWorkflowsHint: 'Workflowy budowane w projektancie, edytowane i wypychane z powrotem przez projektanta',
       useWorkflowsShort: 'Workflowy',
       notPushed: 'Niewypchnięte',
+      pushed: 'Wypchnięte',
       notPushedHint:
         'Zmiany zapisane tutaj nie zostały jeszcze wypchnięte do zdalnego repozytorium: wypchnij je z projektanta lub przyciskiem Push.',
       useForInventories: 'Używać do inwentarzy?',

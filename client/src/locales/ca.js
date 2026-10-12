@@ -876,6 +876,7 @@ export default {
       useWorkflowsHint: 'Workflows que construeix el dissenyador, editats i enviats de tornada pel dissenyador',
       useWorkflowsShort: 'Workflows',
       notPushed: 'Sense enviar',
+      pushed: 'Enviat',
       notPushedHint:
         "Hi ha canvis desats aquí que encara no s'han enviat al remot: envia'ls des del dissenyador o amb Push.",
       useForInventories: 'Fer servir per a inventaris?',

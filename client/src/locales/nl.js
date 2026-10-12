@@ -869,6 +869,7 @@ export default {
       useWorkflowsHint: 'Workflows die de designer bouwt, bewerkt en teruggepusht door de designer',
       useWorkflowsShort: 'Workflows',
       notPushed: 'Niet gepusht',
+      pushed: 'Gepusht',
       notPushedHint:
         'Hier opgeslagen wijzigingen zijn nog niet naar de remote gepusht: push ze vanuit de designer, of met Push.',
       useForInventories: 'Gebruiken voor inventarissen?',

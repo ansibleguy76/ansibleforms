@@ -204,6 +204,7 @@
 .af-pill-blue,
 .af-pill-amber,
 .af-pill-orange,
+.af-pill-unpushed,
 .af-pill-green,
 .af-pill-red,
 .af-pill-cyan,
@@ -217,6 +218,10 @@
 }
 .af-pill-amber {
   background-color: #b37700 !important;
+}
+/* a repository with changes not pushed : the designer's push button's orange */
+.af-pill-unpushed {
+  background-color: var(--af-unpushed-orange) !important;
 }
 /* a job waiting for an approval : waiting on a person, an orange apart from amber's stopped jobs */
 .af-pill-orange {

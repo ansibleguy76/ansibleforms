@@ -867,6 +867,7 @@ export default {
       useWorkflowsHint: 'デザイナーで作るワークフロー。デザイナーで編集してプッシュします',
       useWorkflowsShort: 'ワークフロー',
       notPushed: '未プッシュ',
+      pushed: 'プッシュ済み',
       notPushedHint:
         'ここで保存された変更がまだリモートにプッシュされていません: デザイナーまたはプッシュでプッシュしてください。',
       useForInventories: 'インベントリに使用しますか?',

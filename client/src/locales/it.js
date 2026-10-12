@@ -874,6 +874,7 @@ export default {
       useWorkflowsHint: 'Workflow che il designer costruisce, modificati e reinviati dal designer',
       useWorkflowsShort: 'Workflow',
       notPushed: 'Non inviato',
+      pushed: 'Inviato',
       notPushedHint: 'Ci sono modifiche salvate qui non ancora inviate al remoto: inviale dal designer o con Push.',
       useForInventories: 'Usare per gli inventari?',
       helpUseForInventories:

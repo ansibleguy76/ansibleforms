@@ -20,7 +20,7 @@ import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import TokenStorage from '@/lib/TokenStorage';
-import { statusPill, notPushedPill } from '@/config/settings';
+import { repositoryStatusPill } from '@/config/settings';
 import { cronValidationMessage } from '@/config/cron';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
@@ -143,6 +143,7 @@ const running = computed(() => repo.value?.status === 'running');
 // git's output, a line each (the trailing newline adds none)
 const outputLines = computed(() => (repo.value?.output || '').replace(/\n$/, '').split('\n'));
 // pushed back : only what the designer writes to it, its forms, settings, playbooks, workflows or inventories
+// (and, on the button, only when it has changes not pushed yet)
 const canPush = computed(
   () =>
     !!(
@@ -399,9 +400,8 @@ onMounted(async () => {
             <!-- where it stands : its status and head, each a field of the column, read only -->
             <div class="mb-3">
               <div class="form-label fw-bold">{{ t('settings.fields.status') }}</div>
-              <span v-html="statusPill(t, repo.status)"></span>
-              <!-- changes saved here (the designer's Save) and not pushed yet -->
-              <span v-if="repo.unpushed" class="ms-1" v-html="notPushedPill(t)"></span>
+              <!-- the last sync running or failed, else not pushed yet or pushed -->
+              <span v-html="repositoryStatusPill(t, repo)"></span>
             </div>
             <div class="mb-3">
               <div class="form-label fw-bold">{{ t('settings.fields.head') }}</div>
@@ -540,7 +540,7 @@ onMounted(async () => {
         <BsButton
           icon="upload"
           cssClass="text-nowrap"
-          :disabled="running || !canPush"
+          :disabled="running || !canPush || !repo?.unpushed"
           :title="canPush ? null : t('settings.repositories.pushHint')"
           @click="run('sync')"
           >{{ t('settings.repositories.push') }}</BsButton

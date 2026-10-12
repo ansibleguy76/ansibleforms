@@ -878,6 +878,7 @@ export default {
       useWorkflowsHint: 'Workflows, die der Designer erstellt, bearbeitet und zurückpusht',
       useWorkflowsShort: 'Workflows',
       notPushed: 'Nicht gepusht',
+      pushed: 'Gepusht',
       notPushedHint:
         'Hier gespeicherte Änderungen sind noch nicht zum Remote gepusht: pushe sie im Designer oder mit Push.',
       useForInventories: 'Für Inventare verwenden?',
