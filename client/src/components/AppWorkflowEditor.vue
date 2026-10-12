@@ -838,7 +838,7 @@ function startAt(i) {
               <template v-if="!readOnly">
                 <!-- a node there already : linked -->
                 <label class="form-label small text-muted mb-1">{{ t('workflowEditor.linkExisting') }}</label>
-                <div class="input-group mb-3">
+                <div class="d-flex align-items-center gap-2 mb-3">
                   <select v-model="linkKind" class="form-select af-wf-kind">
                     <option v-for="kind in LINK_KINDS" :key="kind" :value="kind">
                       {{ t(`workflowEditor.kinds.${kind}`) }}
@@ -848,7 +848,9 @@ function startAt(i) {
                     <option value="">{{ t('workflowEditor.linkTo') }}</option>
                     <option v-for="id in linkTargets" :key="id" :value="id">{{ id }}</option>
                   </select>
-                  <BsButton icon="link" @click="addLink()">{{ t('workflowEditor.link') }}</BsButton>
+                  <BsButton icon="link" cssClass="text-nowrap" @click="addLink()">{{
+                    t('workflowEditor.link')
+                  }}</BsButton>
                 </div>
                 <!-- a new node : the wizard, linked after this one -->
                 <label class="form-label small text-muted mb-1">{{ t('workflowEditor.newAfter') }}</label>
