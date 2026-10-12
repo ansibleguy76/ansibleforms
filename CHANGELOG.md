@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.1.0](https://github.com/ansibleforms/ansibleforms/compare/7.0.0...7.1.0) (2026-10-12)
+
+
+### Added
+
+* a new variable of a host or group gets its own row from the Add variable button ([#1004](https://github.com/ansibleforms/ansibleforms/issues/1004)) ([e8b176b](https://github.com/ansibleforms/ansibleforms/commit/e8b176bc453cc2b678000e87ac049fb4db1fae7e))
+* an inventory group shows a group icon, not a folder ([#1010](https://github.com/ansibleforms/ansibleforms/issues/1010)) ([d4c276b](https://github.com/ansibleforms/ansibleforms/commit/d4c276b067ff87969cbcf5cc629acc4e3ee43828))
+* save from the unsaved changes dialog of a playbook, vars file or inventory ([#1005](https://github.com/ansibleforms/ansibleforms/issues/1005)) ([651ef4f](https://github.com/ansibleforms/ansibleforms/commit/651ef4f31823c0249183f8d7149336b11c6a45d5))
+* the designer's confirmations are narrower, and releasing a lock says what its holder loses ([#1012](https://github.com/ansibleforms/ansibleforms/issues/1012)) ([f701cd2](https://github.com/ansibleforms/ansibleforms/commit/f701cd2eec62dff0e597eca600177892146b5ed1))
+* the group_vars and host_vars badges of the inventory preview say vars ([#1015](https://github.com/ansibleforms/ansibleforms/issues/1015)) ([9ba5002](https://github.com/ansibleforms/ansibleforms/commit/9ba50024f00305a2ec51d5a85c0893f11ac2215e))
+* the inventory preview says where a group's or host's variables are ([#1003](https://github.com/ansibleforms/ansibleforms/issues/1003)) ([8c2d72f](https://github.com/ansibleforms/ansibleforms/commit/8c2d72fc2eb9f3458c907d10470eec4444d71127))
+* the variables badge of an inventory row sits beside its name ([#1014](https://github.com/ansibleforms/ansibleforms/issues/1014)) ([555f1d0](https://github.com/ansibleforms/ansibleforms/commit/555f1d003b9f27889fdc8ad5abace22f4f22c126))
+
+
+### Fixed
+
+* a designer section's file explorer is never taller than its editor ([#1009](https://github.com/ansibleforms/ansibleforms/issues/1009)) ([042bd8e](https://github.com/ansibleforms/ansibleforms/commit/042bd8e7239379396af317c6055369349520ee20))
+* a host emptied of its variables is written host:, not ? host ([#1006](https://github.com/ansibleforms/ansibleforms/issues/1006)) ([3f24f3a](https://github.com/ansibleforms/ansibleforms/commit/3f24f3a1a0791ebf4576bc897361d386d6965a50))
+* an rte registered before the config seed is adopted, not doubled ([#1011](https://github.com/ansibleforms/ansibleforms/issues/1011)) ([bfd8bbb](https://github.com/ansibleforms/ansibleforms/commit/bfd8bbb55d8329ac8b58dfc65f2b9348e00bf63d))
+* inventory groups show a folder again in the Visual and Preview tabs ([#1013](https://github.com/ansibleforms/ansibleforms/issues/1013)) ([c25cd42](https://github.com/ansibleforms/ansibleforms/commit/c25cd423228710105110455a14571752b65dc347))
+* start the rte before the app has created the schema ([#997](https://github.com/ansibleforms/ansibleforms/issues/997)) ([a8c2f4b](https://github.com/ansibleforms/ansibleforms/commit/a8c2f4b672855cafd0068ffd7b1c6a9bffca1a99))
+
 ## [7.0.0](https://github.com/ansibleforms/ansibleforms/compare/6.5.5...7.0.0) (2026-10-12)
 
 AnsibleForms 7 is a major release: forms run on more than Ansible and AWX, workflows run in AnsibleForms itself, the interface is new, and the security model is tightened. Coming from 6, read [Upgrading to 7](https://ansibleforms.com/upgrade-7) first: it lists what to change before you switch the image.
