@@ -451,16 +451,30 @@ function discardAndGo() {
   go();
 }
 
+/**
+ * Loads the files and, for the inventories, opens the first inventory's inventory.yaml : the
+ * section opens on an inventory rather than on nothing.
+ */
+async function loadAndOpen() {
+  await loadList();
+  if (!isInventories.value || selected.value) return;
+  const first = listing.value.files
+    .map((f) => f.path)
+    .filter((p) => inventoryFileRole(p, prefixed.value).role === 'inventory')
+    .sort((a, b) => a.localeCompare(b))[0];
+  if (first) await open(first, true);
+}
+
 watch(
   () => props.kind,
   () => {
     selected.value = '';
     content.value = loadedContent.value = '';
     extraFolders.value = [];
-    loadList();
+    loadAndOpen();
   },
 );
-onMounted(loadList);
+onMounted(loadAndOpen);
 defineExpose({
   save,
   push,
