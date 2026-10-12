@@ -10,6 +10,7 @@ import { safeParse } from "../lib/safejson.js";
 import loggerConfig from "../../config/log.config.js";
 import appConfig from "../../config/app.config.js";
 import mysql from "./db.model.js";
+import NotificationChannel from "./notificationChannel.model.js";
 import Form from "./form.model.js";
 import Expression from "./expression.model.js";
 import Query from "./query.model.js";
@@ -1671,7 +1672,8 @@ Job._buildAndSendEmail = async function ({
   subject,
   templatePath,
   replacements = {},
-  logContext = 'notification'
+  logContext = 'notification',
+  server = null
 }) {
   try {
     const config = await Settings.findUrl();
@@ -1716,11 +1718,10 @@ Job._buildAndSendEmail = async function ({
       .replaceAll("${regards}", lit(replacements.regards))
       .replaceAll("${runDetails}", lit(replacements.runDetails));
     
-    const messageid = await Settings.mailsend(
-      recipients.join(","),
-      subject,
-      message
-    );
+    // through the mail channel a form names (channels: [...]), else the active one
+    const messageid = server
+      ? await Settings.maildo(await NotificationChannel.toMailConfig(server), recipients.join(","), subject, message)
+      : await Settings.mailsend(recipients.join(","), subject, message);
     
     if (!messageid) {
       logger.notice(`No ${logContext} sent`);
@@ -1734,8 +1735,93 @@ Job._buildAndSendEmail = async function ({
     return false;
   }
 };
+/**
+ * The channels a form names, split : its mail channels (turned on), which send the usual mail
+ * through their own server instead of the active one, and the others by name (Slack, Teams,
+ * Telegram, webhooks - and the names not found, which sendToChannels says in the log).
+ *
+ * Args:
+ *   names (string[]): the channels' names.
+ *
+ * Returns:
+ *   Promise<object>: { mail (the mail channels), others (the other names) }.
+ */
+Job._splitChannels = async function (names) {
+  const mail = [];
+  const others = [];
+  for (const name of [...new Set((Array.isArray(names) ? names : []).filter(Boolean).map(String))]) {
+    const channel = await NotificationChannel.findByName(name).catch(() => null);
+    if (channel?.type === "mail") {
+      if (channel.enabled) mail.push(channel);
+      else logger.notice(`The mail channel '${name}' is turned off : the mail goes through the active one`);
+    } else {
+      others.push(name);
+    }
+  }
+  return { mail, others };
+};
+/**
+ * Sends the usual mail (its template) to the recipients : through each mail channel a form names,
+ * else through the active one.
+ *
+ * Args:
+ *   mailChannels (object[]): the mail channels named (none : the active one).
+ *   options (object): what Job._buildAndSendEmail takes.
+ *
+ * Returns:
+ *   Promise<boolean>: true when one mail at least was sent.
+ */
+Job._sendMails = async function (mailChannels, options) {
+  if (!mailChannels.length) return Job._buildAndSendEmail(options);
+  let sent = false;
+  for (const server of mailChannels) {
+    if (await Job._buildAndSendEmail({ ...options, server, logContext: `${options.logContext} (${server.name})` })) sent = true;
+  }
+  return sent;
+};
+/**
+ * Sends a notification to the channels a form names (Connections > Notifications : Slack, Teams,
+ * Telegram, a webhook, or a mail channel to the recipients) : the title, a short text and a
+ * link to the job. Never throws : a notification never fails a job.
+ *
+ * Args:
+ *   options (object): { channels (their names), recipients (a mail channel's addresses), title,
+ *     text, status, event, job (the job, for its form and user), jobid, buttonLabel, context
+ *     (for the log) }.
+ *
+ * Returns:
+ *   Promise<boolean>: true when one channel at least got it.
+ */
+Job._notifyChannels = async function ({ channels, recipients = [], title, text, status = "", event = "", job = {}, jobid, buttonLabel, context }) {
+  if (!Array.isArray(channels) || !channels.length) return false;
+  try {
+    const config = await Settings.findUrl().catch(() => ({}));
+    const url = config?.url ? stripTrailingSlashes(config.url) : "";
+    const { sendToChannels } = await import("../lib/notifiers.js");
+    const results = await sendToChannels(
+      channels,
+      {
+        title,
+        text,
+        status,
+        event,
+        job: { id: jobid, form: job.form || "", user: job.user || "" },
+        link: url ? `${url}/jobs/${jobid}` : "",
+        buttonLabel: buttonLabel || i18n.t(null, "notifications.openJob"),
+      },
+      recipients,
+      context,
+    );
+    return results.some((r) => r.ok);
+  } catch (err) {
+    logger.error(`${context} could not be sent to its channels : `, err);
+    return false;
+  }
+};
 Job.sendApprovalNotification = async function (approval, extravars, jobid) {
-  if (!approval?.notifications?.length > 0) return false;
+  const hasMail = approval?.notifications?.length > 0;
+  const hasChannels = Array.isArray(approval?.channels) && approval.channels.length > 0;
+  if (!hasMail && !hasChannels) return false;
   
   var subject =
     Helpers.replacePlaceholders(approval.title, extravars) ||
@@ -1745,7 +1831,28 @@ Job.sendApprovalNotification = async function (approval, extravars, jobid) {
     extravars
   );
   
-  return await Job._buildAndSendEmail({
+  // the approval's channels : the message, and the link to approve or reject on the job's page ;
+  // the job's form and user for a webhook's payload
+  const { mail: mailChannels, others } = hasChannels ? await Job._splitChannels(approval.channels) : { mail: [], others: [] };
+  const asked = hasChannels
+    ? (await mysql.do("SELECT form, user FROM AnsibleForms.`jobs` WHERE id = ?", [jobid]).catch(() => []))?.[0] || {}
+    : {};
+  const viaChannels = others.length
+    ? await Job._notifyChannels({
+        job: asked,
+        channels: others,
+        recipients: approval.notifications || [],
+        title: subject,
+        text: approvalMessage || i18n.t(null, 'email.approval.subtitle'),
+        status: "approve",
+        event: "approval",
+        jobid,
+        buttonLabel: i18n.t(null, 'email.approval.button'),
+        context: "Approval",
+      })
+    : false;
+  if (!hasMail) return viaChannels;
+  const viaMail = await Job._sendMails(mailChannels, {
     recipients: approval.notifications,
     subject: subject,
     templatePath: "approval.html",
@@ -1759,6 +1866,7 @@ Job.sendApprovalNotification = async function (approval, extravars, jobid) {
     },
     logContext: "Approval mail"
   });
+  return viaMail || viaChannels;
 };
 Job.sendStatusNotification = async function (jobid) {
   try {
@@ -1775,7 +1883,8 @@ Job.sendStatusNotification = async function (jobid) {
       notifications.onStatus = ["any"];
     }
     
-    if (!notifications?.recipients) {
+    const channels = Array.isArray(notifications?.channels) ? notifications.channels : [];
+    if (!notifications?.recipients && !channels.length) {
       logger.notice("No notifications set");
       return false;
     }
@@ -1788,10 +1897,24 @@ Job.sendStatusNotification = async function (jobid) {
       return false;
     }
     
-    // Send the mail
     var subject = Job.mailSubject(job, jobid, Job.mailWord('status', job.status));
+    const { mail: mailChannels, others } = await Job._splitChannels(channels);
+    // the channels : a short text and the link to the job (its output is on its page)
+    const viaChannels = await Job._notifyChannels({
+      channels: others,
+      recipients: notifications.recipients || [],
+      title: subject,
+      text: i18n.t(null, 'notifications.statusText', { jobid, form: job.form, status: Job.mailWord('status', job.status) }),
+      status: job.status,
+      event: "status",
+      job,
+      jobid,
+      context: "Status notification",
+    });
+    if (!notifications.recipients) return viaChannels;
     
-    return await Job._buildAndSendEmail({
+    // Send the mail : through the mail channels named, else the active one
+    const viaMail = await Job._sendMails(mailChannels, {
       recipients: notifications.recipients,
       subject: subject,
       templatePath: "jobstatus.html",
@@ -1806,6 +1929,7 @@ Job.sendStatusNotification = async function (jobid) {
       },
       logContext: "Status mail"
     });
+    return viaMail || viaChannels;
   } catch (err) {
     logger.error("Failed to send status notification: ", err);
     return false;
@@ -1832,7 +1956,8 @@ Job.sendEventNotification = async function (jobid, eventType, user = null) {
       return false;
     }
     
-    if (!notifications.recipients || notifications.recipients.length === 0) {
+    const channels = Array.isArray(notifications.channels) ? notifications.channels : [];
+    if ((!notifications.recipients || notifications.recipients.length === 0) && !channels.length) {
       logger.notice("No notification recipients set");
       return false;
     }
@@ -1841,8 +1966,23 @@ Job.sendEventNotification = async function (jobid, eventType, user = null) {
     const eventMessage = Job.eventMessage(eventType, user);
 
     var subject = Job.mailSubject(job, jobid, Job.mailWord('event', eventType));
+    const { mail: mailChannels, others } = await Job._splitChannels(channels);
+    // the channels : the event's sentence and the link to the job
+    const viaChannels = await Job._notifyChannels({
+      channels: others,
+      recipients: notifications.recipients || [],
+      title: subject,
+      text: eventMessage,
+      status: job.status,
+      event: eventType,
+      job,
+      jobid,
+      buttonLabel: i18n.t(null, 'email.jobevent.button'),
+      context: `${eventType} notification`,
+    });
+    if (!notifications.recipients || notifications.recipients.length === 0) return viaChannels;
     
-    return await Job._buildAndSendEmail({
+    const viaMail = await Job._sendMails(mailChannels, {
       recipients: notifications.recipients,
       subject: subject,
       templatePath: "jobevent.html",
@@ -1854,6 +1994,7 @@ Job.sendEventNotification = async function (jobid, eventType, user = null) {
       },
       logContext: `${eventType} notification`
     });
+    return viaMail || viaChannels;
   } catch (err) {
     logger.error(`Failed to send ${eventType} notification: `, err);
     return false;

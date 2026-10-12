@@ -247,4 +247,12 @@ export default {
       body: "<p>This is a test message from AnsibleForms</p>",
     },
   },
+  // what a notification channel (Connections > Notifications) says : a test, a job's end
+  notifications: {
+    testText: "A test notification from {who} : the channel '{name}' receives it.",
+    testSent: "Test notification sent to {name}",
+    testFailed: "Test notification failed",
+    statusText: "Job {jobid} of the form '{form}' ended : {status}.",
+    openJob: "Open the job",
+  },
 };

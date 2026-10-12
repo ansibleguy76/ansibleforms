@@ -13,6 +13,7 @@
     { "name": "settings", "description": "Application settings and configuration" },
     { "name": "secretstore", "description": "Secret stores (HashiCorp Vault, ...) that credentials read from" },
     { "name": "syslogserver", "description": "Syslog servers the server log and the audit entries are sent to" },
+    { "name": "notificationchannel", "description": "Notification channels: SMTP servers, Slack, Microsoft Teams, Telegram and webhooks" },
     { "name": "runner", "description": "Runners : where a playbook runs (an RTE container)" },
     { "name": "config", "description": "Form configuration (config.yaml) and designer support" },
     { "name": "ssh", "description": "SSH key management" },
@@ -1357,6 +1358,51 @@
         "responses": { "200": { "description": "Sent (udp cannot tell whether it arrived)" }, "404": { "description": "Not found" }, "500": { "description": "The transport reported an error" } }
       }
     },
+    "/notificationchannel": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["notificationchannel"],
+        "summary": "List notification channels, or one by name (a Slack or Teams webhook address masked)", "parameters": [ { "name": "name", "in": "query", "required": false, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "Channel list or single channel" } }
+      },
+      "post": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["notificationchannel"],
+        "summary": "Create a notification channel; the first mail channel is the active one",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotificationChannel" } } } },
+        "responses": { "201": { "description": "Channel created" }, "400": { "description": "An invalid field, or one its type needs is missing" } }
+      }
+    },
+    "/notificationchannel/{id}": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["notificationchannel"],
+        "summary": "Get a notification channel by ID (a Slack or Teams webhook address masked)", "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "Channel" }, "404": { "description": "Not found" } }
+      },
+      "put": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["notificationchannel"],
+        "summary": "Update a notification channel by ID; its type stays, a masked webhook address sent back stays as it is", "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotificationChannel" } } } },
+        "responses": { "200": { "description": "Channel updated" }, "404": { "description": "Not found" } }
+      },
+      "delete": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["notificationchannel"],
+        "summary": "Delete a notification channel by ID", "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "Channel deleted" }, "404": { "description": "Not found" } }
+      }
+    },
+    "/notificationchannel/{id}/test": {
+      "post": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["notificationchannel"],
+        "summary": "Send a test notification through a channel, as saved; a mail channel to the address given", "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "requestBody": { "required": false, "content": { "application/json": { "schema": { "type": "object", "properties": { "to": { "type": "string", "description": "The address, for a mail channel" } } } } } },
+        "responses": { "200": { "description": "Sent" }, "400": { "description": "A mail channel without an address" }, "404": { "description": "Not found" }, "500": { "description": "The channel answered with an error" } }
+      }
+    },
     "/secretstore/{id}/mounts": {
       "get": {
         "security": [ { "bearerAuth": [] } ],
@@ -2645,6 +2691,32 @@
           "source": { "type": "string", "default": "localhost", "description": "The host the lines say they come from" },
           "receives": { "type": "string", "enum": ["log", "audit", "both"], "default": "both" },
           "enabled": { "type": "boolean", "default": true }
+        }
+      },
+      "NotificationChannel": {
+        "type": "object",
+        "description": "A notification channel. Which fields are used depends on the type.",
+        "required": ["name", "type"],
+        "properties": {
+          "name": { "type": "string", "example": "ops-slack" },
+          "description": { "type": "string" },
+          "type": { "type": "string", "enum": ["mail", "slack", "teams", "telegram", "webhook"], "description": "Set on create; it stays" },
+          "enabled": { "type": "boolean", "default": true },
+          "is_active": { "type": "boolean", "description": "mail: the one the app sends its mail with" },
+          "server": { "type": "string", "example": "smtp.example.com", "description": "mail" },
+          "port": { "type": "integer", "example": 587, "description": "mail" },
+          "secure": { "type": "boolean", "description": "mail: TLS" },
+          "from_address": { "type": "string", "description": "mail" },
+          "credential": { "type": "string", "description": "mail: an smtp credential, the login" },
+          "webhook_url": { "type": "string", "description": "slack, teams: the webhook address, a secret (masked when read)" },
+          "chat_id": { "type": "string", "description": "telegram: the chat" },
+          "api_url": { "type": "string", "description": "telegram: the Bot API address, empty for api.telegram.org" },
+          "token_credential": { "type": "string", "description": "telegram: an api credential whose password is the bot token; webhook: an api credential whose password is the bearer token" },
+          "url": { "type": "string", "description": "webhook: the address" },
+          "method": { "type": "string", "enum": ["POST", "PUT"], "default": "POST", "description": "webhook" },
+          "headers": { "type": "string", "description": "webhook: extra headers, a JSON object" },
+          "verify_tls": { "type": "boolean", "default": true, "description": "webhook" },
+          "payload": { "type": "string", "description": "webhook: the JSON body, with {{title}} {{text}} {{status}} {{event}} {{jobId}} {{form}} {{user}} {{link}}" }
         }
       },
       "SecretStore": {

@@ -149,10 +149,10 @@ export function searchPages(t, options) {
       link: '/settings/ssh/known-hosts',
     },
     {
-      title: t('sidebar.mail'),
+      title: t('sidebar.notifications'),
       section: settings,
-      icon: 'envelope',
-      link: '/settings/mail',
+      icon: 'bell',
+      link: '/settings/notifications',
     },
     {
       title: t('sidebar.chat'),

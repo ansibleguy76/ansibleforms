@@ -167,6 +167,68 @@ export function schedulePill(t, state) {
   return pill(known[state], label);
 }
 
+// ─── notification channels (Connections > Notifications) ─────────────────────
+// the types a channel can be, in the order the wizard offers them, and each one's icon
+export const CHANNEL_TYPES = ['mail', 'slack', 'teams', 'telegram', 'webhook'];
+export const CHANNEL_ICONS = {
+  mail: 'envelope',
+  slack: 'fab,slack',
+  teams: 'fab,microsoft',
+  telegram: 'fab,telegram',
+  webhook: 'globe',
+};
+// the placeholders a webhook's payload may use, as its help lists them (written out here : the
+// translations cannot hold a brace)
+export const PAYLOAD_PLACEHOLDERS = ['title', 'text', 'status', 'event', 'jobId', 'form', 'user', 'link']
+  .map((name) => `{{${name}}}`)
+  .join(', ');
+// the body a webhook channel sends when it has none of its own (models/notificationChannel.js)
+export const DEFAULT_PAYLOAD = `{
+  "title": "{{title}}",
+  "text": "{{text}}",
+  "status": "{{status}}",
+  "event": "{{event}}",
+  "job": { "id": "{{jobId}}", "form": "{{form}}", "user": "{{user}}" },
+  "link": "{{link}}"
+}`;
+
+/**
+ * A channel's type : one of CHANNEL_TYPES, mail when it has none yet.
+ *
+ * Args:
+ *   item (object): the channel (or the one being made).
+ *
+ * Returns:
+ *   string: its type.
+ */
+export function channelType(item) {
+  return CHANNEL_TYPES.includes(item?.type) ? item.type : 'mail';
+}
+
+/**
+ * Where a channel sends, as the list shows it : a mail server's host and port, a webhook's host,
+ * a Telegram chat ; a Slack or Teams webhook's address is a secret, so only its kind.
+ *
+ * Args:
+ *   t (function): the translation function.
+ *   row (object): the channel.
+ *
+ * Returns:
+ *   string: the address.
+ */
+export function channelAddress(t, row) {
+  const type = channelType(row);
+  if (type === 'mail') return row?.server ? `${row.server}:${row.port || 25}` : '';
+  if (type === 'slack' || type === 'teams') return t('settings.notificationChannels.addressWebhook');
+  if (type === 'telegram')
+    return row?.chat_id ? t('settings.notificationChannels.addressChat', { chat: row.chat_id }) : '';
+  try {
+    return new URL(row?.url).host;
+  } catch {
+    return row?.url || '';
+  }
+}
+
 /**
  * What a syslog server gets, as text : the audit log, the server log, or both.
  *
@@ -2363,61 +2425,149 @@ export default function getSettings(t) {
         },
       ],
     },
-    mailServers: {
+    notificationChannels: {
       // the page title is the menu entry's label (AppSidebar), so the two always match
-      pageTitle: t('sidebar.mail'),
-      type: 'mailserver',
-      label: t('settings.mailServers.label'),
-      labelPlural: t('settings.mailServers.labelPlural'),
-      description: t('settings.mailServers.description'),
-      icon: 'envelope',
+      pageTitle: t('sidebar.notifications'),
+      type: 'notificationchannel',
+      label: t('settings.notificationChannels.label'),
+      labelPlural: t('settings.notificationChannels.labelPlural'),
+      description: t('settings.notificationChannels.description'),
+      icon: 'bell',
       selectable: false,
-      // a server has its own page (pages/admin/mail-server.vue) : its row and Edit open it, New
-      // the wizard
-      openPage: (item) => `/settings/mail/${item.id}`,
-      // the dialog in steps : the server, how the app reaches it, who the mail is from and the
-      // login
+      // a channel has its own page (pages/admin/notification-channel.vue) : its row and Edit open
+      // it, Add the wizard
+      openPage: (item) => `/settings/notifications/${item.id}`,
+      // the dialog in steps : the channel, its type, then its type's own (one at a time : a step's
+      // when follows the type chosen)
       steps: [
-        { key: 'server', label: t('settings.mailServers.stepServer') },
-        { key: 'connection', label: t('settings.mailServers.stepConnection') },
-        { key: 'sender', label: t('settings.mailServers.stepSender') },
-      ],
-      // in the row menu : editing, making it the active one, a test mail (on its page), then
-      // Delete last, each apart
-      actions: [
-        { name: 'edit', title: t('settings.mailServers.editServer'), icon: 'pencil', color: 'edit' },
+        { key: 'channel', label: t('settings.notificationChannels.stepChannel') },
+        { key: 'type', label: t('settings.notificationChannels.stepType') },
         {
-          // the one the app sends with : the others stop being it (mailServer.model)
-          name: 'use',
-          title: t('settings.mailServers.useForMail'),
-          icon: 'envelope',
+          key: 'connection',
+          label: t('settings.notificationChannels.stepConnection'),
+          when: (i) => channelType(i) === 'mail',
+        },
+        { key: 'sender', label: t('settings.notificationChannels.stepSender'), when: (i) => channelType(i) === 'mail' },
+        {
+          key: 'connection',
+          label: t('settings.notificationChannels.stepWebhook'),
+          when: (i) => ['slack', 'teams'].includes(channelType(i)),
+        },
+        {
+          key: 'connection',
+          label: t('settings.notificationChannels.stepBot'),
+          when: (i) => channelType(i) === 'telegram',
+        },
+        {
+          key: 'connection',
+          label: t('settings.notificationChannels.stepEndpoint'),
+          when: (i) => channelType(i) === 'webhook',
+        },
+        {
+          key: 'payload',
+          label: t('settings.notificationChannels.stepPayload'),
+          when: (i) => channelType(i) === 'webhook',
+        },
+      ],
+      // in the row menu : editing, turning it on or off, for mail making it the active one, a test
+      // (on its page, its dialog open), then Delete last, each apart
+      actions: [
+        { name: 'edit', title: t('settings.notificationChannels.editChannel'), icon: 'pencil', color: 'edit' },
+        {
+          name: 'enable',
+          title: t('settings.notificationChannels.enable'),
+          icon: 'toggle-on',
           color: 'edit',
           dividerBefore: true,
+          // only the one that changes it : Enable on a channel turned off, Disable on one turned on
+          shownWhen: (m) => !m.enabled,
+          update: () => ({ enabled: 1 }),
+        },
+        {
+          name: 'disable',
+          title: t('settings.notificationChannels.disable'),
+          icon: 'toggle-off',
+          color: 'edit',
+          dividerBefore: true,
+          shownWhen: (m) => !!m.enabled,
+          update: () => ({ enabled: 0 }),
+        },
+        {
+          // a mail channel only : the one the app sends its mail with ; the others stop being it
+          name: 'use',
+          title: t('settings.notificationChannels.useForMail'),
+          icon: 'envelope',
+          color: 'edit',
+          shownWhen: (m) => m.type === 'mail',
           enabledWhen: (m) => !m.is_active,
           update: () => ({ is_active: 1 }),
         },
         {
           name: 'send_test',
-          title: t('settings.mailServers.sendTest'),
+          title: t('settings.notificationChannels.sendTest'),
           icon: 'paper-plane',
           color: 'test',
           dividerBefore: true,
-          to: (m) => `/settings/mail/${m.id}/test`,
+          to: (m) => ({ path: `/settings/notifications/${m.id}`, query: { test: '1' } }),
         },
-        { name: 'delete', title: t('settings.mailServers.deleteServer'), icon: 'trash', color: 'delete' },
+        {
+          name: 'delete',
+          title: t('settings.notificationChannels.deleteChannel'),
+          icon: 'trash',
+          color: 'delete',
+        },
       ],
       fields: [
         { key: 'id', hidden: true, noInput: true, noTable: true },
         {
-          // the one the app sends with : a yes / no column, not in the dialog ; the first server
-          // is it, another is chosen with Use for mail
-          key: 'is_active',
-          label: t('settings.mailServers.active'),
+          // sending or not : a yes / no column ; a new channel is on, the row menu turns it on or off
+          key: 'enabled',
+          label: t('settings.notificationChannels.enabled'),
           type: 'checkbox',
           noInput: true,
         },
-        { key: 'name', label: t('settings.fields.name'), required: true, icon: 'heading' },
-        { key: 'description', label: t('settings.fields.description'), icon: 'info-circle', hidden: true },
+        { key: 'name', step: 'channel', label: t('settings.fields.name'), required: true, icon: 'heading' },
+        {
+          key: 'description',
+          step: 'channel',
+          label: t('settings.fields.description'),
+          icon: 'info-circle',
+          hidden: true,
+        },
+        {
+          // its type : radios, each its icon, label and a few words ; set when it is made, it stays
+          key: 'type',
+          step: 'type',
+          label: t('settings.notificationChannels.type'),
+          type: 'radio',
+          required: true,
+          options: CHANNEL_TYPES.map((value) => ({
+            value,
+            icon: CHANNEL_ICONS[value],
+            label: t(`settings.notificationChannels.type_${value}`),
+            hint: t(`settings.notificationChannels.typeHint_${value}`),
+          })),
+          initial: (r) => r?.type || 'mail',
+          render: (v) => esc(t(`settings.notificationChannels.type_${CHANNEL_TYPES.includes(v) ? v : 'mail'}`)),
+        },
+        {
+          // where it sends, as the table shows it : not a field of the dialog
+          key: 'address',
+          label: t('settings.notificationChannels.address'),
+          noInput: true,
+          render: (v, row) => esc(channelAddress(t, row)),
+          sortValue: (r) => channelAddress(t, r),
+          hideBelow: 740,
+        },
+        {
+          // a mail channel the app sends its mail with : a yes / no column ; the first one is it
+          key: 'is_active',
+          label: t('settings.notificationChannels.active'),
+          type: 'checkbox',
+          noInput: true,
+          hideBelow: 900,
+        },
+        // ─── mail ───
         {
           key: 'server',
           step: 'connection',
@@ -2426,6 +2576,8 @@ export default function getSettings(t) {
           placeholder: 'smtp.example.com',
           required: true,
           icon: 'server',
+          hidden: true,
+          showWhen: (i) => channelType(i) === 'mail',
         },
         {
           key: 'port',
@@ -2435,6 +2587,8 @@ export default function getSettings(t) {
           help: t('settings.mail.mailPortHelp'),
           initial: (r) => r?.port ?? 587,
           icon: 'arrows-alt-v',
+          hidden: true,
+          showWhen: (i) => channelType(i) === 'mail',
         },
         {
           key: 'secure',
@@ -2444,6 +2598,8 @@ export default function getSettings(t) {
           label: t('settings.mail.useTls'),
           help: t('settings.mail.useTlsHelp'),
           initial: (r) => (r?.id ? !!r.secure : true),
+          hidden: true,
+          showWhen: (i) => channelType(i) === 'mail',
         },
         {
           key: 'from_address',
@@ -2454,6 +2610,8 @@ export default function getSettings(t) {
           placeholder: 'noreply@example.com',
           required: true,
           icon: 'envelope',
+          hidden: true,
+          showWhen: (i) => channelType(i) === 'mail',
         },
         {
           // its login : an smtp credential of Connections > Credentials, or a New one ; none for
@@ -2461,8 +2619,8 @@ export default function getSettings(t) {
           key: 'credential',
           step: 'sender',
           icon: 'key',
-          label: t('settings.mailServers.credential'),
-          help: t('settings.mailServers.helpCredential'),
+          label: t('settings.notificationChannels.credential'),
+          help: t('settings.notificationChannels.helpCredential'),
           type: 'select',
           parent: 'credentials',
           values: 'credential',
@@ -2472,6 +2630,136 @@ export default function getSettings(t) {
           createWith: 'credentials',
           createLabel: t('settings.repositories.newCredential'),
           createDefaults: { credential_type: 'smtp' },
+          // the smtp credentials only, none first (a relay without a login)
+          choicesWhen: (c) => !c?.name || c.credential_type === 'smtp',
+          hidden: true,
+          showWhen: (i) => channelType(i) === 'mail',
+        },
+        // ─── slack, teams ───
+        {
+          // the webhook's address : a secret, never shown again once saved
+          key: 'webhook_url',
+          step: 'connection',
+          type: 'password',
+          label: t('settings.notificationChannels.webhookUrl'),
+          help: (i) =>
+            t(`settings.notificationChannels.webhookUrlHelp_${channelType(i) === 'teams' ? 'teams' : 'slack'}`),
+          placeholder: 'https://',
+          required: true,
+          icon: 'link',
+          hidden: true,
+          showWhen: (i) => ['slack', 'teams'].includes(channelType(i)),
+        },
+        // ─── webhook ───
+        {
+          key: 'url',
+          step: 'connection',
+          label: t('settings.notificationChannels.url'),
+          help: t('settings.notificationChannels.urlHelp'),
+          placeholder: 'https://hooks.example.com/ansibleforms',
+          required: true,
+          icon: 'globe',
+          hidden: true,
+          showWhen: (i) => channelType(i) === 'webhook',
+        },
+        {
+          key: 'method',
+          step: 'connection',
+          label: t('settings.notificationChannels.method'),
+          icon: 'arrow-right',
+          type: 'select',
+          parent: 'webhookMethods',
+          values: ['POST', 'PUT'].map((value) => ({ value, label: value })),
+          valueKey: 'value',
+          labelKey: 'label',
+          initial: (r) => r?.method || 'POST',
+          hidden: true,
+          showWhen: (i) => channelType(i) === 'webhook',
+        },
+        {
+          // telegram : its bot token ; webhook : a bearer token - each the password of an api
+          // credential of Connections > Credentials, or a New one
+          key: 'token_credential',
+          step: 'connection',
+          icon: 'key',
+          label: t('settings.notificationChannels.tokenCredential_webhook'),
+          dialogLabel: (i) =>
+            t(
+              `settings.notificationChannels.tokenCredential_${channelType(i) === 'telegram' ? 'telegram' : 'webhook'}`,
+            ),
+          help: (i) =>
+            t(
+              `settings.notificationChannels.tokenCredentialHelp_${channelType(i) === 'telegram' ? 'telegram' : 'webhook'}`,
+            ),
+          type: 'select',
+          parent: 'credentials',
+          values: 'credential',
+          valueKey: 'name',
+          labelKey: 'name',
+          clearable: true,
+          createWith: 'credentials',
+          createLabel: t('settings.repositories.newCredential'),
+          createDefaults: { credential_type: 'api' },
+          // the api credentials only : a token is their password
+          choicesWhen: (c) => !c?.name || c.credential_type === 'api',
+          hidden: true,
+          showWhen: (i) => ['telegram', 'webhook'].includes(channelType(i)),
+        },
+        // ─── telegram : its chat, after its bot token ───
+        {
+          key: 'chat_id',
+          step: 'connection',
+          label: t('settings.notificationChannels.chatId'),
+          help: t('settings.notificationChannels.chatIdHelp'),
+          placeholder: '-1001234567890',
+          required: true,
+          icon: 'comments',
+          hidden: true,
+          showWhen: (i) => channelType(i) === 'telegram',
+        },
+        {
+          // a Bot API of its own (a local Bot API server) ; empty : api.telegram.org
+          key: 'api_url',
+          step: 'connection',
+          label: t('settings.notificationChannels.apiUrl'),
+          help: t('settings.notificationChannels.apiUrlHelp'),
+          placeholder: 'https://api.telegram.org',
+          icon: 'globe',
+          hidden: true,
+          showWhen: (i) => channelType(i) === 'telegram',
+        },
+        {
+          key: 'verify_tls',
+          step: 'connection',
+          type: 'checkbox',
+          flush: true,
+          label: t('settings.notificationChannels.verifyTls'),
+          help: t('settings.notificationChannels.verifyTlsHelp'),
+          initial: (r) => (r?.id ? !!r.verify_tls : true),
+          hidden: true,
+          showWhen: (i) => channelType(i) === 'webhook',
+        },
+        {
+          key: 'headers',
+          step: 'payload',
+          type: 'textarea',
+          rows: 3,
+          label: t('settings.notificationChannels.headers'),
+          help: t('settings.notificationChannels.headersHelp'),
+          placeholder: '{ "X-Source": "ansibleforms" }',
+          hidden: true,
+          showWhen: (i) => channelType(i) === 'webhook',
+        },
+        {
+          key: 'payload',
+          step: 'payload',
+          type: 'textarea',
+          rows: 9,
+          label: t('settings.notificationChannels.payload'),
+          help: t('settings.notificationChannels.payloadHelp', { placeholders: PAYLOAD_PLACEHOLDERS }),
+          placeholder: DEFAULT_PAYLOAD,
+          hidden: true,
+          showWhen: (i) => channelType(i) === 'webhook',
         },
       ],
     },

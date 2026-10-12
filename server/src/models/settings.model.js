@@ -604,12 +604,12 @@ Settings.mailcheck = function(config,to,subject,body){
   logger.info("Sending testmail")
   return Settings.maildo(config,to,subject,message)
 }
-// Sent with the active mail server (Settings > Mail) ; none active, with the mail settings,
-// which a config seed still writes
+// Sent with the active mail channel (Connections > Notifications) ; none active, with the mail
+// settings, which a config seed still writes
 Settings.mailsend = async function(to,subject,message){
-  const { default: MailServer } = await import('./mailServer.model.js')
-  const active = await MailServer.findActive()
-  const config = active ? await MailServer.toMailConfig(active) : await Settings.findMailSettings()
+  const { default: NotificationChannel } = await import('./notificationChannel.model.js')
+  const active = await NotificationChannel.findActive()
+  const config = active ? await NotificationChannel.toMailConfig(active) : await Settings.findMailSettings()
   return Settings.maildo(config,to,subject,message)
 }
 Settings.maildo = function(config,to,subject,message){

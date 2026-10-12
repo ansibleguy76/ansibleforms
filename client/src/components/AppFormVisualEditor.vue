@@ -415,6 +415,17 @@ function addCredential() {
     setFormIn(d, 'credentials', name, '');
   });
 }
+// the notification channels' names (Connections > Notifications), offered in the notifications'
+// and the approval's Channels (the list needs the settings' permission : without it, none offered)
+const channelNames = ref([]);
+onMounted(async () => {
+  try {
+    const res = await axios.get('/api/v2/notificationchannel/');
+    channelNames.value = (res.data?.records || res.data || []).map((c) => c?.name).filter(Boolean);
+  } catch {
+    channelNames.value = [];
+  }
+});
 // the credentials' names the instance keeps, offered as the values (the list needs the
 // settings' permission : without it, typed)
 const credentialNames = ref([]);
@@ -1102,6 +1113,55 @@ defineExpose({
                 />
               </div>
             </div>
+            <!-- the notification channels it goes to as well (Slack, Teams, Telegram, a webhook) -->
+            <div>
+              <label class="form-label fw-bold">{{ t('designer.visualChannels') }}</label>
+              <div class="d-flex align-items-center flex-wrap gap-2">
+                <span
+                  v-for="c in nested('notifications').channels || []"
+                  :key="c"
+                  class="badge rounded-pill af-form-pill"
+                >
+                  {{ c }}
+                  <button
+                    type="button"
+                    class="btn-close ms-1"
+                    :disabled="locked"
+                    :aria-label="t('common.delete')"
+                    @click="
+                      setNested(
+                        'notifications',
+                        'channels',
+                        nested('notifications').channels.filter((x) => x !== c),
+                      )
+                    "
+                  ></button>
+                </span>
+                <select
+                  @mouseenter="fullTitle"
+                  class="form-select form-select-sm af-form-add"
+                  :disabled="locked"
+                  :value="''"
+                  @change="
+                    setNested('notifications', 'channels', [
+                      ...(nested('notifications').channels || []),
+                      $event.target.value,
+                    ]);
+                    $event.target.value = '';
+                  "
+                >
+                  <option value="">{{ t('designer.visualAdd') }}</option>
+                  <option
+                    v-for="o in channelNames.filter((x) => !(nested('notifications').channels || []).includes(x))"
+                    :key="o"
+                    :value="o"
+                  >
+                    {{ o }}
+                  </option>
+                </select>
+              </div>
+              <div class="form-text">{{ t('designer.visualChannelsHelp') }}</div>
+            </div>
             <div>
               <label class="form-label fw-bold">{{ t('designer.visualOnStatus') }}</label>
               <div class="d-flex flex-wrap gap-3">
@@ -1264,6 +1324,48 @@ defineExpose({
                   @change="addEmail('approval', 'notifications', $event.target)"
                 />
               </div>
+            </div>
+            <!-- the notification channels it is asked in as well (Slack, Teams, Telegram, a webhook) -->
+            <div>
+              <label class="form-label fw-bold">{{ t('designer.visualChannels') }}</label>
+              <div class="d-flex align-items-center flex-wrap gap-2">
+                <span v-for="c in nested('approval').channels || []" :key="c" class="badge rounded-pill af-form-pill">
+                  {{ c }}
+                  <button
+                    type="button"
+                    class="btn-close ms-1"
+                    :disabled="locked"
+                    :aria-label="t('common.delete')"
+                    @click="
+                      setNested(
+                        'approval',
+                        'channels',
+                        nested('approval').channels.filter((x) => x !== c),
+                      )
+                    "
+                  ></button>
+                </span>
+                <select
+                  @mouseenter="fullTitle"
+                  class="form-select form-select-sm af-form-add"
+                  :disabled="locked"
+                  :value="''"
+                  @change="
+                    setNested('approval', 'channels', [...(nested('approval').channels || []), $event.target.value]);
+                    $event.target.value = '';
+                  "
+                >
+                  <option value="">{{ t('designer.visualAdd') }}</option>
+                  <option
+                    v-for="o in channelNames.filter((x) => !(nested('approval').channels || []).includes(x))"
+                    :key="o"
+                    :value="o"
+                  >
+                    {{ o }}
+                  </option>
+                </select>
+              </div>
+              <div class="form-text">{{ t('designer.visualChannelsHelp') }}</div>
             </div>
           </div>
         </div>

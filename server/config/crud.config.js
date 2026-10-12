@@ -78,19 +78,31 @@ const crudConfigs = {
     allowCache: true,
     cacheTTL: 3600
   },
-  // The SMTP servers the app sends mail with : one is active
-  mailserver: {
-    table: 'AnsibleForms.mail_servers',
+  // Where notifications go (Connections > Notifications) : SMTP servers (one active, the one the
+  // app sends its mail with), Slack, Teams, Telegram and webhooks (models/notificationChannel)
+  notificationchannel: {
+    table: 'AnsibleForms.notification_channels',
     fields: [
       { name: 'id', isKey: true },
       { name: 'name', isNaturalKey: true, required: true },
       { name: 'description' },
-      { name: 'server', required: true },
+      { name: 'type', required: true },
+      { name: 'enabled', isBoolean: true },
+      { name: 'is_active', isBoolean: true },
+      { name: 'server' },
       { name: 'port' },
       { name: 'secure', isBoolean: true },
       { name: 'from_address' },
       { name: 'credential' },
-      { name: 'is_active', isBoolean: true },
+      { name: 'webhook_url', isEncrypted: true },
+      { name: 'chat_id' },
+      { name: 'api_url' },
+      { name: 'token_credential' },
+      { name: 'url' },
+      { name: 'method' },
+      { name: 'headers' },
+      { name: 'verify_tls', isBoolean: true },
+      { name: 'payload' },
       { name: 'managed', isBoolean: true }
     ],
     allowCache: true,

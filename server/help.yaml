@@ -2961,7 +2961,7 @@
         short: Add approval point
         description: |
           Ansible Forms allows to add an approval point before a job is ran.  
-          An approval link is sent by email to a specific approver who can then approve or reject the job.
+          An approval link is sent by email to a specific approver who can then approve or reject the job, and to the notification channels it names (`channels`: Slack, Microsoft Teams, Telegram, a webhook - Connections > Notifications).
       - name: notifications
         type: object
         with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep
@@ -2971,7 +2971,7 @@
         docsObjectLink: "notifications"
         short: Add Notification
         description: |
-          Add email notifications on job status events.
+          Add notifications on job status events : by email (`recipients`), and to notification channels (`channels` : Slack, Microsoft Teams, Telegram, a webhook, or a mail server of Connections > Notifications).
         examples:
         - name: Send on success
           code: |
@@ -2980,6 +2980,14 @@
                 - info@ansibleguy.com
               onStatus:
                 - success
+        - name: Post to Slack and Teams when it fails
+          code: |
+            notifications:
+              channels:
+                - ops-slack
+                - ops-teams
+              onStatus:
+                - failed
             
       - name: onSubmit
         type: array
@@ -5187,11 +5195,20 @@
               Every role in this list will have the power to approve or reject this job.     
           - name: notifications
             type: array
-            required: true
+            required: false
             allowed: a valid email address
             short: The approval recipients
             description: | 
               Every email-address in this list will receive the approval message by email with the approval link.
+          - name: channels
+            type: array
+            required: false
+            allowed: the name of a notification channel
+            short: The approval channels
+            description: | 
+              The notification channels of Connections > Notifications that receive the approval message, with a link to the job, where it is approved or rejected : Slack, Microsoft Teams, Telegram, a webhook.  
+              A mail channel in this list sends the approval mail to the `notifications` addresses through that server instead of the active one.  
+              A name that is not there is said in the log and skipped. (Added in 7.0.0)
           examples: 
           - name: Remove host
             language: YAML
@@ -5209,12 +5226,22 @@
                 notifications:
                 - vmware@domain.local
                 - approvers@domain.local      
+          - name: Ask for approval in Teams
+            language: YAML
+            code: |
+              approval:
+                title: Remove host $(vm.name) ?
+                message: You are about to remove vm $(vm.name).
+                roles:
+                - approvers
+                channels:
+                - approvers-teams
         - name: Notifications
           itemName: attribute
           link: forms/form/notifications
           icon: fas,envelope
           description: |
-            When you want to send an email on job-event<br>
+            When you want to send a notification on job-event : an email, and a message to notification channels (Connections > Notifications : Slack, Microsoft Teams, Telegram, a webhook)<br>
             <br>
             **Email Templates**<br>
             Notification emails use HTML templates located in `server/templates/email/`:<br>
@@ -5229,11 +5256,21 @@
           items:
           - name: recipients
             type: array
-            required: true
+            required: false
             allowed: email address
             short: Recipients
             description: | 
-              A list of email addresses who need to receive a notification
+              A list of email addresses who need to receive a notification.  
+              `recipients` or `channels`, or both, is needed.
+          - name: channels
+            type: array
+            required: false
+            allowed: the name of a notification channel
+            short: Channels
+            description: | 
+              The notification channels of Connections > Notifications the notification goes to : Slack, Microsoft Teams, Telegram, a webhook. They get a short message (the form, the job, what happened) with a link to the job.  
+              A mail channel in this list sends the notification mail to the `recipients` through that server instead of the active one.  
+              A name that is not there is said in the log and skipped. (Added in 7.0.0)
           - name: onStatus
             type: array
             required: false

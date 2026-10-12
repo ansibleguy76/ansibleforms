@@ -35,6 +35,7 @@ import SecretStore from "../models/secretStore.model.js";
 import Runner from "../models/runner.model.js";
 import Repository from "../models/repository.model.js";
 import SyslogServer from "../models/syslogServer.model.js";
+import NotificationChannel from "../models/notificationChannel.model.js";
 import Ldap from "../models/ldap.model.js";
 import Settings from "../models/settings.model.js";
 import ChatSettings, { normaliseExtraHeaders } from "../models/chatSettings.model.js";
@@ -109,6 +110,17 @@ const listSections = [
     create: (d) => SyslogServer.create(d, seedOpts),
     update: (d, row) => SyslogServer.update(d, row.id, seedOpts),
     remove: (row) => SyslogServer.delete(row.id, seedOpts),
+  },
+  {
+    // where notifications go (Connections > Notifications) : SMTP servers, Slack, Teams,
+    // Telegram and webhooks. After the credentials : a channel names one
+    key: "notification_channels",
+    modelName: "notificationchannel",
+    label: "notification channel",
+    defaults: { description: "" },
+    create: (d) => NotificationChannel.create(d, seedOpts),
+    update: (d, row) => NotificationChannel.update(d, row.id, seedOpts),
+    remove: (row) => NotificationChannel.delete(row.id, seedOpts),
   },
 ];
 

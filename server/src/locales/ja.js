@@ -254,4 +254,12 @@ export default {
       body: "<p>これは AnsibleForms からのテストメッセージです。</p>",
     },
   },
+  // what a notification channel (Connections > Notifications) says : a test, a job's end
+  notifications: {
+    testText: "{who} からのテスト通知 : チャネル '{name}' が受信します。",
+    testSent: "テスト通知を {name} に送信しました",
+    testFailed: "テスト通知に失敗しました",
+    statusText: "フォーム '{form}' のジョブ {jobid} が終了しました : {status}。",
+    openJob: "ジョブを開く",
+  },
 };
