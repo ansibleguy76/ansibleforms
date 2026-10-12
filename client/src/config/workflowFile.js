@@ -270,6 +270,45 @@ export function onTemplateRunner(n, refs = {}) {
   return type !== 'rte';
 }
 
+// where a job template node runs, as the node's "Runs" offers it : a designer playbook on the RTE,
+// or a runner's template (AWX - AAP and Ascender included - and Semaphore) or job (Rundeck, Jenkins)
+export const RUN_TARGETS = ['rte', 'awx', 'semaphore', 'rundeck', 'jenkins'];
+
+/**
+ * Where a job template node runs : its runner's type, the RTE without a runner.
+ *
+ * Args:
+ *   n (object): the node.
+ *   refs (object): { runners : [{ name, type }] } - null when unknown.
+ *
+ * Returns:
+ *   string|null: one of RUN_TARGETS ; null when it names a runner of unknown type (or none the
+ *     instance has), or is no job template node.
+ */
+export function nodeRunsOn(n, refs = {}) {
+  if (n?.type !== 'job_template') return null;
+  if (!n.runner) return 'rte';
+  const type = (refs.runners || []).find((r) => r.name === n.runner)?.type;
+  return RUN_TARGETS.includes(type) ? type : null;
+}
+
+/**
+ * The runner a node gets when "Runs" picks where it runs : none on the RTE (its default runs it),
+ * else the type's default runner, or its first by name.
+ *
+ * Args:
+ *   target (string): one of RUN_TARGETS.
+ *   runners (object[]): the runners, each { name, type, is_default }.
+ *
+ * Returns:
+ *   string: the runner's name ; '' on the RTE, or when the type has no runner.
+ */
+export function runnerForTarget(target, runners) {
+  if (target === 'rte') return '';
+  const ofType = (runners || []).filter((r) => r.type === target).sort((a, b) => a.name.localeCompare(b.name));
+  return (ofType.find((r) => r.is_default) || ofType[0])?.name || '';
+}
+
 /**
  * What is wrong in a workflow file : what AWX would refuse, and what the instance does not
  * have (a playbook, an inventory, a credential, a repository).

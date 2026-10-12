@@ -121,7 +121,9 @@ onMounted(async () => {
     // the runners a node may run on : each with its type (an RTE runs a playbook, the others a
     // template or job)
     names('/api/v2/runner/', (d) =>
-      (d?.records || d || []).filter((r) => r?.name).map((r) => ({ name: r.name, type: r.type })),
+      (d?.records || d || [])
+        .filter((r) => r?.name)
+        .map((r) => ({ name: r.name, type: r.type, flavour: r.flavour || '', is_default: !!r.is_default })),
     ),
   ]);
   refs.value = { playbooks, inventories, credentials, repositories, runners };
