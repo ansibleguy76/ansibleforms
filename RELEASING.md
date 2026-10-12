@@ -87,10 +87,8 @@ The 6.x line builds on `ansibleguy/ansibleforms-base` from Docker Hub, pinned by
 `Dockerfile` (the 2026.09.25-3 build). That image is frozen: nothing publishes to Docker Hub
 any more, and the base is no longer built from this branch.
 
-The base of current versions is `ghcr.io/ansibleforms/base-server`, built in
-[ansibleforms/base-images](https://github.com/ansibleforms/base-images). To move 6.x onto it,
-point the `FROM` lines in `Dockerfile` at a `base-server` digest and build a release
-candidate to test it.
+Both `FROM` lines in `Dockerfile` (`nodebase` and `tmp_builder`) use that same digest. To move
+6.x to another base, point both lines at the new digest and build a release candidate to test it.
 
 ## A patch release of 6.x
 
