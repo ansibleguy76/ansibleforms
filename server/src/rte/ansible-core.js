@@ -7,7 +7,9 @@
 // The approval gate is NOT here : a job reaches an RTE only once it may run
 // (runners/orchestrator.js, in the app).
 import fs from "fs";
+import os from "os";
 import path from "path";
+import { fileURLToPath } from "url";
 import { spawn } from "child_process";
 import logger from "../lib/logger.js";
 import Cmd from "../lib/cmd.js";
@@ -23,6 +25,95 @@ import { registerJobSecrets, forgetJobSecrets, maskOutput } from "../lib/outputM
 import { playbookEnv } from "../lib/playbookEnv.js";
 import { createOutputBatcher } from "../lib/outputBatcher.js";
 import { resolveInventory } from "../lib/inventories.js";
+
+// ─── a playbook's artifacts (set_stats) ───────────────────────────────────────
+// The callback plugin that writes what set_stats gathered to a file (callback_plugins/
+// af_artifacts.py) : the job stores it as its artifacts, a workflow passes it on (AWX's way).
+const CALLBACK_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "callback_plugins");
+// where ansible looks for callback plugins when nothing says otherwise
+const DEFAULT_CALLBACK_PATHS = ["~/.ansible/plugins/callback", "/usr/share/ansible/plugins/callback"];
+
+/**
+ * The callback_plugins an ansible.cfg sets, as ansible finds the file : ANSIBLE_CONFIG, else
+ * ./ansible.cfg (the playbook folder), ~/.ansible.cfg, /etc/ansible/ansible.cfg. A relative path
+ * is the file's folder's.
+ *
+ * Args:
+ *   directory (string): the folder the playbook runs from.
+ *   env (object): the playbook's environment.
+ *
+ * Returns:
+ *   string[]: the paths it sets, none when no file sets any.
+ */
+function configCallbackPaths(directory, env) {
+  const home = env.HOME || os.homedir();
+  const candidates = [env.ANSIBLE_CONFIG, path.join(directory, "ansible.cfg"), path.join(home, ".ansible.cfg"), "/etc/ansible/ansible.cfg"];
+  for (const file of candidates.filter(Boolean)) {
+    let text;
+    try {
+      text = fs.readFileSync(file, "utf8");
+    } catch {
+      continue;
+    }
+    // the first file found is the one ansible reads, whatever it sets
+    let section = "";
+    for (const line of text.split(/\r?\n/)) {
+      const head = line.match(/^\s*\[([^\]]+)\]/);
+      if (head) section = head[1].trim().toLowerCase();
+      const set = section === "defaults" && line.match(/^\s*callback_plugins\s*[=:]\s*(.*?)\s*$/i);
+      if (set) return set[1].split(path.delimiter).filter(Boolean).map((p) => (p.startsWith("~") || path.isAbsolute(p) ? p : path.resolve(path.dirname(file), p)));
+    }
+    return [];
+  }
+  return [];
+}
+
+/**
+ * The environment a playbook runs with so that its set_stats data is written to a file : the
+ * artifacts plugin's folder first in the callback plugins path, then the folders the
+ * environment or the ansible.cfg named (an environment variable replaces the config's, so they
+ * are kept), else ansible's own ; and the file to write.
+ *
+ * Args:
+ *   env (object): the playbook's environment.
+ *   directory (string): the folder the playbook runs from.
+ *   artifactsFile (string): the file the plugin writes.
+ *
+ * Returns:
+ *   object: the environment.
+ */
+export function artifactsEnv(env, directory, artifactsFile) {
+  const named = env.ANSIBLE_CALLBACK_PLUGINS ? env.ANSIBLE_CALLBACK_PLUGINS.split(path.delimiter).filter(Boolean) : configCallbackPaths(directory, env);
+  const paths = [CALLBACK_DIR, ...(named.length ? named : DEFAULT_CALLBACK_PATHS)];
+  return { ...env, ANSIBLE_CALLBACK_PLUGINS: [...new Set(paths)].join(path.delimiter), AF_ARTIFACTS_FILE: artifactsFile };
+}
+
+/**
+ * The artifacts the plugin wrote, and the file gone : {} when there is none (the playbook did
+ * not get to its end) or it cannot be read.
+ *
+ * Args:
+ *   file (string): the file.
+ *
+ * Returns:
+ *   object: the artifacts.
+ */
+export function takeArtifacts(file) {
+  if (!file) return {};
+  let data = {};
+  try {
+    const parsed = JSON.parse(fs.readFileSync(file, "utf8"));
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) data = parsed;
+  } catch (e) {
+    if (e.code !== "ENOENT") logger.warning(`The set_stats data in ${file} could not be read : ${e.message}`);
+  }
+  try {
+    fs.unlinkSync(file);
+  } catch {
+    // never written, or gone
+  }
+  return data;
+}
 
 /** this RTE's name, stored in jobs.host on the jobs it claims : rte-<hostname>-<port> (lib/role.js) */
 export function runnerIdentity() {
@@ -240,6 +331,8 @@ async function launchPlaybook(ev, secrets, jobid, counter) {
     extravarsFileName: extravarsFileName,
     hiddenExtravarsFileName: hiddenExtravarsFileName,
     keepExtravars: keepExtravars,
+    // what set_stats gathers : written there by the artifacts plugin, stored on the job
+    artifactsFile: path.join(os.tmpdir(), `af_artifacts_${jobid}.json`),
   };
 
   logger.notice("Running from directory : " + cmdObj.directory);
@@ -273,6 +366,7 @@ export function executeCommand(cmd, jobid, counter) {
   var hiddenExtravarsFileName = cmd.hiddenExtravarsFileName;
   var keepExtravars = cmd.keepExtravars;
   var task = cmd.task;
+  var artifactsFile = cmd.artifactsFile;
   // the abort flag lives in the database (Job.abort sets it), so whoever runs the process
   // - this host or another - notices it here and stops the playbook itself
   let killed = false;
@@ -335,7 +429,8 @@ export function executeCommand(cmd, jobid, counter) {
         detached: true,
         // the RTE's environment without AnsibleForms' own variables : a playbook never reads
         // ENCRYPTION_SECRET, the database password or a token through lookup('env')
-        env: playbookEnv(),
+        // and, for a playbook, the artifacts plugin that writes what set_stats gathered
+        env: artifactsFile ? artifactsEnv(playbookEnv(), directory, artifactsFile) : playbookEnv(),
       });
       child.stdout.setEncoding("utf8");
       child.stderr.setEncoding("utf8");
@@ -420,6 +515,8 @@ export function executeCommand(cmd, jobid, counter) {
         // first : ansible-playbook is gone, nothing reads them any more, and the database
         // calls below can stall or be cut short by a stop
         removeExtravarsFiles();
+        // what set_stats gathered, stored on the job whatever its end (AWX keeps a failed job's too)
+        const artifacts = takeArtifacts(artifactsFile);
         // the log as the playbook left it, before the job ends
         await syncJobLog(true);
         // Clear the PID and host from the database as the process has ended
@@ -439,7 +536,8 @@ export function executeCommand(cmd, jobid, counter) {
               ++counter,
               "stderr",
               "aborted",
-              `${task} was aborted by the operator`
+              `${task} was aborted by the operator`,
+              artifacts
             );
             reject(`${task} was aborted by the operator`);
           } else {
@@ -462,7 +560,8 @@ export function executeCommand(cmd, jobid, counter) {
               ++counter,
               "stderr",
               jobstatus,
-              `[ERROR]: ${task} failed with status (${data})`
+              `[ERROR]: ${task} failed with status (${data})`,
+              artifacts
             );
             reject(`${task} failed with status (${data})`);
           } else {
@@ -471,7 +570,8 @@ export function executeCommand(cmd, jobid, counter) {
               ++counter,
               "stdout",
               jobstatus,
-              `ok: [${task} finished] with status (${data})`
+              `ok: [${task} finished] with status (${data})`,
+              artifacts
             );
             resolve(true);
           }
@@ -482,6 +582,7 @@ export function executeCommand(cmd, jobid, counter) {
         if (!settle()) return;
         await output.flush();
         removeExtravarsFiles();
+        takeArtifacts(artifactsFile);
         await syncJobLog(true);
         // Clear the PID and host from the database as the process has errored
         logger.debug(`[Job ${jobid}] Process with PID ${child.pid} encountered an error`);
@@ -502,6 +603,7 @@ export function executeCommand(cmd, jobid, counter) {
     } catch (e) {
       if (!settle()) return;
       removeExtravarsFiles();
+      takeArtifacts(artifactsFile);
       Job.endJobStatus(
         jobid,
         ++counter,

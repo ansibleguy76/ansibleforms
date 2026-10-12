@@ -61,3 +61,7 @@ dist
 # tar file
 ansibleforms.tar
 
+
+# python bytecode, written next to the RTE callback plugin when ansible loads it
+__pycache__/
+*.pyc
