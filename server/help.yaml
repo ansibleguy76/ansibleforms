@@ -729,7 +729,7 @@
     allowed: 0, 1
     default: 1
     short: Enforce the Content-Security-Policy
-    hint: 0 sends it report only ; needs a restart
+    hint: 0 sends it report only ; applied without a restart
     description: |
       The web app is served with a Content-Security-Policy : scripts from the app itself only, so
       a script injected into a page does not run, and no other site may frame it. It allows what
@@ -987,7 +987,7 @@
     allowed: a long random string
     default: none (metrics off)
     short: Prometheus metrics token
-    hint: Unset, /api/v2/metrics answers 404 ; needs a restart
+    hint: Unset, /api/v2/metrics answers 404 ; applied without a restart
     description: |
       Set, an app node (`AF_ROLE` `all` or `app`) serves Prometheus metrics at `/api/v2/metrics`
       and an RTE at `/metrics`, to a scraper that sends `Authorization: Bearer <METRICS_TOKEN>`.
@@ -1005,7 +1005,7 @@
     allowed: text, json
     default: text
     short: Log format
-    hint: json writes one JSON object a line ; needs a restart
+    hint: json writes one JSON object a line ; applied without a restart
     description: |
       `text` (default) : `<time> <level>: <message>`, colored in the console and the log file.
       `json` : one JSON object a line - `time` (ISO), `level`, `message`, `requestId`, `role` and
