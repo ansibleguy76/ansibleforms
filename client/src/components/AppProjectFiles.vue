@@ -644,7 +644,7 @@ defineExpose({
                 <!-- an inventory that is a repository : git's mark -->
                 <FaIcon
                   v-if="isInventories && item.depth === 0 && repositoryInventories.includes(item.name)"
-                  :icon="['fab', 'git-alt']"
+                  icon="fab,git"
                   class="text-secondary me-2 flex-shrink-0"
                   :title="t('designer.files.inventoryRepository')"
                 />
