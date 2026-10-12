@@ -9,8 +9,8 @@ export const DESIGNER_TABS = {
   forms: ['yaml', 'visual', 'preview'],
   // an inventory's groups and hosts, its vars files' variables
   inventories: ['yaml', 'visual'],
-  // a playbook is code, edited as YAML ; its Preview is its outline (plays, roles, tasks)
-  playbooks: ['yaml', 'preview'],
+  // a playbook : its YAML, its plays and tasks as fields (Visual), its outline (Preview)
+  playbooks: ['yaml', 'visual', 'preview'],
   varsfiles: ['yaml', 'visual'],
   // a workflow as its graph (the Visual tab), and a dry run of it (the Preview tab)
   workflows: ['yaml', 'visual', 'preview'],

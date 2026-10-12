@@ -261,7 +261,7 @@ describe('restoring a backup asks before discarding unsaved work', () => {
 
 describe('the designer address names a section and a tab it has', () => {
   // a section it no longer has (roles, users ...) or a tab its section does not have
-  // (/designer/playbooks/visual) is not found, never another section or tab instead
+  // (/designer/constants/preview) is not found, never another section or tab instead
   const names = [...designer.matchAll(/^ {4}name: '(\w+)',$/gm)].map((m) => m[1].toLowerCase());
 
   it('lists exactly the sections of the menu', () => {
@@ -272,6 +272,7 @@ describe('the designer address names a section and a tab it has', () => {
     expect(designerAddressExists({ view: 'playbooks' })).toBe(true);
     expect(designerAddressExists({ view: 'playbooks', item: 'yaml' })).toBe(true);
     expect(designerAddressExists({ view: 'playbooks', item: 'preview' })).toBe(true);
+    expect(designerAddressExists({ view: 'playbooks', item: 'visual' })).toBe(true);
     expect(designerAddressExists({ view: 'varsfiles', item: 'visual' })).toBe(true);
     expect(designerAddressExists({ view: 'forms', item: 'approval-demo' })).toBe(true);
     expect(designerAddressExists({ view: 'forms', item: 'approval-demo', editor: 'preview' })).toBe(true);
@@ -280,7 +281,6 @@ describe('the designer address names a section and a tab it has', () => {
   it('answers anything else as not found', () => {
     expect(designerAddressExists({ item: 'roles' })).toBe(false);
     expect(designerAddressExists({ view: 'roles' })).toBe(false);
-    expect(designerAddressExists({ view: 'playbooks', item: 'visual' })).toBe(false);
     expect(designerAddressExists({ view: 'constants', item: 'preview' })).toBe(false);
     expect(designerAddressExists({ view: 'varsfiles', item: 'site.yml' })).toBe(false);
     expect(designerAddressExists({ view: 'varsfiles', item: 'yaml', editor: 'yaml' })).toBe(false);

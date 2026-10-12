@@ -572,6 +572,8 @@ defineExpose({
           <FaIcon icon="file-lines" class="empty-state-icon" />
           <span>{{ t('designer.files.visualNotYaml') }}</span>
         </div>
+        <!-- a playbook : its plays and tasks, field by field -->
+        <AppPlaybookEditor v-else-if="kind === 'playbooks'" v-model="content" :readOnly="readOnly" @reveal="reveal" />
         <!-- a workflow file : its workflows as graphs, its job templates -->
         <AppWorkflowEditor v-else-if="isWorkflows" v-model="content" :readOnly="readOnly" @reveal="reveal" />
         <div v-else-if="fileKind.kind === 'invalid'" class="alert alert-warning d-flex align-items-center gap-2">
