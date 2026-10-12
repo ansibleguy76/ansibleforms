@@ -1600,6 +1600,9 @@ export default {
     inventoriesDescription:
       "Les inventaires sur lesquels tournent les playbooks : un dossier par inventaire, avec ses variables de groupe et d'hôte.",
     sectionToBuild: "Rien ici pour l'instant.",
+    // the toolbar's generic add and edit (config/designerActions.js), when a section gives no words
+    add: 'Ajouter',
+    edit: 'Modifier',
     files: {
       hideExplorer: "Masquer l'explorateur de fichiers",
       showExplorer: "Afficher l'explorateur de fichiers",

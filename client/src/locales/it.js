@@ -1584,6 +1584,9 @@ export default {
     inventoriesDescription:
       'Gli inventari su cui girano i playbook: una cartella per inventario, con le sue variabili di gruppo e di host.',
     sectionToBuild: 'Ancora niente qui.',
+    // the toolbar's generic add and edit (config/designerActions.js), when a section gives no words
+    add: 'Aggiungi',
+    edit: 'Modifica',
     files: {
       hideExplorer: "Nascondi l'esploratore dei file",
       showExplorer: "Mostra l'esploratore dei file",

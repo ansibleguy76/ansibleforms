@@ -480,6 +480,13 @@ defineExpose({
   reload,
   revert,
   newFile: () => startCreate(isInventories.value ? 'inventory' : 'file'),
+  // the file open's text, as the toolbar's format, compare and download need it
+  getText: () => content.value,
+  setText: (text) => {
+    content.value = text;
+  },
+  savedText: () => loadedContent.value,
+  isYaml: computed(() => lang.value === 'yaml'),
   // the Visual tab of a vars file : a new key at its top
   addVar: () => varsEditor.value?.add(),
   canAddVar: computed(() => !!varsEditor.value),

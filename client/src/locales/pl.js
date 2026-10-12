@@ -1579,6 +1579,9 @@ export default {
     inventoriesDescription:
       'Inwentarze, na których działają playbooki: jeden folder na inwentarz, z jego zmiennymi grup i hostów.',
     sectionToBuild: 'Na razie nic tu nie ma.',
+    // the toolbar's generic add and edit (config/designerActions.js), when a section gives no words
+    add: 'Dodaj',
+    edit: 'Edytuj',
     files: {
       hideExplorer: 'Ukryj eksplorator plików',
       showExplorer: 'Pokaż eksplorator plików',

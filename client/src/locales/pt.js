@@ -1593,6 +1593,9 @@ export default {
     inventoriesDescription:
       'Os inventários contra os quais os playbooks correm: uma pasta por inventário, com as suas variáveis de grupo e de host.',
     sectionToBuild: 'Ainda não há nada aqui.',
+    // the toolbar's generic add and edit (config/designerActions.js), when a section gives no words
+    add: 'Adicionar',
+    edit: 'Editar',
     files: {
       hideExplorer: 'Ocultar o explorador de ficheiros',
       showExplorer: 'Mostrar o explorador de ficheiros',

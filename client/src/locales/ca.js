@@ -1597,6 +1597,9 @@ export default {
     inventoriesDescription:
       'Els inventaris contra els quals corren els playbooks: una carpeta per inventari, amb les seves variables de grup i de host.',
     sectionToBuild: 'Encara no hi ha res aquí.',
+    // the toolbar's generic add and edit (config/designerActions.js), when a section gives no words
+    add: 'Afegeix',
+    edit: 'Edita',
     files: {
       hideExplorer: "Amaga l'explorador de fitxers",
       showExplorer: "Mostra l'explorador de fitxers",

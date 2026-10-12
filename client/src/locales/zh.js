@@ -1521,6 +1521,9 @@ export default {
     inventories: '清单',
     inventoriesDescription: 'playbook 运行所针对的清单:每个清单一个文件夹,含其组变量和主机变量。',
     sectionToBuild: '这里还没有内容。',
+    // the toolbar's generic add and edit (config/designerActions.js), when a section gives no words
+    add: '添加',
+    edit: '编辑',
     files: {
       hideExplorer: '隐藏文件资源管理器',
       showExplorer: '显示文件资源管理器',
