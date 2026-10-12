@@ -1539,7 +1539,8 @@ export default {
         'Failed to parse the forms configuration. Please fix the YAML syntax error before making changes.',
       configTemplated:
         'This configuration uses ytt templating and cannot be edited here. Edit the source template instead.',
-      publicRoleNote: 'The public role applies to everyone automatically; groups and users cannot be assigned to it.',
+      publicRoleNote:
+        'The default role applies to everyone automatically (public is its old name); groups and users cannot be assigned to it.',
       publicEveryone: 'Everyone, automatically',
       roleNoUsers: 'No users in this role yet.',
       roleNoGroups: 'No groups in this role yet.',

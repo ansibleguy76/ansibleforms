@@ -1571,7 +1571,8 @@ export default {
         "No s'ha pogut analitzar la configuració dels formularis. Corregeix l'error de sintaxi YAML abans de fer canvis.",
       configTemplated:
         "Aquesta configuració utilitza plantilles ytt i no es pot editar aquí. Edita la plantilla d'origen.",
-      publicRoleNote: "El rol public s'aplica automàticament a tothom; no s'hi poden assignar grups ni usuaris.",
+      publicRoleNote:
+        "El rol default s'aplica automàticament a tothom (public és el seu nom antic); no se li poden assignar grups ni usuaris.",
       publicEveryone: 'Tothom, automàticament',
       roleNoUsers: 'Aquest rol encara no té usuaris.',
       roleNoGroups: 'Aquest rol encara no té grups.',

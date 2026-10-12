@@ -1560,7 +1560,7 @@ export default {
       configTemplated:
         'Deze configuratie gebruikt ytt-templating en kan hier niet worden bewerkt. Bewerk in plaats daarvan de bronsjabloon.',
       publicRoleNote:
-        'De rol public geldt automatisch voor iedereen; groepen en gebruikers kunnen er niet aan worden toegewezen.',
+        'De rol default geldt automatisch voor iedereen (public is de oude naam); er kunnen geen groepen of gebruikers aan worden toegewezen.',
       publicEveryone: 'Iedereen, automatisch',
       roleNoUsers: 'Deze rol heeft nog geen gebruikers.',
       roleNoGroups: 'Deze rol heeft nog geen groepen.',

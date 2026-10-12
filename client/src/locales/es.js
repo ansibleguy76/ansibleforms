@@ -1564,7 +1564,8 @@ export default {
         'No se pudo analizar la configuración de los formularios. Corrija el error de sintaxis YAML antes de realizar cambios.',
       configTemplated:
         'Esta configuración utiliza plantillas ytt y no se puede editar aquí. Edite en su lugar la plantilla de origen.',
-      publicRoleNote: 'El rol public se aplica automáticamente a todos; no se pueden asignar grupos ni usuarios.',
+      publicRoleNote:
+        'El rol default se aplica automáticamente a todos (public es su nombre anterior); no se le pueden asignar grupos ni usuarios.',
       publicEveryone: 'Todos, automáticamente',
       roleNoUsers: 'Este rol aún no tiene usuarios.',
       roleNoGroups: 'Este rol aún no tiene grupos.',

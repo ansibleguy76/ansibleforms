@@ -10,6 +10,7 @@
 /*  template) still lists its roles here.                         */
 /*                                                                */
 /******************************************************************/
+import { EVERYONE_ROLES } from '@/composables/useRoleSupport';
 import { ref } from 'vue';
 import axios from 'axios';
 import yaml from 'yaml';
@@ -68,7 +69,7 @@ export function useRoleAssignments() {
     const mine = new Set(groupNames);
     return roles.value
       .map((r) => {
-        const everyone = r.name === 'public';
+        const everyone = EVERYONE_ROLES.includes(r.name);
         const direct = !everyone && names(r.users, provider, new Set([username])).length > 0;
         const groups = everyone ? [] : names(r.groups, provider, mine);
         return everyone || direct || groups.length ? { ...row(r), direct, groups, everyone } : null;
@@ -89,7 +90,7 @@ export function useRoleAssignments() {
    */
   function rolesOfGroup(groupName, provider = 'local') {
     return roles.value
-      .filter((r) => r.name !== 'public' && names(r.groups, provider, new Set([groupName])).length)
+      .filter((r) => !EVERYONE_ROLES.includes(r.name) && names(r.groups, provider, new Set([groupName])).length)
       .map(row)
       .sort(byName);
   }
