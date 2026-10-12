@@ -3215,17 +3215,11 @@
               code: |
                 name: Create vm
                 type: awx
-                roles:
-                  - default
-                fields: []
-                template: Create VM       
+                template: Create VM
             - name: Run Ansible playbook
               code: |
                 name: Delete vm
                 type: ansible
-                roles:
-                  - default
-                fields: []
                 playbook: delete_vm.yaml
           - name: key
             type: string
