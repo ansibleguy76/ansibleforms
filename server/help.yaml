@@ -3207,9 +3207,24 @@
             - name: awx
               description: |
                 Targets a job or workflow template on a runner of type awx (Connections > Runners).
+            - name: aap
+              description: |
+                The same as `awx`, for a job or workflow template on Ansible Automation Platform.
+            - name: ascender
+              description: |
+                The same as `awx`, for a job or workflow template on Ascender.
+            - name: semaphore
+              description: |
+                Targets a template on a runner of type semaphore (Connections > Runners).
+            - name: rundeck
+              description: |
+                Targets a job on a runner of type rundeck (Connections > Runners).
+            - name: jenkins
+              description: |
+                Targets a job on a runner of type jenkins (Connections > Runners).
             short: Step type
             description: | 
-              Every step can be an ansible-playbook or an awx-template
+              Every step runs an Ansible playbook (`ansible`), or a template or job on a runner (`awx`, `aap`, `ascender`, `semaphore`, `rundeck`, `jenkins`).
             examples:
             - name: Run AWX Template Helloworld
               code: |
