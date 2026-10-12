@@ -6,19 +6,24 @@
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 [![Docs](https://img.shields.io/badge/docs-ansibleforms.com-informational)](https://ansibleforms.com)
 
-AnsibleForms is a self-hosted web application that turns Ansible playbooks and AWX/AAP/Ascender templates
-into self-service forms: users fill in a form, AnsibleForms builds the extravars and launches the job on a
-runner - a runtime environment container (RTE) for playbooks, or AWX/AAP/Ascender for templates.
+AnsibleForms is a self-hosted web application that turns automation into self-service forms: users
+fill in a form, AnsibleForms builds the variables and launches the job on a runner. A form runs an
+Ansible playbook on a runtime environment container (RTE), a template on AWX, AAP, Ascender or
+Semaphore, a job on Rundeck or Jenkins, or a workflow that chains any of these.
 Everything about installing, configuring and writing forms is documented at [ansibleforms.com](https://ansibleforms.com).
 
 ## Features
 
+- Forms for playbooks (on an RTE), templates (AWX, AAP, Ascender, Semaphore) and jobs (Rundeck, Jenkins)
+- Workflows in AWX's syntax, run by AnsibleForms itself: nodes on any runner, conditions, approvals, success and failure links
 - Cascaded dropdowns fed by databases, REST APIs, files and JavaScript or jq expressions
-- Field dependencies, validation, multi-step forms, approvals and email notifications
-- Role-based access per form category, with local, LDAP, Azure AD and OIDC logins
-- Job history and output, abort and relaunch, plus one-off and recurring schedules
-- Forms kept in Git repositories, edited in the built-in designer
+- Field dependencies, validation enforced on the server, wizard forms, approvals and notifications by mail, Slack, Teams, Telegram or webhook
+- Roles per form category, with local, LDAP, Entra ID and OIDC logins, a password policy and account lockout
+- Credentials kept in AnsibleForms or in a secret store (HashiCorp Vault, CyberArk), sealed on their way to the RTE
+- Job history and live output, abort and relaunch, stored jobs, one-off and recurring schedules
+- Forms, playbooks, vars files and workflows kept in Git repositories, edited in the built-in designer
 - A REST API with interactive docs, an MCP server and an optional chat assistant
+- An audit log, syslog forwarding, Prometheus metrics, backups and liveness and readiness probes
 
 ## Installation
 
@@ -51,7 +56,8 @@ Coming from 6? Read [Upgrading to 7](https://ansibleforms.com/upgrade-7) before 
 ## Deployment topology
 
 One container is enough: with `AF_ROLE` unset it serves the web app and runs the background work
-(schema, seed, schedules, backups, repository syncs, cleanups). Playbooks run on any number of RTEs.
+(schema, seed, schedules, backups, repository syncs, cleanups). Playbooks run on any number of RTEs;
+templates and jobs run on the AWX, Semaphore, Rundeck and Jenkins servers set up as runners.
 
 To scale out or for high availability, split it: app nodes (`AF_ROLE=app`) behind a load balancer and a
 worker (`AF_ROLE=worker`), all from the same image, on one database and one shared volume. A second worker

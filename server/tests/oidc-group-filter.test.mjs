@@ -1,7 +1,8 @@
 // The OIDC provider's "Group Filter" had no effect : the browser filtered the list it
 // posted, but the server ignores that list whenever the handoff carries a groups claim
 // and used the claim unfiltered. The filter is now applied by the server, like for
-// Entra ID and LDAP.
+// Entra ID and LDAP. And the posted list is never read at all : the groups are the
+// token's claim, or none.
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import jwt from "jsonwebtoken";
 
@@ -36,9 +37,13 @@ describe("the oidc group filter is applied by the server", () => {
     expect(user).toMatchObject({ username: "bob", type: "oidc", groups: ["oidc/af-admins"], roles: ["oidc/af-admins"] });
   });
 
-  test("the fallback to the client's list is filtered too", async () => {
-    const user = await login({ preferred_username: "bob" }, ["af-ops", "everyone"]);
-    expect(user.groups).toEqual(["oidc/af-ops"]);
+  test("the list the browser posts is never read : no groups claim is no groups, whatever the body says", async () => {
+    // a caller with the handoff of any account could otherwise name af-admins and get its roles
+    const user = await login({ preferred_username: "bob" }, ["af-admins", "af-ops"]);
+    expect(user.groups).toEqual([]);
+    expect(user.roles).toEqual([]);
+    // and with a claim, the body is not added to it
+    expect((await login({ preferred_username: "bob", groups: ["af-ops"] }, ["af-admins"])).groups).toEqual(["oidc/af-ops"]);
   });
 
   test("no filter keeps every group, an invalid one keeps every group as well", async () => {
