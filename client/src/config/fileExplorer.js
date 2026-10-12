@@ -55,3 +55,33 @@ watch(explorerFolded, (folded) => {
 export function explorerColumns(pct) {
   return explorerFolded.value ? '1fr 0.5rem 2.25rem' : `1fr 1rem ${pct}%`;
 }
+
+// ─── the file a section opens on ──────────────────────────────────────────────
+
+/**
+ * The first file the explorer lists, as it lists them : at each level the folders first, then
+ * the files, each by name - so a section opens on a file rather than on nothing.
+ *
+ * Args:
+ *   paths (string[]): the files' paths ('a/b.yaml').
+ *   accept (function): which files may open (optional ; all by default).
+ *
+ * Returns:
+ *   string|null: its path, or null when there is none.
+ */
+export function firstExplorerFile(paths, accept = () => true) {
+  const before = (a, b) => {
+    const pa = a.split('/');
+    const pb = b.split('/');
+    for (let i = 0; i < Math.min(pa.length, pb.length); i++) {
+      const aFolder = i < pa.length - 1;
+      const bFolder = i < pb.length - 1;
+      // a folder before a file at the same level
+      if (aFolder !== bFolder) return aFolder ? -1 : 1;
+      const byName = pa[i].localeCompare(pb[i]);
+      if (byName) return byName;
+    }
+    return pa.length - pb.length;
+  };
+  return [...(paths || [])].filter(accept).sort(before)[0] ?? null;
+}

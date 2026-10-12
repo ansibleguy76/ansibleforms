@@ -12,12 +12,31 @@ export const PILL = {
   blue: 'af-pill-blue',
   amber: 'af-pill-amber',
   orange: 'af-pill-orange',
+  // a repository not pushed : the designer's push button's orange
+  unpushed: 'af-pill-unpushed',
   green: 'af-pill-green',
   red: 'af-pill-red',
   cyan: 'af-pill-cyan',
   grey: 'af-pill-grey',
   light: 'text-bg-light fw-normal',
 };
+
+/**
+ * A pill of the shared tables, as markup : the one place its markup is written, so every pill
+ * (a status, a state, a type) looks the same.
+ *
+ * Args:
+ *   color (string): its colour, one of PILL (grey when none).
+ *   label (string): its text, escaped here.
+ *   title (string): its tooltip, escaped here (optional).
+ *
+ * Returns:
+ *   string: the pill's HTML.
+ */
+export function pill(color, label, title = '') {
+  const tip = title ? ` title="${esc(title)}"` : '';
+  return `<span class="badge rounded-pill fw-semibold af-pill ${color || PILL.grey}"${tip}><span class="af-pill-label">${esc(label)}</span></span>`;
+}
 
 /**
  * A value escaped for HTML, for a cell or a label built as markup.

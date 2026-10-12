@@ -1,8 +1,14 @@
 'use strict';
-// The designer's Playbooks and Vars files sections : the files of the playbooks folder and of
-// the vars files folder - the playbooks repository's (use_for_playbooks), the vars folder of the
-// forms repository - or the local folder (ANSIBLE_PATH, VARS_FILES_PATH). Listed, read, written and deleted
-// here ; a repository's are then pushed to its remote (Push, as the forms' Save to repo).
+// The designer's Playbooks, Vars files and Inventories sections : the files of the playbooks
+// folder, of the vars files folder and of the inventories - the playbooks repository's
+// (use_for_playbooks), the vars folder of the forms repository, the inventories repositories'
+// (use_for_inventories) - or the local folder (ANSIBLE_PATH, VARS_FILES_PATH, INVENTORY_PATH).
+// Listed, read, written and deleted here ; a repository's are then pushed to its remote (Push,
+// as the forms' Save to repo).
+//
+// A kind has one root ; the inventories have the local folder (one folder per inventory) and
+// a root per inventories repository, each an inventory of its own : its paths start with its name
+// (production/inventory.yaml), as a local inventory's start with its folder's.
 import fs from "fs";
 import path from "path";
 import logger from "../lib/logger.js";
@@ -16,25 +22,56 @@ import { FILE_KINDS, MAX_FILE_BYTES, MAX_LISTED_FILES, safeRelativePath, isInsid
 
 const ProjectFiles = {};
 
+// what a push of each kind says in its commit
+const PUSH_LABEL = { playbooks: "Playbooks", vars: "Vars files", inventories: "Inventories" };
+
 /**
- * The folder of a kind of files and the repository it belongs to.
+ * The folders of a kind of files and the repository each belongs to.
  *
  * Args:
- *   kind (string): 'playbooks' or 'vars'.
+ *   kind (string): 'playbooks', 'vars' or 'inventories'.
  *
  * Returns:
- *   object: { root (absolute folder), repository (its name, or null for a local folder) }.
+ *   object[]: { prefix (the name a path starts with : '' for a folder whose paths are its own,
+ *     an inventories repository's name), root (absolute folder), repository (its name, or null
+ *     for a local folder) }.
  *
  * Raises:
  *   BadRequestError: the kind is not one of FILE_KINDS.
  */
-ProjectFiles.location = async function (kind) {
+ProjectFiles.roots = async function (kind) {
   if (!FILE_KINDS.includes(kind)) throw new Errors.BadRequestError(`Unknown kind of files '${kind}'`);
-  const root = kind === "playbooks"
-    ? (await Repository.getAnsiblePath()) || ansibleConfig.path
-    : await Repository.getVarsFilesPath();
-  return { root: path.resolve(root), repository: configRepoFromPath(path.resolve(root), path.resolve(appConfig.repoPath)) };
+  if (kind === "inventories") {
+    // the local folder, then each repository that is an inventory
+    return (await Repository.getInventoryRoots()).map((r) => ({ prefix: r.repository || "", root: path.resolve(r.root), repository: r.repository }));
+  }
+  const root = path.resolve(kind === "playbooks" ? (await Repository.getAnsiblePath()) || ansibleConfig.path : await Repository.getVarsFilesPath());
+  return [{ prefix: "", root, repository: configRepoFromPath(root, path.resolve(appConfig.repoPath)) }];
 };
+
+/**
+ * The root a path of a kind is in, and the path inside it : a repository's when its first part
+ * names one, else the folder whose paths are its own.
+ *
+ * Args:
+ *   kind (string): the kind.
+ *   rel (string): the path, as the explorer shows it.
+ *
+ * Returns:
+ *   object: { root, repository, prefix, inner (the path inside the root) }.
+ *
+ * Raises:
+ *   BadRequestError: the path names no root of the kind.
+ */
+async function rootOf(kind, rel) {
+  const roots = await ProjectFiles.roots(kind);
+  const parts = String(rel ?? "").replace(/^\/+/, "").split("/");
+  const repo = roots.find((r) => r.prefix && r.prefix === parts[0]);
+  if (repo) return { ...repo, inner: parts.slice(1).join("/") };
+  const own = roots.find((r) => !r.prefix);
+  if (!own) throw new Errors.BadRequestError(`'${rel}' is in none of the folders`);
+  return { ...own, inner: rel };
+}
 
 /**
  * The absolute path of a file of a kind, refused when it would leave its folder (a '..' or a
@@ -70,24 +107,30 @@ async function resolveIn(root, rel) {
   return { rel: safe, abs };
 }
 
+/** A path as the explorer shows it : its root's prefix first, when the kind has several. */
+const shown = (prefix, rel) => (prefix ? `${prefix}/${rel}` : rel);
+
 /**
- * The files of a kind : every file below its folder (hidden ones and links left out), with
- * whether its repository has changes not pushed yet.
+ * The files of a kind : every file below its folders (hidden ones and links left out), with
+ * whether its repositories have changes not pushed yet.
  *
  * Args:
- *   kind (string): 'playbooks' or 'vars'.
+ *   kind (string): 'playbooks', 'vars' or 'inventories'.
  *
  * Returns:
- *   object: { repository, exists (the folder is there), truncated (more than MAX_LISTED_FILES),
- *     dirty (the repository has changes to push), files: [{ path, size, modified }] }.
+ *   object: { repository (the repositories' names, comma separated, or null), repositories
+ *     ([{ name, prefix, dirty }]), exists (a folder is there), truncated (more than
+ *     MAX_LISTED_FILES), dirty (a repository has changes to push), roots (the prefixes, '' for
+ *     one root), files: [{ path, size, modified }] }.
  */
 ProjectFiles.list = async function (kind) {
-  const { root, repository } = await ProjectFiles.location(kind);
+  const roots = await ProjectFiles.roots(kind);
   const files = [];
   let truncated = false;
-  const exists = fs.existsSync(root);
   // breadth first, one folder at a time, at most 12 deep
-  const walk = async (dir, rel, depth) => {
+  // a local inventory's folder named as an inventories repository is hidden by it
+  const repoNames = new Set(roots.map((r) => r.prefix).filter(Boolean));
+  const walk = async (dir, rel, depth, prefix) => {
     if (depth > 12 || truncated) return;
     let entries;
     try {
@@ -99,38 +142,59 @@ ProjectFiles.list = async function (kind) {
     entries.sort((a, b) => a.name.localeCompare(b.name));
     for (const entry of entries) {
       if (entry.name.startsWith(".")) continue;
+      if (!prefix && depth === 0 && repoNames.has(entry.name)) {
+        logger.warning(`The folder ${entry.name} of ${dir} is hidden by the inventories repository of that name`);
+        continue;
+      }
       const childRel = rel ? `${rel}/${entry.name}` : entry.name;
       const childAbs = path.join(dir, entry.name);
       if (entry.isDirectory()) {
-        await walk(childAbs, childRel, depth + 1);
+        await walk(childAbs, childRel, depth + 1, prefix);
       } else if (entry.isFile()) {
         if (files.length >= MAX_LISTED_FILES) {
           truncated = true;
           return;
         }
         const stat = await fs.promises.stat(childAbs);
-        files.push({ path: childRel, size: stat.size, modified: stat.mtime });
+        files.push({ path: shown(prefix, childRel), size: stat.size, modified: stat.mtime });
       }
     }
   };
-  if (exists) await walk(root, "", 0);
-  let dirty = false;
-  if (repository && exists) {
-    try {
-      dirty = await Repo.hasChanges(repository);
-    } catch (e) {
-      logger.warning(`Cannot tell whether '${repository}' has changes : ${e.message}`);
+  let exists = false;
+  const repositories = [];
+  for (const r of roots) {
+    const here = fs.existsSync(r.root);
+    exists = exists || here;
+    if (here) await walk(r.root, "", 0, r.prefix);
+    if (r.repository) {
+      let dirty = false;
+      if (here) {
+        try {
+          dirty = await Repo.hasChanges(r.repository);
+        } catch (e) {
+          logger.warning(`Cannot tell whether '${r.repository}' has changes : ${e.message}`);
+        }
+      }
+      repositories.push({ name: r.repository, prefix: r.prefix, dirty });
     }
   }
-  return { repository, exists, truncated, dirty, files };
+  return {
+    repository: repositories.length ? repositories.map((r) => r.name).join(", ") : null,
+    repositories,
+    roots: roots.map((r) => r.prefix),
+    exists,
+    truncated,
+    dirty: repositories.some((r) => r.dirty),
+    files,
+  };
 };
 
 /**
  * A file's content.
  *
  * Args:
- *   kind (string): 'playbooks' or 'vars'.
- *   rel (string): the file's path in its folder.
+ *   kind (string): 'playbooks', 'vars' or 'inventories'.
+ *   rel (string): the file's path, as the explorer shows it.
  *
  * Returns:
  *   object: { path, content }.
@@ -140,14 +204,14 @@ ProjectFiles.list = async function (kind) {
  *   BadRequestError: the path is not valid, the file is too big or not text.
  */
 ProjectFiles.read = async function (kind, rel) {
-  const { root } = await ProjectFiles.location(kind);
-  const file = await resolveIn(root, rel);
+  const { root, prefix, inner } = await rootOf(kind, rel);
+  const file = await resolveIn(root, inner);
   const stat = await fs.promises.stat(file.abs).catch(() => null);
-  if (!stat || !stat.isFile()) throw new Errors.NotFoundError(`File '${file.rel}' not found`);
-  if (stat.size > MAX_FILE_BYTES) throw new Errors.BadRequestError(`File '${file.rel}' is too big to edit here`);
+  if (!stat || !stat.isFile()) throw new Errors.NotFoundError(`File '${shown(prefix, file.rel)}' not found`);
+  if (stat.size > MAX_FILE_BYTES) throw new Errors.BadRequestError(`File '${shown(prefix, file.rel)}' is too big to edit here`);
   const buffer = await fs.promises.readFile(file.abs);
-  if (!isTextBuffer(buffer)) throw new Errors.BadRequestError(`File '${file.rel}' is not a text file`);
-  return { path: file.rel, content: buffer.toString("utf8") };
+  if (!isTextBuffer(buffer)) throw new Errors.BadRequestError(`File '${shown(prefix, file.rel)}' is not a text file`);
+  return { path: shown(prefix, file.rel), content: buffer.toString("utf8") };
 };
 
 /**
@@ -167,8 +231,8 @@ async function withWriteClaim(repository, write) {
  * Writes a file (a new one, or over the one there), its folders made as needed.
  *
  * Args:
- *   kind (string): 'playbooks' or 'vars'.
- *   rel (string): the file's path in its folder.
+ *   kind (string): 'playbooks', 'vars' or 'inventories'.
+ *   rel (string): the file's path, as the explorer shows it.
  *   content (string): its text.
  *   onlyNew (boolean): refuse when the file is there already (a new file, not a save).
  *
@@ -182,17 +246,18 @@ async function withWriteClaim(repository, write) {
 ProjectFiles.write = async function (kind, rel, content, onlyNew = false) {
   if (typeof content !== "string") throw new Errors.BadRequestError("The content must be text");
   if (Buffer.byteLength(content, "utf8") > MAX_FILE_BYTES) throw new Errors.BadRequestError("The content is too big to save here");
-  const { root, repository } = await ProjectFiles.location(kind);
-  const file = await resolveIn(root, rel);
+  const { root, repository, prefix, inner } = await rootOf(kind, rel);
+  const file = await resolveIn(root, inner);
+  const name = shown(prefix, file.rel);
   return withWriteClaim(repository, async () => {
     if (fs.existsSync(file.abs)) {
-      if (onlyNew) throw new Errors.ConflictError(`File '${file.rel}' exists already`);
-      if (!(await fs.promises.stat(file.abs)).isFile()) throw new Errors.BadRequestError(`'${file.rel}' is not a file`);
+      if (onlyNew) throw new Errors.ConflictError(`File '${name}' exists already`);
+      if (!(await fs.promises.stat(file.abs)).isFile()) throw new Errors.BadRequestError(`'${name}' is not a file`);
     }
     await fs.promises.mkdir(path.dirname(file.abs), { recursive: true });
     await fs.promises.writeFile(file.abs, content, "utf8");
-    logger.notice(`Saved ${kind} file ${file.rel}${repository ? ` in repository '${repository}'` : ""}`);
-    return { path: file.rel, repository };
+    logger.notice(`Saved ${kind} file ${name}${repository ? ` in repository '${repository}'` : ""}`);
+    return { path: name, repository };
   });
 };
 
@@ -200,8 +265,8 @@ ProjectFiles.write = async function (kind, rel, content, onlyNew = false) {
  * Deletes a file, and the folders it leaves empty.
  *
  * Args:
- *   kind (string): 'playbooks' or 'vars'.
- *   rel (string): the file's path in its folder.
+ *   kind (string): 'playbooks', 'vars' or 'inventories'.
+ *   rel (string): the file's path, as the explorer shows it.
  *
  * Returns:
  *   object: { path, repository }.
@@ -210,41 +275,45 @@ ProjectFiles.write = async function (kind, rel, content, onlyNew = false) {
  *   NotFoundError: there is no such file.
  */
 ProjectFiles.remove = async function (kind, rel) {
-  const { root, repository } = await ProjectFiles.location(kind);
-  const file = await resolveIn(root, rel);
+  const { root, repository, prefix, inner } = await rootOf(kind, rel);
+  const file = await resolveIn(root, inner);
+  const name = shown(prefix, file.rel);
   return withWriteClaim(repository, async () => {
     const stat = await fs.promises.lstat(file.abs).catch(() => null);
-    if (!stat || !stat.isFile()) throw new Errors.NotFoundError(`File '${file.rel}' not found`);
+    if (!stat || !stat.isFile()) throw new Errors.NotFoundError(`File '${name}' not found`);
     await fs.promises.unlink(file.abs);
     let dir = path.dirname(file.abs);
     while (dir !== root && isInside(root, dir) && (await fs.promises.readdir(dir)).length === 0) {
       await fs.promises.rmdir(dir);
       dir = path.dirname(dir);
     }
-    logger.notice(`Deleted ${kind} file ${file.rel}${repository ? ` in repository '${repository}'` : ""}`);
-    return { path: file.rel, repository };
+    logger.notice(`Deleted ${kind} file ${name}${repository ? ` in repository '${repository}'` : ""}`);
+    return { path: name, repository };
   });
 };
 
 /**
- * Commits and pushes the changes of a kind's repository.
+ * Commits and pushes the changes of a kind's repositories (each of them, the inventories of
+ * several).
  *
  * Args:
- *   kind (string): 'playbooks' or 'vars'.
+ *   kind (string): 'playbooks', 'vars' or 'inventories'.
  *   username (string): who pushes (in the commit message).
  *
  * Returns:
- *   object: { repository, output }.
+ *   object: { repository (the names, comma separated), output }.
  *
  * Raises:
  *   BadRequestError: the kind's files are in a local folder, not a repository.
  */
 ProjectFiles.push = async function (kind, username) {
-  const { repository } = await ProjectFiles.location(kind);
-  if (!repository) throw new Errors.BadRequestError("These files are in a local folder : there is no repository to push to");
-  const what = kind === "playbooks" ? "Playbooks" : "Vars files";
-  const output = await Repository.sync(repository, username, `${what} sync by ${username || "AnsibleForms"}`);
-  return { repository, output };
+  const names = [...new Set((await ProjectFiles.roots(kind)).map((r) => r.repository).filter(Boolean))];
+  if (!names.length) throw new Errors.BadRequestError("These files are in a local folder : there is no repository to push to");
+  const outputs = [];
+  for (const name of names) {
+    outputs.push(await Repository.sync(name, username, `${PUSH_LABEL[kind]} sync by ${username || "AnsibleForms"}`));
+  }
+  return { repository: names.join(", "), output: outputs.join("\n") };
 };
 
 export default ProjectFiles;

@@ -78,8 +78,10 @@ Cmd.executeSilentCommand = async (cmd,silent=false,singleLine=false,timeoutSecon
           // txt = Cmd.maskGitToken(txt)
           out.push(txt)
         })
-        // add exit eventlistener to the process to handle status update
-        child.on('exit',function(data){
+        // add close eventlistener to the process to handle status update : 'close', not 'exit',
+        // because 'exit' can fire before the output is read, and a quick command (git status)
+        // then resolves with no output at all
+        child.on('close',function(data){
           clearTimeout(timeout)
           logger.info(description + " finished : " + data)
           // always push something to

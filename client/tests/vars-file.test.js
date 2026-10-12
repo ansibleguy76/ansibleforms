@@ -1,7 +1,7 @@
 // The Vars files section's Visual tab : what a file is, and its variables edited without losing
 // its comments.
 import { describe, it, expect } from 'vitest';
-import { varsKind, varsRows, setVar, deleteVar, addVar } from '@/config/varsFile';
+import { varsKind, varsRows, setVar, deleteVar, addVar, renameVar } from '@/config/varsFile';
 
 describe('varsKind', () => {
   it('tells variables, an empty file, anything else and a broken one', () => {
@@ -47,5 +47,14 @@ servers:
     expect(addVar(vars, ['users'], '', 'bob')).toContain('- bob');
     expect(() => addVar(vars, [], 'port', 1)).toThrow('exists');
     expect(addVar('', [], 'a', 1)).toBe('a: 1\n');
+  });
+
+  it('renames a key in place, its value and comment kept', () => {
+    const out = renameVar(vars, ['port'], 'http_port');
+    expect(out).toContain('http_port: 80 # the port');
+    expect(out).not.toMatch(/^port:/m);
+    expect(renameVar(vars, ['servers', 'a'], 'b')).toContain('  b: 1');
+    expect(() => renameVar(vars, ['port'], 'debug')).toThrow('exists');
+    expect(() => renameVar(vars, ['users', 0], 'x')).toThrow('notAMap');
   });
 });

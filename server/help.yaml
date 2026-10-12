@@ -1276,6 +1276,19 @@
       Absolute paths in varsFiles are used as-is.
       Relative paths are resolved against this directory.
       Allows centralized management of shared variable files across forms.
+  - name: INVENTORY_PATH
+    type: string
+    allowed: a valid directory path
+    short: Inventories folder
+    default: "%PERSISTENT_FOLDER%/inventories"
+    version: 7.0.0
+    description: |
+      The local inventories folder : one folder per inventory (staging/inventory.yaml, with its
+      group_vars and host_vars), edited in the designer's Inventories section, next to the
+      repositories used for inventories (each of them an inventory). A playbook form names one
+      with `inventory: <name>`.
+      Read by the RTE as well, where the playbook runs : set it there too (or mount the same
+      folder) when the RTE runs elsewhere.
   - name: ENCRYPTION_SECRET
     type: string
     allowed: a strong encryption string
@@ -2421,10 +2434,25 @@
         group: workflow
         description: |
           In both awx and ansible core you can pass an inventory.  In the case of ansible core, it will be a yaml file.  In case of awx it will be the inventory name.  
+
+          **Ansible** : the name of an inventory of the designer's Inventories section (`inventory: production`)
+          runs the playbook against that inventory - its inventory.yaml with the group_vars and host_vars beside it :
+          the repository of that name used for inventories (`use_for_inventories`, the inventory at its root), or
+          the folder of that name in `INVENTORY_PATH`. Anything else (a path, a file) is passed to ansible as it is,
+          relative to the playbooks folder.
             
           **Note** : You can also dynamically set the inventory by using a field called `__inventory__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static inventory.  
           **Note** : Ansible core allows multiple inventories (so you can use an array), however awx does not support multiple inventories.
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+        examples:
+        - name: Run against an inventory of the designer
+          code: |
+            - name: Patch the web servers
+              type: ansible
+              playbook: patch.yaml
+              inventory: production
+              roles:
+              - admin
       - name: executionEnvironment
         type: string
         with_types: template, awx

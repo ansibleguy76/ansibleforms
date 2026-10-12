@@ -75,6 +75,8 @@ function refreshApprovals() {
   });
 }
 useLiveEvent('jobs', refreshApprovals);
+// the designer lock taken or released : the lock on the Designer link follows at once
+useLiveEvent('designer', () => State.refreshDesignerLock());
 // Settings > Appearance saved (here, in another tab, by another admin) : the announcement, the
 // label, the name and the Designer link follow at once
 useLiveEvent('appearance', () => {

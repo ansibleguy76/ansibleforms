@@ -175,6 +175,7 @@ const repositoryItem = {
     use_for_forms: bool,
     use_for_playbooks: bool,
     use_for_workflows: bool,
+    use_for_inventories: bool,
     rebase_on_start: bool,
     cron: str,
     // status, output and head are runtime state written by the sync, never declared

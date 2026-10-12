@@ -5,7 +5,7 @@ import YAML from 'yaml';
 import Helpers from '@/lib/Helpers';
 import { cronCell } from '@/lib/cronCell';
 import { cronValidationMessage } from './cron';
-import { PILL } from '@/lib/tableCells';
+import { PILL, pill } from '@/lib/tableCells';
 import { formPath } from '@/lib/formsPath';
 
 // A cron field is validated with the SAME check the editor uses (config/cron.js), which
@@ -100,7 +100,27 @@ export function statusPill(t, value) {
   if (!value) return emptyPill();
   const known = { running: PILL.blue, success: PILL.green, failed: PILL.red };
   const label = known[value] ? t(`jobs.menu.${value}`) : value;
-  return `<span class="badge rounded-pill fw-semibold af-pill ${known[value] || PILL.grey}"><span class="af-pill-label">${escapeHtml(label)}</span></span>`;
+  return pill(known[value], label);
+}
+
+/**
+ * A repository's status as a pill : its last pull or push running (blue) or failed (red) ; else
+ * changes saved here and not pushed yet, in the designer's push orange (something waits) ; else
+ * pushed, green (pushed, not up to date : the remote may hold newer commits).
+ *
+ * Args:
+ *   t (function): the translation function.
+ *   repo (object): the repository, with status (its last sync) and unpushed.
+ *
+ * Returns:
+ *   string: the pill's markup.
+ */
+export function repositoryStatusPill(t, repo) {
+  if (repo?.status === 'running' || repo?.status === 'failed') return statusPill(t, repo.status);
+  if (repo?.unpushed) {
+    return pill(PILL.unpushed, t('settings.repositories.notPushed'), t('settings.repositories.notPushedHint'));
+  }
+  return pill(PILL.green, t('settings.repositories.pushed'));
 }
 
 /**
@@ -131,14 +151,14 @@ export function schedulePill(t, state) {
   if (!state) state = 'idle';
   const known = { running: PILL.blue, queued: PILL.amber, idle: PILL.grey };
   const label = known[state] ? t(`settings.schedules.state_${state}`) : state;
-  return `<span class="badge rounded-pill fw-semibold af-pill ${known[state] || PILL.grey}"><span class="af-pill-label">${escapeHtml(label)}</span></span>`;
+  return pill(known[state], label);
 }
 
 export function registrationPill(t, state) {
   const known = { automatic: PILL.blue, unresponsive: PILL.amber };
   const key = known[state] ? state : 'manual';
   const label = t(`settings.runners.state${key[0].toUpperCase()}${key.slice(1)}`);
-  return `<span class="badge rounded-pill fw-semibold af-pill ${known[state] || PILL.grey}"><span class="af-pill-label">${escapeHtml(label)}</span></span>`;
+  return pill(known[state], label);
 }
 
 /**
@@ -172,7 +192,7 @@ export function announcementState(t, row, now = Date.now()) {
 export function announcementLevelPill(t, level) {
   const known = { info: PILL.blue, warning: PILL.amber, danger: PILL.red };
   const key = known[level] ? level : 'info';
-  return `<span class="badge rounded-pill fw-semibold af-pill ${known[key]}"><span class="af-pill-label">${escapeHtml(t(`settings.interface.banner_${key}`))}</span></span>`;
+  return pill(known[key], t(`settings.interface.banner_${key}`));
 }
 
 // how a user signed in, as the disclaimer's acceptances name it
@@ -578,12 +598,20 @@ export default function getSettings(t) {
           dividerBefore: true,
         },
         {
-          // only a repository the designer writes to (forms, settings, playbooks, workflows) is pushed back
+          // only a repository the designer writes to (forms, settings, playbooks, workflows) is pushed
+          // back, and only when it has changes not pushed yet
           name: 'sync',
+          enabledWhen: (r) => !!r.unpushed,
           icon: 'upload',
           title: t('settings.repositories.push'),
           color: 'test',
-          dependency: ['use_for_forms', 'use_for_config', 'use_for_playbooks', 'use_for_workflows'],
+          dependency: [
+            'use_for_forms',
+            'use_for_config',
+            'use_for_playbooks',
+            'use_for_workflows',
+            'use_for_inventories',
+          ],
         },
         { name: 'reset', icon: 'redo', title: t('settings.repositories.reset'), color: 'refresh' },
         {
@@ -632,12 +660,14 @@ export default function getSettings(t) {
         },
         // a commit's 7 characters
         { key: 'head', label: t('settings.fields.head'), noInput: true, hideBelow: 900 },
-        // the last sync's status, as the audit log shows an outcome
+        // its status : the last sync running or failed, else changes saved here (the designer's
+        // Save) and not pushed yet, or pushed
         {
           key: 'status',
           label: t('settings.fields.status'),
           noInput: true,
-          render: (v) => statusPill(t, v),
+          render: (v, row) => repositoryStatusPill(t, row),
+          sortValue: (r) => ({ failed: 0, running: 1 })[r.status] ?? (r.unpushed ? 2 : 3),
         },
         {
           // a credential of Connections > Credentials, or a New one : the user and password git
@@ -776,6 +806,20 @@ export default function getSettings(t) {
           // the column : its short name, as on the Usage step
           columnLabel: t('settings.repositories.usePlaybooksShort'),
           help: t('settings.repositories.helpUseForPlaybooks'),
+          hidden: true,
+        },
+        {
+          key: 'use_for_inventories',
+          step: 'usage',
+          // several repositories may hold inventories, each its own
+          shortLabel: t('settings.repositories.useInventoriesShort'),
+          shortHint: t('settings.repositories.useInventoriesHint'),
+          isSwitch: false,
+          type: 'checkbox',
+          label: t('settings.repositories.useForInventories'),
+          // the column : its short name, as on the Usage step
+          columnLabel: t('settings.repositories.useInventoriesShort'),
+          help: t('settings.repositories.helpUseForInventories'),
           hidden: true,
         },
         {

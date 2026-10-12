@@ -166,6 +166,7 @@ const crudConfigs = {
       { name: 'use_for_forms', isBoolean: true },
       { name: 'use_for_playbooks', isBoolean: true },
       { name: 'use_for_workflows', isBoolean: true },
+      { name: 'use_for_inventories', isBoolean: true },
       // a credential of Connections > Credentials : the user and password git uses
       { name: 'credential' },
       { name: 'rebase_on_start', isBoolean: true },

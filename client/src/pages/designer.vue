@@ -3,9 +3,11 @@ import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
 import Form from '@/lib/Form';
 import { slugOf } from '@/lib/formsPath';
 import { DESIGNER_TABS } from '@/config/designerTabs';
+import getSettings from '@/config/settings';
 import { EXPLORER_WIDTH, explorerWidthAfterDrag, explorerFolded, explorerColumns } from '@/config/fileExplorer';
 import Lock from '@/lib/Lock';
 import { useAppStore } from '@/stores/app';
+import { useLiveEvent } from '@/composables/useLiveEvent';
 import Backup from '@/lib/Backup';
 import Profile from '@/lib/Profile';
 import YAML from 'yaml';
@@ -85,6 +87,13 @@ const tabs = [
     icon: 'file-code',
   },
   {
+    // groups and hosts, as a tree
+    name: 'Inventories',
+    label: () => t('designer.inventories'),
+    description: () => t('designer.inventoriesDescription'),
+    icon: 'sitemap',
+  },
+  {
     // the YAML files a form loads (varsFiles)
     name: 'VarsFiles',
     label: () => t('designer.varsFiles'),
@@ -100,7 +109,7 @@ const tabs = [
   },
 ];
 // the sections still to build (workflows) : every section but the ones built
-const BUILT_SECTIONS = ['Categories', 'Constants', 'Forms', 'Playbooks', 'VarsFiles'];
+const BUILT_SECTIONS = ['Categories', 'Constants', 'Forms', 'Inventories', 'Playbooks', 'VarsFiles'];
 const draftSections = tabs.map((x) => x.name).filter((name) => !BUILT_SECTIONS.includes(name));
 // the views in the menu, alphabetically by their (translated) label
 const sortedTabs = computed(() => [...tabs].sort((a, b) => a.label().localeCompare(b.label(), locale.value)));
@@ -174,18 +183,47 @@ const themeObserver = new MutationObserver(() => {
   editorTheme.value = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'monokai' : 'chrome';
 });
 
-// the playbooks and the vars files : their files (AppProjectFiles), driven by the toolbar, its
-// text editor's buttons too (textEditorButtons)
-const FILE_SECTIONS = { Playbooks: 'playbooks', VarsFiles: 'vars' };
+// the playbooks, the vars files and the inventories : their files (AppProjectFiles), driven by
+// the toolbar
+const FILE_SECTIONS = { Inventories: 'inventories', Playbooks: 'playbooks', VarsFiles: 'vars' };
 const projectFiles = ref(null);
-const textEditorButtons = computed(() => [
-  { icon: 'rotate-left', title: t('designer.undo'), run: editorUndo },
-  { icon: 'rotate-right', title: t('designer.redo'), run: editorRedo },
-  { icon: 'scissors', title: t('designer.cut'), run: editorCut },
-  { icon: 'copy', title: t('designer.copy'), run: editorCopy },
-  { icon: 'paste', title: t('designer.paste'), run: editorPaste },
-  { icon: 'magnifying-glass', title: t('designer.findReplace'), run: editorFind },
-]);
+
+// a new inventory is a new repository : the repositories' New dialog (Settings > Repositories),
+// used for inventories - ticked, and its usage not to change here
+const inventoryRepoDialog = ref(null);
+const inventoryRepoSettings = computed(() => {
+  const repositories = getSettings(t).repositories;
+  return {
+    ...repositories,
+    fields: repositories.fields.map((f) => (f.step === 'usage' ? { ...f, readonly: true } : f)),
+  };
+});
+function newInventory() {
+  inventoryRepoDialog.value?.newItem({ use_for_inventories: true });
+}
+/**
+ * The new inventory's repository is created : once cloned, its first files are added and it opens
+ * (seedInventory) ; a clone that failed is said.
+ *
+ * Args:
+ *   name (string): the repository's name.
+ */
+async function onInventoryRepoCreated(name) {
+  for (let i = 0; i < 60; i++) {
+    let status;
+    try {
+      status = (await axios.get(`/api/v2/repository/${encodeURIComponent(name)}`)).data?.status;
+    } catch {
+      status = null;
+    }
+    if (status === 'success') return projectFiles.value?.seedInventory(name);
+    if (status === 'failed') {
+      toast.error(t('designer.files.inventoryCloneFailed', { name }));
+      return projectFiles.value?.reload();
+    }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+}
 
 const activeEditor = ref(null);
 function onEditorInit(editor) {
@@ -235,6 +273,10 @@ function editorFormat() {
   } else if (currentTab.value === 'Forms' && currentForm.value) {
     const r = fmt(forms.value[currentForm.value]);
     if (r) forms.value[currentForm.value] = r;
+  } else if (FILE_SECTIONS[currentTab.value] && projectFiles.value?.selected) {
+    // a playbook, a vars file, an inventory's : its YAML laid out the same way
+    const r = fmt(projectFiles.value.getText());
+    if (r) projectFiles.value.setText(r);
   }
 }
 
@@ -1284,6 +1326,10 @@ function downloadYaml() {
     content = forms.value[currentForm.value] || '';
     const mapping = idmapping.value.find((x) => x.id === currentForm.value);
     filename = mapping?.source || 'form.yaml';
+  } else if (FILE_SECTIONS[currentTab.value] && projectFiles.value?.selected) {
+    // the file open, by its own name
+    content = projectFiles.value.getText();
+    filename = projectFiles.value.selected.split('/').pop();
   }
   if (!content) return;
   const blob = new Blob([content], { type: 'text/yaml' });
@@ -1734,6 +1780,9 @@ function editorDiff() {
   } else if (currentTab.value === 'Forms' && currentForm.value) {
     diffSaved.value = baselineRaw.value.forms[currentForm.value] || '';
     diffCurrent.value = forms.value[currentForm.value] || '';
+  } else if (FILE_SECTIONS[currentTab.value] && projectFiles.value?.selected) {
+    diffSaved.value = projectFiles.value.savedText() || '';
+    diffCurrent.value = projectFiles.value.getText() || '';
   } else {
     return;
   }
@@ -2187,7 +2236,19 @@ async function loadForms() {
 
 async function loadLock() {
   try {
+    const before = lock.value;
     lock.value = await Lock.get();
+    // ours a moment ago, free now : it was left behind (the computer asleep past
+    // LOCK_STALE_SECONDS, server/src/models/lock.model.js) and nobody took it - taken back, so
+    // the edits open here go on ; somebody else's by now shows who
+    if (before?.match && lock.value?.free) {
+      try {
+        await Lock.set();
+        lock.value = await Lock.get();
+      } catch {
+        // taken meanwhile : the next read shows who
+      }
+    }
     lockError.value = '';
     // the header's Designer link shows the lock too : keep it in step with this poll
     store.designerLock = lock.value;
@@ -2230,11 +2291,11 @@ function selectTab(name) {
   currentTab.value = name;
 }
 
-// the page title : the open view's name and icon once the designer is started ; before that,
-// the designer alone, as the header names it (the section, so the title is not Designer ›
+// the page title : the open view's name and icon once the designer is started (the lock ours) ;
+// before that, or while somebody else holds it, the designer alone, as the header names it (the section, so the title is not Designer ›
 // Designer)
 const pageTitle = computed(() => {
-  if (!lock.value || lock.value.free) return { title: t('nav.designer'), icon: 'pen-to-square' };
+  if (!lock.value?.match) return { title: t('nav.designer'), icon: 'pen-to-square' };
   const tab = tabs.find((x) => x.name === currentTab.value);
   return tab ? { title: tab.label(), icon: tab.icon } : { title: t('nav.designer'), icon: 'pen-to-square' };
 });
@@ -2243,7 +2304,7 @@ const pageTitle = computed(() => {
 // form in the forms view, the editor - Designer › Forms › Approval demo › Preview (the section
 // first, AppSettings)
 const titleCrumbs = computed(() => {
-  if (!lock.value || lock.value.free) return [];
+  if (!lock.value?.match) return [];
   const tab = tabs.find((x) => x.name === currentTab.value);
   if (!tab) return [];
   const formName = currentTab.value === 'Forms' ? currentFormName.value : '';
@@ -2262,14 +2323,15 @@ const titleCrumbs = computed(() => {
 // the line under the title describes the open view once the designer is started, and
 // what the designer is for until then
 const tabDescription = computed(() => {
-  if (!lock.value || lock.value.free) return t('designer.offDescription');
+  if (!lock.value?.match) return t('designer.offDescription');
   return tabs.find((tab) => tab.name === currentTab.value)?.description() || '';
 });
 
 // the left menu : one entry per view ; until the designer is started (locked) the entries
 // are shown greyed out, so it is clear what the designer holds but nothing can be opened
 const sidebarSections = computed(() => {
-  const started = !!lock.value && !lock.value.free;
+  // started : the lock is ours ; free or somebody else's, the sections are greyed out
+  const started = !!lock.value?.match;
   return [
     {
       title: '',
@@ -2896,6 +2958,29 @@ function resetAction() {
   nextAction.value = false; // clear any pending callback so a later flow can't fire a stale one
 }
 
+// somebody took or released the lock (here, in another tab, on another node) : shown at once
+useLiveEvent('designer', () => {
+  if (!busy.value) loadLock();
+});
+
+/**
+ * Releases somebody else's lock, as an admin, once confirmed : for a lock its holder cannot
+ * release any more (gone, or away) ; their unsaved changes are lost.
+ */
+function forceRelease() {
+  action.value = 'forceRelease';
+  nextAction.value = async (proceed) => {
+    resetAction();
+    if (!proceed) return;
+    try {
+      await Lock.forceRelease();
+    } catch (err) {
+      toast.error(err.message);
+    }
+    await loadLock();
+  };
+}
+
 async function setLock(proceed = true) {
   if (!proceed) {
     resetAction();
@@ -3004,23 +3089,6 @@ async function deleteLock(proceed = true) {
   }
 }
 
-async function unLock() {
-  action.value = 'forceUnlock';
-  nextAction.value = async (proceed) => {
-    resetAction();
-    if (!proceed) return;
-    // the server takes the lock only when it is free (another user's answers 423), so a
-    // force unlock releases the other user's lock first, then takes it
-    try {
-      await Lock.release();
-    } catch (err) {
-      toast.error(err.message);
-      return;
-    }
-    await setLock(proceed);
-  };
-}
-
 // forms repositories (issue #414) : the forms live in git, the designer
 // saves into the working trees and 'Push to repo' commits & pushes them
 const formsRepos = ref([]);
@@ -3039,7 +3107,6 @@ const editorTarget = computed(() => {
   if (isConfigTab.value) return true;
   return currentTab.value === 'Forms' && !!currentForm.value && forms.value[currentForm.value] !== undefined;
 });
-const dbOnlyMode = computed(() => configInDatabase.value && formsRepos.value.length === 0);
 // repo mode with the base config in the database : a restore only affects the
 // config (categories/roles/constants), the forms stay in git
 const repoConfigMode = computed(() => configInDatabase.value && formsRepos.value.length > 0);
@@ -3399,6 +3466,151 @@ function onBeforeUnload(e) {
 const leaveConfirmed = ref(false);
 const pendingRoute = ref(null);
 
+// ─── the toolbar ──────────────────────────────────────────────────────────────
+// What the section shown offers : the actions of config/designerActions.js (their icons, titles
+// and order are its, the same in every section), each with what it does and when it is off.
+const toolbarActions = computed(() => {
+  const yaml = editorView.value === 'yaml';
+  const visual = editorView.value === 'visual';
+  // the text editor's own : undo, redo, cut, copy, paste, format, find, compare
+  const textActions = (off, diffOff) => [
+    { key: 'undo', run: editorUndo, disabled: off, show: yaml },
+    { key: 'redo', run: editorRedo, disabled: off, show: yaml },
+    { key: 'cut', run: editorCut, disabled: off, show: yaml },
+    { key: 'copy', run: editorCopy, disabled: off, show: yaml },
+    { key: 'paste', run: editorPaste, disabled: off, show: yaml },
+    { key: 'format', run: editorFormat, disabled: off, show: yaml },
+    { key: 'find', run: editorFind, disabled: off, show: yaml },
+    { key: 'diff', run: editorDiff, disabled: diffOff },
+  ];
+
+  // the playbooks, the vars files, the inventories : the file open
+  if (FILE_SECTIONS[currentTab.value]) {
+    const f = projectFiles.value;
+    if (!f) return [];
+    const none = f.busy || !f.selected;
+    const inventories = currentTab.value === 'Inventories';
+    return [
+      // a new file ; in the inventories a new inventory (a repository), as the explorer's, on the +
+      { key: 'newFile', run: () => f.newFile(), show: !inventories, disabled: f.busy },
+      {
+        key: 'add',
+        run: () => f.newFile(),
+        show: inventories,
+        disabled: f.busy,
+        title: t('designer.files.newInventory'),
+      },
+      {
+        key: 'save',
+        run: () => f.save(),
+        disabled: !f.dirty || f.busy,
+        title: f.repository ? t('designer.saveLocal') : undefined,
+      },
+      {
+        key: 'push',
+        run: () => f.push(),
+        show: !!f.repository,
+        disabled: f.dirty || f.busy || !f.unpushed,
+        color: f.unpushed && !f.dirty ? 'orange' : undefined,
+      },
+      ...textActions(none, none || !f.dirty),
+      {
+        key: 'addVar',
+        run: () => f.addVar(),
+        show: visual && f.canAddVar,
+        disabled: f.busy || !(lock.value && lock.value.match),
+      },
+      { key: 'reload', run: () => f.reload(), disabled: f.busy },
+      { key: 'download', run: downloadYaml, disabled: none },
+      { key: 'revert', run: () => f.revert(), disabled: !f.dirty || f.busy },
+    ];
+  }
+
+  // the categories, the constants and the forms : the configuration
+  const tab = currentTab.value;
+  const forms = tab === 'Forms';
+  const noForm = busyOrTemplated.value || !currentForm.value;
+  const formOnly = noForm || currentFormIsSubform.value;
+  const formWords = (key) => (currentFormIsSubform.value ? t('designer.notForSubforms') : t(key));
+  const repos = formsRepos.value.length > 0;
+  return [
+    { key: 'newFile', run: openNewFile, show: forms, disabled: busyOrTemplated.value },
+    { key: 'import', run: openImport, show: forms, disabled: busyOrTemplated.value },
+    {
+      key: 'loadRepository',
+      run: loadRepository,
+      show: repos,
+      disabled: busy.value,
+      title: loadingRepos.value ? t('designer.loading') : undefined,
+    },
+    { key: 'validate', run: validateForms, disabled: busy.value },
+    {
+      key: 'save',
+      run: saveForms,
+      disabled: !isValid.value || !isDirty.value || busyOrTemplated.value,
+      title: repos ? t('designer.saveLocal') : undefined,
+    },
+    {
+      key: 'push',
+      run: pushToRepo,
+      show: repos,
+      disabled: isDirty.value || busyOrTemplated.value || !hasUnpushed.value,
+      color: !isDirty.value && !busyOrTemplated.value && hasUnpushed.value ? 'orange' : undefined,
+      title: syncing.value ? t('designer.syncing') : undefined,
+    },
+    { key: 'restore', run: restore, show: canRestore.value, disabled: busyOrTemplated.value },
+    ...textActions(busy.value || !editorTarget.value, busy.value || !isDirty.value || !editorTarget.value),
+    // the visual tab : a row added to its outline (a category, a constant, a field)
+    {
+      key: 'add',
+      run: () => visualEditor.value?.add(),
+      show: visual,
+      disabled: busyOrTemplated.value || !!visualEditor.value?.locked,
+      title:
+        tab === 'Categories' ? t('designer.addCategory') : forms ? t('designer.addField') : t('designer.addConstant'),
+    },
+    // the YAML tab : a category or a constant added, or all of them edited, in a dialog
+    {
+      key: 'add',
+      run: tab === 'Categories' ? openAddCategory : openAddConstant,
+      show: yaml && (tab === 'Categories' || tab === 'Constants'),
+      disabled: busyOrTemplated.value || !(tab === 'Categories' ? canAddCategories.value : canAddConstants.value),
+      title: tab === 'Categories' ? t('designer.addCategory') : t('designer.addConstant'),
+    },
+    {
+      key: 'edit',
+      run: tab === 'Categories' ? openEditCategories : openEditConstants,
+      show: yaml && (tab === 'Categories' || tab === 'Constants'),
+      disabled:
+        busyOrTemplated.value || !(tab === 'Categories' ? hasEditableCategories.value : hasEditableConstants.value),
+      title: tab === 'Categories' ? t('designer.editCategories') : t('designer.editConstants'),
+    },
+    // a form's own
+    { key: 'formSettings', run: () => showView('visual'), show: forms, disabled: noForm },
+    { key: 'icon', run: openIconPicker, show: forms, disabled: formOnly, title: formWords('designer.chooseIcon') },
+    {
+      key: 'tileColor',
+      run: openTilePicker,
+      show: forms,
+      disabled: formOnly,
+      title: formWords('designer.chooseBackground'),
+    },
+    { key: 'image', run: openImagePicker, show: forms, disabled: formOnly, title: formWords('designer.chooseImage') },
+    {
+      key: 'categories',
+      run: openCatPicker,
+      show: forms,
+      disabled: formOnly,
+      title: formWords('designer.assignCategories'),
+    },
+    { key: 'roles', run: openRolePicker, show: forms, disabled: formOnly, title: formWords('designer.assignRoles') },
+    { key: 'insertConstant', run: openInsertConstant, show: forms, disabled: busy.value || !editorTarget.value },
+    { key: 'fieldProperties', run: () => showView('visual'), show: forms, disabled: noForm },
+    { key: 'download', run: downloadYaml, disabled: busy.value || !editorTarget.value },
+    { key: 'revert', run: editorRevert, disabled: busy.value || !isDirty.value || !editorTarget.value },
+  ];
+});
+
 onBeforeRouteLeave((to) => {
   if (!isDirty.value || leaveConfirmed.value) return true;
   pendingRoute.value = to.fullPath;
@@ -3429,12 +3641,15 @@ onMounted(async () => {
   // rest of the SPA session, accumulated one per visit, popped its error toasts on
   // unrelated pages, and pinned the component and its buffers in memory.
   if (unmounted.value) return;
+  // the lock's changes come live (useLiveEvent below) ; this read is the holder's heartbeat :
+  // the server keeps a lock seen at least every LOCK_STALE_SECONDS (5 min), and a browser
+  // tab in the background still runs it once a minute
   lockInterval.value = setInterval(async () => {
     // skip the poll while a push/load is in flight : a lock refresh that races
     // a sync can pull the rug out from under the in-flight operation
     if (busy.value) return;
     await loadLock();
-  }, 5000);
+  }, 30000);
 });
 
 onBeforeUnmount(() => {
@@ -3605,18 +3820,18 @@ onBeforeUnmount(() => {
         </template>
       </BsModal>
 
-      <!-- Modal - force unlock-->
-      <BsModal v-if="action == 'forceUnlock'" @close="resetAction()" icon="unlock">
-        <template #title> {{ t('designer.forceUnlock') }} </template>
+      <!-- Modal - an admin releases somebody else's lock -->
+      <BsModal v-if="action == 'forceRelease'" @close="resetAction()" icon="unlock" :footerClose="false">
+        <template #title>{{ t('designer.releaseTitle') }}</template>
         <template #default>
-          <p class="mt-3 fs-6 user-select-none">
-            {{ t('designer.forceUnlockConfirm') }}<br />
-            {{ t('designer.forceUnlockWarning') }}<br /><br />
-            {{ t('designer.forceUnlockCare') }}
+          <p class="mt-3 fs-6">
+            {{ t('designer.releaseAdminOnly') }}<br /><br />
+            {{ t('designer.releaseConfirm', { user: lock?.lock?.username }) }}
           </p>
         </template>
         <template #footer>
-          <BsButton icon="unlock" @click="nextAction(true)">{{ t('designer.forceUnlock') }}</BsButton>
+          <BsButton icon="check" colorClass="danger" @click="nextAction(true)">{{ t('common.yes') }}</BsButton>
+          <BsButton icon="times" @click="resetAction()">{{ t('common.no') }}</BsButton>
         </template>
       </BsModal>
 
@@ -4493,7 +4708,7 @@ onBeforeUnmount(() => {
       >
         <!-- the item's views, on top of its card, once the designer runs : its YAML ; the categories
              and constants as tables (Visual) ; a form's preview -->
-        <template v-if="lock && !lock.free && loaded" #tabs>
+        <template v-if="lock && lock.match && loaded" #tabs>
           <ul class="nav nav-tabs mb-0 designer-tabs">
             <li class="nav-item">
               <a class="nav-link" :class="{ active: editorView === 'yaml' }" href="#" @click.prevent="showView('yaml')">
@@ -4548,24 +4763,31 @@ onBeforeUnmount(() => {
         <template #headerActions>
           <template v-if="lock">
             <popper v-if="lock.lock && !lock.match">
-              <div class="form-check form-switch d-inline-flex align-items-center ms-3 mb-0">
-                <input class="form-check-input" type="checkbox" :checked="true" @change="unLock()" role="button" />
-                <label
-                  class="form-check-label text-warning"
-                  style="margin-left: 0.75rem"
-                  role="button"
-                  @click="unLock()"
-                >
-                  <font-awesome-icon icon="lock" size="sm" class="me-1" />{{ lock.lock.username }}
+              <!-- someone else's : the switch on and disabled, the lock is theirs until they
+                   turn the designer off -->
+              <div class="form-check form-switch d-inline-flex align-items-center ms-3 mb-0 designer-switch-other">
+                <input class="form-check-input" type="checkbox" :checked="true" disabled />
+                <label class="form-check-label" style="margin-left: 0.75rem">
+                  <font-awesome-icon icon="lock" size="sm" class="me-1" />{{
+                    t('designer.lockedByUser', { user: lock.lock.username })
+                  }}
                 </label>
               </div>
               <template #content>
                 {{ t('designer.user') }}: {{ lock.lock.username }}<br />
                 {{ t('designer.type') }}: {{ lock.lock.type }}<br />
-                {{ t('designer.created') }}: {{ lockAge }}<br />
-                <small class="text-muted">{{ t('designer.clickToForceUnlock') }}</small>
+                {{ t('designer.created') }}: {{ lockAge }}
               </template>
             </popper>
+            <!-- an admin releases somebody else's lock (one its holder cannot release any more) -->
+            <BsButton
+              v-if="lock.lock && !lock.match && store.isAdmin"
+              icon="unlock"
+              cssClass="designer-release"
+              colorClass="danger"
+              @click="forceRelease()"
+              >{{ t('designer.release') }}</BsButton
+            >
             <div v-else class="form-check form-switch d-inline-flex align-items-center ms-3 mb-0">
               <input
                 class="form-check-input"
@@ -4590,7 +4812,19 @@ onBeforeUnmount(() => {
         </template>
         <template #default>
           <!-- loading : the page's loading indicator, centered in the card, which fills the page -->
-          <AppPageLoading v-if="lockLoading || (lock && !lock.free && !loaded)" contained />
+          <AppPageLoading v-if="lockLoading" contained />
+          <!-- someone else holds the lock : nothing shown, only who, as when the designer is off -->
+          <div
+            v-else-if="lock && lock.lock && !lock.match"
+            class="d-flex flex-column align-items-center justify-content-center py-5 text-muted"
+          >
+            <FaIcon icon="lock" style="font-size: 2.5rem; opacity: 0.3" class="mb-3" />
+            <p class="mb-3 fw-semibold" style="font-size: 1.2rem">
+              {{ t('designer.inUseBy', { user: lock.lock.username }) }}
+            </p>
+            <p class="fs-6 mb-0">{{ t('designer.inUseByHint', { user: lock.lock.username }) }}</p>
+          </div>
+          <AppPageLoading v-else-if="lock && !lock.free && !loaded" contained />
           <div
             v-else-if="lock && lock.free"
             class="d-flex flex-column align-items-center justify-content-center py-5 text-muted"
@@ -4633,378 +4867,10 @@ onBeforeUnmount(() => {
                 >{{ t('settings.settingsPage.configTemplated') }}</small
               >
               <template v-if="lock && lock.match && editorView !== 'preview'">
-                <!-- a section of records : its YAML applied through the records' API, its page
-                     (the Visual tab) with its own buttons -->
-                <!-- the playbooks and the vars files : the file open saved, the repository pushed, a
-                     new file ; the explorer beside the editor deletes one. The text's own buttons on
-                     the YAML tab, a new variable on a vars file's Visual tab -->
-                <div v-if="FILE_SECTIONS[currentTab]" class="d-flex gap-1 flex-wrap designer-toolbar">
-                  <template v-if="projectFiles">
-                    <BsButton
-                      icon="save"
-                      :isIconButton="true"
-                      @click="projectFiles.save()"
-                      :disabled="!projectFiles.dirty || projectFiles.busy"
-                      :title="projectFiles.repository ? t('designer.saveLocal') : t('designer.save')"
-                    />
-                    <BsButton
-                      v-if="projectFiles.repository"
-                      :colorClass="projectFiles.unpushed ? 'orange' : 'primary'"
-                      icon="code-branch"
-                      :isIconButton="true"
-                      @click="projectFiles.push()"
-                      :disabled="projectFiles.dirty || projectFiles.busy || !projectFiles.unpushed"
-                      :title="t('designer.files.push', { repository: projectFiles.repository })"
-                    />
-                    <BsButton
-                      icon="file-circle-plus"
-                      :isIconButton="true"
-                      @click="projectFiles.newFile()"
-                      :disabled="projectFiles.busy"
-                      :title="t('designer.newFile')"
-                    />
-                    <template v-if="editorView === 'yaml'">
-                      <BsButton
-                        v-for="b in textEditorButtons"
-                        :key="b.icon"
-                        :icon="b.icon"
-                        :isIconButton="true"
-                        @click="b.run()"
-                        :disabled="projectFiles.busy || !projectFiles.selected"
-                        :title="b.title"
-                      />
-                    </template>
-                    <BsButton
-                      v-else-if="projectFiles.canAddVar"
-                      icon="plus"
-                      :isIconButton="true"
-                      @click="projectFiles.addVar()"
-                      :disabled="projectFiles.busy || !(lock && lock.match)"
-                      :title="t('designer.files.addKey')"
-                    />
-                    <BsButton
-                      icon="arrows-rotate"
-                      :isIconButton="true"
-                      @click="projectFiles.reload()"
-                      :disabled="projectFiles.busy"
-                      :title="t('designer.files.reload')"
-                    />
-                    <BsButton
-                      icon="clock-rotate-left"
-                      :isIconButton="true"
-                      @click="projectFiles.revert()"
-                      :disabled="!projectFiles.dirty || projectFiles.busy"
-                      :title="t('designer.revert')"
-                    />
-                  </template>
-                </div>
-                <div v-else class="d-flex gap-1 flex-wrap designer-toolbar">
-                  <template v-if="dbOnlyMode && isConfigTab">
-                    <BsButton
-                      :colorClass="busy ? 'secondary' : 'primary'"
-                      icon="check"
-                      :isIconButton="true"
-                      @click="validateForms"
-                      :disabled="busy"
-                      :title="t('designer.validate')"
-                    />
-                    <BsButton
-                      icon="save"
-                      :isIconButton="true"
-                      @click="saveForms"
-                      :disabled="!isValid || !isDirty || busyOrTemplated"
-                      :title="t('designer.save')"
-                    />
-                    <BsButton
-                      v-if="canRestore"
-                      :colorClass="busyOrTemplated ? 'secondary' : 'primary'"
-                      icon="trash-arrow-up"
-                      :isIconButton="true"
-                      @click="restore"
-                      :disabled="busyOrTemplated"
-                      :title="t('designer.restore')"
-                    />
-                  </template>
-                  <template v-else>
-                    <BsButton
-                      :colorClass="busyOrTemplated ? 'secondary' : 'primary'"
-                      v-if="currentTab == 'Forms'"
-                      icon="file-circle-plus"
-                      :isIconButton="true"
-                      @click="openNewFile()"
-                      :disabled="busyOrTemplated"
-                      :title="t('designer.newFile')"
-                    />
-                    <!-- the counterpart of Download : a local .yaml/.yml is read
-                           into the editor buffers, so Save/validate applies to it -->
-                    <BsButton
-                      :colorClass="busyOrTemplated ? 'secondary' : 'primary'"
-                      v-if="currentTab == 'Forms'"
-                      icon="file-import"
-                      :isIconButton="true"
-                      @click="openImport()"
-                      :disabled="busyOrTemplated"
-                      :title="t('designer.import')"
-                    />
-                    <BsButton
-                      :colorClass="busy ? 'secondary' : 'primary'"
-                      v-if="formsRepos.length > 0"
-                      icon="cloud-arrow-down"
-                      :isIconButton="true"
-                      @click="loadRepository"
-                      :disabled="busy"
-                      :title="loadingRepos ? t('designer.loading') : t('designer.loadRepository')"
-                    />
-                    <BsButton
-                      :colorClass="busy ? 'secondary' : 'primary'"
-                      icon="check"
-                      :isIconButton="true"
-                      @click="validateForms"
-                      :disabled="busy"
-                      :title="t('designer.validate')"
-                    />
-                    <BsButton
-                      icon="save"
-                      :isIconButton="true"
-                      @click="saveForms"
-                      :disabled="!isValid || !isDirty || busyOrTemplated"
-                      :title="formsRepos.length > 0 ? t('designer.saveLocal') : t('designer.save')"
-                    />
-                    <BsButton
-                      v-if="formsRepos.length > 0"
-                      :colorClass="isDirty || busyOrTemplated || !hasUnpushed ? 'secondary' : 'orange'"
-                      icon="code-branch"
-                      :isIconButton="true"
-                      @click="pushToRepo"
-                      :disabled="isDirty || busyOrTemplated || !hasUnpushed"
-                      :title="syncing ? t('designer.syncing') : t('designer.saveRepository')"
-                    />
-                    <BsButton
-                      v-if="canRestore"
-                      :colorClass="busyOrTemplated ? 'secondary' : 'primary'"
-                      icon="trash-arrow-up"
-                      :isIconButton="true"
-                      @click="restore"
-                      :disabled="busyOrTemplated"
-                      :title="t('designer.restore')"
-                    />
-                  </template>
-                  <!-- the text editor's own : undo, redo, cut, copy, paste, format, find -->
-                  <template v-if="editorView === 'yaml'">
-                    <BsButton
-                      :colorClass="busy || !editorTarget ? 'secondary' : 'primary'"
-                      icon="rotate-left"
-                      :isIconButton="true"
-                      @click="editorUndo"
-                      :disabled="busy || !editorTarget"
-                      :title="t('designer.undo')"
-                    />
-                    <BsButton
-                      :colorClass="busy || !editorTarget ? 'secondary' : 'primary'"
-                      icon="rotate-right"
-                      :isIconButton="true"
-                      @click="editorRedo"
-                      :disabled="busy || !editorTarget"
-                      :title="t('designer.redo')"
-                    />
-                    <BsButton
-                      :colorClass="busy || !editorTarget ? 'secondary' : 'primary'"
-                      icon="scissors"
-                      :isIconButton="true"
-                      @click="editorCut"
-                      :disabled="busy || !editorTarget"
-                      :title="t('designer.cut')"
-                    />
-                    <BsButton
-                      :colorClass="busy || !editorTarget ? 'secondary' : 'primary'"
-                      icon="copy"
-                      :isIconButton="true"
-                      @click="editorCopy"
-                      :disabled="busy || !editorTarget"
-                      :title="t('designer.copy')"
-                    />
-                    <BsButton
-                      :colorClass="busy || !editorTarget ? 'secondary' : 'primary'"
-                      icon="paste"
-                      :isIconButton="true"
-                      @click="editorPaste"
-                      :disabled="busy || !editorTarget"
-                      :title="t('designer.paste')"
-                    />
-                    <BsButton
-                      :colorClass="busy || !editorTarget ? 'secondary' : 'primary'"
-                      icon="indent"
-                      :isIconButton="true"
-                      @click="editorFormat"
-                      :disabled="busy || !editorTarget"
-                      :title="t('designer.format')"
-                    />
-                    <BsButton
-                      :colorClass="busy || !editorTarget ? 'secondary' : 'primary'"
-                      icon="magnifying-glass"
-                      :isIconButton="true"
-                      @click="editorFind"
-                      :disabled="busy || !editorTarget"
-                      :title="t('designer.findReplace')"
-                    />
-                  </template>
-                  <BsButton
-                    :colorClass="busy || !isDirty || !editorTarget ? 'secondary' : 'primary'"
-                    icon="right-left"
-                    :isIconButton="true"
-                    @click="editorDiff"
-                    :disabled="busy || !isDirty || !editorTarget"
-                    :title="t('designer.diff')"
-                  />
-                  <!-- the visual tab : a row added to its outline (a category, a constant, a field) -->
-                  <BsButton
-                    v-if="editorView === 'visual' && ['Categories', 'Constants', 'Forms'].includes(currentTab)"
-                    :colorClass="busyOrTemplated || visualEditor?.locked ? 'secondary' : 'primary'"
-                    icon="plus"
-                    :isIconButton="true"
-                    @click="visualEditor?.add()"
-                    :disabled="busyOrTemplated || !!visualEditor?.locked"
-                    :title="
-                      currentTab === 'Categories'
-                        ? t('designer.addCategory')
-                        : currentTab === 'Forms'
-                          ? t('designer.addField')
-                          : t('designer.addConstant')
-                    "
-                  />
-                  <template v-if="currentTab === 'Categories' && editorView === 'yaml'">
-                    <BsButton
-                      :colorClass="busyOrTemplated || !canAddCategories ? 'secondary' : 'primary'"
-                      icon="plus"
-                      :isIconButton="true"
-                      @click="openAddCategory"
-                      :disabled="busyOrTemplated || !canAddCategories"
-                      :title="t('designer.addCategory')"
-                    />
-                    <BsButton
-                      :colorClass="busyOrTemplated || !hasEditableCategories ? 'secondary' : 'primary'"
-                      icon="pencil"
-                      :isIconButton="true"
-                      @click="openEditCategories"
-                      :disabled="busyOrTemplated || !hasEditableCategories"
-                      :title="t('designer.editCategories')"
-                    />
-                  </template>
-                  <template v-if="currentTab === 'Constants' && editorView === 'yaml'">
-                    <BsButton
-                      :colorClass="busyOrTemplated || !canAddConstants ? 'secondary' : 'primary'"
-                      icon="plus"
-                      :isIconButton="true"
-                      @click="openAddConstant"
-                      :disabled="busyOrTemplated || !canAddConstants"
-                      :title="t('designer.addConstant')"
-                    />
-                    <BsButton
-                      :colorClass="busyOrTemplated || !hasEditableConstants ? 'secondary' : 'primary'"
-                      icon="pencil"
-                      :isIconButton="true"
-                      @click="openEditConstants"
-                      :disabled="busyOrTemplated || !hasEditableConstants"
-                      :title="t('designer.editConstants')"
-                    />
-                  </template>
-                  <template v-if="currentTab === 'Forms'">
-                    <!-- pencil, not sliders : FA7 aliases `sliders-h` to `sliders`, and the
-                           constants button uses the settings-menu's sliders-h icon, so both
-                           rendered the same glyph in this toolbar -->
-                    <BsButton
-                      :colorClass="busyOrTemplated || !currentForm ? 'secondary' : 'primary'"
-                      icon="pencil"
-                      :isIconButton="true"
-                      @click="showView('visual')"
-                      :disabled="busyOrTemplated || !currentForm"
-                      :title="t('designer.formSettings')"
-                    />
-                    <!-- a subform can hold none of these properties (the schema
-                           forbids icon/image/tileClass/categories/roles for it) -->
-                    <BsButton
-                      :colorClass="busyOrTemplated || !currentForm || currentFormIsSubform ? 'secondary' : 'primary'"
-                      icon="icons"
-                      :isIconButton="true"
-                      @click="openIconPicker"
-                      :disabled="busyOrTemplated || !currentForm || currentFormIsSubform"
-                      :title="currentFormIsSubform ? t('designer.notForSubforms') : t('designer.chooseIcon')"
-                    />
-                    <BsButton
-                      :colorClass="busyOrTemplated || !currentForm || currentFormIsSubform ? 'secondary' : 'primary'"
-                      icon="palette"
-                      :isIconButton="true"
-                      @click="openTilePicker"
-                      :disabled="busyOrTemplated || !currentForm || currentFormIsSubform"
-                      :title="currentFormIsSubform ? t('designer.notForSubforms') : t('designer.chooseBackground')"
-                    />
-                    <BsButton
-                      :colorClass="busyOrTemplated || !currentForm || currentFormIsSubform ? 'secondary' : 'primary'"
-                      icon="image"
-                      :isIconButton="true"
-                      @click="openImagePicker"
-                      :disabled="busyOrTemplated || !currentForm || currentFormIsSubform"
-                      :title="currentFormIsSubform ? t('designer.notForSubforms') : t('designer.chooseImage')"
-                    />
-                    <BsButton
-                      :colorClass="busyOrTemplated || !currentForm || currentFormIsSubform ? 'secondary' : 'primary'"
-                      icon="folder-tree"
-                      :isIconButton="true"
-                      @click="openCatPicker"
-                      :disabled="busyOrTemplated || !currentForm || currentFormIsSubform"
-                      :title="currentFormIsSubform ? t('designer.notForSubforms') : t('designer.assignCategories')"
-                    />
-                    <BsButton
-                      :colorClass="busyOrTemplated || !currentForm || currentFormIsSubform ? 'secondary' : 'primary'"
-                      icon="user-shield"
-                      :isIconButton="true"
-                      @click="openRolePicker"
-                      :disabled="busyOrTemplated || !currentForm || currentFormIsSubform"
-                      :title="currentFormIsSubform ? t('designer.notForSubforms') : t('designer.assignRoles')"
-                    />
-                    <!-- insert a $(constant) at the cursor, or create one : needs an
-                           editor to insert into, hence the editorTarget guard the
-                           cut/copy/paste buttons use rather than currentForm -->
-                    <BsButton
-                      :colorClass="busy || !editorTarget ? 'secondary' : 'primary'"
-                      icon="sliders-h"
-                      :isIconButton="true"
-                      @click="openInsertConstant"
-                      :disabled="busy || !editorTarget"
-                      :title="t('designer.insertConstant')"
-                    />
-                    <BsButton
-                      :colorClass="busyOrTemplated || !currentForm ? 'secondary' : 'primary'"
-                      icon="list-check"
-                      :isIconButton="true"
-                      @click="showView('visual')"
-                      :disabled="busyOrTemplated || !currentForm"
-                      :title="t('designer.fieldProperties')"
-                    />
-                  </template>
-                  <BsButton
-                    :colorClass="busy || !editorTarget ? 'secondary' : 'primary'"
-                    icon="download"
-                    :isIconButton="true"
-                    @click="downloadYaml"
-                    :disabled="busy || !editorTarget"
-                    :title="t('designer.download')"
-                  />
-                  <BsButton
-                    :colorClass="busy || !isDirty || !editorTarget ? 'secondary' : 'primary'"
-                    icon="clock-rotate-left"
-                    :isIconButton="true"
-                    @click="editorRevert"
-                    :disabled="busy || !isDirty || !editorTarget"
-                    :title="t('designer.revert')"
-                  />
-                </div>
+                <!-- the section's actions : their icons, titles and order from config/designerActions.js,
+                     the same in every section (toolbarActions says which and what they do) -->
+                <AppDesignerToolbar :actions="toolbarActions" />
               </template>
-              <small
-                v-if="lock && !lock.match && !lock.free"
-                class="d-inline-flex px-2 py-1 fw-semibold text-warning-emphasis bg-warning-subtle border border-warning-subtle rounded-2"
-                >{{ t('designer.readOnly') }}</small
-              >
             </div>
             <div
               class="designer-layout"
@@ -5066,33 +4932,46 @@ onBeforeUnmount(() => {
                     :editorStyle="editorStyle('100%')"
                     @init="onEditorInit"
                     @reveal="showView('yaml')"
+                    @newInventory="newInventory"
+                  />
+                  <!-- a new inventory : the repositories' New dialog, used for inventories -->
+                  <AppAdminMulti
+                    v-if="currentTab === 'Inventories'"
+                    ref="inventoryRepoDialog"
+                    :apiVersion="2"
+                    :settings="inventoryRepoSettings"
+                    dialogOnly
+                    canCreateChoices
+                    @created="onInventoryRepoCreated"
                   />
                 </div>
                 <!-- a section's preview, still to build -->
                 <div
                   v-else-if="loaded && draftSections.includes(currentTab) && editorView === 'preview'"
-                  class="designer-visual"
+                  class="designer-visual d-flex flex-column"
                 >
-                  <div class="empty-state">
-                    <FaIcon icon="eye" class="empty-state-icon" />
-                    <span>{{ t('designer.sectionToBuild') }}</span>
-                  </div>
+                  <AppDesignerEmpty :icon="'eye'" :title="t('designer.noFiles')" :text="t('designer.sectionToBuild')" />
                 </div>
                 <div
                   v-else-if="loaded && draftSections.includes(currentTab) && editorView === 'visual'"
-                  class="designer-visual"
+                  class="designer-visual d-flex flex-column"
                 >
-                  <div class="empty-state">
-                    <FaIcon :icon="tabs.find((x) => x.name === currentTab)?.icon" class="empty-state-icon" />
-                    <span>{{ t('designer.sectionToBuild') }}</span>
-                  </div>
+                  <AppDesignerEmpty
+                    :icon="tabs.find((x) => x.name === currentTab)?.icon"
+                    :title="t('designer.noFiles')"
+                    :text="t('designer.sectionToBuild')"
+                  />
                 </div>
                 <!-- a section still to build : nothing to edit yet, nothing typed to lose -->
-                <div v-else-if="loaded && draftSections.includes(currentTab)" class="designer-visual">
-                  <div class="empty-state">
-                    <FaIcon :icon="tabs.find((x) => x.name === currentTab)?.icon" class="empty-state-icon" />
-                    <span>{{ t('designer.sectionToBuild') }}</span>
-                  </div>
+                <div
+                  v-else-if="loaded && draftSections.includes(currentTab)"
+                  class="designer-visual d-flex flex-column"
+                >
+                  <AppDesignerEmpty
+                    :icon="tabs.find((x) => x.name === currentTab)?.icon"
+                    :title="t('designer.noFiles')"
+                    :text="t('designer.sectionToBuild')"
+                  />
                 </div>
                 <!-- Visual : the constants as a table, on the same YAML (saved with Save) -->
                 <div v-if="loaded && currentTab == 'Constants' && editorView === 'visual'" class="designer-visual">
@@ -5393,6 +5272,19 @@ onBeforeUnmount(() => {
 }
 .designer-editor {
   min-width: 0;
+}
+/* someone else holds the lock : the switch on and disabled (Bootstrap's faded blue), its label
+   (the lock, who holds it) in the normal text colour, as Start designer - Bootstrap fades a
+   disabled switch's label too */
+/* the admin's Release stands a little apart from whose lock it is : more than the title
+   controls' gap, which otherwise zeroes a control's margin (bootstrap-override.scss) */
+.af-title-controls > .designer-release {
+  /* with the 8px gap, 14px from the lock's label */
+  margin-left: 6px !important;
+}
+.designer-switch-other .form-check-input:disabled ~ .form-check-label {
+  opacity: 1;
+  cursor: default;
 }
 .designer-resize {
   cursor: col-resize;
@@ -5739,6 +5631,13 @@ onBeforeUnmount(() => {
 }
 /* the playbooks and the vars files : their editor and explorer side by side (AppProjectFiles),
    a grid the rule above would make a column ; its editor's column still fills the height */
+/* a file section takes the editor's whole height, so its empty message stands in the card's middle */
+.designer-page .designer-editor .designer-files {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
 .designer-page .designer-editor .designer-files > .af-files {
   display: grid;
 }

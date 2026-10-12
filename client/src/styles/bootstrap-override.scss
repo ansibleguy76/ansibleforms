@@ -15,7 +15,11 @@
 }
 
 // Darker-orange outline button used for the designer "unsaved / unpushed"
-// indicators (issue #414) ; Bootstrap's warning (#ffc107) reads too light/yellow.
+// indicators (issue #414) ; Bootstrap's warning (#ffc107) reads too light/yellow. The same
+// orange marks a repository not pushed (--af-unpushed-orange : its pill, styles/tables.scss).
+:root {
+  --af-unpushed-orange: #d97400;
+}
 .btn-outline-orange {
   @include button-outline-variant(#d97400);
 }

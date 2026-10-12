@@ -7,7 +7,7 @@ import i18n from '../../lib/i18n.js';
 
 const find = async function(req, res) {
   try {
-    const repositories = await Repository.findAll();
+    const repositories = await Repository.withUnpushed(await Repository.findAll());
     res.json(RestResult.list(repositories));
   } catch(err) {
     res.status(err.status || 500).json(RestResult.error(i18n.t(req, 'resources.failedFindRepositories'), err.message || String(err)));
@@ -35,7 +35,7 @@ const create = async function(req, res) {
 
 const findByName = async function(req, res) {
   try {
-    const repository = await Repository.findByName(req.params.name);
+    const [repository] = await Repository.withUnpushed([await Repository.findByName(req.params.name)]);
     repository.password = "**********"; // mask the password for api
     res.json(RestResult.single(repository));
   } catch(err) {

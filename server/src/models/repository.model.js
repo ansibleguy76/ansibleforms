@@ -454,6 +454,21 @@ class Repository extends CrudModel {
     }
   }
 
+  // where the inventories the playbook forms name (inventory: <name>) are : the local folder
+  // (INVENTORY_PATH), one folder per inventory, and each repository used for inventories, which
+  // IS an inventory - named after it, its inventory.yaml, group_vars and host_vars at its root.
+  // Read where the playbook runs as well (the RTE), from its own REPO_PATH and INVENTORY_PATH.
+  static async getInventoryRoots() {
+    const local = { repository: null, root: appConfig.inventoryPath }
+    try {
+      const repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_inventories ORDER BY name")
+      return [local, ...repositories.map((repo) => ({ repository: repo.name, root: path.join(appConfig.repoPath, repo.name) }))]
+    } catch (e) {
+      logger.error("Failed to get the inventories repositories : ", e)
+      return [local]
+    }
+  }
+
   // migration path (issue #414) : when the only forms repository is cloned and
   // contains no forms content yet, its working tree is seeded with the local
   // designer forms (config.yaml + forms folder) ; nothing is pushed until the
@@ -633,6 +648,21 @@ class Repository extends CrudModel {
     return { repositories: withDirty, configRepo, staged: Repository.hasStagedForms() }
   }
 
+  // each repository with `unpushed` : its working tree has changes not committed, or commits not
+  // pushed yet (the designer saved, nobody pushed) - the repositories list and page say so. One
+  // not cloned, or whose git does not answer, has none to say.
+  static async withUnpushed(repositories) {
+    return Promise.all((repositories || []).map(async (repo) => {
+      if (!repo?.name || !fs.existsSync(path.join(appConfig.repoPath, repo.name))) return { ...repo, unpushed: false }
+      try {
+        return { ...repo, unpushed: await Repo.hasChanges(repo.name) }
+      } catch (e) {
+        logger.debug(`Cannot tell whether '${repo.name}' has changes to push : ${e.message}`)
+        return { ...repo, unpushed: false }
+      }
+    }))
+  }
+
   // true when the working tree has uncommitted or unpushed changes ; used to
   // skip background pulls that would otherwise fail noisily while the designer
   // is mid-edit (issue #414)
@@ -762,8 +792,8 @@ class Repository extends CrudModel {
       syncRepo = await Repository.withCredential(await Repository.findByName(name))
       // a forms repo (read+write forms) or the config-origin repo (so config
       // edits can be committed even when config lives in a separate repo)
-      if (!syncRepo.use_for_forms && !syncRepo.use_for_config && !syncRepo.use_for_playbooks && !syncRepo.use_for_workflows) {
-        throw new Error(`Repository '${name}' is not a forms, config, playbooks or workflows repository`)
+      if (!syncRepo.use_for_forms && !syncRepo.use_for_config && !syncRepo.use_for_playbooks && !syncRepo.use_for_workflows && !syncRepo.use_for_inventories) {
+        throw new Error(`Repository '${name}' is not a forms, config, playbooks, workflows or inventories repository`)
       }
       const repoDir = path.join(appConfig.repoPath, name)
       if (!fs.existsSync(repoDir)) {

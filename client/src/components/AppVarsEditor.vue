@@ -19,7 +19,7 @@ import { ref, computed } from 'vue';
 import YAML from 'yaml';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
-import { varsRows, setVar, deleteVar, addVar } from '@/config/varsFile';
+import { varsRows, setVar, deleteVar, addVar, renameVar } from '@/config/varsFile';
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -30,6 +30,8 @@ const { t } = useI18n();
 
 // ─── the rows ─────────────────────────────────────────────────────────────────
 const rows = computed(() => varsRows(props.modelValue));
+// a list or a map somewhere : the rows keep the fold arrow's room, so the keys line up
+const folds = computed(() => rows.value.some((r) => r.type === 'map' || r.type === 'seq'));
 const folded = ref(new Set());
 // a row shows unless a map or a list above it is folded
 const shown = computed(() =>
@@ -57,6 +59,21 @@ function change(row, raw) {
   if (row.type === 'null') value = raw === '' ? null : raw;
   if (value === row.value) return;
   emit('update:modelValue', setVar(props.modelValue, row.path, value));
+}
+/** Renames a key (not a list's item) : an empty or an existing name is refused, the key kept. */
+function rename(row, event) {
+  const name = String(event.target.value || '').trim();
+  if (props.readOnly || name === row.key) return;
+  if (!name) {
+    event.target.value = row.key;
+    return;
+  }
+  try {
+    emit('update:modelValue', renameVar(props.modelValue, row.path, name));
+  } catch {
+    toast.warning(t('designer.files.keyExists', { key: name }));
+    event.target.value = row.key;
+  }
 }
 function remove(row) {
   if (props.readOnly) return;
@@ -114,14 +131,25 @@ defineExpose({ add: () => startAdd() });
           <span v-if="row.type === 'map' || row.type === 'seq'" role="button" class="af-caret me-1" @click="toggle(row)"
             ><FaIcon :icon="folded.has(row.id) ? 'caret-right' : 'caret-down'"
           /></span>
-          <span v-else class="af-caret me-1"></span>
+          <!-- room for the fold arrow, only when something in the file folds -->
+          <span v-else-if="folds" class="af-caret me-1"></span>
+          <!-- a key : its name edited in place ; a list's item : its place, which opens the YAML -->
+          <input
+            v-if="typeof row.key !== 'number'"
+            class="form-control af-key"
+            :value="row.key"
+            :disabled="readOnly"
+            :aria-label="t('settings.settingsPage.key')"
+            @change="rename(row, $event)"
+            @keyup.enter="$event.target.blur()"
+          />
           <span
-            class="text-truncate af-key"
-            :class="{ 'text-body-secondary': typeof row.key === 'number' }"
+            v-else
+            class="text-truncate af-key text-body-secondary"
             role="button"
             :title="t('designer.files.showInYaml')"
             @click="emit('reveal', row.line)"
-            >{{ typeof row.key === 'number' ? `- ${row.key + 1}` : row.key }}</span
+            >- {{ row.key + 1 }}</span
           >
         </div>
         <!-- the value : as its type -->
@@ -150,7 +178,18 @@ defineExpose({ add: () => startAdd() });
           @change="change(row, $event.target.value)"
           @keyup.enter="$event.target.blur()"
         />
-        <div class="d-flex gap-2 justify-content-end">
+        <!-- Delete first, so it stands in the same place on every row ; a list's or a map's + after it -->
+        <div class="d-flex gap-2">
+          <button
+            type="button"
+            class="btn af-row-btn"
+            :class="readOnly ? 'btn-outline-secondary' : 'btn-outline-danger'"
+            :disabled="readOnly"
+            :title="t('common.delete')"
+            @click="remove(row)"
+          >
+            <FaIcon icon="trash" />
+          </button>
           <button
             v-if="row.type === 'map' || row.type === 'seq'"
             type="button"
@@ -162,16 +201,6 @@ defineExpose({ add: () => startAdd() });
           >
             <FaIcon icon="plus" />
           </button>
-          <button
-            type="button"
-            class="btn af-row-btn"
-            :class="readOnly ? 'btn-outline-secondary' : 'btn-outline-danger'"
-            :disabled="readOnly"
-            :title="t('common.delete')"
-            @click="remove(row)"
-          >
-            <FaIcon icon="trash" />
-          </button>
         </div>
       </div>
     </div>
@@ -181,12 +210,20 @@ defineExpose({ add: () => startAdd() });
       <template #title>{{ adding.isList ? t('designer.files.addItem') : t('designer.files.addKey') }}</template>
       <template #default>
         <p class="text-body-secondary mb-3">{{ t('designer.files.addTo', { where: addTarget }) }}</p>
-        <BsInput v-if="!adding.isList" v-model="adding.key" :label="t('settings.settingsPage.key')" icon="key" />
         <BsInput
+          v-if="!adding.isList"
+          :isFloating="false"
+          v-model="adding.key"
+          :label="t('settings.settingsPage.key')"
+          icon="key"
+        />
+        <BsInput
+          :isFloating="false"
           v-model="adding.value"
           :label="t('settings.settingsPage.value')"
+          icon="pen"
           :help="t('designer.files.valueHelp')"
-          @keyup.enter="add()"
+          @keyup_enter="add()"
         />
       </template>
       <template #footer>
@@ -208,7 +245,8 @@ defineExpose({ add: () => startAdd() });
 }
 .af-vars-row {
   display: grid;
-  grid-template-columns: minmax(12rem, 1fr) minmax(14rem, 1.4fr) 5.5rem;
+  /* the key and the value take the room up to the buttons, which take what they need */
+  grid-template-columns: minmax(12rem, 1fr) minmax(14rem, 1.4fr) auto;
   gap: 0.75rem;
   align-items: center;
   min-width: 36rem;
@@ -222,10 +260,7 @@ defineExpose({ add: () => startAdd() });
   text-align: center;
   color: var(--bs-secondary-color);
 }
-.af-key {
-  font-family: var(--bs-font-monospace);
-}
-.af-key:hover {
+span.af-key:hover {
   text-decoration: underline;
 }
 .min-w-0 {

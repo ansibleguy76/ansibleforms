@@ -20,7 +20,7 @@ import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import TokenStorage from '@/lib/TokenStorage';
-import { statusPill } from '@/config/settings';
+import { repositoryStatusPill } from '@/config/settings';
 import { cronValidationMessage } from '@/config/cron';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
@@ -51,6 +51,7 @@ const EDITED = [
   'use_for_forms',
   'use_for_playbooks',
   'use_for_workflows',
+  'use_for_inventories',
   'cron',
   'rebase_on_start',
 ];
@@ -75,6 +76,11 @@ const USAGES = computed(() =>
       oneOnly: true,
     },
     {
+      key: 'use_for_inventories',
+      label: t('settings.repositories.useInventoriesShort'),
+      hint: t('settings.repositories.useInventoriesHint'),
+    },
+    {
       key: 'use_for_workflows',
       label: t('settings.repositories.useWorkflowsShort'),
       hint: t('settings.repositories.useWorkflowsHint'),
@@ -94,7 +100,14 @@ const USAGES = computed(() =>
  */
 function editable(record) {
   const out = Object.fromEntries(EDITED.map((k) => [k, record[k] ?? '']));
-  for (const u of ['use_for_config', 'use_for_forms', 'use_for_playbooks', 'use_for_workflows', 'rebase_on_start']) {
+  for (const u of [
+    'use_for_config',
+    'use_for_forms',
+    'use_for_playbooks',
+    'use_for_workflows',
+    'use_for_inventories',
+    'rebase_on_start',
+  ]) {
     out[u] = !!record[u];
   }
   out.pull_scheduled = !!(record.cron && String(record.cron).trim());
@@ -129,14 +142,16 @@ useUnsavedGuard(
 const running = computed(() => repo.value?.status === 'running');
 // git's output, a line each (the trailing newline adds none)
 const outputLines = computed(() => (repo.value?.output || '').replace(/\n$/, '').split('\n'));
-// pushed back : only what the designer writes to it, its forms, settings, playbooks or workflows
+// pushed back : only what the designer writes to it, its forms, settings, playbooks, workflows or inventories
+// (and, on the button, only when it has changes not pushed yet)
 const canPush = computed(
   () =>
     !!(
       repo.value?.use_for_forms ||
       repo.value?.use_for_config ||
       repo.value?.use_for_playbooks ||
-      repo.value?.use_for_workflows
+      repo.value?.use_for_workflows ||
+      repo.value?.use_for_inventories
     ),
 );
 const cronError = computed(() => (edit.value?.pull_scheduled ? cronValidationMessage(t, edit.value.cron) : null));
@@ -385,7 +400,8 @@ onMounted(async () => {
             <!-- where it stands : its status and head, each a field of the column, read only -->
             <div class="mb-3">
               <div class="form-label fw-bold">{{ t('settings.fields.status') }}</div>
-              <span v-html="statusPill(t, repo.status)"></span>
+              <!-- the last sync running or failed, else not pushed yet or pushed -->
+              <span v-html="repositoryStatusPill(t, repo)"></span>
             </div>
             <div class="mb-3">
               <div class="form-label fw-bold">{{ t('settings.fields.head') }}</div>
@@ -524,7 +540,7 @@ onMounted(async () => {
         <BsButton
           icon="upload"
           cssClass="text-nowrap"
-          :disabled="running || !canPush"
+          :disabled="running || !canPush || !repo?.unpushed"
           :title="canPush ? null : t('settings.repositories.pushHint')"
           @click="run('sync')"
           >{{ t('settings.repositories.push') }}</BsButton
