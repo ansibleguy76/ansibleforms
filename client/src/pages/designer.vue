@@ -5249,7 +5249,7 @@ onBeforeUnmount(() => {
                             :icon="isCollapsed(item.key) ? 'folder' : 'folder-open'"
                             class="tree-folder-icon me-2 flex-shrink-0"
                           />
-                          <span class="fw-bold text-truncate" :title="item.name">{{ item.name }}</span>
+                          <span class="text-truncate" :title="item.name">{{ item.name }}</span>
                         </span>
                         <span class="d-flex gap-2 flex-shrink-0 ms-2">
                           <span
