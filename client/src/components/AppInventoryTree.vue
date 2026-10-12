@@ -23,6 +23,8 @@ const props = defineProps({
   inventory: { type: Object, required: true },
   groupVars: { type: Array, default: () => [] },
   hostVars: { type: Array, default: () => [] },
+  // the inventory file's own name (inventory.yaml, hosts.yml) : the badge of the variables written in it
+  fileName: { type: String, default: 'inventory.yaml' },
 });
 const emit = defineEmits(['reveal', 'open']);
 const { t } = useI18n();
@@ -91,14 +93,32 @@ function toggle(id) {
             @click="emit('reveal', row.line)"
             >{{ row.name }}</span
           >
-          <span v-if="row.vars" class="badge af-badge me-1">{{ t('designer.files.varsCount', row.vars) }}</span>
+          <!-- two places a group or host gets variables from : under it in this inventory file
+               (the inventory file, its count in the title), and its own group_vars / host_vars file next to it (opened) -->
+          <span
+            v-if="row.vars"
+            class="badge af-badge me-1"
+            :title="
+              t('designer.files.inlineVarsTitle', {
+                count: t('designer.files.varsCount', row.vars),
+                name: row.name,
+                file: fileName,
+              })
+            "
+            >{{ t('designer.files.inventoryFileVars', { file: fileName }) }}</span
+          >
           <span
             v-if="row.type === 'group' ? groupVars.includes(row.name) : hostVars.includes(row.name)"
             role="button"
             class="badge text-bg-primary me-1"
+            :title="
+              t('designer.files.varsFileTitle', {
+                file: `${row.type === 'group' ? 'group_vars' : 'host_vars'}/${row.name}`,
+              })
+            "
             @click="emit('open', { role: row.type === 'group' ? 'group_vars' : 'host_vars', name: row.name })"
             ><FaIcon icon="file-lines" class="me-1" />{{
-              row.type === 'group' ? t('designer.files.groupVars') : t('designer.files.hostVars')
+              row.type === 'group' ? t('designer.files.groupVarsFile') : t('designer.files.hostVarsFile')
             }}</span
           >
         </div>
