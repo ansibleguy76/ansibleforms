@@ -1,11 +1,13 @@
 <script setup>
 /******************************************************************/
 /*                                                                */
-/*  Settings > Mail : the SMTP servers the app sends its mail     */
-/*  with, one of them active. A row opens the server's page       */
-/*  (mail-server.vue), Add the wizard. A config seed that sets    */
-/*  the mail settings is said above the list : the app sends with */
-/*  those while no server is active.                              */
+/*  Settings > Notifications : the channels notifications go to - */
+/*  SMTP servers (one of them active : the app sends its mail     */
+/*  with it), Slack, Microsoft Teams, Telegram and webhooks. A    */
+/*  row opens the channel's page (notification-channel.vue), Add  */
+/*  the wizard. A config seed that sets the mail settings is said */
+/*  above the list : the app sends with those while no mail       */
+/*  channel is active.                                            */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted } from 'vue';
@@ -31,16 +33,16 @@ onMounted(async () => {
   <AppSettingsPage>
     <!-- min-width 0 : a flex item, it keeps the page's width instead of growing with its list (the
          list's columns then fit the room, as every list's) -->
-    <div v-if="authenticated" class="flex-grow-1 d-flex flex-column af-mail-page">
+    <div v-if="authenticated" class="flex-grow-1 d-flex flex-column af-channels-page">
       <div v-if="seeded" class="alert alert-secondary py-2 mx-4 mt-3 mb-0">
-        <FaIcon icon="lock" class="me-2" />{{ t('settings.mailServers.fromSeed') }}
+        <FaIcon icon="lock" class="me-2" />{{ t('settings.notificationChannels.fromSeed') }}
       </div>
-      <AppAdminMulti :settings="settings.mailServers" :apiVersion="2" />
+      <AppAdminMulti :settings="settings.notificationChannels" :apiVersion="2" />
     </div>
   </AppSettingsPage>
 </template>
 <style scoped>
-.af-mail-page {
+.af-channels-page {
   min-width: 0;
 }
 </style>

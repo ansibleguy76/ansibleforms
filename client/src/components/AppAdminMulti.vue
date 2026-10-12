@@ -33,8 +33,9 @@
 /*  field.initial: (item) => value - a dialog-only field's value  */
 /*      on opening, from the record (not stored ; beforeSave      */
 /*      drops it)                                                 */
-/*  field.type 'radio' with field.options [{ value, label, hint }]*/
-/*      : one choice, radio buttons at the dialog's left edge     */
+/*  field.type 'radio' with field.options [{ value, label, hint,  */
+/*      icon }] : one choice, radio buttons at the dialog's left  */
+/*      edge, each its icon (optional), label and a few words     */
 /*  field.nested: a radio group that follows up the one above it  */
 /*      (AWX : which product) - indented, with its label as title */
 /*  field.flush: a switch at the dialog's left edge, its help the */
@@ -54,6 +55,8 @@
 /*      createDefaults is what that New presets                   */
 /*  field.needsChoicesOf: the key of a dropdown (createWith) - the*/
 /*      field is hidden while that one has nothing to choose      */
+/*  field.choicesWhen: (choice, item) => Boolean - the choices of */
+/*      a dropdown kept (an smtp login : the smtp credentials)    */
 /*  field.shortLabel / shortHint: a checkbox at the dialog's left */
 /*      edge, its short label and a few grey words on one line ;  */
 /*      a step's short checkboxes are alphabetical                */
@@ -624,6 +627,21 @@ function getParentValues(key) {
   if (Array.isArray(key)) return key;
   if (!parentLists.value) return [];
   return parentLists.value[key] || [];
+}
+
+/**
+ * The choices of a dropdown : its list's records, those field.choicesWhen keeps (the smtp
+ * credentials only, for a mail server's login).
+ *
+ * Args:
+ *   field (object): the field.
+ *
+ * Returns:
+ *   object[]: the choices.
+ */
+function choicesOf(field) {
+  const all = getParentValues(field.parent);
+  return typeof field.choicesWhen === 'function' ? all.filter((c) => field.choicesWhen(c, item.value || {})) : all;
 }
 
 function showField(field) {
@@ -1716,6 +1734,7 @@ defineExpose({
               :disabled="field.readonly"
             />
             <label class="form-check-label" :for="'af-radio-' + field.key + '-' + opt.value">
+              <FaIcon v-if="opt.icon" :icon="opt.icon" class="af-radio-icon me-2" fixedwidth />
               <span class="af-short-label">{{ opt.label }}</span>
               <span v-if="opt.hint" class="text-body-secondary small">{{ opt.hint }}</span>
             </label>
@@ -1774,7 +1793,7 @@ defineExpose({
           :labelKey="field.labelKey"
           :style="field.style"
           :lang="field.lang"
-          :values="getParentValues(field.parent)"
+          :values="choicesOf(field)"
         />
         <!-- a dropdown that can create its choice : the dialog of that list, over this one -->
         <div

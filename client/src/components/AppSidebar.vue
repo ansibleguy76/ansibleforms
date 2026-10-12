@@ -78,9 +78,9 @@ const sections = computed(() =>
     },
     {
       // Outbound : the systems AnsibleForms reaches and the credentials for them.
-      // Mail belongs here rather than under a section of its own - it is an smtp
-      // host with a port, tls and a username/password, the same shape as runners and
-      // repositories, and it has the same 'test the connection' action.
+      // Notifications belong here rather than under a section of its own - an smtp host,
+      // a Slack or Teams webhook, a Telegram bot or any webhook is a system it reaches, the
+      // same shape as runners and repositories, with the same 'test it' action.
       title: t('sidebar.sections.connections'),
       items: [
         // where forms and playbooks come from, what they log in with (and the stores that hold it),
@@ -94,7 +94,7 @@ const sections = computed(() =>
         { title: t('sidebar.secretStores'), icon: 'vault', link: '/settings/secret-stores' },
         { title: t('sidebar.runners'), icon: 'rocket', link: '/settings/runners' },
         { title: t('sidebar.ssh'), icon: 'key', link: '/settings/ssh' },
-        { title: t('sidebar.mail'), icon: 'envelope', link: '/settings/mail' },
+        { title: t('sidebar.notifications'), icon: 'bell', link: '/settings/notifications' },
         { title: t('sidebar.chat'), icon: 'comments', link: '/settings/chat' },
         { title: t('sidebar.mcp'), icon: 'robot', link: '/settings/mcp' },
         // where the server log and the audit entries are sent

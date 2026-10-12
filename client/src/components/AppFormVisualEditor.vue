@@ -415,6 +415,40 @@ function addCredential() {
     setFormIn(d, 'credentials', name, '');
   });
 }
+// the notification channels' names (Connections > Notifications), offered in the notifications'
+// and the approval's Channels (the list needs the settings' permission : without it, none offered)
+const channelNames = ref([]);
+// name -> its type (mail, slack, teams, telegram, webhook) : whether mail is among those picked
+const channelTypes = ref({});
+onMounted(async () => {
+  try {
+    const res = await axios.get('/api/v2/notificationchannel/');
+    const list = (res.data?.records || res.data || []).filter((c) => c?.name);
+    channelNames.value = list.map((c) => c.name);
+    channelTypes.value = Object.fromEntries(list.map((c) => [c.name, c.type]));
+  } catch {
+    channelNames.value = [];
+    channelTypes.value = {};
+  }
+});
+
+/**
+ * Whether the mail's recipients are asked, under the channels : no channel picked (mail goes
+ * through the default mail channel, as before channels), a mail channel among them, or
+ * recipients already there (never hidden with addresses in them).
+ *
+ * Args:
+ *   key (string): 'notifications' or 'approval'.
+ *   list (string): the recipients' key : recipients, or the approval's notifications.
+ *
+ * Returns:
+ *   boolean: true when they are asked.
+ */
+function sendsMail(key, list) {
+  const block = nested(key) || {};
+  const picked = block.channels || [];
+  return !picked.length || picked.some((n) => channelTypes.value[n] === 'mail') || (block[list] || []).length > 0;
+}
 // the credentials' names the instance keeps, offered as the values (the list needs the
 // settings' permission : without it, typed)
 const credentialNames = ref([]);
@@ -1068,7 +1102,57 @@ defineExpose({
             {{ t('designer.visualInYaml') }}
           </div>
           <div v-else-if="nested('notifications')" class="af-nested">
+            <!-- the channels it goes to first (mail, Slack, Teams, Telegram, a webhook), then the mail's
+                 recipients when mail is among them -->
             <div>
+              <label class="form-label fw-bold">{{ t('designer.visualChannels') }}</label>
+              <div class="d-flex align-items-center flex-wrap gap-2">
+                <span
+                  v-for="c in nested('notifications').channels || []"
+                  :key="c"
+                  class="badge rounded-pill af-form-pill"
+                >
+                  {{ c }}
+                  <button
+                    type="button"
+                    class="btn-close ms-1"
+                    :disabled="locked"
+                    :aria-label="t('common.delete')"
+                    @click="
+                      setNested(
+                        'notifications',
+                        'channels',
+                        nested('notifications').channels.filter((x) => x !== c),
+                      )
+                    "
+                  ></button>
+                </span>
+                <select
+                  @mouseenter="fullTitle"
+                  class="form-select form-select-sm af-form-add"
+                  :disabled="locked"
+                  :value="''"
+                  @change="
+                    setNested('notifications', 'channels', [
+                      ...(nested('notifications').channels || []),
+                      $event.target.value,
+                    ]);
+                    $event.target.value = '';
+                  "
+                >
+                  <option value="">{{ t('designer.visualAdd') }}</option>
+                  <option
+                    v-for="o in channelNames.filter((x) => !(nested('notifications').channels || []).includes(x))"
+                    :key="o"
+                    :value="o"
+                  >
+                    {{ o }}
+                  </option>
+                </select>
+              </div>
+              <div class="form-text">{{ t('designer.visualChannelsHelp') }}</div>
+            </div>
+            <div v-if="sendsMail('notifications', 'recipients')">
               <label class="form-label fw-bold">{{ t('designer.visualRecipients') }}</label>
               <div class="d-flex align-items-center flex-wrap gap-2">
                 <span
@@ -1231,7 +1315,49 @@ defineExpose({
                 </select>
               </div>
             </div>
+            <!-- the channels it is asked in first, then the mail's recipients when mail is among them -->
             <div>
+              <label class="form-label fw-bold">{{ t('designer.visualChannels') }}</label>
+              <div class="d-flex align-items-center flex-wrap gap-2">
+                <span v-for="c in nested('approval').channels || []" :key="c" class="badge rounded-pill af-form-pill">
+                  {{ c }}
+                  <button
+                    type="button"
+                    class="btn-close ms-1"
+                    :disabled="locked"
+                    :aria-label="t('common.delete')"
+                    @click="
+                      setNested(
+                        'approval',
+                        'channels',
+                        nested('approval').channels.filter((x) => x !== c),
+                      )
+                    "
+                  ></button>
+                </span>
+                <select
+                  @mouseenter="fullTitle"
+                  class="form-select form-select-sm af-form-add"
+                  :disabled="locked"
+                  :value="''"
+                  @change="
+                    setNested('approval', 'channels', [...(nested('approval').channels || []), $event.target.value]);
+                    $event.target.value = '';
+                  "
+                >
+                  <option value="">{{ t('designer.visualAdd') }}</option>
+                  <option
+                    v-for="o in channelNames.filter((x) => !(nested('approval').channels || []).includes(x))"
+                    :key="o"
+                    :value="o"
+                  >
+                    {{ o }}
+                  </option>
+                </select>
+              </div>
+              <div class="form-text">{{ t('designer.visualChannelsHelp') }}</div>
+            </div>
+            <div v-if="sendsMail('approval', 'notifications')">
               <label class="form-label fw-bold">{{ t('designer.visualApprovalNotify') }}</label>
               <div class="d-flex align-items-center flex-wrap gap-2">
                 <span

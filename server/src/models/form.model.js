@@ -1077,8 +1077,51 @@ export function deprecatedMultistep(form){
   if (form?.type !== 'multistep') return null
   return `Form '${form.name}' : type multistep is ${DEPRECATED_IN_7} - use type workflow (Designer > Workflows), whose nodes run on any runner, with a condition (if_extra_var) and their own values (extra_vars_key)`
 }
+/**
+ * The notification channels a form names (its notifications, its approval, its steps') :
+ * channels: [...] of Connections > Notifications.
+ *
+ * Args:
+ *   form (object): the form.
+ *
+ * Returns:
+ *   string[]: the names, each once.
+ */
+export function channelsOfForm(form){
+  const names = []
+  const add = (list) => { if (Array.isArray(list)) names.push(...list.filter((n) => typeof n === 'string' && n.trim())) }
+  if (form && typeof form === 'object') {
+    add(form.notifications?.channels)
+    add(form.approval?.channels)
+    for (const s of Array.isArray(form.steps) ? form.steps : []) {
+      add(s?.notifications?.channels)
+      add(s?.approval?.channels)
+    }
+  }
+  return [...new Set(names)]
+}
+// A form naming a channel that is not there (Connections > Notifications) : said in the log, once
+// per form and name - never an error, the notification skips it when it is sent
+const warnedChannels = new Set()
+async function warnUnknownChannels(form){
+  const names = channelsOfForm(form).filter((n) => !warnedChannels.has(`${form.name}\u0000${n}`))
+  if (!names.length) return
+  try {
+    const { default: NotificationChannel } = await import('./notificationChannel.model.js')
+    const known = new Set((await NotificationChannel.findAll()).map((c) => c.name))
+    for (const name of names) {
+      if (known.has(name)) continue
+      warnedChannels.add(`${form.name}\u0000${name}`)
+      logger.warning(`Form '${form.name}' names the notification channel '${name}', which is not there (Connections > Notifications) : its notifications skip it`)
+    }
+  } catch (e) {
+    logger.debug(`The notification channels of form '${form.name}' could not be checked : ${e.message}`)
+  }
+}
 Form.validateForm = function(obj){
   if(obj){
+    // not awaited : a check against the database, its outcome a log line
+    warnUnknownChannels(obj)
     const multistep = deprecatedMultistep(obj)
     if (multistep && !warnedMultistep.has(obj.name)) {
       warnedMultistep.add(obj.name)

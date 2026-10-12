@@ -928,9 +928,9 @@ Health.check = async function () {
   // row that goes amber for a legitimate setup is noise. Whether it actually WORKS is left
   // to Mail's own test button - reading the row proves nothing about the smtp host.
   try {
-    // the active mail server ; none, the mail settings (a seeded instance's)
-    const { default: MailServer } = await import('./mailServer.model.js');
-    const active = await MailServer.findActive();
+    // the active mail channel ; none, the mail settings (a seeded instance's)
+    const { default: NotificationChannel } = await import('./notificationChannel.model.js');
+    const active = await NotificationChannel.findActive();
     const mail = active
       ? { mail_server: active.server, mail_port: active.port, mail_secure: active.secure, mail_username: active.credential }
       : await Settings.findMailSettings();

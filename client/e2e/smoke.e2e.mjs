@@ -44,3 +44,17 @@ test('the repositories page shows a Pull and a Push column', async ({ page }) =>
   await expect(head.getByText('Push', { exact: true })).toBeVisible();
   await expect(head.getByText('Status', { exact: true })).toHaveCount(0);
 });
+
+test('the notifications page adds a channel of one of five types', async ({ page }) => {
+  await page.goto('/settings/notifications');
+  await page.getByRole('button', { name: /Add notification channel/ }).click();
+  const dialog = page.locator('.modal').filter({ hasText: 'New notification channel' });
+  await expect(dialog).toBeVisible();
+  // its name first, then its type : a radio each
+  await dialog.locator('input').first().fill('e2e-channel');
+  await dialog.locator('.modal-footer button').filter({ hasText: /Next/ }).click();
+  for (const type of ['mail', 'slack', 'teams', 'telegram', 'webhook']) {
+    await expect(dialog.locator(`input[type=radio][value="${type}"]`)).toHaveCount(1);
+  }
+  await dialog.locator('.modal-footer button').filter({ hasText: /Close/ }).click();
+});

@@ -525,7 +525,7 @@ const SCHEMA_MANIFEST = {
   base: {
     tables: ['groups', 'users', 'tokens', 'credentials', 'ldap', 'jobs', 'job_output',
              'settings', 'repositories', 'schedule', 'audit', 'chat_settings', 'secret_stores', 'runners',
-             'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'mail_servers', 'syslog_servers', 'login_failures', 'token_revocations', 'schema_migrations',
+             'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'notification_channels', 'syslog_servers', 'login_failures', 'token_revocations', 'schema_migrations',
              'directory_users', 'announcements', 'disclaimer_versions', 'disclaimer_acceptances'],
   },
   patches: {
@@ -563,7 +563,7 @@ const SCHEMA_MANIFEST = {
     // dropped), and the job log a playbook writes is stored on the job
     // and the worker and several app nodes : the processes on the database, what changed
     // between them, the designer lock, and the node that follows a job
-    patchVersion7: { tables: ['secret_stores', 'runners', 'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'mail_servers', 'syslog_servers', 'login_failures', 'token_revocations', 'schema_migrations',
+    patchVersion7: { tables: ['secret_stores', 'runners', 'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'notification_channels', 'syslog_servers', 'login_failures', 'token_revocations', 'schema_migrations',
                               'directory_users', 'announcements', 'disclaimer_versions', 'disclaimer_acceptances'],
                      columns: ['schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'settings.syslog_env_imported_at', 'jobs.runner', 'jobs.runner_kind',
                                'runners.username', 'runners.password', 'runners.use_credentials', 'runners.node_id', 'jobs.job_log',
@@ -916,10 +916,12 @@ async function patchVersion7(messages, success, failed) {
   // restricted
   await checkPromise(addColumn("credentials", "client_cert", "text", true, "NULL"), messages, success, failed);
   await checkPromise(addColumn("credentials", "client_key", "text", true, "NULL"), messages, success, failed);
-  // several SMTP servers, one active ; the mail settings become the first, their login an
-  // smtp credential
-  const mailBuffer = fs.readFileSync(`${__dirname}/../db/create_mail_servers_table.sql`);
-  await checkPromise(addTable("mail_servers", mailBuffer.toString()), messages, success, failed);
+  // where notifications go (Connections > Notifications) : SMTP servers (one active), Slack,
+  // Teams, Telegram and webhooks. The mail servers of a 7 release candidate move in (their table
+  // then goes), and the mail settings of before become the first, their login an smtp credential
+  const channelsBuffer = fs.readFileSync(`${__dirname}/../db/create_notification_channels_table.sql`);
+  await checkPromise(addTable("notification_channels", channelsBuffer.toString()), messages, success, failed);
+  await checkPromise(moveMailServersToChannels(), messages, success, failed);
   await checkPromise(copyMailSettingsToServers(), messages, success, failed);
   // the syslog servers the server log and the audit entries go to (Connections > Syslog) ; the
   // LOG_SYSLOG_* variables of before become the first, once (lib/syslogServers.js)
@@ -1054,15 +1056,49 @@ export async function copyAwxToRunners() {
 }
 
 /**
- * The mail settings as the first mail server, active, their login an smtp credential.
- * Idempotent : only while there is no mail server yet. Not on a seeded instance : the seed
+ * The mail servers of a 7 release candidate (the mail_servers table, before notification
+ * channels) moved to notification channels of type mail, then their table dropped : only once
+ * every one of them is there (one named like a channel already there is not copied over it,
+ * and the table is kept, said in the log). Idempotent : nothing to do without the table.
+ *
+ * Returns:
+ *   Promise<string|null>: what was done, or null when there was nothing to do.
+ */
+export async function moveMailServersToChannels() {
+  const exists = await mysql.do("SHOW TABLES FROM AnsibleForms LIKE 'mail_servers'");
+  if (!exists.length) return null;
+  const copied = await mysql.do(
+    "INSERT INTO AnsibleForms.`notification_channels` (name, description, type, enabled, is_active, server, port, secure, from_address, credential, managed) " +
+      "SELECT m.name, m.description, 'mail', 1, m.is_active, m.server, m.port, m.secure, m.from_address, m.credential, m.managed FROM AnsibleForms.`mail_servers` m " +
+      "WHERE NOT EXISTS (SELECT 1 FROM AnsibleForms.`notification_channels` c WHERE c.name = m.name)",
+  );
+  // every one of them a mail channel now : the table goes ; else it stays, and says why
+  const left = await mysql.do(
+    "SELECT m.name FROM AnsibleForms.`mail_servers` m WHERE NOT EXISTS " +
+      "(SELECT 1 FROM AnsibleForms.`notification_channels` c WHERE c.name = m.name AND c.type = 'mail')",
+  );
+  if (left.length) {
+    const message = `Mail server(s) ${left.map((r) => r.name).join(", ")} could not move to notification channels : a channel of another type has that name. Rename it ; the mail_servers table is kept until then`;
+    logger.error(message);
+    return message;
+  }
+  await dropTable("mail_servers");
+  const n = copied?.affectedRows || 0;
+  const message = n ? `Moved ${n} mail server(s) to notification channels (type mail) and dropped the mail_servers table` : "Dropped the mail_servers table, its servers were already notification channels";
+  logger.warning(message);
+  return message;
+}
+
+/**
+ * The mail settings as the first mail channel, active, their login an smtp credential.
+ * Idempotent : only while there is no mail channel yet. Not on a seeded instance : the seed
  * owns the mail settings, which stay what it sends with.
  *
  * Returns:
  *   Promise<string|null>: what was done, or null when there was nothing to do.
  */
 export async function copyMailSettingsToServers() {
-  const servers = await mysql.do("SELECT COUNT(*) AS n FROM AnsibleForms.`mail_servers`");
+  const servers = await mysql.do("SELECT COUNT(*) AS n FROM AnsibleForms.`notification_channels` WHERE type = 'mail'");
   if (servers[0]?.n) return null;
   const rows = await mysql.do("SELECT * FROM AnsibleForms.`settings` LIMIT 1");
   const s = rows[0];
@@ -1079,10 +1115,10 @@ export async function copyMailSettingsToServers() {
     );
   }
   await mysql.do(
-    "INSERT INTO AnsibleForms.`mail_servers` (name, description, server, port, secure, from_address, credential, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)",
+    "INSERT INTO AnsibleForms.`notification_channels` (name, description, type, enabled, server, port, secure, from_address, credential, is_active) VALUES (?, ?, 'mail', 1, ?, ?, ?, ?, ?, 1)",
     ["default", "From the mail settings", s.mail_server, s.mail_port || null, s.mail_secure ? 1 : 0, s.mail_from || null, credential],
   );
-  return "Copied the mail settings to the mail server 'default'" + (credential ? ", its login to the credential 'mail-login'" : "");
+  return "Copied the mail settings to the mail channel 'default'" + (credential ? ", its login to the credential 'mail-login'" : "");
 }
 
 // the tables 7.0.0 drops : their presence means an upgrade is pending

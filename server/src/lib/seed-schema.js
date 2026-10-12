@@ -203,6 +203,35 @@ const syslogServerItem = {
   },
 };
 
+// a notification channel of Connections > Notifications : an SMTP server, Slack, Teams, Telegram or
+// a webhook ; which fields apply is up to its type (models/notificationChannel)
+const notificationChannelItem = {
+  type: "object",
+  additionalProperties: false,
+  required: ["name", "type"],
+  properties: {
+    name: str,
+    description: str,
+    type: { type: "string", enum: ["mail", "slack", "teams", "telegram", "webhook"] },
+    enabled: bool,
+    is_active: bool,
+    server: str,
+    port: strOrInt,
+    secure: bool,
+    from_address: str,
+    credential: str,
+    webhook_url: str,
+    chat_id: strOrInt,
+    api_url: str,
+    token_credential: str,
+    url: str,
+    method: { type: "string", enum: ["POST", "PUT"] },
+    headers: str,
+    verify_tls: bool,
+    payload: str,
+  },
+};
+
 const listSection = (item) => ({
   type: "object",
   additionalProperties: false,
@@ -319,6 +348,7 @@ export const seedSchema = {
     oauth2: listSection(oauth2Item),
     repositories: listSection(repositoryItem),
     syslog_servers: listSection(syslogServerItem),
+    notification_channels: listSection(notificationChannelItem),
     ldap: ldapSection,
     settings: settingsSection,
     chat: chatSection,
@@ -332,7 +362,7 @@ const validator = ajv.compile(seedSchema);
 // typo here : the second entry silently wins the upsert while the first is counted
 // as declared, so a prune would spare a record nobody can see in the file.
 function assertUniqueNames(doc) {
-  for (const key of ["runners", "secret_stores", "credentials", "oauth2", "repositories", "syslog_servers"]) {
+  for (const key of ["runners", "secret_stores", "credentials", "oauth2", "repositories", "syslog_servers", "notification_channels"]) {
     const items = doc[key]?.items;
     if (!Array.isArray(items)) continue;
     const seen = new Set();

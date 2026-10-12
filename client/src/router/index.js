@@ -33,8 +33,8 @@ const directoryGroup = () => import('@/pages/admin/directory-group.vue');
 const ldap = () => import('@/pages/admin/ldap.vue');
 const chatSettings = () => import('@/pages/admin/chat.vue');
 const mcpSettings = () => import('@/pages/admin/mcp.vue');
-const mailSettings = () => import('@/pages/admin/mailSettings.vue');
-const mailServer = () => import('@/pages/admin/mail-server.vue');
+const notificationChannels = () => import('@/pages/admin/notificationChannels.vue');
+const notificationChannel = () => import('@/pages/admin/notification-channel.vue');
 const syslogServers = () => import('@/pages/admin/syslogServers.vue');
 const syslogServer = () => import('@/pages/admin/syslog-server.vue');
 const logo = () => import('@/pages/admin/logo.vue');
@@ -212,16 +212,18 @@ const routes = [
     component: syslogServer,
     meta: { permission: 'showSettings' },
   },
+  // Settings > Connections > Notifications : the channels notifications go to (SMTP servers,
+  // Slack, Teams, Telegram, webhooks), each its own page
   {
-    path: '/settings/mail',
-    name: '/settings/mail',
-    component: mailSettings,
+    path: '/settings/notifications',
+    name: '/settings/notifications',
+    component: notificationChannels,
     meta: { permission: 'showSettings' },
   },
   {
-    path: '/settings/mail/:id(\\d+)/:tab?',
-    name: '/settings/mail/:id',
-    component: mailServer,
+    path: '/settings/notifications/:id(\\d+)/:tab?',
+    name: '/settings/notifications/:id',
+    component: notificationChannel,
     meta: { permission: 'showSettings' },
   },
   { path: '/settings/logo/:tab?', name: '/settings/logo', component: logo, meta: { permission: 'showSettings' } },

@@ -130,15 +130,20 @@ async function load() {
   }
   const [stores, mails, repos] = await Promise.all([
     axios.get('/api/v2/secretstore/', auth).catch(() => null),
-    axios.get('/api/v2/mailserver/', auth).catch(() => null),
+    axios.get('/api/v2/notificationchannel/', auth).catch(() => null),
     axios.get('/api/v2/repository/', auth).catch(() => null),
   ]);
   secretStores.value = [{ name: '' }, ...(stores?.data?.records || []).map((s) => ({ name: s.name }))];
-  // what names a credential : a secret store (its token or login), a mail server (its smtp
-  // login), a repository (its git login) ; the Used by tab keeps those naming this one
+  // what names a credential : a secret store (its token or login), a notification channel (a
+  // mail server's smtp login, a bot's or a webhook's token), a repository (its git login) ; the
+  // Used by tab keeps those naming this one
   users.value = [
     ...(stores?.data?.records || []).map((r) => ({ ...r, kind: 'secretStore', to: `/settings/secret-stores/${r.id}` })),
-    ...(mails?.data?.records || []).map((r) => ({ ...r, kind: 'mailServer', to: `/settings/mail/${r.id}` })),
+    ...(mails?.data?.records || []).map((r) => ({
+      ...r,
+      kind: 'notificationChannel',
+      to: `/settings/notifications/${r.id}`,
+    })),
     ...(repos?.data?.records || []).map((r) => ({ ...r, kind: 'repository', to: `/settings/repositories/${r.id}` })),
   ];
   loaded.value = true;
@@ -164,10 +169,11 @@ async function update(data) {
 }
 
 // ─── Used by ──────────────────────────────────────────────────────────────────
-// the secret stores, mail servers and repositories that name the credential ; a row opens it
+// the secret stores, notification channels and repositories that name the credential (a channel
+// as its login or its token) ; a row opens it
 const users = ref([]);
 const usedBy = computed(() =>
-  credential.value ? users.value.filter((u) => u.credential && u.credential === credential.value.name) : [],
+  credential.value ? users.value.filter((u) => [u.credential, u.token_credential].includes(credential.value.name)) : [],
 );
 const usedByColumns = computed(() => [
   { key: 'name', label: t('settings.fields.name') },

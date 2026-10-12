@@ -370,6 +370,8 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
       message: node.description || `Workflow ${workflow.name} : ${node.name}`,
       roles: formObj.approval?.roles || [],
       notifications: formObj.approval?.notifications || [],
+      // and its channels (Connections > Notifications : Slack, Teams, Telegram, a webhook)
+      channels: formObj.approval?.channels || [],
     };
     await print(`APPROVE [${node.name}] ${"*".repeat(Math.max(5, 69 - node.name.length))}`);
     await Job.transitionStatus(jobid, ["running"], { status: "approve", approval: JSON.stringify(approval) });

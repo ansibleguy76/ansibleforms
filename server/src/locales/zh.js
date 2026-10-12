@@ -235,4 +235,12 @@ export default {
       body: "<p>这是一封来自 AnsibleForms 的测试邮件。</p>",
     },
   },
+  // what a notification channel (Connections > Notifications) says : a test, a job's end
+  notifications: {
+    testText: "来自 {who} 的测试通知 : 通道 '{name}' 收到了它。",
+    testSent: "测试通知已发送到 {name}",
+    testFailed: "测试通知失败",
+    statusText: "表单 '{form}' 的作业 {jobid} 已结束 : {status}。",
+    openJob: "打开作业",
+  },
 };
