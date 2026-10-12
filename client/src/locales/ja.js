@@ -1539,7 +1539,8 @@ export default {
       configParseError: 'フォーム設定の解析に失敗しました。変更する前に YAML の構文エラーを修正してください。',
       configTemplated:
         'この設定は ytt テンプレートを使用しているため、ここでは編集できません。代わりにソーステンプレートを編集してください。',
-      publicRoleNote: 'public ロールは全員に自動的に適用されます。グループやユーザーを割り当てることはできません。',
+      publicRoleNote:
+        'ロール default は全員に自動的に適用されます（public は旧名）。グループやユーザーは割り当てられません。',
       publicEveryone: '全員（自動）',
       roleNoUsers: 'このロールにはまだユーザーがいません。',
       roleNoGroups: 'このロールにはまだグループがありません。',

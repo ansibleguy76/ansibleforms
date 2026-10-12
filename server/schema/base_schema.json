@@ -44,7 +44,7 @@
       "contains": {
         "type": "object",
         "properties": {
-          "name": { "const": "public"},
+          "name": { "enum": ["default", "public"]},
           "description": { "type": "string" },
           "groups": { "const": []},
           "options": {
@@ -76,6 +76,8 @@
         "required": [
           "name"
         ],
+        "if": { "properties": { "name": { "enum": ["default", "public"] } }, "required": ["name"] },
+        "then": { "properties": { "groups": { "const": [] }, "users": { "not": {} }, "credentials": { "not": {} }, "secretStores": { "not": {} }, "runners": { "not": {} } } },
         "anyOf": [
           {
             "required": [

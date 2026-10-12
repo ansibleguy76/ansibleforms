@@ -3,6 +3,7 @@
 // name but who never signed in, the groups seen at a sign-in or named by a role. Each row with
 // its counts : its roles by the login's rule (User.getRolesAndOptions - by name, through a
 // group, public always), on the groups seen at its last sign-in.
+import { everyoneName } from "./defaultRole.js";
 import { DIRECTORY_TYPES } from './directoryTypes.js';
 
 /**
@@ -35,10 +36,10 @@ const names = (list) => (Array.isArray(list) ? list.map(String) : []);
  *   groups (string[]): its groups, prefixed (ldap/ops).
  *
  * Returns:
- *   string[]: the role names, public included.
+ *   string[]: the role names, the role everyone has included (default ; public in an older config).
  */
 export function rolesOfDirectoryUser(roles, type, username, groups) {
-  const out = new Set(['public']);
+  const out = new Set([everyoneName(roles)]);
   for (const r of roles || []) {
     if (names(r.users).includes(`${type}/${username}`) || names(r.groups).some((g) => groups.includes(g))) {
       out.add(r.name);

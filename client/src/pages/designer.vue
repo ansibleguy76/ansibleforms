@@ -1816,7 +1816,7 @@ const formTemplate = {
   type: 'ansible',
   playbook: 'dummy.yaml',
   description: '',
-  roles: ['public'],
+  roles: ['default'],
   categories: [],
   tileClass: 'has-background-info-light',
   fields: [
@@ -1987,7 +1987,7 @@ const rolesObj = computed(() => {
   if (!roles.value) {
     return [
       { name: 'admin', groups: ['local/admins'] },
-      { name: 'public', groups: [] },
+      { name: 'default', groups: [] },
     ];
   }
   try {

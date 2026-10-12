@@ -1556,7 +1556,7 @@ export default {
       configTemplated:
         'Ta konfiguracja używa szablonów ytt i nie można jej tutaj edytować. Zamiast tego edytuj szablon źródłowy.',
       publicRoleNote:
-        'Rola public dotyczy automatycznie wszystkich; nie można do niej przypisać grup ani użytkowników.',
+        'Rola default dotyczy automatycznie wszystkich (public to jej stara nazwa); nie można do niej przypisać grup ani użytkowników.',
       publicEveryone: 'Wszyscy, automatycznie',
       roleNoUsers: 'Ta rola nie ma jeszcze użytkowników.',
       roleNoGroups: 'Ta rola nie ma jeszcze grup.',

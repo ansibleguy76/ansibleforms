@@ -2,6 +2,7 @@
 // rule of the login (User.getRolesAndOptions), counted rather than applied. A role is a user's
 // when its users name `local/<username>` or its groups `local/<group>` of one of the user's
 // groups ; public is everyone's. A group's roles are those whose groups name `local/<group>`.
+import { everyoneName } from "./defaultRole.js";
 import Form from '../models/form.model.js';
 import logger from './logger.js';
 
@@ -24,7 +25,7 @@ export async function configRoles() {
 const names = (list) => (Array.isArray(list) ? list.map(String) : []);
 
 /**
- * Adds role_count to each local user : the roles it has, public included.
+ * Adds role_count to each local user : the roles it has, the role everyone has included.
  *
  * Args:
  *   users (object[]): the users, each { username, group_ids }.
@@ -38,7 +39,7 @@ export async function withUserRoleCounts(users, groups) {
   const nameOf = new Map((groups || []).map((g) => [g.id, g.name]));
   return users.map((u) => {
     const mine = (u.group_ids || [u.group_id]).map((id) => `local/${nameOf.get(id)}`);
-    const counted = new Set(['public']);
+    const counted = new Set([everyoneName(roles)]);
     for (const r of roles) {
       if (names(r.users).includes(`local/${u.username}`) || names(r.groups).some((g) => mine.includes(g))) {
         counted.add(r.name);

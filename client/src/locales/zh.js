@@ -1506,7 +1506,7 @@ export default {
       description: '常规应用设置，例如公共 URL、默认语言和配置来源。',
       configParseError: '解析表单配置失败。请先修复 YAML 语法错误，再进行更改。',
       configTemplated: '此配置使用 ytt 模板，无法在此处编辑。请改为编辑源模板。',
-      publicRoleNote: 'public 角色自动适用于所有人；不能为其分配组和用户。',
+      publicRoleNote: 'default 角色自动适用于所有人（public 是其旧名称）；不能为其分配组或用户。',
       publicEveryone: '所有人（自动）',
       roleNoUsers: '此角色还没有用户。',
       roleNoGroups: '此角色还没有组。',

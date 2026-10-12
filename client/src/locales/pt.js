@@ -1566,7 +1566,7 @@ export default {
       configTemplated:
         'Esta configuração usa templates ytt e não pode ser editada aqui. Edite antes o template de origem.',
       publicRoleNote:
-        'A função public aplica-se automaticamente a todos; não lhe podem ser atribuídos grupos nem utilizadores.',
+        'A função default aplica-se automaticamente a todos (public é o seu nome antigo); não lhe podem ser atribuídos grupos nem utilizadores.',
       publicEveryone: 'Todos, automaticamente',
       roleNoUsers: 'Esta função ainda não tem utilizadores.',
       roleNoGroups: 'Esta função ainda não tem grupos.',

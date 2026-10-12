@@ -1579,7 +1579,7 @@ export default {
       configTemplated:
         'Diese Konfiguration verwendet ytt-Templating und kann hier nicht bearbeitet werden. Bearbeiten Sie stattdessen die Quellvorlage.',
       publicRoleNote:
-        'Die Rolle public gilt automatisch fuer alle; Gruppen und Benutzer koennen ihr nicht zugewiesen werden.',
+        'Die Rolle default gilt automatisch für alle (public ist ihr alter Name); ihr können keine Gruppen und Benutzer zugewiesen werden.',
       publicEveryone: 'Alle, automatisch',
       roleNoUsers: 'Diese Rolle hat noch keine Benutzer.',
       roleNoGroups: 'Diese Rolle hat noch keine Gruppen.',

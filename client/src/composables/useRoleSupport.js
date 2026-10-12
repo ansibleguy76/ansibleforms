@@ -12,8 +12,10 @@ import axios from 'axios';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 
-// the roles the config must keep : admin and public
-export const RESERVED_ROLES = ['admin', 'public'];
+// the roles the config must keep : admin, and default - everyone's role ; public is its old name
+export const RESERVED_ROLES = ['admin', 'default', 'public'];
+// the role every user has, under its name or its old one
+export const EVERYONE_ROLES = ['default', 'public'];
 
 /**
  * The roles' shared support, around the roles of useFormsConfig.
@@ -105,7 +107,7 @@ export function useRoleSupport(roles, save) {
   function stampRoleFlags() {
     for (const role of roles.value) {
       role._required = RESERVED_ROLES.includes(role.name);
-      role._public = role.name === 'public';
+      role._public = EVERYONE_ROLES.includes(role.name);
       // the name the list is sorted on : the one loaded, so a role does not move while renamed
       role._sortName = role.name || '';
     }

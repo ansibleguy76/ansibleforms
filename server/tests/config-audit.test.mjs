@@ -219,10 +219,10 @@ describe("the admin and public roles are kept by every save", () => {
     roles: names.map((name) => ({ name, groups: name === "public" ? [] : ["local/admins"] })),
   });
 
-  test("assertRequiredRoles refuses a config without admin, or without public", async () => {
+  test("assertRequiredRoles refuses a config without admin, or without default (public its old name)", async () => {
     const Form = (await import("../src/models/form.model.js")).default;
     assert.throws(() => Form.assertRequiredRoles(config(["public", "ops"])), /admin cannot be deleted/);
-    assert.throws(() => Form.assertRequiredRoles(config(["admin", "ops"])), /public cannot be deleted/);
+    assert.throws(() => Form.assertRequiredRoles(config(["admin", "ops"])), /default cannot be deleted/);
     assert.doesNotThrow(() => Form.assertRequiredRoles(config(["admin", "public", "ops"])));
   });
 

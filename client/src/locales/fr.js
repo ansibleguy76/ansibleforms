@@ -1573,7 +1573,7 @@ export default {
       configTemplated:
         'Cette configuration utilise le templating ytt et ne peut pas être modifiée ici. Modifiez plutôt le modèle source.',
       publicRoleNote:
-        "Le rôle public s'applique automatiquement à tout le monde ; les groupes et utilisateurs ne peuvent pas lui être assignés.",
+        "Le rôle default s'applique automatiquement à tous (public est son ancien nom) ; on ne peut pas lui attribuer de groupes ni d'utilisateurs.",
       publicEveryone: 'Tout le monde, automatiquement',
       roleNoUsers: "Ce rôle n'a pas encore d'utilisateurs.",
       roleNoGroups: "Ce rôle n'a pas encore de groupes.",

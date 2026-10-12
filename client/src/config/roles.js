@@ -88,7 +88,7 @@ export function roleOptionDefaults(roleName) {
  */
 export function requiredRoleDescription(t, name) {
   if (name === 'admin') return t('settings.settingsPage.roleDescriptionAdmin');
-  if (name === 'public') return t('settings.settingsPage.roleDescriptionPublic');
+  if (name === 'default' || name === 'public') return t('settings.settingsPage.roleDescriptionPublic');
   return '';
 }
 
@@ -187,12 +187,12 @@ export function roleToEditable(r) {
 // passed through untouched.
 export function serializeRole(r) {
   const name = (r.name || '').trim();
-  const isPublic = name === 'public';
+  const isPublic = name === 'default' || name === 'public';
   const role = { name };
   // written only when there is one, so a role without stays as it was in the yaml ; admin and
   // public have a fixed one (requiredRoleDescription), never stored
   const description = (r.description || '').trim();
-  if (description && name !== 'admin' && name !== 'public') role.description = description;
+  if (description && name !== 'admin' && name !== 'default' && name !== 'public') role.description = description;
   const clean = (list) =>
     (list || [])
       .filter((e) => e && typeof e.name === 'string' && e.name.trim())

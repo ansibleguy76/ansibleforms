@@ -1468,7 +1468,7 @@
     docsObjectLink: "#role-object"
     short: Roles
     description: | 
-      The roles provide RBAC.  Each role has a name and 1 or more groups (local, ldap or azuread).  The `admin` and `public` rol is mandatory.  
+      The roles provide RBAC.  Each role has a name and 1 or more groups (local, ldap or azuread).  The `admin` and `default` roles are mandatory (`public` is the old name of `default`, and still works).  
       Since version 4.0.11 you can also add users (local, ldap or azuread).  
       Since version 5.0.8 options are introduced to add specific role-options.  
 
@@ -1492,11 +1492,12 @@
       - allowMcp: The user can use the MCP server from an AI agent (when it is enabled). Defaults to the role's allowChat. (Added in 7.0.0)
         
       When options are not set, the admin role will have all options.  
-      When options are set on the public role, they will have the lowest precedence and can be used as default options for all roles.  
-      You can add options on role level, which will override the public role options.  
+      When options are set on the default role, they are everyone's defaults : they have the lowest precedence and only fill the options none of the user's own roles set.  
+      You can add options on role level, which override the default role's options. Between a user's own roles the most restrictive wins (an option false on one of them is false).  
+      The `default` role is every signed-in user's ; there is no anonymous access. `public` is its name before 7 and keeps working (forms listing `public` still match), but new configs say `default`.  
 
       The `allowLogin` option is different, that is for the backend.  By default everyone can login.  
-      You can set it to false on public and then enable on the roles you want to give access.  Watch out you don't lock yourself out.  
+      You can set it to false on default and then enable on the roles you want to give access.  Watch out you don't lock yourself out.  
 
     examples:
     - name: Roles
@@ -1523,7 +1524,7 @@
         - name: usersonly
           users:
           - local/myuser
-        - name: public        # is mandatory
+        - name: default        # is mandatory
           groups: []  
           options:
             showDebugButtons: true  # everyone can see the debug buttons
@@ -1594,8 +1595,8 @@
       link: forms/role
       itemName: attribute
       description: |
-        A role allows RBAC.  Each role has 1 or more groups (local or ldap).  Except the `public` role, which has no groups.  
-        The `public` and `admin` roles are mandatory.
+        A role allows RBAC.  Each role has 1 or more groups (local or ldap).  Except the `default` role (`public` its old name), which has no groups.  
+        The `default` and `admin` roles are mandatory.
       items:
       - name: name
         type: string
@@ -1604,7 +1605,7 @@
         allowed: alphanumeric + dash + underscore + space
         short: The name of the role
         description: | 
-          The name of a role has to be unique.  The `public` and `admin` roles are mandatory.
+          The name of a role has to be unique.  The `default` and `admin` roles are mandatory.
       - name: groups
         type: array
         required: true
@@ -1722,7 +1723,7 @@
           - name: demo
             groups:
             - local/demo
-          - name: public        # is mandatory
+          - name: default        # is mandatory
             groups: []  
             options:
               showDebugButtons: true  # everyone can see the debug buttons
@@ -1752,7 +1753,7 @@
         allowed: valid role names
         short: Who has access
         description: | 
-          You can have RBAC by adding roles to a form.  If you want everyone to see the form, add the `public` role.  
+          You can have RBAC by adding roles to a form.  If you want everyone to see the form, add the `default` role (`public`, its old name, works too).  
           **Note** : An admin has always access.
         examples:
         - name: Give access to vmware team
@@ -2287,7 +2288,7 @@
             name: Create vm
             type: awx
             roles:
-              - public
+              - default
             fields: []
             template: Create VM       
         - name: Run Delete VM playbook
@@ -2295,7 +2296,7 @@
             name: Delete vm
             type: ansible
             roles:
-              - public
+              - default
             fields: []
             playbook: delete_vm.yaml
         - name: Run multistep job
@@ -2303,7 +2304,7 @@
             name: Trigger awx job
             type: multistep
             roles:
-              - public
+              - default
             fields: []
             steps:
             - name: Create vm
@@ -2332,7 +2333,7 @@
             name: Helloworld
             type: awx
             roles:
-              - public
+              - default
             fields: []
             template: Helloworld
         - name: Use dynamic template name
@@ -2340,7 +2341,7 @@
             name: Foobar
             type: awx
             roles:
-              - public
+              - default
             template: HelloWorld
             fields:
               - name: __template__
@@ -2384,7 +2385,7 @@
             name: Foobar
             type: ansible
             roles:
-              - public
+              - default
             fields: []
             playbook: foobar.yaml  
         - name: Use dynamic playbook name
@@ -2392,7 +2393,7 @@
             name: HelloWorld
             type: ansible
             roles:
-              - public
+              - default
             playbook: foobar.yaml
             fields:
               - name: __playbook__
@@ -2502,7 +2503,7 @@
             name: Provision host
             type: ansible
             roles:
-              - public
+              - default
             playbook: provision.yml
             wizard:
               - subform: basics
@@ -2519,7 +2520,7 @@
             name: Provision and verify host
             type: multistep
             roles:
-              - public
+              - default
             wizard:
               - subform: basics
                 title: Basics
@@ -2862,7 +2863,7 @@
               - name: Create VM
                 type: ansible
                 roles:
-                  - public
+                  - default
                 fields: []
                 playbook: vm.yml
                 launchValidation: enforce
@@ -2888,7 +2889,7 @@
               - name: Create a snapshot
                 type: ansible
                 roles:
-                  - public
+                  - default
                 fields: []
                 playbook: snapshot.yml
                 enableForChat: true
@@ -3167,7 +3168,7 @@
                 name: Create vm
                 type: awx
                 roles:
-                  - public
+                  - default
                 fields: []
                 template: Create VM       
             - name: Run Ansible playbook
@@ -3175,7 +3176,7 @@
                 name: Delete vm
                 type: ansible
                 roles:
-                  - public
+                  - default
                 fields: []
                 playbook: delete_vm.yaml
           - name: key
@@ -3192,7 +3193,7 @@
                 name: Resize volume
                 type: multistep
                 roles:
-                  - public
+                  - default
                 steps:
                 - name: Create datastore
                   type: awx
@@ -3240,7 +3241,7 @@
                 name: Create something
                 type: multistep
                 roles:
-                  - public
+                  - default
                 steps:
                 - name: Create
                   type: awx
@@ -3269,7 +3270,7 @@
                 name: Resize volume
                 type: multistep
                 roles:
-                  - public
+                  - default
                 fields: []
                 steps:
                 - name: Send email
@@ -3292,7 +3293,7 @@
                 name: Resize volume
                 type: multistep
                 roles:
-                  - public
+                  - default
                 fields: []
                 steps:
                 - name: Load cmdb
@@ -3434,7 +3435,7 @@
               - name: Provision host
                 type: ansible
                 roles:
-                  - public
+                  - default
                 playbook: provision.yml
                 wizard:
                   - subform: basics
@@ -3762,7 +3763,7 @@
                     - name: Create customer
                       type: ansible
                       roles:
-                        - public
+                        - default
                       playbook: customer.yaml
                       fields:
                         - name: name
@@ -6082,7 +6083,7 @@
       type: ansible
       playbook: myplaybook.yaml
       roles:
-        - public
+        - default
       credentials:
         vc_cred: vcenter
         ad_cred: ad
@@ -6236,7 +6237,7 @@
         - vmware
       executionEnvironment: my_execution_environment
       roles:
-        - public
+        - default
       categories: []
       inventory: my_inventory # will be overwritten by the field __inventory__
       tileClass: bg-info-subtle

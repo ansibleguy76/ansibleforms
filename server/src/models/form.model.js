@@ -1,4 +1,5 @@
 'use strict';
+import { assertOneEveryoneRole } from "../lib/defaultRole.js";
 import appConfig from './../../config/app.config.js';
 import logger from "../lib/logger.js";
 import fs from "fs";
@@ -935,17 +936,22 @@ function assertNoDuplicateRoles(obj){
 Form.assertRequiredRoles = function(obj){
   if(!Array.isArray(obj?.roles)) return
   const names = new Set(obj.roles.map(r => (typeof r?.name === 'string' ? r.name.trim() : '')))
-  const missing = ['admin', 'public'].filter(n => !names.has(n))
+  // the role every user has : default, or public its old name - one of them, not both
+  const missing = ['admin'].filter(n => !names.has(n))
+  if (!names.has('default') && !names.has('public')) missing.push('default')
   if(missing.length > 0){
     const message = `The role(s) ${missing.join(", ")} cannot be deleted : the app needs them.`
     logger.error(message)
     throw new Error(message)
   }
+  assertOneEveryoneRole(obj.roles)
 }
 
 Form.validateConfig = function(obj){
   if(obj){
     logger.debug("validating base against schema")
+    // default and public (its old name) are one role : not both
+    assertOneEveryoneRole(obj.roles)
     const validate = ajv.compile(baseSchema)
     const valid = validate(obj)
 

@@ -1,4 +1,5 @@
 "use strict";
+import { EVERYONE_ROLES, everyoneEntry } from "../lib/defaultRole.js";
 import crypto from "../lib/crypto.js";
 import logger from "../lib/logger.js";
 import { authenticate as ldapAuthentication } from "ldap-authentication";
@@ -303,19 +304,20 @@ class User extends CrudModel {
     // user's own roles, which is exactly what "we don't overwrite" forbids.
     collapseExtravars(options);
 
-    logger.debug(`Adding public role to ${full_username}`);
-    roles.push("public");
-    // if the public role has any option set, we add it to the options, we don't overwrite
-    baseConfig.roles.forEach(function (role) {
-      if (role.name == "public" && role.options) {
-        for (const [key, value] of Object.entries(role.options)) {
-          if (options[key] === undefined) {
-            logger.debug(`Adding public option ${key} = ${value}`);
-            options[key] = value;
-          }
+    // every user has the default role, and public its old name : a form listing either matches
+    logger.debug(`Adding the default role to ${full_username}`);
+    for (const name of EVERYONE_ROLES) if (!roles.includes(name)) roles.push(name);
+    // its options are everyone's defaults : they fill what none of the user's own roles set, they
+    // never overwrite
+    const everyone = everyoneEntry(baseConfig.roles);
+    if (everyone?.options) {
+      for (const [key, value] of Object.entries(everyone.options)) {
+        if (options[key] === undefined) {
+          logger.debug(`Adding default option ${key} = ${value}`);
+          options[key] = value;
         }
       }
-    });
+    }
 
     result.roles = roles;
     result.options = options;
