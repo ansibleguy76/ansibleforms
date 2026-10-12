@@ -69,6 +69,10 @@ const listSections = [
     create: (d) => Runner.create(d, seedOpts),
     update: (d, row) => Runner.update(d, row.id, seedOpts),
     remove: (row) => Runner.delete(row.id, seedOpts),
+    // an RTE registers itself (rte/register.js), maybe before the seed is applied : the row
+    // it wrote at the declared address is adopted, or that RTE would be two runners
+    findAdoptable: (item) => Runner.findRegisteredAt(item),
+    adopt: (d, row) => Runner.adoptRegistered(d, row, seedOpts),
   },
   {
     key: "credentials",
@@ -225,6 +229,17 @@ async function applyListSection(section, cfg, summary) {
         summary.adopted.push(`${section.label}:${item.name}`);
       }
       await section.update(data, existing);
+      summary.updated.push(`${section.label}:${item.name}`);
+      continue;
+    }
+    // No row by that name, but one the section adopts under it (a runner an RTE registered
+    // itself at the declared address) : taken over with the fields of a new row, never a
+    // second row next to it
+    const adoptable = section.findAdoptable ? await section.findAdoptable(item) : null;
+    if (adoptable) {
+      logger.warning(`Config seed adopts the ${section.label} '${adoptable.name}' (${adoptable.uri}), which its RTE registered itself, as '${item.name}' : its declared fields are now enforced from the seed file`);
+      summary.adopted.push(`${section.label}:${item.name}`);
+      await section.adopt(buildRecord(section, item, true), adoptable);
       summary.updated.push(`${section.label}:${item.name}`);
     } else {
       const data = buildRecord(section, item, true);
@@ -621,5 +636,5 @@ async function logApply(seedPath, summary, outcome) {
   }
 }
 
-export { listSections };
+export { listSections, applyListSection };
 export default { applyConfigSeed, reloadConfigSeed, getSeedState };
