@@ -15,7 +15,7 @@ export default {
     group: 'Groep {name}',
     variables: 'Variabelen',
     removeVar: 'Variabele verwijderen',
-    noVar: 'Hier is geen variabele ingesteld.',
+    noVar: '{name} heeft nog geen variabelen.',
     addVar: 'Variabele toevoegen',
     varsHint: 'Ingesteld in de inventaris zelf; group_vars- en host_vars-bestanden staan in de verkenner.',
   },

@@ -17,7 +17,7 @@
 /*      reveal: the line to open the YAML on                      */
 /*                                                                */
 /******************************************************************/
-import { ref, computed } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import { inventoryOf, inventoryRows } from '@/config/inventoryTree';
@@ -130,12 +130,41 @@ function removeOpen() {
   else apply((text) => editRemoveGroup(text, o.path));
   open.value = null;
 }
-// a new variable : its name and value, typed
-const newVar = ref({ key: '', value: '' });
+// a new variable : no empty row when the dialog opens ; Add variable adds a row of a name and a
+// value, saved once it has a name and the row is left (or Enter), removed again with its x
+const newVar = ref(null);
+const newVarRow = ref(null);
+watch(
+  () => !!open.value,
+  (isOpen) => {
+    if (isOpen) newVar.value = null;
+  },
+);
+/**
+ * Adds the row of a new variable, its name focused ; a row still without a name is focused again.
+ */
+async function startVar() {
+  if (!newVar.value) newVar.value = { key: '', value: '' };
+  await nextTick();
+  newVarRow.value?.querySelector('input')?.focus();
+}
+/**
+ * Saves the new variable when it has a name ; its row then joins the others.
+ */
 function addVar() {
-  const key = newVar.value.key.trim();
+  const key = newVar.value?.key.trim();
   if (!key) return;
-  if (apply((text) => editSetVar(text, target.value, key, newVar.value.value))) newVar.value = { key: '', value: '' };
+  if (apply((text) => editSetVar(text, target.value, key, newVar.value.value))) newVar.value = null;
+}
+/**
+ * Leaving the new row (not moving between its own name and value) saves it.
+ *
+ * Args:
+ *   event (FocusEvent): the focusout of the row.
+ */
+function leaveVar(event) {
+  if (newVarRow.value?.contains(event.relatedTarget)) return;
+  addVar();
 }
 </script>
 <template>
@@ -309,13 +338,17 @@ function addVar() {
             @click="apply((text) => editRemoveVar(text, target, v.key))"
           />
         </div>
-        <div v-if="!vars.length" class="text-muted small mb-2">{{ t('inventoryEditor.noVar') }}</div>
-        <div v-if="!readOnly" class="d-flex gap-2">
+        <div v-if="!vars.length && !newVar" class="text-muted small mb-2">
+          {{ t('inventoryEditor.noVar', { name: openName }) }}
+        </div>
+        <!-- the new variable's row, once Add variable is clicked -->
+        <div v-if="newVar && !readOnly" ref="newVarRow" class="d-flex gap-2 mb-2" @focusout="leaveVar">
           <input
             v-model="newVar.key"
             class="form-control font-monospace af-ie-key"
             :placeholder="t('inventoryEditor.varName')"
             spellcheck="false"
+            @keyup.enter="addVar()"
           />
           <input
             v-model="newVar.value"
@@ -324,7 +357,17 @@ function addVar() {
             spellcheck="false"
             @keyup.enter="addVar()"
           />
-          <BsButton icon="plus" :title="t('inventoryEditor.addVar')" @click="addVar()" />
+          <BsButton
+            icon="xmark"
+            colorClass="danger"
+            :isIconButton="true"
+            :title="t('inventoryEditor.removeVar')"
+            @mousedown.prevent
+            @click="newVar = null"
+          />
+        </div>
+        <div v-if="!readOnly">
+          <BsButton icon="plus" @click="startVar()">{{ t('inventoryEditor.addVar') }}</BsButton>
         </div>
         <div class="form-text mt-3">{{ t('inventoryEditor.varsHint') }}</div>
       </template>

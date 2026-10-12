@@ -15,7 +15,7 @@ export default {
     group: 'Grupa {name}',
     variables: 'Zmienne',
     removeVar: 'Usuń zmienną',
-    noVar: 'Brak zmiennych.',
+    noVar: '{name} nie ma jeszcze żadnych zmiennych.',
     addVar: 'Dodaj zmienną',
     varsHint: 'Ustawione w samym inwentarzu; pliki group_vars i host_vars są w eksploratorze.',
   },

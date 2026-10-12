@@ -15,7 +15,7 @@ export default {
     group: '组 {name}',
     variables: '变量',
     removeVar: '移除变量',
-    noVar: '这里没有设置变量。',
+    noVar: '{name} 还没有设置任何变量。',
     addVar: '添加变量',
     varsHint: '在清单本身中设置；group_vars 和 host_vars 文件在资源管理器中。',
   },

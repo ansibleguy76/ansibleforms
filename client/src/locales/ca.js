@@ -15,7 +15,7 @@ export default {
     group: 'Grup {name}',
     variables: 'Variables',
     removeVar: 'Treure variable',
-    noVar: 'No hi ha variables aquí.',
+    noVar: '{name} encara no té cap variable.',
     addVar: 'Afegir variable',
     varsHint: "Definides al mateix inventari; els fitxers group_vars i host_vars són a l'explorador.",
   },
