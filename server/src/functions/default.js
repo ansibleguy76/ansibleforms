@@ -351,7 +351,12 @@ const fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort=n
     }else if(action=="post"){
       data = await axios.post(url,body,axiosConfig);
     }else if(action=="delete"){
-      data = await axios.post(url,axiosConfig);
+      // axios.delete takes (url, config) : the headers live in the config and an
+      // optional body goes in config.data (a DELETE has no body argument)
+      if(body!=null && body!==""){
+        axiosConfig.data=body
+      }
+      data = await axios.delete(url,axiosConfig);
     }else if(action=="put"){
       data = await axios.put(url,body,axiosConfig);
     }
