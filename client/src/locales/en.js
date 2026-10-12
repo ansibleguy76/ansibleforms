@@ -1556,6 +1556,8 @@ export default {
     playbooksDescription: 'The Ansible playbooks the forms run.',
     sectionToBuild: 'Nothing here yet.',
     files: {
+      hideExplorer: 'Hide the file explorer',
+      showExplorer: 'Show the file explorer',
       showInYaml: 'Show in the YAML',
       noVars: 'No variables yet: add one with +.',
       keysCount: '{n} key | {n} keys',

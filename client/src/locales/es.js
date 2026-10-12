@@ -1583,6 +1583,8 @@ export default {
     playbooksDescription: 'Los playbooks de Ansible que ejecutan los formularios.',
     sectionToBuild: 'Aún no hay nada aquí.',
     files: {
+      hideExplorer: 'Ocultar el explorador de archivos',
+      showExplorer: 'Mostrar el explorador de archivos',
       showInYaml: 'Ver en el YAML',
       noVars: 'Aún no hay variables: añade una con +.',
       keysCount: '{n} clave | {n} claves',

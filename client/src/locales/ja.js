@@ -1553,6 +1553,8 @@ export default {
     playbooksDescription: 'フォームが実行する Ansible プレイブック。',
     sectionToBuild: 'まだ何もありません。',
     files: {
+      hideExplorer: 'ファイルエクスプローラーを隠す',
+      showExplorer: 'ファイルエクスプローラーを表示',
       showInYaml: 'YAML で表示',
       noVars: '変数はまだありません: + で追加してください。',
       keysCount: 'キー {n} 個',

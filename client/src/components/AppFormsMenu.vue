@@ -100,7 +100,7 @@ onMounted(async () => {
         >
           <span :class="{ 'text-light': isAll }">
             <span class="me-2">
-              <FaIcon icon="check-double" :fixedwidth="true"></FaIcon>
+              <FaIcon icon="list" :fixedwidth="true"></FaIcon>
             </span>
             {{ t('forms.allForms') }}</span
           >

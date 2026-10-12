@@ -100,7 +100,7 @@ function findCategory(items, names) {
   return findCategory(item.items, names.slice(1));
 }
 const categoryTitle = computed(() => {
-  if (!currentCategory.value) return { title: t('forms.allForms'), icon: 'check-double', crumbs: [] };
+  if (!currentCategory.value) return { title: t('forms.allForms'), icon: 'list', crumbs: [] };
   const names = currentCategory.value.split('/');
   // every step with its own icon : the category, then each sub category below it
   const crumbs = names.map((name, i) => ({

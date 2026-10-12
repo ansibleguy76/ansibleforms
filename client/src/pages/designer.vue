@@ -3,6 +3,7 @@ import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
 import Form from '@/lib/Form';
 import { slugOf } from '@/lib/formsPath';
 import { DESIGNER_TABS } from '@/config/designerTabs';
+import { EXPLORER_WIDTH, explorerWidthAfterDrag, explorerFolded, explorerColumns } from '@/config/fileExplorer';
 import Lock from '@/lib/Lock';
 import { useAppStore } from '@/stores/app';
 import Backup from '@/lib/Backup';
@@ -241,7 +242,7 @@ const route = useRoute();
 const router = useRouter();
 const store = useAppStore();
 
-const treeWidthPct = ref(25);
+const treeWidthPct = ref(EXPLORER_WIDTH.start);
 function startResize(e) {
   e.preventDefault();
   const layout = e.target.closest('.designer-layout');
@@ -251,8 +252,7 @@ function startResize(e) {
   const startPct = treeWidthPct.value;
   function onMove(ev) {
     const dx = ev.clientX - startX;
-    const dPct = (dx / layoutRect.width) * 100;
-    treeWidthPct.value = Math.min(50, Math.max(15, startPct - dPct));
+    treeWidthPct.value = explorerWidthAfterDrag(startPct, dx, layoutRect.width);
     layout.style.gridTemplateColumns = `1fr 1rem ${treeWidthPct.value}%`;
   }
   function onUp() {
@@ -5009,7 +5009,7 @@ onBeforeUnmount(() => {
             <div
               class="designer-layout"
               :class="{ 'designer-layout-preview': editorView === 'preview' }"
-              :style="currentTab == 'Forms' ? { gridTemplateColumns: `1fr 1rem ${treeWidthPct}%` } : undefined"
+              :style="currentTab == 'Forms' ? { gridTemplateColumns: explorerColumns(treeWidthPct) } : undefined"
             >
               <div class="designer-editor">
                 <!-- Preview : the Forms page's menu, from the categories as they are now -->
@@ -5196,11 +5196,33 @@ onBeforeUnmount(() => {
                   </template>
                 </div>
               </div>
-              <div v-if="currentTab == 'Forms'" class="designer-resize" @mousedown="startResize"></div>
-              <div v-if="currentTab == 'Forms'" class="designer-tree">
+              <div
+                v-if="currentTab == 'Forms'"
+                class="designer-resize"
+                @mousedown="!explorerFolded && startResize($event)"
+              ></div>
+              <!-- folded away : only its < remains, to bring it back -->
+              <div v-if="currentTab == 'Forms' && explorerFolded" class="designer-explorer-folded">
+                <span
+                  role="button"
+                  class="tree-add-btn"
+                  :title="t('designer.files.showExplorer')"
+                  @click="explorerFolded = false"
+                  ><FaIcon icon="chevron-left"
+                /></span>
+              </div>
+              <div v-else-if="currentTab == 'Forms'" class="designer-tree">
                 <div class="file-tree-panel">
                   <div class="file-tree-header d-flex justify-content-between align-items-center">
-                    <span><FaIcon icon="folder-tree" class="me-2" size="sm" />{{ t('designer.fileExplorer') }}</span>
+                    <span class="d-flex align-items-center"
+                      ><span
+                        role="button"
+                        class="tree-add-btn me-2"
+                        :title="t('designer.files.hideExplorer')"
+                        @click="explorerFolded = true"
+                        ><FaIcon icon="chevron-right" /></span
+                      >{{ t('designer.fileExplorer') }}</span
+                    >
                     <span class="d-flex gap-2">
                       <span
                         role="button"
@@ -5249,7 +5271,7 @@ onBeforeUnmount(() => {
                             :icon="isCollapsed(item.key) ? 'folder' : 'folder-open'"
                             class="tree-folder-icon me-2 flex-shrink-0"
                           />
-                          <span class="fw-bold text-truncate" :title="item.name">{{ item.name }}</span>
+                          <span class="text-truncate" :title="item.name">{{ item.name }}</span>
                         </span>
                         <span class="d-flex gap-2 flex-shrink-0 ms-2">
                           <span
@@ -5361,7 +5383,9 @@ onBeforeUnmount(() => {
 <style lang="scss" scoped>
 .designer-layout {
   display: grid;
-  grid-template-columns: 1fr 1rem 25%;
+  /* the explorer's width when it opens : EXPLORER_WIDTH.start (config/fileExplorer.js), set
+     inline as soon as the forms show it */
+  grid-template-columns: 1fr 1rem 30%;
   align-items: start;
 }
 .designer-layout:not(:has(.designer-tree)) {
@@ -5393,6 +5417,11 @@ onBeforeUnmount(() => {
   &:hover::after {
     background: var(--bs-border-color);
   }
+}
+.designer-explorer-folded {
+  margin-top: 0.5rem;
+  display: flex;
+  justify-content: center;
 }
 .designer-tree {
   max-height: 80vh;
