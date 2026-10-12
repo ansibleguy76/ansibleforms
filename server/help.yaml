@@ -2605,7 +2605,7 @@
               - admin
       - name: executionEnvironment
         type: string
-        with_types: awx, aap, ascender, semaphore, rundeck, jenkins
+        with_types: awx, aap, ascender
         short: Execution Environment
         version: 5.0.0
         group: workflow
@@ -2616,7 +2616,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.   
       - name: instanceGroups
         type: array or string
-        with_types: awx, aap, ascender, semaphore, rundeck, jenkins
+        with_types: awx, aap, ascender
         short: Instance Groups
         version: 5.0.0
         group: workflow
@@ -2628,7 +2628,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.                       
       - name: scm_branch
         type: string
-        with_types: awx, aap, ascender, semaphore, rundeck, jenkins
+        with_types: awx, aap, ascender
         short: SCM Branch
         version: 5.0.0
         group: workflow
@@ -2737,7 +2737,7 @@
             awx: my_awx_instance
       - name: awxCredentials
         type: array
-        with_types: awx, aap, ascender, semaphore, rundeck, jenkins
+        with_types: awx, aap, ascender
         group: workflow
         version: 4.0.16
         allowed: name of credential in AWX
