@@ -1610,7 +1610,7 @@ export default function getSettings(t) {
           hidden: true,
           // a cyberark credential has a client key instead
           dependency: 'credential_type',
-          dependencyValues: ['ssh', 'git', 'api', 'database'],
+          dependencyValues: ['ssh', 'git', 'api', 'database', 'smtp'],
         },
         {
           // a cyberark credential : the client certificate and key its AppID may be restricted to
