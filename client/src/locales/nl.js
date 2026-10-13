@@ -1538,8 +1538,9 @@ export default {
       stepStore: 'Opslag',
       stepType: 'Type',
       type: 'Type',
-      type_ssh: 'SSH',
-      type_sshHint: 'Een gebruiker en wachtwoord voor SSH naar een server',
+      type_ssh: 'SSH / gebruiker en wachtwoord',
+      type_sshHint:
+        'Een gebruiker en wachtwoord, voor SSH naar een server of een andere login. Credentials van vóór 7 hebben dit type : voor een REST API zegt API beter waarvoor hij dient',
       type_git: 'Git',
       type_gitHint: 'Een gebruiker en wachtwoord of token voor git-repositories',
       type_api: 'API',

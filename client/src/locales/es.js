@@ -1543,8 +1543,9 @@ export default {
       stepStore: 'Almacén',
       stepType: 'Tipo',
       type: 'Tipo',
-      type_ssh: 'SSH',
-      type_sshHint: 'Un usuario y una contraseña para SSH a un servidor',
+      type_ssh: 'SSH / usuario y contraseña',
+      type_sshHint:
+        'Un usuario y una contraseña, para SSH a un servidor o cualquier otro acceso. Las credenciales anteriores a la 7 tienen este tipo : para una API REST, API dice mejor para qué sirve',
       type_git: 'Git',
       type_gitHint: 'Un usuario y una contraseña o un token para repositorios git',
       type_api: 'API',

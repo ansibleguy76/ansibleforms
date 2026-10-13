@@ -235,7 +235,7 @@ async function save() {
     description: e.description.trim(),
     credential_type: e.credential_type,
     host: ['ssh', 'database'].includes(e.credential_type) ? e.host.trim() : '',
-    port: ['ssh', 'database'].includes(e.credential_type) ? e.port : '',
+    port: ['ssh', 'database'].includes(e.credential_type) && String(e.port ?? '').trim() !== '' ? e.port : null,
     db_type: isDatabase.value ? e.db_type : '',
     db_name: isDatabase.value ? e.db_name.trim() : '',
   };

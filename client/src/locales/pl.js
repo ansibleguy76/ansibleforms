@@ -1443,8 +1443,9 @@ export default {
       stepStore: 'Magazyn',
       stepType: 'Typ',
       type: 'Typ',
-      type_ssh: 'SSH',
-      type_sshHint: 'Użytkownik i hasło do SSH na serwer',
+      type_ssh: 'SSH / użytkownik i hasło',
+      type_sshHint:
+        'Użytkownik i hasło, do SSH na serwer lub innego logowania. Poświadczenia sprzed 7 mają ten typ : dla REST API typ API lepiej mówi, do czego służy',
       type_git: 'Git',
       type_gitHint: 'Użytkownik i hasło lub token do repozytoriów git',
       type_api: 'API',
