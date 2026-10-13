@@ -11,7 +11,9 @@
 /*                   behind an info icon after the title          */
 /*      crumbs: Array of { title, icon, to } - a title in steps,  */
 /*              each a link when it has a route (to) ; a title of */
-/*              one step links to the page itself                 */
+/*              one step links to the page itself ; a step whose  */
+/*              title is null is not known yet (a record's name   */
+/*              while it loads) : a grey bar (AppSkeleton)        */
 /*                                                                */
 /*  Every title starts with the page's section, as the header     */
 /*  names it (lib/sections.js) : Jobs › Running, Settings ›       */
@@ -89,11 +91,16 @@ const steps = computed(() => {
   <section class="section w-100" :class="{ 'mt-3': title }">
     <div class="container-fluid">
       <div v-if="title" class="d-flex align-items-center border-bottom mb-3 pb-2 af-title-line">
-        <h3 v-if="steps.length > 1" :aria-label="steps.map((c) => c.title).join(' › ')">
+        <h3 v-if="steps.length > 1" :aria-label="steps.map((c) => c.title ?? '').join(' › ')">
           <template v-for="(c, i) in steps" :key="i">
             <span v-if="i > 0" class="mx-2 text-body-secondary af-crumb-separator">›</span>
             <!-- a step with a route : a link, in the title's own look -->
-            <router-link v-if="c.to" :to="c.to" class="af-crumb-link"
+            <!-- a step not known yet (a record's name while it loads) : a grey bar in its place, after
+                 its icon when it has one -->
+            <template v-if="c.title == null"
+              ><span v-if="c.icon" class="me-2"><FaIcon :icon="c.icon" /></span><AppSkeleton shape="inline" width="6em"
+            /></template>
+            <router-link v-else-if="c.to" :to="c.to" class="af-crumb-link"
               ><span class="me-2"><FaIcon :icon="c.icon" /></span>{{ c.title }}</router-link
             >
             <template v-else
