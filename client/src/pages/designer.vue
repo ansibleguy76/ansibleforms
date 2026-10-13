@@ -3485,15 +3485,13 @@ const toolbarActions = computed(() => {
     // a kind of file without its role option (allowPlaybookDesign, ...) : read, not changed
     const readOnly = !canDesignFiles(FILE_SECTIONS[currentTab.value]);
     return [
-      // a new file ; on the + : in the inventories a new inventory (a repository), in the
-      // workflows a new workflow (a file, an empty workflow in it), as the explorer's
-      { key: 'newFile', run: () => f.newFile(), show: !inventories && !workflows, disabled: f.busy || readOnly },
+      // a new file, the same button first on every section's bar : in the inventories a new
+      // inventory (a repository), in the workflows a new workflow (a file, an empty workflow in it)
       {
-        key: 'add',
+        key: 'newFile',
         run: () => f.newFile(),
-        show: inventories || workflows,
         disabled: f.busy || readOnly,
-        title: inventories ? t('designer.files.newInventory') : t('designer.files.newWorkflow'),
+        title: inventories ? t('designer.files.newInventory') : workflows ? t('designer.files.newWorkflow') : undefined,
       },
       {
         key: 'save',
