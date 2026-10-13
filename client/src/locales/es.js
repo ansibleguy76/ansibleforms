@@ -2503,6 +2503,7 @@ export default {
     copy: 'Copiar',
     lines: '{count} líneas',
     steps: 'pasos',
+    logFile: 'Archivo de registro',
     showExtravars: 'Mostrar variables extra',
     hideExtravars: 'Ocultar variables extra',
     showPayload: 'Mostrar payload',

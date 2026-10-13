@@ -2489,6 +2489,7 @@ export default {
     copy: 'Kopiuj',
     lines: '{count} wierszy',
     steps: 'kroki',
+    logFile: 'Plik dziennika',
     showExtravars: 'Pokaż extravars',
     hideExtravars: 'Ukryj extravars',
     showPayload: 'Pokaż payload',

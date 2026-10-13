@@ -159,8 +159,12 @@
   padding: 0.75rem 1.25rem 0;
   font-size: 1rem;
 }
-.af-output-body .logfile {
-  margin: 0 1.25rem 1.25rem;
+/* the job's log file : a section of the panel, a hairline above it, as between a workflow's nodes */
+.af-output-body .af-logfile {
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--af-field-border);
+  border-radius: 0;
 }
 
 /* the extravars and artifacts : one look for JSON (vue-json-pretty) and YAML (highlight.js) -
