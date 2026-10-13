@@ -23,7 +23,15 @@
 /*  Measured again when the table's frame changes width and when  */
 /*  its rows change (a tab's rows loaded, a row removed).         */
 /*                                                                */
+/*  A column is resized with the mouse : the separator at its     */
+/*  header's right edge dragged, double-clicked to give it back   */
+/*  its own width. The width is kept in this browser, per page    */
+/*  and column (its header), and the column keeps it as a kept    */
+/*  one does ; a drag never sorts the column.                     */
+/*                                                                */
 /******************************************************************/
+
+import { columnLabel, columnResizer, columnWidths } from '@/lib/tableCells';
 
 // the columns that keep their own width : a row's checkbox, its menu
 const FIXED = ['bs-dt-select', 'bs-dt-row-actions', 'af-row-menu-col', 'af-jobs-select', 'af-expand-col'];
@@ -140,6 +148,22 @@ function pxOf(width) {
 }
 
 /**
+ * Whether a column can be resized : a column with a header, not a checkbox, a row menu, a caret
+ * or the spacer.
+ *
+ * Args:
+ *   table (HTMLTableElement): the table.
+ *   index (number): the column.
+ *
+ * Returns:
+ *   boolean: true when it can.
+ */
+function isResizable(table, index) {
+  const th = table.tHead?.rows[0]?.cells[index];
+  return !!th && !isControl(table, index) && !th.classList.contains('af-expand-col') && !!columnLabel(th);
+}
+
+/**
  * Lays a table out : measures its columns at their natural width, then gives them their widths.
  *
  * Args:
@@ -180,7 +204,13 @@ function fit(table) {
   table.style.width = '100%';
   table.style.tableLayout = 'fixed';
 
-  const fixed = natural.map((_, i) => isFixed(table, i));
+  // a column resized with the mouse : that width, kept as a kept column's
+  const set = columnWidths(table);
+  const user = [...ths].map((th, i) => (isResizable(table, i) && set[columnLabel(th)] > 0 ? set[columnLabel(th)] : 0));
+  user.forEach((w, i) => {
+    if (w) natural[i] = w;
+  });
+  const fixed = natural.map((_, i) => !!user[i] || isFixed(table, i));
   const flex = natural.map((_, i) => i).filter((i) => !fixed[i]);
   // the room they share : the frame's width less the fixed columns'
   const width = frame.clientWidth;
@@ -199,9 +229,15 @@ function fit(table) {
   }
   // all fit : each its own width, and the room left to the last column with content (a kept one
   // too : a duration at the far right) ; not to a checkbox or a row menu
-  const content = natural.map((_, i) => i).filter((i) => !isControl(table, i));
+  // (a column resized with the mouse keeps its width : the room goes to the last one that was not)
+  const content = natural.map((_, i) => i).filter((i) => !isControl(table, i) && !user[i]);
   const spacer = natural.findIndex((_, i) => ths[i].classList.contains('af-fit-spacer'));
-  const takesRest = shared ? -1 : spacer >= 0 ? spacer : content[content.length - 1];
+  const takesRest = shared ? -1 : spacer >= 0 ? spacer : content.length ? content[content.length - 1] : -1;
+  // every column resized and no spacer : the table as wide as they are, the room left empty
+  if (takesRest < 0 && !shared) {
+    const total = natural.reduce((a, b) => a + b, 0);
+    table.style.width = `${Math.max(total, 0)}px`;
+  }
   natural.forEach((w, i) => {
     if (fixed[i]) ths[i].style.width = i === takesRest ? '' : `${w}px`;
   });
@@ -240,6 +276,11 @@ function schedule(table) {
 export default {
   mounted(table) {
     table.classList.add('af-fit');
+    // its columns resized with the mouse (lib/tableCells.js) : laid out again as they are
+    table._fitResizeOff = columnResizer(table, {
+      canResize: (index) => isResizable(table, index),
+      onResize: () => schedule(table),
+    });
     schedule(table);
     // its frame wider or narrower (the window, the sidebar)
     if (typeof ResizeObserver !== 'undefined' && table.parentElement) {
@@ -262,6 +303,7 @@ export default {
   },
   unmounted(table) {
     table._fitObserver?.disconnect();
+    table._fitResizeOff?.();
     if (table._fitFrame) cancelAnimationFrame(table._fitFrame);
   },
 };

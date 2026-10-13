@@ -307,6 +307,34 @@
 .af-fit .bs-dt-row-actions {
   overflow: visible;
 }
+/* a column resized with the mouse (lib/tableCells.js, columnResizer) : a thin separator at each
+   header's right edge, the resize cursor where it is grabbed, and no text selected while dragging */
+table.af-fit > thead > tr:first-child > th {
+  position: relative;
+}
+/* (none on a column that is not resized : a caret's, a checkbox's, a row menu's, the spacer) */
+$af-unresized-cols: ':last-child, :empty, .af-fit-spacer, .af-expand-col, .af-jobs-expand, .bs-dt-select, .af-jobs-select, .af-row-menu-col';
+table.af-fit > thead > tr:first-child > th:not(#{$af-unresized-cols})::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  /* the light grey of the line under the header, not the fields' darker one */
+  border-right: 1px solid var(--bs-border-color);
+  pointer-events: none;
+}
+table.af-fit.af-col-grip > thead,
+table.af-fit.af-col-resizing {
+  cursor: col-resize;
+}
+table.af-fit.af-col-grip > thead th,
+table.af-fit.af-col-resizing th {
+  cursor: col-resize !important;
+}
+table.af-fit.af-col-resizing {
+  user-select: none;
+}
 /* the spacer of a table (v-fit-columns) : no content, no padding ; the room left */
 table.af-fit th.af-fit-spacer,
 table.af-fit td.af-fit-spacer {

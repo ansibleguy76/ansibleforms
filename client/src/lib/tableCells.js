@@ -1,8 +1,9 @@
 /******************************************************************/
 /*                                                                */
 /*  The cells of the tables : the colours of a pill, as Bootstrap  */
-/*  classes (styled by styles/tables.scss, .af-pill), and the     */
-/*  width a column needs for its header.                          */
+/*  classes (styled by styles/tables.scss, .af-pill), the width   */
+/*  a column needs for its header, and a column's width set with  */
+/*  the mouse (its header's separator dragged).                   */
 /*                                                                */
 /******************************************************************/
 
@@ -162,4 +163,182 @@ export function widestCell(values, html = false) {
   }
   table.remove();
   return Math.ceil(widest);
+}
+
+// ─── a column's width set with the mouse ─────────────────────────────────────
+// Every table laid out by v-fit-columns (directives/fitColumns.js) : the separator at a header's
+// right edge dragged to resize its column (styles/tables.scss, .af-col-grip), double-clicked to give
+// it back its own width. The width is kept in this browser, per page and column (its header).
+
+// how near a header's right edge the pointer grabs its separator, in px
+const GRIP = 6;
+// the least a column is dragged to, in px
+const MIN_DRAG = 40;
+const STORE = 'af-col-widths:';
+
+/**
+ * Where a table's widths are kept : its data-fit-id, else the page (its first two path parts, so
+ * every record's page shares one).
+ *
+ * Args:
+ *   table (HTMLTableElement): the table.
+ *
+ * Returns:
+ *   string: the localStorage key.
+ */
+function storeKey(table) {
+  const id = table.getAttribute('data-fit-id');
+  if (id) return STORE + id;
+  return STORE + window.location.pathname.split('/').filter(Boolean).slice(0, 2).join('/');
+}
+
+/**
+ * The widths set with the mouse for a table's page : its columns' headers -> px.
+ *
+ * Args:
+ *   table (HTMLTableElement): the table.
+ *
+ * Returns:
+ *   object: the widths ; {} when none, or the browser keeps nothing.
+ */
+export function columnWidths(table) {
+  try {
+    const kept = JSON.parse(localStorage.getItem(storeKey(table)) || '{}');
+    return kept && typeof kept === 'object' ? kept : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Keeps a column's width set with the mouse, or forgets it.
+ *
+ * Args:
+ *   table (HTMLTableElement): the table.
+ *   label (string): the column's header.
+ *   width (number|null): px, or null to give it back its own width.
+ */
+export function keepColumnWidth(table, label, width) {
+  const widths = columnWidths(table);
+  if (width == null) delete widths[label];
+  else widths[label] = Math.round(width);
+  try {
+    if (Object.keys(widths).length) localStorage.setItem(storeKey(table), JSON.stringify(widths));
+    else localStorage.removeItem(storeKey(table));
+  } catch {
+    // a browser keeping nothing : the width lasts until the page is left
+  }
+}
+
+/**
+ * A column's header, as its width is kept by : its text, on one line.
+ *
+ * Args:
+ *   th (HTMLTableCellElement): the header.
+ *
+ * Returns:
+ *   string: the label ; '' for a column without one.
+ */
+export function columnLabel(th) {
+  return (th?.textContent || '').trim().replace(/\s+/g, ' ');
+}
+
+/**
+ * The column whose separator is under the pointer : a header's right edge, or the left edge of the
+ * one after it.
+ *
+ * Args:
+ *   table (HTMLTableElement): the table.
+ *   event (PointerEvent|MouseEvent): the pointer.
+ *   canResize (function): (index) => whether that column can be resized.
+ *
+ * Returns:
+ *   number: the column, or -1.
+ */
+function gripAt(table, event, canResize) {
+  const row = table.tHead?.rows[0];
+  const th = event.target?.closest?.('th');
+  if (!row || !th || th.parentElement !== row) return -1;
+  const rect = th.getBoundingClientRect();
+  let index = th.cellIndex;
+  if (event.clientX < rect.left + GRIP) index -= 1;
+  else if (event.clientX < rect.right - GRIP) return -1;
+  return index >= 0 && canResize(index) ? index : -1;
+}
+
+/**
+ * Lets a table's columns be resized with the mouse : a separator dragged, double-clicked to reset.
+ *
+ * Args:
+ *   table (HTMLTableElement): the table.
+ *   options (object): canResize (index) => whether a column can be ; onResize () => called when a
+ *     width changed (the table laid out again).
+ *
+ * Returns:
+ *   function: removes the listeners (the table unmounted).
+ */
+export function columnResizer(table, { canResize, onResize }) {
+  let drag = null;
+  const hover = (event) => {
+    if (!drag) table.classList.toggle('af-col-grip', gripAt(table, event, canResize) >= 0);
+  };
+  const leave = () => {
+    if (!drag) table.classList.remove('af-col-grip');
+  };
+  const down = (event) => {
+    if (event.button !== 0) return;
+    const index = gripAt(table, event, canResize);
+    if (index < 0) return;
+    const th = table.tHead.rows[0].cells[index];
+    event.preventDefault();
+    drag = { label: columnLabel(th), x: event.clientX, width: th.getBoundingClientRect().width, moved: false };
+    table.classList.add('af-col-resizing');
+  };
+  const move = (event) => {
+    if (!drag) return;
+    // the pointer held by the table once it moves : not before, or a double click would land on
+    // the table, not on the header it resets
+    if (!drag.moved && Math.abs(event.clientX - drag.x) > 2) {
+      drag.moved = true;
+      table.setPointerCapture?.(event.pointerId);
+    }
+    if (!drag.moved) return;
+    keepColumnWidth(table, drag.label, Math.max(MIN_DRAG, drag.width + event.clientX - drag.x));
+    onResize();
+  };
+  const up = (event) => {
+    if (!drag) return;
+    if (drag.moved) table.releasePointerCapture?.(event.pointerId);
+    table.classList.remove('af-col-resizing');
+    // the click on a separator (a drag, or one of a double click's) : never a sort
+    const swallow = (click) => {
+      click.stopPropagation();
+      click.preventDefault();
+    };
+    window.addEventListener('click', swallow, { capture: true, once: true });
+    setTimeout(() => window.removeEventListener('click', swallow, { capture: true }), 0);
+    drag = null;
+  };
+  // a double click on a separator : the column back to its own width
+  const reset = (event) => {
+    const index = gripAt(table, event, canResize);
+    if (index < 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    keepColumnWidth(table, columnLabel(table.tHead.rows[0].cells[index]), null);
+    onResize();
+  };
+  const listeners = [
+    ['pointermove', hover],
+    ['pointerleave', leave],
+    ['pointerdown', down],
+    ['pointermove', move],
+    ['pointerup', up],
+    ['pointercancel', up],
+    ['dblclick', reset],
+  ];
+  for (const [type, handler] of listeners) table.addEventListener(type, handler);
+  return () => {
+    for (const [type, handler] of listeners) table.removeEventListener(type, handler);
+  };
 }
