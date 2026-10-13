@@ -11,6 +11,7 @@ import * as openidClient from 'openid-client';
 import { Strategy as OpenIdClientStrategy } from 'openid-client/passport';
 import AzureAd from '../models/azureAd.model.js';
 import logger from '../lib/logger.js';
+import authConfig from '../../config/auth.config.js';
 
 // the tenant ids that are not one tenant : refused, they would let any tenant in
 const NOT_A_TENANT = new Set(['', 'common', 'organizations', 'consumers']);
@@ -85,8 +86,17 @@ const initialize = async () => {
   }
   try {
     const tenant = encodeURIComponent(String(azureConfig.tenant_id).trim());
-    const issuer = new URL(`https://login.microsoftonline.com/${tenant}/v2.0`);
-    const config = await openidClient.discovery(issuer, azureConfig.client_id, { client_secret: azureConfig.client_secret });
+    // the authority : Microsoft's public cloud, a national cloud (AZURE_AUTHORITY_URI), or in
+    // development a local test provider over plain http
+    const authority = String(authConfig.azureAuthorityUrl || 'https://login.microsoftonline.com').replace(/\/+$/, '');
+    const issuer = new URL(`${authority}/${tenant}/v2.0`);
+    const plainHttp = issuer.protocol === 'http:';
+    if (plainHttp && process.env.NODE_ENV !== 'development') {
+      logger.error(`Could not enable Entra ID : the authority ${authority} is not https`);
+      return false;
+    }
+    const config = await openidClient.discovery(issuer, azureConfig.client_id, { client_secret: azureConfig.client_secret }, undefined,
+      plainHttp ? { execute: [openidClient.allowInsecureRequests] } : undefined);
     const verify = (tokens, done) => {
       try {
         const claims = tokens.claims();

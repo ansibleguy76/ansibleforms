@@ -201,6 +201,7 @@ const LIVE_CUSTOM = {
   ACCESS_TOKEN_REFRESH_EXPIRATION: (v) => { authConfig.jwtRefreshExpiration = v; },
   ACCESS_TOKEN_ISSUER: (v) => { authConfig.jwtIssuer = v; },
   AZURE_GRAPH_URI: (v) => { authConfig.azureGraphUrl = v; },
+  AZURE_AUTHORITY_URI: (v) => { authConfig.azureAuthorityUrl = v; },
   // winston keeps the level as a mutable property on the logger and each transport.
   // logConfig holds its own captured copy, which the Status page reports - update both, or
   // the level changes while the page keeps claiming the old one.

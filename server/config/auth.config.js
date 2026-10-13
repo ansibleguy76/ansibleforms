@@ -19,6 +19,9 @@ export default {
   // many days at most ; a longer request is cut to it
   apiTokenMaxDays: Math.max(1, parseInt(process.env.API_TOKEN_MAX_DAYS ?? 90, 10) || 90),
   azureGraphUrl: process.env.AZURE_GRAPH_URI || "https://graph.microsoft.com",
+  // the Entra ID sign-in authority : Microsoft's public cloud, or a national cloud
+  // (login.microsoftonline.us, login.chinacloudapi.cn) ; read when the Entra ID provider is enabled
+  azureAuthorityUrl: process.env.AZURE_AUTHORITY_URI || "https://login.microsoftonline.com",
   ldapErrorRegex:".*, data ([^,]*),.*",
   ldapErrors:{
     "52e":"Wrong password",
