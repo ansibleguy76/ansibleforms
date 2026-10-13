@@ -59,7 +59,7 @@ const FILE_DESIGN_GUARDS = new Map([
 ])
 Middleware.checkFileDesignMiddleware = (req, res, next) => {
   const guard = FILE_DESIGN_GUARDS.get(req.params?.kind)
-  return guard ? guard(req, res, next) : next()
+  return typeof guard === 'function' ? guard(req, res, next) : next()
 }
 
 Middleware.checkLogsMiddleware = permissionGuard(u => u.options.showLogs, 'errors.noLogsAccess')
