@@ -234,6 +234,13 @@
 .form-floating > select:not(:focus)::placeholder {
   opacity: 0 !important;
 }
+// A field's placeholder goes away as soon as the field is clicked (focused), before anything is
+// typed, and comes back when it is left empty. After the theme rules above : same specificity,
+// both !important, so the later one wins
+input:focus::placeholder,
+textarea:focus::placeholder {
+  opacity: 0 !important;
+}
 // Nav tabs with flush card connection
 // The strip keeps to one line : when the tabs do not fit, it scrolls sideways (with
 // its scrollbar under the tabs) instead of wrapping to a second row.
