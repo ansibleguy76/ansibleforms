@@ -57,6 +57,11 @@ function followsShown(path) {
 /*             'tabs'   a row of tabs, the first one open         */
 /*             'inline' one bar in a line of text (a title that   */
 /*                      is not known yet)                         */
+/*             'login'  the sign-in card's form : the username    */
+/*                      and password fields, Sign in, then count  */
+/*                      single sign-on buttons (none : 0)         */
+/*             'sso'    the single sign-on part alone : the "or"  */
+/*                      divider and count buttons                 */
 /*      count: Number - how many tiles, rows, fields, lines...    */
 /*      delay: Number - milliseconds before anything shows (0 :   */
 /*             at once, as the start-up screen)                   */
@@ -225,6 +230,25 @@ const inline = computed(() => props.shape === 'inline');
         </span>
       </li>
     </ul>
+    <!-- the sign-in card's form (pages/login.vue) : its two fields, Sign in, its single sign-on -->
+    <div v-else-if="shape === 'login'">
+      <div class="af-sk af-sk-login-field"></div>
+      <div class="af-sk af-sk-login-field"></div>
+      <div class="af-sk af-sk-login-button"></div>
+      <template v-if="count > 0">
+        <div class="af-sk-divider"><span>or</span></div>
+        <div class="af-sk-sso">
+          <div v-for="i in count" :key="i" class="af-sk af-sk-sso-button"></div>
+        </div>
+      </template>
+    </div>
+    <!-- the single sign-on part of the sign-in card : the divider, then the providers' buttons -->
+    <div v-else-if="shape === 'sso'">
+      <div class="af-sk-divider"><span>or</span></div>
+      <div class="af-sk-sso">
+        <div v-for="i in count" :key="i" class="af-sk af-sk-sso-button"></div>
+      </div>
+    </div>
     <!-- text -->
     <div v-else>
       <div v-for="i in count" :key="i" class="af-sk af-sk-line" :style="{ width: share(i) }"></div>
@@ -431,6 +455,42 @@ const inline = computed(() => props.shape === 'inline');
   flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
+}
+/* ------------------------------------------------------------------ */
+/* the sign-in card : its floating fields (58px and the 16px under),  */
+/* Sign in (42px), the divider and the providers' buttons, as         */
+/* pages/login.vue lays them out                                      */
+/* ------------------------------------------------------------------ */
+.af-sk-login-field {
+  height: 58px;
+  margin-bottom: 1rem;
+}
+.af-sk-login-button {
+  height: 42px;
+}
+/* the divider's "or" is the card's own word (it is not data) */
+.af-sk-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--bs-secondary-color);
+  font-size: 0.875rem;
+  margin: 1.25rem 0 1rem;
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    border-top: 1px solid var(--af-field-border);
+  }
+}
+.af-sk-sso {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+}
+.af-sk-sso-button {
+  width: 4.5rem;
+  height: 3rem;
 }
 /* ------------------------------------------------------------------ */
 /* a tab and a word of a title                                        */

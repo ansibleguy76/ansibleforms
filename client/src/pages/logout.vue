@@ -7,8 +7,11 @@ import { useRoute, useRouter } from 'vue-router';
 import TokenStorage from '@/lib/TokenStorage';
 import { forgetMenus } from '@/lib/menuMemory';
 import Navigate from '@/lib/Navigate';
+import { rememberedSso } from '@/lib/loginSso';
 
 const store = useAppStore();
+// the single sign-on buttons the login card had last time : their room kept (lib/loginSso.js)
+const lastSso = rememberedSso();
 
 const route = useRoute();
 const router = useRouter();
@@ -71,35 +74,9 @@ if (userType == 'oidc') {
 }
 </script>
 <template>
-  <!-- centered both ways, where the sign-in card appears next : the spinner sat on the left
-       edge, the inner box being only as wide as the spinner -->
-  <div class="d-flex align-items-center justify-content-center py-4 bg-body-tertiary login vh-100">
-    <div class="d-flex justify-content-center">
-      <div class="spinner-border" role="status">
-        <span class="visually-hidden">Logging out...</span>
-      </div>
-    </div>
-  </div>
+  <!-- the sign-in card that comes next, its form as grey placeholders : the login page then draws
+       its own card in the same spot (AppLoginFrame) -->
+  <AppLoginFrame>
+    <AppSkeleton shape="login" :count="lastSso" :delay="0" />
+  </AppLoginFrame>
 </template>
-<style scoped lang="scss">
-[data-bs-theme='light'] {
-  .login {
-    background-image: var(--af-login-background-light) !important;
-    background-size: cover;
-  }
-}
-
-[data-bs-theme='dark'] {
-  .login {
-    background-image: var(--af-login-background-dark) !important;
-    background-size: cover;
-  }
-}
-
-[data-bs-theme='color'] {
-  .login {
-    background-image: var(--af-login-background-color) !important;
-    background-size: cover;
-  }
-}
-</style>
