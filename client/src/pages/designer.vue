@@ -114,6 +114,8 @@ const currentTab = ref(addressOf(startRoute.params).view || sortedTabs.value[0].
 const showWarnings = ref(false);
 const action = ref(null);
 const lock = ref(false);
+// the lock read once (or its read failed) : until then the editor's lines as grey placeholders
+const lockRead = ref(false);
 const lockError = ref('');
 const nextAction = ref(false);
 const lockInterval = ref(null);
@@ -2223,6 +2225,8 @@ async function loadLock() {
     } else {
       toast.error(err.message);
     }
+  } finally {
+    lockRead.value = true;
   }
 }
 
@@ -4794,8 +4798,9 @@ onBeforeUnmount(() => {
           </template>
         </template>
         <template #default>
-          <!-- loading : the page's loading indicator, centered in the card, which fills the page -->
-          <AppPageLoading v-if="lockLoading" contained />
+          <!-- loading (the lock not read yet, or being taken) : the editor's lines as grey placeholders,
+               filling the card (which fills the page) -->
+          <AppSkeleton v-if="lockLoading || !lockRead" shape="editor" :count="40" />
           <!-- someone else holds the lock : nothing shown, only who, as when the designer is off -->
           <div
             v-else-if="lock && lock.lock && !lock.match"
@@ -4807,7 +4812,7 @@ onBeforeUnmount(() => {
             </p>
             <p class="fs-6 mb-0">{{ t('designer.inUseByHint', { user: lock.lock.username }) }}</p>
           </div>
-          <AppPageLoading v-else-if="lock && !lock.free && !loaded" contained />
+          <AppSkeleton v-else-if="lock && !lock.free && !loaded" shape="editor" :count="40" />
           <div
             v-else-if="lock && lock.free"
             class="d-flex flex-column align-items-center justify-content-center py-5 text-muted"

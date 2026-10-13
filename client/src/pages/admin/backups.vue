@@ -229,9 +229,7 @@ onMounted(async () => {
           </li>
         </ul>
       </div>
-      <div v-else>
-        {{ t('admin.loading') }}
-      </div>
+      <AppSkeleton v-else shape="detail" :count="5" />
     </BsOffCanvas>
   </AppSettingsPage>
 </template>

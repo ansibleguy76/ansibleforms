@@ -26,6 +26,8 @@ import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 const { t } = useI18n();
 const settings = computed(() => getSettings(t));
 const authenticated = ref(false);
+// the page's values read once : until then its fields as grey placeholders
+const loaded = ref(false);
 const title = computed(() => t('sidebar.disclaimer'));
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
@@ -135,6 +137,7 @@ useUnsavedGuard(
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (authenticated.value) await load();
+  loaded.value = true;
 });
 </script>
 <template>
@@ -196,46 +199,56 @@ onMounted(async () => {
         <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
       </template>
       <template #default>
-        <!-- on or off ; off, its text is kept, greyed out -->
-        <label class="form-label fw-bold af-switch-title" for="af-disclaimer-on">{{
-          t('settings.disclaimer.enabled')
-        }}</label>
-        <div class="form-check form-switch mb-0">
-          <input id="af-disclaimer-on" v-model="edit.enabled" class="form-check-input" type="checkbox" role="switch" />
-        </div>
-        <div class="form-text">
-          {{ t('settings.disclaimer.enabledHelp') }}
-          <template v-if="version"> {{ t('settings.disclaimer.currentVersion', { version }) }}</template>
-        </div>
-        <BsInput
-          class="af-disclaimer-field mt-4"
-          :isFloating="false"
-          icon="heading"
-          :disabled="!edit.enabled"
-          v-model="edit.title"
-          :label="t('settings.disclaimer.title')"
-          :help="t('settings.disclaimer.titleHelp')"
-        />
-        <BsInput
-          class="af-disclaimer-field mt-4"
-          :isFloating="false"
-          type="textarea"
-          :rows="10"
-          icon="file-lines"
-          :disabled="!edit.enabled"
-          v-model="edit.text"
-          :label="t('settings.disclaimer.text')"
-          :help="t('settings.disclaimer.textHelp')"
-        />
-        <BsInput
-          class="af-disclaimer-field mt-4"
-          :isFloating="false"
-          icon="square-check"
-          :disabled="!edit.enabled"
-          v-model="edit.checkbox_label"
-          :label="t('settings.disclaimer.checkbox')"
-          :help="t('settings.disclaimer.checkboxHelp')"
-        />
+        <!-- the first load : the fields as grey placeholders, in their place -->
+        <AppSkeleton v-if="!loaded" shape="form" :count="4" />
+        <template v-else>
+          <!-- on or off ; off, its text is kept, greyed out -->
+          <label class="form-label fw-bold af-switch-title" for="af-disclaimer-on">{{
+            t('settings.disclaimer.enabled')
+          }}</label>
+          <div class="form-check form-switch mb-0">
+            <input
+              id="af-disclaimer-on"
+              v-model="edit.enabled"
+              class="form-check-input"
+              type="checkbox"
+              role="switch"
+            />
+          </div>
+          <div class="form-text">
+            {{ t('settings.disclaimer.enabledHelp') }}
+            <template v-if="version"> {{ t('settings.disclaimer.currentVersion', { version }) }}</template>
+          </div>
+          <BsInput
+            class="af-disclaimer-field mt-4"
+            :isFloating="false"
+            icon="heading"
+            :disabled="!edit.enabled"
+            v-model="edit.title"
+            :label="t('settings.disclaimer.title')"
+            :help="t('settings.disclaimer.titleHelp')"
+          />
+          <BsInput
+            class="af-disclaimer-field mt-4"
+            :isFloating="false"
+            type="textarea"
+            :rows="10"
+            icon="file-lines"
+            :disabled="!edit.enabled"
+            v-model="edit.text"
+            :label="t('settings.disclaimer.text')"
+            :help="t('settings.disclaimer.textHelp')"
+          />
+          <BsInput
+            class="af-disclaimer-field mt-4"
+            :isFloating="false"
+            icon="square-check"
+            :disabled="!edit.enabled"
+            v-model="edit.checkbox_label"
+            :label="t('settings.disclaimer.checkbox')"
+            :help="t('settings.disclaimer.checkboxHelp')"
+          />
+        </template>
       </template>
     </AppSettings>
     <AppDisclaimer

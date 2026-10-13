@@ -296,8 +296,12 @@ async function loadValues() {
   }
 }
 
+// the record read once : until then its fields as grey placeholders (a save reads it again with
+// the fields kept on screen)
+const loaded = ref(false);
 onMounted(async () => {
   await Promise.all([loadItem(), loadValues()]);
+  loaded.value = true;
 });
 
 defineExpose({
@@ -340,7 +344,9 @@ defineExpose({
     </template>
     <!-- in tabs : each tab its slot, then its toggles and its rows -->
     <template v-if="tabs.length" #default>
-      <div v-for="tab in tabs" v-show="activeTab === tab.key" :key="tab.key">
+      <!-- the first load : the fields as grey placeholders, in their place -->
+      <AppSkeleton v-if="!loaded" shape="form" :count="4" />
+      <div v-for="tab in tabs" v-show="loaded && activeTab === tab.key" :key="tab.key">
         <div v-if="isManaged" class="alert alert-secondary py-2">
           <FaIcon icon="lock" class="me-2" />
           {{ t('settings.common.seedManagedNotice') }}
@@ -392,52 +398,56 @@ defineExpose({
       </div>
     </template>
     <template v-else #default>
-      <div v-if="isManaged" class="alert alert-secondary py-2">
-        <FaIcon icon="lock" class="me-2" />
-        {{ t('settings.common.seedManagedNotice') }}
-      </div>
-      <!-- a toggle as the switches of the MCP and chat pages : its title, the switch, its help -->
-      <div v-for="field in toggleFields" :key="field.key" class="mb-3">
-        <label class="form-label fw-bold af-toggle-title" :for="'tg-' + field.key">{{ field.label }}</label>
-        <div class="form-check form-switch mb-0">
-          <input
-            :id="'tg-' + field.key"
-            v-model="item[field.key]"
-            class="form-check-input"
-            type="checkbox"
-            role="switch"
-            :disabled="isManaged || locked"
-          />
+      <!-- the first load : the fields as grey placeholders, in their place -->
+      <AppSkeleton v-if="!loaded" shape="form" :count="4" />
+      <template v-else>
+        <div v-if="isManaged" class="alert alert-secondary py-2">
+          <FaIcon icon="lock" class="me-2" />
+          {{ t('settings.common.seedManagedNotice') }}
         </div>
-        <div v-if="field.help" class="form-text">{{ field.help }}</div>
-      </div>
-      <template v-for="(cols, rIdx) in rows" :key="rIdx">
-        <div v-if="cols && cols.some((f) => isVisible(f))" class="row">
-          <div
-            :class="field.type === 'checkbox' ? 'col-auto' : 'col'"
-            v-for="field in cols"
-            :key="field.key"
-            v-show="isVisible(field)"
-          >
-            <BsInput
-              :isFloating="false"
-              :placeholder="field.placeholder"
-              :description="field.description"
-              :style="field.style"
-              :icon="field.icon"
-              :help="field.help"
-              :type="field.type"
-              :values="loadedValues[field.key] || field.values"
-              :liveSync="field.type === 'editor'"
-              v-model="$v.item[field.key].$model"
-              :disabled="disabledFields[field.key]"
-              :label="field.label"
-              :required="field.required"
-              :hasError="$v.item[field.key].$invalid && $v.item[field.key].$dirty && !disabledFields[field.key]"
-              :errors="$v.item[field.key].$errors"
+        <!-- a toggle as the switches of the MCP and chat pages : its title, the switch, its help -->
+        <div v-for="field in toggleFields" :key="field.key" class="mb-3">
+          <label class="form-label fw-bold af-toggle-title" :for="'tg-' + field.key">{{ field.label }}</label>
+          <div class="form-check form-switch mb-0">
+            <input
+              :id="'tg-' + field.key"
+              v-model="item[field.key]"
+              class="form-check-input"
+              type="checkbox"
+              role="switch"
+              :disabled="isManaged || locked"
             />
           </div>
+          <div v-if="field.help" class="form-text">{{ field.help }}</div>
         </div>
+        <template v-for="(cols, rIdx) in rows" :key="rIdx">
+          <div v-if="cols && cols.some((f) => isVisible(f))" class="row">
+            <div
+              :class="field.type === 'checkbox' ? 'col-auto' : 'col'"
+              v-for="field in cols"
+              :key="field.key"
+              v-show="isVisible(field)"
+            >
+              <BsInput
+                :isFloating="false"
+                :placeholder="field.placeholder"
+                :description="field.description"
+                :style="field.style"
+                :icon="field.icon"
+                :help="field.help"
+                :type="field.type"
+                :values="loadedValues[field.key] || field.values"
+                :liveSync="field.type === 'editor'"
+                v-model="$v.item[field.key].$model"
+                :disabled="disabledFields[field.key]"
+                :label="field.label"
+                :required="field.required"
+                :hasError="$v.item[field.key].$invalid && $v.item[field.key].$dirty && !disabledFields[field.key]"
+                :errors="$v.item[field.key].$errors"
+              />
+            </div>
+          </div>
+        </template>
       </template>
     </template>
     <template #footer>
@@ -450,6 +460,10 @@ defineExpose({
    far from its label, and two or three to a row they were each another width. 20rem fits the
    narrowest column (three to a row), so the fields of a tab line up */
 :deep(.card-body .input-group) {
+  max-width: 20rem;
+}
+/* and their placeholders while the record loads (AppSkeleton) */
+:deep(.card-body .af-sk-input) {
   max-width: 20rem;
 }
 :deep(.card-body) {

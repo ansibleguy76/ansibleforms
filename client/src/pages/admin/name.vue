@@ -14,6 +14,8 @@ import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 
 const { t } = useI18n();
 const authenticated = ref(false);
+// the page's values read once : until then its fields as grey placeholders
+const loaded = ref(false);
 
 /**
  * The name of a settings row, as the page edits it : empty without one.
@@ -39,6 +41,7 @@ const title = computed(() => t('sidebar.name'));
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (authenticated.value) await load();
+  loaded.value = true;
 });
 </script>
 <template>
@@ -50,15 +53,19 @@ onMounted(async () => {
         }}</BsButton>
       </template>
       <template #default>
-        <BsInput
-          class="af-interface-field"
-          :isFloating="false"
-          icon="font"
-          v-model="look.app_name"
-          placeholder="Ansible Forms"
-          :label="t('settings.interface.appName')"
-          :help="t('settings.interface.appNameHelp')"
-        />
+        <!-- the first load : the fields as grey placeholders, in their place -->
+        <AppSkeleton v-if="!loaded" shape="form" :count="1" />
+        <template v-else>
+          <BsInput
+            class="af-interface-field"
+            :isFloating="false"
+            icon="font"
+            v-model="look.app_name"
+            placeholder="Ansible Forms"
+            :label="t('settings.interface.appName')"
+            :help="t('settings.interface.appNameHelp')"
+          />
+        </template>
       </template>
     </AppSettings>
   </AppSettingsPage>

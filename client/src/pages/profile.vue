@@ -81,6 +81,8 @@ watch(
 // COMPUTED
 
 const profile = computed(() => store.profile || {});
+// the groups read (Profile.load) : the token carries none
+const groupsKnown = computed(() => Array.isArray(profile.value.groups));
 // the roles to show : every user also carries public, default's name before 7, so that forms still
 // listing it match - it is the same role, shown once as default
 const shownRoles = computed(() => (profile.value.roles || []).filter((r) => r !== 'public'));
@@ -365,15 +367,17 @@ async function changePassword() {
               </li>
               <li class="list-group-item af-detail">
                 <span class="af-detail-label"
-                  >{{ t('profilePage.groups') }} <span class="af-count">{{ (profile.groups || []).length }}</span></span
+                  >{{ t('profilePage.groups') }}
+                  <span v-if="groupsKnown" class="af-count">{{ profile.groups.length }}</span></span
                 >
-                <span class="af-detail-value">
-                  <span v-for="g in profile.groups || []" :key="g" class="badge af-chip"
+                <!-- the groups are read from the server (the token does not carry them) : a grey bar
+                     until then, rather than "none yet" -->
+                <span v-if="!groupsKnown" class="af-detail-value"><AppSkeleton shape="inline" width="7rem" /></span>
+                <span v-else class="af-detail-value">
+                  <span v-for="g in profile.groups" :key="g" class="badge af-chip"
                     ><FaIcon icon="users" class="me-1" />{{ g }}</span
                   >
-                  <span v-if="!(profile.groups || []).length" class="text-body-secondary">{{
-                    t('profilePage.noneYet')
-                  }}</span>
+                  <span v-if="!profile.groups.length" class="text-body-secondary">{{ t('profilePage.noneYet') }}</span>
                 </span>
               </li>
               <li class="list-group-item af-detail">

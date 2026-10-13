@@ -2832,10 +2832,8 @@ defineExpose({
 
   <!-- LOADER & FORM NOT FOUND -->
 
-  <div v-else>
-    <h2>{{ t('form.loading') }}</h2>
-    <div class="alert alert-info">{{ t('form.formNotReady') }}</div>
-  </div>
+  <!-- its pre-tasks and validations still running : its fields as grey placeholders -->
+  <AppSkeleton v-else shape="form" :count="5" style="--af-sk-field-max: none" />
 </template>
 <style scoped lang="scss">
 /* a group's first row of fields : the room over its labels' letters as under the last field

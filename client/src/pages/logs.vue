@@ -10,6 +10,8 @@ const { t } = useI18n();
 
 const log = ref('');
 const isLoading = ref(false);
+// the log read once (or its read failed) : until then its lines as grey placeholders
+const firstRead = ref(false);
 const filter = ref('');
 const scroller = ref(null);
 // the last lines of the log : enough to look back through with the search, small enough to read
@@ -109,6 +111,7 @@ async function load(force = false) {
   } finally {
     // always released, also when the server answered the "..." placeholder
     isLoading.value = false;
+    firstRead.value = true;
   }
   schedulePoll();
 }
@@ -169,7 +172,9 @@ onUnmounted(() => {
             role="region"
             :aria-label="t('logs.title')"
           >
-            <div v-if="clearedAfter !== null && !filtered.length" class="text-body-secondary fst-italic py-2">
+            <!-- the first read : the log's lines as grey placeholders, where they come -->
+            <AppSkeleton v-if="!firstRead" shape="editor" :count="24" />
+            <div v-else-if="clearedAfter !== null && !filtered.length" class="text-body-secondary fst-italic py-2">
               {{ t('logs.cleared') }}
             </div>
             <div v-for="(t, i) in filtered" :key="i">

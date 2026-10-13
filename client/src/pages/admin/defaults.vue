@@ -23,6 +23,8 @@ import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 
 const { t } = useI18n();
 const authenticated = ref(false);
+// the page's values read once : until then its fields as grey placeholders
+const loaded = ref(false);
 
 // ─── what the settings row keeps ──────────────────────────────────────────────
 // the theme and its colour, the forms view, the time zone
@@ -131,6 +133,7 @@ onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
   await Promise.all([loadTheme(), loadEnvironmentVariables()]);
+  loaded.value = true;
 });
 </script>
 <template>
@@ -145,84 +148,88 @@ onMounted(async () => {
         <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
       </template>
       <template #default>
-        <div v-if="envRestartPending.length" class="alert alert-warning py-2">
-          <FaIcon icon="triangle-exclamation" class="me-2" />
-          {{ t('settings.settingsPage.envRestartPending', { names: envRestartPending.join(', ') }) }}
-        </div>
-        <!-- the theme, the language, the forms view and the time zone for everyone -->
-        <div>
-          <!-- the theme : no environment variable, kept in the database -->
-          <BsInput
-            class="af-interface-field"
-            :isFloating="false"
-            type="select"
-            icon="palette"
-            v-model="theme.default_theme"
-            :values="themeOptions"
-            valueKey="value"
-            labelKey="label"
-            :label="t('settings.settingsPage.defaultTheme')"
-            :help="t('settings.settingsPage.defaultThemeHelp')"
-          />
-          <div v-if="theme.default_theme === 'color'" class="mt-2 ms-1">
-            <div class="d-flex flex-wrap gap-2">
-              <button
-                v-for="c in colorPalette"
-                :key="c.hex"
-                type="button"
-                class="settings-color-swatch"
-                :style="{ backgroundColor: c.hex }"
-                :class="{ 'settings-color-swatch-active': theme.default_theme_color === c.hex }"
-                :title="c.label"
-                @click="theme.default_theme_color = c.hex"
-              >
-                <FaIcon v-if="theme.default_theme_color === c.hex" icon="check" class="settings-swatch-check" />
-              </button>
-            </div>
+        <!-- the first load : the fields as grey placeholders, in their place -->
+        <AppSkeleton v-if="!loaded" shape="form" :count="4" />
+        <template v-else>
+          <div v-if="envRestartPending.length" class="alert alert-warning py-2">
+            <FaIcon icon="triangle-exclamation" class="me-2" />
+            {{ t('settings.settingsPage.envRestartPending', { names: envRestartPending.join(', ') }) }}
           </div>
-          <!-- the language : an environment variable -->
-          <template v-for="e in languageEnv" :key="e.name">
-            <div class="mt-4"></div>
-            <AppEnvField v-model="envEdits[e.name]" :e="e" />
-          </template>
-          <!-- the forms list's view and the time zone : in the database -->
-          <BsInput
-            class="af-interface-field mt-4"
-            :isFloating="false"
-            type="select"
-            icon="table-cells-large"
-            v-model="theme.forms_view"
-            :values="formsViews"
-            valueKey="value"
-            labelKey="label"
-            :label="t('settings.interface.formsView')"
-            :help="t('settings.interface.formsViewHelp')"
-          />
-          <BsInput
-            class="af-interface-field mt-4"
-            :isFloating="false"
-            type="select"
-            icon="clock"
-            v-model="theme.default_timezone"
-            :values="timezones"
-            valueKey="value"
-            labelKey="label"
-            :label="t('settings.interface.timezone')"
-            :help="t('settings.interface.timezoneHelp')"
-          />
-          <BsInput
-            class="af-interface-field mt-4"
-            :isFloating="false"
-            type="select"
-            icon="calendar"
-            v-model="theme.default_date_format"
-            :values="dateFormats"
-            valueKey="value"
-            labelKey="label"
-            :label="t('settings.interface.dateFormat')"
-            :help="t('settings.interface.dateFormatHelp')"
-          />
-        </div>
+          <!-- the theme, the language, the forms view and the time zone for everyone -->
+          <div>
+            <!-- the theme : no environment variable, kept in the database -->
+            <BsInput
+              class="af-interface-field"
+              :isFloating="false"
+              type="select"
+              icon="palette"
+              v-model="theme.default_theme"
+              :values="themeOptions"
+              valueKey="value"
+              labelKey="label"
+              :label="t('settings.settingsPage.defaultTheme')"
+              :help="t('settings.settingsPage.defaultThemeHelp')"
+            />
+            <div v-if="theme.default_theme === 'color'" class="mt-2 ms-1">
+              <div class="d-flex flex-wrap gap-2">
+                <button
+                  v-for="c in colorPalette"
+                  :key="c.hex"
+                  type="button"
+                  class="settings-color-swatch"
+                  :style="{ backgroundColor: c.hex }"
+                  :class="{ 'settings-color-swatch-active': theme.default_theme_color === c.hex }"
+                  :title="c.label"
+                  @click="theme.default_theme_color = c.hex"
+                >
+                  <FaIcon v-if="theme.default_theme_color === c.hex" icon="check" class="settings-swatch-check" />
+                </button>
+              </div>
+            </div>
+            <!-- the language : an environment variable -->
+            <template v-for="e in languageEnv" :key="e.name">
+              <div class="mt-4"></div>
+              <AppEnvField v-model="envEdits[e.name]" :e="e" />
+            </template>
+            <!-- the forms list's view and the time zone : in the database -->
+            <BsInput
+              class="af-interface-field mt-4"
+              :isFloating="false"
+              type="select"
+              icon="table-cells-large"
+              v-model="theme.forms_view"
+              :values="formsViews"
+              valueKey="value"
+              labelKey="label"
+              :label="t('settings.interface.formsView')"
+              :help="t('settings.interface.formsViewHelp')"
+            />
+            <BsInput
+              class="af-interface-field mt-4"
+              :isFloating="false"
+              type="select"
+              icon="clock"
+              v-model="theme.default_timezone"
+              :values="timezones"
+              valueKey="value"
+              labelKey="label"
+              :label="t('settings.interface.timezone')"
+              :help="t('settings.interface.timezoneHelp')"
+            />
+            <BsInput
+              class="af-interface-field mt-4"
+              :isFloating="false"
+              type="select"
+              icon="calendar"
+              v-model="theme.default_date_format"
+              :values="dateFormats"
+              valueKey="value"
+              labelKey="label"
+              :label="t('settings.interface.dateFormat')"
+              :help="t('settings.interface.dateFormatHelp')"
+            />
+          </div>
+        </template>
       </template>
     </AppSettings>
   </AppSettingsPage>

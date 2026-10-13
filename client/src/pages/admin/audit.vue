@@ -201,8 +201,8 @@ onMounted(async () => {
         </div>
       </template>
       <template #default>
-        <!-- the first load : the pages' loading indicator, as every page's -->
-        <AppPageLoading v-if="loading && records.length === 0" />
+        <!-- the first load : the table's rows as grey placeholders (a reload keeps them shown) -->
+        <AppSkeleton v-if="loading && records.length === 0" shape="table" :count="10" />
         <div v-else-if="loadFailed" class="text-center text-muted py-4">
           <div class="fw-bold">{{ t('audit.failedLoad') }}</div>
         </div>
