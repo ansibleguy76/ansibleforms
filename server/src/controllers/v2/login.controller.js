@@ -410,8 +410,10 @@ const authCallback = function(req, res, next, type) {
         return next(reason)
       }
       const token = signHandoff(payload, type);
-      // in the fragment : the browser keeps it, no server, proxy or access log ever sees it
-      res.redirect(`${appConfig.baseUrl}/login#token=${token}`)
+      // in the fragment : the browser keeps it, no server, proxy or access log ever sees it. Into
+      // the app, not the login page : the app takes the handoff before it draws anything
+      // (client main.js), so the user goes from the provider straight to the page they wanted
+      res.redirect(`${appConfig.baseUrl}/#token=${token}`)
     } catch (err) {
       logger.error(helpers.getError(err))
       return next(err)

@@ -52,18 +52,27 @@ describe('the routes declare who may see a page', () => {
 
 describe('the guard', () => {
   // the signed-in user's role options, as the guard reads them from the token
-  const as = (options) => vi.spyOn(TokenStorage, 'getPayload').mockReturnValue({ user: { username: 'u', options } });
+  const as = (options) => {
+    vi.spyOn(TokenStorage, 'isAuthenticated').mockReturnValue(true);
+    vi.spyOn(TokenStorage, 'getPayload').mockReturnValue({ user: { username: 'u', options } });
+  };
 
-  it('a page needing an option the user lacks : home ; with it : the page', () => {
+  it('a page needing an option the user lacks : home ; with it : the page', async () => {
     const designer = router.resolve('/designer');
     as({ showJobs: true });
-    expect(permissionGuard(designer)).toEqual({ name: '/' });
+    expect(await permissionGuard(designer)).toEqual({ name: '/' });
     as({ showDesigner: true });
-    expect(permissionGuard(designer)).toBe(true);
+    expect(await permissionGuard(designer)).toBe(true);
   });
 
-  it('a page needing nothing opens for anybody', () => {
+  it('a page needing an option, opened signed out : the login page, which comes back to it', async () => {
+    vi.spyOn(TokenStorage, 'isAuthenticated').mockReturnValue(false);
+    const job = router.resolve('/jobs/141');
+    expect(await permissionGuard(job)).toEqual({ name: '/login', query: { from: '/jobs/141' } });
+  });
+
+  it('a page needing nothing opens for anybody', async () => {
     as({});
-    expect(permissionGuard(router.resolve('/profile'))).toBe(true);
+    expect(await permissionGuard(router.resolve('/profile'))).toBe(true);
   });
 });
