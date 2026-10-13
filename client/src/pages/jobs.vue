@@ -128,6 +128,22 @@ function jobTypeLabel(j) {
   if (j?.job_type === 'awx') return j.runner_kind || 'awx';
   return j?.job_type || 'ansible';
 }
+// a job type as its badge says it : the product's own spelling, as the other badges capitalized
+const JOB_TYPE_NAMES = {
+  ansible: 'Ansible',
+  workflow: 'Workflow',
+  multistep: 'Multistep',
+  awx: 'AWX',
+  aap: 'AAP',
+  ascender: 'Ascender',
+  semaphore: 'Semaphore',
+  rundeck: 'Rundeck',
+  jenkins: 'Jenkins',
+};
+function jobTypeName(j) {
+  const type = jobTypeLabel(j);
+  return JOB_TYPE_NAMES[type] || type.charAt(0).toUpperCase() + type.slice(1);
+}
 /**
  * Whether a job has artifacts to show : a template job that ran on an AWX, AAP or Ascender (or a
  * runner since removed) - Semaphore, Rundeck and Jenkins have none ; any other job whose
@@ -1516,7 +1532,7 @@ onMounted(async () => {
               <div class="af-job-heading">
                 <h3 class="af-job-number">{{ job.form || t('jobs.jobTitle', { id: '#' + jobId }) }}</h3>
                 <AppStatusPill :status="job.status" />
-                <AppStatusPill :label="jobTypeLabel(job)" tone="grey" />
+                <AppStatusPill :label="jobTypeName(job)" tone="grey" />
               </div>
               <dl class="af-job-facts">
                 <!-- an ansible job : the hosts it ran on (its limit, else its inventories, else the

@@ -2433,6 +2433,12 @@ export default {
   },
   jobs: {
     // the jobs page's left menu
+    // a job's status where the menu has no entry for it
+    statusLabel: {
+      abandoned: 'Verwaist',
+      rejected: 'Abgelehnt',
+      warning: 'Warnung',
+    },
     menu: {
       status: 'Status',
       all: 'Alle Jobs',

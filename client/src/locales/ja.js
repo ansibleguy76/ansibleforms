@@ -2382,6 +2382,12 @@ export default {
   },
   jobs: {
     // the jobs page's left menu
+    // a job's status where the menu has no entry for it
+    statusLabel: {
+      abandoned: '放棄',
+      rejected: '却下',
+      warning: '警告',
+    },
     menu: {
       status: 'ステータス',
       all: 'すべてのジョブ',

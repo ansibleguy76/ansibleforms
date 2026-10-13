@@ -2324,6 +2324,12 @@ export default {
   },
   jobs: {
     // the jobs page's left menu
+    // a job's status where the menu has no entry for it
+    statusLabel: {
+      abandoned: '已放弃',
+      rejected: '已拒绝',
+      warning: '警告',
+    },
     menu: {
       status: '状态',
       all: '所有作业',
