@@ -2418,19 +2418,20 @@ export default {
     // the jobs page's left menu
     // a job's status where the menu has no entry for it
     statusLabel: {
-      abandoned: 'Abandonado',
-      rejected: 'Rechazado',
       warning: 'Advertencia',
     },
     menu: {
-      status: 'Estado',
+      past: 'Pasado',
+      present: 'Presente',
+      future: 'Futuro',
       all: 'Todos los jobs',
       running: 'En ejecución',
-      approve: 'Por aprobar',
+      approve: 'Esperando aprobación',
       success: 'Correcto',
       failed: 'Fallido',
       aborted: 'Cancelado',
-      planned: 'Planificado',
+      rejected: 'Rechazado',
+      abandoned: 'Abandonado',
     },
     // the message in the table when no job is shown
     empty: {
@@ -2448,6 +2449,9 @@ export default {
       success: 'Los jobs que terminaron correctamente.',
       failed: 'Los jobs que terminaron con un error. Abre uno para ver en su salida qué falló.',
       aborted: 'Los jobs que se detuvieron antes de terminar.',
+      rejected: 'Trabajos que un aprobador rechazó: nunca se ejecutaron.',
+      abandoned:
+        'Trabajos que perdieron lo que los ejecutaba (un RTE o nodo reiniciado o detenido) y ya no pueden terminar. Relanza uno para ejecutarlo de nuevo.',
     },
     title: 'Trabajos',
     refresh: 'Actualizar',

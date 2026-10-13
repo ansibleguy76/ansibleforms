@@ -2403,19 +2403,20 @@ export default {
     // the jobs page's left menu
     // a job's status where the menu has no entry for it
     statusLabel: {
-      abandoned: 'Porzucone',
-      rejected: 'Odrzucone',
       warning: 'Ostrzeżenie',
     },
     menu: {
-      status: 'Stan',
+      past: 'Przeszłe',
+      present: 'Bieżące',
+      future: 'Przyszłe',
       all: 'Wszystkie zadania',
       running: 'Uruchomione',
-      approve: 'Do zatwierdzenia',
+      approve: 'Oczekuje na zatwierdzenie',
       success: 'Zakończone powodzeniem',
       failed: 'Nieudane',
       aborted: 'Przerwane',
-      planned: 'Zaplanowane',
+      rejected: 'Odrzucone',
+      abandoned: 'Porzucone',
     },
     // the message in the table when no job is shown
     empty: {
@@ -2434,6 +2435,9 @@ export default {
       success: 'Zadania zakończone powodzeniem.',
       failed: 'Zadania zakończone błędem. Otwórz zadanie, aby w jego wyniku sprawdzić, co poszło nie tak.',
       aborted: 'Zadania zatrzymane przed zakończeniem.',
+      rejected: 'Zadania odrzucone przez zatwierdzającego: nigdy nie zostały uruchomione.',
+      abandoned:
+        'Zadania, które utraciły to, co je uruchamiało (zrestartowane lub zatrzymane RTE albo węzeł aplikacji), i nie mogą się już zakończyć. Uruchom jedno ponownie, aby wykonać je jeszcze raz.',
     },
     title: 'Zadania',
     refresh: 'Odśwież',

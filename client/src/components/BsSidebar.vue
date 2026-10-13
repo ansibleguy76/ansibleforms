@@ -177,8 +177,20 @@ onMounted(async () => {
               :class="{ active: isActive(item.link), 'link-body-emphasis': !isActive(item.link) }"
               :aria-current="isActive(item.link) ? 'page' : null"
             >
-              <FaIcon :icon="item.icon" :fixedwidth="true" />
-              {{ item.title }}
+              <!-- the same row as a view's : a count, when it has one, on the right -->
+              <span class="d-flex align-items-center">
+                <span class="flex-grow-1 text-truncate">
+                  <FaIcon :icon="item.icon" :fixedwidth="true" />
+                  {{ item.title }}
+                </span>
+                <AppMenuBadge
+                  v-if="item.badge != null"
+                  class="ms-2"
+                  :count="item.badge"
+                  :active="isActive(item.link)"
+                  :alert="!!item.badgeAlert"
+                />
+              </span>
             </router-link>
           </li>
         </ul>

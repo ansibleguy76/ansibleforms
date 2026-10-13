@@ -2413,19 +2413,20 @@ export default {
     // the jobs page's left menu
     // a job's status where the menu has no entry for it
     statusLabel: {
-      abandoned: 'Verlaten',
-      rejected: 'Afgewezen',
       warning: 'Waarschuwing',
     },
     menu: {
-      status: 'Status',
+      past: 'Verleden',
+      present: 'Heden',
+      future: 'Toekomst',
       all: 'Alle jobs',
       running: 'Bezig',
-      approve: 'Goed te keuren',
+      approve: 'Wacht op goedkeuring',
       success: 'Geslaagd',
       failed: 'Mislukt',
       aborted: 'Afgebroken',
-      planned: 'Gepland',
+      rejected: 'Afgewezen',
+      abandoned: 'Verlaten',
     },
     // the message in the table when no job is shown
     empty: {
@@ -2443,6 +2444,9 @@ export default {
       success: 'Jobs die geslaagd zijn.',
       failed: 'Jobs die met een fout zijn geëindigd. Open er een om in de uitvoer te zien wat er misging.',
       aborted: 'Jobs die zijn afgebroken voordat ze klaar waren.',
+      rejected: 'Jobs die een goedkeurder heeft afgewezen: ze zijn nooit uitgevoerd.',
+      abandoned:
+        'Jobs die kwijt zijn wat ze uitvoerde (een herstarte of gestopte RTE of app-node) en niet meer kunnen eindigen. Start er een opnieuw om hem nogmaals uit te voeren.',
     },
     title: 'Jobs',
     refresh: 'Vernieuwen',

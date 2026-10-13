@@ -2326,19 +2326,20 @@ export default {
     // the jobs page's left menu
     // a job's status where the menu has no entry for it
     statusLabel: {
-      abandoned: '已放弃',
-      rejected: '已拒绝',
       warning: '警告',
     },
     menu: {
-      status: '状态',
+      past: '过去',
+      present: '现在',
+      future: '未来',
       all: '所有作业',
       running: '运行中',
-      approve: '待审批',
+      approve: '等待审批',
       success: '成功',
       failed: '失败',
       aborted: '已中止',
-      planned: '已计划',
+      rejected: '已拒绝',
+      abandoned: '已放弃',
     },
     // the message in the table when no job is shown
     empty: {
@@ -2355,6 +2356,8 @@ export default {
       success: '已成功完成的作业。',
       failed: '以错误结束的作业。打开作业可在其输出中查看出错原因。',
       aborted: '在完成前被停止的作业。',
+      rejected: '被审批人拒绝的作业：它们从未运行。',
+      abandoned: '失去了运行它们的组件（重启或停止的 RTE 或应用节点）而无法再结束的作业。重新启动一个即可再次运行。',
     },
     title: '作业',
     refresh: '刷新',

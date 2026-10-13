@@ -16,6 +16,8 @@ const SLUGS = {
   success: 'success',
   failed: 'failed',
   aborted: 'aborted',
+  rejected: 'rejected',
+  abandoned: 'abandoned',
 };
 
 // the names in the address, for the router's route (/jobs/:status(running|approval|...))
