@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { useAppStore } from '@/stores/app';
 import TokenStorage from '@/lib/TokenStorage';
+import Profile from '@/lib/Profile';
 import Navigate from '@/lib/Navigate';
 import Time from '@/lib/Time';
 
@@ -8,7 +9,16 @@ var State = {
   loadProfile() {
     const store = useAppStore();
     var payload = TokenStorage.getPayload();
-    store.profile = payload.user || {};
+    const user = payload?.user || {};
+    // the token carries no groups (#1036) : the ones already loaded for the same user stay, and
+    // the server is asked for them (Profile.load puts them on the profile)
+    const previous = store.profile;
+    const same = previous && previous.username === user.username && previous.type === user.type;
+    store.profile =
+      !Array.isArray(user.groups) && same && Array.isArray(previous.groups)
+        ? { ...user, groups: previous.groups }
+        : user;
+    if (user.username && !Array.isArray(user.groups)) Profile.load();
   },
 
   refreshAuthenticated() {

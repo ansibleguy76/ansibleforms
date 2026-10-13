@@ -1636,7 +1636,12 @@ function initForm() {
   isInitializing.value = Object.keys(prefillValues.value).length > 0;
 
   // inject user
-  form.value['__user__'] = TokenStorage.getPayload().user;
+  // the token's user, with its groups : a token carries none (#1036), the page loaded them
+  // from the server before the form (Profile.load) ; a token issued before carries its own
+  const tokenUser = TokenStorage.getPayload().user;
+  form.value['__user__'] = Array.isArray(tokenUser?.groups)
+    ? tokenUser
+    : { ...tokenUser, groups: store.profile?.groups || [] };
   fieldOptions.value['__user__'] = {
     type: 'expression',
   };

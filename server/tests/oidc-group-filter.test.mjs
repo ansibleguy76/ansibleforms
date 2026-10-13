@@ -34,22 +34,25 @@ beforeEach(() => { provider.groupfilter = "^af-"; });
 describe("the oidc group filter is applied by the server", () => {
   test("the groups claim of the token is filtered", async () => {
     const user = await login({ preferred_username: "bob", groups: ["af-admins", "everyone", "staff-af-"] });
-    expect(user).toMatchObject({ username: "bob", type: "oidc", groups: ["oidc/af-admins"], roles: ["oidc/af-admins"] });
+    // the token carries no groups (#1036) : the roles, resolved from them (here one per group), show
+    // which were kept
+    expect(user).toMatchObject({ username: "bob", type: "oidc", roles: ["oidc/af-admins"] });
+    expect(user.groups).toBeUndefined();
   });
 
   test("the list the browser posts is never read : no groups claim is no groups, whatever the body says", async () => {
     // a caller with the handoff of any account could otherwise name af-admins and get its roles
     const user = await login({ preferred_username: "bob" }, ["af-admins", "af-ops"]);
-    expect(user.groups).toEqual([]);
+    expect(user.roles).toEqual([]);
     expect(user.roles).toEqual([]);
     // and with a claim, the body is not added to it
-    expect((await login({ preferred_username: "bob", groups: ["af-ops"] }, ["af-admins"])).groups).toEqual(["oidc/af-ops"]);
+    expect((await login({ preferred_username: "bob", groups: ["af-ops"] }, ["af-admins"])).roles).toEqual(["oidc/af-ops"]);
   });
 
   test("no filter keeps every group, an invalid one keeps every group as well", async () => {
     provider.groupfilter = "";
-    expect((await login({ preferred_username: "bob", groups: ["af-admins", "everyone"] })).groups).toEqual(["oidc/af-admins", "oidc/everyone"]);
+    expect((await login({ preferred_username: "bob", groups: ["af-admins", "everyone"] })).roles).toEqual(["oidc/af-admins", "oidc/everyone"]);
     provider.groupfilter = "(";
-    expect((await login({ preferred_username: "bob", groups: ["af-admins", "everyone"] })).groups).toEqual(["oidc/af-admins", "oidc/everyone"]);
+    expect((await login({ preferred_username: "bob", groups: ["af-admins", "everyone"] })).roles).toEqual(["oidc/af-admins", "oidc/everyone"]);
   });
 });

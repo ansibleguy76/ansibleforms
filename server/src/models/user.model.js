@@ -238,6 +238,27 @@ class User extends CrudModel {
     });
   }
 
+  /**
+   * The names of a local user's groups : its first (users.group_id) and the others
+   * (user_groups), as authenticate reads them at sign-in. The token no longer carries them
+   * (lib/userGroups.js).
+   *
+   * Args:
+   *   username (string): the username.
+   *
+   * Returns:
+   *   Promise<string|null>: the names, comma separated ("" for none) ; null when there is no
+   *     such user.
+   */
+  static async groupNames(username) {
+    const rows = await mysql.do(
+      "SELECT (SELECT GROUP_CONCAT(g.name) FROM AnsibleForms.`groups` g WHERE g.id=users.group_id OR g.id IN (SELECT ug.group_id FROM AnsibleForms.`user_groups` ug WHERE ug.user_id=users.id)) `groups` FROM AnsibleForms.`users` WHERE username=?;",
+      [username],
+    );
+    if (!rows?.length) return null;
+    return rows[0].groups || "";
+  }
+
   static async getRolesAndOptions(groups, user) {
   var result = {};
   var roles = [];

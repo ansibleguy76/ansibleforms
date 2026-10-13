@@ -3,6 +3,8 @@
 // username, written on every successful sign-in of an LDAP, Entra ID or OIDC user. It records who
 // they are and the groups and roles the directory gave them that time, for their page in
 // Settings > Users ; the directory stays the source of truth, the row is what was last seen.
+// The groups are also the user's groups for its session : its tokens do not carry them (#1036),
+// the server reads them here (lib/userGroups.js).
 // An admin may block a user's sign-in here : refused at the next sign-in, its sessions ended.
 //
 // The unique key (type, username) compares as the column's collation does : case-insensitively,
