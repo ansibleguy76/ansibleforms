@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.0.1](https://github.com/ansibleforms/ansibleforms/compare/7.0.0...7.0.1) (2026-10-13)
+
+
+### Fixed
+
+* a failed single sign-on says why, and the profile shows the default role once ([#1026](https://github.com/ansibleforms/ansibleforms/issues/1026)) ([803845a](https://github.com/ansibleforms/ansibleforms/commit/803845a59eb6997ad0c8dd203c6a9399b31deaa0))
+* a job's log file in the output's layout, numbered, its levels in the output's colours ([1c48b77](https://github.com/ansibleforms/ansibleforms/commit/1c48b775bede241230f6cf438f7c42d0a45a2215))
+
 ## [7.0.0](https://github.com/ansibleforms/ansibleforms/compare/6.5.5...7.0.0) (2026-10-13)
 
 
