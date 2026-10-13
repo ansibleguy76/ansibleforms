@@ -136,7 +136,9 @@ class Schedule extends CrudModel {
     // the identity the job will run as : the user object of the token, as it is now - the
     // same object a launch from the browser puts in `ansibleforms_user`, so a playbook sees
     // the same fields either way (displayName, the oid of an Entra ID user...). It is the
-    // signed payload's `user`, not the token : no secrets in it.
+    // signed payload's `user`, not the token : no secrets in it. Its groups are not in the
+    // token (#1036) : the jwt strategy put them back on it (lib/userGroups.js), and the
+    // planned run keeps them here, as they are now.
     const owner = { ...user, groups: user.groups || [], roles: user.roles || [], options: user.options || {} };
     logger.info(`Planning a one-time run of form '${formName}' for ${user.username} at ${data.run_at}`);
     return super.create(this.modelName, {

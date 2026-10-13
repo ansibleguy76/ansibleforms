@@ -61,7 +61,10 @@ describe("the groups come from Graph, through the server", () => {
     expect(r.statusCode).toBe(200);
     expect(graph.calls[0].auth).toBe(`Bearer ${azureToken}`);
     const user = jwt.verify(r.body.token, authConfig.secret).user;
-    expect(user).toMatchObject({ username: "alice@example.com", type: "azuread", groups: ["azuread/g1", "azuread/af-admins"] });
+    // the token carries no groups (#1036) : the roles, resolved from them (here one per group), show
+    // which were kept
+    expect(user).toMatchObject({ username: "alice@example.com", type: "azuread", roles: ["azuread/g1", "azuread/af-admins"] });
+    expect(user.groups).toBeUndefined();
   });
 
   test("the openid-client login : the ID token's claims and the Graph access token, sealed", async () => {
@@ -101,7 +104,7 @@ describe("the groups come from Graph, through the server", () => {
     await controller.azureadoauth2login(req(signHandoff({ upn: "alice@example.com", oid: "1234", tid: TENANT, groups: ["af-ops", "everyone"] }, "azuread")), r);
     expect(r.statusCode).toBe(200);
     expect(graph.calls).toHaveLength(0);
-    expect(jwt.verify(r.body.token, authConfig.secret).user.groups).toEqual(["azuread/af-ops"]);
+    expect(jwt.verify(r.body.token, authConfig.secret).user.roles).toEqual(["azuread/af-ops"]);
   });
 
   test("Graph refusing the token fails the login with the reason, logged on the server", async () => {

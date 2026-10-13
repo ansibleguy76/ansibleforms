@@ -20,6 +20,7 @@ import { claimsDisplayName } from "../../lib/displayName.js";
 import { loginBlocked, loginFailed, loginSucceeded } from "../../lib/loginThrottle.js";
 import { newSessionId, revokeSession, consumeOnce } from "../../lib/tokenRevocation.js";
 import { admitSignIn } from "../../lib/signInGate.js";
+import { tokenUser, forgetGroups } from "../../lib/userGroups.js";
 
 // Login is audited here rather than by the blanket middleware, which deliberately
 // skips /auth : on a failed attempt there is no req.user, so that layer could only
@@ -114,12 +115,22 @@ function userToJwt(user,expiryDays){
     tokenExpiresIn = authConfig.jwtExpiration
   }
 
+  // The tokens carry the user WITHOUT its groups. They are sent on every request, and an
+  // Entra ID user in a hundred groups (each one twice : its object id and its name) made them
+  // larger than the 16 KB a request header may be : every api call was refused with 431
+  // (#1036). The roles and options resolved from the groups are in the token ; the groups stay
+  // where the sign-in put them (the local user's groups, a directory user's record) and the
+  // server puts them back on req.user.user (lib/userGroups.js). This sign-in may have changed
+  // them : the cached ones are forgotten.
+  const claims = tokenUser(user)
+  forgetGroups(user.type, user.username)
+
   // we create 2 jwt tokens (accesstoken and refresh token)
   // the session : both tokens and every refresh of them carry it, so a logout ends them all
   const sid = newSessionId()
-  const token = jwt.sign(api ? {user,access:true,sid,api:true} : {user,access:true,sid}, authConfig.secret,{ expiresIn: tokenExpiresIn, issuer: authConfig.jwtIssuer});
-  const refreshtoken = jwt.sign({user,refresh:true,sid}, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration, issuer: authConfig.jwtIssuer});
-  logger.debug(JSON.stringify(user))
+  const token = jwt.sign(api ? {user:claims,access:true,sid,api:true} : {user:claims,access:true,sid}, authConfig.secret,{ expiresIn: tokenExpiresIn, issuer: authConfig.jwtIssuer});
+  const refreshtoken = jwt.sign({user:claims,refresh:true,sid}, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration, issuer: authConfig.jwtIssuer});
+  logger.debug(JSON.stringify(claims))
   // we store the tokens in the database, to later verify a refresh token action
   logger.info("Storing refreshtoken in database for user " + user.username)
   Token.store(user.username,user.type,refreshtoken,function(err,result){

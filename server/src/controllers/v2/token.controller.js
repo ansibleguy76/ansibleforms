@@ -7,6 +7,7 @@ import Token from "../../models/token.model.js";
 import User from "../../models/user.model.js";
 import i18n from '../../lib/i18n.js';
 import { isRevoked } from '../../lib/tokenRevocation.js';
+import { storedGroups, tokenUser, forgetGroups } from '../../lib/userGroups.js';
 
 const refresh = async function(req, res) {
     try {
@@ -63,11 +64,21 @@ const refresh = async function(req, res) {
         // access tokens one refresh at a time. Now a change lands within the access
         // token's lifetime. getRolesAndOptions degrades to safe defaults if the config
         // cannot be read, so a broken config cannot silently escalate anyone.
-        const body = { ...jwtPayload.user };
+        //
+        // The groups are not in the token any more (#1036 : they made it too large for a
+        // request header) : they are read from where the sign-in stored them, a local user's
+        // groups as an admin set them now, a directory user's at its last sign-in
+        // (lib/userGroups.js). A refresh token issued before carries its groups : they serve
+        // when nothing is stored, and the new tokens leave them out.
+        const body = tokenUser(jwtPayload.user);
         try {
-            const ro = await User.getRolesAndOptions(body.groups || [], body);
+            const stored = await storedGroups(body);
+            const groups = stored ?? (Array.isArray(jwtPayload.user.groups) ? jwtPayload.user.groups : []);
+            const ro = await User.getRolesAndOptions(groups, body);
             body.roles = ro.roles;
             body.options = ro.options;
+            // the requests of the new access token read them again
+            forgetGroups(body.type, body.username);
         } catch (e) {
             logger.error(`Could not re-resolve roles on refresh for ${username} : ${e.message}`);
             return res.status(401).json(RestResult.error(i18n.t(req, 'errors.refreshTokenUnknown')));
