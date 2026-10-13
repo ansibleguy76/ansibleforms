@@ -44,6 +44,7 @@ defineProps({
   help: { type: String, default: '' }, // Help text
   description: { type: String, default: '' }, // Description text
   placeholder: { type: String, default: '' }, // Placeholder text
+  suffix: { type: String, default: '' }, // a fixed text after the input (not typed, not in the value)
   hasError: { type: Boolean, default: false }, // Error flag
   required: { type: Boolean, default: false }, // Required flag
   readonly: { type: Boolean, default: false }, // Readonly flag
@@ -262,6 +263,7 @@ defineProps({
             :placeholder="placeholder"
             v-model="model"
           />
+          <span v-if="suffix" class="input-group-text af-input-suffix">{{ suffix }}</span>
           <div v-if="hasError && errors.length > 0" class="invalid-feedback">
             {{ errors[0].$message || errors[0] }}
           </div>
@@ -434,6 +436,7 @@ defineProps({
             :placeholder="placeholder"
             v-model="model"
           />
+          <span v-if="suffix" class="input-group-text af-input-suffix">{{ suffix }}</span>
         </div>
       </div>
       <div v-else>
@@ -548,6 +551,10 @@ defineProps({
   </template>
 </template>
 <style scoped lang="scss">
+// a fixed text after the input (a redirect URL's callback path) : read as part of the value
+.af-input-suffix {
+  color: var(--bs-body-color);
+}
 .form-floating:focus-within {
   z-index: 2;
 }

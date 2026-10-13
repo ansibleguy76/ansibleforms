@@ -22,6 +22,7 @@ import getSettings from '@/config/settings';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { recordButtons } from '@/lib/recordButtons';
+import { ssoCallbackUrl, SSO_EXAMPLE_BASE } from '@/lib/ssoCallback';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -41,6 +42,7 @@ const TYPES = { azuread: 'Entra ID', oidc: 'Open ID' };
 const dirty = computed(
   () => !!provider.value && EDITED.some((k) => (edit.value[k] ?? '') !== (provider.value[k] ?? '')),
 );
+
 // leaving with the provider changed and unsaved asks first
 useUnsavedGuard(
   dirty,
@@ -300,7 +302,6 @@ onMounted(async () => {
               icon="building"
               :required="true"
               :isFloating="false"
-              :help="t('settings.oauth2.tenantIdHelp')"
               :label="t('settings.oauth2.tenantId')"
             />
             <BsInput
@@ -324,6 +325,8 @@ onMounted(async () => {
               class="af-provider-field"
               v-model="edit.redirect_uri"
               icon="link"
+              :placeholder="ssoCallbackUrl(provider.provider, SSO_EXAMPLE_BASE)"
+              :required="true"
               :isFloating="false"
               :label="t('settings.oauth2.redirectUrl')"
             />

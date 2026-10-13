@@ -1161,12 +1161,10 @@ export default {
       deleteProvider: 'Anbieter loeschen',
       provider: 'Anbieter',
       tenantId: 'Tenant-ID',
-      tenantIdHelp:
-        'Die ID Ihres Mandanten (eine GUID) oder eine seiner Domänen : nur seine Benutzer melden sich an. Erforderlich',
       clientId: 'Client-ID',
       clientSecret: 'Client-Secret',
       groupFilter: 'Gruppenfilter',
-      redirectUrl: 'Redirect-URL',
+      redirectUrl: 'Umleitungs-URI',
       issuer: 'Issuer',
       scope: 'Scope',
       authUrl: 'Auth-URL',

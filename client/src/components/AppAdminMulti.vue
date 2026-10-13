@@ -42,6 +42,8 @@
 /*      full width under it                                       */
 /*  field.showWhen: (item) => Boolean - shown by a rule of its    */
 /*      own, instead of field.dependency                          */
+/*  field.suffix: a fixed text after the input, not in its value  */
+/*      (a text, or (item) => text)                               */
 /*  field.help / field.placeholder / field.dialogLabel: a text,   */
 /*      or (item) => text, following the record shown (its type) */
 /*  field.onEdit: a password shown when editing too, as ******** ;*/
@@ -1786,6 +1788,7 @@ defineExpose({
           :isHorizontal="true"
           :type="field.type"
           :placeholder="action == 'edit' && field.onEdit ? '********' : textOf(field.placeholder)"
+          :suffix="textOf(field.suffix)"
           :icon="field.icon"
           :help="
             action == 'edit' && field.onEdit ? field.keepHelp || t('settings.common.passwordKeep') : textOf(field.help)

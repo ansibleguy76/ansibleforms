@@ -1152,12 +1152,10 @@ export default {
       deleteProvider: 'Provider verwijderen',
       provider: 'Provider',
       tenantId: 'Tenant ID',
-      tenantIdHelp:
-        'De id van uw tenant (een GUID) of een van zijn domeinen : alleen zijn gebruikers melden zich aan. Verplicht',
       clientId: 'Client ID',
       clientSecret: 'Client secret',
       groupFilter: 'Groepfilter',
-      redirectUrl: 'Redirect URL',
+      redirectUrl: 'Omleidings-URI',
       issuer: 'Issuer',
       scope: 'Scope',
       authUrl: 'Auth URL',
