@@ -57,6 +57,8 @@ function followsShown(path) {
 /*             'tabs'   a row of tabs, the first one open         */
 /*             'inline' one bar in a line of text (a title that   */
 /*                      is not known yet)                         */
+/*             'badge'  a left menu's count, a grey pill (its     */
+/*                      number not known yet)                     */
 /*             'buttons' a page's buttons on its title line, each */
 /*                      as tall as a button : the line keeps its  */
 /*                      height (and its wrap) until they come     */
@@ -140,8 +142,8 @@ const buttonWidths = computed(() =>
 const INDENTS = [0, 1, 1, 2, 2, 2, 1, 2, 3, 3, 1, 0, 1, 1, 2, 2];
 const indent = (i) => `${INDENTS[i % INDENTS.length] * 1.5}rem`;
 
-// 'inline' sits in a line of text (a title) : a span, the others a block
-const inline = computed(() => props.shape === 'inline');
+// 'inline' and 'badge' sit in a line of text (a title, a menu entry) : a span, the others a block
+const inline = computed(() => ['inline', 'badge'].includes(props.shape));
 </script>
 
 <template>
@@ -154,7 +156,8 @@ const inline = computed(() => props.shape === 'inline');
   >
     <span class="visually-hidden">{{ t('common.loading') }}</span>
     <!-- a word of a title : one bar, as tall as the text's small letters -->
-    <span v-if="inline" class="af-sk af-sk-inline" :style="{ width }"></span>
+    <span v-if="shape === 'badge'" class="af-sk af-sk-badge"></span>
+    <span v-else-if="inline" class="af-sk af-sk-inline" :style="{ width }"></span>
     <!-- the forms page : its grid of tiles, an icon square and two lines in each -->
     <div v-else-if="shape === 'tiles'" class="row align-content-stretch g-4">
       <div v-for="i in count" :key="i" class="col-md-6 col-lg-4 col-xxl-3">
@@ -508,6 +511,27 @@ const inline = computed(() => props.shape === 'inline');
 .af-sk-sso-button {
   width: 4.5rem;
   height: 3rem;
+}
+/* ------------------------------------------------------------------ */
+/* a menu's count : the size of its pill (AppMenuBadge) with one or   */
+/* two digits                                                         */
+/* ------------------------------------------------------------------ */
+.af-skeleton-badge {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+.af-sk-badge {
+  display: inline-block;
+  width: 2.25rem;
+  height: 18px;
+  border-radius: 50rem;
+  /* on the menu's own grey (tertiary) : the border's grey, to be seen there */
+  background-image: linear-gradient(
+    90deg,
+    var(--bs-border-color) 0%,
+    var(--bs-secondary-bg) 40%,
+    var(--bs-border-color) 80%
+  );
 }
 /* ------------------------------------------------------------------ */
 /* a page's buttons : the controls of the title line (.af-title-      */
