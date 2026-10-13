@@ -13,7 +13,7 @@
 const SLUGS = {
   running: 'running',
   approve: 'approval',
-  success: 'success',
+  success: 'succeeded',
   failed: 'failed',
   aborted: 'aborted',
   rejected: 'rejected',

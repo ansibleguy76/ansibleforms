@@ -35,7 +35,7 @@ export function searchPages(t, options) {
       title: t('sidebar.schedules'),
       section: t('nav.jobs'),
       icon: 'clock',
-      link: '/jobs/schedules',
+      link: '/jobs/scheduled',
     },
     {
       title: t('sidebar.storedJobs'),

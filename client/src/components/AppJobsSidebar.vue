@@ -131,7 +131,7 @@ const sections = computed(() => {
   }
   // job states as the rest of the menu (the pages keep their own titles, Schedules and Stored jobs)
   const future = [
-    { title: t('jobs.menu.scheduled'), icon: 'clock', link: '/jobs/schedules', badge: futureCounts.value.schedules },
+    { title: t('jobs.menu.scheduled'), icon: 'clock', link: '/jobs/scheduled', badge: futureCounts.value.schedules },
     { title: t('jobs.menu.stored'), icon: 'floppy-disk', link: '/jobs/stored', badge: futureCounts.value.stored },
   ].filter((i) => mayOpen(i.link, store.profile?.options));
   if (future.length) sections.push({ title: t('jobs.menu.future'), items: future });
@@ -170,7 +170,7 @@ async function loadFutureCounts() {
     }
   };
   const [schedules, stored] = await Promise.all([
-    read('/jobs/schedules', '/api/v2/schedule/'),
+    read('/jobs/scheduled', '/api/v2/schedule/'),
     read('/jobs/stored', '/api/v2/stored-jobs/'),
   ]);
   futureCounts.value = { schedules, stored };

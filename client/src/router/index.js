@@ -109,14 +109,14 @@ const routes = [
   // the scheduled and stored jobs live with the jobs (their menu is the jobs menu) ; a fixed
   // segment outranks /jobs/:id, whatever the order
   {
-    path: '/jobs/schedules',
-    name: '/jobs/schedules',
+    path: '/jobs/scheduled',
+    name: '/jobs/scheduled',
     component: schedules,
     meta: { permission: 'allowScheduledJobs' },
   },
   {
-    path: '/jobs/schedules/:id(\\d+)/:tab?',
-    name: '/jobs/schedules/:id',
+    path: '/jobs/scheduled/:id(\\d+)/:tab?',
+    name: '/jobs/scheduled/:id',
     component: schedule,
     meta: { permission: 'allowScheduledJobs' },
   },

@@ -1160,7 +1160,7 @@ export default function getSettings(t) {
       selectable: false,
       // a schedule has its own page (pages/schedule.vue) : its row and Edit open it, New the
       // wizard
-      openPage: (item) => `/jobs/schedules/${item.id}`,
+      openPage: (item) => `/jobs/scheduled/${item.id}`,
       // the dialog in steps : what runs (its name, the form), when (once at a time, or on a cron
       // schedule), the extra vars it sends to the form
       steps: [

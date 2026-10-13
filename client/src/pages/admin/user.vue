@@ -531,7 +531,7 @@ onMounted(async () => {
           v-else-if="user && activeTab === 'schedules'"
           :columns="scheduleColumns"
           :rows="userSchedules"
-          :to="(s) => `/jobs/schedules/${s.id}`"
+          :to="(s) => `/jobs/scheduled/${s.id}`"
           :empty="t('settings.users.noSchedule')"
         />
         <!-- Activity : what the audit log recorded it doing, the latest first -->

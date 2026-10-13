@@ -1,7 +1,7 @@
 <script setup>
 /******************************************************************/
 /*                                                                */
-/*  A schedule's page (/jobs/schedules/<id>), opened from the     */
+/*  A schedule's page (/jobs/scheduled/<id>), opened from the     */
 /*  schedules' list : the steps of its dialog as tabs, and what   */
 /*  it said the last time, the tab kept in the url -              */
 /*    Details      where it stands (last launch, the job it       */
@@ -136,8 +136,8 @@ const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((
 
 // the title : Schedules › <name>, each step a link
 const pageCrumbs = computed(() => [
-  { title: t('settings.schedules.labelPlural'), icon: 'clock', to: '/jobs/schedules' },
-  { title: schedule.value?.name || scheduleId.value, icon: 'clock', to: `/jobs/schedules/${scheduleId.value}` },
+  { title: t('settings.schedules.labelPlural'), icon: 'clock', to: '/jobs/scheduled' },
+  { title: schedule.value?.name || scheduleId.value, icon: 'clock', to: `/jobs/scheduled/${scheduleId.value}` },
 ]);
 // and the open tab last, as every page in tabs names it : Users › admin › Groups
 const crumbs = computed(() => {
@@ -201,7 +201,7 @@ async function deleteSchedule() {
   try {
     await axios.delete(`/api/v2/schedule/${encodeURIComponent(scheduleId.value)}`);
     schedule.value = null;
-    router.push('/jobs/schedules');
+    router.push('/jobs/scheduled');
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err));
   }
