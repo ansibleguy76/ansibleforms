@@ -215,7 +215,7 @@ const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((
 const pageCrumbs = computed(() => [
   { title: t('sidebar.notifications'), icon: 'bell', to: '/settings/notifications' },
   {
-    title: channel.value?.name || channelId.value,
+    title: channel.value?.name || (loaded.value ? channelId.value : null),
     icon: CHANNEL_ICONS[type.value],
     to: `/settings/notifications/${channelId.value}`,
   },
@@ -413,11 +413,17 @@ onMounted(async () => {
           </li>
         </ul>
       </template>
+      <!-- the record loading : its tabs as grey placeholders -->
+      <template v-else-if="!loaded" #tabs>
+        <AppSkeleton shape="tabs" :count="tabs.length" />
+      </template>
       <template #default>
         <div v-if="loaded && !channel" class="empty-state">
           <FaIcon icon="bell" class="empty-state-icon" />
           <span>{{ t('settings.notificationChannels.notFound', { id: channelId }) }}</span>
         </div>
+        <!-- the record loading : its fields as grey placeholders, where they come -->
+        <AppSkeleton v-else-if="!loaded && !channel" shape="form" :count="3" />
         <div v-else-if="channel && edit" class="af-channel-tab">
           <!-- a channel of the config seed : read only here -->
           <div v-if="managed" class="alert alert-secondary py-2">

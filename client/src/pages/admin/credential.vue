@@ -208,7 +208,7 @@ const shownTab = computed(() => (tabs.value.some((x) => x.key === activeTab.valu
 const pageCrumbs = computed(() => [
   { title: t('sidebar.credentials'), icon: 'lock', to: '/settings/credentials' },
   {
-    title: credential.value?.name || credentialId.value,
+    title: credential.value?.name || (loaded.value ? credentialId.value : null),
     icon: 'lock',
     to: `/settings/credentials/${credentialId.value}`,
   },
@@ -345,11 +345,17 @@ onMounted(async () => {
           </li>
         </ul>
       </template>
+      <!-- the record loading : its tabs as grey placeholders -->
+      <template v-else-if="!loaded" #tabs>
+        <AppSkeleton shape="tabs" :count="tabs.length" />
+      </template>
       <template #default>
         <div v-if="loaded && !credential" class="empty-state">
           <FaIcon icon="lock" class="empty-state-icon" />
           <span>{{ t('settings.credentials.notFound', { id: credentialId }) }}</span>
         </div>
+        <!-- the record loading : its fields as grey placeholders, where they come -->
+        <AppSkeleton v-else-if="!loaded && !credential" shape="form" :count="3" />
         <!-- Used by : what names the credential ; a row opens it -->
         <AppLinkedTable
           v-else-if="credential && shownTab === 'used-by'"

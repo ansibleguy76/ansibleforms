@@ -314,11 +314,17 @@ onMounted(async () => {
           </li>
         </ul>
       </template>
+      <!-- the record loading : its tabs as grey placeholders -->
+      <template v-else-if="!loaded" #tabs>
+        <AppSkeleton shape="tabs" :count="tabs.length" />
+      </template>
       <template #default>
         <div v-if="loaded && !user" class="empty-state">
           <FaIcon icon="user" class="empty-state-icon" />
           <span>{{ t('settings.directory.notFound', { name: username, source: sourceName }) }}</span>
         </div>
+        <!-- the record loading : its fields as grey placeholders, where they come -->
+        <AppSkeleton v-else-if="!loaded && !user" shape="form" :count="3" />
         <!-- Details : what was recorded at its last sign-in, read only -->
         <div v-else-if="user && activeTab === 'details'" class="af-user-details">
           <div v-if="!user.seen" class="alert alert-secondary py-2">

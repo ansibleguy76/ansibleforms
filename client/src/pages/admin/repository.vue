@@ -238,7 +238,7 @@ const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((
 const pageCrumbs = computed(() => [
   { title: t('settings.repositories.labelPlural'), icon: 'fab,git', to: '/settings/repositories' },
   {
-    title: repo.value?.name || repoName.value,
+    title: repo.value?.name || (loaded.value ? repoName.value : null),
     icon: 'fab,git',
     to: `/settings/repositories/${repoId.value}`,
   },
@@ -389,11 +389,17 @@ onMounted(async () => {
           </li>
         </ul>
       </template>
+      <!-- the record loading : its tabs as grey placeholders -->
+      <template v-else-if="!loaded" #tabs>
+        <AppSkeleton shape="tabs" :count="tabs.length" />
+      </template>
       <template #default>
         <div v-if="loaded && !repo" class="empty-state">
           <FaIcon icon="fab,git" class="empty-state-icon" />
           <span>{{ t('settings.repositories.notFound', { name: repoName || '#' + repoId }) }}</span>
         </div>
+        <!-- the record loading : its fields as grey placeholders, where they come -->
+        <AppSkeleton v-else-if="!loaded && !repo" shape="form" :count="3" />
         <div v-else-if="repo && edit" class="af-repo-tab">
           <!-- Details : what it is, and where it stands -->
           <template v-if="activeTab === 'details'">

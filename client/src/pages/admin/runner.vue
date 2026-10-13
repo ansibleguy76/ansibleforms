@@ -222,7 +222,11 @@ const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((
 // the title : Runners › <name>, each step a link
 const pageCrumbs = computed(() => [
   { title: t('sidebar.runners'), icon: 'rocket', to: '/settings/runners' },
-  { title: runner.value?.name || runnerId.value, icon: 'rocket', to: `/settings/runners/${runnerId.value}` },
+  {
+    title: runner.value?.name || (loaded.value ? runnerId.value : null),
+    icon: 'rocket',
+    to: `/settings/runners/${runnerId.value}`,
+  },
 ]);
 // and the open tab last, as every page in tabs names it : Users › admin › Groups
 const crumbs = computed(() => {
@@ -377,11 +381,17 @@ onMounted(async () => {
           </li>
         </ul>
       </template>
+      <!-- the record loading : its tabs as grey placeholders -->
+      <template v-else-if="!loaded" #tabs>
+        <AppSkeleton shape="tabs" :count="tabs.length" />
+      </template>
       <template #default>
         <div v-if="loaded && !runner" class="empty-state">
           <FaIcon icon="rocket" class="empty-state-icon" />
           <span>{{ t('settings.runners.notFound', { id: runnerId }) }}</span>
         </div>
+        <!-- the record loading : its fields as grey placeholders, where they come -->
+        <AppSkeleton v-else-if="!loaded && !runner" shape="form" :count="3" />
         <!-- Forms : the forms that run on it ; a row opens the form -->
         <AppLinkedTable
           v-else-if="runner && activeTab === 'forms'"

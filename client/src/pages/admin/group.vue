@@ -119,7 +119,11 @@ const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((
 // the title : Groups › <name>, each step a link : Groups back to the list, the name to this page
 const pageCrumbs = computed(() => [
   { title: t('sidebar.groups'), icon: 'users', to: '/settings/groups' },
-  { title: group.value?.name || groupId.value, icon: 'users', to: `/settings/groups/${groupId.value}` },
+  {
+    title: group.value?.name || (loaded.value ? groupId.value : null),
+    icon: 'users',
+    to: `/settings/groups/${groupId.value}`,
+  },
 ]);
 // and the open tab last, as every page in tabs names it : Users › admin › Groups
 const crumbs = computed(() => {
@@ -283,11 +287,17 @@ onMounted(async () => {
           </li>
         </ul>
       </template>
+      <!-- the record loading : its tabs as grey placeholders -->
+      <template v-else-if="!loaded" #tabs>
+        <AppSkeleton shape="tabs" :count="tabs.length" />
+      </template>
       <template #default>
         <div v-if="loaded && !group" class="empty-state">
           <FaIcon icon="users" class="empty-state-icon" />
           <span>{{ t('settings.groups.groupNotFound', { id: groupId }) }}</span>
         </div>
+        <!-- the record loading : its fields as grey placeholders, where they come -->
+        <AppSkeleton v-else-if="!loaded && !group" shape="form" :count="2" />
         <!-- Details : the name and the description -->
         <div v-else-if="group && activeTab === 'details'" class="af-group-details">
           <BsInput

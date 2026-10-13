@@ -121,7 +121,11 @@ const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((
 // the title : Stored Jobs › <name>, each step a link
 const pageCrumbs = computed(() => [
   { title: t('jobs.menu.stored'), icon: 'floppy-disk', to: '/jobs/stored' },
-  { title: stored.value?.name || storedId.value, icon: 'floppy-disk', to: `/jobs/stored/${storedId.value}` },
+  {
+    title: stored.value?.name || (loaded.value ? storedId.value : null),
+    icon: 'floppy-disk',
+    to: `/jobs/stored/${storedId.value}`,
+  },
 ]);
 // and the open tab last, as every page in tabs names it : Users › admin › Groups
 const crumbs = computed(() => {
@@ -227,11 +231,17 @@ onMounted(async () => {
             </li>
           </ul>
         </template>
+        <!-- the record loading : its tabs as grey placeholders -->
+        <template v-else-if="!loaded" #tabs>
+          <AppSkeleton shape="tabs" :count="tabs.length" />
+        </template>
         <template #default>
           <div v-if="loaded && !stored" class="empty-state">
             <FaIcon icon="floppy-disk" class="empty-state-icon" />
             <span>{{ t('settings.storedJobs.notFound', { id: storedId }) }}</span>
           </div>
+          <!-- the record loading : its fields as grey placeholders, where they come -->
+          <AppSkeleton v-else-if="!loaded && !stored" shape="form" :count="3" />
           <div v-else-if="stored && edit" class="af-stored-tab">
             <!-- Details : what it is, whose, and for how long -->
             <template v-if="activeTab === 'details'">
