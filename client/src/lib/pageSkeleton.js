@@ -14,6 +14,7 @@
 import { sectionOf } from '@/lib/sections';
 import { settingsEntry } from '@/lib/settingsMenu';
 import { statusFromSlug, ALL_JOBS } from '@/lib/jobsPath';
+import { recordButtons } from '@/lib/recordButtons';
 import { profileViews, profileMenuViews } from '@/config/profileViews';
 
 // ------------------------------------------------------------------
@@ -33,20 +34,6 @@ const SETTINGS_LISTS = [
   'audit-log',
   'backups',
 ];
-// a record's buttons on its title line (Test, Delete, Save ...), their widths in pixels as their
-// labels make them : the title line keeps its height (and wraps as it will)
-const RECORD_BUTTONS = {
-  users: [192, 103, 89],
-  groups: [103, 89],
-  roles: [103, 89],
-  repositories: [78, 88, 95, 103, 89],
-  credentials: [175, 192, 103, 89],
-  'secret-stores': [175, 103, 89],
-  runners: [175, 150, 103, 89],
-  notifications: [126, 103, 89],
-  syslog: [126, 103, 89],
-  sso: [150, 103, 89],
-};
 // the pages in tabs : how many tabs they have
 const SETTINGS_TABS = {
   general: 11,
@@ -113,7 +100,9 @@ function settingsPage(words, path, section, t) {
       crumbs: [section, own, { title: name, icon: entry.icon }, recordTab(rest[directory ? 2 : 1], t)],
       tabs: 4,
       // a directory user's : Block sign-in and Forget ; a directory group's : none
-      buttons: directory ? (page === 'users' ? [130, 100] : null) : RECORD_BUTTONS[page] || null,
+      // its buttons (lib/recordButtons.js) ; a directory user's : Block sign-in and Forget, a
+      // directory group's : none
+      buttons: directory ? (page === 'users' ? [130, 100] : null) : recordButtons(page, word),
       parts: [{ shape: 'form', count: 3 }],
     };
   }
@@ -195,8 +184,8 @@ function jobsPage(words, section, t) {
       frame: 'jobs',
       crumbs: [section, own, { title: null, icon: future.icon }, recordTab(words[2], t)],
       tabs: future.tabs,
-      // Run now (Open in form), Delete, Save
-      buttons: first === 'scheduled' ? [119, 103, 89] : [155, 103, 89],
+      // its buttons (lib/recordButtons.js)
+      buttons: recordButtons(first, id),
       parts: [{ shape: 'form', count: 3 }],
     };
   }

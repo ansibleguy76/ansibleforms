@@ -33,6 +33,7 @@ import { setSignInBlocked } from '@/lib/signIn';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { useRoleAssignments } from '@/composables/useRoleAssignments';
+import { recordButtons } from '@/lib/recordButtons';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -654,7 +655,7 @@ onMounted(async () => {
       <!-- the record loading : its buttons as grey placeholders, so the title line keeps its
            height and nothing moves when they come -->
       <template v-else-if="!loaded" #actions>
-        <AppSkeleton shape="buttons" :widths="[192, 103, 89]" />
+        <AppSkeleton shape="buttons" :widths="recordButtons('users', userId)" />
       </template>
     </AppSettings>
   </AppSettingsPage>

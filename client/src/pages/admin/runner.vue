@@ -34,6 +34,7 @@ import { useFormLinks } from '@/composables/useFormLinks';
 import { formPath } from '@/lib/formsPath';
 import Time from '@/lib/Time';
 import { durationSeconds, formatDuration } from '@/lib/jobTime';
+import { recordButtons } from '@/lib/recordButtons';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -597,7 +598,7 @@ onMounted(async () => {
       <!-- the record loading : its buttons as grey placeholders, so the title line keeps its
            height and nothing moves when they come -->
       <template v-else-if="!loaded" #actions>
-        <AppSkeleton shape="buttons" :widths="[175, 150, 103, 89]" />
+        <AppSkeleton shape="buttons" :widths="recordButtons('runners', runnerId, appStore.isAdmin)" />
       </template>
     </AppSettings>
   </AppSettingsPage>
