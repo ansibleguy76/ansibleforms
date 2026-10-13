@@ -4,6 +4,7 @@ import TokenStorage from '@/lib/TokenStorage';
 import Profile from '@/lib/Profile';
 import Navigate from '@/lib/Navigate';
 import Time from '@/lib/Time';
+import { ssoSettled } from '@/lib/ssoReturn';
 
 var State = {
   loadProfile() {
@@ -168,6 +169,8 @@ var State = {
     }
   },
   async init(router, route) {
+    // back from a single sign-on provider : the tokens are being stored (lib/ssoReturn.js)
+    await ssoSettled();
     State.refreshAuthenticated();
     if (!TokenStorage.isAuthenticated()) {
       console.log('Not authenticated, redirecting to login');

@@ -381,7 +381,7 @@ const errorHandler = async function(err,req, res,_next) {
  * 4. The backend uses passport to authenticate the user with the identity provider and redirects the user away to the identity provider (microsft, google, ...)
  * 5. The identity provider authenticates the user and redirects the user back to the callback url https://ansibleformsurl/auth/azureadoauth2/callback or https://ansibleformsurl/auth/oidc/callback
  * 6. The backend server receives the callback and uses passport to verify the returned payload.  it passes the payload to an authCallback function
- * 7. The authCallback function redirects the user back to the frontend with a HANDOFF token (/login?token=), signed by us : the claims the login needs, and for azuread the provider's access token sealed inside it (lib/ssoHandoff.js).
+ * 7. The authCallback function redirects the user back into the app with a HANDOFF token in the fragment (/#token=), signed by us ; the app swaps it before it draws (client lib/ssoReturn.js) : the claims the login needs, and for azuread the provider's access token sealed inside it (lib/ssoHandoff.js).
  * 8. The frontend posts the handoff token to the backend /auth/azureadoauth2/login (or /auth/oidc/login) endpoint.
  * 9. For azuread the backend opens the sealed access token and fetches the user's groups from Microsoft Graph, filtered with the provider's group filter (lib/azureGraph.js). For oidc the groups are a claim of the profile, filtered with the same group filter.
  * 10. The backend grabs more information from payload if needed (username,...) and assembles a user-object, the roles and options are added
@@ -410,8 +410,10 @@ const authCallback = function(req, res, next, type) {
         return next(reason)
       }
       const token = signHandoff(payload, type);
-      // in the fragment : the browser keeps it, no server, proxy or access log ever sees it
-      res.redirect(`${appConfig.baseUrl}/login#token=${token}`)
+      // in the fragment : the browser keeps it, no server, proxy or access log ever sees it. Into
+      // the app, not the login page : the app takes the handoff before it draws anything
+      // (client main.js), so the user goes from the provider straight to the page they wanted
+      res.redirect(`${appConfig.baseUrl}/#token=${token}`)
     } catch (err) {
       logger.error(helpers.getError(err))
       return next(err)

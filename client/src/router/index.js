@@ -67,6 +67,7 @@ const directoryUser = () => import('@/pages/admin/directory-user.vue');
 const backups = () => import('@/pages/admin/backups.vue');
 
 import TokenStorage from '@/lib/TokenStorage.js';
+import { ssoSettled } from '@/lib/ssoReturn';
 import axios from 'axios';
 import { getActivePinia } from 'pinia';
 import { useAppStore } from '@/stores/app';
@@ -347,9 +348,15 @@ const router = createRouter({
 // the one guard : a route's role option (meta.permission), from the signed-in user's token -
 // without it, home. The server checks the same option on the api, this only spares the user a
 // page whose every request would be refused.
-export function permissionGuard(to) {
+export async function permissionGuard(to) {
   const permission = to.meta?.permission;
   if (!permission) return true;
+  // back from a single sign-on provider : the user's options are known once the handoff is
+  // swapped (lib/ssoReturn.js) - without the wait the login page would flash on the way back
+  await ssoSettled();
+  // nobody signed in : to the login page, which comes back here after the sign-in (a link to a
+  // job or a schedule opened signed out) ; home would lose the link
+  if (!TokenStorage.isAuthenticated()) return { name: '/login', query: { from: to.fullPath } };
   return TokenStorage.getPayload()?.user?.options?.[permission] ? true : { name: '/' };
 }
 router.beforeEach(permissionGuard);

@@ -1,9 +1,10 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useVuelidate } from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
 import TokenStorage from '@/lib/TokenStorage'; // work with tokens and local storage
 import BaseUrl from '@/lib/BaseUrl';
+import { rememberSsoOrigin } from '@/lib/ssoReturn';
 import State from '@/lib/State'; // work with state
 import Navigate from '@/lib/Navigate'; // navigate to routes
 import Helpers from '@/lib/Helpers'; // helper functions
@@ -53,14 +54,29 @@ const SIGNED_OUT = 'af_signed_out';
 const $v = useVuelidate(rules, { user });
 
 // methods
+// on the way to the provider : the form greys out at once (the provider's page can take a moment
+// to come) ; the way back goes straight to the page the user wanted, else the forms page
+// (lib/ssoReturn.js)
+const ssoPending = ref(false);
+function goToSso(issuer, path) {
+  ssoPending.value = true;
+  rememberSsoOrigin(route.query.from);
+  localStorage.setItem('authIssuer', issuer);
+  window.location.replace(`${BaseUrl}${path}`);
+}
 function authAzureAd() {
-  localStorage.setItem('authIssuer', 'azuread'); // set cookie to azuread
-  window.location.replace(`${BaseUrl}/api/v2/auth/azureadoauth2`); // redirect to azuread
+  goToSso('azuread', '/api/v2/auth/azureadoauth2');
 }
 function authOidc() {
-  localStorage.setItem('authIssuer', 'oidc'); // set cookie to oidc
-  window.location.replace(`${BaseUrl}/api/v2/auth/oidc`); // redirect to oidc
+  goToSso('oidc', '/api/v2/auth/oidc');
 }
+// back on this page with the browser's Back button from the provider : the page comes from the
+// browser's cache, greyed out as it was left
+function onPageShow(e) {
+  if (e.persisted) ssoPending.value = false;
+}
+window.addEventListener('pageshow', onPageShow);
+onBeforeUnmount(() => window.removeEventListener('pageshow', onPageShow));
 function getGroupsAndLogin(token, url, type = 'azuread') {
   // The token in the url is OUR handoff, not the provider's token (6.3.0) : the server reads
   // the groups itself at the login step - Microsoft Graph for Entra ID (#548), the handoff's
@@ -203,7 +219,7 @@ onMounted(() => {
       <BsThemeSwitcher buttonClass="btn-bd-primary py-2" v-model="currentTheme" />
     </div>
 
-    <div class="card form-signin w-100 m-auto">
+    <div class="card form-signin w-100 m-auto" :class="{ 'login-busy': ssoPending }" :aria-busy="ssoPending">
       <div class="card-body">
         <div class="login-logo" :class="{ 'login-logo-instance': store.appName || store.envLabel }">
           <!-- an uploaded logo ; not the server's built-in default, which is the light logo and
@@ -375,6 +391,22 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   gap: 0.75rem;
+}
+/* on the way to the single sign-on provider : the fields and the buttons greyed out, nothing to
+   click twice ; the logo, the title and the page's background stay as they are */
+.login-busy {
+  pointer-events: none;
+}
+.login-busy :deep(:is(.form-control, .input-group-text)) {
+  background-color: var(--bs-secondary-bg);
+  color: var(--bs-secondary-color);
+}
+.login-busy :deep(:is(.btn, .login-sso-btn)) {
+  opacity: 0.5;
+  filter: grayscale(1);
+  transition:
+    opacity 0.15s ease,
+    filter 0.15s ease;
 }
 .login-sso-btn {
   display: inline-flex;
