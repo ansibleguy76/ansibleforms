@@ -2504,6 +2504,7 @@ export default {
     copy: 'Copiar',
     lines: '{count} linhas',
     steps: 'etapas',
+    logFile: 'Arquivo de log',
     showExtravars: 'Mostrar extravars',
     hideExtravars: 'Ocultar extravars',
     showPayload: 'Mostrar payload',

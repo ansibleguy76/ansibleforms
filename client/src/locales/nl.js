@@ -2498,6 +2498,7 @@ export default {
     copy: 'Kopiëren',
     lines: '{count} regels',
     steps: 'stappen',
+    logFile: 'Logbestand',
     showExtravars: 'Toon extravars',
     hideExtravars: 'Verberg extravars',
     showPayload: 'Payload tonen',

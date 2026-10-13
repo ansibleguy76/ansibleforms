@@ -6001,7 +6001,7 @@
       **How it works:**
       - During a job run, the RTE watches for a log file at a well-known path inside the playbook folder
       - Every 2 seconds, when the file changed, and once more when the playbook ends, the RTE stores its contents on the job ; the file is then removed (since 7)
-      - The log file is displayed in a separate **Logfile** panel below the main Ansible output, with full ANSI colour support
+      - The log file is displayed in a **Log file** section of the job's output, numbered as the output's lines : a log line's timestamp and level (ERROR, WARNING, INFO, DEBUG) are read and coloured as the output's, and ANSI colours are supported
 
       **Log file path convention:**
       ```
@@ -6023,7 +6023,7 @@
       You can use standard ANSI escape codes (e.g. `\033[92m` for green, `\033[91m` for red) in your log messages and they will be rendered as colours in the UI. This is ideal for distinguishing success, warning, and error states at a glance.
 
       **Typical use case:**  
-      A custom Python Ansible module that performs a long sequence of API calls or data operations (e.g. a SnapMirror DR workflow) can append one line per step to the log file. The operator watching the job in AnsibleForms will see live progress in the Logfile panel as each polling cycle refreshes the output.
+      A custom Python Ansible module that performs a long sequence of API calls or data operations (e.g. a SnapMirror DR workflow) can append one line per step to the log file. The operator watching the job in AnsibleForms will see live progress in the Log file section as each polling cycle refreshes the output.
   - name: Cascaded Dropdowns
     short: Make cascaded dropdowns
     description: |

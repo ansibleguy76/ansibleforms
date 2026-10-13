@@ -2522,6 +2522,7 @@ export default {
     copy: 'Kopieren',
     lines: '{count} Zeilen',
     steps: 'Schritte',
+    logFile: 'Logdatei',
     showExtravars: 'Extra-Variablen anzeigen',
     hideExtravars: 'Extra-Variablen ausblenden',
     showPayload: 'Payload anzeigen',

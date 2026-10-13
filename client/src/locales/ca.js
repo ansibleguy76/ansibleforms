@@ -2508,6 +2508,7 @@ export default {
     copy: 'Copia',
     lines: '{count} línies',
     steps: 'passos',
+    logFile: 'Fitxer de registre',
     showExtravars: 'Mostra les extravars',
     hideExtravars: 'Amaga les extravars',
     showPayload: 'Mostra el payload',

@@ -2409,6 +2409,7 @@ export default {
     copy: '复制',
     lines: '{count} 行',
     steps: '步骤',
+    logFile: '日志文件',
     showExtravars: '显示 Extravars',
     hideExtravars: '隐藏 Extravars',
     showPayload: '显示 payload',

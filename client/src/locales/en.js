@@ -2468,6 +2468,7 @@ export default {
     copy: 'Copy',
     lines: '{count} lines',
     steps: 'steps',
+    logFile: 'Log file',
     showExtravars: 'Show extravars',
     hideExtravars: 'Hide extravars',
     showPayload: 'Show payload',

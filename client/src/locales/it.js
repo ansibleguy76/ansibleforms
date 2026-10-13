@@ -2497,6 +2497,7 @@ export default {
     copy: 'Copia',
     lines: '{count} righe',
     steps: 'passi',
+    logFile: 'File di log',
     showExtravars: 'Mostra variabili extra',
     hideExtravars: 'Nascondi variabili extra',
     showPayload: 'Mostra payload',

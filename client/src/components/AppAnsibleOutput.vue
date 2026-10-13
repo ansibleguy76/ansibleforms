@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useAppStore } from '@/stores/app';
+import { jobLogLines } from '@/lib/jobLog';
 
 /******************************************************************/
 /*                                                                */
@@ -385,47 +386,20 @@ const groups = computed(() => {
   return result.filter((g) => g.node || g.lines.length);
 });
 
-// Convert ANSI escape codes to HTML <span> tags for browser rendering
-function ansiToHtml(text) {
-  if (!text) return '';
-  // Escape HTML special chars first (before inserting our own span tags)
-  let result = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const colorMap = {
-    90: 'color:#888', // GRAY
-    91: 'color:#e74c3c', // RED
-    92: 'color:#2ecc71', // GREEN
-    93: 'color:#f1c40f', // YELLOW
-    94: 'color:#3498db', // BLUE
-    95: 'color:#9b59b6', // MAGENTA
-    96: 'color:#1abc9c', // CYAN
-    97: 'color:#ecf0f1', // WHITE
-  };
-  // Process sequentially, tracking open span depth so RESET closes ALL open spans
-  let openSpans = 0;
-  // eslint-disable-next-line no-control-regex -- \x1B is the ANSI escape byte we are parsing
-  result = result.replace(/\x1B\[([0-9;]*)m/g, (_match, code) => {
-    if (code === '0' || code === '') {
-      // Reset — close every open span at once
-      const close = '</span>'.repeat(openSpans);
-      openSpans = 0;
-      return close;
-    }
-    const style = colorMap[code];
-    if (style) {
-      openSpans++;
-      return `<span style="${style}">`;
-    }
-    return '';
-  });
-  // Close any spans still open at end of string
-  if (openSpans > 0) result += '</span>'.repeat(openSpans);
-  // Strip any remaining unrecognised ANSI sequences
-  // eslint-disable-next-line no-control-regex -- \x1B is the ANSI escape byte we are parsing
-  result = result.replace(/\x1B\[[0-?]*[ -/]*[@-~]/g, '');
-  return result;
-}
+// ─── the job's log file : a card of its own, in the output's look ────────────
 
-const jobLogHtml = computed(() => ansiToHtml(props.jobLog));
+// its lines (lib/jobLog.js : a log line's timestamp quiet, its level in the output's colours)
+const logLines = computed(() => jobLogLines(props.jobLog));
+// folded by its header, as a section of the output
+const logFolded = ref(false);
+
+/**
+ * Hands the log file to the page as plain text, as a section's copy does.
+ */
+function copyLog() {
+  // eslint-disable-next-line no-control-regex -- \x1B is the ANSI escape byte we strip
+  emit('copy', String(props.jobLog || '').replace(/\x1B\[[0-?]*[ -/]*[@-~]/g, ''));
+}
 </script>
 <template>
   <slot name="title"></slot>
@@ -538,9 +512,34 @@ const jobLogHtml = computed(() => ansiToHtml(props.jobLog));
     </div>
   </div>
   <div v-else class="ansible" v-html="output"></div>
-  <div v-if="jobLog" class="logfile">
-    <div class="logfile-title">Logfile</div>
-    <pre class="logfile-content" v-html="jobLogHtml"></pre>
+  <!-- the job's log file : a section with its header, as the output's own, its lines numbered -->
+  <div v-if="logLines.length" class="af-logfile af-node-card">
+    <div
+      class="af-node-head"
+      role="button"
+      tabindex="0"
+      :aria-expanded="!logFolded"
+      @click="logFolded = !logFolded"
+      @keydown.enter.self.prevent="logFolded = !logFolded"
+      @keydown.space.self.prevent="logFolded = !logFolded"
+    >
+      <FaIcon :icon="logFolded ? 'chevron-right' : 'chevron-down'" class="af-node-chevron" />
+      <FaIcon icon="file-lines" class="af-node-flag" />
+      <span class="af-node-name">{{ t('jobs.logFile') }}</span>
+      <span class="af-node-meta">
+        <span><FaIcon icon="list-ol" />{{ logLines.length }}</span>
+        <button type="button" class="af-node-copy" :title="copyLabel" :aria-label="copyLabel" @click.stop="copyLog">
+          <FaIcon icon="copy" />
+        </button>
+      </span>
+    </div>
+    <div v-if="!logFolded" class="ansible af-ansible-lines">
+      <div v-for="(line, i) in logLines" :key="i" class="af-ansible-line" :class="line.level && `af-log-${line.level}`">
+        <span class="af-ansible-no">{{ i + 1 }}</span>
+        <span class="af-ansible-fold"></span>
+        <span class="af-ansible-text" v-html="line.html"></span>
+      </div>
+    </div>
   </div>
 </template>
 <style lang="scss">
@@ -799,26 +798,34 @@ const jobLogHtml = computed(() => ansiToHtml(props.jobLog));
     margin-right: 0.3rem;
   }
 }
-.logfile {
-  font-family: monospace;
-  font-size: 0.8rem;
-  background: #222;
-  color: #c8c8c8;
+.af-logfile {
+  /* on its own : framed as the output ; inside a job's panel the panel frames it (jobOutput.scss) */
+  margin-top: 1rem;
+  border: 1px solid var(--af-field-border);
   border-radius: 5px;
-  border: 1px solid #444;
-  margin-top: 1.5rem;
-  margin-bottom: 1rem;
-  padding: 0.5rem 1rem 1rem 1rem;
-  .logfile-title {
-    font-size: 0.9rem;
-    font-weight: bold;
-    color: #f6e58d;
-    margin-bottom: 0.5rem;
-  }
-  .logfile-content {
-    white-space: pre-wrap;
-    word-break: break-all;
+  overflow: hidden;
+  .ansible {
     margin: 0;
+    border: 0;
+    border-radius: 0;
+  }
+  .af-ansible-text {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  /* a log line's timestamp quiet, its level word bold in its colour (lib/jobLog.js) */
+  .af-log-time {
+    color: var(--bs-secondary-color);
+  }
+  .af-log-level {
+    font-weight: 600;
+  }
+  /* an error or a warning line : a mark in the line numbers' column, as an annotation */
+  .af-log-error .af-ansible-no {
+    box-shadow: inset -3px 0 0 var(--af-ansible-output-danger);
+  }
+  .af-log-warning .af-ansible-no {
+    box-shadow: inset -3px 0 0 var(--af-ansible-output-warning);
   }
 }
 </style>

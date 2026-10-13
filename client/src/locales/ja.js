@@ -2468,6 +2468,7 @@ export default {
     copy: 'コピー',
     lines: '{count} 行',
     steps: 'ステップ',
+    logFile: 'ログファイル',
     showExtravars: 'Extravars を表示',
     hideExtravars: 'Extravars を非表示',
     showPayload: 'payload を表示',

@@ -2511,6 +2511,7 @@ export default {
     copy: 'Copier',
     lines: '{count} lignes',
     steps: 'étapes',
+    logFile: 'Fichier journal',
     showExtravars: 'Afficher les variables supplementaires',
     hideExtravars: 'Masquer les variables supplementaires',
     showPayload: 'Afficher la payload',
