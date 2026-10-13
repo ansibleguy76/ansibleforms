@@ -141,8 +141,26 @@ const themeObserver = new MutationObserver(() => {
 // (AppProjectFiles), driven by the toolbar
 const FILE_SECTIONS = { Inventories: 'inventories', Playbooks: 'playbooks', VarsFiles: 'vars', Workflows: 'workflows' };
 const projectFiles = ref(null);
-// the playbooks are changed only with the role option allowPlaybookDesign (else shown read-only)
-const canDesignPlaybooks = computed(() => store.profile?.options?.allowPlaybookDesign !== false);
+// each kind of file is changed only with its own role option (else shown read-only)
+const FILE_DESIGN_OPTIONS = {
+  playbooks: 'allowPlaybookDesign',
+  workflows: 'allowWorkflowDesign',
+  inventories: 'allowInventoryDesign',
+  vars: 'allowVarsFileDesign',
+};
+/**
+ * Whether the user may change a kind of file in the designer.
+ *
+ * Args:
+ *   kind (string): 'playbooks', 'workflows', 'inventories' or 'vars'.
+ *
+ * Returns:
+ *   boolean: true unless the user's role option for it is off.
+ */
+function canDesignFiles(kind) {
+  const option = FILE_DESIGN_OPTIONS[kind];
+  return !option || store.profile?.options?.[option] !== false;
+}
 
 // a new inventory is a new repository : the repositories' New dialog (Settings > Repositories),
 // used for inventories - ticked, and its usage not to change here
@@ -3464,8 +3482,8 @@ const toolbarActions = computed(() => {
     const none = f.busy || !f.selected;
     const inventories = currentTab.value === 'Inventories';
     const workflows = currentTab.value === 'Workflows';
-    // the playbooks without allowPlaybookDesign : read, not changed
-    const readOnly = currentTab.value === 'Playbooks' && !canDesignPlaybooks.value;
+    // a kind of file without its role option (allowPlaybookDesign, ...) : read, not changed
+    const readOnly = !canDesignFiles(FILE_SECTIONS[currentTab.value]);
     return [
       // a new file ; on the + : in the inventories a new inventory (a repository), in the
       // workflows a new workflow (a file, an empty workflow in it), as the explorer's
@@ -3474,7 +3492,7 @@ const toolbarActions = computed(() => {
         key: 'add',
         run: () => f.newFile(),
         show: inventories || workflows,
-        disabled: f.busy,
+        disabled: f.busy || readOnly,
         title: inventories ? t('designer.files.newInventory') : t('designer.files.newWorkflow'),
       },
       {
@@ -4916,9 +4934,7 @@ onBeforeUnmount(() => {
                     :kind="FILE_SECTIONS[currentTab]"
                     :forms="formsForPreview"
                     :view="editorView"
-                    :readOnly="
-                      !(lock && lock.match) || (FILE_SECTIONS[currentTab] === 'playbooks' && !canDesignPlaybooks)
-                    "
+                    :readOnly="!(lock && lock.match) || !canDesignFiles(FILE_SECTIONS[currentTab])"
                     :theme="editorTheme"
                     :editorStyle="editorStyle('100%')"
                     @init="onEditorInit"

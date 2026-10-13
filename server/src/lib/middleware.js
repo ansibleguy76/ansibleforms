@@ -47,11 +47,20 @@ Middleware.checkSettingsMiddleware = permissionGuard(u => u.options.showSettings
 // applies at once, without signing in again) and the user's own showDesigner option
 Middleware.checkDesignerMiddleware = permissionGuard(u => appConfig.showDesigner && u.options.showDesigner, 'errors.noDesignerAccess')
 
-// the designer's playbooks : written (saved, new, removed, pushed) only with allowPlaybookDesign ;
-// read by every designer (a form or a workflow picks one), the other kinds of files pass
-const playbookDesignGuard = permissionGuard(u => u.options.allowPlaybookDesign, 'errors.noPlaybookDesignAccess')
-Middleware.checkPlaybookDesignMiddleware = (req, res, next) =>
-  req.params?.kind === 'playbooks' ? playbookDesignGuard(req, res, next) : next()
+// the designer's files : each kind written (saved, new, removed, pushed) only with its own role
+// option ; read by every designer (a form or a workflow picks one)
+// a Map, not an object : the kind comes from the url, and an object would also answer for
+// 'constructor' or 'toString' with a function that is not a guard
+const FILE_DESIGN_GUARDS = new Map([
+  ['playbooks', permissionGuard(u => u.options.allowPlaybookDesign, 'errors.noPlaybookDesignAccess')],
+  ['workflows', permissionGuard(u => u.options.allowWorkflowDesign, 'errors.noWorkflowDesignAccess')],
+  ['inventories', permissionGuard(u => u.options.allowInventoryDesign, 'errors.noInventoryDesignAccess')],
+  ['vars', permissionGuard(u => u.options.allowVarsFileDesign, 'errors.noVarsFileDesignAccess')],
+])
+Middleware.checkFileDesignMiddleware = (req, res, next) => {
+  const guard = FILE_DESIGN_GUARDS.get(req.params?.kind)
+  return typeof guard === 'function' ? guard(req, res, next) : next()
+}
 
 Middleware.checkLogsMiddleware = permissionGuard(u => u.options.showLogs, 'errors.noLogsAccess')
 

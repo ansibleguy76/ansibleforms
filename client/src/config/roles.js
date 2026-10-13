@@ -7,6 +7,9 @@ export const authProviders = ['local', 'ldap', 'azuread', 'oidc'];
 export const roleOptionKeys = [
   'showDesigner',
   'allowPlaybookDesign',
+  'allowWorkflowDesign',
+  'allowInventoryDesign',
+  'allowVarsFileDesign',
   'showLogs',
   'showDebugButtons',
   'showSettings',
@@ -35,6 +38,9 @@ export const roleOptionKeys = [
 // found in hand-written yaml are preserved verbatim by serializeRole).
 const trueByDefaultOptions = [
   'allowPlaybookDesign',
+  'allowWorkflowDesign',
+  'allowInventoryDesign',
+  'allowVarsFileDesign',
   'allowVerboseMode',
   'showJobs',
   'showDebugButtons',

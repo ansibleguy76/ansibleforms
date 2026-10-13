@@ -52,6 +52,9 @@
             "properties": {
               "showDesigner": { "type": "boolean"},
               "allowPlaybookDesign": { "type": "boolean" },
+              "allowWorkflowDesign": { "type": "boolean" },
+              "allowInventoryDesign": { "type": "boolean" },
+              "allowVarsFileDesign": { "type": "boolean" },
               "showLogs": { "type": "boolean" },
               "showDebugButtons": { "type": "boolean" },
               "showSettings": { "type": "boolean" },
@@ -103,6 +106,9 @@
             "properties": {
               "showDesigner": { "type": "boolean"},
               "allowPlaybookDesign": { "type": "boolean" },
+              "allowWorkflowDesign": { "type": "boolean" },
+              "allowInventoryDesign": { "type": "boolean" },
+              "allowVarsFileDesign": { "type": "boolean" },
               "showLogs": { "type": "boolean" },
               "showDebugButtons": { "type": "boolean" },
               "showSettings": { "type": "boolean" },
