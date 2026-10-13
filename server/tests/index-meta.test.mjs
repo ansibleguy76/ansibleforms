@@ -30,7 +30,7 @@ describe("the instance's name and label in index.html", () => {
   test("a name cannot break out of its attribute", () => {
     const out = injectAppIdentity(html, { appName: `Ops "R&D" <script>alert('x')</script>`, envLabel: "", envLabelColor: "" });
     assert.equal(meta(out, "af-app-name"), "Ops &quot;R&amp;D&quot; &lt;script&gt;alert(&#39;x&#39;)&lt;/script&gt;");
-    assert.doesNotMatch(out, /<script>/);
+    assert.doesNotMatch(out, /<script/i);
   });
 
   test("a $ in a name is kept as it is (not a replacement pattern)", () => {
