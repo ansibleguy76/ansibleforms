@@ -106,6 +106,7 @@ onMounted(async () => {
             :disabled="!look.env_label_show"
             v-model="look.env_label"
             :label="t('settings.interface.envLabel')"
+            placeholder="PRODUCTION"
             :help="t('settings.interface.envLabelHelp')"
           />
           <!-- its colour : round swatches, as the Color theme's ; switched off, the text, the
