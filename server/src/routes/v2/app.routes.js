@@ -14,7 +14,14 @@ const router = express.Router();
 const CACHE_TTL_MS = 60 * 1000;
 let defaultsCache = { value: undefined, fetchedAt: 0 };
 
-async function resolveDefaults() {
+/**
+ * The appearance's defaults (Settings > Appearance), cached for a short time : this endpoint's,
+ * and index.html's instance name and label (app-start.js, lib/indexMeta.js).
+ *
+ * Returns:
+ *   Promise<Object>: { language, theme, color, appName, envLabel, envLabelColor, ... }.
+ */
+export async function resolveDefaults() {
   if (defaultsCache.value !== undefined && (Date.now() - defaultsCache.fetchedAt) < CACHE_TTL_MS) {
     return defaultsCache.value;
   }

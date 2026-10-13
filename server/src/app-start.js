@@ -6,6 +6,11 @@ import express from 'express';
 import ansibleforms from './app.js';
 import appConfig from '../config/app.config.js';
 import { injectBaseUrl } from './lib/baseurl.js';
+import { enabledSsoProviders, injectSsoProviders } from './lib/ssoMeta.js';
+import { injectAppIdentity } from './lib/indexMeta.js';
+import { resolveDefaults } from './routes/v2/app.routes.js';
+import AzureAd from './models/azureAd.model.js';
+import OIDC from './models/oidc.model.js';
 import { staticCacheHeaders, injectAssetVersion } from './lib/staticCache.js';
 import { readBuildInfo, appBuildHeader } from './lib/appBuild.js';
 import { resolve } from 'path';
@@ -162,11 +167,18 @@ export async function startApp(){
   } else {
     logger.warning(`No index.html found in ${publicPath}, did you build the client?`);
   }
-  const serveIndex = (req, res) => {
+  const serveIndex = async (req, res) => {
     res.setHeader('Cache-Control', 'no-cache, must-revalidate');
     if (indexHtml) {
+      // the single sign-on providers on now, for the sign-in card's first frame (lib/ssoMeta.js) ;
+      // read at every load (an admin may switch one on or off), left out when they cannot be read
+      // and the instance's name and environment label, for the sign-in card and the header
+      const [providers, defaults] = await Promise.all([
+        enabledSsoProviders({ AzureAd, OIDC }).catch(() => null),
+        resolveDefaults().catch(() => null),
+      ]);
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.send(indexHtml);
+      res.send(injectAppIdentity(injectSsoProviders(indexHtml, providers), defaults));
     } else {
       res.sendFile(indexPath);
     }

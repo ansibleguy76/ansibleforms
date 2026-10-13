@@ -11,6 +11,8 @@ import svgLoader from 'vite-svg-loader'
 import { defineConfig, loadEnv } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
 import { readFileSync } from 'node:fs'
+import { injectSsoProviders } from '../server/src/lib/ssoMeta.js'
+import { injectAppIdentity } from '../server/src/lib/indexMeta.js'
 
 // The client's build identity, baked into the bundle (issue #660). The docker build writes
 // build-info.json here, in client/, before it runs vite build (scripts/generate-build-info.sh) ;
@@ -27,6 +29,24 @@ function clientBuildInfo() {
   return { gitSha: 'dev', dirty: false, buildTime: null }
 }
 
+// The development server serves index.html itself, not the app's server : it puts in the single
+// sign-on providers that are on and the instance's name and label, as the app's server does
+// (server/src/lib/ssoMeta.js, indexMeta.js), asked of the api behind the proxy, so the sign-in
+// card and the header have them from the first frame here too. Each left out when the api
+// cannot be reached.
+function devSsoMeta(target) {
+  return {
+    name: 'af-dev-sso-meta',
+    apply: 'serve',
+    async transformIndexHtml(html) {
+      const read = (path) => fetch(`${target}${path}`).then((res) => res.json()).catch(() => null)
+      const [sso, config] = await Promise.all([read('/api/v2/auth/settings'), read('/api/v2/app/config')])
+      const providers = sso ? [sso.azureAdEnabled && 'azuread', sso.oidcEnabled && 'oidc'].filter(Boolean) : null
+      return injectAppIdentity(injectSsoProviders(html, providers), config)
+    },
+  }
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
 // read .env / .env.local etc, so VITE_DEV_HOST can be set once per machine instead of
@@ -38,6 +58,7 @@ return {
   base: './',
   plugins: [
     basicSsl(),
+    devSsoMeta(env.API_PROXY_TARGET || 'http://localhost:3001'),
     svgLoader(
       {defaultImport: 'url'}
     ),
