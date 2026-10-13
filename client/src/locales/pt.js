@@ -1156,12 +1156,10 @@ export default {
       deleteProvider: 'Eliminar fornecedor',
       provider: 'Fornecedor',
       tenantId: 'Tenant ID',
-      tenantIdHelp:
-        'O id do seu inquilino (um GUID) ou um dos seus domínios : só os seus utilizadores iniciam sessão. Obrigatório',
       clientId: 'Client ID',
       clientSecret: 'Client secret',
       groupFilter: 'Filtro de grupos',
-      redirectUrl: 'URL de redirecionamento',
+      redirectUrl: 'URI de redirecionamento',
       issuer: 'Emissor',
       scope: 'Âmbito',
       authUrl: 'URL de autenticação',

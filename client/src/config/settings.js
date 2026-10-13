@@ -7,6 +7,7 @@ import { cronCell } from '@/lib/cronCell';
 import { cronValidationMessage } from './cron';
 import { PILL, pill, esc } from '@/lib/tableCells';
 import { formPath } from '@/lib/formsPath';
+import { ssoCallbackUrl, ssoCallbackBase, ssoCallbackPath, SSO_EXAMPLE_BASE } from '@/lib/ssoCallback';
 
 // A cron field is validated with the SAME check the editor uses (config/cron.js), which
 // is the only thing that keeps the two from disagreeing.
@@ -989,6 +990,11 @@ export default function getSettings(t) {
           ],
         },
       ],
+      // the redirect URL : the address typed and the provider's callback path, joined
+      beforeSave: ({ redirect_base, ...item }) => ({
+        ...item,
+        redirect_uri: ssoCallbackUrl(item.provider, redirect_base),
+      }),
       actions: [
         { name: 'edit', title: t('settings.oauth2.editProvider'), icon: 'pencil', color: 'edit' },
         // the one its type signs in with : the others of its type stop being it (oauth2.model)
@@ -1040,13 +1046,12 @@ export default function getSettings(t) {
           key: 'tenant_id',
           step: 'sign-in',
           label: t('settings.oauth2.tenantId'),
-          // required for Entra ID, checked by the server (the field only shows for azuread)
-          required: false,
+          // required for Entra ID : the field only shows (and is only checked) for azuread
+          required: true,
           icon: 'building',
           dependency: 'provider',
           dependencyValues: ['azuread'],
           hidden: true,
-          help: t('settings.oauth2.tenantIdHelp'),
         },
         {
           key: 'client_id',
@@ -1069,19 +1074,6 @@ export default function getSettings(t) {
           hidden: true,
         },
         {
-          key: 'redirect_uri',
-          step: 'sign-in',
-          label: t('settings.oauth2.redirectUrl'),
-          readonly: false,
-          dependency: 'provider',
-          dependencyValues: ['azuread', 'oidc'],
-          defaultMap: {
-            azuread: (config) => `${config.url}/api/v2/auth/azureadoauth2/callback`,
-            oidc: (config) => `${config.url}/api/v2/auth/oidc/callback`,
-          },
-          hidden: true,
-        },
-        {
           key: 'client_secret',
           step: 'sign-in',
           label: t('settings.oauth2.clientSecret'),
@@ -1089,6 +1081,34 @@ export default function getSettings(t) {
           required: true,
           icon: 'lock',
           hidden: true,
+        },
+        // the redirect URL : stored whole, typed as its address with the callback path beside it
+        // (redirect_base) ; Save joins them (beforeSave)
+        {
+          key: 'redirect_uri',
+          label: t('settings.oauth2.redirectUrl'),
+          noInput: true,
+          hidden: true,
+        },
+        {
+          key: 'redirect_base',
+          step: 'sign-in',
+          label: t('settings.oauth2.redirectUrl'),
+          // a sign-in needs the full URL (the server reads it as one)
+          required: true,
+          icon: 'link',
+          dependency: 'provider',
+          dependencyValues: ['azuread', 'oidc'],
+          // a new provider : the app's address (the URL setting), when it has one
+          defaultMap: {
+            azuread: (config) => ssoCallbackBase('azuread', config.url),
+            oidc: (config) => ssoCallbackBase('oidc', config.url),
+          },
+          placeholder: SSO_EXAMPLE_BASE,
+          suffix: (item) => ssoCallbackPath(item.provider),
+          initial: (r) => ssoCallbackBase(r?.provider, r?.redirect_uri),
+          hidden: true,
+          noTable: true,
         },
         {
           key: 'groupfilter',
