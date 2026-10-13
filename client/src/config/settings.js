@@ -1154,6 +1154,8 @@ export default function getSettings(t) {
       type: 'schedule',
       label: t('settings.schedules.label'),
       labelPlural: t('settings.schedules.labelPlural'),
+      // the page's title : the jobs menu's entry (a job state, as the jobs list's titles)
+      pageTitle: t('jobs.menu.scheduled'),
       description: t('settings.schedules.description'),
       // reloadSeconds: 7,
       icon: 'clock',
@@ -1304,6 +1306,8 @@ export default function getSettings(t) {
       type: 'stored-jobs',
       label: t('settings.storedJobs.label'),
       labelPlural: t('settings.storedJobs.labelPlural'),
+      // the page's title : the jobs menu's entry (a job state, as the jobs list's titles)
+      pageTitle: t('jobs.menu.stored'),
       description: t('settings.storedJobs.description'),
       icon: 'floppy-disk',
       reloadSeconds: false, // Disable auto-reload

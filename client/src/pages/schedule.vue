@@ -136,7 +136,7 @@ const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((
 
 // the title : Schedules › <name>, each step a link
 const pageCrumbs = computed(() => [
-  { title: t('settings.schedules.labelPlural'), icon: 'clock', to: '/jobs/scheduled' },
+  { title: t('jobs.menu.scheduled'), icon: 'clock', to: '/jobs/scheduled' },
   { title: schedule.value?.name || scheduleId.value, icon: 'clock', to: `/jobs/scheduled/${scheduleId.value}` },
 ]);
 // and the open tab last, as every page in tabs names it : Users › admin › Groups
