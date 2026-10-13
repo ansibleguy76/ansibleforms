@@ -2083,11 +2083,31 @@ tr.table-selected {
   .modal-backdrop {
     z-index: 1061;
   }
+  /* its header (the name, extravars, artifacts, run time) stays in place : only the part
+     under it scrolls, its scrollbar starting under the header */
   .modal-body {
     padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .af-ansible-groups,
+  .af-node-card {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
   }
   .af-ansible-groups {
     border-radius: 0;
+  }
+  .af-node-head {
+    flex: none;
+  }
+  .af-node-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
   }
 }
 </style>

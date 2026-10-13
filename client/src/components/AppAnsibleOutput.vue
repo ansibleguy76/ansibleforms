@@ -474,39 +474,43 @@ function copyLog() {
           </button>
         </span>
       </div>
-      <AppNodeData
-        v-if="group.node && nodeData[group.node.index]"
-        :jobId="jobId"
-        :nodeId="group.node.graphId"
-        :kind="nodeData[group.node.index]"
-        @close="toggleNodeData(group.node.index, nodeData[group.node.index])"
-        @copy="(text) => emit('copy', text)"
-      />
-      <div v-if="group.lines.length" class="ansible af-ansible-lines">
-        <div
-          v-for="line in group.lines"
-          :key="line.index"
-          class="af-ansible-line"
-          :class="{ 'af-ansible-head': line.level }"
-        >
-          <span class="af-ansible-no">{{ line.index + 1 }}</span>
-          <span class="af-ansible-fold">
-            <button
-              v-if="line.level && line.end > line.index + 1"
-              type="button"
-              class="af-ansible-caret"
-              :aria-expanded="!folded.has(line.index)"
-              @click="toggle(line.index)"
-            >
-              <FaIcon :icon="folded.has(line.index) ? 'caret-right' : 'caret-down'" />
-            </button>
-          </span>
-          <span class="af-ansible-text"
-            ><span v-html="line.html"></span
-            ><span v-if="folded.has(line.index)" class="af-ansible-more" @click="toggle(line.index)">{{
-              line.end - line.index - 1
-            }}</span></span
+      <!-- under the header : its extravars or artifacts, and its lines (a node's dialog scrolls
+           this part only, the header staying in place) -->
+      <div v-if="(group.node && nodeData[group.node.index]) || group.lines.length" class="af-node-body">
+        <AppNodeData
+          v-if="group.node && nodeData[group.node.index]"
+          :jobId="jobId"
+          :nodeId="group.node.graphId"
+          :kind="nodeData[group.node.index]"
+          @close="toggleNodeData(group.node.index, nodeData[group.node.index])"
+          @copy="(text) => emit('copy', text)"
+        />
+        <div v-if="group.lines.length" class="ansible af-ansible-lines">
+          <div
+            v-for="line in group.lines"
+            :key="line.index"
+            class="af-ansible-line"
+            :class="{ 'af-ansible-head': line.level }"
           >
+            <span class="af-ansible-no">{{ line.index + 1 }}</span>
+            <span class="af-ansible-fold">
+              <button
+                v-if="line.level && line.end > line.index + 1"
+                type="button"
+                class="af-ansible-caret"
+                :aria-expanded="!folded.has(line.index)"
+                @click="toggle(line.index)"
+              >
+                <FaIcon :icon="folded.has(line.index) ? 'caret-right' : 'caret-down'" />
+              </button>
+            </span>
+            <span class="af-ansible-text"
+              ><span v-html="line.html"></span
+              ><span v-if="folded.has(line.index)" class="af-ansible-more" @click="toggle(line.index)">{{
+                line.end - line.index - 1
+              }}</span></span
+            >
+          </div>
         </div>
       </div>
     </div>
