@@ -2244,8 +2244,7 @@ export default {
     newFile: 'Neue Datei',
     newFileTitle: 'Eine neue Formulardatei erstellen',
     newFileLabel: 'Dateiname',
-    newFileHelp:
-      'Eine flache .yaml-Datei, keine Ordner. Die Datei wird beim Speichern erstellt, mit einem neuen Formular darin.',
+    newFileHelp: 'Eine .yaml-Datei ohne Ordner, beim Speichern mit einem neuen Formular erstellt.',
     newFileInvalid: 'Der Dateiname muss eine flache .yaml- oder .yml-Datei sein, ohne Ordner',
     newFileExists: 'Diese Datei existiert bereits',
     pushChooseTitle: 'Datei in Remote-Repository speichern',

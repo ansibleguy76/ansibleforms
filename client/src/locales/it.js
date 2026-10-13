@@ -2221,8 +2221,7 @@ export default {
     newFile: 'Nuovo file',
     newFileTitle: 'Creare un nuovo file di moduli',
     newFileLabel: 'Nome del file',
-    newFileHelp:
-      "Un file .yaml piatto, senza cartelle. Il file viene creato al salvataggio, con un nuovo modulo all'interno.",
+    newFileHelp: 'Un file .yaml senza cartelle, creato al salvataggio con un nuovo modulo.',
     newFileInvalid: 'Il nome deve essere un file .yaml o .yml piatto, senza cartelle',
     newFileExists: 'Questo file esiste già',
     pushChooseTitle: 'Salva file nel repository remoto',

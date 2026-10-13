@@ -2213,7 +2213,7 @@ export default {
     newFile: 'Nowy plik',
     newFileTitle: 'Utwórz nowy plik formularzy',
     newFileLabel: 'Nazwa pliku',
-    newFileHelp: 'Płaski plik .yaml, bez folderów. Plik zostanie utworzony przy zapisie, z nowym formularzem w środku.',
+    newFileHelp: 'Plik .yaml bez folderów, tworzony przy zapisie z nowym formularzem.',
     newFileInvalid: 'Nazwa pliku musi wskazywać płaski plik .yaml lub .yml, bez folderów',
     newFileExists: 'Ten plik już istnieje',
     pushChooseTitle: 'Zapisz plik w zdalnym repozytorium',

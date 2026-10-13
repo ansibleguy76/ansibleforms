@@ -2233,7 +2233,7 @@ export default {
     newFile: 'Fitxer nou',
     newFileTitle: 'Crea un fitxer de formularis nou',
     newFileLabel: 'Nom del fitxer',
-    newFileHelp: 'Un fitxer .yaml pla, sense carpetes. El fitxer es crea en desar, amb un formulari nou a dins.',
+    newFileHelp: 'Un fitxer .yaml sense carpetes, creat en desar amb un formulari nou.',
     newFileInvalid: 'El nom del fitxer ha de ser un fitxer .yaml o .yml pla, sense carpetes',
     newFileExists: 'Aquest fitxer ja existeix',
     pushChooseTitle: 'Desa el fitxer al repositori remot',
