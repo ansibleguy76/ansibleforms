@@ -36,6 +36,7 @@
 
 import { getCurrentInstance, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { backdropPress } from '@/lib/backdropPress';
 
 // INIT
 
@@ -57,8 +58,12 @@ const sizeClass = computed(() => (props.size && props.size !== 'md' ? `modal-${p
 
 // METHODS
 
+// a press on the backdrop closes the modal : one that starts inside it (selecting text, a
+// drag) and ends outside does not (lib/backdropPress.js)
+const press = backdropPress((target) => target?.id == uid);
+
 function backdropClick(e) {
-  if (props.closable && e.target.id == uid) {
+  if (press.closes(e) && props.closable) {
     emit('close');
   }
 }
@@ -66,6 +71,7 @@ function backdropClick(e) {
 
 <template>
   <div
+    @mousedown="press.down"
     @click="backdropClick"
     :id="uid"
     class="modal fade show d-block"
