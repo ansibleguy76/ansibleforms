@@ -2196,7 +2196,7 @@ export default {
     newFile: '新しいファイル',
     newFileTitle: '新しいフォームファイルを作成',
     newFileLabel: 'ファイル名',
-    newFileHelp: 'フォルダーを含まない .yaml ファイルです。ファイルは保存時に、新しいフォームを含めて作成されます。',
+    newFileHelp: 'フォルダーなしの .yaml ファイル。保存時に新しいフォームとともに作成されます。',
     newFileInvalid: 'ファイル名はフォルダーを含まない .yaml または .yml ファイルである必要があります',
     newFileExists: 'このファイルはすでに存在します',
     pushChooseTitle: 'リモートリポジトリにファイルを保存',

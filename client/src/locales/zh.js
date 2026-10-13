@@ -2142,7 +2142,7 @@ export default {
     newFile: '新建文件',
     newFileTitle: '新建表单文件',
     newFileLabel: '文件名',
-    newFileHelp: '一个扁平的 .yaml 文件，不含文件夹。文件在保存时创建，其中包含一个新表单。',
+    newFileHelp: '不含文件夹的 .yaml 文件，保存时创建并包含一个新表单。',
     newFileInvalid: '文件名必须是扁平的 .yaml 或 .yml 文件，不含文件夹',
     newFileExists: '此文件已存在',
     pushChooseTitle: '将文件保存到远程仓库',

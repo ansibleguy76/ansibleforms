@@ -2227,8 +2227,7 @@ export default {
     newFile: 'Novo ficheiro',
     newFileTitle: 'Criar um novo ficheiro de formulários',
     newFileLabel: 'Nome do ficheiro',
-    newFileHelp:
-      'Um ficheiro .yaml simples, sem pastas. O ficheiro é criado ao guardar, com um novo formulário lá dentro.',
+    newFileHelp: 'Um ficheiro .yaml sem pastas, criado ao guardar com um novo formulário.',
     newFileInvalid: 'O nome do ficheiro tem de ser um ficheiro .yaml ou .yml simples, sem pastas',
     newFileExists: 'Este ficheiro já existe',
     pushChooseTitle: 'Guardar ficheiro no repositório remoto',

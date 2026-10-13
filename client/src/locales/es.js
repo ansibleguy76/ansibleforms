@@ -2228,7 +2228,7 @@ export default {
     newFile: 'Nuevo archivo',
     newFileTitle: 'Crear un nuevo archivo de formularios',
     newFileLabel: 'Nombre del archivo',
-    newFileHelp: 'Un archivo .yaml plano, sin carpetas. El archivo se crea al guardar, con un nuevo formulario dentro.',
+    newFileHelp: 'Un archivo .yaml sin carpetas, creado al guardar con un formulario nuevo.',
     newFileInvalid: 'El nombre debe ser un archivo .yaml o .yml plano, sin carpetas',
     newFileExists: 'Este archivo ya existe',
     pushChooseTitle: 'Guardar archivo en el repositorio remoto',

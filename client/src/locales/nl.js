@@ -2222,8 +2222,7 @@ export default {
     newFile: 'Nieuw bestand',
     newFileTitle: 'Een nieuw forms bestand aanmaken',
     newFileLabel: 'Bestandsnaam',
-    newFileHelp:
-      'Een plat .yaml bestand, geen mappen. Het bestand wordt aangemaakt bij het opslaan, met een nieuw formulier erin.',
+    newFileHelp: 'Een .yaml bestand zonder mappen, bij het opslaan aangemaakt met een nieuw formulier.',
     newFileInvalid: 'De bestandsnaam moet een plat .yaml of .yml bestand zijn, zonder mappen',
     newFileExists: 'Dit bestand bestaat al',
     pushChooseTitle: 'Bestand opslaan naar remote repository',

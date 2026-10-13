@@ -2194,7 +2194,7 @@ export default {
     newFile: 'New file',
     newFileTitle: 'Create a new forms file',
     newFileLabel: 'Filename',
-    newFileHelp: 'A flat .yaml file, no folders. The file is created on save, with a new form inside.',
+    newFileHelp: 'A .yaml file, no folders, created on save with a new form.',
     newFileInvalid: 'The filename must be a flat .yaml or .yml file, without folders',
     newFileExists: 'This file already exists',
     pushChooseTitle: 'Save file to remote repository',

@@ -2235,8 +2235,7 @@ export default {
     newFile: 'Nouveau fichier',
     newFileTitle: 'Créer un nouveau fichier de formulaires',
     newFileLabel: 'Nom du fichier',
-    newFileHelp:
-      "Un fichier .yaml plat, sans dossiers. Le fichier est créé lors de l'enregistrement, avec un nouveau formulaire à l'intérieur.",
+    newFileHelp: "Un fichier .yaml sans dossier, créé à l'enregistrement avec un nouveau formulaire.",
     newFileInvalid: 'Le nom doit être un fichier .yaml ou .yml plat, sans dossiers',
     newFileExists: 'Ce fichier existe déjà',
     pushChooseTitle: 'Enregistrer le fichier dans le dépôt distant',
