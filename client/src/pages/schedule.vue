@@ -367,6 +367,11 @@ onMounted(async () => {
           <BsButton icon="trash" @click="confirmDelete = true">{{ t('common.delete') }}</BsButton>
           <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
         </template>
+        <!-- the record loading : its buttons as grey placeholders, so the title line keeps its
+             height and nothing moves when they come -->
+        <template v-else-if="!loaded" #actions>
+          <AppSkeleton shape="buttons" :widths="[119, 103, 89]" />
+        </template>
       </AppSettings>
       <!-- the user being checked : the title and placeholders where the page comes -->
       <AppPageSkeleton v-else />

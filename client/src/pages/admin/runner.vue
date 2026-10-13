@@ -594,6 +594,11 @@ onMounted(async () => {
           <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
         </template>
       </template>
+      <!-- the record loading : its buttons as grey placeholders, so the title line keeps its
+           height and nothing moves when they come -->
+      <template v-else-if="!loaded" #actions>
+        <AppSkeleton shape="buttons" :widths="[175, 150, 103, 89]" />
+      </template>
     </AppSettings>
   </AppSettingsPage>
 </template>

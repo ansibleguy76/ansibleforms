@@ -57,6 +57,9 @@ function followsShown(path) {
 /*             'tabs'   a row of tabs, the first one open         */
 /*             'inline' one bar in a line of text (a title that   */
 /*                      is not known yet)                         */
+/*             'buttons' a page's buttons on its title line, each */
+/*                      as tall as a button : the line keeps its  */
+/*                      height (and its wrap) until they come     */
 /*             'login'  the sign-in card's form : the username    */
 /*                      and password fields, Sign in, then count  */
 /*                      single sign-on buttons (none : 0)         */
@@ -66,6 +69,9 @@ function followsShown(path) {
 /*      delay: Number - milliseconds before anything shows (0 :   */
 /*             at once, as the start-up screen)                   */
 /*      width: String - the bar's width, for 'inline'             */
+/*      widths: Array - the buttons' widths in pixels, for        */
+/*              'buttons' (as their labels make them) ; none :    */
+/*              count buttons of usual widths                     */
 /*                                                                */
 /*  The fields of 'form' are at most 40rem wide, as the settings  */
 /*  pages' ; --af-sk-field-max on a parent changes it (a form's   */
@@ -87,6 +93,7 @@ const props = defineProps({
   count: { type: Number, default: 6 },
   delay: { type: Number, default: 150 },
   width: { type: String, default: '8em' },
+  widths: { type: Array, default: null },
 });
 
 // ------------------------------------------------------------------
@@ -123,6 +130,12 @@ const share = (i) => WIDTHS[i % WIDTHS.length];
 // a label is a word or two : a width in rem rather than a share of the row
 const LABELS = ['7rem', '10rem', '6rem', '9rem', '12rem', '8rem', '5.5rem', '11rem'];
 const label = (i) => LABELS[i % LABELS.length];
+// a title line's buttons : Save last, Delete before it, the page's own actions first (Test
+// connection, Change password) wider
+const button = (i) => (i === props.count ? '5.5rem' : i === props.count - 1 ? '6.5rem' : '10.5rem');
+const buttonWidths = computed(() =>
+  props.widths ? props.widths.map((w) => `${w}px`) : Array.from({ length: props.count }, (_, i) => button(i + 1)),
+);
 // a code line's indent, in steps of two characters : the nesting of yaml
 const INDENTS = [0, 1, 1, 2, 2, 2, 1, 2, 3, 3, 1, 0, 1, 1, 2, 2];
 const indent = (i) => `${INDENTS[i % INDENTS.length] * 1.5}rem`;
@@ -222,6 +235,10 @@ const inline = computed(() => props.shape === 'inline');
         <div class="af-sk af-sk-mono" :style="{ marginLeft: indent(i), width: `calc(${share(i * 5)} * 0.55)` }"></div>
       </div>
     </div>
+    <!-- buttons : on the title line, each one of its controls (the box itself takes no room) -->
+    <template v-else-if="shape === 'buttons'">
+      <span v-for="(w, i) in buttonWidths" :key="i" class="af-sk af-sk-button" :style="{ width: w }"></span>
+    </template>
     <!-- tabs : the page's own tab bar, a grey word in each, the first one open -->
     <ul v-else-if="shape === 'tabs'" class="nav nav-tabs mb-0">
       <li v-for="i in count" :key="i" class="nav-item">
@@ -491,6 +508,18 @@ const inline = computed(() => props.shape === 'inline');
 .af-sk-sso-button {
   width: 4.5rem;
   height: 3rem;
+}
+/* ------------------------------------------------------------------ */
+/* a page's buttons : the controls of the title line (.af-title-      */
+/* controls), its box taking no room, each bar a button's height      */
+/* ------------------------------------------------------------------ */
+.af-skeleton-buttons {
+  display: contents;
+}
+.af-sk-button {
+  display: inline-block;
+  height: calc(1.5em + 0.75rem + 2px);
+  min-width: 6rem;
 }
 /* ------------------------------------------------------------------ */
 /* a tab and a word of a title                                        */

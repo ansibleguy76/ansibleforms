@@ -33,6 +33,20 @@ const SETTINGS_LISTS = [
   'audit-log',
   'backups',
 ];
+// a record's buttons on its title line (Test, Delete, Save ...), their widths in pixels as their
+// labels make them : the title line keeps its height (and wraps as it will)
+const RECORD_BUTTONS = {
+  users: [192, 103, 89],
+  groups: [103, 89],
+  roles: [103, 89],
+  repositories: [78, 88, 95, 103, 89],
+  credentials: [175, 192, 103, 89],
+  'secret-stores': [175, 103, 89],
+  runners: [175, 150, 103, 89],
+  notifications: [126, 103, 89],
+  syslog: [126, 103, 89],
+  sso: [150, 103, 89],
+};
 // the pages in tabs : how many tabs they have
 const SETTINGS_TABS = {
   general: 11,
@@ -53,6 +67,23 @@ const SETTINGS_SHAPES = {
 };
 
 /**
+ * The last step of a record's title : its tab, Details when the address names none (every
+ * record page opens on it), else a grey bar (the tab's name is its page's).
+ *
+ * Args:
+ *   tab (string|undefined): the tab in the address.
+ *   t (Function): vue-i18n's translate function.
+ *
+ * Returns:
+ *   Object: the crumb.
+ */
+function recordTab(tab, t) {
+  return !tab || tab === 'details'
+    ? { title: t('settings.common.tabDetails'), icon: 'sliders' }
+    : { title: null, icon: 'sliders' };
+}
+
+/**
  * The look of a settings page.
  *
  * Args:
@@ -71,14 +102,18 @@ function settingsPage(words, path, section, t) {
   const [page, ...rest] = words;
   // a record of a list (/settings/users/3, /settings/roles/admin, /settings/users/ldap/jdoe) :
   // its name when the address carries it (not a number), then its tab ; its fields
-  if (SETTINGS_LISTS.includes(page) && rest.length) {
+  // (an SSO provider too : /settings/sso/2, beside the SSO page's tabs /settings/sso/providers)
+  const record = SETTINGS_LISTS.includes(page) || (page === 'sso' && /^\d+$/.test(rest[0] || ''));
+  if (record && rest.length) {
     const directory = ['ldap', 'azuread', 'oidc'].includes(rest[0]) && rest.length > 1;
     const word = directory ? rest[1] : rest[0];
     const name = /^\d+$/.test(word) ? null : decodeURIComponent(word);
     return {
       frame: 'settings',
-      crumbs: [section, own, { title: name, icon: entry.icon }, { title: null, icon: 'sliders' }],
+      crumbs: [section, own, { title: name, icon: entry.icon }, recordTab(rest[directory ? 2 : 1], t)],
       tabs: 4,
+      // a directory user's : Block sign-in and Forget ; a directory group's : none
+      buttons: directory ? (page === 'users' ? [130, 100] : null) : RECORD_BUTTONS[page] || null,
       parts: [{ shape: 'form', count: 3 }],
     };
   }
@@ -158,8 +193,10 @@ function jobsPage(words, section, t) {
     if (!id) return { frame: 'jobs', crumbs: [section, own], parts: [{ shape: 'table', count: 8 }] };
     return {
       frame: 'jobs',
-      crumbs: [section, own, { title: null, icon: future.icon }, { title: null, icon: 'sliders' }],
+      crumbs: [section, own, { title: null, icon: future.icon }, recordTab(words[2], t)],
       tabs: future.tabs,
+      // Run now (Open in form), Delete, Save
+      buttons: first === 'scheduled' ? [119, 103, 89] : [155, 103, 89],
       parts: [{ shape: 'form', count: 3 }],
     };
   }
@@ -183,9 +220,10 @@ function jobsPage(words, section, t) {
  *   options (object): the user's role options (the profile's menu).
  *
  * Returns:
- *   Object|null: { frame, crumbs, tabs, parts: [{ shape, count, card, wide }], bare, fill } - frame the left
+ *   Object|null: { frame, crumbs, tabs, buttons, parts: [{ shape, count, card, wide }], bare, fill } - frame the left
  *     menu beside it ('settings', 'jobs', 'form', 'profile', 'designer'), crumbs the title's
- *     steps (the section first), tabs how many tabs above the card, parts the content's
+ *     steps (the section first), tabs how many tabs above the card, buttons the widths of those
+ *     on the title line, parts the content's
  *     placeholders (card : in a card of their own, on a page without the card ; wide : fields
  *     across the card) ; fill : the page fills the window (af-fill-page) ; null when the address
  *     names no known page.

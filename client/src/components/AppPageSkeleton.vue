@@ -54,6 +54,9 @@ const fieldWidth = (part) => (part.wide ? { '--af-sk-field-max': 'none' } : null
     :crumbs="crumbs"
     :bare="!!look.bare"
   >
+    <template v-if="look.buttons" #actions>
+      <AppSkeleton shape="buttons" :widths="look.buttons" :delay="delay" />
+    </template>
     <template v-if="look.tabs" #tabs>
       <AppSkeleton shape="tabs" :count="look.tabs" :delay="delay" />
     </template>
