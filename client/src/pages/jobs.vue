@@ -33,6 +33,8 @@ const jobs = ref([]);
 // the jobs loaded once : until then the menu shows the counts it had
 const jobsLoaded = ref(false);
 const job = ref(null);
+// the job of the page could not be read (gone, not visible) : no placeholders for it
+const jobMissing = ref(false);
 // a multistep job's steps, by id, as read with the job : each step's output under the main job's
 const stepJobs = ref({});
 // the outputs of a multistep job folded away by their title : 'main', or a step's id
@@ -560,6 +562,8 @@ watch(
   () => route.params.id,
   async (id) => {
     if (id) {
+      // another job : its placeholders while it is read, not the job opened before
+      if (String(job.value?.id) !== String(id)) job.value = null;
       jobId.value = id;
       await loadOutput(id);
       // Expand parent if this is a child job
@@ -694,8 +698,15 @@ async function loadOutput(id, sub = false) {
   }
   if (!sub) {
     jobId.value = id;
+    jobMissing.value = false;
   }
-  const result = await axios.get(`/api/v2/job/${id}`);
+  let result;
+  try {
+    result = await axios.get(`/api/v2/job/${id}`);
+  } catch (err) {
+    if (!sub) jobMissing.value = true;
+    throw err;
+  }
   if (result.status === 200) {
     const data = result.data;
     if (!sub) {
@@ -1296,7 +1307,9 @@ onMounted(async () => {
           </div>
         </template>
         <!-- the list : table and pager framed like the other tables, running to the card's edges -->
-        <div v-if="!isJobPage" class="af-table-frame">
+        <!-- the list's first load : its rows as grey placeholders (a reload keeps the rows shown) -->
+        <AppSkeleton v-if="!isJobPage && !jobsLoaded && isLoading" shape="table" :count="10" />
+        <div v-else-if="!isJobPage" class="af-table-frame">
           <!-- the columns fit their values, a spacer after them (directives/fitColumns.js) ; refitted
                when the rows change, not at every tick of a running job's duration -->
           <table v-fit-columns="fitKey" class="custom-table af-table table-sm">
@@ -1536,6 +1549,11 @@ onMounted(async () => {
             </tbody>
           </table>
         </div>
+        <!-- the job being read : its facts and its output as grey placeholders -->
+        <template v-if="isJobPage && !job && !jobMissing">
+          <AppSkeleton shape="facts" :count="6" />
+          <AppSkeleton shape="output" :count="14" />
+        </template>
         <div v-if="job && isJobPage" class="row af-job-output">
           <div class="col">
             <!-- the job at a glance : its number and state, then what ran, who launched it, when
