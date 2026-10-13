@@ -15,6 +15,7 @@ import { sectionOf } from '@/lib/sections';
 import { settingsEntry } from '@/lib/settingsMenu';
 import { statusFromSlug, ALL_JOBS } from '@/lib/jobsPath';
 import { recordButtons } from '@/lib/recordButtons';
+import { listControls } from '@/lib/listControls';
 import { profileViews, profileMenuViews } from '@/config/profileViews';
 
 // ------------------------------------------------------------------
@@ -107,15 +108,26 @@ function settingsPage(words, path, section, t) {
     };
   }
   if (SETTINGS_LISTS.includes(page)) {
-    return { frame: 'settings', crumbs: [section, own], parts: [{ shape: 'table', count: 8 }] };
+    return {
+      frame: 'settings',
+      crumbs: [section, own],
+      // the table's controls and the page's buttons on the title line (lib/listControls.js) ; the
+      // audit log's filters (actors, actions, outcomes) and Refresh
+      buttons: page === 'audit-log' ? [256, 352, 154, 110] : listControls(page),
+      parts: [{ shape: 'table', count: 8 }],
+    };
   }
   const tabs = SETTINGS_TABS[page] || 0;
+  // a tab that is a list (the SSO page's providers, the announcements' list ...) : its table, its
+  // controls on the title line (lib/listControls.js)
+  const tabList = rest[0] ? listControls(`${page}/${rest[0]}`) : null;
   return {
     frame: 'settings',
     // a page in tabs names its tab last
     crumbs: tabs ? [section, own, { title: null, icon: 'sliders' }] : [section, own],
     tabs,
-    parts: [SETTINGS_SHAPES[page] || { shape: 'form', count: 4 }],
+    buttons: tabList,
+    parts: [tabList ? { shape: 'table', count: 8 } : SETTINGS_SHAPES[page] || { shape: 'form', count: 4 }],
     // the server log fills the window, its card the scrolling pane
     fill: page === 'server-log',
   };
@@ -179,7 +191,14 @@ function jobsPage(words, section, t) {
   }[first];
   if (future) {
     const own = { title: future.title, icon: future.icon, to: future.to };
-    if (!id) return { frame: 'jobs', crumbs: [section, own], parts: [{ shape: 'table', count: 8 }] };
+    if (!id) {
+      return {
+        frame: 'jobs',
+        crumbs: [section, own],
+        buttons: listControls(first),
+        parts: [{ shape: 'table', count: 8 }],
+      };
+    }
     return {
       frame: 'jobs',
       crumbs: [section, own, { title: null, icon: future.icon }, recordTab(words[2], t)],
@@ -192,7 +211,14 @@ function jobsPage(words, section, t) {
   // the jobs list : every job, or those of a status
   const status = first && first !== ALL_JOBS ? statusFromSlug(first) : null;
   const own = jobsListTitle(status, t);
-  return { frame: 'jobs', list: true, crumbs: [section, own], parts: [{ shape: 'table', count: 10 }] };
+  // its search, columns and Refresh on the title line (pages/jobs.vue)
+  return {
+    frame: 'jobs',
+    list: true,
+    crumbs: [section, own],
+    buttons: ['search', 132, 110],
+    parts: [{ shape: 'table', count: 10 }],
+  };
 }
 
 // ------------------------------------------------------------------

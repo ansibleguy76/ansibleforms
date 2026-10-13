@@ -108,6 +108,7 @@ import BsDataTable from './BsDataTable.vue';
 import getSettings from '@/config/settings';
 import { inSentence } from '@/lib/inSentence';
 import { rememberRows } from '@/lib/recordButtons';
+import { tableControls } from '@/lib/listControls';
 
 // INIT
 
@@ -969,6 +970,10 @@ const isInvalidPassword = computed(() => {
 const deleteAction = computed(() => actions.value.find((a) => a.name === 'delete') || null);
 // checkboxes : a list that is selectable (the default), or one whose rows can be deleted
 const dataTableSelectable = computed(() => props.settings.selectable !== false || !!deleteAction.value);
+// the table's controls on the title line (BsDataTable's toolbar), their widths in pixels as their
+// labels make them : the search, Select all on a list whose rows can be ticked, the columns, the
+// export (lib/listControls.js)
+const toolbarRoom = computed(() => tableControls(dataTableSelectable.value));
 // a click on a row selects it only on a selectable list ; a list that opens its rows on a
 // click (selectable: false) keeps doing so, its checkboxes alone selecting
 const rowClickSelects = computed(() => props.settings.selectable !== false);
@@ -1447,6 +1452,9 @@ defineExpose({
     <!-- the table's search and columns, on the title line as the Forms page has its search -->
     <template #headerActions>
       <div :id="toolsId" class="af-title-flow"></div>
+      <!-- the first load : the table's controls as grey placeholders, so the title line has their
+           room before they come (the search, Select all, the columns, the export) -->
+      <AppSkeleton v-if="loading" shape="buttons" :widths="toolbarRoom" />
     </template>
     <template #default>
       <BsDataTable

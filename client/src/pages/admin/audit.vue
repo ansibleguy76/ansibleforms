@@ -177,14 +177,26 @@ onMounted(async () => {
       :title="t('audit.title')"
       :description="t('audit.description')"
     >
-      <!-- the filters on the title line, as the other tables have their search and columns -->
+      <!-- the filters on the title line, as the other tables have their search and columns. The
+           actors' and the actions' at least as wide as their names make them once read : they do
+           not widen (and push the table down) when the first page of entries comes -->
       <template #headerActions>
         <div class="d-flex align-items-center gap-2">
-          <select v-model="filterActor" class="form-select" style="width: auto" @change="applyFilters">
+          <select
+            v-model="filterActor"
+            class="form-select"
+            style="width: auto; min-width: 16rem"
+            @change="applyFilters"
+          >
             <option value="">{{ t('audit.allActors') }}</option>
             <option v-for="a in facets.actors" :key="'ac-' + a" :value="a">{{ a }}</option>
           </select>
-          <select v-model="filterAction" class="form-select" style="width: auto" @change="applyFilters">
+          <select
+            v-model="filterAction"
+            class="form-select"
+            style="width: auto; min-width: 22rem"
+            @change="applyFilters"
+          >
             <option value="">{{ t('audit.allActions') }}</option>
             <option v-for="a in facets.actions" :key="'an-' + a" :value="a">{{ actionLabel(a) }}</option>
           </select>
