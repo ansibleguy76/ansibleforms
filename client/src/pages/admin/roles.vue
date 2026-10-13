@@ -9,6 +9,7 @@ import { useRoleSupport } from '@/composables/useRoleSupport';
 import { requiredRoleDescription } from '@/config/roles';
 import { toast } from 'vue-sonner';
 import BsDataTable from '@/components/BsDataTable.vue';
+import { tableControls } from '@/lib/listControls';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -281,6 +282,9 @@ onMounted(async () => {
       <!-- the table's search and columns, on the title line as the other lists have them -->
       <template #headerActions>
         <div :id="toolsId" class="af-title-flow"></div>
+        <!-- the first load : the table's controls as grey placeholders, so the title line has their
+             room before they come (lib/listControls.js) -->
+        <AppSkeleton v-if="!loaded" shape="buttons" :widths="tableControls(!readOnly)" />
       </template>
       <template #default>
         <div>

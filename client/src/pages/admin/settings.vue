@@ -537,7 +537,11 @@ onMounted(async () => {
         <!-- narrows every tab at once ; the search box of the other pages -->
         <BsSearch v-model="search" style="width: 16rem" />
       </template>
-      <template v-if="!searching" #tabs>
+      <!-- the first load : the tabs (one per group of settings, read with them) as grey placeholders -->
+      <template v-if="!loaded" #tabs>
+        <AppSkeleton shape="tabs" :count="11" />
+      </template>
+      <template v-else-if="!searching" #tabs>
         <ul class="nav nav-tabs mb-0">
           <li v-for="group in envGroups" :key="group.key" class="nav-item">
             <a

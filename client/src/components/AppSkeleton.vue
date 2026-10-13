@@ -72,8 +72,9 @@ function followsShown(path) {
 /*             at once, as the start-up screen)                   */
 /*      width: String - the bar's width, for 'inline'             */
 /*      widths: Array - the buttons' widths in pixels, for        */
-/*              'buttons' (as their labels make them) ; none :    */
-/*              count buttons of usual widths                     */
+/*              'buttons' (as their labels make them), 'search'   */
+/*              for a table's search box ; none : count buttons   */
+/*              of usual widths                                   */
 /*                                                                */
 /*  The fields of 'form' are at most 40rem wide, as the settings  */
 /*  pages' ; --af-sk-field-max on a parent changes it (a form's   */
@@ -135,8 +136,11 @@ const label = (i) => LABELS[i % LABELS.length];
 // a title line's buttons : Save last, Delete before it, the page's own actions first (Test
 // connection, Change password) wider
 const button = (i) => (i === props.count ? '5.5rem' : i === props.count - 1 ? '6.5rem' : '10.5rem');
+// each a width in pixels, or 'search' : a table's search box (20rem, down to 10rem)
 const buttonWidths = computed(() =>
-  props.widths ? props.widths.map((w) => `${w}px`) : Array.from({ length: props.count }, (_, i) => button(i + 1)),
+  props.widths
+    ? props.widths.map((w) => (w === 'search' ? 'search' : `${w}px`))
+    : Array.from({ length: props.count }, (_, i) => button(i + 1)),
 );
 // a code line's indent, in steps of two characters : the nesting of yaml
 const INDENTS = [0, 1, 1, 2, 2, 2, 1, 2, 3, 3, 1, 0, 1, 1, 2, 2];
@@ -240,7 +244,13 @@ const inline = computed(() => ['inline', 'badge'].includes(props.shape));
     </div>
     <!-- buttons : on the title line, each one of its controls (the box itself takes no room) -->
     <template v-else-if="shape === 'buttons'">
-      <span v-for="(w, i) in buttonWidths" :key="i" class="af-sk af-sk-button" :style="{ width: w }"></span>
+      <span
+        v-for="(w, i) in buttonWidths"
+        :key="i"
+        class="af-sk af-sk-button"
+        :class="{ 'af-sk-search': w === 'search' }"
+        :style="w === 'search' ? null : { width: w }"
+      ></span>
     </template>
     <!-- tabs : the page's own tab bar, a grey word in each, the first one open -->
     <ul v-else-if="shape === 'tabs'" class="nav nav-tabs mb-0">
@@ -542,8 +552,15 @@ const inline = computed(() => ['inline', 'badge'].includes(props.shape));
 }
 .af-sk-button {
   display: inline-block;
-  height: calc(1.5em + 0.75rem + 2px);
+  /* a button's height (Bootstrap's : its line, its padding, its border), whatever the font around */
+  height: calc(1.5rem + 0.75rem + 2px);
   min-width: 6rem;
+}
+/* a table's search box on the title line : as .af-table-search (styles/tables.scss) */
+.af-sk-search {
+  width: 20rem;
+  flex: 0 1 20rem;
+  min-width: 10rem;
 }
 /* ------------------------------------------------------------------ */
 /* a tab and a word of a title                                        */
