@@ -188,7 +188,7 @@ onMounted(async () => {
             style="width: auto; min-width: 16rem"
             @change="applyFilters"
           >
-            <option value="">{{ t('audit.allActors') }}</option>
+            <option value="">{{ t('audit.allUsers') }}</option>
             <option v-for="a in facets.actors" :key="'ac-' + a" :value="a">{{ a }}</option>
           </select>
           <select

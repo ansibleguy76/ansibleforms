@@ -571,7 +571,7 @@ export default {
     outcomeSuccess: 'riuscito',
     outcomeFailure: 'fallito',
     outcomeDenied: 'negato',
-    allActors: 'Tutti gli autori',
+    allUsers: 'Tutti gli utenti',
     allActions: 'Tutte le azioni',
     allOutcomes: 'Tutti gli esiti',
     empty: 'Nessuna voce di audit',

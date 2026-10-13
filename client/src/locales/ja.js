@@ -566,7 +566,7 @@ export default {
     outcomeSuccess: '成功',
     outcomeFailure: '失敗',
     outcomeDenied: '拒否',
-    allActors: 'すべての実行者',
+    allUsers: 'すべてのユーザー',
     allActions: 'すべての操作',
     allOutcomes: 'すべての結果',
     empty: '監査エントリはまだありません',

@@ -565,7 +565,7 @@ export default {
     outcomeSuccess: 'success',
     outcomeFailure: 'failure',
     outcomeDenied: 'denied',
-    allActors: 'All actors',
+    allUsers: 'All users',
     allActions: 'All actions',
     allOutcomes: 'All outcomes',
     empty: 'No audit entries yet',

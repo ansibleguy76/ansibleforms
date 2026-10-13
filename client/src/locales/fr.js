@@ -572,7 +572,7 @@ export default {
     outcomeSuccess: 'succès',
     outcomeFailure: 'échec',
     outcomeDenied: 'refusé',
-    allActors: 'Tous les auteurs',
+    allUsers: 'Tous les utilisateurs',
     allActions: 'Toutes les actions',
     allOutcomes: 'Tous les résultats',
     empty: "Aucune entrée d'audit",

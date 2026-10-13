@@ -569,7 +569,7 @@ export default {
     outcomeSuccess: 'èxit',
     outcomeFailure: 'error',
     outcomeDenied: 'denegat',
-    allActors: 'Tots els actors',
+    allUsers: 'Tots els usuaris',
     allActions: 'Totes les accions',
     allOutcomes: 'Tots els resultats',
     empty: "Encara no hi ha entrades d'auditoria",

@@ -560,7 +560,7 @@ export default {
     outcomeSuccess: '成功',
     outcomeFailure: '失败',
     outcomeDenied: '已拒绝',
-    allActors: '所有执行者',
+    allUsers: '所有用户',
     allActions: '所有操作',
     allOutcomes: '所有结果',
     empty: '暂无审计条目',

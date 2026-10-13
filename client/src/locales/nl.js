@@ -568,7 +568,7 @@ export default {
     outcomeSuccess: 'gelukt',
     outcomeFailure: 'mislukt',
     outcomeDenied: 'geweigerd',
-    allActors: 'Alle actors',
+    allUsers: 'Alle gebruikers',
     allActions: 'Alle acties',
     allOutcomes: 'Alle resultaten',
     empty: 'Nog geen auditvermeldingen',
