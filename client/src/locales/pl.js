@@ -2409,6 +2409,8 @@ export default {
       past: 'Przeszłe',
       present: 'Bieżące',
       future: 'Przyszłe',
+      scheduled: 'Zaplanowane',
+      stored: 'Zapisane',
       all: 'Wszystkie zadania',
       running: 'Uruchomione',
       approve: 'Oczekuje na zatwierdzenie',

@@ -2441,6 +2441,8 @@ export default {
       past: 'Vergangenheit',
       present: 'Gegenwart',
       future: 'Zukunft',
+      scheduled: 'Geplant',
+      stored: 'Gespeichert',
       all: 'Alle Jobs',
       running: 'Läuft',
       approve: 'Wartet auf Genehmigung',

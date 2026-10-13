@@ -2332,6 +2332,8 @@ export default {
       past: '过去',
       present: '现在',
       future: '未来',
+      scheduled: '已计划',
+      stored: '已保存',
       all: '所有作业',
       running: '运行中',
       approve: '等待审批',

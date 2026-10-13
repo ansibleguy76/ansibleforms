@@ -2424,6 +2424,8 @@ export default {
       past: 'Pasado',
       present: 'Presente',
       future: 'Futuro',
+      scheduled: 'Programados',
+      stored: 'Guardados',
       all: 'Todos los jobs',
       running: 'En ejecución',
       approve: 'Esperando aprobación',

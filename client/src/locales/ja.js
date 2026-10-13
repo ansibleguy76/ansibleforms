@@ -2390,6 +2390,8 @@ export default {
       past: '過去',
       present: '現在',
       future: '未来',
+      scheduled: 'スケジュール済み',
+      stored: '保存済み',
       all: 'すべてのジョブ',
       running: '実行中',
       approve: '承認待ち',
