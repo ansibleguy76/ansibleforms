@@ -1579,16 +1579,6 @@ export default function getSettings(t) {
           filterable: true,
         },
         {
-          // set by the type (the server keeps it in step) : a column only
-          key: 'is_database',
-          label: t('settings.credentials.forDatabase'),
-          noInput: true,
-          columnType: 'checkbox',
-          filterType: 'boolean',
-          hidden: true,
-          required: false,
-        },
-        {
           key: 'user',
           step: 'login',
           label: t('settings.fields.user'),

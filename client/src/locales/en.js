@@ -1502,7 +1502,6 @@ export default {
       description: 'Reusable credentials for connecting to databases and external services from forms.',
       editCredential: 'Edit credential',
       deleteCredential: 'Delete credential',
-      forDatabase: 'For database',
       enableDbFields: 'Enable database fields',
       databaseType: 'Database type',
       database: 'Database',

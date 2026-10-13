@@ -1519,7 +1519,6 @@ export default {
       description: 'Credenziali riutilizzabili per la connessione a database e servizi esterni dai formulari.',
       editCredential: 'Modifica credenziale',
       deleteCredential: 'Elimina credenziale',
-      forDatabase: 'Per database',
       enableDbFields: 'Abilita campi database',
       databaseType: 'Tipo database',
       database: 'Database',

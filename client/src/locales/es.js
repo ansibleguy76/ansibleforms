@@ -1526,7 +1526,6 @@ export default {
         'Credenciales reutilizables para conectar con bases de datos y servicios externos desde formularios.',
       editCredential: 'Editar credencial',
       deleteCredential: 'Eliminar credencial',
-      forDatabase: 'Para base de datos',
       enableDbFields: 'Habilitar campos de base de datos',
       databaseType: 'Tipo de base de datos',
       database: 'Base de datos',

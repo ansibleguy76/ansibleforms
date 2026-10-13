@@ -1533,7 +1533,6 @@ export default {
         'Identifiants réutilisables pour la connexion aux bases de données et services externes depuis les formulaires.',
       editCredential: "Modifier l'identifiant",
       deleteCredential: "Supprimer l'identifiant",
-      forDatabase: 'Pour la base de donnees',
       enableDbFields: 'Activer les champs base de donnees',
       databaseType: 'Type de base de donnees',
       database: 'Base de donnees',

@@ -1378,7 +1378,6 @@ export default {
       description: '可在表单中重复使用、用于连接数据库和外部服务的凭据。',
       editCredential: '编辑凭据',
       deleteCredential: '删除凭据',
-      forDatabase: '用于数据库',
       enableDbFields: '启用数据库字段',
       databaseType: '数据库类型',
       database: '数据库',

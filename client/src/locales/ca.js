@@ -1434,7 +1434,6 @@ export default {
         'Credencials reutilitzables per connectar-se a bases de dades i serveis externs des dels formularis.',
       editCredential: 'Edita la credencial',
       deleteCredential: 'Suprimeix la credencial',
-      forDatabase: 'Per a base de dades',
       enableDbFields: 'Activa els camps de base de dades',
       databaseType: 'Tipus de base de dades',
       database: 'Base de dades',

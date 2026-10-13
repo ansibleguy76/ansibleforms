@@ -1534,7 +1534,6 @@ export default {
         'Wiederverwendbare Zugangsdaten für die Verbindung zu Datenbanken und externen Diensten aus Formularen.',
       editCredential: 'Anmeldedaten bearbeiten',
       deleteCredential: 'Anmeldedaten loeschen',
-      forDatabase: 'Fuer Datenbank',
       enableDbFields: 'Datenbankfelder aktivieren',
       databaseType: 'Datenbanktyp',
       database: 'Datenbank',

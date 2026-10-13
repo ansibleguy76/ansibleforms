@@ -1521,7 +1521,6 @@ export default {
         'Herbruikbare inloggegevens voor het verbinden met databases en externe services vanuit formulieren.',
       editCredential: 'Inloggegevens bewerken',
       deleteCredential: 'Inloggegevens verwijderen',
-      forDatabase: 'Voor database',
       enableDbFields: 'Database velden inschakelen',
       databaseType: 'Database type',
       database: 'Database',
