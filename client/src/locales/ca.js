@@ -2423,19 +2423,20 @@ export default {
     // the jobs page's left menu
     // a job's status where the menu has no entry for it
     statusLabel: {
-      abandoned: 'Abandonat',
-      rejected: 'Rebutjat',
       warning: 'Avís',
     },
     menu: {
-      status: 'Estat',
+      past: 'Passat',
+      present: 'Present',
+      future: 'Futur',
       all: 'Totes les tasques',
       running: 'En execució',
-      approve: 'Cal aprovació',
+      approve: 'Esperant aprovació',
       success: 'Correctes',
       failed: 'Fallides',
       aborted: 'Avortades',
-      planned: 'Planificades',
+      rejected: 'Rebutjat',
+      abandoned: 'Abandonat',
     },
     // the message in the table when no job is shown
     empty: {
@@ -2453,6 +2454,9 @@ export default {
       success: 'Tasques que han acabat correctament.',
       failed: "Tasques que han acabat amb un error. Obre'n una per veure a la sortida què ha anat malament.",
       aborted: "Tasques que s'han aturat abans d'acabar.",
+      rejected: 'Feines que un aprovador va rebutjar: no es van executar mai.',
+      abandoned:
+        'Feines que van perdre el que les executava (un RTE o node reiniciat o aturat) i ja no poden acabar. Torna a llançar-ne una per executar-la de nou.',
     },
     title: 'Tasques',
     refresh: 'Actualitza',

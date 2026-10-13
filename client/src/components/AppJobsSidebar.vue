@@ -29,7 +29,7 @@
 import { useI18n } from 'vue-i18n';
 import { jobsPath } from '@/lib/jobsPath';
 import { ref, computed, watch, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
 import { useAppStore } from '@/stores/app';
 import { mayOpen } from '@/lib/routePermission';
@@ -50,6 +50,7 @@ const emit = defineEmits(['select']);
 
 const { t } = useI18n();
 const router = useRouter();
+const route = useRoute();
 const store = useAppStore();
 
 const can = (permission) => !!store.profile?.options?.[permission];
@@ -73,16 +74,28 @@ watch(
   { immediate: true },
 );
 
+// the future jobs' counts : the schedules and the stored jobs the user may see (null until read,
+// then the count of last time while they are read again)
+const futureCounts = remembered('jobsFuture', { schedules: null, stored: null });
+
 // the statuses of the menu, with their names and icons, in the same order and with the
 // same icons as the jobs list's page titles (pages/jobs.vue). The labels are spelled out,
 // not built from the status, so the i18n key check can find them.
-const MENU_STATUSES = [
-  { status: 'running', icon: 'play', label: () => t('jobs.menu.running') },
-  { status: 'approve', icon: 'hourglass-half', label: () => t('jobs.menu.approve') },
-  { status: 'success', icon: 'check', label: () => t('jobs.menu.success') },
-  { status: 'failed', icon: 'xmark', label: () => t('jobs.menu.failed') },
-  { status: 'aborted', icon: 'ban', label: () => t('jobs.menu.aborted') },
-];
+const MENU_STATUSES = {
+  // what ran : ended one way or the other
+  past: [
+    { status: 'success', icon: 'check', label: () => t('jobs.menu.success') },
+    { status: 'failed', icon: 'xmark', label: () => t('jobs.menu.failed') },
+    { status: 'aborted', icon: 'ban', label: () => t('jobs.menu.aborted') },
+    { status: 'rejected', icon: 'thumbs-down', label: () => t('jobs.menu.rejected') },
+    { status: 'abandoned', icon: 'plug-circle-xmark', label: () => t('jobs.menu.abandoned') },
+  ],
+  // what is going on now : running, or waiting for someone's approval
+  present: [
+    { status: 'running', icon: 'play', label: () => t('jobs.menu.running') },
+    { status: 'approve', icon: 'hourglass-half', label: () => t('jobs.menu.approve') },
+  ],
+};
 
 // COMPUTED
 
@@ -94,39 +107,33 @@ function pick(status) {
   else router.push(jobsPath(status));
 }
 
+// the jobs in time : the past ones (ended), the present ones (running, waiting for an approval)
+// and the future ones (on a schedule, or stored to be submitted again). Every job is at the
+// header's Jobs link (/jobs/all).
 const sections = computed(() => {
   const sections = [];
   if (can('showJobs')) {
     const all = countedJobs.value.filter((x) => !x.parent_id);
     const count = (status) => all.filter((x) => x.status === status).length;
-    sections.push({
-      title: t('jobs.menu.status'),
-      items: [
-        {
-          title: t('jobs.menu.all'),
-          icon: 'list',
-          badge: all.length,
-          active: isJobsList.value && !props.status,
-          action: () => pick(null),
-        },
-        ...MENU_STATUSES.map((m) => ({
-          title: m.label(),
-          icon: m.icon,
-          badge: count(m.status),
-          // a job waiting for approval needs someone : its count stands out, in the orange of its status
-          badgeAlert: m.status === 'approve' && count(m.status) > 0,
-          active: isJobsList.value && props.status === m.status,
-          action: () => pick(m.status),
-        })),
-      ],
-    });
+    const items = (list) =>
+      list.map((m) => ({
+        title: m.label(),
+        icon: m.icon,
+        badge: count(m.status),
+        // a job waiting for approval needs someone : its count stands out, in the orange of its status
+        badgeAlert: m.status === 'approve' && count(m.status) > 0,
+        active: isJobsList.value && props.status === m.status,
+        action: () => pick(m.status),
+      }));
+    // in time's order : the past, the present, then the future below
+    sections.push({ title: t('jobs.menu.past'), items: items(MENU_STATUSES.past) });
+    sections.push({ title: t('jobs.menu.present'), items: items(MENU_STATUSES.present) });
   }
-  // the jobs that run later : on a schedule, or saved to be submitted again
-  const planned = [
-    { title: t('sidebar.schedules'), icon: 'clock', link: '/jobs/schedules' },
-    { title: t('sidebar.storedJobs'), icon: 'floppy-disk', link: '/jobs/stored' },
+  const future = [
+    { title: t('sidebar.schedules'), icon: 'clock', link: '/jobs/schedules', badge: futureCounts.value.schedules },
+    { title: t('sidebar.storedJobs'), icon: 'floppy-disk', link: '/jobs/stored', badge: futureCounts.value.stored },
   ].filter((i) => mayOpen(i.link, store.profile?.options));
-  if (planned.length) sections.push({ title: t('jobs.menu.planned'), items: planned });
+  if (future.length) sections.push({ title: t('jobs.menu.future'), items: future });
   return sections;
 });
 
@@ -145,9 +152,35 @@ async function loadCounts() {
   }
 }
 
+/**
+ * Reads how many schedules and stored jobs the user has, for the Upcoming badges : only those
+ * the user may open (the same role options as their pages).
+ */
+async function loadFutureCounts() {
+  const options = store.profile?.options;
+  const read = async (link, url) => {
+    if (!mayOpen(link, options)) return null;
+    try {
+      const result = await axios.get(url);
+      return result.data?.count ?? result.data?.records?.length ?? null;
+    } catch {
+      // a hint : without it the menu still works
+      return null;
+    }
+  };
+  const [schedules, stored] = await Promise.all([
+    read('/jobs/schedules', '/api/v2/schedule/'),
+    read('/jobs/stored', '/api/v2/stored-jobs/'),
+  ]);
+  futureCounts.value = { schedules, stored };
+}
+
 // MOUNT
 
 onMounted(loadCounts);
+onMounted(loadFutureCounts);
+// a schedule or a stored job added or deleted on its page : read again when the page changes
+watch(() => route.path, loadFutureCounts);
 // and again whenever the jobs change (lib/liveEvents.js) : the counts follow a job starting,
 // ending, or waiting for approval
 useLiveEvent('jobs', loadCounts);

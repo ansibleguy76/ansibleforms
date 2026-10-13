@@ -2435,19 +2435,20 @@ export default {
     // the jobs page's left menu
     // a job's status where the menu has no entry for it
     statusLabel: {
-      abandoned: 'Verwaist',
-      rejected: 'Abgelehnt',
       warning: 'Warnung',
     },
     menu: {
-      status: 'Status',
+      past: 'Vergangenheit',
+      present: 'Gegenwart',
+      future: 'Zukunft',
       all: 'Alle Jobs',
       running: 'Läuft',
-      approve: 'Zu genehmigen',
+      approve: 'Wartet auf Genehmigung',
       success: 'Erfolgreich',
       failed: 'Fehlgeschlagen',
       aborted: 'Abgebrochen',
-      planned: 'Geplant',
+      rejected: 'Abgelehnt',
+      abandoned: 'Verwaist',
     },
     // the message in the table when no job is shown
     empty: {
@@ -2467,6 +2468,9 @@ export default {
       failed:
         'Jobs, die mit einem Fehler beendet wurden. Öffnen Sie einen, um in seiner Ausgabe zu sehen, was schiefging.',
       aborted: 'Jobs, die vor ihrem Ende abgebrochen wurden.',
+      rejected: 'Jobs, die ein Genehmiger abgelehnt hat: Sie wurden nie ausgeführt.',
+      abandoned:
+        'Jobs, die verloren haben, was sie ausführte (ein neu gestartetes oder gestopptes RTE oder App-Knoten), und nicht mehr enden können. Starte einen neu, um ihn erneut auszuführen.',
     },
     title: 'Jobs',
     refresh: 'Aktualisieren',

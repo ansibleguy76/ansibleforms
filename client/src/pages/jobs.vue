@@ -324,6 +324,18 @@ const MENU_STATUSES = [
     label: () => t('jobs.menu.aborted'),
     description: () => t('jobs.description.aborted'),
   },
+  {
+    status: 'rejected',
+    icon: 'thumbs-down',
+    label: () => t('jobs.menu.rejected'),
+    description: () => t('jobs.description.rejected'),
+  },
+  {
+    status: 'abandoned',
+    icon: 'plug-circle-xmark',
+    label: () => t('jobs.menu.abandoned'),
+    description: () => t('jobs.description.abandoned'),
+  },
 ];
 // the page title is the view picked in the left menu (its name and icon, as in the menu)
 // a job's page's title in steps : Jobs › Job #73, each a link

@@ -2384,19 +2384,20 @@ export default {
     // the jobs page's left menu
     // a job's status where the menu has no entry for it
     statusLabel: {
-      abandoned: '放棄',
-      rejected: '却下',
       warning: '警告',
     },
     menu: {
-      status: 'ステータス',
+      past: '過去',
+      present: '現在',
+      future: '未来',
       all: 'すべてのジョブ',
       running: '実行中',
       approve: '承認待ち',
       success: '成功',
       failed: '失敗',
       aborted: '中止',
-      planned: '予約済み',
+      rejected: '却下',
+      abandoned: '放棄',
     },
     // the message in the table when no job is shown
     empty: {
@@ -2413,6 +2414,9 @@ export default {
       success: '正常に完了したジョブです。',
       failed: 'エラーで終了したジョブです。ジョブを開くと、出力で問題の内容を確認できます。',
       aborted: '完了前に停止されたジョブです。',
+      rejected: '承認者が却下したジョブです。実行されていません。',
+      abandoned:
+        '実行元（再起動または停止した RTE やアプリノード）を失い、もう終了できないジョブです。再実行するにはリランチしてください。',
     },
     title: 'ジョブ',
     refresh: '更新',

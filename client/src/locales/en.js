@@ -2383,19 +2383,20 @@ export default {
     // the jobs page's left menu
     // a job's status where the menu has no entry for it
     statusLabel: {
-      abandoned: 'Abandoned',
-      rejected: 'Rejected',
       warning: 'Warning',
     },
     menu: {
-      status: 'Status',
+      past: 'Past',
+      present: 'Present',
+      future: 'Future',
       all: 'All jobs',
       running: 'Running',
-      approve: 'Needs approval',
+      approve: 'Waiting for approval',
       success: 'Success',
       failed: 'Failed',
       aborted: 'Aborted',
-      planned: 'Planned',
+      rejected: 'Rejected',
+      abandoned: 'Abandoned',
     },
     // the message in the table when no job is shown
     empty: {
@@ -2413,6 +2414,9 @@ export default {
       success: 'Jobs that finished successfully.',
       failed: 'Jobs that ended with an error. Open one to see in its output what went wrong.',
       aborted: 'Jobs that were stopped before they finished.',
+      rejected: 'Jobs an approver rejected: they never ran.',
+      abandoned:
+        'Jobs that lost what ran them (a restarted or stopped RTE or app node) and can no longer finish. Relaunch one to run it again.',
     },
     title: 'Jobs',
     refresh: 'Refresh',
