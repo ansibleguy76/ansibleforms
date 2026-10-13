@@ -201,9 +201,8 @@ onMounted(async () => {
         </div>
       </template>
       <template #default>
-        <div v-if="loading && records.length === 0" class="spinner-border" role="status">
-          <span class="visually-hidden">{{ t('settings.common.loading') }}</span>
-        </div>
+        <!-- the first load : the pages' loading indicator, as every page's -->
+        <AppPageLoading v-if="loading && records.length === 0" />
         <div v-else-if="loadFailed" class="text-center text-muted py-4">
           <div class="fw-bold">{{ t('audit.failedLoad') }}</div>
         </div>

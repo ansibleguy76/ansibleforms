@@ -2306,11 +2306,8 @@ onBeforeUnmount(() => {
           </div>
         </div>
       </div>
-      <div v-else-if="!formNotFound" class="loader">
-        <div class="spinner-border" role="status">
-          <span class="visually-hidden">{{ t('form.loading') }}</span>
-        </div>
-      </div>
+      <!-- the form loading : the pages' loading indicator, as every page's -->
+      <AppPageLoading v-else-if="!formNotFound" />
       <!-- not found : the page's title and its divider, as a form's, then why on one line -->
       <div v-else class="section container-fluid w-100 mt-3">
         <div class="d-flex flex-wrap align-items-center border-bottom mb-3 pb-2 af-page-head">
@@ -2514,16 +2511,6 @@ onBeforeUnmount(() => {
 .af-form-buttons {
   gap: 0.5rem;
 }
-/* the spinner while the form loads : centred in the space beside the forms menu. It used to
-   centre every element holding it (*:has(.loader)), the page's main row included - so the menu
-   showed in the middle of the page until the form came */
-.loader {
-  flex: 1 1 auto;
-  display: flex;
-  justify-content: center;
-  padding-top: 3rem;
-}
-
 .badge.status {
   font-size: 0.75rem;
 }
