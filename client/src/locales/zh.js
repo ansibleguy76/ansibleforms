@@ -1394,9 +1394,11 @@ export default {
       stepStore: '存储',
       stepType: '类型',
       type: '类型',
-      type_ssh: 'SSH / 用户名和密码',
-      type_sshHint:
-        '用户名和密码，用于 SSH 连接服务器或其他登录。7 之前的凭据都是此类型：用于 REST API 时，选 API 更能说明用途',
+      type_ssh: 'SSH',
+      type_sshHint: '用于 SSH 连接服务器的用户名和密码',
+      type_userpass: '用户名和密码',
+      type_userpassHint:
+        '用于其他任何登录的用户名和密码：使用 basic auth 的 REST API、服务等。7 之前的凭据都是此类型。',
       type_git: 'Git',
       type_gitHint: '用于 git 仓库的用户名和密码或令牌',
       type_api: 'API',

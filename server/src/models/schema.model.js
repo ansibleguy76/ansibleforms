@@ -902,7 +902,7 @@ async function patchVersion7(messages, success, failed) {
   // reads is there - on a database from before flavour, filling it earlier failed (Unknown
   // column 'r.flavour') and left the old jobs without a kind until the next start
   await checkPromise(fillJobRunnerKinds(), messages, success, failed);
-  // what a credential is for : ssh, git, api or database ; the existing ones from their
+  // what a credential is for : userpass, ssh, git, api, database... ; the existing ones from their
   // is_database flag
   await checkPromise(addColumn("credentials", "credential_type", "varchar(20)", true, "NULL"), messages, success, failed);
   await checkPromise(fillCredentialTypes(), messages, success, failed);
@@ -1006,10 +1006,12 @@ function fillJobRunnerKinds() {
     .then((res) => `filled the runner kind of ${res?.affectedRows ?? 0} job(s)`);
 }
 
-// Idempotent by its WHERE clause : only a credential without a valid type gets one
+// Idempotent by its WHERE clause : only a credential without a valid type gets one - database for
+// a database one, else userpass, a user and a password : what a credential from 6 is, mostly a
+// REST login (it used to become ssh)
 function fillCredentialTypes() {
   return mysql
-    .do("UPDATE AnsibleForms.`credentials` SET credential_type=IF(is_database,'database','ssh') WHERE credential_type IS NULL OR credential_type NOT IN ('ssh','git','api','database','cyberark','smtp')")
+    .do("UPDATE AnsibleForms.`credentials` SET credential_type=IF(is_database,'database','userpass') WHERE credential_type IS NULL OR credential_type NOT IN ('userpass','ssh','git','api','database','cyberark','smtp')")
     .then((res) => `Set the type of ${res?.affectedRows ?? 0} credential(s)`);
 }
 

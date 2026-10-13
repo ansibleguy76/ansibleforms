@@ -28,16 +28,18 @@ class CredentialModel extends CrudModel {
   // the types a credential can be : what it is for. A cyberark one is how a CyberArk secret
   // store logs in : its AppID (user), and a client certificate and key when the AppID is
   // restricted to one
-  static TYPES = ['ssh', 'git', 'api', 'database', 'cyberark', 'smtp'];
+  // userpass : a user and a password for any login (a REST API, a service...), the default ; ssh :
+  // one for SSH to a server, the login a workflow node's playbook connects with
+  static TYPES = ['userpass', 'ssh', 'git', 'api', 'database', 'cyberark', 'smtp'];
 
   /**
    * Keeps a credential's type and its is_database flag in step : the type sets the flag, and
    * a write that only sends the flag (an older client, the seed) gets the matching type -
-   * database, or ssh on a create.
+   * database, or userpass on a create.
    *
    * Args:
    *   data (object): the record written.
-   *   creating (boolean): a create (a credential without a type is an ssh one).
+   *   creating (boolean): a create (a credential without a type is a userpass one).
    *
    * Returns:
    *   object: the record.
@@ -53,7 +55,7 @@ class CredentialModel extends CrudModel {
       data.is_database = data.credential_type === 'database' ? 1 : 0;
     } else if (data.is_database !== undefined) {
       if (data.is_database && data.is_database !== '0') data.credential_type = 'database';
-      else if (creating) data.credential_type = 'ssh';
+      else if (creating) data.credential_type = 'userpass';
     } else if (creating) {
       // the column's default makes it a database credential : say so
       data.credential_type = 'database';

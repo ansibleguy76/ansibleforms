@@ -1550,9 +1550,11 @@ export default {
       stepStore: 'Speicher',
       stepType: 'Typ',
       type: 'Typ',
-      type_ssh: 'SSH / Benutzer und Passwort',
-      type_sshHint:
-        'Benutzer und Passwort, für SSH zu einem Server oder eine andere Anmeldung. Zugangsdaten von vor 7 haben diesen Typ : für eine REST API sagt API besser, wofür er dient',
+      type_ssh: 'SSH',
+      type_sshHint: 'Benutzer und Passwort für SSH zu einem Server',
+      type_userpass: 'Benutzer und Passwort',
+      type_userpassHint:
+        'Benutzer und Passwort für jede andere Anmeldung : eine REST API mit Basic Auth, ein Dienst und mehr. Zugangsdaten von vor 7 haben diesen Typ.',
       type_git: 'Git',
       type_gitHint: 'Benutzer und Passwort oder Token für Git-Repositorys',
       type_api: 'API',

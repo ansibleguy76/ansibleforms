@@ -1535,9 +1535,11 @@ export default {
       stepStore: 'Archivio',
       stepType: 'Tipo',
       type: 'Tipo',
-      type_ssh: 'SSH / utente e password',
-      type_sshHint:
-        'Un utente e una password, per SSH verso un server o un altro accesso. Le credenziali precedenti alla 7 hanno questo tipo : per una REST API, API dice meglio a cosa serve',
+      type_ssh: 'SSH',
+      type_sshHint: 'Un utente e una password per SSH verso un server',
+      type_userpass: 'Utente e password',
+      type_userpassHint:
+        'Un utente e una password per qualsiasi altro accesso : una REST API con basic auth, un servizio e altro. Le credenziali precedenti alla 7 hanno questo tipo.',
       type_git: 'Git',
       type_gitHint: 'Un utente e una password o un token per repository git',
       type_api: 'API',

@@ -253,9 +253,9 @@ const FORM_TYPE_OF_RUNNER = { rte: "ansible", awx: "awx", semaphore: "semaphore"
 
 /**
  * How a node's credentials reach its playbook. Each one reaches it under its own name, as a form's
- * credentials do ; the first ssh one (a user and a password - SSH, REST with basic auth...) is also
- * the login ansible connects with, as AWX's machine credential. A vault one opens the vaults only :
- * its password is not handed to the playbook. A credential used to be the login only and never
+ * credentials do ; the first ssh one is also the login ansible connects with, as AWX's machine
+ * credential - a userpass one (a REST login...) is not. A vault one opens the vaults only : its
+ * password is not handed to the playbook. A credential used to be the login only and never
  * reached the playbook - a node with one REST credential ran without it.
  *
  * Args:
@@ -272,7 +272,7 @@ export function credentialRoles(credentials, types) {
       if (!out.vaultCredentials) out.vaultCredentials = c.name;
       continue;
     }
-    if ((types.get(c.name) || "ssh") === "ssh" && !out.ansibleCredentials) out.ansibleCredentials = c.name;
+    if (types.get(c.name) === "ssh" && !out.ansibleCredentials) out.ansibleCredentials = c.name;
     out.credentials[c.name] = c.name;
   }
   return out;
@@ -361,7 +361,7 @@ async function credentialTypes(workflow) {
   const names = [...new Set(workflow.nodes.flatMap((n) => n.credentials.map((c) => c.name)))];
   if (!names.length) return new Map();
   const rows = await mysql.do("SELECT name, credential_type FROM AnsibleForms.`credentials` WHERE name IN (?)", [names]);
-  return new Map((rows || []).map((r) => [r.name, r.credential_type || "ssh"]));
+  return new Map((rows || []).map((r) => [r.name, r.credential_type || "userpass"]));
 }
 
 // ─── the run ──────────────────────────────────────────────────────────────────

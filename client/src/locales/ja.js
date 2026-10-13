@@ -1432,9 +1432,11 @@ export default {
       stepStore: '保存先',
       stepType: '種類',
       type: '種類',
-      type_ssh: 'SSH / ユーザーとパスワード',
-      type_sshHint:
-        'ユーザーとパスワード。サーバーへの SSH やその他のログインに使います。7 より前の認証情報はこの種類です。REST API には API の方が用途を正しく表します',
+      type_ssh: 'SSH',
+      type_sshHint: 'サーバーへの SSH 用のユーザーとパスワード',
+      type_userpass: 'ユーザーとパスワード',
+      type_userpassHint:
+        'その他のログイン用のユーザーとパスワード（Basic 認証の REST API、サービスなど）。7 より前の認証情報はこの種類です。',
       type_git: 'Git',
       type_gitHint: 'git リポジトリ用のユーザーとパスワードまたはトークン',
       type_api: 'API',

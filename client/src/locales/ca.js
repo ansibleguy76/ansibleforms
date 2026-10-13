@@ -1450,9 +1450,11 @@ export default {
       stepStore: 'Magatzem',
       stepType: 'Tipus',
       type: 'Tipus',
-      type_ssh: 'SSH / usuari i contrasenya',
-      type_sshHint:
-        "Un usuari i una contrasenya, per a SSH a un servidor o qualsevol altre accés. Les credencials d'abans de la 7 tenen aquest tipus : per a una API REST, API diu millor per a què serveix",
+      type_ssh: 'SSH',
+      type_sshHint: 'Un usuari i una contrasenya per a SSH a un servidor',
+      type_userpass: 'Usuari i contrasenya',
+      type_userpassHint:
+        "Un usuari i una contrasenya per a qualsevol altre accés : una API REST amb basic auth, un servei i més. Les credencials d'abans de la 7 tenen aquest tipus.",
       type_git: 'Git',
       type_gitHint: 'Un usuari i una contrasenya o un token per a repositoris git',
       type_api: 'API',

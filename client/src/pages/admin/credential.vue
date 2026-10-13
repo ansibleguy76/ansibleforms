@@ -83,7 +83,7 @@ function editable(record) {
       ? record.credential_type
       : record.is_database
         ? 'database'
-        : 'ssh',
+        : 'userpass',
     user: record.user ?? '',
     client_cert: record.client_cert ?? '',
     client_key: '',
