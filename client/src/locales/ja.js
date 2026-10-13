@@ -1955,6 +1955,10 @@ export default {
       pushed: '{repository} にプッシュしました',
       path: 'パス',
       pathHelp: 'フォルダー内のファイルのパス (サブフォルダーを含む、roles/web/tasks/main.yml)。',
+      workflowPathHelp:
+        'workflows フォルダ内のワークフローのファイル（サブフォルダを含む：deploy.yml、team/deploy.yml）。フォームは playbook と同じく、このファイル名で実行します。',
+      sharedWorkflowNames:
+        '{names} という名前のワークフローが別のファイルにもあります。名前で実行するフォームは停止します。名前を変えるか、フォームでファイルを指定してください。',
       folderHelp: 'フォルダーのパス。ファイルを保存すると残ります。',
       create: '作成',
       deleteConfirm: '本当に削除しますか',

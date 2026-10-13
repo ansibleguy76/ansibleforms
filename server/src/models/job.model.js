@@ -1300,8 +1300,12 @@ Job.launch = async function ({
     const completionPromise = executeJob();
     return { id: jobid, completionPromise };
   } else {
-    executeJob().catch(err => {
+    executeJob().catch(async (err) => {
       logger.error(`Background job ${jobid} failed:`, err);
+      // nothing else ends it : it would stay running for ever, with nothing in its output to
+      // say why. Ended once (endJobStatus leaves a job that has ended already)
+      const order = (await Job.lastOrder(jobid).catch(() => 0)) + 1;
+      await Job.endJobStatus(jobid, order, "stderr", "failed", `[ERROR]: ${err?.message || err}`);
     });
     return { id: jobid };
   }

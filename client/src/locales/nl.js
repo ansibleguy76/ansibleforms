@@ -1982,6 +1982,10 @@ export default {
       pushed: 'Gepusht naar {repository}',
       path: 'Pad',
       pathHelp: 'Het pad van het bestand in de map, met submappen (roles/web/tasks/main.yml).',
+      workflowPathHelp:
+        'Het bestand van de workflow in de workflows-map, met submappen (deploy.yml, team/deploy.yml). Een formulier start hem met dit bestand, zoals het een playbook noemt.',
+      sharedWorkflowNames:
+        'Een workflow met de naam {names} staat ook in een ander bestand : een formulier dat hem bij zijn naam start, stopt. Hernoem hem, of noem zijn bestand in het formulier.',
       folderHelp: 'Het pad van de map; hij blijft zodra er een bestand in is opgeslagen.',
       create: 'Aanmaken',
       deleteConfirm: 'Weet je zeker dat je wilt verwijderen',

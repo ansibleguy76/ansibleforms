@@ -1992,6 +1992,10 @@ export default {
       pushed: 'Enviat a {repository}',
       path: 'Ruta',
       pathHelp: 'La ruta del fitxer a la carpeta, amb les subcarpetes (roles/web/tasks/main.yml).',
+      workflowPathHelp:
+        "El fitxer del workflow a la carpeta de workflows, amb les subcarpetes (deploy.yml, team/deploy.yml). Un formulari l'executa per aquest fitxer, com anomena un playbook.",
+      sharedWorkflowNames:
+        "Un workflow anomenat {names} també és en un altre fitxer : un formulari que l'executa pel seu nom s'atura. Canvieu-li el nom, o indiqueu el seu fitxer al formulari.",
       folderHelp: "La ruta de la carpeta; es conserva quan s'hi desa un fitxer.",
       create: 'Crea',
       deleteConfirm: 'Segur que vols esborrar',

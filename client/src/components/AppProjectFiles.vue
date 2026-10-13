@@ -263,7 +263,10 @@ async function save() {
   if (!dirty.value || props.readOnly) return;
   working.value = true;
   try {
-    await axios.put(`${api.value}/file`, { path: selected.value, content: content.value });
+    const res = await axios.put(`${api.value}/file`, { path: selected.value, content: content.value });
+    // a workflow named as one in another file : said now, not when a form fails to start it
+    const shared = res.data?.sharedNames || [];
+    if (shared.length) toast.warning(t('designer.files.sharedWorkflowNames', { names: shared.join(', ') }));
     loadedContent.value = content.value;
     toast.success(t('designer.files.saved', { path: selected.value }));
     await loadList();
@@ -321,7 +324,12 @@ const CREATE_LOOK = {
   group_vars: { icon: 'layer-group', title: 'designer.files.newGroupVars', help: 'designer.files.groupVarsHelp' },
   host_vars: { icon: 'server', title: 'designer.files.newHostVars', help: 'designer.files.hostVarsHelp' },
   // a new workflow : a new file, an empty workflow named after it (createFile)
-  workflow: { icon: 'diagram-project', title: 'designer.files.newWorkflow', help: 'designer.files.pathHelp' },
+  workflow: {
+    icon: 'diagram-project',
+    title: 'designer.files.newWorkflow',
+    help: 'designer.files.workflowPathHelp',
+    placeholder: 'deploy.yml',
+  },
 };
 const createLook = computed(() => CREATE_LOOK[creating.value?.kind] || CREATE_LOOK.file);
 
@@ -827,6 +835,7 @@ defineExpose({
           :isFloating="false"
           v-model="creating.path"
           :label="t('designer.files.path')"
+          :placeholder="createLook.placeholder || ''"
           :icon="createLook.icon"
           :help="t(createLook.help)"
           @keyup_enter="create()"

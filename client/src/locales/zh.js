@@ -1904,6 +1904,10 @@ export default {
       pushed: '已推送到 {repository}',
       path: '路径',
       pathHelp: '文件在文件夹中的路径,含子文件夹 (roles/web/tasks/main.yml)。',
+      workflowPathHelp:
+        '工作流在 workflows 文件夹中的文件，包括子文件夹（deploy.yml、team/deploy.yml）。表单像引用 playbook 一样，用这个文件来运行它。',
+      sharedWorkflowNames:
+        '名为 {names} 的工作流也在另一个文件中：按名称运行它的表单会停止。请重命名它，或在表单中指定它的文件。',
       folderHelp: '文件夹的路径;在其中保存文件后会保留。',
       create: '创建',
       deleteConfirm: '确定要删除',

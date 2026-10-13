@@ -131,6 +131,29 @@ export async function resolvePlaybookDirectory(playbookSubPath = "") {
 }
 
 /**
+ * A form's playbook as ansible-playbook takes it : its file (deploy.yml, team/deploy.yml), or its
+ * name without the extension (deploy), as a form may name a workflow - the .yml or the .yaml file
+ * of that name in the playbook folder. A name with no such file goes as it is : ansible-playbook
+ * then says it is not found.
+ *
+ * Args:
+ *   directory (string): the folder the playbook runs from.
+ *   playbook (string): the form's playbook.
+ *
+ * Returns:
+ *   string: the playbook's file.
+ */
+export function playbookFile(directory, playbook) {
+  const name = String(playbook ?? "");
+  if (!name || /\.ya?ml$/i.test(name) || !directory) return name;
+  if (fs.existsSync(path.join(directory, name))) return name;
+  for (const ext of [".yml", ".yaml"]) {
+    if (fs.existsSync(path.join(directory, name + ext))) return name + ext;
+  }
+  return name;
+}
+
+/**
  * The ansible-playbook arguments for a job's extravars. No shell runs them, so no value
  * needs quoting ; the vault password is not among them (it goes in on stdin).
  */
@@ -318,9 +341,13 @@ async function launchPlaybook(ev, secrets, jobid, counter) {
   const extravarsFileName = `extravars_${jobid}.json`;
   const hiddenExtravarsFileName = `he_${extravarsFileName}`;
   logger.debug(`Extravars File: ${extravarsFileName}`);
+  const directory = await resolvePlaybookDirectory(playbookSubPath);
+  // its name (deploy) as its file (deploy.yml) : a form may name it either way
+  playbook = playbookFile(directory, playbook);
+  extravars.__playbook__ = playbook;
   const { args, inventory } = buildAnsibleArgs(extravars, { extravarsFileName, hiddenExtravarsFileName, vaultPassword });
   var cmdObj = {
-    directory: await resolvePlaybookDirectory(playbookSubPath),
+    directory,
     file: "ansible-playbook",
     args: args,
     stdin: vaultPassword,
