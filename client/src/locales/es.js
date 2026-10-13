@@ -1987,6 +1987,10 @@ export default {
       pushed: 'Enviado a {repository}',
       path: 'Ruta',
       pathHelp: 'La ruta del archivo en la carpeta, con sus subcarpetas (roles/web/tasks/main.yml).',
+      workflowPathHelp:
+        'El archivo del workflow en la carpeta de workflows, con sus subcarpetas (deploy.yml, team/deploy.yml). Un formulario lo ejecuta por este archivo, como nombra un playbook.',
+      sharedWorkflowNames:
+        'Un workflow llamado {names} está también en otro archivo : un formulario que lo ejecuta por su nombre se detiene. Renómbrelo, o indique su archivo en el formulario.',
       folderHelp: 'La ruta de la carpeta; se conserva cuando se guarda un archivo en ella.',
       create: 'Crear',
       deleteConfirm: '¿Seguro que quieres borrar',

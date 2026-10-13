@@ -99,7 +99,7 @@ const runnerLabel = (r) => {
 };
 const isTrue = (v) => v === true || v === 'true';
 
-// ─── its credentials : those it has (each removable), one more picked and added ───
+// ─── its credentials : those it has (each removable), one more added as it is picked ───
 const credentialToAdd = ref('');
 watch(
   () => props.node.identifier,
@@ -108,7 +108,7 @@ watch(
 const credentialChoices = computed(() =>
   sorted(props.refs.credentials).filter((c) => !(props.node.credentials || []).includes(c)),
 );
-/** Adds the credential picked ; nothing picked, nothing added. */
+/** Adds the credential picked, the list back to its first choice ; nothing picked, nothing added. */
 function addCredential() {
   if (!credentialToAdd.value) return;
   emit('set', 'credentials', [...(props.node.credentials || []), credentialToAdd.value]);
@@ -323,13 +323,20 @@ function removeCredential(name) {
           />
         </div>
         <div v-if="!readOnly" class="input-group">
-          <select v-model="credentialToAdd" class="form-select" :disabled="!credentialChoices.length">
+          <!-- picked is added : no button to press after the choice (it was missed) -->
+          <select
+            v-model="credentialToAdd"
+            class="form-select"
+            :disabled="!credentialChoices.length"
+            @change="addCredential()"
+          >
             <option value="">
-              {{ credentialChoices.length ? t('workflowEditor.credential') : t('workflowEditor.noCredentials') }}
+              {{
+                credentialChoices.length ? `${t('workflowEditor.addCredential')}...` : t('workflowEditor.noCredentials')
+              }}
             </option>
             <option v-for="c in credentialChoices" :key="c" :value="c">{{ c }}</option>
           </select>
-          <BsButton icon="plus" :title="t('workflowEditor.addCredential')" @click="addCredential()" />
         </div>
       </div>
     </div>

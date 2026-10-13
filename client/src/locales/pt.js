@@ -1987,6 +1987,10 @@ export default {
       pushed: 'Enviado para {repository}',
       path: 'Caminho',
       pathHelp: 'O caminho do ficheiro na pasta, com as subpastas (roles/web/tasks/main.yml).',
+      workflowPathHelp:
+        'O arquivo do workflow na pasta de workflows, com as subpastas (deploy.yml, team/deploy.yml). Um formulário o executa por este arquivo, como nomeia um playbook.',
+      sharedWorkflowNames:
+        'Um workflow chamado {names} está também em outro arquivo : um formulário que o executa pelo nome para. Renomeie-o, ou indique o seu arquivo no formulário.',
       folderHelp: 'O caminho da pasta; mantém-se quando um ficheiro é guardado nela.',
       create: 'Criar',
       deleteConfirm: 'Tem a certeza de que quer eliminar',

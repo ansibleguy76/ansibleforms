@@ -1973,6 +1973,10 @@ export default {
       pushed: 'Wypchnięto do {repository}',
       path: 'Ścieżka',
       pathHelp: 'Ścieżka pliku w folderze, z podfolderami (roles/web/tasks/main.yml).',
+      workflowPathHelp:
+        'Plik workflow w folderze workflow, z podfolderami (deploy.yml, team/deploy.yml). Formularz uruchamia go przez ten plik, tak jak nazywa playbook.',
+      sharedWorkflowNames:
+        'Workflow o nazwie {names} jest też w innym pliku : formularz, który uruchamia go po nazwie, zatrzymuje się. Zmień jego nazwę lub podaj w formularzu jego plik.',
       folderHelp: 'Ścieżka folderu; zostaje, gdy zapiszesz w nim plik.',
       create: 'Utwórz',
       deleteConfirm: 'Czy na pewno chcesz usunąć',

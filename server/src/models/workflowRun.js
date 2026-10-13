@@ -94,7 +94,9 @@ async function allWorkflows() {
         logger.warning(`Workflow file '${file}' is not valid YAML : ${e.message}`);
         continue;
       }
-      for (const wf of workflows) found.push({ workflow: wf, file });
+      // its path in its folder, as a form names it (workflows/deploy.yml), with forward slashes
+      const rel = path.relative(root, file).split(path.sep).join("/");
+      for (const wf of workflows) found.push({ workflow: wf, file, rel });
     }
   }
   return found;
@@ -109,29 +111,92 @@ async function allWorkflows() {
 export async function listWorkflows() {
   return (await allWorkflows())
     .filter((f) => f.workflow.name)
-    .map((f) => ({ name: f.workflow.name, file: path.basename(f.file) }))
+    .map((f) => ({ name: f.workflow.name, file: f.rel }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /**
- * A workflow of the designer's, by its name : in the workflows folder (WORKFLOWS_PATH) or a
- * repository used for workflows.
+ * The names of a saved workflows file that another file has too : two workflows of one name stop
+ * a form that runs it by its name - said when the file is saved, rather than when a job starts.
  *
  * Args:
- *   name (string): the workflow's name.
+ *   content (string): the file's text.
+ *
+ * Returns:
+ *   Promise<string[]>: its workflows' names that are in more than one file.
+ */
+export async function sharedWorkflowNames(content) {
+  let names;
+  try {
+    names = new Set(workflowsOf(String(content || "")).map((w) => w.name).filter(Boolean));
+  } catch {
+    return [];
+  }
+  if (!names.size) return [];
+  const files = new Map();
+  for (const f of await allWorkflows()) {
+    if (names.has(f.workflow.name)) files.set(f.workflow.name, new Set([...(files.get(f.workflow.name) || []), f.file]));
+  }
+  return [...names].filter((n) => (files.get(n)?.size || 0) > 1).sort();
+}
+
+/**
+ * A form's `workflow:` read : its file, as a form names its playbook (deploy.yml, or
+ * team/deploy.yml in a subfolder), else a workflow's name inside a file (as before).
+ *
+ * Args:
+ *   ref (string): the form's workflow.
+ *
+ * Returns:
+ *   object: { file (the path, its ./ and leading / left out), name } - one of them set.
+ */
+export function workflowRef(ref) {
+  const text = String(ref ?? "").trim();
+  if (/\.ya?ml$/i.test(text)) return { file: text.replace(/\\/g, "/").replace(/^(\.\/|\/)+/, ""), name: null };
+  return { file: null, name: text };
+}
+
+/**
+ * A workflow of the designer's, as a form names it : by its file (deploy.yml, team/deploy.yml -
+ * its path in the workflows folder, WORKFLOWS_PATH, or a repository used for workflows ; a file
+ * name alone matches in a subfolder too, when only one file has it), or by its name.
+ *
+ * Args:
+ *   ref (string): the form's workflow : a file or a name.
  *
  * Returns:
  *   Promise<object>: { workflow (workflowsOf), file (where it is) }.
  *
  * Raises:
- *   NotFoundError: no workflow has this name.
- *   ConflictError: two have it - which one to run is not for the app to guess.
+ *   NotFoundError: no such file, or no workflow has this name.
+ *   ConflictError: two match, or the file holds several workflows - which one to run is not for
+ *     the app to guess.
  */
-export async function findWorkflow(name) {
-  const found = (await allWorkflows()).filter((f) => f.workflow.name === name);
+export async function findWorkflow(ref) {
+  const all = await allWorkflows();
+  const { file, name } = workflowRef(ref);
+  if (file) {
+    let inFile = all.filter((f) => f.rel === file);
+    // a file name alone : in a subfolder, when only one file has it
+    if (!inFile.length && !file.includes("/")) {
+      const files = [...new Set(all.filter((f) => path.basename(f.rel) === file).map((f) => f.rel))].sort();
+      if (files.length > 1) throw new Errors.ConflictError(`Workflow file '${file}' is in ${files.join(" and ")} : name it with its folder`);
+      inFile = all.filter((f) => f.rel === files[0]);
+    }
+    if (!inFile.length) throw new Errors.NotFoundError(`No workflow file '${file}' in the designer's workflows`);
+    // a file from two places (the workflows folder and a repository) : as two names would be
+    if (new Set(inFile.map((f) => f.file)).size > 1) {
+      throw new Errors.ConflictError(`Workflow file '${file}' is in ${[...new Set(inFile.map((f) => f.file))].join(" and ")} : rename one of them`);
+    }
+    if (inFile.length > 1) {
+      throw new Errors.ConflictError(`Workflow file '${file}' holds ${inFile.length} workflows (${inFile.map((f) => f.workflow.name).join(", ")}) : name the one to run`);
+    }
+    return inFile[0];
+  }
+  const found = all.filter((f) => f.workflow.name === name);
   if (!found.length) throw new Errors.NotFoundError(`No workflow '${name}' in the designer's workflows`);
   if (found.length > 1) {
-    throw new Errors.ConflictError(`Workflow '${name}' is in ${found.map((f) => f.file).join(" and ")} : rename one of them`);
+    throw new Errors.ConflictError(`Workflow '${name}' is in ${found.map((f) => f.file).join(" and ")} : rename one of them, or name its file`);
   }
   return found[0];
 }
@@ -306,7 +371,10 @@ async function credentialTypes(workflow) {
 export async function runWorkflow({ Job, form, formObj, user, extravars, credentials, jobid }) {
   let counter = await Job.lastOrder(jobid);
   const print = (line, stream = "stdout") => Job.printJobOutput(line, stream, jobid, ++counter);
-  // the workflow job's artifacts : all its nodes' (allArtifacts), as a nested workflow passes them on
+  // the workflow job's artifacts : all its nodes' (allArtifacts), as a nested workflow passes them on.
+  // None before its nodes are read : a workflow that cannot start ends with none - it used to
+  // reach for them before they existed, and the end itself threw
+  let allArtifacts = () => ({});
   const end = (status, message) => Job.endJobStatus(jobid, ++counter, status === "success" ? "stdout" : "stderr", status, message, allArtifacts());
 
   let found;
@@ -328,7 +396,7 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
   // ─── its state, and its graph as an AWX workflow's ───
   // artifacts : what a node passes on to the nodes after it (what came to it, and its job's)
   const state = new Map(nodes.map((n) => [n.identifier, { status: "pending", doNotRun: false, job: null, started: 0, elapsed: 0, artifacts: {} }]));
-  const allArtifacts = () => Object.assign({}, ...nodes.map((n) => state.get(n.identifier).artifacts));
+  allArtifacts = () => Object.assign({}, ...nodes.map((n) => state.get(n.identifier).artifacts));
   const ids = new Map(nodes.map((n, i) => [n.identifier, i + 1]));
   let wfStatus = "running";
   let lastGraph = "";

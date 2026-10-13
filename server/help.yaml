@@ -2391,20 +2391,25 @@
         type: string
         with_types: workflow
         group: basic
-        allowed: the name of one of the designer's workflows
+        allowed: a workflow's file (deploy-app.yml, team/deploy-app.yml) or its name
         short: Workflow
         version: 7.0.0
         description: |
           The workflow a form of type `workflow` runs : a workflow_job_templates entry of a file in
           the designer's Workflows section (the local workflows folder, WORKFLOWS_PATH, or a
-          repository used for workflows), in the AWX export syntax. Two workflows of one name
-          stop the job : rename one of them.
+          repository used for workflows), in the AWX export syntax.
+
+          Name it as a playbook is named, by its **file** with its subfolders
+          (`team/deploy-app.yml`) - a file name alone is found in a subfolder too, when only one
+          file has it - or by the workflow's **name** inside the file (`deploy-app`). A file that
+          holds several workflows is named by the workflow's name. Two workflows that match stop
+          the job, with the reason in its output : rename one, or name its file.
         examples:
         - name: Run the deploy-app workflow
           code: |
             name: Deploy
             type: workflow
-            workflow: deploy-app
+            workflow: team/deploy-app.yml
             roles:
               - admin
             fields: []
@@ -2412,10 +2417,12 @@
         type: string
         with_types: ansible
         group: basic
-        allowed: a valid yaml file
+        allowed: a playbook's file (deploy.yml, team/deploy.yml) or its name (deploy)
         short: Ansible playbook
         description: | 
           This attribute is only used when the form type is `ansible`.  When using awx, use the property `template`.  
+
+          Name it by its **file** with its subfolders in the playbook folder (`team/deploy.yml`), or by its **name** without the extension (`deploy`) : the RTE then runs `deploy.yml`, else `deploy.yaml` - as a workflow form names its workflow.
             
           **Note** : You can also dynamically set the playbook by using a field called `__playbook__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static playbook name.  
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.        

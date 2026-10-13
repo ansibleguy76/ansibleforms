@@ -5,7 +5,7 @@
 import RestResult from '../../models/restResult.model.v2.js';
 import ProjectFiles from '../../models/projectFiles.model.js';
 import Lock from '../../models/lock.model.js';
-import { listWorkflows } from '../../models/workflowRun.js';
+import { listWorkflows, sharedWorkflowNames } from '../../models/workflowRun.js';
 import Errors from '../../lib/errors.js';
 import i18n from '../../lib/i18n.js';
 
@@ -57,7 +57,10 @@ const projectFilesController = {
   async save(req, res) {
     try {
       if (!(await holdsLock(req, res))) return;
-      res.json(RestResult.single(await ProjectFiles.write(req.params.kind, req.body?.path, req.body?.content)));
+      const saved = await ProjectFiles.write(req.params.kind, req.body?.path, req.body?.content);
+      // a workflow named as one in another file : a form running it by name would stop
+      if (req.params.kind === 'workflows') saved.sharedNames = await sharedWorkflowNames(req.body?.content).catch(() => []);
+      res.json(RestResult.single(saved));
     } catch (err) {
       Errors.ReturnError(res, err);
     }

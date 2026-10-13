@@ -1995,6 +1995,10 @@ export default {
       pushed: 'Poussé vers {repository}',
       path: 'Chemin',
       pathHelp: 'Le chemin du fichier dans le dossier, avec ses sous-dossiers (roles/web/tasks/main.yml).',
+      workflowPathHelp:
+        'Le fichier du workflow dans le dossier des workflows, avec ses sous-dossiers (deploy.yml, team/deploy.yml). Un formulaire le lance par ce fichier, comme il nomme un playbook.',
+      sharedWorkflowNames:
+        "Un workflow nommé {names} est aussi dans un autre fichier : un formulaire qui le lance par son nom s'arrête. Renommez-le, ou nommez son fichier dans le formulaire.",
       folderHelp: "Le chemin du dossier ; il est gardé dès qu'un fichier y est enregistré.",
       create: 'Créer',
       deleteConfirm: 'Voulez-vous vraiment supprimer',

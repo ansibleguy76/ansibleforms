@@ -490,13 +490,17 @@ onMounted(async () => {
     playbookNames.value = [];
   }
 });
-// the designer's workflows (Designer > Workflows), offered as a workflow form's workflow ; none
-// (the list needs the designer's permission) : the name is typed
+// the designer's workflows (Designer > Workflows), offered as a workflow form's workflow : its file
+// (a workflow's name still works) ; none (the list needs the designer's permission) : it is typed
 const workflowNames = ref([]);
 onMounted(async () => {
   try {
     const res = await axios.get('/api/v2/files/workflows/names');
-    workflowNames.value = (res.data?.records || res.data || []).map((w) => w?.name).filter(Boolean);
+    // each workflow by its file, as a playbook is named (team/deploy.yml) ; one of a file holding
+    // several by its name
+    const list = (res.data?.records || res.data || []).filter((w) => w?.name);
+    const perFile = list.reduce((m, w) => m.set(w.file, (m.get(w.file) || 0) + 1), new Map());
+    workflowNames.value = list.map((w) => (w.file && perFile.get(w.file) === 1 ? w.file : w.name));
   } catch {
     workflowNames.value = [];
   }

@@ -2002,6 +2002,10 @@ export default {
       pushed: 'Nach {repository} gepusht',
       path: 'Pfad',
       pathHelp: 'Der Pfad der Datei im Ordner, mit Unterordnern (roles/web/tasks/main.yml).',
+      workflowPathHelp:
+        'Die Datei des Workflows im Workflow-Ordner, mit Unterordnern (deploy.yml, team/deploy.yml). Ein Formular startet ihn mit dieser Datei, wie es ein Playbook nennt.',
+      sharedWorkflowNames:
+        'Ein Workflow namens {names} steht auch in einer anderen Datei : ein Formular, das ihn über seinen Namen startet, bricht ab. Benennen Sie ihn um, oder nennen Sie im Formular seine Datei.',
       folderHelp: 'Der Pfad des Ordners; er bleibt, sobald eine Datei darin gespeichert ist.',
       create: 'Anlegen',
       deleteConfirm: 'Möchtest du wirklich löschen',

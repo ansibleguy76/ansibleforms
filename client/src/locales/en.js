@@ -1954,6 +1954,10 @@ export default {
       pushed: 'Pushed to {repository}',
       path: 'Path',
       pathHelp: "The file's path in the folder, with its subfolders (roles/web/tasks/main.yml).",
+      workflowPathHelp:
+        "The workflow's file in the workflows folder, with its subfolders (deploy.yml, team/deploy.yml). A form runs it by this file, as it names a playbook.",
+      sharedWorkflowNames:
+        'A workflow named {names} is in another file too : a form that runs it by its name stops. Rename it, or name its file in the form.',
       folderHelp: "The folder's path; it is kept once a file is saved in it.",
       create: 'Create',
       deleteConfirm: 'Are you sure you want to delete',

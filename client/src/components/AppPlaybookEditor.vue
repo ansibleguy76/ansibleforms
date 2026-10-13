@@ -128,6 +128,18 @@ function addArg() {
 // the sections a play may still have
 const missing = (play) => PLAY_SECTIONS.filter((k) => !play.sections[k]);
 const sectionToAdd = ref({});
+/**
+ * Adds the section picked for a play (its first task's dialog opens), the list back to its first
+ * choice.
+ *
+ * Args:
+ *   pi (number): the play's place.
+ */
+function pickSection(pi) {
+  const section = sectionToAdd.value[pi];
+  sectionToAdd.value = { ...sectionToAdd.value, [pi]: undefined };
+  if (section) addTask(pi, section);
+}
 </script>
 <template>
   <div class="af-pbe">
@@ -293,13 +305,11 @@ const sectionToAdd = ref({});
           </div>
           <!-- a section it does not have yet -->
           <div v-if="!readOnly && missing(play).length" class="d-flex gap-2 align-items-center">
-            <select v-model="sectionToAdd[pi]" class="form-select af-pbe-section-select">
-              <option :value="undefined">{{ t('playbookEditor.section') }}</option>
+            <!-- picked is added, as a node's credential : no button to press after the choice -->
+            <select v-model="sectionToAdd[pi]" class="form-select af-pbe-section-select" @change="pickSection(pi)">
+              <option :value="undefined">{{ t('playbookEditor.addSection') }}...</option>
               <option v-for="k in missing(play)" :key="k" :value="k">{{ t(`playbookOutline.sections.${k}`) }}</option>
             </select>
-            <BsButton icon="plus" @click="sectionToAdd[pi] && addTask(pi, sectionToAdd[pi])">{{
-              t('playbookEditor.addSection')
-            }}</BsButton>
           </div>
         </template>
       </div>

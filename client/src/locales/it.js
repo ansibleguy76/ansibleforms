@@ -1980,6 +1980,10 @@ export default {
       pushed: 'Inviato a {repository}',
       path: 'Percorso',
       pathHelp: 'Il percorso del file nella cartella, con le sottocartelle (roles/web/tasks/main.yml).',
+      workflowPathHelp:
+        'Il file del workflow nella cartella dei workflow, con le sottocartelle (deploy.yml, team/deploy.yml). Un modulo lo avvia con questo file, come nomina un playbook.',
+      sharedWorkflowNames:
+        'Un workflow chiamato {names} è anche in un altro file : un modulo che lo avvia per nome si ferma. Rinominalo, o indica il suo file nel modulo.',
       folderHelp: 'Il percorso della cartella; resta quando vi si salva un file.',
       create: 'Crea',
       deleteConfirm: 'Vuoi davvero eliminare',
