@@ -29,6 +29,7 @@ import { runWorker, stopLostWorker } from "../init/worker.js";
 import { die } from "../lib/die.js";
 import Job from "../models/job.model.js";
 import { installFatalHandlers } from "../lib/fatal.js";
+import { httpServerOptions } from "../lib/httpServerOptions.js";
 
 function startHealthServer() {
   const app = express();
@@ -37,8 +38,8 @@ function startHealthServer() {
   app.get("/health", (req, res) => res.json({ id: nodeId, role: "worker", version: appVersion, worker: holdsWorkerLock() }));
   const port = appConfig.port;
   const server = httpsConfig.https
-    ? https.createServer({ key: httpsConfig.httpsKey, cert: httpsConfig.httpsCert }, app)
-    : http.createServer(app);
+    ? https.createServer({ ...httpServerOptions(), key: httpsConfig.httpsKey, cert: httpsConfig.httpsCert }, app)
+    : http.createServer(httpServerOptions(), app);
   // a port that is taken is fatal : a worker that works but answers no healthcheck is restarted
   // over and over, and loses the lock each time
   server.on("error", (err) => die(`Worker : cannot listen on port ${port} : ${err.message}`));

@@ -535,6 +535,22 @@
       Increase if you have unusually large forms or expression payloads.
       Note: this does NOT apply to file uploads (those are governed by `UPLOAD_MAX_GB`).
     version: 6.0.0
+  - name: MAX_HTTP_HEADER_SIZE
+    version: 7.1.0
+    type: number
+    allowed: a number of bytes, from 1024 to 1048576
+    short: Request header size limit (bytes)
+    hint: The largest request header the server accepts ; a larger one is refused with 431. Takes effect after a restart.
+    required: false
+    default: 16384
+    description: |
+      The largest request header the server accepts, in bytes. Node.js refuses a request whose headers are larger with
+      **431 Request Header Fields Too Large**, before it reaches the application, so nothing of it is in the log.
+      Unset, Node's own limit applies: 16384 bytes (16 KB), or the value of `NODE_OPTIONS=--max-http-header-size` when
+      the deployment sets it. Raise it when a reverse proxy or a client sends large headers (large cookies, a large
+      `Authorization` header). A value that is not a number from 1024 to 1048576 is ignored and logged.
+      It applies to the web server, the RTE and the worker. The server reads it when it starts: a change takes effect
+      after a restart.
   - name: UPLOAD_MAX_GB
     type: number
     default: 10

@@ -10,6 +10,7 @@ import { setDefaultLocale } from './i18n.js';
 import { applySecureContext } from './httpsContext.js';
 import { rebuildBodyParsers } from './bodyParsers.js';
 import { applyTrustProxy, compileTrustProxy } from './trustProxy.js';
+import { MIN_HEADER_SIZE, MAX_HEADER_SIZE } from './httpServerOptions.js';
 import authConfig from '../../config/auth.config.js';
 import logConfig, { parseRetentionDays } from '../../config/log.config.js';
 import ansibleConfig from '../../config/ansible.config.js';
@@ -400,6 +401,11 @@ export function validate(name, value, doc) {
     } catch (e) {
       return `TRUST_PROXY must be a number of proxies, true, false or a comma-separated list of addresses and CIDR ranges : ${e.message}`;
     }
+  }
+  // refused here rather than at the next start, where it would only be logged and Node's own
+  // limit would apply (lib/httpServerOptions.js)
+  if (name === 'MAX_HTTP_HEADER_SIZE' && v !== '' && (parseInt(v, 10) < MIN_HEADER_SIZE || parseInt(v, 10) > MAX_HEADER_SIZE)) {
+    return `MAX_HTTP_HEADER_SIZE must be a number of bytes from ${MIN_HEADER_SIZE} to ${MAX_HEADER_SIZE}`;
   }
   if (v.length > 4096) return `${name} is too long`;
   // A value documented as a regular expression is COMPILED by its consumer, and both of
