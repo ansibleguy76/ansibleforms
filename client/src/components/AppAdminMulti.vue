@@ -107,6 +107,7 @@ import { useI18n } from 'vue-i18n';
 import BsDataTable from './BsDataTable.vue';
 import getSettings from '@/config/settings';
 import { inSentence } from '@/lib/inSentence';
+import { rememberRows } from '@/lib/recordButtons';
 
 // INIT
 
@@ -310,6 +311,8 @@ async function loadItems(force = true) {
   // the "no data" flicker.
   resetSelection();
   itemList.value = await loadList(objectType, isFlat, undefined, props.settings.listQuery || '');
+  // kept for the records' pages : which buttons a record has, before it is read (lib/recordButtons.js)
+  rememberRows(objectType, itemList.value);
   // Drop selected rows that are no longer there. resetSelection() clears the SINGLE
   // item selection (the offcanvas), not the multi-select set, so without this the
   // toolbar kept counting rows that had been deleted - by this admin elsewhere, by

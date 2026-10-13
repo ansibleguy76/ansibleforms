@@ -19,6 +19,7 @@ import { useRoleSupport } from '@/composables/useRoleSupport';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { useFormLinks } from '@/composables/useFormLinks';
 import { formPath } from '@/lib/formsPath';
+import { recordButtons } from '@/lib/recordButtons';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -365,6 +366,11 @@ onMounted(async () => {
         <BsButton icon="save" :disabled="!isRolesDirty || readOnly" @click="saveRole()">{{
           t('settings.common.save')
         }}</BsButton>
+      </template>
+      <!-- the record loading : its buttons as grey placeholders, so the title line keeps its
+           height and nothing moves when they come -->
+      <template v-else-if="!loaded" #actions>
+        <AppSkeleton shape="buttons" :widths="recordButtons('roles', roleName)" />
       </template>
     </AppSettings>
   </AppSettingsPage>

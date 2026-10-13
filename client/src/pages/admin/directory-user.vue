@@ -430,6 +430,11 @@ onMounted(async () => {
           t('settings.directory.forget')
         }}</BsButton>
       </template>
+      <!-- the record loading : its buttons as grey placeholders, so the title line keeps its
+           height and nothing moves when they come -->
+      <template v-else-if="!loaded" #actions>
+        <AppSkeleton shape="buttons" :widths="[130, 100]" />
+      </template>
     </AppSettings>
   </AppSettingsPage>
 </template>

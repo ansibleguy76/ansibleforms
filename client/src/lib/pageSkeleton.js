@@ -14,6 +14,7 @@
 import { sectionOf } from '@/lib/sections';
 import { settingsEntry } from '@/lib/settingsMenu';
 import { statusFromSlug, ALL_JOBS } from '@/lib/jobsPath';
+import { recordButtons } from '@/lib/recordButtons';
 import { profileViews, profileMenuViews } from '@/config/profileViews';
 
 // ------------------------------------------------------------------
@@ -53,6 +54,23 @@ const SETTINGS_SHAPES = {
 };
 
 /**
+ * The last step of a record's title : its tab, Details when the address names none (every
+ * record page opens on it), else a grey bar (the tab's name is its page's).
+ *
+ * Args:
+ *   tab (string|undefined): the tab in the address.
+ *   t (Function): vue-i18n's translate function.
+ *
+ * Returns:
+ *   Object: the crumb.
+ */
+function recordTab(tab, t) {
+  return !tab || tab === 'details'
+    ? { title: t('settings.common.tabDetails'), icon: 'sliders' }
+    : { title: null, icon: 'sliders' };
+}
+
+/**
  * The look of a settings page.
  *
  * Args:
@@ -71,14 +89,20 @@ function settingsPage(words, path, section, t) {
   const [page, ...rest] = words;
   // a record of a list (/settings/users/3, /settings/roles/admin, /settings/users/ldap/jdoe) :
   // its name when the address carries it (not a number), then its tab ; its fields
-  if (SETTINGS_LISTS.includes(page) && rest.length) {
+  // (an SSO provider too : /settings/sso/2, beside the SSO page's tabs /settings/sso/providers)
+  const record = SETTINGS_LISTS.includes(page) || (page === 'sso' && /^\d+$/.test(rest[0] || ''));
+  if (record && rest.length) {
     const directory = ['ldap', 'azuread', 'oidc'].includes(rest[0]) && rest.length > 1;
     const word = directory ? rest[1] : rest[0];
     const name = /^\d+$/.test(word) ? null : decodeURIComponent(word);
     return {
       frame: 'settings',
-      crumbs: [section, own, { title: name, icon: entry.icon }, { title: null, icon: 'sliders' }],
+      crumbs: [section, own, { title: name, icon: entry.icon }, recordTab(rest[directory ? 2 : 1], t)],
       tabs: 4,
+      // a directory user's : Block sign-in and Forget ; a directory group's : none
+      // its buttons (lib/recordButtons.js) ; a directory user's : Block sign-in and Forget, a
+      // directory group's : none
+      buttons: directory ? (page === 'users' ? [130, 100] : null) : recordButtons(page, word),
       parts: [{ shape: 'form', count: 3 }],
     };
   }
@@ -158,8 +182,10 @@ function jobsPage(words, section, t) {
     if (!id) return { frame: 'jobs', crumbs: [section, own], parts: [{ shape: 'table', count: 8 }] };
     return {
       frame: 'jobs',
-      crumbs: [section, own, { title: null, icon: future.icon }, { title: null, icon: 'sliders' }],
+      crumbs: [section, own, { title: null, icon: future.icon }, recordTab(words[2], t)],
       tabs: future.tabs,
+      // its buttons (lib/recordButtons.js)
+      buttons: recordButtons(first, id),
       parts: [{ shape: 'form', count: 3 }],
     };
   }
@@ -183,9 +209,10 @@ function jobsPage(words, section, t) {
  *   options (object): the user's role options (the profile's menu).
  *
  * Returns:
- *   Object|null: { frame, crumbs, tabs, parts: [{ shape, count, card, wide }], bare, fill } - frame the left
+ *   Object|null: { frame, crumbs, tabs, buttons, parts: [{ shape, count, card, wide }], bare, fill } - frame the left
  *     menu beside it ('settings', 'jobs', 'form', 'profile', 'designer'), crumbs the title's
- *     steps (the section first), tabs how many tabs above the card, parts the content's
+ *     steps (the section first), tabs how many tabs above the card, buttons the widths of those
+ *     on the title line, parts the content's
  *     placeholders (card : in a card of their own, on a page without the card ; wide : fields
  *     across the card) ; fill : the page fills the window (af-fill-page) ; null when the address
  *     names no known page.

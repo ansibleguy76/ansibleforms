@@ -25,6 +25,7 @@ import { useRoleAssignments } from '@/composables/useRoleAssignments';
 import { usePagedRows } from '@/composables/usePagedRows';
 import { useFormLinks } from '@/composables/useFormLinks';
 import { formPath } from '@/lib/formsPath';
+import { recordButtons } from '@/lib/recordButtons';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -459,6 +460,11 @@ onMounted(async () => {
         <BsButton v-if="activeTab === 'details'" icon="save" :disabled="!dirty" @click="saveDetails()">{{
           t('settings.common.save')
         }}</BsButton>
+      </template>
+      <!-- the record loading : its buttons as grey placeholders, so the title line keeps its
+           height and nothing moves when they come -->
+      <template v-else-if="!loaded" #actions>
+        <AppSkeleton shape="buttons" :widths="recordButtons('groups', groupId)" />
       </template>
     </AppSettings>
   </AppSettingsPage>
