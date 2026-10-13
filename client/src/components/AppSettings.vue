@@ -44,6 +44,7 @@ import { computed, provide } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { sectionOf } from '@/lib/sections';
+import { settingsSection } from '@/lib/settingsMenu';
 
 // a title of one step links to the page itself : its plain address, without a tab or a filter
 const route = useRoute();
@@ -79,12 +80,16 @@ const props = defineProps({
   },
 });
 
-// the title's steps : the page's section first, then its own (its crumbs, or its title)
+// the title's steps : the page's section first, then its own (its crumbs, or its title) ; a
+// settings page also names its part of the settings menu (Settings › Appearance › Defaults), a
+// step without an icon or a link, as the menu shows it
 const steps = computed(() => {
   const own = props.crumbs.length ? props.crumbs : [{ title: props.title, icon: props.icon, to: route.path }];
   const section = sectionOf(route.path, t);
-  if (!section || own[0]?.title === section.title) return own;
-  return [section, ...own];
+  const all = !section || own[0]?.title === section.title ? own : [section, ...own];
+  const part = section && all[0]?.title === section.title ? settingsSection(route.path, t) : null;
+  if (!part || all[1]?.title === part.title) return all;
+  return [all[0], part, ...all.slice(1)];
 });
 </script>
 <template>
@@ -101,10 +106,10 @@ const steps = computed(() => {
               ><span v-if="c.icon" class="me-2"><FaIcon :icon="c.icon" /></span><AppSkeleton shape="inline" width="6em"
             /></template>
             <router-link v-else-if="c.to" :to="c.to" class="af-crumb-link"
-              ><span class="me-2"><FaIcon :icon="c.icon" /></span>{{ c.title }}</router-link
+              ><span v-if="c.icon" class="me-2"><FaIcon :icon="c.icon" /></span>{{ c.title }}</router-link
             >
             <template v-else
-              ><span class="me-2"><FaIcon :icon="c.icon" /></span>{{ c.title }}</template
+              ><span v-if="c.icon" class="me-2"><FaIcon :icon="c.icon" /></span>{{ c.title }}</template
             >
           </template>
           <AppInfoPopover v-if="description" :text="description" />
