@@ -116,6 +116,9 @@ watch(
 // COMPUTED
 
 const profile = computed(() => store.profile || {});
+// the roles to show : every user also carries public, default's name before 7, so that forms still
+// listing it match - it is the same role, shown once as default
+const shownRoles = computed(() => (profile.value.roles || []).filter((r) => r !== 'public'));
 // only local accounts have a password AnsibleForms can change ; ldap, azure ad and oidc
 // passwords are managed by their own provider
 const isLocal = computed(() => profile.value.type == 'local');
@@ -410,15 +413,13 @@ async function changePassword() {
               </li>
               <li class="list-group-item af-detail">
                 <span class="af-detail-label"
-                  >{{ t('profilePage.roles') }} <span class="af-count">{{ (profile.roles || []).length }}</span></span
+                  >{{ t('profilePage.roles') }} <span class="af-count">{{ shownRoles.length }}</span></span
                 >
                 <span class="af-detail-value">
-                  <span v-for="r in profile.roles || []" :key="r" class="badge af-chip"
+                  <span v-for="r in shownRoles" :key="r" class="badge af-chip"
                     ><FaIcon icon="user-shield" class="me-1" />{{ r }}</span
                   >
-                  <span v-if="!(profile.roles || []).length" class="text-body-secondary">{{
-                    t('profilePage.noneYet')
-                  }}</span>
+                  <span v-if="!shownRoles.length" class="text-body-secondary">{{ t('profilePage.noneYet') }}</span>
                 </span>
               </li>
             </ul>
