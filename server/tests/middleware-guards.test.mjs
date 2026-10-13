@@ -256,7 +256,9 @@ describe("the designer's files are written only with their own option", () => {
     });
   }
 
-  test("a kind without an option passes", () => {
-    assert.equal(runKind("other", { roles: [], options: {} }).nexted, true);
+  test("a kind without an option passes, an object's own names included", () => {
+    for (const kind of ["other", "constructor", "toString", "__proto__"]) {
+      assert.equal(runKind(kind, { roles: [], options: {} }).nexted, true, kind);
+    }
   });
 });

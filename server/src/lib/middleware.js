@@ -49,14 +49,16 @@ Middleware.checkDesignerMiddleware = permissionGuard(u => appConfig.showDesigner
 
 // the designer's files : each kind written (saved, new, removed, pushed) only with its own role
 // option ; read by every designer (a form or a workflow picks one)
-const FILE_DESIGN_GUARDS = {
-  playbooks: permissionGuard(u => u.options.allowPlaybookDesign, 'errors.noPlaybookDesignAccess'),
-  workflows: permissionGuard(u => u.options.allowWorkflowDesign, 'errors.noWorkflowDesignAccess'),
-  inventories: permissionGuard(u => u.options.allowInventoryDesign, 'errors.noInventoryDesignAccess'),
-  vars: permissionGuard(u => u.options.allowVarsFileDesign, 'errors.noVarsFileDesignAccess'),
-}
+// a Map, not an object : the kind comes from the url, and an object would also answer for
+// 'constructor' or 'toString' with a function that is not a guard
+const FILE_DESIGN_GUARDS = new Map([
+  ['playbooks', permissionGuard(u => u.options.allowPlaybookDesign, 'errors.noPlaybookDesignAccess')],
+  ['workflows', permissionGuard(u => u.options.allowWorkflowDesign, 'errors.noWorkflowDesignAccess')],
+  ['inventories', permissionGuard(u => u.options.allowInventoryDesign, 'errors.noInventoryDesignAccess')],
+  ['vars', permissionGuard(u => u.options.allowVarsFileDesign, 'errors.noVarsFileDesignAccess')],
+])
 Middleware.checkFileDesignMiddleware = (req, res, next) => {
-  const guard = FILE_DESIGN_GUARDS[req.params?.kind]
+  const guard = FILE_DESIGN_GUARDS.get(req.params?.kind)
   return guard ? guard(req, res, next) : next()
 }
 
