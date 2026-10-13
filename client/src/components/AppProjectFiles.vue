@@ -319,7 +319,8 @@ function startCreate(kind, folder = '') {
 const asksName = computed(() => ['group_vars', 'host_vars'].includes(creating.value?.kind));
 const createValue = computed(() => String((asksName.value ? creating.value?.name : creating.value?.path) || '').trim());
 const CREATE_LOOK = {
-  file: { icon: 'file', title: 'designer.newFile', help: 'designer.files.pathHelp' },
+  // a new playbook or vars file : its file name as the placeholder
+  file: { icon: 'file', title: 'designer.newFile', help: 'designer.files.pathHelp', placeholder: 'file.yaml' },
   folder: { icon: 'folder', title: 'designer.newFolder', help: 'designer.files.folderHelp' },
   group_vars: { icon: 'layer-group', title: 'designer.files.newGroupVars', help: 'designer.files.groupVarsHelp' },
   host_vars: { icon: 'server', title: 'designer.files.newHostVars', help: 'designer.files.hostVarsHelp' },
@@ -328,7 +329,7 @@ const CREATE_LOOK = {
     icon: 'diagram-project',
     title: 'designer.files.newWorkflow',
     help: 'designer.files.workflowPathHelp',
-    placeholder: 'deploy.yml',
+    placeholder: 'workflow.yaml',
   },
 };
 const createLook = computed(() => CREATE_LOOK[creating.value?.kind] || CREATE_LOOK.file);

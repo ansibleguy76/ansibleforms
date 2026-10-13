@@ -3720,7 +3720,7 @@ onBeforeUnmount(() => {
       </BsModal>
 
       <!-- Modal - new file -->
-      <BsModal v-if="showNewFile" @close="showNewFile = false" icon="file-circle-plus">
+      <BsModal v-if="showNewFile" size="md" @close="showNewFile = false" icon="file-circle-plus">
         <template #title> {{ t('designer.newFileTitle') }} </template>
         <template #default>
           <BsInput
