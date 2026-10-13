@@ -51,7 +51,15 @@ const initialize = async () => {
     const issuerUrl = new URL(oidcConfig.issuer);
     logger.debug(`Discovering OIDC issuer at ${issuerUrl.href}`);
 
+    // plain http only in development, for a local test provider ; a real provider is https
     const execute = [];
+    if (issuerUrl.protocol === 'http:') {
+      if (process.env.NODE_ENV !== 'development') {
+        logger.error(`Could not enable OIDC : the issuer ${issuerUrl.href} is not https`);
+        return false;
+      }
+      execute.push(openidClient.allowInsecureRequests);
+    }
 
     const config = await openidClient.discovery(
       issuerUrl,

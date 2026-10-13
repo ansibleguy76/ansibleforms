@@ -461,6 +461,19 @@
       however old it is.
       Defaults to 0, which means keep everything: upgrading must never silently delete job
       history, so switching this on is a deliberate choice.
+  - name: AZURE_AUTHORITY_URI
+    version: 7.0.4
+    type: string
+    allowed: a valid base URI without slash on the end
+    short: Entra ID sign-in authority
+    default: https://login.microsoftonline.com
+    description: |
+      The Microsoft identity platform the server sends an Entra ID sign-in to, with the tenant id
+      of the provider after it (`<authority>/<tenant>/v2.0`). Change it for a national cloud,
+      e.g. `https://login.microsoftonline.us` (US Government) or `https://login.chinacloudapi.cn`
+      (China), together with `AZURE_GRAPH_URI`. Read when the Entra ID provider is enabled or
+      saved. Only HTTPS is accepted, except with `NODE_ENV=development`, for a local test
+      provider.
   - name: AZURE_GRAPH_URI
     version: 4.0.3
     type: string
