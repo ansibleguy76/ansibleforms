@@ -1509,8 +1509,8 @@ defineExpose({
           </div>
         </template>
       </BsDataTable>
-      <!-- the first load (a reload keeps the rows shown) : the pages' loading indicator -->
-      <AppPageLoading v-if="loading" />
+      <!-- the first load (a reload keeps the rows shown) : the table's rows as grey placeholders -->
+      <AppSkeleton v-if="loading" shape="table" :count="8" />
     </template>
     <template #footer>
       <!-- the table's pager, under the card -->

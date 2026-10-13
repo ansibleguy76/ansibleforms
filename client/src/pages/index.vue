@@ -193,7 +193,6 @@ onMounted(async () => {
       <p v-for="(e, i) in formConfig.errors" :key="'error' + i" class="mb-3 has-text-danger text-prewrap">{{ e }}</p>
     </template>
   </BsOffCanvas>
-  <AppPageLoading v-if="loading" />
   <div class="flex-shrink-0">
     <main class="d-flex flex-nowrap af-settings-layout">
       <!-- the menu draws at once (its last categories) ; the forms come in beside it -->
@@ -201,7 +200,19 @@ onMounted(async () => {
         <div class="row g-0 flex-grow-1 flex-md-nowrap af-forms-row">
           <!-- the categories : the shared forms menu (a form's page shows it too) -->
           <AppFormsMenu :formConfig="formConfig" :currentCategory="currentCategory" @select="select" />
-          <div v-if="authenticated && forms" class="col h-100 bg-body">
+          <!-- the forms loading : the page's title at once, the tiles as grey placeholders -->
+          <div v-if="loading && !forms" class="col h-100 bg-body">
+            <AppSettings
+              bare
+              :title="categoryTitle.title"
+              :icon="categoryTitle.icon"
+              :crumbs="categoryTitle.crumbs"
+              :description="t('forms.pageDescription')"
+            >
+              <AppSkeleton shape="tiles" :count="8" />
+            </AppSettings>
+          </div>
+          <div v-else-if="authenticated && forms" class="col h-100 bg-body">
             <!-- the same page layout as the other pages : the open category as the title, with the
                  search and the view switch on the right, and the divider under it -->
             <AppSettings
