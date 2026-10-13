@@ -383,6 +383,13 @@ textarea:focus::placeholder {
 .af-settings-layout > .section {
   min-width: 0;
 }
+// The wrapper of a list's "create from a dropdown" dialogs (AppAdminMulti, a secret store's, a
+// notification channel's page) : no place of its own in the layout - an empty flex item, it took
+// the column gap after the page, 32px more on the right than on the left. Its dialogs are fixed,
+// over the page, so they open as they did.
+.af-nested-dialogs {
+  display: contents;
+}
 
 // The forms page's category list behaves like the settings sidebar : the same panel
 // color, pinned below the header, one screen high and scrolling on its own. On a phone
