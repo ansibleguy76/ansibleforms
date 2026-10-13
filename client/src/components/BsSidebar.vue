@@ -8,7 +8,8 @@
 /*        no title has no collapsible header. An item links to    */
 /*        a route ({ link }) or runs a click ({ action, active,   */
 /*        disabled }) ; a disabled entry is greyed out. Either    */
-/*        kind can show a count ({ badge, badgeAlert })           */
+/*        kind can show a count ({ badge, badgeAlert }) ; a count */
+/*        not known yet ({ badgeLoading }) a grey pill            */
 /*      storageKey: String - localStorage key for collapse state  */
 /*      title: String - optional heading above the sections       */
 /*      icon: String - icon shown next to the heading             */
@@ -168,6 +169,8 @@ onMounted(async () => {
                   :active="!!item.active"
                   :alert="!!item.badgeAlert"
                 />
+                <!-- its count not known yet : a grey pill in its place, never a false 0 -->
+                <AppSkeleton v-else-if="item.badgeLoading" class="ms-2" shape="badge" />
               </span>
             </a>
             <router-link
@@ -190,6 +193,8 @@ onMounted(async () => {
                   :active="isActive(item.link)"
                   :alert="!!item.badgeAlert"
                 />
+                <!-- its count not known yet : a grey pill in its place, never a false 0 -->
+                <AppSkeleton v-else-if="item.badgeLoading" class="ms-2" shape="badge" />
               </span>
             </router-link>
           </li>

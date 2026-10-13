@@ -66,6 +66,9 @@ const lastJobs = remembered('jobs', null);
 const pageJobs = computed(() => props.jobs ?? ownJobs.value);
 const ready = computed(() => (props.jobs !== null ? props.loaded : ownLoaded.value));
 const countedJobs = computed(() => (ready.value ? pageJobs.value : (lastJobs.value ?? pageJobs.value)));
+// the counts known : the page's jobs read, or those counted last in this tab ; until then a grey
+// pill in place of each count (a 0 would be false)
+const countsKnown = computed(() => ready.value || lastJobs.value != null);
 watch(
   [ready, pageJobs],
   () => {
@@ -74,9 +77,10 @@ watch(
   { immediate: true },
 );
 
-// the future jobs' counts : the schedules and the stored jobs the user may see (null until read,
-// then the count of last time while they are read again)
-const futureCounts = remembered('jobsFuture', { schedules: null, stored: null });
+// the future jobs' counts : the schedules and the stored jobs the user may see (undefined until
+// read : a grey pill ; null when they could not be read : none ; then the count of last time while
+// they are read again)
+const futureCounts = remembered('jobsFuture', { schedules: undefined, stored: undefined });
 
 // the statuses of the menu, with their names and icons, in the same order and with the
 // same icons as the jobs list's page titles (pages/jobs.vue). The labels are spelled out,
@@ -119,9 +123,10 @@ const sections = computed(() => {
       list.map((m) => ({
         title: m.label(),
         icon: m.icon,
-        badge: count(m.status),
+        badge: countsKnown.value ? count(m.status) : null,
+        badgeLoading: !countsKnown.value,
         // a job waiting for approval needs someone : its count stands out, in the orange of its status
-        badgeAlert: m.status === 'approve' && count(m.status) > 0,
+        badgeAlert: countsKnown.value && m.status === 'approve' && count(m.status) > 0,
         active: isJobsList.value && props.status === m.status,
         action: () => pick(m.status),
       }));
@@ -131,8 +136,20 @@ const sections = computed(() => {
   }
   // job states as the rest of the menu (the pages keep their own titles, Schedules and Stored jobs)
   const future = [
-    { title: t('jobs.menu.scheduled'), icon: 'clock', link: '/jobs/scheduled', badge: futureCounts.value.schedules },
-    { title: t('jobs.menu.stored'), icon: 'floppy-disk', link: '/jobs/stored', badge: futureCounts.value.stored },
+    {
+      title: t('jobs.menu.scheduled'),
+      icon: 'clock',
+      link: '/jobs/scheduled',
+      badge: futureCounts.value.schedules,
+      badgeLoading: futureCounts.value.schedules === undefined,
+    },
+    {
+      title: t('jobs.menu.stored'),
+      icon: 'floppy-disk',
+      link: '/jobs/stored',
+      badge: futureCounts.value.stored,
+      badgeLoading: futureCounts.value.stored === undefined,
+    },
   ].filter((i) => mayOpen(i.link, store.profile?.options));
   if (future.length) sections.push({ title: t('jobs.menu.future'), items: future });
   return sections;
