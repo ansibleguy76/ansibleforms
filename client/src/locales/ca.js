@@ -732,6 +732,8 @@ export default {
     schemaCheckFailed: "No s'ha pogut comprovar l'esquema de la base de dades d'AnsibleForms",
     requiredFields: 'Proporciona tots els camps obligatoris',
     unknownError: 'Error desconegut',
+    requestTooLarge:
+      'La sol·licitud era massa gran per al servidor (HTTP 431). Si inicieu la sessió amb inici de sessió únic i pertanyeu a molts grups, demaneu a un administrador que defineixi un filtre de grups al proveïdor.',
   },
   login: {
     title: 'Inici de sessió',

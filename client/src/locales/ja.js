@@ -729,6 +729,8 @@ export default {
     schemaCheckFailed: 'AnsibleForms のデータベーススキーマの確認に失敗しました',
     requiredFields: '必須項目をすべて入力してください',
     unknownError: '不明なエラー',
+    requestTooLarge:
+      'リクエストがサーバーにとって大きすぎます (HTTP 431)。シングルサインオンでサインインし、多数のグループに所属している場合は、プロバイダーにグループフィルターを設定するよう管理者に依頼してください。',
   },
   login: {
     title: 'ログイン',

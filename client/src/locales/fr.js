@@ -735,6 +735,8 @@ export default {
     schemaCheckFailed: 'Echec de la verification du schema de base de donnees AnsibleForms',
     requiredFields: 'Veuillez fournir tous les champs obligatoires',
     unknownError: 'Erreur inconnue',
+    requestTooLarge:
+      'La requête était trop volumineuse pour le serveur (HTTP 431). Si vous vous connectez par authentification unique et appartenez à de nombreux groupes, demandez à un administrateur de définir un filtre de groupes sur le fournisseur.',
   },
   login: {
     title: 'Connexion',

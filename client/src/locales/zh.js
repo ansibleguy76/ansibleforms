@@ -721,6 +721,8 @@ export default {
     schemaCheckFailed: '检查 AnsibleForms 数据库架构失败',
     requiredFields: '请填写所有必填字段',
     unknownError: '未知错误',
+    requestTooLarge:
+      '请求对服务器来说太大 (HTTP 431)。如果您使用单点登录并属于很多组，请让管理员在提供程序上设置组筛选器。',
   },
   login: {
     title: '登录',

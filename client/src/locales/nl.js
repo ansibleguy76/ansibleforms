@@ -731,6 +731,8 @@ export default {
     schemaCheckFailed: 'Controle van AnsibleForms databaseschema mislukt',
     requiredFields: 'Vul alle verplichte velden in',
     unknownError: 'Onbekende fout',
+    requestTooLarge:
+      'Het verzoek was te groot voor de server (HTTP 431). Als u zich aanmeldt met single sign-on en lid bent van veel groepen, vraag dan een beheerder om een groepsfilter in te stellen bij de provider.',
   },
   login: {
     title: 'Inloggen',

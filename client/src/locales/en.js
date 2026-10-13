@@ -727,6 +727,8 @@ export default {
     schemaCheckFailed: 'Failed to check AnsibleForms database schema',
     requiredFields: 'Please provide all required fields',
     unknownError: 'Unknown error',
+    requestTooLarge:
+      'The request was too large for the server (HTTP 431). If you sign in with single sign-on and belong to many groups, ask an administrator to set a group filter on the provider.',
   },
   login: {
     title: 'Login',

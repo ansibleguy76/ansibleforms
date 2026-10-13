@@ -735,6 +735,8 @@ export default {
     schemaCheckFailed: 'Pruefung des AnsibleForms-Datenbankschemas fehlgeschlagen',
     requiredFields: 'Bitte alle Pflichtfelder ausfuellen',
     unknownError: 'Unbekannter Fehler',
+    requestTooLarge:
+      'Die Anfrage war für den Server zu groß (HTTP 431). Wenn Sie sich per Single Sign-on anmelden und vielen Gruppen angehören, bitten Sie einen Administrator, beim Anbieter einen Gruppenfilter festzulegen.',
   },
   login: {
     title: 'Anmeldung',

@@ -12,6 +12,7 @@ import State from '@/lib/State';
 import { isNewerBuild, clientSha } from '@/lib/Version';
 import Theme from '@/lib/Theme';
 import { preloadMenus } from '@/lib/menuPreload';
+import { notifyRequestTooLarge } from '@/lib/requestTooLarge';
 
 const route = useRoute();
 const router = useRouter();
@@ -44,6 +45,13 @@ function registerAxiosInterceptor() {
     },
     async (error) => {
       checkBuild(error.response);
+      // the server refused the request as too large (431), before the app saw it : said once,
+      // rather than lists that stay empty with no reason given (#1036). The caller still gets
+      // the error.
+      if (error.response?.status === 431) {
+        notifyRequestTooLarge();
+        throw error;
+      }
       // signed in with the public default password : the server refuses everything but the
       // password change (server/src/lib/middleware.js passwordChangeGate)
       if (error.response?.status === 403 && error.response?.data?.code === 'password_change_required') {
