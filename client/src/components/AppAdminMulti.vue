@@ -1509,9 +1509,8 @@ defineExpose({
           </div>
         </template>
       </BsDataTable>
-      <div class="spinner-border" role="status" v-if="loading">
-        <span class="visually-hidden">{{ t('settings.common.loading') }}</span>
-      </div>
+      <!-- the first load (a reload keeps the rows shown) : the table's rows as grey placeholders -->
+      <AppSkeleton v-if="loading" shape="table" :count="8" />
     </template>
     <template #footer>
       <!-- the table's pager, under the card -->

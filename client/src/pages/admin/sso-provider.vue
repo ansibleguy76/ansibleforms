@@ -100,7 +100,7 @@ const notes = computed(() => {
 const pageCrumbs = computed(() => [
   { title: t('sidebar.oauth2'), icon: 'right-to-bracket', to: '/settings/sso/providers' },
   {
-    title: provider.value?.name || providerId.value,
+    title: provider.value?.name || (loaded.value ? providerId.value : null),
     icon: 'right-to-bracket',
     to: `/settings/sso/${providerId.value}`,
   },
@@ -225,11 +225,17 @@ onMounted(async () => {
           </li>
         </ul>
       </template>
+      <!-- the record loading : its tabs as grey placeholders -->
+      <template v-else-if="!loaded" #tabs>
+        <AppSkeleton shape="tabs" :count="tabs.length" />
+      </template>
       <template #default>
         <div v-if="loaded && !provider" class="empty-state">
           <FaIcon icon="right-to-bracket" class="empty-state-icon" />
           <span>{{ t('settings.oauth2.providerNotFound', { id: providerId }) }}</span>
         </div>
+        <!-- the record loading : its fields as grey placeholders, where they come -->
+        <AppSkeleton v-else-if="!loaded && !provider" shape="form" :count="3" />
         <div v-else-if="provider" class="af-provider-tab">
           <!-- the help of the tab, as in the dialog's step -->
           <div v-for="(note, n) in notes" :key="'note-' + n" class="alert alert-info af-provider-note">

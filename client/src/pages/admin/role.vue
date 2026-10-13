@@ -300,6 +300,10 @@ onMounted(async () => {
           </li>
         </ul>
       </template>
+      <!-- the role loading : its tabs as grey placeholders -->
+      <template v-else-if="!loaded" #tabs>
+        <AppSkeleton shape="tabs" :count="tabs.length" />
+      </template>
       <template #default>
         <div v-if="loadError" class="alert alert-danger" role="alert">
           {{ t('settings.common.failedToLoad') }} : {{ loadError }}
@@ -308,6 +312,8 @@ onMounted(async () => {
           <FaIcon icon="user-shield" class="empty-state-icon" />
           <span>{{ t('settings.settingsPage.roleNotFound', { name: roleName }) }}</span>
         </div>
+        <!-- the role loading : its fields as grey placeholders, where they come -->
+        <AppSkeleton v-else-if="!loaded && !role" shape="form" :count="3" />
         <!-- Forms : the forms that name the role ; a row opens the form -->
         <AppLinkedTable
           v-else-if="role && activeTab === 'forms'"

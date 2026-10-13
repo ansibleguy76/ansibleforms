@@ -38,6 +38,8 @@ onMounted(async () => {
         :settings="settings.schedules"
         @trigger="triggerLaunch"
       />
+      <!-- the user being checked : the title and placeholders where the list comes -->
+      <AppPageSkeleton v-else />
     </main>
   </div>
 </template>

@@ -180,7 +180,11 @@ const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((
 // the title : Secret stores › <name>, each step a link
 const pageCrumbs = computed(() => [
   { title: t('sidebar.secretStores'), icon: 'vault', to: '/settings/secret-stores' },
-  { title: store.value?.name || storeId.value, icon: 'vault', to: `/settings/secret-stores/${storeId.value}` },
+  {
+    title: store.value?.name || (loaded.value ? storeId.value : null),
+    icon: 'vault',
+    to: `/settings/secret-stores/${storeId.value}`,
+  },
 ]);
 // and the open tab last, as every page in tabs names it : Users › admin › Groups
 const crumbs = computed(() => {
@@ -305,11 +309,17 @@ onMounted(async () => {
           </li>
         </ul>
       </template>
+      <!-- the record loading : its tabs as grey placeholders -->
+      <template v-else-if="!loaded" #tabs>
+        <AppSkeleton shape="tabs" :count="tabs.length" />
+      </template>
       <template #default>
         <div v-if="loaded && !store" class="empty-state">
           <FaIcon icon="vault" class="empty-state-icon" />
           <span>{{ t('settings.secretStores.notFound', { id: storeId }) }}</span>
         </div>
+        <!-- the record loading : its fields as grey placeholders, where they come -->
+        <AppSkeleton v-else-if="!loaded && !store" shape="form" :count="3" />
         <div v-else-if="store && edit" class="af-store-tab">
           <!-- a store of the config seed : read only here -->
           <div v-if="managed" class="alert alert-secondary py-2">

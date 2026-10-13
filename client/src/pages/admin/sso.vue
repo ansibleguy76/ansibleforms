@@ -21,6 +21,8 @@ import { useRouteTab } from '@/composables/useRouteTab';
 const { t } = useI18n();
 const settings = computed(() => getSettings(t));
 const authenticated = ref(false);
+// the page's values read once : until then its fields as grey placeholders
+const loaded = ref(false);
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
 const pageTabs = computed(() => [
@@ -45,6 +47,7 @@ onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
   await loadEnvironmentVariables();
+  loaded.value = true;
 });
 </script>
 <template>
@@ -96,11 +99,15 @@ onMounted(async () => {
         </ul>
       </template>
       <template #default>
-        <div v-if="envRestartPending.length" class="alert alert-warning py-2">
-          <FaIcon icon="triangle-exclamation" class="me-2" />
-          {{ t('settings.settingsPage.envRestartPending', { names: envRestartPending.join(', ') }) }}
-        </div>
-        <AppEnvField v-for="e in envItems" :key="e.name" v-model="envEdits[e.name]" :e="e" :asSwitch="true" />
+        <!-- the first load : the fields as grey placeholders, in their place -->
+        <AppSkeleton v-if="!loaded" shape="form" :count="3" />
+        <template v-else>
+          <div v-if="envRestartPending.length" class="alert alert-warning py-2">
+            <FaIcon icon="triangle-exclamation" class="me-2" />
+            {{ t('settings.settingsPage.envRestartPending', { names: envRestartPending.join(', ') }) }}
+          </div>
+          <AppEnvField v-for="e in envItems" :key="e.name" v-model="envEdits[e.name]" :e="e" :asSwitch="true" />
+        </template>
       </template>
       <template #actions>
         <BsButton icon="save" :disabled="!envDirty" @click="saveEnvironmentVariables()">{{

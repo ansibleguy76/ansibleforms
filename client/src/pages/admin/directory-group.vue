@@ -123,11 +123,17 @@ onMounted(async () => {
           </li>
         </ul>
       </template>
+      <!-- the record loading : its tabs as grey placeholders -->
+      <template v-else-if="!loaded" #tabs>
+        <AppSkeleton shape="tabs" :count="tabs.length" />
+      </template>
       <template #default>
         <div v-if="loaded && !group" class="empty-state">
           <FaIcon icon="users" class="empty-state-icon" />
           <span>{{ t('settings.directory.groupNotFound', { name: groupName, source: sourceName }) }}</span>
         </div>
+        <!-- the record loading : its fields as grey placeholders, where they come -->
+        <AppSkeleton v-else-if="!loaded && !group" shape="form" :count="3" />
         <template v-else-if="group">
           <!-- Details : where it comes from (its users are those seen in it), read only -->
           <div v-if="activeTab === 'details'" class="af-group-details">

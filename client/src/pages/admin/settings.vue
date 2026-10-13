@@ -342,6 +342,8 @@ const envGroups = computed(() => {
 });
 
 const authenticated = ref(false);
+// the page's values read once : until then its fields as grey placeholders
+const loaded = ref(false);
 const item = ref({ url: '', forms_yaml: '', config_source: null });
 const originalItem = ref(null);
 const showImportConfirm = ref(false);
@@ -518,6 +520,7 @@ onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
   await Promise.all([loadItem(), loadEnvironmentVariables()]);
+  loaded.value = true;
 });
 </script>
 <template>
@@ -550,134 +553,138 @@ onMounted(async () => {
         </ul>
       </template>
       <template #default>
-        <!-- Environment Variable tabs -->
-        <div v-if="searching && !shownGroups.length" class="text-body-secondary fst-italic">
-          {{ t('settings.settingsPage.searchNone') }}
-        </div>
-        <template v-for="(group, gIdx) in shownGroups" :key="group.key">
-          <div v-show="searching || activeTab === group.key">
-            <!-- searching : the matches of every tab, each under its tab's name -->
-            <!-- a line between the tabs' matches, and one under each tab's name, from side to side of
-                 the card ; under it the space between fields -->
-            <hr v-if="searching && gIdx > 0" class="mt-4 mb-0 af-search-line" />
-            <h6
-              v-if="searching"
-              class="fw-bold text-body-secondary af-search-tab"
-              :class="{ 'af-search-first': gIdx === 0 }"
-            >
-              <FaIcon :icon="group.icon" class="me-1" />{{ group.label }}
-            </h6>
-            <!-- The editable, database-backed settings live with their subject rather than
-               in a general tab: the public url is a server property, the language and
-               theme defaults are UI ones. They save through saveSettings(), the fields
-               below through the env endpoint - the one Save button covers both. -->
-            <template v-if="group.key === 'server' && urlMatches">
-              <BsInput
-                class="af-env-field af-env-wide"
-                :isFloating="false"
-                icon="globe"
-                v-model="$v.item.url.$model"
-                :label="t('settings.settingsPage.publicRootUrl')"
-                :required="true"
-                :help="t('settings.settingsPage.publicRootUrlHelp')"
-                :hasError="$v.item.url.$invalid && $v.item.url.$dirty"
-                :errors="$v.item.url.$errors"
-              />
-              <div class="mt-4"></div>
-            </template>
-            <div v-if="envRestartPending.length" class="alert alert-warning py-2">
-              <FaIcon icon="triangle-exclamation" class="me-2" />
-              {{ t('settings.settingsPage.envRestartPending', { names: envRestartPending.join(', ') }) }}
-            </div>
-            <!-- The same rhythm as the Settings tab - label, value, help text below -
-               but deliberately NOT BsInput. These are read-only: they come from the
-               process environment and there is no endpoint that writes them, so an
-               input (even disabled) would promise an edit that cannot happen. The
-               value sits in a plain bordered block instead. -->
-            <template v-for="(e, i) in group.items" :key="e.name">
-              <div v-if="i > 0" class="mt-4"></div>
-              <!-- Same structure as a BsInput on the Settings tab: mb-3 wrapper,
-                 form-label fw-bold, an input-group with a leading icon, then the
-                 help text. The value is a DIV carrying .form-control rather than an
-                 <input>: it looks like the fields beside it, but nothing writes these
-                 - they come from the process environment - so an input would promise
-                 an edit that cannot happen. -->
-              <div
-                class="mb-3 af-env-field"
-                :class="{ 'af-env-wide': envGroups.find((g) => g.key === group.key)?.items.some(envWide) }"
+        <!-- the first load : the fields as grey placeholders, in their place -->
+        <AppSkeleton v-if="!loaded" shape="form" :count="5" />
+        <template v-else>
+          <!-- Environment Variable tabs -->
+          <div v-if="searching && !shownGroups.length" class="text-body-secondary fst-italic">
+            {{ t('settings.settingsPage.searchNone') }}
+          </div>
+          <template v-for="(group, gIdx) in shownGroups" :key="group.key">
+            <div v-show="searching || activeTab === group.key">
+              <!-- searching : the matches of every tab, each under its tab's name -->
+              <!-- a line between the tabs' matches, and one under each tab's name, from side to side of
+                   the card ; under it the space between fields -->
+              <hr v-if="searching && gIdx > 0" class="mt-4 mb-0 af-search-line" />
+              <h6
+                v-if="searching"
+                class="fw-bold text-body-secondary af-search-tab"
+                :class="{ 'af-search-first': gIdx === 0 }"
               >
-                <!-- an editable variable gets a real BsInput, so it is identical to the
-                   Settings tab. One that cannot be written keeps the read-only box and
-                   says why, rather than offering an edit that would not take. -->
+                <FaIcon :icon="group.icon" class="me-1" />{{ group.label }}
+              </h6>
+              <!-- The editable, database-backed settings live with their subject rather than
+                 in a general tab: the public url is a server property, the language and
+                 theme defaults are UI ones. They save through saveSettings(), the fields
+                 below through the env endpoint - the one Save button covers both. -->
+              <template v-if="group.key === 'server' && urlMatches">
                 <BsInput
-                  v-if="envEditable(e)"
+                  class="af-env-field af-env-wide"
                   :isFloating="false"
-                  :icon="e.type === 'number' ? 'hashtag' : 'font'"
-                  :type="envOptions(e) ? 'select' : e.secret ? 'password' : e.type === 'number' ? 'number' : 'text'"
-                  :values="envOptions(e) || []"
-                  valueKey="value"
-                  labelKey="label"
-                  :placeholder="e.secret && e.set ? t('settings.settingsPage.envSecretUnchanged') : ''"
-                  :label="e.short || e.name"
-                  :help="envHelp(e)"
-                  :disabled="envOff(e)"
-                  v-model="envEdits[e.name]"
+                  icon="globe"
+                  v-model="$v.item.url.$model"
+                  :label="t('settings.settingsPage.publicRootUrl')"
+                  :required="true"
+                  :help="t('settings.settingsPage.publicRootUrlHelp')"
+                  :hasError="$v.item.url.$invalid && $v.item.url.$dirty"
+                  :errors="$v.item.url.$errors"
                 />
-                <template v-else>
-                  <label class="form-label fw-bold">{{ e.short || e.name }}</label>
-                  <div>
-                    <div class="input-group">
-                      <span class="input-group-text text-gray-500">
-                        <FaIcon :fixedwidth="true" :icon="e.editable === 'refused' ? 'lock' : 'shield-halved'" />
-                      </span>
-                      <!-- a secret whose state matters says it (set, the public default, random
-                           each start), never its value -->
-                      <div
-                        v-if="e.secretState"
-                        class="form-control env-value"
-                        :class="{ 'env-unsafe': e.secretState !== 'set' }"
-                      >
-                        {{ t(`settings.settingsPage.secretState_${e.secretState}`) }}
-                      </div>
-                      <div v-else class="form-control env-value" :title="e.value ? String(e.value) : e.name">
-                        {{ e.value === null || e.value === '' ? '—' : e.value }}
+                <div class="mt-4"></div>
+              </template>
+              <div v-if="envRestartPending.length" class="alert alert-warning py-2">
+                <FaIcon icon="triangle-exclamation" class="me-2" />
+                {{ t('settings.settingsPage.envRestartPending', { names: envRestartPending.join(', ') }) }}
+              </div>
+              <!-- The same rhythm as the Settings tab - label, value, help text below -
+                 but deliberately NOT BsInput. These are read-only: they come from the
+                 process environment and there is no endpoint that writes them, so an
+                 input (even disabled) would promise an edit that cannot happen. The
+                 value sits in a plain bordered block instead. -->
+              <template v-for="(e, i) in group.items" :key="e.name">
+                <div v-if="i > 0" class="mt-4"></div>
+                <!-- Same structure as a BsInput on the Settings tab: mb-3 wrapper,
+                   form-label fw-bold, an input-group with a leading icon, then the
+                   help text. The value is a DIV carrying .form-control rather than an
+                   <input>: it looks like the fields beside it, but nothing writes these
+                   - they come from the process environment - so an input would promise
+                   an edit that cannot happen. -->
+                <div
+                  class="mb-3 af-env-field"
+                  :class="{ 'af-env-wide': envGroups.find((g) => g.key === group.key)?.items.some(envWide) }"
+                >
+                  <!-- an editable variable gets a real BsInput, so it is identical to the
+                     Settings tab. One that cannot be written keeps the read-only box and
+                     says why, rather than offering an edit that would not take. -->
+                  <BsInput
+                    v-if="envEditable(e)"
+                    :isFloating="false"
+                    :icon="e.type === 'number' ? 'hashtag' : 'font'"
+                    :type="envOptions(e) ? 'select' : e.secret ? 'password' : e.type === 'number' ? 'number' : 'text'"
+                    :values="envOptions(e) || []"
+                    valueKey="value"
+                    labelKey="label"
+                    :placeholder="e.secret && e.set ? t('settings.settingsPage.envSecretUnchanged') : ''"
+                    :label="e.short || e.name"
+                    :help="envHelp(e)"
+                    :disabled="envOff(e)"
+                    v-model="envEdits[e.name]"
+                  />
+                  <template v-else>
+                    <label class="form-label fw-bold">{{ e.short || e.name }}</label>
+                    <div>
+                      <div class="input-group">
+                        <span class="input-group-text text-gray-500">
+                          <FaIcon :fixedwidth="true" :icon="e.editable === 'refused' ? 'lock' : 'shield-halved'" />
+                        </span>
+                        <!-- a secret whose state matters says it (set, the public default, random
+                             each start), never its value -->
+                        <div
+                          v-if="e.secretState"
+                          class="form-control env-value"
+                          :class="{ 'env-unsafe': e.secretState !== 'set' }"
+                        >
+                          {{ t(`settings.settingsPage.secretState_${e.secretState}`) }}
+                        </div>
+                        <div v-else class="form-control env-value" :title="e.value ? String(e.value) : e.name">
+                          {{ e.value === null || e.value === '' ? '—' : e.value }}
+                        </div>
                       </div>
                     </div>
+                    <div v-if="envHelp(e)" class="form-text">{{ envHelp(e) }}</div>
+                    <div class="form-text env-locked">
+                      {{ e.overridden ? t('settings.settingsPage.envOverridden') : e.refusedReason || '' }}
+                    </div>
+                  </template>
+                  <!-- read by an RTE from its own environment : this page cannot reach it -->
+                  <div v-if="envEditable(e) && e.editable === 'rte'" class="form-text env-restart">
+                    {{ t('settings.settingsPage.envRteOnly') }}
                   </div>
-                  <div v-if="envHelp(e)" class="form-text">{{ envHelp(e) }}</div>
-                  <div class="form-text env-locked">
-                    {{ e.overridden ? t('settings.settingsPage.envOverridden') : e.refusedReason || '' }}
+                  <div v-if="envEditable(e) && e.editable === 'restart'" class="form-text env-restart">
+                    {{ t('settings.settingsPage.envRestartRequired') }}
+                    <!-- for a path, 'takes effect after a restart' is true but misses the
+                       part that matters: whatever is already on disk does not move -->
+                    <template v-if="e.relocates"> {{ t('settings.settingsPage.envRelocates') }}</template>
                   </div>
-                </template>
-                <!-- read by an RTE from its own environment : this page cannot reach it -->
-                <div v-if="envEditable(e) && e.editable === 'rte'" class="form-text env-restart">
-                  {{ t('settings.settingsPage.envRteOnly') }}
                 </div>
-                <div v-if="envEditable(e) && e.editable === 'restart'" class="form-text env-restart">
-                  {{ t('settings.settingsPage.envRestartRequired') }}
-                  <!-- for a path, 'takes effect after a restart' is true but misses the
-                     part that matters: whatever is already on disk does not move -->
-                  <template v-if="e.relocates"> {{ t('settings.settingsPage.envRelocates') }}</template>
+              </template>
+              <!-- After the fields, not before them: these move the whole configuration
+                 between disk and database, so they read as an action on the settings
+                 above rather than a heading over them. mt-4 to separate them from the last
+                 field, and a small mb-2 so they do not sit hard against the card edge -
+                 deliberately smaller than a field's mb-3, which the :last-child rule below
+                 zeroes precisely because it stacks on the card's own padding. -->
+              <template v-if="group.key === 'configuration' && !searching">
+                <div class="mt-4 mb-2 d-flex align-items-center">
+                  <BsButton icon="file-import" @click="showImportConfirm = true">{{
+                    t('settings.settingsPage.importToDatabase')
+                  }}</BsButton>
+                  <BsButton icon="file-export" cssClass="ms-3" @click="showExportConfirm = true">{{
+                    t('settings.settingsPage.exportToFile')
+                  }}</BsButton>
                 </div>
-              </div>
-            </template>
-            <!-- After the fields, not before them: these move the whole configuration
-               between disk and database, so they read as an action on the settings
-               above rather than a heading over them. mt-4 to separate them from the last
-               field, and a small mb-2 so they do not sit hard against the card edge -
-               deliberately smaller than a field's mb-3, which the :last-child rule below
-               zeroes precisely because it stacks on the card's own padding. -->
-            <template v-if="group.key === 'configuration' && !searching">
-              <div class="mt-4 mb-2 d-flex align-items-center">
-                <BsButton icon="file-import" @click="showImportConfirm = true">{{
-                  t('settings.settingsPage.importToDatabase')
-                }}</BsButton>
-                <BsButton icon="file-export" cssClass="ms-3" @click="showExportConfirm = true">{{
-                  t('settings.settingsPage.exportToFile')
-                }}</BsButton>
-              </div>
-            </template>
-          </div>
+              </template>
+            </div>
+          </template>
         </template>
       </template>
       <template #actions>

@@ -201,9 +201,8 @@ onMounted(async () => {
         </div>
       </template>
       <template #default>
-        <div v-if="loading && records.length === 0" class="spinner-border" role="status">
-          <span class="visually-hidden">{{ t('settings.common.loading') }}</span>
-        </div>
+        <!-- the first load : the table's rows as grey placeholders (a reload keeps them shown) -->
+        <AppSkeleton v-if="loading && records.length === 0" shape="table" :count="10" />
         <div v-else-if="loadFailed" class="text-center text-muted py-4">
           <div class="fw-bold">{{ t('audit.failedLoad') }}</div>
         </div>

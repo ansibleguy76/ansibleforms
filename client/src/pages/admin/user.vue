@@ -187,7 +187,11 @@ const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((
 // the title : Users › <username>, each step a link : Users back to the list, the name to this page
 const pageCrumbs = computed(() => [
   { title: t('settings.users.labelPlural'), icon: 'user', to: '/settings/users' },
-  { title: user.value?.username || userId.value, icon: 'user', to: `/settings/users/${userId.value}` },
+  {
+    title: user.value?.username || (loaded.value ? userId.value : null),
+    icon: 'user',
+    to: `/settings/users/${userId.value}`,
+  },
 ]);
 // and the open tab last, as every page in tabs names it : Users › admin › Groups
 const crumbs = computed(() => {
@@ -417,11 +421,17 @@ onMounted(async () => {
           </li>
         </ul>
       </template>
+      <!-- the record loading : its tabs as grey placeholders -->
+      <template v-else-if="!loaded" #tabs>
+        <AppSkeleton shape="tabs" :count="tabs.length" />
+      </template>
       <template #default>
         <div v-if="loaded && !user" class="empty-state">
           <FaIcon icon="user" class="empty-state-icon" />
           <span>{{ t('settings.users.userNotFound', { id: userId }) }}</span>
         </div>
+        <!-- the record loading : its fields as grey placeholders, where they come -->
+        <AppSkeleton v-else-if="!loaded && !user" shape="form" :count="3" />
         <!-- Details : the username, its description and email -->
         <div v-else-if="user && activeTab === 'details'" class="af-user-details">
           <!-- Allow sign-in : saved at once, as a runner's Default ; never off for the admin user -->

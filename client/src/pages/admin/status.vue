@@ -151,9 +151,8 @@ onMounted(async () => {
         <small v-if="checkedAt" class="text-muted ms-3">{{ t('health.checkedAt', { time: checkedAt }) }}</small>
       </template>
       <template #default>
-        <div v-if="loading && !result" class="spinner-border" role="status">
-          <span class="visually-hidden">{{ t('settings.common.loading') }}</span>
-        </div>
+        <!-- the first check : the checks' rows as grey placeholders (a refresh keeps them shown) -->
+        <AppSkeleton v-if="loading && !result" shape="detail" :count="10" />
         <table v-if="result && activeTab === 'checks'" class="table table-sm align-middle mb-0 health-table">
           <tbody>
             <template v-for="c in result.checks" :key="c.key">

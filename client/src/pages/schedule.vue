@@ -137,7 +137,11 @@ const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((
 // the title : Schedules › <name>, each step a link
 const pageCrumbs = computed(() => [
   { title: t('jobs.menu.scheduled'), icon: 'clock', to: '/jobs/scheduled' },
-  { title: schedule.value?.name || scheduleId.value, icon: 'clock', to: `/jobs/scheduled/${scheduleId.value}` },
+  {
+    title: schedule.value?.name || (loaded.value ? scheduleId.value : null),
+    icon: 'clock',
+    to: `/jobs/scheduled/${scheduleId.value}`,
+  },
 ]);
 // and the open tab last, as every page in tabs names it : Users › admin › Groups
 const crumbs = computed(() => {
@@ -253,11 +257,17 @@ onMounted(async () => {
             </li>
           </ul>
         </template>
+        <!-- the record loading : its tabs as grey placeholders -->
+        <template v-else-if="!loaded" #tabs>
+          <AppSkeleton shape="tabs" :count="tabs.length" />
+        </template>
         <template #default>
           <div v-if="loaded && !schedule" class="empty-state">
             <FaIcon icon="clock" class="empty-state-icon" />
             <span>{{ t('settings.schedules.notFound', { id: scheduleId }) }}</span>
           </div>
+          <!-- the record loading : its fields as grey placeholders, where they come -->
+          <AppSkeleton v-else-if="!loaded && !schedule" shape="form" :count="3" />
           <div v-else-if="schedule && edit" class="af-schedule-tab">
             <!-- Details : where it stands, its name and the form it runs -->
             <template v-if="activeTab === 'details'">
@@ -358,6 +368,8 @@ onMounted(async () => {
           <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
         </template>
       </AppSettings>
+      <!-- the user being checked : the title and placeholders where the page comes -->
+      <AppPageSkeleton v-else />
     </main>
   </div>
 </template>

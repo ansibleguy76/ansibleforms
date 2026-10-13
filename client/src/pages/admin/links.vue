@@ -29,6 +29,8 @@ import { useRouteTab } from '@/composables/useRouteTab';
 
 const { t } = useI18n();
 const authenticated = ref(false);
+// the page's values read once : until then its fields as grey placeholders
+const loaded = ref(false);
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
 const tabs = computed(() => [
@@ -330,6 +332,7 @@ async function save() {
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (authenticated.value) await Promise.all([loadEnvironmentVariables(), loadOwn()]);
+  loaded.value = true;
 });
 </script>
 <template>
@@ -369,148 +372,154 @@ onMounted(async () => {
         }}</BsButton>
       </template>
       <template #default>
-        <div v-if="envRestartPending.length" class="alert alert-warning py-2">
-          <FaIcon icon="triangle-exclamation" class="me-2" />
-          {{ t('settings.settingsPage.envRestartPending', { names: envRestartPending.join(', ') }) }}
-        </div>
-        <!-- Built-in : the Designer's link -->
-        <div v-show="activeTab === 'builtin'">
-          <AppEnvField v-for="e in builtin" :key="e.name" v-model="envEdits[e.name]" :e="e" :asSwitch="true" />
-        </div>
-        <!-- Custom : the instance's own links, in the header's order -->
-        <div v-show="activeTab === 'custom'">
-          <div v-if="!own.header_links.length" class="empty-state">
-            <FaIcon icon="link" class="empty-state-icon" />
-            <span>{{ t('settings.interface.noLinks') }}</span>
-          </div>
-          <div v-if="tooMany" class="alert alert-warning py-2">
+        <!-- the first load : the fields as grey placeholders, in their place -->
+        <AppSkeleton v-if="!loaded" shape="form" :count="4" />
+        <template v-else>
+          <div v-if="envRestartPending.length" class="alert alert-warning py-2">
             <FaIcon icon="triangle-exclamation" class="me-2" />
-            {{ t('settings.interface.linksTooMany', { max: MAX_LINKS, inside: MAX_INSIDE }) }}
+            {{ t('settings.settingsPage.envRestartPending', { names: envRestartPending.join(', ') }) }}
           </div>
-          <div v-if="own.header_links.length" class="af-links">
-            <div class="af-links-row af-links-head">
-              <span>{{ t('settings.interface.linkIcon') }}</span>
-              <span>{{ t('settings.interface.linkLabel') }}</span>
-              <span>{{ t('settings.interface.linkUrl') }}</span>
-              <span class="text-center">{{ t('settings.interface.linkNewTab') }}</span>
-              <span></span>
+          <!-- Built-in : the Designer's link -->
+          <div v-show="activeTab === 'builtin'">
+            <AppEnvField v-for="e in builtin" :key="e.name" v-model="envEdits[e.name]" :e="e" :asSwitch="true" />
+          </div>
+          <!-- Custom : the instance's own links, in the header's order -->
+          <div v-show="activeTab === 'custom'">
+            <div v-if="!own.header_links.length" class="empty-state">
+              <FaIcon icon="link" class="empty-state-icon" />
+              <span>{{ t('settings.interface.noLinks') }}</span>
             </div>
-            <div
-              v-for="(l, i) in own.header_links"
-              :key="l.id"
-              class="af-links-row"
-              :class="{ 'af-link-nested': l.parent }"
-            >
-              <!-- every field as the settings pages' (BsInput) : the grey box with its icon, then the
-                   field. The icon : picked from a few that suit a link, shown in its grey box (as a
-                   category's icon in the designer) -->
-              <!-- a link inside another : indented, with the designer categories' nested icon -->
-              <div class="d-flex align-items-center" :style="{ paddingLeft: l.parent ? '1.5rem' : 0 }">
-                <FaIcon
-                  v-if="l.parent"
-                  icon="level-up-alt"
-                  class="text-muted me-2 fa-rotate-90"
-                  style="font-size: 0.75rem"
-                />
-                <div class="input-group flex-grow-1">
-                  <span class="input-group-text"
-                    ><FaIcon :fixedwidth="true" :icon="isIconName(l.icon) ? l.icon : 'link'"
-                  /></span>
-                  <select v-model="l.icon" class="form-select" :aria-label="t('settings.interface.linkIcon')">
-                    <!-- an icon not in the list (saved through the api) : offered, so it stays visible -->
-                    <option v-if="l.icon && !LINK_ICONS.includes(l.icon)" :value="l.icon">{{ l.icon }}</option>
-                    <option v-for="name in LINK_ICONS" :key="name" :value="name">{{ name }}</option>
-                  </select>
+            <div v-if="tooMany" class="alert alert-warning py-2">
+              <FaIcon icon="triangle-exclamation" class="me-2" />
+              {{ t('settings.interface.linksTooMany', { max: MAX_LINKS, inside: MAX_INSIDE }) }}
+            </div>
+            <div v-if="own.header_links.length" class="af-links">
+              <div class="af-links-row af-links-head">
+                <span>{{ t('settings.interface.linkIcon') }}</span>
+                <span>{{ t('settings.interface.linkLabel') }}</span>
+                <span>{{ t('settings.interface.linkUrl') }}</span>
+                <span class="text-center">{{ t('settings.interface.linkNewTab') }}</span>
+                <span></span>
+              </div>
+              <div
+                v-for="(l, i) in own.header_links"
+                :key="l.id"
+                class="af-links-row"
+                :class="{ 'af-link-nested': l.parent }"
+              >
+                <!-- every field as the settings pages' (BsInput) : the grey box with its icon, then the
+                     field. The icon : picked from a few that suit a link, shown in its grey box (as a
+                     category's icon in the designer) -->
+                <!-- a link inside another : indented, with the designer categories' nested icon -->
+                <div class="d-flex align-items-center" :style="{ paddingLeft: l.parent ? '1.5rem' : 0 }">
+                  <FaIcon
+                    v-if="l.parent"
+                    icon="level-up-alt"
+                    class="text-muted me-2 fa-rotate-90"
+                    style="font-size: 0.75rem"
+                  />
+                  <div class="input-group flex-grow-1">
+                    <span class="input-group-text"
+                      ><FaIcon :fixedwidth="true" :icon="isIconName(l.icon) ? l.icon : 'link'"
+                    /></span>
+                    <select v-model="l.icon" class="form-select" :aria-label="t('settings.interface.linkIcon')">
+                      <!-- an icon not in the list (saved through the api) : offered, so it stays visible -->
+                      <option v-if="l.icon && !LINK_ICONS.includes(l.icon)" :value="l.icon">{{ l.icon }}</option>
+                      <option v-for="name in LINK_ICONS" :key="name" :value="name">{{ name }}</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="input-group">
+                  <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="font" /></span>
+                  <input
+                    v-model="l.label"
+                    class="form-control"
+                    :class="{ 'is-invalid': invalid[i]?.label }"
+                    maxlength="30"
+                    :aria-label="t('settings.interface.linkLabel')"
+                  />
+                </div>
+                <div class="input-group">
+                  <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="globe" /></span>
+                  <input
+                    v-model.trim="l.url"
+                    class="form-control"
+                    :class="{ 'is-invalid': invalid[i]?.url }"
+                    :placeholder="holdsLinks(l) ? t('settings.interface.linkUrlOptional') : ''"
+                    :aria-label="t('settings.interface.linkUrl')"
+                    spellcheck="false"
+                  />
+                </div>
+                <div class="form-check form-switch d-flex justify-content-center mb-0">
+                  <input
+                    v-model="l.newTab"
+                    class="form-check-input"
+                    type="checkbox"
+                    role="switch"
+                    :aria-label="t('settings.interface.linkNewTab')"
+                  />
+                </div>
+                <div class="d-flex gap-2 justify-content-end">
+                  <!-- the moves : one group of outlined buttons, as tall as the fields ; blue as the page's
+                       buttons when they may be pressed, grey when not -->
+                  <div class="btn-group" role="group" :aria-label="t('settings.interface.linkMoves')">
+                    <!-- ← out of its menu, → inside the header link above -->
+                    <button
+                      type="button"
+                      class="btn af-row-btn"
+                      :class="!l.parent ? 'btn-outline-secondary' : 'btn-outline-primary'"
+                      :disabled="!l.parent"
+                      :title="t('settings.interface.linkOutdent')"
+                      @click="outdentLink(i)"
+                    >
+                      <FaIcon icon="arrow-left" />
+                    </button>
+                    <button
+                      type="button"
+                      class="btn af-row-btn"
+                      :class="!canIndent(i) ? 'btn-outline-secondary' : 'btn-outline-primary'"
+                      :disabled="!canIndent(i)"
+                      :title="
+                        holdsLinks(l) ? t('settings.interface.linkHoldsLinks') : t('settings.interface.linkIndent')
+                      "
+                      @click="indentLink(i)"
+                    >
+                      <FaIcon icon="arrow-right" />
+                    </button>
+                    <button
+                      type="button"
+                      class="btn af-row-btn"
+                      :class="!canMove(i, -1) ? 'btn-outline-secondary' : 'btn-outline-primary'"
+                      :disabled="!canMove(i, -1)"
+                      :title="t('settings.interface.linkUp')"
+                      @click="moveLink(i, -1)"
+                    >
+                      <FaIcon icon="arrow-up" />
+                    </button>
+                    <button
+                      type="button"
+                      class="btn af-row-btn"
+                      :class="!canMove(i, 1) ? 'btn-outline-secondary' : 'btn-outline-primary'"
+                      :disabled="!canMove(i, 1)"
+                      :title="t('settings.interface.linkDown')"
+                      @click="moveLink(i, 1)"
+                    >
+                      <FaIcon icon="arrow-down" />
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-outline-danger af-row-btn"
+                    :title="t('common.delete')"
+                    @click="removeLink(i)"
+                  >
+                    <FaIcon icon="trash" />
+                  </button>
                 </div>
               </div>
-              <div class="input-group">
-                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="font" /></span>
-                <input
-                  v-model="l.label"
-                  class="form-control"
-                  :class="{ 'is-invalid': invalid[i]?.label }"
-                  maxlength="30"
-                  :aria-label="t('settings.interface.linkLabel')"
-                />
-              </div>
-              <div class="input-group">
-                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="globe" /></span>
-                <input
-                  v-model.trim="l.url"
-                  class="form-control"
-                  :class="{ 'is-invalid': invalid[i]?.url }"
-                  :placeholder="holdsLinks(l) ? t('settings.interface.linkUrlOptional') : ''"
-                  :aria-label="t('settings.interface.linkUrl')"
-                  spellcheck="false"
-                />
-              </div>
-              <div class="form-check form-switch d-flex justify-content-center mb-0">
-                <input
-                  v-model="l.newTab"
-                  class="form-check-input"
-                  type="checkbox"
-                  role="switch"
-                  :aria-label="t('settings.interface.linkNewTab')"
-                />
-              </div>
-              <div class="d-flex gap-2 justify-content-end">
-                <!-- the moves : one group of outlined buttons, as tall as the fields ; blue as the page's
-                     buttons when they may be pressed, grey when not -->
-                <div class="btn-group" role="group" :aria-label="t('settings.interface.linkMoves')">
-                  <!-- ← out of its menu, → inside the header link above -->
-                  <button
-                    type="button"
-                    class="btn af-row-btn"
-                    :class="!l.parent ? 'btn-outline-secondary' : 'btn-outline-primary'"
-                    :disabled="!l.parent"
-                    :title="t('settings.interface.linkOutdent')"
-                    @click="outdentLink(i)"
-                  >
-                    <FaIcon icon="arrow-left" />
-                  </button>
-                  <button
-                    type="button"
-                    class="btn af-row-btn"
-                    :class="!canIndent(i) ? 'btn-outline-secondary' : 'btn-outline-primary'"
-                    :disabled="!canIndent(i)"
-                    :title="holdsLinks(l) ? t('settings.interface.linkHoldsLinks') : t('settings.interface.linkIndent')"
-                    @click="indentLink(i)"
-                  >
-                    <FaIcon icon="arrow-right" />
-                  </button>
-                  <button
-                    type="button"
-                    class="btn af-row-btn"
-                    :class="!canMove(i, -1) ? 'btn-outline-secondary' : 'btn-outline-primary'"
-                    :disabled="!canMove(i, -1)"
-                    :title="t('settings.interface.linkUp')"
-                    @click="moveLink(i, -1)"
-                  >
-                    <FaIcon icon="arrow-up" />
-                  </button>
-                  <button
-                    type="button"
-                    class="btn af-row-btn"
-                    :class="!canMove(i, 1) ? 'btn-outline-secondary' : 'btn-outline-primary'"
-                    :disabled="!canMove(i, 1)"
-                    :title="t('settings.interface.linkDown')"
-                    @click="moveLink(i, 1)"
-                  >
-                    <FaIcon icon="arrow-down" />
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  class="btn btn-outline-danger af-row-btn"
-                  :title="t('common.delete')"
-                  @click="removeLink(i)"
-                >
-                  <FaIcon icon="trash" />
-                </button>
-              </div>
             </div>
           </div>
-        </div>
+        </template>
       </template>
     </AppSettings>
   </AppSettingsPage>

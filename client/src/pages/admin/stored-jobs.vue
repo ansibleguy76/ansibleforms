@@ -23,6 +23,8 @@ onMounted(async () => {
     <main class="d-flex flex-nowrap af-settings-layout">
       <AppJobsSidebar />
       <AppAdminMulti v-if="authenticated" apiVersion="2" ref="adminMulti" :settings="settings.stored_jobs" />
+      <!-- the user being checked : the title and placeholders where the list comes -->
+      <AppPageSkeleton v-else />
     </main>
   </div>
 </template>

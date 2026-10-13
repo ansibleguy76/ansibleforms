@@ -182,6 +182,8 @@ onMounted(async () => {
       @preview="previewDetails"
       @reset="null"
     />
+    <!-- the user being checked : the title and placeholders where the list comes -->
+    <AppPageSkeleton v-else />
     <BsOffCanvas :title="t('admin.backups.backupDetails')" :show="showBackupDetails" @close="offcanvasClose">
       <div v-if="currentBackup">
         <div v-if="!currentBackup.valid" class="alert alert-warning" role="alert">
@@ -229,9 +231,7 @@ onMounted(async () => {
           </li>
         </ul>
       </div>
-      <div v-else>
-        {{ t('admin.loading') }}
-      </div>
+      <AppSkeleton v-else shape="detail" :count="5" />
     </BsOffCanvas>
   </AppSettingsPage>
 </template>

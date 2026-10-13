@@ -13,6 +13,8 @@ import BsDataTable from '@/components/BsDataTable.vue';
 const { t } = useI18n();
 const router = useRouter();
 const authenticated = ref(false);
+// the roles read once : until then the table's rows as grey placeholders
+const loaded = ref(false);
 
 const {
   roles,
@@ -248,6 +250,7 @@ onMounted(async () => {
   if (!authenticated.value) return;
   await Promise.all([load(), loadLocalNames()]);
   stampRoleFlags();
+  loaded.value = true;
 });
 </script>
 <template>
@@ -284,7 +287,9 @@ onMounted(async () => {
           <div v-if="loadError" class="alert alert-danger" role="alert">
             {{ t('settings.common.failedToLoad') }} : {{ loadError }}
           </div>
-          <div v-if="roles.length === 0" class="empty-state">
+          <!-- the first load : the table's rows as grey placeholders -->
+          <AppSkeleton v-if="!loaded" shape="table" :count="6" />
+          <div v-else-if="roles.length === 0" class="empty-state">
             <FaIcon icon="user-shield" class="empty-state-icon" />
             <span>{{ t('settings.settingsPage.noRoles') }}</span>
           </div>

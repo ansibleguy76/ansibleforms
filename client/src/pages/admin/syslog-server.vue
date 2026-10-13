@@ -150,7 +150,11 @@ const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((
 // the title : Syslog › <name>, each step a link
 const pageCrumbs = computed(() => [
   { title: t('sidebar.syslog'), icon: 'tower-broadcast', to: '/settings/syslog' },
-  { title: server.value?.name || serverId.value, icon: 'tower-broadcast', to: `/settings/syslog/${serverId.value}` },
+  {
+    title: server.value?.name || (loaded.value ? serverId.value : null),
+    icon: 'tower-broadcast',
+    to: `/settings/syslog/${serverId.value}`,
+  },
 ]);
 // and the open tab last, as every page in tabs names it : Users › admin › Groups
 const crumbs = computed(() => {
@@ -272,11 +276,17 @@ onMounted(async () => {
           </li>
         </ul>
       </template>
+      <!-- the record loading : its tabs as grey placeholders -->
+      <template v-else-if="!loaded" #tabs>
+        <AppSkeleton shape="tabs" :count="tabs.length" />
+      </template>
       <template #default>
         <div v-if="loaded && !server" class="empty-state">
           <FaIcon icon="tower-broadcast" class="empty-state-icon" />
           <span>{{ t('settings.syslogServers.notFound', { id: serverId }) }}</span>
         </div>
+        <!-- the record loading : its fields as grey placeholders, where they come -->
+        <AppSkeleton v-else-if="!loaded && !server" shape="form" :count="3" />
         <div v-else-if="server && edit" class="af-syslog-tab">
           <!-- a server of the config seed : read only here -->
           <div v-if="managed" class="alert alert-secondary py-2">

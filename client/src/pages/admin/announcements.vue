@@ -23,6 +23,8 @@ import { inSentence } from '@/lib/inSentence';
 const { t, locale } = useI18n();
 const settings = computed(() => getSettings(t));
 const authenticated = ref(false);
+// the page's values read once : until then its fields as grey placeholders
+const loaded = ref(false);
 const title = computed(() => t('sidebar.announcement'));
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
@@ -65,6 +67,7 @@ useUnsavedGuard(
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (authenticated.value) await load();
+  loaded.value = true;
 });
 </script>
 <template>
@@ -125,19 +128,23 @@ onMounted(async () => {
         }}</BsButton>
       </template>
       <template #default>
-        <label class="form-label fw-bold af-switch-title" for="af-banner-show">{{
-          t('settings.interface.bannerShow')
-        }}</label>
-        <div class="form-check form-switch mb-0">
-          <input
-            id="af-banner-show"
-            v-model="look.banner_show"
-            class="form-check-input"
-            type="checkbox"
-            role="switch"
-          />
-        </div>
-        <div class="form-text mb-0">{{ t('settings.interface.bannerShowHelp') }}</div>
+        <!-- the first load : the fields as grey placeholders, in their place -->
+        <AppSkeleton v-if="!loaded" shape="form" :count="3" />
+        <template v-else>
+          <label class="form-label fw-bold af-switch-title" for="af-banner-show">{{
+            t('settings.interface.bannerShow')
+          }}</label>
+          <div class="form-check form-switch mb-0">
+            <input
+              id="af-banner-show"
+              v-model="look.banner_show"
+              class="form-check-input"
+              type="checkbox"
+              role="switch"
+            />
+          </div>
+          <div class="form-text mb-0">{{ t('settings.interface.bannerShowHelp') }}</div>
+        </template>
       </template>
     </AppSettings>
     <AppAdminMulti

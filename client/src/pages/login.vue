@@ -11,15 +11,12 @@ import Helpers from '@/lib/Helpers'; // helper functions
 import { toast } from 'vue-sonner';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
-import Theme from '@/lib/Theme';
-import { useAppStore } from '@/stores/app';
+import { rememberedSso, rememberSso } from '@/lib/loginSso';
 
 // plugins
 
 const route = useRoute();
 const router = useRouter();
-// the logo above the form : the custom logo when one is set, as in the header
-const store = useAppStore();
 
 // vuelidate
 const rules = {
@@ -38,12 +35,14 @@ const user = ref({
   password: '',
 });
 
-const currentTheme = ref(Theme.load());
 const loading = ref(false);
 const azureAdEnabled = ref(false);
 const azureGraphUrl = ref('');
 const oidcEnabled = ref(false);
 const oidcIssuer = ref('');
+// the providers read from the server : until then the buttons of last time, in grey
+const settingsRead = ref(false);
+const lastSso = rememberedSso();
 // SSO_AUTO_LOGIN, on with exactly one provider active (the server says so) : this page goes
 // straight to that provider instead of showing its form
 const ssoAutoLogin = ref(false);
@@ -105,6 +104,7 @@ async function getSettings(token) {
 
     oidcEnabled.value = !!result.data.oidcEnabled;
     oidcIssuer.value = result.data.oidcIssuer;
+    rememberSso(Number(azureAdEnabled.value) + Number(oidcEnabled.value));
     ssoAutoLogin.value = !!result.data.ssoAutoLogin;
     // not on the way back from the provider (a handoff), and only where going there cannot
     // lock anyone out or loop : the form at /login?local, after signing out, after an SSO error
@@ -126,6 +126,8 @@ async function getSettings(token) {
     }
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err, 'Failed to get settings'));
+  } finally {
+    settingsRead.value = true;
   }
 }
 /**
@@ -214,148 +216,80 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="d-flex align-items-center py-4 bg-body-tertiary login vh-100">
-    <div class="dropdown position-fixed top-0 end-0 mt-3 me-3 bd-mode-toggle">
-      <BsThemeSwitcher buttonClass="btn-bd-primary py-2" v-model="currentTheme" />
-    </div>
-
-    <div class="card form-signin w-100 m-auto" :class="{ 'login-busy': ssoPending }" :aria-busy="ssoPending">
-      <div class="card-body">
-        <div class="login-logo" :class="{ 'login-logo-instance': store.appName || store.envLabel }">
-          <!-- an uploaded logo ; not the server's built-in default, which is the light logo and
-               would replace the dark theme's own -->
-          <img v-if="store.customLogo && !store.logoIsDefault" :src="store.customLogo" alt="AnsibleForms" />
-          <img v-else-if="currentTheme === 'dark'" :src="'img/logo_dark.svg'" alt="AnsibleForms" />
-          <!-- the color theme's white logo is made for its colored header : the card is white -->
-          <img v-else :src="'img/logo_light.svg'" alt="AnsibleForms" />
-        </div>
-        <!-- which instance : its name and its environment (Settings > Appearance) -->
-        <div v-if="store.appName || store.envLabel" class="login-instance">
-          <span v-if="store.appName" class="login-app-name">{{ store.appName }}</span>
-          <AppEnvLabel />
-        </div>
-        <h5 class="card-title login-title">Please sign in</h5>
-        <BsInput
-          v-model="user.username"
-          @keyup_enter="login()"
-          label="Username"
-          placeholder="Username"
-          icon="user"
-          :hasError="$v.user.username.$invalid && $v.user.username.$dirty"
-          :errors="$v.user.username.$errors"
-        />
-        <BsInput
-          v-model="user.password"
-          @keyup_enter="login()"
-          type="password"
-          label="Password"
-          placeholder="Password"
-          icon="lock"
-          :hasError="$v.user.password.$invalid && $v.user.password.$dirty"
-          :errors="$v.user.password.$errors"
-        />
-        <button class="btn btn-primary w-100 py-2 login-submit" @click="login()">Sign in</button>
-        <!-- single sign-on : under a divider, its providers in a centred row of equal buttons -->
-        <template v-if="azureAdEnabled || oidcEnabled">
-          <div class="login-divider"><span>or</span></div>
-          <div class="login-sso">
-            <button
-              v-if="azureAdEnabled"
-              type="button"
-              class="login-sso-btn"
-              title="Sign in with Microsoft"
-              aria-label="Sign in with Microsoft"
-              @click="authAzureAd()"
-            >
-              <!-- the Microsoft logo, as Microsoft's sign-in buttons carry it (its branding
+  <!-- the background, the theme switcher, the card's logo and title (AppLoginFrame) : the
+       sign-out page draws the same frame -->
+  <AppLoginFrame :busy="ssoPending">
+    <BsInput
+      v-model="user.username"
+      @keyup_enter="login()"
+      label="Username"
+      placeholder="Username"
+      icon="user"
+      :hasError="$v.user.username.$invalid && $v.user.username.$dirty"
+      :errors="$v.user.username.$errors"
+    />
+    <BsInput
+      v-model="user.password"
+      @keyup_enter="login()"
+      type="password"
+      label="Password"
+      placeholder="Password"
+      icon="lock"
+      :hasError="$v.user.password.$invalid && $v.user.password.$dirty"
+      :errors="$v.user.password.$errors"
+    />
+    <button class="btn btn-primary w-100 py-2 login-submit" @click="login()">Sign in</button>
+    <!-- single sign-on : under a divider, its providers in a centred row of equal buttons -->
+    <template v-if="azureAdEnabled || oidcEnabled">
+      <div class="login-divider"><span>or</span></div>
+      <div class="login-sso">
+        <button
+          v-if="azureAdEnabled"
+          type="button"
+          class="login-sso-btn"
+          title="Sign in with Microsoft"
+          aria-label="Sign in with Microsoft"
+          @click="authAzureAd()"
+        >
+          <!-- the Microsoft logo, as Microsoft's sign-in buttons carry it (its branding
                    guidelines) : four squares, its four colours -->
-              <svg class="login-ms-logo" viewBox="0 0 21 21" aria-hidden="true">
-                <rect x="1" y="1" width="9" height="9" fill="#f25022" />
-                <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
-                <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
-                <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
-              </svg>
-            </button>
-            <button
-              v-if="oidcEnabled"
-              type="button"
-              class="login-sso-btn"
-              title="Sign in with OpenID Connect"
-              aria-label="Sign in with OpenID Connect"
-              @click="authOidc()"
-            >
-              <!-- the OpenID mark in its colours : the orange I, the grey swoosh and arrow -->
-              <svg class="login-oidc-logo" viewBox="0 0 512 512" aria-hidden="true">
-                <path fill="#f7931e" d="M310.2 18.9L232.7 56.7V493l77.4-36.5z" />
-                <path
-                  fill="#9a9a9a"
-                  d="M232.7 444.4C144.2 433.3 77.7 385.1 77.7 327c0-55 59.7-101.3 141.4-115.4V162.3C94.3 177.5 0 245.3 0 327c0 84.5 101.1 154.5 232.7 166z"
-                />
-                <path
-                  fill="#9a9a9a"
-                  d="M323.8 162.3v49.3c30.5 5.3 57.8 14.9 80.2 27.9l-42 23.7 150 32.6L501.3 184.7l-39.9 22.6c-37.1-22.6-84.5-38.6-137.6-45z"
-                />
-              </svg>
-            </button>
-          </div>
-        </template>
+          <svg class="login-ms-logo" viewBox="0 0 21 21" aria-hidden="true">
+            <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+            <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+            <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+            <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+          </svg>
+        </button>
+        <button
+          v-if="oidcEnabled"
+          type="button"
+          class="login-sso-btn"
+          title="Sign in with OpenID Connect"
+          aria-label="Sign in with OpenID Connect"
+          @click="authOidc()"
+        >
+          <!-- the OpenID mark in its colours : the orange I, the grey swoosh and arrow -->
+          <svg class="login-oidc-logo" viewBox="0 0 512 512" aria-hidden="true">
+            <path fill="#f7931e" d="M310.2 18.9L232.7 56.7V493l77.4-36.5z" />
+            <path
+              fill="#9a9a9a"
+              d="M232.7 444.4C144.2 433.3 77.7 385.1 77.7 327c0-55 59.7-101.3 141.4-115.4V162.3C94.3 177.5 0 245.3 0 327c0 84.5 101.1 154.5 232.7 166z"
+            />
+            <path
+              fill="#9a9a9a"
+              d="M323.8 162.3v49.3c30.5 5.3 57.8 14.9 80.2 27.9l-42 23.7 150 32.6L501.3 184.7l-39.9 22.6c-37.1-22.6-84.5-38.6-137.6-45z"
+            />
+          </svg>
+        </button>
       </div>
-    </div>
-  </div>
+    </template>
+    <!-- the providers not read yet : as many grey buttons as last time, so the card does not
+             grow when they come (lib/loginSso.js) -->
+    <AppSkeleton v-else-if="!settingsRead && lastSso" shape="sso" :count="lastSso" :delay="0" />
+  </AppLoginFrame>
 </template>
 
 <style scoped>
-.form-signin {
-  /* the width of a usual login card : wider stretches the fields */
-  max-width: 450px;
-  padding: 1rem;
-  /* a soft shadow all around, lifting the card off the background */
-  box-shadow: 0 0 1.5rem rgba(0, 0, 0, 0.18);
-}
-
-/* the logo heads the card, larger than in the header (33px) : the card is 500px wide.
-   An svg without width/height has no size of its own, so it gets a height, and the width
-   follows from its ratio ; raster images keep their own size, never scaled up. */
-.login-logo {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 1.625rem;
-  img {
-    max-width: 100%;
-    max-height: 56px;
-  }
-  img[src$='.svg'],
-  img[src^='data:image/svg+xml'] {
-    height: 56px;
-    width: auto;
-  }
-}
-
-/* which instance : its name and its environment's label, between the logo and the title.
-   It belongs to the logo, so it sits close under it, and keeps the logo's own room
-   (1.625rem) to the title : the title is as far from it as from the logo without one. */
-.login-logo.login-logo-instance {
-  margin-bottom: 0.75rem;
-}
-.login-instance {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-bottom: 1.625rem;
-}
-.login-app-name {
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-.login-instance :deep(.af-env-label) {
-  margin: 0;
-}
-.login-title {
-  text-align: center;
-  margin-bottom: 1rem;
-}
-
 /* the one action on the page, so a solid button : the theme tints every btn-primary down to
    a pale fill (styles/textColors.scss, with !important), which made Sign in the faintest
    thing on the card. This selector is more specific, so it wins in every theme. */
@@ -392,22 +326,6 @@ onMounted(() => {
   justify-content: center;
   gap: 0.75rem;
 }
-/* on the way to the single sign-on provider : the fields and the buttons greyed out, nothing to
-   click twice ; the logo, the title and the page's background stay as they are */
-.login-busy {
-  pointer-events: none;
-}
-.login-busy :deep(:is(.form-control, .input-group-text)) {
-  background-color: var(--bs-secondary-bg);
-  color: var(--bs-secondary-color);
-}
-.login-busy :deep(:is(.btn, .login-sso-btn)) {
-  opacity: 0.5;
-  filter: grayscale(1);
-  transition:
-    opacity 0.15s ease,
-    filter 0.15s ease;
-}
 .login-sso-btn {
   display: inline-flex;
   align-items: center;
@@ -436,29 +354,5 @@ onMounted(() => {
 .login-oidc-logo {
   width: 1.75rem;
   height: 1.75rem;
-}
-
-/* the menu's text label is meant for the collapsed header : the login page has none, so
-   small screens keep the icon alone, as large ones do */
-.bd-mode-toggle :deep(.d-lg-none) {
-  display: none !important;
-}
-[data-bs-theme='light'] {
-  .login {
-    background-image: var(--af-login-background-light) !important;
-    background-size: cover;
-  }
-}
-[data-bs-theme='dark'] {
-  .login {
-    background-image: var(--af-login-background-dark) !important;
-    background-size: cover;
-  }
-}
-[data-bs-theme='color'] {
-  .login {
-    background-image: var(--af-login-background-color) !important;
-    background-size: cover;
-  }
 }
 </style>

@@ -18,6 +18,8 @@ import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 
 const { t } = useI18n();
 const authenticated = ref(false);
+// the page's values read once : until then its fields as grey placeholders
+const loaded = ref(false);
 
 // the label's colours (the app's pill tones), as the server keeps them (models/settings.model.js)
 const LABEL_COLORS = ['blue', 'green', 'amber', 'orange', 'red', 'grey'];
@@ -63,6 +65,7 @@ onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
   await load();
+  loaded.value = true;
 });
 </script>
 <template>
@@ -79,64 +82,68 @@ onMounted(async () => {
         }}</BsButton>
       </template>
       <template #default>
-        <!-- the label beside the logo, and its colour (a pill, shown as the header shows it) -->
-        <label class="form-label fw-bold af-switch-title" for="af-env-label-show">{{
-          t('settings.interface.envLabelShow')
-        }}</label>
-        <div class="form-check form-switch mb-0">
-          <input
-            id="af-env-label-show"
-            v-model="look.env_label_show"
-            class="form-check-input"
-            type="checkbox"
-            role="switch"
-          />
-        </div>
-        <div class="form-text">{{ t('settings.interface.envLabelShowHelp') }}</div>
-        <BsInput
-          class="af-interface-field mt-4"
-          :isFloating="false"
-          icon="tag"
-          :disabled="!look.env_label_show"
-          v-model="look.env_label"
-          :label="t('settings.interface.envLabel')"
-          :help="t('settings.interface.envLabelHelp')"
-        />
-        <!-- its colour : round swatches, as the Color theme's ; switched off, the text, the
-             colour and the preview are greyed out and kept as they are -->
-        <label class="form-label fw-bold mt-4 d-block">{{ t('settings.interface.envLabelColor') }}</label>
-        <div
-          class="d-flex flex-wrap gap-2 ms-1"
-          :class="{ 'af-off': !look.env_label_show }"
-          role="radiogroup"
-          :aria-label="t('settings.interface.envLabelColor')"
-        >
-          <button
-            v-for="c in LABEL_COLORS"
-            :key="c"
-            type="button"
-            class="settings-color-swatch af-label-swatch"
-            :class="[PILL[c], { 'af-label-swatch-active': look.env_label_color === c }]"
-            :title="c"
-            role="radio"
-            :aria-checked="look.env_label_color === c"
+        <!-- the first load : the fields as grey placeholders, in their place -->
+        <AppSkeleton v-if="!loaded" shape="form" :count="3" />
+        <template v-else>
+          <!-- the label beside the logo, and its colour (a pill, shown as the header shows it) -->
+          <label class="form-label fw-bold af-switch-title" for="af-env-label-show">{{
+            t('settings.interface.envLabelShow')
+          }}</label>
+          <div class="form-check form-switch mb-0">
+            <input
+              id="af-env-label-show"
+              v-model="look.env_label_show"
+              class="form-check-input"
+              type="checkbox"
+              role="switch"
+            />
+          </div>
+          <div class="form-text">{{ t('settings.interface.envLabelShowHelp') }}</div>
+          <BsInput
+            class="af-interface-field mt-4"
+            :isFloating="false"
+            icon="tag"
             :disabled="!look.env_label_show"
-            @click="look.env_label_color = c"
+            v-model="look.env_label"
+            :label="t('settings.interface.envLabel')"
+            :help="t('settings.interface.envLabelHelp')"
+          />
+          <!-- its colour : round swatches, as the Color theme's ; switched off, the text, the
+               colour and the preview are greyed out and kept as they are -->
+          <label class="form-label fw-bold mt-4 d-block">{{ t('settings.interface.envLabelColor') }}</label>
+          <div
+            class="d-flex flex-wrap gap-2 ms-1"
+            :class="{ 'af-off': !look.env_label_show }"
+            role="radiogroup"
+            :aria-label="t('settings.interface.envLabelColor')"
           >
-            <FaIcon v-if="look.env_label_color === c" icon="check" class="settings-swatch-check" />
-          </button>
-        </div>
-        <!-- the preview : the header's logo and the label, as the header shows them -->
-        <label class="form-label fw-bold mt-4 d-block">{{ t('settings.interface.envLabelPreview') }}</label>
-        <div class="af-label-preview" :class="{ 'af-off': !look.env_label_show }">
-          <img :src="previewLogo" class="af-label-preview-logo" alt="" />
-          <span
-            class="badge rounded-pill fw-semibold af-pill af-label-preview-pill"
-            :class="PILL[look.env_label_color] || PILL.grey"
-          >
-            <span class="af-pill-label">{{ look.env_label || 'PRODUCTION' }}</span>
-          </span>
-        </div>
+            <button
+              v-for="c in LABEL_COLORS"
+              :key="c"
+              type="button"
+              class="settings-color-swatch af-label-swatch"
+              :class="[PILL[c], { 'af-label-swatch-active': look.env_label_color === c }]"
+              :title="c"
+              role="radio"
+              :aria-checked="look.env_label_color === c"
+              :disabled="!look.env_label_show"
+              @click="look.env_label_color = c"
+            >
+              <FaIcon v-if="look.env_label_color === c" icon="check" class="settings-swatch-check" />
+            </button>
+          </div>
+          <!-- the preview : the header's logo and the label, as the header shows them -->
+          <label class="form-label fw-bold mt-4 d-block">{{ t('settings.interface.envLabelPreview') }}</label>
+          <div class="af-label-preview" :class="{ 'af-off': !look.env_label_show }">
+            <img :src="previewLogo" class="af-label-preview-logo" alt="" />
+            <span
+              class="badge rounded-pill fw-semibold af-pill af-label-preview-pill"
+              :class="PILL[look.env_label_color] || PILL.grey"
+            >
+              <span class="af-pill-label">{{ look.env_label || 'PRODUCTION' }}</span>
+            </span>
+          </div>
+        </template>
       </template>
     </AppSettings>
   </AppSettingsPage>
