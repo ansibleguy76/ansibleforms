@@ -331,9 +331,32 @@ const logout = async function(req, res, _next){
   });
 };
 
-// catches middleware error (non implemented strategy for example)
+/**
+ * What went wrong with a single sign-on, in the provider's words. openid-client wraps the
+ * provider's answer - ResponseBodyError when the token endpoint refused the code,
+ * AuthorizationResponseError when the provider sent the browser back with an error - and its
+ * own message says only that ("server responded with an error in the response body"). The
+ * reason is in the provider's error and error_description : Entra ID's AADSTS code and text
+ * (an expired client secret, a redirect URI it does not know, a consent not granted...).
+ *
+ * Args:
+ *   err (Error|string): what passport or openid-client threw.
+ *
+ * Returns:
+ *   string: the provider's description (its first line : Entra ID adds a trace and
+ *     correlation id), or its error code, or the error's own message.
+ */
+export function ssoErrorMessage(err) {
+  const description = typeof err?.error_description === 'string' ? err.error_description.split(/\r?\n/)[0].trim() : '';
+  if (description) return description;
+  if (typeof err?.error === 'string' && err.error) return err.error;
+  return helpers.getError(err) || 'Single sign-on failed';
+}
+
+// catches middleware error (non implemented strategy for example) : back to the login page,
+// with the provider's reason, encoded as a query value
 const errorHandler = async function(err,req, res,_next) {
-  res.redirect(`${appConfig.baseUrl}/login?error=${err}`)
+  res.redirect(`${appConfig.baseUrl}/login?error=${encodeURIComponent(ssoErrorMessage(err))}`)
 };
 
 /**
@@ -363,8 +386,17 @@ const authCallback = function(req, res, next, type) {
     // redirected (#542).
     try {
       if (err) {
-        logger.error(helpers.getError(err))
+        // the provider's reason, and the code it goes with, in the log as on the login page
+        logger.error(`${type} sign-in failed : ${ssoErrorMessage(err)}${err?.error ? ` (${err.error})` : ''}`)
         return next(err)
+      }
+      // no error and no user : the strategy failed the sign-in (a state that does not match,
+      // a callback without a code). It used to mint a handoff without claims, and the login
+      // page failed later on it with nothing to say why
+      if (!payload) {
+        const reason = new Error('The identity provider did not sign you in - start again from the login page')
+        logger.error(`${type} sign-in failed : no user from the identity provider`)
+        return next(reason)
       }
       const token = signHandoff(payload, type);
       // in the fragment : the browser keeps it, no server, proxy or access log ever sees it
