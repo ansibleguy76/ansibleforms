@@ -4,6 +4,8 @@
 // Content-Security-Policy allows (no inline script). index.html is served with no-cache, so an
 // admin switching a provider on or off is seen at the next page load.
 
+import { setMeta } from "./indexMeta.js";
+
 // the providers, by their name in the meta tag, in the order the card shows their buttons
 export const SSO_PROVIDERS = ["azuread", "oidc"];
 
@@ -37,8 +39,5 @@ export async function enabledSsoProviders({ AzureAd, OIDC }) {
 export function injectSsoProviders(html, providers) {
   if (!html || !Array.isArray(providers)) return html;
   // only the known names : nothing else reaches the attribute
-  const content = providers.filter((p) => SSO_PROVIDERS.includes(p)).join(",");
-  const tag = `<meta name="af-sso" content="${content}" />`;
-  if (/<meta\s+name="af-sso"[^>]*>/.test(html)) return html.replace(/<meta\s+name="af-sso"[^>]*>/, tag);
-  return html.replace(/<\/head>/, `  ${tag}\n</head>`);
+  return setMeta(html, "af-sso", providers.filter((p) => SSO_PROVIDERS.includes(p)).join(","));
 }

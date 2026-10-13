@@ -6,6 +6,21 @@
 import { defineStore, getActivePinia } from 'pinia';
 import { ref } from 'vue';
 
+/**
+ * A value the server put in index.html for the first frame (server/src/lib/indexMeta.js) : the
+ * instance's name, its environment's label and colour.
+ *
+ * Args:
+ *   name (string): the meta tag's name.
+ *
+ * Returns:
+ *   string|null: its content ; null when empty, or when the page carries no such tag (then the
+ *     api says, State.loadAppConfig).
+ */
+function servedMeta(name) {
+  return (typeof document !== 'undefined' && document.querySelector(`meta[name="${name}"]`)?.content) || null;
+}
+
 // the user's time zone preference, kept in this browser like the theme ; storage can be
 // unavailable (private mode), then the default applies
 function loadTimezone() {
@@ -48,10 +63,10 @@ export const useAppStore = defineStore('app', () => {
   // Settings > Appearance (/api/v2/app/config) : the name in the browser tab and on
   // the sign-in page, the label beside the logo and its colour, the announcements under the
   // header ({ id, message, level, end_at } of each running now), the forms list's view for
-  // everyone
-  const appName = ref(null);
-  const envLabel = ref(null);
-  const envLabelColor = ref(null);
+  // everyone. The name and the label from the first frame, as index.html carries them
+  const appName = ref(servedMeta('af-app-name'));
+  const envLabel = ref(servedMeta('af-env-label'));
+  const envLabelColor = ref(servedMeta('af-env-label-color'));
   const announcements = ref([]);
   const formsView = ref(null);
   // the header's own links (Settings > Appearance > Links > Custom), for who is signed in
