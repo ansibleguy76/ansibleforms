@@ -35,6 +35,7 @@ import { appVersion as version } from "../lib/version.js";
 import { startHeartbeat } from "../lib/nodes.js";
 import { registerSelf } from "./register.js";
 import { startSyslogServers } from "../lib/syslogServers.js";
+import { httpServerOptions } from "../lib/httpServerOptions.js";
 
 
 // the jobs this process is running ; a job is only ever run by the RTE that claimed it
@@ -284,8 +285,8 @@ export async function startRte({ firstDelayMs, maxDelayMs } = {}) {
 
   const port = appConfig.port;
   const server = httpsConfig.https
-    ? https.createServer({ key: httpsConfig.httpsKey, cert: httpsConfig.httpsCert }, app)
-    : http.createServer(app);
+    ? https.createServer({ ...httpServerOptions(), key: httpsConfig.httpsKey, cert: httpsConfig.httpsCert }, app)
+    : http.createServer(httpServerOptions(), app);
   // a port that is taken is fatal : an RTE that heartbeats but listens nowhere looks alive
   server.on("error", (err) => {
     console.error(`RTE : cannot listen on port ${port} : ${err.message}`);

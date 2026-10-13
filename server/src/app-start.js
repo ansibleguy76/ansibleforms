@@ -12,6 +12,7 @@ import { resolve } from 'path';
 import history from 'connect-history-api-fallback';
 import httpsConfig from '../config/https.config.js';
 import { registerHttpsServer } from './lib/httpsContext.js';
+import { httpServerOptions } from './lib/httpServerOptions.js';
 import authConfig from '../config/auth.config.js';
 import logger from './lib/logger.js';
 import { reloadConfigSeed } from './lib/seed.js';
@@ -202,17 +203,20 @@ export async function startApp(){
 
   // choose whether to start https or http server
   let httpServer;
+  // the largest request header (MAX_HTTP_HEADER_SIZE) : Node's own when it is unset
+  const serverOptions = httpServerOptions();
+  if (serverOptions.maxHeaderSize) logger.notice(`Accepting request headers up to ${serverOptions.maxHeaderSize} bytes`);
   logger.notice(`Serving static files from ${publicPath}`);
   logger.notice(`Exposing app under ${appConfig.baseUrl || '/'}`);
   if (httpsConfig.https) {
     logger.notice("Running https !");
     const credentials = { key: httpsConfig.httpsKey, cert: httpsConfig.httpsCert };
-    httpServer = https.createServer(credentials, rootApp);
+    httpServer = https.createServer({ ...serverOptions, ...credentials }, rootApp);
     // lets the settings page reload the certificate without a restart
     registerHttpsServer(httpServer);
   } else {
     logger.notice("Running http !");
-    httpServer = http.createServer(rootApp);
+    httpServer = http.createServer(serverOptions, rootApp);
   }
 
   // start the webserver and listen on the port we choose
