@@ -26,6 +26,7 @@
 
 import { getCurrentInstance, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { backdropPress } from '@/lib/backdropPress';
 
 // INIT
 
@@ -66,9 +67,11 @@ const sizeClass = computed(() => (props.size && props.size !== 'md' ? `modal-${p
 function close() {
   emit('close');
 }
-// a click on the backdrop around the dialog closes it, not one inside it
+// a press on the backdrop around the dialog closes it : not one inside it, nor one that starts
+// inside it and ends on the backdrop (selecting text, lib/backdropPress.js)
+const press = backdropPress((target) => target?.id == uid);
 function backdropClick(e) {
-  if (e.target.id == uid) close();
+  if (press.closes(e)) close();
 }
 </script>
 
@@ -84,6 +87,7 @@ function backdropClick(e) {
     role="dialog"
     aria-modal="true"
     aria-labelledby="offcanvasLabel"
+    @mousedown="press.down"
     @click="backdropClick"
   >
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" :class="[sizeClass, dialogClass]">
