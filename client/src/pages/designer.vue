@@ -5251,6 +5251,8 @@ onBeforeUnmount(() => {
           </div>
         </template>
       </AppSettings>
+      <!-- the user being checked : the title and placeholders where the designer comes -->
+      <AppPageSkeleton v-else />
     </main>
   </div>
 </template>

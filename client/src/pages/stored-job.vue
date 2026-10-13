@@ -340,6 +340,8 @@ onMounted(async () => {
           <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
         </template>
       </AppSettings>
+      <!-- the user being checked : the title and placeholders where the page comes -->
+      <AppPageSkeleton v-else />
     </main>
   </div>
 </template>

@@ -2306,8 +2306,8 @@ onBeforeUnmount(() => {
           </div>
         </div>
       </div>
-      <!-- the form loading : the pages' loading indicator, as every page's -->
-      <AppPageLoading v-else-if="!formNotFound" />
+      <!-- the form loading : its title and its fields as grey placeholders (lib/pageSkeleton.js) -->
+      <AppPageSkeleton v-else-if="!formNotFound" />
       <!-- not found : the page's title and its divider, as a form's, then why on one line -->
       <div v-else class="section container-fluid w-100 mt-3">
         <div class="d-flex flex-wrap align-items-center border-bottom mb-3 pb-2 af-page-head">
