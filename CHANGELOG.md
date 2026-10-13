@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.0.2](https://github.com/ansibleforms/ansibleforms/compare/7.0.1...7.0.2) (2026-10-13)
+
+
+### Fixed
+
+* a modal stays open when a selection inside it ends on the backdrop ([#1032](https://github.com/ansibleforms/ansibleforms/issues/1032)) ([7ad97af](https://github.com/ansibleforms/ansibleforms/commit/7ad97af026c59cc1aac29f3475fb092a761e741b))
+* a workflow that cannot start fails with its reason, and a form names a workflow or a playbook by its file or its name ([#1031](https://github.com/ansibleforms/ansibleforms/issues/1031)) ([3025dbe](https://github.com/ansibleforms/ansibleforms/commit/3025dbe1a47bd72b40f6ef4c5cea44f05019f931))
+
 ## [7.0.1](https://github.com/ansibleforms/ansibleforms/compare/7.0.0...7.0.1) (2026-10-13)
 
 
