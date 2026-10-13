@@ -2401,6 +2401,12 @@ export default {
   },
   jobs: {
     // the jobs page's left menu
+    // a job's status where the menu has no entry for it
+    statusLabel: {
+      abandoned: 'Porzucone',
+      rejected: 'Odrzucone',
+      warning: 'Ostrzeżenie',
+    },
     menu: {
       status: 'Stan',
       all: 'Wszystkie zadania',

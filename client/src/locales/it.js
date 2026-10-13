@@ -2409,6 +2409,12 @@ export default {
   },
   jobs: {
     // the jobs page's left menu
+    // a job's status where the menu has no entry for it
+    statusLabel: {
+      abandoned: 'Abbandonato',
+      rejected: 'Rifiutato',
+      warning: 'Avviso',
+    },
     menu: {
       status: 'Stato',
       all: 'Tutti i job',

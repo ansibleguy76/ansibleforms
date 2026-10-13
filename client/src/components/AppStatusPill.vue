@@ -5,8 +5,9 @@
 /*  .af-pill) : the same colours wherever a job shows its status  */
 /*  - the jobs list, a job's page, a form's running job, an AWX   */
 /*  workflow. Running blue, success green, failed red, waiting    */
-/*  for an approval orange, stopped amber, anything else grey ;   */
-/*  the label as the jobs' menu says it, else the status itself.  */
+/*  for an approval orange, stopped amber, abandoned (what ran it */
+/*  is gone) and anything else grey ; the label translated, a     */
+/*  status without a translation capitalized.                     */
 /*                                                                */
 /*  @props:                                                       */
 /*      status: String - the job's status (AWX's too)             */
@@ -40,13 +41,16 @@ const STATUS_TONE = {
   warning: 'amber',
   aborted: 'amber',
   rejected: 'amber',
-  abandoned: 'amber',
+  // nobody stopped it : what ran it is gone (a restarted or dead RTE or node), apart from aborted
+  abandoned: 'grey',
   canceled: 'amber',
 };
 const colour = computed(() => PILL[props.tone || STATUS_TONE[props.status] || 'grey']);
 const text = computed(() => {
   if (props.label) return props.label;
-  return te(`jobs.menu.${props.status}`) ? t(`jobs.menu.${props.status}`) : props.status;
+  for (const key of [`jobs.statusLabel.${props.status}`, `jobs.menu.${props.status}`]) if (te(key)) return t(key);
+  // a status without a translation (AWX's own words) : capitalized as the others
+  return props.status ? props.status.charAt(0).toUpperCase() + props.status.slice(1) : '';
 });
 </script>
 
