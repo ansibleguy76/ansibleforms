@@ -1434,7 +1434,6 @@ export default {
         'Credencials reutilitzables per connectar-se a bases de dades i serveis externs des dels formularis.',
       editCredential: 'Edita la credencial',
       deleteCredential: 'Suprimeix la credencial',
-      forDatabase: 'Per a base de dades',
       enableDbFields: 'Activa els camps de base de dades',
       databaseType: 'Tipus de base de dades',
       database: 'Base de dades',
@@ -1453,6 +1452,9 @@ export default {
       type: 'Tipus',
       type_ssh: 'SSH',
       type_sshHint: 'Un usuari i una contrasenya per a SSH a un servidor',
+      type_userpass: 'Usuari i contrasenya',
+      type_userpassHint:
+        "Un usuari i una contrasenya per a qualsevol altre accés : una API REST amb basic auth, un servei i més. Les credencials d'abans de la 7 tenen aquest tipus.",
       type_git: 'Git',
       type_gitHint: 'Un usuari i una contrasenya o un token per a repositoris git',
       type_api: 'API',

@@ -1416,7 +1416,6 @@ export default {
       description: 'フォームからデータベースや外部サービスに接続するための、再利用可能な認証情報です。',
       editCredential: '認証情報を編集',
       deleteCredential: '認証情報を削除',
-      forDatabase: 'データベース用',
       enableDbFields: 'データベースの項目を有効にする',
       databaseType: 'データベースの種類',
       database: 'データベース',
@@ -1435,6 +1434,9 @@ export default {
       type: '種類',
       type_ssh: 'SSH',
       type_sshHint: 'サーバーへの SSH 用のユーザーとパスワード',
+      type_userpass: 'ユーザーとパスワード',
+      type_userpassHint:
+        'その他のログイン用のユーザーとパスワード（Basic 認証の REST API、サービスなど）。7 より前の認証情報はこの種類です。',
       type_git: 'Git',
       type_gitHint: 'git リポジトリ用のユーザーとパスワードまたはトークン',
       type_api: 'API',

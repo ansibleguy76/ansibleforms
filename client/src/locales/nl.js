@@ -1521,7 +1521,6 @@ export default {
         'Herbruikbare inloggegevens voor het verbinden met databases en externe services vanuit formulieren.',
       editCredential: 'Inloggegevens bewerken',
       deleteCredential: 'Inloggegevens verwijderen',
-      forDatabase: 'Voor database',
       enableDbFields: 'Database velden inschakelen',
       databaseType: 'Database type',
       database: 'Database',
@@ -1540,6 +1539,9 @@ export default {
       type: 'Type',
       type_ssh: 'SSH',
       type_sshHint: 'Een gebruiker en wachtwoord voor SSH naar een server',
+      type_userpass: 'Gebruiker en wachtwoord',
+      type_userpassHint:
+        'Een gebruiker en wachtwoord voor elke andere login : een REST API met basic auth, een dienst en meer. Credentials van vóór 7 hebben dit type.',
       type_git: 'Git',
       type_gitHint: 'Een gebruiker en wachtwoord of token voor git-repositories',
       type_api: 'API',

@@ -252,8 +252,11 @@ export function nodeRuns(parent, node) {
 const FORM_TYPE_OF_RUNNER = { rte: "ansible", awx: "awx", semaphore: "semaphore", rundeck: "rundeck", jenkins: "jenkins" };
 
 /**
- * How a node's credentials reach its playbook : a vault one opens the vaults, the first ssh one
- * logs in, the others are passed to the playbook under their own name (as a form's credentials).
+ * How a node's credentials reach its playbook. Each one reaches it under its own name, as a form's
+ * credentials do ; the first ssh one is also the login ansible connects with, as AWX's machine
+ * credential - a userpass one (a REST login...) is not. A vault one opens the vaults only : its
+ * password is not handed to the playbook. A credential used to be the login only and never
+ * reached the playbook - a node with one REST credential ran without it.
  *
  * Args:
  *   credentials (object[]): the node's credentials ({ name, kind }).
@@ -265,9 +268,12 @@ const FORM_TYPE_OF_RUNNER = { rte: "ansible", awx: "awx", semaphore: "semaphore"
 export function credentialRoles(credentials, types) {
   const out = { ansibleCredentials: "", vaultCredentials: "", credentials: {} };
   for (const c of credentials || []) {
-    if (c.kind.includes("vault") && !out.vaultCredentials) out.vaultCredentials = c.name;
-    else if ((types.get(c.name) || "ssh") === "ssh" && !out.ansibleCredentials) out.ansibleCredentials = c.name;
-    else out.credentials[c.name] = c.name;
+    if (c.kind.includes("vault")) {
+      if (!out.vaultCredentials) out.vaultCredentials = c.name;
+      continue;
+    }
+    if (types.get(c.name) === "ssh" && !out.ansibleCredentials) out.ansibleCredentials = c.name;
+    out.credentials[c.name] = c.name;
   }
   return out;
 }
@@ -283,7 +289,7 @@ export function credentialRoles(credentials, types) {
  * Returns:
  *   object: the step's form (as a multistep's step).
  */
-export function nodeForm(workflow, node, types, runnerType = "") {
+export function nodeForm(workflow, node, types, runnerType = "", formCredentials = {}) {
   const formType = node.runner ? FORM_TYPE_OF_RUNNER[runnerType] : "ansible";
   if (!formType) throw new Error(`node '${node.identifier}' names runner '${node.runner}', which is no runner a node can run on`);
   if (formType !== "ansible") return templateNodeForm(workflow, node, formType);
@@ -299,8 +305,16 @@ export function nodeForm(workflow, node, types, runnerType = "") {
   if (node.diff_mode) form.diff = true;
   if (roles.ansibleCredentials) form.ansibleCredentials = roles.ansibleCredentials;
   if (roles.vaultCredentials) form.vaultCredentials = roles.vaultCredentials;
-  if (Object.keys(roles.credentials).length) form.credentials = roles.credentials;
+  // the workflow form's credentials (credentials: { ontap: ontap_automation }) reach every node, as
+  // a multistep's reach its steps ; the node's own win a name both use
+  const credentials = { ...plainMap(formCredentials), ...roles.credentials };
+  if (Object.keys(credentials).length) form.credentials = credentials;
   return form;
+}
+
+/** a form's credentials map, {} when it is none */
+function plainMap(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
 }
 
 /**
@@ -347,7 +361,7 @@ async function credentialTypes(workflow) {
   const names = [...new Set(workflow.nodes.flatMap((n) => n.credentials.map((c) => c.name)))];
   if (!names.length) return new Map();
   const rows = await mysql.do("SELECT name, credential_type FROM AnsibleForms.`credentials` WHERE name IN (?)", [names]);
-  return new Map((rows || []).map((r) => [r.name, r.credential_type || "ssh"]));
+  return new Map((rows || []).map((r) => [r.name, r.credential_type || "userpass"]));
 }
 
 // ─── the run ──────────────────────────────────────────────────────────────────
@@ -544,9 +558,11 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
           if (!row) throw new Error(`no runner named '${node.runner}' - add it under Connections > Runners`);
           runnerType = row.type;
         }
-        await runChild(node, nodeForm(workflow, node, types, runnerType), nodeExtravars(extravars, workflow, node, inherited));
+        await runChild(node, nodeForm(workflow, node, types, runnerType, formObj.credentials), nodeExtravars(extravars, workflow, node, inherited));
       } else if (node.type === "workflow_job_template") {
         const child = { type: "workflow", name: `${workflow.name} - ${node.identifier}`, workflow: node.name, __workflowDepth: (Number(formObj.__workflowDepth) || 0) + 1 };
+        // the form's credentials reach a nested workflow's nodes too
+        if (Object.keys(plainMap(formObj.credentials)).length) child.credentials = formObj.credentials;
         await runChild(node, child, nodeExtravars(extravars, workflow, node, inherited));
       } else if (node.type === "project") {
         let lines = [];

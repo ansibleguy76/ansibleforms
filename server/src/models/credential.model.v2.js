@@ -28,16 +28,18 @@ class CredentialModel extends CrudModel {
   // the types a credential can be : what it is for. A cyberark one is how a CyberArk secret
   // store logs in : its AppID (user), and a client certificate and key when the AppID is
   // restricted to one
-  static TYPES = ['ssh', 'git', 'api', 'database', 'cyberark', 'smtp'];
+  // userpass : a user and a password for any login (a REST API, a service...), the default ; ssh :
+  // one for SSH to a server, the login a workflow node's playbook connects with
+  static TYPES = ['userpass', 'ssh', 'git', 'api', 'database', 'cyberark', 'smtp'];
 
   /**
    * Keeps a credential's type and its is_database flag in step : the type sets the flag, and
    * a write that only sends the flag (an older client, the seed) gets the matching type -
-   * database, or ssh on a create.
+   * database, or userpass on a create.
    *
    * Args:
    *   data (object): the record written.
-   *   creating (boolean): a create (a credential without a type is an ssh one).
+   *   creating (boolean): a create (a credential without a type is a userpass one).
    *
    * Returns:
    *   object: the record.
@@ -53,7 +55,7 @@ class CredentialModel extends CrudModel {
       data.is_database = data.credential_type === 'database' ? 1 : 0;
     } else if (data.is_database !== undefined) {
       if (data.is_database && data.is_database !== '0') data.credential_type = 'database';
-      else if (creating) data.credential_type = 'ssh';
+      else if (creating) data.credential_type = 'userpass';
     } else if (creating) {
       // the column's default makes it a database credential : say so
       data.credential_type = 'database';
@@ -61,16 +63,44 @@ class CredentialModel extends CrudModel {
     return data;
   }
 
+  /**
+   * A credential's port as its column takes it : a whole number, or none. A credential without a
+   * host (an api, a git or an smtp one) sends it empty, and MySQL refused '' for the int column
+   * ("Incorrect integer value: '' for column 'port'") - saving a type change failed.
+   *
+   * Args:
+   *   data (object): the record written.
+   *
+   * Returns:
+   *   object: the record.
+   *
+   * Raises:
+   *   BadRequestError: a port that is not a whole number from 1 to 65535.
+   */
+  static normalizePort(data) {
+    if (data.port === undefined) return data;
+    if (data.port === null || String(data.port).trim() === '') {
+      data.port = null;
+      return data;
+    }
+    const port = Number(String(data.port).trim());
+    if (!Number.isInteger(port) || port < 1 || port > 65535) {
+      throw new Errors.BadRequestError(`A credential's port is a whole number from 1 to 65535 : '${data.port}' is not`);
+    }
+    data.port = port;
+    return data;
+  }
+
   // opts carries { fromSeed:true } for the declarative config seed only
   static async create(data, opts = {}) {
-    return super.create(this.modelName, this.mirrorType(this.mirrorVaultPath(data), true), opts);
+    return super.create(this.modelName, this.mirrorType(this.mirrorVaultPath(this.normalizePort(data)), true), opts);
   }
 
   static async update(data, id, opts = {}) {
     // the api shows the client key masked ; the mask sent back means "unchanged", and an
     // empty one too (the dialog leaves a secret empty to keep it)
     if (data.client_key === '**********' || data.client_key === '') delete data.client_key;
-    return super.update(this.modelName, this.mirrorType(this.mirrorVaultPath(data)), id, opts);
+    return super.update(this.modelName, this.mirrorType(this.mirrorVaultPath(this.normalizePort(data))), id, opts);
   }
 
   static async delete(id, opts = {}) {

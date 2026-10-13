@@ -1426,7 +1426,6 @@ export default {
         'Poświadczenia wielokrotnego użytku do łączenia się z bazami danych i usługami zewnętrznymi z poziomu formularzy.',
       editCredential: 'Edytuj poświadczenie',
       deleteCredential: 'Usuń poświadczenie',
-      forDatabase: 'Dla bazy danych',
       enableDbFields: 'Włącz pola bazy danych',
       databaseType: 'Typ bazy danych',
       database: 'Baza danych',
@@ -1445,6 +1444,9 @@ export default {
       type: 'Typ',
       type_ssh: 'SSH',
       type_sshHint: 'Użytkownik i hasło do SSH na serwer',
+      type_userpass: 'Użytkownik i hasło',
+      type_userpassHint:
+        'Użytkownik i hasło do każdego innego logowania : REST API z basic auth, usługa i więcej. Poświadczenia sprzed 7 mają ten typ.',
       type_git: 'Git',
       type_gitHint: 'Użytkownik i hasło lub token do repozytoriów git',
       type_api: 'API',

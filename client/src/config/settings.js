@@ -303,7 +303,8 @@ export function announcementLevelPill(t, level) {
 const SIGN_IN_TYPES = { local: 'Local', ldap: 'LDAP', azuread: 'Entra ID', oidc: 'OpenID Connect' };
 
 // what a credential is for (its type), in the order the dialog offers them
-export const CREDENTIAL_TYPES = ['ssh', 'git', 'api', 'database', 'cyberark', 'smtp'];
+// userpass : a user and a password for any login, the default ; ssh : one for SSH to a server
+export const CREDENTIAL_TYPES = ['userpass', 'ssh', 'git', 'api', 'database', 'cyberark', 'smtp'];
 
 // The flavours of an awx runner (server/src/models/runner.model.js has the same list) : which
 // product it is (its uri carries its API path)
@@ -1570,23 +1571,15 @@ export default function getSettings(t) {
               ? r.credential_type
               : r?.id && r?.is_database
                 ? 'database'
-                : 'ssh',
+                : 'userpass',
           render: (v, r) =>
             escapeHtml(
-              t(`settings.credentials.type_${CREDENTIAL_TYPES.includes(v) ? v : r?.is_database ? 'database' : 'ssh'}`),
+              t(
+                `settings.credentials.type_${CREDENTIAL_TYPES.includes(v) ? v : r?.is_database ? 'database' : 'userpass'}`,
+              ),
             ),
           sortable: true,
           filterable: true,
-        },
-        {
-          // set by the type (the server keeps it in step) : a column only
-          key: 'is_database',
-          label: t('settings.credentials.forDatabase'),
-          noInput: true,
-          columnType: 'checkbox',
-          filterType: 'boolean',
-          hidden: true,
-          required: false,
         },
         {
           key: 'user',
@@ -1614,7 +1607,7 @@ export default function getSettings(t) {
           hidden: true,
           // a cyberark credential has a client key instead
           dependency: 'credential_type',
-          dependencyValues: ['ssh', 'git', 'api', 'database', 'smtp'],
+          dependencyValues: ['userpass', 'ssh', 'git', 'api', 'database', 'smtp'],
         },
         {
           // a cyberark credential : the client certificate and key its AppID may be restricted to

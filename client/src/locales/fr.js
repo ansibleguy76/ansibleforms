@@ -1533,7 +1533,6 @@ export default {
         'Identifiants réutilisables pour la connexion aux bases de données et services externes depuis les formulaires.',
       editCredential: "Modifier l'identifiant",
       deleteCredential: "Supprimer l'identifiant",
-      forDatabase: 'Pour la base de donnees',
       enableDbFields: 'Activer les champs base de donnees',
       databaseType: 'Type de base de donnees',
       database: 'Base de donnees',
@@ -1552,6 +1551,9 @@ export default {
       type: 'Type',
       type_ssh: 'SSH',
       type_sshHint: 'Un utilisateur et un mot de passe pour SSH vers un serveur',
+      type_userpass: 'Utilisateur et mot de passe',
+      type_userpassHint:
+        "Un utilisateur et un mot de passe pour toute autre connexion : une API REST en basic auth, un service et plus. Les identifiants d'avant la 7 ont ce type.",
       type_git: 'Git',
       type_gitHint: 'Un utilisateur et un mot de passe ou un jeton pour des dépôts git',
       type_api: 'API',

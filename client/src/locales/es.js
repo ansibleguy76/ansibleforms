@@ -1526,7 +1526,6 @@ export default {
         'Credenciales reutilizables para conectar con bases de datos y servicios externos desde formularios.',
       editCredential: 'Editar credencial',
       deleteCredential: 'Eliminar credencial',
-      forDatabase: 'Para base de datos',
       enableDbFields: 'Habilitar campos de base de datos',
       databaseType: 'Tipo de base de datos',
       database: 'Base de datos',
@@ -1545,6 +1544,9 @@ export default {
       type: 'Tipo',
       type_ssh: 'SSH',
       type_sshHint: 'Un usuario y una contraseña para SSH a un servidor',
+      type_userpass: 'Usuario y contraseña',
+      type_userpassHint:
+        'Un usuario y una contraseña para cualquier otro acceso : una API REST con basic auth, un servicio y más. Las credenciales anteriores a la 7 tienen este tipo.',
       type_git: 'Git',
       type_gitHint: 'Un usuario y una contraseña o un token para repositorios git',
       type_api: 'API',

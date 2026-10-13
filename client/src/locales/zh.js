@@ -1378,7 +1378,6 @@ export default {
       description: '可在表单中重复使用、用于连接数据库和外部服务的凭据。',
       editCredential: '编辑凭据',
       deleteCredential: '删除凭据',
-      forDatabase: '用于数据库',
       enableDbFields: '启用数据库字段',
       databaseType: '数据库类型',
       database: '数据库',
@@ -1397,6 +1396,9 @@ export default {
       type: '类型',
       type_ssh: 'SSH',
       type_sshHint: '用于 SSH 连接服务器的用户名和密码',
+      type_userpass: '用户名和密码',
+      type_userpassHint:
+        '用于其他任何登录的用户名和密码：使用 basic auth 的 REST API、服务等。7 之前的凭据都是此类型。',
       type_git: 'Git',
       type_gitHint: '用于 git 仓库的用户名和密码或令牌',
       type_api: 'API',

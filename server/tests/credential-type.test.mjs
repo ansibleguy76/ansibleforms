@@ -1,4 +1,4 @@
-// A credential's type says what it is for (ssh, git, api or database) and keeps the older
+// A credential's type says what it is for (userpass, ssh, git, api, database...) and keeps the older
 // is_database flag in step, so a client or a seed that only knows the flag still works.
 import { test, describe } from "vitest";
 import assert from "node:assert/strict";
@@ -14,12 +14,12 @@ const { default: Credential } = await import("../src/models/credential.model.v2.
 describe("a credential's type and its is_database flag", () => {
   test("the type sets the flag", () => {
     assert.equal(Credential.mirrorType({ credential_type: "database" }).is_database, 1);
-    for (const type of ["ssh", "git", "api"]) assert.equal(Credential.mirrorType({ credential_type: type }).is_database, 0);
+    for (const type of ["userpass", "ssh", "git", "api"]) assert.equal(Credential.mirrorType({ credential_type: type }).is_database, 0);
   });
 
-  test("the flag alone sets the type : database, or ssh on a create", () => {
+  test("the flag alone sets the type : database, or userpass on a create", () => {
     assert.equal(Credential.mirrorType({ is_database: 1 }).credential_type, "database");
-    assert.equal(Credential.mirrorType({ is_database: 0 }, true).credential_type, "ssh");
+    assert.equal(Credential.mirrorType({ is_database: 0 }, true).credential_type, "userpass");
     assert.equal(Credential.mirrorType({ is_database: 0 }).credential_type, undefined, "an update leaves the stored type");
   });
 
