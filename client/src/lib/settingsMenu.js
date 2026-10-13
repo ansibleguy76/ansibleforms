@@ -115,4 +115,20 @@ export function settingsEntry(path, t) {
   return items.find((i) => path === i.link || path.startsWith(i.link + '/')) || null;
 }
 
-export default { settingsMenu, settingsEntry };
+/**
+ * The settings menu's section of a page (System, Appearance, Access, ...) : the one holding its
+ * entry.
+ *
+ * Args:
+ *   path (string): the page's address (/settings/defaults).
+ *   t (Function): vue-i18n's translate function.
+ *
+ * Returns:
+ *   Object|null: { title }, or null for an address outside the menu.
+ */
+export function settingsSection(path, t) {
+  const section = settingsMenu(t).find((s) => s.items.some((i) => path === i.link || path.startsWith(i.link + '/')));
+  return section ? { title: section.title } : null;
+}
+
+export default { settingsMenu, settingsEntry, settingsSection };
