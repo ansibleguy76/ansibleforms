@@ -317,10 +317,11 @@ $af-unresized-cols: ':last-child, :empty, .af-fit-spacer, .af-expand-col, .af-jo
 table.af-fit > thead > tr:first-child > th:not(#{$af-unresized-cols})::after {
   content: '';
   position: absolute;
-  top: 25%;
+  top: 0;
   right: 0;
-  height: 50%;
-  border-right: 1px solid var(--af-field-border, var(--bs-border-color));
+  bottom: 0;
+  /* the light grey of the line under the header, not the fields' darker one */
+  border-right: 1px solid var(--bs-border-color);
   pointer-events: none;
 }
 table.af-fit.af-col-grip > thead,
