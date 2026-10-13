@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * playbooks run without the app's environment ([#884](https://github.com/ansibleforms/ansibleforms/issues/884))
 * launch validation enforced by default ([#880](https://github.com/ansibleforms/ansibleforms/issues/880))
 * runners, app nodes, secret stores and a new interface ([#740](https://github.com/ansibleforms/ansibleforms/issues/740))
+* the api v1 is removed, single sign-on callbacks too : a redirect URL with `/api/v1/` must become `/api/v2/`, on the SSO provider and in the identity provider ([#740](https://github.com/ansibleforms/ansibleforms/issues/740))
 
 ### Added
 
