@@ -47,6 +47,17 @@ version.
 Edit `CHANGELOG.md` on the release pull request's branch (`release-please--branches--main`,
 or `release-please--branches--release/6.x`) and push. Once the release exists, you can also edit the GitHub release notes directly.
 
+That edit is lost when release-please rebuilds the branch after the next merge. A merged pull
+request with the wrong title (a `feat:` that should be a `fix:`, which bumps the minor
+version) is corrected at its source instead: add this to the merged pull request's
+description, and the next merge to `main` makes release-please read it so.
+
+```
+BEGIN_COMMIT_OVERRIDE
+fix: the title it should have had
+END_COMMIT_OVERRIDE
+```
+
 ### Forcing a specific version
 
 Set `"release-as"` in `release-please-config.json`, in a pull request with a `feat:` or `fix:`
