@@ -185,6 +185,7 @@ function removeUser(index) {
         :isFloating="false"
         v-model="role.name"
         :label="t('settings.settingsPage.name')"
+        :placeholder="t('settings.settingsPage.roleNamePlaceholder')"
         :disabled="role._required || readOnly"
       />
       <!-- admin and default : a fixed description, greyed out as their name -->

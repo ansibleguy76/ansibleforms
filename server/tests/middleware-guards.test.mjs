@@ -226,24 +226,37 @@ describe("the chat and MCP guards follow their own option", () => {
   }
 });
 
-describe("the designer's playbooks are written only with allowPlaybookDesign", () => {
+describe("the designer's files are written only with their own option", () => {
   const runKind = (kind, user) => {
     const res = makeRes();
     let nexted = false;
-    Middleware.checkPlaybookDesignMiddleware({ params: { kind }, user: { user } }, res, () => { nexted = true; });
+    Middleware.checkFileDesignMiddleware({ params: { kind }, user: { user } }, res, () => { nexted = true; });
     return { res, nexted };
   };
+  const OPTIONS = {
+    playbooks: "allowPlaybookDesign",
+    workflows: "allowWorkflowDesign",
+    inventories: "allowInventoryDesign",
+    vars: "allowVarsFileDesign",
+  };
 
-  test("a playbook write is refused (403) without it, passes with it", () => {
-    const denied = runKind("playbooks", withOption("allowPlaybookDesign", false));
-    assert.equal(denied.res.statusCode, 403);
-    assert.equal(denied.nexted, false);
-    assert.equal(runKind("playbooks", withOption("allowPlaybookDesign", true)).nexted, true);
-  });
+  for (const [kind, option] of Object.entries(OPTIONS)) {
+    test(`a ${kind} write is refused (403) without ${option}, passes with it`, () => {
+      const denied = runKind(kind, withOption(option, false));
+      assert.equal(denied.res.statusCode, 403);
+      assert.equal(denied.nexted, false);
+      assert.equal(runKind(kind, withOption(option, true)).nexted, true);
+    });
 
-  test("the other kinds of files pass whatever the option", () => {
-    for (const kind of ["vars", "inventories", "workflows"]) {
-      assert.equal(runKind(kind, withOption("allowPlaybookDesign", false)).nexted, true, kind);
-    }
+    test(`a ${kind} write ignores the other kinds' options`, () => {
+      const others = Object.fromEntries(
+        Object.entries(OPTIONS).map(([k, o]) => [o, k === kind]),
+      );
+      assert.equal(runKind(kind, { roles: [], options: others }).nexted, true);
+    });
+  }
+
+  test("a kind without an option passes", () => {
+    assert.equal(runKind("other", { roles: [], options: {} }).nexted, true);
   });
 });
