@@ -11,8 +11,6 @@ import svgLoader from 'vite-svg-loader'
 import { defineConfig, loadEnv } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
 import { readFileSync } from 'node:fs'
-import { injectSsoProviders } from '../server/src/lib/ssoMeta.js'
-import { injectAppIdentity } from '../server/src/lib/indexMeta.js'
 
 // The client's build identity, baked into the bundle (issue #660). The docker build writes
 // build-info.json here, in client/, before it runs vite build (scripts/generate-build-info.sh) ;
@@ -33,7 +31,8 @@ function clientBuildInfo() {
 // sign-on providers that are on and the instance's name and label, as the app's server does
 // (server/src/lib/ssoMeta.js, indexMeta.js), asked of the api behind the proxy, so the sign-in
 // card and the header have them from the first frame here too. Each left out when the api
-// cannot be reached.
+// cannot be reached. The server's helpers are loaded only here, when it serves : the image's
+// client build stage has no server code (only formEngine), so an import broke npm run build.
 function devSsoMeta(target) {
   return {
     name: 'af-dev-sso-meta',
@@ -42,6 +41,10 @@ function devSsoMeta(target) {
       const read = (path) => fetch(`${target}${path}`).then((res) => res.json()).catch(() => null)
       const [sso, config] = await Promise.all([read('/api/v2/auth/settings'), read('/api/v2/app/config')])
       const providers = sso ? [sso.azureAdEnabled && 'azuread', sso.oidcEnabled && 'oidc'].filter(Boolean) : null
+      // the path built at run time : vite bundles this file and would resolve a fixed one
+      const serverLib = (file) => new URL(`../server/src/lib/${file}`, import.meta.url).href
+      const { injectSsoProviders } = await import(serverLib('ssoMeta.js'))
+      const { injectAppIdentity } = await import(serverLib('indexMeta.js'))
       return injectAppIdentity(injectSsoProviders(html, providers), config)
     },
   }
