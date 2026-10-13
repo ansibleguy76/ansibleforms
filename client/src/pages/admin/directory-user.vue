@@ -405,7 +405,7 @@ onMounted(async () => {
           v-else-if="user && activeTab === 'schedules'"
           :columns="scheduleColumns"
           :rows="schedules"
-          :to="(s) => `/jobs/schedules/${s.id}`"
+          :to="(s) => `/jobs/scheduled/${s.id}`"
           :empty="t('settings.users.noSchedule')"
         />
         <AppLinkedTable

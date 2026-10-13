@@ -19,7 +19,7 @@ const links = [...menus.matchAll(/link:\s*['"]([^'"]+)['"]/g)].map((m) => m[1]);
 describe('the routes declare who may see a page', () => {
   it('the menus were read, so these assertions are not vacuous', () => {
     expect(links.length).toBeGreaterThan(15);
-    expect(links).toContain('/jobs/schedules');
+    expect(links).toContain('/jobs/scheduled');
   });
 
   it('every menu link points at a route that exists', () => {
@@ -35,7 +35,7 @@ describe('the routes declare who may see a page', () => {
     expect(routePermission('/settings/users')).toBe('showSettings');
     expect(routePermission('/settings/backups')).toBe('allowBackupOps');
     expect(routePermission('/settings/server-log')).toBe('showLogs');
-    expect(routePermission('/jobs/schedules')).toBe('allowScheduledJobs');
+    expect(routePermission('/jobs/scheduled')).toBe('allowScheduledJobs');
     expect(routePermission('/jobs/stored')).toBe('allowStoredJobs');
     expect(routePermission('/designer')).toBe('showDesigner');
     expect(routePermission('/jobs')).toBe('showJobs');

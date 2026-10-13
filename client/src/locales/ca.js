@@ -2429,6 +2429,8 @@ export default {
       past: 'Passat',
       present: 'Present',
       future: 'Futur',
+      scheduled: 'Programats',
+      stored: 'Desats',
       all: 'Totes les tasques',
       running: 'En execució',
       approve: 'Esperant aprovació',

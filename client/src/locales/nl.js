@@ -2419,6 +2419,8 @@ export default {
       past: 'Verleden',
       present: 'Heden',
       future: 'Toekomst',
+      scheduled: 'Gepland',
+      stored: 'Opgeslagen',
       all: 'Alle jobs',
       running: 'Bezig',
       approve: 'Wacht op goedkeuring',
