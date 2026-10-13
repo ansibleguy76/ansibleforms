@@ -734,6 +734,8 @@ export default {
     schemaCheckFailed: 'Verifica dello schema database di AnsibleForms non riuscita',
     requiredFields: 'Compila tutti i campi obbligatori',
     unknownError: 'Errore sconosciuto',
+    requestTooLarge:
+      'La richiesta era troppo grande per il server (HTTP 431). Se accedi con il single sign-on e appartieni a molti gruppi, chiedi a un amministratore di impostare un filtro dei gruppi sul provider.',
   },
   login: {
     title: 'Accesso',

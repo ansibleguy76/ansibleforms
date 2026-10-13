@@ -730,6 +730,8 @@ export default {
     schemaCheckFailed: 'Error al verificar el esquema de la base de datos de AnsibleForms',
     requiredFields: 'Por favor, proporciona todos los campos obligatorios',
     unknownError: 'Error desconocido',
+    requestTooLarge:
+      'La solicitud era demasiado grande para el servidor (HTTP 431). Si inicia sesión con inicio de sesión único y pertenece a muchos grupos, pida a un administrador que defina un filtro de grupos en el proveedor.',
   },
   login: {
     title: 'Iniciar sesión',

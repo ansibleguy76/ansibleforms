@@ -730,6 +730,8 @@ export default {
     schemaCheckFailed: 'Nie udało się sprawdzić schematu bazy danych AnsibleForms',
     requiredFields: 'Wypełnij wszystkie wymagane pola',
     unknownError: 'Nieznany błąd',
+    requestTooLarge:
+      'Żądanie było zbyt duże dla serwera (HTTP 431). Jeśli logujesz się przez logowanie jednokrotne i należysz do wielu grup, poproś administratora o ustawienie filtru grup u dostawcy.',
   },
   login: {
     title: 'Logowanie',
