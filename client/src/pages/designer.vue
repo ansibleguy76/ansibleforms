@@ -3,6 +3,7 @@ import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
 import Form from '@/lib/Form';
 import { slugOf } from '@/lib/formsPath';
 import { DESIGNER_TABS } from '@/config/designerTabs';
+import { designerViews } from '@/config/designerViews';
 import getSettings from '@/config/settings';
 import { EXPLORER_WIDTH, explorerWidthAfterDrag, explorerFolded, explorerColumns } from '@/config/fileExplorer';
 import Lock from '@/lib/Lock';
@@ -56,58 +57,9 @@ const formMeta = ref({});
 const loaded = ref(false);
 const lockLoading = ref(false);
 const currentForm = ref(null);
-// name is the internal key (warnings and the editors switch on it), label what the menu shows
-// description is the line under the page title, as on the settings pages (the first three
-// reuse those pages' own descriptions, so both places say the same)
-const tabs = [
-  {
-    name: 'Categories',
-    label: () => t('sidebar.categories'),
-    description: () => t('settings.settingsPage.categoriesDescription'),
-    icon: 'folder-tree',
-  },
-  {
-    name: 'Constants',
-    label: () => t('sidebar.constants'),
-    description: () => t('settings.settingsPage.constantsDescription'),
-    icon: 'sliders-h',
-  },
-  {
-    name: 'Forms',
-    label: () => t('nav.forms'),
-    description: () => t('designer.formsDescription'),
-    icon: 'far,rectangle-list',
-  }, // the header's Forms icon, outlined : the solid one is a dark blob at menu size
-  // the sections still to build : an empty text area each for now, nothing saved
-  {
-    // a file of code
-    name: 'Playbooks',
-    label: () => t('designer.playbooks'),
-    description: () => t('designer.playbooksDescription'),
-    icon: 'file-code',
-  },
-  {
-    // groups and hosts, as a tree
-    name: 'Inventories',
-    label: () => t('designer.inventories'),
-    description: () => t('designer.inventoriesDescription'),
-    icon: 'sitemap',
-  },
-  {
-    // the YAML files a form loads (varsFiles)
-    name: 'VarsFiles',
-    label: () => t('designer.varsFiles'),
-    description: () => t('designer.varsFilesDescription'),
-    icon: 'file-lines',
-  },
-  {
-    // nodes joined by lines, as AWX draws a workflow
-    name: 'Workflows',
-    label: () => t('designer.workflows'),
-    description: () => t('designer.workflowsDescription'),
-    icon: 'diagram-project',
-  },
-];
+// the views (config/designerViews.js) : name is the internal key (warnings and the editors switch
+// on it), label what the menu shows, description the line under the page title
+const tabs = designerViews(t);
 // the sections still to build : every section but the ones built
 const BUILT_SECTIONS = ['Categories', 'Constants', 'Forms', 'Inventories', 'Playbooks', 'VarsFiles', 'Workflows'];
 const draftSections = tabs.map((x) => x.name).filter((name) => !BUILT_SECTIONS.includes(name));

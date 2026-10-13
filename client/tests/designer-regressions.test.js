@@ -262,7 +262,9 @@ describe('restoring a backup asks before discarding unsaved work', () => {
 describe('the designer address names a section and a tab it has', () => {
   // a section it no longer has (roles, users ...) or a tab its section does not have
   // (/designer/constants/diagram) is not found, never another section or tab instead
-  const names = [...designer.matchAll(/^ {4}name: '(\w+)',$/gm)].map((m) => m[1].toLowerCase());
+  // the sections are listed in config/designerViews.js, which the designer shows
+  const views = read('src/config/designerViews.js');
+  const names = [...views.matchAll(/^ {6}name: '(\w+)',$/gm)].map((m) => m[1].toLowerCase());
 
   it('lists exactly the sections of the menu', () => {
     expect(Object.keys(DESIGNER_TABS).sort()).toEqual([...names].sort());

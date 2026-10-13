@@ -25,6 +25,7 @@ import Profile from '@/lib/Profile';
 import { languages, fallbackLanguage } from '@/config/languages';
 import dayjs from 'dayjs';
 import Time, { DATE_FORMATS } from '@/lib/Time';
+import { profileViews, profileMenuViews } from '@/config/profileViews';
 
 // INIT
 
@@ -49,48 +50,12 @@ const palette = [
   '#795548',
 ];
 
-// the views of the left menu (labels and descriptions spelled out, so the i18n key check can
-// find them) ; the menu lists them alphabetically, see menuViews
-const VIEWS = [
-  {
-    name: 'account',
-    icon: 'id-card',
-    label: () => t('profilePage.menu.account'),
-    description: () => t('profilePage.description.account'),
-  },
-  {
-    name: 'preferences',
-    icon: 'sliders',
-    label: () => t('profilePage.menu.preferences'),
-    description: () => t('profilePage.description.preferences'),
-  },
-  {
-    name: 'password',
-    icon: 'key',
-    label: () => t('profilePage.menu.password'),
-    description: () => t('profilePage.description.password'),
-  },
-  {
-    name: 'permissions',
-    icon: 'shield-halved',
-    label: () => t('profilePage.menu.permissions'),
-    description: () => t('profilePage.description.permissions'),
-  },
-  {
-    name: 'token',
-    icon: 'code',
-    label: () => t('profilePage.menu.token'),
-    description: () => t('profilePage.description.token'),
-    // long-lived tokens are a role option : the view is only there for the roles that have it
-    visible: () => !!store.profile?.options?.extendedTokenExpiration,
-  },
-];
-const isVisible = (v) => (v.visible ? v.visible() : true);
+// the views of the left menu (config/profileViews.js) ; the menu lists them alphabetically, see
+// menuViews. The api token's view follows the role options of the store's profile
+const VIEWS = profileViews(t, () => store.profile?.options);
 // the menu : the views the user may open, alphabetically by their (translated) label, as in
 // the designer's menu ; the page opens on the first of them
-const menuViews = computed(() =>
-  VIEWS.filter(isVisible).sort((a, b) => a.label().localeCompare(b.label(), locale.value)),
-);
+const menuViews = computed(() => profileMenuViews(VIEWS, locale.value));
 
 // DATA
 

@@ -13,7 +13,8 @@ import { routePermission, mayOpen } from '@/lib/routePermission';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const read = (p) => readFileSync(path.join(here, '..', p), 'utf8');
-const menus = read('src/components/AppSidebar.vue') + read('src/components/AppJobsSidebar.vue');
+// the settings menu's entries are in lib/settingsMenu.js, which AppSidebar filters
+const menus = read('src/lib/settingsMenu.js') + read('src/components/AppJobsSidebar.vue');
 const links = [...menus.matchAll(/link:\s*['"]([^'"]+)['"]/g)].map((m) => m[1]);
 
 describe('the routes declare who may see a page', () => {
