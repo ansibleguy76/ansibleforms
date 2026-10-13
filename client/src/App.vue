@@ -13,6 +13,7 @@ import { isNewerBuild, clientSha } from '@/lib/Version';
 import Theme from '@/lib/Theme';
 import { preloadMenus } from '@/lib/menuPreload';
 import { notifyRequestTooLarge } from '@/lib/requestTooLarge';
+import { ssoReturning } from '@/lib/ssoReturn';
 
 const route = useRoute();
 const router = useRouter();
@@ -154,6 +155,10 @@ function registerAxiosInterceptor() {
   );
 }
 
+// the header while the app starts : for a signed-in user, or on the way back from a single
+// sign-on ; nobody signed in goes to the login page, which has none
+const hasSession = TokenStorage.isAuthenticated() || ssoReturning;
+
 async function checkDatabase() {
   console.log('Checking database');
   var result;
@@ -236,14 +241,13 @@ onMounted(async () => {
   <!-- the disclaimer, accepted once before anything else (Settings > Access > Disclaimer) -->
   <AppDisclaimer v-if="appStore.disclaimerOpen" />
   <router-view v-if="isLoaded || route.name === '/schema' || route.name === '/login' || route.name === '/error'" />
-  <div v-else class="d-flex justify-content-center align-items-center vh-100">
-    <div class="text-center">
-      <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem">
-        <span class="visually-hidden">Loading...</span>
-      </div>
-      <p>Loading...</p>
-    </div>
-  </div>
+  <!-- while the app starts (the database checked, a single sign-on finished) : the header and the
+       pages' own loading indicator, so the first frame already looks like the page to come rather
+       than a bare spinner on a white page -->
+  <template v-else>
+    <AppNav v-if="hasSession" />
+    <AppPageLoading />
+  </template>
 </template>
 <style>
 @import 'roboto-fontface/css/roboto/roboto-fontface.css';
