@@ -6,6 +6,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('axios', () => ({ default: { post: vi.fn() } }));
 
+// the browser storage the tokens live in : on Node 26 the environment's own stands in for
+// happy-dom's and is not there without a file, so a small in-memory one, as time.test.js does
+const storage = new Map();
+vi.stubGlobal('localStorage', {
+  getItem: (k) => (storage.has(k) ? storage.get(k) : null),
+  setItem: (k, v) => storage.set(k, String(v)),
+  removeItem: (k) => storage.delete(k),
+  clear: () => storage.clear(),
+});
+
 const axios = (await import('axios')).default;
 const TokenStorage = (await import('@/lib/TokenStorage')).default;
 
