@@ -239,6 +239,10 @@ export default {
     onSuccess: 'en caso de éxito',
     onFailure: 'en caso de fallo',
     always: 'siempre',
+    // Ascender's conditional links : the legend, and when one is taken
+    conditional: 'condicional',
+    conditionIf: '{trigger}, si {condition}',
+    conditionUnknown: '{trigger}, con una condición',
   },
   nav: {
     // the lock on the Designer link while someone holds the designer, in its tooltip

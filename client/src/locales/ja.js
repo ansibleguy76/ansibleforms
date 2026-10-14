@@ -238,6 +238,10 @@ export default {
     onSuccess: '成功時',
     onFailure: '失敗時',
     always: '常に',
+    // Ascender's conditional links : the legend, and when one is taken
+    conditional: '条件付き',
+    conditionIf: '{trigger}、{condition} の場合',
+    conditionUnknown: '{trigger}、条件付き',
   },
   nav: {
     // the lock on the Designer link while someone holds the designer, in its tooltip

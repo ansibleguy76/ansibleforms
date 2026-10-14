@@ -235,6 +235,10 @@ export default {
     onSuccess: '成功时',
     onFailure: '失败时',
     always: '始终',
+    // Ascender's conditional links : the legend, and when one is taken
+    conditional: '条件',
+    conditionIf: '{trigger}，当 {condition} 时',
+    conditionUnknown: '{trigger}，有条件',
   },
   nav: {
     // the lock on the Designer link while someone holds the designer, in its tooltip

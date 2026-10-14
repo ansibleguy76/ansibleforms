@@ -130,8 +130,11 @@ function workflowNodes(page) {
       related: { job: "/api/v2/jobs/101/" },
       summary_fields: { job: s[1], unified_job_template: { name: "node one", unified_job_type: "job" } },
       success_nodes: [2],
-      failure_nodes: [3],
+      failure_nodes: [],
       always_nodes: [],
+      // Ascender : a link taken when the parent fails and its artifact deploy is not true
+      condition_nodes: [3],
+      condition_edges: [{ id: 3, trigger: "failure", artifact_key: "deploy", operator: "ne", expected_value: "true" }],
       do_not_run: false,
     },
     {
@@ -139,6 +142,8 @@ function workflowNodes(page) {
       job: s[2] ? 102 : null,
       related: s[2] ? { job: "/api/v2/jobs/102/" } : {},
       summary_fields: { job: s[2], unified_job_template: { name: "node two", unified_job_type: "job" } },
+      // an older Ascender : the conditional child without its condition
+      condition_nodes: [3],
       success_nodes: [],
       failure_nodes: [],
       always_nodes: [],
@@ -326,6 +331,14 @@ test("successful workflow job: node outputs, summary and graph json", { timeout:
   assert.equal(graph.nodes.find((n) => n.id == 1).status, "successful");
   assert.equal(graph.nodes.find((n) => n.id == 1).name, "node one");
   assert.deepEqual(graph.nodes.find((n) => n.id == 1).success_nodes, [2]);
+  assert.deepEqual(graph.nodes.find((n) => n.id == 1).condition_edges, [
+    { id: 3, trigger: "failure", artifact_key: "deploy", operator: "ne", expected_value: "true" },
+  ]);
+  assert.deepEqual(graph.nodes.find((n) => n.id == 2).condition_edges, [
+    { id: 3, trigger: "success", artifact_key: "", operator: "eq", expected_value: "" },
+  ]);
+  // AWX and AAP : no conditional links
+  assert.deepEqual(graph.nodes.find((n) => n.id == 3).condition_edges, []);
   assert.equal(graph.nodes.find((n) => n.id == 3).status, "skipped");
   // the output order is strictly increasing
   const orders = outputs.map((o) => o.order);
