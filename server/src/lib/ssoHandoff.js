@@ -53,8 +53,10 @@ export function openToken(sealed) {
  *                                 login needs are taken, the token itself travels sealed
  *                                 as `at`) ; oidc : a profile
  * @param {string} type            the login method, `azuread` or `oidc`
+ * @param {object} options         { reauth } : the user signed in at the provider again for it
+ *                                 (prompt=login), so the session counts as a recent sign-in
  */
-export function signHandoff(payload, type) {
+export function signHandoff(payload, type, { reauth = false } = {}) {
   let claims = payload;
   // azuread : { claims : the ID token's, accessToken : for Graph } (auth/auth_azuread.js)
   const azure = type === 'azuread' && payload && typeof payload === 'object' && payload.claims;
@@ -69,7 +71,7 @@ export function signHandoff(payload, type) {
   }
   return jwt.sign(
     // jti : the login takes a handoff once (tokenRevocation.consumeOnce)
-    { ...own, sso: type, jti: crypto.randomBytes(16).toString('hex') },
+    { ...own, sso: type, ...(reauth ? { reauth: true } : {}), jti: crypto.randomBytes(16).toString('hex') },
     authConfig.secret,
     { expiresIn: SSO_HANDOFF_EXPIRES_IN, issuer: authConfig.jwtIssuer },
   );

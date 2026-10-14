@@ -23,6 +23,13 @@ export default {
     refreshTokenExpired: "Refresh token wygasł",
     refreshTokenUnknown: "Nieznany refresh token",
     refreshTokenReplaced: "Refresh token został już użyty przez równoczesne odświeżenie",
+    apiTokenFromApiToken: "Token API nie może utworzyć innego tokenu API",
+    apiTokenNotAllowed: "Twoja rola nie pozwala na tokeny API",
+    apiTokenSignInAgain: "Zaloguj się ponownie, aby utworzyć token API : ostatnie logowanie było zbyt dawno",
+    apiTokenLifetime: "Czas ważności musi być liczbą dni, najwyżej {max}",
+    apiTokenFailed: "Nie udało się utworzyć tokenu API",
+    apiTokensFailed: "Nie udało się odczytać ani zmienić tokenów API",
+    apiTokenNotFound: "Taki token API nie istnieje",
     requiredFields: "Wypełnij wszystkie wymagane pola",
     noVerbosePermission:
       "Nie masz uprawnień do korzystania z trybu szczegółowego (verbose)",

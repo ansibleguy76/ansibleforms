@@ -26,6 +26,8 @@ import { languages, fallbackLanguage } from '@/config/languages';
 import dayjs from 'dayjs';
 import Time, { DATE_FORMATS } from '@/lib/Time';
 import { profileViews, profileMenuViews } from '@/config/profileViews';
+import BaseUrl from '@/lib/BaseUrl';
+import { rememberSsoOrigin, ssoSettled, ssoReturning } from '@/lib/ssoReturn';
 
 // INIT
 
@@ -199,8 +201,10 @@ const canSavePassword = computed(() => {
 });
 
 // the api token : a login with the user's password and a longer expiry (the login endpoint's
-// expiryDays, honoured for roles with extendedTokenExpiration). Shown once ; it ends at its expiry,
-// a logout of its session or a password change.
+// expiryDays, honoured for roles with extendedTokenExpiration) ; an SSO account has no password
+// here, its token is made from this session (#1068), which must have signed in a few minutes ago :
+// else the sign-in runs again first, and the token is made on the way back. Shown once ; it ends
+// at its expiry, when it is revoked (the list under it), or with a password change or a block.
 // The server caps the expiry at API_TOKEN_MAX_DAYS : only the lifetimes up to that cap are offered,
 // plus the cap itself, so a longer choice is never silently shortened.
 const tokenMaxDays = ref(90);
@@ -210,7 +214,7 @@ const TOKEN_LIFETIMES = computed(() => {
   if (!list.includes(max)) list.push(max);
   return list;
 });
-const tokenForm = ref({ days: 90, password: '' });
+const tokenForm = ref({ days: 90, password: '', name: '' });
 axios
   .get('/api/v2/auth/settings')
   .then((result) => {
@@ -222,23 +226,39 @@ axios
   .catch(() => {});
 const tokenResult = ref(null);
 const creatingToken = ref(false);
-// a token is created with a password, so only for the accounts that sign in with one
-const canCreateToken = computed(() => ['local', 'ldap'].includes(profile.value.type));
+// the accounts that sign in with a password here confirm it ; an SSO account signs in again instead
+const usesPassword = computed(() => ['local', 'ldap'].includes(profile.value.type));
+const canSubmitToken = computed(() => !creatingToken.value && (!usesPassword.value || !!tokenForm.value.password));
+// the list under the form, read again once a token is made
+const tokensReload = ref(0);
+// the token asked for before the sign-in ran again, made on the way back : only right after that
+// sign-in, by the same user, a few minutes later at most (an abandoned one is never made later)
+const PENDING_TOKEN = 'af_pending_token';
+const PENDING_MAX_MS = 5 * 60 * 1000;
 const tokenExample = computed(() => `curl -H "Authorization: Bearer $TOKEN" ${window.location.origin}/api/v2/job`);
 
+function showToken(token) {
+  const exp = TokenStorage.decode(token).exp;
+  tokenResult.value = { token, expires: Time.format(exp * 1000) };
+  tokenForm.value.name = '';
+  tokensReload.value++;
+}
+
 async function createToken() {
-  if (!tokenForm.value.password || creatingToken.value) return;
+  if (!canSubmitToken.value) return;
+  if (!usesPassword.value) return createTokenFromSession();
   creatingToken.value = true;
   try {
+    const query = new URLSearchParams({ expiryDays: tokenForm.value.days });
+    if (tokenForm.value.name.trim()) query.set('name', tokenForm.value.name.trim());
     const result = await axios.post(
-      `/api/v2/auth/login?expiryDays=${tokenForm.value.days}`,
+      `/api/v2/auth/login?${query}`,
       {},
       { auth: { username: profile.value.username, password: tokenForm.value.password } },
     );
     const token = result.data?.token;
     if (!token) throw new Error('no token');
-    const exp = TokenStorage.decode(token).exp;
-    tokenResult.value = { token, expires: Time.format(exp * 1000) };
+    showToken(token);
   } catch {
     toast.error(t('profilePage.token.failed'));
   } finally {
@@ -246,6 +266,75 @@ async function createToken() {
     creatingToken.value = false;
   }
 }
+
+/**
+ * Makes the token from this session ; a sign-in too long ago runs the sign-in again first.
+ *
+ * Args:
+ *   retry (boolean): false on the way back from that sign-in : asked again, it fails instead.
+ */
+async function createTokenFromSession(retry = true) {
+  creatingToken.value = true;
+  try {
+    const result = await axios.post('/api/v2/profile/tokens', {
+      expiryDays: tokenForm.value.days,
+      name: tokenForm.value.name.trim(),
+    });
+    if (!result.data?.token) throw new Error('no token');
+    showToken(result.data.token);
+  } catch (err) {
+    if (retry && err?.response?.status === 403 && err.response.data?.code === 'sign_in_again') {
+      signInAgain();
+      return;
+    }
+    toast.error(Helpers.parseAxiosResponseError(err, t('profilePage.token.failedSession')));
+  } finally {
+    creatingToken.value = false;
+  }
+}
+
+// through the provider again, back to this page, where the token asked for is made
+function signInAgain() {
+  try {
+    sessionStorage.setItem(
+      PENDING_TOKEN,
+      JSON.stringify({
+        days: tokenForm.value.days,
+        name: tokenForm.value.name,
+        username: profile.value.username,
+        at: Date.now(),
+      }),
+    );
+  } catch {
+    // no storage : the user asks again once back
+  }
+  toast.info(t('profilePage.token.signingInAgain'));
+  rememberSsoOrigin('/profile/token');
+  const issuer = profile.value.type === 'oidc' ? 'oidc' : 'azuread';
+  localStorage.setItem('authIssuer', issuer);
+  // reauth : the provider asks for the credentials again (a live provider session would answer
+  // without asking), and only that sign-in counts as a recent one
+  window.location.replace(`${BaseUrl}/api/v2/auth/${issuer === 'oidc' ? 'oidc' : 'azureadoauth2'}?reauth=1`);
+}
+
+// back from that sign-in : the token asked for before it
+async function resumePendingToken() {
+  let pending;
+  try {
+    pending = JSON.parse(sessionStorage.getItem(PENDING_TOKEN) || 'null');
+    sessionStorage.removeItem(PENDING_TOKEN);
+  } catch {
+    pending = null;
+  }
+  if (!pending || !ssoReturning || !(Date.now() - Number(pending.at) < PENDING_MAX_MS)) return;
+  await ssoSettled();
+  // the user the new session is of (the profile may not be read yet)
+  if (pending.username !== TokenStorage.getPayload()?.user?.username) return;
+  if (Number(pending.days)) tokenForm.value.days = Number(pending.days);
+  tokenForm.value.name = String(pending.name || '');
+  await createTokenFromSession(false);
+}
+resumePendingToken();
 
 async function copyToken() {
   try {
@@ -623,11 +712,8 @@ async function changePassword() {
 
         <!-- ===================== api token ===================== -->
         <template v-else-if="currentView === 'token'">
-          <p v-if="!canCreateToken" class="text-body-secondary mb-0">
-            <FaIcon icon="circle-info" class="me-2" />{{ t('profilePage.token.notForType', { type: loginType.label }) }}
-          </p>
           <!-- the token, once : copy it now -->
-          <div v-else-if="tokenResult">
+          <div v-if="tokenResult">
             <label class="form-label fw-semibold" for="af-token">{{
               t('profilePage.token.created', { date: tokenResult.expires })
             }}</label>
@@ -667,7 +753,20 @@ async function changePassword() {
               </div>
               <div class="form-text">{{ t('profilePage.token.lifetimeHint') }}</div>
             </div>
-            <div>
+            <div class="mb-3">
+              <label class="form-label fw-bold" for="af-token-name">{{ t('profilePage.token.name') }}</label>
+              <div class="input-group">
+                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="tag" /></span>
+                <input id="af-token-name" v-model="tokenForm.name" type="text" maxlength="100" class="form-control" />
+              </div>
+              <div class="form-text">{{ t('profilePage.token.nameHint') }}</div>
+            </div>
+            <p v-if="!usesPassword" class="text-body-secondary mb-0">
+              <FaIcon icon="circle-info" class="me-2" />{{
+                t('profilePage.token.signInAgainHint', { type: loginType.label })
+              }}
+            </p>
+            <div v-else>
               <label class="form-label fw-bold" for="af-token-password">{{ t('profilePage.token.password') }}</label>
               <div class="input-group">
                 <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="lock" /></span>
@@ -682,14 +781,16 @@ async function changePassword() {
               <div class="form-text">{{ t('profilePage.token.passwordHint') }}</div>
             </div>
           </form>
+          <!-- the tokens made, each to revoke -->
+          <div class="mt-4 pt-3 border-top">
+            <h6 class="fw-bold mb-2">{{ t('profilePage.token.yours') }}</h6>
+            <AppApiTokens url="/api/v2/profile/tokens" :reload="tokensReload" />
+          </div>
         </template>
 
         <!-- the view's action, where the settings pages put their Save button : below the card,
              on the right, grey until the form can be sent, then the accent color -->
-        <template
-          v-if="(currentView === 'password' && isLocal) || (currentView === 'token' && canCreateToken && !tokenResult)"
-          #actions
-        >
+        <template v-if="(currentView === 'password' && isLocal) || (currentView === 'token' && !tokenResult)" #actions>
           <BsButton
             v-if="currentView === 'password'"
             icon="key"
@@ -701,8 +802,8 @@ async function changePassword() {
           <BsButton
             v-else
             icon="code"
-            :colorClass="tokenForm.password && !creatingToken ? 'primary' : 'secondary'"
-            :disabled="!tokenForm.password || creatingToken"
+            :colorClass="canSubmitToken ? 'primary' : 'secondary'"
+            :disabled="!canSubmitToken"
             @click="createToken"
             >{{ t('profilePage.token.create') }}</BsButton
           >

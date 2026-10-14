@@ -98,12 +98,12 @@ const res = () => { const r = { statusCode: 200, body: null }; r.status = (c) =>
  * Returns:
  *   Promise<object>: the login's answer, { token, refreshtoken }.
  */
-async function azureLogin(names) {
+async function azureLogin(names, { reauth = false } = {}) {
   const value = names.map((n) => ({ id: crypto.randomUUID(), displayName: n }));
   vi.stubGlobal("fetch", async () => ({ ok: true, status: 200, text: async () => JSON.stringify({ value }) }));
   const azureToken = jwt.sign({ upn: "first.lastname@contoso.com", oid: crypto.randomUUID(), tid: TENANT, name: "First Lastname" }, "x");
   const r = res();
-  await controller.azureadoauth2login({ body: { token: signHandoff(azureToken, "azuread") }, headers: {}, ip: "127.0.0.1" }, r);
+  await controller.azureadoauth2login({ body: { token: signHandoff(azureToken, "azuread", { reauth }) }, headers: {}, ip: "127.0.0.1" }, r);
   expect(r.statusCode).toBe(200);
   return r.body;
 }
@@ -267,5 +267,67 @@ describe("the token refresh", () => {
     const r = await refresh(old);
     expect(r.statusCode).toBe(200);
     expect(jwt.verify(r.body.token, authConfig.secret).user.roles).toContain("netops");
+  });
+});
+
+// #1068 : an api token is made from a session only shortly after its user proved who they are. An
+// SSO sign-in the provider may have answered silently does not count ; one where it asked for the
+// credentials again (prompt=login, the handoff's reauth) does. A refresh carries the time as it is.
+describe("the sign-in time of a session (auth_time)", () => {
+  async function refresh(refreshtoken) {
+    const r = res();
+    await tokenController.refresh({ body: { refreshtoken } }, r);
+    return r;
+  }
+
+  test("a plain SSO sign-in has none", async () => {
+    const { token, refreshtoken } = await azureLogin(["SG-Operators"]);
+    expect(jwt.decode(token).auth_time).toBeUndefined();
+    expect(jwt.decode(refreshtoken).auth_time).toBeUndefined();
+    // and a refresh does not make one up
+    const r = await refresh(refreshtoken);
+    expect(r.statusCode).toBe(200);
+    expect(jwt.decode(r.body.token).auth_time).toBeUndefined();
+  });
+
+  test("an SSO sign-in asked for again has it, and a refresh keeps it as it was", async () => {
+    const before = Math.floor(Date.now() / 1000);
+    const { token, refreshtoken } = await azureLogin(["SG-Operators"], { reauth: true });
+    const at = jwt.decode(token).auth_time;
+    expect(at).toBeGreaterThanOrEqual(before);
+    expect(jwt.decode(refreshtoken).auth_time).toBe(at);
+    await new Promise((r) => setTimeout(r, 1100));
+    const r = await refresh(refreshtoken);
+    expect(jwt.decode(r.body.token).auth_time).toBe(at);
+    expect(jwt.decode(r.body.refreshtoken).auth_time).toBe(at);
+  });
+
+  test("?reauth=1 asks the provider for the credentials (prompt=login), and only that callback says reauth", async () => {
+    const { ssoStart, authCallback } = await import("../src/controllers/v2/login.controller.js");
+    const handoffOf = async (req) => {
+      let to = "";
+      await authCallback(req, { redirect: (u) => (to = u) }, (e) => { throw e; }, "oidc")(null, { sub: "x", email: "a@b.c" });
+      return jwt.decode(new URLSearchParams(to.split("#")[1]).get("token"));
+    };
+    const session = {};
+    expect(ssoStart({ query: { reauth: "1" }, session })).toEqual({ prompt: "login" });
+    expect(session.afReauth).toBeGreaterThan(0);
+    const req = { session };
+    expect((await handoffOf(req)).reauth).toBe(true);
+    // taken once : a second callback on that session is a plain sign-in
+    expect(session.afReauth).toBeUndefined();
+    expect((await handoffOf(req)).reauth).toBeUndefined();
+    // a plain sign-in forgets an older mark
+    session.afReauth = Date.now();
+    expect(ssoStart({ query: {}, session })).toEqual({});
+    expect((await handoffOf({ session })).reauth).toBeUndefined();
+    // a mark too old (an abandoned sign-in) does not count
+    session.afReauth = Date.now() - 11 * 60 * 1000;
+    expect((await handoffOf({ session })).reauth).toBeUndefined();
+  });
+
+  test("the handoff says reauth only when asked", () => {
+    expect(jwt.decode(signHandoff({ sub: "x" }, "oidc")).reauth).toBeUndefined();
+    expect(jwt.decode(signHandoff({ sub: "x" }, "oidc", { reauth: true })).reauth).toBe(true);
   });
 });

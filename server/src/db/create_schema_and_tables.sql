@@ -555,5 +555,20 @@ CREATE TABLE `disclaimer_acceptances` (
   UNIQUE KEY `uk_disclaimer_acceptances_user_version` (`username`, `user_type`, `version`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- the API tokens issued : models/apiToken.model.js
+-- (keep in sync with src/db/create_api_tokens_table.sql)
+DROP TABLE IF EXISTS `api_tokens`;
+CREATE TABLE `api_tokens` (
+  `sid` varchar(64) NOT NULL,
+  `username` varchar(250) NOT NULL,
+  `username_type` varchar(20) NOT NULL,
+  `name` varchar(100) DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `last_used_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`sid`),
+  KEY `idx_api_tokens_user` (`username_type`, `username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- enable foreign key checks
 SET FOREIGN_KEY_CHECKS=1;

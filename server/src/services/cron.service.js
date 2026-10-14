@@ -18,6 +18,7 @@ import dayjs from 'dayjs';
 import { forgetOldNodes } from '../lib/nodes.js';
 import { nodeId } from '../lib/role.js';
 import { purgeRevocations } from '../lib/tokenRevocation.js';
+import ApiToken from '../models/apiToken.model.js';
 
 // the cron registry is re-read from the database this often even without a change notice
 // (lib/epochs.js), in case one was missed
@@ -389,6 +390,8 @@ class CronService {
         await Token.cleanup();
         // the revocations no token can need any more
         await purgeRevocations();
+        // the api tokens that expired : off their users' lists
+        await ApiToken.purge();
       } catch (err) {
         logger.error('Failed to cleanup tokens:', err);
       }

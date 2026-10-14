@@ -100,10 +100,12 @@ const refresh = async function(req, res) {
 
         // the same session : a logout still ends what this refresh hands out
         const sid = jwtPayload.sid;
-        const token = jwt.sign({ user: body, access:true, sid }, authConfig.secret, { expiresIn: authConfig.jwtExpiration, issuer: authConfig.jwtIssuer });
+        // when the user signed in : the refreshes keep it (an api token is made only shortly after)
+        const auth_time = jwtPayload.auth_time;
+        const token = jwt.sign({ user: body, access:true, sid, auth_time }, authConfig.secret, { expiresIn: authConfig.jwtExpiration, issuer: authConfig.jwtIssuer });
         // jwtid : a refresh in the same second as the sign-in, or as the refresh before, signed
         // the very same token again, so rotating it replaced the token it had just stored
-        const newRefreshtoken = jwt.sign({ user: body, refresh:true, sid }, authConfig.secret, { expiresIn: authConfig.jwtRefreshExpiration, issuer: authConfig.jwtIssuer, jwtid: crypto.randomUUID() });
+        const newRefreshtoken = jwt.sign({ user: body, refresh:true, sid, auth_time }, authConfig.secret, { expiresIn: authConfig.jwtRefreshExpiration, issuer: authConfig.jwtIssuer, jwtid: crypto.randomUUID() });
 
         // Single use : the old row stayed valid, so a stolen refresh token kept working
         // alongside the new one indefinitely. It is marked replaced rather than deleted, so a

@@ -151,6 +151,8 @@ const tabs = computed(() => [
   },
   { key: 'schedules', label: t('settings.schedules.labelPlural'), icon: 'clock', count: userSchedules.value.length },
   { key: 'activity', label: t('settings.linked.activity'), icon: 'clipboard-list', count: activity.value.length },
+  // its api tokens, each to revoke (#1068)
+  { key: 'tokens', label: t('apiTokens.tab'), icon: 'code' },
 ]);
 
 // ─── Roles ────────────────────────────────────────────────────────────────────
@@ -551,6 +553,10 @@ onMounted(async () => {
           :columns="activityColumns"
           :rows="activity"
           :empty="t('settings.linked.noActivity')"
+        />
+        <AppApiTokens
+          v-else-if="user && activeTab === 'tokens'"
+          :url="`/api/v2/user/${encodeURIComponent(userId)}/tokens`"
         />
         <template v-else-if="user">
           <p v-if="!userGroups.length" class="text-muted small mb-0">{{ t('settings.users.noGroup') }}</p>

@@ -21,6 +21,7 @@ import { loginBlocked, loginFailed, loginSucceeded } from "../../lib/loginThrott
 import { newSessionId, revokeSession, consumeOnce } from "../../lib/tokenRevocation.js";
 import { admitSignIn } from "../../lib/signInGate.js";
 import { tokenUser, forgetGroups } from "../../lib/userGroups.js";
+import ApiToken from "../../models/apiToken.model.js";
 
 // Login is audited here rather than by the blanket middleware, which deliberately
 // skips /auth : on a failed attempt there is no req.user, so that layer could only
@@ -94,7 +95,21 @@ async function admitUser(req, res, user, extra = {}) {
   return false;
 }
 
-async function userToJwt(user,expiryDays){
+/**
+ * The tokens of a sign-in, or an api token (expiryDays, for a role with extendedTokenExpiration).
+ *
+ * Args:
+ *   user (object): the user signed in.
+ *   expiryDays (number): an api token's lifetime in days ; none for a session.
+ *   options (object): { name, authTime, strict } - an api token's name ; when its user last
+ *     proved who they are (unix seconds), else now (a password just checked), or null for none (an
+ *     SSO sign-in the provider may have answered without asking anything) ; strict : an api token
+ *     that could not be recorded is not handed out (it could not be revoked on its own).
+ *
+ * Returns:
+ *   Promise<object>: { token, refreshtoken } ; an api token's expiry too (expires_at).
+ */
+export async function userToJwt(user,expiryDays,{ name, authTime, strict = false } = {}){
 
   // is something like
   // {"username":"administrator","type":"local","roles":["default","admin"]}
@@ -128,8 +143,28 @@ async function userToJwt(user,expiryDays){
   // we create 2 jwt tokens (accesstoken and refresh token)
   // the session : both tokens and every refresh of them carry it, so a logout ends them all
   const sid = newSessionId()
-  const token = jwt.sign(api ? {user:claims,access:true,sid,api:true} : {user:claims,access:true,sid}, authConfig.secret,{ expiresIn: tokenExpiresIn, issuer: authConfig.jwtIssuer});
-  const refreshtoken = jwt.sign({user:claims,refresh:true,sid}, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration, issuer: authConfig.jwtIssuer});
+  // when its user signed in (unix seconds), kept through the refreshes : an api token is made
+  // from a session only shortly after a sign-in (apiToken.controller.js)
+  const auth_time = authTime === null ? undefined : Number(authTime) || Math.floor(Date.now() / 1000)
+  const token = jwt.sign(api ? {user:claims,access:true,sid,api:true,auth_time} : {user:claims,access:true,sid,auth_time}, authConfig.secret,{ expiresIn: tokenExpiresIn, issuer: authConfig.jwtIssuer});
+  const refreshtoken = jwt.sign({user:claims,refresh:true,sid,auth_time}, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration, issuer: authConfig.jwtIssuer});
+  // an api token is listed on its user's profile and page, to be revoked there
+  let expires_at
+  if (api) {
+    const { iat, exp } = jwt.decode(token)
+    expires_at = new Date(exp * 1000)
+    // a failure is logged : the token works, it is only missing from the list (a password change
+    // or a block still ends it)
+    try {
+      await ApiToken.record({ sid, username: user.username, type: user.type || 'local', name, createdAt: new Date(iat * 1000), expiresAt: expires_at })
+    } catch (err) {
+      logger.error(`Failed to record the api token of ${user.username} : ${err}`)
+      if (strict) {
+        await revokeSession(sid, expires_at.getTime())
+        throw err
+      }
+    }
+  }
   logger.debug(JSON.stringify(claims))
   // we store the tokens in the database, to later verify a refresh token action
   logger.info("Storing refreshtoken in database for user " + user.username)
@@ -141,10 +176,7 @@ async function userToJwt(user,expiryDays){
   } catch (err) {
     logger.error(`Failed to store token for ${user.username} : ${err}`)
   }
-  return {
-    token: token,
-    refreshtoken: refreshtoken
-  }
+  return api ? { token, refreshtoken, expires_at } : { token, refreshtoken }
 }
 // get login settings
 const settings = async function(req, res) {
@@ -246,7 +278,7 @@ const basic = async function(req, res,next) {
               auditLogin(req, 'success', user.type, null, user.username);
               await loginSucceeded(attemptedUsername(req));
               // send the tokens to the requester
-              return res.json(await userToJwt(user,req.query.expiryDays));
+              return res.json(await userToJwt(user,req.query.expiryDays,{ name: typeof req.query.name === "string" ? req.query.name.trim() : "" }));
             }
           );
         } catch (error) {
@@ -306,7 +338,7 @@ const basic_ldap = async function(req, res,next) {
             auditLogin(req, 'success', user.type, null, user.username);
             await loginSucceeded(attemptedUsername(req));
             // send the tokens to the requester
-            return res.json(await userToJwt(user,req.query.expiryDays));
+            return res.json(await userToJwt(user,req.query.expiryDays,{ name: typeof req.query.name === "string" ? req.query.name.trim() : "" }));
           }
         );
       } catch (error) {
@@ -390,7 +422,30 @@ const errorHandler = async function(err,req, res,_next) {
  * 12. The frontend grabs the token and stores it in the local storage, ready for jwt-bearer authentication
  * 
  */
-const authCallback = function(req, res, next, type) {
+// how long a sign-in asked for again may take at the provider
+const REAUTH_WINDOW_MS = 10 * 60 * 1000
+
+/**
+ * The options of the redirect to the provider : ?reauth=1 (the profile, for an api token) asks the
+ * provider for the credentials again (prompt=login) and marks it in the sign-in's session, so the
+ * callback can say so ; any other sign-in forgets an older mark.
+ *
+ * Args:
+ *   req (object): the request.
+ *
+ * Returns:
+ *   object: the passport.authenticate options.
+ */
+export function ssoStart(req) {
+  const reauth = req.query?.reauth === '1'
+  if (req.session) {
+    if (reauth) req.session.afReauth = Date.now()
+    else delete req.session.afReauth
+  }
+  return reauth ? { prompt: 'login' } : {}
+}
+
+export const authCallback = function(req, res, next, type) {
   return async (err, payload) => {
     // The HANDOFF token : the claims passport just verified, re-signed with OUR secret
     // (lib/ssoHandoff.js explains why). Signed inside the try and only without an error :
@@ -410,7 +465,10 @@ const authCallback = function(req, res, next, type) {
         logger.error(`${type} sign-in failed : no user from the identity provider`)
         return next(reason)
       }
-      const token = signHandoff(payload, type);
+      // a sign-in asked for again (?reauth=1, prompt=login) : said so in the handoff, once
+      const asked = Number(req.session?.afReauth) || 0
+      if (req.session) delete req.session.afReauth
+      const token = signHandoff(payload, type, { reauth: !!asked && Date.now() - asked < REAUTH_WINDOW_MS });
       // in the fragment : the browser keeps it, no server, proxy or access log ever sees it. Into
       // the app, not the login page : the app takes the handoff before it draws anything
       // (client main.js), so the user goes from the provider straight to the page they wanted
@@ -503,7 +561,7 @@ const azureadoauth2 = async function(req, res,next) {
   logger.debug("Redirect to azure")
   // redirect to azure
   try {
-    passport.authenticate('azure_ad_oauth2')(req,res,next)
+    passport.authenticate('azure_ad_oauth2', ssoStart(req))(req,res,next)
   } catch(err) {
     logger.error(`Azure AD redirect failed: ${err?.message || err}`)
     next(err)
@@ -548,8 +606,8 @@ const azureadoauth2login = async function(req, res,_next) {
     // deliberately skipped by the blanket middleware, so an SSO login left no trace at all,
     // successful or refused. The audit trail is the control that would surface a problem here.
     auditLogin(req, 'success', 'azuread', null, user.username);
-    // return token
-    res.json(await userToJwt(user))
+    // a recent sign-in (for an api token) only when the provider asked for the credentials again
+    res.json(await userToJwt(user, undefined, { authTime: payload.reauth ? undefined : null }))
 
   } catch(err){
     logger.error(helpers.getError(err))
@@ -561,7 +619,7 @@ const azureadoauth2login = async function(req, res,_next) {
 const oidc = async function(req, res,next) {
   logger.debug("Redirect to Open ID Issuer")
   // redirect to Open ID Connect Provider
-  passport.authenticate('oidc')(req,res,next)
+  passport.authenticate('oidc', ssoStart(req))(req,res,next)
 };
 
 // callback with the OIDC access token
@@ -596,8 +654,8 @@ const oidcLogin = async function(req, res, _next) {
     // deliberately skipped by the blanket middleware, so an SSO login left no trace at all,
     // successful or refused. The audit trail is the control that would surface a problem here.
     auditLogin(req, 'success', 'oidc', null, user.username);
-    // return token
-    res.json(await userToJwt(user))
+    // a recent sign-in (for an api token) only when the provider asked for the credentials again
+    res.json(await userToJwt(user, undefined, { authTime: payload.reauth ? undefined : null }))
 
   } catch(err){
     logger.error(helpers.getError(err))
