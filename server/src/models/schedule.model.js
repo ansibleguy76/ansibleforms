@@ -1,7 +1,7 @@
 'use strict';
 
 import logger from "../lib/logger.js";
-import Job, { guardLaunch } from "./job.model.js";
+import Job, { guardLaunch, filterRawFormDataOf } from "./job.model.js";
 import yaml from 'yaml';
 import CrudModel from './crud.model.js';
 import mysql from './db.model.js';
@@ -150,7 +150,9 @@ class Schedule extends CrudModel {
       one_time_run: true,
       run_at: data.run_at,
       extra_vars: data.extra_vars || '',
-      raw_form_data: Object.keys(rawFormData).length ? JSON.stringify(rawFormData) : null,
+      // filtered on the server as a job's are : no password, even one in a list row, and
+      // nothing the form does not declare
+      raw_form_data: Object.keys(rawFormData).length ? JSON.stringify(filterRawFormDataOf(formConfig.forms[0], rawFormData)) : null,
       owner: JSON.stringify(owner),
       // it waits for its time : idle
       state: 'idle',

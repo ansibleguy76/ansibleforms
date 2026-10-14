@@ -28,6 +28,9 @@ let launched = null;
 let guarded = null;
 vi.mock("../src/models/job.model.js", () => ({
   default: { launch: async (args) => { launched = args; return { id: 42 }; } },
+  // the server's filter of the raw form data, as a job's : here it drops a field named secret
+  // (the real one, models/job.model.js, is tested with the form engine)
+  filterRawFormDataOf: (_formObj, raw) => Object.fromEntries(Object.entries(raw).filter(([k]) => k !== "secret")),
   // the form 'Strict Form' is under 'enforce' : a planned run without a host is refused
   guardLaunch: async (args) => {
     guarded = args;
@@ -199,6 +202,11 @@ describe("Schedule.plan", () => {
     await assert.rejects(Schedule.plan(planner, planBody({ form: "Strict Form" })), { name: "ValidationError" });
     assert.equal(created, null);
     await Schedule.plan(planner, planBody({ form: "Strict Form", raw_form_data: JSON.stringify({ host: "prod-1" }) }));
+    assert.equal(created.raw_form_data, JSON.stringify({ host: "prod-1" }));
+  });
+
+  test("the raw form data is filtered on the server before it is stored, as a job's is", async () => {
+    await Schedule.plan(planner, planBody({ raw_form_data: { host: "prod-1", secret: "s3cr3t" } }));
     assert.equal(created.raw_form_data, JSON.stringify({ host: "prod-1" }));
   });
 

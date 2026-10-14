@@ -212,6 +212,16 @@ describe("a job launched by a schedule", () => {
     expect(err.message).toContain("launched by a schedule");
   });
 
+  test("under enforce, only who may manage schedules replays one : not a user who merely sees every job", async () => {
+    Form.load.mockResolvedValue({ constants: {}, forms: [{ ...structuredClone(form), launchValidation: "enforce" }] });
+    Job.findById = vi.fn(async () => scheduleJob());
+    const watcher = { username: "eve", type: "local", roles: ["ops"], options: { allowJobRelaunch: true, showAllJobLogs: true } };
+    await expect(Job.relaunch(watcher, 42, false)).rejects.toMatchObject({ code: "no_form_data" });
+    expect(Job.launch).not.toHaveBeenCalled();
+    await Job.relaunch({ ...watcher, options: { ...watcher.options, allowScheduledJobs: true } }, 42, false);
+    expect(Job.launch).toHaveBeenCalledTimes(1);
+  });
+
   test("a user's job without form values under enforce is still refused, not replayed", async () => {
     Form.load.mockResolvedValue({ constants: {}, forms: [{ ...structuredClone(form), launchValidation: "enforce" }] });
     Job.findById = vi.fn(async () => ({ ...storedJob(), raw_form_data: null }));

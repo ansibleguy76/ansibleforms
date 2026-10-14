@@ -422,7 +422,7 @@ export function registerTools(server, handlers, policy = {}) {
       + 'first : that returns `modeledExtravars` (passwords masked), `credentials` and a `payloadHash` '
       + 'without launching - confirm them with the user, then call again with `expectedPayloadHash`. '
       + 'Refused while fields are missing, invalid or fail validation (code `form_incomplete`), for a '
-      + 'wizard form or a shown password field (`unsupported`), or when the payload changed (`payload_mismatch`).',
+      + 'wizard form or a shown password field (`unsupported`), with changes for a job that stored no form values, such as one a schedule launched (`no_form_data`), or when the payload changed (`payload_mismatch`).',
     inputSchema: {
       id: z.number().int().positive().describe('Id of the job to relaunch'),
       values: valuesSchema.optional().describe('Only the fields to change, as raw values ; the rest is taken from the job'),

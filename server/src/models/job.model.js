@@ -1438,6 +1438,15 @@ function launchedBySchedule(job) {
   return job?.user_type === 'schedule' && !job?.raw_form_data;
 }
 
+/**
+ * A schedule's job replayed as it ran, under 'enforce' too : only for who may manage schedules
+ * (an admin, or allowScheduledJobs). The replay keeps the schedule's own extravars, reserved keys
+ * included, which 'enforce' would otherwise keep from anyone else who sees every job.
+ */
+function replaysSchedule(job, user) {
+  return launchedBySchedule(job) && ((user?.roles || []).includes("admin") || !!user?.options?.allowScheduledJobs);
+}
+
 /** An error the MCP server passes on with its own code (tools.js wrap) and the details. */
 function codedError(ErrorClass, message, code, details = {}) {
   const err = new ErrorClass(message);
@@ -1482,7 +1491,7 @@ Job.relaunchWithValues = async function ({ user, id, values = {}, verbose = fals
   // the server ; the preview masks them). The same for a job an admin-level schedule launched,
   // even under 'enforce' : its extravars are the schedule's own, set in the settings and built
   // on the server, never a client's, and it has no form values to validate (#1063)
-  if (!changed && (launchValidationMode(formObj) !== 'enforce' || launchedBySchedule(job))) {
+  if (!changed && (launchValidationMode(formObj) !== 'enforce' || replaysSchedule(job, user))) {
     const storedExtravars = safeParse(job.extravars, {}, `job.extravars id=${id}`) || {};
     delete storedExtravars.__verbose__;
     const credentials = safeParse(job.credentials, {}, `job.credentials id=${id}`) || {};
