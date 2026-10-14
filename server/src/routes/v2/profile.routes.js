@@ -4,8 +4,8 @@ import userController from '../../controllers/v2/user.controller.js';
 import apiTokenController from '../../controllers/v2/apiToken.controller.js';
 import { authRateLimit } from '../../lib/authRateLimit.js';
 // the routes that check a password or hand out a token : the same ceiling per address as the
-// sign-in (lib/authRateLimit.js), so a session cannot be used to guess the current password ;
-// a count of their own, reading the profile is not limited
+// sign-in (lib/authRateLimit.js), a count of their own ; reading the profile is not limited. A
+// wrong current password also counts toward the account lockout (user.controller.js)
 const limiter = authRateLimit();
 // Retrieve profile
 router.get('/', userController.find);
