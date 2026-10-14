@@ -2477,6 +2477,7 @@ export default {
     deleteJob: 'Eliminar trabajo',
     duration: 'Duración',
     openJob: 'Abrir job',
+    openInRunner: 'Abrir #{id} en {product}',
     deleteSelected: 'Eliminar ({count})',
     deleteSelectedConfirm: '¿Eliminar los {count} jobs seleccionados?',
     deletedSelected: '{count} jobs eliminados',

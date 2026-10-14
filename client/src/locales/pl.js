@@ -2464,6 +2464,7 @@ export default {
     deleteJob: 'Usuń zadanie',
     duration: 'Czas trwania',
     openJob: 'Otwórz zadanie',
+    openInRunner: 'Otwórz #{id} w {product}',
     deleteSelected: 'Usuń ({count})',
     deleteSelectedConfirm: 'Usunąć {count} zaznaczonych zadań?',
     deletedSelected: 'Usunięto zadania: {count}',

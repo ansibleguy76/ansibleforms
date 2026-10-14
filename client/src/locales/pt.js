@@ -2477,6 +2477,7 @@ export default {
     deleteJob: 'Eliminar tarefa',
     duration: 'Duração',
     openJob: 'Abrir tarefa',
+    openInRunner: 'Abrir #{id} em {product}',
     deleteSelected: 'Eliminar ({count})',
     deleteSelectedConfirm: 'Eliminar as {count} tarefas selecionadas?',
     deletedSelected: '{count} tarefas eliminadas',

@@ -2443,6 +2443,7 @@ export default {
     deleteJob: 'Delete job',
     duration: 'Duration',
     openJob: 'Open job',
+    openInRunner: 'Open #{id} in {product}',
     deleteSelected: 'Delete ({count})',
     deleteSelectedConfirm: 'Delete the {count} selected jobs?',
     deletedSelected: '{count} jobs deleted',
