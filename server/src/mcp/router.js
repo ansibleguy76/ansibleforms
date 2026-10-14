@@ -14,6 +14,7 @@ import { resolveFormQuery } from '../lib/queryPolicy.js';
 import Schedule from '../models/schedule.model.js';
 import Settings from '../models/settings.model.js';
 import cronService from '../services/cron.service.js';
+import CrudModel from '../models/crud.model.js';
 import { createHandlers, registerTools } from './tools.js';
 import appConfig from '../../config/app.config.js';
 
@@ -38,7 +39,14 @@ const version = (() => {
 
 // the app's display zone (Settings > Appearance > Defaults) : a planned run's time is answered on it
 const appTimezone = async () => (await Settings.findAppDefaults())?.timezone || 'UTC';
-const deps = { Form, Job, Expression, Query, resolveFormQuery, Schedule, cron: cronService, appTimezone };
+// the stored jobs, as the stored jobs routes read and write them (controllers/v2/stored-jobs.controller.js)
+const StoredJobs = {
+  findAll: () => CrudModel.findAll('stored_jobs'),
+  findById: (id) => CrudModel.findById('stored_jobs', id),
+  create: (data) => CrudModel.create('stored_jobs', data),
+  delete: (id) => CrudModel.delete('stored_jobs', id),
+};
+const deps = { Form, Job, Expression, Query, resolveFormQuery, Schedule, cron: cronService, appTimezone, StoredJobs };
 
 function jsonRpcError(res, status, code, message) {
   res.status(status).json({ jsonrpc: '2.0', error: { code, message }, id: null });

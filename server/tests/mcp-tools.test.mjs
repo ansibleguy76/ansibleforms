@@ -563,3 +563,104 @@ describe("MCP schedules", () => {
     expect(deps.Schedule.delete).not.toHaveBeenCalled();
   });
 });
+
+// #1070 : stored jobs through MCP, scoped as the stored jobs routes scope them
+describe("MCP stored jobs", () => {
+  const storer = { ...user, options: { allowStoredJobs: true } };
+  const settings = { ...user, username: "admin", options: { allowStoredJobs: true, showSettings: true } };
+  let rows;
+  beforeEach(() => {
+    rows = new Map([
+      [1, { id: 1, name: "monthly", description: "the usual", form_name: "Create volume", username: "local/bob", form_data: JSON.stringify({ cluster: "c1", name: "v1", gone: "old" }), created_at: "2026-10-01T00:00:00.000Z", expires_at: null }],
+      [2, { id: 2, name: "eve's", form_name: "Create volume", username: "local/eve", form_data: JSON.stringify({ cluster: "c2", name: "v2" }), created_at: "2026-10-01T00:00:00.000Z", expires_at: null }],
+      [3, { id: 3, name: "ldap bob", form_name: "Create volume", username: "ldap/bob", form_data: "{}", created_at: "2026-10-01T00:00:00.000Z", expires_at: null }],
+    ]);
+    let next = 10;
+    deps.StoredJobs = {
+      findAll: vi.fn(async () => [...rows.values()]),
+      findById: vi.fn(async (id) => { if (!rows.has(Number(id))) { const e = new Error(`No stored job ${id}`); e.name = "NotFoundError"; throw e; } return rows.get(Number(id)); }),
+      create: vi.fn(async (data) => {
+        if ([...rows.values()].some((r) => r.username === data.username && r.form_name === data.form_name && r.name === data.name)) {
+          throw Object.assign(new Error("Duplicate entry"), { code: "ER_DUP_ENTRY" });
+        }
+        const id = next++; rows.set(id, { id, ...data }); return id;
+      }),
+      delete: vi.fn(async (id) => rows.delete(Number(id))),
+    };
+    deps.Job.maskExtravars = vi.fn(async (_form, text) => text);
+  });
+
+  test("the tools come with allowStoredJobs ; read only keeps listing and reading", async () => {
+    const names = async (u, policy) => (await (await connect(u, policy)).listTools()).tools.map((t) => t.name);
+    expect((await names(user)).some((n) => n.includes("stored"))).toBe(false);
+    expect(await names(storer)).toEqual(expect.arrayContaining(["list_stored_jobs", "get_stored_job", "store_job", "delete_stored_job"]));
+    const ro = await names(storer, { readOnly: true });
+    expect(ro).toEqual(expect.arrayContaining(["list_stored_jobs", "get_stored_job"]));
+    expect(ro.some((n) => ["store_job", "delete_stored_job"].includes(n))).toBe(false);
+  });
+
+  test("a user lists and reads their own ; a settings user everyone's ; by id or by form and name", async () => {
+    const mine = await call(await connect(storer), "list_stored_jobs");
+    expect(mine.data).toMatchObject({ scope: "mine", storedJobs: [{ id: 1, name: "monthly", form: "Create volume", expired: false }] });
+    expect(mine.data.storedJobs[0].form_data).toBeUndefined();
+    expect((await call(await connect(settings), "list_stored_jobs")).data.storedJobs.map((x) => x.id)).toEqual([1, 2, 3]);
+    const client = await connect(storer);
+    expect((await call(client, "get_stored_job", { id: 1 })).data.values).toEqual({ cluster: "c1", name: "v1", gone: "old" });
+    expect((await call(client, "get_stored_job", { form: "Create volume", name: "monthly" })).data.id).toBe(1);
+    for (const args of [{ id: 2 }, { id: 3 }, { id: 99 }, { form: "Create volume", name: "eve's" }]) {
+      expect((await client.callTool({ name: "get_stored_job", arguments: args })).structuredContent.code).toBe("not_found");
+    }
+  });
+
+  test("store_job keeps what the Store dialog keeps, and says what it left out", async () => {
+    const r = await call(await connect(storer), "store_job", {
+      form: "Create volume", name: "weekly", description: "d", values: { cluster: "c1", name: "v9", secret: "pw", bogus: 1 }, expires_at: "2031-01-01T00:00:00+01:00",
+    });
+    const data = deps.StoredJobs.create.mock.calls[0][0];
+    expect(data).toMatchObject({ name: "weekly", form_name: "Create volume", username: "local/bob", expires_at: "2030-12-31T23:00:00.000Z" });
+    expect(JSON.parse(data.form_data)).toEqual({ cluster: "c1", name: "v9" });
+    expect(r.data.leftOut).toEqual({ passwords: ["secret"], unknown: ["bogus"], other: [] });
+    expect(r.data.warnings.join(" ")).toContain("Password fields are never stored");
+    const dup = await (await connect(storer)).callTool({ name: "store_job", arguments: { form: "Create volume", name: "monthly", values: {} } });
+    expect(dup.structuredContent.code).toBe("conflict");
+    const noZone = await (await connect(storer)).callTool({ name: "store_job", arguments: { form: "Create volume", name: "z", values: {}, expires_at: "2031-01-01T00:00:00" } });
+    expect(noZone.structuredContent.code).toBe("invalid_request");
+  });
+
+  test("launch_job from a stored job : its values with the given ones over them, a gone field left out and said", async () => {
+    const client = await connect(storer);
+    const resolved = await call(client, "resolve_field", { form: "Create volume", storedJob: { id: 1 }, values: { name: "v1-override" } });
+    expect(resolved.data.complete).toBe(true);
+    expect(resolved.data.warnings.join(" ")).toContain("left out : gone");
+    const r = await call(client, "launch_job", { form: "Create volume", storedJob: { name: "monthly" }, values: { name: "v1-override" }, expectedPayloadHash: resolved.data.payloadHash });
+    expect(r.isError).toBe(false);
+    const arg = deps.Job.launch.mock.calls[0][0];
+    expect(arg.extravars.volume.name).toBe("v1-override");
+    expect(arg.rawFormData).toMatchObject({ cluster: "c1", name: "v1-override" });
+    expect(arg.rawFormData.gone).toBeUndefined();
+    expect(r.data.warnings.join(" ")).toContain("left out : gone");
+  });
+
+  test("a stored job of another user, or of another form, is not a start", async () => {
+    const h = createHandlers({ user: storer, deps });
+    await expect(h.launchJob({ form: "Create volume", storedJob: { id: 2 } })).rejects.toMatchObject({ code: "not_found" });
+    rows.set(4, { id: 4, name: "other form", form_name: "Other", username: "local/bob", form_data: "{}" });
+    await expect(h.launchJob({ form: "Create volume", storedJob: { id: 4 } })).rejects.toMatchObject({ code: "invalid_request" });
+    expect(deps.Job.launch).not.toHaveBeenCalled();
+  });
+
+  test("delete : only one the user may see ; the handlers refuse in read only and without the option", async () => {
+    const client = await connect(storer);
+    expect((await client.callTool({ name: "delete_stored_job", arguments: { id: 2 } })).structuredContent.code).toBe("not_found");
+    expect((await call(client, "delete_stored_job", { id: 1 })).data).toMatchObject({ id: 1, deleted: true });
+    await expect(createHandlers({ user: storer, deps, policy: { readOnly: true } }).deleteStoredJob({ id: 1 })).rejects.toMatchObject({ code: "access_denied" });
+    await expect(createHandlers({ user: storer, deps, policy: { readOnly: true } }).storeJob({ form: "Create volume", name: "x", values: {} })).rejects.toMatchObject({ code: "access_denied" });
+    await expect(createHandlers({ user, deps }).listStoredJobs({})).rejects.toMatchObject({ code: "access_denied" });
+    await expect(createHandlers({ user, deps }).launchJob({ form: "Create volume", storedJob: { id: 1 } })).rejects.toMatchObject({ code: "access_denied" });
+  });
+
+  test("chat forms only : the stored jobs of a form MCP does not offer are left out", async () => {
+    expect((await call(await connect(storer, { chatFormsOnly: true }), "list_stored_jobs")).data.storedJobs).toEqual([]);
+    await expect(createHandlers({ user: storer, deps, policy: { chatFormsOnly: true } }).getStoredJob({ id: 1 })).rejects.toMatchObject({ code: "not_found" });
+  });
+});
