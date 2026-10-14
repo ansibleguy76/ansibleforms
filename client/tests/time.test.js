@@ -125,3 +125,88 @@ describe('the date format', () => {
     expect(Time.format('2026-10-06T00:23:03.000Z')).toBe('2026-10-06 00:23:03 UTC');
   });
 });
+
+describe('Time.toWallClock / fromWallClock', () => {
+  test('reads a moment on the clock of a zone', () => {
+    const wall = Time.toWallClock('2026-10-15T09:00:00.000Z', 'Europe/Madrid');
+    expect([wall.getFullYear(), wall.getMonth(), wall.getDate(), wall.getHours(), wall.getMinutes()]).toEqual([
+      2026, 9, 15, 11, 0,
+    ]);
+    const utc = Time.toWallClock('2026-10-15T09:00:00.000Z', 'UTC');
+    expect(utc.getHours()).toBe(9);
+  });
+
+  test('the day changes with the zone', () => {
+    const wall = Time.toWallClock('2026-10-06T00:23:00.000Z', 'America/New_York');
+    expect([wall.getDate(), wall.getHours(), wall.getMinutes()]).toEqual([5, 20, 23]);
+  });
+
+  test('a wall clock picked in a zone is the moment in that zone', () => {
+    expect(Time.fromWallClock(new Date(2026, 9, 15, 9, 0, 0), 'UTC')).toBe('2026-10-15T09:00:00.000Z');
+    expect(Time.fromWallClock(new Date(2026, 9, 15, 9, 0, 0), 'Europe/Madrid')).toBe('2026-10-15T07:00:00.000Z');
+    // winter : CET is UTC+1
+    expect(Time.fromWallClock(new Date(2026, 0, 15, 9, 0, 0), 'Europe/Madrid')).toBe('2026-01-15T08:00:00.000Z');
+  });
+
+  test('switching zones keeps the moment', () => {
+    const moment = '2026-10-15T09:00:00.000Z';
+    for (const zone of ['UTC', 'Europe/Madrid', 'Asia/Tokyo', 'America/New_York']) {
+      expect(Time.fromWallClock(Time.toWallClock(moment, zone), zone)).toBe(moment);
+    }
+  });
+
+  test('not a date gives nothing', () => {
+    expect(Time.toWallClock('nope', 'UTC')).toBeNull();
+    expect(Time.fromWallClock(new Date('nope'), 'UTC')).toBe('');
+    expect(Time.fromWallClock(null, 'UTC')).toBe('');
+  });
+});
+
+describe('Time.momentOf', () => {
+  test('a moment nobody changed stays itself, across the clock changes', () => {
+    // every quarter of an hour of the two days the clocks change in Madrid and New York, on
+    // several zones : the hour that comes twice, and the one the browser skips, included
+    const days = ['2026-03-08', '2026-03-29', '2026-10-25', '2026-11-01'];
+    for (const zone of ['UTC', 'Europe/Madrid', 'America/New_York', 'Asia/Kolkata']) {
+      for (const day of days) {
+        const start = Date.parse(`${day}T00:00:00.000Z`) - 12 * 3600e3;
+        for (let t = start; t < start + 48 * 3600e3; t += 15 * 60e3) {
+          const iso = new Date(t).toISOString();
+          expect(Time.momentOf(Time.toWallClock(iso, zone), zone, iso)).toBe(iso);
+        }
+      }
+    }
+  });
+
+  test('the second 02:30 of an autumn night in Madrid is kept, not read as the first', () => {
+    const second = '2026-10-25T01:30:00.000Z'; // 02:30 CET
+    const wall = Time.toWallClock(second, 'Europe/Madrid');
+    expect(wall.getHours()).toBe(2);
+    expect(Time.fromWallClock(wall, 'Europe/Madrid')).toBe('2026-10-25T00:30:00.000Z'); // 02:30 CEST
+    expect(Time.momentOf(wall, 'Europe/Madrid', second)).toBe(second);
+  });
+
+  test('keeps the milliseconds', () => {
+    const iso = '2026-10-15T09:00:00.123Z';
+    expect(Time.momentOf(Time.toWallClock(iso, 'Europe/Madrid'), 'Europe/Madrid', iso)).toBe(iso);
+    expect(Time.fromWallClock(Time.toWallClock(iso, 'Europe/Madrid'), 'Europe/Madrid')).toBe(iso);
+  });
+
+  test('a wall clock changed is read on the zone', () => {
+    expect(Time.momentOf(new Date(2026, 9, 15, 13, 30), 'Europe/Madrid', '2026-10-15T09:00:00.000Z')).toBe(
+      '2026-10-15T11:30:00.000Z',
+    );
+    expect(Time.momentOf(new Date(2026, 9, 15, 13, 30), 'UTC', '')).toBe('2026-10-15T13:30:00.000Z');
+    expect(Time.momentOf(null, 'UTC', '2026-10-15T09:00:00.000Z')).toBe('');
+  });
+});
+
+describe('Time.wallText', () => {
+  test('writes a moment on the clock of a zone, from the moment itself', () => {
+    expect(Time.wallText('2026-10-15T09:00:00.000Z', 'Europe/Madrid')).toBe('2026-10-15 11:00');
+    // in the hour Madrid skips in spring, as UTC : a local Date in Madrid could not hold it
+    expect(Time.wallText('2027-03-28T02:30:00.000Z', 'UTC')).toBe('2027-03-28 02:30');
+    expect(Time.wallText('', 'UTC')).toBe('');
+    expect(Time.wallText('nope', 'UTC')).toBe('');
+  });
+});

@@ -812,6 +812,9 @@ export default {
     },
     common: {
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
+      zoneBrowser: 'Die Zeitzone Ihres Browsers ({zone})',
+      zoneApp: 'Die Zeitzone der Anwendung ({zone})',
+      zonePick: 'Zeitzone von Datum und Uhrzeit',
       datePlaceholders: {
         date: 'JJJJ-MM-TT',
         datetime: 'JJJJ-MM-TT HH:mm',

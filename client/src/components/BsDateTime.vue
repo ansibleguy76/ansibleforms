@@ -13,15 +13,21 @@
 /*      teleport: Boolean - the calendar opened on the page's     */
 /*         body : in a dialog, whose scrolling body would cut it  */
 /*         off                                                    */
+/*      convertToUtc: Boolean - a datetime that is a moment, sent */
+/*         as a UTC ISO string. It is picked on the app's time    */
+/*         zone (Time.zone(), the one every page shows), and a    */
+/*         switch in the calendar moves it to the browser's zone  */
+/*         and back : the moment stays, only the clock changes    */
 /*                                                                */
 /*  @emit:                                                        */
 /*      change: Event                                              */
 /*                                                                */
 /******************************************************************/
 
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { useAppStore } from '@/stores/app';
 import { useI18n } from 'vue-i18n';
+import Time from '@/lib/Time';
 
 // MODEL
 
@@ -57,6 +63,11 @@ const shownPlaceholder = computed(() => {
 const hasFocus = ref(false);
 const tempValue = ref('');
 const pickerModel = ref(null); // Local timezone Date for picker
+// the zone a moment is picked on, when the user switched it ; else the app's zone
+const pickedZone = ref(null);
+// the calendar, and the choice made in it and not applied yet (a datetime is applied with Select)
+const dp = ref(null);
+let pendingWall = null;
 
 // COMPUTED
 
@@ -64,8 +75,68 @@ const theme = computed(() => store.theme);
 const hasTimePicker = computed(() => {
   return ['datetime', 'time'].includes(props.dateType);
 });
+// a moment (sent as UTC) : picked on a zone's clock. Without convertToUtc a datetime is a wall
+// clock with no zone (a form field), and stays on the browser's local Date as before
+const isMoment = computed(() => props.dateType === 'datetime' && props.convertToUtc);
+const appZone = computed(() => Time.zone());
+const browserZone = Time.browserZone();
+const zone = computed(() => pickedZone.value || appZone.value);
+// the moment shown (else now), for the zones' names and offsets : summer and winter differ
+const shownMoment = computed(() => {
+  const iso = momentOf(pickerModel.value);
+  return iso ? new Date(iso) : new Date();
+});
+function offsetOf(z) {
+  return Time.toWallClock(shownMoment.value, z)?.getTime() ?? 0;
+}
+// both zones on the same clock (the app on the browser's zone, or two zones with one offset) :
+// nothing to switch
+const zonesDiffer = computed(() => isMoment.value && offsetOf(appZone.value) !== offsetOf(browserZone));
+const zoneCards = computed(() => [
+  {
+    zone: browserZone,
+    name: Time.zoneName(shownMoment.value, browserZone),
+    title: t('settings.common.zoneBrowser', { zone: browserZone }),
+  },
+  {
+    zone: appZone.value,
+    name: Time.zoneName(shownMoment.value, appZone.value),
+    title: t('settings.common.zoneApp', { zone: appZone.value }),
+  },
+]);
+// the moment on both clocks, the picked one first : nothing ambiguous before saving
+const bothClocks = computed(() => {
+  if (!zonesDiffer.value) return '';
+  const iso = momentOf(pickerModel.value);
+  if (!iso) return '';
+  const other = zone.value === browserZone ? appZone.value : browserZone;
+  return [zone.value, other].map((z) => `${Time.wallText(iso, z)} ${Time.zoneName(new Date(iso), z)}`).join(' · ');
+});
 
 // METHODS
+
+// the moment a wall clock on the zone picked stands for : the model's own while the wall clock
+// is still the model's
+function momentOf(wall) {
+  return Time.momentOf(wall, zone.value, typeof model.value === 'string' ? model.value : '');
+}
+
+function internalChange(value) {
+  pendingWall = value instanceof Date ? value : null;
+}
+
+// the same moment on another zone's clock, and the choice not applied yet with it
+function switchZone(next) {
+  if (next === zone.value) return;
+  const held = pickerModel.value instanceof Date ? pickerModel.value : null;
+  const pending = pendingWall && (!held || pendingWall.getTime() !== held.getTime()) ? pendingWall : null;
+  const iso = momentOf(held);
+  const pendingIso = pending ? Time.fromWallClock(pending, zone.value) : '';
+  pickedZone.value = next === appZone.value ? null : next;
+  if (iso) pickerModel.value = Time.toWallClock(iso, zone.value);
+  // the calendar reads its model again once it changed : the choice goes back in after that
+  if (pendingIso) nextTick(() => dp.value?.updateInternalModelValue(Time.toWallClock(pendingIso, zone.value)));
+}
 
 function getWeekNumber(date) {
   // ISO week number calculation
@@ -119,8 +190,9 @@ function syncToOutput() {
       model.value = `${year}-${month}-${day}`;
     } else if (props.dateType === 'datetime') {
       if (props.convertToUtc) {
-        // Convert local time to UTC ISO string
-        model.value = localDate.toISOString();
+        // the wall clock picked, on the zone picked, as a UTC ISO string : the same moment as
+        // before when it was not changed
+        model.value = momentOf(localDate) || null;
       } else {
         // Use local datetime without timezone conversion
         const year = localDate.getFullYear();
@@ -223,10 +295,9 @@ function loadFromOutput() {
       }
     } else if (props.dateType === 'datetime') {
       if (props.convertToUtc) {
-        // Parse UTC ISO string - browser automatically converts to local timezone
-        // So if value is "2026-03-09T12:00:00.000Z" and user is GMT+2,
-        // the Date object will represent 14:00 local time
-        pickerModel.value = new Date(model.value);
+        // a UTC ISO string, shown on the clock of the zone picked : 2026-03-09T12:00:00.000Z
+        // is 12:00 on UTC and 13:00 on Europe/Madrid
+        pickerModel.value = Time.toWallClock(model.value, zone.value);
       } else {
         // Local datetime string (YYYY-MM-DDTHH:mm:ss or YYYY-MM-DD HH:mm:ss format)
         const separator = model.value.includes('T') ? 'T' : ' ';
@@ -289,6 +360,13 @@ function updateTempValue() {
   // Handle Date objects
   if (!(value instanceof Date)) {
     tempValue.value = '';
+    return;
+  }
+
+  // a moment is written from the moment itself : a wall clock in the hour the browser skips in
+  // spring cannot be held in a local Date (02:30 UTC would show as 03:30)
+  if (isMoment.value) {
+    tempValue.value = Time.wallText(momentOf(value), zone.value);
     return;
   }
 
@@ -419,6 +497,11 @@ watch(
   { deep: true },
 );
 
+// the app's zone changed (the profile) : the moment on its clock
+watch(appZone, () => {
+  if (isMoment.value && !pickedZone.value && !hasFocus.value) loadFromOutput();
+});
+
 // Watch pickerModel changes to update display only
 watch(
   pickerModel,
@@ -430,7 +513,9 @@ watch(
 </script>
 <template>
   <VueDatePicker
+    ref="dp"
     text-input
+    @internal-model-change="internalChange"
     v-model="pickerModel"
     @blur="blur"
     @focus="focus"
@@ -446,10 +531,33 @@ watch(
     :dark="theme == 'dark'"
     :teleport="teleport ? 'body' : undefined"
   >
+    <!-- the clock a moment is picked on : the browser's or the app's -->
+    <template v-if="zonesDiffer" #menu-header>
+      <div
+        class="btn-group btn-group-sm w-100 p-2 af-zone-switch"
+        role="group"
+        :aria-label="t('settings.common.zonePick')"
+      >
+        <button
+          v-for="card in zoneCards"
+          :key="card.zone"
+          type="button"
+          class="btn"
+          :class="card.zone === zone ? 'btn-primary' : 'btn-outline-secondary'"
+          :title="card.title"
+          :aria-pressed="card.zone === zone"
+          @click.stop="switchZone(card.zone)"
+        >
+          {{ card.name }}
+        </button>
+      </div>
+    </template>
     <template #dp-input>
       <div class="input-group mt-2">
         <span class="input-group-text" :class="{ 'text-body': hasFocus, 'text-gray-500': !hasFocus }">
           <FaIcon :fixedwidth="true" :icon="icon" />
+          <!-- the zone the moment is shown on ; at the start, the calendar's clear button sits at the end -->
+          <span v-if="isMoment" class="ms-2 small" :title="zone">{{ Time.zoneName(shownMoment, zone) }}</span>
         </span>
         <input
           v-model="tempValue"
@@ -465,6 +573,7 @@ watch(
       </div>
     </template>
   </VueDatePicker>
+  <small v-if="bothClocks" class="form-text text-muted d-block af-both-clocks">{{ bothClocks }}</small>
 </template>
 <style scoped lang="scss">
 .invalid-feedback {
@@ -472,6 +581,10 @@ watch(
 }
 </style>
 <style lang="scss">
+/* the zone switch, in the calendar (teleported out of this component's scope) */
+.af-zone-switch .btn {
+  font-size: 0.8rem;
+}
 /* a calendar opened on the page's body (teleport) : above the dialog it was opened from */
 body > .dp__outer_menu_wrap,
 body > .dp--menu-wrapper {
