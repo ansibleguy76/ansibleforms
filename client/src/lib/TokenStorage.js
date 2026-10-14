@@ -121,7 +121,16 @@ var TokenStorage = {
       if (this.getRefreshToken() !== refreshToken) return this.getToken();
       await new Promise((resolve) => setTimeout(resolve, 250));
     }
-    return this.getRefreshToken() !== refreshToken ? this.getToken() : null;
+    if (this.getRefreshToken() !== refreshToken) return this.getToken();
+    // nothing came : the refresh that took it may have failed and given it back, so one more try
+    try {
+      const tokenResponse = await axios.post(`/api/v2/token`, { refreshtoken: refreshToken }, { __tokenRefresh: true });
+      this.storeToken(tokenResponse.data.token);
+      this.storeRefreshToken(tokenResponse.data.refreshtoken);
+      return tokenResponse.data.token;
+    } catch {
+      return this.getRefreshToken() !== refreshToken ? this.getToken() : null;
+    }
   },
 
   storeToken(token) {

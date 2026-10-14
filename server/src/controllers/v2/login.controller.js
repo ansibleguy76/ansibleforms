@@ -94,7 +94,7 @@ async function admitUser(req, res, user, extra = {}) {
   return false;
 }
 
-function userToJwt(user,expiryDays){
+async function userToJwt(user,expiryDays){
 
   // is something like
   // {"username":"administrator","type":"local","roles":["default","admin"]}
@@ -133,13 +133,14 @@ function userToJwt(user,expiryDays){
   logger.debug(JSON.stringify(claims))
   // we store the tokens in the database, to later verify a refresh token action
   logger.info("Storing refreshtoken in database for user " + user.username)
-  Token.store(user.username,user.type,refreshtoken,function(err,result){
-    if(err){
-      logger.error("Failed to store token. ",err)
-    }else{
-      logger.info(result)
-    }
-  })
+  // awaited : the client may refresh as soon as it has the tokens, and a refresh that came
+  // before the row was refused as an unknown token (#1062). A failure is logged, the sign-in
+  // goes on as before, only its refresh will be refused.
+  try {
+    await Token.store(user.username,user.type,refreshtoken)
+  } catch (err) {
+    logger.error(`Failed to store token for ${user.username} : ${err}`)
+  }
   return {
     token: token,
     refreshtoken: refreshtoken
@@ -245,7 +246,7 @@ const basic = async function(req, res,next) {
               auditLogin(req, 'success', user.type, null, user.username);
               await loginSucceeded(attemptedUsername(req));
               // send the tokens to the requester
-              return res.json(userToJwt(user,req.query.expiryDays));
+              return res.json(await userToJwt(user,req.query.expiryDays));
             }
           );
         } catch (error) {
@@ -305,7 +306,7 @@ const basic_ldap = async function(req, res,next) {
             auditLogin(req, 'success', user.type, null, user.username);
             await loginSucceeded(attemptedUsername(req));
             // send the tokens to the requester
-            return res.json(userToJwt(user,req.query.expiryDays));
+            return res.json(await userToJwt(user,req.query.expiryDays));
           }
         );
       } catch (error) {
@@ -548,7 +549,7 @@ const azureadoauth2login = async function(req, res,_next) {
     // successful or refused. The audit trail is the control that would surface a problem here.
     auditLogin(req, 'success', 'azuread', null, user.username);
     // return token
-    res.json(userToJwt(user))
+    res.json(await userToJwt(user))
 
   } catch(err){
     logger.error(helpers.getError(err))
@@ -596,7 +597,7 @@ const oidcLogin = async function(req, res, _next) {
     // successful or refused. The audit trail is the control that would surface a problem here.
     auditLogin(req, 'success', 'oidc', null, user.username);
     // return token
-    res.json(userToJwt(user))
+    res.json(await userToJwt(user))
 
   } catch(err){
     logger.error(helpers.getError(err))

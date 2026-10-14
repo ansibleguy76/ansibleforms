@@ -73,6 +73,17 @@ describe('TokenStorage.getNewToken', () => {
     expect(await TokenStorage.getNewToken('access-1')).toBe('access-other');
   });
 
+  it('on a 409 and nothing stored after, tries once more : the refresh that took it may have given it back', async () => {
+    vi.useFakeTimers();
+    axios.post.mockRejectedValueOnce({ response: { status: 409, data: { code: 'refresh_token_replaced' } } });
+    axios.post.mockResolvedValueOnce({ data: { token: 'access-2', refreshtoken: 'refresh-2' } });
+    const result = TokenStorage.getNewToken('access-1');
+    await vi.advanceTimersByTimeAsync(6000);
+    vi.useRealTimers();
+    expect(await result).toBe('access-2');
+    expect(axios.post).toHaveBeenCalledTimes(2);
+  });
+
   it('on a refusal, takes tokens stored meanwhile rather than none', async () => {
     axios.post.mockImplementation(async () => {
       TokenStorage.storeToken('access-other');

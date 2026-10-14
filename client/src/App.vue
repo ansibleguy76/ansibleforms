@@ -132,7 +132,14 @@ function registerAxiosInterceptor() {
         // In all other cases, something was wrong with the token refresh.
         const headers = error.config?.headers;
         const sent = String(headers?.get?.('Authorization') ?? headers?.Authorization ?? '').replace(/^Bearer /, '');
+        const failedRefresh = TokenStorage.getRefreshToken();
         const token = await TokenStorage.getNewToken(sent);
+        // another tab stored new tokens just after this refresh gave up : not cleared, they are good
+        if (!token && TokenStorage.getRefreshToken() !== failedRefresh && TokenStorage.getToken()) {
+          error.config.headers['Authorization'] = `Bearer ${TokenStorage.getToken()}`;
+          error.config.__isRetry = true;
+          return axios.request(error.config);
+        }
         if (!token) {
           // No token was returned, this means the user is not authenticated
           // Silently redirect to login without spamming errors

@@ -29,7 +29,7 @@ vi.mock("../src/models/db.model.js", () => ({
         const replaced = db.tokens.get(token);
         return [{ current: replaced === null ? 1 : 0, recent: replaced !== null && replaced > db.now - grace * 1000 ? 1 : 0 }];
       }
-      if (/SET replaced_at=NOW\(\)/.test(sql)) {
+      if (/SET replaced_at=UTC_TIMESTAMP\(\)/.test(sql)) {
         if (db.tokens.get(params[2]) !== null) return { affectedRows: 0 };
         db.tokens.set(params[2], db.now);
         return { affectedRows: 1 };

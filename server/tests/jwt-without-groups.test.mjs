@@ -41,7 +41,7 @@ vi.mock("../src/models/db.model.js", () => ({
       if (/SELECT replaced_at IS NULL AS current/.test(sql)) {
         return db.tokens.has(params[3]) ? [{ current: db.tokens.get(params[3]) === null ? 1 : 0, recent: 1 }] : [];
       }
-      if (/SET replaced_at=NOW\(\)/.test(sql)) {
+      if (/SET replaced_at=UTC_TIMESTAMP\(\)/.test(sql)) {
         if (db.tokens.get(params[2]) !== null) return { affectedRows: 0 };
         db.tokens.set(params[2], Date.now());
         return { affectedRows: 1 };
