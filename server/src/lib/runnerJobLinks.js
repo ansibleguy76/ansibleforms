@@ -4,21 +4,21 @@
 import Runner from "../models/runner.model.js";
 import logger from "./logger.js";
 
-// a node's job type in AWX, and what the UI calls it : an approval, a project or an inventory
-// update has no page of that kind
-const UI_KINDS = { job: "playbook", workflow_job: "workflow" };
+// a node's job type in AWX, and what the UI calls it in a job's address (an approval has a page of
+// another kind : none)
+const UI_KINDS = { job: "playbook", workflow_job: "workflow", project_update: "project", inventory_update: "inventory" };
 
 /**
  * A job's page in the UI of an awx runner.
  *
- * | flavour             | job                               | workflow                          |
- * | none (AWX), ascender| /#/jobs/playbook/<id>/output      | /#/jobs/workflow/<id>/output      |
- * | aap (2.5 gateway)   | /execution/jobs/playbook/<id>/output | /execution/jobs/workflow/<id>/output |
+ * | runner                                  | address                              |
+ * | AWX, Ascender, AAP before 2.5 (/api/v2) | /#/jobs/<kind>/<id>/output           |
+ * | AAP 2.5+ gateway (/api/controller/v2)   | /execution/jobs/<kind>/<id>/output   |
  *
  * Args:
  *   runner (object): the runner (type, uri, flavour).
  *   id (number|string): the job's id in that product.
- *   kind (string): 'playbook' or 'workflow'.
+ *   kind (string): 'playbook', 'workflow', 'project' or 'inventory'.
  *
  * Returns:
  *   string: the address, or '' when there is none (not an awx runner, no id, a uri that is
@@ -37,7 +37,10 @@ export function uiJobUrl(runner, id, kind = "playbook") {
   // a path before it stays (/tower/api/v2). Never the credentials a uri may carry.
   const api = url.pathname.search(/\/api(\/|$)/);
   const base = url.origin + (api >= 0 ? url.pathname.slice(0, api) : url.pathname).replace(/\/+$/, "");
-  return runner.flavour === "aap" ? `${base}/execution/jobs/${kind}/${id}/output` : `${base}/#/jobs/${kind}/${id}/output`;
+  // the AAP 2.5 gateway (its controller under /api/controller) has its own UI ; an AAP before 2.5
+  // is the controller alone, with AWX's
+  const gateway = runner.flavour === "aap" && /\/api\/controller(\/|$)/.test(url.pathname);
+  return gateway ? `${base}/execution/jobs/${kind}/${id}/output` : `${base}/#/jobs/${kind}/${id}/output`;
 }
 
 /**

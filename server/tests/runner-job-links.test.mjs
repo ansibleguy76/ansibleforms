@@ -25,6 +25,20 @@ describe("uiJobUrl", () => {
     expect(uiJobUrl(aap, 9, "workflow")).toBe("https://aap.example.com/execution/jobs/workflow/9/output");
   });
 
+  test("an AAP before 2.5 (the controller alone, /api/v2) uses AWX's routes", () => {
+    expect(uiJobUrl({ type: "awx", uri: "https://aap24.example.com/api/v2", flavour: "aap" }, 5)).toBe(
+      "https://aap24.example.com/#/jobs/playbook/5/output",
+    );
+    expect(uiJobUrl({ type: "awx", uri: "https://aap24.example.com", flavour: "aap" }, 5)).toBe(
+      "https://aap24.example.com/#/jobs/playbook/5/output",
+    );
+  });
+
+  test("project and inventory updates have their pages", () => {
+    expect(uiJobUrl(awx, 8, "project")).toBe("https://awx.example.com/#/jobs/project/8/output");
+    expect(uiJobUrl(aap, 8, "inventory")).toBe("https://aap.example.com/execution/jobs/inventory/8/output");
+  });
+
   test("a path before the API stays, the API path and the credentials go", () => {
     expect(uiJobUrl({ type: "awx", uri: "https://u:secret@host.example.com/tower/api/v2/" }, 3)).toBe(
       "https://host.example.com/tower/#/jobs/playbook/3/output",
@@ -39,6 +53,7 @@ describe("uiJobUrl", () => {
     expect(uiJobUrl(awx, null)).toBe("");
     expect(uiJobUrl(awx, "3/../../admin")).toBe("");
     expect(uiJobUrl(awx, 3, "project_update")).toBe("");
+    expect(uiJobUrl(awx, 3, "approval")).toBe("");
     expect(uiJobUrl({ type: "awx", uri: "javascript:alert(1)" }, 3)).toBe("");
     expect(uiJobUrl({ type: "awx", uri: "not a url" }, 3)).toBe("");
     expect(uiJobUrl(null, 3)).toBe("");
@@ -69,6 +84,7 @@ describe("addRunnerJobLinks", () => {
             { id: 2, type: "workflow_job", job: 52 },
             { id: 3, type: "workflow_approval", job: 53 },
             { id: 4, type: "job", job: null },
+            { id: 5, type: "project_update", job: 54 },
           ],
         },
       },
@@ -80,7 +96,16 @@ describe("addRunnerJobLinks", () => {
       "https://aap.example.com/execution/jobs/workflow/52/output",
       undefined,
       undefined,
+      "https://aap.example.com/execution/jobs/project/54/output",
     ]);
+  });
+
+  test("a workflow just launched (its graph still empty) gets the workflow address", async () => {
+    const job = await addRunnerJobLinks(
+      { id: 7, job_type: "awx", runner: "asc", awx_id: 60, awx_workflow: { id: 60, name: "wf", nodes: [] } },
+      { Runner: runners({ asc: ascender }) },
+    );
+    expect(job.runner_job_url).toBe("https://ascender.example.com/#/jobs/workflow/60/output");
   });
 
   test("no links for other jobs, other runners, or a runner that is gone or cannot be read", async () => {
