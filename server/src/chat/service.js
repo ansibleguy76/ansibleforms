@@ -96,7 +96,7 @@ export function createChatService({
       } catch (err) {
         if (err instanceof ChatError) throw err;
         const d = describeError(err);
-        const status = { access_denied: 403, not_found: 404, form_incomplete: 409, payload_mismatch: 409, unsupported: 400 }[d.code] || 500;
+        const status = { access_denied: 403, not_found: 404, form_incomplete: 409, payload_mismatch: 409, unsupported: 400, no_form_data: 400 }[d.code] || 500;
         throw new ChatError(d.code, d.message, status);
       }
       const jobId = launched?.id ?? null;

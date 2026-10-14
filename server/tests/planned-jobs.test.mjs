@@ -28,6 +28,9 @@ let launched = null;
 let guarded = null;
 vi.mock("../src/models/job.model.js", () => ({
   default: { launch: async (args) => { launched = args; return { id: 42 }; } },
+  // the server's filter of the raw form data, as a job's : here it drops a field named secret
+  // (the real one, models/job.model.js, is tested with the form engine)
+  filterRawFormDataOf: (_formObj, raw) => Object.fromEntries(Object.entries(raw).filter(([k]) => k !== "secret")),
   // the form 'Strict Form' is under 'enforce' : a planned run without a host is refused
   guardLaunch: async (args) => {
     guarded = args;
@@ -71,6 +74,7 @@ vi.mock("../src/models/form.model.js", () => ({
 const Middleware = (await import("../src/lib/middleware.js")).default;
 const { default: Schedule } = await import("../src/models/schedule.model.js");
 const { default: CrudModel } = await import("../src/models/crud.model.js");
+const { default: scheduleController } = await import("../src/controllers/v2/schedule.controller.js");
 
 const planner = {
   id: 2, username: "bob", type: "local", groups: ["local/users"], roles: ["users", "default"],
@@ -201,6 +205,11 @@ describe("Schedule.plan", () => {
     assert.equal(created.raw_form_data, JSON.stringify({ host: "prod-1" }));
   });
 
+  test("the raw form data is filtered on the server before it is stored, as a job's is", async () => {
+    await Schedule.plan(planner, planBody({ raw_form_data: { host: "prod-1", secret: "s3cr3t" } }));
+    assert.equal(created.raw_form_data, JSON.stringify({ host: "prod-1" }));
+  });
+
   test("raw form data that is not a dictionary is refused", async () => {
     await assert.rejects(Schedule.plan(planner, planBody({ raw_form_data: "{bad" })), { name: "BadRequestError" });
     await assert.rejects(Schedule.plan(planner, planBody({ raw_form_data: [1] })), { name: "BadRequestError" });
@@ -210,9 +219,22 @@ describe("Schedule.plan", () => {
     await assert.rejects(Schedule.plan(nobody, planBody()), { name: "AccessDeniedError" });
   });
 
-  test("an admin-level create cannot set an owner either", async () => {
-    await Schedule.create({ name: "x", owner: "{}" });
+  test("an admin-level create cannot set an owner either, nor raw form data", async () => {
+    await Schedule.create({ name: "x", owner: "{}", raw_form_data: { host: "x" } });
     assert.equal(created.owner, undefined);
+    assert.equal(created.raw_form_data, undefined);
+  });
+
+  test("an update changes neither the owner nor the values a run was planned with", async () => {
+    let updated = null;
+    const original = CrudModel.update;
+    CrudModel.update = async (_m, data) => { updated = { ...data }; return {}; };
+    try {
+      await Schedule.update({ name: "y", owner: "{}", raw_form_data: "{}" }, 7);
+    } finally {
+      CrudModel.update = original;
+    }
+    assert.deepEqual(updated, { name: "y" });
   });
 });
 
@@ -257,5 +279,57 @@ describe("Schedule.launch", () => {
     await Schedule.launch(1);
     assert.equal(launched, null, "nothing may run");
     assert.equal(row.status, "failed");
+  });
+});
+
+// ─── the create endpoint : "Run later" against "Schedule" (#1063) ──
+
+describe("POST /api/v2/schedule", () => {
+  // the controller with a request from this user, and what it created
+  async function post(user, body) {
+    const res = { statusCode: 200 };
+    res.status = (c) => { res.statusCode = c; return res; };
+    res.json = (b) => { res.body = b; return res; };
+    CrudModel.findById = async () => ({ id: 7, ...created });
+    await scheduleController.create({ user: { user }, body }, res);
+    return res;
+  }
+
+  test("an admin's Run later is planned : it runs as them, with their form values", async () => {
+    const r = await post(scheduler, planBody({ planned: true, raw_form_data: { username: "x" } }));
+    assert.equal(r.statusCode, 201);
+    assert.equal(JSON.parse(created.owner).username, "bob", "it runs as the admin who planned it");
+    assert.equal(created.raw_form_data, JSON.stringify({ username: "x" }));
+    assert.equal(created.planned, undefined, "the flag is not a column");
+  });
+
+  test("an admin's Schedule is an admin-level schedule, as before", async () => {
+    const r = await post(scheduler, planBody({ planned: false }));
+    assert.equal(r.statusCode, 201);
+    assert.equal(created.owner, undefined, "it runs as the Schedule Service");
+    assert.equal(created.planned, undefined, "the flag is not a column");
+  });
+
+  test("a planner's Run later is planned, with or without the flag", async () => {
+    await post(planner, planBody({ planned: true }));
+    assert.equal(JSON.parse(created.owner).username, "bob");
+    await post(planner, planBody());
+    assert.equal(JSON.parse(created.owner).username, "bob");
+  });
+
+  test("a planner cannot make an admin-level schedule by leaving the flag off", async () => {
+    const r = await post(planner, planBody({ planned: false, one_time_run: false, cron: "0 0 * * *" }));
+    assert.equal(r.statusCode, 403);
+    assert.equal(created, null);
+  });
+});
+
+// the schedule's CRUD fields : what plan() writes must reach the table, and be read back when
+// the run fires (the other tests mock CrudModel.create, which hid that it was dropped)
+describe("the schedule record", () => {
+  test("keeps the owner and the raw form data on insert and update", () => {
+    const row = { name: "n", owner: "{}", raw_form_data: '{"username":"x"}' };
+    assert.deepEqual(CrudModel.getFieldValues("schedule", { ...row }), row);
+    assert.match(CrudModel.getSelectFields("schedule"), /\braw_form_data\b/);
   });
 });

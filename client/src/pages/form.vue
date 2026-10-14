@@ -1329,6 +1329,9 @@ async function createSchedule() {
       // the raw field values : a planned run is checked by the launch validation when it is
       // planned and when it fires, as a launch from here is
       raw_form_data: getFilteredRawFormData(),
+      // "Run later" plans one run of this form as the signed-in user, admin or not ; only
+      // "Schedule" makes a schedule that runs as the Schedule Service (#1063)
+      planned: scheduleAction.value === 'run-later',
     };
 
     // Add type-specific fields
