@@ -6,6 +6,9 @@ import { buildLaunchPayload, filterRawFormData, maskPasswords } from '../lib/for
 import { sha256 } from '../lib/formEngine/node/hash.js';
 import { createFormServices } from '../lib/formServices.js';
 import { describeRowErrors } from '../lib/launchValidation.js';
+import { cronError } from '../lib/cronValidate.js';
+import { Cron } from 'croner';
+import yaml from 'yaml';
 
 /**
  * The MCP tools. Deliberately technical : they expose the form flow a browser goes through
@@ -66,13 +69,15 @@ function publicResolution(res) {
 /**
  * @param {object} args
  * @param {object} args.user  req.user.user
- * @param {object} args.deps  { Form, Job, Expression, Query, resolveFormQuery }
+ * @param {object} args.deps  { Form, Job, Expression, Query, resolveFormQuery } ; for the
+ *   schedules also { Schedule, cron (the cron service : add and remove a schedule's task),
+ *   appTimezone (async : the app's display zone, Settings > Appearance) }
  * @param {object} [args.policy]  the MCP settings, from the MCP router only (the chat
  *   assistant has its own rules) : `readOnly` refuses launch_job and relaunch_job,
  *   `chatFormsOnly` offers only the forms offered in the chat (enableForChat)
  */
 export function createHandlers({ user, deps, policy = {} }) {
-  const { Form, Job, Expression, Query, resolveFormQuery } = deps;
+  const { Form, Job, Expression, Query, resolveFormQuery, Schedule, cron, appTimezone } = deps;
   const roles = user?.roles || [];
 
   // a form MCP may offer : any the user may open, or with chatFormsOnly those offered in the
@@ -86,10 +91,132 @@ export function createHandlers({ user, deps, policy = {} }) {
     return { formConfig, formObj };
   }
 
-  function refuseWhenReadOnly() {
+  function refuseWhenReadOnly(what = 'jobs cannot be launched or relaunched through it') {
     if (policy.readOnly) {
-      throw new ToolError('This MCP server is read only : jobs cannot be launched or relaunched through it', 'access_denied');
+      throw new ToolError(`This MCP server is read only : ${what}`, 'access_denied');
     }
+  }
+
+  // ─── schedules (#1069) : the role options decide, as on the schedule routes ────────────────
+  // allowScheduledJobs : every schedule (an admin-level right) ; allowPlannedJobs : one-time runs
+  // of a form, as the user, and those only
+  const mayPlan = !!user?.options?.allowPlannedJobs;
+  const mayManage = !!user?.options?.allowScheduledJobs;
+
+  /** The user a planned run runs as, from its owner ; null for an admin-level schedule. */
+  function ownerOf(row) {
+    if (!row?.owner) return null;
+    try {
+      const owner = typeof row.owner === 'string' ? JSON.parse(row.owner) : row.owner;
+      return owner?.username ? { username: owner.username, type: owner.type || 'local' } : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Whether a schedule is this user's : a run they planned. */
+  function isMine(row) {
+    const owner = ownerOf(row);
+    return !!owner && owner.username === user?.username && owner.type === (user?.type || 'local');
+  }
+
+  /** The names of the forms MCP offers this user, when only the chat's are offered. */
+  async function offeredFormNames() {
+    if (!policy.chatFormsOnly) return null;
+    const cfg = await Form.load(roles);
+    return new Set((cfg?.forms || []).filter(offered).map((f) => f.name));
+  }
+
+  /** A schedule this user may see, else not found (as one that does not exist). */
+  async function visibleSchedule(id) {
+    if (!mayManage && !mayPlan) throw new ToolError('You do not have permission to see schedules', 'access_denied');
+    const notFound = new ToolError(`Schedule ${id} not found or you do not have access to it`, 'not_found');
+    let row;
+    try {
+      row = await Schedule.findById(id);
+    } catch (err) {
+      if (err?.name === 'NotFoundError') throw notFound;
+      throw err;
+    }
+    if (!row || (!mayManage && !isMine(row))) throw notFound;
+    const names = await offeredFormNames();
+    if (names && !names.has(row.form)) throw notFound;
+    return row;
+  }
+
+  /** When a schedule runs next, for a row read without it (the list adds it) : null for none. */
+  function nextRunOf(row) {
+    if (row?.one_time_run) return row.run_at ? new Date(row.run_at).toISOString() : null;
+    if (!row?.cron) return null;
+    try {
+      const next = new Cron(String(row.cron), { paused: true }).nextRun();
+      return next ? next.toISOString() : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** A schedule as the list shows it : what, when and how it went ; not its values. */
+  function scheduleSummary(row) {
+    const owner = ownerOf(row);
+    return {
+      id: row.id,
+      name: row.name,
+      form: row.form,
+      // a run planned by a user runs as them ; any other schedule as the Schedule Service
+      planned: !!owner,
+      runsAs: owner ? owner.username : 'Schedule Service',
+      oneTimeRun: !!row.one_time_run,
+      runAt: row.run_at ?? null,
+      cron: row.cron || null,
+      nextRun: row.next_run ?? nextRunOf(row),
+      status: row.status || null,
+      state: row.state || null,
+      lastRun: row.last_run ?? null,
+    };
+  }
+
+  /**
+   * A moment as a planned run takes it : an ISO 8601 time with its offset or Z, so the run never
+   * depends on the zone of a server or a browser (#1064) ; not in the past.
+   */
+  function momentOf(runAt) {
+    const text = String(runAt ?? '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})$/i.test(text)) {
+      throw new ToolError(`run_at must be an ISO 8601 time with its offset or Z, such as 2026-10-15T22:00:00+02:00 or `
+        + `2026-10-15T20:00:00Z, not '${text}' : a time without a zone is ambiguous`, 'invalid_request');
+    }
+    const when = new Date(text);
+    if (Number.isNaN(when.getTime())) throw new ToolError(`run_at '${text}' is not a valid time`, 'invalid_request');
+    if (when.getTime() < Date.now() - 60 * 1000) {
+      throw new ToolError(`run_at '${text}' is in the past`, 'invalid_request', { now: new Date().toISOString() });
+    }
+    return when;
+  }
+
+  /** A moment in UTC and on the app's clock (Settings > Appearance > Defaults, else UTC). */
+  async function bothClocks(when) {
+    let zone;
+    try {
+      zone = (await appTimezone?.()) || 'UTC';
+    } catch {
+      zone = 'UTC';
+    }
+    let local;
+    try {
+      local = new Intl.DateTimeFormat('sv-SE', { timeZone: zone, dateStyle: 'short', timeStyle: 'medium' }).format(when);
+    } catch {
+      zone = 'UTC';
+      local = new Intl.DateTimeFormat('sv-SE', { timeZone: 'UTC', dateStyle: 'short', timeStyle: 'medium' }).format(when);
+    }
+    return { runAt: when.toISOString(), runAtLocal: `${local} ${zone}`, timezone: zone };
+  }
+
+  /** The cron service runs it from now on (the schedule routes do the same). */
+  async function registered(id) {
+    const row = await Schedule.findById(id);
+    cron?.addSchedule?.(row.id, row.name, row.cron, row.one_time_run, row.run_at);
+    return row;
   }
 
   function servicesFor(formConfig, formObj, subformName) {
@@ -149,6 +276,68 @@ export function createHandlers({ user, deps, policy = {} }) {
     };
   }
 
+  /**
+   * A form resolved, validated and turned into its launch payload, as launch_job submits it and
+   * plan_job plans it : refused while incomplete, with a file field, or when the payload differs
+   * from the confirmed one.
+   *
+   * Returns:
+   *   Promise<object>: { formObj, extravars, credentials, payloadHash, rawFormData, warnings }.
+   */
+  async function readyToLaunch({ form, values, verbose, expectedPayloadHash }) {
+    const { formConfig, formObj } = await loadForm(form);
+    if (formObj.type === 'subform') {
+      throw new ToolError(`'${formObj.name}' is a subform and cannot be launched on its own`, 'unsupported');
+    }
+    if (Array.isArray(formObj.wizard) && formObj.wizard.length > 0) {
+      throw new ToolError(`'${formObj.name}' is a wizard form ; wizard forms cannot be launched through MCP yet`, 'unsupported');
+    }
+    if (verbose && !user?.options?.allowVerboseMode) {
+      throw new ToolError('You do not have permission to run jobs in verbose mode', 'access_denied');
+    }
+    const res = await resolveForm({
+      form: formObj,
+      constants: formConfig.constants || {},
+      vars: formObj.vars || {},
+      user,
+      values: values || {},
+      services: servicesFor(formConfig, formObj),
+      allRows: true,
+    });
+    if (!res.complete) {
+      const parts = [];
+      const notAnOption = res.fields.filter((f) => f.notInOptions && res.invalid.includes(f.name)).map((f) => f.name);
+      const failing = Object.entries(res.validationErrors)
+        .map(([name, errs]) => `${name} (${errs.map((e) => e.description ? `${e.type}: ${e.description}` : e.type).join(', ')})`);
+      if (res.missing.length) parts.push(`missing input for : ${res.missing.join(', ')}`);
+      if (notAnOption.length) parts.push(`not one of the options : ${notAnOption.join(', ')}`);
+      if (failing.length) parts.push(`validation failed : ${failing.join(' ; ')}`);
+      const rows = describeRowErrors(res.rowErrors);
+      if (rows.length) parts.push(`list rows failing : ${rows.join(', ')}`);
+      if (res.waiting.length) parts.push(`not resolvable yet : ${res.waiting.join(', ')}`);
+      throw new ToolError(`The form is not complete - ${parts.join(' ; ')}. Call resolve_field to see what is needed.`,
+        'form_incomplete', {
+          missing: res.missing, invalid: res.invalid, waiting: res.waiting, validationErrors: res.validationErrors,
+          rowErrors: res.rowErrors,
+        });
+    }
+    const files = res._fields.filter((f) => f.type === 'file' && res._visibility[f.name]
+      && res._values[f.name] !== undefined && res._values[f.name] !== null && res._values[f.name] !== '');
+    if (files.length) {
+      throw new ToolError(`File fields cannot be filled through MCP (${files.map((f) => f.name).join(', ')})`,
+        'unsupported', { fields: files.map((f) => f.name) });
+    }
+    const { extravars, credentials, payloadHash } = launchPayload(res, formObj);
+    // the resolution changed since it was approved : a query answered differently, the
+    // form was edited, or other values were sent
+    if (expectedPayloadHash && expectedPayloadHash !== payloadHash) {
+      throw new ToolError('The payload differs from the one that was resolved - resolve the form again and have it confirmed.',
+        'payload_mismatch', { expectedPayloadHash, payloadHash });
+    }
+    if (verbose) extravars.__verbose__ = true;
+    return { formObj, extravars, credentials, payloadHash, rawFormData: filterRawFormData(res._fields, res._values), warnings: res.warnings };
+  }
+
   return {
     async listForms() {
       const cfg = await Form.load(roles);
@@ -198,68 +387,91 @@ export function createHandlers({ user, deps, policy = {} }) {
 
     async launchJob({ form, values, verbose, expectedPayloadHash }) {
       refuseWhenReadOnly();
-      const { formConfig, formObj } = await loadForm(form);
-      if (formObj.type === 'subform') {
-        throw new ToolError(`'${formObj.name}' is a subform and cannot be launched on its own`, 'unsupported');
-      }
-      if (Array.isArray(formObj.wizard) && formObj.wizard.length > 0) {
-        throw new ToolError(`'${formObj.name}' is a wizard form ; wizard forms cannot be launched through MCP yet`, 'unsupported');
-      }
-      if (verbose && !user?.options?.allowVerboseMode) {
-        throw new ToolError('You do not have permission to run jobs in verbose mode', 'access_denied');
-      }
-      const res = await resolveForm({
-        form: formObj,
-        constants: formConfig.constants || {},
-        vars: formObj.vars || {},
-        user,
-        values: values || {},
-        services: servicesFor(formConfig, formObj),
-        allRows: true,
-      });
-      if (!res.complete) {
-        const parts = [];
-        const notAnOption = res.fields.filter((f) => f.notInOptions && res.invalid.includes(f.name)).map((f) => f.name);
-        const failing = Object.entries(res.validationErrors)
-          .map(([name, errs]) => `${name} (${errs.map((e) => e.description ? `${e.type}: ${e.description}` : e.type).join(', ')})`);
-        if (res.missing.length) parts.push(`missing input for : ${res.missing.join(', ')}`);
-        if (notAnOption.length) parts.push(`not one of the options : ${notAnOption.join(', ')}`);
-        if (failing.length) parts.push(`validation failed : ${failing.join(' ; ')}`);
-        const rows = describeRowErrors(res.rowErrors);
-        if (rows.length) parts.push(`list rows failing : ${rows.join(', ')}`);
-        if (res.waiting.length) parts.push(`not resolvable yet : ${res.waiting.join(', ')}`);
-        throw new ToolError(`The form is not complete - ${parts.join(' ; ')}. Call resolve_field to see what is needed.`,
-          'form_incomplete', {
-            missing: res.missing, invalid: res.invalid, waiting: res.waiting, validationErrors: res.validationErrors,
-            rowErrors: res.rowErrors,
-          });
-      }
-      const files = res._fields.filter((f) => f.type === 'file' && res._visibility[f.name]
-        && res._values[f.name] !== undefined && res._values[f.name] !== null && res._values[f.name] !== '');
-      if (files.length) {
-        throw new ToolError(`File fields cannot be filled through MCP (${files.map((f) => f.name).join(', ')})`,
-          'unsupported', { fields: files.map((f) => f.name) });
-      }
-      const { extravars, credentials, payloadHash } = launchPayload(res, formObj);
-      // the resolution changed since it was approved : a query answered differently, the
-      // form was edited, or other values were sent
-      if (expectedPayloadHash && expectedPayloadHash !== payloadHash) {
-        throw new ToolError('The payload differs from the one that was resolved - resolve the form again and have it confirmed.',
-          'payload_mismatch', { expectedPayloadHash, payloadHash });
-      }
-      if (verbose) extravars.__verbose__ = true;
-      const rawFormData = filterRawFormData(res._fields, res._values);
+      const ready = await readyToLaunch({ form, values, verbose, expectedPayloadHash });
       const job = await Job.launch({
-        form: formObj.name,
+        form: ready.formObj.name,
         user,
-        credentials,
-        extravars,
-        rawFormData,
+        credentials: ready.credentials,
+        extravars: ready.extravars,
+        rawFormData: ready.rawFormData,
         fromClient: true,
         // resolved and validated above ; the REST launch guard need not do it again
         validated: true,
       });
-      return { id: job?.id, form: formObj.name, payloadHash, warnings: res.warnings };
+      return { id: job?.id, form: ready.formObj.name, payloadHash: ready.payloadHash, warnings: ready.warnings };
+    },
+
+    async planJob({ form, values, run_at: runAt, name, verbose, expectedPayloadHash }) {
+      refuseWhenReadOnly('jobs cannot be planned through it');
+      if (!mayPlan) throw new ToolError('You do not have permission to plan jobs (the allowPlannedJobs role option)', 'access_denied');
+      const when = momentOf(runAt);
+      if (!String(name ?? '').trim()) throw new ToolError('A planned job needs a name', 'invalid_request');
+      const ready = await readyToLaunch({ form, values, verbose, expectedPayloadHash });
+      // Run later on the form : a one-time run as this user, checked again when it fires
+      const id = await Schedule.plan(user, {
+        name: String(name).trim(),
+        form: ready.formObj.name,
+        one_time_run: true,
+        run_at: when.toISOString(),
+        extra_vars: yaml.stringify(ready.extravars),
+        raw_form_data: ready.rawFormData,
+      });
+      const row = await registered(id);
+      return { id: row.id, name: row.name, form: ready.formObj.name, ...(await bothClocks(when)), payloadHash: ready.payloadHash, warnings: ready.warnings };
+    },
+
+    async createSchedule({ form, name, cron: cronExpr, run_at: runAt, extraVars }) {
+      refuseWhenReadOnly('schedules cannot be created through it');
+      if (!mayManage) throw new ToolError('You do not have permission to create schedules (the allowScheduledJobs role option)', 'access_denied');
+      if (!String(name ?? '').trim()) throw new ToolError('A schedule needs a name', 'invalid_request');
+      if (!!cronExpr === !!runAt) throw new ToolError('Give either cron (a recurring schedule) or run_at (one run), not both', 'invalid_request');
+      const { formObj } = await loadForm(form);
+      if (formObj.type === 'subform') throw new ToolError(`'${formObj.name}' is a subform and cannot be scheduled on its own`, 'unsupported');
+      const data = { name: String(name).trim(), form: formObj.name, extra_vars: yaml.stringify(extraVars || {}) };
+      let when = null;
+      if (cronExpr) {
+        const problem = cronError(cronExpr);
+        if (problem) throw new ToolError(`Not a cron schedule : ${problem}`, 'invalid_request');
+        Object.assign(data, { cron: String(cronExpr).trim(), one_time_run: false });
+      } else {
+        when = momentOf(runAt);
+        Object.assign(data, { one_time_run: true, run_at: when.toISOString() });
+      }
+      const row = await registered(await Schedule.create(data));
+      return { ...scheduleSummary(row), ...(when ? await bothClocks(when) : {}) };
+    },
+
+    async listSchedules({ form } = {}) {
+      if (!mayManage && !mayPlan) throw new ToolError('You do not have permission to see schedules', 'access_denied');
+      const names = await offeredFormNames();
+      const rows = (await Schedule.findAll()) || [];
+      const schedules = rows
+        .filter((r) => mayManage || isMine(r))
+        .filter((r) => !names || names.has(r.form))
+        .filter((r) => !form || r.form === form)
+        .map(scheduleSummary);
+      return { schedules, scope: mayManage ? 'all' : 'mine' };
+    },
+
+    async getSchedule({ id }) {
+      const row = await visibleSchedule(id);
+      // its extra vars as a job's are shown : secret-looking keys and the form's password fields masked
+      let stored;
+      try {
+        stored = yaml.parse(row.extra_vars || '{}') || {};
+      } catch {
+        stored = {};
+      }
+      const extravars = parseJson(await Job.maskExtravars(row.form, JSON.stringify(stored)), {});
+      return { ...scheduleSummary(row), extravars, output: row.output || '' };
+    },
+
+    async deleteSchedule({ id }) {
+      refuseWhenReadOnly('schedules cannot be deleted through it');
+      const row = await visibleSchedule(id);
+      await Schedule.delete(row.id);
+      cron?.removeSchedule?.(row.id);
+      return { id: row.id, name: row.name, deleted: true };
     },
 
     async relaunchJob({ id, values, verbose, preview, expectedPayloadHash }) {
@@ -352,9 +564,11 @@ function wrap(fn) {
 
 /**
  * Register every tool on an McpServer, bound to one user's handlers. Read only (the MCP
- * settings), the tools that launch are not offered at all - the handlers refuse them too.
+ * settings), the tools that launch, plan or change are not offered at all - the handlers refuse
+ * them too. The schedule tools are offered as the user's role options allow them.
  */
-export function registerTools(server, handlers, policy = {}) {
+export function registerTools(server, handlers, policy = {}, user = {}) {
+  const options = user?.options || {};
   server.registerTool('list_forms', {
     title: 'List forms',
     description: 'The forms the authenticated user may use, with their description and categories.',
@@ -432,6 +646,67 @@ export function registerTools(server, handlers, policy = {}) {
     },
     annotations: { readOnlyHint: false, destructiveHint: true },
   }, wrap((a) => handlers.relaunchJob(a)));
+
+  // ─── schedules (#1069) ───
+  if (!policy.readOnly && options.allowPlannedJobs) server.registerTool('plan_job', {
+    title: 'Plan a job (Run later)',
+    description: 'Run the form once, later, as you : what Run later does on the form. The values are resolved '
+      + 'and validated like launch_job now, and checked again when the run fires. `run_at` is an ISO 8601 '
+      + 'time WITH its offset or Z (2026-10-15T22:00:00+02:00) ; a time without a zone is refused. The answer '
+      + 'gives the run time in UTC and on the app\'s clock. Refused while the form is incomplete (code '
+      + '`form_incomplete`) or when `expectedPayloadHash` no longer matches (`payload_mismatch`). Confirm the '
+      + 'modeledExtravars from resolve_field and the time with the user before calling it.',
+    inputSchema: {
+      form: z.string().describe('Form name'),
+      values: valuesSchema,
+      run_at: z.string().describe('When to run it : ISO 8601 with its offset or Z'),
+      name: z.string().describe('A name for the planned run, as listed under Jobs > Scheduled'),
+      verbose: z.boolean().optional().describe('Verbose ansible output (needs the allowVerboseMode role option)'),
+      expectedPayloadHash: z.string().optional().describe('The payloadHash resolve_field returned for the approved values'),
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true },
+  }, wrap((a) => handlers.planJob(a)));
+
+  if (!policy.readOnly && options.allowScheduledJobs) server.registerTool('create_schedule', {
+    title: 'Create schedule',
+    description: 'A schedule of a form, as in Settings > Schedules : recurring with `cron` (five fields, such as '
+      + '"0 22 * * 1-5"), or one run with `run_at` (ISO 8601 with its offset or Z). It runs as the Schedule '
+      + 'Service with the given extra vars, NOT as you and without the form\'s validation - to run a form '
+      + 'once as yourself, use plan_job.',
+    inputSchema: {
+      form: z.string().describe('Form name'),
+      name: z.string().describe('A name for the schedule'),
+      cron: z.string().optional().describe('A cron expression, for a recurring schedule'),
+      run_at: z.string().optional().describe('One run at this time : ISO 8601 with its offset or Z'),
+      extraVars: z.record(z.string(), z.any()).optional().describe('The extra vars the job gets'),
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true },
+  }, wrap((a) => handlers.createSchedule(a)));
+
+  if (options.allowPlannedJobs || options.allowScheduledJobs) {
+    server.registerTool('list_schedules', {
+      title: 'List schedules',
+      description: 'The schedules you may see : with allowScheduledJobs all of them, else the runs you planned. '
+        + 'Per schedule its form, when it runs (runAt or cron, nextRun), whether it runs as you (planned) and how '
+        + 'its last run went.',
+      inputSchema: { form: z.string().optional().describe('Only the schedules of this form') },
+      annotations: { readOnlyHint: true },
+    }, wrap((a) => handlers.listSchedules(a)));
+
+    server.registerTool('get_schedule', {
+      title: 'Get schedule',
+      description: 'One schedule, with its extra vars (secret-looking ones masked) and the output of its last run.',
+      inputSchema: { id: z.number().int().positive().describe('Schedule id') },
+      annotations: { readOnlyHint: true },
+    }, wrap((a) => handlers.getSchedule(a)));
+
+    if (!policy.readOnly) server.registerTool('delete_schedule', {
+      title: 'Delete schedule',
+      description: 'Cancel a planned run or delete a schedule you may see ; it does not run any more.',
+      inputSchema: { id: z.number().int().positive().describe('Schedule id') },
+      annotations: { readOnlyHint: false, destructiveHint: true },
+    }, wrap((a) => handlers.deleteSchedule(a)));
+  }
 
   server.registerTool('get_job', {
     title: 'Get job',

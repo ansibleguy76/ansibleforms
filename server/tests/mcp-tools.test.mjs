@@ -54,7 +54,7 @@ beforeEach(() => {
 
 async function connect(u = user, policy = undefined) {
   const server = new McpServer({ name: "ansibleforms", version: "test" });
-  registerTools(server, createHandlers({ user: u, deps, policy }), policy);
+  registerTools(server, createHandlers({ user: u, deps, policy }), policy, u);
   const client = new Client({ name: "test", version: "1" });
   const [a, b] = InMemoryTransport.createLinkedPair();
   await Promise.all([server.connect(a), client.connect(b)]);
@@ -400,5 +400,123 @@ describe("MCP tools", () => {
       expect((await call(client, "list_forms")).data.forms.map((f) => f.name)).toEqual(["Create volume"]);
       expect((await call(client, "get_form", { name: "Create volume" })).isError).toBe(false);
     });
+  });
+});
+
+// #1069 : planning and scheduling through MCP, on the schedule model, as the role options allow
+describe("MCP schedules", () => {
+  const planner = { ...user, options: { allowPlannedJobs: true } };
+  const manager = { ...user, username: "admin", options: { allowScheduledJobs: true, allowPlannedJobs: true } };
+  const later = new Date(Date.now() + 3600e3);
+  let rows;
+  beforeEach(() => {
+    rows = new Map([
+      [1, { id: 1, name: "bob's run", form: "Create volume", one_time_run: 1, run_at: "2030-01-01T00:00:00.000Z", owner: JSON.stringify({ username: "bob", type: "local" }), extra_vars: "volume:\n  name: v1\npassword: pw\n", output: "" }],
+      [2, { id: 2, name: "nightly", form: "Create volume", one_time_run: 0, cron: "0 22 * * *", owner: null, extra_vars: "size: 5\n", next_run: "2030-01-01T22:00:00.000Z" }],
+      [3, { id: 3, name: "eve's run", form: "Create volume", one_time_run: 1, run_at: "2030-01-01T00:00:00.000Z", owner: JSON.stringify({ username: "eve", type: "local" }), extra_vars: "" }],
+    ]);
+    let next = 10;
+    deps.Schedule = {
+      plan: vi.fn(async (u, data) => { const id = next++; rows.set(id, { id, ...data, owner: JSON.stringify({ username: u.username, type: u.type }) }); return id; }),
+      create: vi.fn(async (data) => { const id = next++; rows.set(id, { id, ...data, owner: null }); return id; }),
+      findAll: vi.fn(async () => [...rows.values()]),
+      findById: vi.fn(async (id) => { if (!rows.has(Number(id))) { const e = new Error(`No schedule ${id}`); e.name = "NotFoundError"; throw e; } return rows.get(Number(id)); }),
+      delete: vi.fn(async (id) => rows.delete(Number(id))),
+    };
+    deps.cron = { addSchedule: vi.fn(), removeSchedule: vi.fn() };
+    deps.appTimezone = vi.fn(async () => "Europe/Madrid");
+    deps.Job.maskExtravars = vi.fn(async (_form, text) => text.replace(/"password":"[^"]*"/, '"password":"**NOLOG**"'));
+  });
+
+  test("the tools come with the role options : none without them, list and plan for a planner, all for a manager", async () => {
+    const names = async (u, policy) => (await (await connect(u, policy)).listTools()).tools.map((t) => t.name);
+    expect(await names(user)).not.toContain("list_schedules");
+    const p = await names(planner);
+    expect(p).toEqual(expect.arrayContaining(["plan_job", "list_schedules", "get_schedule", "delete_schedule"]));
+    expect(p).not.toContain("create_schedule");
+    expect(await names(manager)).toEqual(expect.arrayContaining(["plan_job", "create_schedule", "list_schedules"]));
+    // read only : listing stays, nothing that changes
+    const ro = await names(manager, { readOnly: true });
+    expect(ro).toEqual(expect.arrayContaining(["list_schedules", "get_schedule"]));
+    expect(ro).not.toEqual(expect.arrayContaining(["plan_job"]));
+    expect(ro.some((n) => ["plan_job", "create_schedule", "delete_schedule"].includes(n))).toBe(false);
+  });
+
+  test("plan_job plans Run later as the user, with the resolved values, and answers on both clocks", async () => {
+    const client = await connect(planner);
+    const runAt = later.toISOString().replace("Z", "+00:00");
+    const r = await call(client, "plan_job", { form: "Create volume", values: { cluster: "c1", name: "v1", secret: "pw" }, run_at: runAt, name: "tonight" });
+    expect(r.isError).toBe(false);
+    const [u, data] = deps.Schedule.plan.mock.calls[0];
+    expect(u.username).toBe("bob");
+    expect(data).toMatchObject({ name: "tonight", form: "Create volume", one_time_run: true, run_at: later.toISOString() });
+    expect(data.extra_vars).toContain("name: v1");
+    // the raw values for the launch validation when it fires : never the password
+    expect(data.raw_form_data).toMatchObject({ cluster: "c1", name: "v1" });
+    expect(data.raw_form_data.secret).toBeUndefined();
+    expect(deps.cron.addSchedule).toHaveBeenCalledWith(r.data.id, "tonight", undefined, true, later.toISOString());
+    expect(r.data).toMatchObject({ runAt: later.toISOString(), timezone: "Europe/Madrid" });
+    expect(r.data.runAtLocal).toMatch(/ Europe\/Madrid$/);
+    expect(r.data.payloadHash).toMatch(/^sha256:[0-9a-f]{64}$/);
+    expect(deps.Job.launch).not.toHaveBeenCalled();
+  });
+
+  test("plan_job refuses a time without a zone, in the past, an incomplete form and a changed payload", async () => {
+    const client = await connect(planner);
+    const values = { cluster: "c1", name: "v1" };
+    const noZone = await client.callTool({ name: "plan_job", arguments: { form: "Create volume", values, run_at: "2030-01-01T22:00:00", name: "x" } });
+    expect(noZone.structuredContent.code).toBe("invalid_request");
+    const past = await client.callTool({ name: "plan_job", arguments: { form: "Create volume", values, run_at: "2020-01-01T22:00:00Z", name: "x" } });
+    expect(past.structuredContent.code).toBe("invalid_request");
+    const incomplete = await client.callTool({ name: "plan_job", arguments: { form: "Create volume", values: { cluster: "c1" }, run_at: later.toISOString(), name: "x" } });
+    expect(incomplete.structuredContent.code).toBe("form_incomplete");
+    const changed = await client.callTool({ name: "plan_job", arguments: { form: "Create volume", values, run_at: later.toISOString(), name: "x", expectedPayloadHash: "0".repeat(64) } });
+    expect(changed.structuredContent.code).toBe("payload_mismatch");
+    expect(deps.Schedule.plan).not.toHaveBeenCalled();
+  });
+
+  test("without allowPlannedJobs, or read only, the handler refuses to plan", async () => {
+    await expect(createHandlers({ user, deps }).planJob({ form: "Create volume", values: {}, run_at: later.toISOString(), name: "x" })).rejects.toMatchObject({ code: "access_denied" });
+    await expect(createHandlers({ user: planner, deps, policy: { readOnly: true } }).planJob({ form: "Create volume", values: {}, run_at: later.toISOString(), name: "x" })).rejects.toMatchObject({ code: "access_denied" });
+  });
+
+  test("create_schedule : recurring or once, through Schedule.create ; a bad cron or both is refused ; only for allowScheduledJobs", async () => {
+    const client = await connect(manager);
+    const r = await call(client, "create_schedule", { form: "Create volume", name: "weekdays", cron: "0 22 * * 1-5", extraVars: { size: 5 } });
+    expect(r.isError).toBe(false);
+    expect(deps.Schedule.create).toHaveBeenCalledWith({ name: "weekdays", form: "Create volume", extra_vars: "size: 5\n", cron: "0 22 * * 1-5", one_time_run: false });
+    expect(r.data).toMatchObject({ name: "weekdays", planned: false, runsAs: "Schedule Service", cron: "0 22 * * 1-5" });
+    expect(new Date(r.data.nextRun).getTime()).toBeGreaterThan(Date.now());
+    expect(deps.cron.addSchedule).toHaveBeenCalled();
+    const once = await call(client, "create_schedule", { form: "Create volume", name: "once", run_at: later.toISOString() });
+    expect(once.data).toMatchObject({ oneTimeRun: true, runAt: later.toISOString() });
+    expect((await client.callTool({ name: "create_schedule", arguments: { form: "Create volume", name: "bad", cron: "99 * * * *" } })).structuredContent.code).toBe("invalid_request");
+    expect((await client.callTool({ name: "create_schedule", arguments: { form: "Create volume", name: "both", cron: "0 1 * * *", run_at: later.toISOString() } })).structuredContent.code).toBe("invalid_request");
+    await expect(createHandlers({ user: planner, deps }).createSchedule({ form: "Create volume", name: "x", cron: "0 1 * * *" })).rejects.toMatchObject({ code: "access_denied" });
+  });
+
+  test("a planner lists, reads and cancels their own runs only ; a manager sees all", async () => {
+    const mine = await call(await connect(planner), "list_schedules");
+    expect(mine.data.scope).toBe("mine");
+    expect(mine.data.schedules.map((s) => s.id)).toEqual([1]);
+    expect(mine.data.schedules[0]).toMatchObject({ planned: true, runsAs: "bob" });
+    expect((await call(await connect(manager), "list_schedules")).data.schedules.map((s) => s.id)).toEqual([1, 2, 3]);
+
+    const client = await connect(planner);
+    const got = await call(client, "get_schedule", { id: 1 });
+    expect(got.data.extravars).toEqual({ volume: { name: "v1" }, password: "**NOLOG**" });
+    for (const id of [2, 3, 99]) {
+      expect((await client.callTool({ name: "get_schedule", arguments: { id } })).structuredContent.code).toBe("not_found");
+      expect((await client.callTool({ name: "delete_schedule", arguments: { id } })).structuredContent.code).toBe("not_found");
+    }
+    expect(deps.Schedule.delete).not.toHaveBeenCalled();
+    const del = await call(client, "delete_schedule", { id: 1 });
+    expect(del.data).toMatchObject({ id: 1, deleted: true });
+    expect(deps.cron.removeSchedule).toHaveBeenCalledWith(1);
+  });
+
+  test("chat forms only : the schedules of a form MCP does not offer are left out", async () => {
+    const r = await call(await connect(manager, { chatFormsOnly: true }), "list_schedules");
+    expect(r.data.schedules).toEqual([]);
   });
 });

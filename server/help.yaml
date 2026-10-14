@@ -686,17 +686,24 @@
       and runs as that user, with the same form roles and job visibility as in the browser.
       Users whose roles turn off `allowMcp` ("Allow MCP") cannot use it. Takes
       effect at once, without a restart. See the MCP page of the documentation.
+
+      Scheduling follows the role options too. With `allowPlannedJobs` a client gets
+      `plan_job` (Run later : one run of a form as the user, its `run_at` an ISO 8601 time with
+      its offset or Z) and `list_schedules`, `get_schedule` and `delete_schedule` for the runs
+      the user planned. With `allowScheduledJobs` it also gets `create_schedule` (a cron or
+      one-time schedule that runs as the Schedule Service) and sees every schedule.
   - name: MCP_READ_ONLY
     version: 7.0.0
     type: boolean
     allowed: 0, 1
-    short: Block launching and relaunching jobs (read-only)
+    short: Block launching, relaunching and planning jobs (read-only)
     hint: AI clients can list, open and fill in forms, but not launch or relaunch jobs
     default: 0
     description: |
-      With 1, the MCP server is read-only: it offers no `launch_job` and no `relaunch_job`
-      tool and refuses them. An AI client can list the forms, read them, resolve their
-      fields and follow jobs, but runs nothing. A safe way to try an agent before letting it
+      With 1, the MCP server is read-only: it offers no `launch_job`, `relaunch_job`,
+      `plan_job`, `create_schedule` or `delete_schedule` tool and refuses them. An AI client
+      can list the forms, read them, resolve their fields, follow jobs and list schedules,
+      but runs and plans nothing. A safe way to try an agent before letting it
       launch playbooks. Takes effect at once, without a restart.
   - name: MCP_CHAT_FORMS_ONLY
     version: 7.0.0
