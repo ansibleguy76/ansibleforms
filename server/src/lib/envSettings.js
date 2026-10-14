@@ -86,8 +86,6 @@ const LIVE = {
   PROCESS_MAX_BUFFER: { key: 'processMaxBuffer', parse: v => parseInt(v, 10) || 50 * 1024 * 1024 },
   AWX_API_PREFIX: { key: 'awxApiPrefix', parse: v => v },
   SHOW_DESIGNER: { key: 'showDesigner', parse: v => v == 1 },
-  // the login reads it per request, through AzureAd.isEnabled and OIDC.isEnabled
-  ENABLE_SSO: { key: 'enableSso', parse: v => v == 1 },
   // the login page reads it per request, through /api/v2/auth/settings
   SSO_AUTO_LOGIN: { key: 'ssoAutoLogin', parse: v => v == 1 },
   // app.js mounts the MCP server always, behind a gate reading this per request
@@ -192,6 +190,21 @@ function importSyslogSoon() {
   syslogImport.unref?.();
 }
 
+// the SSO login strategies are built once (auth/loginStrategies.js) : rebuilt when SSO is
+// switched or the Entra ID authority changes, a moment later so that the fields saved together
+// are all there first and one rebuild covers them
+let loginRebuild = null;
+function rebuildLoginSoon() {
+  clearTimeout(loginRebuild);
+  loginRebuild = setTimeout(() => {
+    import('../auth/loginStrategies.js')
+      .then(({ rebuildLoginStrategies }) => rebuildLoginStrategies())
+      .catch((err) => logger.error(`Could not rebuild the SSO login : ${err.message || err}`));
+  }, 500);
+  // a pending rebuild never keeps the process alive
+  loginRebuild.unref?.();
+}
+
 // Live, but needing more than an appConfig field or process.env : a function that
 // reconfigures something already constructed.
 const LIVE_CUSTOM = {
@@ -201,7 +214,11 @@ const LIVE_CUSTOM = {
   ACCESS_TOKEN_REFRESH_EXPIRATION: (v) => { authConfig.jwtRefreshExpiration = v; },
   ACCESS_TOKEN_ISSUER: (v) => { authConfig.jwtIssuer = v; },
   AZURE_GRAPH_URI: (v) => { authConfig.azureGraphUrl = v; },
-  AZURE_AUTHORITY_URI: (v) => { authConfig.azureAuthorityUrl = v; },
+  // the Entra ID strategy discovers its issuer from it when built : rebuilt
+  AZURE_AUTHORITY_URI: (v) => { authConfig.azureAuthorityUrl = v; rebuildLoginSoon(); },
+  // the login page reads it per request (AzureAd.isEnabled, OIDC.isEnabled), the strategies
+  // its buttons lead to when built : rebuilt, or SSO switched on offers a login that fails
+  ENABLE_SSO: (v) => { appConfig.enableSso = v == 1; rebuildLoginSoon(); },
   // winston keeps the level as a mutable property on the logger and each transport.
   // logConfig holds its own captured copy, which the Status page reports - update both, or
   // the level changes while the page keeps claiming the old one.
