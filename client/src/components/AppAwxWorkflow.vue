@@ -287,6 +287,8 @@ function linkText(l) {
     : t('workflow.conditionUnknown', { trigger: when });
 }
 watch(hoveredLink, async (l) => {
+  // not drawn until measured : no card of the last condition's width, nor of none
+  linkCardWidth.value = 0;
   if (!l) return;
   await nextTick();
   linkCardWidth.value = Math.ceil(linkMeasure.value?.getComputedTextLength?.() || 0) + LINK_CARD_PAD;
@@ -294,7 +296,7 @@ watch(hoveredLink, async (l) => {
 // the card above the diamond (under it when there is no room above), inside the graph
 const linkCard = computed(() => {
   const l = hoveredLink.value;
-  if (!l) return null;
+  if (!l || !linkCardWidth.value) return null;
   const w = linkCardWidth.value;
   const x = Math.max(MARGIN, Math.min(l.mx - w / 2, graph.value.width - MARGIN - w));
   const above = l.my - 10 - LINK_CARD_H;
@@ -520,7 +522,10 @@ const graph = computed(() => {
                 :style="{ stroke: edgeColors[l.trigger] }"
                 @mouseenter="hoveredLink = l"
                 @mouseleave="hoveredLink = null"
-              />
+              >
+                <!-- the same, where there is no pointer (touch, a screen reader) -->
+                <title>{{ linkText(l) }}</title>
+              </rect>
               <!-- start node -->
               <g>
                 <rect

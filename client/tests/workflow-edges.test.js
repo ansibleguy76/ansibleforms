@@ -65,4 +65,10 @@ describe('conditionText', () => {
     expect(conditionText({ key: 'env', operator: 'ne', value: '"prod"' })).toBe('env ≠ "prod"');
     expect(conditionText(null)).toBe('');
   });
+
+  it('shows an empty value as "", and cuts a long one', () => {
+    expect(conditionText({ key: 'note', operator: 'eq', value: '' })).toBe('note = ""');
+    const long = conditionText({ key: 'doc', operator: 'eq', value: 'x'.repeat(100) });
+    expect(long).toBe('doc = ' + 'x'.repeat(39) + '…');
+  });
 });

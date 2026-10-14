@@ -36,8 +36,12 @@ export function workflowEdges(nodes) {
   return edges;
 }
 
+// a value longer than this is cut on the graph (an artifact can hold a whole JSON document)
+const MAX_VALUE = 40;
+
 /**
- * A conditional link's condition, as it reads on the graph : deploy = true, env ≠ "prod".
+ * A conditional link's condition, as it reads on the graph : deploy = true, env ≠ "prod" ; an
+ * empty value reads "". (Ascender never takes a link whose artifact is missing, ≠ included.)
  *
  * Args:
  *   condition (object): { key, operator, value }, or null.
@@ -47,5 +51,7 @@ export function workflowEdges(nodes) {
  */
 export function conditionText(condition) {
   if (!condition) return '';
-  return `${condition.key} ${condition.operator === 'ne' ? '≠' : '='} ${condition.value}`;
+  const value = String(condition.value ?? '');
+  const shown = value === '' ? '""' : value.length > MAX_VALUE ? value.slice(0, MAX_VALUE - 1) + '…' : value;
+  return `${condition.key} ${condition.operator === 'ne' ? '≠' : '='} ${shown}`;
 }

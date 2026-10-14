@@ -130,7 +130,7 @@ function workflowNodes(page) {
       related: { job: "/api/v2/jobs/101/" },
       summary_fields: { job: s[1], unified_job_template: { name: "node one", unified_job_type: "job" } },
       success_nodes: [2],
-      failure_nodes: [3],
+      failure_nodes: [],
       always_nodes: [],
       // Ascender : a link taken when the parent fails and its artifact deploy is not true
       condition_nodes: [3],
