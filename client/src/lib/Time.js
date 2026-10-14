@@ -193,7 +193,7 @@ const Time = {
     const d = dayjs(value);
     if (!d.isValid()) return null;
     const w = d.tz(zone);
-    return new Date(w.year(), w.month(), w.date(), w.hour(), w.minute(), w.second());
+    return new Date(w.year(), w.month(), w.date(), w.hour(), w.minute(), w.second(), w.millisecond());
   },
   /**
    * The moment a wall clock stands for in a zone : the reverse of toWallClock.
@@ -211,7 +211,41 @@ const Time = {
     const text =
       `${wall.getFullYear()}-${p(wall.getMonth() + 1)}-${p(wall.getDate())}` +
       `T${p(wall.getHours())}:${p(wall.getMinutes())}:${p(wall.getSeconds())}`;
-    return dayjs.tz(text, zone).toISOString();
+    return dayjs.tz(text, zone).add(wall.getMilliseconds(), 'ms').toISOString();
+  },
+  /**
+   * A moment on the clock of a zone, as the date and time picker writes it (2026-10-15 11:00).
+   *
+   * Args:
+   *   value (string|Date|number): the moment.
+   *   zone (string): an IANA zone name.
+   *
+   * Returns:
+   *   string: the wall clock, or '' when the value is not a date.
+   */
+  wallText(value, zone) {
+    if (value === null || value === undefined || value === '') return '';
+    const d = dayjs(value);
+    return d.isValid() ? d.tz(zone).format('YYYY-MM-DD HH:mm') : '';
+  },
+  /**
+   * The moment a wall clock picked on a zone stands for, keeping the current one when the wall
+   * clock is still its own. A wall clock does not always say which moment it was : the hour the
+   * clocks go back comes twice (02:30 CET or CEST), and a wall clock in the browser's spring
+   * gap moves an hour on in a local Date. Read back, either would shift a moment nobody touched.
+   *
+   * Args:
+   *   wall (Date): the wall clock, in the Date's local fields.
+   *   zone (string): an IANA zone name.
+   *   current (string): the moment held now, a UTC ISO string, or nothing.
+   *
+   * Returns:
+   *   string: the moment as a UTC ISO string, or '' when the wall clock is not a date.
+   */
+  momentOf(wall, zone, current) {
+    if (!(wall instanceof Date) || isNaN(wall.getTime())) return '';
+    if (current && Time.toWallClock(current, zone)?.getTime() === wall.getTime()) return current;
+    return Time.fromWallClock(wall, zone);
   },
   /**
    * A server timestamp in the user's zone, with the zone's short name after a time.
