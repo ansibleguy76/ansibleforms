@@ -295,6 +295,11 @@ export function createHandlers({ user, deps, policy = {} }) {
   async function overStored(form, values, storedJob) {
     if (!storedJob) return { values: values || {}, warnings: [] };
     const row = await visibleStored({ id: storedJob.id, form, name: storedJob.name });
+    // a start from your own only : a settings user reads and deletes everyone's, but launches
+    // nobody else's values
+    if (row.username !== me) {
+      throw new ToolError(`Stored job ${row.id} is ${row.username}'s ; you can only start from your own`, 'access_denied');
+    }
     if (row.form_name !== form) {
       throw new ToolError(`Stored job ${row.id} holds values of form '${row.form_name}', not of '${form}'`, 'invalid_request');
     }
@@ -385,6 +390,12 @@ export function createHandlers({ user, deps, policy = {} }) {
   async function readyToLaunch({ form, values: given, storedJob, verbose, expectedPayloadHash }) {
     const { formConfig, formObj } = await loadForm(form);
     const { values, warnings: storedWarnings } = await overStored(form, given, storedJob);
+    // a stored job can change between what was shown and the launch : the confirmed payload is
+    // the one launched, or none
+    if (storedJob && !expectedPayloadHash) {
+      throw new ToolError('Launching or planning from a stored job needs the expectedPayloadHash resolve_field returned for it, '
+        + 'so what runs is what was confirmed', 'invalid_request');
+    }
     if (formObj.type === 'subform') {
       throw new ToolError(`'${formObj.name}' is a subform and cannot be launched on its own`, 'unsupported');
     }
@@ -470,7 +481,10 @@ export function createHandlers({ user, deps, policy = {} }) {
 
     async resolveField(args) {
       // a stored job's values, for the whole form (not a subform's row)
-      const fromStored = args.subform ? { values: args.values, warnings: [] } : await overStored(args.form, args.values, args.storedJob);
+      if (args.subform && args.storedJob) {
+        throw new ToolError('A stored job holds the values of a whole form : resolve it without `subform`', 'invalid_request');
+      }
+      const fromStored = await overStored(args.form, args.values, args.storedJob);
       const { res, formObj } = await resolveFor({ ...args, values: fromStored.values });
       const out = publicResolution(res);
       if (fromStored.warnings.length) out.warnings = [...(out.warnings || []), ...fromStored.warnings];
@@ -582,19 +596,30 @@ export function createHandlers({ user, deps, policy = {} }) {
       if (!mayStore) throw new ToolError('You do not have permission to use stored jobs (the allowStoredJobs role option)', 'access_denied');
       const names = await offeredFormNames();
       const rows = (await StoredJobs.findAll()) || [];
+      // what can be started from : a stored job of a form this user may launch (one stored from a
+      // subform's tab holds a subform's values)
+      const launchable = new Set(((await Form.load(roles))?.forms || []).filter((f) => offered(f) && f.type !== 'subform').map((f) => f.name));
       const storedJobs = rows
         .filter((r) => seesAllStored || r.username === me)
         .filter((r) => !names || names.has(r.form_name))
         .filter((r) => !form || r.form_name === form)
-        .map(storedSummary);
+        .map((r) => ({ ...storedSummary(r), usable: launchable.has(r.form_name) && r.username === me }));
       return { storedJobs, scope: seesAllStored ? 'all' : 'mine' };
     },
 
     async getStoredJob({ id, form, name }) {
       const row = await visibleStored({ id, form, name });
-      // secret-looking values masked as a job's are (the form's password fields were never stored)
-      const values = parseJson(await Job.maskExtravars(row.form_name, JSON.stringify(storedValues(row))), {});
-      return { ...storedSummary(row), values };
+      // the form's password fields left out, in list rows too (the browser kept those in its rows),
+      // then secret-looking values masked as a job's are. A row of a form that cannot be loaded
+      // (one stored from a subform) keeps no list or object value : it could hold any secret.
+      let values = storedValues(row);
+      try {
+        const { formObj } = await loadForm(row.form_name);
+        values = filterRawFormData(normalizeFields(formObj.fields), values, formObj.subforms || []);
+      } catch {
+        values = Object.fromEntries(Object.entries(values).filter(([, v]) => v === null || typeof v !== 'object'));
+      }
+      return { ...storedSummary(row), values: parseJson(await Job.maskExtravars(row.form_name, JSON.stringify(values)), {}) };
     },
 
     async storeJob({ form, name, values, description, expires_at: expiresAt }) {
@@ -606,9 +631,12 @@ export function createHandlers({ user, deps, policy = {} }) {
         throw new ToolError(`'${formObj.name}' is a wizard form ; its values cannot be stored through MCP yet`, 'unsupported');
       }
       const fields = normalizeFields(formObj.fields);
-      // as the Store dialog keeps them : no password (in a list row neither), nothing the form
-      // does not have
-      const kept = filterRawFormData(fields, values || {}, formObj.subforms || []);
+      // the values as the form reads them (a choice as its whole option record, so Load in the
+      // browser finds it) ; then kept as the Store dialog keeps them : no password (in a list row
+      // neither), nothing the form does not have, only what was given
+      const { res } = await resolveFor({ form: formObj.name, values: values || {} });
+      const given = Object.fromEntries(Object.keys(values || {}).filter((k) => k in res._values).map((k) => [k, res._values[k]]));
+      const kept = filterRawFormData(res._fields || fields, given, formObj.subforms || []);
       const types = Object.fromEntries(fields.map((f) => [f.name, f.type]));
       const leftOut = Object.keys(values || {}).filter((k) => !(k in kept));
       const passwords = leftOut.filter((k) => types[k] === 'password');
@@ -701,7 +729,8 @@ const valuesSchema = z.record(z.string(), z.any())
 const storedJobSchema = z.object({
   id: z.number().int().positive().optional().describe('Stored job id, from list_stored_jobs'),
   name: z.string().optional().describe('Or its name : one of your own stored jobs of this form'),
-}).optional().describe('Start from the values of a stored job ; `values` are laid over them. Password fields were never stored : supply them in `values`.');
+}).optional().describe('Start from the values of one of your own stored jobs ; `values` are laid over them. Password fields '
+  + 'are not stored : supply them in `values`. launch_job and plan_job then need the expectedPayloadHash resolve_field returned.');
 
 /**
  * Wrap a handler : the result as JSON text and as structured content, a refusal as a tool
@@ -898,14 +927,15 @@ export function registerTools(server, handlers, policy = {}, user = {}) {
       title: 'List stored jobs',
       description: 'The stored jobs you may see (values saved under a name with Store on a form) : your own, or '
         + 'everyone\'s for a settings user. Name, description, form, created and expiry ; not the values - '
-        + 'get_stored_job has them. Pass one as `storedJob` to resolve_field, launch_job or plan_job to start from it.',
+        + 'get_stored_job has them. One marked `usable` (your own, of a form you may launch) can be passed as '
+        + '`storedJob` to resolve_field, launch_job or plan_job to start from it.',
       inputSchema: { form: z.string().optional().describe('Only the stored jobs of this form') },
       annotations: { readOnlyHint: true },
     }, wrap((a) => handlers.listStoredJobs(a)));
 
     server.registerTool('get_stored_job', {
       title: 'Get stored job',
-      description: 'One stored job with its values (secret-looking ones masked ; password fields are never stored). '
+      description: 'One stored job with its values (the form\'s password fields left out, secret-looking values masked). '
         + 'Name it by `id`, or by `form` and `name` among your own.',
       inputSchema: {
         id: z.number().int().positive().optional().describe('Stored job id'),

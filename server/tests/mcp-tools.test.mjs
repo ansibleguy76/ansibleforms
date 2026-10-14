@@ -605,7 +605,8 @@ describe("MCP stored jobs", () => {
     expect(mine.data.storedJobs[0].form_data).toBeUndefined();
     expect((await call(await connect(settings), "list_stored_jobs")).data.storedJobs.map((x) => x.id)).toEqual([1, 2, 3]);
     const client = await connect(storer);
-    expect((await call(client, "get_stored_job", { id: 1 })).data.values).toEqual({ cluster: "c1", name: "v1", gone: "old" });
+    // a value for a field the form no longer has is not shown either
+    expect((await call(client, "get_stored_job", { id: 1 })).data.values).toEqual({ cluster: "c1", name: "v1" });
     expect((await call(client, "get_stored_job", { form: "Create volume", name: "monthly" })).data.id).toBe(1);
     for (const args of [{ id: 2 }, { id: 3 }, { id: 99 }, { form: "Create volume", name: "eve's" }]) {
       expect((await client.callTool({ name: "get_stored_job", arguments: args })).structuredContent.code).toBe("not_found");
@@ -643,9 +644,9 @@ describe("MCP stored jobs", () => {
 
   test("a stored job of another user, or of another form, is not a start", async () => {
     const h = createHandlers({ user: storer, deps });
-    await expect(h.launchJob({ form: "Create volume", storedJob: { id: 2 } })).rejects.toMatchObject({ code: "not_found" });
+    await expect(h.launchJob({ form: "Create volume", storedJob: { id: 2 }, expectedPayloadHash: "x" })).rejects.toMatchObject({ code: "not_found" });
     rows.set(4, { id: 4, name: "other form", form_name: "Other", username: "local/bob", form_data: "{}" });
-    await expect(h.launchJob({ form: "Create volume", storedJob: { id: 4 } })).rejects.toMatchObject({ code: "invalid_request" });
+    await expect(h.launchJob({ form: "Create volume", storedJob: { id: 4 }, expectedPayloadHash: "x" })).rejects.toMatchObject({ code: "invalid_request" });
     expect(deps.Job.launch).not.toHaveBeenCalled();
   });
 
@@ -662,5 +663,53 @@ describe("MCP stored jobs", () => {
   test("chat forms only : the stored jobs of a form MCP does not offer are left out", async () => {
     expect((await call(await connect(storer, { chatFormsOnly: true }), "list_stored_jobs")).data.storedJobs).toEqual([]);
     await expect(createHandlers({ user: storer, deps, policy: { chatFormsOnly: true } }).getStoredJob({ id: 1 })).rejects.toMatchObject({ code: "not_found" });
+  });
+
+  test("launch or plan from a stored job needs the confirmed hash ; without it nothing runs", async () => {
+    const h = createHandlers({ user: storer, deps });
+    await expect(h.launchJob({ form: "Create volume", storedJob: { id: 1 } })).rejects.toMatchObject({ code: "invalid_request" });
+    expect(deps.Job.launch).not.toHaveBeenCalled();
+  });
+
+  test("a settings user reads everyone's, but starts only from their own ; by name it is their own", async () => {
+    rows.set(5, { id: 5, name: "monthly", form_name: "Create volume", username: "local/admin", form_data: JSON.stringify({ cluster: "c2", name: "admins" }) });
+    const h = createHandlers({ user: settings, deps });
+    expect((await h.getStoredJob({ id: 1 })).values).toEqual({ cluster: "c1", name: "v1" });
+    await expect(h.resolveField({ form: "Create volume", storedJob: { id: 1 } })).rejects.toMatchObject({ code: "access_denied" });
+    // two users with a stored job of the same name : by name, the caller's
+    expect((await h.getStoredJob({ form: "Create volume", name: "monthly" })).id).toBe(5);
+    const list = await h.listStoredJobs({});
+    expect(list.storedJobs.find((x) => x.id === 1).usable).toBe(false);
+    expect(list.storedJobs.find((x) => x.id === 5).usable).toBe(true);
+  });
+
+  test("get_stored_job leaves out the password fields of list rows the browser kept", async () => {
+    deps.Form.load.mockImplementation(async (roles, name) => {
+      if (!name) return { forms: [{ name: "Accounts" }] };
+      return {
+        constants: {},
+        forms: [{
+          name: "Accounts", type: "ansible", roles: ["default"],
+          fields: [{ name: "accounts", type: "list", subform: "account", model: "cfg.accounts" }],
+          subforms: [{ name: "account", fields: [{ name: "user", type: "text" }, { name: "pin", type: "password", model: "auth.pin" }] }],
+        }],
+        errors: [], warnings: [],
+      };
+    });
+    rows.set(6, { id: 6, name: "accts", form_name: "Accounts", username: "local/bob", form_data: JSON.stringify({ accounts: [{ user: "u1", pin: "1234", __output__: { user: "u1", auth: { pin: "1234" } } }] }) });
+    const got = await createHandlers({ user: storer, deps }).getStoredJob({ id: 6 });
+    expect(JSON.stringify(got.values)).not.toContain("1234");
+    expect(got.values.accounts[0].user).toBe("u1");
+  });
+
+  test("store_job stores a choice as its whole option, as the browser's Load expects it", async () => {
+    await call(await connect(storer), "store_job", { form: "Create volume", name: "choice", values: { cluster: "c1", name: "v1" } });
+    const data = JSON.parse(deps.StoredJobs.create.mock.calls[0][0].form_data);
+    expect(data.name).toBe("v1");
+    expect(Object.keys(data).sort()).toEqual(["cluster", "name"]);
+  });
+
+  test("a stored job with a subform is refused, not ignored", async () => {
+    await expect(createHandlers({ user: storer, deps }).resolveField({ form: "Create volume", subform: "x", storedJob: { id: 1 } })).rejects.toMatchObject({ code: "invalid_request" });
   });
 });
