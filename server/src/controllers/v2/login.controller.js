@@ -21,6 +21,7 @@ import { loginBlocked, loginFailed, loginSucceeded } from "../../lib/loginThrott
 import { newSessionId, revokeSession, consumeOnce } from "../../lib/tokenRevocation.js";
 import { admitSignIn } from "../../lib/signInGate.js";
 import { tokenUser, forgetGroups } from "../../lib/userGroups.js";
+import ApiToken from "../../models/apiToken.model.js";
 
 // Login is audited here rather than by the blanket middleware, which deliberately
 // skips /auth : on a failed attempt there is no req.user, so that layer could only
@@ -94,7 +95,19 @@ async function admitUser(req, res, user, extra = {}) {
   return false;
 }
 
-async function userToJwt(user,expiryDays){
+/**
+ * The tokens of a sign-in, or an api token (expiryDays, for a role with extendedTokenExpiration).
+ *
+ * Args:
+ *   user (object): the user signed in.
+ *   expiryDays (number): an api token's lifetime in days ; none for a session.
+ *   options (object): { name, authTime } - an api token's name, and when its user signed in
+ *     (unix seconds ; else now : this sign-in).
+ *
+ * Returns:
+ *   Promise<object>: { token, refreshtoken } ; an api token's expiry too (expires_at).
+ */
+export async function userToJwt(user,expiryDays,{ name, authTime } = {}){
 
   // is something like
   // {"username":"administrator","type":"local","roles":["default","admin"]}
@@ -128,8 +141,24 @@ async function userToJwt(user,expiryDays){
   // we create 2 jwt tokens (accesstoken and refresh token)
   // the session : both tokens and every refresh of them carry it, so a logout ends them all
   const sid = newSessionId()
-  const token = jwt.sign(api ? {user:claims,access:true,sid,api:true} : {user:claims,access:true,sid}, authConfig.secret,{ expiresIn: tokenExpiresIn, issuer: authConfig.jwtIssuer});
-  const refreshtoken = jwt.sign({user:claims,refresh:true,sid}, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration, issuer: authConfig.jwtIssuer});
+  // when its user signed in (unix seconds), kept through the refreshes : an api token is made
+  // from a session only shortly after a sign-in (apiToken.controller.js)
+  const auth_time = Number(authTime) || Math.floor(Date.now() / 1000)
+  const token = jwt.sign(api ? {user:claims,access:true,sid,api:true,auth_time} : {user:claims,access:true,sid,auth_time}, authConfig.secret,{ expiresIn: tokenExpiresIn, issuer: authConfig.jwtIssuer});
+  const refreshtoken = jwt.sign({user:claims,refresh:true,sid,auth_time}, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration, issuer: authConfig.jwtIssuer});
+  // an api token is listed on its user's profile and page, to be revoked there
+  let expires_at
+  if (api) {
+    const { iat, exp } = jwt.decode(token)
+    expires_at = new Date(exp * 1000)
+    // a failure is logged : the token works, it is only missing from the list (a password change
+    // or a block still ends it)
+    try {
+      await ApiToken.record({ sid, username: user.username, type: user.type || 'local', name, createdAt: new Date(iat * 1000), expiresAt: expires_at })
+    } catch (err) {
+      logger.error(`Failed to record the api token of ${user.username} : ${err}`)
+    }
+  }
   logger.debug(JSON.stringify(claims))
   // we store the tokens in the database, to later verify a refresh token action
   logger.info("Storing refreshtoken in database for user " + user.username)
@@ -141,10 +170,7 @@ async function userToJwt(user,expiryDays){
   } catch (err) {
     logger.error(`Failed to store token for ${user.username} : ${err}`)
   }
-  return {
-    token: token,
-    refreshtoken: refreshtoken
-  }
+  return api ? { token, refreshtoken, expires_at } : { token, refreshtoken }
 }
 // get login settings
 const settings = async function(req, res) {
@@ -246,7 +272,7 @@ const basic = async function(req, res,next) {
               auditLogin(req, 'success', user.type, null, user.username);
               await loginSucceeded(attemptedUsername(req));
               // send the tokens to the requester
-              return res.json(await userToJwt(user,req.query.expiryDays));
+              return res.json(await userToJwt(user,req.query.expiryDays,{ name: typeof req.query.name === "string" ? req.query.name.trim() : "" }));
             }
           );
         } catch (error) {
@@ -306,7 +332,7 @@ const basic_ldap = async function(req, res,next) {
             auditLogin(req, 'success', user.type, null, user.username);
             await loginSucceeded(attemptedUsername(req));
             // send the tokens to the requester
-            return res.json(await userToJwt(user,req.query.expiryDays));
+            return res.json(await userToJwt(user,req.query.expiryDays,{ name: typeof req.query.name === "string" ? req.query.name.trim() : "" }));
           }
         );
       } catch (error) {

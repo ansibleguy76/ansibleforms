@@ -22,6 +22,13 @@ export default {
     refreshTokenExpired: "Refresh token is verlopen",
     refreshTokenUnknown: "Refresh token is onbekend",
     refreshTokenReplaced: "Refresh token is al gebruikt door een gelijktijdige vernieuwing",
+    apiTokenFromApiToken: "Een API-token kan geen ander API-token maken",
+    apiTokenNotAllowed: "Je rol staat geen API-tokens toe",
+    apiTokenSignInAgain: "Meld je opnieuw aan om een API-token te maken : je laatste aanmelding is te lang geleden",
+    apiTokenLifetime: "De looptijd moet een aantal dagen zijn, hoogstens {max}",
+    apiTokenFailed: "Het API-token kon niet worden gemaakt",
+    apiTokensFailed: "De API-tokens konden niet worden gelezen of gewijzigd",
+    apiTokenNotFound: "Dit API-token bestaat niet",
     requiredFields: "Vul alle verplichte velden in",
     noVerbosePermission:
       "U heeft geen toestemming om de verbose modus te gebruiken",

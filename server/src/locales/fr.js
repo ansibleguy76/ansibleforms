@@ -24,6 +24,13 @@ export default {
     refreshTokenExpired: "Le jeton de rafraichissement a expire",
     refreshTokenUnknown: "Jeton de rafraichissement inconnu",
     refreshTokenReplaced: "Jeton de rafraichissement déjà utilisé par un rafraichissement simultané",
+    apiTokenFromApiToken: "Un jeton d'API ne peut pas créer un autre jeton d'API",
+    apiTokenNotAllowed: "Votre rôle n'autorise pas les jetons d'API",
+    apiTokenSignInAgain: "Reconnectez-vous pour créer un jeton d'API : votre dernière connexion est trop ancienne",
+    apiTokenLifetime: "La durée doit être un nombre de jours, au plus {max}",
+    apiTokenFailed: "Impossible de créer le jeton d'API",
+    apiTokensFailed: "Impossible de lire ou de modifier les jetons d'API",
+    apiTokenNotFound: "Ce jeton d'API n'existe pas",
     requiredFields: "Veuillez fournir tous les champs obligatoires",
     noVerbosePermission:
       "Vous n'avez pas la permission d'utiliser le mode verbeux",

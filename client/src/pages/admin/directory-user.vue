@@ -141,6 +141,8 @@ const tabs = computed(() => [
   },
   { key: 'schedules', label: t('settings.schedules.labelPlural'), icon: 'clock', count: schedules.value.length },
   { key: 'activity', label: t('settings.linked.activity'), icon: 'clipboard-list', count: activity.value.length },
+  // its api tokens, each to revoke (#1068)
+  { key: 'tokens', label: t('apiTokens.tab'), icon: 'code' },
 ]);
 const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
@@ -420,6 +422,7 @@ onMounted(async () => {
           :rows="activity"
           :empty="t('settings.linked.noActivity')"
         />
+        <AppApiTokens v-else-if="user && activeTab === 'tokens'" :url="`${apiPath}/tokens`" />
       </template>
       <template v-if="user" #actions>
         <BsButton icon="right-from-bracket" :disabled="!user.seen" @click="endSessions()">{{
