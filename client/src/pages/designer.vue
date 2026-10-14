@@ -44,6 +44,7 @@ import {
   categoryPaths,
 } from '@/config/categories';
 import { formPath } from '@/lib/formsPath';
+import { EVERYONE_ROLES } from '@/composables/useRoleSupport';
 
 dayjs.extend(relativeTime);
 
@@ -1741,10 +1742,12 @@ const visualOtherForms = computed(() =>
     .filter((f) => f && f.type !== 'subform' && f.name && f.name !== currentFormName.value)
     .map((f) => ({ name: String(f.name), order: typeof f.order === 'number' ? f.order : undefined })),
 );
+// the roles a form or its approval may list : not default, every user's role holds no one to
+// give a form to (a form listing it already keeps it)
 const visualRoleOptions = computed(() =>
   (Array.isArray(rolesObj.value) ? rolesObj.value : [])
     .map((r) => (r && typeof r === 'object' ? String(r.name ?? '').trim() : ''))
-    .filter(Boolean),
+    .filter((name) => name && !EVERYONE_ROLES.includes(name)),
 );
 
 function editorDiff() {
@@ -1790,7 +1793,8 @@ const formTemplate = {
   type: 'ansible',
   playbook: 'dummy.yaml',
   description: '',
-  roles: ['default'],
+  // admins only until it is given a role : default is no role to give a form to
+  roles: [],
   categories: [],
   tileClass: 'has-background-info-light',
   fields: [
