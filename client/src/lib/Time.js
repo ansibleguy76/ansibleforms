@@ -179,6 +179,41 @@ const Time = {
     return name;
   },
   /**
+   * A moment as the wall clock of a zone, held in a local Date : the date picker works on the
+   * browser's local Date, so 09:00 UTC picked on the UTC clock is a Date whose local hours are 9.
+   *
+   * Args:
+   *   value (string|Date|number): the moment, an ISO string with its zone, a Date or epoch ms.
+   *   zone (string): an IANA zone name.
+   *
+   * Returns:
+   *   Date|null: the wall clock, or null when the value is not a date.
+   */
+  toWallClock(value, zone) {
+    const d = dayjs(value);
+    if (!d.isValid()) return null;
+    const w = d.tz(zone);
+    return new Date(w.year(), w.month(), w.date(), w.hour(), w.minute(), w.second());
+  },
+  /**
+   * The moment a wall clock stands for in a zone : the reverse of toWallClock.
+   *
+   * Args:
+   *   wall (Date): the wall clock, in the Date's local fields.
+   *   zone (string): an IANA zone name.
+   *
+   * Returns:
+   *   string: the moment as a UTC ISO string, or '' when the wall clock is not a date.
+   */
+  fromWallClock(wall, zone) {
+    if (!(wall instanceof Date) || isNaN(wall.getTime())) return '';
+    const p = (n) => String(n).padStart(2, '0');
+    const text =
+      `${wall.getFullYear()}-${p(wall.getMonth() + 1)}-${p(wall.getDate())}` +
+      `T${p(wall.getHours())}:${p(wall.getMinutes())}:${p(wall.getSeconds())}`;
+    return dayjs.tz(text, zone).toISOString();
+  },
+  /**
    * A server timestamp in the user's zone, with the zone's short name after a time.
    *
    * Args:

@@ -804,6 +804,9 @@ export default {
     },
     common: {
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
+      zoneBrowser: 'ブラウザのタイムゾーン ({zone})',
+      zoneApp: 'アプリのタイムゾーン ({zone})',
+      zonePick: '日時のタイムゾーン',
       datePlaceholders: {
         date: 'YYYY-MM-DD',
         datetime: 'YYYY-MM-DD HH:mm',

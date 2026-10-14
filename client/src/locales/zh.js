@@ -794,6 +794,9 @@ export default {
     },
     common: {
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
+      zoneBrowser: '浏览器的时区 ({zone})',
+      zoneApp: '应用的时区 ({zone})',
+      zonePick: '日期和时间的时区',
       datePlaceholders: {
         date: 'YYYY-MM-DD',
         datetime: 'YYYY-MM-DD HH:mm',
