@@ -256,7 +256,11 @@ const crudConfigs = {
       { name: 'queue_id' },
       // who planned it, as a JSON user object : set ONLY by Schedule.plan, never from a
       // request body (the controller drops it). Empty = an admin-level schedule.
-      { name: 'owner' }
+      { name: 'owner' },
+      // a planned run's raw field values (Schedule.plan), for the launch validation when it
+      // fires. Missing here, it was dropped on insert and never read back, and a planned run
+      // of a form under 'enforce' failed with "no rawFormData was sent" (#1063)
+      { name: 'raw_form_data' }
     ],
     allowCache: true,
     cacheTTL: 3600

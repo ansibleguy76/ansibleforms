@@ -25,12 +25,16 @@ const scheduleController = {
   async create(req, res) {
     try {
       const user = req?.user?.user || {};
-      // Without allowScheduledJobs the route guard let this through on allowPlannedJobs :
-      // that is "Run later" on a form, a one-time run of a form the user may run, as them.
-      // Decided again here on the option itself rather than trusted from the guard.
-      const insertId = user.options?.allowScheduledJobs
-        ? await Schedule.create(req.body)
-        : await Schedule.plan(user, req.body);
+      // "Run later" on a form (planned) is a one-time run of a form the user may run, as them,
+      // with the values they entered : planned for everyone. An admin's used to go through
+      // create(), lose its owner and its form values and run as the Schedule Service (#1063).
+      // Without allowScheduledJobs the route guard let this through on allowPlannedJobs, so
+      // anything else is planned too ; decided here on the option itself rather than trusted
+      // from the guard.
+      const { planned, ...body } = req.body || {};
+      const insertId = user.options?.allowScheduledJobs && !planned
+        ? await Schedule.create(body)
+        : await Schedule.plan(user, body);
       // Fetch the created record to get all fields for cron service
       const created = await Schedule.findById(insertId);
       // Add to cron service

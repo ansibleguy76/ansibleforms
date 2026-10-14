@@ -1433,6 +1433,11 @@ function assertRelaunchable(job, formObj, user) {
   }
 }
 
+/** Launched by an admin-level schedule, as the Schedule Service : no form values of its own. */
+function launchedBySchedule(job) {
+  return job?.user_type === 'schedule' && !job?.raw_form_data;
+}
+
 /** An error the MCP server passes on with its own code (tools.js wrap) and the details. */
 function codedError(ErrorClass, message, code, details = {}) {
   const err = new ErrorClass(message);
@@ -1474,8 +1479,10 @@ Job.relaunchWithValues = async function ({ user, id, values = {}, verbose = fals
 
   // no changes, and the form is not enforced : a replay of the job as it ran - its stored
   // extravars, on the server, as a relaunch always was (passwords included, they never leave
-  // the server ; the preview masks them)
-  if (!changed && launchValidationMode(formObj) !== 'enforce') {
+  // the server ; the preview masks them). The same for a job an admin-level schedule launched,
+  // even under 'enforce' : its extravars are the schedule's own, set in the settings and built
+  // on the server, never a client's, and it has no form values to validate (#1063)
+  if (!changed && (launchValidationMode(formObj) !== 'enforce' || launchedBySchedule(job))) {
     const storedExtravars = safeParse(job.extravars, {}, `job.extravars id=${id}`) || {};
     delete storedExtravars.__verbose__;
     const credentials = safeParse(job.credentials, {}, `job.credentials id=${id}`) || {};
@@ -1502,7 +1509,10 @@ Job.relaunchWithValues = async function ({ user, id, values = {}, verbose = fals
     throw codedError(Errors.BadRequestError, `'${job.form}' is a wizard form ; ${changed ? 'it cannot be relaunched with changes' : 'this job did not store its step drafts, so it cannot be checked under launch validation \'enforce\''}`, 'unsupported');
   }
   if (!stored) {
-    throw new Errors.NotFoundError(`No saved form data found for job ${id}, so it cannot be relaunched with changes. This job may have been created before the relaunch feature was enabled.`);
+    const why = launchedBySchedule(job)
+      ? 'it was launched by a schedule, which runs with its own extra vars and no form values'
+      : 'it was launched before form values were stored with a job';
+    throw codedError(Errors.BadRequestError, `Job ${id} cannot be relaunched with changes : ${why}. Relaunch it without changes instead.`, 'no_form_data');
   }
   if (stored.__form__ && stored.__form__ !== job.form) {
     throw new Errors.BadRequestError(`Cannot relaunch: saved data is from form '${stored.__form__}', not '${job.form}'.`);

@@ -112,9 +112,11 @@ describe("Job.relaunchWithValues", () => {
     await expect(Job.relaunchWithValues({ user, id: 42, verbose: true })).rejects.toMatchObject({ name: "AccessDeniedError" });
   });
 
-  test("a job without stored form data cannot be relaunched with changes", async () => {
+  test("a job without stored form data cannot be relaunched with changes, and says why", async () => {
     Job.findById = vi.fn(async () => ({ ...storedJob(), raw_form_data: null }));
-    await expect(Job.relaunchWithValues({ user, id: 42, values: { size: 20 } })).rejects.toMatchObject({ name: "NotFoundError" });
+    const err = await Job.relaunchWithValues({ user, id: 42, values: { size: 20 } }).catch((e) => e);
+    expect(err).toMatchObject({ name: "BadRequestError", code: "no_form_data" });
+    expect(err.message).toContain("before form values were stored");
   });
 
   test("a running job is previewed but not relaunched", async () => {
@@ -185,5 +187,35 @@ describe("raw form data is stored without passwords", () => {
       subforms,
     );
     expect(out).toEqual({ users: [{ user: "a", keys: [{ id: 1 }], __output__: { user: "a", cred: {}, keys: [{ id: 1 }] } }] });
+  });
+});
+
+// a job an admin-level schedule launched, as the Schedule Service : its extravars are the
+// schedule's own, and it has no form values (#1063)
+describe("a job launched by a schedule", () => {
+  const admin = { username: "root", type: "local", roles: ["admin"], options: { allowJobRelaunch: true } };
+  const scheduleJob = () => ({ ...storedJob(), user: "Schedule Service", user_type: "schedule", raw_form_data: null });
+
+  test("is relaunched without changes as it ran, even under enforce", async () => {
+    Form.load.mockResolvedValue({ constants: {}, forms: [{ ...structuredClone(form), launchValidation: "enforce" }] });
+    Job.findById = vi.fn(async () => scheduleJob());
+    await Job.relaunch(admin, 42, false);
+    const arg = Job.launch.mock.calls[0][0];
+    expect(arg).toMatchObject({ replay: true, user: admin });
+    expect(arg.extravars.vm).toEqual({ name: "prod-1" });
+  });
+
+  test("cannot be relaunched with changes, and says it is the schedule's", async () => {
+    Job.findById = vi.fn(async () => scheduleJob());
+    const err = await Job.relaunchWithValues({ user: admin, id: 42, values: { size: 20 } }).catch((e) => e);
+    expect(err).toMatchObject({ code: "no_form_data" });
+    expect(err.message).toContain("launched by a schedule");
+  });
+
+  test("a user's job without form values under enforce is still refused, not replayed", async () => {
+    Form.load.mockResolvedValue({ constants: {}, forms: [{ ...structuredClone(form), launchValidation: "enforce" }] });
+    Job.findById = vi.fn(async () => ({ ...storedJob(), raw_form_data: null }));
+    await expect(Job.relaunch(user, 42, false)).rejects.toMatchObject({ code: "no_form_data" });
+    expect(Job.launch).not.toHaveBeenCalled();
   });
 });
