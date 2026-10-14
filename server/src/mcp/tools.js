@@ -70,13 +70,14 @@ function publicResolution(res) {
  * @param {object} args.user  req.user.user
  * @param {object} args.deps  { Form, Job, Expression, Query, resolveFormQuery } ; for the
  *   schedules also { Schedule, cron (the cron service : add and remove a schedule's task),
- *   appTimezone (async : the app's display zone, Settings > Appearance) }
+ *   appTimezone (async : the app's display zone, Settings > Appearance) } ; for the stored jobs
+ *   { StoredJobs : findAll, findById, create, delete on the stored_jobs table }
  * @param {object} [args.policy]  the MCP settings, from the MCP router only (the chat
  *   assistant has its own rules) : `readOnly` refuses launch_job and relaunch_job,
  *   `chatFormsOnly` offers only the forms offered in the chat (enableForChat)
  */
 export function createHandlers({ user, deps, policy = {} }) {
-  const { Form, Job, Expression, Query, resolveFormQuery, Schedule, cron, appTimezone } = deps;
+  const { Form, Job, Expression, Query, resolveFormQuery, Schedule, cron, appTimezone, StoredJobs } = deps;
   const roles = user?.roles || [];
 
   // a form MCP may offer : any the user may open, or with chatFormsOnly those offered in the
@@ -176,10 +177,10 @@ export function createHandlers({ user, deps, policy = {} }) {
    * A moment as a planned run takes it : an ISO 8601 time with its offset or Z, so the run never
    * depends on the zone of a server or a browser (#1064) ; not in the past.
    */
-  function momentOf(runAt) {
+  function momentOf(runAt, what = 'run_at') {
     const text = String(runAt ?? '').trim();
     if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})$/i.test(text)) {
-      throw new ToolError(`run_at must be an ISO 8601 time with its offset or Z, such as 2026-10-15T22:00:00+02:00 or `
+      throw new ToolError(`${what} must be an ISO 8601 time with its offset or Z, such as 2026-10-15T22:00:00+02:00 or `
         + `2026-10-15T20:00:00Z, not '${text}' : a time without a zone is ambiguous`, 'invalid_request');
     }
     const when = new Date(text);
@@ -189,10 +190,10 @@ export function createHandlers({ user, deps, policy = {} }) {
     const day = new Date(Date.UTC(y, mo - 1, d));
     if (Number.isNaN(when.getTime()) || h > 23 || mi > 59
       || day.getUTCFullYear() !== y || day.getUTCMonth() !== mo - 1 || day.getUTCDate() !== d) {
-      throw new ToolError(`run_at '${text}' is not a valid time`, 'invalid_request');
+      throw new ToolError(`${what} '${text}' is not a valid time`, 'invalid_request');
     }
     if (when.getTime() < Date.now() - 60 * 1000) {
-      throw new ToolError(`run_at '${text}' is in the past`, 'invalid_request', { now: new Date().toISOString() });
+      throw new ToolError(`${what} '${text}' is in the past`, 'invalid_request', { now: new Date().toISOString() });
     }
     return when;
   }
@@ -225,6 +226,93 @@ export function createHandlers({ user, deps, policy = {} }) {
       }
       throw err;
     }
+  }
+
+  // ─── stored jobs (#1070) : as the stored jobs routes scope them ───────────────────────────────
+  // allowStoredJobs : the user's own ; a settings user (showSettings) everyone's
+  const mayStore = !!user?.options?.allowStoredJobs;
+  const seesAllStored = !!user?.options?.showSettings;
+  // the owner of a stored job, as the routes write it
+  const me = `${user?.type || 'local'}/${user?.username}`;
+
+  /**
+   * A stored job this user may see : by its id, or by its form and name among their own ; else
+   * not found, as one that does not exist.
+   */
+  async function visibleStored({ id, form, name }) {
+    if (!mayStore) throw new ToolError('You do not have permission to use stored jobs (the allowStoredJobs role option)', 'access_denied');
+    const notFound = new ToolError(`Stored job ${id ?? `'${name}' of form '${form}'`} not found or you do not have access to it`, 'not_found');
+    let row;
+    if (id) {
+      try {
+        row = await StoredJobs.findById(id);
+      } catch (err) {
+        if (err?.name === 'NotFoundError') throw notFound;
+        throw err;
+      }
+    } else if (form && name) {
+      row = ((await StoredJobs.findAll()) || []).find((r) => r.form_name === form && r.name === name && r.username === me);
+    } else {
+      throw new ToolError('Name a stored job by its id, or by its form and name', 'invalid_request');
+    }
+    if (!row || (!seesAllStored && row.username !== me)) throw notFound;
+    const names = await offeredFormNames();
+    if (names && !names.has(row.form_name)) throw notFound;
+    return row;
+  }
+
+  /** A stored job as the list shows it : what and when, not its values. */
+  function storedSummary(row) {
+    const expires = row.expires_at ? new Date(row.expires_at) : null;
+    return {
+      id: row.id,
+      name: row.name,
+      description: row.description || '',
+      form: row.form_name,
+      ...(seesAllStored ? { owner: row.username } : {}),
+      createdAt: row.created_at ?? null,
+      expiresAt: expires ? expires.toISOString() : null,
+      expired: !!expires && expires.getTime() < Date.now(),
+    };
+  }
+
+  /** The values a stored job holds (the form's raw values, no passwords). */
+  function storedValues(row) {
+    const data = parseJson(row.form_data, null);
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      throw new ToolError(`The values of stored job ${row.id} cannot be read`, 'invalid_request');
+    }
+    return data;
+  }
+
+  /**
+   * The values to resolve or launch with : a stored job's (Load on the form), with the values
+   * given laid over them. A stored value for a field the form no longer has is left out and said.
+   *
+   * Returns:
+   *   Promise<object>: { values, warnings }.
+   */
+  async function overStored(form, values, storedJob) {
+    if (!storedJob) return { values: values || {}, warnings: [] };
+    const row = await visibleStored({ id: storedJob.id, form, name: storedJob.name });
+    // a start from your own only : a settings user reads and deletes everyone's, but launches
+    // nobody else's values
+    if (row.username !== me) {
+      throw new ToolError(`Stored job ${row.id} is ${row.username}'s ; you can only start from your own`, 'access_denied');
+    }
+    if (row.form_name !== form) {
+      throw new ToolError(`Stored job ${row.id} holds values of form '${row.form_name}', not of '${form}'`, 'invalid_request');
+    }
+    const data = storedValues(row);
+    if (data.__wizard__ === true) throw new ToolError('This stored job is of a wizard form ; wizard forms cannot be launched through MCP yet', 'unsupported');
+    const { formObj } = await loadForm(form);
+    const known = new Set(normalizeFields(formObj.fields).map((f) => f.name));
+    const stale = Object.keys(data).filter((k) => !known.has(k));
+    const kept = Object.fromEntries(Object.entries(data).filter(([k]) => known.has(k)));
+    const warnings = [];
+    if (stale.length) warnings.push(`Stored job '${row.name}' has values for fields the form no longer has, left out : ${stale.join(', ')}`);
+    if (storedSummary(row).expired) warnings.push(`Stored job '${row.name}' has expired`);
+    return { values: { ...kept, ...(values || {}) }, warnings };
   }
 
   /** The cron service runs it from now on (the schedule routes do the same). */
@@ -299,8 +387,15 @@ export function createHandlers({ user, deps, policy = {} }) {
    * Returns:
    *   Promise<object>: { formObj, extravars, credentials, payloadHash, rawFormData, warnings }.
    */
-  async function readyToLaunch({ form, values, verbose, expectedPayloadHash }) {
+  async function readyToLaunch({ form, values: given, storedJob, verbose, expectedPayloadHash }) {
     const { formConfig, formObj } = await loadForm(form);
+    const { values, warnings: storedWarnings } = await overStored(form, given, storedJob);
+    // a stored job can change between what was shown and the launch : the confirmed payload is
+    // the one launched, or none
+    if (storedJob && !expectedPayloadHash) {
+      throw new ToolError('Launching or planning from a stored job needs the expectedPayloadHash resolve_field returned for it, '
+        + 'so what runs is what was confirmed', 'invalid_request');
+    }
     if (formObj.type === 'subform') {
       throw new ToolError(`'${formObj.name}' is a subform and cannot be launched on its own`, 'unsupported');
     }
@@ -350,7 +445,7 @@ export function createHandlers({ user, deps, policy = {} }) {
         'payload_mismatch', { expectedPayloadHash, payloadHash });
     }
     if (verbose) extravars.__verbose__ = true;
-    return { formObj, extravars, credentials, payloadHash, rawFormData: filterRawFormData(res._fields, res._values), warnings: res.warnings };
+    return { formObj, extravars, credentials, payloadHash, rawFormData: filterRawFormData(res._fields, res._values), warnings: [...(res.warnings || []), ...storedWarnings] };
   }
 
   return {
@@ -385,8 +480,14 @@ export function createHandlers({ user, deps, policy = {} }) {
     },
 
     async resolveField(args) {
-      const { res, formObj } = await resolveFor(args);
+      // a stored job's values, for the whole form (not a subform's row)
+      if (args.subform && args.storedJob) {
+        throw new ToolError('A stored job holds the values of a whole form : resolve it without `subform`', 'invalid_request');
+      }
+      const fromStored = await overStored(args.form, args.values, args.storedJob);
+      const { res, formObj } = await resolveFor({ ...args, values: fromStored.values });
       const out = publicResolution(res);
+      if (fromStored.warnings.length) out.warnings = [...(out.warnings || []), ...fromStored.warnings];
       // the exact launch payload, only where it is one : a whole root form, resolved
       out.formFingerprint = sha256(formObj);
       if (res.complete && !args.subform && !args.field) {
@@ -400,9 +501,9 @@ export function createHandlers({ user, deps, policy = {} }) {
       return out;
     },
 
-    async launchJob({ form, values, verbose, expectedPayloadHash }) {
+    async launchJob({ form, values, storedJob, verbose, expectedPayloadHash }) {
       refuseWhenReadOnly();
-      const ready = await readyToLaunch({ form, values, verbose, expectedPayloadHash });
+      const ready = await readyToLaunch({ form, values, storedJob, verbose, expectedPayloadHash });
       const job = await Job.launch({
         form: ready.formObj.name,
         user,
@@ -416,12 +517,12 @@ export function createHandlers({ user, deps, policy = {} }) {
       return { id: job?.id, form: ready.formObj.name, payloadHash: ready.payloadHash, warnings: ready.warnings };
     },
 
-    async planJob({ form, values, run_at: runAt, name, verbose, expectedPayloadHash }) {
+    async planJob({ form, values, storedJob, run_at: runAt, name, verbose, expectedPayloadHash }) {
       refuseWhenReadOnly('jobs cannot be planned through it');
       if (!mayPlan) throw new ToolError('You do not have permission to plan jobs (the allowPlannedJobs role option)', 'access_denied');
       const when = momentOf(runAt);
       if (!String(name ?? '').trim()) throw new ToolError('A planned job needs a name', 'invalid_request');
-      const ready = await readyToLaunch({ form, values, verbose, expectedPayloadHash });
+      const ready = await readyToLaunch({ form, values, storedJob, verbose, expectedPayloadHash });
       // Run later on the form : a one-time run as this user, checked again when it fires
       const id = await stored(String(name).trim(), () => Schedule.plan(user, {
         name: String(name).trim(),
@@ -491,6 +592,91 @@ export function createHandlers({ user, deps, policy = {} }) {
       return { id: row.id, name: row.name, deleted: true };
     },
 
+    async listStoredJobs({ form } = {}) {
+      if (!mayStore) throw new ToolError('You do not have permission to use stored jobs (the allowStoredJobs role option)', 'access_denied');
+      const names = await offeredFormNames();
+      const rows = (await StoredJobs.findAll()) || [];
+      // what can be started from : a stored job of a form this user may launch (one stored from a
+      // subform's tab holds a subform's values)
+      const launchable = new Set(((await Form.load(roles))?.forms || []).filter((f) => offered(f) && f.type !== 'subform').map((f) => f.name));
+      const storedJobs = rows
+        .filter((r) => seesAllStored || r.username === me)
+        .filter((r) => !names || names.has(r.form_name))
+        .filter((r) => !form || r.form_name === form)
+        .map((r) => ({ ...storedSummary(r), usable: launchable.has(r.form_name) && r.username === me }));
+      return { storedJobs, scope: seesAllStored ? 'all' : 'mine' };
+    },
+
+    async getStoredJob({ id, form, name }) {
+      const row = await visibleStored({ id, form, name });
+      // the form's password fields left out, in list rows too (the browser kept those in its rows),
+      // then secret-looking values masked as a job's are. A row of a form that cannot be loaded
+      // (one stored from a subform) keeps no list or object value : it could hold any secret.
+      let values = storedValues(row);
+      try {
+        const { formObj } = await loadForm(row.form_name);
+        values = filterRawFormData(normalizeFields(formObj.fields), values, formObj.subforms || []);
+      } catch {
+        values = Object.fromEntries(Object.entries(values).filter(([, v]) => v === null || typeof v !== 'object'));
+      }
+      return { ...storedSummary(row), values: parseJson(await Job.maskExtravars(row.form_name, JSON.stringify(values)), {}) };
+    },
+
+    async storeJob({ form, name, values, description, expires_at: expiresAt }) {
+      refuseWhenReadOnly('jobs cannot be stored through it');
+      if (!mayStore) throw new ToolError('You do not have permission to use stored jobs (the allowStoredJobs role option)', 'access_denied');
+      if (!String(name ?? '').trim()) throw new ToolError('A stored job needs a name', 'invalid_request');
+      const { formObj } = await loadForm(form);
+      if (Array.isArray(formObj.wizard) && formObj.wizard.length > 0) {
+        throw new ToolError(`'${formObj.name}' is a wizard form ; its values cannot be stored through MCP yet`, 'unsupported');
+      }
+      const fields = normalizeFields(formObj.fields);
+      // the values as the form reads them (a choice as its whole option record, so Load in the
+      // browser finds it) ; then kept as the Store dialog keeps them : no password (in a list row
+      // neither), nothing the form does not have, only what was given
+      const { res } = await resolveFor({ form: formObj.name, values: values || {} });
+      const given = Object.fromEntries(Object.keys(values || {}).filter((k) => k in res._values).map((k) => [k, res._values[k]]));
+      const kept = filterRawFormData(res._fields || fields, given, formObj.subforms || []);
+      const types = Object.fromEntries(fields.map((f) => [f.name, f.type]));
+      const leftOut = Object.keys(values || {}).filter((k) => !(k in kept));
+      const passwords = leftOut.filter((k) => types[k] === 'password');
+      const unknown = leftOut.filter((k) => !(k in types));
+      const other = leftOut.filter((k) => !passwords.includes(k) && !unknown.includes(k));
+      const expires = expiresAt ? momentOf(expiresAt, 'expires_at') : null;
+      const storedName = String(name).trim();
+      let id;
+      try {
+        id = await StoredJobs.create({
+          name: storedName,
+          description: description ? String(description) : '',
+          form_name: formObj.name,
+          username: me,
+          form_data: JSON.stringify(kept),
+          expires_at: expires ? expires.toISOString() : null,
+        });
+      } catch (err) {
+        if (err?.code === 'ER_DUP_ENTRY' || /Duplicate entry/i.test(err?.message || '')) {
+          throw new ToolError(`You already have a stored job named '${storedName}' for form '${formObj.name}'`, 'conflict', { name: storedName });
+        }
+        throw err;
+      }
+      const warnings = [];
+      if (passwords.length) warnings.push(`Password fields are never stored, supply them when you launch : ${passwords.join(', ')}`);
+      if (unknown.length) warnings.push(`Not fields of the form, left out : ${unknown.join(', ')}`);
+      if (other.length) warnings.push(`Not stored (constants and reserved fields) : ${other.join(', ')}`);
+      return {
+        id, name: storedName, form: formObj.name, expiresAt: expires ? expires.toISOString() : null,
+        stored: Object.keys(kept), leftOut: { passwords, unknown, other }, warnings,
+      };
+    },
+
+    async deleteStoredJob({ id }) {
+      refuseWhenReadOnly('stored jobs cannot be deleted through it');
+      const row = await visibleStored({ id });
+      await StoredJobs.delete(row.id);
+      return { id: row.id, name: row.name, deleted: true };
+    },
+
     async relaunchJob({ id, values, verbose, preview, expectedPayloadHash }) {
       if (!preview) refuseWhenReadOnly();
       // the job's form must be one MCP offers
@@ -538,6 +724,13 @@ export function createHandlers({ user, deps, policy = {} }) {
 
 const valuesSchema = z.record(z.string(), z.any())
   .describe('Raw field values keyed by field name. A choice field takes the selected option record, a partial record or its valueColumn value (an array of those when multiple).');
+
+// a stored job to start from (#1070) : what Load does on the form
+const storedJobSchema = z.object({
+  id: z.number().int().positive().optional().describe('Stored job id, from list_stored_jobs'),
+  name: z.string().optional().describe('Or its name : one of your own stored jobs of this form'),
+}).optional().describe('Start from the values of one of your own stored jobs ; `values` are laid over them. Password fields '
+  + 'are not stored : supply them in `values`. launch_job and plan_job then need the expectedPayloadHash resolve_field returned.');
 
 /**
  * Wrap a handler : the result as JSON text and as structured content, a refusal as a tool
@@ -618,6 +811,7 @@ export function registerTools(server, handlers, policy = {}, user = {}) {
     inputSchema: {
       form: z.string().describe('Form name'),
       values: valuesSchema.optional(),
+      storedJob: storedJobSchema,
       field: z.string().optional().describe('Resolve only this field (and its dependencies)'),
       subform: z.string().optional().describe('Resolve a subform of the form (a list row or wizard step)'),
       parent: valuesSchema.optional().describe('Parent form values, available to a subform as __parent__'),
@@ -636,7 +830,8 @@ export function registerTools(server, handlers, policy = {}, user = {}) {
       + 'modeledExtravars from resolve_field with the user before calling it.',
     inputSchema: {
       form: z.string().describe('Form name'),
-      values: valuesSchema,
+      values: valuesSchema.optional(),
+      storedJob: storedJobSchema,
       verbose: z.boolean().optional().describe('Verbose ansible output (needs the allowVerboseMode role option)'),
       expectedPayloadHash: z.string().optional().describe('The payloadHash resolve_field returned for the approved values ; the launch is refused when the payload differs'),
     },
@@ -675,7 +870,8 @@ export function registerTools(server, handlers, policy = {}, user = {}) {
       + 'modeledExtravars from resolve_field and the time with the user before calling it.',
     inputSchema: {
       form: z.string().describe('Form name'),
-      values: valuesSchema,
+      values: valuesSchema.optional(),
+      storedJob: storedJobSchema,
       run_at: z.string().describe('When to run it : ISO 8601 with its offset or Z'),
       name: z.string().min(1).max(255).describe('A name for the planned run, as listed under Jobs > Scheduled ; names are unique'),
       verbose: z.boolean().optional().describe('Verbose ansible output (needs the allowVerboseMode role option)'),
@@ -723,6 +919,53 @@ export function registerTools(server, handlers, policy = {}, user = {}) {
       inputSchema: { id: z.number().int().positive().describe('Schedule id') },
       annotations: { readOnlyHint: false, destructiveHint: true },
     }, wrap((a) => handlers.deleteSchedule(a)));
+  }
+
+  // ─── stored jobs (#1070) ───
+  if (options.allowStoredJobs) {
+    server.registerTool('list_stored_jobs', {
+      title: 'List stored jobs',
+      description: 'The stored jobs you may see (values saved under a name with Store on a form) : your own, or '
+        + 'everyone\'s for a settings user. Name, description, form, created and expiry ; not the values - '
+        + 'get_stored_job has them. One marked `usable` (your own, of a form you may launch) can be passed as '
+        + '`storedJob` to resolve_field, launch_job or plan_job to start from it.',
+      inputSchema: { form: z.string().optional().describe('Only the stored jobs of this form') },
+      annotations: { readOnlyHint: true },
+    }, wrap((a) => handlers.listStoredJobs(a)));
+
+    server.registerTool('get_stored_job', {
+      title: 'Get stored job',
+      description: 'One stored job with its values (the form\'s password fields left out, secret-looking values masked). '
+        + 'Name it by `id`, or by `form` and `name` among your own.',
+      inputSchema: {
+        id: z.number().int().positive().optional().describe('Stored job id'),
+        form: z.string().optional().describe('Its form, with name'),
+        name: z.string().optional().describe('Its name, with form'),
+      },
+      annotations: { readOnlyHint: true },
+    }, wrap((a) => handlers.getStoredJob(a)));
+
+    if (!policy.readOnly) server.registerTool('store_job', {
+      title: 'Store job',
+      description: 'Save values of a form under a name, as the Store dialog does, to launch from later (yours or '
+        + 'the user\'s in the browser, with Load). Password fields are not stored ; the answer says which '
+        + 'fields were left out. `expires_at` (optional) is ISO 8601 with its offset or Z.',
+      inputSchema: {
+        form: z.string().describe('Form name'),
+        name: z.string().min(1).max(255).describe('A name, unique among your stored jobs of this form'),
+        values: valuesSchema,
+        description: z.string().optional().describe('What these values are for'),
+        expires_at: z.string().optional().describe('When it expires : ISO 8601 with its offset or Z ; none, it does not'),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false },
+    }, wrap((a) => handlers.storeJob(a)));
+
+    if (!policy.readOnly) server.registerTool('delete_stored_job', {
+      title: 'Delete stored job',
+      description: 'Delete a stored job you may see.',
+      inputSchema: { id: z.number().int().positive().describe('Stored job id') },
+      annotations: { readOnlyHint: false, destructiveHint: true },
+    }, wrap((a) => handlers.deleteStoredJob(a)));
   }
 
   server.registerTool('get_job', {
