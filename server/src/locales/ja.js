@@ -20,6 +20,7 @@ export default {
     invalidRefreshToken: "リフレッシュトークンが無効です",
     refreshTokenExpired: "リフレッシュトークンの有効期限が切れています",
     refreshTokenUnknown: "不明なリフレッシュトークンです",
+    refreshTokenReplaced: "リフレッシュトークンは同時に行われた更新で既に使用されています",
     requiredFields: "必須項目をすべて入力してください",
     noVerbosePermission: "詳細モードを使用する権限がありません",
   },

@@ -22,6 +22,7 @@ export default {
     invalidRefreshToken: "Nieprawidłowy refresh token",
     refreshTokenExpired: "Refresh token wygasł",
     refreshTokenUnknown: "Nieznany refresh token",
+    refreshTokenReplaced: "Refresh token został już użyty przez równoczesne odświeżenie",
     requiredFields: "Wypełnij wszystkie wymagane pola",
     noVerbosePermission:
       "Nie masz uprawnień do korzystania z trybu szczegółowego (verbose)",

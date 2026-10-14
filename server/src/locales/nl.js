@@ -21,6 +21,7 @@ export default {
     invalidRefreshToken: "Ongeldig refresh token",
     refreshTokenExpired: "Refresh token is verlopen",
     refreshTokenUnknown: "Refresh token is onbekend",
+    refreshTokenReplaced: "Refresh token is al gebruikt door een gelijktijdige vernieuwing",
     requiredFields: "Vul alle verplichte velden in",
     noVerbosePermission:
       "U heeft geen toestemming om de verbose modus te gebruiken",

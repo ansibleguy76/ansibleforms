@@ -95,6 +95,11 @@ function registerAxiosInterceptor() {
         // ever matched in english - in any other locale it fell through to the
         // refresh below, refreshed fine (the token was valid all along), retried,
         // and 401'd again forever.
+        // the refresh's own errors : TokenStorage.getNewToken decides, as another tab or request
+        // may have refreshed meanwhile, and clearing here would erase the tokens it stored (#1062)
+        if (error?.config?.__tokenRefresh) {
+          throw error;
+        }
         if (error?.config?.url == `/api/v2/token` || error?.response?.data?.error == 'Account is disabled.') {
           console.log('The error is from token refresh or account is disabled, no refresh possible');
           var message = 'Unauthorized.  Access denied.';
@@ -125,7 +130,16 @@ function registerAxiosInterceptor() {
         // to propagate : it will likely be a new 401 error, not authorized to
         // refresh, and it will be caught by this interceptor in a second run.
         // In all other cases, something was wrong with the token refresh.
-        const token = await TokenStorage.getNewToken();
+        const headers = error.config?.headers;
+        const sent = String(headers?.get?.('Authorization') ?? headers?.Authorization ?? '').replace(/^Bearer /, '');
+        const failedRefresh = TokenStorage.getRefreshToken();
+        const token = await TokenStorage.getNewToken(sent);
+        // another tab stored new tokens just after this refresh gave up : not cleared, they are good
+        if (!token && TokenStorage.getRefreshToken() !== failedRefresh && TokenStorage.getToken()) {
+          error.config.headers['Authorization'] = `Bearer ${TokenStorage.getToken()}`;
+          error.config.__isRetry = true;
+          return axios.request(error.config);
+        }
         if (!token) {
           // No token was returned, this means the user is not authenticated
           // Silently redirect to login without spamming errors

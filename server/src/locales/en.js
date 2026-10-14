@@ -20,6 +20,7 @@ export default {
     invalidRefreshToken: "Invalid refresh token",
     refreshTokenExpired: "Refresh token is expired",
     refreshTokenUnknown: "Refresh token is unknown",
+    refreshTokenReplaced: "Refresh token already used by a concurrent refresh",
     requiredFields: "Please provide all required fields",
     noVerbosePermission: "You do not have permission to use verbose mode",
   },

@@ -17,7 +17,7 @@ process.env.DB_USER ||= "test";
 process.env.DB_PASSWORD ||= "test";
 
 // ─── a database in memory : the directory users, the local users, the tokens ──────────────────
-const db = vi.hoisted(() => ({ directory: new Map(), local: new Map(), tokens: new Set(), queries: 0 }));
+const db = vi.hoisted(() => ({ directory: new Map(), local: new Map(), tokens: new Map(), queries: 0 }));
 vi.mock("../src/models/db.model.js", () => ({
   default: {
     do: async (sql, params) => {
@@ -36,9 +36,18 @@ vi.mock("../src/models/db.model.js", () => ({
         const username = Array.isArray(params) ? params[0] : params;
         return db.local.has(username) ? [{ groups: db.local.get(username) }] : [];
       }
-      if (/INSERT INTO AnsibleForms.`tokens`/.test(sql)) { db.tokens.add(params.refresh_token); return {}; }
-      if (/SELECT refresh_token FROM AnsibleForms.`tokens`/.test(sql)) return db.tokens.has(params[2]) ? [{ refresh_token: params[2] }] : [];
-      if (/DELETE FROM AnsibleForms.`tokens`/.test(sql)) { db.tokens.delete(params[2]); return {}; }
+      // the tokens a refresh replaced stay a few seconds, marked (models/token.model.js)
+      if (/INSERT INTO AnsibleForms.`tokens`/.test(sql)) { db.tokens.set(params.refresh_token, null); return {}; }
+      if (/SELECT replaced_at IS NULL AS current/.test(sql)) {
+        return db.tokens.has(params[3]) ? [{ current: db.tokens.get(params[3]) === null ? 1 : 0, recent: 1 }] : [];
+      }
+      if (/SET replaced_at=UTC_TIMESTAMP\(\)/.test(sql)) {
+        if (db.tokens.get(params[2]) !== null) return { affectedRows: 0 };
+        db.tokens.set(params[2], Date.now());
+        return { affectedRows: 1 };
+      }
+      if (/DELETE FROM AnsibleForms.`tokens` .*refresh_token=\?/.test(sql)) { db.tokens.delete(params[2]); return {}; }
+      if (/DELETE FROM AnsibleForms.`tokens`/.test(sql)) return {};
       return [];
     },
     tryDo: async () => [],
@@ -243,7 +252,7 @@ describe("the token refresh", () => {
   test("a local user's groups as an admin set them now", async () => {
     db.local.set("bob", "users");
     const old = jwt.sign({ user: { username: "bob", type: "local", groups: ["local/users"], roles: ["default"] }, refresh: true, sid: "s" }, authConfig.secret, { issuer: authConfig.jwtIssuer });
-    db.tokens.add(old);
+    db.tokens.set(old, null);
     db.local.set("bob", "users,builders");
     const r = await refresh(old);
     expect(r.statusCode).toBe(200);
@@ -254,7 +263,7 @@ describe("the token refresh", () => {
 
   test("a refresh token issued before, for a user with nothing stored, uses the groups it carries", async () => {
     const old = jwt.sign({ user: { username: "carol", type: "ldap", groups: ["ldap/netops"], roles: [] }, refresh: true, sid: "s" }, authConfig.secret, { issuer: authConfig.jwtIssuer });
-    db.tokens.add(old);
+    db.tokens.set(old, null);
     const r = await refresh(old);
     expect(r.statusCode).toBe(200);
     expect(jwt.verify(r.body.token, authConfig.secret).user.roles).toContain("netops");

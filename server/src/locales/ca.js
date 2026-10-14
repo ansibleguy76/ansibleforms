@@ -20,6 +20,7 @@ export default {
     invalidRefreshToken: "El token de refresc no és vàlid",
     refreshTokenExpired: "El token de refresc ha caducat",
     refreshTokenUnknown: "El token de refresc és desconegut",
+    refreshTokenReplaced: "El token de refresc ja l'ha fet servir una altra renovació simultània",
     requiredFields: "Proporciona tots els camps obligatoris",
     noVerbosePermission: "No tens permís per utilitzar el mode detallat",
   },

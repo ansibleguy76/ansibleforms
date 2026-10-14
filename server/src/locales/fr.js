@@ -23,6 +23,7 @@ export default {
     invalidRefreshToken: "Jeton de rafraichissement invalide",
     refreshTokenExpired: "Le jeton de rafraichissement a expire",
     refreshTokenUnknown: "Jeton de rafraichissement inconnu",
+    refreshTokenReplaced: "Jeton de rafraichissement déjà utilisé par un rafraichissement simultané",
     requiredFields: "Veuillez fournir tous les champs obligatoires",
     noVerbosePermission:
       "Vous n'avez pas la permission d'utiliser le mode verbeux",

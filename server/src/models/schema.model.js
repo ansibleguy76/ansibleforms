@@ -576,7 +576,8 @@ const SCHEMA_MANIFEST = {
                                'users.description', 'schedule.raw_form_data', 'users.blocked', 'settings.favicon',
                                'settings.app_name', 'settings.env_label', 'settings.env_label_show', 'settings.env_label_color',
                                'settings.banner_show', 'settings.disclaimer_enabled',
-                               'settings.forms_view', 'settings.default_timezone', 'settings.default_date_format', 'settings.header_links'] },
+                               'settings.forms_view', 'settings.default_timezone', 'settings.default_date_format', 'settings.header_links',
+                               'tokens.replaced_at'] },
   },
 };
 
@@ -992,6 +993,10 @@ async function patchVersion7(messages, success, failed) {
   // a repository for the inventories the playbook forms name (inventory: <name>)
   await checkPromise(addColumn("repositories", "use_for_inventories", "tinyint(4)", true, "0"), messages, success, failed);
   await checkPromise(dropColumn("repositories", "use_for_vars_files"), messages, success, failed);
+  // a refresh token replaced by a refresh is kept a few seconds, marked, rather than deleted :
+  // a request that refreshed with it at the same time is told so instead of being refused as
+  // an unknown token (models/token.model.js, #1062)
+  await checkPromise(addColumn("tokens", "replaced_at", "datetime", true, "NULL"), messages, success, failed);
 }
 
 // Idempotent by its WHERE clause : only a job with a runner and no kind yet gets one, from its

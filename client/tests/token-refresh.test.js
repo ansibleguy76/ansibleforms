@@ -1,0 +1,113 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// The token refresh (#1062) : when the access token expires, the requests in flight and the
+// other tabs all want a new one, with the same single-use refresh token. One refresh runs ; the
+// others wait for it, or take the tokens another tab stored, and never throw them away.
+
+vi.mock('axios', () => ({ default: { post: vi.fn() } }));
+
+// the browser storage the tokens live in : on Node 26 the environment's own stands in for
+// happy-dom's and is not there without a file, so a small in-memory one, as time.test.js does
+const storage = new Map();
+vi.stubGlobal('localStorage', {
+  getItem: (k) => (storage.has(k) ? storage.get(k) : null),
+  setItem: (k, v) => storage.set(k, String(v)),
+  removeItem: (k) => storage.delete(k),
+  clear: () => storage.clear(),
+});
+
+const axios = (await import('axios')).default;
+const TokenStorage = (await import('@/lib/TokenStorage')).default;
+
+function deferred() {
+  let resolve, reject;
+  const promise = new Promise((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+beforeEach(() => {
+  localStorage.clear();
+  axios.post.mockReset();
+  TokenStorage.storeToken('access-1');
+  TokenStorage.storeRefreshToken('refresh-1');
+});
+
+describe('TokenStorage.getNewToken', () => {
+  it('refreshes once for requests that fail together, and gives them all the new token', async () => {
+    const answer = deferred();
+    axios.post.mockReturnValue(answer.promise);
+    const calls = [1, 2, 3, 4].map(() => TokenStorage.getNewToken('access-1'));
+    answer.resolve({ data: { token: 'access-2', refreshtoken: 'refresh-2' } });
+    expect(await Promise.all(calls)).toEqual(['access-2', 'access-2', 'access-2', 'access-2']);
+    expect(axios.post).toHaveBeenCalledTimes(1);
+    expect(TokenStorage.getRefreshToken()).toBe('refresh-2');
+  });
+
+  it('does not refresh when the failed request was sent with a token already replaced', async () => {
+    TokenStorage.storeToken('access-2');
+    TokenStorage.storeRefreshToken('refresh-2');
+    expect(await TokenStorage.getNewToken('access-1')).toBe('access-2');
+    expect(axios.post).not.toHaveBeenCalled();
+  });
+
+  it('refreshes again for a later expiry', async () => {
+    axios.post.mockResolvedValueOnce({ data: { token: 'access-2', refreshtoken: 'refresh-2' } });
+    axios.post.mockResolvedValueOnce({ data: { token: 'access-3', refreshtoken: 'refresh-3' } });
+    expect(await TokenStorage.getNewToken('access-1')).toBe('access-2');
+    expect(await TokenStorage.getNewToken('access-2')).toBe('access-3');
+    expect(axios.post).toHaveBeenCalledTimes(2);
+  });
+
+  it('on a 409, takes the tokens the concurrent refresh stores', async () => {
+    axios.post.mockImplementation(async () => {
+      // another tab, outside the lock, rotated it first and stores its tokens shortly after
+      setTimeout(() => {
+        TokenStorage.storeToken('access-other');
+        TokenStorage.storeRefreshToken('refresh-other');
+      }, 50);
+      throw { response: { status: 409, data: { code: 'refresh_token_replaced' } } };
+    });
+    expect(await TokenStorage.getNewToken('access-1')).toBe('access-other');
+  });
+
+  it('on a 409 and nothing stored after, tries once more : the refresh that took it may have given it back', async () => {
+    vi.useFakeTimers();
+    axios.post.mockRejectedValueOnce({ response: { status: 409, data: { code: 'refresh_token_replaced' } } });
+    axios.post.mockResolvedValueOnce({ data: { token: 'access-2', refreshtoken: 'refresh-2' } });
+    const result = TokenStorage.getNewToken('access-1');
+    await vi.advanceTimersByTimeAsync(6000);
+    vi.useRealTimers();
+    expect(await result).toBe('access-2');
+    expect(axios.post).toHaveBeenCalledTimes(2);
+  });
+
+  it('on a refusal, takes tokens stored meanwhile rather than none', async () => {
+    axios.post.mockImplementation(async () => {
+      TokenStorage.storeToken('access-other');
+      TokenStorage.storeRefreshToken('refresh-other');
+      throw { response: { status: 401, data: { error: 'Refresh token is unknown' } } };
+    });
+    expect(await TokenStorage.getNewToken('access-1')).toBe('access-other');
+  });
+
+  it('a real refusal : null, and the tokens are left for the caller to clear', async () => {
+    axios.post.mockRejectedValue({ response: { status: 401, data: { error: 'Refresh token is unknown' } } });
+    expect(await TokenStorage.getNewToken('access-1')).toBeNull();
+    expect(TokenStorage.getRefreshToken()).toBe('refresh-1');
+  });
+
+  it('marks its request so the 401 interceptor leaves its errors alone', async () => {
+    axios.post.mockResolvedValue({ data: { token: 'access-2', refreshtoken: 'refresh-2' } });
+    await TokenStorage.getNewToken('access-1');
+    expect(axios.post.mock.calls[0][2]).toMatchObject({ __tokenRefresh: true });
+  });
+
+  it('without a refresh token : null, no request', async () => {
+    TokenStorage.clear();
+    expect(await TokenStorage.getNewToken()).toBeNull();
+    expect(axios.post).not.toHaveBeenCalled();
+  });
+});
