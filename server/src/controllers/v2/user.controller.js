@@ -5,7 +5,7 @@ import RestResult from '../../models/restResult.model.v2.js';
 import Errors from '../../lib/errors.js';
 import i18n from '../../lib/i18n.js';
 import { assertMayTouchAdmin } from '../../lib/adminGrants.js';
-import { unlockAccount } from '../../lib/loginThrottle.js';
+import { unlockAccount, loginBlocked, loginFailed, loginSucceeded } from '../../lib/loginThrottle.js';
 import Group from '../../models/group.model.js';
 import { withUserRoleCounts } from '../../lib/roleCounts.js';
 import { withUserJobCounts } from '../../lib/jobCounts.js';
@@ -241,6 +241,14 @@ const changePassword = async function(req, res) {
             if (!current) {
               return res.status(400).json(RestResult.error(i18n.t(req, 'resources.currentPasswordRequired')));
             }
+            // a wrong current password counts as a failed login (lib/loginThrottle.js) : a session
+            // cannot be used to guess it past the account lockout, and a locked account is
+            // refused before the password is checked
+            const blocked = await loginBlocked(req.user.user.username, req.ip).catch(() => ({ blocked: false }));
+            if (blocked.blocked) {
+              res.setHeader('Retry-After', String((blocked.minutes || 1) * 60));
+              return res.status(429).json(RestResult.error(i18n.t(req, 'resources.currentPasswordWrong'), i18n.t(req, 'auth.tooManyFailures', { minutes: blocked.minutes || 1 })));
+            }
             // User.authenticate RESOLVES with { isValid: false } for a wrong password - it
             // does not reject - so the result has to be inspected. A try/catch alone let
             // every wrong password through, which is worse than not checking at all.
@@ -251,6 +259,7 @@ const changePassword = async function(req, res) {
               check = null;
             }
             if (!check?.isValid) {
+              await loginFailed(req.user.user.username, req.ip);
               Audit.log({
                 user: req.user?.user, ip: req.ip, action: 'user.password.update',
                 outcome: 'denied', targetType: 'user', target: req.user.user.username,
@@ -259,6 +268,7 @@ const changePassword = async function(req, res) {
               return res.status(403).json(RestResult.error(i18n.t(req, 'resources.currentPasswordWrong')));
             }
           }
+          if (req.body.password) await loginSucceeded(req.user.user.username);
           delete req.body.currentPassword
           await User.update(req.body,req.user.user.id);
           // a new password ends every session of the user, this one included : sign in again
