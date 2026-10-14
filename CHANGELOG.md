@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.1.0](https://github.com/ansibleforms/ansibleforms/compare/7.0.3...7.1.0) (2026-10-14)
+
+
+### Added
+
+* a setting for the largest request header the servers accept (MAX_HTTP_HEADER_SIZE) ([#1038](https://github.com/ansibleforms/ansibleforms/issues/1038)) ([060af75](https://github.com/ansibleforms/ansibleforms/commit/060af750de48395a3312bf7bd47cff00a5297197))
+* a table's columns are resized with the mouse, by the separators between their headers ([#1055](https://github.com/ansibleforms/ansibleforms/issues/1055)) ([5046d6c](https://github.com/ansibleforms/ansibleforms/commit/5046d6c185fcd7266839478791c9a9072058d8f0))
+* an AZURE_AUTHORITY_URI setting for the Entra ID sign-in address, a national cloud's ([#1041](https://github.com/ansibleforms/ansibleforms/issues/1041)) ([f4f0508](https://github.com/ansibleforms/ansibleforms/commit/f4f0508e5c91d4a1d9c6ee0b11bfada38cff9e5b))
+* back from a single sign-on straight into the app, on the page that was wanted ([#1042](https://github.com/ansibleforms/ansibleforms/issues/1042)) ([1940f82](https://github.com/ansibleforms/ansibleforms/commit/1940f827897efe1ba7863a069840135e2d99edd1))
+* pages load with skeleton placeholders instead of a spinner ([#1043](https://github.com/ansibleforms/ansibleforms/issues/1043)) ([2969660](https://github.com/ansibleforms/ansibleforms/commit/29696602fb30eab63eeec2de50935c197d79bf0a))
+* workflows, inventories and vars files each have an Edit role option, as playbooks ([#1052](https://github.com/ansibleforms/ansibleforms/issues/1052)) ([09ea171](https://github.com/ansibleforms/ansibleforms/commit/09ea171f56734b952a9a1945205a35e879046c93))
+
+
+### Fixed
+
+* a field's placeholder clears as soon as the field is clicked ([#1053](https://github.com/ansibleforms/ansibleforms/issues/1053)) ([32eebc0](https://github.com/ansibleforms/ansibleforms/commit/32eebc0e2fa62ca050ed9c1c2a485683f6fd65f6))
+* a page's title and its controls stay on one line while the search can narrow ([#1060](https://github.com/ansibleforms/ansibleforms/issues/1060)) ([f1396c3](https://github.com/ansibleforms/ansibleforms/commit/f1396c3ccd45a3de50aef3ba9fed72fbccf30a96))
+* a settings list has the same room on its right as on its left ([#1059](https://github.com/ansibleforms/ansibleforms/issues/1059)) ([f345b49](https://github.com/ansibleforms/ansibleforms/commit/f345b49076e30169fce7988fb130f325d9e8b2f6))
+* a settings page's title names its part of the settings menu ([#1057](https://github.com/ansibleforms/ansibleforms/issues/1057)) ([6dbceda](https://github.com/ansibleforms/ansibleforms/commit/6dbceda6d7507564b7fa9a7145c134ad52e3cf70))
+* a workflow node's dialog keeps its header in place, only its output scrolls ([#1050](https://github.com/ansibleforms/ansibleforms/issues/1050)) ([3367068](https://github.com/ansibleforms/ansibleforms/commit/3367068c48e8f408a4badc417b8e3721fa01f6b1))
+* keep the groups out of the tokens, so a user in many groups is no longer refused with 431 ([#1037](https://github.com/ansibleforms/ansibleforms/issues/1037)) ([178a385](https://github.com/ansibleforms/ansibleforms/commit/178a38566a66a01d740e4750a553446bddc1c0d4))
+* say so when the server refuses a request as too large (431), instead of empty pages ([#1040](https://github.com/ansibleforms/ansibleforms/issues/1040)) ([585076e](https://github.com/ansibleforms/ansibleforms/commit/585076e4de17d1d674d1c94768a9e42c718beec6))
+* the audit log's user filter reads All users ([#1056](https://github.com/ansibleforms/ansibleforms/issues/1056)) ([8942140](https://github.com/ansibleforms/ansibleforms/commit/894214030dc1bb231606f47596dd1799a1af8f38))
+* the designer's new file dialogs and buttons are the same in every section ([#1054](https://github.com/ansibleforms/ansibleforms/issues/1054)) ([afe89df](https://github.com/ansibleforms/ansibleforms/commit/afe89df0d9d6f7c6df9c0c2da3412e3dddf388d1))
+* the environment label's field shows PRODUCTION as its placeholder ([#1058](https://github.com/ansibleforms/ansibleforms/issues/1058)) ([d5dc9ba](https://github.com/ansibleforms/ansibleforms/commit/d5dc9baeee8c8b7f2668f4bd92b350ee1e3bf694))
+* the SSO redirect URI is typed as its address, its callback path fixed beside it ([#1049](https://github.com/ansibleforms/ansibleforms/issues/1049)) ([107ec3d](https://github.com/ansibleforms/ansibleforms/commit/107ec3d1ed451ad000fe4a7efed9535a583840f0))
+* the user menu says Entra ID, not Azure AD ([#1061](https://github.com/ansibleforms/ansibleforms/issues/1061)) ([cab2b7f](https://github.com/ansibleforms/ansibleforms/commit/cab2b7fd7c20def9c2680c4412407601b81ed774))
+
 ## [7.0.3](https://github.com/ansibleforms/ansibleforms/compare/7.0.2...7.0.3) (2026-10-13)
 
 
