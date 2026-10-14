@@ -20,6 +20,7 @@ export default {
     invalidRefreshToken: "refresh token 无效",
     refreshTokenExpired: "refresh token 已过期",
     refreshTokenUnknown: "refresh token 未知",
+    refreshTokenReplaced: "refresh token 已被同时进行的刷新使用",
     requiredFields: "请填写所有必填字段",
     noVerbosePermission: "您无权使用详细模式",
   },

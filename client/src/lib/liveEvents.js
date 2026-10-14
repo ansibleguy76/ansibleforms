@@ -125,8 +125,9 @@ async function lead() {
   while (releaseLock) {
     controller = new AbortController();
     try {
+      const sent = TokenStorage.getToken();
       let res = await fetch('/api/v2/events', { ...TokenStorage.getAuthentication(), signal: controller.signal });
-      if (res.status === 401 && (await TokenStorage.getNewToken())) {
+      if (res.status === 401 && (await TokenStorage.getNewToken(sent))) {
         res = await fetch('/api/v2/events', { ...TokenStorage.getAuthentication(), signal: controller.signal });
       }
       if (res.ok && res.body) {

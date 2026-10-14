@@ -45,7 +45,8 @@ CREATE TABLE `tokens` (
   `username` varchar(250) NOT NULL,
   `username_type` varchar(10) NOT NULL,
   `refresh_token` text DEFAULT NULL,
-  `timestamp` datetime NOT NULL DEFAULT current_timestamp()
+  `timestamp` datetime NOT NULL DEFAULT current_timestamp(),
+  `replaced_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 -- create credentials table
 DROP TABLE IF EXISTS `credentials`;

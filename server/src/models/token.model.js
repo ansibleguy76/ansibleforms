@@ -36,15 +36,53 @@ Token.cleanup = function () {
     });
 };
 
+// How long a refresh token replaced by a refresh is still recognised as just replaced. A page
+// has several requests in flight when its access token expires, and other tabs share its tokens
+// (#1062) : the first refresh wins, the others arrive with the token it replaced. Inside this
+// grace they are told so (409, the client then reads the tokens the winner stored) ; after it
+// the token is unknown, as a reused single-use token should be.
+Token.REPLACED_GRACE_SECONDS = 30;
+
+// What the tokens table says of a refresh token : 'valid', 'replaced' (by a refresh, inside the
+// grace) or 'unknown' (never stored, logged out, or replaced longer ago)
 Token.check = function (username, username_type, refresh_token) {
-  logger.info(`Checking token for user ${username} (${username_type})`);
-  return mysql.do("SELECT refresh_token FROM AnsibleForms.`tokens` WHERE username=? AND username_type=? AND refresh_token=? LIMIT 1", [username, username_type, refresh_token]).then((res) => {
-    if (res.length > 0) {
-      return "Refresh token is OK";
-    } else {
-      throw `User ${username} (${username_type}) not found`;
-    }
-  });
+  logger.debug(`Checking token for user ${username} (${username_type})`);
+  return mysql
+    .do(
+      "SELECT replaced_at IS NULL AS current, replaced_at > NOW() - INTERVAL ? SECOND AS recent FROM AnsibleForms.`tokens` WHERE username=? AND username_type=? AND refresh_token=? LIMIT 1",
+      [Token.REPLACED_GRACE_SECONDS, username, username_type, refresh_token]
+    )
+    .then((res) => {
+      const row = res?.[0];
+      if (!row) return "unknown";
+      if (Number(row.current)) return "valid";
+      return Number(row.recent) ? "replaced" : "unknown";
+    });
+};
+
+// Rotates a refresh token : the old one is marked replaced, the new one stored. The mark is taken
+// with a conditional update, so of two refreshes with the same token only one rotates it ; the
+// other gets false and is answered as a concurrent refresh. A failure storing the new token gives
+// the old one back, so it cannot leave the user with no usable token at all.
+Token.replace = async function (username, username_type, old_refresh_token, new_refresh_token) {
+  const claim = await mysql.do(
+    "UPDATE AnsibleForms.`tokens` SET replaced_at=NOW() WHERE username=? AND username_type=? AND refresh_token=? AND replaced_at IS NULL",
+    [username, username_type, old_refresh_token]
+  );
+  if (!claim?.affectedRows) return false;
+  try {
+    await Token.store(username, username_type, new_refresh_token);
+  } catch (err) {
+    await mysql
+      .do("UPDATE AnsibleForms.`tokens` SET replaced_at=NULL WHERE username=? AND username_type=? AND refresh_token=?", [username, username_type, old_refresh_token])
+      .catch(() => {});
+    throw err;
+  }
+  // the user's tokens replaced longer ago than the grace serve nothing any more
+  await mysql
+    .do("DELETE FROM AnsibleForms.`tokens` WHERE username=? AND username_type=? AND replaced_at < NOW() - INTERVAL ? SECOND", [username, username_type, Token.REPLACED_GRACE_SECONDS])
+    .catch((err) => logger.warning(`Could not remove replaced tokens for ${username} (${username_type}) : ${err}`));
+  return true;
 };
 
 export default Token;

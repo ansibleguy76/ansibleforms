@@ -20,6 +20,7 @@ export default {
     invalidRefreshToken: "Token de actualización no válido",
     refreshTokenExpired: "El token de actualización ha caducado",
     refreshTokenUnknown: "Token de actualización desconocido",
+    refreshTokenReplaced: "El token de actualización ya lo ha usado otra renovación simultánea",
     requiredFields: "Por favor, proporciona todos los campos obligatorios",
     noVerbosePermission: "No tienes permiso para usar el modo detallado",
   },

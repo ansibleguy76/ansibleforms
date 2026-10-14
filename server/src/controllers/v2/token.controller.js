@@ -1,5 +1,6 @@
 'use strict';
 import RestResult from '../../models/restResult.model.v2.js';
+import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
 import authConfig from '../../../config/auth.config.js';
 import logger from "../../lib/logger.js";
@@ -8,6 +9,13 @@ import User from "../../models/user.model.js";
 import i18n from '../../lib/i18n.js';
 import { isRevoked } from '../../lib/tokenRevocation.js';
 import { storedGroups, tokenUser, forgetGroups } from '../../lib/userGroups.js';
+
+// A refresh with the token another refresh has just replaced : normal when a page or several tabs
+// refresh at once. 409, which the client answers by reading the tokens the other refresh stored.
+function alreadyRefreshed(req, res, username, username_type) {
+    logger.info(`Refresh token already used for ${username} (${username_type}), refreshed by a concurrent request`);
+    return res.status(409).json({ ...RestResult.error(i18n.t(req, 'errors.refreshTokenReplaced')), code: 'refresh_token_replaced' });
+}
 
 const refresh = async function(req, res) {
     try {
@@ -49,7 +57,13 @@ const refresh = async function(req, res) {
             return res.status(401).json(RestResult.error(i18n.t(req, 'errors.invalidRefreshToken')));
         }
         
-        await Token.check(username, username_type, refreshtoken);
+        const state = await Token.check(username, username_type, refreshtoken);
+        if (state === 'replaced') return alreadyRefreshed(req, res, username, username_type);
+        if (state !== 'valid') {
+            // a reuse after the grace, or a token logged out : a fault of the client, not of the server
+            logger.warning(`Refresh refused for ${username} (${username_type}) : the refresh token is unknown, or was already used more than ${Token.REPLACED_GRACE_SECONDS}s ago`);
+            return res.status(401).json(RestResult.error(i18n.t(req, 'errors.refreshTokenUnknown')));
+        }
         
         if(new Date(jwtPayload.exp*1000) <= new Date()){
             logger.error("Refresh token is expired");
@@ -87,13 +101,17 @@ const refresh = async function(req, res) {
         // the same session : a logout still ends what this refresh hands out
         const sid = jwtPayload.sid;
         const token = jwt.sign({ user: body, access:true, sid }, authConfig.secret, { expiresIn: authConfig.jwtExpiration, issuer: authConfig.jwtIssuer });
-        const newRefreshtoken = jwt.sign({ user: body, refresh:true, sid }, authConfig.secret, { expiresIn: authConfig.jwtRefreshExpiration, issuer: authConfig.jwtIssuer });
+        // jwtid : a refresh in the same second as the sign-in, or as the refresh before, signed
+        // the very same token again, so rotating it replaced the token it had just stored
+        const newRefreshtoken = jwt.sign({ user: body, refresh:true, sid }, authConfig.secret, { expiresIn: authConfig.jwtRefreshExpiration, issuer: authConfig.jwtIssuer, jwtid: crypto.randomUUID() });
 
-        await Token.store(username, username_type, newRefreshtoken);
         // Single use : the old row stayed valid, so a stolen refresh token kept working
-        // alongside the new one indefinitely. Deleted AFTER the new one is stored, so a
-        // failure here cannot leave the user with no usable token at all.
-        await Token.delete(username, username_type, refreshtoken);
+        // alongside the new one indefinitely. It is marked replaced rather than deleted, so a
+        // request that refreshed with it at the same time gets a 409 for a few seconds instead
+        // of a 401 that signs the user out (#1062) ; false when such a request rotated it first.
+        if (!(await Token.replace(username, username_type, refreshtoken, newRefreshtoken))) {
+            return alreadyRefreshed(req, res, username, username_type);
+        }
         logger.info("Token is renewed and stored");
         
         res.json(RestResult.single({ token, refreshtoken: newRefreshtoken }));
