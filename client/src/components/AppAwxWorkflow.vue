@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch, nextTick, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { workflowEdges, conditionText } from '@/lib/workflowEdges';
 
 /******************************************************************/
 /*                                                                */
@@ -8,13 +9,16 @@ import { useI18n } from 'vue-i18n';
 /*  Visualize an awx workflow job as a graph, similar to the      */
 /*  awx workflow output view.  Nodes are painted by status        */
 /*  (green=successful, red=failed, ...) and the links are         */
-/*  painted by relation (success, failure, always)                */
+/*  painted by relation (success, failure, always) ; Ascender's   */
+/*  conditional links are dashed, in their trigger's color, a     */
+/*  diamond on them showing their condition when hovered          */
 /*                                                                */
 /*  @props:                                                       */
 /*      workflow: Object                                          */
 /*        { id, name, status, nodes: [                            */
 /*            { id, name, type, status, elapsed,                  */
-/*              success_nodes, failure_nodes, always_nodes } ] }  */
+/*              success_nodes, failure_nodes, always_nodes,       */
+/*              condition_edges } ] }                             */
 /*                                                                */
 /******************************************************************/
 
@@ -254,6 +258,51 @@ const card = computed(() => {
   return { ...n, cx: x, w: cardWidth.value };
 });
 
+// ─── a conditional link (Ascender) under the pointer : its condition ──────────
+// Its diamond hovered, a card over it says when the link is taken : on failure, if deploy = true.
+// It ignores the pointer, as the node's card does.
+const hoveredLink = ref(null);
+// the hidden text the condition is measured with, and the card's width
+const linkMeasure = ref(null);
+const linkCardWidth = ref(0);
+const LINK_CARD_H = 24;
+const LINK_CARD_PAD = 16;
+
+/**
+ * When a conditional link is taken, as its card says it.
+ *
+ * Args:
+ *   l (object): the link ({ trigger, condition }).
+ *
+ * Returns:
+ *   string: its parent's outcome and its condition (or that it is not known).
+ */
+function linkText(l) {
+  if (!l) return '';
+  const when = { success: t('workflow.onSuccess'), failure: t('workflow.onFailure'), always: t('workflow.always') }[
+    l.trigger
+  ];
+  return l.condition
+    ? t('workflow.conditionIf', { trigger: when, condition: conditionText(l.condition) })
+    : t('workflow.conditionUnknown', { trigger: when });
+}
+watch(hoveredLink, async (l) => {
+  if (!l) return;
+  await nextTick();
+  linkCardWidth.value = Math.ceil(linkMeasure.value?.getComputedTextLength?.() || 0) + LINK_CARD_PAD;
+});
+// the card above the diamond (under it when there is no room above), inside the graph
+const linkCard = computed(() => {
+  const l = hoveredLink.value;
+  if (!l) return null;
+  const w = linkCardWidth.value;
+  const x = Math.max(MARGIN, Math.min(l.mx - w / 2, graph.value.width - MARGIN - w));
+  const above = l.my - 10 - LINK_CARD_H;
+  return { x, y: above >= 0 ? above : l.my + 10, w, text: linkText(l) };
+});
+// the conditional links, each with its diamond ; the legend shows them only when there are some
+const conditionLinks = computed(() => graph.value.links.filter((l) => l.type === 'condition'));
+
 // compute the graph layout (layered DAG, like the awx workflow visualizer)
 const graph = computed(() => {
   const nodes = props.workflow?.nodes || [];
@@ -262,12 +311,7 @@ const graph = computed(() => {
     byId[n.id] = n;
   });
   // collect the links
-  const edges = [];
-  nodes.forEach((n) => {
-    (n.success_nodes || []).forEach((c) => byId[c] && edges.push({ from: n.id, to: c, type: 'success' }));
-    (n.failure_nodes || []).forEach((c) => byId[c] && edges.push({ from: n.id, to: c, type: 'failure' }));
-    (n.always_nodes || []).forEach((c) => byId[c] && edges.push({ from: n.id, to: c, type: 'always' }));
-  });
+  const edges = workflowEdges(nodes);
   // roots are nodes without incoming links
   const hasParent = new Set(edges.map((e) => e.to));
   const roots = nodes.filter((n) => !hasParent.has(n.id));
@@ -324,10 +368,15 @@ const graph = computed(() => {
     const y1 = pos[e.from].y + NODE_H / 2;
     const x2 = pos[e.to].x;
     const y2 = pos[e.to].y + NODE_H / 2;
-    if (depth[e.to] - depth[e.from] <= 1) return { type: e.type, d: linkPath(x1, y1, x2, y2) };
+    // a conditional link : its trigger and condition, and its middle (where its diamond is)
+    const extra = { type: e.type, trigger: e.trigger, condition: e.condition };
+    if (depth[e.to] - depth[e.from] <= 1)
+      return { ...extra, d: linkPath(x1, y1, x2, y2), mx: (x1 + x2) / 2, my: (y1 + y2) / 2 };
     const top = arcTop(e);
     return {
-      type: e.type,
+      ...extra,
+      mx: (x1 + x2) / 2,
+      my: top,
       d:
         `M ${x1} ${y1} C ${x1 + GAP_X * 0.6} ${y1}, ${x1 + GAP_X * 0.4} ${top}, ${x1 + GAP_X} ${top} ` +
         `L ${x2 - GAP_X} ${top} C ${x2 - GAP_X * 0.4} ${top}, ${x2 - GAP_X * 0.6} ${y2}, ${x2} ${y2}`,
@@ -374,6 +423,9 @@ const graph = computed(() => {
           <span class="awx-workflow-legend"
             ><span class="legend-line" :style="{ background: edgeColors.always }"></span
             >{{ t('workflow.always') }}</span
+          >
+          <span v-if="conditionLinks.length" class="awx-workflow-legend"
+            ><span class="legend-line legend-dashed"></span>{{ t('workflow.conditional') }}</span
           >
           <span class="awx-tool-sep" />
           <!-- full screen : zoom out, the zoom (a click : actual size), zoom in, the whole graph -->
@@ -450,9 +502,24 @@ const graph = computed(() => {
                 :key="'link' + i"
                 :d="l.d"
                 fill="none"
-                :stroke="edgeColors[l.type]"
+                :stroke="edgeColors[l.type === 'condition' ? l.trigger : l.type]"
+                :stroke-dasharray="l.type === 'condition' ? '6 4' : null"
                 stroke-width="2"
                 opacity="0.8"
+              />
+              <!-- a conditional link's diamond, in its middle : hovered, its condition -->
+              <rect
+                v-for="(l, i) in conditionLinks"
+                :key="'cond' + i"
+                :x="l.mx - 6"
+                :y="l.my - 6"
+                width="12"
+                height="12"
+                :transform="`rotate(45 ${l.mx} ${l.my})`"
+                class="awx-cond"
+                :style="{ stroke: edgeColors[l.trigger] }"
+                @mouseenter="hoveredLink = l"
+                @mouseleave="hoveredLink = null"
               />
               <!-- start node -->
               <g>
@@ -554,6 +621,21 @@ const graph = computed(() => {
                   class="awx-node-link-text"
                 >
                   ↗
+                </text>
+              </g>
+              <!-- the hovered conditional link's card : when it is taken -->
+              <text ref="linkMeasure" class="awx-cond-text awx-measure" x="0" y="0">{{ linkText(hoveredLink) }}</text>
+              <g v-if="linkCard" class="awx-node-card">
+                <rect
+                  :x="linkCard.x"
+                  :y="linkCard.y"
+                  :width="linkCard.w"
+                  :height="LINK_CARD_H"
+                  rx="4"
+                  class="awx-cond-card"
+                />
+                <text :x="linkCard.x + LINK_CARD_PAD / 2" :y="linkCard.y + 16" class="awx-cond-text">
+                  {{ linkCard.text }}
                 </text>
               </g>
             </g>
@@ -735,6 +817,10 @@ const graph = computed(() => {
     }
   }
 
+  /* the conditional links : dashed */
+  .legend-dashed {
+    background: repeating-linear-gradient(90deg, var(--bs-secondary) 0 6px, transparent 6px 9px);
+  }
   .legend-line {
     display: inline-block;
     width: 18px;
@@ -765,6 +851,23 @@ const graph = computed(() => {
   .awx-node-rect {
     fill: var(--bs-body-bg);
     stroke-width: 2;
+  }
+  /* a conditional link (Ascender) : its diamond, and the card with its condition */
+  .awx-cond {
+    fill: var(--bs-body-bg);
+    stroke-width: 2;
+    cursor: help;
+    &:hover {
+      fill: var(--af-row-hover-bg);
+    }
+  }
+  .awx-cond-card {
+    fill: var(--bs-body-bg);
+    stroke: var(--bs-border-color);
+  }
+  .awx-cond-text {
+    fill: var(--bs-body-color);
+    font-size: 0.75rem;
   }
 
   .awx-node-name {

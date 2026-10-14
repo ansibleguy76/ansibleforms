@@ -687,9 +687,39 @@ Awx.getWorkflowNodes = async function (awx, job) {
     success_nodes: n.success_nodes || [],
     failure_nodes: n.failure_nodes || [],
     always_nodes: n.always_nodes || [],
+    // Ascender's conditional links : taken on the parent's outcome (trigger) when an artifact of
+    // it matches ; AWX and AAP have none
+    condition_edges: conditionEdges(n),
     do_not_run: n.do_not_run || false,
   }));
 };
+/**
+ * The conditional links of an Ascender workflow node : one per child, with what takes it. A
+ * child listed in condition_nodes but not in condition_edges (an older Ascender) is taken on
+ * success, its condition unknown.
+ *
+ * Args:
+ *   n (object): the node, as the api returned it.
+ *
+ * Returns:
+ *   object[]: [{ id, trigger, artifact_key, operator, expected_value }], [] on AWX and AAP.
+ */
+function conditionEdges(n) {
+  const edges = (Array.isArray(n.condition_edges) ? n.condition_edges : [])
+    .filter((e) => e && e.id != null)
+    .map((e) => ({
+      id: e.id,
+      trigger: ["success", "failure", "always"].includes(e.trigger) ? e.trigger : "success",
+      artifact_key: e.artifact_key || "",
+      operator: e.operator === "ne" ? "ne" : "eq",
+      expected_value: e.expected_value ?? "",
+    }));
+  const known = new Set(edges.map((e) => e.id));
+  (Array.isArray(n.condition_nodes) ? n.condition_nodes : [])
+    .filter((id) => !known.has(id))
+    .forEach((id) => edges.push({ id, trigger: "success", artifact_key: "", operator: "eq", expected_value: "" }));
+  return edges;
+}
 /**
  * The extra vars and the artifacts of one node's job of an AWX workflow : what the job page's
  * node shows (Show variables, Show artifacts). An approval or a project update has neither : {}.

@@ -240,6 +240,10 @@ export default {
     onSuccess: 'bij succes',
     onFailure: 'bij fout',
     always: 'altijd',
+    // Ascender's conditional links : the legend, and when one is taken
+    conditional: 'voorwaardelijk',
+    conditionIf: '{trigger}, als {condition}',
+    conditionUnknown: '{trigger}, onder een voorwaarde',
   },
   nav: {
     // the lock on the Designer link while someone holds the designer, in its tooltip
