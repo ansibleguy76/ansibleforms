@@ -807,7 +807,7 @@ const buildMismatch = computed(() => {
 }
 
 .af-header {
-  // the user menu grows with the name : a long one (an Azure AD e-mail address) stays on one
+  // the user menu grows with the name : a long one (an Entra ID e-mail address) stays on one
   // line and widens the menu, up to the screen width, where it is cut off with an ellipsis
   .af-user-menu {
     width: max-content;
