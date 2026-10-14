@@ -552,7 +552,9 @@ textarea:focus::placeholder {
 .af-title-controls .af-title-flow,
 .af-title-controls .bs-dt-toolbar-moved,
 .af-title-controls .bs-dt-toolbar-moved > .ms-auto {
-  display: contents;
+  // !important : the toolbar and its button group are Bootstrap d-flex (display: flex !important),
+  // which kept them boxes of their own - wrapping inside, the search unable to grow
+  display: contents !important;
 }
 // the gap spaces them : a control's own leading margin (ms-2, ms-3, from when they sat
 // elsewhere) would double it
@@ -567,7 +569,23 @@ textarea:focus::placeholder {
 .af-title-controls .bs-dt-toolbar-moved .af-table-search {
   flex: 1 1 12rem;
   max-width: 20rem;
-  min-width: 10rem;
+  min-width: 8rem;
+}
+// the title and its controls fit side by side when a table's search narrows (AppSettings measures
+// it, af-title-one-line) : one line, the search giving way down to its min-width, the buttons whole
+.af-title-line.af-title-one-line {
+  flex-wrap: nowrap;
+  > h3 {
+    flex-shrink: 0;
+  }
+  > .af-title-controls {
+    flex: 1 1 0;
+    flex-wrap: nowrap;
+  }
+  .af-title-controls .btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
 }
 
 // the Required badge of an item the config must keep (the admin and default roles) : a border and
