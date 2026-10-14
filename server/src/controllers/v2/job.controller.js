@@ -1,6 +1,7 @@
 'use strict';
 import Job from '../../models/job.model.js';
 import { workflowNodeData } from '../../lib/workflowNodeData.js';
+import { addRunnerJobLinks } from '../../lib/runnerJobLinks.js';
 import RestResultv2 from '../../models/restResult.model.v2.js';
 import logger from "../../lib/logger.js";
 import stream from 'stream';
@@ -41,6 +42,8 @@ const getJob = async function(req, res) {
     restData.approval = JSON.parse(job.approval || "{}")
     restData.notifications = JSON.parse(job.notifications || "{}")
     restData.subjobs = (job.subjobs || "").split(",").filter(x => x != "").map(x => parseInt(x))
+    // on an AWX, AAP or Ascender : the job's address there, and its workflow nodes'
+    await addRunnerJobLinks(restData)
     res.status(200).json(RestResultv2.single(restData));
   } catch (err) {
     if (err.name === 'NotFoundError') {

@@ -23,6 +23,8 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  // the product the workflow ran on (AWX, AAP, Ascender) : a node's link opens its job there
+  product: { type: String, default: 'AWX' },
 });
 
 const { t } = useI18n();
@@ -503,6 +505,21 @@ const graph = computed(() => {
                   {{ n.status }}
                   <template v-if="n.elapsed > 0">· {{ Math.round(n.elapsed) }}s</template>
                 </text>
+                <!-- its job in the product it ran on (a click on the node opens its output here) -->
+                <a
+                  v-if="n.ui_url"
+                  :href="n.ui_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="awx-node-link"
+                  @click.stop
+                >
+                  <title>{{ t('jobs.openInRunner', { id: n.job, product }) }}</title>
+                  <rect :x="n.x + NODE_W - 26" :y="n.y + NODE_H - 24" width="20" height="20" fill="transparent" />
+                  <text :x="n.x + NODE_W - 10" :y="n.y + NODE_H - 9" text-anchor="end" class="awx-node-link-text">
+                    ↗
+                  </text>
+                </a>
               </g>
               <!-- the hovered node's card : its whole name, over it (the last drawn, so on top) -->
               <text ref="measure" class="awx-node-name awx-measure" x="0" y="0">{{ hovered?.name }}</text>
@@ -528,6 +545,16 @@ const graph = computed(() => {
                   {{ card.status }}
                   <template v-if="card.elapsed > 0">· {{ Math.round(card.elapsed) }}s</template>
                 </text>
+                <!-- the node's link, drawn where it is under the card : the click passes through to it -->
+                <text
+                  v-if="card.ui_url"
+                  :x="card.x + NODE_W - 10"
+                  :y="card.y + NODE_H - 9"
+                  text-anchor="end"
+                  class="awx-node-link-text"
+                >
+                  ↗
+                </text>
               </g>
             </g>
           </svg>
@@ -542,6 +569,19 @@ const graph = computed(() => {
 .awx-node-card {
   pointer-events: none;
   filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.18));
+}
+/* a node's link to its job in the product */
+.awx-node-link {
+  cursor: pointer;
+  text-decoration: none;
+}
+.awx-node-link-text {
+  font-size: 14px;
+  text-decoration: none;
+  fill: var(--bs-link-color);
+}
+.awx-node-link:hover .awx-node-link-text {
+  fill: var(--bs-link-hover-color);
 }
 /* the text a name is measured with : laid out, never seen */
 .awx-measure {

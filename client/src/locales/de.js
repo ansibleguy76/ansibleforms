@@ -2495,6 +2495,7 @@ export default {
     deleteJob: 'Job loeschen',
     duration: 'Dauer',
     openJob: 'Job öffnen',
+    openInRunner: '#{id} in {product} öffnen',
     deleteSelected: 'Löschen ({count})',
     deleteSelectedConfirm: 'Die {count} ausgewählten Jobs löschen?',
     deletedSelected: '{count} Jobs gelöscht',

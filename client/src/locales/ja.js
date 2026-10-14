@@ -2443,6 +2443,7 @@ export default {
     deleteJob: 'ジョブを削除',
     duration: '所要時間',
     openJob: 'ジョブを開く',
+    openInRunner: '{product} で #{id} を開く',
     deleteSelected: '削除 ({count})',
     deleteSelectedConfirm: '選択した {count} 件のジョブを削除しますか？',
     deletedSelected: '{count} 件のジョブを削除しました',

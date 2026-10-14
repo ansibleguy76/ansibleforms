@@ -389,8 +389,13 @@ Awx.launchTemplate = async function (
     var job = axiosResult.data;
     if (job) {
       logger.info(`awx job id = ${job.id}`);
-      // log launch
-      await Job.update({ awx_id: job.id }, jobid);
+      // log launch ; a workflow is known as one from here (its empty graph, filled by the
+      // tracker) : its link and its abort go to the workflow endpoints before the first poll
+      const launched = { awx_id: job.id };
+      if (job.type === "workflow_job" || job.related?.workflow_nodes) {
+        launched.awx_workflow = JSON.stringify({ id: job.id, name: job.name || template.name, status: job.status, nodes: [] });
+      }
+      await Job.update(launched, jobid);
       await Job.printJobOutput(
         // as the RTE's own lines (ok: [Running on RTE ...]) : AnsibleForms' word, not AWX's
         `ok: [Launched template ${template.name} with jobid ${job.id}]`,

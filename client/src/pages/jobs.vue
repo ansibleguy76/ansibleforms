@@ -1224,7 +1224,19 @@ onMounted(async () => {
     <Teleport to="body">
       <div v-if="nodeShown" class="af-node-modal">
         <BsModal size="xl" @close="nodeShown = null" icon="diagram-project">
-          <template #title> {{ nodeShown.node.name }} </template>
+          <template #title>
+            {{ nodeShown.node.name }}
+            <!-- the node's job in the product it ran on -->
+            <a
+              v-if="nodeShown.node.ui_url"
+              :href="nodeShown.node.ui_url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="ms-2 small"
+              :title="t('jobs.openInRunner', { id: nodeShown.node.job, product: jobTypeName(job) })"
+              >#{{ nodeShown.node.job }}<FaIcon icon="arrow-up-right-from-square" class="ms-1"
+            /></a>
+          </template>
           <template #default>
             <AppAnsibleOutput
               :output="nodeShown.html"
@@ -1580,8 +1592,20 @@ onMounted(async () => {
                 <!-- an AWX job : the job template it launched, and its job's number in AWX -->
                 <div v-if="job.job_type == 'awx'" class="af-job-fact">
                   <dt><FaIcon icon="scroll" />{{ t('jobs.template') }}</dt>
-                  <dd :title="job.target">
-                    {{ job.target || '–' }}<span v-if="job.awx_id" class="af-job-fact-note">#{{ job.awx_id }}</span>
+                  <!-- the template cut short when long, its #id always seen -->
+                  <dd :title="job.target" class="af-job-fact-split">
+                    <span class="af-job-fact-text">{{ job.target || '–' }}</span>
+                    <span v-if="job.awx_id" class="af-job-fact-note">
+                      <a
+                        v-if="job.runner_job_url"
+                        :href="job.runner_job_url"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        :title="t('jobs.openInRunner', { id: job.awx_id, product: jobTypeName(job) })"
+                        >#{{ job.awx_id }}<FaIcon icon="arrow-up-right-from-square" class="ms-1"
+                      /></a>
+                      <template v-else>#{{ job.awx_id }}</template>
+                    </span>
                   </dd>
                 </div>
                 <!-- a workflow job : the workflow it ran, and how many nodes (where a playbook job's playbook is) -->
@@ -1626,7 +1650,7 @@ onMounted(async () => {
             <!-- awx workflow graph (only for awx workflow jobs) -->
             <div class="row" v-if="job.awx_workflow?.nodes?.length">
               <div class="col">
-                <AppAwxWorkflow :workflow="job.awx_workflow" @node="openNodeOutput" />
+                <AppAwxWorkflow :workflow="job.awx_workflow" :product="jobTypeName(job)" @node="openNodeOutput" />
               </div>
             </div>
 
@@ -1925,6 +1949,22 @@ onMounted(async () => {
   dd.font-monospace {
     font-size: 0.875rem;
     font-weight: 400;
+  }
+}
+/* a value and its note on one line : the value cut short, the note whole */
+.af-job-fact dd.af-job-fact-split {
+  display: flex;
+  align-items: baseline;
+  .af-job-fact-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .af-job-fact-note {
+    flex-shrink: 0;
+    svg {
+      font-size: 0.65rem;
+    }
   }
 }
 /* the approval review (openReview) : the question, then the job's facts as label and value */

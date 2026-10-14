@@ -2482,6 +2482,7 @@ export default {
     deleteJob: 'Suprimeix la tasca',
     duration: 'Durada',
     openJob: 'Obre la tasca',
+    openInRunner: 'Obre #{id} a {product}',
     deleteSelected: 'Suprimeix ({count})',
     deleteSelectedConfirm: 'Voleu suprimir les {count} tasques seleccionades?',
     deletedSelected: '{count} tasques suprimides',

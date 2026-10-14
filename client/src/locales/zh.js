@@ -2384,6 +2384,7 @@ export default {
     deleteJob: '删除作业',
     duration: '耗时',
     openJob: '打开作业',
+    openInRunner: '在 {product} 中打开 #{id}',
     deleteSelected: '删除 ({count})',
     deleteSelectedConfirm: '删除选中的 {count} 个作业？',
     deletedSelected: '已删除 {count} 个作业',
