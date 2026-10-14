@@ -13,6 +13,7 @@ import { startSyslogServers, reloadSyslogServers } from "../lib/syslogServers.js
 import CrudModel from "../models/crud.model.js";
 import Help from "../models/help.model.js";
 import cronService from "../services/cron.service.js";
+import { rebuildLoginStrategies } from "../auth/loginStrategies.js";
 
 let started = false;
 // the managed .env as this process last applied it
@@ -42,14 +43,6 @@ export async function applyChangedEnv() {
   if (restart.length) {
     logger.warning(`Environment settings changed on another node take effect here after a restart : ${restart.join(", ")}`);
   }
-}
-
-async function rebuildLoginStrategies() {
-  // imported here : the passport strategies belong to the web app, a worker never loads them
-  const { default: authAzureAd } = await import("../auth/auth_azuread.js");
-  const { default: authOidc } = await import("../auth/auth_oidc.js");
-  await authAzureAd.initialize();
-  await authOidc.initialize();
 }
 
 export async function startCluster() {

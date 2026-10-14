@@ -18,8 +18,10 @@ class OIDC {
     }
   }
 
+  // the provider signed in with : the enabled one of its type (Use for sign-in), never just the
+  // first row - with several, that was any of them, and its tenant or client was not the one saved
   static async find() {
-    const res = await mysql.do("SELECT client_id, client_secret, enable, groupfilter, issuer, redirect_uri FROM AnsibleForms.`oauth2_providers` WHERE provider='oidc' LIMIT 1;");
+    const res = await mysql.do("SELECT client_id, client_secret, enable, groupfilter, issuer, redirect_uri FROM AnsibleForms.`oauth2_providers` WHERE provider='oidc' AND enable ORDER BY id LIMIT 1;");
     if (res.length > 0) {
       let record = res[0];
       try {
