@@ -319,7 +319,7 @@ export default {
       name: 'Nombre',
       nameHint: 'Opcional: para qué es el token, así lo reconoces en la lista de abajo.',
       signInAgainHint:
-        'Iniciaste sesión con {type}: aquí no hay contraseña que confirmar. Si tu último inicio de sesión tiene más de unos minutos, primero vuelves a iniciar sesión y luego se crea el token.',
+        'Iniciaste sesión con {type}: aquí no hay contraseña que confirmar. Para crear un token vuelves a iniciar sesión con {type}, introduciendo tus credenciales, y el token se crea al volver.',
       signingInAgain: 'Volviendo a iniciar sesión para crear el token…',
       failedSession: 'No se pudo crear el token.',
       yours: 'Tus tokens',

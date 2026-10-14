@@ -76,11 +76,13 @@ ApiToken.findForUser = async function (username, type) {
  */
 ApiToken.revoke = async function (sid, username, type) {
   const rows = await (await db()).do(
-    "SELECT sid, UNIX_TIMESTAMP(expires_at) AS exp FROM AnsibleForms.`api_tokens` WHERE sid = ? AND username_type = ? AND username = ?",
+    "SELECT sid, expires_at FROM AnsibleForms.`api_tokens` WHERE sid = ? AND username_type = ? AND username = ?",
     [String(sid), type, username]
   );
   if (!rows?.length) return false;
-  await revokeSession(rows[0].sid, Number(rows[0].exp) * 1000);
+  // the column holds UTC, read as UTC by the driver : not UNIX_TIMESTAMP(), which reads it in the
+  // database's own zone and ended the revocation hours early on a server not in UTC
+  await revokeSession(rows[0].sid, new Date(rows[0].expires_at).getTime());
   await (await db()).do("DELETE FROM AnsibleForms.`api_tokens` WHERE sid = ?", [rows[0].sid]);
   touched.delete(rows[0].sid);
   return true;

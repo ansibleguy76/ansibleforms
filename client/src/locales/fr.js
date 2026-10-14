@@ -324,7 +324,7 @@ export default {
       name: 'Nom',
       nameHint: 'Facultatif : à quoi sert le jeton, pour le reconnaître dans la liste ci-dessous.',
       signInAgainHint:
-        "Vous vous êtes connecté avec {type} : il n'y a pas de mot de passe à confirmer ici. Si votre dernière connexion date de plus de quelques minutes, vous vous reconnectez d'abord, puis le jeton est créé.",
+        "Vous vous êtes connecté avec {type} : il n'y a pas de mot de passe à confirmer ici. Pour créer un jeton, vous vous reconnectez avec {type} en saisissant vos identifiants, et le jeton est créé à votre retour.",
       signingInAgain: 'Reconnexion pour créer le jeton…',
       failedSession: "Le jeton n'a pas pu être créé.",
       yours: 'Vos jetons',

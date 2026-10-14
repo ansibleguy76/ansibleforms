@@ -317,7 +317,7 @@ export default {
       name: 'Name',
       nameHint: 'Optional: what the token is for, so you recognise it in the list below.',
       signInAgainHint:
-        'You signed in with {type}: there is no password to confirm here. If your last sign-in is more than a few minutes old, you sign in again first, then the token is created.',
+        'You signed in with {type}: there is no password to confirm here. To create a token you sign in with {type} once more, entering your credentials, and the token is created when you are back.',
       signingInAgain: 'Signing in again to create the token…',
       failedSession: 'The token could not be created.',
       yours: 'Your tokens',

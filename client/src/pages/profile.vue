@@ -27,7 +27,7 @@ import dayjs from 'dayjs';
 import Time, { DATE_FORMATS } from '@/lib/Time';
 import { profileViews, profileMenuViews } from '@/config/profileViews';
 import BaseUrl from '@/lib/BaseUrl';
-import { rememberSsoOrigin, ssoSettled } from '@/lib/ssoReturn';
+import { rememberSsoOrigin, ssoSettled, ssoReturning } from '@/lib/ssoReturn';
 
 // INIT
 
@@ -231,8 +231,10 @@ const usesPassword = computed(() => ['local', 'ldap'].includes(profile.value.typ
 const canSubmitToken = computed(() => !creatingToken.value && (!usesPassword.value || !!tokenForm.value.password));
 // the list under the form, read again once a token is made
 const tokensReload = ref(0);
-// the token asked for before the sign-in ran again, made on the way back
+// the token asked for before the sign-in ran again, made on the way back : only right after that
+// sign-in, by the same user, a few minutes later at most (an abandoned one is never made later)
 const PENDING_TOKEN = 'af_pending_token';
+const PENDING_MAX_MS = 5 * 60 * 1000;
 const tokenExample = computed(() => `curl -H "Authorization: Bearer $TOKEN" ${window.location.origin}/api/v2/job`);
 
 function showToken(token) {
@@ -294,7 +296,15 @@ async function createTokenFromSession(retry = true) {
 // through the provider again, back to this page, where the token asked for is made
 function signInAgain() {
   try {
-    sessionStorage.setItem(PENDING_TOKEN, JSON.stringify({ days: tokenForm.value.days, name: tokenForm.value.name }));
+    sessionStorage.setItem(
+      PENDING_TOKEN,
+      JSON.stringify({
+        days: tokenForm.value.days,
+        name: tokenForm.value.name,
+        username: profile.value.username,
+        at: Date.now(),
+      }),
+    );
   } catch {
     // no storage : the user asks again once back
   }
@@ -302,7 +312,9 @@ function signInAgain() {
   rememberSsoOrigin('/profile/token');
   const issuer = profile.value.type === 'oidc' ? 'oidc' : 'azuread';
   localStorage.setItem('authIssuer', issuer);
-  window.location.replace(`${BaseUrl}/api/v2/auth/${issuer === 'oidc' ? 'oidc' : 'azureadoauth2'}`);
+  // reauth : the provider asks for the credentials again (a live provider session would answer
+  // without asking), and only that sign-in counts as a recent one
+  window.location.replace(`${BaseUrl}/api/v2/auth/${issuer === 'oidc' ? 'oidc' : 'azureadoauth2'}?reauth=1`);
 }
 
 // back from that sign-in : the token asked for before it
@@ -314,8 +326,10 @@ async function resumePendingToken() {
   } catch {
     pending = null;
   }
-  if (!pending) return;
+  if (!pending || !ssoReturning || !(Date.now() - Number(pending.at) < PENDING_MAX_MS)) return;
   await ssoSettled();
+  // the user the new session is of (the profile may not be read yet)
+  if (pending.username !== TokenStorage.getPayload()?.user?.username) return;
   if (Number(pending.days)) tokenForm.value.days = Number(pending.days);
   tokenForm.value.name = String(pending.name || '');
   await createTokenFromSession(false);

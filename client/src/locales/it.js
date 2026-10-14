@@ -322,7 +322,7 @@ export default {
       name: 'Nome',
       nameHint: 'Facoltativo: a cosa serve il token, così lo riconosci nell’elenco qui sotto.',
       signInAgainHint:
-        'Hai effettuato l’accesso con {type}: qui non c’è una password da confermare. Se il tuo ultimo accesso risale a più di qualche minuto fa, prima accedi di nuovo, poi il token viene creato.',
+        'Hai effettuato l’accesso con {type}: qui non c’è una password da confermare. Per creare un token accedi di nuovo con {type} inserendo le tue credenziali, e il token viene creato al tuo ritorno.',
       signingInAgain: 'Nuovo accesso per creare il token…',
       failedSession: 'Impossibile creare il token.',
       yours: 'I tuoi token',

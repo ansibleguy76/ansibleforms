@@ -62,7 +62,7 @@ const create = async function (req, res) {
     if (!Number.isFinite(days) || days < 1) return res.status(400).json(RestResult.error(i18n.t(req, 'errors.apiTokenLifetime', { max: authConfig.apiTokenMaxDays })));
     const name = typeof req.body?.name === 'string' ? req.body.name.trim().slice(0, 100) : '';
     // the session's sign-in time : the token says when its user last proved who they are
-    const issued = await userToJwt(user, days, { name, authTime: req.user.auth_time });
+    const issued = await userToJwt(user, days, { name, authTime: req.user.auth_time, strict: true });
     logger.notice(`Api token made from a session by ${user.username} (${user.type}), ${days} days at most`);
     res.json(RestResult.single({ token: issued.token, expires_at: issued.expires_at }));
   } catch (err) {

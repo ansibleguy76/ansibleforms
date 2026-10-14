@@ -313,7 +313,7 @@ export default {
       name: '名称',
       nameHint: '可选：令牌的用途，便于在下方列表中识别。',
       signInAgainHint:
-        '您通过 {type} 登录：这里没有需要确认的密码。如果上次登录已超过几分钟，会先重新登录，然后创建令牌。',
+        '您通过 {type} 登录：这里没有需要确认的密码。要创建令牌，请再次通过 {type} 输入凭据登录，返回后即会创建令牌。',
       signingInAgain: '正在重新登录以创建令牌…',
       failedSession: '无法创建令牌。',
       yours: '您的令牌',

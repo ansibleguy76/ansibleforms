@@ -101,13 +101,15 @@ async function admitUser(req, res, user, extra = {}) {
  * Args:
  *   user (object): the user signed in.
  *   expiryDays (number): an api token's lifetime in days ; none for a session.
- *   options (object): { name, authTime } - an api token's name, and when its user signed in
- *     (unix seconds ; else now : this sign-in).
+ *   options (object): { name, authTime, strict } - an api token's name ; when its user last
+ *     proved who they are (unix seconds), else now (a password just checked), or null for none (an
+ *     SSO sign-in the provider may have answered without asking anything) ; strict : an api token
+ *     that could not be recorded is not handed out (it could not be revoked on its own).
  *
  * Returns:
  *   Promise<object>: { token, refreshtoken } ; an api token's expiry too (expires_at).
  */
-export async function userToJwt(user,expiryDays,{ name, authTime } = {}){
+export async function userToJwt(user,expiryDays,{ name, authTime, strict = false } = {}){
 
   // is something like
   // {"username":"administrator","type":"local","roles":["default","admin"]}
@@ -143,7 +145,7 @@ export async function userToJwt(user,expiryDays,{ name, authTime } = {}){
   const sid = newSessionId()
   // when its user signed in (unix seconds), kept through the refreshes : an api token is made
   // from a session only shortly after a sign-in (apiToken.controller.js)
-  const auth_time = Number(authTime) || Math.floor(Date.now() / 1000)
+  const auth_time = authTime === null ? undefined : Number(authTime) || Math.floor(Date.now() / 1000)
   const token = jwt.sign(api ? {user:claims,access:true,sid,api:true,auth_time} : {user:claims,access:true,sid,auth_time}, authConfig.secret,{ expiresIn: tokenExpiresIn, issuer: authConfig.jwtIssuer});
   const refreshtoken = jwt.sign({user:claims,refresh:true,sid,auth_time}, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration, issuer: authConfig.jwtIssuer});
   // an api token is listed on its user's profile and page, to be revoked there
@@ -157,6 +159,10 @@ export async function userToJwt(user,expiryDays,{ name, authTime } = {}){
       await ApiToken.record({ sid, username: user.username, type: user.type || 'local', name, createdAt: new Date(iat * 1000), expiresAt: expires_at })
     } catch (err) {
       logger.error(`Failed to record the api token of ${user.username} : ${err}`)
+      if (strict) {
+        await revokeSession(sid, expires_at.getTime())
+        throw err
+      }
     }
   }
   logger.debug(JSON.stringify(claims))
@@ -416,7 +422,30 @@ const errorHandler = async function(err,req, res,_next) {
  * 12. The frontend grabs the token and stores it in the local storage, ready for jwt-bearer authentication
  * 
  */
-const authCallback = function(req, res, next, type) {
+// how long a sign-in asked for again may take at the provider
+const REAUTH_WINDOW_MS = 10 * 60 * 1000
+
+/**
+ * The options of the redirect to the provider : ?reauth=1 (the profile, for an api token) asks the
+ * provider for the credentials again (prompt=login) and marks it in the sign-in's session, so the
+ * callback can say so ; any other sign-in forgets an older mark.
+ *
+ * Args:
+ *   req (object): the request.
+ *
+ * Returns:
+ *   object: the passport.authenticate options.
+ */
+export function ssoStart(req) {
+  const reauth = req.query?.reauth === '1'
+  if (req.session) {
+    if (reauth) req.session.afReauth = Date.now()
+    else delete req.session.afReauth
+  }
+  return reauth ? { prompt: 'login' } : {}
+}
+
+export const authCallback = function(req, res, next, type) {
   return async (err, payload) => {
     // The HANDOFF token : the claims passport just verified, re-signed with OUR secret
     // (lib/ssoHandoff.js explains why). Signed inside the try and only without an error :
@@ -436,7 +465,10 @@ const authCallback = function(req, res, next, type) {
         logger.error(`${type} sign-in failed : no user from the identity provider`)
         return next(reason)
       }
-      const token = signHandoff(payload, type);
+      // a sign-in asked for again (?reauth=1, prompt=login) : said so in the handoff, once
+      const asked = Number(req.session?.afReauth) || 0
+      if (req.session) delete req.session.afReauth
+      const token = signHandoff(payload, type, { reauth: !!asked && Date.now() - asked < REAUTH_WINDOW_MS });
       // in the fragment : the browser keeps it, no server, proxy or access log ever sees it. Into
       // the app, not the login page : the app takes the handoff before it draws anything
       // (client main.js), so the user goes from the provider straight to the page they wanted
@@ -529,7 +561,7 @@ const azureadoauth2 = async function(req, res,next) {
   logger.debug("Redirect to azure")
   // redirect to azure
   try {
-    passport.authenticate('azure_ad_oauth2')(req,res,next)
+    passport.authenticate('azure_ad_oauth2', ssoStart(req))(req,res,next)
   } catch(err) {
     logger.error(`Azure AD redirect failed: ${err?.message || err}`)
     next(err)
@@ -574,8 +606,8 @@ const azureadoauth2login = async function(req, res,_next) {
     // deliberately skipped by the blanket middleware, so an SSO login left no trace at all,
     // successful or refused. The audit trail is the control that would surface a problem here.
     auditLogin(req, 'success', 'azuread', null, user.username);
-    // return token
-    res.json(await userToJwt(user))
+    // a recent sign-in (for an api token) only when the provider asked for the credentials again
+    res.json(await userToJwt(user, undefined, { authTime: payload.reauth ? undefined : null }))
 
   } catch(err){
     logger.error(helpers.getError(err))
@@ -587,7 +619,7 @@ const azureadoauth2login = async function(req, res,_next) {
 const oidc = async function(req, res,next) {
   logger.debug("Redirect to Open ID Issuer")
   // redirect to Open ID Connect Provider
-  passport.authenticate('oidc')(req,res,next)
+  passport.authenticate('oidc', ssoStart(req))(req,res,next)
 };
 
 // callback with the OIDC access token
@@ -622,8 +654,8 @@ const oidcLogin = async function(req, res, _next) {
     // deliberately skipped by the blanket middleware, so an SSO login left no trace at all,
     // successful or refused. The audit trail is the control that would surface a problem here.
     auditLogin(req, 'success', 'oidc', null, user.username);
-    // return token
-    res.json(await userToJwt(user))
+    // a recent sign-in (for an api token) only when the provider asked for the credentials again
+    res.json(await userToJwt(user, undefined, { authTime: payload.reauth ? undefined : null }))
 
   } catch(err){
     logger.error(helpers.getError(err))

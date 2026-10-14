@@ -322,7 +322,7 @@ export default {
       name: 'Name',
       nameHint: 'Optional: wofür das Token ist, damit Sie es in der Liste unten wiedererkennen.',
       signInAgainHint:
-        'Sie haben sich mit {type} angemeldet: Hier gibt es kein Passwort zu bestätigen. Liegt Ihre letzte Anmeldung mehr als ein paar Minuten zurück, melden Sie sich zuerst erneut an, dann wird das Token erstellt.',
+        'Sie haben sich mit {type} angemeldet: Hier gibt es kein Passwort zu bestätigen. Um ein Token zu erstellen, melden Sie sich noch einmal mit {type} an und geben Ihre Anmeldedaten ein; das Token wird erstellt, wenn Sie zurück sind.',
       signingInAgain: 'Erneute Anmeldung, um das Token zu erstellen…',
       failedSession: 'Das Token konnte nicht erstellt werden.',
       yours: 'Ihre Tokens',

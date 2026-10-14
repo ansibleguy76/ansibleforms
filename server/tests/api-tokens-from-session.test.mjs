@@ -28,10 +28,10 @@ vi.mock("../src/models/db.model.js", () => ({
           .filter((r) => r.username_type === type && r.username === username && r.expires_at > new Date())
           .sort((a, b) => b.created_at - a.created_at);
       }
-      if (/SELECT sid, UNIX_TIMESTAMP\(expires_at\)/.test(sql)) {
+      if (/SELECT sid, expires_at FROM/.test(sql)) {
         const [sid, type, username] = params;
         const row = db.apiTokens.get(sid);
-        return row && row.username_type === type && row.username === username ? [{ sid, exp: row.expires_at.getTime() / 1000 }] : [];
+        return row && row.username_type === type && row.username === username ? [{ sid, expires_at: row.expires_at }] : [];
       }
       if (/DELETE FROM AnsibleForms.`api_tokens` WHERE sid/.test(sql)) {
         db.apiTokens.delete(params[0]);

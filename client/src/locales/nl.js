@@ -320,7 +320,7 @@ export default {
       name: 'Naam',
       nameHint: 'Optioneel: waarvoor het token is, zodat je het herkent in de lijst hieronder.',
       signInAgainHint:
-        'Je bent aangemeld met {type}: hier is geen wachtwoord te bevestigen. Is je laatste aanmelding meer dan een paar minuten geleden, dan meld je je eerst opnieuw aan en daarna wordt het token gemaakt.',
+        'Je bent aangemeld met {type}: hier is geen wachtwoord te bevestigen. Om een token te maken meld je je nog een keer aan met {type} en voer je je gegevens in; het token wordt gemaakt als je terug bent.',
       signingInAgain: 'Opnieuw aanmelden om het token te maken…',
       failedSession: 'Het token kon niet worden gemaakt.',
       yours: 'Jouw tokens',
