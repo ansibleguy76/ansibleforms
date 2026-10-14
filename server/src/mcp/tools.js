@@ -7,7 +7,6 @@ import { sha256 } from '../lib/formEngine/node/hash.js';
 import { createFormServices } from '../lib/formServices.js';
 import { describeRowErrors } from '../lib/launchValidation.js';
 import { cronError } from '../lib/cronValidate.js';
-import { Cron } from 'croner';
 import yaml from 'yaml';
 
 /**
@@ -144,16 +143,13 @@ export function createHandlers({ user, deps, policy = {} }) {
     return row;
   }
 
-  /** When a schedule runs next, for a row read without it (the list adds it) : null for none. */
+  /**
+   * When a schedule runs next : as the list has it, else as the model works it out for one row
+   * (the scheduler's zone for a cron, none for a one-time run already past).
+   */
   function nextRunOf(row) {
-    if (row?.one_time_run) return row.run_at ? new Date(row.run_at).toISOString() : null;
-    if (!row?.cron) return null;
-    try {
-      const next = new Cron(String(row.cron), { paused: true }).nextRun();
-      return next ? next.toISOString() : null;
-    } catch {
-      return null;
-    }
+    if (row && 'next_run' in row) return row.next_run ?? null;
+    return Schedule.withNextRun ? Schedule.withNextRun(row).next_run ?? null : null;
   }
 
   /** A schedule as the list shows it : what, when and how it went ; not its values. */
@@ -169,7 +165,7 @@ export function createHandlers({ user, deps, policy = {} }) {
       oneTimeRun: !!row.one_time_run,
       runAt: row.run_at ?? null,
       cron: row.cron || null,
-      nextRun: row.next_run ?? nextRunOf(row),
+      nextRun: nextRunOf(row),
       status: row.status || null,
       state: row.state || null,
       lastRun: row.last_run ?? null,
@@ -187,7 +183,14 @@ export function createHandlers({ user, deps, policy = {} }) {
         + `2026-10-15T20:00:00Z, not '${text}' : a time without a zone is ambiguous`, 'invalid_request');
     }
     const when = new Date(text);
-    if (Number.isNaN(when.getTime())) throw new ToolError(`run_at '${text}' is not a valid time`, 'invalid_request');
+    // a date that does not exist (30 February, 24:00) is moved by the parser without a word :
+    // refused instead, the run would happen on another day than the one asked
+    const [, y, mo, d, h, mi] = text.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/).map(Number);
+    const day = new Date(Date.UTC(y, mo - 1, d));
+    if (Number.isNaN(when.getTime()) || h > 23 || mi > 59
+      || day.getUTCFullYear() !== y || day.getUTCMonth() !== mo - 1 || day.getUTCDate() !== d) {
+      throw new ToolError(`run_at '${text}' is not a valid time`, 'invalid_request');
+    }
     if (when.getTime() < Date.now() - 60 * 1000) {
       throw new ToolError(`run_at '${text}' is in the past`, 'invalid_request', { now: new Date().toISOString() });
     }
@@ -210,6 +213,18 @@ export function createHandlers({ user, deps, policy = {} }) {
       local = new Intl.DateTimeFormat('sv-SE', { timeZone: 'UTC', dateStyle: 'short', timeStyle: 'medium' }).format(when);
     }
     return { runAt: when.toISOString(), runAtLocal: `${local} ${zone}`, timezone: zone };
+  }
+
+  /** A schedule stored ; a name already taken (names are unique, for every user) said so. */
+  async function stored(name, store) {
+    try {
+      return await store();
+    } catch (err) {
+      if (err?.code === 'ER_DUP_ENTRY' || /Duplicate entry/i.test(err?.message || '')) {
+        throw new ToolError(`A schedule named '${name}' already exists ; choose another name`, 'conflict', { name });
+      }
+      throw err;
+    }
   }
 
   /** The cron service runs it from now on (the schedule routes do the same). */
@@ -408,23 +423,25 @@ export function createHandlers({ user, deps, policy = {} }) {
       if (!String(name ?? '').trim()) throw new ToolError('A planned job needs a name', 'invalid_request');
       const ready = await readyToLaunch({ form, values, verbose, expectedPayloadHash });
       // Run later on the form : a one-time run as this user, checked again when it fires
-      const id = await Schedule.plan(user, {
+      const id = await stored(String(name).trim(), () => Schedule.plan(user, {
         name: String(name).trim(),
         form: ready.formObj.name,
         one_time_run: true,
         run_at: when.toISOString(),
         extra_vars: yaml.stringify(ready.extravars),
         raw_form_data: ready.rawFormData,
-      });
+      }));
       const row = await registered(id);
       return { id: row.id, name: row.name, form: ready.formObj.name, ...(await bothClocks(when)), payloadHash: ready.payloadHash, warnings: ready.warnings };
     },
 
-    async createSchedule({ form, name, cron: cronExpr, run_at: runAt, extraVars }) {
+    async createSchedule({ form, name, cron: cronGiven, run_at: runAt, extraVars }) {
       refuseWhenReadOnly('schedules cannot be created through it');
+      // a blank cron is none : it would store a schedule that never runs
+      const cronExpr = String(cronGiven ?? '').trim();
       if (!mayManage) throw new ToolError('You do not have permission to create schedules (the allowScheduledJobs role option)', 'access_denied');
       if (!String(name ?? '').trim()) throw new ToolError('A schedule needs a name', 'invalid_request');
-      if (!!cronExpr === !!runAt) throw new ToolError('Give either cron (a recurring schedule) or run_at (one run), not both', 'invalid_request');
+      if (!!cronExpr === !!runAt) throw new ToolError('Give one of cron (a recurring schedule) or run_at (one run), not both and not neither', 'invalid_request');
       const { formObj } = await loadForm(form);
       if (formObj.type === 'subform') throw new ToolError(`'${formObj.name}' is a subform and cannot be scheduled on its own`, 'unsupported');
       const data = { name: String(name).trim(), form: formObj.name, extra_vars: yaml.stringify(extraVars || {}) };
@@ -432,12 +449,12 @@ export function createHandlers({ user, deps, policy = {} }) {
       if (cronExpr) {
         const problem = cronError(cronExpr);
         if (problem) throw new ToolError(`Not a cron schedule : ${problem}`, 'invalid_request');
-        Object.assign(data, { cron: String(cronExpr).trim(), one_time_run: false });
+        Object.assign(data, { cron: cronExpr, one_time_run: false });
       } else {
         when = momentOf(runAt);
         Object.assign(data, { one_time_run: true, run_at: when.toISOString() });
       }
-      const row = await registered(await Schedule.create(data));
+      const row = await registered(await stored(data.name, () => Schedule.create(data)));
       return { ...scheduleSummary(row), ...(when ? await bothClocks(when) : {}) };
     },
 
@@ -660,7 +677,7 @@ export function registerTools(server, handlers, policy = {}, user = {}) {
       form: z.string().describe('Form name'),
       values: valuesSchema,
       run_at: z.string().describe('When to run it : ISO 8601 with its offset or Z'),
-      name: z.string().describe('A name for the planned run, as listed under Jobs > Scheduled'),
+      name: z.string().min(1).max(255).describe('A name for the planned run, as listed under Jobs > Scheduled ; names are unique'),
       verbose: z.boolean().optional().describe('Verbose ansible output (needs the allowVerboseMode role option)'),
       expectedPayloadHash: z.string().optional().describe('The payloadHash resolve_field returned for the approved values'),
     },
@@ -675,7 +692,7 @@ export function registerTools(server, handlers, policy = {}, user = {}) {
       + 'once as yourself, use plan_job.',
     inputSchema: {
       form: z.string().describe('Form name'),
-      name: z.string().describe('A name for the schedule'),
+      name: z.string().min(1).max(255).describe('A name for the schedule ; names are unique'),
       cron: z.string().optional().describe('A cron expression, for a recurring schedule'),
       run_at: z.string().optional().describe('One run at this time : ISO 8601 with its offset or Z'),
       extraVars: z.record(z.string(), z.any()).optional().describe('The extra vars the job gets'),

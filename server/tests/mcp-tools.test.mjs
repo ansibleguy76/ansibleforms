@@ -422,6 +422,8 @@ describe("MCP schedules", () => {
       findAll: vi.fn(async () => [...rows.values()]),
       findById: vi.fn(async (id) => { if (!rows.has(Number(id))) { const e = new Error(`No schedule ${id}`); e.name = "NotFoundError"; throw e; } return rows.get(Number(id)); }),
       delete: vi.fn(async (id) => rows.delete(Number(id))),
+      // the model's own next run, for a row read alone (the scheduler's zone : not the point here)
+      withNextRun: vi.fn((row) => ({ ...row, next_run: row.cron ? "2031-01-01T22:00:00.000Z" : row.run_at && new Date(row.run_at) > new Date() ? row.run_at : null })),
     };
     deps.cron = { addSchedule: vi.fn(), removeSchedule: vi.fn() };
     deps.appTimezone = vi.fn(async () => "Europe/Madrid");
@@ -486,12 +488,15 @@ describe("MCP schedules", () => {
     expect(r.isError).toBe(false);
     expect(deps.Schedule.create).toHaveBeenCalledWith({ name: "weekdays", form: "Create volume", extra_vars: "size: 5\n", cron: "0 22 * * 1-5", one_time_run: false });
     expect(r.data).toMatchObject({ name: "weekdays", planned: false, runsAs: "Schedule Service", cron: "0 22 * * 1-5" });
-    expect(new Date(r.data.nextRun).getTime()).toBeGreaterThan(Date.now());
+    expect(r.data.nextRun).toBe("2031-01-01T22:00:00.000Z");
+    expect(deps.Schedule.withNextRun).toHaveBeenCalled();
     expect(deps.cron.addSchedule).toHaveBeenCalled();
     const once = await call(client, "create_schedule", { form: "Create volume", name: "once", run_at: later.toISOString() });
     expect(once.data).toMatchObject({ oneTimeRun: true, runAt: later.toISOString() });
     expect((await client.callTool({ name: "create_schedule", arguments: { form: "Create volume", name: "bad", cron: "99 * * * *" } })).structuredContent.code).toBe("invalid_request");
     expect((await client.callTool({ name: "create_schedule", arguments: { form: "Create volume", name: "both", cron: "0 1 * * *", run_at: later.toISOString() } })).structuredContent.code).toBe("invalid_request");
+    // a blank cron is none : with no run_at either, refused rather than a schedule that never runs
+    expect((await client.callTool({ name: "create_schedule", arguments: { form: "Create volume", name: "blank", cron: "   " } })).structuredContent.code).toBe("invalid_request");
     await expect(createHandlers({ user: planner, deps }).createSchedule({ form: "Create volume", name: "x", cron: "0 1 * * *" })).rejects.toMatchObject({ code: "access_denied" });
   });
 
@@ -518,5 +523,43 @@ describe("MCP schedules", () => {
   test("chat forms only : the schedules of a form MCP does not offer are left out", async () => {
     const r = await call(await connect(manager, { chatFormsOnly: true }), "list_schedules");
     expect(r.data.schedules).toEqual([]);
+  });
+
+  test("a date that does not exist is refused, an offset without a colon is read", async () => {
+    const h = createHandlers({ user: planner, deps });
+    const values = { cluster: "c1", name: "v1" };
+    for (const runAt of ["2031-02-30T10:00:00Z", "2031-01-10T24:00:00Z", "2031-01-10T10:60:00Z"]) {
+      await expect(h.planJob({ form: "Create volume", values, run_at: runAt, name: "x" })).rejects.toMatchObject({ code: "invalid_request" });
+    }
+    const r = await h.planJob({ form: "Create volume", values, run_at: "2031-01-10T10:00:00+0530", name: "india" });
+    expect(r.runAt).toBe("2031-01-10T04:30:00.000Z");
+  });
+
+  test("a name already taken is a conflict, not an internal error", async () => {
+    deps.Schedule.plan.mockRejectedValueOnce(Object.assign(new Error("Duplicate entry 'tonight' for key 'uk_schedule_natural_key'"), { code: "ER_DUP_ENTRY" }));
+    const r = await (await connect(planner)).callTool({ name: "plan_job", arguments: { form: "Create volume", values: { cluster: "c1", name: "v1" }, run_at: later.toISOString(), name: "tonight" } });
+    expect(r.structuredContent).toMatchObject({ code: "conflict", name: "tonight" });
+  });
+
+  test("a run planned by an ldap bob is not the local bob's", async () => {
+    rows.set(4, { id: 4, name: "ldap bob", form: "Create volume", one_time_run: 1, owner: JSON.stringify({ username: "bob", type: "ldap" }), extra_vars: "" });
+    const h = createHandlers({ user: planner, deps });
+    expect((await h.listSchedules({})).schedules.map((x) => x.id)).toEqual([1]);
+    await expect(h.getSchedule({ id: 4 })).rejects.toMatchObject({ code: "not_found" });
+    await expect(h.deleteSchedule({ id: 4 })).rejects.toMatchObject({ code: "not_found" });
+  });
+
+  test("the handlers refuse too : read only, no option, a form MCP does not offer", async () => {
+    const ro = createHandlers({ user: manager, deps, policy: { readOnly: true } });
+    await expect(ro.createSchedule({ form: "Create volume", name: "x", cron: "0 1 * * *" })).rejects.toMatchObject({ code: "access_denied" });
+    await expect(ro.deleteSchedule({ id: 1 })).rejects.toMatchObject({ code: "access_denied" });
+    const none = createHandlers({ user, deps });
+    for (const call of [() => none.listSchedules({}), () => none.getSchedule({ id: 1 }), () => none.deleteSchedule({ id: 1 })]) {
+      await expect(call()).rejects.toMatchObject({ code: "access_denied" });
+    }
+    const chat = createHandlers({ user: manager, deps, policy: { chatFormsOnly: true } });
+    await expect(chat.getSchedule({ id: 2 })).rejects.toMatchObject({ code: "not_found" });
+    await expect(chat.deleteSchedule({ id: 2 })).rejects.toMatchObject({ code: "not_found" });
+    expect(deps.Schedule.delete).not.toHaveBeenCalled();
   });
 });
