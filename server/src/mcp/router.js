@@ -11,6 +11,9 @@ import Job from '../models/job.model.js';
 import Expression from '../models/expression.model.js';
 import Query from '../models/query.model.js';
 import { resolveFormQuery } from '../lib/queryPolicy.js';
+import Schedule from '../models/schedule.model.js';
+import Settings from '../models/settings.model.js';
+import cronService from '../services/cron.service.js';
 import { createHandlers, registerTools } from './tools.js';
 import appConfig from '../../config/app.config.js';
 
@@ -33,7 +36,9 @@ const version = (() => {
   }
 })();
 
-const deps = { Form, Job, Expression, Query, resolveFormQuery };
+// the app's display zone (Settings > Appearance > Defaults) : a planned run's time is answered on it
+const appTimezone = async () => (await Settings.findAppDefaults())?.timezone || 'UTC';
+const deps = { Form, Job, Expression, Query, resolveFormQuery, Schedule, cron: cronService, appTimezone };
 
 function jsonRpcError(res, status, code, message) {
   res.status(status).json({ jsonrpc: '2.0', error: { code, message }, id: null });
@@ -50,7 +55,7 @@ router.post('/', async (req, res) => {
   // the MCP settings, read per request so a change applies at once : read only, and which
   // forms are offered (the chat assistant shares the handlers, without this policy)
   const policy = { readOnly: appConfig.mcpReadOnly, chatFormsOnly: appConfig.mcpChatFormsOnly };
-  registerTools(server, createHandlers({ user, deps, policy }), policy);
+  registerTools(server, createHandlers({ user, deps, policy }), policy, user);
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     // plain JSON responses : every tool answers in one piece, and a JSON body is easier on

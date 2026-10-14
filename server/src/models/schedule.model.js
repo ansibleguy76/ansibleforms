@@ -44,6 +44,11 @@ function withNextRun(row) {
 class Schedule extends CrudModel {
   static modelName = 'schedule';
 
+  /** A schedule with when it runs next (next_run), as the list shows it : for one row read alone. */
+  static withNextRun(row) {
+    return withNextRun(row);
+  }
+
   static async create(data) {
     logger.info(`Creating schedule ${data.name}`);
     // `owner` is written by plan() alone. A request body that carries one is somebody
