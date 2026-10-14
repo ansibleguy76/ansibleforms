@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.2.0](https://github.com/ansibleforms/ansibleforms/compare/7.1.0...7.2.0) (2026-10-14)
+
+
+### Added
+
+* a job on awx, aap or ascender links to its run in that product ([#1075](https://github.com/ansibleforms/ansibleforms/issues/1075)) ([e429f23](https://github.com/ansibleforms/ansibleforms/commit/e429f23c1ea369532b214f6e45c1273bddd823ba)), closes [#1065](https://github.com/ansibleforms/ansibleforms/issues/1065)
+* mcp tools for stored jobs, and launching from one ([#1078](https://github.com/ansibleforms/ansibleforms/issues/1078)) ([6fa6e27](https://github.com/ansibleforms/ansibleforms/commit/6fa6e27299e6c1ed15ee89c1e36e5310fd02b98b)), closes [#1070](https://github.com/ansibleforms/ansibleforms/issues/1070)
+* mcp tools to plan a job, create schedules, and list, read and delete them ([#1077](https://github.com/ansibleforms/ansibleforms/issues/1077)) ([1580a3c](https://github.com/ansibleforms/ansibleforms/commit/1580a3c4ab03b5939085cec5fd049ed89ef25097)), closes [#1069](https://github.com/ansibleforms/ansibleforms/issues/1069)
+* sso users can create api tokens from their session, and tokens can be listed and revoked ([#1076](https://github.com/ansibleforms/ansibleforms/issues/1076)) ([65cd199](https://github.com/ansibleforms/ansibleforms/commit/65cd19953098fb37013bc05c567df9454a181d41)), closes [#1068](https://github.com/ansibleforms/ansibleforms/issues/1068)
+* the date and time picker says which time zone it is on and can switch between the app's and the browser's ([#1074](https://github.com/ansibleforms/ansibleforms/issues/1074)) ([0927d36](https://github.com/ansibleforms/ansibleforms/commit/0927d36d0c1b78df29249cfd0ab88ef71ede4151)), closes [#1064](https://github.com/ansibleforms/ansibleforms/issues/1064)
+
+
+### Fixed
+
+* an admin's run later runs as the admin with the form values, and a job launched by a schedule can be relaunched ([#1073](https://github.com/ansibleforms/ansibleforms/issues/1073)) ([1b11af5](https://github.com/ansibleforms/ansibleforms/commit/1b11af5f3d1f45f2dddf5291f5a3b14b05c91e24)), closes [#1063](https://github.com/ansibleforms/ansibleforms/issues/1063)
+* requests that refresh an expired session at the same time no longer sign the user out ([#1072](https://github.com/ansibleforms/ansibleforms/issues/1072)) ([d9be41d](https://github.com/ansibleforms/ansibleforms/commit/d9be41d779b6da9e9f36ac9cdafae33cd8bb6fbc)), closes [#1062](https://github.com/ansibleforms/ansibleforms/issues/1062)
+* single sign-on uses the enabled Entra ID or OIDC provider, not the first one saved ([#1066](https://github.com/ansibleforms/ansibleforms/issues/1066)) ([bb072dd](https://github.com/ansibleforms/ansibleforms/commit/bb072dd09269092c0afb4a0d17f7c5861e4d7c5c))
+* the designer no longer offers the default role to a form, a new form starts with no role ([#1071](https://github.com/ansibleforms/ansibleforms/issues/1071)) ([416f54b](https://github.com/ansibleforms/ansibleforms/commit/416f54b6c6c69ed763656b13e7a2f0f0af3162ea))
+
 ## [7.1.0](https://github.com/ansibleforms/ansibleforms/compare/7.0.3...7.1.0) (2026-10-14)
 
 
