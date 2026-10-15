@@ -839,6 +839,7 @@ const buildMismatch = computed(() => {
   // how the account signs in (Local account, LDAP, Microsoft Entra ID) : lighter, under its name
   .af-menu-type {
     color: var(--bs-tertiary-color);
+    padding-top: 0.25rem;
   }
 
   // collapsed (mobile) menu: plain stacked list
