@@ -824,6 +824,7 @@ export default {
       month: '月',
       dayOfWeek: '曜日',
       placeholder: '* * * * *',
+      placeholderZone: '* * * * * {zone}',
       invalid: '無効な cron 式です',
       invalidStep:
         '数値の接頭辞付きのステップ (例: 7/10) はサポートされていません - */step または min-max/step を使用してください',
@@ -852,6 +853,7 @@ export default {
       zoneBrowser: 'ブラウザのタイムゾーン ({zone})',
       zoneApp: 'アプリのタイムゾーン ({zone})',
       zonePick: '日時のタイムゾーン',
+      datePlaceholderZone: '{format} {zone}',
       datePlaceholders: {
         date: 'YYYY-MM-DD',
         datetime: 'YYYY-MM-DD HH:mm',

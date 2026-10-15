@@ -814,6 +814,7 @@ export default {
       month: '月',
       dayOfWeek: '星期',
       placeholder: '* * * * *',
+      placeholderZone: '* * * * * {zone}',
       invalid: '无效的 cron 表达式',
       invalidStep: '不支持带数字前缀的步长（例如 7/10），请使用 */步长 或 最小值-最大值/步长',
       unsupported: '无法预览：此表达式使用了编辑器不支持的 cron 功能',
@@ -841,6 +842,7 @@ export default {
       zoneBrowser: '浏览器的时区 ({zone})',
       zoneApp: '应用的时区 ({zone})',
       zonePick: '日期和时间的时区',
+      datePlaceholderZone: '{format} {zone}',
       datePlaceholders: {
         date: 'YYYY-MM-DD',
         datetime: 'YYYY-MM-DD HH:mm',

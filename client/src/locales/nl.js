@@ -828,6 +828,7 @@ export default {
       month: 'Maand',
       dayOfWeek: 'Weekdag',
       placeholder: '* * * * *',
+      placeholderZone: '* * * * * {zone}',
       invalid: 'Ongeldige cron-expressie',
       invalidStep:
         'Stapgrootte met numeriek voorvoegsel (bijv. 7/10) wordt niet ondersteund - gebruik */stap of min-max/stap',
@@ -856,6 +857,7 @@ export default {
       zoneBrowser: 'De tijdzone van je browser ({zone})',
       zoneApp: 'De tijdzone van de applicatie ({zone})',
       zonePick: 'Tijdzone van datum en tijd',
+      datePlaceholderZone: '{format} {zone}',
       datePlaceholders: {
         date: 'JJJJ-MM-DD',
         datetime: 'JJJJ-MM-DD UU:mm',

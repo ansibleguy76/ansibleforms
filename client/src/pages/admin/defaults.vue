@@ -15,7 +15,7 @@ import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import Helpers from '@/lib/Helpers';
 import Theme from '@/lib/Theme';
-import Time, { DATE_FORMATS } from '@/lib/Time';
+import Time, { BROWSER, DATE_FORMATS } from '@/lib/Time';
 import dayjs from 'dayjs';
 import State from '@/lib/State';
 import { useEnvVars } from '@/composables/useEnvVars';
@@ -63,7 +63,9 @@ const timezones = computed(() => [
 // each date format as the app writes a date with it : the date, the time and the zone, in the
 // default time zone chosen above, then the pattern
 const dateFormats = computed(() => {
-  const zone = theme.value.default_timezone || 'UTC';
+  // each user's browser : this one's zone, as this admin's own browser shows it
+  const pref = theme.value.default_timezone || 'UTC';
+  const zone = pref === BROWSER ? Time.browserZone() : pref;
   const now = new Date();
   let name = zone;
   try {

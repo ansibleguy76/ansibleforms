@@ -2353,19 +2353,8 @@ onBeforeUnmount(() => {
 
       <div class="mb-3" v-if="scheduleAction === 'schedule'">
         <label class="form-label">{{ t('form.cronExpression') }} <span class="text-danger">*</span></label>
-        <input
-          type="text"
-          class="form-control font-monospace"
-          v-model="scheduleForm.cron"
-          placeholder="0 0 * * *"
-          :disabled="scheduleSubmitting"
-        />
-        <small class="form-text text-muted">
-          Examples:<br />
-          <code>0 0 * * *</code> - Daily at midnight<br />
-          <code>0 */6 * * *</code> - Every 6 hours<br />
-          <code>0 9 * * 1-5</code> - Weekdays at 9am
-        </small>
+        <!-- the same editor as a schedule's : presets, the next runs, and the scheduler's zone -->
+        <BsCron v-model="scheduleForm.cron" icon="stopwatch" />
       </div>
 
       <div class="mb-3" v-if="scheduleAction === 'run-later'">

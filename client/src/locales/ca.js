@@ -831,6 +831,7 @@ export default {
       month: 'Mes',
       dayOfWeek: 'Dia de la setmana',
       placeholder: '* * * * *',
+      placeholderZone: '* * * * * {zone}',
       invalid: 'Expressió cron no vàlida',
       invalidStep: "No s'admet un pas amb un prefix numèric (p. ex. 7/10) - utilitza */pas o min-max/pas",
       unsupported: "No es pot previsualitzar: aquesta expressió utilitza una funció de cron que l'editor no admet",
@@ -858,6 +859,7 @@ export default {
       zoneBrowser: 'La zona horària del teu navegador ({zone})',
       zoneApp: "La zona horària de l'aplicació ({zone})",
       zonePick: 'Zona horària de la data i hora',
+      datePlaceholderZone: '{format} {zone}',
       datePlaceholders: {
         date: 'AAAA-MM-DD',
         datetime: 'AAAA-MM-DD HH:mm',

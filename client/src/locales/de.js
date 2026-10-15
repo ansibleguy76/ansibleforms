@@ -832,6 +832,7 @@ export default {
       month: 'Monat',
       dayOfWeek: 'Wochentag',
       placeholder: '* * * * *',
+      placeholderZone: '* * * * * {zone}',
       invalid: 'Ungültiger Cron-Ausdruck',
       invalidStep:
         'Schrittweite mit numerischem Präfix (z. B. 7/10) wird nicht unterstützt - verwenden Sie */Schritt oder Min-Max/Schritt',
@@ -861,6 +862,7 @@ export default {
       zoneBrowser: 'Die Zeitzone Ihres Browsers ({zone})',
       zoneApp: 'Die Zeitzone der Anwendung ({zone})',
       zonePick: 'Zeitzone von Datum und Uhrzeit',
+      datePlaceholderZone: '{format} {zone}',
       datePlaceholders: {
         date: 'JJJJ-MM-TT',
         datetime: 'JJJJ-MM-TT HH:mm',

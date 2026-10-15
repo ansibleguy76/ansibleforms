@@ -831,6 +831,7 @@ export default {
       month: 'Mese',
       dayOfWeek: 'Giorno sett.',
       placeholder: '* * * * *',
+      placeholderZone: '* * * * * {zone}',
       invalid: 'Espressione cron non valida',
       invalidStep: 'Il passo con prefisso numerico (es. 7/10) non è supportato - usare */passo o min-max/passo',
       unsupported: 'Anteprima non disponibile: questa espressione usa una funzione cron non supportata dall’editor',
@@ -858,6 +859,7 @@ export default {
       zoneBrowser: 'Il fuso orario del tuo browser ({zone})',
       zoneApp: "Il fuso orario dell'applicazione ({zone})",
       zonePick: 'Fuso orario di data e ora',
+      datePlaceholderZone: '{format} {zone}',
       datePlaceholders: {
         date: 'AAAA-MM-GG',
         datetime: 'AAAA-MM-GG HH:mm',

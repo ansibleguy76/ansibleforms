@@ -826,6 +826,7 @@ export default {
       month: 'Miesiąc',
       dayOfWeek: 'Dzień tygodnia',
       placeholder: '* * * * *',
+      placeholderZone: '* * * * * {zone}',
       invalid: 'Nieprawidłowe wyrażenie cron',
       invalidStep: 'Krok z prefiksem liczbowym (np. 7/10) nie jest obsługiwany - użyj */krok lub min-max/krok',
       unsupported: 'Nie można wyświetlić podglądu: to wyrażenie używa funkcji cron, której edytor nie obsługuje',
@@ -853,6 +854,7 @@ export default {
       zoneBrowser: 'Strefa czasowa przeglądarki ({zone})',
       zoneApp: 'Strefa czasowa aplikacji ({zone})',
       zonePick: 'Strefa czasowa daty i godziny',
+      datePlaceholderZone: '{format} {zone}',
       datePlaceholders: {
         date: 'RRRR-MM-DD',
         datetime: 'RRRR-MM-DD GG:mm',

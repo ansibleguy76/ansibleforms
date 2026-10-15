@@ -9,7 +9,8 @@
 /*      dateType: String                                          */
 /*      icon: String                                              */
 /*      placeholder: String - shown while empty ; none, the       */
-/*         format of its type (YYYY-MM-DD HH:mm for datetime)     */
+/*         format of its type (YYYY-MM-DD HH:mm for datetime),    */
+/*         with the zone for a moment (convertToUtc)              */
 /*      teleport: Boolean - the calendar opened on the page's     */
 /*         body : in a dialog, whose scrolling body would cut it  */
 /*         off                                                    */
@@ -58,7 +59,10 @@ const { t, te } = useI18n();
 const shownPlaceholder = computed(() => {
   if (props.placeholder) return props.placeholder;
   const key = `settings.common.datePlaceholders.${props.dateType}`;
-  return te(key) ? t(key) : '';
+  const format = te(key) ? t(key) : '';
+  // a moment : the zone it is picked on too, as the time means nothing without it
+  if (!isMoment.value || !format) return format;
+  return t('settings.common.datePlaceholderZone', { format, zone: Time.zoneLabel(shownMoment.value, zone.value) });
 });
 const hasFocus = ref(false);
 const tempValue = ref('');
@@ -556,8 +560,6 @@ watch(
       <div class="input-group mt-2">
         <span class="input-group-text" :class="{ 'text-body': hasFocus, 'text-gray-500': !hasFocus }">
           <FaIcon :fixedwidth="true" :icon="icon" />
-          <!-- the zone the moment is shown on ; at the start, the calendar's clear button sits at the end -->
-          <span v-if="isMoment" class="ms-2 small" :title="zone">{{ Time.zoneName(shownMoment, zone) }}</span>
         </span>
         <input
           v-model="tempValue"
