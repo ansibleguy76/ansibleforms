@@ -10,7 +10,7 @@ export const roleOptionGroups = [
   {
     name: 'pages',
     title: 'profilePage.groupPages',
-    keys: ['showSettings', 'showLogs', 'showJobs', 'showDebugButtons'],
+    keys: ['showSettings', 'showJobs', 'showLogs', 'showDebugButtons'],
   },
   {
     name: 'designer',
@@ -41,8 +41,8 @@ export const roleOptionGroups = [
 // every role option, in the groups' order
 export const roleOptionKeys = [
   'showSettings',
-  'showLogs',
   'showJobs',
+  'showLogs',
   'showDebugButtons',
   'showDesigner',
   'allowPlaybookDesign',
