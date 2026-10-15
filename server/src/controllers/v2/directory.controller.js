@@ -8,8 +8,8 @@ import RestResult from '../../models/restResult.model.v2.js';
 import i18n from '../../lib/i18n.js';
 import helpers from '../../lib/common.js';
 import mysql from '../../models/db.model.js';
-import authConfig from '../../../config/auth.config.js';
 import { revokeUser } from '../../lib/tokenRevocation.js';
+import { revocationHorizonSeconds } from '../../lib/tokenLifetime.js';
 import { configRoles } from '../../lib/roleCounts.js';
 import { directoryUserRows, directoryGroupRows } from '../../lib/directoryViews.js';
 
@@ -41,7 +41,7 @@ function identity(req, res) {
  *   id (object): { type, name }.
  */
 async function endSessions(id) {
-  await revokeUser(id.name, id.type, authConfig.apiTokenMaxDays * 86400);
+  await revokeUser(id.name, id.type, revocationHorizonSeconds());
   await mysql.do('DELETE FROM AnsibleForms.`tokens` WHERE username = ? AND username_type = ?', [id.name, id.type]);
 }
 

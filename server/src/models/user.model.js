@@ -25,6 +25,10 @@ function applyOptionDefaults(options, isAdmin) {
   // in the designer, each kind of file written (saved, new, removed, pushed) : on for every
   // designer unless a role says otherwise
   if (options.allowPlaybookDesign === undefined) options.allowPlaybookDesign = true;
+  // api tokens (lib/tokenLifetime.js) : off unless a role turns them on ; extendedTokenExpiration
+  // (tokens too, and one that never expires) off as well
+  if (options.allowApiTokens === undefined) options.allowApiTokens = false;
+  if (options.extendedTokenExpiration === undefined) options.extendedTokenExpiration = false;
   if (options.allowWorkflowDesign === undefined) options.allowWorkflowDesign = true;
   if (options.allowInventoryDesign === undefined) options.allowInventoryDesign = true;
   if (options.allowVarsFileDesign === undefined) options.allowVarsFileDesign = true;

@@ -26,6 +26,7 @@ export const roleOptionKeys = [
   'allowPlannedJobs',
   'allowChat',
   'allowMcp',
+  'allowApiTokens',
   'extendedTokenExpiration',
 ];
 

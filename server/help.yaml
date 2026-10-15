@@ -749,10 +749,12 @@
     short: API token maximum life (days)
     hint: A login with ?expiryDays= longer than this is cut to it
     description: |
-      A role with the `extendedTokenExpiration` option may log in with `?expiryDays=<n>` and get
-      an access token that lives n days, for scripts and integrations. It lives this many days at
-      most : a longer request is cut to it. Like every token, it ends sooner when its user
-      changes their password (or an admin sets it), or when its session logs out.
+      A role with the `allowApiTokens` option may log in with `?expiryDays=<n>` and get an access
+      token that lives n days, for scripts and integrations. It lives this many days at most : a
+      longer request is cut to it. A role with `extendedTokenExpiration` may also ask
+      `?expiryDays=never` for a token that never expires. Like every token, it ends sooner when its
+      user changes their password (or an admin sets it), when it is revoked, or when its session
+      logs out.
 
       Profile > API token makes one for any account. A local or LDAP user confirms their
       password ; a Microsoft Entra ID or OIDC user has none here, so the token is made from their session,
@@ -1552,7 +1554,8 @@
       - showLogs: The user can see the logs page
       - showJobs: The user can see the jobs page. Default true.
       - showArtifacts: The user can see the artifacts an AWX job returns. Default true.
-      - extendedTokenExpiration: The user can request a token with a longer expiration time (for coding api purposes for example)  
+      - allowApiTokens: The user can make API tokens (Profile > API token), living up to API_TOKEN_MAX_DAYS. Default false. (Added in 7.3.0)
+      - extendedTokenExpiration: The user can make API tokens too, and one that never expires. Default false.
       - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
       - allowLogin: The user can login.
       - allowBackupOps: The user can perform database operations, such as backup and restore.
@@ -1762,7 +1765,8 @@
           - showLogs: The user can see the logs page
           - showJobs: The user can see the jobs page. Default true.
           - showArtifacts: The user can see the artifacts an AWX job returns. Default true.
-          - extendedTokenExpiration: The user can request a token with a longer expiration time (for coding api purposes for example)  
+          - allowApiTokens: The user can make API tokens (Profile > API token), living up to API_TOKEN_MAX_DAYS. Default false. (Added in 7.3.0)
+          - extendedTokenExpiration: The user can make API tokens too, and one that never expires. Default false.
           - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
           - allowLogin: The user can login.
           - allowBackupOps: The user can perform database operations, such as backup and restore.

@@ -8,7 +8,8 @@
 /*                                                                */
 /*  @query:                                                       */
 /*      view: account | preferences | password | permissions |    */
-/*            token (only for roles with extendedTokenExpiration) */
+/*            token (only for roles with allowApiTokens or        */
+/*            extendedTokenExpiration)                            */
 /*                                                                */
 /******************************************************************/
 
@@ -27,6 +28,7 @@ import dayjs from 'dayjs';
 import Time, { DATE_FORMATS } from '@/lib/Time';
 import { profileViews, profileMenuViews } from '@/config/profileViews';
 import BaseUrl from '@/lib/BaseUrl';
+import { neverExpires } from '@/lib/apiTokens';
 import { rememberSsoOrigin, ssoSettled, ssoReturning } from '@/lib/ssoReturn';
 
 // INIT
@@ -126,7 +128,7 @@ const PERMISSION_GROUPS = [
   {
     name: 'other',
     title: () => t('profilePage.groupOther'),
-    keys: ['allowLogin', 'allowBackupOps', 'allowChat', 'allowMcp', 'extendedTokenExpiration'],
+    keys: ['allowLogin', 'allowBackupOps', 'allowChat', 'allowMcp', 'allowApiTokens', 'extendedTokenExpiration'],
   },
 ];
 // what each option lets the user do (spelled out per key, so the i18n key check finds them)
@@ -152,6 +154,7 @@ const OPTION_DESCRIPTIONS = {
   allowBackupOps: () => t('profilePage.optionDescription.allowBackupOps'),
   allowChat: () => t('profilePage.optionDescription.allowChat'),
   allowMcp: () => t('profilePage.optionDescription.allowMcp'),
+  allowApiTokens: () => t('profilePage.optionDescription.allowApiTokens'),
   extendedTokenExpiration: () => t('profilePage.optionDescription.extendedTokenExpiration'),
 };
 const permissionGroups = computed(() => {
@@ -201,17 +204,20 @@ const canSavePassword = computed(() => {
 });
 
 // the api token : a login with the user's password and a longer expiry (the login endpoint's
-// expiryDays, honoured for roles with extendedTokenExpiration) ; an SSO account has no password
+// expiryDays, honoured for roles with allowApiTokens or extendedTokenExpiration) ; an SSO account has no password
 // here, its token is made from this session (#1068), which must have signed in a few minutes ago :
 // else the sign-in runs again first, and the token is made on the way back. Shown once ; it ends
 // at its expiry, when it is revoked (the list under it), or with a password change or a block.
 // The server caps the expiry at API_TOKEN_MAX_DAYS : only the lifetimes up to that cap are offered,
 // plus the cap itself, so a longer choice is never silently shortened.
 const tokenMaxDays = ref(90);
+// a role with extendedTokenExpiration may also make one that never expires ('never')
+const canNeverExpire = computed(() => !!profile.value?.options?.extendedTokenExpiration);
 const TOKEN_LIFETIMES = computed(() => {
   const max = tokenMaxDays.value;
   const list = [30, 90, 180, 365].filter((d) => d <= max);
   if (!list.includes(max)) list.push(max);
+  if (canNeverExpire.value) list.push('never');
   return list;
 });
 const tokenForm = ref({ days: 90, password: '', name: '' });
@@ -239,7 +245,10 @@ const tokenExample = computed(() => `curl -H "Authorization: Bearer $TOKEN" ${wi
 
 function showToken(token) {
   const exp = TokenStorage.decode(token).exp;
-  tokenResult.value = { token, expires: Time.format(exp * 1000) };
+  tokenResult.value = {
+    token,
+    expires: neverExpires(exp * 1000) ? t('apiTokens.neverExpires') : Time.format(exp * 1000),
+  };
   tokenForm.value.name = '';
   tokensReload.value++;
 }
@@ -330,7 +339,9 @@ async function resumePendingToken() {
   await ssoSettled();
   // the user the new session is of (the profile may not be read yet)
   if (pending.username !== TokenStorage.getPayload()?.user?.username) return;
-  if (Number(pending.days)) tokenForm.value.days = Number(pending.days);
+  // a number of days, or 'never' (a token that never expires) : kept as it was asked
+  if (pending.days === 'never') tokenForm.value.days = 'never';
+  else if (Number(pending.days)) tokenForm.value.days = Number(pending.days);
   tokenForm.value.name = String(pending.name || '');
   await createTokenFromSession(false);
 }
@@ -747,7 +758,7 @@ async function changePassword() {
                 <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="hourglass-half" /></span>
                 <select id="af-token-days" v-model.number="tokenForm.days" class="form-select">
                   <option v-for="d in TOKEN_LIFETIMES" :key="d" :value="d">
-                    {{ t('profilePage.token.days', { n: d }) }}
+                    {{ d === 'never' ? t('apiTokens.neverExpires') : t('profilePage.token.days', { n: d }) }}
                   </option>
                 </select>
               </div>

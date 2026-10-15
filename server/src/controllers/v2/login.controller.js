@@ -19,6 +19,7 @@ import Audit from "../../models/audit.model.js";
 import { claimsDisplayName } from "../../lib/displayName.js";
 import { loginBlocked, loginFailed, loginSucceeded } from "../../lib/loginThrottle.js";
 import { newSessionId, revokeSession, consumeOnce } from "../../lib/tokenRevocation.js";
+import { NEVER_DAYS, apiTokenDays, revocationHorizonSeconds } from "../../lib/tokenLifetime.js";
 import { admitSignIn } from "../../lib/signInGate.js";
 import { tokenUser, forgetGroups } from "../../lib/userGroups.js";
 import ApiToken from "../../models/apiToken.model.js";
@@ -96,11 +97,12 @@ async function admitUser(req, res, user, extra = {}) {
 }
 
 /**
- * The tokens of a sign-in, or an api token (expiryDays, for a role with extendedTokenExpiration).
+ * The tokens of a sign-in, or an api token (expiryDays, for a role with allowApiTokens or
+ * extendedTokenExpiration ; 'never' for one that never expires, the extended one only).
  *
  * Args:
  *   user (object): the user signed in.
- *   expiryDays (number): an api token's lifetime in days ; none for a session.
+ *   expiryDays (number|string): an api token's lifetime in days, or 'never' ; none for a session.
  *   options (object): { name, authTime, strict } - an api token's name ; when its user last
  *     proved who they are (unix seconds), else now (a password just checked), or null for none (an
  *     SSO sign-in the provider may have answered without asking anything) ; strict : an api token
@@ -119,13 +121,14 @@ export async function userToJwt(user,expiryDays,{ name, authTime, strict = false
   // passes its gate (Middleware.disclaimerGate)
   var api = false
 
-  if(expiryDays && (user?.options["extendedTokenExpiration"] ?? false) && !isNaN(expiryDays)){  
-    // bounded : an api token lives API_TOKEN_MAX_DAYS at most, and a password change or a
-    // logout of its session ends it sooner (lib/tokenRevocation.js)
-    const days = Math.min(Math.max(1, Math.floor(Number(expiryDays))), authConfig.apiTokenMaxDays)
+  // bounded : an api token lives API_TOKEN_MAX_DAYS at most (or NEVER_DAYS, one that never
+  // expires), and a password change or a logout of its session ends it sooner
+  // (lib/tokenRevocation.js) ; a user without the role option gets a session's tokens
+  const days = expiryDays ? apiTokenDays(user, expiryDays) : null
+  if(days){
     tokenExpiresIn = `${days}d`
     api = true
-    logger.info(`Extended token expiration (${days} days) requested for ${user.username}`)
+    logger.info(`Api token (${days === NEVER_DAYS ? 'never expires' : `${days} days`}) requested for ${user.username}`)
   }else{
     tokenExpiresIn = authConfig.jwtExpiration
   }
@@ -359,7 +362,7 @@ const logout = async function(req, res, _next){
     const bearer = String(req.headers?.authorization || '').replace(/^Bearer\s+/i, '')
     if (bearer) {
       const payload = jwt.verify(bearer, authConfig.secret, { issuer: authConfig.jwtIssuer, ignoreExpiration: true })
-      if (payload?.sid) await revokeSession(payload.sid, Date.now() + authConfig.apiTokenMaxDays * 86400 * 1000)
+      if (payload?.sid) await revokeSession(payload.sid, Date.now() + revocationHorizonSeconds() * 1000)
       const refreshtoken = req.body?.refreshtoken
       if (refreshtoken && payload?.user?.username) await Token.delete(payload.user.username, payload.user.type, refreshtoken)
     }

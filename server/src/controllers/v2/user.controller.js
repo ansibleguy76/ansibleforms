@@ -12,9 +12,9 @@ import { withUserJobCounts } from '../../lib/jobCounts.js';
 import DirectoryUser from '../../models/directoryUser.model.js';
 import { directoryUserRows } from '../../lib/directoryViews.js';
 import { configRoles } from '../../lib/roleCounts.js';
-import authConfig from '../../../config/auth.config.js';
 import Token from '../../models/token.model.js';
 import { revokeUser } from '../../lib/tokenRevocation.js';
+import { revocationHorizonSeconds } from '../../lib/tokenLifetime.js';
 import { passwordProblem } from '../../lib/passwordPolicy.js';
 
 // a password the policy refuses (lib/passwordPolicy.js) : 400 with the reason
@@ -37,7 +37,7 @@ function refusePassword(req, res, password, username) {
  */
 async function endSessions(username) {
   if (!username) return;
-  await revokeUser(username, 'local', authConfig.apiTokenMaxDays * 86400);
+  await revokeUser(username, 'local', revocationHorizonSeconds());
   await Token.deleteAllForUser(username).catch(() => {});
 }
 
