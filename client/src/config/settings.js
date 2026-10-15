@@ -1957,6 +1957,8 @@ export default function getSettings(t) {
       icon: 'address-book',
       // Enabled under the name, as an SSO provider's Active
       togglesLast: true,
+      // the tabs of long values (search bases, DNs, attributes) : their fields wider
+      wideTabs: ['users', 'groups'],
       // a directory's page (pages/admin/ldap-directory.vue) : its test, and Delete but on the default
       // one, which is turned off instead
       actions: [
