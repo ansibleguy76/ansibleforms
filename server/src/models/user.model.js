@@ -33,6 +33,8 @@ function applyOptionDefaults(options, isAdmin) {
   if (options.allowInventoryDesign === undefined) options.allowInventoryDesign = true;
   if (options.allowVarsFileDesign === undefined) options.allowVarsFileDesign = true;
   if (options.showLogs === undefined) options.showLogs = isAdmin;
+  // the audit log on its own (the settings give it too) : as the server log, the admins'
+  if (options.showAuditLog === undefined) options.showAuditLog = isAdmin;
   if (options.allowBackupOps === undefined) options.allowBackupOps = isAdmin;
   if (options.showJobs === undefined) options.showJobs = true;
   if (options.showDebugButtons === undefined) options.showDebugButtons = true;

@@ -8,6 +8,8 @@
 
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import { useAppStore } from '@/stores/app';
+import { settingsMenu } from '@/lib/settingsMenu';
+import { mayOpen } from '@/lib/routePermission';
 import { useI18n } from 'vue-i18n';
 import Theme from '@/lib/Theme';
 import Helpers from '@/lib/Helpers';
@@ -235,8 +237,16 @@ const menu = computed(() => {
     target: '_self',
   });
 
-  if (!store?.profile?.options?.showSettings) {
+  // Settings : for a user who may open any settings page (the server log, the audit log, without
+  // the settings themselves), and to the first of them
+  const settingsPage = settingsMenu(t)
+    .flatMap((s) => s.items)
+    .find((i) => mayOpen(i.link, store?.profile?.options));
+  if (!settingsPage) {
     m = m.filter((m) => m.link != '/settings/general');
+  } else {
+    const settings = m.find((x) => x.link == '/settings/general');
+    if (settings) settings.link = settingsPage.link;
   }
   // the designer : switched on for the instance (Settings > Appearance > Links) and for the user
   if (!store?.profile?.options?.showDesigner || !store.designerEnabled) {

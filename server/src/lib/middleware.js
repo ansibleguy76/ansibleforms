@@ -63,6 +63,9 @@ Middleware.checkFileDesignMiddleware = (req, res, next) => {
 }
 
 Middleware.checkLogsMiddleware = permissionGuard(u => u.options.showLogs, 'errors.noLogsAccess')
+// the audit log : with the settings, or on its own (showAuditLog : a compliance role reads it
+// without the rights to change anything)
+Middleware.checkAuditMiddleware = permissionGuard(u => u.options.showSettings || u.options.showAuditLog, 'errors.noAuditAccess')
 
 Middleware.checkBackupMiddleware = permissionGuard(u => u.options.allowBackupOps, 'errors.noDatabaseAccess')
 

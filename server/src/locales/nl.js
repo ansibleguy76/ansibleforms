@@ -9,6 +9,7 @@ export default {
     noInventoryDesignAccess: "Je mag de inventarissen in de designer niet bewerken",
     noVarsFileDesignAccess: "Je mag de variabelenbestanden in de designer niet bewerken",
     noLogsAccess: "U heeft geen toegang tot logs",
+    noAuditAccess: "Je hebt geen toegang tot het auditlogboek",
     noDatabaseAccess: "U heeft geen toegang tot database bewerkingen",
     noScheduleAccess: "U heeft geen toestemming om schedules te beheren",
     noChatAccess: "Je hebt geen toestemming om de chat-assistent te gebruiken",

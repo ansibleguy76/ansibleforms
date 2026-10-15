@@ -109,6 +109,7 @@ const OPTION_DESCRIPTIONS = {
   allowInventoryDesign: () => t('profilePage.optionDescription.allowInventoryDesign'),
   allowVarsFileDesign: () => t('profilePage.optionDescription.allowVarsFileDesign'),
   showLogs: () => t('profilePage.optionDescription.showLogs'),
+  showAuditLog: () => t('profilePage.optionDescription.showAuditLog'),
   showJobs: () => t('profilePage.optionDescription.showJobs'),
   showDebugButtons: () => t('profilePage.optionDescription.showDebugButtons'),
   allowJobRelaunch: () => t('profilePage.optionDescription.allowJobRelaunch'),

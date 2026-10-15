@@ -67,6 +67,7 @@ const directoryUser = () => import('@/pages/admin/directory-user.vue');
 const backups = () => import('@/pages/admin/backups.vue');
 
 import TokenStorage from '@/lib/TokenStorage.js';
+import { hasPermission } from '@/lib/permission';
 import { ssoSettled } from '@/lib/ssoReturn';
 import axios from 'axios';
 import { getActivePinia } from 'pinia';
@@ -331,12 +332,13 @@ const routes = [
     component: runner,
     meta: { permission: 'showSettings' },
   },
-  // GET /api/v2/audit is mounted behind checkSettingsMiddleware, so the guard matches
+  // GET /api/v2/audit is mounted behind checkAuditMiddleware (showSettings or showAuditLog), so the
+  // guard matches : any of the two
   {
     path: '/settings/audit-log/:tab?',
     name: '/settings/audit-log',
     component: audit,
-    meta: { permission: 'showSettings' },
+    meta: { permission: ['showSettings', 'showAuditLog'] },
   },
 ];
 
@@ -357,7 +359,7 @@ export async function permissionGuard(to) {
   // nobody signed in : to the login page, which comes back here after the sign-in (a link to a
   // job or a schedule opened signed out) ; home would lose the link
   if (!TokenStorage.isAuthenticated()) return { name: '/login', query: { from: to.fullPath } };
-  return TokenStorage.getPayload()?.user?.options?.[permission] ? true : { name: '/' };
+  return hasPermission(TokenStorage.getPayload()?.user?.options, permission) ? true : { name: '/' };
 }
 router.beforeEach(permissionGuard);
 // the one read of /api/v2/app/config a route check may wait for, shared by the checks of one load

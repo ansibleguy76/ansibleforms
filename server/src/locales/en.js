@@ -9,6 +9,7 @@ export default {
     noInventoryDesignAccess: "You may not edit the inventories in the designer",
     noVarsFileDesignAccess: "You may not edit the vars files in the designer",
     noLogsAccess: "You do not have access to logs",
+    noAuditAccess: "You do not have access to the audit log",
     noDatabaseAccess: "You do not have access to database operations",
     noScheduleAccess: "You do not have permission to manage scheduled jobs",
     noChatAccess: "You do not have permission to use the chat assistant",

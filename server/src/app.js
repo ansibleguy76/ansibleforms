@@ -252,7 +252,7 @@ const load = async (app) => {
   app.use(`/api/v2/group`, cors(), authobj, Middleware.checkSettingsMiddleware, groupRoutesv2);
   app.use(`/api/v2/settings`, cors(), authobj, Middleware.checkSettingsMiddleware, settingsRoutesv2);
   app.use(`/api/v2/health`, cors(), authobj, Middleware.checkSettingsMiddleware, healthRoutesv2);
-  app.use(`/api/v2/audit`, cors(), authobj, Middleware.checkSettingsMiddleware, auditRoutesv2);
+  app.use(`/api/v2/audit`, cors(), authobj, Middleware.checkAuditMiddleware, auditRoutesv2);
   // the LDAP and SSO users and groups of Settings > Users and Groups (models/directoryUser.model.js)
   app.use(`/api/v2/directory`, cors(), authobj, Middleware.checkSettingsMiddleware, directoryRoutesv2);
   // custom logo ; reading is public (header and login page), changing it is guarded in the routes

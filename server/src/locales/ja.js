@@ -9,6 +9,7 @@ export default {
     noInventoryDesignAccess: "デザイナーでインベントリを編集することはできません",
     noVarsFileDesignAccess: "デザイナーで変数ファイルを編集することはできません",
     noLogsAccess: "ログへのアクセス権がありません",
+    noAuditAccess: "監査ログへのアクセス権がありません",
     noDatabaseAccess: "データベース操作へのアクセス権がありません",
     noScheduleAccess: "スケジュール済みジョブを管理する権限がありません",
     noChatAccess: "チャットアシスタントを使用する権限がありません",

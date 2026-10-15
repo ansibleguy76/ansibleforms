@@ -262,3 +262,13 @@ describe("the designer's files are written only with their own option", () => {
     }
   });
 });
+
+describe("the audit log : with the settings, or with showAuditLog on its own", () => {
+  test("showSettings or showAuditLog lets through, neither refuses with 403", () => {
+    assert.equal(run(Middleware.checkAuditMiddleware, { roles: [], options: { showSettings: true } }).nexted, true);
+    assert.equal(run(Middleware.checkAuditMiddleware, { roles: [], options: { showAuditLog: true } }).nexted, true);
+    const { res, nexted } = run(Middleware.checkAuditMiddleware, { roles: [], options: { showSettings: false, showAuditLog: false } });
+    assert.equal(nexted, false);
+    assert.equal(res.statusCode, 403);
+  });
+});
