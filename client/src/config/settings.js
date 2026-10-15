@@ -993,7 +993,7 @@ export default function getSettings(t) {
       // the redirect URL : the address typed and the provider's callback path, joined
       beforeSave: ({ redirect_base, ...item }) => ({
         ...item,
-        redirect_uri: ssoCallbackUrl(item.provider, redirect_base),
+        redirect_uri: ssoCallbackUrl(item.provider, redirect_base, item.redirect_uri),
       }),
       actions: [
         { name: 'edit', title: t('settings.oauth2.editProvider'), icon: 'pencil', color: 'edit' },
@@ -1105,7 +1105,7 @@ export default function getSettings(t) {
             oidc: (config) => ssoCallbackBase('oidc', config.url),
           },
           placeholder: SSO_EXAMPLE_BASE,
-          suffix: (item) => ssoCallbackPath(item.provider),
+          suffix: (item) => ssoCallbackPath(item.provider, item.redirect_uri),
           initial: (r) => ssoCallbackBase(r?.provider, r?.redirect_uri),
           hidden: true,
           noTable: true,

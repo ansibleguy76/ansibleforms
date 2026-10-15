@@ -417,12 +417,12 @@ const errorHandler = async function(err,req, res,_next) {
  * 
  * 1. The user clicks on the identity provider login button
  * 2. A browser storage authIssuer key is set with the identity provider name (azuread, oidc, ...)
- * 3. The user is redirected to the ansibleforms backend server identity provider api https://ansibleformsurl/auth/azureadoauth2 or https://ansibleformsurl/auth/oidc, ...
+ * 3. The user is redirected to the ansibleforms backend server identity provider api https://ansibleformsurl/auth/entraid or https://ansibleformsurl/auth/oidc, ...
  * 4. The backend uses passport to authenticate the user with the identity provider and redirects the user away to the identity provider (microsft, google, ...)
- * 5. The identity provider authenticates the user and redirects the user back to the callback url https://ansibleformsurl/auth/azureadoauth2/callback or https://ansibleformsurl/auth/oidc/callback
+ * 5. The identity provider authenticates the user and redirects the user back to the callback url https://ansibleformsurl/auth/entraid/callback (the provider's redirect uri : /auth/azureadoauth2/callback when saved before 7.3) or https://ansibleformsurl/auth/oidc/callback
  * 6. The backend server receives the callback and uses passport to verify the returned payload.  it passes the payload to an authCallback function
  * 7. The authCallback function redirects the user back into the app with a HANDOFF token in the fragment (/#token=), signed by us ; the app swaps it before it draws (client lib/ssoReturn.js) : the claims the login needs, and for azuread the provider's access token sealed inside it (lib/ssoHandoff.js).
- * 8. The frontend posts the handoff token to the backend /auth/azureadoauth2/login (or /auth/oidc/login) endpoint.
+ * 8. The frontend posts the handoff token to the backend /auth/entraid/login (or /auth/oidc/login) endpoint.
  * 9. For azuread the backend opens the sealed access token and fetches the user's groups from Microsoft Graph, filtered with the provider's group filter (lib/entraGraph.js). For oidc the groups are a claim of the profile, filtered with the same group filter.
  * 10. The backend grabs more information from payload if needed (username,...) and assembles a user-object, the roles and options are added
  * 11. The backend converts the user object to json and signs it as a jwt token an returns it in the response

@@ -64,7 +64,7 @@ function goToSso(issuer, path) {
   window.location.replace(`${BaseUrl}${path}`);
 }
 function authEntraId() {
-  goToSso('azuread', '/api/v2/auth/azureadoauth2');
+  goToSso('azuread', '/api/v2/auth/entraid');
 }
 function authOidc() {
   goToSso('oidc', '/api/v2/auth/oidc');
@@ -86,7 +86,7 @@ async function tokenLogin(token, type = 'azuread') {
   // The groups are the server's business : the claim in the handoff token (OIDC) or Microsoft
   // Graph (Entra ID), through the provider's group filter. The browser posts none - a list it
   // chose was never to be trusted.
-  const loginProvider = type === 'azuread' ? 'azureadoauth2' : 'oidc';
+  const loginProvider = type === 'azuread' ? 'entraid' : 'oidc';
 
   try {
     const result = await axios.post(`/api/v2/auth/${loginProvider}/login`, { token });

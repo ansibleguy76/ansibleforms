@@ -323,7 +323,7 @@ function signInAgain() {
   localStorage.setItem('authIssuer', issuer);
   // reauth : the provider asks for the credentials again (a live provider session would answer
   // without asking), and only that sign-in counts as a recent one
-  window.location.replace(`${BaseUrl}/api/v2/auth/${issuer === 'oidc' ? 'oidc' : 'azureadoauth2'}?reauth=1`);
+  window.location.replace(`${BaseUrl}/api/v2/auth/${issuer === 'oidc' ? 'oidc' : 'entraid'}?reauth=1`);
 }
 
 // back from that sign-in : the token asked for before it
