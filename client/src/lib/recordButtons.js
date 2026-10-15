@@ -113,7 +113,7 @@ export function recordButtons(kind, id, isAdmin = true) {
     case 'repositories':
       return [W.pull, W.push, W.reset, ...(row?.user && !row?.credential ? [W.changePassword] : []), W.delete, W.save];
     case 'sso':
-      return [W.changeSecret, W.delete, W.save];
+      return [W.delete, W.save];
     case 'users':
       return [W.changePassword, W.delete, W.save];
     case 'groups':

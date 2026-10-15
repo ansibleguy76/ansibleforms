@@ -1596,8 +1596,7 @@ export default {
       type_ssh: 'SSH',
       type_sshHint: 'A user and password for SSH to a server',
       type_userpass: 'User and password',
-      type_userpassHint:
-        'A user and password for any other login : a REST API with basic auth, a service and more. Credentials from before 7 have this type.',
+      type_userpassHint: 'A user and password for any other login, as the credentials from before 7',
       type_git: 'Git',
       type_gitHint: 'A user and password or token for git repositories',
       type_api: 'API',

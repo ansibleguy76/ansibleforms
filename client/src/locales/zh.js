@@ -1467,8 +1467,7 @@ export default {
       type_ssh: 'SSH',
       type_sshHint: '用于 SSH 连接服务器的用户名和密码',
       type_userpass: '用户名和密码',
-      type_userpassHint:
-        '用于其他任何登录的用户名和密码：使用 basic auth 的 REST API、服务等。7 之前的凭据都是此类型。',
+      type_userpassHint: '用于其他任何登录的用户和密码，7 之前的凭据也是此类型',
       type_git: 'Git',
       type_gitHint: '用于 git 仓库的用户名和密码或令牌',
       type_api: 'API',

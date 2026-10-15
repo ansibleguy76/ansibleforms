@@ -2029,8 +2029,9 @@ export default function getSettings(t) {
           label: t('settings.ldap.bindUserDn'),
           help: t('settings.ldap.bindUserDnDesc'),
           required: true,
-          // its own account : none while a credential gives it
-          showWhen: (item) => !item.credential,
+          // the chosen credential's user, read only ; else its own, edited here
+          fromCredential: { field: 'credential', pick: 'user' },
+          disabledWhen: (item) => !!item.credential,
           dependency: 'enable',
         },
         {
@@ -2042,8 +2043,10 @@ export default function getSettings(t) {
           help: t('settings.ldap.bindUserPasswordDesc'),
           type: 'password',
           required: true,
-          // its own account : none while a credential gives it
-          showWhen: (item) => !item.credential,
+          // the chosen credential's password, masked ; else its own : left as it is, the stored
+          // one is kept, typed, it is replaced
+          fromCredential: { field: 'credential', pick: 'password' },
+          disabledWhen: (item) => !!item.credential,
           dependency: 'enable',
         },
         {

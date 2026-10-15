@@ -1531,7 +1531,7 @@ export default {
       type_sshHint: 'Un usuari i una contrasenya per a SSH a un servidor',
       type_userpass: 'Usuari i contrasenya',
       type_userpassHint:
-        "Un usuari i una contrasenya per a qualsevol altre accés : una API REST amb basic auth, un servei i més. Les credencials d'abans de la 7 tenen aquest tipus.",
+        "Un usuari i contrasenya per a qualsevol altre inici de sessió, com les credencials d'abans de la 7",
       type_git: 'Git',
       type_gitHint: 'Un usuari i una contrasenya o un token per a repositoris git',
       type_api: 'API',

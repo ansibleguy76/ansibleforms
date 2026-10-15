@@ -1626,8 +1626,7 @@ export default {
       type_ssh: 'SSH',
       type_sshHint: 'Benutzer und Passwort für SSH zu einem Server',
       type_userpass: 'Benutzer und Passwort',
-      type_userpassHint:
-        'Benutzer und Passwort für jede andere Anmeldung : eine REST API mit Basic Auth, ein Dienst und mehr. Zugangsdaten von vor 7 haben diesen Typ.',
+      type_userpassHint: 'Benutzer und Passwort für jede andere Anmeldung, wie die Anmeldedaten von vor Version 7',
       type_git: 'Git',
       type_gitHint: 'Benutzer und Passwort oder Token für Git-Repositorys',
       type_api: 'API',

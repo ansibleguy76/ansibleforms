@@ -1629,7 +1629,7 @@ export default {
       type_sshHint: 'Un utilisateur et un mot de passe pour SSH vers un serveur',
       type_userpass: 'Utilisateur et mot de passe',
       type_userpassHint:
-        "Un utilisateur et un mot de passe pour toute autre connexion : une API REST en basic auth, un service et plus. Les identifiants d'avant la 7 ont ce type.",
+        "Un utilisateur et un mot de passe pour toute autre connexion, comme les identifiants d'avant la 7",
       type_git: 'Git',
       type_gitHint: 'Un utilisateur et un mot de passe ou un jeton pour des dépôts git',
       type_api: 'API',

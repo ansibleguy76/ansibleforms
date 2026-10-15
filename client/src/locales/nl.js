@@ -1614,8 +1614,7 @@ export default {
       type_ssh: 'SSH',
       type_sshHint: 'Een gebruiker en wachtwoord voor SSH naar een server',
       type_userpass: 'Gebruiker en wachtwoord',
-      type_userpassHint:
-        'Een gebruiker en wachtwoord voor elke andere login : een REST API met basic auth, een dienst en meer. Credentials van vóór 7 hebben dit type.',
+      type_userpassHint: 'Een gebruiker en wachtwoord voor elke andere aanmelding, zoals de referenties van vóór 7',
       type_git: 'Git',
       type_gitHint: 'Een gebruiker en wachtwoord of token voor git-repositories',
       type_api: 'API',

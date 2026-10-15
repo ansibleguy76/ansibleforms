@@ -1508,8 +1508,7 @@ export default {
       type_ssh: 'SSH',
       type_sshHint: 'サーバーへの SSH 用のユーザーとパスワード',
       type_userpass: 'ユーザーとパスワード',
-      type_userpassHint:
-        'その他のログイン用のユーザーとパスワード（Basic 認証の REST API、サービスなど）。7 より前の認証情報はこの種類です。',
+      type_userpassHint: 'その他のログイン用のユーザーとパスワード（7 より前の資格情報もこの種類）',
       type_git: 'Git',
       type_gitHint: 'git リポジトリ用のユーザーとパスワードまたはトークン',
       type_api: 'API',
