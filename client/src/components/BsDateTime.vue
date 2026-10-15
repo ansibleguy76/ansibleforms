@@ -25,7 +25,7 @@
 /*                                                                */
 /******************************************************************/
 
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, ref, shallowRef, watch } from 'vue';
 import { useAppStore } from '@/stores/app';
 import { useI18n } from 'vue-i18n';
 import Time from '@/lib/Time';
@@ -72,6 +72,8 @@ const pickedZone = ref(null);
 // the calendar, and the choice made in it and not applied yet (a datetime is applied with Select)
 const dp = ref(null);
 let pendingWall = null;
+// the same choice, for what shows from it (the zones' names) : a plain variable does not re-render
+const pendingShown = shallowRef(null);
 
 // COMPUTED
 
@@ -85,9 +87,10 @@ const isMoment = computed(() => props.dateType === 'datetime' && props.convertTo
 const appZone = computed(() => Time.zone());
 const browserZone = Time.browserZone();
 const zone = computed(() => pickedZone.value || appZone.value);
-// the moment shown (else now), for the zones' names and offsets : summer and winter differ
+// the moment shown (the choice not applied yet, else the value, else now), for the zones' names
+// and offsets : summer and winter differ
 const shownMoment = computed(() => {
-  const iso = momentOf(pickerModel.value);
+  const iso = pendingShown.value ? Time.fromWallClock(pendingShown.value, zone.value) : momentOf(pickerModel.value);
   return iso ? new Date(iso) : new Date();
 });
 function offsetOf(z) {
@@ -125,7 +128,23 @@ const timeConfig = computed(() => {
 // the clock open (not the calendar's days) : the zones are a time's, so they show with it only
 const timeOpen = ref(false);
 function overlayToggle({ open, overlay }) {
-  if (overlay === 'time') timeOpen.value = open;
+  if (overlay !== 'time') return;
+  timeOpen.value = open;
+  // no day picked yet : the picker tells no change of the time alone, so a zone switch could not
+  // carry the hour picked. The clock opens on today, now, as a choice (applied on Select only),
+  // and its changes come with the day
+  const held = pickerModel.value instanceof Date ? pickerModel.value : null;
+  if (open && isMoment.value && !held && !pendingWall) {
+    pendingWall = Time.toWallClock(new Date(), zone.value);
+    pendingShown.value = pendingWall;
+    dp.value?.updateInternalModelValue(pendingWall);
+  }
+}
+// the calendar closed : the clock with it, and a choice not applied (Cancel) is gone
+function menuClosed() {
+  timeOpen.value = false;
+  pendingWall = null;
+  pendingShown.value = null;
 }
 // the calendar kept on the screen : on a short window it has room neither above nor below the
 // field, and it slides up or down to stay whole, over the field if it must
@@ -150,6 +169,7 @@ function momentOf(wall) {
 
 function internalChange(value) {
   pendingWall = value instanceof Date ? value : null;
+  pendingShown.value = pendingWall;
 }
 
 // the same moment on another zone's clock, and the choice not applied yet with it
@@ -546,7 +566,7 @@ watch(
     text-input
     @internal-model-change="internalChange"
     @overlay-toggle="overlayToggle"
-    @closed="timeOpen = false"
+    @closed="menuClosed"
     v-model="pickerModel"
     @blur="blur"
     @focus="focus"
@@ -563,29 +583,34 @@ watch(
     :teleport="teleport ? 'body' : undefined"
   >
     <!-- the clock a moment is picked on, over the time : the browser's, the app's or UTC, else the
-         one zone it is -->
+         one zone it is. The header takes no height, the zones float over the top of the time :
+         the menu changing height as the time opens closes the time again -->
     <template v-if="isMoment" #menu-header>
-      <div v-if="timeOpen && !zonesDiffer" class="p-2 text-center small text-body-secondary af-zone-only">
-        {{ Time.zoneLabel(shownMoment, zone) }}
-      </div>
-      <div
-        v-else-if="timeOpen"
-        class="btn-group btn-group-sm w-100 p-2 af-zone-switch"
-        role="group"
-        :aria-label="t('settings.common.zonePick')"
-      >
-        <button
-          v-for="card in zoneCards"
-          :key="card.zone"
-          type="button"
-          class="btn"
-          :class="card.zone === zone ? 'btn-primary' : 'btn-outline-secondary'"
-          :title="card.title"
-          :aria-pressed="card.zone === zone"
-          @click.stop="switchZone(card.zone)"
-        >
-          {{ card.name }}
-        </button>
+      <div class="af-zone-head">
+        <div v-if="timeOpen" class="af-zone-float">
+          <div v-if="!zonesDiffer" class="p-2 text-center small text-body-secondary af-zone-only">
+            {{ Time.zoneLabel(shownMoment, zone) }}
+          </div>
+          <div
+            v-else
+            class="btn-group btn-group-sm w-100 p-2 af-zone-switch"
+            role="group"
+            :aria-label="t('settings.common.zonePick')"
+          >
+            <button
+              v-for="card in zoneCards"
+              :key="card.zone"
+              type="button"
+              class="btn"
+              :class="card.zone === zone ? 'btn-primary' : 'btn-outline-secondary'"
+              :title="card.title"
+              :aria-pressed="card.zone === zone"
+              @click.stop="switchZone(card.zone)"
+            >
+              {{ card.name }}
+            </button>
+          </div>
+        </div>
       </div>
     </template>
     <template #dp-input>
@@ -615,7 +640,21 @@ watch(
 }
 </style>
 <style lang="scss">
-/* the zone switch, in the calendar (teleported out of this component's scope) */
+/* the zone switch, over the time (teleported out of this component's scope) : no height of its
+   own, above the time it floats on */
+.af-zone-head {
+  position: relative;
+  height: 0;
+}
+.af-zone-float {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* above the time, which the picker puts at 99999 */
+  z-index: 100000;
+  background-color: var(--dp-background-color);
+}
 .af-zone-switch .btn {
   font-size: 0.8rem;
 }
