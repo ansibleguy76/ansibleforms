@@ -7,8 +7,9 @@
 /*      dataList: Array - List of items to paginate  */
 /*      perPage: Number - Initial items per page      */
 /*        (default 10). Without a size the user      */
-/*        picked (a cookie), the rows that fit the     */
-/*        screen win over it (lib/tableFit.js)         */
+/*        picked (a cookie), the largest size offered  */
+/*        that fits the screen wins over it            */
+/*        (lib/tableFit.js)                            */
 /*      buttonsShown: Number - Number of buttons     */
 /*      index: Number - Index of the item to show    */
 /*      currentPage: Number - the page shown, from   */
@@ -20,7 +21,7 @@
 /****************************************************/
 
 import { watch, ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue';
-import { measureFit } from '@/lib/tableFit';
+import { measureFit, fitSize } from '@/lib/tableFit';
 import Helpers from '@/lib/Helpers';
 import { useI18n } from 'vue-i18n';
 
@@ -47,9 +48,8 @@ const page = ref(0);
 // the prop only seeds the initial page size : a perPage the user picked
 // before is restored from the cookie on mount and wins over it
 const pageSize = ref(props.perPage);
-// the sizes offered ; the one fitted to the screen among them when it is none of these
+// the sizes offered : the screen picks among them too, never a size of its own
 const SIZES = [10, 25, 50, 100];
-const sizes = computed(() => [...new Set([...SIZES, pageSize.value])].sort((a, b) => a - b));
 // the page size follows the screen until the user picks one (or picked one before)
 const fitting = ref(true);
 const navEl = ref(null);
@@ -183,7 +183,9 @@ function fitToScreen(tries = 10) {
     if (!fitting.value || !navEl.value) return;
     const count = measureFit(navEl.value.closest('.af-table-pager') || navEl.value);
     if (count) {
-      if (count !== pageSize.value) pageSize.value = count;
+      // the largest size offered that fits, else the smallest
+      const size = fitSize(count, SIZES);
+      if (size !== pageSize.value) pageSize.value = size;
     } else if (tries > 0) {
       fitTimer = setTimeout(() => fitToScreen(tries - 1), 300);
     }
@@ -239,7 +241,7 @@ watch(
        box and gets the rounded left corners, as Next the right ones -->
   <nav ref="navEl" aria-label="Pagination" class="af-pager-nav">
     <select class="form-select af-page-size" v-model="pageSize" :aria-label="t('common.pageSize')" @change="pickSize">
-      <option v-for="size in sizes" :key="size" :value="size">{{ size }}</option>
+      <option v-for="size in SIZES" :key="size" :value="size">{{ size }}</option>
     </select>
     <ul class="pagination justify-content-end user-select-none">
       <!-- Previous and Next disabled at either end : no button there, no pointer -->

@@ -1,9 +1,10 @@
 /******************************************************************/
 /*                                                                */
-/*  How many rows a table shows by default : as many as fit the   */
-/*  screen under its header, with its pager still in view. A size */
-/*  the user picks in the pager wins over it (BsPagination keeps  */
-/*  it in a cookie) ; until then the count follows the window.    */
+/*  How many rows a table shows by default : the largest of the   */
+/*  pager's sizes that fits the screen under its header, with its */
+/*  pager still in view (the smallest when none fits). A size the */
+/*  user picks in the pager wins over it (BsPagination keeps it   */
+/*  in a cookie) ; until then the size follows the window.        */
 /*                                                                */
 /******************************************************************/
 
@@ -27,6 +28,21 @@ const BOTTOM_GAP = 16;
 export function fitRowCount(available, rowHeight) {
   if (!(rowHeight > 0) || !Number.isFinite(available)) return null;
   return Math.min(FIT_MAX, Math.max(FIT_MIN, Math.floor(available / rowHeight)));
+}
+
+/**
+ * The page size for the rows that fit : the largest size offered that is not more, else the
+ * smallest. A size of its own (18) would be one the pager does not offer.
+ *
+ * Args:
+ *   count (number): the rows that fit.
+ *   sizes (number[]): the sizes offered, smallest first.
+ *
+ * Returns:
+ *   number: one of the sizes.
+ */
+export function fitSize(count, sizes) {
+  return sizes.filter((size) => size <= count).pop() ?? sizes[0];
 }
 
 /**

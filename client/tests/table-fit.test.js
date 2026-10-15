@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { fitRowCount, FIT_MIN, FIT_MAX } from '../src/lib/tableFit.js';
+import { fitRowCount, fitSize, FIT_MIN, FIT_MAX } from '../src/lib/tableFit.js';
 
 // the rows a table shows by default : as many as fit the room under its header
 describe('fitRowCount', () => {
@@ -18,5 +18,21 @@ describe('fitRowCount', () => {
     expect(fitRowCount(600, 0)).toBeNull();
     expect(fitRowCount(600, undefined)).toBeNull();
     expect(fitRowCount(NaN, 37)).toBeNull();
+  });
+});
+
+// the page size the screen picks : one the pager offers, never a count of its own
+describe('fitSize', () => {
+  const sizes = [10, 25, 50, 100];
+
+  it('takes the largest size that fits', () => {
+    expect(fitSize(18, sizes)).toBe(10);
+    expect(fitSize(25, sizes)).toBe(25);
+    expect(fitSize(49, sizes)).toBe(25);
+    expect(fitSize(100, sizes)).toBe(100);
+  });
+
+  it('takes the smallest when none fits', () => {
+    expect(fitSize(7, sizes)).toBe(10);
   });
 });
