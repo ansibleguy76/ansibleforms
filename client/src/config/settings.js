@@ -147,8 +147,9 @@ function pillDate(value, short = false) {
 
 /**
  * A repository's push as a pill : its last push failed red ; else changes saved here and not
- * pushed yet, pending changes in the designer's push orange (something waits) ; else nothing to
- * push, success green. When the last push ended follows it, grey.
+ * pushed yet, pending changes in the designer's push orange (something waits) ; else its last
+ * push worked, success green ; never pushed (or a repository the app does not write to) an en
+ * dash, as a pull that never ran. When the last push ended follows it, grey.
  *
  * Args:
  *   t (function): the translation function.
@@ -164,7 +165,7 @@ export function repositoryPushPill(t, repo, short = false) {
   if (repo?.unpushed) {
     return pill(PILL.unpushed, t('settings.repositories.notPushed'), t('settings.repositories.notPushedHint')) + date;
   }
-  return statusPill(t, 'success') + date;
+  return repo?.push_status === 'success' ? statusPill(t, 'success') + date : emptyPill();
 }
 
 /**
@@ -823,7 +824,7 @@ export default function getSettings(t) {
           noInput: true,
           width: '16rem',
           render: (v, row) => repositoryPushPill(t, row, true),
-          sortValue: (r) => (r.push_status === 'failed' ? 0 : r.unpushed ? 1 : 2),
+          sortValue: (r) => (r.push_status === 'failed' ? 0 : r.unpushed ? 1 : r.push_status === 'success' ? 2 : 3),
         },
         {
           // a credential of Connections > Credentials, or a New one : the user and password git
