@@ -64,7 +64,7 @@ const range = computed(() => {
       <span class="af-table-count">{{ range }}</span>
       <BsPagination
         :dataList="items"
-        :perPage="25"
+        :perPage="10"
         :buttonsShown="7"
         name="record_tabs"
         :currentPage="page"

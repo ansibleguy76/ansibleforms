@@ -21,7 +21,7 @@
 /****************************************************/
 
 import { watch, ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue';
-import { measureFit, fitSize } from '@/lib/tableFit';
+import { measureFit, fitSize, nearestSize } from '@/lib/tableFit';
 import Helpers from '@/lib/Helpers';
 import { useI18n } from 'vue-i18n';
 
@@ -48,8 +48,9 @@ const page = ref(0);
 // the prop only seeds the initial page size : a perPage the user picked
 // before is restored from the cookie on mount and wins over it
 const pageSize = ref(props.perPage);
-// the sizes offered : the screen picks among them too, never a size of its own
-const SIZES = [10, 25, 50, 100];
+// the sizes offered, as PatternFly's and so the Ansible Automation Platform's : the screen picks
+// among them too, never a size of its own
+const SIZES = [10, 20, 50, 100];
 // the page size follows the screen until the user picks one (or picked one before)
 const fitting = ref(true);
 const navEl = ref(null);
@@ -205,7 +206,8 @@ onMounted(() => {
   if (props.name) {
     const saved = Helpers.getCookie(`pagination_${props.name}_perPage`);
     if (saved && !isNaN(parseInt(saved))) {
-      pageSize.value = parseInt(saved);
+      // a size no longer offered (25, before 20 replaced it) : the nearest one
+      pageSize.value = nearestSize(parseInt(saved), SIZES);
       fitting.value = false;
     }
   }

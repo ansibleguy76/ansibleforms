@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { fitRowCount, fitSize, FIT_MIN, FIT_MAX } from '../src/lib/tableFit.js';
+import { fitRowCount, fitSize, nearestSize, FIT_MIN, FIT_MAX } from '../src/lib/tableFit.js';
 
 // the rows a table shows by default : as many as fit the room under its header
 describe('fitRowCount', () => {
@@ -23,16 +23,31 @@ describe('fitRowCount', () => {
 
 // the page size the screen picks : one the pager offers, never a count of its own
 describe('fitSize', () => {
-  const sizes = [10, 25, 50, 100];
+  const sizes = [10, 20, 50, 100];
 
   it('takes the largest size that fits', () => {
     expect(fitSize(18, sizes)).toBe(10);
-    expect(fitSize(25, sizes)).toBe(25);
-    expect(fitSize(49, sizes)).toBe(25);
+    expect(fitSize(20, sizes)).toBe(20);
+    expect(fitSize(49, sizes)).toBe(20);
     expect(fitSize(100, sizes)).toBe(100);
   });
 
   it('takes the smallest when none fits', () => {
     expect(fitSize(7, sizes)).toBe(10);
+  });
+});
+
+// a size saved before the sizes changed : the nearest one offered now
+describe('nearestSize', () => {
+  const sizes = [10, 20, 50, 100];
+
+  it('keeps a size still offered', () => {
+    expect(nearestSize(50, sizes)).toBe(50);
+  });
+
+  it('moves a size no longer offered to the closest', () => {
+    expect(nearestSize(25, sizes)).toBe(20);
+    expect(nearestSize(75, sizes)).toBe(50);
+    expect(nearestSize(500, sizes)).toBe(100);
   });
 });

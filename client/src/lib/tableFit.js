@@ -46,6 +46,21 @@ export function fitSize(count, sizes) {
 }
 
 /**
+ * The size offered nearest to one saved before : a size no longer offered (25) becomes the closest
+ * (20), the smaller on a tie.
+ *
+ * Args:
+ *   size (number): the size saved.
+ *   sizes (number[]): the sizes offered, smallest first.
+ *
+ * Returns:
+ *   number: one of the sizes.
+ */
+export function nearestSize(size, sizes) {
+  return sizes.reduce((best, s) => (Math.abs(s - size) < Math.abs(best - size) ? s : best), sizes[0]);
+}
+
+/**
  * The element a table scrolls in : its nearest ancestor that scrolls, else none (the window).
  *
  * Args:
