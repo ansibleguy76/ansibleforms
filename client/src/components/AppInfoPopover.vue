@@ -164,12 +164,17 @@ onBeforeUnmount(() => {
     }
   }
 }
-// the icon : quieter than the title it follows, the accent on hover and while open
+// the icon : quieter than the title it follows, the accent on hover and while open. Centred on the
+// middle of the line's letters (vertical-align: middle, from the font the browser actually uses) :
+// a fixed raise (0.55em) put it at another height with every font - Segoe UI, San Francisco,
+// Ubuntu - so on another laptop it sat higher or lower
 .af-info-btn {
+  display: inline-flex;
+  align-items: center;
   padding: 0 0.25rem;
   font-size: 0.41em;
   line-height: 1;
-  vertical-align: 0.55em;
+  vertical-align: middle;
   color: var(--bs-secondary-color);
   text-decoration: none;
   &:hover,
