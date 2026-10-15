@@ -39,7 +39,7 @@ const Job = (await import("../src/models/job.model.js")).default;
 const { default: Settings } = await import("../src/models/settings.model.js");
 const { channelsOfForm } = await import("../src/models/form.model.js");
 const { default: NotificationChannel } = await import("../src/models/notificationChannel.model.js");
-const { moveMailServersToChannels, copyMailSettingsToServers, moveMailServersToCredentials, moveSsoClientsToCredentials } = await import("../src/models/schema.model.js");
+const { moveMailServersToChannels, copyMailSettingsToServers, moveMailServersToCredentials, moveSsoClientsToCredentials, moveLdapServersToCredentials } = await import("../src/models/schema.model.js");
 
 beforeEach(() => {
   queries.length = 0;
@@ -251,5 +251,31 @@ describe("an SSO provider's client moves to a credential of its type", () => {
 
   test("nothing of its own left : nothing to do", async () => {
     expect(await moveSsoClientsToCredentials()).toBe(null);
+  });
+});
+
+describe("an LDAP directory's servers move to its ldap credential", () => {
+  const dir = (over) => ({ id: 2, name: "eu", server: "ldap.eu:636", port: 636, enable_tls: 1, ignore_certs: 0, cert: null, ca_bundle: "CA", bind_user_dn: "cn=svc", bind_user_pw: "enc", credential: "eu-bind", ...over });
+
+  test("a credential without servers : the directory's go into it, the directory's emptied", async () => {
+    answers = [
+      { match: /FROM AnsibleForms\.`ldap`/, rows: [dir()] },
+      { match: /SELECT \* FROM AnsibleForms\.`credentials` WHERE name/, rows: [{ id: 9, name: "eu-bind", host: null }] },
+    ];
+    expect(await moveLdapServersToCredentials()).toMatch(/eu into eu-bind/);
+    const into = queries.find((q) => /^UPDATE AnsibleForms\.`credentials` SET \?/.test(q.sql));
+    expect(into.args[0]).toMatchObject({ host: "ldap.eu:636", port: 636, secure: 1, ca_bundle: "CA" });
+    expect(queries.find((q) => /UPDATE AnsibleForms\.`ldap` SET server = NULL/.test(q.sql)).args).toEqual(["eu-bind", 2]);
+  });
+
+  test("its own bind account : a new ldap credential with it and the servers", async () => {
+    answers = [{ match: /FROM AnsibleForms\.`ldap`/, rows: [dir({ credential: null })] }];
+    expect(await moveLdapServersToCredentials()).toMatch(/eu into eu-ldap/);
+    const insert = queries.find((q) => /^INSERT INTO AnsibleForms\.`credentials` SET/.test(q.sql));
+    expect(insert.args[0]).toMatchObject({ name: "eu-ldap", user: "cn=svc", password: "enc", credential_type: "ldap", host: "ldap.eu:636" });
+  });
+
+  test("nothing of its own left : nothing to do", async () => {
+    expect(await moveLdapServersToCredentials()).toBe(null);
   });
 });

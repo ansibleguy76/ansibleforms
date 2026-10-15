@@ -438,12 +438,6 @@ onMounted(async () => {
                 "
                 :label="t('settings.secretStores.credential')"
               />
-              <BsButton
-                v-if="!managed"
-                icon="plus"
-                @click="creator?.newItem({ credential_type: isVault ? 'api' : 'cyberark' })"
-                >{{ t('settings.repositories.newCredential') }}</BsButton
-              >
               <!-- a store from before credentials : its own token or AppID, until one is chosen -->
               <p v-if="(isVault ? store.token : store.app_id) && !edit.credential" class="form-text mt-3 mb-0">
                 {{ t(isVault ? 'settings.secretStores.ownToken' : 'settings.secretStores.ownLogin') }}
@@ -519,6 +513,14 @@ onMounted(async () => {
         </div>
       </template>
       <template v-if="store" #actions>
+        <!-- Credentials : a new api (Vault) or cyberark credential, chosen once made -->
+        <BsButton
+          v-if="activeTab === 'credentials'"
+          icon="plus"
+          :disabled="managed"
+          @click="creator?.newItem({ credential_type: isVault ? 'api' : 'cyberark' })"
+          >{{ t('settings.repositories.newCredential') }}</BsButton
+        >
         <BsButton icon="plug" cssClass="text-nowrap" :disabled="testing" @click="testConnection()">{{
           t('settings.common.testConnection')
         }}</BsButton>

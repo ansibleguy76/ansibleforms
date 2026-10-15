@@ -1627,7 +1627,7 @@ export default {
       type_smtp: 'SMTP',
       type_smtpHint: 'A mail server, its port and TLS, and its login (none for a relay)',
       type_ldap: 'LDAP',
-      type_ldapHint: 'The bind account of an LDAP directory : its DN and password',
+      type_ldapHint: "An LDAP directory's servers, TLS and bind account : its bind DN and password",
       type_entraid: 'Microsoft Entra ID',
       type_entraidHint: 'The app of a Microsoft Entra ID provider : its tenant ID, client ID and client secret',
       type_oidc: 'Open ID',
@@ -1693,7 +1693,7 @@ export default {
       enableLdapHelp: 'Users sign in with their LDAP or Active Directory account',
       credential: 'Credential',
       credentialHelp:
-        'An ldap credential of Connections > Credentials : its user is the bind DN. None : a directory from before credentials binds with its own bind user.',
+        "An ldap credential of Connections > Credentials: the directory's servers, port, TLS and certificates, and the bind DN and password.",
       nameHelp:
         'Prefixes its members in roles : corp/jane, ldap/corp/Admins. The default directory keeps the short names and its own name.',
       servers: 'Servers',

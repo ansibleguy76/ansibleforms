@@ -605,7 +605,8 @@ const SCHEMA_MANIFEST = {
                                'tokens.replaced_at', 'repositories.pull_output', 'repositories.push_output',
                                'repositories.pulled_at', 'repositories.pushed_at', 'repositories.push_status',
                                'ldap.id', 'ldap.name', 'ldap.position', 'ldap.domains', 'ldap.credential',
-                               'oauth2_providers.credential', 'credentials.tenant_id', 'credentials.issuer', 'credentials.redirect_uri'] },
+                               'oauth2_providers.credential', 'credentials.tenant_id', 'credentials.issuer', 'credentials.redirect_uri',
+                               'credentials.ignore_certs', 'credentials.ca_bundle'] },
   },
 };
 
@@ -956,6 +957,8 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(moveMailServersToCredentials(), messages, success, failed);
   // an SSO provider's client (and its tenant or issuer) belongs to a credential of its type
   await checkPromise(moveSsoClientsToCredentials(), messages, success, failed);
+  // an LDAP directory's servers and TLS belong to its ldap credential, with its bind account
+  await checkPromise(moveLdapServersToCredentials(), messages, success, failed);
   // the syslog servers the server log and the audit entries go to (Connections > Syslog) ; the
   // LOG_SYSLOG_* variables of before become the first, once (lib/syslogServers.js)
   const syslogBuffer = fs.readFileSync(`${__dirname}/../db/create_syslog_servers_table.sql`);
@@ -1054,6 +1057,10 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addColumn("credentials", "issuer", "varchar(500)", true, "NULL"), messages, success, failed);
   // and the redirect URL registered with the client : the app registration as one credential
   await checkPromise(addColumn("credentials", "redirect_uri", "varchar(1000)", true, "NULL"), messages, success, failed);
+  // an ldap credential holds its directory's servers and TLS with the bind account, as an smtp one
+  // its mail server : whether certificates are checked, the CA bundle
+  await checkPromise(addColumn("credentials", "ignore_certs", "tinyint(4)", true, "NULL"), messages, success, failed);
+  await checkPromise(addColumn("credentials", "ca_bundle", "text", true, "NULL"), messages, success, failed);
   // and when each ended, worked or not, shown beside the repository's Pull and Push
   await checkPromise(addColumn("repositories", "pulled_at", "datetime", true, "NULL"), messages, success, failed);
   await checkPromise(addColumn("repositories", "pushed_at", "datetime", true, "NULL"), messages, success, failed);
@@ -1324,6 +1331,77 @@ export async function moveSsoClientsToCredentials() {
   }
   if (!done.length) return null;
   const message = `Moved the client of ${done.length} SSO provider(s) to credentials (${done.join(", ")})`;
+  logger.notice(message);
+  return message;
+}
+
+/**
+ * The servers, port, TLS and certificates of each LDAP directory moved to its ldap credential,
+ * with its bind account : where it connects and as whom are one credential, as a mail channel's.
+ *   - its credential has no servers yet : the directory's go into it
+ *   - it has the same ones : nothing to copy
+ *   - it has others (two directories shared one bind account) : a copy of the credential with the
+ *     directory's servers, the directory then names the copy
+ *   - no credential (its own bind DN and password) : a new ldap credential, <directory>-ldap, its
+ *     user the bind DN, its password the bind password (copied as stored : the same key encrypts
+ *     both tables)
+ * The directory's own then emptied. Not a seeded directory : the seed owns it, and its own are still
+ * used while its credential has none. Idempotent : only a directory with a server left.
+ *
+ * Returns:
+ *   Promise<string|null>: what was done, or null when there was nothing to do.
+ */
+export async function moveLdapServersToCredentials() {
+  const dirs = await mysql.do(
+    "SELECT id, name, server, port, enable_tls, ignore_certs, cert, ca_bundle, bind_user_dn, bind_user_pw, credential FROM AnsibleForms.`ldap` " +
+      "WHERE COALESCE(managed, 0) = 0 AND server IS NOT NULL AND server <> ''",
+  );
+  if (!dirs.length) return null;
+  const done = [];
+  for (const d of dirs) {
+    const c = {
+      host: String(d.server).trim(),
+      port: d.port || null,
+      secure: d.enable_tls ? 1 : 0,
+      ignore_certs: d.ignore_certs ? 1 : 0,
+      client_cert: d.cert || null,
+      ca_bundle: d.ca_bundle || null,
+    };
+    const creds = d.credential ? await mysql.do("SELECT * FROM AnsibleForms.`credentials` WHERE name = ?", [d.credential]) : [];
+    const cred = creds[0];
+    let name = cred?.name || null;
+    if (cred && !String(cred.host || "").trim()) {
+      await mysql.do("UPDATE AnsibleForms.`credentials` SET ? WHERE id = ?", [c, cred.id]);
+      done.push(`${d.name} into ${name}`);
+    } else if (cred && (String(cred.host).trim() !== c.host || (cred.port || null) !== c.port || (cred.secure ? 1 : 0) !== c.secure)) {
+      name = await freeCredentialName(`${cred.name}-${d.name}`);
+      await mysql.do(
+        "INSERT INTO AnsibleForms.`credentials` (name, user, password, description, is_database, credential_type, secret_store, secret_ref, host, port, secure, ignore_certs, client_cert, ca_bundle) " +
+          "SELECT ?, user, password, ?, 0, 'ldap', secret_store, secret_ref, ?, ?, ?, ?, ?, ? FROM AnsibleForms.`credentials` WHERE id = ?",
+        [name, `The bind account of ${cred.name}, with the servers of the LDAP directory ${d.name}`, c.host, c.port, c.secure, c.ignore_certs, c.client_cert, c.ca_bundle, cred.id],
+      );
+      done.push(`${d.name} into a copy of ${cred.name}, ${name}`);
+    } else if (!cred) {
+      name = await freeCredentialName(`${d.name}-ldap`);
+      await mysql.do("INSERT INTO AnsibleForms.`credentials` SET ?", [
+        {
+          name,
+          user: d.bind_user_dn || null,
+          password: d.bind_user_pw || null,
+          description: `The servers and bind account of the LDAP directory ${d.name}`,
+          is_database: 0,
+          credential_type: "ldap",
+          ...c,
+        },
+      ]);
+      done.push(`${d.name} into ${name}`);
+    }
+    await mysql.do(
+      "UPDATE AnsibleForms.`ldap` SET server = NULL, port = NULL, enable_tls = 0, ignore_certs = 0, cert = NULL, ca_bundle = NULL, credential = ? WHERE id = ?",
+      [name, d.id],
+    );
+  }
+  const message = `Moved the servers of ${dirs.length} LDAP directory(ies) to their ldap credential${done.length ? ` (${done.join(", ")})` : ""}`;
   logger.notice(message);
   return message;
 }

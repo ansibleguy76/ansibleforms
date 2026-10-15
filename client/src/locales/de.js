@@ -1655,7 +1655,7 @@ export default {
       type_smtp: 'SMTP',
       type_smtpHint: 'Ein Mailserver, sein Port und TLS und seine Anmeldung (keine für ein Relay)',
       type_ldap: 'LDAP',
-      type_ldapHint: 'Das Bind-Konto eines LDAP-Verzeichnisses: DN und Passwort',
+      type_ldapHint: 'Server, TLS und Bind-Konto eines LDAP-Verzeichnisses: DN und Passwort',
       type_entraid: 'Microsoft Entra ID',
       type_entraidHint: 'Die App eines Microsoft Entra ID-Anbieters: Mandanten-ID, Client-ID und Client-Geheimnis',
       type_oidc: 'Open ID',
@@ -1726,7 +1726,7 @@ export default {
       enableLdapHelp: 'Benutzer melden sich mit ihrem LDAP- oder Active-Directory-Konto an',
       credential: 'Anmeldedaten-Eintrag',
       credentialHelp:
-        'Ein ldap-Eintrag aus Verbindungen > Anmeldedaten: der Benutzer ist der Bind-DN. Keiner: ein Verzeichnis von vor den Anmeldedaten bindet mit eigenem Bind-Benutzer.',
+        'Ein ldap-Eintrag aus Verbindungen > Anmeldedaten: Server, Port, TLS und Zertifikate des Verzeichnisses sowie Bind-DN und Passwort.',
       nameHelp:
         'Stellt seinen Mitgliedern in Rollen den Namen voran: corp/jane, ldap/corp/Admins. Das Verzeichnis default behält die kurzen Namen und seinen eigenen Namen.',
       servers: 'Server',

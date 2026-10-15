@@ -19,6 +19,9 @@ const MASK = '**********';
  * Returns:
  *   object: the directory to send.
  */
+// a directory's connection : its credential's when the credential holds one (Ldap.withConnection)
+const CONNECTION_KEYS = ['server', 'port', 'enable_tls', 'ignore_certs', 'cert', 'ca_bundle'];
+
 function shown(directory) {
   return directory ? { ...directory, bind_user_pw: directory.bind_user_pw ? MASK : '' } : directory;
 }
@@ -37,7 +40,9 @@ const empty = (req) => req.body?.constructor === Object && Object.keys(req.body)
 const findAll = async function (req, res) {
   try {
     // in the lookup order, the first and the last said (the list's Move up and Move down)
-    const all = await Ldap.findAll();
+    // each with the connection it uses : its credential's servers and TLS (the API's server, port,
+    // enable_tls... as before), else its own
+    const all = await Promise.all((await Ldap.findAll()).map((d) => Ldap.withConnection(d)));
     res.status(200).json(RestResultv2.list(all.map((d, i) => ({ ...shown(d), isFirst: i === 0, isLast: i === all.length - 1 }))));
   } catch (err) {
     logger.error("Error finding the LDAP directories: ", err);
@@ -49,7 +54,7 @@ const findById = async function (req, res) {
   try {
     const directory = await Ldap.findById(req.params.id);
     if (!directory) return res.status(404).json(RestResultv2.error(i18n.t(req, 'resources.failedFindLdap'), `No ldap directory ${req.params.id}`));
-    res.status(200).json(RestResultv2.single(shown(directory)));
+    res.status(200).json(RestResultv2.single(shown(await Ldap.withConnection(directory))));
   } catch (err) {
     logger.error("Error finding the LDAP directory: ", err);
     res.status(500).json(RestResultv2.error(i18n.t(req, 'resources.failedFindLdap'), err.toString()));
@@ -85,6 +90,10 @@ const update = async function (req, res) {
     delete record.testuser;
     delete record.testpassword;
     delete record.managed;
+    // its connection shown is its credential's : never written back over its own
+    if (await Ldap.connectionOf(record.credential).catch(() => null)) {
+      for (const key of CONNECTION_KEYS) record[key] = existing[key] ?? null;
+    }
     await Ldap.updateById(req.params.id, record);
     res.status(200).json(RestResultv2.single({ message: i18n.t(req, 'resources.ldapUpdated') }));
   } catch (err) {
@@ -122,6 +131,12 @@ const check = async function (req, res) {
     // the page's fields as they are (saved or not) ; the stored bind password only for the stored
     // servers, never handed to others
     const sent = { ...existing, ...req.body };
+    // its credential's servers and account (shown on its page) : its own are left as they are,
+    // the test reads the credential's (Ldap.authenticateOn)
+    if (await Ldap.connectionOf(sent.credential).catch(() => null)) {
+      for (const key of CONNECTION_KEYS) sent[key] = existing[key] ?? null;
+      sent.bind_user_pw = existing.bind_user_pw;
+    }
     if (sent.bind_user_pw === MASK) {
       if (!sameLdapTarget(sent, existing)) {
         return res.status(400).json(RestResultv2.error(i18n.t(req, 'resources.ldapCheckFailed'), i18n.t(req, 'resources.storedPasswordOtherServer')));

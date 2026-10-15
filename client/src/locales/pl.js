@@ -1549,7 +1549,7 @@ export default {
       type_smtp: 'SMTP',
       type_smtpHint: 'Serwer poczty, jego port i TLS oraz logowanie (brak dla przekaźnika)',
       type_ldap: 'LDAP',
-      type_ldapHint: 'Konto powiązania katalogu LDAP: jego DN i hasło',
+      type_ldapHint: 'Serwery, TLS i konto powiązania katalogu LDAP: jego DN i hasło',
       type_entraid: 'Microsoft Entra ID',
       type_entraidHint: 'Aplikacja dostawcy Microsoft Entra ID: ID dzierżawy, ID klienta i sekret',
       type_oidc: 'Open ID',
@@ -1616,7 +1616,7 @@ export default {
       enableLdapHelp: 'Użytkownicy logują się kontem LDAP lub Active Directory',
       credential: 'Poświadczenie',
       credentialHelp:
-        'Poświadczenie ldap z Połączenia > Poświadczenia: użytkownik to DN powiązania. Brak: katalog sprzed poświadczeń wiąże się własnym użytkownikiem.',
+        'Poświadczenie ldap z Połączenia > Poświadczenia: serwery katalogu, port, TLS i certyfikaty oraz DN i hasło powiązania.',
       nameHelp:
         'Poprzedza członków w rolach swoją nazwą: corp/jane, ldap/corp/Admins. Katalog default zachowuje krótkie nazwy i własną nazwę.',
       servers: 'Serwery',

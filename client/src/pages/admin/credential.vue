@@ -61,6 +61,8 @@ const EDITED = [
   'host',
   'port',
   'secure',
+  'ignore_certs',
+  'ca_bundle',
   'db_type',
   'db_name',
 ];
@@ -103,6 +105,8 @@ function editable(record) {
     host: record.host ?? '',
     port: record.port ?? '',
     secure: !!record.secure,
+    ignore_certs: !!record.ignore_certs,
+    ca_bundle: record.ca_bundle ?? '',
     db_type: record.db_type || 'mysql',
     db_name: record.db_name ?? '',
   };
@@ -225,8 +229,21 @@ const shownTab = computed(() => {
 });
 // an SSH, a database or an smtp credential connects somewhere : its host and port in its Login
 // tab (an smtp one's the mail server, and its TLS)
-const hasConnection = computed(() => ['ssh', 'database', 'smtp'].includes(type.value));
+// an ldap one's its directory's servers (in failover order), TLS and certificates
+const hasConnection = computed(() => ['ssh', 'database', 'smtp', 'ldap'].includes(type.value));
 const isSmtp = computed(() => type.value === 'smtp');
+const isLdap = computed(() => type.value === 'ldap');
+/**
+ * TLS turned on or off : an ldap one's standard port follows it (389 plain, 636 with TLS), as the
+ * directory's page did.
+ */
+function onTlsSwitch() {
+  if (!isLdap.value) return;
+  const port = Number(edit.value.port);
+  if (!edit.value.port || port === 389 || port === 636) edit.value.port = edit.value.secure ? 636 : 389;
+}
+// an ldap one's servers' certificates : checked against these unless told not to
+const ldapCerts = computed(() => isLdap.value && edit.value?.secure && !edit.value?.ignore_certs);
 // an Entra ID or Open ID one : the app registration of an SSO provider, its redirect URL too
 const isSso = computed(() => ['entraid', 'oidc'].includes(type.value));
 // the redirect URL it gets when left empty : the app's address (Settings > URL) and the callback
@@ -267,8 +284,11 @@ async function save() {
     credential_type: e.credential_type,
     host: hasConnection.value ? e.host.trim() : '',
     port: hasConnection.value && String(e.port ?? '').trim() !== '' ? e.port : null,
-    // an smtp one's TLS
-    secure: e.credential_type === 'smtp' && e.secure ? 1 : 0,
+    // an ldap one's : certificates not checked, the CA bundle (its client certificate below)
+    ignore_certs: isLdap.value && e.ignore_certs ? 1 : 0,
+    ca_bundle: isLdap.value ? e.ca_bundle : '',
+    // an smtp or an ldap one's TLS
+    secure: ['smtp', 'ldap'].includes(e.credential_type) && e.secure ? 1 : 0,
     db_type: isDatabase.value ? e.db_type : '',
     db_name: isDatabase.value ? e.db_name.trim() : '',
   };
@@ -285,6 +305,8 @@ async function save() {
     // its new password, typed in its Login tab
     if (newPassword.value && !isCyberark.value) data.password = newPassword.value;
   }
+  // an ldap one's client certificate, checked by its servers
+  if (isLdap.value) data.client_cert = e.client_cert;
   if (isCyberark.value) {
     data.client_cert = e.client_cert;
     // left empty, the stored key stays
@@ -481,7 +503,20 @@ onMounted(async () => {
                   :required="true"
                   :label="t('settings.credentials.databaseType')"
                 />
+                <!-- an ldap one's servers : one per input, tried in order (Add server) -->
+                <BsInputList
+                  v-if="isLdap"
+                  class="af-credential-field"
+                  v-model="edit.host"
+                  icon="server"
+                  placeholder="dc1.corp.example"
+                  :required="true"
+                  :addLabel="t('settings.ldap.addServer')"
+                  :help="t('settings.ldap.serversHelp')"
+                  :label="t('settings.ldap.servers')"
+                />
                 <BsInput
+                  v-else
                   class="af-credential-field"
                   v-model="edit.host"
                   icon="server"
@@ -500,18 +535,60 @@ onMounted(async () => {
                   :help="isSmtp ? t('settings.mail.mailPortHelp') : ''"
                   :label="isSmtp ? t('settings.mail.mailPort') : t('settings.fields.port')"
                 />
-                <!-- an smtp one : TLS -->
-                <div v-if="isSmtp" class="form-check form-switch mb-3">
+                <!-- an smtp or an ldap one : TLS -->
+                <div v-if="isSmtp || isLdap" class="form-check form-switch mb-3">
                   <input
                     id="af-credential-tls"
                     v-model="edit.secure"
                     class="form-check-input"
                     type="checkbox"
                     role="switch"
+                    @change="onTlsSwitch"
                   />
-                  <label class="form-check-label" for="af-credential-tls">{{ t('settings.mail.useTls') }}</label>
-                  <div class="form-text mt-1">{{ t('settings.mail.useTlsHelp') }}</div>
+                  <label class="form-check-label" for="af-credential-tls">{{
+                    isLdap ? t('settings.ldap.enableTls') : t('settings.mail.useTls')
+                  }}</label>
+                  <div class="form-text mt-1">
+                    {{ isLdap ? t('settings.ldap.enableTlsDesc') : t('settings.mail.useTlsHelp') }}
+                  </div>
                 </div>
+                <!-- an ldap one with TLS : whether its servers' certificates are checked, and against
+                     which -->
+                <template v-if="isLdap && edit.secure">
+                  <div class="form-check form-switch mb-3">
+                    <input
+                      id="af-credential-ignore-certs"
+                      v-model="edit.ignore_certs"
+                      class="form-check-input"
+                      type="checkbox"
+                      role="switch"
+                    />
+                    <label class="form-check-label" for="af-credential-ignore-certs">{{
+                      t('settings.ldap.ignoreCerts')
+                    }}</label>
+                    <div class="form-text mt-1">{{ t('settings.ldap.ignoreCertsDesc') }}</div>
+                  </div>
+                  <template v-if="ldapCerts">
+                    <BsInput
+                      class="af-credential-field"
+                      v-model="edit.client_cert"
+                      type="textarea"
+                      icon="certificate"
+                      placeholder="-----BEGIN CERTIFICATE-----"
+                      :isFloating="false"
+                      :label="t('settings.fields.certificate')"
+                    />
+                    <BsInput
+                      class="af-credential-field"
+                      v-model="edit.ca_bundle"
+                      type="textarea"
+                      icon="certificate"
+                      placeholder="-----BEGIN CERTIFICATE-----"
+                      :isFloating="false"
+                      :label="t('settings.fields.caBundle')"
+                    />
+                  </template>
+                </template>
                 <BsInput
                   v-if="isDatabase"
                   class="af-credential-field"

@@ -49,6 +49,10 @@ const crudConfigs = {
       // an oidc credential's issuer ; an entraid or oidc one's redirect URL
       { name: 'issuer' },
       { name: 'redirect_uri' },
+      // an ldap credential's TLS : certificates not checked, the CA bundle (its client certificate
+      // is client_cert)
+      { name: 'ignore_certs', isBoolean: true },
+      { name: 'ca_bundle' },
       { name: 'description' },
       { name: 'db_type' },
       { name: 'vault_path' },

@@ -1642,7 +1642,7 @@ export default {
       type_smtp: 'SMTP',
       type_smtpHint: 'Un server di posta, la sua porta e TLS, e il suo accesso (nessuno per un relay)',
       type_ldap: 'LDAP',
-      type_ldapHint: "L'account di bind di una directory LDAP: il suo DN e la password",
+      type_ldapHint: "I server, il TLS e l'account di bind di una directory LDAP: il suo DN e la password",
       type_entraid: 'Microsoft Entra ID',
       type_entraidHint: "L'app di un provider Microsoft Entra ID: ID tenant, ID client e segreto",
       type_oidc: 'Open ID',
@@ -1711,7 +1711,7 @@ export default {
       enableLdapHelp: 'Gli utenti accedono con il proprio account LDAP o Active Directory',
       credential: 'Credenziale',
       credentialHelp:
-        "Una credenziale ldap di Connessioni > Credenziali: l'utente è il DN di bind. Nessuna: una directory precedente alle credenziali usa il proprio utente di bind.",
+        'Una credenziale ldap di Connessioni > Credenziali: i server della directory, la porta, il TLS e i certificati, e il DN e la password di bind.',
       nameHelp:
         'Antepone il proprio nome ai membri nei ruoli: corp/jane, ldap/corp/Admins. La directory default mantiene i nomi brevi e il proprio nome.',
       servers: 'Server',

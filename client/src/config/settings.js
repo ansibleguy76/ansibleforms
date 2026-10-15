@@ -1676,13 +1676,19 @@ export default function getSettings(t) {
           key: 'host',
           step: 'login',
           dependency: 'credential_type',
-          dependencyValues: ['ssh', 'database', 'smtp'],
+          dependencyValues: ['ssh', 'database', 'smtp', 'ldap'],
           label: t('settings.fields.host'),
-          // an smtp one's host is its mail server, which it needs
-          dialogLabel: (r) => (r.credential_type === 'smtp' ? t('settings.mail.mailServer') : null),
-          help: (r) => (r.credential_type === 'smtp' ? t('settings.mail.mailServerHelp') : null),
-          placeholder: (r) => (r.credential_type === 'smtp' ? 'smtp.example.com' : ''),
-          requiredWhen: (r) => r.credential_type === 'smtp',
+          // an smtp one's host is its mail server, an ldap one's its directory's servers (one per
+          // input, tried in order) : both need it
+          dialogLabel: (r) =>
+            ({ smtp: t('settings.mail.mailServer'), ldap: t('settings.ldap.servers') })[r.credential_type] || null,
+          help: (r) =>
+            ({ smtp: t('settings.mail.mailServerHelp'), ldap: t('settings.ldap.serversHelp') })[r.credential_type] ||
+            null,
+          placeholder: (r) => ({ smtp: 'smtp.example.com', ldap: 'dc1.corp.example' })[r.credential_type] || '',
+          listWhen: (r) => r.credential_type === 'ldap',
+          addLabel: t('settings.ldap.addServer'),
+          requiredWhen: (r) => ['smtp', 'ldap'].includes(r.credential_type),
           // no column : most credentials connect to nothing, an ssh, a database or an smtp one
           // shows it on its page
           noTable: true,
@@ -1695,7 +1701,7 @@ export default function getSettings(t) {
           key: 'port',
           step: 'login',
           dependency: 'credential_type',
-          dependencyValues: ['ssh', 'database', 'smtp'],
+          dependencyValues: ['ssh', 'database', 'smtp', 'ldap'],
           label: t('settings.fields.port'),
           dialogLabel: (r) => (r.credential_type === 'smtp' ? t('settings.mail.mailPort') : null),
           help: (r) => (r.credential_type === 'smtp' ? t('settings.mail.mailPortHelp') : null),
@@ -1707,13 +1713,15 @@ export default function getSettings(t) {
           icon: 'arrows-alt-v',
         },
         {
-          // an smtp one : TLS to its mail server
+          // an smtp or an ldap one : TLS to its servers
           key: 'secure',
           step: 'login',
           dependency: 'credential_type',
-          dependencyValues: ['smtp'],
+          dependencyValues: ['smtp', 'ldap'],
           label: t('settings.mail.useTls'),
-          help: t('settings.mail.useTlsHelp'),
+          dialogLabel: (r) => (r.credential_type === 'ldap' ? t('settings.ldap.enableTls') : null),
+          help: (r) =>
+            r.credential_type === 'ldap' ? t('settings.ldap.enableTlsDesc') : t('settings.mail.useTlsHelp'),
           type: 'checkbox',
           noTable: true,
           hidden: true,
@@ -1819,18 +1827,45 @@ export default function getSettings(t) {
           dependencyValues: ['entraid', 'oidc'],
         },
         {
-          // a cyberark credential : the client certificate and key its AppID may be restricted to
+          // an ldap one with TLS : its servers' certificates not checked
+          key: 'ignore_certs',
+          step: 'login',
+          label: t('settings.ldap.ignoreCerts'),
+          help: t('settings.ldap.ignoreCertsDesc'),
+          type: 'checkbox',
+          noTable: true,
+          hidden: true,
+          required: false,
+          filterable: false,
+          showWhen: (r) => r.credential_type === 'ldap' && !!r.secure,
+        },
+        {
+          // a cyberark credential : the client certificate and key its AppID may be restricted to ;
+          // an ldap one with its certificates checked : the client certificate its servers check
           key: 'client_cert',
           step: 'login',
           icon: 'certificate',
           type: 'textarea',
           label: t('settings.secretStores.clientCert'),
-          help: t('settings.secretStores.clientCertHelp'),
+          dialogLabel: (r) => (r.credential_type === 'ldap' ? t('settings.fields.certificate') : null),
+          help: (r) => (r.credential_type === 'cyberark' ? t('settings.secretStores.clientCertHelp') : null),
           placeholder: '-----BEGIN CERTIFICATE-----',
           hidden: true,
           noTable: true,
-          dependency: 'credential_type',
-          dependencyValues: ['cyberark'],
+          showWhen: (r) =>
+            r.credential_type === 'cyberark' || (r.credential_type === 'ldap' && !!r.secure && !r.ignore_certs),
+        },
+        {
+          // an ldap one with its certificates checked : the CA bundle they are checked against
+          key: 'ca_bundle',
+          step: 'login',
+          icon: 'certificate',
+          type: 'textarea',
+          label: t('settings.fields.caBundle'),
+          placeholder: '-----BEGIN CERTIFICATE-----',
+          hidden: true,
+          noTable: true,
+          showWhen: (r) => r.credential_type === 'ldap' && !!r.secure && !r.ignore_certs,
         },
         {
           key: 'client_key',
@@ -1953,78 +1988,6 @@ export default function getSettings(t) {
           disabledWhen: (item, saved) => saved.name === 'default',
         },
         {
-          key: 'server',
-          tab: 'connection',
-          icon: 'server',
-          line: 1,
-          // one per input, stored comma separated ; tried in order
-          type: 'list',
-          addLabel: t('settings.ldap.addServer'),
-          label: t('settings.ldap.servers'),
-          help: t('settings.ldap.serversHelp'),
-          placeholder: 'dc1.corp.example',
-          required: true,
-          dependency: 'enable',
-        },
-        {
-          key: 'port',
-          tab: 'connection',
-          icon: 'arrows-alt-v',
-          type: 'number',
-          line: 2,
-          label: t('settings.fields.port'),
-          required: true,
-          dependency: 'enable',
-        },
-        {
-          key: 'enable_tls',
-          tab: 'connection',
-          label: t('settings.ldap.enableTls'),
-          help: t('settings.ldap.enableTlsDesc'),
-          type: 'checkbox',
-          line: 3,
-          dependency: 'enable',
-          onChange: (val, item) => {
-            if (Number(item.port) === 389 || Number(item.port) === 636) item.port = val ? 636 : 389;
-          },
-        },
-        {
-          key: 'ignore_certs',
-          tab: 'connection',
-          hideWhenDisabled: true,
-          label: t('settings.ldap.ignoreCerts'),
-          help: t('settings.ldap.ignoreCertsDesc'),
-          type: 'checkbox',
-          line: 4,
-          dependency: 'enable_tls',
-        },
-        {
-          key: 'cert',
-          tab: 'connection',
-          hideWhenDisabled: true,
-          icon: 'certificate',
-          type: 'textarea',
-          line: 5,
-          label: t('settings.fields.certificate'),
-          required: true,
-          dependency: 'ignore_certs',
-          negateDependency: true,
-          placeholder: '-----BEGIN CERTIFICATE-----',
-        },
-        {
-          key: 'ca_bundle',
-          tab: 'connection',
-          hideWhenDisabled: true,
-          icon: 'certificate',
-          type: 'textarea',
-          line: 6,
-          label: t('settings.fields.caBundle'),
-          required: true,
-          dependency: 'ignore_certs',
-          negateDependency: true,
-          placeholder: '-----BEGIN CERTIFICATE-----',
-        },
-        {
           key: 'search_base',
           tab: 'users',
           icon: 'search',
@@ -2045,8 +2008,8 @@ export default function getSettings(t) {
           dependency: 'enable',
         },
         {
-          // a credential of Connections > Credentials to bind with, or none : its own bind user and
-          // password below
+          // where it connects and as whom : an ldap credential of Connections > Credentials (its
+          // servers, port, TLS and certificates, and the bind DN and password)
           key: 'credential',
           tab: 'credentials',
           icon: 'key',
@@ -2055,7 +2018,7 @@ export default function getSettings(t) {
           label: t('settings.ldap.credential'),
           help: t('settings.ldap.credentialHelp'),
           // its page's dropdown (AppAdminSingle) and the New dialog's (AppAdminMulti) : the ldap
-          // credentials only, none first (its own bind user and password)
+          // credentials only
           valuesFrom: { url: '/api/v2/credential/', filter: (c) => c.credential_type === 'ldap' },
           parent: 'credentials',
           values: 'credential',
@@ -2067,6 +2030,7 @@ export default function getSettings(t) {
           createWith: 'credentials',
           createLabel: t('settings.repositories.newCredential'),
           createDefaults: { credential_type: 'ldap' },
+          required: true,
           dependency: 'enable',
         },
         {
@@ -2215,6 +2179,9 @@ export default function getSettings(t) {
           label: t('settings.chat.credential'),
           help: t('settings.chat.credentialHelp'),
           valuesFrom: { url: '/api/v2/credential/', filter: (c) => c.credential_type === 'api' },
+          // Add credential under it : a new api credential
+          createWith: 'credentials',
+          createDefaults: { credential_type: 'api' },
           dependency: 'provider',
         },
         {

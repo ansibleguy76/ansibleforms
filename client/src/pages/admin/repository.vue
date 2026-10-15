@@ -232,6 +232,18 @@ async function load(keepEdits = false) {
   loaded.value = true;
 }
 
+/**
+ * Chooses the credential just made with Add credential.
+ *
+ * Args:
+ *   name (string): the new credential's name.
+ */
+async function onCredentialCreated(name) {
+  const creds = await axios.get('/api/v2/credential/', TokenStorage.getAuthentication()).catch(() => null);
+  credentials.value = [{ name: '' }, ...(creds?.data?.records || []).map((c) => ({ name: c.name }))];
+  edit.value.credential = name;
+}
+
 // while git runs, the status and output are refreshed every 2 seconds
 let poll = null;
 function watchRun() {
@@ -469,7 +481,7 @@ onMounted(async () => {
               :label="t('settings.repositories.credential')"
             />
             <!-- a repository from before credentials : its own user, until a credential is chosen -->
-            <p v-if="repo.user && !edit.credential" class="form-text mb-0">
+            <p v-if="repo.user && !edit.credential" class="form-text">
               {{ t('settings.repositories.ownUser', { user: repo.user }) }}
             </p>
           </template>
@@ -544,6 +556,8 @@ onMounted(async () => {
         </div>
       </template>
       <template v-if="repo" #actions>
+        <!-- Credentials : a new git credential, chosen once made -->
+        <AppNewCredentialButton v-if="activeTab === 'credentials'" type="git" @created="onCredentialCreated" />
         <!-- Pull, Push and Reset : git on the repository, as the designer's repository page -->
         <BsButton icon="download" cssClass="text-nowrap" :disabled="running" @click="run('clone')">{{
           t('settings.repositories.pull')

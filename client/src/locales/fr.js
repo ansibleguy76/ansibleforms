@@ -1658,7 +1658,7 @@ export default {
       type_smtp: 'SMTP',
       type_smtpHint: 'Un serveur de messagerie, son port et TLS, et sa connexion (aucune pour un relais)',
       type_ldap: 'LDAP',
-      type_ldapHint: "Le compte de bind d'un annuaire LDAP : son DN et son mot de passe",
+      type_ldapHint: "Les serveurs, le TLS et le compte de bind d'un annuaire LDAP : son DN et son mot de passe",
       type_entraid: 'Microsoft Entra ID',
       type_entraidHint:
         "L'application d'un fournisseur Microsoft Entra ID : son ID de locataire, son ID client et son secret",
@@ -1728,7 +1728,7 @@ export default {
       enableLdapHelp: 'Les utilisateurs se connectent avec leur compte LDAP ou Active Directory',
       credential: 'Identifiant',
       credentialHelp:
-        "Un identifiant ldap de Connexions > Identifiants : son utilisateur est le DN de bind. Aucun : un annuaire d'avant les identifiants se lie avec son propre utilisateur.",
+        "Un identifiant ldap de Connexions > Identifiants : les serveurs de l'annuaire, le port, le TLS et les certificats, et le DN et le mot de passe de bind.",
       nameHelp:
         "Préfixe ses membres dans les rôles : corp/jane, ldap/corp/Admins. L'annuaire default garde les noms courts et son propre nom.",
       servers: 'Serveurs',

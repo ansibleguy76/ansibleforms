@@ -63,6 +63,9 @@ const credentialItem = {
     tenant_id: str,
     issuer: str,
     redirect_uri: str,
+    // an ldap credential's TLS : certificates not checked, the CA bundle
+    ignore_certs: bool,
+    ca_bundle: str,
     // a credential can take its user and password from a secret store instead of
     // carrying them here at all : the store's name and the place in it
     secret_store: str,

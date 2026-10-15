@@ -100,6 +100,17 @@ async function update(data) {
   }
 }
 
+/**
+ * Chooses the credential just made with Add credential.
+ *
+ * Args:
+ *   name (string): the new credential's name.
+ */
+async function onCredentialCreated(name) {
+  await loadCredentials();
+  edit.value.credential = name;
+}
+
 // ─── tabs ─────────────────────────────────────────────────────────────────────
 // the dialog's steps : Details, Type, Credentials, Groups
 const tabs = computed(() => [
@@ -316,7 +327,7 @@ onMounted(async () => {
               :help="t('settings.oauth2.credentialHelp')"
               :label="t('settings.oauth2.credential')"
             />
-            <p v-if="provider.client_id && !edit.credential" class="form-text mb-0">
+            <p v-if="provider.client_id && !edit.credential" class="form-text">
               {{ t('settings.oauth2.ownClient', { client: provider.client_id }) }}
             </p>
           </template>
@@ -333,6 +344,12 @@ onMounted(async () => {
         </div>
       </template>
       <template v-if="provider" #actions>
+        <!-- Credentials : a new credential of its type, chosen once made -->
+        <AppNewCredentialButton
+          v-if="activeTab === 'credentials'"
+          :type="provider.provider === 'azuread' ? 'entraid' : 'oidc'"
+          @created="onCredentialCreated"
+        />
         <BsButton icon="trash" @click="confirmDelete = true">{{ t('common.delete') }}</BsButton>
         <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
       </template>

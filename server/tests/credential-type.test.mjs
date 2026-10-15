@@ -84,3 +84,10 @@ describe("a credential keeps the type it was made as", () => {
     vi.restoreAllMocks();
   });
 });
+
+describe("an ldap credential's servers", () => {
+  test("an ldap one needs its directory servers", () => {
+    assert.throws(() => Credential.requireTypeFields({ credential_type: "ldap" }, true), /needs its directory servers/);
+    assert.equal(Credential.requireTypeFields({ credential_type: "ldap", host: "ldap1, ldap2" }, true).host, "ldap1, ldap2");
+  });
+});

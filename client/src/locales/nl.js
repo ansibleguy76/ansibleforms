@@ -1643,7 +1643,7 @@ export default {
       type_smtp: 'SMTP',
       type_smtpHint: 'Een mailserver, de poort en TLS, en de login (geen voor een relay)',
       type_ldap: 'LDAP',
-      type_ldapHint: 'Het bind-account van een LDAP-directory: DN en wachtwoord',
+      type_ldapHint: 'De servers, TLS en het bind-account van een LDAP-directory: DN en wachtwoord',
       type_entraid: 'Microsoft Entra ID',
       type_entraidHint: 'De app van een Microsoft Entra ID-provider: tenant-ID, client-ID en clientgeheim',
       type_oidc: 'Open ID',
@@ -1711,7 +1711,7 @@ export default {
       enableLdapHelp: 'Gebruikers melden zich aan met hun LDAP- of Active Directory-account',
       credential: 'Referentie',
       credentialHelp:
-        'Een ldap-referentie uit Verbindingen > Referenties: de gebruiker is de bind-DN. Geen: een directory van vóór referenties bindt met zijn eigen bind-gebruiker.',
+        'Een ldap-referentie uit Verbindingen > Referenties: de servers, poort, TLS en certificaten van de directory, en de bind-DN en het wachtwoord.',
       nameHelp:
         'Zet zijn naam voor zijn leden in rollen: corp/jane, ldap/corp/Admins. De directory default houdt de korte namen en zijn eigen naam.',
       servers: 'Servers',

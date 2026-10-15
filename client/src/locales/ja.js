@@ -1537,7 +1537,7 @@ export default {
       type_smtp: 'SMTP',
       type_smtpHint: 'メールサーバー、そのポートと TLS、ログイン（リレーの場合はなし）',
       type_ldap: 'LDAP',
-      type_ldapHint: 'LDAP ディレクトリのバインドアカウント：DN とパスワード',
+      type_ldapHint: 'LDAP ディレクトリのサーバー、TLS、バインドアカウント：DN とパスワード',
       type_entraid: 'Microsoft Entra ID',
       type_entraidHint: 'Microsoft Entra ID プロバイダーのアプリ：テナント ID、クライアント ID、シークレット',
       type_oidc: 'Open ID',
@@ -1602,7 +1602,7 @@ export default {
       enableLdapHelp: 'ユーザーは LDAP または Active Directory のアカウントでサインインします',
       credential: '資格情報',
       credentialHelp:
-        '［接続 > 資格情報］の ldap 資格情報：ユーザーがバインド DN。なし：資格情報より前のディレクトリは自身のバインドユーザーを使います。',
+        '［接続 > 資格情報］の ldap 資格情報：ディレクトリのサーバー、ポート、TLS と証明書、バインド DN とパスワード。',
       nameHelp:
         'ロールでメンバーの前に付けます：corp/jane、ldap/corp/Admins。default ディレクトリは短い名前と自身の名前を保持します。',
       servers: 'サーバー',

@@ -1561,7 +1561,7 @@ export default {
       type_smtp: 'SMTP',
       type_smtpHint: 'Un servidor de correu, el seu port i TLS, i el seu inici de sessió (cap per a un relay)',
       type_ldap: 'LDAP',
-      type_ldapHint: "El compte de bind d'un directori LDAP: el seu DN i contrasenya",
+      type_ldapHint: "Els servidors, el TLS i el compte de bind d'un directori LDAP: el seu DN i contrasenya",
       type_entraid: 'Microsoft Entra ID',
       type_entraidHint: "L'aplicació d'un proveïdor Microsoft Entra ID: el seu ID de tenant, ID de client i secret",
       type_oidc: 'Open ID',
@@ -1628,7 +1628,7 @@ export default {
       enableLdapHelp: 'Els usuaris inicien la sessió amb el seu compte de LDAP o Active Directory',
       credential: 'Credencial',
       credentialHelp:
-        'Una credencial ldap de Connexions > Credencials: el seu usuari és el DN de bind. Cap: un directori anterior a les credencials usa el seu propi usuari de bind.',
+        'Una credencial ldap de Connexions > Credencials: els servidors del directori, el port, el TLS i els certificats, i el DN i la contrasenya de bind.',
       nameHelp:
         'Prefixa els seus membres als rols: corp/jane, ldap/corp/Admins. El directori default conserva els noms curts i el seu propi nom.',
       servers: 'Servidors',
