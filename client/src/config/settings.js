@@ -785,6 +785,13 @@ export default function getSettings(t) {
           help: t('settings.repositories.helpName'),
         },
         {
+          key: 'description',
+          icon: 'info-circle',
+          label: t('settings.fields.description'),
+          placeholder: t('settings.fields.description'),
+          required: true,
+        },
+        {
           key: 'branch',
           icon: 'code-branch',
           // left out on a narrow table, after the head
@@ -900,13 +907,6 @@ export default function getSettings(t) {
           columnLabel: t('settings.repositories.cloneOnStartShort'),
           help: t('settings.repositories.helpCloneOnStart'),
           hidden: true,
-        },
-        {
-          key: 'description',
-          icon: 'info-circle',
-          label: t('settings.fields.description'),
-          placeholder: t('settings.fields.description'),
-          required: true,
         },
         {
           key: 'use_for_config',
@@ -2373,17 +2373,6 @@ export default function getSettings(t) {
           filterable: true,
           help: t('settings.runners.nameHelp'),
         },
-        // set by the api for a runner its RTE registered itself (rte/register.js) : automatic
-        // while the RTE writes its heartbeat, unresponsive once it stopped - the worker removes
-        // it after 10 minutes. Any other runner is manual. A column only, never sent (beforeSave). render() output goes to
-        // v-html : static markup and a locale string only, as a pill (registrationPill)
-        {
-          key: 'state',
-          label: t('settings.runners.state'),
-          noInput: true,
-          sortable: true,
-          render: (v) => registrationPill(t, v),
-        },
         {
           // RTE, AWX, AAP or Ascender : one choice, radio buttons (not stored : the type and the
           // flavour are, see beforeSave)
@@ -2421,7 +2410,17 @@ export default function getSettings(t) {
           line: 0,
           label: t('settings.fields.description'),
           required: false,
-          hidden: true,
+        },
+        // set by the api for a runner its RTE registered itself (rte/register.js) : automatic
+        // while the RTE writes its heartbeat, unresponsive once it stopped - the worker removes
+        // it after 10 minutes. Any other runner is manual. A column only, never sent (beforeSave). render() output goes to
+        // v-html : static markup and a locale string only, as a pill (registrationPill)
+        {
+          key: 'state',
+          label: t('settings.runners.state'),
+          noInput: true,
+          sortable: true,
+          render: (v) => registrationPill(t, v),
         },
         {
           key: 'uri',
@@ -2429,6 +2428,8 @@ export default function getSettings(t) {
           icon: 'globe',
           line: 1,
           label: t('settings.fields.uri'),
+          // in Columns : the description shows instead
+          hidden: true,
           required: true,
           // the address of the kind chosen
           help: (r) => t(`settings.runners.uriHelp_${r.kind || 'rte'}`),
@@ -2891,7 +2892,7 @@ export default function getSettings(t) {
           noInput: true,
         },
         { key: 'name', label: t('settings.fields.name'), required: true, icon: 'heading' },
-        { key: 'description', label: t('settings.fields.description'), icon: 'info-circle', hidden: true },
+        { key: 'description', label: t('settings.fields.description'), icon: 'info-circle' },
         {
           // where it listens, as the table shows it : not a field of the dialog
           key: 'address',
@@ -2899,6 +2900,8 @@ export default function getSettings(t) {
           noInput: true,
           render: (v, row) => esc(syslogAddress(row)),
           sortValue: (r) => syslogAddress(r),
+          // in Columns : the description shows instead
+          hidden: true,
         },
         {
           key: 'protocol',
@@ -3333,7 +3336,6 @@ export default function getSettings(t) {
           line: 0,
           label: t('settings.fields.description'),
           required: false,
-          hidden: true,
         },
         {
           key: 'url',
@@ -3345,6 +3347,8 @@ export default function getSettings(t) {
           // an example of the type chosen
           placeholder: (r) =>
             r.type === 'cyberark_ccp' ? 'https://ccp.example.com' : 'https://vault.example.com:8200',
+          // in Columns : the description shows instead
+          hidden: true,
           dependency: 'type',
         },
         {
@@ -3361,6 +3365,7 @@ export default function getSettings(t) {
                 ? 'settings.secretStores.helpCredentialCyberark'
                 : 'settings.secretStores.helpCredential',
             ),
+          hidden: true,
           type: 'select',
           parent: 'credentials',
           values: 'credential',
