@@ -698,3 +698,9 @@ textarea:focus::placeholder {
   white-space: nowrap;
   overflow: hidden;
 }
+
+/* a disabled check's help under it is dimmed as its label (Bootstrap dims the label only) : a
+   switch set when its record was made, as a Vault's Enterprise */
+.form-check-input:disabled ~ .form-text {
+  opacity: 0.5;
+}

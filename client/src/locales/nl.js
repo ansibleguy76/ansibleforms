@@ -1564,6 +1564,7 @@ export default {
       clientKeyHelp: 'PEM private key van het clientcertificaat. Wordt versleuteld opgeslagen.',
       enterprise: 'Vault Enterprise',
       enterpriseHelp: 'Zijn namespaces, een functie van Vault Enterprise en HCP Vault.',
+      namespaceRequired: 'De namespace is verplicht voor een Vault Enterprise.',
       kv1Hint: 'De KV-engine zonder versies',
       kv2Hint: 'De KV-engine met versies, standaard sinds Vault 0.10',
       stepAuth: 'Referenties',

@@ -1453,6 +1453,7 @@ export default {
       clientKeyHelp: 'クライアント証明書の PEM 秘密鍵です。暗号化して保存されます。',
       enterprise: 'Vault Enterprise',
       enterpriseHelp: 'その名前空間 (Vault Enterprise と HCP Vault の機能)。',
+      namespaceRequired: 'Vault Enterprise にはネームスペースが必須です。',
       kv1Hint: 'バージョンなしの KV エンジン',
       kv2Hint: 'バージョン管理された KV エンジン (Vault 0.10 以降の既定)',
       stepAuth: '認証情報',

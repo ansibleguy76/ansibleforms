@@ -1464,6 +1464,7 @@ export default {
       clientKeyHelp: 'Klucz prywatny PEM certyfikatu klienta. Przechowywany w postaci zaszyfrowanej.',
       enterprise: 'Vault Enterprise',
       enterpriseHelp: 'Jego przestrzenie nazw, funkcja Vault Enterprise i HCP Vault.',
+      namespaceRequired: 'Przestrzeń nazw jest wymagana dla Vault Enterprise.',
       kv1Hint: 'Silnik KV bez wersji',
       kv2Hint: 'Silnik KV z wersjami, domyślny od Vault 0.10',
       stepAuth: 'Poświadczenia',

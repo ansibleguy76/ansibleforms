@@ -1411,6 +1411,7 @@ export default {
       clientKeyHelp: '客户端证书的 PEM 私钥。加密存储。',
       enterprise: 'Vault Enterprise',
       enterpriseHelp: '其命名空间，Vault Enterprise 和 HCP Vault 的功能。',
+      namespaceRequired: 'Vault Enterprise 必须填写命名空间。',
       kv1Hint: '不带版本的 KV 引擎',
       kv2Hint: '带版本的 KV 引擎，自 Vault 0.10 起为默认',
       stepAuth: '凭据',

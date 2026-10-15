@@ -1474,6 +1474,7 @@ export default {
       clientKeyHelp: 'Clau privada PEM del certificat de client. Es desa xifrada.',
       enterprise: 'Vault Enterprise',
       enterpriseHelp: 'Els seus espais de noms, una funció de Vault Enterprise i HCP Vault.',
+      namespaceRequired: 'El namespace és obligatori per a un Vault Enterprise.',
       kv1Hint: 'El motor KV sense versions',
       kv2Hint: 'El motor KV amb versions, el predeterminat des de Vault 0.10',
       stepAuth: 'Credencials',
