@@ -1376,7 +1376,6 @@ export default {
       typeHint_teams: "Una targeta en un canal de Teams, a través d'un webhook de Workflows",
       typeHint_telegram: "Un missatge d'un bot en un xat de Telegram",
       typeHint_webhook: 'Una petició JSON a qualsevol endpoint HTTP',
-      address: 'Adreça',
       addressWebhook: "Webhook d'entrada",
       addressChat: 'Xat {chat}',
       credential: 'Credencial',

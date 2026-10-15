@@ -1356,7 +1356,6 @@ export default {
       typeHint_teams: 'Teams チャネルへのカード (Workflows の Webhook 経由)',
       typeHint_telegram: 'Telegram チャットへのボットのメッセージ',
       typeHint_webhook: '任意の HTTP エンドポイントへの JSON リクエスト',
-      address: 'アドレス',
       addressWebhook: '受信 Webhook',
       addressChat: 'チャット {chat}',
       credential: '認証情報',

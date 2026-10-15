@@ -1473,7 +1473,6 @@ export default {
       typeHint_teams: 'Eine Karte in einem Teams-Kanal, über einen Workflows-Webhook',
       typeHint_telegram: 'Eine Nachricht eines Bots in einem Telegram-Chat',
       typeHint_webhook: 'Eine JSON-Anfrage an einen beliebigen HTTP-Endpunkt',
-      address: 'Adresse',
       addressWebhook: 'Eingehender Webhook',
       addressChat: 'Chat {chat}',
       credential: 'Zugangsdaten',
