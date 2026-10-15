@@ -106,6 +106,7 @@ onMounted(load);
     size="lg"
     :closable="!!preview"
     :footerClose="false"
+    blur
     @close="emit('close')"
   >
     <template #title>{{ disclaimer.title }}</template>
@@ -117,7 +118,7 @@ onMounted(load);
       </div>
     </template>
     <template #footer>
-      <BsButton icon="right-from-bracket" colorClass="secondary" :disabled="busy" @click="decline()">{{
+      <BsButton icon="right-from-bracket" colorClass="danger" :disabled="busy" @click="decline()">{{
         t('disclaimer.decline')
       }}</BsButton>
       <BsButton
