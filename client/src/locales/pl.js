@@ -1646,7 +1646,7 @@ export default {
       groupMemberUserAttributeDesc: 'Atrybut użytkownika porównywany z atrybutem członka grupy (np. dn, uid).',
       groupFilter: 'Filtr grup',
       groupFilterDesc:
-        'Wyrażenie regularne porównywane z nazwą grupy. Pozostaw puste, aby zachować wszystkie grupy. Zachowywane są tylko pasujące grupy i tylko je widzą mapowanie ról, pole __user__ w formularzach oraz playbook.',
+        'Wyrażenie regularne: zostają tylko grupy o pasującej nazwie, dla ról, formularzy i playbooków. Puste zachowuje wszystkie.',
     },
     runners: {
       label: 'Runner',

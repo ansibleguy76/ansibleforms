@@ -1659,7 +1659,7 @@ export default {
         "Atribut de l'usuari que es compara amb l'atribut de membre del grup (p. ex. dn, uid).",
       groupFilter: 'Filtre de grups',
       groupFilterDesc:
-        "Expressió regular que es compara amb el nom del grup. Deixa-ho buit per conservar tots els grups. Només es conserven els grups que coincideixen, i són els que veuen l'assignació de rols, el camp __user__ dels formularis i el playbook.",
+        'Expressió regular: només es conserven els grups el nom dels quals coincideix, per a rols, formularis i playbooks. Buit els conserva tots.',
     },
     runners: {
       label: 'Runner',

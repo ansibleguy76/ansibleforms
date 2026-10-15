@@ -1739,7 +1739,7 @@ export default {
       groupMemberUserAttributeDesc: "Attributo utente confrontato con l'attributo membro del gruppo (es. dn, uid).",
       groupFilter: 'Filtro gruppi',
       groupFilterDesc:
-        'Espressione regolare confrontata con il nome del gruppo. Lasciare vuoto per mantenere tutti i gruppi. Solo i gruppi corrispondenti vengono mantenuti, e sono quelli che vedono la mappatura dei ruoli, il campo __user__ nei form e il playbook.',
+        'Espressione regolare: si mantengono solo i gruppi il cui nome corrisponde, per ruoli, form e playbook. Vuoto li mantiene tutti.',
     },
     mail: {
       label: 'Impostazioni mail',

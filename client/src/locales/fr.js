@@ -1754,7 +1754,7 @@ export default {
       groupMemberUserAttributeDesc: "Attribut utilisateur comparé à l'attribut membre du groupe (ex. dn, uid).",
       groupFilter: 'Filtre de groupe',
       groupFilterDesc:
-        'Expression reguliere comparee au nom du groupe. Laisser vide pour conserver tous les groupes. Seuls les groupes correspondants sont conserves, et ce sont eux que voient le mappage des roles, le champ __user__ dans les formulaires et le playbook.',
+        'Expression régulière : seuls les groupes dont le nom correspond sont gardés, pour les rôles, formulaires et playbooks. Vide garde tout.',
     },
     mail: {
       label: 'Parametres mail',

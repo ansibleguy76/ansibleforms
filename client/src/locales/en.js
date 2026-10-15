@@ -1720,7 +1720,7 @@ export default {
       groupMemberUserAttributeDesc: 'User attribute matched against the group member attribute (e.g. dn, uid).',
       groupFilter: 'Group filter',
       groupFilterDesc:
-        'Regular expression matched against the group name. Leave empty to keep every group. Only matching groups are kept, and they are what the role mapping, the __user__ field in forms and the playbook all see.',
+        'Regular expression : only the groups whose name matches are kept, for roles, forms and playbooks. Empty keeps every group.',
     },
     mail: {
       label: 'Mail settings',

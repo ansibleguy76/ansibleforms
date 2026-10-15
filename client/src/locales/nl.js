@@ -1740,7 +1740,7 @@ export default {
         'Gebruikersattribuut dat wordt vergeleken met het groepslidattribuut (bijv. dn, uid).',
       groupFilter: 'Groepfilter',
       groupFilterDesc:
-        'Reguliere expressie die wordt vergeleken met de groepsnaam. Laat leeg om alle groepen te behouden. Alleen overeenkomende groepen worden behouden, en die zijn wat de rolkoppeling, het __user__ veld in formulieren en de playbook zien.',
+        'Reguliere expressie: alleen groepen met een passende naam blijven, voor rollen, formulieren en playbooks. Leeg houdt alle groepen.',
     },
     mail: {
       label: 'Mail instellingen',

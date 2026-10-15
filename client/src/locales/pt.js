@@ -1655,7 +1655,7 @@ export default {
       groupMemberUserAttributeDesc: 'Atributo do utilizador comparado com o atributo de membro do grupo (ex. dn, uid).',
       groupFilter: 'Filtro de grupos',
       groupFilterDesc:
-        'Expressão regular comparada com o nome do grupo. Deixe vazio para manter todos os grupos. Só os grupos correspondentes são mantidos, e são eles que o mapeamento de funções, o campo __user__ nos formulários e o playbook veem.',
+        'Expressão regular: só ficam os grupos cujo nome corresponde, para perfis, formulários e playbooks. Vazio mantém todos.',
     },
     runners: {
       label: 'Runner',

@@ -1586,8 +1586,7 @@ export default {
       groupMemberUserAttribute: '组成员用户属性',
       groupMemberUserAttributeDesc: '与组成员属性进行匹配的用户属性（例如 dn、uid）。',
       groupFilter: '组筛选',
-      groupFilterDesc:
-        '与组名进行匹配的正则表达式。留空则保留所有组。只保留匹配的组，角色映射、表单中的 __user__ 字段和 playbook 看到的都是这些组。',
+      groupFilterDesc: '正则表达式：只保留名称匹配的组，用于角色、表单和 playbook。留空保留所有组。',
     },
     runners: {
       label: '运行器',
