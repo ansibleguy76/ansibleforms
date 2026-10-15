@@ -191,12 +191,8 @@ export function schedulePill(t, state) {
 }
 
 // ─── SSO providers (Access > SSO) ────────────────────────────────────────────
-// the types a provider can be, in the order the wizard offers them, and each one's icon
+// the types a provider can be, in the order the wizard offers them
 export const SSO_TYPES = ['azuread', 'oidc'];
-export const SSO_ICONS = {
-  azuread: 'fab,microsoft',
-  oidc: 'fab,openid',
-};
 
 // ─── notification channels (Connections > Notifications) ─────────────────────
 // the types a channel can be, in the order the wizard offers them, and each one's icon
@@ -1074,7 +1070,7 @@ export default function getSettings(t) {
         },
         { key: 'name', label: t('settings.fields.name'), required: true, icon: 'heading' },
         {
-          // its type : radios, each its icon, label and a few words ; set when it is made, it stays
+          // its type : radios, each its label and a few words ; set when it is made, it stays
           key: 'provider',
           step: 'type',
           label: t('settings.oauth2.provider'),
@@ -1084,7 +1080,6 @@ export default function getSettings(t) {
           required: true,
           options: SSO_TYPES.map((value) => ({
             value,
-            icon: SSO_ICONS[value],
             label: t(`settings.oauth2.type_${value}`),
             hint: t(`settings.oauth2.typeHint_${value}`),
           })),
@@ -2654,7 +2649,7 @@ export default function getSettings(t) {
           hidden: true,
         },
         {
-          // its type : radios, each its icon, label and a few words ; set when it is made, it stays
+          // its type : radios, each its label and a few words ; set when it is made, it stays
           key: 'type',
           step: 'type',
           label: t('settings.notificationChannels.type'),
@@ -2662,7 +2657,6 @@ export default function getSettings(t) {
           required: true,
           options: CHANNEL_TYPES.map((value) => ({
             value,
-            icon: CHANNEL_ICONS[value],
             label: t(`settings.notificationChannels.type_${value}`),
             hint: t(`settings.notificationChannels.typeHint_${value}`),
           })),

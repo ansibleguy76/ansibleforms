@@ -1218,8 +1218,7 @@ export default {
       active: 'Włączony',
       useForSignIn: 'Użyj do logowania',
       credential: 'Poświadczenie',
-      credentialHelp:
-        'Poświadczenie jego typu z Połączenia > Poświadczenia (Microsoft Entra ID lub Open ID): ID klienta i sekret.',
+      credentialHelp: 'Poświadczenie jego typu: Microsoft Entra ID lub Open ID.',
       ownClient: 'Loguje się własnym ID klienta ({client}) sprzed poświadczeń, dopóki nie wybierzesz poświadczenia.',
       activeHelp: 'Użytkownicy logują się nim, gdy wybiorą {type}; włączenie go wyłącza pozostałych dostawców {type}.',
       autoLogin: 'Pomiń stronę logowania',

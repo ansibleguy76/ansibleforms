@@ -1218,8 +1218,7 @@ export default {
       active: 'Ingeschakeld',
       useForSignIn: 'Gebruiken om aan te melden',
       credential: 'Referentie',
-      credentialHelp:
-        'Een referentie van zijn type uit Verbindingen > Referenties (Microsoft Entra ID of Open ID): client-ID en clientgeheim.',
+      credentialHelp: 'Een referentie van zijn type: Microsoft Entra ID of Open ID.',
       ownClient:
         'Het meldt zich aan met zijn eigen client-ID ({client}) van vóór referenties, tot er een referentie gekozen is.',
       activeHelp:

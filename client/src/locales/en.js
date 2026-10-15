@@ -1208,8 +1208,7 @@ export default {
       active: 'Enabled',
       useForSignIn: 'Use for sign-in',
       credential: 'Credential',
-      credentialHelp:
-        'A credential of its type in Connections > Credentials (Microsoft Entra ID or Open ID) : its client ID and client secret.',
+      credentialHelp: 'A credential of its type: Microsoft Entra ID or Open ID.',
       ownClient:
         'It signs in with its own client ID ({client}), from before credentials, until a credential is chosen.',
       activeHelp: 'Users sign in with it when they choose {type}; turning it on turns off the other {type} providers.',

@@ -1184,7 +1184,7 @@ export default {
       active: '已启用',
       useForSignIn: '用于登录',
       credential: '凭据',
-      credentialHelp: '“连接 > 凭据”中其类型的凭据（Microsoft Entra ID 或 Open ID）：客户端 ID 和密钥。',
+      credentialHelp: '其类型的凭据：Microsoft Entra ID 或 Open ID。',
       ownClient: '在选择凭据之前，它使用凭据之前自己的客户端 ID（{client}）登录。',
       activeHelp: '用户选择 {type} 时使用它登录；开启它会关闭其他 {type} 提供商。',
       autoLogin: '跳过登录页',

@@ -1211,8 +1211,7 @@ export default {
       active: '有効',
       useForSignIn: 'サインインに使用',
       credential: '資格情報',
-      credentialHelp:
-        '［接続 > 資格情報］のその種類の資格情報（Microsoft Entra ID または Open ID）：クライアント ID とシークレット。',
+      credentialHelp: 'その種類の資格情報：Microsoft Entra ID または Open ID。',
       ownClient: '資格情報を選ぶまで、資格情報より前の自身のクライアント ID（{client}）でサインインします。',
       activeHelp:
         '{type} を選んだユーザーはこれでサインインします。オンにすると他の {type} プロバイダーはオフになります。',

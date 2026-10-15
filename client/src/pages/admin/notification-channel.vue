@@ -495,11 +495,7 @@ onMounted(async () => {
                   disabled
                 />
                 <label class="form-check-label" :for="'af-chtype-' + kind">
-                  <span class="af-short-label"
-                    ><FaIcon :icon="CHANNEL_ICONS[kind]" class="me-2" fixedwidth />{{
-                      t(`settings.notificationChannels.type_${kind}`)
-                    }}</span
-                  >
+                  <span class="af-short-label">{{ t(`settings.notificationChannels.type_${kind}`) }}</span>
                   <span class="text-body-secondary small">{{
                     t(`settings.notificationChannels.typeHint_${kind}`)
                   }}</span>

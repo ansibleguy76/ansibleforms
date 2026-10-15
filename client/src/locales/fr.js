@@ -1228,8 +1228,7 @@ export default {
       active: 'Activé',
       useForSignIn: 'Utiliser pour la connexion',
       credential: 'Identifiant',
-      credentialHelp:
-        'Un identifiant de son type dans Connexions > Identifiants (Microsoft Entra ID ou Open ID) : son ID client et son secret.',
+      credentialHelp: 'Un identifiant de son type : Microsoft Entra ID ou Open ID.',
       ownClient:
         "Il se connecte avec son propre ID client ({client}), d'avant les identifiants, jusqu'au choix d'un identifiant.",
       activeHelp:

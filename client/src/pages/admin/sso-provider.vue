@@ -22,7 +22,7 @@ import axios from 'axios';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
-import getSettings, { SSO_TYPES, SSO_ICONS } from '@/config/settings';
+import getSettings, { SSO_TYPES } from '@/config/settings';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { recordButtons } from '@/lib/recordButtons';
@@ -319,11 +319,7 @@ onMounted(async () => {
                 disabled
               />
               <label class="form-check-label" :for="'af-ssotype-' + kind">
-                <span class="af-short-label"
-                  ><FaIcon :icon="SSO_ICONS[kind]" class="me-2" fixedwidth />{{
-                    t(`settings.oauth2.type_${kind}`)
-                  }}</span
-                >
+                <span class="af-short-label">{{ t(`settings.oauth2.type_${kind}`) }}</span>
                 <span class="text-body-secondary small">{{ t(`settings.oauth2.typeHint_${kind}`) }}</span>
               </label>
             </div>

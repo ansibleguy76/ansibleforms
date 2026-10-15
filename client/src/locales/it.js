@@ -1222,8 +1222,7 @@ export default {
       active: 'Abilitato',
       useForSignIn: "Usa per l'accesso",
       credential: 'Credenziale',
-      credentialHelp:
-        'Una credenziale del suo tipo in Connessioni > Credenziali (Microsoft Entra ID o Open ID): ID client e segreto.',
+      credentialHelp: 'Una credenziale del suo tipo: Microsoft Entra ID o Open ID.',
       ownClient:
         'Accede con il proprio ID client ({client}), precedente alle credenziali, finché non si sceglie una credenziale.',
       activeHelp: 'Gli utenti accedono con esso quando scelgono {type}; attivarlo disattiva gli altri provider {type}.',

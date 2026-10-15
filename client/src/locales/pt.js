@@ -1226,8 +1226,7 @@ export default {
       active: 'Ativado',
       useForSignIn: 'Usar para iniciar sessão',
       credential: 'Credencial',
-      credentialHelp:
-        'Uma credencial do seu tipo em Ligações > Credenciais (Microsoft Entra ID ou Open ID): o ID de cliente e o segredo.',
+      credentialHelp: 'Uma credencial do seu tipo: Microsoft Entra ID ou Open ID.',
       ownClient:
         'Inicia sessão com o seu próprio ID de cliente ({client}), anterior às credenciais, até se escolher uma credencial.',
       activeHelp:

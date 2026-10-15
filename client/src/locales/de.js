@@ -1226,8 +1226,7 @@ export default {
       active: 'Aktiviert',
       useForSignIn: 'Für die Anmeldung verwenden',
       credential: 'Anmeldedaten-Eintrag',
-      credentialHelp:
-        'Ein Eintrag seines Typs aus Verbindungen > Anmeldedaten (Microsoft Entra ID oder Open ID): Client-ID und Client-Geheimnis.',
+      credentialHelp: 'Ein Eintrag seines Typs: Microsoft Entra ID oder Open ID.',
       ownClient:
         'Es meldet sich mit seiner eigenen Client-ID ({client}) von vor den Anmeldedaten an, bis ein Eintrag gewählt ist.',
       activeHelp:
