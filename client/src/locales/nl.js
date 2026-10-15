@@ -1322,6 +1322,13 @@ export default {
       flavour: 'Product',
       skipVerify: 'Certificaatcontrole overslaan',
       stepAuth: 'Referenties',
+      credential: 'Referentie',
+      credentialHelp_api: 'Een api-referentie uit Verbindingen > Referenties: het wachtwoord is het token.',
+      credentialHelp_awx:
+        'Een api-referentie (het wachtwoord is het API-token) of een userpass-referentie (gebruiker en wachtwoord).',
+      credentialHelp_jenkins: 'Een userpass-referentie: de Jenkins-gebruiker en zijn API-token.',
+      ownToken: 'Meldt zich aan met zijn eigen token van vóór referenties, tot er een referentie gekozen is.',
+      ownTokenRte: 'Meldt zich aan met het token waarmee zijn RTE zich registreerde, tot er een referentie gekozen is.',
       stepConnection: 'Verbinding',
       stepRunner: 'Runner',
       stepType: 'Type',
@@ -1753,10 +1760,10 @@ export default {
       usernameAttributeDesc: 'LDAP-attribuut dat wordt gebruikt als inlognaam (bijv. sAMAccountName, uid).',
       groupsAttribute: 'Groepen attribuut',
       groupsAttributeDesc:
-        'Gebruikersattribuut dat groepslidmaatschappen bevat (bijv. memberOf). Zet het op groups om het resultaat van de groepszoekopdracht (Groepen zoekbasis en Groep klasse) te gebruiken.',
+        'Het attribuut met de groepen van een gebruiker (memberOf), of groups voor het resultaat van de groepszoekopdracht.',
       groupsSearchBase: 'Groepen zoekbasis',
       groupsSearchBaseDesc:
-        'Waar de groepen van de gebruiker gezocht worden (vereist Groepsklasse en Groepsattribuut groups). Leeg: gelezen uit de gebruikersentry.',
+        'Waar het zoeken naar groepen begint (met Groepsklasse, en Groepenattribuut groups). Leeg: groepen uit de gebruiker.',
       groupClass: 'Groep klasse',
       groupClassDesc: 'LDAP objectClass die wordt gebruikt voor groepen (bijv. groupOfNames, posixGroup).',
       groupMemberAttribute: 'Groepslid attribuut',

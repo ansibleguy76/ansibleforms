@@ -1066,6 +1066,8 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addColumn("oauth2_providers", "auto_login", "tinyint(4)", true, "0"), messages, success, failed);
   // a runner signs in with a credential of Connections > Credentials, as every other connection
   await checkPromise(addColumn("runners", "credential", "varchar(250)", true, "NULL"), messages, success, failed);
+  // and the token, user and password of each runner moved to a credential
+  await checkPromise(moveRunnerSecretsToCredentials(), messages, success, failed);
   // and when each ended, worked or not, shown beside the repository's Pull and Push
   await checkPromise(addColumn("repositories", "pulled_at", "datetime", true, "NULL"), messages, success, failed);
   await checkPromise(addColumn("repositories", "pushed_at", "datetime", true, "NULL"), messages, success, failed);
@@ -1336,6 +1338,51 @@ export async function moveSsoClientsToCredentials() {
   }
   if (!done.length) return null;
   const message = `Moved the client of ${done.length} SSO provider(s) to credentials (${done.join(", ")})`;
+  logger.notice(message);
+  return message;
+}
+
+/**
+ * The token, user and password of each runner moved to a credential of Connections > Credentials,
+ * as every connection's : a new one, <runner>-token or <runner>-login, its secrets copied as
+ * stored (the same key encrypts both tables), the runner then names it.
+ *   - an RTE, a Semaphore, a Rundeck, an AWX with its token : an api credential, its password the
+ *     token
+ *   - an AWX with a user and password : a userpass credential
+ *   - a Jenkins : a userpass credential, its user and the user's API token
+ * The runner's own then emptied. Not a seeded runner (the seed owns it), nor one its RTE registered
+ * (its registration writes its token) : their own are still used. Idempotent : only a runner
+ * without a credential and with a secret of its own left.
+ *
+ * Returns:
+ *   Promise<string|null>: what was done, or null when there was nothing to do.
+ */
+export async function moveRunnerSecretsToCredentials() {
+  const runners = await mysql.do(
+    "SELECT id, name, type, token, username, password, use_credentials FROM AnsibleForms.`runners` " +
+      "WHERE COALESCE(managed, 0) = 0 AND node_id IS NULL AND COALESCE(credential, '') = '' " +
+      "AND (COALESCE(token, '') <> '' OR COALESCE(password, '') <> '')",
+  );
+  if (!runners.length) return null;
+  const done = [];
+  for (const r of runners) {
+    const login = r.type === "jenkins" || (r.type === "awx" && r.use_credentials);
+    const name = await freeCredentialName(`${r.name}-${login ? "login" : "token"}`);
+    await mysql.do("INSERT INTO AnsibleForms.`credentials` SET ?", [
+      {
+        name,
+        user: login ? r.username || null : null,
+        // a Jenkins' password is its user's API token ; an AWX's with a login its password
+        password: r.type === "jenkins" ? r.token || null : login ? r.password || null : r.token || null,
+        description: `The ${login ? "login" : "token"} of the runner ${r.name}`,
+        is_database: 0,
+        credential_type: login ? "userpass" : "api",
+      },
+    ]);
+    await mysql.do("UPDATE AnsibleForms.`runners` SET token = NULL, password = NULL, credential = ? WHERE id = ?", [name, r.id]);
+    done.push(`${r.name} into ${name}`);
+  }
+  const message = `Moved the token or login of ${runners.length} runner(s) to credentials (${done.join(", ")})`;
   logger.notice(message);
   return message;
 }

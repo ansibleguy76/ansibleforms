@@ -1331,6 +1331,13 @@ export default {
       flavour: 'Produkt',
       skipVerify: 'Zertifikatsprüfung überspringen',
       stepAuth: 'Anmeldedaten',
+      credential: 'Zugangsdaten',
+      credentialHelp_api: 'Ein api-Eintrag aus Verbindungen > Anmeldedaten: das Passwort ist das Token.',
+      credentialHelp_awx:
+        'Ein api-Eintrag (das Passwort ist das API-Token) oder ein userpass-Eintrag (Benutzer und Passwort).',
+      credentialHelp_jenkins: 'Ein userpass-Eintrag: der Jenkins-Benutzer und sein API-Token.',
+      ownToken: 'Meldet sich mit dem eigenen Token von vor den Zugangsdaten an, bis ein Eintrag gewählt wird.',
+      ownTokenRte: 'Meldet sich mit dem Token an, mit dem sich sein RTE registriert hat, bis ein Eintrag gewählt wird.',
       stepConnection: 'Verbindung',
       stepRunner: 'Runner',
       stepType: 'Typ',
@@ -1768,10 +1775,10 @@ export default {
       usernameAttributeDesc: 'LDAP-Attribut, das als Anmeldename verwendet wird (z.B. sAMAccountName, uid).',
       groupsAttribute: 'Gruppen-Attribut',
       groupsAttributeDesc:
-        'Benutzerattribut mit Gruppenmitgliedschaften (z.B. memberOf). Auf groups setzen, um das Ergebnis der Gruppensuche (Gruppen-Search-Base und Gruppenklasse) zu verwenden.',
+        'Das Attribut mit den Gruppen eines Benutzers (memberOf), oder groups für das Ergebnis der Gruppensuche.',
       groupsSearchBase: 'Gruppen-Search-Base',
       groupsSearchBaseDesc:
-        'Wo die Gruppen des Benutzers gesucht werden (braucht Gruppenklasse und Gruppenattribut groups). Leer: aus dem Benutzereintrag gelesen.',
+        'Wo die Gruppensuche beginnt (mit Gruppenklasse und Gruppenattribut groups). Leer: Gruppen aus dem Benutzer.',
       groupClass: 'Gruppenklasse',
       groupClassDesc: 'LDAP-objectClass für Gruppen (z.B. groupOfNames, posixGroup).',
       groupMemberAttribute: 'Gruppenmitglied-Attribut',

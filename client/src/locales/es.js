@@ -1328,6 +1328,13 @@ export default {
       flavour: 'Producto',
       skipVerify: 'Omitir la verificación del certificado',
       stepAuth: 'Credenciales',
+      credential: 'Credencial',
+      credentialHelp_api: 'Una credencial api de Conexiones > Credenciales: su contraseña es el token.',
+      credentialHelp_awx:
+        'Una credencial api (su contraseña es el token de la API) o una userpass (un usuario y una contraseña).',
+      credentialHelp_jenkins: 'Una credencial userpass: el usuario de Jenkins y su token de la API.',
+      ownToken: 'Inicia sesión con su propio token, de antes de las credenciales, hasta que se elija una.',
+      ownTokenRte: 'Inicia sesión con el token con el que se registró su RTE, hasta que se elija una credencial.',
       stepConnection: 'Conexión',
       stepRunner: 'Runner',
       stepType: 'Tipo',
@@ -1762,10 +1769,10 @@ export default {
       usernameAttributeDesc: 'Atributo LDAP usado como nombre de inicio de sesión (ej. sAMAccountName, uid).',
       groupsAttribute: 'Atributo de grupos',
       groupsAttributeDesc:
-        'Atributo de usuario que lista las membresías de grupo (ej. memberOf). Póngalo en groups para usar el resultado de la búsqueda de grupos (Base de Búsqueda de Grupos y Clase de Grupo).',
+        'El atributo con los grupos de un usuario (memberOf), o groups para el resultado de la búsqueda de grupos.',
       groupsSearchBase: 'Base de búsqueda de grupos',
       groupsSearchBaseDesc:
-        'Dónde buscar los grupos del usuario (requiere Clase de grupo y Atributo de grupos en groups). Vacío: se leen de la entrada del usuario.',
+        'Dónde empieza la búsqueda de grupos (con Clase de grupo, y Atributo de grupos groups). Vacío: grupos del usuario.',
       groupClass: 'Clase de grupo',
       groupClassDesc: 'objectClass LDAP utilizada para grupos (ej. groupOfNames, posixGroup).',
       groupMemberAttribute: 'Atributo de miembro de grupo',

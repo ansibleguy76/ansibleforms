@@ -39,7 +39,7 @@ const Job = (await import("../src/models/job.model.js")).default;
 const { default: Settings } = await import("../src/models/settings.model.js");
 const { channelsOfForm } = await import("../src/models/form.model.js");
 const { default: NotificationChannel } = await import("../src/models/notificationChannel.model.js");
-const { moveMailServersToChannels, copyMailSettingsToServers, moveMailServersToCredentials, moveSsoClientsToCredentials, moveLdapServersToCredentials } = await import("../src/models/schema.model.js");
+const { moveMailServersToChannels, copyMailSettingsToServers, moveMailServersToCredentials, moveSsoClientsToCredentials, moveLdapServersToCredentials, moveRunnerSecretsToCredentials } = await import("../src/models/schema.model.js");
 
 beforeEach(() => {
   queries.length = 0;
@@ -277,5 +277,27 @@ describe("an LDAP directory's servers move to its ldap credential", () => {
 
   test("nothing of its own left : nothing to do", async () => {
     expect(await moveLdapServersToCredentials()).toBe(null);
+  });
+});
+
+describe("a runner's token or login moves to a credential", () => {
+  test("a token : an api credential with it ; a Jenkins : a userpass one with its user and token", async () => {
+    answers = [{ match: /FROM AnsibleForms\.`runners`/, rows: [
+      { id: 1, name: "semaphore-prod", type: "semaphore", token: "enc-t" },
+      { id: 2, name: "jenkins-ci", type: "jenkins", username: "af", token: "enc-j" },
+      { id: 3, name: "awx-login", type: "awx", use_credentials: 1, username: "admin", password: "enc-p" },
+    ] }];
+    expect(await moveRunnerSecretsToCredentials()).toMatch(/3 runner/);
+    const inserts = queries.filter((q) => /^INSERT INTO AnsibleForms\.`credentials` SET/.test(q.sql)).map((q) => q.args[0]);
+    expect(inserts[0]).toMatchObject({ name: "semaphore-prod-token", credential_type: "api", user: null, password: "enc-t" });
+    expect(inserts[1]).toMatchObject({ name: "jenkins-ci-login", credential_type: "userpass", user: "af", password: "enc-j" });
+    expect(inserts[2]).toMatchObject({ name: "awx-login-login", credential_type: "userpass", user: "admin", password: "enc-p" });
+    expect(queries.filter((q) => /UPDATE AnsibleForms\.`runners` SET token = NULL/.test(q.sql)).map((q) => q.args)).toEqual([
+      ["semaphore-prod-token", 1], ["jenkins-ci-login", 2], ["awx-login-login", 3],
+    ]);
+  });
+
+  test("none left : nothing to do", async () => {
+    expect(await moveRunnerSecretsToCredentials()).toBe(null);
   });
 });

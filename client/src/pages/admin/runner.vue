@@ -47,18 +47,7 @@ const runnerId = computed(() => String(route.params.id || ''));
 const runner = ref(null); // as saved
 const edit = ref(null); // as edited
 // what this page edits : the token and the password have their own dialog
-const EDITED = [
-  'name',
-  'description',
-  'kind',
-  'uri',
-  'project',
-  'use_credentials',
-  'username',
-  'skip_verify',
-  'custom_ca',
-  'ca_bundle',
-];
+const EDITED = ['name', 'description', 'kind', 'uri', 'project', 'credential', 'skip_verify', 'custom_ca', 'ca_bundle'];
 // an example address of each kind, as the dialog's
 const URI_EXAMPLE = {
   rte: 'https://rte-vmware:8000',
@@ -87,8 +76,7 @@ function editable(record) {
     kind: runnerKind(record),
     uri: record.uri ?? '',
     project: record.project ?? '',
-    use_credentials: !!record.use_credentials,
-    username: record.username ?? '',
+    credential: record.credential ?? '',
     skip_verify: !!record.ignore_certs,
     custom_ca: !!String(record.ca_bundle || '').trim(),
     ca_bundle: record.ca_bundle ?? '',
@@ -100,7 +88,6 @@ const managed = computed(() => !!runner.value?.managed);
 // refuses the others) ; a seeded one nobody changes here
 const appStore = useAppStore();
 const readOnly = computed(() => managed.value || !appStore.isAdmin);
-const isRte = computed(() => edit.value?.kind === 'rte');
 // a Semaphore or a Rundeck : a project on its server, signed in with a token
 const hasProject = computed(() => PROJECT_RUNNER_KINDS.includes(edit.value?.kind));
 // an AWX, an AAP or an Ascender take a token or a user and password ; the others a token
@@ -119,14 +106,44 @@ function kindAllowed(kind) {
   const saved = runner.value ? runnerKind(runner.value) : edit.value?.kind;
   return kind === saved || (AWX_RUNNER_KINDS.includes(kind) && AWX_RUNNER_KINDS.includes(saved));
 }
-const usesCredentials = computed(() => isAwxKind.value && !!edit.value?.use_credentials);
 // a Jenkins signs in with a user and that user's API token ; its folder (project) is optional
 const isJenkins = computed(() => edit.value?.kind === 'jenkins');
-const hasUsername = computed(() => usesCredentials.value || isJenkins.value);
+// the credentials it can sign in with : an api one (its password the token), or a userpass one
+// (a user and a password : an AWX's login, a Jenkins user and its API token)
+const credentialTypes = computed(() =>
+  isJenkins.value ? ['userpass'] : isAwxKind.value ? ['api', 'userpass'] : ['api'],
+);
+const allCredentials = ref([]);
+const credentials = computed(() => [
+  { name: '' },
+  ...allCredentials.value
+    .filter((c) => credentialTypes.value.includes(c.credential_type))
+    .map((c) => ({ name: c.name })),
+]);
+/**
+ * Reads the credentials its dropdown offers.
+ */
+async function loadCredentials() {
+  const res = await axios.get('/api/v2/credential/').catch(() => null);
+  allCredentials.value = res?.data?.records || [];
+}
+/**
+ * Chooses the credential just made with Add credential.
+ *
+ * Args:
+ *   name (string): the new credential's name.
+ */
+async function onCredentialCreated(name) {
+  await loadCredentials();
+  edit.value.credential = name;
+}
+// one from before credentials : its own token (or user and password), until a credential is
+// chosen ; an RTE that registered itself keeps the token of its registration
+const ownSecret = computed(
+  () => !!runner.value && !runner.value.credential && !!(runner.value.token || runner.value.password),
+);
 const dirty = computed(
-  () =>
-    !!runner.value &&
-    (EDITED.some((k) => String(edit.value[k] ?? '') !== String(editable(runner.value)[k] ?? '')) || !!newSecret.value),
+  () => !!runner.value && EDITED.some((k) => String(edit.value[k] ?? '') !== String(editable(runner.value)[k] ?? '')),
 );
 // leaving with the runner changed and unsaved asks first
 useUnsavedGuard(
@@ -271,16 +288,13 @@ async function save() {
     type: e.kind === 'rte' || PROJECT_RUNNER_KINDS.includes(e.kind) ? e.kind : 'awx',
     project: PROJECT_RUNNER_KINDS.includes(e.kind) ? String(e.project || '').trim() : null,
     flavour: ['aap', 'ascender'].includes(e.kind) ? e.kind : null,
-    use_credentials: usesCredentials.value ? 1 : 0,
-    username: hasUsername.value ? e.username.trim() : runner.value.username,
+    // as whom : a credential of Connections > Credentials
+    credential: e.credential || null,
     ignore_certs: e.skip_verify ? 1 : 0,
     ca_bundle: !e.skip_verify && e.custom_ca ? e.ca_bundle : '',
   };
-  // its new token or password, typed in its Credentials tab
-  if (newSecret.value) data[secretKey.value] = newSecret.value;
   if (await update(data)) {
     toast.success(`${data.name} ${t('settings.common.isUpdated')}`);
-    newSecret.value = '';
     await load();
   }
 }
@@ -313,11 +327,6 @@ async function testConnection() {
   }
 }
 
-// its token, or its password with a user and password : typed in its Credentials tab ; empty, the
-// stored one is kept
-const newSecret = ref('');
-const secretKey = computed(() => (usesCredentials.value ? 'password' : 'token'));
-
 // Delete asks first
 const confirmDelete = ref(false);
 
@@ -338,7 +347,7 @@ async function deleteRunner() {
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
-  await Promise.all([load(), loadForms()]);
+  await Promise.all([load(), loadForms(), loadCredentials()]);
   await loadJobs();
 });
 </script>
@@ -534,66 +543,34 @@ onMounted(async () => {
             <!-- Authentication : an RTE's, a Semaphore's or a Rundeck's token, a Jenkins' user and
                  its token ; an AWX's token, or a user and password -->
             <template v-else>
-              <template v-if="isAwxKind">
-                <div
-                  v-for="opt in [
-                    {
-                      value: false,
-                      label: t('settings.runners.authToken'),
-                      hint: t('settings.runners.authTokenHint'),
-                    },
-                    { value: true, label: t('settings.runners.authUser'), hint: t('settings.runners.authUserHint') },
-                  ]"
-                  :key="String(opt.value)"
-                  class="form-check af-short-check"
-                >
-                  <input
-                    :id="'af-auth-' + opt.value"
-                    v-model="edit.use_credentials"
-                    class="form-check-input"
-                    type="radio"
-                    name="af-runner-auth"
-                    :value="opt.value"
-                  />
-                  <label class="form-check-label" :for="'af-auth-' + opt.value">
-                    <span class="af-short-label">{{ opt.label }}</span>
-                    <span class="text-body-secondary small">{{ opt.hint }}</span>
-                  </label>
-                </div>
-              </template>
-              <BsInput
-                v-if="hasUsername"
-                class="af-runner-field"
-                :class="{ 'mt-3': usesCredentials }"
-                v-model="edit.username"
-                icon="user"
-                :isFloating="false"
-                :help="isJenkins ? t('settings.runners.usernameHelp_jenkins') : ''"
-                :label="t('settings.fields.username')"
-              />
-              <p v-if="hasProject" class="form-text mb-2">{{ t(`settings.runners.tokenHelp_${edit.kind}`) }}</p>
-              <!-- its token or password, masked : left empty, the stored one is kept ; typed, replaced -->
               <BsInput
                 class="af-runner-field"
-                :class="{ 'mt-3': isAwxKind && !usesCredentials }"
-                v-model="newSecret"
-                type="password"
-                :icon="usesCredentials ? 'lock' : 'key'"
+                v-model="edit.credential"
+                type="select"
+                icon="key"
                 :isFloating="false"
-                placeholder="**********"
-                :disabled="readOnly"
-                :help="
-                  usesCredentials
-                    ? t('settings.common.passwordKeep')
-                    : t(`settings.runners.tokenKeep_${isRte ? 'rte' : 'api'}`)
-                "
-                :label="usesCredentials ? t('settings.fields.password') : t('settings.fields.token')"
+                :values="credentials"
+                valueKey="name"
+                labelKey="name"
+                :help="t(`settings.runners.credentialHelp_${isJenkins ? 'jenkins' : isAwxKind ? 'awx' : 'api'}`)"
+                :label="t('settings.runners.credential')"
               />
+              <!-- one from before credentials : its own token, until a credential is chosen -->
+              <p v-if="ownSecret && !edit.credential" class="form-text mb-0">
+                {{ t(runner.node_id ? 'settings.runners.ownTokenRte' : 'settings.runners.ownToken') }}
+              </p>
             </template>
           </fieldset>
         </div>
       </template>
       <template v-if="runner" #actions>
+        <!-- Credentials : a new credential of the type it signs in with, chosen once made -->
+        <AppNewCredentialButton
+          v-if="activeTab === 'credentials'"
+          :type="isJenkins ? 'userpass' : 'api'"
+          :disabled="readOnly"
+          @created="onCredentialCreated"
+        />
         <BsButton icon="plug" cssClass="text-nowrap" :disabled="testing" @click="testConnection()">{{
           t('settings.common.testConnection')
         }}</BsButton>

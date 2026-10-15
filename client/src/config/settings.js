@@ -2328,9 +2328,6 @@ export default function getSettings(t) {
         // only when checked against one
         ignore_certs: !!skip_verify,
         ca_bundle: !skip_verify && custom_ca ? item.ca_bundle || '' : '',
-        // an RTE, a Semaphore, a Rundeck and a Jenkins take a token (a Jenkins with its user) ; a
-        // user and password are an awx runner's choice only
-        ...(AWX_RUNNER_KINDS.includes(kind) ? {} : { use_credentials: false }),
         type: kind === 'rte' || PROJECT_RUNNER_KINDS.includes(kind) ? kind : 'awx',
         flavour: ['aap', 'ascender'].includes(kind) ? kind : null,
         // the project : a Semaphore's, a Rundeck's or a Jenkins' (its folder) only
@@ -2464,68 +2461,37 @@ export default function getSettings(t) {
           dependencyValues: PROJECT_RUNNER_KINDS,
         },
         {
-          // an AWX, AAP or Ascender : an API token, or a user and password - radio buttons
-          key: 'use_credentials',
+          // as whom : a credential of Connections > Credentials - an api one (its password the
+          // token : an RTE's RTE_TOKEN, a Semaphore's, a Rundeck's, an AWX's API token) or a
+          // userpass one (an AWX's user and password, a Jenkins user and its API token)
+          key: 'credential',
           step: 'credentials',
-          label: t('settings.runners.stepAuth'),
-          type: 'radio',
-          options: [
-            { value: false, label: t('settings.runners.authToken'), hint: t('settings.runners.authTokenHint') },
-            { value: true, label: t('settings.runners.authUser'), hint: t('settings.runners.authUserHint') },
-          ],
-          initial: (r) => !!r?.use_credentials,
-          // an RTE, a Semaphore, a Rundeck, a Jenkins : always a token
-          defaultMap: { rte: false, semaphore: false, rundeck: false, jenkins: false },
-          columnType: 'checkbox',
-          filterType: 'boolean',
-          hidden: true,
-          password_related: true,
-          dependency: 'kind',
-          dependencyValues: AWX_RUNNER_KINDS,
-        },
-        {
-          key: 'token',
-          step: 'credentials',
-          // shown when editing too, as ******** : left empty, the stored one stays
-          onEdit: true,
-          keepHelp: t('settings.common.tokenKeep'),
-          icon: 'lock',
-          line: 1,
-          label: t('settings.fields.token'),
-          type: 'password',
-          required: false,
-          hidden: true,
-          // an RTE's RTE_TOKEN, a Semaphore's, a Rundeck's or a Jenkins' user token, or an AWX's API token
+          icon: 'key',
+          label: t('settings.runners.credential'),
           help: (r) =>
             t(
-              `settings.runners.tokenHelp_${r.kind === 'rte' || !r.kind ? 'rte' : PROJECT_RUNNER_KINDS.includes(r.kind) ? r.kind : 'api'}`,
+              `settings.runners.credentialHelp_${r.kind === 'jenkins' ? 'jenkins' : AWX_RUNNER_KINDS.includes(r.kind) ? 'awx' : 'api'}`,
             ),
-          dependency: 'use_credentials',
-          negateDependency: true,
-        },
-        {
-          key: 'username',
-          step: 'credentials',
-          icon: 'user',
-          line: 2,
-          label: t('settings.fields.username'),
-          required: false,
+          type: 'select',
+          parent: 'credentials',
+          values: 'credential',
+          valueKey: 'name',
+          labelKey: 'name',
+          required: true,
+          // the credentials of the kinds it signs in with
+          choicesWhen: (c, item) =>
+            !c?.name ||
+            (item.kind === 'jenkins'
+              ? ['userpass']
+              : AWX_RUNNER_KINDS.includes(item.kind)
+                ? ['api', 'userpass']
+                : ['api']
+            ).includes(c.credential_type),
+          createWith: 'credentials',
+          createLabel: t('settings.repositories.newCredential'),
+          createDefaults: (item) => ({ credential_type: item.kind === 'jenkins' ? 'userpass' : 'api' }),
           hidden: true,
-          // an AWX's with a user and password ; a Jenkins' always : its API token is that user's
-          showWhen: (r) => !!r.use_credentials || r.kind === 'jenkins',
-          help: (r) => (r.kind === 'jenkins' ? t('settings.runners.usernameHelp_jenkins') : ''),
-        },
-        {
-          key: 'password',
-          step: 'credentials',
-          onEdit: true,
-          icon: 'lock',
-          line: 2,
-          label: t('settings.fields.password'),
-          type: 'password',
-          required: false,
-          hidden: true,
-          dependency: 'use_credentials',
+          noTable: true,
         },
         {
           // the certificate not checked at all : off by default (not stored : ignore_certs is)

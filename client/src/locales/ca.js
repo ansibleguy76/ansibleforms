@@ -1673,10 +1673,10 @@ export default {
         "Atribut LDAP que s'utilitza com a nom d'usuari d'inici de sessió (p. ex. sAMAccountName, uid).",
       groupsAttribute: 'Atribut de grups',
       groupsAttributeDesc:
-        "Atribut de l'usuari que llista els grups dels quals és membre (p. ex. memberOf). Posa-hi groups per utilitzar el resultat de la cerca de grups (Base de cerca de grups i Classe de grup).",
+        "L'atribut que llista els grups d'un usuari (memberOf), o groups per al resultat de la cerca de grups.",
       groupsSearchBase: 'Base de cerca de grups',
       groupsSearchBaseDesc:
-        "On cercar els grups de l'usuari (cal Classe de grup i Atribut de grups a groups). Buit: es llegeixen de l'entrada de l'usuari.",
+        "On comença la cerca de grups (amb Classe de grup, i Atribut de grups groups). Buit: grups llegits de l'usuari.",
       groupClass: 'Classe de grup',
       groupClassDesc: "objectClass LDAP que s'utilitza per als grups (p. ex. groupOfNames, posixGroup).",
       groupMemberAttribute: 'Atribut de membre del grup',
@@ -1729,6 +1729,13 @@ export default {
       flavour: 'Producte',
       skipVerify: 'Omet la verificació del certificat',
       stepAuth: 'Credencials',
+      credential: 'Credencial',
+      credentialHelp_api: 'Una credencial api de Connexions > Credencials: la seva contrasenya és el token.',
+      credentialHelp_awx:
+        "Una credencial api (la contrasenya és el token de l'API) o una userpass (un usuari i una contrasenya).",
+      credentialHelp_jenkins: "Una credencial userpass: l'usuari de Jenkins i el seu token de l'API.",
+      ownToken: "Inicia sessió amb el seu propi token, d'abans de les credencials, fins que se n'esculli una.",
+      ownTokenRte: "Inicia sessió amb el token amb què es va registrar el seu RTE, fins que s'esculli una credencial.",
       stepConnection: 'Connexió',
       stepRunner: 'Runner',
       stepType: 'Tipus',
