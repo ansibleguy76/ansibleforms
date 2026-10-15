@@ -1842,6 +1842,7 @@ export default {
       roleOptionShowAuditLog: '監査ログを表示',
       roleOptionShowDebugButtons: 'デバッグボタンを表示',
       roleOptionIncluded: '{option} に含まれます',
+      roleOptionNeeds: '{option} が必要です',
       roleOptionShowSettings: 'すべての設定を表示',
       roleOptionShowAppearanceSettings: '外観の設定を表示',
       roleOptionShowConnectionsSettings: '接続の設定を表示',

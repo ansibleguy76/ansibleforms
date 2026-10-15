@@ -1868,6 +1868,7 @@ export default {
       roleOptionShowAuditLog: 'Auditlogboek tonen',
       roleOptionShowDebugButtons: 'Debug-knoppen tonen',
       roleOptionIncluded: 'Inbegrepen in {option}',
+      roleOptionNeeds: 'Vereist {option}',
       roleOptionShowSettings: 'Alle instellingen tonen',
       roleOptionShowAppearanceSettings: 'Uiterlijk-instellingen tonen',
       roleOptionShowConnectionsSettings: 'Verbindingen-instellingen tonen',

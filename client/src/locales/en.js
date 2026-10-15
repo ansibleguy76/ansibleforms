@@ -1843,6 +1843,7 @@ export default {
       roleOptionShowAuditLog: 'Show Audit log',
       roleOptionShowDebugButtons: 'Show debug buttons',
       roleOptionIncluded: 'Included in {option}',
+      roleOptionNeeds: 'Needs {option}',
       roleOptionShowSettings: 'Show all settings',
       roleOptionShowAppearanceSettings: 'Show Appearance settings',
       roleOptionShowConnectionsSettings: 'Show Connections settings',

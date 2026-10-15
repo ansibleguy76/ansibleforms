@@ -1883,6 +1883,7 @@ export default {
       roleOptionShowAuditLog: "Afficher le Journal d'audit",
       roleOptionShowDebugButtons: 'Afficher les boutons de debug',
       roleOptionIncluded: 'Inclus dans {option}',
+      roleOptionNeeds: 'Nécessite {option}',
       roleOptionShowSettings: 'Afficher tous les paramètres',
       roleOptionShowAppearanceSettings: "Afficher les paramètres d'Apparence",
       roleOptionShowConnectionsSettings: 'Afficher les paramètres de Connexions',

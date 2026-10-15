@@ -1887,6 +1887,7 @@ export default {
       roleOptionShowAuditLog: 'Audit-Protokoll anzeigen',
       roleOptionShowDebugButtons: 'Debug-Buttons anzeigen',
       roleOptionIncluded: 'In {option} enthalten',
+      roleOptionNeeds: 'Benötigt {option}',
       roleOptionShowSettings: 'Alle Einstellungen anzeigen',
       roleOptionShowAppearanceSettings: 'Erscheinungsbild-Einstellungen anzeigen',
       roleOptionShowConnectionsSettings: 'Verbindungs-Einstellungen anzeigen',

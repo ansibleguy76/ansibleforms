@@ -30,7 +30,13 @@
 
 import { ref, computed, h } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { requiredRoleDescription, roleOptionGroups, roleOptionIncludedIn, roleOptionDescription } from '@/config/roles';
+import {
+  requiredRoleDescription,
+  roleOptionGroups,
+  roleOptionIncludedIn,
+  roleOptionNeeds,
+  roleOptionDescription,
+} from '@/config/roles';
 import { usePagedRows } from '@/composables/usePagedRows';
 
 const props = defineProps({
@@ -62,6 +68,20 @@ function includedBy(key) {
 }
 
 /**
+ * The option another one needs, when that one is off (the Edit options need Show Designer).
+ *
+ * Args:
+ *   key (string): the option.
+ *
+ * Returns:
+ *   string|null: the option it needs, or null.
+ */
+function missing(key) {
+  const needs = roleOptionNeeds[key];
+  return needs && !role.value.options?.[needs] ? needs : null;
+}
+
+/**
  * The popover of an option : what it gives (config/roles.js) and, for a part of the settings, that
  * Show all settings includes it.
  *
@@ -75,7 +95,9 @@ function optionHelp(key) {
   const description = roleOptionDescription(t, te, key);
   const by = roleOptionIncludedIn[key];
   const included = by ? t('settings.settingsPage.roleOptionIncluded', { option: props.optionLabel(by) }) + '.' : '';
-  return [description, included].filter(Boolean).join(' ');
+  const needs = roleOptionNeeds[key];
+  const needed = needs ? t('settings.settingsPage.roleOptionNeeds', { option: props.optionLabel(needs) }) + '.' : '';
+  return [description, included, needed].filter(Boolean).join(' ');
 }
 
 const optionGroups = computed(() => {
@@ -264,6 +286,16 @@ function removeUser(index) {
                 type="checkbox"
                 :isSwitch="true"
                 :modelValue="true"
+                :label="optionLabel(optKey)"
+                :disabled="true"
+              />
+              <!-- needs another option that is off (Show Designer for the Edit ones) : off and greyed
+                   out, its own value kept for when that one is turned on -->
+              <BsInput
+                v-else-if="missing(optKey)"
+                type="checkbox"
+                :isSwitch="true"
+                :modelValue="false"
                 :label="optionLabel(optKey)"
                 :disabled="true"
               />

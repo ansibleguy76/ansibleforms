@@ -1797,6 +1797,7 @@ export default {
       roleOptionShowAuditLog: '显示审计日志',
       roleOptionShowDebugButtons: '显示调试按钮',
       roleOptionIncluded: '已包含在 {option} 中',
+      roleOptionNeeds: '需要 {option}',
       roleOptionShowSettings: '显示所有设置',
       roleOptionShowAppearanceSettings: '显示外观设置',
       roleOptionShowConnectionsSettings: '显示连接设置',

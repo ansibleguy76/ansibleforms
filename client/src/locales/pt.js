@@ -1878,6 +1878,7 @@ export default {
       roleOptionShowAuditLog: 'Mostrar o Registo de auditoria',
       roleOptionShowDebugButtons: 'Mostrar botões de depuração',
       roleOptionIncluded: 'Incluído em {option}',
+      roleOptionNeeds: 'Precisa de {option}',
       roleOptionShowSettings: 'Mostrar todas as definições',
       roleOptionShowAppearanceSettings: 'Mostrar as definições de Aparência',
       roleOptionShowConnectionsSettings: 'Mostrar as definições de Ligações',

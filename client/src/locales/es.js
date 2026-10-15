@@ -1877,6 +1877,7 @@ export default {
       roleOptionShowAuditLog: 'Mostrar el Registro de auditoría',
       roleOptionShowDebugButtons: 'Mostrar botones de depuracion',
       roleOptionIncluded: 'Incluido en {option}',
+      roleOptionNeeds: 'Necesita {option}',
       roleOptionShowSettings: 'Mostrar toda la configuración',
       roleOptionShowAppearanceSettings: 'Mostrar la configuración de Apariencia',
       roleOptionShowConnectionsSettings: 'Mostrar la configuración de Conexiones',

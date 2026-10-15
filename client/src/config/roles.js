@@ -79,6 +79,20 @@ export const roleOptionIncludedIn = {
   showAppearanceSettings: 'showSettings',
   showConnectionsSettings: 'showSettings',
   showAuditLog: 'showSettings',
+  // acting on every user's jobs means seeing them (job.model.js seesAllJobs)
+  showAllJobLogs: 'manageAllJobs',
+  // extended tokens are tokens too (lib/tokenLifetime.js mayMakeApiTokens)
+  allowApiTokens: 'extendedTokenExpiration',
+};
+
+// the options that only matter with another one on : without it, the role editor shows them off
+// and greyed out (their own value kept), as the role gets them
+export const roleOptionNeeds = {
+  allowFormDesign: 'showDesigner',
+  allowPlaybookDesign: 'showDesigner',
+  allowWorkflowDesign: 'showDesigner',
+  allowInventoryDesign: 'showDesigner',
+  allowVarsFileDesign: 'showDesigner',
 };
 
 // every role option, in the groups' order
