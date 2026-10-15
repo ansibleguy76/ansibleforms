@@ -688,7 +688,8 @@ Job.delete = async function (user, id) {
   var query;
   var params;
   await Job.checkExists(id);
-  if (seesAllJobs(user)) {
+  // every user's job : an admin, or manageAllJobs ; seeing them (showAllJobLogs) is not deleting them
+  if (managesAllJobs(user)) {
     query =
       "SELECT j.*,sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=?;";
     params = [id, id];
@@ -1454,9 +1455,10 @@ Job.continue = async function ({ form, user, credentials = {}, extravars = {}, j
 function assertRelaunchable(job, formObj, user) {
   // Job.findById also hands a non-owner every job waiting for approval (so it can be
   // approved) : that is not a licence to read its form data or launch it again under
-  // another name. Only the owner, an admin, or a user who sees every job may.
-  const seesAll = seesAllJobs(user);
-  if (!seesAll && !(job.user === user?.username && (job.user_type ?? user?.type) === user?.type)) {
+  // another name. Only the owner, an admin, or a role with manageAllJobs may ; seeing every
+  // job (showAllJobLogs) is watching them, not launching them again.
+  const managesAll = managesAllJobs(user);
+  if (!managesAll && !(job.user === user?.username && (job.user_type ?? user?.type) === user?.type)) {
     throw new Errors.AccessDeniedError(`You can only relaunch your own jobs`);
   }
   if (formObj.allowRelaunch === false) {

@@ -926,6 +926,7 @@ const showBulkDelete = ref(false);
 function canDelete(j) {
   return (
     canDeleteJobs.value &&
+    canManage(j) &&
     j.status != 'approve' &&
     ((j.status != 'running' && !j.abort_requested) || managesAllJobs.value)
   );
@@ -1282,7 +1283,7 @@ onMounted(async () => {
           <div v-if="isJobPage" class="d-flex justify-content-end align-items-center gap-2">
             <template v-if="job">
               <BsButton
-                v-if="job.status != 'running' && job.status != 'approve' && canRelaunchJobs"
+                v-if="job.status != 'running' && job.status != 'approve' && canRelaunchJobs && canManage(job)"
                 icon="redo"
                 cssClass="text-nowrap"
                 @click="
@@ -1480,14 +1481,14 @@ onMounted(async () => {
                         <!-- what can be done with it, apart from opening it -->
                         <li
                           v-if="
-                            (j.status != 'running' && j.status != 'approve' && canRelaunchJobs) ||
-                            (j.status == 'running' && !j.abort_requested) ||
+                            (j.status != 'running' && j.status != 'approve' && canRelaunchJobs && canManage(j)) ||
+                            (j.status == 'running' && !j.abort_requested && canManage(j)) ||
                             (j.status == 'approve' && approvalAllowed(j))
                           "
                         >
                           <hr class="dropdown-divider" />
                         </li>
-                        <li v-if="j.status != 'running' && j.status != 'approve' && canRelaunchJobs">
+                        <li v-if="j.status != 'running' && j.status != 'approve' && canRelaunchJobs && canManage(j)">
                           <a
                             class="dropdown-item"
                             href="#"

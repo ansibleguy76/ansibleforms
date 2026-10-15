@@ -288,8 +288,13 @@ describe("deleting someone else's job that waits for approval is refused", () =>
     assert.equal(deleted(), true);
   });
 
-  test("a user with showAllJobLogs may delete it", async () => {
-    await Job.delete(seesAll, 7);
+  test("a user with showAllJobLogs only sees it : may not delete it", async () => {
+    await assert.rejects(() => Job.delete(seesAll, 7), (err) => err.name === "AccessDeniedError" || err.name === "NotFoundError");
+    assert.equal(deleted(), false);
+  });
+
+  test("a user with manageAllJobs may delete it", async () => {
+    await Job.delete({ ...seesAll, options: { manageAllJobs: true } }, 7);
     assert.equal(deleted(), true);
   });
 });
