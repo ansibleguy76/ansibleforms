@@ -2627,6 +2627,14 @@ export default function getSettings(t) {
       fields: [
         { key: 'id', hidden: true, noInput: true, noTable: true },
         {
+          // a mail channel the app sends its mail with : a yes / no column ; the first column, before Enabled
+          key: 'is_active',
+          label: t('settings.notificationChannels.active'),
+          type: 'checkbox',
+          noInput: true,
+          hideBelow: 900,
+        },
+        {
           // sending or not : a yes / no column ; a new channel is on, the row menu turns it on or off
           key: 'enabled',
           label: t('settings.notificationChannels.enabled'),
@@ -2664,14 +2672,6 @@ export default function getSettings(t) {
           render: (v, row) => esc(channelAddress(t, row)),
           sortValue: (r) => channelAddress(t, r),
           hideBelow: 740,
-        },
-        {
-          // a mail channel the app sends its mail with : a yes / no column ; the first one is it
-          key: 'is_active',
-          label: t('settings.notificationChannels.active'),
-          type: 'checkbox',
-          noInput: true,
-          hideBelow: 900,
         },
         // ─── mail ───
         {
