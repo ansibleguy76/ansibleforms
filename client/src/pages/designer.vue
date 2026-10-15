@@ -1872,9 +1872,10 @@ const fileTreeFlat = computed(() => {
   walk(tree, 0, '');
   if (treeFilter.value) {
     const q = treeFilter.value.toLowerCase();
+    // a file shows when one of its forms has the search, in its name or its YAML
     const matchingFiles = new Set();
     for (const m of idmapping.value) {
-      if ((m.name || '').toLowerCase().includes(q)) {
+      if (formMatch(m)) {
         matchingFiles.add(m.source);
       }
     }
@@ -2382,6 +2383,52 @@ const collapsedPaths = ref(new Set());
 const treeFilter = ref('');
 const hasTree = computed(() => currentTab.value === 'Forms' || !!FILE_SECTIONS[currentTab.value]);
 watch(currentTab, () => (treeFilter.value = ''));
+// the search in the editor open (a form's YAML, a file's) : every match highlighted, the first one
+// from the cursor selected and scrolled to the middle ; again when another form or file opens
+// (once read)
+let markTimer = null;
+function markSearch() {
+  const editor = activeEditor.value;
+  if (!editor?.session || projectFiles.value?.busy) return;
+  const q = treeFilter.value.trim();
+  const re = q.length >= 2 ? new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi') : null;
+  editor.session.highlight(re);
+  editor.renderer.updateBackMarkers();
+  if (!re) return;
+  editor.find(q, { caseSensitive: false, wrap: true, skipCurrent: false });
+  // the match in the editor's middle, not on its last line
+  editor.renderer.scrollCursorIntoView(null, 0.5);
+}
+watch(
+  [
+    treeFilter,
+    activeEditor,
+    currentForm,
+    editorView,
+    () => projectFiles.value?.selected,
+    () => projectFiles.value?.busy,
+  ],
+  () => {
+    clearTimeout(markTimer);
+    markTimer = setTimeout(markSearch, 300);
+  },
+);
+onBeforeUnmount(() => clearTimeout(markTimer));
+/**
+ * How a form meets the search : by its name, by its YAML only (the tree says so), or not.
+ *
+ * Args:
+ *   form (object): the form ({ id, name }).
+ *
+ * Returns:
+ *   string: 'name', 'content' or '' (no search : every form shows, as by its name).
+ */
+function formMatch(form) {
+  const q = treeFilter.value.trim().toLowerCase();
+  if (!q) return 'name';
+  if ((form.name || '').toLowerCase().includes(q)) return 'name';
+  return (forms.value?.[form.id] || '').toLowerCase().includes(q) ? 'content' : '';
+}
 // the designer turned off (its trees gone, the search disabled) : the search emptied with them
 watch(
   () => !!lock.value?.match,
@@ -5226,9 +5273,7 @@ onBeforeUnmount(() => {
                         </div>
                         <template v-if="!isCollapsed(item.key) || treeFilter">
                           <div
-                            v-for="n in formnames(item.source).filter(
-                              (f) => !treeFilter || (f.name || '').toLowerCase().includes(treeFilter.toLowerCase()),
-                            )"
+                            v-for="n in formnames(item.source).filter((f) => formMatch(f))"
                             :key="n.id"
                             class="d-flex justify-content-between align-items-center py-1 tree-node tree-form"
                             :class="{
@@ -5253,6 +5298,10 @@ onBeforeUnmount(() => {
                             <span class="d-flex align-items-center min-w-0">
                               <FaIcon v-if="n.icon" :icon="n.icon" class="me-2 flex-shrink-0" />
                               <span class="text-truncate" :title="n.name">{{ n.name }}</span>
+                              <!-- found in its YAML, not its name -->
+                              <span v-if="formMatch(n) === 'content'" class="af-tree-in-content">{{
+                                t('designer.inContent')
+                              }}</span>
                             </span>
                             <span role="button" class="tree-del-btn flex-shrink-0 ms-2" @click.stop="deleteForm(n.id)">
                               <FaIcon icon="times" />

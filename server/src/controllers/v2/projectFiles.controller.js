@@ -47,6 +47,14 @@ const projectFilesController = {
       Errors.ReturnError(res, err);
     }
   },
+  // the files whose text has ?q (the designer's search)
+  async search(req, res) {
+    try {
+      res.json(RestResult.single(await ProjectFiles.search(req.params.kind, req.query.q)));
+    } catch (err) {
+      Errors.ReturnError(res, err);
+    }
+  },
   async read(req, res) {
     try {
       res.json(RestResult.single(await ProjectFiles.read(req.params.kind, req.query.path)));

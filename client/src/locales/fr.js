@@ -2402,6 +2402,7 @@ export default {
     chooseIcon: 'Choisir une icône',
     chooseBackground: 'Choisir un arrière-plan',
     searchIcons: 'Rechercher des icônes',
+    inContent: 'dans le contenu',
     noIconsFound: 'Aucune icône trouvée',
     selectFormFirst: "Sélectionnez d'abord un formulaire",
     preview: 'Aperçu',

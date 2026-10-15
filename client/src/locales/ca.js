@@ -2399,6 +2399,7 @@ export default {
     chooseIcon: 'Tria una icona',
     chooseBackground: 'Tria un fons',
     searchIcons: 'Cerca icones',
+    inContent: 'al contingut',
     noIconsFound: "No s'ha trobat cap icona",
     selectFormFirst: 'Selecciona primer un formulari',
     preview: 'Previsualització',

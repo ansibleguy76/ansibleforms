@@ -2393,6 +2393,7 @@ export default {
     chooseIcon: 'Escolher ícone',
     chooseBackground: 'Escolher fundo',
     searchIcons: 'Pesquisar ícones',
+    inContent: 'no conteúdo',
     noIconsFound: 'Nenhum ícone encontrado',
     selectFormFirst: 'Selecione primeiro um formulário',
     preview: 'Pré-visualização',

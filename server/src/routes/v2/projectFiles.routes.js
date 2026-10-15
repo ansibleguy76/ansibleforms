@@ -9,6 +9,8 @@ router.get('/workflows/names', projectFilesController.workflowNames);
 // kind written only with its own role option (allowPlaybookDesign, allowWorkflowDesign, ...)
 router.get('/:kind', projectFilesController.list);
 router.get('/:kind/file', projectFilesController.read);
+// the files whose text has ?q : the designer's search
+router.get('/:kind/search', projectFilesController.search);
 router.put('/:kind/file', Middleware.checkFileDesignMiddleware, projectFilesController.save);
 router.post('/:kind/file', Middleware.checkFileDesignMiddleware, projectFilesController.create);
 router.delete('/:kind/file', Middleware.checkFileDesignMiddleware, projectFilesController.remove);

@@ -2283,6 +2283,7 @@ export default {
     chooseIcon: '选择图标',
     chooseBackground: '选择背景',
     searchIcons: '搜索图标',
+    inContent: '内容中',
     noIconsFound: '未找到图标',
     selectFormFirst: '请先选择一个表单',
     preview: '预览',

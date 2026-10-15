@@ -88,10 +88,37 @@ const leavingTo = ref(null); // what to do once the changes are dropped : go to 
 const collapsed = ref(new Set());
 // the designer's search, on its title line, as every page's
 const filter = computed(() => props.filter || '');
+// the files whose text has the search too (the server reads them : GET /files/<kind>/search),
+// asked a moment after the last key ; a search of fewer than 2 characters matches names only
+const contentMatches = ref(new Set());
+let searchTimer = null;
+let searchSeq = 0;
+watch(
+  [filter, () => props.kind],
+  ([q]) => {
+    clearTimeout(searchTimer);
+    const term = q.trim();
+    if (term.length < 2) {
+      contentMatches.value = new Set();
+      return;
+    }
+    const seq = ++searchSeq;
+    searchTimer = setTimeout(async () => {
+      try {
+        const result = await axios.get(`${api.value}/search`, { params: { q: term } });
+        // an answer to an older search (typed over since) is dropped
+        if (seq === searchSeq) contentMatches.value = new Set(result.data?.matches || []);
+      } catch {
+        if (seq === searchSeq) contentMatches.value = new Set();
+      }
+    }, 300);
+  },
+  { immediate: true },
+);
 
 /**
  * The explorer's rows : the folders and files, a folder before its content, each with its
- * depth. A filter shows the files whose path has it, with their folders, all open.
+ * depth. A filter shows the files whose path or text has it, with their folders, all open.
  */
 const rows = computed(() => {
   const root = { folders: new Map(), files: [] };
@@ -105,9 +132,11 @@ const rows = computed(() => {
   };
   const needle = filter.value.trim().toLowerCase();
   for (const f of listing.value.files) {
-    if (needle && !f.path.toLowerCase().includes(needle)) continue;
+    // by its path, else by its text (found by the server) : the tree says which
+    const byName = !needle || f.path.toLowerCase().includes(needle);
+    if (!byName && !contentMatches.value.has(f.path)) continue;
     const parts = f.path.split('/');
-    folderAt(parts.slice(0, -1)).files.push({ name: parts.at(-1), path: f.path });
+    folderAt(parts.slice(0, -1)).files.push({ name: parts.at(-1), path: f.path, inContent: !byName });
   }
   if (!needle) for (const d of extraFolders.value) folderAt(d.split('/'));
   const out = [];
@@ -118,7 +147,7 @@ const rows = computed(() => {
       if (needle || !collapsed.value.has(path)) walk(node.folders.get(name), path, depth + 1);
     }
     for (const f of node.files.sort((a, b) => a.name.localeCompare(b.name))) {
-      out.push({ type: 'file', name: f.name, path: f.path, depth });
+      out.push({ type: 'file', name: f.name, path: f.path, depth, inContent: f.inContent });
     }
   };
   walk(root, '', 0);
@@ -495,7 +524,10 @@ function onBeforeUnload(e) {
   if (dirty.value) e.preventDefault();
 }
 window.addEventListener('beforeunload', onBeforeUnload);
-onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnload));
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', onBeforeUnload);
+  clearTimeout(searchTimer);
+});
 
 /** Saves the changes, then goes where the dialog was opened for ; a failed save stays. */
 async function saveAndGo() {
@@ -782,6 +814,8 @@ defineExpose({
                   class="text-secondary me-2 flex-shrink-0"
                 />
                 <span class="text-truncate" :title="item.path">{{ item.name }}</span>
+                <!-- found in its text, not its name -->
+                <span v-if="item.inContent" class="af-tree-in-content">{{ t('designer.inContent') }}</span>
               </span>
               <span v-if="!readOnly" class="d-flex gap-2 flex-shrink-0 ms-2">
                 <span

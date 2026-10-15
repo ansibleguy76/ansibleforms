@@ -2356,6 +2356,7 @@ export default {
     chooseIcon: 'Choose icon',
     chooseBackground: 'Choose background',
     searchIcons: 'Search icons',
+    inContent: 'in content',
     noIconsFound: 'No icons found',
     selectFormFirst: 'Select a form first',
     preview: 'Preview',

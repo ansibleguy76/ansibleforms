@@ -2352,6 +2352,7 @@ export default {
     chooseIcon: 'アイコンを選択',
     chooseBackground: '背景を選択',
     searchIcons: 'アイコンを検索',
+    inContent: '内容内',
     noIconsFound: 'アイコンが見つかりません',
     selectFormFirst: '先にフォームを選択してください',
     preview: 'プレビュー',

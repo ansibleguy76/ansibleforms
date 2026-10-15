@@ -18,7 +18,7 @@ import ansibleConfig from "../../config/ansible.config.js";
 import Repository from "./repository.model.js";
 import Repo from "./repo.model.js";
 import { configRepoFromPath } from "../lib/forms-git.js";
-import { FILE_KINDS, MAX_FILE_BYTES, MAX_LISTED_FILES, safeRelativePath, isInside, isTextBuffer } from "../lib/projectFiles.js";
+import { FILE_KINDS, MAX_FILE_BYTES, MAX_LISTED_FILES, MIN_SEARCH_CHARS, MAX_SEARCH_CHARS, MAX_SEARCHED_BYTES, safeRelativePath, isInside, isTextBuffer, textHas } from "../lib/projectFiles.js";
 
 const ProjectFiles = {};
 
@@ -216,6 +216,51 @@ ProjectFiles.read = async function (kind, rel) {
   const buffer = await fs.promises.readFile(file.abs);
   if (!isTextBuffer(buffer)) throw new Errors.BadRequestError(`File '${shown(prefix, file.rel)}' is not a text file`);
   return { path: shown(prefix, file.rel), content: buffer.toString("utf8") };
+};
+
+/**
+ * The files of a kind whose text has a term (the designer's search, which also matches names in
+ * the browser) : the text files a listing shows and the editor would open, read one at a time,
+ * at most MAX_SEARCHED_BYTES in all.
+ *
+ * Args:
+ *   kind (string): 'playbooks', 'vars', 'inventories' or 'workflows'.
+ *   term (string): what is searched (MIN_SEARCH_CHARS to MAX_SEARCH_CHARS once trimmed).
+ *
+ * Returns:
+ *   object: { matches (the paths, as the explorer shows them), truncated (the bytes cap was
+ *     reached : files after it were not read) }.
+ *
+ * Raises:
+ *   BadRequestError: the term is too short or too long.
+ */
+ProjectFiles.search = async function (kind, term) {
+  const needle = String(term ?? "").trim();
+  if (needle.length < MIN_SEARCH_CHARS || needle.length > MAX_SEARCH_CHARS) {
+    throw new Errors.BadRequestError(`Search between ${MIN_SEARCH_CHARS} and ${MAX_SEARCH_CHARS} characters`);
+  }
+  const listing = await ProjectFiles.list(kind);
+  const matches = [];
+  let read = 0;
+  let truncated = listing.truncated;
+  for (const f of listing.files) {
+    // too big or not text : the editor would not open it either
+    if (f.size > MAX_FILE_BYTES) continue;
+    if (read + f.size > MAX_SEARCHED_BYTES) {
+      truncated = true;
+      break;
+    }
+    try {
+      const { root, inner } = await rootOf(kind, f.path);
+      const file = await resolveIn(root, inner);
+      const buffer = await fs.promises.readFile(file.abs);
+      read += buffer.length;
+      if (isTextBuffer(buffer) && textHas(buffer.toString("utf8"), needle)) matches.push(f.path);
+    } catch (e) {
+      logger.debug(`Search skipped ${f.path} : ${e.message}`);
+    }
+  }
+  return { matches, truncated };
 };
 
 /**
