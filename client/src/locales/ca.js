@@ -321,9 +321,10 @@ export default {
       stepCopy: 'Copia',
       create: 'Crea el token',
       created: 'El teu token, vàlid fins al {date}',
+      createdNever: 'El vostre token, que no caduca mai',
       copy: 'Copia',
       copied: 'Token copiat',
-      once: "Copia'l ara: només es mostra una vegada. Tracta'l com la teva contrasenya i revoca'l a sota quan ja no el necessitis.",
+      once: 'Copieu-lo ara: només es mostra un cop. Guardeu-lo com una contrasenya.',
       example: "Envia'l a la capçalera Authorization de cada crida a l'API:",
       notForType:
         "Els tokens de l'API es creen amb la teva contrasenya, així que no estan disponibles per als comptes {type}.",

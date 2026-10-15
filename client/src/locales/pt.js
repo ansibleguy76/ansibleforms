@@ -320,9 +320,10 @@ export default {
       stepCopy: 'Copiar',
       create: 'Criar token',
       created: 'O seu token, válido até {date}',
+      createdNever: 'O seu token, que nunca expira',
       copy: 'Copiar',
       copied: 'Token copiado',
-      once: 'Copie-o agora: só é mostrado uma vez. Trate-o como a sua palavra-passe e revogue-o abaixo quando já não precisar dele.',
+      once: 'Copie-o agora: só é mostrado uma vez. Guarde-o como uma palavra-passe.',
       example: 'Envie-o no cabeçalho Authorization de cada chamada à API:',
       notForType:
         'Os tokens de API são criados com a sua palavra-passe, por isso não estão disponíveis para contas {type}.',

@@ -242,7 +242,8 @@ function showToken(token) {
   const exp = TokenStorage.decode(token).exp;
   tokenResult.value = {
     token,
-    expires: neverExpires(exp * 1000) ? t('apiTokens.neverExpires') : Time.format(exp * 1000),
+    never: neverExpires(exp * 1000),
+    expires: Time.format(exp * 1000),
   };
   tokenForm.value.name = '';
   tokensReload.value++;
@@ -745,7 +746,9 @@ async function changePassword() {
               />
               <div v-if="tokenStep === 2 && tokenResult">
                 <label class="form-label fw-semibold" for="af-token">{{
-                  t('profilePage.token.created', { date: tokenResult.expires })
+                  tokenResult.never
+                    ? t('profilePage.token.createdNever')
+                    : t('profilePage.token.created', { date: tokenResult.expires })
                 }}</label>
                 <div class="input-group mb-2">
                   <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="key" /></span>

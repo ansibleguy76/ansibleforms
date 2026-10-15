@@ -323,9 +323,10 @@ export default {
       stepCopy: 'Copier',
       create: 'Créer le token',
       created: "Votre token, valable jusqu'au {date}",
+      createdNever: "Votre jeton, qui n'expire jamais",
       copy: 'Copier',
       copied: 'Token copié',
-      once: "Copiez-le maintenant : il n'est affiché qu'une fois. Traitez-le comme votre mot de passe et révoquez-le ci-dessous quand vous n'en avez plus besoin.",
+      once: "Copiez-le maintenant : il n'est affiché qu'une fois. Gardez-le comme un mot de passe.",
       example: "Envoyez-le dans l'en-tête Authorization de chaque appel API :",
       notForType:
         'Les tokens API sont créés avec votre mot de passe : ils ne sont pas disponibles pour les comptes {type}.',
