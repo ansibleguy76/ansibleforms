@@ -468,7 +468,7 @@
     short: Microsoft Entra ID sign-in authority
     default: https://login.microsoftonline.com
     description: |
-      The Microsoft identity platform the server sends an Microsoft Entra ID sign-in to, with the tenant id
+      The Microsoft identity platform the server sends a Microsoft Entra ID sign-in to, with the tenant id
       of the provider after it (`<authority>/<tenant>/v2.0`). Change it for a national cloud,
       e.g. `https://login.microsoftonline.us` (US Government) or `https://login.chinacloudapi.cn`
       (China), together with `AZURE_GRAPH_URI`. Read when the Microsoft Entra ID provider is enabled or
@@ -755,7 +755,7 @@
       changes their password (or an admin sets it), or when its session logs out.
 
       Profile > API token makes one for any account. A local or LDAP user confirms their
-      password ; an Microsoft Entra ID or OIDC user has none here, so the token is made from their session,
+      password ; a Microsoft Entra ID or OIDC user has none here, so the token is made from their session,
       which must have signed in at most 10 minutes before (the page sends them through the sign-in
       again otherwise). An API token cannot make another. Each token is listed on the profile and
       on the user's page in Settings > Users (made, expires, last used), where the user or an admin
@@ -1687,7 +1687,7 @@
         description: |
           A list of groups.  They must be in the format of `local/groupname` or `ldap/groupname` or `azuread/groupname`
 
-          An Microsoft Entra ID group can be named by its object id, `azuread/<object id>` : unique, where
+          A Microsoft Entra ID group can be named by its object id, `azuread/<object id>` : unique, where
           two groups can share a display name. Both work ; the object id is the one to prefer.
       - name: users
         type: array
