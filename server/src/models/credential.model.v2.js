@@ -162,6 +162,29 @@ class CredentialModel extends CrudModel {
     return super.findAll(this.modelName);
   }
 
+  /**
+   * How many records use each credential, as its page's Used by tab lists them : the secret
+   * stores, notification channels (a login or a token), repositories, LDAP directories, SSO
+   * providers and the chat assistant that name it.
+   *
+   * Returns:
+   *   Promise<Map<string, number>>: the count of each credential name used at least once.
+   */
+  static async usageCounts() {
+    const rows = await mysql.do(
+      "SELECT name, COUNT(*) AS n FROM (" +
+        "SELECT credential AS name FROM AnsibleForms.`secret_stores` " +
+        "UNION ALL SELECT credential FROM AnsibleForms.`notification_channels` " +
+        "UNION ALL SELECT token_credential FROM AnsibleForms.`notification_channels` " +
+        "UNION ALL SELECT credential FROM AnsibleForms.`repositories` " +
+        "UNION ALL SELECT credential FROM AnsibleForms.`ldap` " +
+        "UNION ALL SELECT credential FROM AnsibleForms.`oauth2_providers` " +
+        "UNION ALL SELECT credential FROM AnsibleForms.`chat_settings`" +
+        ") used WHERE name IS NOT NULL AND name <> '' GROUP BY name",
+    );
+    return new Map((rows || []).map((r) => [r.name, Number(r.n) || 0]));
+  }
+
   static async findById(id) {
     return super.findById(this.modelName, id);
   }

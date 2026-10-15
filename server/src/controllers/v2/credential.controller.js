@@ -43,12 +43,16 @@ const credentialController = {
         if (credential && credential.client_key) credential.client_key = '**********';
         res.json(RestResult.single(credential));
       } else {
-        const credentials = await CredentialModel.findAll();
-        // Mask passwords before returning to API
-        credentials.forEach(c => {
-          if (c.password) c.password = '**********';
-          if (c.client_key) c.client_key = '**********';
-        });
+        // how many records use each (used_by_count), as its Used by tab lists them ; a count that
+        // cannot be read leaves the list as it is
+        const usage = await CredentialModel.usageCounts().catch(() => new Map());
+        const credentials = (await CredentialModel.findAll()).map((c) => ({
+          ...c,
+          // Mask passwords before returning to API
+          password: c.password ? '**********' : c.password,
+          client_key: c.client_key ? '**********' : c.client_key,
+          used_by_count: usage.get(c.name) || 0,
+        }));
         res.json(RestResult.list(credentials));
       }
     } catch (err) {

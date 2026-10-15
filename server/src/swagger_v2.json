@@ -3104,6 +3104,7 @@
           "db_name": { "type": "string", "description": "Database name.", "example": "mydb" },
           "secure": { "type": "boolean", "description": "Use a secure connection (an smtp one : TLS).", "example": false },
           "is_database": { "type": "boolean", "description": "Is this a database credential?", "example": true },
+          "used_by_count": { "type": "integer", "readOnly": true, "description": "In the list : how many secret stores, notification channels, repositories, LDAP directories, SSO providers and chat settings use it" },
           "credential_type": { "type": "string", "enum": ["userpass", "ssh", "git", "api", "database", "cyberark", "smtp", "ldap", "entraid", "oidc"], "description": "What the credential is for ; is_database follows it", "example": "git" },
           "tenant_id": { "type": "string", "description": "An entraid credential's tenant (its user is the client ID, its password the client secret)" },
           "issuer": { "type": "string", "description": "An oidc credential's issuer, the provider's address (its user is the client ID, its password the client secret)", "example": "https://accounts.google.com" },

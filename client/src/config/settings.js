@@ -1630,6 +1630,26 @@ export default function getSettings(t) {
           filterable: true,
         },
         {
+          key: 'description',
+          label: t('settings.fields.description'),
+          sortable: false,
+          required: true,
+          filterable: false,
+          icon: 'info-circle',
+        },
+        {
+          // how many records use it (the server counts them, as its Used by tab lists them) : a
+          // column, to the right
+          key: 'used_by_count',
+          label: t('settings.linked.usedBy'),
+          noInput: true,
+          align: 'end',
+          filterable: false,
+          filterType: 'number',
+          // none : an en dash, as the other empty cells
+          render: (v) => (v ? String(v) : '–'),
+        },
+        {
           key: 'db_type',
           step: 'login',
           label: t('settings.credentials.databaseType'),
@@ -1864,15 +1884,6 @@ export default function getSettings(t) {
           step: 'store',
           dependency: 'secret_source',
           dependencyValues: ['store'],
-        },
-        {
-          key: 'description',
-          label: t('settings.fields.description'),
-          sortable: false,
-          hidden: true,
-          required: true,
-          filterable: false,
-          icon: 'info-circle',
         },
       ],
     },
