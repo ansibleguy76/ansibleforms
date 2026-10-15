@@ -195,15 +195,21 @@ async function onCredentialCreated(name) {
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
 // mail : where it sends and as whom are its smtp credential (the server, port, TLS, login)
+// telegram and webhook : the api credential of their token ; a Slack or Teams webhook address is its
+// own secret. Credentials first after the type, as on every page
 const TABS_BY_TYPE = {
   mail: [
-    { key: 'sender', label: 'stepSender', icon: 'envelope' },
     { key: 'credentials', label: 'tabCredentials', icon: 'key' },
+    { key: 'sender', label: 'stepSender', icon: 'envelope' },
   ],
   slack: [{ key: 'connection', label: 'stepWebhook', icon: 'link' }],
   teams: [{ key: 'connection', label: 'stepWebhook', icon: 'link' }],
-  telegram: [{ key: 'connection', label: 'stepBot', icon: 'robot' }],
+  telegram: [
+    { key: 'credentials', label: 'tabCredentials', icon: 'key' },
+    { key: 'connection', label: 'stepBot', icon: 'robot' },
+  ],
   webhook: [
+    { key: 'credentials', label: 'tabCredentials', icon: 'key' },
     { key: 'connection', label: 'stepEndpoint', icon: 'globe' },
     { key: 'payload', label: 'stepPayload', icon: 'code' },
   ],
@@ -549,8 +555,8 @@ onMounted(async () => {
               />
             </template>
 
-            <!-- telegram : Bot, its token's credential, the chat, the Bot API -->
-            <template v-else-if="type === 'telegram' && activeTab === 'connection'">
+            <!-- telegram : Credentials, its bot token's api credential -->
+            <template v-else-if="type === 'telegram' && activeTab === 'credentials'">
               <BsInput
                 class="af-channel-field"
                 v-model="edit.token_credential"
@@ -564,9 +570,30 @@ onMounted(async () => {
                 :help="t('settings.notificationChannels.tokenCredentialHelp_telegram')"
                 :label="t('settings.notificationChannels.tokenCredential_telegram')"
               />
-              <BsButton v-if="!managed" class="mb-3" icon="plus" @click="newCredential('token_credential', 'api')">{{
+              <BsButton v-if="!managed" icon="plus" @click="newCredential('token_credential', 'api')">{{
                 t('settings.repositories.newCredential')
               }}</BsButton>
+            </template>
+            <!-- webhook : Credentials, the api credential of its bearer token (none : no token) -->
+            <template v-else-if="type === 'webhook' && activeTab === 'credentials'">
+              <BsInput
+                class="af-channel-field"
+                v-model="edit.token_credential"
+                type="select"
+                icon="key"
+                :isFloating="false"
+                :values="credentialsOf('api')"
+                valueKey="name"
+                labelKey="name"
+                :help="t('settings.notificationChannels.tokenCredentialHelp_webhook')"
+                :label="t('settings.notificationChannels.tokenCredential_webhook')"
+              />
+              <BsButton v-if="!managed" icon="plus" @click="newCredential('token_credential', 'api')">{{
+                t('settings.repositories.newCredential')
+              }}</BsButton>
+            </template>
+            <!-- telegram : Bot, the chat and the Bot API -->
+            <template v-else-if="type === 'telegram' && activeTab === 'connection'">
               <BsInput
                 class="af-channel-field"
                 v-model="edit.chat_id"
@@ -611,21 +638,6 @@ onMounted(async () => {
                 labelKey="label"
                 :label="t('settings.notificationChannels.method')"
               />
-              <BsInput
-                class="af-channel-field"
-                v-model="edit.token_credential"
-                type="select"
-                icon="key"
-                :isFloating="false"
-                :values="credentialsOf('api')"
-                valueKey="name"
-                labelKey="name"
-                :help="t('settings.notificationChannels.tokenCredentialHelp_webhook')"
-                :label="t('settings.notificationChannels.tokenCredential_webhook')"
-              />
-              <BsButton v-if="!managed" class="mb-3" icon="plus" @click="newCredential('token_credential', 'api')">{{
-                t('settings.repositories.newCredential')
-              }}</BsButton>
               <div class="form-check form-switch mb-3">
                 <input
                   id="af-channel-verify"

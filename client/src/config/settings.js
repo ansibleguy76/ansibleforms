@@ -2335,8 +2335,8 @@ export default function getSettings(t) {
       steps: [
         { key: 'runner', label: t('settings.runners.stepRunner') },
         { key: 'type', label: t('settings.runners.stepType') },
-        { key: 'connection', label: t('settings.runners.stepConnection') },
         { key: 'credentials', label: t('settings.runners.stepAuth') },
+        { key: 'connection', label: t('settings.runners.stepConnection') },
       ],
       // the kind chosen is stored as a type and a flavour : an RTE, or an awx runner that is an
       // AWX, an AAP or an Ascender. What the api adds or the RTE writes (state, node_id) is
@@ -2612,10 +2612,14 @@ export default function getSettings(t) {
       steps: [
         { key: 'channel', label: t('settings.notificationChannels.stepChannel') },
         { key: 'type', label: t('settings.notificationChannels.stepType') },
-        // mail : the from address, then its smtp credential (the mail server, its port and TLS, the
-        // login)
+        // its credential first, as on every page : mail's smtp one (the mail server, its port and
+        // TLS, the login), a Telegram bot's or a webhook's token ; then mail's from address
+        {
+          key: 'credentials',
+          label: t('settings.common.tabCredentials'),
+          when: (i) => ['mail', 'telegram', 'webhook'].includes(channelType(i)),
+        },
         { key: 'sender', label: t('settings.notificationChannels.stepSender'), when: (i) => channelType(i) === 'mail' },
-        { key: 'credentials', label: t('settings.common.tabCredentials'), when: (i) => channelType(i) === 'mail' },
         {
           key: 'connection',
           label: t('settings.notificationChannels.stepWebhook'),
@@ -2816,7 +2820,7 @@ export default function getSettings(t) {
           // telegram : its bot token ; webhook : a bearer token - each the password of an api
           // credential of Connections > Credentials, or a New one
           key: 'token_credential',
-          step: 'connection',
+          step: 'credentials',
           icon: 'key',
           label: t('settings.notificationChannels.tokenCredential_webhook'),
           dialogLabel: (i) =>
@@ -3294,8 +3298,8 @@ export default function getSettings(t) {
       steps: [
         { key: 'store', label: t('settings.secretStores.stepStore') },
         { key: 'type', label: t('settings.secretStores.stepType') },
-        { key: 'connection', label: t('settings.secretStores.stepConnection') },
         { key: 'credentials', label: t('settings.secretStores.stepAuth') },
+        { key: 'connection', label: t('settings.secretStores.stepConnection') },
         { key: 'options', label: t('settings.secretStores.stepOptions') },
       ],
       // the switches are not stored : ignore_certs, a CA bundle and a namespace are

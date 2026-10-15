@@ -162,12 +162,12 @@ async function update(data) {
 }
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
-// the dialog's steps : Runner, Type, Connection, Authentication ; then what runs on it
+// the dialog's steps : Runner, Type, Credentials, Connection ; then what runs on it
 const tabs = computed(() => [
   { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
   { key: 'type', label: t('settings.runners.stepType'), icon: 'shapes' },
-  { key: 'connection', label: t('settings.runners.stepConnection'), icon: 'globe' },
   { key: 'credentials', label: t('settings.runners.stepAuth'), icon: 'key' },
+  { key: 'connection', label: t('settings.runners.stepConnection'), icon: 'globe' },
   { key: 'forms', label: t('settings.linked.forms'), icon: 'rectangle-list', count: runnerForms.value.length },
   { key: 'jobs', label: t('settings.linked.jobs'), icon: 'history', count: runnerJobs.value.length },
 ]);
