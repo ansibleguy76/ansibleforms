@@ -27,6 +27,7 @@ import Profile from '@/lib/Profile';
 import TokenStorage from '@/lib/TokenStorage';
 import Helpers from '@/lib/Helpers';
 import { CREDENTIAL_TYPES } from '@/config/settings';
+import { slugOf } from '@/lib/formsPath';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { recordButtons } from '@/lib/recordButtons';
@@ -144,19 +145,24 @@ async function load() {
   } catch {
     credential.value = null;
   }
-  const [stores, mails, repos, directories, providers, chat] = await Promise.all([
+  const [stores, mails, repos, directories, providers, chat, runners, forms, workflows] = await Promise.all([
     axios.get('/api/v2/secretstore/', auth).catch(() => null),
     axios.get('/api/v2/notificationchannel/', auth).catch(() => null),
     axios.get('/api/v2/repository/', auth).catch(() => null),
     axios.get('/api/v2/ldapdirectory/', auth).catch(() => null),
     axios.get('/api/v2/oauth2/', auth).catch(() => null),
     axios.get('/api/v2/chatsettings/', auth).catch(() => null),
+    axios.get('/api/v2/runner/', auth).catch(() => null),
+    axios.get('/api/v2/config/formscredentials', auth).catch(() => null),
+    axios.get('/api/v2/config/workflowscredentials', auth).catch(() => null),
   ]);
   secretStores.value = [{ name: '' }, ...(stores?.data?.records || []).map((s) => ({ name: s.name }))];
   // what names a credential : a secret store (its token or login), a notification channel (a
   // mail server's smtp login, a bot's or a webhook's token), a repository (its git login), an LDAP
-  // directory (its bind account), an SSO provider (its client), the chat assistant (its key) ; the
-  // Used by tab keeps those naming this one
+  // directory (its bind account), an SSO provider (its client), a runner (its token or login), the
+  // chat assistant (its key), a form (in its yaml) and a workflow of the designer (its nodes) : one
+  // row per credential a form or a workflow names, where it names it ; the Used by tab keeps those
+  // naming this one
   users.value = [
     ...(stores?.data?.records || []).map((r) => ({ ...r, kind: 'secretStore', to: `/settings/secret-stores/${r.id}` })),
     ...(mails?.data?.records || []).map((r) => ({
@@ -167,10 +173,14 @@ async function load() {
     ...(repos?.data?.records || []).map((r) => ({ ...r, kind: 'repository', to: `/settings/repositories/${r.id}` })),
     ...(directories?.data?.records || []).map((r) => ({ ...r, kind: 'ldapDirectory', to: `/settings/ldap/${r.id}` })),
     ...(providers?.data?.records || []).map((r) => ({ ...r, kind: 'ssoProvider', to: `/settings/sso/${r.id}` })),
+    ...(runners?.data?.records || []).map((r) => ({ ...r, kind: 'runner', to: `/settings/runners/${r.id}` })),
     ...(chat?.data?.credential
       ? [{ name: t('sidebar.chat'), credential: chat.data.credential, kind: 'chat', to: '/settings/chat' }]
       : []),
+    ...formRows(forms?.data?.records || []),
+    ...formRows(workflows?.data?.records || [], 'workflow'),
   ];
+  dynamicForms.value = (forms?.data?.records || []).filter((f) => f.dynamic?.length);
   loaded.value = true;
 }
 
@@ -194,17 +204,82 @@ async function update(data) {
 }
 
 // ─── Used by ──────────────────────────────────────────────────────────────────
-// the secret stores, notification channels, repositories, LDAP directories, SSO providers and the
-// chat assistant that name the credential (a channel as its login or its token) ; a row opens it
+// the secret stores, notification channels, repositories, LDAP directories, SSO providers,
+// runners, the chat assistant, the forms and the designer's workflows that name the credential (a
+// channel as its login or its token) ; a row opens it
 const users = ref([]);
+// the forms that build a credential's name when they run ($(field) in it) : they may use this one
+// when its name fits their pattern
+const dynamicForms = ref([]);
+
+/**
+ * Whether a credential's name fits a name a form builds when it runs : each placeholder
+ * ($(field), {{ var }}, ${var}) stands for any text.
+ *
+ * Args:
+ *   pattern (string): the name as the form writes it, such as `$(env)-db`.
+ *   name (string): the credential's name.
+ *
+ * Returns:
+ *   boolean: true when the form may build that name.
+ */
+function fitsPattern(pattern, name) {
+  const parts = String(pattern).split(/\$\([^)]*\)|\{\{[^}]*\}\}|\$\{[^}]*\}/);
+  const regex = parts.map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.+');
+  return new RegExp(`^${regex}$`).test(String(name));
+}
+
+/**
+ * The Used by rows of the forms, or of the designer's workflows : one per form (or workflow) and
+ * credential it names, saying where (the server's scans : lib/formLinks.js formCredentials,
+ * models/workflowRun.js workflowCredentials).
+ *
+ * Args:
+ *   forms (object[]): { name, description, credentials: [{ name, where }] } each.
+ *   kind (string): 'form' (a row opens the form in the designer) or 'workflow' (the designer's
+ *     Workflows, whose file the row names : the designer opens no file by its address).
+ *
+ * Returns:
+ *   object[]: the rows, each { name, description, credential, how, kind, to }.
+ */
+function formRows(forms, kind = 'form') {
+  const rows = [];
+  for (const f of forms) {
+    const byCredential = new Map();
+    for (const c of f.credentials || []) byCredential.set(c.name, [...(byCredential.get(c.name) || []), c.where]);
+    for (const [credentialName, places] of byCredential) {
+      rows.push({
+        name: f.name,
+        description: f.description,
+        credential: credentialName,
+        how: places.join(', '),
+        kind,
+        to: kind === 'form' ? `/designer/forms/${slugOf(f.name)}` : `/designer/workflows#${slugOf(f.name)}`,
+      });
+    }
+  }
+  return rows;
+}
 const usedBy = computed(() =>
   credential.value ? users.value.filter((u) => [u.credential, u.token_credential].includes(credential.value.name)) : [],
 );
 const usedByColumns = computed(() => [
   { key: 'name', label: t('settings.fields.name') },
-  { key: 'kind', label: t('settings.linked.kind'), value: (u) => t(`settings.linked.${u.kind}`) },
+  { key: 'type', label: t('settings.linked.type'), value: (u) => t(`settings.linked.${u.kind}`) },
   { key: 'description', label: t('settings.fields.description') },
+  // where a form names it ; the other records name it in their own credential field
+  { key: 'how', label: t('settings.linked.usesItAs'), value: (u) => u.how || '' },
 ]);
+// the forms that may use it : their credential's name, built when they run, fits this one's
+const dynamicNote = computed(() => {
+  const name = credential.value?.name;
+  if (!name) return '';
+  const forms = dynamicForms.value
+    .map((f) => ({ name: f.name, places: (f.dynamic || []).filter((d) => fitsPattern(d.pattern, name)) }))
+    .filter((f) => f.places.length)
+    .map((f) => `${f.name} (${f.places.map((d) => `${d.where}: ${d.pattern}`).join(', ')})`);
+  return forms.length ? t('settings.linked.dynamicForms', { forms: forms.join('; ') }) : '';
+});
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
 // the dialog's steps : Store not for a CyberArk's ; then what uses it. Where an SSH or a database
@@ -430,16 +505,19 @@ onMounted(async () => {
         </div>
         <!-- the record loading : its fields as grey placeholders, where they come -->
         <AppSkeleton v-else-if="!loaded && !credential" shape="form" :count="3" />
-        <!-- Used by : what names the credential ; a row opens it -->
-        <AppLinkedTable
-          v-else-if="credential && shownTab === 'used-by'"
-          :exportName="`${credential.name}-used-by`"
-          :columns="usedByColumns"
-          :rows="usedBy"
-          rowKey="to"
-          :to="(u) => u.to"
-          :empty="t('settings.linked.noUse')"
-        />
+        <!-- Used by : what names the credential ; a row opens it. Under it, the forms that build a
+             credential's name when they run and may use this one -->
+        <div v-else-if="credential && shownTab === 'used-by'">
+          <AppLinkedTable
+            :exportName="`${credential.name}-used-by`"
+            :columns="usedByColumns"
+            :rows="usedBy"
+            rowKey="to"
+            :to="(u) => u.to"
+            :empty="t('settings.linked.noUse')"
+          />
+          <p v-if="dynamicNote" class="form-text mt-3 mb-0">{{ dynamicNote }}</p>
+        </div>
         <div v-else-if="credential && edit" class="af-credential-tab">
           <!-- a credential of the config seed : read only here -->
           <div v-if="managed" class="alert alert-secondary py-2">

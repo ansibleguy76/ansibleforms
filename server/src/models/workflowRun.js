@@ -116,6 +116,34 @@ export async function listWorkflows() {
 }
 
 /**
+ * The credentials each of the designer's workflows names : its job template nodes' (the export's
+ * related.credentials, or credentials), for a credential's Used by tab.
+ *
+ * Returns:
+ *   Promise<object[]>: { name, description, file, credentials: [{ name, where }] } for the
+ *     workflows that name at least one credential, sorted by name ; where says the file and the
+ *     node, such as "deploy.yaml, node configure".
+ */
+export async function workflowCredentials() {
+  const out = [];
+  for (const { workflow, rel } of await allWorkflows()) {
+    const credentials = [];
+    for (const node of workflow.nodes || []) {
+      const nodeName = node.identifier || node.name || "?";
+      for (const c of node.credentials || []) {
+        const name = String(c?.name || "").trim();
+        const where = `${rel}, node ${nodeName}`;
+        if (name && !credentials.some((x) => x.name === name && x.where === where)) credentials.push({ name, where });
+      }
+    }
+    if (credentials.length) {
+      out.push({ name: workflow.name || rel, description: workflow.description || "", file: rel, credentials });
+    }
+  }
+  return out.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
  * The names of a saved workflows file that another file has too : two workflows of one name stop
  * a form that runs it by its name - said when the file is saved, rather than when a job starts.
  *
