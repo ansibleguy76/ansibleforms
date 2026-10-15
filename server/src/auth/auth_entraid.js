@@ -86,7 +86,7 @@ const initialize = async () => {
   }
   try {
     const tenant = encodeURIComponent(String(entraConfig.tenant_id).trim());
-    // the authority : Microsoft's public cloud, a national cloud (AZURE_AUTHORITY_URI), or in
+    // the authority : Microsoft's public cloud, a national cloud (ENTRA_AUTHORITY_URI), or in
     // development a local test provider over plain http
     const authority = String(authConfig.entraAuthorityUrl || 'https://login.microsoftonline.com').replace(/\/+$/, '');
     const issuer = new URL(`${authority}/${tenant}/v2.0`);

@@ -86,7 +86,8 @@ const envGroupOrder = [
     label: () => t('settings.settingsPage.envGroupAuthentication'),
     icon: 'user-shield',
     prefix: ['ACCESS_TOKEN_', 'LOGIN_', 'AUTH_', 'PASSWORD_'],
-    exact: ['AZURE_AUTHORITY_URI', 'AZURE_GRAPH_URI', 'API_TOKEN_MAX_DAYS'],
+    // the AZURE_* names are the deprecated ones of the ENTRA_* (removed in 8.0)
+    exact: ['ENTRA_AUTHORITY_URI', 'ENTRA_GRAPH_URI', 'AZURE_AUTHORITY_URI', 'AZURE_GRAPH_URI', 'API_TOKEN_MAX_DAYS'],
   },
   {
     key: 'security',

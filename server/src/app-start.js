@@ -18,7 +18,7 @@ import history from 'connect-history-api-fallback';
 import httpsConfig from '../config/https.config.js';
 import { registerHttpsServer } from './lib/httpsContext.js';
 import { httpServerOptions } from './lib/httpServerOptions.js';
-import authConfig from '../config/auth.config.js';
+import authConfig, { entraEnvWarnings } from '../config/auth.config.js';
 import logger from './lib/logger.js';
 import { reloadConfigSeed } from './lib/seed.js';
 import { getExpressionMode } from './lib/expressionMode.js';
@@ -144,6 +144,9 @@ export async function startApp(){
       }
     })
     .catch((err) => logger.debug(`Could not read the database user's privileges : ${err.message || err}`));
+
+  // the Entra ID variables of before 7.3 (AZURE_*) : still read, said once
+  for (const warning of entraEnvWarnings()) logger.warning(warning);
 
   if (authConfig.secretIsGenerated) {
     logger.warning('[SECURITY] JWT signing secret was auto-generated. All tokens will be invalidated on restart. Set the ACCESS_TOKEN_SECRET environment variable for persistent token signing.');
