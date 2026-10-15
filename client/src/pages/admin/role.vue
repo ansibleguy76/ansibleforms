@@ -14,6 +14,7 @@ import { useRoute, useRouter } from 'vue-router';
 import Profile from '@/lib/Profile';
 import { useI18n } from 'vue-i18n';
 import { useFormsConfig } from '@/composables/useFormsConfig';
+import { providerPrefix } from '@/config/roles';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRoleSupport } from '@/composables/useRoleSupport';
 import { useRouteTab } from '@/composables/useRouteTab';
@@ -247,7 +248,7 @@ onMounted(async () => {
         class="form-select mb-3"
         @change="adding.name = localChoices(adding.kind, adding.provider)[0] || ''"
       >
-        <option v-for="p in authProviders" :key="p" :value="p">{{ p }}</option>
+        <option v-for="p in authProviders" :key="p" :value="p">{{ providerPrefix(p) }}</option>
       </select>
       <label class="form-label fw-bold">{{ t('settings.settingsPage.name') }}</label>
       <select v-if="adding.provider === 'local'" v-model="adding.name" class="form-select">

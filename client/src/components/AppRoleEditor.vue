@@ -36,6 +36,7 @@ import {
   roleOptionIncludedIn,
   roleOptionNeeds,
   roleOptionDescription,
+  providerPrefix,
 } from '@/config/roles';
 import { usePagedRows } from '@/composables/usePagedRows';
 
@@ -357,7 +358,7 @@ function removeUser(index) {
                     />
                   </td>
                   <td>{{ row.named.name }}</td>
-                  <td>{{ row.named.provider }}</td>
+                  <td>{{ providerPrefix(row.named.provider) }}</td>
                   <!-- named in the role itself : no group -->
                   <td class="text-muted">–</td>
                   <td class="af-fit-spacer"></td>
@@ -411,7 +412,7 @@ function removeUser(index) {
           :disabled="readOnly || role._default"
           @change="onProviderChange(usr, 'user')"
         >
-          <option v-for="p in authProviders" :key="p" :value="p">{{ p }}</option>
+          <option v-for="p in authProviders" :key="p" :value="p">{{ providerPrefix(p) }}</option>
         </select>
         <select
           v-if="usr.provider === 'local'"
@@ -481,7 +482,7 @@ function removeUser(index) {
                   />
                 </td>
                 <td>{{ grp.name }}</td>
-                <td>{{ grp.provider }}</td>
+                <td>{{ providerPrefix(grp.provider) }}</td>
                 <td class="af-fit-spacer"></td>
                 <td class="bs-dt-row-actions">
                   <!-- its menu, as the rows of the other tables -->
@@ -523,7 +524,7 @@ function removeUser(index) {
           :disabled="readOnly || role._default"
           @change="onProviderChange(grp, 'group')"
         >
-          <option v-for="p in authProviders" :key="p" :value="p">{{ p }}</option>
+          <option v-for="p in authProviders" :key="p" :value="p">{{ providerPrefix(p) }}</option>
         </select>
         <select
           v-if="grp.provider === 'local'"
