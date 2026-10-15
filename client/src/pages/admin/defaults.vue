@@ -214,7 +214,7 @@ onMounted(async () => {
             <!-- the language : an environment variable -->
             <template v-for="e in languageEnv" :key="e.name">
               <div class="mt-4"></div>
-              <AppEnvField v-model="envEdits[e.name]" :e="e" />
+              <AppEnvField v-model="envEdits[e.name]" :e="e" class="af-defaults-wide" />
             </template>
             <!-- the forms list's view and the time zone : in the database -->
             <BsInput
@@ -265,9 +265,11 @@ onMounted(async () => {
 :deep(.card-body > :last-child > .mb-3:last-child) {
   margin-bottom: 0 !important;
 }
-/* as wide as the language below it (AppEnvField : a dropdown's width on the settings pages) */
-.af-interface-field :deep(.input-group) {
-  max-width: 20rem;
+/* the page's dropdowns one width, wider than the settings pages' usual one : a date format shows
+   its example in full (a date, a time and a zone), the language below it as wide */
+.af-interface-field :deep(.input-group),
+.af-defaults-wide :deep(.input-group.input-group) {
+  max-width: 26rem;
 }
 </style>
 <route lang="yaml">
