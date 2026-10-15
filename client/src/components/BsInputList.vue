@@ -3,10 +3,10 @@
 /*                                                      */
 /*  Bootstrap Input List Component                      */
 /*  A field of several values, one per input (an LDAP   */
-/*  directory's servers) : each with its remove button  */
-/*  when there are more than one, and an add button     */
-/*  under the last. The value is one text, the values   */
-/*  comma separated, as it is stored.                   */
+/*  directory's servers) : each with its X (the last    */
+/*  one left is emptied, not removed), and an add       */
+/*  button under the last. The value is one text, the   */
+/*  values comma separated, as it is stored.            */
 /*                                                      */
 /*  @model: String - the values, comma separated        */
 /*                                                      */
@@ -84,9 +84,10 @@ function update(index, value) {
 function add() {
   values.value.push('');
 }
+// the X of a value : that input removed ; the last one left is emptied, never removed
 function remove(index) {
-  values.value.splice(index, 1);
-  if (!values.value.length) values.value.push('');
+  if (values.value.length > 1) values.value.splice(index, 1);
+  else values.value[0] = '';
   model.value = join(values.value);
 }
 </script>
@@ -114,7 +115,6 @@ function remove(index) {
           @input="update(i, $event.target.value)"
         />
         <button
-          v-if="values.length > 1"
           type="button"
           class="btn btn-outline-secondary"
           :title="t('common.remove')"
