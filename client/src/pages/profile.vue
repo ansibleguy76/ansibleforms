@@ -670,7 +670,7 @@ async function changePassword() {
             </div>
           </form>
           <p v-else class="text-body-secondary mb-0">
-            <FaIcon icon="circle-info" class="me-2" />{{ t('profilePage.elsewhere', { type: profile.type }) }}
+            <FaIcon icon="circle-info" class="me-2" />{{ t('profilePage.elsewhere', { type: loginType.label }) }}
           </p>
         </template>
 
