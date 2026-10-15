@@ -22,7 +22,6 @@ import { useRouteTab } from '@/composables/useRouteTab';
 import { useFormLinks } from '@/composables/useFormLinks';
 import { formPath } from '@/lib/formsPath';
 import { recordButtons } from '@/lib/recordButtons';
-import { esc } from '@/lib/tableCells';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -142,22 +141,20 @@ const groupRows = computed(() =>
       }))
     : [],
 );
-// none : an en dash, as the other empty cells
-const orDash = (v) => (v ? esc(String(v)) : '–');
 const userColumns = computed(() => [
   { key: 'name', label: t('settings.settingsPage.name'), filterable: true },
   { key: 'provider', label: t('settings.settingsPage.provider'), filterable: true },
-  { key: 'description', label: t('settings.fields.description'), filterable: true, render: orDash },
-  { key: 'from', label: t('settings.settingsPage.roleMemberFrom'), filterable: true, render: orDash },
+  { key: 'description', label: t('settings.fields.description'), filterable: true },
+  { key: 'from', label: t('settings.settingsPage.roleMemberFrom'), filterable: true },
 ]);
 const groupColumns = computed(() => [
   { key: 'name', label: t('settings.settingsPage.name'), filterable: true },
   { key: 'provider', label: t('settings.settingsPage.provider'), filterable: true },
-  { key: 'description', label: t('settings.fields.description'), filterable: true, render: orDash },
+  { key: 'description', label: t('settings.fields.description'), filterable: true },
 ]);
 const formColumns = computed(() => [
   { key: 'name', label: t('settings.fields.form'), filterable: true },
-  { key: 'description', label: t('settings.fields.description'), filterable: true, render: orDash },
+  { key: 'description', label: t('settings.fields.description'), filterable: true },
 ]);
 const { activeTab, tabLink } = useRouteTab('general', (key) => tabs.value.some((x) => x.key === key));
 

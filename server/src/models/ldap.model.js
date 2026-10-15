@@ -15,6 +15,8 @@ var Ldap=function(ldap){
     if (ldap.name !== undefined) this.name = String(ldap.name).trim();
     if (ldap.position !== undefined && ldap.position !== "") this.position = parseInt(ldap.position, 10) || 1;
     if (ldap.domains !== undefined) this.domains = ldap.domains || "";
+    // what it is, for the list and its page
+    if (ldap.description !== undefined) this.description = ldap.description || "";
     this.server = ldap.server;
     this.port = ldap.port;
     this.ignore_certs = (ldap.ignore_certs)?1:0;

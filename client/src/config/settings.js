@@ -1957,6 +1957,8 @@ export default function getSettings(t) {
       icon: 'address-book',
       // Enabled under the name, as an SSO provider's Active
       togglesLast: true,
+      // the tabs of long values (search bases, DNs, attributes) : their fields wider
+      wideTabs: ['users', 'groups'],
       // a directory's page (pages/admin/ldap-directory.vue) : its test, and Delete but on the default
       // one, which is turned off instead
       actions: [
@@ -1984,6 +1986,14 @@ export default function getSettings(t) {
           placeholder: 'corp',
           required: true,
           disabledWhen: (item, saved) => saved.name === 'default',
+        },
+        {
+          // what it is, for the list and its page
+          key: 'description',
+          tab: 'general',
+          icon: 'info-circle',
+          line: 1,
+          label: t('settings.fields.description'),
         },
         {
           key: 'search_base',
@@ -3592,16 +3602,16 @@ const NEW_DIRECTORY = { enable: true, port: 389, username_attribute: 'sAMAccount
  *   object: the list's settings (AppAdminMulti).
  */
 function ldapDirectories(t, ldap) {
-  // the columns : on or off (first, as every list's Enabled), the name, the servers ; never sorted,
+  // the columns : on or off (first, as every list's Enabled), the name, the description ; never sorted,
   // so the list is always in the lookup order
   const column = {
     name: { sortable: false, filterable: true },
-    server: { sortable: false, filterable: true },
+    description: { sortable: false, filterable: true },
     // a ✓ as every list's Enabled, first as theirs
     enable: { sortable: false, label: t('settings.ldap.enabled'), type: 'checkbox' },
   };
   // the columns first, in their order ; the dialog's fields keep theirs within each step
-  const COLUMNS = ['enable', 'name', 'server'];
+  const COLUMNS = ['enable', 'name', 'description'];
   const columnOrder = (key) => (COLUMNS.includes(key) ? COLUMNS.indexOf(key) : COLUMNS.length);
   return {
     pageTitle: t('sidebar.ldap'),
@@ -3612,7 +3622,6 @@ function ldapDirectories(t, ldap) {
     selectable: false,
     steps: [
       { key: 'general', label: t('settings.common.tabDetails') },
-      { key: 'connection', label: t('settings.common.tabConnection') },
       { key: 'credentials', label: t('settings.common.tabCredentials') },
       { key: 'users', label: t('settings.ldap.tabUsers') },
       { key: 'groups', label: t('settings.ldap.tabGroups') },

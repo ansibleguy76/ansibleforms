@@ -23,6 +23,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import { toast } from 'vue-sonner';
+import { deleteRecords } from '@/lib/bulkDelete';
 import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import Helpers from '@/lib/Helpers';
@@ -344,6 +345,24 @@ async function deleteRunner() {
   }
 }
 
+/**
+ * Deletes the rows ticked in its Jobs, Stored jobs or Schedules table, after asking, then reads
+ * them again.
+ *
+ * Args:
+ *   rows (object[]): the rows ticked.
+ *   api (string): their api : job, stored-jobs or schedule.
+ */
+async function deleteTicked(rows, api) {
+  if (
+    await deleteRecords(
+      t,
+      rows.map((r) => `/api/v2/${api}/${r.id}`),
+    )
+  )
+    await loadJobs();
+}
+
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
@@ -411,6 +430,10 @@ onMounted(async () => {
         />
         <!-- Jobs : the jobs that ran on it, the latest first ; a row opens the job -->
         <AppLinkedTable
+          selectable
+          :rowActions="[
+            { title: t('common.delete'), icon: 'trash', danger: true, run: (r) => deleteTicked([r], 'job') },
+          ]"
           v-else-if="runner && activeTab === 'jobs'"
           :exportName="`${runner.name}-jobs`"
           :columns="jobColumns"
@@ -419,6 +442,11 @@ onMounted(async () => {
           :empty="t('settings.linked.noJob')"
         >
           <template #cell-status="{ row }"><AppStatusPill :status="row.status" /></template>
+          <template #bulk-actions="{ selected, count }">
+            <BsButton v-if="count" icon="trash" @click="deleteTicked(selected, 'job')"
+              >{{ t('common.delete') }} ({{ count }})</BsButton
+            >
+          </template>
         </AppLinkedTable>
         <div v-else-if="runner && edit" class="af-runner-tab">
           <!-- a runner of the config seed : read only here -->

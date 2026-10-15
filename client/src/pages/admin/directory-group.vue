@@ -204,6 +204,15 @@ onMounted(async () => {
             :empty="t('settings.directory.noMember')"
           />
           <AppLinkedTable
+            selectable
+            :rowActions="[
+              {
+                title: t('settings.settingsPage.removeFromRole'),
+                icon: 'trash',
+                danger: true,
+                run: (r) => removeRoles([r]),
+              },
+            ]"
             v-else-if="activeTab === 'roles'"
             :exportName="`${groupName}-roles`"
             :columns="roleColumns"

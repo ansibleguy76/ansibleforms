@@ -27,17 +27,22 @@
 /*  : a filter on every column, the columns shown, the export to  */
 /*  CSV (named after exportName, else none).                      */
 /*  exportName: the CSV file's name                               */
-/*  Each row has its checkbox, as a list's : Select all and Clear */
-/*  selection on the title line, the export then of the rows      */
-/*  ticked ; a slot #bulk-actions="{ selected, count }" adds what */
-/*  the page does with them.                                      */
+/*  selectable : each row its checkbox, as a list's - Select all  */
+/*  and Clear selection on the title line, the export then of the */
+/*  rows ticked ; a slot #bulk-actions="{ selected, count }" adds */
+/*  what the page does with them (Remove, Delete). None on a      */
+/*  table nothing is done with : its filter decides the export.   */
+/*  rowActions: [{ title, icon, danger?, enabledWhen?(row),       */
+/*    run(row) }] - each row's menu (⋮), the same actions one row */
+/*    at a time (Remove from role, Delete)                        */
 /*                                                                */
 /******************************************************************/
-import { ref, computed, inject } from 'vue';
+import { ref, computed, inject, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useCellPopovers } from '@/composables/useCellPopovers';
-import { csvCell, htmlToText } from '@/lib/dataTable';
+import { csvCell, htmlToText, isSortable, compareRows } from '@/lib/dataTable';
+import { EMPTY_CELL, orEmpty } from '@/lib/tableCells';
 import BsSearch from './BsSearch.vue';
 import BsColumnPicker from './BsColumnPicker.vue';
 
@@ -50,6 +55,8 @@ const props = defineProps({
   children: { type: Function, default: null },
   childrenBefore: { type: String, default: '' },
   exportName: { type: String, default: '' },
+  selectable: { type: Boolean, default: false },
+  rowActions: { type: Array, default: () => [] },
 });
 const { t } = useI18n();
 
@@ -74,10 +81,30 @@ function plain(col, row) {
   const v = col.html ? htmlToText(col.html(row)) : col.value ? col.value(row) : row[col.key];
   return v === null || v === undefined ? '' : String(v);
 }
+// the order : a named column's header clicked sorts by it, A to Z, again Z to A (lib/dataTable.js)
+const sortKey = ref(null);
+const sortDir = ref(1);
+/**
+ * Sorts by a column : the same one again turns the order round.
+ *
+ * Args:
+ *   col (object): the column whose header was clicked.
+ */
+function toggleSort(col) {
+  if (!isSortable(col)) return;
+  if (sortKey.value === col.key) sortDir.value = -sortDir.value;
+  else {
+    sortKey.value = col.key;
+    sortDir.value = 1;
+  }
+}
 const filteredRows = computed(() => {
   const q = filter.value.trim().toLowerCase();
-  if (!q) return props.rows;
-  return props.rows.filter((row) => props.columns.some((col) => plain(col, row).toLowerCase().includes(q)));
+  const rows = q
+    ? props.rows.filter((row) => props.columns.some((col) => plain(col, row).toLowerCase().includes(q)))
+    : props.rows;
+  const col = props.columns.find((c) => c.key === sortKey.value);
+  return col ? [...rows].sort((a, b) => compareRows(a, b, col, sortDir.value, (r, c) => plain(c, r))) : rows;
 });
 /**
  * Shows or hides a column (the picker's tick).
@@ -102,6 +129,15 @@ function applyPreset(keys) {
 }
 // ─── the rows ticked (their key), as a list's ─────────────────────────────────
 const selected = ref(new Set());
+// rows gone (deleted, read again) : no longer ticked
+watch(
+  () => props.rows,
+  (rows) => {
+    const keys = new Set(rows.map((r) => r[props.rowKey]));
+    const kept = new Set([...selected.value].filter((k) => keys.has(k)));
+    if (kept.size !== selected.value.size) selected.value = kept;
+  },
+);
 const selectedRows = computed(() => props.rows.filter((r) => selected.value.has(r[props.rowKey])));
 const allShownTicked = computed(
   () => shownRows.value.length > 0 && shownRows.value.every((r) => selected.value.has(r[props.rowKey])),
@@ -238,7 +274,7 @@ function open(row) {
  */
 function text(col, row) {
   const v = col.value ? col.value(row) : row[col.key];
-  return v === null || v === undefined || v === '' ? '–' : String(v);
+  return v === null || v === undefined || String(v).trim() === '' ? EMPTY_CELL : String(v);
 }
 </script>
 <template>
@@ -247,14 +283,20 @@ function text(col, row) {
     <div class="d-flex align-items-center gap-2 bs-dt-toolbar-moved flex-wrap">
       <BsSearch v-model="filter" class="af-table-search" />
       <!-- the selection : how many, Clear selection, Select all, and what the page does with them -->
-      <span v-if="selected.size" class="text-muted small">{{ selected.size }} {{ t('dataTable.selected') }}</span>
-      <button v-if="selected.size" class="btn btn-outline-primary" @click="selected = new Set()">
+      <span v-if="selectable && selected.size" class="text-muted small"
+        >{{ selected.size }} {{ t('dataTable.selected') }}</span
+      >
+      <button v-if="selectable && selected.size" class="btn btn-outline-primary" @click="selected = new Set()">
         <FaIcon icon="xmark" class="me-1" />{{ t('dataTable.clearSelection') }}
       </button>
-      <button v-if="selected.size < filteredRows.length" class="btn btn-outline-primary" @click="selectAll">
+      <button
+        v-if="selectable && selected.size < filteredRows.length"
+        class="btn btn-outline-primary"
+        @click="selectAll"
+      >
         <FaIcon icon="check-double" class="me-1" />{{ t('dataTable.selectAll', { count: filteredRows.length }) }}
       </button>
-      <slot name="bulk-actions" :selected="selectedRows" :count="selected.size" />
+      <slot v-if="selectable" name="bulk-actions" :selected="selectedRows" :count="selected.size" />
       <div class="ms-auto d-flex align-items-center gap-2">
         <BsColumnPicker
           :columns="columns"
@@ -275,7 +317,7 @@ function text(col, row) {
       <thead>
         <tr>
           <!-- the page's rows ticked at once -->
-          <th class="text-center bs-dt-select">
+          <th v-if="selectable" class="text-center bs-dt-select">
             <input
               type="checkbox"
               class="form-check-input"
@@ -287,12 +329,26 @@ function text(col, row) {
           <template v-for="col in shownColumns" :key="col.key">
             <!-- the caret's own column, before its column (a job's form) -->
             <th v-if="children && col.key === childrenBefore" class="af-expand-col"></th>
-            <th :class="col.class" :data-fit-keep="col.keep ? '' : null">
+            <th
+              :class="[col.class, { 'bs-dt-sortable': isSortable(col) }]"
+              :data-fit-keep="col.keep ? '' : null"
+              :role="isSortable(col) ? 'button' : null"
+              @click="toggleSort(col)"
+            >
               {{ col.label }}
+              <!-- its order : the arrow of the one sorted by, the pair greyed on the others -->
+              <span v-if="isSortable(col)" class="text-muted ms-1 af-sort-icon">
+                <FaIcon v-if="sortKey === col.key" :icon="sortDir === 1 ? 'sort-up' : 'sort-down'" /><FaIcon
+                  v-else
+                  icon="sort"
+                  class="opacity-25"
+                />
+              </span>
             </th>
           </template>
           <!-- the room left, after the last column (v-fit-columns) -->
           <th class="af-fit-spacer"></th>
+          <th v-if="rowActions.length" class="af-row-menu-col"></th>
         </tr>
       </thead>
       <tbody>
@@ -306,7 +362,7 @@ function text(col, row) {
           @click="open(row)"
         >
           <!-- its box (a step under a job has none : the job is ticked) -->
-          <td class="text-center bs-dt-select" @click.stop>
+          <td v-if="selectable" class="text-center bs-dt-select" @click.stop>
             <input
               v-if="!child"
               type="checkbox"
@@ -333,16 +389,50 @@ function text(col, row) {
             <td :class="[col.class, { 'af-row-open': i === 0 && target(row), 'af-child-row': i === 0 && child }]">
               <slot :name="`cell-${col.key}`" :row="row">
                 <!-- eslint-disable-next-line vue/no-v-html -- html() is escaped by its column -->
-                <span v-if="col.html" v-html="col.html(row)"></span>
+                <span v-if="col.html" v-html="orEmpty(col.html(row))"></span>
                 <template v-else>{{ text(col, row) }}</template>
               </slot>
             </td>
           </template>
           <td class="af-fit-spacer"></td>
+          <!-- its menu : the actions of the rows ticked, for this one (none under a job's step) -->
+          <td v-if="rowActions.length" class="bs-dt-row-actions" @click.stop>
+            <div v-if="!child" class="dropdown">
+              <a
+                role="button"
+                class="bs-dt-row-menu px-2"
+                data-bs-toggle="dropdown"
+                data-bs-popper-config='{"strategy":"fixed"}'
+              >
+                <FaIcon icon="ellipsis-vertical" />
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li v-for="action in rowActions" :key="action.title">
+                  <a
+                    class="dropdown-item"
+                    :class="
+                      action.enabledWhen && !action.enabledWhen(row)
+                        ? 'disabled text-muted'
+                        : action.danger
+                          ? 'text-danger'
+                          : ''
+                    "
+                    href="#"
+                    @click.prevent="(!action.enabledWhen || action.enabledWhen(row)) && action.run(row)"
+                  >
+                    <FaIcon :icon="action.icon" class="me-2" />{{ action.title }}
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </td>
         </tr>
         <!-- none : the page's note (no job yet...), or none the filter keeps -->
         <tr v-if="!drawnRows.length">
-          <td :colspan="shownColumns.length + (children ? 3 : 2)" class="text-center text-muted py-3">
+          <td
+            :colspan="shownColumns.length + (children ? 2 : 1) + (selectable ? 1 : 0) + (rowActions.length ? 1 : 0)"
+            class="text-center text-muted py-3"
+          >
             {{ rows.length ? t('common.noData') : empty || t('common.noData') }}
           </td>
         </tr>
@@ -352,3 +442,13 @@ function text(col, row) {
   <!-- the rows shown, the page size and the pages, under the table as a list's -->
   <AppTablePager :items="filteredRows" @change="(r) => (pageRows = r)" />
 </template>
+<style scoped>
+/* a header that sorts : the pointer, and its arrows small as every list's */
+.bs-dt-sortable {
+  cursor: pointer;
+  user-select: none;
+}
+.af-sort-icon {
+  font-size: 0.7em;
+}
+</style>

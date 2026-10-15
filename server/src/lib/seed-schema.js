@@ -313,6 +313,8 @@ const ldapSection = {
     bind_user_pw: str,
     // a credential of the credentials section to bind with instead (optional : the user and
     // password above are still declared)
+    // what it is, for the list and its page
+    description: str,
     credential: str,
     search_base: str,
     username_attribute: str,

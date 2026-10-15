@@ -607,7 +607,7 @@ const SCHEMA_MANIFEST = {
                                'ldap.id', 'ldap.name', 'ldap.position', 'ldap.domains', 'ldap.credential',
                                'oauth2_providers.credential', 'credentials.tenant_id', 'credentials.issuer', 'credentials.redirect_uri',
                                'credentials.ignore_certs', 'credentials.ca_bundle', 'oauth2_providers.auto_login',
-                               'runners.credential'] },
+                               'runners.credential', 'ldap.description'] },
   },
 };
 
@@ -1068,6 +1068,8 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addColumn("runners", "credential", "varchar(250)", true, "NULL"), messages, success, failed);
   // and the token, user and password of each runner moved to a credential
   await checkPromise(moveRunnerSecretsToCredentials(), messages, success, failed);
+  // an LDAP directory says what it is, as every record
+  await checkPromise(addColumn("ldap", "description", "varchar(250)", true, "NULL"), messages, success, failed);
   // and when each ended, worked or not, shown beside the repository's Pull and Push
   await checkPromise(addColumn("repositories", "pulled_at", "datetime", true, "NULL"), messages, success, failed);
   await checkPromise(addColumn("repositories", "pushed_at", "datetime", true, "NULL"), messages, success, failed);

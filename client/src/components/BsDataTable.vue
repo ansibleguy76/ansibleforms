@@ -53,8 +53,8 @@ import Helpers from '@/lib/Helpers';
 import BsPagination from './BsPagination.vue';
 import BsSearch from './BsSearch.vue';
 import BsColumnPicker from './BsColumnPicker.vue';
-import { parseNumberFilter, csvCell, htmlToText } from '@/lib/dataTable';
-import { headerWidth, widestCell } from '@/lib/tableCells';
+import { parseNumberFilter, csvCell, htmlToText, isSortable, compareRows } from '@/lib/dataTable';
+import { headerWidth, widestCell, orEmpty, EMPTY_CELL } from '@/lib/tableCells';
 
 const { t } = useI18n();
 
@@ -161,7 +161,7 @@ const naturalWidths = computed(() => {
       true,
     );
     // its header in full : its label, its sort icon, a right-aligned column's wider padding
-    const header = parseFloat(headerWidth(c.label, !!c.sortable, '8rem', c.align === 'end')) || 0;
+    const header = parseFloat(headerWidth(c.label, isSortable(c), '8rem', c.align === 'end')) || 0;
     out[c.key] = Math.max(cells, header);
   });
   return out;
@@ -301,16 +301,9 @@ const filteredItems = computed(() => {
     const key = sortKey.value;
     const col = props.columns.find((c) => c.key === key);
     const dir = sortDir.value;
-    // numerically when both raw values are numbers - a text compare puts "10" before
-    // "2" ; a column can bring sortValue(row) when its rendered text does not sort (dates)
-    list = [...list].sort((a, b) => {
-      const ra = col.sortValue ? col.sortValue(a) : a[col.key];
-      const rb = col.sortValue ? col.sortValue(b) : b[col.key];
-      if (typeof ra === 'number' && typeof rb === 'number') return (ra - rb) * dir;
-      const ta = cellText(a, col).toLowerCase();
-      const tb = cellText(b, col).toLowerCase();
-      return ta < tb ? -dir : ta > tb ? dir : 0;
-    });
+    // the shared order of every table (lib/dataTable.js compareRows) : numbers and yes / no by
+    // value, a date by its sortValue, text alphabetically
+    if (col) list = [...list].sort((a, b) => compareRows(a, b, col, dir, cellText));
   }
 
   return list;
@@ -378,11 +371,14 @@ function cellText(item, col) {
 function cellHtml(item, col) {
   if (!col) return '';
   const raw = item[col.key];
-  if (col.render) return String(col.render(raw, item) ?? '');
-  if (raw == null) return '';
-  return String(raw).replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;' })[c],
+  // an empty cell : an en dash, on every table (orEmpty)
+  if (col.render) return orEmpty(col.render(raw, item));
+  if (raw == null) return EMPTY_CELL;
+  return orEmpty(
+    String(raw).replace(
+      /[&<>"']/g,
+      (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;' })[c],
+    ),
   );
 }
 
@@ -669,14 +665,14 @@ function exportCsv() {
             <th
               v-for="col in visibleColumns"
               :key="col.key"
-              :class="{ 'bs-dt-sortable': col.sortable, 'text-end': col.align === 'end' }"
-              @click="col.sortable ? toggleSort(col.key) : undefined"
+              :class="{ 'bs-dt-sortable': isSortable(col), 'text-end': col.align === 'end' }"
+              @click="isSortable(col) ? toggleSort(col.key) : undefined"
               :data-fit-keep="colWidth(col)"
               :data-fit-natural="colWidth(col) ? null : naturalWidths[col.key]"
               :style="{ userSelect: 'none', whiteSpace: 'nowrap' }"
             >
               {{ col.label }}
-              <span v-if="col.sortable" class="text-muted ms-1" style="font-size: 0.7em">
+              <span v-if="isSortable(col)" class="text-muted ms-1" style="font-size: 0.7em">
                 <template v-if="sortKey === col.key">
                   <font-awesome-icon :icon="sortDir === 1 ? 'sort-up' : 'sort-down'" />
                 </template>

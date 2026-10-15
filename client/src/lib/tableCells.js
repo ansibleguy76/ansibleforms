@@ -7,6 +7,23 @@
 /*                                                                */
 /******************************************************************/
 
+// an empty cell of every table : an en dash, so a blank never reads as a cell not drawn yet
+export const EMPTY_CELL = '–';
+
+/**
+ * A cell's html, or the en dash of an empty cell : every table draws its cells through it.
+ *
+ * Args:
+ *   html (string|null|undefined): the cell's html, escaped already.
+ *
+ * Returns:
+ *   string: the html, or EMPTY_CELL when it is empty (or only spaces).
+ */
+export function orEmpty(html) {
+  const s = html == null ? '' : String(html);
+  return s.trim() === '' ? EMPTY_CELL : s;
+}
+
 // the colours of a pill : solid, white text and no border (styles/tables.scss) - the theme
 // turns Bootstrap's bg-* into pale tints, so the pills have their own
 export const PILL = {

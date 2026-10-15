@@ -399,7 +399,12 @@ defineExpose({
     <template v-if="tabs.length" #default>
       <!-- the first load : the fields as grey placeholders, in their place -->
       <AppSkeleton v-if="!loaded" shape="form" :count="4" />
-      <div v-for="tab in tabs" v-show="loaded && activeTab === tab.key" :key="tab.key">
+      <div
+        v-for="tab in tabs"
+        v-show="loaded && activeTab === tab.key"
+        :key="tab.key"
+        :class="{ 'af-wide-tab': (settings.wideTabs || []).includes(tab.key) }"
+      >
         <div v-if="isManaged" class="alert alert-secondary py-2">
           <FaIcon icon="lock" class="me-2" />
           {{ t('settings.common.seedManagedNotice') }}
@@ -564,6 +569,11 @@ defineExpose({
    narrowest column (three to a row), so the fields of a tab line up */
 :deep(.card-body .input-group) {
   max-width: 20rem;
+}
+/* a tab of long values (an LDAP directory's search bases, its DNs) : its fields twice as wide,
+   all of them one width (settings.wideTabs) */
+.af-wide-tab :deep(.input-group) {
+  max-width: 40rem;
 }
 /* and their placeholders while the record loads (AppSkeleton) */
 :deep(.card-body .af-sk-input) {
