@@ -60,7 +60,27 @@ const timezones = computed(() => [
     .map((z) => ({ value: z, label: z })),
 ]);
 // the date formats, each shown as today's date reads in it
-const dateFormats = computed(() => DATE_FORMATS.map((f) => ({ value: f, label: `${dayjs().format(f)}  (${f})` })));
+// each date format as the app writes a date with it : the date, the time and the zone, in the
+// default time zone chosen above, then the pattern
+const dateFormats = computed(() => {
+  const zone = theme.value.default_timezone || 'UTC';
+  const now = new Date();
+  let name = zone;
+  try {
+    name = Time.zoneName(now, zone) || zone;
+  } catch {
+    // an unknown zone : its own name
+  }
+  return DATE_FORMATS.map((f) => {
+    let example;
+    try {
+      example = dayjs(now).tz(zone).format(`${f} HH:mm`);
+    } catch {
+      example = dayjs(now).utc().format(`${f} HH:mm`);
+    }
+    return { value: f, label: `${example} ${name}  (${f})` };
+  });
+});
 const formsViews = computed(() =>
   ['tiles', 'list'].map((v) => ({ value: v, label: t(`settings.interface.formsView_${v}`) })),
 );
