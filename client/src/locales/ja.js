@@ -852,6 +852,7 @@ export default {
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
       zoneBrowser: 'ブラウザのタイムゾーン ({zone})',
       zoneApp: 'アプリのタイムゾーン ({zone})',
+      zoneUtc: '協定世界時 (UTC)',
       zonePick: '日時のタイムゾーン',
       datePlaceholderZone: '{format} {zone}',
       datePlaceholders: {

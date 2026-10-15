@@ -861,6 +861,7 @@ export default {
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
       zoneBrowser: 'Die Zeitzone Ihres Browsers ({zone})',
       zoneApp: 'Die Zeitzone der Anwendung ({zone})',
+      zoneUtc: 'Koordinierte Weltzeit (UTC)',
       zonePick: 'Zeitzone von Datum und Uhrzeit',
       datePlaceholderZone: '{format} {zone}',
       datePlaceholders: {

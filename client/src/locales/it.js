@@ -858,6 +858,7 @@ export default {
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
       zoneBrowser: 'Il fuso orario del tuo browser ({zone})',
       zoneApp: "Il fuso orario dell'applicazione ({zone})",
+      zoneUtc: 'Tempo coordinato universale (UTC)',
       zonePick: 'Fuso orario di data e ora',
       datePlaceholderZone: '{format} {zone}',
       datePlaceholders: {

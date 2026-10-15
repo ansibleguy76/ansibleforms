@@ -850,6 +850,7 @@ export default {
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
       zoneBrowser: "Your browser's time zone ({zone})",
       zoneApp: "The app's time zone ({zone})",
+      zoneUtc: 'Coordinated Universal Time (UTC)',
       zonePick: 'Time zone of the date and time',
       // a date and time that is a moment : its format and the zone it is picked on
       datePlaceholderZone: '{format} {zone}',

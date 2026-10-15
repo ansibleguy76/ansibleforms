@@ -93,21 +93,24 @@ const shownMoment = computed(() => {
 function offsetOf(z) {
   return Time.toWallClock(shownMoment.value, z)?.getTime() ?? 0;
 }
-// both zones on the same clock (the app on the browser's zone, or two zones with one offset) :
-// nothing to switch
-const zonesDiffer = computed(() => isMoment.value && offsetOf(appZone.value) !== offsetOf(browserZone));
-const zoneCards = computed(() => [
-  {
-    zone: browserZone,
-    name: Time.zoneName(shownMoment.value, browserZone),
-    title: t('settings.common.zoneBrowser', { zone: browserZone }),
-  },
-  {
-    zone: appZone.value,
-    name: Time.zoneName(shownMoment.value, appZone.value),
-    title: t('settings.common.zoneApp', { zone: appZone.value }),
-  },
-]);
+// the clocks a moment can be picked on : the browser's, the app's and always UTC, so its UTC
+// time is a click away. Zones on the same clock (the app on the browser's zone, or UTC itself)
+// are offered once, the first named
+const zoneCards = computed(() => {
+  const candidates = [
+    { zone: browserZone, title: t('settings.common.zoneBrowser', { zone: browserZone }) },
+    { zone: appZone.value, title: t('settings.common.zoneApp', { zone: appZone.value }) },
+    { zone: 'UTC', title: t('settings.common.zoneUtc') },
+  ];
+  const cards = [];
+  for (const card of candidates) {
+    if (cards.some((c) => c.zone === card.zone || offsetOf(c.zone) === offsetOf(card.zone))) continue;
+    cards.push({ ...card, name: Time.zoneName(shownMoment.value, card.zone) });
+  }
+  return cards;
+});
+// more than one clock : something to switch
+const zonesDiffer = computed(() => isMoment.value && zoneCards.value.length > 1);
 // the picker's time options (its version 12 takes them in one object, not as props) : the clock
 // shown for the types with a time, on 24 hours, and an empty picker opening on now on the zone
 // picked, not on the browser's clock
@@ -119,13 +122,14 @@ const timeConfig = computed(() => {
   }
   return config;
 });
-// the moment on both clocks, the picked one first : nothing ambiguous before saving
+// the moment on every clock, the picked one first : nothing ambiguous before saving
 const bothClocks = computed(() => {
   if (!zonesDiffer.value) return '';
   const iso = momentOf(pickerModel.value);
   if (!iso) return '';
-  const other = zone.value === browserZone ? appZone.value : browserZone;
-  return [zone.value, other].map((z) => `${Time.wallText(iso, z)} ${Time.zoneName(new Date(iso), z)}`).join(' · ');
+  const picked = zoneCards.value.find((c) => c.zone === zone.value || offsetOf(c.zone) === offsetOf(zone.value));
+  const zones = [zone.value, ...zoneCards.value.filter((c) => c !== picked).map((c) => c.zone)];
+  return zones.map((z) => `${Time.wallText(iso, z)} ${Time.zoneName(new Date(iso), z)}`).join(' · ');
 });
 
 // METHODS
@@ -151,6 +155,8 @@ function switchZone(next) {
   if (iso) pickerModel.value = Time.toWallClock(iso, zone.value);
   // the calendar reads its model again once it changed : the choice goes back in after that
   if (pendingIso) nextTick(() => dp.value?.updateInternalModelValue(Time.toWallClock(pendingIso, zone.value)));
+  // nothing picked yet : the clock shows now, so now moves to the new zone's clock with it
+  else if (!iso) nextTick(() => dp.value?.updateInternalModelValue(Time.toWallClock(new Date(), zone.value)));
 }
 
 function getWeekNumber(date) {
