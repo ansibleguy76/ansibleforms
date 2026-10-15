@@ -213,10 +213,10 @@ const LIVE_CUSTOM = {
   ACCESS_TOKEN_EXPIRATION: (v) => { authConfig.jwtExpiration = v; },
   ACCESS_TOKEN_REFRESH_EXPIRATION: (v) => { authConfig.jwtRefreshExpiration = v; },
   ACCESS_TOKEN_ISSUER: (v) => { authConfig.jwtIssuer = v; },
-  AZURE_GRAPH_URI: (v) => { authConfig.azureGraphUrl = v; },
+  AZURE_GRAPH_URI: (v) => { authConfig.entraGraphUrl = v; },
   // the Entra ID strategy discovers its issuer from it when built : rebuilt
-  AZURE_AUTHORITY_URI: (v) => { authConfig.azureAuthorityUrl = v; rebuildLoginSoon(); },
-  // the login page reads it per request (AzureAd.isEnabled, OIDC.isEnabled), the strategies
+  AZURE_AUTHORITY_URI: (v) => { authConfig.entraAuthorityUrl = v; rebuildLoginSoon(); },
+  // the login page reads it per request (EntraId.isEnabled, OIDC.isEnabled), the strategies
   // its buttons lead to when built : rebuilt, or SSO switched on offers a login that fails
   ENABLE_SSO: (v) => { appConfig.enableSso = v == 1; rebuildLoginSoon(); },
   // winston keeps the level as a mutable property on the logger and each transport.

@@ -36,8 +36,8 @@ const user = ref({
 });
 
 const loading = ref(false);
-const azureAdEnabled = ref(false);
-const azureGraphUrl = ref('');
+const entraIdEnabled = ref(false);
+const entraGraphUrl = ref('');
 const oidcEnabled = ref(false);
 const oidcIssuer = ref('');
 // the providers read from the server : until then the buttons of last time, in grey
@@ -63,7 +63,7 @@ function goToSso(issuer, path) {
   localStorage.setItem('authIssuer', issuer);
   window.location.replace(`${BaseUrl}${path}`);
 }
-function authAzureAd() {
+function authEntraId() {
   goToSso('azuread', '/api/v2/auth/azureadoauth2');
 }
 function authOidc() {
@@ -99,22 +99,22 @@ async function getSettings(token) {
   try {
     const result = await axios.get(`/api/v2/auth/settings`);
 
-    azureAdEnabled.value = !!result.data.azureAdEnabled;
-    azureGraphUrl.value = result.data.azureGraphUrl;
+    entraIdEnabled.value = !!result.data.entraIdEnabled;
+    entraGraphUrl.value = result.data.entraGraphUrl;
 
     oidcEnabled.value = !!result.data.oidcEnabled;
     oidcIssuer.value = result.data.oidcIssuer;
-    rememberSso(Number(azureAdEnabled.value) + Number(oidcEnabled.value));
+    rememberSso(Number(entraIdEnabled.value) + Number(oidcEnabled.value));
     ssoAutoLogin.value = !!result.data.ssoAutoLogin;
     // not on the way back from the provider (a handoff), and only where going there cannot
     // lock anyone out or loop : the form at /login?local, after signing out, after an SSO error
     if (!token && ssoAutoLogin.value && mayGoStraightToSso()) {
       loading.value = true;
-      if (azureAdEnabled.value) authAzureAd();
+      if (entraIdEnabled.value) authEntraId();
       else if (oidcEnabled.value) authOidc();
     }
 
-    if (token && azureAdEnabled.value) {
+    if (token && entraIdEnabled.value) {
       if (localStorage.getItem('authIssuer') == 'azuread')
         // get cookie and see if we issued azuread
         getGroupsAndLogin(token);
@@ -240,16 +240,16 @@ onMounted(() => {
     />
     <button class="btn btn-primary w-100 py-2 login-submit" @click="login()">Sign in</button>
     <!-- single sign-on : under a divider, its providers in a centred row of equal buttons -->
-    <template v-if="azureAdEnabled || oidcEnabled">
+    <template v-if="entraIdEnabled || oidcEnabled">
       <div class="login-divider"><span>or</span></div>
       <div class="login-sso">
         <button
-          v-if="azureAdEnabled"
+          v-if="entraIdEnabled"
           type="button"
           class="login-sso-btn"
           title="Sign in with Microsoft"
           aria-label="Sign in with Microsoft"
-          @click="authAzureAd()"
+          @click="authEntraId()"
         >
           <!-- the Microsoft logo, as Microsoft's sign-in buttons carry it (its branding
                    guidelines) : four squares, its four colours -->

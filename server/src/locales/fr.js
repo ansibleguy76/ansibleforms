@@ -51,7 +51,7 @@ export default {
       "Non authentifie, la connexion n'est pas activee pour cet utilisateur.",
     signInBlocked:
       "Non authentifié, un administrateur a bloqué la connexion de cet utilisateur.",
-    azureFailed: "Echec de l'authentification Azure AD",
+    entraFailed: "Echec de l'authentification Azure AD",
     oidcFailed: "Echec de l'authentification OIDC",
   },
   success: {

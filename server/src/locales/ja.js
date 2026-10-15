@@ -47,7 +47,7 @@ export default {
       "認証されていません。このユーザーはログインが有効になっていません。",
     signInBlocked:
       "認証されていません。管理者がこのユーザーのサインインをブロックしました。",
-    azureFailed: "Azure AD 認証に失敗しました",
+    entraFailed: "Azure AD 認証に失敗しました",
     oidcFailed: "OIDC 認証に失敗しました",
   },
   success: {

@@ -50,7 +50,7 @@ export default {
       "Brak uwierzytelnienia, logowanie nie jest włączone dla tego użytkownika.",
     signInBlocked:
       "Brak uwierzytelnienia, administrator zablokował logowanie tego użytkownika.",
-    azureFailed: "Uwierzytelnianie Azure AD nie powiodło się",
+    entraFailed: "Uwierzytelnianie Azure AD nie powiodło się",
     oidcFailed: "Uwierzytelnianie OIDC nie powiodło się",
   },
   success: {

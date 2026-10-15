@@ -8,7 +8,7 @@
 // when that attribute is `groups`. The hint used to say "leave empty to use the main search
 // base", which no code does : an empty groups search base means no group search at all.
 //
-// Entra ID : the login reads the groups from Microsoft Graph (lib/azureGraph.js,
+// Entra ID : the login reads the groups from Microsoft Graph (lib/entraGraph.js,
 // /me/transitiveMemberOf, by display name) with the access token, and the role mapping
 // sees them as azuread/<name>. The help used to list "Required Group Claims", sending
 // admins to configure a groups claim in the token that the login never reads.

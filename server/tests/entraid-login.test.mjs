@@ -11,16 +11,16 @@ process.env.DB_PASSWORD ||= "test";
 vi.mock("../src/models/db.model.js", () => ({ default: { do: async () => [] } }));
 const TENANT = "11111111-2222-3333-4444-555555555555";
 const provider = { enable: 1, groupfilter: "^af-", tenant_id: TENANT };
-vi.mock("../src/models/azureAd.model.js", () => ({ default: { isEnabled: async () => provider, find: async () => provider } }));
+vi.mock("../src/models/entraId.model.js", () => ({ default: { isEnabled: async () => provider, find: async () => provider } }));
 vi.mock("../src/models/user.model.js", () => ({ default: { getRolesAndOptions: async (groups) => ({ roles: groups, options: { allowLogin: true } }) } }));
 vi.mock("../src/models/audit.model.js", () => ({ default: { log: async () => {} } }));
 
 const { signHandoff } = await import("../src/lib/ssoHandoff.js");
-const { fetchAzureGroups, filterGroups } = await import("../src/lib/azureGraph.js");
+const { fetchEntraGroups, filterGroups } = await import("../src/lib/entraGraph.js");
 const controller = (await import("../src/controllers/v2/login.controller.js")).default;
 const authConfig = (await import("../config/auth.config.js")).default;
 
-const azureToken = jwt.sign({ aud: "graph", iss: `https://sts.windows.net/${TENANT}/`, exp: Math.floor(Date.now() / 1000) + 600, upn: "alice@example.com", oid: "1234", tid: TENANT }, "microsoft");
+const entraToken = jwt.sign({ aud: "graph", iss: `https://sts.windows.net/${TENANT}/`, exp: Math.floor(Date.now() / 1000) + 600, upn: "alice@example.com", oid: "1234", tid: TENANT }, "microsoft");
 
 const graph = (pages, status = 200) => vi.fn(async (url, init) => {
   graph.calls.push({ url, auth: init.headers.authorization });
@@ -38,9 +38,9 @@ describe("the groups come from Graph, through the server", () => {
       { value: [{ id: "g1", displayName: "af-admins" }, { id: "g2", displayName: null }, { displayName: "noid" }], "@odata.nextLink": "https://graph.microsoft.com/v1.0/me/transitiveMemberOf?$skiptoken=2" },
       { value: [{ id: "g3", displayName: "everyone" }] },
     ];
-    expect(await fetchAzureGroups("tok", "https://graph.microsoft.com/", { fetchImpl: graph(pages) })).toEqual(["af-admins", "noid", "everyone"]);
+    expect(await fetchEntraGroups("tok", "https://graph.microsoft.com/", { fetchImpl: graph(pages) })).toEqual(["af-admins", "noid", "everyone"]);
     graph.calls = [];
-    expect(await fetchAzureGroups("tok", "https://graph.microsoft.com/", { fetchImpl: graph(pages), withIds: true })).toEqual([
+    expect(await fetchEntraGroups("tok", "https://graph.microsoft.com/", { fetchImpl: graph(pages), withIds: true })).toEqual([
       { id: "g1", name: "af-admins" }, { id: "g2", name: "" }, { id: "g3", name: "everyone" },
     ]);
     expect(graph.calls[0].url).toBe("https://graph.microsoft.com/v1.0/me/transitiveMemberOf?$select=id,displayName&$top=999");
@@ -57,9 +57,9 @@ describe("the groups come from Graph, through the server", () => {
   test("the login : handoff in, Graph called with the opened access token, filtered groups by id and by name, a jwt out", async () => {
     vi.stubGlobal("fetch", graph([{ value: [{ id: "g1", displayName: "af-admins" }, { id: "g2", displayName: "everyone" }] }]));
     const r = res();
-    await controller.azureadoauth2login(req(signHandoff(azureToken, "azuread")), r);
+    await controller.entraidLogin(req(signHandoff(entraToken, "azuread")), r);
     expect(r.statusCode).toBe(200);
-    expect(graph.calls[0].auth).toBe(`Bearer ${azureToken}`);
+    expect(graph.calls[0].auth).toBe(`Bearer ${entraToken}`);
     const user = jwt.verify(r.body.token, authConfig.secret).user;
     // the token carries no groups (#1036) : the roles, resolved from them (here one per group), show
     // which were kept
@@ -71,7 +71,7 @@ describe("the groups come from Graph, through the server", () => {
     vi.stubGlobal("fetch", graph([{ value: [{ id: "g1", displayName: "af-admins" }] }]));
     const claims = { sub: "s", tid: TENANT, iss: `https://login.microsoftonline.com/${TENANT}/v2.0`, preferred_username: "alice@example.com", oid: "1234" };
     const r = res();
-    await controller.azureadoauth2login(req(signHandoff({ claims, accessToken: "graph-access-token" }, "azuread")), r);
+    await controller.entraidLogin(req(signHandoff({ claims, accessToken: "graph-access-token" }, "azuread")), r);
     expect(r.statusCode).toBe(200);
     expect(graph.calls[0].auth).toBe("Bearer graph-access-token");
     expect(jwt.verify(r.body.token, authConfig.secret).user.username).toBe("alice@example.com");
@@ -80,7 +80,7 @@ describe("the groups come from Graph, through the server", () => {
   test("a login of another tenant is refused", async () => {
     vi.stubGlobal("fetch", graph([{ value: [] }]));
     const r = res();
-    await controller.azureadoauth2login(req(signHandoff({ claims: { tid: "99999999-2222-3333-4444-555555555555", upn: "eve@other.com" }, accessToken: "x" }, "azuread")), r);
+    await controller.entraidLogin(req(signHandoff({ claims: { tid: "99999999-2222-3333-4444-555555555555", upn: "eve@other.com" }, accessToken: "x" }, "azuread")), r);
     expect(r.statusCode).toBe(401);
     expect(JSON.stringify(r.body)).toMatch(/another tenant/);
     expect(graph.calls).toHaveLength(0);
@@ -90,7 +90,7 @@ describe("the groups come from Graph, through the server", () => {
     provider.tenant_id = "";
     try {
       const r = res();
-      await controller.azureadoauth2login(req(signHandoff(azureToken, "azuread")), r);
+      await controller.entraidLogin(req(signHandoff(entraToken, "azuread")), r);
       expect(r.statusCode).toBe(401);
       expect(JSON.stringify(r.body)).toMatch(/tenant id/);
     } finally {
@@ -101,7 +101,7 @@ describe("the groups come from Graph, through the server", () => {
   test("a handoff without a sealed access token falls back to its groups claim, filtered too", async () => {
     vi.stubGlobal("fetch", graph([]));
     const r = res();
-    await controller.azureadoauth2login(req(signHandoff({ upn: "alice@example.com", oid: "1234", tid: TENANT, groups: ["af-ops", "everyone"] }, "azuread")), r);
+    await controller.entraidLogin(req(signHandoff({ upn: "alice@example.com", oid: "1234", tid: TENANT, groups: ["af-ops", "everyone"] }, "azuread")), r);
     expect(r.statusCode).toBe(200);
     expect(graph.calls).toHaveLength(0);
     expect(jwt.verify(r.body.token, authConfig.secret).user.roles).toEqual(["azuread/af-ops"]);
@@ -110,16 +110,16 @@ describe("the groups come from Graph, through the server", () => {
   test("Graph refusing the token fails the login with the reason, logged on the server", async () => {
     vi.stubGlobal("fetch", graph([], 401));
     const r = res();
-    await controller.azureadoauth2login(req(signHandoff(azureToken, "azuread")), r);
+    await controller.entraidLogin(req(signHandoff(entraToken, "azuread")), r);
     expect(r.statusCode).toBe(401);
     expect(JSON.stringify(r.body)).toMatch(/Microsoft Graph returned 401 InvalidAuthenticationToken/);
   });
 
   test("an access token in the url, or a made-up handoff, is refused", async () => {
     vi.stubGlobal("fetch", graph([{ value: [] }]));
-    for (const token of [azureToken, jwt.sign({ upn: "mallory", sso: "azuread" }, "not-our-secret")]) {
+    for (const token of [entraToken, jwt.sign({ upn: "mallory", sso: "azuread" }, "not-our-secret")]) {
       const r = res();
-      await controller.azureadoauth2login(req(token), r);
+      await controller.entraidLogin(req(token), r);
       expect(r.statusCode).toBe(401);
     }
     expect(graph.calls).toHaveLength(0);
@@ -128,14 +128,14 @@ describe("the groups come from Graph, through the server", () => {
 
 describe("the Entra ID strategy", () => {
   test("one tenant only : common, organizations, consumers or none are refused", async () => {
-    const { isSingleTenant } = await import("../src/auth/auth_azuread.js");
+    const { isSingleTenant } = await import("../src/auth/auth_entraid.js");
     expect(isSingleTenant(TENANT)).toBe(true);
     expect(isSingleTenant("contoso.onmicrosoft.com")).toBe(true);
     for (const t of ["", null, "common", "Organizations", "consumers"]) expect(isSingleTenant(t)).toBe(false);
   });
 
   test("the token's tenant must be the configured one", async () => {
-    const { assertTenant } = await import("../src/auth/auth_azuread.js");
+    const { assertTenant } = await import("../src/auth/auth_entraid.js");
     expect(() => assertTenant({ tid: TENANT }, TENANT)).not.toThrow();
     expect(() => assertTenant({ tid: "99999999-2222-3333-4444-555555555555" }, TENANT)).toThrow(/another tenant/);
     expect(() => assertTenant({}, TENANT)).toThrow(/no tenant/);

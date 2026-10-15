@@ -13,14 +13,14 @@ export const SSO_PROVIDERS = ["azuread", "oidc"];
  * The single sign-on providers that are on.
  *
  * Args:
- *   models (Object): { AzureAd, OIDC } - the providers' models (their isEnabled()).
+ *   models (Object): { EntraId, OIDC } - the providers' models (their isEnabled()).
  *
  * Returns:
  *   Promise<string[]>: the names of those on (azuread, oidc), in the card's order.
  */
-export async function enabledSsoProviders({ AzureAd, OIDC }) {
-  const [azure, oidc] = await Promise.all([AzureAd.isEnabled(), OIDC.isEnabled()]);
-  const on = { azuread: !!azure?.enable, oidc: !!oidc?.enable };
+export async function enabledSsoProviders({ EntraId, OIDC }) {
+  const [entra, oidc] = await Promise.all([EntraId.isEnabled(), OIDC.isEnabled()]);
+  const on = { azuread: !!entra?.enable, oidc: !!oidc?.enable };
   return SSO_PROVIDERS.filter((name) => on[name]);
 }
 

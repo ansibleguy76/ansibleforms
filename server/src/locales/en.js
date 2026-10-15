@@ -46,7 +46,7 @@ export default {
     loginDisabled: "Not authenticated, login is not enabled for this user.",
     signInBlocked:
       "Not authenticated, an administrator blocked the sign-in of this user.",
-    azureFailed: "Azure AD authentication failed",
+    entraFailed: "Azure AD authentication failed",
     oidcFailed: "OIDC authentication failed",
   },
   success: {

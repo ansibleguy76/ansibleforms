@@ -43,7 +43,7 @@ export default {
     disclaimerAccepted: "已接受免责声明",
     loginDisabled: "未通过身份验证，此用户未启用登录。",
     signInBlocked: "未认证，管理员已阻止此用户登录。",
-    azureFailed: "Azure AD 身份验证失败",
+    entraFailed: "Azure AD 身份验证失败",
     oidcFailed: "OIDC 身份验证失败",
   },
   success: {

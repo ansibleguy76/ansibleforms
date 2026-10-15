@@ -30,7 +30,7 @@ import logger from "./lib/logger.js";
 import appConfig from "../config/app.config.js";
 
 // Authentication strategies
-import auth_azuread from "./auth/auth_azuread.js";
+import auth_entraid from "./auth/auth_entraid.js";
 import auth_oidc from "./auth/auth_oidc.js";
 import "./auth/auth_basic.js";
 import "./auth/auth_jwt.js";
@@ -97,7 +97,7 @@ swaggerDocumentV2.info.version = appVersion;
 // start the app
 const load = async (app) => {
   // the database and the worker's bootstrap come first (app-start.js)
-  await auth_azuread.initialize(); // we wait for the azuread to be ready
+  await auth_entraid.initialize(); // we wait for the azuread to be ready
   await auth_oidc.initialize(); // we wait for the oidc to be ready
 
   // which address req.ip - and so every audit row - names : the connection's peer unless

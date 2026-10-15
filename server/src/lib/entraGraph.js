@@ -8,11 +8,11 @@ const MAX_PAGES = 50;
 /**
  * The groups the signed-in user is a (transitive) member of - their display names, or with
  * withIds their object ids and names - from
- * Microsoft Graph, every page. Called by the server at the login step with the Azure access
+ * Microsoft Graph, every page. Called by the server at the login step with the Entra ID access
  * token (#548 : the browser used to do this, and since 6.3.0 it no longer has that token).
  * A failure throws with Graph's status and message, so the log says why a login failed.
  */
-export async function fetchAzureGroups(accessToken, graphUrl, { fetchImpl = fetch, withIds = false } = {}) {
+export async function fetchEntraGroups(accessToken, graphUrl, { fetchImpl = fetch, withIds = false } = {}) {
   const names = [];
   let url = `${stripTrailingSlashes(graphUrl || 'https://graph.microsoft.com')}/v1.0/me/transitiveMemberOf?$select=id,displayName&$top=999`;
   for (let page = 0; url && page < MAX_PAGES; page++) {
@@ -39,4 +39,4 @@ export function filterGroups(names, groupfilter) {
   return names.filter((n) => regex.test(n));
 }
 
-export default { fetchAzureGroups, filterGroups };
+export default { fetchEntraGroups, filterGroups };

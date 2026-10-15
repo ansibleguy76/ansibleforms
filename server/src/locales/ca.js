@@ -47,7 +47,7 @@ export default {
       "No autenticat, l'inici de sessió no està habilitat per a aquest usuari.",
     signInBlocked:
       "No autenticat, un administrador ha bloquejat l'inici de sessió d'aquest usuari.",
-    azureFailed: "L'autenticació amb Azure AD ha fallat",
+    entraFailed: "L'autenticació amb Azure AD ha fallat",
     oidcFailed: "L'autenticació OIDC ha fallat",
   },
   success: {
