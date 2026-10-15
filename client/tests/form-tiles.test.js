@@ -9,10 +9,10 @@ describe('the forms page placeholders', () => {
     expect(tileColumns(1920)).toBe(4);
   });
 
-  it('fill it : 9 on a laptop, 16 on a big screen', () => {
+  it('fill it : 9 on a laptop, 20 on a big screen', () => {
     expect(tileCount(500)).toBe(3);
     expect(tileCount(800)).toBe(6);
     expect(tileCount(1366)).toBe(9);
-    expect(tileCount(1920)).toBe(16);
+    expect(tileCount(1920)).toBe(20);
   });
 });

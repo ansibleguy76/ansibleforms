@@ -3,8 +3,8 @@
 /*  How many grey tiles the forms page shows while it loads : as  */
 /*  many as fill its grid, columns by rows. The grid's columns    */
 /*  follow Bootstrap's breakpoints (col-md-6 col-lg-4 col-xxl-3 : */
-/*  1, 2, 3 or 4) ; 3 rows, 4 on the widest screens - a laptop 9  */
-/*  tiles, a big screen 16. The start-up screen                   */
+/*  1, 2, 3 or 4) ; 3 rows, 5 on the widest screens - a laptop 9  */
+/*  tiles, a big screen 20. The start-up screen                   */
 /*  (AppFormsLoading) and the page (pages/index.vue) use the same */
 /*  count, so the placeholders do not change between the two.    */
 /*                                                                */
@@ -28,7 +28,7 @@ export function tileColumns(width) {
 }
 
 /**
- * The placeholders that fill the forms grid at a window width : its columns by 3 rows, 4 rows on the
+ * The placeholders that fill the forms grid at a window width : its columns by 3 rows, 5 rows on the
  * widest screens.
  *
  * Args:
@@ -39,7 +39,7 @@ export function tileColumns(width) {
  */
 export function tileCount(width) {
   const columns = tileColumns(width);
-  return columns * (columns >= 4 ? 4 : 3);
+  return columns * (columns >= 4 ? 5 : 3);
 }
 
 /**
