@@ -337,7 +337,8 @@ export default {
     columnAccess: 'El teu accés',
     // what each role option lets the user do
     optionDescription: {
-      showSettings: 'Veure les pàgines de configuració.',
+      showSettings:
+        'Veure i canviar totes les pàgines de configuració. El Registre del servidor i les Còpies de seguretat tenen els seus propis interruptors.',
       showDesigner: 'Veure i utilitzar el dissenyador.',
       allowFormDesign:
         'Editar els formularis al dissenyador: categories, constants i formularis (sense: només lectura).',
@@ -354,16 +355,16 @@ export default {
       showDebugButtons: "Veure els botons de depuració d'un formulari.",
       allowJobRelaunch: "Rellançar tasques amb les dades del formulari d'una execució anterior.",
       allowJobDeletion:
-        "Eliminar tasques: les pròpies, o totes per a un administrador. Sense: l'historial queda sencer.",
+        "Eliminar tasques: les pròpies, o les de tots els usuaris amb Gestiona les tasques de tots els usuaris (o com a administrador). Sense: l'historial queda sencer.",
       manageAllJobs:
         'Avortar, eliminar i tornar a llançar les tasques de tots els usuaris, no només les pròpies. Eliminar i tornar a llançar també necessiten les seves opcions.',
       allowVerboseMode: 'Executar tasques en mode detallat.',
       allowScheduledJobs: 'Crear i gestionar programacions a la pàgina Programacions, recurrents o puntuals.',
-      allowStoredJobs: "Desar les dades d'una tasca i tornar-les a carregar més tard.",
+      allowStoredJobs: "Desar les dades d'un formulari i tornar-les a carregar més tard.",
       allowPlannedJobs: "Executar la tasca d'un formulari una vegada, més tard, a l'hora que triïs (Executa més tard).",
       showAllJobLogs: 'Veure les tasques de tots els usuaris, no només les teves.',
       showArtifacts: 'Veure els artefactes que retorna una tasca.',
-      showExtravars: "Veure les extravars d'un formulari.",
+      showExtravars: "Veure les extravars d'un formulari i d'una tasca.",
       allowLogin: 'Iniciar sessió a AnsibleForms.',
       allowBackupOps: 'Fer còpies de seguretat de la base de dades i restaurar-les.',
       allowChat: "Utilitzar l'assistent de xat, quan està activat.",

@@ -337,7 +337,8 @@ export default {
     columnAccess: 'Il tuo accesso',
     // what each role option lets the user do
     optionDescription: {
-      showSettings: 'Vedere le pagine delle impostazioni.',
+      showSettings:
+        'Vedere e modificare tutte le pagine delle impostazioni. Il Log del server e i Backup hanno i propri interruttori.',
       showDesigner: 'Vedere e usare il designer.',
       allowFormDesign: 'Modificare i moduli nel designer: categorie, costanti e moduli (senza: sola lettura).',
       allowPlaybookDesign: 'Modificare i playbook nel designer (senza: sola lettura).',
@@ -352,16 +353,17 @@ export default {
       showJobs: 'Vedere la pagina dei job.',
       showDebugButtons: 'Vedere i pulsanti di debug su un form.',
       allowJobRelaunch: "Rilanciare i job con i dati del form di un'esecuzione precedente.",
-      allowJobDeletion: 'Eliminare job: i propri, o tutti per un admin. Senza: lo storico resta completo.',
+      allowJobDeletion:
+        'Eliminare job: i propri, o quelli di tutti gli utenti con Gestisci i job di tutti gli utenti (o da admin). Senza: lo storico resta completo.',
       manageAllJobs:
         'Interrompere, eliminare e rilanciare i job di tutti gli utenti, non solo i propri. Eliminare e rilanciare richiedono anche le loro opzioni.',
       allowVerboseMode: 'Eseguire i job in modalità verbose.',
       allowScheduledJobs: 'Creare e gestire pianificazioni nella pagina Pianificazioni, ricorrenti o una tantum.',
-      allowStoredJobs: 'Salvare i dati di un job e ricaricarli più tardi.',
+      allowStoredJobs: 'Salvare i dati di un modulo e ricaricarli più tardi.',
       allowPlannedJobs: "Eseguire il job di un modulo una volta, più tardi, all'ora scelta (Esegui più tardi).",
       showAllJobLogs: 'Vedere i job di tutti gli utenti, non solo i tuoi.',
       showArtifacts: 'Vedere gli artifact restituiti da un job.',
-      showExtravars: 'Vedere le extravars di un form.',
+      showExtravars: 'Vedere le extravars di un modulo e di un job.',
       allowLogin: 'Accedere ad AnsibleForms.',
       allowBackupOps: 'Eseguire backup e ripristino del database.',
       allowChat: "Usare l'assistente chat, se è abilitato.",

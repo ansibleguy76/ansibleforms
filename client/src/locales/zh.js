@@ -328,7 +328,7 @@ export default {
     columnAccess: '您的权限',
     // what each role option lets the user do
     optionDescription: {
-      showSettings: '查看设置页面。',
+      showSettings: '查看并更改所有设置页面。服务器日志和备份有各自的开关。',
       showDesigner: '查看和使用设计器。',
       allowFormDesign: '在设计器中编辑表单：类别、常量和表单（否则：只读）。',
       allowPlaybookDesign: '在设计器中编辑 playbook（否则：只读）。',
@@ -342,15 +342,16 @@ export default {
       showJobs: '查看作业页面。',
       showDebugButtons: '查看表单上的调试按钮。',
       allowJobRelaunch: '使用之前运行的表单数据重新运行作业。',
-      allowJobDeletion: '删除作业：自己的作业，管理员可删除所有作业。否则：作业历史保持完整。',
+      allowJobDeletion:
+        '删除作业：自己的作业，或通过“管理所有用户的作业”删除所有用户的作业（管理员亦可）。否则：作业历史保持完整。',
       manageAllJobs: '中止、删除和重新启动所有用户的作业，而不仅是自己的。删除和重新启动还需要各自的选项。',
       allowVerboseMode: '以详细模式运行作业。',
       allowScheduledJobs: '在调度页面创建和管理调度，周期性或一次性。',
-      allowStoredJobs: '保存作业数据，以便以后再次加载。',
+      allowStoredJobs: '保存表单的数据，以便以后再次加载。',
       allowPlannedJobs: '在选定时间稍后运行一次表单的作业（稍后运行）。',
       showAllJobLogs: '查看所有用户的作业，而不仅仅是您自己的。',
       showArtifacts: '查看作业返回的工件。',
-      showExtravars: '查看表单的 extravars。',
+      showExtravars: '查看表单和作业的 extravars。',
       allowLogin: '登录 AnsibleForms。',
       allowBackupOps: '备份和还原数据库。',
       allowChat: '在启用时使用聊天助手。',

@@ -332,7 +332,7 @@ export default {
     columnAccess: 'Your access',
     // what each role option lets the user do
     optionDescription: {
-      showSettings: 'See the settings pages.',
+      showSettings: 'See and change every settings page. The Server log and Backups have their own toggles.',
       showDesigner: 'See and use the designer.',
       allowFormDesign: 'Edit the forms in the designer: categories, constants and forms (without it: read-only).',
       allowPlaybookDesign: 'Edit the playbooks in the designer (without it: read-only).',
@@ -346,16 +346,17 @@ export default {
       showJobs: 'See the jobs page.',
       showDebugButtons: 'See the debug buttons on a form.',
       allowJobRelaunch: 'Relaunch jobs with the form data of an earlier run.',
-      allowJobDeletion: 'Delete jobs: your own, or every job for an admin. Without it the job history stays whole.',
+      allowJobDeletion:
+        "Delete jobs: your own, or every user's with Manage all users' jobs (or as admin). Without it the job history stays whole.",
       manageAllJobs:
         'Abort, delete and relaunch the jobs of every user, not only your own. Deleting and relaunching also need Allow deleting jobs and Allow job relaunch.',
       allowVerboseMode: 'Run jobs in verbose mode.',
       allowScheduledJobs: 'Create and manage schedules on the Schedules page, recurring or one-time.',
-      allowStoredJobs: 'Store job data and load it again later.',
+      allowStoredJobs: "Store a form's data and load it again later.",
       allowPlannedJobs: "Run a form's job once, later, at a time you choose (Run later).",
       showAllJobLogs: 'See the jobs of every user, not only your own.',
       showArtifacts: 'See the artifacts a job returns.',
-      showExtravars: 'See the extravars of a form.',
+      showExtravars: 'See the extravars of a form and of a job.',
       allowLogin: 'Sign in to AnsibleForms.',
       allowBackupOps: 'Back up and restore the database.',
       allowChat: 'Use the chat assistant, when it is enabled.',

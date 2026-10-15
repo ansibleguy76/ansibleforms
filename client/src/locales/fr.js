@@ -339,7 +339,8 @@ export default {
     columnAccess: 'Votre accès',
     // what each role option lets the user do
     optionDescription: {
-      showSettings: 'Voir les pages de paramètres.',
+      showSettings:
+        'Voir et modifier toutes les pages de paramètres. Le Journal du serveur et les Sauvegardes ont leurs propres interrupteurs.',
       showDesigner: 'Voir et utiliser le designer.',
       allowFormDesign:
         'Modifier les formulaires dans le designer : catégories, constantes et formulaires (sinon : en lecture seule).',
@@ -355,16 +356,17 @@ export default {
       showJobs: 'Voir la page des jobs.',
       showDebugButtons: 'Voir les boutons de débogage sur un formulaire.',
       allowJobRelaunch: "Relancer des jobs avec les données de formulaire d'une exécution précédente.",
-      allowJobDeletion: "Supprimer des jobs : les vôtres, ou tous pour un admin. Sinon : l'historique reste complet.",
+      allowJobDeletion:
+        "Supprimer des jobs : les vôtres, ou ceux de tous les utilisateurs avec Gérer les jobs de tous les utilisateurs (ou en admin). Sinon : l'historique reste complet.",
       manageAllJobs:
         'Interrompre, supprimer et relancer les jobs de tous les utilisateurs, pas seulement les vôtres. Supprimer et relancer demandent aussi leurs options.',
       allowVerboseMode: 'Lancer des jobs en mode verbeux.',
       allowScheduledJobs: 'Créer et gérer des planifications sur la page Planifications, récurrentes ou ponctuelles.',
-      allowStoredJobs: "Enregistrer les données d'un job et les recharger plus tard.",
+      allowStoredJobs: "Enregistrer les données d'un formulaire et les recharger plus tard.",
       allowPlannedJobs: "Exécuter le job d'un formulaire une fois, plus tard, à l'heure choisie (Exécuter plus tard).",
       showAllJobLogs: 'Voir les jobs de tous les utilisateurs, pas seulement les vôtres.',
       showArtifacts: 'Voir les artifacts renvoyés par un job.',
-      showExtravars: "Voir les extravars d'un formulaire.",
+      showExtravars: "Voir les extravars d'un formulaire et d'un job.",
       allowLogin: 'Se connecter à AnsibleForms.',
       allowBackupOps: 'Sauvegarder et restaurer la base de données.',
       allowChat: "Utiliser l'assistant de chat, s'il est activé.",

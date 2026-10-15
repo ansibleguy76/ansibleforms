@@ -337,7 +337,7 @@ export default {
     columnAccess: 'Ihr Zugriff',
     // what each role option lets the user do
     optionDescription: {
-      showSettings: 'Die Einstellungsseiten sehen.',
+      showSettings: 'Alle Einstellungsseiten sehen und ändern. Serverprotokoll und Backups haben eigene Schalter.',
       showDesigner: 'Den Designer sehen und verwenden.',
       allowFormDesign: 'Die Formulare im Designer bearbeiten: Kategorien, Konstanten und Formulare (ohne: nur lesen).',
       allowPlaybookDesign: 'Die Playbooks im Designer bearbeiten (ohne: nur lesen).',
@@ -352,16 +352,17 @@ export default {
       showJobs: 'Die Jobs-Seite sehen.',
       showDebugButtons: 'Die Debug-Schaltflächen auf einem Formular sehen.',
       allowJobRelaunch: 'Jobs mit den Formulardaten eines früheren Laufs neu starten.',
-      allowJobDeletion: 'Jobs löschen: die eigenen, als Admin alle. Ohne: der Jobverlauf bleibt vollständig.',
+      allowJobDeletion:
+        'Jobs löschen: die eigenen, oder die aller Benutzer mit Jobs aller Benutzer verwalten (oder als Admin). Ohne: der Jobverlauf bleibt vollständig.',
       manageAllJobs:
         'Die Jobs aller Benutzer abbrechen, löschen und neu starten, nicht nur die eigenen. Löschen und Neustarten brauchen auch die Optionen dafür.',
       allowVerboseMode: 'Jobs im Verbose-Modus ausführen.',
       allowScheduledJobs: 'Zeitpläne auf der Seite Zeitpläne erstellen und verwalten, wiederkehrend oder einmalig.',
-      allowStoredJobs: 'Jobdaten speichern und später wieder laden.',
+      allowStoredJobs: 'Die Daten eines Formulars speichern und später wieder laden.',
       allowPlannedJobs: 'Den Job eines Formulars einmal später ausführen, zu einer gewählten Zeit (Später ausführen).',
       showAllJobLogs: 'Die Jobs aller Benutzer sehen, nicht nur die eigenen.',
       showArtifacts: 'Die Artifacts sehen, die ein Job zurückgibt.',
-      showExtravars: 'Die Extravars eines Formulars sehen.',
+      showExtravars: 'Die Extravars eines Formulars und eines Jobs sehen.',
       allowLogin: 'Sich bei AnsibleForms anmelden.',
       allowBackupOps: 'Die Datenbank sichern und wiederherstellen.',
       allowChat: 'Den Chat-Assistenten verwenden, wenn er aktiviert ist.',

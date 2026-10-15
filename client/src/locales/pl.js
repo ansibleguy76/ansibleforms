@@ -334,7 +334,8 @@ export default {
     columnAccess: 'Twój dostęp',
     // what each role option lets the user do
     optionDescription: {
-      showSettings: 'Wyświetlanie stron ustawień.',
+      showSettings:
+        'Wyświetlanie i zmiana wszystkich stron ustawień. Dziennik serwera i Kopie zapasowe mają własne przełączniki.',
       showDesigner: 'Wyświetlanie projektanta i korzystanie z niego.',
       allowFormDesign: 'Edytować formularze w designerze: kategorie, stałe i formularze (bez tego: tylko odczyt).',
       allowPlaybookDesign: 'Edytować playbooki w designerze (bez tego: tylko odczyt).',
@@ -348,16 +349,17 @@ export default {
       showJobs: 'Wyświetlanie strony zadań.',
       showDebugButtons: 'Wyświetlanie przycisków debugowania w formularzu.',
       allowJobRelaunch: 'Ponowne uruchamianie zadań z danymi formularza z wcześniejszego uruchomienia.',
-      allowJobDeletion: 'Usuwać zadania: własne, a administrator wszystkie. Bez tego historia pozostaje pełna.',
+      allowJobDeletion:
+        'Usuwać zadania: własne, lub wszystkich użytkowników z Zarządzaj zadaniami wszystkich użytkowników (albo jako administrator). Bez tego historia pozostaje pełna.',
       manageAllJobs:
         'Przerywać, usuwać i ponownie uruchamiać zadania wszystkich użytkowników, nie tylko własne. Usuwanie i ponowne uruchamianie wymagają też swoich opcji.',
       allowVerboseMode: 'Uruchamianie zadań w trybie szczegółowym (verbose).',
       allowScheduledJobs: 'Tworzyć harmonogramy i nimi zarządzać na stronie Harmonogramy, cykliczne lub jednorazowe.',
-      allowStoredJobs: 'Zapisywanie danych zadania i ponowne wczytywanie ich później.',
+      allowStoredJobs: 'Zapisywanie danych formularza i ponowne wczytywanie ich później.',
       allowPlannedJobs: 'Uruchomić zadanie formularza raz, później, o wybranej godzinie (Uruchom później).',
       showAllJobLogs: 'Wyświetlanie zadań wszystkich użytkowników, nie tylko własnych.',
       showArtifacts: 'Wyświetlanie artefaktów zwracanych przez zadanie.',
-      showExtravars: 'Wyświetlanie extravars formularza.',
+      showExtravars: 'Wyświetlanie extravars formularza i zadania.',
       allowLogin: 'Logowanie do AnsibleForms.',
       allowBackupOps: 'Tworzenie kopii zapasowej bazy danych i jej przywracanie.',
       allowChat: 'Korzystanie z asystenta czatu, gdy jest włączony.',

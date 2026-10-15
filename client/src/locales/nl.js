@@ -335,7 +335,7 @@ export default {
     columnAccess: 'Jouw toegang',
     // what each role option lets the user do
     optionDescription: {
-      showSettings: "De instellingenpagina's zien.",
+      showSettings: "Alle instellingenpagina's zien en wijzigen. Serverlog en Back-ups hebben hun eigen schakelaars.",
       showDesigner: 'De designer zien en gebruiken.',
       allowFormDesign:
         'De formulieren in de designer bewerken: categorieën, constanten en formulieren (zonder: alleen lezen).',
@@ -351,16 +351,17 @@ export default {
       showJobs: 'De jobspagina zien.',
       showDebugButtons: 'De debugknoppen op een formulier zien.',
       allowJobRelaunch: 'Jobs opnieuw starten met de formuliergegevens van een eerdere uitvoering.',
-      allowJobDeletion: 'Taken verwijderen: de eigen, of alle voor een admin. Zonder: de geschiedenis blijft volledig.',
+      allowJobDeletion:
+        'Taken verwijderen: de eigen, of die van alle gebruikers met Taken van alle gebruikers beheren (of als admin). Zonder: de geschiedenis blijft volledig.',
       manageAllJobs:
         'De taken van alle gebruikers afbreken, verwijderen en opnieuw starten, niet alleen de eigen. Verwijderen en opnieuw starten vragen ook hun eigen opties.',
       allowVerboseMode: 'Jobs in verbose-modus uitvoeren.',
       allowScheduledJobs: 'Planningen maken en beheren op de pagina Planner, terugkerend of eenmalig.',
-      allowStoredJobs: 'Jobgegevens opslaan en later weer laden.',
+      allowStoredJobs: 'De gegevens van een formulier opslaan en later weer laden.',
       allowPlannedJobs: 'De taak van een formulier één keer later uitvoeren, op een gekozen tijd (Later uitvoeren).',
       showAllJobLogs: 'De jobs van alle gebruikers zien, niet alleen die van jezelf.',
       showArtifacts: 'De artifacts zien die een job teruggeeft.',
-      showExtravars: 'De extravars van een formulier zien.',
+      showExtravars: 'De extravars van een formulier en van een taak zien.',
       allowLogin: 'Aanmelden bij AnsibleForms.',
       allowBackupOps: 'Een back-up van de database maken en terugzetten.',
       allowChat: 'De chatassistent gebruiken, als die is ingeschakeld.',

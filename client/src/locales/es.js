@@ -334,7 +334,8 @@ export default {
     columnAccess: 'Tu acceso',
     // what each role option lets the user do
     optionDescription: {
-      showSettings: 'Ver las páginas de ajustes.',
+      showSettings:
+        'Ver y cambiar todas las páginas de configuración. El Registro del servidor y las Copias de seguridad tienen sus propios interruptores.',
       showDesigner: 'Ver y usar el designer.',
       allowFormDesign:
         'Editar los formularios en el diseñador: categorías, constantes y formularios (sin ello: solo lectura).',
@@ -351,17 +352,17 @@ export default {
       showDebugButtons: 'Ver los botones de depuración en un formulario.',
       allowJobRelaunch: 'Relanzar jobs con los datos del formulario de una ejecución anterior.',
       allowJobDeletion:
-        'Eliminar trabajos: los propios, o todos para un administrador. Sin ello: el historial queda completo.',
+        'Eliminar trabajos: los propios, o los de todos los usuarios con Gestionar los trabajos de todos los usuarios (o como administrador). Sin ello: el historial queda completo.',
       manageAllJobs:
         'Abortar, eliminar y relanzar los trabajos de todos los usuarios, no solo los propios. Eliminar y relanzar también necesitan sus opciones.',
       allowVerboseMode: 'Ejecutar jobs en modo verbose.',
       allowScheduledJobs: 'Crear y gestionar programaciones en la página Programaciones, recurrentes o puntuales.',
-      allowStoredJobs: 'Guardar los datos de un job y volver a cargarlos después.',
+      allowStoredJobs: 'Guardar los datos de un formulario y volver a cargarlos después.',
       allowPlannedJobs:
         'Ejecutar el trabajo de un formulario una vez, más tarde, a la hora que elijas (Ejecutar más tarde).',
       showAllJobLogs: 'Ver los jobs de todos los usuarios, no solo los tuyos.',
       showArtifacts: 'Ver los artifacts que devuelve un job.',
-      showExtravars: 'Ver las extravars de un formulario.',
+      showExtravars: 'Ver las extravars de un formulario y de un trabajo.',
       allowLogin: 'Iniciar sesión en AnsibleForms.',
       allowBackupOps: 'Hacer copias de seguridad de la base de datos y restaurarlas.',
       allowChat: 'Usar el asistente de chat, cuando está activado.',

@@ -95,6 +95,27 @@ export const roleOptionNeeds = {
   extendedTokenExpiration: 'allowApiTokens',
 };
 
+/**
+ * What an option really gives, with the rules above : on when an option that includes it is on,
+ * off when an option it needs is off, else its own value. The role editor and the profile's
+ * Permissions view show the same.
+ *
+ * Args:
+ *   options (object): the role's (or the user's) options.
+ *   key (string): the option.
+ *
+ * Returns:
+ *   object: { value (boolean), includedBy (string|null), needs (string|null) } - the option that
+ *     gives it, or the one it is missing.
+ */
+export function effectiveRoleOption(options, key) {
+  const by = roleOptionIncludedIn[key];
+  if (by && options?.[by]) return { value: true, includedBy: by, needs: null };
+  const need = roleOptionNeeds[key];
+  if (need && !options?.[need]) return { value: false, includedBy: null, needs: need };
+  return { value: !!options?.[key], includedBy: null, needs: null };
+}
+
 // every role option, in the groups' order
 export const roleOptionKeys = [
   'showSettings',

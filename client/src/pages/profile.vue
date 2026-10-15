@@ -27,7 +27,7 @@ import { languages, fallbackLanguage } from '@/config/languages';
 import dayjs from 'dayjs';
 import Time, { DATE_FORMATS } from '@/lib/Time';
 import { profileViews, profileMenuViews } from '@/config/profileViews';
-import { roleOptionGroups, roleOptionDescription } from '@/config/roles';
+import { roleOptionGroups, roleOptionDescription, roleOptionLabel, effectiveRoleOption } from '@/config/roles';
 import BaseUrl from '@/lib/BaseUrl';
 import { neverExpires } from '@/lib/apiTokens';
 import { rememberSsoOrigin, ssoSettled, ssoReturning } from '@/lib/ssoReturn';
@@ -108,7 +108,17 @@ const permissionGroups = computed(() => {
   return PERMISSION_GROUPS.map((g) => {
     const keys = g.keys.filter((k) => k in opts);
     if (g.name === 'other') keys.push(...Object.keys(opts).filter((k) => !grouped.has(k)));
-    const options = keys.map((k) => ({ key: k, description: roleOptionDescription(t, te, k), value: !!opts[k] }));
+    // what applies (config/roles.js effectiveRoleOption) : an option included in another that is on
+    // is allowed, one missing the option it needs is not - and the row says why
+    const options = keys.map((k) => {
+      const eff = effectiveRoleOption(opts, k);
+      const note = eff.includedBy
+        ? t('settings.settingsPage.roleOptionIncluded', { option: roleOptionLabel(t, eff.includedBy) })
+        : eff.needs
+          ? t('settings.settingsPage.roleOptionNeeds', { option: roleOptionLabel(t, eff.needs) })
+          : '';
+      return { key: k, description: roleOptionDescription(t, te, k), value: eff.value, note };
+    });
     return { name: g.name, title: g.title(), options, allowed: options.filter((o) => o.value).length };
   }).filter((g) => g.options.length);
 });
@@ -650,7 +660,10 @@ async function changePassword() {
                     <td>
                       <code class="af-option-key">{{ o.key }}</code>
                     </td>
-                    <td :class="o.value ? '' : 'text-body-secondary'">{{ o.description }}</td>
+                    <td :class="o.value ? '' : 'text-body-secondary'">
+                      {{ o.description }}
+                      <div v-if="o.note" class="small text-body-secondary">{{ o.note }}</div>
+                    </td>
                     <td class="text-end">
                       <span class="badge rounded-pill af-pill" :class="o.value ? 'af-pill-green' : 'af-pill-grey'">
                         <FaIcon :icon="o.value ? 'check' : 'xmark'" class="me-1" />{{

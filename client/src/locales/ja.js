@@ -333,7 +333,7 @@ export default {
     columnAccess: 'あなたのアクセス権',
     // what each role option lets the user do
     optionDescription: {
-      showSettings: '設定ページを表示します。',
+      showSettings: 'すべての設定ページを表示・変更します。サーバーログとバックアップには専用の切り替えがあります。',
       showDesigner: 'デザイナーを表示して使用します。',
       allowFormDesign: 'デザイナーでフォームを編集する：カテゴリ、定数、フォーム（なしの場合：読み取り専用）。',
       allowPlaybookDesign: 'デザイナーで playbook を編集する（なしの場合：読み取り専用）。',
@@ -347,16 +347,17 @@ export default {
       showJobs: 'ジョブページを表示します。',
       showDebugButtons: 'フォームのデバッグボタンを表示します。',
       allowJobRelaunch: '以前の実行時のフォームデータでジョブを再起動します。',
-      allowJobDeletion: 'ジョブを削除します（自分のもの、管理者はすべて）。なしの場合：履歴はそのまま残ります。',
+      allowJobDeletion:
+        'ジョブを削除します（自分のもの、または「全ユーザーのジョブを管理」で全ユーザーのもの、管理者も）。なしの場合：履歴はそのまま残ります。',
       manageAllJobs:
         '自分のものだけでなく、全ユーザーのジョブを中止・削除・再実行します。削除と再実行にはそれぞれのオプションも必要です。',
       allowVerboseMode: 'ジョブを詳細モードで実行します。',
       allowScheduledJobs: 'スケジュールページでスケジュールを作成・管理します（定期または1回）。',
-      allowStoredJobs: 'ジョブのデータを保存し、後で再び読み込みます。',
+      allowStoredJobs: 'フォームのデータを保存し、後で再び読み込みます。',
       allowPlannedJobs: 'フォームのジョブを、選んだ時刻に後で1回実行します（後で実行）。',
       showAllJobLogs: '自分のジョブだけでなく、すべてのユーザーのジョブを表示します。',
       showArtifacts: 'ジョブが返す artifacts を表示します。',
-      showExtravars: 'フォームの extravars を表示します。',
+      showExtravars: 'フォームとジョブの extravars を表示します。',
       allowLogin: 'AnsibleForms にサインインします。',
       allowBackupOps: 'データベースをバックアップ、復元します。',
       allowChat: '有効な場合に、チャットアシスタントを使用します。',
