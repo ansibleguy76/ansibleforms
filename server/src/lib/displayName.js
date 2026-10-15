@@ -2,7 +2,7 @@
 // with. Local accounts have none : they are shown by their username.
 //
 // It is read at sign-in from what the identity source already returns, so no setting is
-// needed : the directory entry for ldap, the token's claims for azure ad and openid connect.
+// needed : the directory entry for ldap, the token's claims for Entra ID and openid connect.
 // It travels in the user object of the tokens (a refresh copies it along with the rest).
 
 // an ldap attribute can come back as a string or, when multi-valued, as an array of them
@@ -22,7 +22,7 @@ export function ldapDisplayName(entry) {
   return firstValue(entry.cn);
 }
 
-// the name in an azure ad or openid connect token : the standard `name` claim, else the
+// the name in an Entra ID or openid connect token : the standard `name` claim, else the
 // given and family names together
 export function claimsDisplayName(claims) {
   if (!claims || typeof claims !== "object") return "";

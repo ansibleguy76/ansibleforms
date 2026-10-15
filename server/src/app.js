@@ -97,7 +97,7 @@ swaggerDocumentV2.info.version = appVersion;
 // start the app
 const load = async (app) => {
   // the database and the worker's bootstrap come first (app-start.js)
-  await auth_entraid.initialize(); // we wait for the azuread to be ready
+  await auth_entraid.initialize(); // we wait for Entra ID to be ready
   await auth_oidc.initialize(); // we wait for the oidc to be ready
 
   // which address req.ip - and so every audit row - names : the connection's peer unless

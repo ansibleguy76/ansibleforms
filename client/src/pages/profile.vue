@@ -91,7 +91,7 @@ const groupsKnown = computed(() => Array.isArray(profile.value.groups));
 // the roles to show : every user also carries public, default's name before 7, so that forms still
 // listing it match - it is the same role, shown once as default
 const shownRoles = computed(() => (profile.value.roles || []).filter((r) => r !== 'public'));
-// only local accounts have a password AnsibleForms can change ; ldap, azure ad and oidc
+// only local accounts have a password AnsibleForms can change ; ldap, Entra ID and oidc
 // passwords are managed by their own provider
 const isLocal = computed(() => profile.value.type == 'local');
 // the options in their groups, as the role's page shows them (config/roles.js) ; an option the
@@ -456,7 +456,7 @@ async function changePassword() {
         <!-- ===================== account ===================== -->
         <template v-if="currentView === 'account'">
           <div class="card">
-            <!-- who : the person's name when the sign-in brought one (ldap, azure ad, openid
+            <!-- who : the person's name when the sign-in brought one (ldap, Entra ID, openid
                  connect), else the username - the username itself is a row below. Styled like
                  the permissions tables' headers, without a border-bottom of its own : the list
                  group under it draws that line (a list group in a card takes the card's border

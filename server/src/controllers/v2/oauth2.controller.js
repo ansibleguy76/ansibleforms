@@ -35,7 +35,7 @@ const oauth2Controller = {
   async create(req, res) {
     try {
       const created = await OAuth2.create(req.body);
-      await auth_entraid.initialize(); // we wait for the azuread to be ready
+      await auth_entraid.initialize(); // we wait for Entra ID to be ready
       await auth_oidc.initialize(); // we wait for the oidc to be ready
       return res.status(201).json(RestResult.single(i18n.t(req, 'resources.oauth2Added'), created));
     } catch (err) {
@@ -58,7 +58,7 @@ const oauth2Controller = {
   async update(req, res) {
     try {
       const updated = await OAuth2.update(req.body, req.params.id);
-      await auth_entraid.initialize(); // we wait for the azuread to be ready
+      await auth_entraid.initialize(); // we wait for Entra ID to be ready
       await auth_oidc.initialize(); // we wait for the oidc to be ready      
       return res.json(RestResult.single(updated));
     } catch (err) {
@@ -70,7 +70,7 @@ const oauth2Controller = {
   async delete(req, res) {
     try {
       const deleted = await OAuth2.delete(req.params.id);
-      await auth_entraid.initialize(); // we wait for the azuread to be ready
+      await auth_entraid.initialize(); // we wait for Entra ID to be ready
       await auth_oidc.initialize(); // we wait for the oidc to be ready
       return res.json(RestResult.single(deleted));
     } catch (err) {
