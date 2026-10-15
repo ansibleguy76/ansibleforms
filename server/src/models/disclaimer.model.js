@@ -94,7 +94,8 @@ function keyOf(user, version) {
 
 const Disclaimer = {
   /**
-   * The disclaimer as it stands : switched on or not, and its current version.
+   * The disclaimer as it stands : switched on or not, and its current version - the one Restore
+   * chose (settings.disclaimer_version), else the latest.
    *
    * Returns:
    *   Promise<object>: { enabled, version (0 : none yet), title, text, checkbox_label }.
@@ -103,7 +104,11 @@ const Disclaimer = {
     if (currentCache.value !== undefined && Date.now() - currentCache.at < CACHE_MS) return currentCache.value;
     const [settings, versions] = await Promise.all([
       mysql.do('SELECT disclaimer_enabled FROM AnsibleForms.`settings` LIMIT 1'),
-      mysql.do('SELECT version, title, text, checkbox_label FROM AnsibleForms.`disclaimer_versions` ORDER BY version DESC LIMIT 1'),
+      mysql.do(
+        'SELECT version, title, text, checkbox_label FROM AnsibleForms.`disclaimer_versions` ' +
+          // the one chosen first, when it is still there ; else the latest
+          'ORDER BY (version = (SELECT disclaimer_version FROM AnsibleForms.`settings` LIMIT 1)) DESC, version DESC LIMIT 1',
+      ),
     ]);
     const v = versions[0];
     const value = {
@@ -207,14 +212,19 @@ const Disclaimer = {
     const changed = title !== current.title || text !== current.text || checkboxLabel !== current.checkbox_label;
     if (changed && title && text && checkboxLabel) {
       if (!current.version || data.askAgain) {
+        // the next number after the latest (the current one may be an older one, restored)
+        const latest = await mysql.do('SELECT COALESCE(MAX(version), 0) AS v FROM AnsibleForms.`disclaimer_versions`');
+        const next = (latest[0]?.v || 0) + 1;
         await mysql.do('INSERT INTO AnsibleForms.`disclaimer_versions` SET ?', {
-          version: current.version + 1,
+          version: next,
           title,
           text,
           checkbox_label: checkboxLabel,
           created_by: admin || null,
           created_at: nowDb(),
         });
+        // and the current one
+        await mysql.do('UPDATE AnsibleForms.`settings` SET disclaimer_version = ?', [next]);
       } else {
         await mysql.do(
           'UPDATE AnsibleForms.`disclaimer_versions` SET title = ?, text = ?, checkbox_label = ? WHERE version = ?',
@@ -256,12 +266,13 @@ const Disclaimer = {
         '(SELECT COUNT(*) FROM AnsibleForms.`disclaimer_acceptances` a WHERE a.version = v.version) AS acceptances ' +
         'FROM AnsibleForms.`disclaimer_versions` v ORDER BY v.version DESC',
     );
-    // the latest is the current one : the one users accept
-    return rows.map((r, i) => ({ ...r, current: i === 0 ? 1 : 0 }));
+    // the current one : the one users accept (Disclaimer.current)
+    const current = await this.current();
+    return rows.map((r) => ({ ...r, current: r.version === current.version ? 1 : 0 }));
   },
 
   /**
-   * Deletes a version and who accepted it. The current one deleted, the one before is current
+   * Deletes a version and who accepted it. The current one deleted, the latest left is current
    * again (its users do not accept again) ; the last one deleted, the disclaimer is switched off -
    * it has nothing left to show.
    *
@@ -275,6 +286,8 @@ const Disclaimer = {
     const found = await this.version(version);
     await mysql.do('DELETE FROM AnsibleForms.`disclaimer_acceptances` WHERE version = ?', [found.version]);
     await mysql.do('DELETE FROM AnsibleForms.`disclaimer_versions` WHERE version = ?', [found.version]);
+    // the current one deleted : the latest left is (none chosen)
+    if (found.current) await mysql.do('UPDATE AnsibleForms.`settings` SET disclaimer_version = NULL');
     const left = await mysql.do('SELECT COUNT(*) AS n FROM AnsibleForms.`disclaimer_versions`');
     if (!left[0]?.n) await mysql.do('UPDATE AnsibleForms.`settings` SET disclaimer_enabled = 0');
     forgetDisclaimer();
@@ -282,35 +295,26 @@ const Disclaimer = {
   },
 
   /**
-   * Restores a version : its text the current one again, as a new version (the next number), so
-   * every user accepts it ; the version itself stays as it was.
+   * Restores a version : it is the current one again, as it is - the users who accepted it are
+   * not asked again, the others are.
    *
    * Args:
    *   version (number|string): its number.
    *   admin (string): who restores it.
    *
    * Returns:
-   *   Promise<number>: the new version's number.
+   *   Promise<number>: its number.
    *
    * Raises:
    *   NotFoundError: no version has that number.
    */
   async restoreVersion(version, admin) {
     const found = await this.version(version);
-    const latest = await mysql.do('SELECT COALESCE(MAX(version), 0) AS v FROM AnsibleForms.`disclaimer_versions`');
-    const next = (latest[0]?.v || 0) + 1;
-    await mysql.do('INSERT INTO AnsibleForms.`disclaimer_versions` SET ?', {
-      version: next,
-      title: found.title,
-      text: found.text,
-      checkbox_label: found.checkbox_label,
-      created_by: admin || null,
-      created_at: nowDb(),
-    });
+    await mysql.do('UPDATE AnsibleForms.`settings` SET disclaimer_version = ?', [found.version]);
     forgetDisclaimer();
     await bump('disclaimer').catch(() => {});
-    logger.notice(`${admin} restored disclaimer version ${found.version} as version ${next}`);
-    return next;
+    logger.notice(`${admin} restored disclaimer version ${found.version}`);
+    return found.version;
   },
 
   /**

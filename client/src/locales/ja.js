@@ -1311,10 +1311,10 @@ export default {
       askAgainConfirm: '{count} 人のユーザーに免責事項への再同意を求めますか？既存の同意は消去されます。',
       askAgainDone: '{count} 人のユーザーが次回のサインイン時に免責事項に再同意します。',
       restore: '復元',
+      versionEnabled: '有効',
       restoreConfirm:
-        'バージョン {version} を現在の免責事項として復元しますか？新しいバージョンになり、すべてのユーザーが同意します。',
-      restoreDone: 'バージョン {version} として復元しました。',
-      current: '現在',
+        'バージョン {version} を再び現在の免責事項にしますか？すでに同意したユーザーには再同意を求めません。',
+      restoreDone: 'バージョン {version} が再び現在の免責事項になりました。',
     },
     notificationChannels: {
       label: '通知チャネル',

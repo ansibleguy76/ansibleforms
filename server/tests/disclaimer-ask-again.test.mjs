@@ -32,7 +32,7 @@ test("the acceptances ticked are cleared ; none given is refused", async () => {
   await expect(Disclaimer.askAgain([], "admin")).rejects.toThrow(/No acceptance/);
 });
 
-test("a version, the current one too, goes with its acceptances ; restored as the next version", async () => {
+test("a version, the current one too, goes with its acceptances ; restored, it is the current one", async () => {
   answers = [
     { match: /FROM AnsibleForms\.`disclaimer_versions` v ORDER BY/, rows: [{ version: 3, title: "t3" }, { version: 2, title: "t2", text: "x2", checkbox_label: "ok" }] },
     { match: /MAX\(version\)/, rows: [{ v: 3 }] },
@@ -44,9 +44,11 @@ test("a version, the current one too, goes with its acceptances ; restored as th
   expect(queries.some((q) => /SET disclaimer_enabled = 0/.test(q.sql))).toBe(false);
   await Disclaimer.deleteVersion(2);
   expect(queries.some((q) => /DELETE FROM AnsibleForms\.`disclaimer_acceptances` WHERE version/.test(q.sql) && q.args[0] === 2)).toBe(true);
-  expect(await Disclaimer.restoreVersion(2, "admin")).toBe(4);
-  const insert = queries.find((q) => /^INSERT INTO AnsibleForms\.`disclaimer_versions`/.test(q.sql));
-  expect(insert.args).toMatchObject({ version: 4, title: "t2", text: "x2", created_by: "admin" });
+  // restored : the current one, as it is (no copy) - who accepted it counts again
+  expect(await Disclaimer.restoreVersion(2, "admin")).toBe(2);
+  expect(queries.some((q) => /^INSERT INTO AnsibleForms\.`disclaimer_versions`/.test(q.sql))).toBe(false);
+  const chosen = queries.find((q) => /SET disclaimer_version = \?/.test(q.sql));
+  expect(chosen.args).toEqual([2]);
 });
 
 test("the last version deleted : the disclaimer is switched off", async () => {

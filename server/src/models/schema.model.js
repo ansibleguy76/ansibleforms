@@ -607,7 +607,7 @@ const SCHEMA_MANIFEST = {
                                'ldap.id', 'ldap.name', 'ldap.position', 'ldap.domains', 'ldap.credential',
                                'oauth2_providers.credential', 'credentials.tenant_id', 'credentials.issuer', 'credentials.redirect_uri',
                                'credentials.ignore_certs', 'credentials.ca_bundle', 'oauth2_providers.auto_login',
-                               'runners.credential', 'ldap.description'] },
+                               'runners.credential', 'ldap.description', 'settings.disclaimer_version'] },
   },
 };
 
@@ -1070,6 +1070,8 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(moveRunnerSecretsToCredentials(), messages, success, failed);
   // an LDAP directory says what it is, as every record
   await checkPromise(addColumn("ldap", "description", "varchar(250)", true, "NULL"), messages, success, failed);
+  // the disclaimer version users accept, as Restore chose it ; none : the latest
+  await checkPromise(addColumn("settings", "disclaimer_version", "int(11)", true, "NULL"), messages, success, failed);
   // and when each ended, worked or not, shown beside the repository's Pull and Push
   await checkPromise(addColumn("repositories", "pulled_at", "datetime", true, "NULL"), messages, success, failed);
   await checkPromise(addColumn("repositories", "pushed_at", "datetime", true, "NULL"), messages, success, failed);

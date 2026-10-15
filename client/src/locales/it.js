@@ -1421,10 +1421,10 @@ export default {
         "Chiedere a {count} utente/i di accettare di nuovo l'avviso? La loro accettazione viene cancellata.",
       askAgainDone: "{count} utente/i accetteranno di nuovo l'avviso al prossimo accesso.",
       restore: 'Ripristina',
+      versionEnabled: 'Abilitato',
       restoreConfirm:
-        'Ripristinare la versione {version} come avviso attuale? Diventa una nuova versione, che ogni utente accetta.',
-      restoreDone: 'Ripristinata come versione {version}.',
-      current: 'Attuale',
+        "Rendere di nuovo la versione {version} l'avviso attuale? A chi l'ha già accettata non viene richiesto di nuovo.",
+      restoreDone: "La versione {version} è di nuovo l'avviso attuale.",
     },
     notificationChannels: {
       label: 'Canale di notifica',

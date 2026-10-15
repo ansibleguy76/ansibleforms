@@ -332,6 +332,8 @@ CREATE TABLE `settings` (
   `env_label_color` varchar(20) DEFAULT NULL,
   `banner_show` tinyint(4) NOT NULL DEFAULT 1,
   `disclaimer_enabled` tinyint(4) NOT NULL DEFAULT 0,
+  -- the disclaimer version users accept, Restore's choice ; none : the latest
+  `disclaimer_version` int(11) DEFAULT NULL,
   `forms_view` varchar(10) DEFAULT NULL,
   `default_timezone` varchar(64) DEFAULT NULL,
   `default_date_format` varchar(20) DEFAULT NULL,

@@ -1426,10 +1426,10 @@ export default {
       askAgainConfirm: '¿Pedir a {count} usuario(s) que acepten de nuevo el aviso? Su aceptación se borra.',
       askAgainDone: '{count} usuario(s) aceptarán el aviso de nuevo en su próximo inicio de sesión.',
       restore: 'Restaurar',
+      versionEnabled: 'Habilitado',
       restoreConfirm:
-        '¿Restaurar la versión {version} como aviso actual? Pasa a ser una versión nueva, que todos los usuarios aceptan.',
-      restoreDone: 'Restaurada como versión {version}.',
-      current: 'Actual',
+        '¿Volver a hacer de la versión {version} el aviso actual? A quienes ya la aceptaron no se les vuelve a pedir.',
+      restoreDone: 'La versión {version} vuelve a ser el aviso actual.',
     },
     notificationChannels: {
       label: 'Canal de notificación',

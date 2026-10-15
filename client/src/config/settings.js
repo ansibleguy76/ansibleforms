@@ -3136,8 +3136,8 @@ export default function getSettings(t) {
       selectable: false,
       // ticked, to export them
       checkboxes: true,
-      // a record, never changed : opened, its text as it was agreed to ; restored (its text the
-      // current one again, as a new version every user accepts), or deleted with who accepted it
+      // a record, never changed : opened, its text as it was agreed to ; restored (the current one
+      // again, as it is : who accepted it is not asked again), or deleted with who accepted it
       noCreate: true,
       actions: [
         {
@@ -3162,14 +3162,14 @@ export default function getSettings(t) {
       ],
       fields: [
         { key: 'id', hidden: true, noInput: true, noTable: true },
-        { key: 'version', label: t('settings.disclaimer.version'), icon: 'hashtag', readonly: true },
         {
-          // the one users accept : the latest
+          // the one users accept (Restore chooses it), first as every list's Enabled
           key: 'current',
-          label: t('settings.disclaimer.current'),
+          label: t('settings.disclaimer.versionEnabled'),
           type: 'checkbox',
           noInput: true,
         },
+        { key: 'version', label: t('settings.disclaimer.version'), icon: 'hashtag', readonly: true },
         { key: 'title', label: t('settings.disclaimer.title'), icon: 'heading', readonly: true },
         {
           key: 'text',

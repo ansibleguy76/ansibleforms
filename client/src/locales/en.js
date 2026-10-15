@@ -1405,10 +1405,9 @@ export default {
       askAgainConfirm: 'Ask {count} user(s) to accept the disclaimer again? Their acceptance is cleared.',
       askAgainDone: '{count} user(s) will accept the disclaimer again at their next sign-in.',
       restore: 'Restore',
-      restoreConfirm:
-        'Restore version {version} as the current disclaimer? It becomes a new version, which every user accepts.',
-      restoreDone: 'Restored as version {version}.',
-      current: 'Current',
+      versionEnabled: 'Enabled',
+      restoreConfirm: 'Make version {version} the current disclaimer again? Users who accepted it are not asked again.',
+      restoreDone: 'Version {version} is the current disclaimer again.',
     },
     notificationChannels: {
       label: 'Notification channel',

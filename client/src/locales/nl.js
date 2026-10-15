@@ -1419,10 +1419,10 @@ export default {
       askAgainConfirm: '{count} gebruiker(s) vragen de disclaimer opnieuw te accepteren? Hun acceptatie wordt gewist.',
       askAgainDone: '{count} gebruiker(s) accepteren de disclaimer opnieuw bij hun volgende aanmelding.',
       restore: 'Herstellen',
+      versionEnabled: 'Ingeschakeld',
       restoreConfirm:
-        'Versie {version} herstellen als huidige disclaimer? Het wordt een nieuwe versie, die elke gebruiker accepteert.',
-      restoreDone: 'Hersteld als versie {version}.',
-      current: 'Huidig',
+        'Versie {version} weer de huidige disclaimer maken? Wie hem al accepteerde, wordt niet opnieuw gevraagd.',
+      restoreDone: 'Versie {version} is weer de huidige disclaimer.',
     },
     notificationChannels: {
       label: 'Meldingskanaal',

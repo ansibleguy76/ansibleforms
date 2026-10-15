@@ -1432,10 +1432,10 @@ export default {
         "Demander à {count} utilisateur(s) d'accepter de nouveau l'avertissement ? Leur acceptation est effacée.",
       askAgainDone: "{count} utilisateur(s) accepteront de nouveau l'avertissement à leur prochaine connexion.",
       restore: 'Restaurer',
+      versionEnabled: 'Activé',
       restoreConfirm:
-        'Restaurer la version {version} comme avertissement actuel ? Elle devient une nouvelle version, que chaque utilisateur accepte.',
-      restoreDone: 'Restaurée comme version {version}.',
-      current: 'Actuelle',
+        "Refaire de la version {version} l'avertissement actuel ? Ceux qui l'ont acceptée ne sont pas redemandés.",
+      restoreDone: "La version {version} est de nouveau l'avertissement actuel.",
     },
     notificationChannels: {
       label: 'Canal de notification',
