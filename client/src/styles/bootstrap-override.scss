@@ -574,20 +574,28 @@ textarea:focus::placeholder {
 // every filter box of the title line one width, a table's (af-table-search) as a page's own
 // (BsSearch, af-search) : 20rem, narrower only when the row is ; at the row's left, the buttons
 // pushed right. !important : the pages gave theirs a width inline (320px, 16rem)
+// (the box a page put its search in, with its buttons or not, is laid out as its own controls
+// below, so the buttons beside the search go right too)
+.af-title-controls > :has(.af-search) {
+  display: contents !important;
+}
+.af-title-controls > :has(.af-search) > * {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
 .af-title-controls .bs-dt-toolbar-moved .af-table-search,
 .af-title-controls .af-search {
   flex: 0 1 20rem;
   width: 20rem !important;
   min-width: 8rem;
-  margin-right: auto;
+  margin-right: auto !important;
 }
-// a page's own search (BsSearch) or filters (the audit's) : at the row's left as a table's, the
-// buttons after them pushed right - the search itself, or the box it sits in on the page ; the
-// forms' toolbar (pages/index.vue) laid out as its own controls, its view button at the right
+// a page's filters (the audit's) : at the row's left as a search, the buttons after them pushed
+// right ; the forms' toolbar (pages/index.vue) laid out as its own controls, its view button at
+// the right
 .af-title-controls > .af-forms-toolbar {
   display: contents !important;
 }
-.af-title-controls > :has(.af-search),
 .af-title-controls > :has(> .form-select) {
   margin-right: auto;
 }
