@@ -37,7 +37,7 @@ class OAuth2 extends CrudModel {
     // consumers) any Microsoft tenant could sign in (auth/auth_azuread.js refuses to start)
     static assertEntraTenant(provider, tenantId) {
         if (provider === 'azuread' && !isSingleTenant(tenantId)) {
-            throw new Errors.BadRequestError("An Entra ID provider needs the tenant id of your tenant (a GUID or its domain), not empty, common, organizations or consumers");
+            throw new Errors.BadRequestError("An Microsoft Entra ID provider needs the tenant id of your tenant (a GUID or its domain), not empty, common, organizations or consumers");
         }
     }
     static async create(data, opts = {}) {

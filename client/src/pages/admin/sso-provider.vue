@@ -37,7 +37,7 @@ const provider = ref(null); // as saved
 const edit = ref(null); // as edited
 // what this page edits : the secret has its own dialog (Change secret)
 const EDITED = ['name', 'description', 'tenant_id', 'client_id', 'issuer', 'redirect_uri', 'groupfilter'];
-const TYPES = { azuread: 'Entra ID', oidc: 'Open ID' };
+const TYPES = { azuread: 'Microsoft Entra ID', oidc: 'Open ID' };
 
 const dirty = computed(
   () => !!provider.value && EDITED.some((k) => (edit.value[k] ?? '') !== (provider.value[k] ?? '')),

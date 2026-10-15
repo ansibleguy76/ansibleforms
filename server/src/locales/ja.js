@@ -114,7 +114,7 @@ export default {
     currentPasswordWrong: "現在のパスワードが正しくありません",
     cantChangePasswordLdap: "LDAP ユーザーのパスワードは変更できません",
     directoryTypeUnknown:
-      "LDAP、Entra ID、OIDC のユーザーまたはグループではありません",
+      "LDAP、Microsoft Entra ID、OIDC のユーザーまたはグループではありません",
     directoryUserKept:
       "管理者がこのユーザーをブロックしています。忘れる前にサインインを許可してください",
     failedDirectoryUser:

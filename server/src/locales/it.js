@@ -112,7 +112,7 @@ export default {
       "Per impostare una nuova password è necessaria quella attuale",
     currentPasswordWrong: "La password attuale non è corretta",
     cantChangePasswordLdap: "Non puoi cambiare la password di un utente LDAP",
-    directoryTypeUnknown: "Non è un utente o gruppo LDAP, Entra ID o OIDC",
+    directoryTypeUnknown: "Non è un utente o gruppo LDAP, Microsoft Entra ID o OIDC",
     directoryUserKept:
       "Un amministratore ha bloccato questo utente: consenti l'accesso prima di dimenticarlo",
     failedDirectoryUser: "Impossibile leggere o modificare l'utente LDAP o SSO",

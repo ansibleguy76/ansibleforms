@@ -111,7 +111,7 @@ export default {
       "Your current password is required to set a new one",
     currentPasswordWrong: "The current password is not correct",
     cantChangePasswordLdap: "You can't change the password for an LDAP user",
-    directoryTypeUnknown: "Not an LDAP, Entra ID or OIDC user or group",
+    directoryTypeUnknown: "Not an LDAP, Microsoft Entra ID or OIDC user or group",
     directoryUserKept:
       "An administrator blocked this user : allow its sign-in before forgetting it",
     failedDirectoryUser: "The LDAP or SSO user could not be read or changed",

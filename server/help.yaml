@@ -152,7 +152,7 @@
     description: |
       Host the whole application (GUI, REST API and Swagger interface) under a URL subpath, typically behind a reverse proxy.
       For example with `BASE_URL=/ansibleforms`, the application is served under `https://host/ansibleforms/`.
-      Note : when using an SSO identity provider (Entra ID / OIDC), make sure the instance url in the provider settings includes the subpath, so the generated redirect uri matches.
+      Note : when using an SSO identity provider (Microsoft Entra ID / OIDC), make sure the instance url in the provider settings includes the subpath, so the generated redirect uri matches.
   - name: TRUST_PROXY
     version: 7.0.0
     type: string
@@ -465,13 +465,13 @@
     version: 7.0.4
     type: string
     allowed: a valid base URI without slash on the end
-    short: Entra ID sign-in authority
+    short: Microsoft Entra ID sign-in authority
     default: https://login.microsoftonline.com
     description: |
-      The Microsoft identity platform the server sends an Entra ID sign-in to, with the tenant id
+      The Microsoft identity platform the server sends an Microsoft Entra ID sign-in to, with the tenant id
       of the provider after it (`<authority>/<tenant>/v2.0`). Change it for a national cloud,
       e.g. `https://login.microsoftonline.us` (US Government) or `https://login.chinacloudapi.cn`
-      (China), together with `AZURE_GRAPH_URI`. Read when the Entra ID provider is enabled or
+      (China), together with `AZURE_GRAPH_URI`. Read when the Microsoft Entra ID provider is enabled or
       saved. Only HTTPS is accepted, except with `NODE_ENV=development`, for a local test
       provider.
   - name: AZURE_GRAPH_URI
@@ -651,10 +651,10 @@
     type: boolean
     allowed: 0, 1
     short: Enable Single Sign-On
-    hint: Users can sign in with the SSO providers (Entra ID, OIDC)
+    hint: Users can sign in with the SSO providers (Microsoft Entra ID, OIDC)
     default: 1
     description: |
-      Lets users sign in with the active SSO provider of each type (Entra ID, OpenID Connect)
+      Lets users sign in with the active SSO provider of each type (Microsoft Entra ID, OpenID Connect)
       configured under Settings > SSO. Off, the login page offers no provider and their
       sign-in is refused, while the providers stay configured. Takes effect at once, without a
       restart.
@@ -666,7 +666,7 @@
     hint: With one SSO provider active, users go straight to it
     default: 0
     description: |
-      When exactly one SSO provider is active (Entra ID or OpenID Connect, Settings > SSO), the
+      When exactly one SSO provider is active (Microsoft Entra ID or OpenID Connect, Settings > SSO), the
       login page sends the user straight to it instead of showing the AnsibleForms login form : a
       user already signed in with the provider is in within seconds. With both providers active
       the login page shows them, to choose. The login form stays reachable at `/login?local`
@@ -755,7 +755,7 @@
       changes their password (or an admin sets it), or when its session logs out.
 
       Profile > API token makes one for any account. A local or LDAP user confirms their
-      password ; an Entra ID or OIDC user has none here, so the token is made from their session,
+      password ; an Microsoft Entra ID or OIDC user has none here, so the token is made from their session,
       which must have signed in at most 10 minutes before (the page sends them through the sign-in
       again otherwise). An API token cannot make another. Each token is listed on the profile and
       on the user's page in Settings > Users (made, expires, last used), where the user or an admin
@@ -1428,7 +1428,7 @@
     hint: Trims the ansibleforms_user object sent to the playbook.
     default: ""
     description: |
-      Every job carries the launching user as `ansibleforms_user` in its extravars.  With an LDAP or Entra ID login that is the user's full group membership plus every resolved role option, which for a directory user in a hundred groups is a hundred lines of extravars the playbook never reads - stored in the AWX job and in `jobs.extravars`, readable by anyone with access to the job.
+      Every job carries the launching user as `ansibleforms_user` in its extravars.  With an LDAP or Microsoft Entra ID login that is the user's full group membership plus every resolved role option, which for a directory user in a hundred groups is a hundred lines of extravars the playbook never reads - stored in the AWX job and in `jobs.extravars`, readable by anyone with access to the job.
 
       Leave it empty (the default) and the whole object is sent, exactly as in every release before this one.  Set it to a comma separated list of top level keys, for example `username,email,type`, and only those are sent.  Set it to `none` and `ansibleforms_user` is not sent at all.  `all` is the default said out loud, useful for a form that must override a trimmed global setting.
 
@@ -1687,7 +1687,7 @@
         description: |
           A list of groups.  They must be in the format of `local/groupname` or `ldap/groupname` or `azuread/groupname`
 
-          An Entra ID group can be named by its object id, `azuread/<object id>` : unique, where
+          An Microsoft Entra ID group can be named by its object id, `azuread/<object id>` : unique, where
           two groups can share a display name. Both work ; the object id is the one to prefer.
       - name: users
         type: array

@@ -301,7 +301,7 @@ export function announcementLevelPill(t, level) {
 }
 
 // how a user signed in, as the disclaimer's acceptances name it
-const SIGN_IN_TYPES = { local: 'Local', ldap: 'LDAP', azuread: 'Entra ID', oidc: 'OpenID Connect' };
+const SIGN_IN_TYPES = { local: 'Local', ldap: 'LDAP', azuread: 'Microsoft Entra ID', oidc: 'OpenID Connect' };
 
 // what a credential is for (its type), in the order the dialog offers them
 // userpass : a user and a password for any login, the default ; ssh : one for SSH to a server
@@ -1034,7 +1034,7 @@ export default function getSettings(t) {
           type: 'select',
           parent: 'providers',
           values: [
-            { label: 'Entra ID', value: 'azuread' },
+            { label: 'Microsoft Entra ID', value: 'azuread' },
             { label: 'Open ID', value: 'oidc' },
           ],
           valueKey: 'value',

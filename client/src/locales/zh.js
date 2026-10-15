@@ -916,7 +916,7 @@ export default {
       source: '来源',
       sourceLocal: '本地',
       sourceLdap: 'LDAP',
-      sourceAzuread: 'Entra ID',
+      sourceAzuread: 'Microsoft Entra ID',
       sourceOidc: 'OIDC',
       blocked: '已阻止登录',
       blockedShort: '已阻止',
@@ -1141,7 +1141,7 @@ export default {
     oauth2: {
       label: 'SSO 提供商',
       labelPlural: 'SSO 提供商',
-      description: '配置用于单点登录的外部身份提供商（Entra ID、OIDC 等）。',
+      description: '配置用于单点登录的外部身份提供商（Microsoft Entra ID、OIDC 等）。',
       editProvider: '编辑提供商',
       tabProviders: '提供商',
       active: '已启用',

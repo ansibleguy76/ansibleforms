@@ -48,15 +48,15 @@ export function assertTenant(claims, tenantId) {
   // a domain as tenant id : the issuer, pinned by the discovery, names the tenant's GUID ;
   // a GUID : it must be the token's tid
   const guid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(want);
-  if (!tid) throw new Error('The Entra ID token carries no tenant (tid)');
-  if (guid && tid !== want) throw new Error(`The Entra ID token is of another tenant (${tid})`);
+  if (!tid) throw new Error('The Microsoft Entra ID token carries no tenant (tid)');
+  if (guid && tid !== want) throw new Error(`The Microsoft Entra ID token is of another tenant (${tid})`);
   if (!guid && !String(claims?.iss || '').toLowerCase().includes(`/${tid}/`)) {
-    throw new Error('The Entra ID token does not come from the tenant it names');
+    throw new Error('The Microsoft Entra ID token does not come from the tenant it names');
   }
 }
 
 const initialize = async () => {
-  logger.debug('Initializing Entra ID strategy');
+  logger.debug('Initializing Microsoft Entra ID strategy');
   passport.serializeUser((user, done) => done(null, user));
   passport.deserializeUser((user, done) => done(null, user));
 
@@ -65,23 +65,23 @@ const initialize = async () => {
   try {
     azure = await AzureAd.isEnabled();
     if (azure.enable) azureConfig = await AzureAd.find();
-    else logger.info('Entra ID is not enabled');
+    else logger.info('Microsoft Entra ID is not enabled');
   } catch (err) {
-    logger.error('Failed to get the Entra ID configuration. ', err);
+    logger.error('Failed to get the Microsoft Entra ID configuration. ', err);
     return false;
   }
   try {
     passport.unuse('azure_ad_oauth2');
   } catch (err) {
-    logger.error('Failed to remove the Entra ID strategy. ', err);
+    logger.error('Failed to remove the Microsoft Entra ID strategy. ', err);
   }
   if (!azure?.enable) return true;
   if (!azureConfig?.client_id || !azureConfig?.redirect_uri) {
-    logger.error('Could not enable Entra ID : the client id and the redirect uri are required');
+    logger.error('Could not enable Microsoft Entra ID : the client id and the redirect uri are required');
     return false;
   }
   if (!isSingleTenant(azureConfig.tenant_id)) {
-    logger.error(`Could not enable Entra ID : set the tenant id to your tenant ('${azureConfig.tenant_id || ''}' would let any Microsoft tenant log in)`);
+    logger.error(`Could not enable Microsoft Entra ID : set the tenant id to your tenant ('${azureConfig.tenant_id || ''}' would let any Microsoft tenant log in)`);
     return false;
   }
   try {
@@ -92,7 +92,7 @@ const initialize = async () => {
     const issuer = new URL(`${authority}/${tenant}/v2.0`);
     const plainHttp = issuer.protocol === 'http:';
     if (plainHttp && process.env.NODE_ENV !== 'development') {
-      logger.error(`Could not enable Entra ID : the authority ${authority} is not https`);
+      logger.error(`Could not enable Microsoft Entra ID : the authority ${authority} is not https`);
       return false;
     }
     const config = await openidClient.discovery(issuer, azureConfig.client_id, { client_secret: azureConfig.client_secret }, undefined,
@@ -101,11 +101,11 @@ const initialize = async () => {
       try {
         const claims = tokens.claims();
         assertTenant(claims, azureConfig.tenant_id);
-        logger.debug(`Entra ID login for subject=${claims.sub || 'unknown'}`);
+        logger.debug(`Microsoft Entra ID login for subject=${claims.sub || 'unknown'}`);
         // the claims and the Graph access token, for the handoff (lib/ssoHandoff.js)
         return done(null, { claims, accessToken: tokens.access_token });
       } catch (err) {
-        logger.warning(`Entra ID login refused : ${err.message}`);
+        logger.warning(`Microsoft Entra ID login refused : ${err.message}`);
         return done(err);
       }
     };
@@ -114,10 +114,10 @@ const initialize = async () => {
       scope: AZURE_SCOPES,
       callbackURL: new URL(azureConfig.redirect_uri),
     }, verify));
-    logger.info('Entra ID strategy initialized');
+    logger.info('Microsoft Entra ID strategy initialized');
     return true;
   } catch (err) {
-    logger.error(`Failed to initialize the Entra ID strategy. ${err?.message || err}`);
+    logger.error(`Failed to initialize the Microsoft Entra ID strategy. ${err?.message || err}`);
     return false;
   }
 };

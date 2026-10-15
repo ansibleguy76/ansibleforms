@@ -932,7 +932,7 @@ export default {
       source: 'Origen',
       sourceLocal: 'Local',
       sourceLdap: 'LDAP',
-      sourceAzuread: 'Entra ID',
+      sourceAzuread: 'Microsoft Entra ID',
       sourceOidc: 'OIDC',
       blocked: 'Inici de sessió bloquejat',
       blockedShort: 'Bloquejat',
@@ -1178,7 +1178,8 @@ export default {
     oauth2: {
       label: 'Proveïdor SSO',
       labelPlural: 'Proveïdors SSO',
-      description: "Configura proveïdors d'identitat externs per a l'inici de sessió únic (Entra ID, OIDC, etc.).",
+      description:
+        "Configura proveïdors d'identitat externs per a l'inici de sessió únic (Microsoft Entra ID, OIDC, etc.).",
       editProvider: 'Edita el proveïdor',
       tabProviders: 'Proveïdors',
       active: 'Actiu',
