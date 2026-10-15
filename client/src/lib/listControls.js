@@ -32,6 +32,9 @@ const LISTS = {
   notifications: { buttons: [244] },
   syslog: { buttons: [192] },
   ldap: { buttons: [190], selectable: false },
+  // Add SSO provider ; Add disclaimer
+  sso: { buttons: [190] },
+  disclaimer: { buttons: [160] },
   backups: { buttons: [144], selectable: false },
   scheduled: { buttons: [158] },
   stored: { buttons: [166] },

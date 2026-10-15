@@ -1001,8 +1001,11 @@ const isInvalidPassword = computed(() => {
 // BsDataTable mode (always on — BsDataTable is the only table renderer)
 // the list's delete action : with one, the rows get checkboxes, to delete several at once
 const deleteAction = computed(() => actions.value.find((a) => a.name === 'delete') || null);
-// checkboxes : a list that is selectable (the default), or one whose rows can be deleted
-const dataTableSelectable = computed(() => props.settings.selectable !== false || !!deleteAction.value);
+// checkboxes : a list that is selectable (the default), one whose rows can be deleted, or one that
+// asks for them (checkboxes : a read-only list, the rows ticked exported)
+const dataTableSelectable = computed(
+  () => props.settings.selectable !== false || !!deleteAction.value || !!props.settings.checkboxes,
+);
 // the table's controls on the title line (BsDataTable's toolbar), their widths in pixels as their
 // labels make them : the search, Select all on a list whose rows can be ticked, the columns, the
 // export (lib/listControls.js)
@@ -1203,6 +1206,9 @@ function dispatchAction(action, item) {
   // an action that saves a few fields of the record (action.update : an SSO provider's Use for
   // sign-in), then shows the list again
   if (typeof action.update === 'function') return quickUpdate(item, action.update(item));
+  // an action that runs on its own (action.run : a disclaimer version restored), as on the rows
+  // ticked
+  if (typeof action.run === 'function') return runAction(action, [item]);
   switch (action.name) {
     case 'edit':
       // a record with its own page is edited there
@@ -1430,6 +1436,50 @@ async function bulkDelete() {
   }
 }
 
+// ─── the list's own actions that run (action.run) : on a row, and on the rows ticked ────
+// each { name, title, icon, enabledWhen?(row), confirm?(count, rows), done?(n, rows),
+// run(ids, rows), bulk? } : in the row menu, and - bulk - a button beside Delete while rows are
+// ticked, acting on those it is enabled for ; asking first when it says how
+const bulkActions = computed(() => actions.value.filter((a) => a.bulk && typeof a.run === 'function'));
+
+/**
+ * The rows ticked that a list action applies to, among those still on screen.
+ *
+ * Args:
+ *   action (object): the action (settings.bulkActions).
+ *
+ * Returns:
+ *   object[]: the rows.
+ */
+function bulkRows(action) {
+  return itemList.value.filter(
+    (r) => selectedIds.value.has(r[idKey]) && (!action.enabledWhen || action.enabledWhen(r)),
+  );
+}
+
+/**
+ * Runs a list action on rows, after asking when it asks, then reads the list again.
+ *
+ * Args:
+ *   action (object): the action (action.run).
+ *   rows (object[]): the rows : a row's menu's one, or those ticked it is enabled for.
+ */
+async function runAction(action, rows) {
+  if (!rows.length) return;
+  if (action.confirm && !confirm(action.confirm(rows.length, rows))) return;
+  try {
+    const n = await action.run(
+      rows.map((r) => r[idKey]),
+      rows,
+    );
+    toast.success(action.done ? action.done(typeof n === 'number' ? n : rows.length, rows) : action.title);
+    selectedIds.value = new Set();
+    await loadItems();
+  } catch (err) {
+    toast.error(Helpers.parseAxiosResponseError(err, action.title));
+  }
+}
+
 // HOOKS
 
 onMounted(async () => {
@@ -1512,7 +1562,19 @@ defineExpose({
       >
         <template v-if="dataTableSelectable" #bulk-actions="{ count }">
           <!-- in the style of the toolbar's other buttons -->
-          <BsButton v-if="count" icon="trash" @click="bulkDelete"> {{ t('common.delete') }} ({{ count }}) </BsButton>
+          <!-- the list's own actions on them (settings.bulkActions), then Delete -->
+          <template v-for="action in bulkActions" :key="'bulk-' + action.name">
+            <BsButton
+              v-if="count"
+              :icon="action.icon"
+              :disabled="!bulkRows(action).length"
+              @click="runAction(action, bulkRows(action))"
+              >{{ action.title }} ({{ bulkRows(action).length }})</BsButton
+            >
+          </template>
+          <BsButton v-if="count && deleteAction" icon="trash" @click="bulkDelete">
+            {{ t('common.delete') }} ({{ count }})
+          </BsButton>
         </template>
         <template v-if="dataTableShowRowMenu" #row-actions="{ item }">
           <div class="dropdown">

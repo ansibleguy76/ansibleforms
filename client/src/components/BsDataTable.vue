@@ -563,7 +563,9 @@ function clearSelection() {
 
 function exportCsv() {
   const lines = [props.columns.map((c) => csvCell(c.label)).join(',')];
-  for (const item of filteredItems.value) {
+  // the rows ticked, else those the filter keeps
+  const ticked = props.selectedIds.size ? props.items.filter((i) => props.selectedIds.has(i[props.idKey])) : null;
+  for (const item of ticked || filteredItems.value) {
     lines.push(props.columns.map((col) => csvCell(cellPlain(item, col))).join(','));
   }
   const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });

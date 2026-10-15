@@ -422,7 +422,7 @@ export default {
   },
   disclaimer: {
     accept: 'Aceitar',
-    decline: 'Recusar e terminar sessão',
+    decline: 'Recusar',
   },
   sidebar: {
     sections: {
@@ -1299,8 +1299,6 @@ export default {
       publishedBy: 'Publicado por',
       publishedAt: 'Publicado',
       tabAcceptances: 'Aceitações',
-      acceptance: 'Aceitação',
-      acceptancesDescription: 'Quem aceitou que versão do aviso legal, quando e de onde.',
       enabled: 'Exigir um aviso legal',
       enabledHelp:
         'Cada utilizador aceita-o uma vez após iniciar sessão; até lá a aplicação não mostra mais nada. Os tokens de API não são questionados.',
@@ -1325,6 +1323,21 @@ export default {
       acceptedAt: 'Aceite',
       ip: 'Endereço IP',
       browser: 'Navegador',
+      askAgain: 'Pedir novamente',
+      askAgainConfirm: 'Pedir a {count} utilizador(es) que aceitem novamente o aviso? A aceitação é apagada.',
+      askAgainDone: '{count} utilizador(es) aceitarão o aviso novamente no próximo início de sessão.',
+      restore: 'Ativar esta versão',
+      versionEnabled: 'Ativada',
+      label: 'Aviso',
+      labelPlural: 'Avisos',
+      editDisclaimer: 'Editar aviso',
+      enabledHelpVersion:
+        'Ligado: os utilizadores aceitam este aviso no próximo pedido, e os outros ficam desligados. Desligado: nenhum aviso é pedido.',
+      askAgainTextVersion:
+        '{count} utilizador(es) aceitaram este texto. Pedir-lhes que o aceitem novamente, ou mantê-lo como correção (ninguém volta a ser solicitado)?',
+      notFound: 'Nenhum aviso {id}.',
+      restoreConfirm: 'Ativar a versão {version}? Quem já a aceitou não volta a ser solicitado.',
+      restoreDone: 'A versão {version} está ativada.',
     },
     notificationChannels: {
       label: 'Canal de notificação',

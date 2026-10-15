@@ -419,7 +419,7 @@ export default {
   },
   disclaimer: {
     accept: 'Accepteren',
-    decline: 'Weigeren en afmelden',
+    decline: 'Weigeren',
   },
   sidebar: {
     sections: {
@@ -1389,8 +1389,6 @@ export default {
       publishedBy: 'Gepubliceerd door',
       publishedAt: 'Gepubliceerd',
       tabAcceptances: 'Acceptaties',
-      acceptance: 'Acceptatie',
-      acceptancesDescription: 'Wie welke versie van de disclaimer accepteerde, wanneer en vanaf waar.',
       enabled: 'Disclaimer vereisen',
       enabledHelp:
         'Elke gebruiker accepteert hem één keer na het aanmelden; tot dan toont de app niets anders. API-tokens worden niet gevraagd.',
@@ -1415,6 +1413,21 @@ export default {
       acceptedAt: 'Geaccepteerd',
       ip: 'IP-adres',
       browser: 'Browser',
+      askAgain: 'Opnieuw vragen',
+      askAgainConfirm: '{count} gebruiker(s) vragen de disclaimer opnieuw te accepteren? Hun acceptatie wordt gewist.',
+      askAgainDone: '{count} gebruiker(s) accepteren de disclaimer opnieuw bij hun volgende aanmelding.',
+      restore: 'Deze versie inschakelen',
+      versionEnabled: 'Ingeschakeld',
+      label: 'Disclaimer',
+      labelPlural: 'Disclaimers',
+      editDisclaimer: 'Disclaimer bewerken',
+      enabledHelpVersion:
+        'Aan: gebruikers accepteren deze disclaimer bij hun volgende verzoek, de andere zijn uit. Uit: er wordt geen disclaimer gevraagd.',
+      askAgainTextVersion:
+        '{count} gebruiker(s) accepteerden deze tekst. Hen opnieuw vragen, of bewaren als correctie (niemand wordt opnieuw gevraagd)?',
+      notFound: 'Geen disclaimer {id}.',
+      restoreConfirm: 'Versie {version} inschakelen? Wie hem al accepteerde, wordt niet opnieuw gevraagd.',
+      restoreDone: 'Versie {version} is ingeschakeld.',
     },
     notificationChannels: {
       label: 'Meldingskanaal',

@@ -409,7 +409,7 @@ export default {
   },
   disclaimer: {
     accept: '接受',
-    decline: '拒绝并退出登录',
+    decline: '拒绝',
   },
   sidebar: {
     sections: {
@@ -1251,8 +1251,6 @@ export default {
       publishedBy: '发布者',
       publishedAt: '发布时间',
       tabAcceptances: '接受记录',
-      acceptance: '接受',
-      acceptancesDescription: '谁在何时、从何处接受了哪个版本的免责声明。',
       enabled: '要求免责声明',
       enabledHelp: '每个用户登录后接受一次；在此之前应用不显示其他内容。API 令牌不受此要求。',
       currentVersion: '当前版本：{version}。',
@@ -1275,6 +1273,19 @@ export default {
       acceptedAt: '接受时间',
       ip: 'IP 地址',
       browser: '浏览器',
+      askAgain: '再次请求',
+      askAgainConfirm: '要请 {count} 位用户再次接受免责声明吗？他们的接受记录将被清除。',
+      askAgainDone: '{count} 位用户将在下次登录时再次接受免责声明。',
+      restore: '启用此版本',
+      versionEnabled: '已启用',
+      label: '免责声明',
+      labelPlural: '免责声明',
+      editDisclaimer: '编辑免责声明',
+      enabledHelpVersion: '开启：用户将在下次请求时接受此免责声明，其他的将关闭。关闭：不要求任何免责声明。',
+      askAgainTextVersion: '{count} 位用户已接受此文本。要请他们再次接受，还是作为更正保留（不会再要求任何人）？',
+      notFound: '没有免责声明 {id}。',
+      restoreConfirm: '启用版本 {version} 吗？已接受过它的用户不会再被要求接受。',
+      restoreDone: '版本 {version} 已启用。',
     },
     notificationChannels: {
       label: '通知通道',

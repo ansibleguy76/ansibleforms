@@ -11,6 +11,9 @@
 /*      iconClass: String - a class on    */
 /*         that icon (text-warning ...)   */
 /*      size: String                      */
+/*      blur: Boolean - the page behind   */
+/*         blurred, not only darkened (the */
+/*         disclaimer : read it first)    */
 /*      dialogClass: String - a class on  */
 /*         the dialog box itself          */
 /*        'sm' | 'md' | 'lg' | 'xl'        */
@@ -50,6 +53,7 @@ const props = defineProps({
   dialogClass: { type: String, default: '' },
   footerClose: { type: Boolean, default: true },
   closable: { type: Boolean, default: true },
+  blur: { type: Boolean, default: false },
 });
 
 // Bootstrap has modal-sm/-lg/-xl but no modal-md : the default width is the
@@ -107,5 +111,15 @@ function backdropClick(e) {
       </div>
     </div>
   </div>
-  <div class="modal-backdrop fade show"></div>
+  <div class="modal-backdrop fade show" :class="{ 'af-backdrop-blur': blur }"></div>
 </template>
+<style scoped>
+/* the page behind blurred : nothing of it can be read until the dialog is answered */
+.af-backdrop-blur {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  /* opaque, its colour see-through instead : Bootstrap's half opacity halved the blur too */
+  opacity: 1 !important;
+  background-color: rgba(var(--bs-black-rgb), 0.35);
+}
+</style>

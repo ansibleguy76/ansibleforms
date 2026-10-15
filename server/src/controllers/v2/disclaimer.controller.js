@@ -74,9 +74,69 @@ const version = async (req, res) => {
   }
 };
 
+// a disclaimer added : a new version, not enabled
+const createVersion = async (req, res) => {
+  try {
+    const version = await Disclaimer.createVersion(req.body, req.user?.user?.username);
+    return res.json(RestResult.single({ id: version, version }));
+  } catch (err) {
+    Errors.ReturnError(res, err);
+  }
+};
+
+// a version's words changed : a correction, or (askAgain) everyone accepting it again
+const updateVersion = async (req, res) => {
+  try {
+    await Disclaimer.updateVersion(req.params.id, req.body);
+    return res.json(RestResult.single(await Disclaimer.version(req.params.id)));
+  } catch (err) {
+    Errors.ReturnError(res, err);
+  }
+};
+
+// a version enabled (the one users accept) or disabled (the disclaimer off) { enabled }
+const enableVersion = async (req, res) => {
+  try {
+    await Disclaimer.enableVersion(req.params.id, req.body?.enabled !== false && req.body?.enabled !== 0, req.user?.user?.username);
+    return res.json(RestResult.single(await Disclaimer.version(req.params.id)));
+  } catch (err) {
+    Errors.ReturnError(res, err);
+  }
+};
+
+// a version deleted, with who accepted it
+const deleteVersion = async (req, res) => {
+  try {
+    await Disclaimer.deleteVersion(req.params.id);
+    return res.json(RestResult.single({ message: i18n.t(req, "success.deleted", { resource: "Disclaimer version" }) }));
+  } catch (err) {
+    Errors.ReturnError(res, err);
+  }
+};
+
+// a version restored : its text the current one again, as a new version
+const restoreVersion = async (req, res) => {
+  try {
+    const version = await Disclaimer.restoreVersion(req.params.id, req.user?.user?.username);
+    return res.json(RestResult.single({ version }));
+  } catch (err) {
+    Errors.ReturnError(res, err);
+  }
+};
+
+// Ask again : the acceptances ticked no longer count, their users accept again { ids }
+const askAgain = async (req, res) => {
+  try {
+    const count = await Disclaimer.askAgain(req.body?.ids, req.user?.user?.username);
+    return res.json(RestResult.single({ count }));
+  } catch (err) {
+    Errors.ReturnError(res, err);
+  }
+};
+
 const acceptances = async (req, res) => {
   try {
-    return res.json(RestResult.list(await Disclaimer.acceptances()));
+    return res.json(RestResult.list(await Disclaimer.acceptances(req.query.version)));
   } catch (err) {
     Errors.ReturnError(res, err);
   }
@@ -90,4 +150,4 @@ const acceptance = async (req, res) => {
   }
 };
 
-export default { current, accept, decline, settings, saveSettings, versions, version, acceptances, acceptance };
+export default { current, accept, decline, settings, saveSettings, versions, version, acceptances, acceptance, askAgain, deleteVersion, restoreVersion, createVersion, updateVersion, enableVersion };
