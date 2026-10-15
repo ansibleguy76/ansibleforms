@@ -191,8 +191,9 @@ onMounted(async () => {
         </ul>
       </template>
       <template #actions>
-        <!-- the dialog as users will see it, with the text as it is now -->
-        <BsButton icon="eye" :disabled="!edit.text.trim()" @click="previewOpen = true">{{
+        <!-- the dialog as users will see it, with the text as it is now ; none while it is not
+             required (its fields are greyed then) -->
+        <BsButton icon="eye" :disabled="!edit.enabled || !edit.text.trim()" @click="previewOpen = true">{{
           t('settings.disclaimer.preview')
         }}</BsButton>
         <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
