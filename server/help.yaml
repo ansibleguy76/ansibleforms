@@ -749,10 +749,12 @@
     short: API token maximum life (days)
     hint: A login with ?expiryDays= longer than this is cut to it
     description: |
-      A role with the `extendedTokenExpiration` option may log in with `?expiryDays=<n>` and get
-      an access token that lives n days, for scripts and integrations. It lives this many days at
-      most : a longer request is cut to it. Like every token, it ends sooner when its user
-      changes their password (or an admin sets it), or when its session logs out.
+      A role with the `allowApiTokens` option may log in with `?expiryDays=<n>` and get an access
+      token that lives n days, for scripts and integrations. It lives this many days at most : a
+      longer request is cut to it. A role with `extendedTokenExpiration` may also ask
+      `?expiryDays=never` for a token that never expires. Like every token, it ends sooner when its
+      user changes their password (or an admin sets it), when it is revoked, or when its session
+      logs out.
 
       Profile > API token makes one for any account. A local or LDAP user confirms their
       password ; a Microsoft Entra ID or OIDC user has none here, so the token is made from their session,
@@ -1542,6 +1544,7 @@
       Since version 5.0.8 options are introduced to add specific role-options.  
 
       - showDesigner: The user can see the designer
+      - allowFormDesign: The user can edit the forms config in the designer (categories, constants, forms : save, restore, pull and push the forms repositories). Without it the designer shows them read-only. Default true. (Added in 7.3.0)
       - allowPlaybookDesign: The user can edit the playbooks in the designer (save, new, remove, push). Without it the designer shows them read-only. Default true. (Added in 7.0.0)
       - allowWorkflowDesign: The user can edit the workflows in the designer (save, new, remove, push). Without it the designer shows them read-only. Default true. (Added in 7.1.0)
       - allowInventoryDesign: The user can edit the inventories in the designer (save, new, remove, push). Without it the designer shows them read-only. Default true. (Added in 7.1.0)
@@ -1549,15 +1552,22 @@
       - showSettings: The user can see the settings page
       - showDebugButtons: The user can see the debug buttons on a form
       - showExtravars: The user can see the extravars on a form
-      - showLogs: The user can see the logs page
+      - showLogs: The user can see the server log (Settings > Server log)
+      - showAuditLog: The user can see the audit log (Settings > Audit log) without the other settings. Default : admins. (Added in 7.3.0)
+      - showAppearanceSettings: The user can change Settings > Appearance (defaults, name, logo, icon, links, environment label, announcements) without the other settings. Default false. (Added in 7.3.0)
+      - showConnectionsSettings: The user can manage Settings > Connections (repositories, credentials, secret stores, runners, SSH, notifications, chat assistant, MCP, syslog) without the other settings. Default false. (Added in 7.3.0)
       - showJobs: The user can see the jobs page. Default true.
       - showArtifacts: The user can see the artifacts an AWX job returns. Default true.
-      - extendedTokenExpiration: The user can request a token with a longer expiration time (for coding api purposes for example)  
+      - allowFileUploads: The user can upload files through a form's file fields. Without it the field is read-only and the upload is refused. Default true. (Added in 7.3.0)
+      - allowApiTokens: The user can make API tokens (Profile > API token), living up to API_TOKEN_MAX_DAYS. Default false (true for a role that only sets extendedTokenExpiration, as before this option). (Added in 7.3.0)
+      - extendedTokenExpiration: With allowApiTokens, the user can also make API tokens that never expire. Default false.
       - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
       - allowLogin: The user can login.
       - allowBackupOps: The user can perform database operations, such as backup and restore.
       - allowVerboseMode: The user can enable verbose mode on ansible forms.
       - allowJobRelaunch: The user can relaunch jobs with pre-filled form data from previous submissions.
+      - allowJobDeletion: The user can delete jobs (their own ; an admin every job). Without it the job history stays whole. Default true. (Added in 7.3.0)
+      - manageAllJobs: The user can abort, delete and relaunch the jobs of every user, not only their own, without the admin role (delete and relaunch also need allowJobDeletion and allowJobRelaunch). Default : admins. (Added in 7.3.0)
       - allowScheduledJobs: The user can create and manage scheduled jobs (recurring cron or one-time). Default for admins only. Grant it only to roles you would trust as admins: every user with this option sees and can change all schedules, not only their own, and a schedule they create runs with admin rights, for any form. (Added in 6.1.5)
       - allowStoredJobs: The user can store and load job data for later use. (Added in 6.1.5)
       - allowPlannedJobs: The user can plan a one-time run of a form they may run ("Run later"). The job runs as that user, not as admin, and they cannot see or change other schedules. (Added in 6.1.5)
@@ -1752,6 +1762,7 @@
           The options are:
 
           - showDesigner: The user can see the designer
+          - allowFormDesign: The user can edit the forms config in the designer (categories, constants, forms : save, restore, pull and push the forms repositories). Without it the designer shows them read-only. Default true. (Added in 7.3.0)
           - allowPlaybookDesign: The user can edit the playbooks in the designer (save, new, remove, push). Without it the designer shows them read-only. Default true. (Added in 7.0.0)
           - allowWorkflowDesign: The user can edit the workflows in the designer (save, new, remove, push). Without it the designer shows them read-only. Default true. (Added in 7.1.0)
           - allowInventoryDesign: The user can edit the inventories in the designer (save, new, remove, push). Without it the designer shows them read-only. Default true. (Added in 7.1.0)
@@ -1759,15 +1770,22 @@
           - showSettings: The user can see the settings page
           - showDebugButtons: The user can see the debug buttons on a form
           - showExtravars: The user can see the extravars on a form
-          - showLogs: The user can see the logs page
+          - showLogs: The user can see the server log (Settings > Server log)
+          - showAuditLog: The user can see the audit log (Settings > Audit log) without the other settings. Default : admins. (Added in 7.3.0)
+          - showAppearanceSettings: The user can change Settings > Appearance (defaults, name, logo, icon, links, environment label, announcements) without the other settings. Default false. (Added in 7.3.0)
+          - showConnectionsSettings: The user can manage Settings > Connections (repositories, credentials, secret stores, runners, SSH, notifications, chat assistant, MCP, syslog) without the other settings. Default false. (Added in 7.3.0)
           - showJobs: The user can see the jobs page. Default true.
           - showArtifacts: The user can see the artifacts an AWX job returns. Default true.
-          - extendedTokenExpiration: The user can request a token with a longer expiration time (for coding api purposes for example)  
+          - allowFileUploads: The user can upload files through a form's file fields. Without it the field is read-only and the upload is refused. Default true. (Added in 7.3.0)
+          - allowApiTokens: The user can make API tokens (Profile > API token), living up to API_TOKEN_MAX_DAYS. Default false (true for a role that only sets extendedTokenExpiration, as before this option). (Added in 7.3.0)
+          - extendedTokenExpiration: With allowApiTokens, the user can also make API tokens that never expire. Default false.
           - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
           - allowLogin: The user can login.
           - allowBackupOps: The user can perform database operations, such as backup and restore.
           - allowVerboseMode: The user can enable verbose mode on ansible forms.
           - allowJobRelaunch: The user can relaunch jobs with pre-filled form data from previous submissions.
+          - allowJobDeletion: The user can delete jobs (their own ; an admin every job). Without it the job history stays whole. Default true. (Added in 7.3.0)
+          - manageAllJobs: The user can abort, delete and relaunch the jobs of every user, not only their own, without the admin role (delete and relaunch also need allowJobDeletion and allowJobRelaunch). Default : admins. (Added in 7.3.0)
           - allowScheduledJobs: The user can create and manage scheduled jobs (recurring cron or one-time). Default for admins only. Grant it only to roles you would trust as admins: every user with this option sees and can change all schedules, not only their own, and a schedule they create runs with admin rights, for any form. (Added in 6.1.5)
           - allowStoredJobs: The user can store and load job data for later use. (Added in 6.1.5)
           - allowPlannedJobs: The user can plan a one-time run of a form they may run ("Run later"). The job runs as that user, not as admin, and they cannot see or change other schedules. (Added in 6.1.5)

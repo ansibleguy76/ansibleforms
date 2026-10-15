@@ -25,10 +25,23 @@ function applyOptionDefaults(options, isAdmin) {
   // in the designer, each kind of file written (saved, new, removed, pushed) : on for every
   // designer unless a role says otherwise
   if (options.allowPlaybookDesign === undefined) options.allowPlaybookDesign = true;
+  // the forms config in the designer (categories, constants, forms) : as the files, on unless a role says otherwise
+  if (options.allowFormDesign === undefined) options.allowFormDesign = true;
+  // api tokens (lib/tokenLifetime.js) : off unless a role turns them on - a role from before this
+  // option, with only extendedTokenExpiration (then the token permission), keeps them ;
+  // extendedTokenExpiration (with them, one that never expires) off as well
+  if (options.allowApiTokens === undefined) options.allowApiTokens = !!options.extendedTokenExpiration;
+  if (options.extendedTokenExpiration === undefined) options.extendedTokenExpiration = false;
   if (options.allowWorkflowDesign === undefined) options.allowWorkflowDesign = true;
   if (options.allowInventoryDesign === undefined) options.allowInventoryDesign = true;
   if (options.allowVarsFileDesign === undefined) options.allowVarsFileDesign = true;
   if (options.showLogs === undefined) options.showLogs = isAdmin;
+  // the audit log on its own (the settings give it too) : as the server log, the admins'
+  if (options.showAuditLog === undefined) options.showAuditLog = isAdmin;
+  // a part of the settings on its own (lib/settingsSections.js) : off unless a role turns it on
+  // (showSettings gives every part)
+  if (options.showAppearanceSettings === undefined) options.showAppearanceSettings = false;
+  if (options.showConnectionsSettings === undefined) options.showConnectionsSettings = false;
   if (options.allowBackupOps === undefined) options.allowBackupOps = isAdmin;
   if (options.showJobs === undefined) options.showJobs = true;
   if (options.showDebugButtons === undefined) options.showDebugButtons = true;
@@ -37,8 +50,14 @@ function applyOptionDefaults(options, isAdmin) {
   if (options.showArtifacts === undefined) options.showArtifacts = true;
   if (options.allowJobRelaunch === undefined) options.allowJobRelaunch = isAdmin;
   if (options.showAllJobLogs === undefined) options.showAllJobLogs = isAdmin;
+  // every user's jobs acted on (abort, delete, relaunch ; job.model.js managesAllJobs) : the admins'
+  if (options.manageAllJobs === undefined) options.manageAllJobs = isAdmin;
   if (options.allowScheduledJobs === undefined) options.allowScheduledJobs = isAdmin;
   if (options.allowStoredJobs === undefined) options.allowStoredJobs = true;
+  // a form's file fields, uploaded to the server : on unless a role turns it off
+  if (options.allowFileUploads === undefined) options.allowFileUploads = true;
+  // deleting jobs (their own ; every job for an admin) : on unless a role turns it off
+  if (options.allowJobDeletion === undefined) options.allowJobDeletion = true;
   if (options.allowPlannedJobs === undefined) options.allowPlannedJobs = true;
   // the chat assistant (ENABLE_CHAT) : on for everyone unless a role says otherwise
   if (options.allowChat === undefined) options.allowChat = true;

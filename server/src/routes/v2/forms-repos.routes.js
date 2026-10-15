@@ -1,4 +1,5 @@
 import express from 'express';
+import Middleware from '../../lib/middleware.js';
 import repositoryController from '../../controllers/v2/repository.controller.js';
 
 const router = express.Router();
@@ -10,12 +11,12 @@ const router = express.Router();
 // list the forms repositories
 router.get('/', repositoryController.formsRepos);
 // commit & push all forms repositories
-router.post('/sync/', repositoryController.formsRepoSyncAll);
+router.post('/sync/', Middleware.checkFormDesignMiddleware, repositoryController.formsRepoSyncAll);
 // commit & push one forms repository by name
-router.post('/sync/:name', repositoryController.formsRepoSync);
+router.post('/sync/:name', Middleware.checkFormDesignMiddleware, repositoryController.formsRepoSync);
 // pull all forms repositories from their remote
-router.post('/pull/', repositoryController.formsRepoPullAll);
+router.post('/pull/', Middleware.checkFormDesignMiddleware, repositoryController.formsRepoPullAll);
 // pull one forms repository from its remote by name
-router.post('/pull/:name', repositoryController.formsRepoPull);
+router.post('/pull/:name', Middleware.checkFormDesignMiddleware, repositoryController.formsRepoPull);
 
 export default router

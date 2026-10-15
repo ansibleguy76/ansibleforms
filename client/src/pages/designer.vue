@@ -3122,7 +3122,9 @@ const hasUnpushed = computed(() => stagedForms.value || formsRepos.value.some((r
 const busy = computed(() => syncing.value || loadingRepos.value);
 // gate for everything that WRITES : the same in-flight guard, plus the ytt
 // template case where the designer only holds an expansion of the real config
-const busyOrTemplated = computed(() => busy.value || configTemplated.value);
+// the categories, the constants and the forms are changed only with the role option allowFormDesign
+const canDesignForms = computed(() => store.profile?.options?.allowFormDesign !== false);
+const busyOrTemplated = computed(() => busy.value || configTemplated.value || !canDesignForms.value);
 
 async function loadFormsRepos() {
   try {
@@ -3327,6 +3329,11 @@ async function validateForms() {
 
 async function saveForms(close = false) {
   if (busy.value) return; // a push/load is in flight : ignore (e.g. Ctrl+S)
+  // the forms without allowFormDesign : read, not saved (Ctrl+S included ; the server refuses too)
+  if (!canDesignForms.value) {
+    if (close) resetAction();
+    return;
+  }
   // the buffers are the ytt EXPANSION of the stored template : saving them would
   // replace the template with its output (see loadConfigTemplated)
   if (configTemplated.value) {
@@ -3537,7 +3544,7 @@ const toolbarActions = computed(() => {
       key: 'loadRepository',
       run: loadRepository,
       show: repos,
-      disabled: busy.value,
+      disabled: busy.value || !canDesignForms.value,
       title: loadingRepos.value ? t('designer.loading') : undefined,
     },
     { key: 'validate', run: validateForms, disabled: busy.value },
@@ -4910,12 +4917,13 @@ onBeforeUnmount(() => {
                   <AppCategoriesEditor
                     ref="visualEditor"
                     v-model="categories"
-                    :readOnly="!(lock && lock.match) || configTemplated"
+                    :readOnly="!(lock && lock.match) || configTemplated || !canDesignForms"
                   />
                 </div>
                 <div v-else-if="loaded && currentTab == 'Categories'">
                   <BsInput
                     type="editor"
+                    :readonly="configTemplated || !canDesignForms"
                     :isFloating="false"
                     v-model="categories"
                     @save="saveForms()"
@@ -4991,12 +4999,13 @@ onBeforeUnmount(() => {
                   <AppConstantsEditor
                     ref="visualEditor"
                     v-model="constants"
-                    :readOnly="!(lock && lock.match) || configTemplated"
+                    :readOnly="!(lock && lock.match) || configTemplated || !canDesignForms"
                   />
                 </div>
                 <div v-else-if="loaded && currentTab == 'Constants'">
                   <BsInput
                     type="editor"
+                    :readonly="configTemplated || !canDesignForms"
                     :isFloating="false"
                     v-model="constants"
                     @save="saveForms()"
@@ -5066,7 +5075,7 @@ onBeforeUnmount(() => {
                         :key="'formvisual-' + currentForm"
                         ref="visualEditor"
                         v-model="forms[currentForm]"
-                        :readOnly="!(lock && lock.match) || configTemplated"
+                        :readOnly="!(lock && lock.match) || configTemplated || !canDesignForms"
                         :categoryOptions="visualCategoryOptions"
                         :roleOptions="visualRoleOptions"
                         :otherForms="visualOtherForms"
@@ -5075,6 +5084,7 @@ onBeforeUnmount(() => {
                     <div v-else-if="editorTarget" :key="'formeditor-' + currentForm">
                       <BsInput
                         type="editor"
+                        :readonly="configTemplated || !canDesignForms"
                         :isFloating="false"
                         v-model="forms[currentForm]"
                         @save="saveForms()"

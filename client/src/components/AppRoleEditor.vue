@@ -30,7 +30,13 @@
 
 import { ref, computed, h } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { requiredRoleDescription } from '@/config/roles';
+import {
+  requiredRoleDescription,
+  roleOptionGroups,
+  roleOptionIncludedIn,
+  roleOptionNeeds,
+  roleOptionDescription,
+} from '@/config/roles';
 import { usePagedRows } from '@/composables/usePagedRows';
 
 const props = defineProps({
@@ -43,6 +49,66 @@ const props = defineProps({
   nextUid: { type: Function, required: true },
   tab: { type: String, default: '' },
   throughGroups: { type: Array, default: () => [] },
+});
+
+// the options in their groups (config/roles.js), each with its title, only those the page passes
+// (optionKeys) ; an option in no group, last, under none
+/**
+ * The option that already gives this one, when it is on (Show all settings gives the parts).
+ *
+ * Args:
+ *   key (string): the option.
+ *
+ * Returns:
+ *   string|null: the option that gives it, or null.
+ */
+function includedBy(key) {
+  const by = roleOptionIncludedIn[key];
+  return by && role.value.options?.[by] ? by : null;
+}
+
+/**
+ * The option another one needs, when that one is off (the Edit options need Show Designer).
+ *
+ * Args:
+ *   key (string): the option.
+ *
+ * Returns:
+ *   string|null: the option it needs, or null.
+ */
+function missing(key) {
+  const needs = roleOptionNeeds[key];
+  return needs && !role.value.options?.[needs] ? needs : null;
+}
+
+/**
+ * The popover of an option : what it gives (config/roles.js) and, for a part of the settings, that
+ * Show all settings includes it.
+ *
+ * Args:
+ *   key (string): the option.
+ *
+ * Returns:
+ *   string: the text ; '' for none.
+ */
+function optionHelp(key) {
+  const description = roleOptionDescription(t, te, key);
+  const by = roleOptionIncludedIn[key];
+  const included = by ? t('settings.settingsPage.roleOptionIncluded', { option: props.optionLabel(by) }) + '.' : '';
+  const needs = roleOptionNeeds[key];
+  const needed = needs ? t('settings.settingsPage.roleOptionNeeds', { option: props.optionLabel(needs) }) + '.' : '';
+  return [description, included, needed].filter(Boolean).join(' ');
+}
+
+const optionGroups = computed(() => {
+  const keys = props.optionKeys;
+  const groups = roleOptionGroups
+    .map((g) => ({ name: g.name, title: t(g.title), keys: g.keys.filter((k) => keys.includes(k)) }))
+    .filter((g) => g.keys.length);
+  const grouped = new Set(roleOptionGroups.flatMap((g) => g.keys));
+  const rest = keys.filter((k) => !grouped.has(k));
+  if (rest.length) groups.push({ name: 'other', title: '', keys: rest });
+  return groups;
 });
 
 // what holds the tabs' content : under the editor's own tab strip (a dialog), a card the tabs
@@ -80,7 +146,7 @@ function toggleAll(list) {
   selected.value = all ? [] : uids;
 }
 
-const { t } = useI18n();
+const { t, te } = useI18n();
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
 // the role in three tabs : General (its name and options), its users and its groups, each of
@@ -206,16 +272,45 @@ function removeUser(index) {
         :placeholder="t('settings.settingsPage.roleDescriptionPlaceholder')"
         :disabled="readOnly"
       />
-      <label class="form-label fw-bold">{{ t('settings.settingsPage.options') }}</label>
-      <div class="row row-cols-2 row-cols-md-3 g-0 role-options mb-3">
-        <div v-for="optKey in optionKeys" :key="optKey" class="col">
-          <BsInput
-            type="checkbox"
-            :isSwitch="true"
-            v-model="role.options[optKey]"
-            :label="optionLabel(optKey)"
-            :disabled="readOnly"
-          />
+      <label class="form-label fw-bold af-role-options-title">{{ t('settings.settingsPage.options') }}</label>
+      <!-- the options in their groups (config/roles.js), each under its title -->
+      <div v-for="group in optionGroups" :key="group.name" class="af-role-option-group">
+        <div class="af-role-option-group-title">{{ group.title }}</div>
+        <div class="row row-cols-2 row-cols-md-3 g-0 role-options">
+          <div v-for="optKey in group.keys" :key="optKey" class="col">
+            <!-- given by another option that is on (Show all settings) : on, greyed out, its own value
+                 kept for when that one is turned off -->
+            <div class="af-role-option">
+              <BsInput
+                v-if="includedBy(optKey)"
+                type="checkbox"
+                :isSwitch="true"
+                :modelValue="true"
+                :label="optionLabel(optKey)"
+                :disabled="true"
+              />
+              <!-- needs another option that is off (Show Designer for the Edit ones) : off and greyed
+                   out, its own value kept for when that one is turned on -->
+              <BsInput
+                v-else-if="missing(optKey)"
+                type="checkbox"
+                :isSwitch="true"
+                :modelValue="false"
+                :label="optionLabel(optKey)"
+                :disabled="true"
+              />
+              <BsInput
+                v-else
+                type="checkbox"
+                :isSwitch="true"
+                v-model="role.options[optKey]"
+                :label="optionLabel(optKey)"
+                :disabled="readOnly"
+              />
+              <!-- what it gives, and when another option covers it, that it does -->
+              <AppInfoPopover v-if="optionHelp(optKey)" :text="optionHelp(optKey)" placement="top" />
+            </div>
+          </div>
         </div>
       </div>
     </template>
@@ -483,9 +578,58 @@ function removeUser(index) {
   justify-content: center;
   padding: 0 0.75rem;
 }
+/* a toggle and its (i) right after the label, on one line : the switch without its own bottom
+   margin, the row's room given by the option itself */
+.af-role-option {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.4rem 0;
+}
+.role-options .af-role-option :deep(.mb-3) {
+  margin-bottom: 0 !important;
+}
+.af-role-option :deep(.form-check) {
+  margin-bottom: 0;
+}
+/* BsInput's field label is empty for a switch (its label is the switch's own) : not drawn here, so
+   the row is the switch, its label and the (i), centred together */
+.af-role-option :deep(.form-label) {
+  display: none;
+}
+/* the (i) of a page title is sized and raised for the title : here, beside a label, its own size
+   and centred on the label's line */
+.af-role-option :deep(.af-info-btn) {
+  align-self: center;
+  margin: 0;
+  padding: 0 0.15rem;
+  font-size: 0.8rem;
+  vertical-align: middle;
+}
 .role-options {
-  margin-top: -0.5rem;
-  /* the switches take back their own margin : this gives the tab its room at the bottom */
+  /* the switches take back their own margin : this gives the group its room at the bottom */
+  padding-bottom: 0.5rem;
+}
+/* a group of options : its title small, in capitals and grey, as the settings menu's sections */
+/* room above each group, its title close to its options ; the first one, under the options'
+   heading, only a little */
+.af-role-option-group {
+  margin-top: 0.75rem;
+  padding-top: 0.25rem;
+}
+.af-role-options-title + .af-role-option-group {
+  margin-top: 0;
+  padding-top: 0.6rem;
+}
+.af-role-option-group-title {
+  margin: 0.25rem 0 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--bs-secondary-color);
+}
+.af-role-option-group:last-child .role-options {
   padding-bottom: 0.75rem;
 }
 .role-options :deep(.mb-3) {

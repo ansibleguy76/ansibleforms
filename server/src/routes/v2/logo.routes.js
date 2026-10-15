@@ -12,8 +12,8 @@ const authenticate = passport.authenticate("jwt", { session: false });
 // get the custom logo, or the default one (public : the login page shows it)
 router.get('/', logoController.get);
 // upload a new custom logo (settings access only)
-router.post('/', authenticate, Middleware.checkSettingsMiddleware, logoController.update);
+router.post('/', authenticate, Middleware.checkAppearanceMiddleware, logoController.update);
 // remove the custom logo and fall back to the default (settings access only)
-router.delete('/', authenticate, Middleware.checkSettingsMiddleware, logoController.remove);
+router.delete('/', authenticate, Middleware.checkAppearanceMiddleware, logoController.remove);
 
 export default router

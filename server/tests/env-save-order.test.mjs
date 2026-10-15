@@ -57,7 +57,7 @@ function makeRes() {
 }
 const save = async (body) => {
   const res = makeRes();
-  await controller.saveEnv({ body, user: { user: { username: "root" } }, ip: "::1" }, res);
+  await controller.saveEnv({ body, user: { user: { username: "root", options: { showSettings: true } } }, ip: "::1" }, res);
   return res;
 };
 

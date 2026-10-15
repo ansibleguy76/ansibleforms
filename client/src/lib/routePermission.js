@@ -9,6 +9,7 @@
 /******************************************************************/
 import router from '@/router';
 import { designerSwitchedOff } from '@/stores/app';
+import { hasPermission } from '@/lib/permission';
 
 /**
  * The role option the route of a link needs.
@@ -17,7 +18,8 @@ import { designerSwitchedOff } from '@/stores/app';
  *   link (string): the link (/settings/users).
  *
  * Returns:
- *   string|null: the option (showSettings...), or null for a route open to every user.
+ *   string|string[]|null: the option (showSettings...), any of several (the audit log), or null for
+ *     a route open to every user.
  */
 export function routePermission(link) {
   try {
@@ -35,13 +37,13 @@ export function routePermission(link) {
  *   options (object): the user's role options (profile.options).
  *
  * Returns:
- *   boolean: true when the route needs nothing, or an option the user has.
+ *   boolean: true when the route needs nothing, or an option the user has (any of them).
  */
 export function mayOpen(link, options) {
   const permission = routePermission(link);
   // the designer switched off for the instance (SHOW_DESIGNER) : for no one
   if (permission === 'showDesigner' && designerSwitchedOff()) return false;
-  return !permission || !!options?.[permission];
+  return hasPermission(options, permission);
 }
 
 export default { routePermission, mayOpen };

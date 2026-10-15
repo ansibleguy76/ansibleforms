@@ -164,12 +164,16 @@ onBeforeUnmount(() => {
     }
   }
 }
-// the icon : quieter than the title it follows, the accent on hover and while open
+// the icon : quieter than the title it follows, the accent on hover and while open. No offset of
+// its own : the title it sits in centres its parts (a flex line, styles/bootstrap-override.scss,
+// .af-title-line > h3) - a fixed raise put it at another height with every font
 .af-info-btn {
+  display: inline-flex;
+  align-items: center;
   padding: 0 0.25rem;
   font-size: 0.41em;
   line-height: 1;
-  vertical-align: 0.55em;
+  vertical-align: middle;
   color: var(--bs-secondary-color);
   text-decoration: none;
   &:hover,

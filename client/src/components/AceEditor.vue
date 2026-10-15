@@ -41,6 +41,11 @@ const props = defineProps({
     type: String,
     default: 'yaml',
   },
+  // shown, not editable (a role without the option to edit it, a page that only shows a text)
+  readonly: {
+    type: Boolean,
+    default: false,
+  },
   theme: {
     type: String,
     default: null,
@@ -130,7 +135,7 @@ watch(
       :theme="effectiveTheme"
       :style="style"
       :printMargin="false"
-      :options="{ useWorker: true }"
+      :options="{ useWorker: true, readOnly: readonly }"
     />
   </div>
 </template>

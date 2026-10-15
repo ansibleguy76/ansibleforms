@@ -62,7 +62,19 @@ Middleware.checkFileDesignMiddleware = (req, res, next) => {
   return typeof guard === 'function' ? guard(req, res, next) : next()
 }
 
+// the designer's forms config (categories, constants, forms) : saved, restored, pulled or pushed only
+// with allowFormDesign ; read by every designer
+Middleware.checkFormDesignMiddleware = permissionGuard(u => u.options.allowFormDesign, 'errors.noFormDesignAccess')
 Middleware.checkLogsMiddleware = permissionGuard(u => u.options.showLogs, 'errors.noLogsAccess')
+// a part of the settings on its own (lib/settingsSections.js) : with every setting, or that part
+Middleware.checkAppearanceMiddleware = permissionGuard(u => u.options.showSettings || u.options.showAppearanceSettings, 'errors.noSettingsAccess')
+Middleware.checkConnectionsMiddleware = permissionGuard(u => u.options.showSettings || u.options.showConnectionsSettings, 'errors.noSettingsAccess')
+// the endpoints every part writes through (the settings row, the environment variables) : any
+// part ; their handlers then check each field (lib/settingsSections.js)
+Middleware.checkAnySettingsMiddleware = permissionGuard(u => u.options.showSettings || u.options.showAppearanceSettings || u.options.showConnectionsSettings, 'errors.noSettingsAccess')
+// the audit log : with the settings, or on its own (showAuditLog : a compliance role reads it
+// without the rights to change anything)
+Middleware.checkAuditMiddleware = permissionGuard(u => u.options.showSettings || u.options.showAuditLog, 'errors.noAuditAccess')
 
 Middleware.checkBackupMiddleware = permissionGuard(u => u.options.allowBackupOps, 'errors.noDatabaseAccess')
 

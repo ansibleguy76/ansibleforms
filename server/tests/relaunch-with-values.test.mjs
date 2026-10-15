@@ -102,9 +102,10 @@ describe("Job.relaunchWithValues", () => {
     Job.findById = vi.fn(async () => ({ ...storedJob(), user: "bob", status: "approve" }));
     await expect(Job.relaunchWithValues({ user, id: 42, preview: true })).rejects.toMatchObject({ name: "AccessDeniedError" });
     await expect(Job.relaunchWithValues({ user, id: 42 })).rejects.toMatchObject({ name: "AccessDeniedError" });
-    // an admin, or a user who sees every job, may
+    // an admin, or a role that manages every user's jobs, may ; one that only sees them may not
     await expect(Job.relaunchWithValues({ user: { ...user, roles: ["admin"] }, id: 42, preview: true })).resolves.toHaveProperty("payloadHash");
-    await expect(Job.relaunchWithValues({ user: { ...user, options: { ...user.options, showAllJobLogs: true } }, id: 42, preview: true })).resolves.toHaveProperty("payloadHash");
+    await expect(Job.relaunchWithValues({ user: { ...user, options: { ...user.options, manageAllJobs: true } }, id: 42, preview: true })).resolves.toHaveProperty("payloadHash");
+    await expect(Job.relaunchWithValues({ user: { ...user, options: { ...user.options, showAllJobLogs: true } }, id: 42, preview: true })).rejects.toMatchObject({ name: "AccessDeniedError" });
   });
 
   test("the relaunch permission and the verbose permission are checked", async () => {
@@ -212,10 +213,10 @@ describe("a job launched by a schedule", () => {
     expect(err.message).toContain("launched by a schedule");
   });
 
-  test("under enforce, only who may manage schedules replays one : not a user who merely sees every job", async () => {
+  test("under enforce, only who may manage schedules replays one : not a user who merely manages every job", async () => {
     Form.load.mockResolvedValue({ constants: {}, forms: [{ ...structuredClone(form), launchValidation: "enforce" }] });
     Job.findById = vi.fn(async () => scheduleJob());
-    const watcher = { username: "eve", type: "local", roles: ["ops"], options: { allowJobRelaunch: true, showAllJobLogs: true } };
+    const watcher = { username: "eve", type: "local", roles: ["ops"], options: { allowJobRelaunch: true, manageAllJobs: true } };
     await expect(Job.relaunch(watcher, 42, false)).rejects.toMatchObject({ code: "no_form_data" });
     expect(Job.launch).not.toHaveBeenCalled();
     await Job.relaunch({ ...watcher, options: { ...watcher.options, allowScheduledJobs: true } }, 42, false);

@@ -10,6 +10,7 @@ import i18n from '../../lib/i18n.js';
 import yaml from 'yaml';
 import appConfig from '../../../config/app.config.js';
 import { auditConfigChange, configHash as auditConfigHash } from '../../lib/configAudit.js';
+import { readableSettingsFields, writableSettingsFields } from '../../lib/settingsSections.js';
 
 
 // Config edits are exclusive with an active designer session : the designer
@@ -50,6 +51,13 @@ const find = async function(req, res) {
       // knows whether the active config lives in the database.
       if (settings) {
         settings.enableConfigInDatabase = appConfig.enableConfigInDatabase;
+      }
+      // a part of the settings on its own (lib/settingsSections.js) : only its fields
+      const readable = readableSettingsFields(req);
+      if (settings && readable) {
+        for (const key of Object.keys(settings)) {
+          if (!readable.has(key) && key !== 'enableConfigInDatabase') delete settings[key];
+        }
       }
       res.json(RestResult.single(settings));
     } catch(err) {
@@ -114,6 +122,13 @@ const update = async function(req, res) {
         res.status(400).json(RestResult.error(i18n.t(req, 'errors.requiredFields')));
     }else{
         try {
+          // a part of the settings on its own (lib/settingsSections.js) : only its fields change
+          const writable = writableSettingsFields(req);
+          const outside = writable ? Object.keys(req.body).filter((key) => !writable.has(key)) : [];
+          if (outside.length) {
+            return res.status(403).json(RestResult.error(i18n.t(req, 'resources.failedUpdateSettings'),
+              `${i18n.t(req, 'errors.noSettingsAccess')} (${outside.join(', ')})`));
+          }
           const existingSettings = await Settings.find();
           // The seed owns the mail fields and the url. It does NOT own the theme, the
           // language or config_source, which travel through this same endpoint - so the

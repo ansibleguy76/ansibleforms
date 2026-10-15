@@ -4,7 +4,8 @@
 // an admin lists and revokes a user's (Settings > Users and Groups).
 //
 // Made from a session, with the same rules as one made with a password (the login's expiryDays) :
-// a role with extendedTokenExpiration, at most API_TOKEN_MAX_DAYS, a session of its own. And two
+// a role with allowApiTokens or extendedTokenExpiration, at most API_TOKEN_MAX_DAYS (or never, with
+// extendedTokenExpiration), a session of its own. And two
 // more : the session signed in a few minutes ago at most (the client sends the user through the
 // sign-in again otherwise), so a stolen browser session is not made into a token of months ; and
 // never from an api token, so a token cannot outlive itself.
@@ -18,6 +19,7 @@ import authConfig from '../../../config/auth.config.js';
 import { DIRECTORY_TYPES } from '../../models/directoryUser.model.js';
 import { assertMayTouchAdmin } from '../../lib/adminGrants.js';
 import { userToJwt } from './login.controller.js';
+import { NEVER_DAYS, apiTokenDays, mayMakeApiTokens } from '../../lib/tokenLifetime.js';
 
 // how long after a sign-in its session may make a token (seconds)
 export const RECENT_SIGN_IN_SECONDS = 10 * 60;
@@ -56,14 +58,16 @@ const create = async function (req, res) {
   const user = req.user?.user;
   try {
     if (req.user?.api) return forbid(res, req, 'errors.apiTokenFromApiToken', 'api_token_session');
-    if (!(user?.options?.extendedTokenExpiration ?? false)) return forbid(res, req, 'errors.apiTokenNotAllowed', 'not_allowed');
+    if (!mayMakeApiTokens(user)) return forbid(res, req, 'errors.apiTokenNotAllowed', 'not_allowed');
     if (!signedInRecently(req.user?.auth_time)) return forbid(res, req, 'errors.apiTokenSignInAgain', 'sign_in_again');
-    const days = Number(req.body?.expiryDays);
-    if (!Number.isFinite(days) || days < 1) return res.status(400).json(RestResult.error(i18n.t(req, 'errors.apiTokenLifetime', { max: authConfig.apiTokenMaxDays })));
+    // a number of days, or 'never' (extendedTokenExpiration only)
+    const asked = req.body?.expiryDays;
+    const days = apiTokenDays(user, asked);
+    if (!days) return res.status(400).json(RestResult.error(i18n.t(req, 'errors.apiTokenLifetime', { max: authConfig.apiTokenMaxDays })));
     const name = typeof req.body?.name === 'string' ? req.body.name.trim().slice(0, 100) : '';
     // the session's sign-in time : the token says when its user last proved who they are
-    const issued = await userToJwt(user, days, { name, authTime: req.user.auth_time, strict: true });
-    logger.notice(`Api token made from a session by ${user.username} (${user.type}), ${days} days at most`);
+    const issued = await userToJwt(user, days === NEVER_DAYS ? 'never' : days, { name, authTime: req.user.auth_time, strict: true });
+    logger.notice(`Api token made from a session by ${user.username} (${user.type}), ${days === NEVER_DAYS ? 'never expires' : `${days} days at most`}`);
     res.json(RestResult.single({ token: issued.token, expires_at: issued.expires_at }));
   } catch (err) {
     logger.error(`Could not make an api token for ${user?.username} : ${err}`);

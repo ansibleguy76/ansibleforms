@@ -4,28 +4,149 @@
 
 export const authProviders = ['local', 'ldap', 'azuread', 'oidc'];
 
+// the role options in their groups, in the order they show : the role's page and its New role
+// dialog (AppRoleEditor) and the profile's Permissions view, each group under its title
+export const roleOptionGroups = [
+  {
+    name: 'settings',
+    title: 'nav.settings',
+    keys: [
+      'showSettings',
+      'showAppearanceSettings',
+      'showConnectionsSettings',
+      'showLogs',
+      'showAuditLog',
+      'allowBackupOps',
+    ],
+  },
+  {
+    name: 'designer',
+    title: 'nav.designer',
+    keys: [
+      'showDesigner',
+      'allowFormDesign',
+      'allowPlaybookDesign',
+      'allowWorkflowDesign',
+      'allowInventoryDesign',
+      'allowVarsFileDesign',
+    ],
+  },
+  {
+    name: 'jobs',
+    title: 'profilePage.groupJobs',
+    keys: [
+      'showJobs',
+      'showAllJobLogs',
+      'manageAllJobs',
+      'showExtravars',
+      'showDebugButtons',
+      'showArtifacts',
+      'allowVerboseMode',
+      'allowJobRelaunch',
+      'allowJobDeletion',
+      'allowScheduledJobs',
+      'allowPlannedJobs',
+      'allowStoredJobs',
+    ],
+  },
+  {
+    name: 'access',
+    title: 'profilePage.groupAccess',
+    keys: ['allowLogin', 'allowChat', 'allowMcp', 'allowFileUploads', 'allowApiTokens', 'extendedTokenExpiration'],
+  },
+];
+
+/**
+ * What a role option gives, in words : its description (profilePage.optionDescription.<key>), the
+ * same on the role's page (the (i) beside each toggle) and on the profile's Permissions view.
+ *
+ * Args:
+ *   t (Function): vue-i18n's translate function.
+ *   te (Function): vue-i18n's "has this key" function.
+ *   key (string): the option.
+ *
+ * Returns:
+ *   string: the description ; '' for an option without one (a hand-written key).
+ */
+export function roleOptionDescription(t, te, key) {
+  const path = `profilePage.optionDescription.${key}`;
+  return te(path) ? t(path) : '';
+}
+
+// the options another one already gives : with it on, they are on whatever the role says (the
+// server's guards accept either), so the role editor shows them on and greyed out
+export const roleOptionIncludedIn = {
+  showAppearanceSettings: 'showSettings',
+  showConnectionsSettings: 'showSettings',
+  showAuditLog: 'showSettings',
+  // acting on every user's jobs means seeing them (job.model.js seesAllJobs)
+  showAllJobLogs: 'manageAllJobs',
+};
+
+// the options that only matter with another one on : without it, the role editor shows them off
+// and greyed out (their own value kept), as the role gets them
+export const roleOptionNeeds = {
+  allowFormDesign: 'showDesigner',
+  allowPlaybookDesign: 'showDesigner',
+  allowWorkflowDesign: 'showDesigner',
+  allowInventoryDesign: 'showDesigner',
+  allowVarsFileDesign: 'showDesigner',
+  // extended tokens add Never expires to the tokens (lib/tokenLifetime.js)
+  extendedTokenExpiration: 'allowApiTokens',
+};
+
+/**
+ * What an option really gives, with the rules above : on when an option that includes it is on,
+ * off when an option it needs is off, else its own value. The role editor and the profile's
+ * Permissions view show the same.
+ *
+ * Args:
+ *   options (object): the role's (or the user's) options.
+ *   key (string): the option.
+ *
+ * Returns:
+ *   object: { value (boolean), includedBy (string|null), needs (string|null) } - the option that
+ *     gives it, or the one it is missing.
+ */
+export function effectiveRoleOption(options, key) {
+  const by = roleOptionIncludedIn[key];
+  if (by && options?.[by]) return { value: true, includedBy: by, needs: null };
+  const need = roleOptionNeeds[key];
+  if (need && !options?.[need]) return { value: false, includedBy: null, needs: need };
+  return { value: !!options?.[key], includedBy: null, needs: null };
+}
+
+// every role option, in the groups' order
 export const roleOptionKeys = [
+  'showSettings',
+  'showAppearanceSettings',
+  'showConnectionsSettings',
+  'showLogs',
+  'showAuditLog',
+  'allowBackupOps',
   'showDesigner',
+  'allowFormDesign',
   'allowPlaybookDesign',
   'allowWorkflowDesign',
   'allowInventoryDesign',
   'allowVarsFileDesign',
-  'showLogs',
-  'showDebugButtons',
-  'showSettings',
-  'showExtravars',
-  'showAllJobLogs',
-  'showArtifacts',
   'showJobs',
-  'allowLogin',
-  'allowBackupOps',
+  'showAllJobLogs',
+  'manageAllJobs',
+  'showExtravars',
+  'showDebugButtons',
+  'showArtifacts',
   'allowVerboseMode',
   'allowJobRelaunch',
+  'allowJobDeletion',
   'allowScheduledJobs',
-  'allowStoredJobs',
   'allowPlannedJobs',
+  'allowStoredJobs',
+  'allowLogin',
   'allowChat',
   'allowMcp',
+  'allowFileUploads',
+  'allowApiTokens',
   'extendedTokenExpiration',
 ];
 
@@ -37,6 +158,7 @@ export const roleOptionKeys = [
 // variant is not exposed by this editor, so it is not listed here (unknown keys
 // found in hand-written yaml are preserved verbatim by serializeRole).
 const trueByDefaultOptions = [
+  'allowFormDesign',
   'allowPlaybookDesign',
   'allowWorkflowDesign',
   'allowInventoryDesign',
@@ -47,6 +169,8 @@ const trueByDefaultOptions = [
   'showExtravars',
   'showArtifacts',
   'allowStoredJobs',
+  'allowFileUploads',
+  'allowJobDeletion',
   'allowPlannedJobs',
   'allowLogin',
   'allowChat',
@@ -149,6 +273,9 @@ export function roleToEditable(r) {
   }
   // allowMcp absent : the server gives it the role's allowChat (user.model.js), so it shows that
   if (!r.options || r.options.allowMcp === undefined) options.allowMcp = options.allowChat;
+  // allowApiTokens absent : a role from before it, whose extendedTokenExpiration gave the tokens -
+  // the server gives it that value (user.model.js), so it shows that
+  if (!r.options || r.options.allowApiTokens === undefined) options.allowApiTokens = !!options.extendedTokenExpiration;
   return {
     name: r.name || '',
     // what the role is for, in a few words (the roles list shows it)

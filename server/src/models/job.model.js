@@ -510,6 +510,34 @@ Job.isAbortRequested = async function (id) {
   return !!res[0].abort_requested;
 };
 /**
+ * Whether a user acts on every user's jobs (abort, delete, relaunch) : an admin, or a role with
+ * manageAllJobs.
+ *
+ * Args:
+ *   user (object): the user.
+ *
+ * Returns:
+ *   boolean: true when they may.
+ */
+export function managesAllJobs(user) {
+  return (user?.roles || []).includes("admin") || !!user?.options?.manageAllJobs;
+}
+
+/**
+ * Whether a user sees every user's jobs : an admin, showAllJobLogs, or manageAllJobs (acting on
+ * a job means seeing it).
+ *
+ * Args:
+ *   user (object): the user.
+ *
+ * Returns:
+ *   boolean: true when they may.
+ */
+export function seesAllJobs(user) {
+  return managesAllJobs(user) || !!user?.options?.showAllJobLogs;
+}
+
+/**
  * @param {object} user The caller. REQUIRED - this had no authorization at all, so any
  *   authenticated user could abort any other user's running playbook by id. Every sibling
  *   (delete, findById) filters on j.user/j.user_type; this one did not, which also made
@@ -523,7 +551,8 @@ Job.abort = async function (user, id) {
   if (!user || !user.username) {
     throw new Errors.AccessDeniedError(`You do not have access to job ${id}`);
   }
-  if (!user.roles?.includes("admin")) {
+  // the owner, an admin, or a role with manageAllJobs
+  if (!managesAllJobs(user)) {
     const owned = await mysql.do(
       "SELECT id FROM AnsibleForms.`jobs` WHERE id=? AND user=? AND user_type=?",
       [id, user.username, user.type]
@@ -650,11 +679,17 @@ Job.createOutput = async function (record) {
 };
 Job.delete = async function (user, id) {
   logger.notice(`Deleting job ${id}`);
+  // a role option : on unless a role turns it off (allowJobDeletion), then no job is deleted by
+  // this user, theirs included - the job history stays whole
+  if (user?.options?.allowJobDeletion === false) {
+    throw new Errors.AccessDeniedError(`You may not delete jobs`);
+  }
 
   var query;
   var params;
   await Job.checkExists(id);
-  if (user.roles.includes("admin") || user.options?.showAllJobLogs) {
+  // every user's job : an admin, or manageAllJobs ; seeing them (showAllJobLogs) is not deleting them
+  if (managesAllJobs(user)) {
     query =
       "SELECT j.*,sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=?;";
     params = [id, id];
@@ -752,7 +787,7 @@ Job.findAll = async function (user, records, filter = {}) {
   if (filter.runner) { where.push("runner=?"); vars.push(String(filter.runner)); }
   const narrowed = where.length ? where.join(" AND ") : "1=1";
   var query;
-  if (user.roles.includes("admin") || user.options?.showAllJobLogs) {
+  if (seesAllJobs(user)) {
     query =
       "SELECT id,form,target,status,CONVERT_TZ(start, 'UTC', ?) AS start,CONVERT_TZ(end, 'UTC', ?) AS end,user,user_type,job_type,parent_id,approval,runner,runner_kind FROM AnsibleForms.`jobs` WHERE " + narrowed + " ORDER BY id DESC LIMIT ?";
     return await mysql.do(query, [loggerConfig.tz, loggerConfig.tz, ...vars, records], true);
@@ -924,7 +959,7 @@ Job.findById = async function (user, id, asText, logSafe = false) {
   // Sanitize timezone to prevent SQL injection - only allow valid timezone format
   const safeTimezone = loggerConfig.tz.match(/^[A-Za-z/_+-]+$/) ? loggerConfig.tz : 'UTC';
   
-  if (user.roles.includes("admin") || user.options?.showAllJobLogs) {
+  if (seesAllJobs(user)) {
     query =
       "SELECT j.id,j.form,j.target,j.status,CONVERT_TZ(j.start, 'UTC', ?) AS start,CONVERT_TZ(j.end, 'UTC', ?) AS end,j.user,j.user_type,j.job_type,j.runner,j.runner_kind,j.extravars,j.credentials,j.notifications,j.approval,j.step,j.parent_id,j.awx_id,j.awx_artifacts,j.awx_workflow,j.job_log,j.abort_requested,j.raw_form_data,sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=?;";
     params = [safeTimezone, safeTimezone, id, id];
@@ -1420,9 +1455,10 @@ Job.continue = async function ({ form, user, credentials = {}, extravars = {}, j
 function assertRelaunchable(job, formObj, user) {
   // Job.findById also hands a non-owner every job waiting for approval (so it can be
   // approved) : that is not a licence to read its form data or launch it again under
-  // another name. Only the owner, an admin, or a user who sees every job may.
-  const seesAll = (user?.roles || []).includes("admin") || !!user?.options?.showAllJobLogs;
-  if (!seesAll && !(job.user === user?.username && (job.user_type ?? user?.type) === user?.type)) {
+  // another name. Only the owner, an admin, or a role with manageAllJobs may ; seeing every
+  // job (showAllJobLogs) is watching them, not launching them again.
+  const managesAll = managesAllJobs(user);
+  if (!managesAll && !(job.user === user?.username && (job.user_type ?? user?.type) === user?.type)) {
     throw new Errors.AccessDeniedError(`You can only relaunch your own jobs`);
   }
   if (formObj.allowRelaunch === false) {

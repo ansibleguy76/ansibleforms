@@ -17,6 +17,7 @@ import axios from 'axios';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import Time from '@/lib/Time';
+import { neverExpires } from '@/lib/apiTokens';
 import Helpers from '@/lib/Helpers';
 
 const props = defineProps({
@@ -85,7 +86,9 @@ watch(() => [props.url, props.reload], load, { immediate: true });
           <tr v-for="token in tokens" :key="token.sid">
             <td>{{ token.name || '–' }}</td>
             <td class="text-nowrap">{{ Time.format(token.created_at) }}</td>
-            <td class="text-nowrap">{{ Time.format(token.expires_at) }}</td>
+            <td class="text-nowrap">
+              {{ neverExpires(token.expires_at) ? t('apiTokens.neverExpires') : Time.format(token.expires_at) }}
+            </td>
             <td class="text-nowrap">
               {{ token.last_used_at ? Time.format(token.last_used_at) : t('apiTokens.neverUsed') }}
             </td>

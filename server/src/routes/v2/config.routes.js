@@ -4,16 +4,16 @@ import configController from '../../controllers/v2/config.controller.js';
 import middleware from '../../lib/middleware.js';
 
 // designer routes only (admin !!)
-router.post('/', middleware.checkDesignerMiddleware, configController.save);
+router.post('/', middleware.checkDesignerMiddleware, middleware.checkFormDesignMiddleware, configController.save);
 router.post('/check', middleware.checkDesignerMiddleware, configController.validate);
-router.post('/restore/:backupName', middleware.checkDesignerMiddleware, configController.restore);
+router.post('/restore/:backupName', middleware.checkDesignerMiddleware, middleware.checkFormDesignMiddleware, configController.restore);
 router.get('/backups', middleware.checkDesignerMiddleware, configController.backups);
-router.get('/env', middleware.checkSettingsMiddleware, configController.env);
+router.get('/env', middleware.checkAnySettingsMiddleware, configController.env);
 // writes persistent/.env ; refuses anything already set in the real environment
-router.put('/env', middleware.checkSettingsMiddleware, configController.saveEnv);
+router.put('/env', middleware.checkAnySettingsMiddleware, configController.saveEnv);
 // read-only connection test for the Vault page
-router.post('/vault/check', middleware.checkSettingsMiddleware, configController.vaultCheck);
-router.get('/vault/mounts', middleware.checkSettingsMiddleware, configController.vaultMounts);
+router.post('/vault/check', middleware.checkConnectionsMiddleware, configController.vaultCheck);
+router.get('/vault/mounts', middleware.checkConnectionsMiddleware, configController.vaultMounts);
 // config mode (database vs file) - designer accessible so designers without settings access can learn the mode
 router.get('/mode', middleware.checkDesignerMiddleware, configController.configMode);
 // is the stored config a ytt template ? designer accessible for the same reason as /mode :
@@ -25,7 +25,7 @@ router.get('/', middleware.checkDesignerMiddleware, configController.findAll);
 // get list, just the icons and names (no admin)
 router.get('/formlist', configController.findList);
 // every form, its roles and its runners : the settings pages' Forms tabs
-router.get('/formslinked', middleware.checkSettingsMiddleware, configController.formsLinked);
+router.get('/formslinked', middleware.checkAnySettingsMiddleware, configController.formsLinked);
 // flat list of form names (for dropdowns : datasources and schedules)
 router.get('/formnames', middleware.checkSettingsOrScheduledJobsMiddleware, configController.formNames);
 // get one config (no admin)

@@ -8,7 +8,8 @@
 /*                                                                */
 /*  @query:                                                       */
 /*      view: account | preferences | password | permissions |    */
-/*            token (only for roles with extendedTokenExpiration) */
+/*            token (only for roles with allowApiTokens or        */
+/*            extendedTokenExpiration)                            */
 /*                                                                */
 /******************************************************************/
 
@@ -26,7 +27,9 @@ import { languages, fallbackLanguage } from '@/config/languages';
 import dayjs from 'dayjs';
 import Time, { DATE_FORMATS } from '@/lib/Time';
 import { profileViews, profileMenuViews } from '@/config/profileViews';
+import { roleOptionGroups, roleOptionDescription, roleOptionLabel, effectiveRoleOption } from '@/config/roles';
 import BaseUrl from '@/lib/BaseUrl';
+import { neverExpires } from '@/lib/apiTokens';
 import { rememberSsoOrigin, ssoSettled, ssoReturning } from '@/lib/ssoReturn';
 
 // INIT
@@ -34,7 +37,7 @@ import { rememberSsoOrigin, ssoSettled, ssoReturning } from '@/lib/ssoReturn';
 const store = useAppStore();
 const route = useRoute();
 const router = useRouter();
-const { t, locale } = useI18n();
+const { t, te, locale } = useI18n();
 
 // the same swatches as the header's theme switcher
 const palette = [
@@ -91,69 +94,12 @@ const shownRoles = computed(() => (profile.value.roles || []).filter((r) => r !=
 // only local accounts have a password AnsibleForms can change ; ldap, azure ad and oidc
 // passwords are managed by their own provider
 const isLocal = computed(() => profile.value.type == 'local');
-// the options grouped by what they are about ; an option the server sends that is not in
-// a group (a hand-written key) lands in "other", under its own name
+// the options in their groups, as the role's page shows them (config/roles.js) ; an option the
+// server sends that is in no group (a hand-written key) lands in "other", under its own name
 const PERMISSION_GROUPS = [
-  {
-    name: 'pages',
-    title: () => t('profilePage.groupPages'),
-    keys: [
-      'showSettings',
-      'showDesigner',
-      'allowPlaybookDesign',
-      'allowWorkflowDesign',
-      'allowInventoryDesign',
-      'allowVarsFileDesign',
-      'showLogs',
-      'showJobs',
-      'showDebugButtons',
-    ],
-  },
-  {
-    name: 'jobs',
-    title: () => t('profilePage.groupJobs'),
-    keys: [
-      'allowJobRelaunch',
-      'allowVerboseMode',
-      'allowScheduledJobs',
-      'allowStoredJobs',
-      'allowPlannedJobs',
-      'showAllJobLogs',
-      'showArtifacts',
-      'showExtravars',
-    ],
-  },
-  {
-    name: 'other',
-    title: () => t('profilePage.groupOther'),
-    keys: ['allowLogin', 'allowBackupOps', 'allowChat', 'allowMcp', 'extendedTokenExpiration'],
-  },
+  ...roleOptionGroups.map((g) => ({ name: g.name, title: () => t(g.title), keys: g.keys })),
+  { name: 'other', title: () => t('profilePage.groupOther'), keys: [] },
 ];
-// what each option lets the user do (spelled out per key, so the i18n key check finds them)
-const OPTION_DESCRIPTIONS = {
-  showSettings: () => t('profilePage.optionDescription.showSettings'),
-  showDesigner: () => t('profilePage.optionDescription.showDesigner'),
-  allowPlaybookDesign: () => t('profilePage.optionDescription.allowPlaybookDesign'),
-  allowWorkflowDesign: () => t('profilePage.optionDescription.allowWorkflowDesign'),
-  allowInventoryDesign: () => t('profilePage.optionDescription.allowInventoryDesign'),
-  allowVarsFileDesign: () => t('profilePage.optionDescription.allowVarsFileDesign'),
-  showLogs: () => t('profilePage.optionDescription.showLogs'),
-  showJobs: () => t('profilePage.optionDescription.showJobs'),
-  showDebugButtons: () => t('profilePage.optionDescription.showDebugButtons'),
-  allowJobRelaunch: () => t('profilePage.optionDescription.allowJobRelaunch'),
-  allowVerboseMode: () => t('profilePage.optionDescription.allowVerboseMode'),
-  allowScheduledJobs: () => t('profilePage.optionDescription.allowScheduledJobs'),
-  allowStoredJobs: () => t('profilePage.optionDescription.allowStoredJobs'),
-  allowPlannedJobs: () => t('profilePage.optionDescription.allowPlannedJobs'),
-  showAllJobLogs: () => t('profilePage.optionDescription.showAllJobLogs'),
-  showArtifacts: () => t('profilePage.optionDescription.showArtifacts'),
-  showExtravars: () => t('profilePage.optionDescription.showExtravars'),
-  allowLogin: () => t('profilePage.optionDescription.allowLogin'),
-  allowBackupOps: () => t('profilePage.optionDescription.allowBackupOps'),
-  allowChat: () => t('profilePage.optionDescription.allowChat'),
-  allowMcp: () => t('profilePage.optionDescription.allowMcp'),
-  extendedTokenExpiration: () => t('profilePage.optionDescription.extendedTokenExpiration'),
-};
 const permissionGroups = computed(() => {
   const opts = profile.value.options || {};
   // showExtraVars (capital V) is the server's legacy spelling of showExtravars, listed under
@@ -162,7 +108,17 @@ const permissionGroups = computed(() => {
   return PERMISSION_GROUPS.map((g) => {
     const keys = g.keys.filter((k) => k in opts);
     if (g.name === 'other') keys.push(...Object.keys(opts).filter((k) => !grouped.has(k)));
-    const options = keys.map((k) => ({ key: k, description: OPTION_DESCRIPTIONS[k]?.() || '', value: !!opts[k] }));
+    // what applies (config/roles.js effectiveRoleOption) : an option included in another that is on
+    // is allowed, one missing the option it needs is not - and the row says why
+    const options = keys.map((k) => {
+      const eff = effectiveRoleOption(opts, k);
+      const note = eff.includedBy
+        ? t('settings.settingsPage.roleOptionIncluded', { option: roleOptionLabel(t, eff.includedBy) })
+        : eff.needs
+          ? t('settings.settingsPage.roleOptionNeeds', { option: roleOptionLabel(t, eff.needs) })
+          : '';
+      return { key: k, description: roleOptionDescription(t, te, k), value: eff.value, note };
+    });
     return { name: g.name, title: g.title(), options, allowed: options.filter((o) => o.value).length };
   }).filter((g) => g.options.length);
 });
@@ -201,17 +157,22 @@ const canSavePassword = computed(() => {
 });
 
 // the api token : a login with the user's password and a longer expiry (the login endpoint's
-// expiryDays, honoured for roles with extendedTokenExpiration) ; an SSO account has no password
+// expiryDays, honoured for roles with allowApiTokens or extendedTokenExpiration) ; an SSO account has no password
 // here, its token is made from this session (#1068), which must have signed in a few minutes ago :
 // else the sign-in runs again first, and the token is made on the way back. Shown once ; it ends
 // at its expiry, when it is revoked (the list under it), or with a password change or a block.
 // The server caps the expiry at API_TOKEN_MAX_DAYS : only the lifetimes up to that cap are offered,
 // plus the cap itself, so a longer choice is never silently shortened.
 const tokenMaxDays = ref(90);
+// a role with extendedTokenExpiration may also make one that never expires ('never')
+const canNeverExpire = computed(
+  () => !!profile.value?.options?.allowApiTokens && !!profile.value?.options?.extendedTokenExpiration,
+);
 const TOKEN_LIFETIMES = computed(() => {
   const max = tokenMaxDays.value;
   const list = [30, 90, 180, 365].filter((d) => d <= max);
   if (!list.includes(max)) list.push(max);
+  if (canNeverExpire.value) list.push('never');
   return list;
 });
 const tokenForm = ref({ days: 90, password: '', name: '' });
@@ -239,7 +200,10 @@ const tokenExample = computed(() => `curl -H "Authorization: Bearer $TOKEN" ${wi
 
 function showToken(token) {
   const exp = TokenStorage.decode(token).exp;
-  tokenResult.value = { token, expires: Time.format(exp * 1000) };
+  tokenResult.value = {
+    token,
+    expires: neverExpires(exp * 1000) ? t('apiTokens.neverExpires') : Time.format(exp * 1000),
+  };
   tokenForm.value.name = '';
   tokensReload.value++;
 }
@@ -330,7 +294,9 @@ async function resumePendingToken() {
   await ssoSettled();
   // the user the new session is of (the profile may not be read yet)
   if (pending.username !== TokenStorage.getPayload()?.user?.username) return;
-  if (Number(pending.days)) tokenForm.value.days = Number(pending.days);
+  // a number of days, or 'never' (a token that never expires) : kept as it was asked
+  if (pending.days === 'never') tokenForm.value.days = 'never';
+  else if (Number(pending.days)) tokenForm.value.days = Number(pending.days);
   tokenForm.value.name = String(pending.name || '');
   await createTokenFromSession(false);
 }
@@ -694,7 +660,10 @@ async function changePassword() {
                     <td>
                       <code class="af-option-key">{{ o.key }}</code>
                     </td>
-                    <td :class="o.value ? '' : 'text-body-secondary'">{{ o.description }}</td>
+                    <td :class="o.value ? '' : 'text-body-secondary'">
+                      {{ o.description }}
+                      <div v-if="o.note" class="small text-body-secondary">{{ o.note }}</div>
+                    </td>
                     <td class="text-end">
                       <span class="badge rounded-pill af-pill" :class="o.value ? 'af-pill-green' : 'af-pill-grey'">
                         <FaIcon :icon="o.value ? 'check' : 'xmark'" class="me-1" />{{
@@ -747,7 +716,7 @@ async function changePassword() {
                 <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="hourglass-half" /></span>
                 <select id="af-token-days" v-model.number="tokenForm.days" class="form-select">
                   <option v-for="d in TOKEN_LIFETIMES" :key="d" :value="d">
-                    {{ t('profilePage.token.days', { n: d }) }}
+                    {{ d === 'never' ? t('apiTokens.neverExpires') : t('profilePage.token.days', { n: d }) }}
                   </option>
                 </select>
               </div>
