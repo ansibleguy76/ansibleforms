@@ -3,6 +3,7 @@
 import { editorStyle } from './editorStyle';
 import YAML from 'yaml';
 import Helpers from '@/lib/Helpers';
+import Time from '@/lib/Time';
 import { cronCell } from '@/lib/cronCell';
 import { cronValidationMessage } from './cron';
 import { PILL, pill, esc } from '@/lib/tableCells';
@@ -106,35 +107,64 @@ export function statusPill(t, value) {
 
 /**
  * A repository's last pull as a pill : running blue, success green, failed red ; never pulled
- * (no status yet) an en dash. Its clone, sync and reset write the same status.
+ * (no status yet) an en dash. Its clone, sync and reset write the same status. When it ended
+ * follows it, grey.
  *
  * Args:
  *   t (function): the translation function.
- *   repo (object): the repository, with status (its last pull).
+ *   repo (object): the repository, with status (its last pull) and pulled_at.
+ *   short (boolean): the date without its seconds (a table's cell).
  *
  * Returns:
  *   string: the pill's markup.
  */
-export function repositoryPullPill(t, repo) {
-  return statusPill(t, repo?.status);
+export function repositoryPullPill(t, repo, short = false) {
+  return statusPill(t, repo?.status) + pillDate(repo?.pulled_at, short);
 }
 
 /**
- * A repository's push as a pill : changes saved here and not pushed yet, pending changes in the
- * designer's push orange (something waits) ; else nothing to push, success green.
+ * When a repository's last pull or push ended, beside its pill : grey, in the user's zone and date
+ * format ; nothing when it never ran.
+ *
+ * Args:
+ *   value (string): the server's timestamp, or none.
+ *   short (boolean): without its seconds and zone (a table's cell, where room is short), in full
+ *     on hover.
+ *
+ * Returns:
+ *   string: the date's markup, escaped, or ''.
+ */
+function pillDate(value, short = false) {
+  const full = value ? Helpers.formatServerDate(value) : '';
+  if (!full) return '';
+  if (!short) return ` <span class="af-pill-date">${esc(full)}</span>`;
+  // the date and the time in the user's zone, the zone's name left to the tooltip
+  let text = Time.format(value, 'YYYY-MM-DD HH:mm');
+  const zone = Time.zoneName(new Date(value), Time.zone());
+  if (zone && text.endsWith(` ${zone}`)) text = text.slice(0, -zone.length - 1);
+  return ` <span class="af-pill-date" title="${esc(full)}">${esc(text)}</span>`;
+}
+
+/**
+ * A repository's push as a pill : its last push failed red ; else changes saved here and not
+ * pushed yet, pending changes in the designer's push orange (something waits) ; else nothing to
+ * push, success green. When the last push ended follows it, grey.
  *
  * Args:
  *   t (function): the translation function.
- *   repo (object): the repository, with unpushed.
+ *   repo (object): the repository, with unpushed, push_status and pushed_at.
+ *   short (boolean): the date without its seconds (a table's cell).
  *
  * Returns:
  *   string: the pill's markup.
  */
-export function repositoryPushPill(t, repo) {
+export function repositoryPushPill(t, repo, short = false) {
+  const date = pillDate(repo?.pushed_at, short);
+  if (repo?.push_status === 'failed') return statusPill(t, 'failed') + date;
   if (repo?.unpushed) {
-    return pill(PILL.unpushed, t('settings.repositories.notPushed'), t('settings.repositories.notPushedHint'));
+    return pill(PILL.unpushed, t('settings.repositories.notPushed'), t('settings.repositories.notPushedHint')) + date;
   }
-  return statusPill(t, 'success');
+  return statusPill(t, 'success') + date;
 }
 
 /**
@@ -768,19 +798,22 @@ export default function getSettings(t) {
           key: 'branch',
           icon: 'code-branch',
           // left out on a narrow table, after the head
-          hideBelow: 740,
+          hideBelow: 1000,
           label: t('settings.fields.branch'),
           placeholder: 'main',
           readonly: false,
         },
         // a commit's 7 characters
-        { key: 'head', label: t('settings.fields.head'), noInput: true, hideBelow: 900 },
+        // left out sooner than the branch : the pull and push dates beside their pills take room
+        { key: 'head', label: t('settings.fields.head'), noInput: true, hideBelow: 1100 },
         // its last pull (clone, sync or reset) : running, success or failed
         {
           key: 'status',
           label: t('settings.fields.pull'),
           noInput: true,
-          render: (v, row) => repositoryPullPill(t, row),
+          // the pill and its date whole : the description gives way rather than them
+          width: '16rem',
+          render: (v, row) => repositoryPullPill(t, row, true),
           sortValue: (r) => ({ failed: 0, running: 1, success: 2 })[r.status] ?? 3,
         },
         // its push : changes saved here (the designer's Save) and not pushed yet, or none
@@ -788,8 +821,9 @@ export default function getSettings(t) {
           key: 'unpushed',
           label: t('settings.fields.push'),
           noInput: true,
-          render: (v, row) => repositoryPushPill(t, row),
-          sortValue: (r) => (r.unpushed ? 0 : 1),
+          width: '16rem',
+          render: (v, row) => repositoryPushPill(t, row, true),
+          sortValue: (r) => (r.push_status === 'failed' ? 0 : r.unpushed ? 1 : 2),
         },
         {
           // a credential of Connections > Credentials, or a New one : the user and password git

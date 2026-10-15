@@ -210,6 +210,11 @@ const crudConfigs = {
       // what git said on the last pull (or clone, reset), and on the last push
       { name: 'pull_output' },
       { name: 'push_output' },
+      // when the last pull and the last push ended
+      { name: 'pulled_at' },
+      { name: 'pushed_at' },
+      // how the last push ended ; status is the last pull's
+      { name: 'push_status' },
       { name: 'head' },
       { name: 'managed', isBoolean: true }
     ],
