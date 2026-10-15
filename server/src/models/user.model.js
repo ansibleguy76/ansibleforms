@@ -49,6 +49,8 @@ function applyOptionDefaults(options, isAdmin) {
   if (options.showArtifacts === undefined) options.showArtifacts = true;
   if (options.allowJobRelaunch === undefined) options.allowJobRelaunch = isAdmin;
   if (options.showAllJobLogs === undefined) options.showAllJobLogs = isAdmin;
+  // every user's jobs acted on (abort, delete, relaunch ; job.model.js managesAllJobs) : the admins'
+  if (options.manageAllJobs === undefined) options.manageAllJobs = isAdmin;
   if (options.allowScheduledJobs === undefined) options.allowScheduledJobs = isAdmin;
   if (options.allowStoredJobs === undefined) options.allowStoredJobs = true;
   // deleting jobs (their own ; every job for an admin) : on unless a role turns it off

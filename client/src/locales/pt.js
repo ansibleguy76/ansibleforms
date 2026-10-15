@@ -354,6 +354,7 @@ export default {
       allowJobRelaunch: 'Relançar tarefas com os dados do formulário de uma execução anterior.',
       allowJobDeletion:
         'Eliminar tarefas: as próprias, ou todas para um administrador. Sem isso: o histórico fica completo.',
+      manageAllJobs: 'Abortar, eliminar e relançar as tarefas de todos os utilizadores, não só as próprias.',
       allowVerboseMode: 'Executar tarefas em modo detalhado.',
       allowScheduledJobs: 'Criar e gerir agendamentos na página Agendamentos, recorrentes ou pontuais.',
       allowStoredJobs: 'Guardar os dados de uma tarefa e voltar a carregá-los mais tarde.',
@@ -1887,6 +1888,7 @@ export default {
       roleOptionAllowVerboseMode: 'Permitir modo detalhado',
       roleOptionAllowJobRelaunch: 'Permitir relançar tarefas',
       roleOptionAllowJobDeletion: 'Permitir eliminar tarefas',
+      roleOptionManageAllJobs: 'Gerir as tarefas de todos os utilizadores',
       roleOptionAllowScheduledJobs: 'Permitir Agendamentos',
       roleOptionAllowChat: 'Permitir assistente de chat',
       roleOptionAllowMcp: 'Permitir MCP',

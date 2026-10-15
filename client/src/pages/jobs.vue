@@ -270,6 +270,22 @@ function toggleColumn(key) {
 // deleting jobs is a role option (allowJobDeletion, on unless a role turns it off) : without it,
 // no Delete and no ticking of jobs to delete
 const canDeleteJobs = computed(() => store?.profile?.options?.allowJobDeletion !== false);
+// every user's jobs acted on (abort, delete, relaunch) : an admin, or a role with manageAllJobs
+const managesAllJobs = computed(() => !!store.isAdmin || !!store?.profile?.options?.manageAllJobs);
+
+/**
+ * Whether the user may act on a job (abort it) : theirs, or every job with manageAllJobs.
+ *
+ * Args:
+ *   j (object): the job.
+ *
+ * Returns:
+ *   boolean: true when they may.
+ */
+function canManage(j) {
+  const me = store?.profile;
+  return managesAllJobs.value || (j?.user === me?.username && (j?.user_type || 'local') === (me?.type || 'local'));
+}
 const canRelaunchJobs = computed(() => {
   return store?.profile?.options?.allowJobRelaunch;
 });
@@ -909,7 +925,9 @@ const showBulkDelete = ref(false);
  */
 function canDelete(j) {
   return (
-    canDeleteJobs.value && j.status != 'approve' && ((j.status != 'running' && !j.abort_requested) || store.isAdmin)
+    canDeleteJobs.value &&
+    j.status != 'approve' &&
+    ((j.status != 'running' && !j.abort_requested) || managesAllJobs.value)
   );
 }
 // the jobs of the page that can be ticked, and whether they all are
@@ -1274,7 +1292,7 @@ onMounted(async () => {
                 >{{ t('jobs.relaunchJob') }}</BsButton
               >
               <BsButton
-                v-if="job.status == 'running' && !job.abort_requested"
+                v-if="job.status == 'running' && !job.abort_requested && canManage(job)"
                 icon="ban"
                 cssClass="text-nowrap"
                 @click="
@@ -1480,7 +1498,7 @@ onMounted(async () => {
                             ><font-awesome-icon icon="redo" class="me-2" />{{ t('jobs.relaunchJob') }}</a
                           >
                         </li>
-                        <li v-if="j.status == 'running' && !j.abort_requested">
+                        <li v-if="j.status == 'running' && !j.abort_requested && canManage(j)">
                           <a
                             class="dropdown-item"
                             href="#"

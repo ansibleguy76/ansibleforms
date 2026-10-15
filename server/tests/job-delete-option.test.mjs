@@ -22,3 +22,20 @@ describe("allowJobDeletion", () => {
     await expect(Job.delete(user, 1)).rejects.not.toMatchObject({ name: "AccessDeniedError" });
   });
 });
+
+const { managesAllJobs, seesAllJobs } = await import("../src/models/job.model.js");
+
+describe("manageAllJobs", () => {
+  test("an admin, or the option, acts on every user's jobs", () => {
+    expect(managesAllJobs({ roles: ["admin"], options: {} })).toBe(true);
+    expect(managesAllJobs({ roles: [], options: { manageAllJobs: true } })).toBe(true);
+    expect(managesAllJobs({ roles: [], options: { showAllJobLogs: true } })).toBe(false);
+    expect(managesAllJobs({ roles: [], options: {} })).toBe(false);
+  });
+
+  test("acting on every job means seeing every job", () => {
+    expect(seesAllJobs({ roles: [], options: { manageAllJobs: true } })).toBe(true);
+    expect(seesAllJobs({ roles: [], options: { showAllJobLogs: true } })).toBe(true);
+    expect(seesAllJobs({ roles: [], options: {} })).toBe(false);
+  });
+});
