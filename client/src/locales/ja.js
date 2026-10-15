@@ -1308,10 +1308,13 @@ export default {
       ip: 'IP アドレス',
       browser: 'ブラウザー',
       askAgain: '再同意を求める',
-      askAgainConfirm:
-        '{count} 人のユーザーに免責事項への再同意を求めますか？既存の同意は「再同意を依頼済み」として保持されます。',
+      askAgainConfirm: '{count} 人のユーザーに免責事項への再同意を求めますか？既存の同意は消去されます。',
       askAgainDone: '{count} 人のユーザーが次回のサインイン時に免責事項に再同意します。',
-      askedAgain: '再同意を依頼',
+      restore: '復元',
+      restoreConfirm:
+        'バージョン {version} を現在の免責事項として復元しますか？新しいバージョンになり、すべてのユーザーが同意します。',
+      restoreDone: 'バージョン {version} として復元しました。',
+      current: '現在',
     },
     notificationChannels: {
       label: '通知チャネル',

@@ -150,7 +150,6 @@ onMounted(async () => {
       :apiVersion="2"
       :settings="listOf"
       :crumbs="crumbs"
-      readOnly
     >
       <template #tabs>
         <ul class="nav nav-tabs mb-0">

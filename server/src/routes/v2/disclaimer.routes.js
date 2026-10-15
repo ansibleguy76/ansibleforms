@@ -16,6 +16,9 @@ disclaimerSettingsRouter.put('/', disclaimerController.saveSettings);
 export const disclaimerVersionRouter = express.Router();
 disclaimerVersionRouter.get('/', disclaimerController.versions);
 disclaimerVersionRouter.get('/:id', disclaimerController.version);
+// deleted (never the current one), or restored as a new version
+disclaimerVersionRouter.delete('/:id', disclaimerController.deleteVersion);
+disclaimerVersionRouter.post('/:id/restore', disclaimerController.restoreVersion);
 
 // Settings > Access > Disclaimer > Acceptances : who accepted which version
 export const disclaimerAcceptanceRouter = express.Router();

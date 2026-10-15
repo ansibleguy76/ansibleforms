@@ -1418,9 +1418,13 @@ export default {
       browser: 'Browser',
       askAgain: 'Richiedi di nuovo',
       askAgainConfirm:
-        "Chiedere a {count} utente/i di accettare di nuovo l'avviso? La loro accettazione è conservata, segnata come richiesta di nuovo.",
+        "Chiedere a {count} utente/i di accettare di nuovo l'avviso? La loro accettazione viene cancellata.",
       askAgainDone: "{count} utente/i accetteranno di nuovo l'avviso al prossimo accesso.",
-      askedAgain: 'Richiesto di nuovo',
+      restore: 'Ripristina',
+      restoreConfirm:
+        'Ripristinare la versione {version} come avviso attuale? Diventa una nuova versione, che ogni utente accetta.',
+      restoreDone: 'Ripristinata come versione {version}.',
+      current: 'Attuale',
     },
     notificationChannels: {
       label: 'Canale di notifica',

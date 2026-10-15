@@ -18,9 +18,6 @@ CREATE TABLE IF NOT EXISTS `disclaimer_acceptances` (
   `accepted_at` datetime NOT NULL,
   `ip` varchar(64) DEFAULT NULL,
   `user_agent` varchar(500) DEFAULT NULL,
-  -- asked again by an admin : no longer counts, the user accepts again (a new row) ; kept as it was
-  `asked_again_at` datetime DEFAULT NULL,
-  `asked_again_by` varchar(250) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `idx_disclaimer_acceptances_user_version` (`username`, `user_type`, `version`)
+  UNIQUE KEY `uk_disclaimer_acceptances_user_version` (`username`, `user_type`, `version`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

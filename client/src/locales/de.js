@@ -1426,10 +1426,13 @@ export default {
       ip: 'IP-Adresse',
       browser: 'Browser',
       askAgain: 'Erneut anfragen',
-      askAgainConfirm:
-        '{count} Benutzer bitten, den Hinweis erneut zu akzeptieren? Ihre Zustimmung bleibt erhalten, als erneut angefragt markiert.',
+      askAgainConfirm: '{count} Benutzer bitten, den Hinweis erneut zu akzeptieren? Ihre Zustimmung wird gelöscht.',
       askAgainDone: '{count} Benutzer akzeptieren den Hinweis bei der nächsten Anmeldung erneut.',
-      askedAgain: 'Erneut angefragt',
+      restore: 'Wiederherstellen',
+      restoreConfirm:
+        'Version {version} als aktuellen Hinweis wiederherstellen? Sie wird eine neue Version, die jeder Benutzer akzeptiert.',
+      restoreDone: 'Als Version {version} wiederhergestellt.',
+      current: 'Aktuell',
     },
     notificationChannels: {
       label: 'Benachrichtigungskanal',

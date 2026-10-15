@@ -1429,9 +1429,13 @@ export default {
       browser: 'Navigateur',
       askAgain: 'Redemander',
       askAgainConfirm:
-        "Demander à {count} utilisateur(s) d'accepter de nouveau l'avertissement ? Leur acceptation est conservée, marquée comme redemandée.",
+        "Demander à {count} utilisateur(s) d'accepter de nouveau l'avertissement ? Leur acceptation est effacée.",
       askAgainDone: "{count} utilisateur(s) accepteront de nouveau l'avertissement à leur prochaine connexion.",
-      askedAgain: 'Redemandé',
+      restore: 'Restaurer',
+      restoreConfirm:
+        'Restaurer la version {version} comme avertissement actuel ? Elle devient une nouvelle version, que chaque utilisateur accepte.',
+      restoreDone: 'Restaurée comme version {version}.',
+      current: 'Actuelle',
     },
     notificationChannels: {
       label: 'Canal de notification',

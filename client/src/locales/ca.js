@@ -1327,10 +1327,13 @@ export default {
       ip: 'Adreça IP',
       browser: 'Navegador',
       askAgain: 'Torna a demanar',
-      askAgainConfirm:
-        "Vols demanar a {count} usuari(s) que tornin a acceptar l'avís? La seva acceptació es conserva, marcada com a tornada a demanar.",
+      askAgainConfirm: "Vols demanar a {count} usuari(s) que tornin a acceptar l'avís? La seva acceptació s'esborra.",
       askAgainDone: "{count} usuari(s) tornaran a acceptar l'avís al proper inici de sessió.",
-      askedAgain: 'Tornat a demanar',
+      restore: 'Restaura',
+      restoreConfirm:
+        'Vols restaurar la versió {version} com a avís actual? Esdevé una versió nova, que tots els usuaris accepten.',
+      restoreDone: 'Restaurada com a versió {version}.',
+      current: 'Actual',
     },
     notificationChannels: {
       label: 'Canal de notificació',

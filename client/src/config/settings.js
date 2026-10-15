@@ -3136,12 +3136,40 @@ export default function getSettings(t) {
       selectable: false,
       // ticked, to export them
       checkboxes: true,
-      // a record, never changed : opened, its text as it was agreed to
+      // a record, never changed : opened, its text as it was agreed to ; restored (its text the
+      // current one again, as a new version every user accepts), or deleted with who accepted it -
+      // never the current one
       noCreate: true,
-      actions: [],
+      actions: [
+        {
+          name: 'restore',
+          title: t('settings.disclaimer.restore'),
+          icon: 'rotate-left',
+          color: 'change',
+          // the current one is the disclaimer already
+          enabledWhen: (r) => !r.current,
+          confirm: (_count, rows) => t('settings.disclaimer.restoreConfirm', { version: rows[0].version }),
+          done: (version) => t('settings.disclaimer.restoreDone', { version }),
+          run: async (ids) => (await axios.post(`/api/v2/disclaimerversion/${ids[0]}/restore`)).data?.version,
+        },
+        {
+          name: 'delete',
+          title: t('common.delete'),
+          icon: 'trash',
+          color: 'delete',
+          enabledWhen: (r) => !r.current,
+        },
+      ],
       fields: [
         { key: 'id', hidden: true, noInput: true, noTable: true },
         { key: 'version', label: t('settings.disclaimer.version'), icon: 'hashtag', readonly: true },
+        {
+          // the one users accept : the latest
+          key: 'current',
+          label: t('settings.disclaimer.current'),
+          type: 'checkbox',
+          noInput: true,
+        },
         { key: 'title', label: t('settings.disclaimer.title'), icon: 'heading', readonly: true },
         {
           key: 'text',
@@ -3182,17 +3210,17 @@ export default function getSettings(t) {
       selectable: false,
       // ticked, to export them
       checkboxes: true,
-      // a record, never changed : no Add, no Edit, no Delete ; opened, shown in full
+      // a record, never changed : no Add, no Edit ; opened, shown in full
       noCreate: true,
-      actions: [],
-      // Ask again : the ones ticked no longer count (kept, marked), their users accept again at
-      // their next sign-in ; one asked again already is left as it is
-      bulkActions: [
+      // Ask again : cleared, their users accept again at their next request ; on a row, and on the
+      // rows ticked
+      actions: [
         {
           name: 'ask_again',
           title: t('settings.disclaimer.askAgain'),
           icon: 'rotate',
-          appliesTo: (r) => !r.asked_again_at,
+          color: 'change',
+          bulk: true,
           confirm: (count) => t('settings.disclaimer.askAgainConfirm', { count }),
           done: (count) => t('settings.disclaimer.askAgainDone', { count }),
           run: async (ids) => (await axios.post('/api/v2/disclaimeracceptance/ask-again', { ids })).data?.count,
@@ -3233,26 +3261,6 @@ export default function getSettings(t) {
           noTable: true,
           readonly: true,
           initial: (r) => (r?.accepted_at ? Helpers.formatServerDate(r.accepted_at) : ''),
-        },
-        {
-          // asked again : when (and by whom, on hover) ; none, an en dash
-          key: 'asked_again_at',
-          label: t('settings.disclaimer.askedAgain'),
-          noInput: true,
-          render: (v, r) =>
-            v ? `<span title="${esc(r.asked_again_by || '')}">${esc(Helpers.formatServerDate(v))}</span>` : '',
-          sortValue: (r) => Date.parse(r.asked_again_at) || 0,
-        },
-        {
-          // the same, in the dialog : when and by whom
-          key: 'asked_again',
-          label: t('settings.disclaimer.askedAgain'),
-          icon: 'rotate',
-          noTable: true,
-          readonly: true,
-          showWhen: (r) => !!r?.asked_again_at,
-          initial: (r) =>
-            r?.asked_again_at ? `${Helpers.formatServerDate(r.asked_again_at)} (${r.asked_again_by || '–'})` : '',
         },
         {
           key: 'ip',

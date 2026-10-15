@@ -363,28 +363,6 @@ function addIndex(table, indexName, columns) {
     });
 }
 
-/**
- * Drops an index of a table when it is there.
- *
- * Args:
- *   table (string): the table.
- *   indexName (string): the index.
- *
- * Returns:
- *   Promise<string>: what was done.
- */
-function dropIndex(table, indexName) {
-  const db = "AnsibleForms";
-  return mysql.do("SHOW INDEX FROM ??.?? WHERE Key_name = ?", [db, table, indexName]).then((found) => {
-    if (!found.length) return `Index '${indexName}' is not on '${table}'`;
-    return mysql.do("ALTER TABLE ??.?? DROP INDEX ??", [db, table, indexName]).then(() => {
-      const message = `dropped index '${indexName}' on '${table}'`;
-      logger.warning(message);
-      return message;
-    });
-  });
-}
-
 function addTable(table, sql) {
   var message;
   var db = "AnsibleForms";
@@ -629,9 +607,7 @@ const SCHEMA_MANIFEST = {
                                'ldap.id', 'ldap.name', 'ldap.position', 'ldap.domains', 'ldap.credential',
                                'oauth2_providers.credential', 'credentials.tenant_id', 'credentials.issuer', 'credentials.redirect_uri',
                                'credentials.ignore_certs', 'credentials.ca_bundle', 'oauth2_providers.auto_login',
-                               'runners.credential', 'ldap.description',
-                               'disclaimer_acceptances.asked_again_at', 'disclaimer_acceptances.asked_again_by'],
-                     indexes: ['disclaimer_acceptances.idx_disclaimer_acceptances_user_version'] },
+                               'runners.credential', 'ldap.description'] },
   },
 };
 
@@ -1094,12 +1070,6 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(moveRunnerSecretsToCredentials(), messages, success, failed);
   // an LDAP directory says what it is, as every record
   await checkPromise(addColumn("ldap", "description", "varchar(250)", true, "NULL"), messages, success, failed);
-  // a disclaimer acceptance asked again (Ask again) : kept, no longer counting, the user accepting
-  // again in a row of its own - one user and version may now have several rows
-  await checkPromise(addColumn("disclaimer_acceptances", "asked_again_at", "datetime", true, "NULL"), messages, success, failed);
-  await checkPromise(addColumn("disclaimer_acceptances", "asked_again_by", "varchar(250)", true, "NULL"), messages, success, failed);
-  await checkPromise(addIndex("disclaimer_acceptances", "idx_disclaimer_acceptances_user_version", ["username", "user_type", "version"]), messages, success, failed);
-  await checkPromise(dropIndex("disclaimer_acceptances", "uk_disclaimer_acceptances_user_version"), messages, success, failed);
   // and when each ended, worked or not, shown beside the repository's Pull and Push
   await checkPromise(addColumn("repositories", "pulled_at", "datetime", true, "NULL"), messages, success, failed);
   await checkPromise(addColumn("repositories", "pushed_at", "datetime", true, "NULL"), messages, success, failed);

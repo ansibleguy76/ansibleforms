@@ -1423,10 +1423,13 @@ export default {
       ip: 'Dirección IP',
       browser: 'Navegador',
       askAgain: 'Volver a pedir',
-      askAgainConfirm:
-        '¿Pedir a {count} usuario(s) que acepten de nuevo el aviso? Su aceptación se conserva, marcada como vuelta a pedir.',
+      askAgainConfirm: '¿Pedir a {count} usuario(s) que acepten de nuevo el aviso? Su aceptación se borra.',
       askAgainDone: '{count} usuario(s) aceptarán el aviso de nuevo en su próximo inicio de sesión.',
-      askedAgain: 'Vuelto a pedir',
+      restore: 'Restaurar',
+      restoreConfirm:
+        '¿Restaurar la versión {version} como aviso actual? Pasa a ser una versión nueva, que todos los usuarios aceptan.',
+      restoreDone: 'Restaurada como versión {version}.',
+      current: 'Actual',
     },
     notificationChannels: {
       label: 'Canal de notificación',

@@ -133,8 +133,7 @@ const Disclaimer = {
     const key = keyOf(user, current.version);
     if (accepted.has(key)) return false;
     const res = await mysql.do(
-      // an acceptance asked again (Ask again) no longer counts
-      'SELECT 1 FROM AnsibleForms.`disclaimer_acceptances` WHERE username = ? AND user_type = ? AND version = ? AND asked_again_at IS NULL LIMIT 1',
+      'SELECT 1 FROM AnsibleForms.`disclaimer_acceptances` WHERE username = ? AND user_type = ? AND version = ? LIMIT 1',
       [user?.username || '', user?.type || 'local', current.version],
     );
     if (res.length) {
@@ -164,13 +163,8 @@ const Disclaimer = {
     if (Number(version) !== current.version) {
       throw new Errors.BadRequestError('The disclaimer changed : read it again');
     }
-    // once per user and version while it counts : an acceptance asked again is kept, a new one added
-    const active = await mysql.do(
-      'SELECT 1 FROM AnsibleForms.`disclaimer_acceptances` WHERE username = ? AND user_type = ? AND version = ? AND asked_again_at IS NULL LIMIT 1',
-      [user?.username || '', user?.type || 'local', current.version],
-    );
-    if (!active.length) await mysql.do(
-      'INSERT INTO AnsibleForms.`disclaimer_acceptances` SET ?',
+    await mysql.do(
+      'INSERT IGNORE INTO AnsibleForms.`disclaimer_acceptances` SET ?',
       {
         username: user?.username || '',
         user_type: user?.type || 'local',
@@ -257,11 +251,64 @@ const Disclaimer = {
    *   Promise<object[]>: the versions, each with its id (its number) and its acceptances.
    */
   async versions() {
-    return mysql.do(
+    const rows = await mysql.do(
       'SELECT v.version AS id, v.version, v.title, v.text, v.checkbox_label, v.created_by, v.created_at, ' +
         '(SELECT COUNT(*) FROM AnsibleForms.`disclaimer_acceptances` a WHERE a.version = v.version) AS acceptances ' +
         'FROM AnsibleForms.`disclaimer_versions` v ORDER BY v.version DESC',
     );
+    // the latest is the current one : the one users accept
+    return rows.map((r, i) => ({ ...r, current: i === 0 ? 1 : 0 }));
+  },
+
+  /**
+   * Deletes a version and who accepted it ; never the current one (another is restored first).
+   *
+   * Args:
+   *   version (number|string): its number.
+   *
+   * Raises:
+   *   NotFoundError: no version has that number.
+   *   BadRequestError: it is the current one.
+   */
+  async deleteVersion(version) {
+    const found = await this.version(version);
+    if (found.current) throw new Errors.BadRequestError('The current version is the one users accept : restore another first');
+    await mysql.do('DELETE FROM AnsibleForms.`disclaimer_acceptances` WHERE version = ?', [found.version]);
+    await mysql.do('DELETE FROM AnsibleForms.`disclaimer_versions` WHERE version = ?', [found.version]);
+    forgetDisclaimer();
+    await bump('disclaimer').catch(() => {});
+  },
+
+  /**
+   * Restores a version : its text the current one again, as a new version (the next number), so
+   * every user accepts it ; the version itself stays as it was.
+   *
+   * Args:
+   *   version (number|string): its number.
+   *   admin (string): who restores it.
+   *
+   * Returns:
+   *   Promise<number>: the new version's number.
+   *
+   * Raises:
+   *   NotFoundError: no version has that number.
+   */
+  async restoreVersion(version, admin) {
+    const found = await this.version(version);
+    const latest = await mysql.do('SELECT COALESCE(MAX(version), 0) AS v FROM AnsibleForms.`disclaimer_versions`');
+    const next = (latest[0]?.v || 0) + 1;
+    await mysql.do('INSERT INTO AnsibleForms.`disclaimer_versions` SET ?', {
+      version: next,
+      title: found.title,
+      text: found.text,
+      checkbox_label: found.checkbox_label,
+      created_by: admin || null,
+      created_at: nowDb(),
+    });
+    forgetDisclaimer();
+    await bump('disclaimer').catch(() => {});
+    logger.notice(`${admin} restored disclaimer version ${found.version} as version ${next}`);
+    return next;
   },
 
   /**
@@ -290,7 +337,7 @@ const Disclaimer = {
    */
   async acceptances() {
     const rows = await mysql.do(
-      'SELECT id, username, user_type, version, accepted_at, ip, user_agent, asked_again_at, asked_again_by FROM AnsibleForms.`disclaimer_acceptances` ORDER BY accepted_at DESC, id DESC',
+      'SELECT id, username, user_type, version, accepted_at, ip, user_agent FROM AnsibleForms.`disclaimer_acceptances` ORDER BY accepted_at DESC, id DESC',
     );
     // those recorded with the prefix, shown without it
     return rows.map((r) => ({ ...r, ip: r.ip ? plainIp(r.ip) : r.ip }));
@@ -310,7 +357,7 @@ const Disclaimer = {
    */
   async acceptance(id) {
     const res = await mysql.do(
-      'SELECT id, username, user_type, version, accepted_at, ip, user_agent, asked_again_at, asked_again_by FROM AnsibleForms.`disclaimer_acceptances` WHERE id = ?',
+      'SELECT id, username, user_type, version, accepted_at, ip, user_agent FROM AnsibleForms.`disclaimer_acceptances` WHERE id = ?',
       [id],
     );
     if (!res.length) throw new Errors.NotFoundError(`No disclaimer acceptance ${id}`);
@@ -318,8 +365,8 @@ const Disclaimer = {
   },
 
   /**
-   * Asks users to accept again : their acceptances no longer count (kept, marked when and by whom),
-   * and at their next request the disclaimer shows again. Every node forgets what it read (the
+   * Asks users to accept again : their acceptances are cleared, and at their next request the
+   * disclaimer shows again (the audit log keeps who asked). Every node forgets what it read (the
    * 'disclaimer' epoch).
    *
    * Args:
@@ -327,7 +374,7 @@ const Disclaimer = {
    *   admin (string): who asks.
    *
    * Returns:
-   *   Promise<number>: how many were asked again (one asked already is left as it is).
+   *   Promise<number>: how many were cleared.
    *
    * Raises:
    *   BadRequestError: no acceptance given.
@@ -335,10 +382,7 @@ const Disclaimer = {
   async askAgain(ids, admin) {
     const list = (Array.isArray(ids) ? ids : []).map((id) => parseInt(id, 10)).filter((id) => Number.isInteger(id));
     if (!list.length) throw new Errors.BadRequestError('No acceptance to ask again');
-    const res = await mysql.do(
-      'UPDATE AnsibleForms.`disclaimer_acceptances` SET asked_again_at = ?, asked_again_by = ? WHERE id IN (?) AND asked_again_at IS NULL',
-      [nowDb(), admin || null, list],
-    );
+    const res = await mysql.do('DELETE FROM AnsibleForms.`disclaimer_acceptances` WHERE id IN (?)', [list]);
     forgetDisclaimer();
     await bump('disclaimer').catch(() => {});
     logger.notice(`${admin} asked ${res?.affectedRows ?? 0} user(s) to accept the disclaimer again`);

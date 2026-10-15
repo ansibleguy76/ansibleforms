@@ -1402,10 +1402,13 @@ export default {
       ip: 'IP address',
       browser: 'Browser',
       askAgain: 'Ask again',
-      askAgainConfirm:
-        'Ask {count} user(s) to accept the disclaimer again? Their acceptance is kept, marked as asked again.',
+      askAgainConfirm: 'Ask {count} user(s) to accept the disclaimer again? Their acceptance is cleared.',
       askAgainDone: '{count} user(s) will accept the disclaimer again at their next sign-in.',
-      askedAgain: 'Asked again',
+      restore: 'Restore',
+      restoreConfirm:
+        'Restore version {version} as the current disclaimer? It becomes a new version, which every user accepts.',
+      restoreDone: 'Restored as version {version}.',
+      current: 'Current',
     },
     notificationChannels: {
       label: 'Notification channel',

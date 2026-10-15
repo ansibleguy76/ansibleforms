@@ -1326,10 +1326,13 @@ export default {
       ip: 'Endereço IP',
       browser: 'Navegador',
       askAgain: 'Pedir novamente',
-      askAgainConfirm:
-        'Pedir a {count} utilizador(es) que aceitem novamente o aviso? A aceitação é mantida, marcada como pedida novamente.',
+      askAgainConfirm: 'Pedir a {count} utilizador(es) que aceitem novamente o aviso? A aceitação é apagada.',
       askAgainDone: '{count} utilizador(es) aceitarão o aviso novamente no próximo início de sessão.',
-      askedAgain: 'Pedido novamente',
+      restore: 'Restaurar',
+      restoreConfirm:
+        'Restaurar a versão {version} como aviso atual? Passa a ser uma nova versão, que todos os utilizadores aceitam.',
+      restoreDone: 'Restaurada como versão {version}.',
+      current: 'Atual',
     },
     notificationChannels: {
       label: 'Canal de notificação',

@@ -1206,6 +1206,9 @@ function dispatchAction(action, item) {
   // an action that saves a few fields of the record (action.update : an SSO provider's Use for
   // sign-in), then shows the list again
   if (typeof action.update === 'function') return quickUpdate(item, action.update(item));
+  // an action that runs on its own (action.run : a disclaimer version restored), as on the rows
+  // ticked
+  if (typeof action.run === 'function') return runAction(action, [item]);
   switch (action.name) {
     case 'edit':
       // a record with its own page is edited there
@@ -1433,11 +1436,11 @@ async function bulkDelete() {
   }
 }
 
-// ─── the list's other actions on the rows ticked (settings.bulkActions) ───────
-// each { name, title, icon, appliesTo?(row), confirm?(count), done?(count), run(ids, rows) } :
-// a button beside Delete while rows are ticked, acting on those it applies to (a disclaimer
-// acceptance asked again already is left as it is), asking first when it says how
-const bulkActions = computed(() => props.settings.bulkActions || []);
+// ─── the list's own actions that run (action.run) : on a row, and on the rows ticked ────
+// each { name, title, icon, enabledWhen?(row), confirm?(count, rows), done?(n, rows),
+// run(ids, rows), bulk? } : in the row menu, and - bulk - a button beside Delete while rows are
+// ticked, acting on those it is enabled for ; asking first when it says how
+const bulkActions = computed(() => actions.value.filter((a) => a.bulk && typeof a.run === 'function'));
 
 /**
  * The rows ticked that a list action applies to, among those still on screen.
@@ -1449,26 +1452,27 @@ const bulkActions = computed(() => props.settings.bulkActions || []);
  *   object[]: the rows.
  */
 function bulkRows(action) {
-  return itemList.value.filter((r) => selectedIds.value.has(r[idKey]) && (!action.appliesTo || action.appliesTo(r)));
+  return itemList.value.filter(
+    (r) => selectedIds.value.has(r[idKey]) && (!action.enabledWhen || action.enabledWhen(r)),
+  );
 }
 
 /**
- * Runs a list action on the rows ticked it applies to, after asking when it asks, then reads the
- * list again.
+ * Runs a list action on rows, after asking when it asks, then reads the list again.
  *
  * Args:
- *   action (object): the action (settings.bulkActions).
+ *   action (object): the action (action.run).
+ *   rows (object[]): the rows : a row's menu's one, or those ticked it is enabled for.
  */
-async function runBulk(action) {
-  const rows = bulkRows(action);
+async function runAction(action, rows) {
   if (!rows.length) return;
-  if (action.confirm && !confirm(action.confirm(rows.length))) return;
+  if (action.confirm && !confirm(action.confirm(rows.length, rows))) return;
   try {
     const n = await action.run(
       rows.map((r) => r[idKey]),
       rows,
     );
-    toast.success(action.done ? action.done(typeof n === 'number' ? n : rows.length) : action.title);
+    toast.success(action.done ? action.done(typeof n === 'number' ? n : rows.length, rows) : action.title);
     selectedIds.value = new Set();
     await loadItems();
   } catch (err) {
@@ -1560,7 +1564,11 @@ defineExpose({
           <!-- in the style of the toolbar's other buttons -->
           <!-- the list's own actions on them (settings.bulkActions), then Delete -->
           <template v-for="action in bulkActions" :key="'bulk-' + action.name">
-            <BsButton v-if="count" :icon="action.icon" :disabled="!bulkRows(action).length" @click="runBulk(action)"
+            <BsButton
+              v-if="count"
+              :icon="action.icon"
+              :disabled="!bulkRows(action).length"
+              @click="runAction(action, bulkRows(action))"
               >{{ action.title }} ({{ bulkRows(action).length }})</BsButton
             >
           </template>

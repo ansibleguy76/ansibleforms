@@ -1319,9 +1319,13 @@ export default {
       browser: 'Przeglądarka',
       askAgain: 'Poproś ponownie',
       askAgainConfirm:
-        'Poprosić {count} użytkownika(ów) o ponowną akceptację zastrzeżenia? Ich akceptacja zostaje zachowana, oznaczona jako ponownie poproszona.',
+        'Poprosić {count} użytkownika(ów) o ponowną akceptację zastrzeżenia? Ich akceptacja zostanie usunięta.',
       askAgainDone: '{count} użytkownik(ów) zaakceptuje zastrzeżenie ponownie przy następnym logowaniu.',
-      askedAgain: 'Ponownie poproszono',
+      restore: 'Przywróć',
+      restoreConfirm:
+        'Przywrócić wersję {version} jako bieżące zastrzeżenie? Stanie się nową wersją, którą każdy użytkownik akceptuje.',
+      restoreDone: 'Przywrócono jako wersję {version}.',
+      current: 'Bieżąca',
     },
     notificationChannels: {
       label: 'Kanał powiadomień',

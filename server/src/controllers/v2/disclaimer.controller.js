@@ -74,6 +74,26 @@ const version = async (req, res) => {
   }
 };
 
+// a version deleted (never the current one), with who accepted it
+const deleteVersion = async (req, res) => {
+  try {
+    await Disclaimer.deleteVersion(req.params.id);
+    return res.json(RestResult.single({ message: i18n.t(req, "success.deleted", { resource: "Disclaimer version" }) }));
+  } catch (err) {
+    Errors.ReturnError(res, err);
+  }
+};
+
+// a version restored : its text the current one again, as a new version
+const restoreVersion = async (req, res) => {
+  try {
+    const version = await Disclaimer.restoreVersion(req.params.id, req.user?.user?.username);
+    return res.json(RestResult.single({ version }));
+  } catch (err) {
+    Errors.ReturnError(res, err);
+  }
+};
+
 // Ask again : the acceptances ticked no longer count, their users accept again { ids }
 const askAgain = async (req, res) => {
   try {
@@ -100,4 +120,4 @@ const acceptance = async (req, res) => {
   }
 };
 
-export default { current, accept, decline, settings, saveSettings, versions, version, acceptances, acceptance, askAgain };
+export default { current, accept, decline, settings, saveSettings, versions, version, acceptances, acceptance, askAgain, deleteVersion, restoreVersion };
