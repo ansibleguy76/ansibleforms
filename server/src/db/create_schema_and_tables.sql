@@ -564,6 +564,7 @@ CREATE TABLE `announcements` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `message` varchar(500) NOT NULL,
   `level` varchar(10) NOT NULL DEFAULT 'info',
+  `enabled` tinyint(4) NOT NULL DEFAULT 1,
   `start_at` datetime DEFAULT NULL,
   `end_at` datetime DEFAULT NULL,
   `created_by` varchar(250) DEFAULT NULL,

@@ -77,10 +77,6 @@ var Settings=function(settings){
     if(settings.env_label_color !== undefined){
       this.env_label_color = oneOf(settings.env_label_color, LABEL_COLORS);
     }
-    // the announcements shown or not : kept while hidden, so they come back as they were
-    if(settings.banner_show !== undefined){
-      this.banner_show = settings.banner_show === false || settings.banner_show === 0 || settings.banner_show === '0' ? 0 : 1;
-    }
     if(settings.forms_view !== undefined){
       this.forms_view = oneOf(settings.forms_view, FORMS_VIEWS);
     }
@@ -526,13 +522,13 @@ Settings.findUrl = function () {
 // endpoint blocks the SPA from rendering even the login page, so a MySQL outage
 // must cost one connectTimeout, not one per setting.
 Settings.findAppDefaults = function () {
-  return mysql.do("SELECT default_language, default_theme, default_theme_color, app_name, env_label, env_label_show, env_label_color, banner_show, forms_view, default_timezone, default_date_format, header_links FROM AnsibleForms.`settings` LIMIT 1")
+  return mysql.do("SELECT default_language, default_theme, default_theme_color, app_name, env_label, env_label_show, env_label_color, forms_view, default_timezone, default_date_format, header_links FROM AnsibleForms.`settings` LIMIT 1")
     .then(async (res) => {
       const r = res[0] || {};
-      // the announcements not ended yet (Settings > Appearance > Announcements), none while
-      // switched off ; which run now is decided per request (routes/v2/app.routes.js). A
-      // table not there yet (a database before its patch) : none
-      const announcements = r.banner_show === 0 ? [] : await Announcement.findNotEnded().catch(() => []);
+      // the announcements enabled and not ended yet (Settings > Appearance > Announcements) ;
+      // which run now is decided per request (routes/v2/app.routes.js). A table not there yet (a
+      // database before its patch) : none
+      const announcements = await Announcement.findNotEnded().catch(() => []);
       return {
         language: r.default_language || null,
         theme: r.default_theme || null,

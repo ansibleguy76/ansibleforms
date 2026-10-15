@@ -15,9 +15,9 @@
 export const SETTINGS_SECTIONS = {
   appearance: {
     option: 'showAppearanceSettings',
-    // Settings > Appearance : defaults, name, links, environment label, announcements' banner
+    // Settings > Appearance : defaults, name, links, environment label
     settingsFields: [
-      'app_name', 'banner_show', 'default_date_format', 'default_language', 'default_theme',
+      'app_name', 'default_date_format', 'default_language', 'default_theme',
       'default_theme_color', 'default_timezone', 'env_label', 'env_label_color', 'env_label_show',
       'forms_view', 'header_links',
     ],

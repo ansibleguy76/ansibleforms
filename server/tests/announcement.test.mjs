@@ -11,6 +11,7 @@ test("a new announcement : its message trimmed, info by default, its moments in 
   expect(announcementFields({ message: "  Maintenance Sunday 22:00 ", start_at: "2026-10-20T20:00:00.000Z", end_at: "2099-10-20T23:00:00+02:00" })).toEqual({
     message: "Maintenance Sunday 22:00",
     level: "info",
+    enabled: 1,
     start_at: "2026-10-20 20:00:00",
     end_at: "2099-10-20 21:00:00",
   });
@@ -29,6 +30,8 @@ test("refused : no message, an unknown type, a date that is none, an end before 
 test("an update writes only the fields given", () => {
   expect(announcementFields({ level: "warning" }, true)).toEqual({ level: "warning" });
   expect(announcementFields({ end_at: "" }, true)).toEqual({ end_at: null });
+  expect(announcementFields({ enabled: false }, true)).toEqual({ enabled: 0 });
+  expect(announcementFields({ enabled: true }, true)).toEqual({ enabled: 1 });
 });
 
 test("shown from its start until its end, each optional", () => {

@@ -39,7 +39,7 @@ const Job = (await import("../src/models/job.model.js")).default;
 const { default: Settings } = await import("../src/models/settings.model.js");
 const { channelsOfForm } = await import("../src/models/form.model.js");
 const { default: NotificationChannel } = await import("../src/models/notificationChannel.model.js");
-const { moveMailServersToChannels, copyMailSettingsToServers, moveMailServersToCredentials, moveSsoClientsToCredentials, moveLdapServersToCredentials, moveRunnerSecretsToCredentials } = await import("../src/models/schema.model.js");
+const { moveMailServersToChannels, copyMailSettingsToServers, moveMailServersToCredentials, moveSsoClientsToCredentials, moveLdapServersToCredentials, moveRunnerSecretsToCredentials, moveBannerSwitchToAnnouncements } = await import("../src/models/schema.model.js");
 
 beforeEach(() => {
   queries.length = 0;
@@ -299,5 +299,21 @@ describe("a runner's token or login moves to a credential", () => {
 
   test("none left : nothing to do", async () => {
     expect(await moveRunnerSecretsToCredentials()).toBe(null);
+  });
+});
+
+describe("the announcements' switch of before moves to each announcement", () => {
+  test("switched on : nothing to do", async () => {
+    answers = [{ match: /SELECT banner_show/, rows: [{ banner_show: 1 }] }];
+    expect(await moveBannerSwitchToAnnouncements()).toBe(null);
+    expect(queries.some((q) => /UPDATE/.test(q.sql))).toBe(false);
+  });
+  test("switched off : every announcement disabled, the switch back on", async () => {
+    answers = [
+      { match: /SELECT banner_show/, rows: [{ banner_show: 0 }] },
+      { match: /UPDATE AnsibleForms\.`announcements`/, rows: { affectedRows: 2 } },
+    ];
+    expect(await moveBannerSwitchToAnnouncements()).toMatch(/disabled 2 announcement/);
+    expect(queries.some((q) => /SET banner_show = 1/.test(q.sql))).toBe(true);
   });
 });
