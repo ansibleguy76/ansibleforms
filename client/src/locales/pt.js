@@ -352,6 +352,8 @@ export default {
       showJobs: 'Ver a página de tarefas.',
       showDebugButtons: 'Ver os botões de depuração num formulário.',
       allowJobRelaunch: 'Relançar tarefas com os dados do formulário de uma execução anterior.',
+      allowJobDeletion:
+        'Eliminar tarefas: as próprias, ou todas para um administrador. Sem isso: o histórico fica completo.',
       allowVerboseMode: 'Executar tarefas em modo detalhado.',
       allowScheduledJobs: 'Criar e gerir agendamentos na página Agendamentos, recorrentes ou pontuais.',
       allowStoredJobs: 'Guardar os dados de uma tarefa e voltar a carregá-los mais tarde.',
@@ -1884,6 +1886,7 @@ export default {
       roleOptionAllowBackupOps: 'Mostrar as Cópias de segurança',
       roleOptionAllowVerboseMode: 'Permitir modo detalhado',
       roleOptionAllowJobRelaunch: 'Permitir relançar tarefas',
+      roleOptionAllowJobDeletion: 'Permitir eliminar tarefas',
       roleOptionAllowScheduledJobs: 'Permitir Agendamentos',
       roleOptionAllowChat: 'Permitir assistente de chat',
       roleOptionAllowMcp: 'Permitir MCP',

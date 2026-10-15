@@ -650,6 +650,11 @@ Job.createOutput = async function (record) {
 };
 Job.delete = async function (user, id) {
   logger.notice(`Deleting job ${id}`);
+  // a role option : on unless a role turns it off (allowJobDeletion), then no job is deleted by
+  // this user, theirs included - the job history stays whole
+  if (user?.options?.allowJobDeletion === false) {
+    throw new Errors.AccessDeniedError(`You may not delete jobs`);
+  }
 
   var query;
   var params;

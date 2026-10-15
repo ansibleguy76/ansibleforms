@@ -353,6 +353,8 @@ export default {
       showJobs: 'Veure la pàgina de tasques.',
       showDebugButtons: "Veure els botons de depuració d'un formulari.",
       allowJobRelaunch: "Rellançar tasques amb les dades del formulari d'una execució anterior.",
+      allowJobDeletion:
+        "Eliminar tasques: les pròpies, o totes per a un administrador. Sense: l'historial queda sencer.",
       allowVerboseMode: 'Executar tasques en mode detallat.',
       allowScheduledJobs: 'Crear i gestionar programacions a la pàgina Programacions, recurrents o puntuals.',
       allowStoredJobs: "Desar les dades d'una tasca i tornar-les a carregar més tard.",
@@ -1888,6 +1890,7 @@ export default {
       roleOptionAllowBackupOps: 'Mostra les Còpies de seguretat',
       roleOptionAllowVerboseMode: 'Permet el mode detallat',
       roleOptionAllowJobRelaunch: 'Permet rellançar tasques',
+      roleOptionAllowJobDeletion: 'Permet eliminar tasques',
       roleOptionAllowScheduledJobs: 'Permet les Programacions',
       roleOptionAllowChat: "Permet l'assistent de xat",
       roleOptionAllowMcp: 'Permet MCP',

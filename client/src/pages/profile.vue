@@ -116,6 +116,7 @@ const OPTION_DESCRIPTIONS = {
   showJobs: () => t('profilePage.optionDescription.showJobs'),
   showDebugButtons: () => t('profilePage.optionDescription.showDebugButtons'),
   allowJobRelaunch: () => t('profilePage.optionDescription.allowJobRelaunch'),
+  allowJobDeletion: () => t('profilePage.optionDescription.allowJobDeletion'),
   allowVerboseMode: () => t('profilePage.optionDescription.allowVerboseMode'),
   allowScheduledJobs: () => t('profilePage.optionDescription.allowScheduledJobs'),
   allowStoredJobs: () => t('profilePage.optionDescription.allowStoredJobs'),

@@ -267,6 +267,9 @@ function toggleColumn(key) {
 // COMPUTED
 
 // Check if user can relaunch jobs
+// deleting jobs is a role option (allowJobDeletion, on unless a role turns it off) : without it,
+// no Delete and no ticking of jobs to delete
+const canDeleteJobs = computed(() => store?.profile?.options?.allowJobDeletion !== false);
 const canRelaunchJobs = computed(() => {
   return store?.profile?.options?.allowJobRelaunch;
 });
@@ -905,7 +908,9 @@ const showBulkDelete = ref(false);
  *   boolean: it can be deleted.
  */
 function canDelete(j) {
-  return j.status != 'approve' && ((j.status != 'running' && !j.abort_requested) || store.isAdmin);
+  return (
+    canDeleteJobs.value && j.status != 'approve' && ((j.status != 'running' && !j.abort_requested) || store.isAdmin)
+  );
 }
 // the jobs of the page that can be ticked, and whether they all are
 const pageSelectable = computed(() => displayedJobs.value.filter(canDelete));
@@ -1279,7 +1284,7 @@ onMounted(async () => {
                 >{{ t('jobs.abortJob') }}</BsButton
               >
               <BsButton
-                v-if="job.status != 'approve' && ((job.status != 'running' && !job.abort_requested) || store.isAdmin)"
+                v-if="canDelete(job)"
                 icon="trash-alt"
                 cssClass="text-nowrap"
                 @click="
@@ -1491,8 +1496,9 @@ onMounted(async () => {
                             ><font-awesome-icon icon="clipboard-check" class="me-2" />{{ t('jobs.reviewApproval') }}</a
                           >
                         </li>
-                        <li><hr class="dropdown-divider" /></li>
-                        <li>
+                        <!-- Delete : not there at all for a role without allowJobDeletion -->
+                        <li v-if="canDeleteJobs"><hr class="dropdown-divider" /></li>
+                        <li v-if="canDeleteJobs">
                           <a
                             class="dropdown-item"
                             :class="canDelete(j) ? 'text-danger' : 'disabled text-muted'"

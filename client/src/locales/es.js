@@ -350,6 +350,8 @@ export default {
       showJobs: 'Ver la página de jobs.',
       showDebugButtons: 'Ver los botones de depuración en un formulario.',
       allowJobRelaunch: 'Relanzar jobs con los datos del formulario de una ejecución anterior.',
+      allowJobDeletion:
+        'Eliminar trabajos: los propios, o todos para un administrador. Sin ello: el historial queda completo.',
       allowVerboseMode: 'Ejecutar jobs en modo verbose.',
       allowScheduledJobs: 'Crear y gestionar programaciones en la página Programaciones, recurrentes o puntuales.',
       allowStoredJobs: 'Guardar los datos de un job y volver a cargarlos después.',
@@ -1883,6 +1885,7 @@ export default {
       roleOptionAllowBackupOps: 'Mostrar las Copias de seguridad',
       roleOptionAllowVerboseMode: 'Permitir modo detallado',
       roleOptionAllowJobRelaunch: 'Permitir relanzamiento de jobs',
+      roleOptionAllowJobDeletion: 'Permitir eliminar trabajos',
       roleOptionAllowScheduledJobs: 'Permitir Programaciones',
       roleOptionAllowChat: 'Permitir el asistente de chat',
       roleOptionAllowMcp: 'Permitir MCP',

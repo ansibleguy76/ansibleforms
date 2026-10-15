@@ -51,6 +51,8 @@ function applyOptionDefaults(options, isAdmin) {
   if (options.showAllJobLogs === undefined) options.showAllJobLogs = isAdmin;
   if (options.allowScheduledJobs === undefined) options.allowScheduledJobs = isAdmin;
   if (options.allowStoredJobs === undefined) options.allowStoredJobs = true;
+  // deleting jobs (their own ; every job for an admin) : on unless a role turns it off
+  if (options.allowJobDeletion === undefined) options.allowJobDeletion = true;
   if (options.allowPlannedJobs === undefined) options.allowPlannedJobs = true;
   // the chat assistant (ENABLE_CHAT) : on for everyone unless a role says otherwise
   if (options.allowChat === undefined) options.allowChat = true;
