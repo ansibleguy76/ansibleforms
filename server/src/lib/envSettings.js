@@ -11,7 +11,7 @@ import { applySecureContext } from './httpsContext.js';
 import { rebuildBodyParsers } from './bodyParsers.js';
 import { applyTrustProxy, compileTrustProxy } from './trustProxy.js';
 import { MIN_HEADER_SIZE, MAX_HEADER_SIZE } from './httpServerOptions.js';
-import authConfig from '../../config/auth.config.js';
+import authConfig, { entraEnv } from '../../config/auth.config.js';
 import logConfig, { parseRetentionDays } from '../../config/log.config.js';
 import ansibleConfig from '../../config/ansible.config.js';
 
@@ -213,10 +213,14 @@ const LIVE_CUSTOM = {
   ACCESS_TOKEN_EXPIRATION: (v) => { authConfig.jwtExpiration = v; },
   ACCESS_TOKEN_REFRESH_EXPIRATION: (v) => { authConfig.jwtRefreshExpiration = v; },
   ACCESS_TOKEN_ISSUER: (v) => { authConfig.jwtIssuer = v; },
-  AZURE_GRAPH_URI: (v) => { authConfig.azureGraphUrl = v; },
+  // the new name wins over the old one (AZURE_*, deprecated) : both read again from process.env,
+  // which applyLive has already updated, so clearing one falls back to the other
+  ENTRA_GRAPH_URI: () => { authConfig.entraGraphUrl = entraEnv('ENTRA_GRAPH_URI'); },
+  AZURE_GRAPH_URI: () => { authConfig.entraGraphUrl = entraEnv('ENTRA_GRAPH_URI'); },
   // the Entra ID strategy discovers its issuer from it when built : rebuilt
-  AZURE_AUTHORITY_URI: (v) => { authConfig.azureAuthorityUrl = v; rebuildLoginSoon(); },
-  // the login page reads it per request (AzureAd.isEnabled, OIDC.isEnabled), the strategies
+  ENTRA_AUTHORITY_URI: () => { authConfig.entraAuthorityUrl = entraEnv('ENTRA_AUTHORITY_URI'); rebuildLoginSoon(); },
+  AZURE_AUTHORITY_URI: () => { authConfig.entraAuthorityUrl = entraEnv('ENTRA_AUTHORITY_URI'); rebuildLoginSoon(); },
+  // the login page reads it per request (EntraId.isEnabled, OIDC.isEnabled), the strategies
   // its buttons lead to when built : rebuilt, or SSO switched on offers a login that fails
   ENABLE_SSO: (v) => { appConfig.enableSso = v == 1; rebuildLoginSoon(); },
   // winston keeps the level as a mutable property on the logger and each transport.

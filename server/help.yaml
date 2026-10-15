@@ -461,8 +461,8 @@
       however old it is.
       Defaults to 0, which means keep everything: upgrading must never silently delete job
       history, so switching this on is a deliberate choice.
-  - name: AZURE_AUTHORITY_URI
-    version: 7.0.4
+  - name: ENTRA_AUTHORITY_URI
+    version: 7.3.0
     type: string
     allowed: a valid base URI without slash on the end
     short: Microsoft Entra ID sign-in authority
@@ -471,21 +471,40 @@
       The Microsoft identity platform the server sends a Microsoft Entra ID sign-in to, with the tenant id
       of the provider after it (`<authority>/<tenant>/v2.0`). Change it for a national cloud,
       e.g. `https://login.microsoftonline.us` (US Government) or `https://login.chinacloudapi.cn`
-      (China), together with `AZURE_GRAPH_URI`. Read when the Microsoft Entra ID provider is enabled or
+      (China), together with `ENTRA_GRAPH_URI`. Read when the Microsoft Entra ID provider is enabled or
       saved. Only HTTPS is accepted, except with `NODE_ENV=development`, for a local test
-      provider.
+      provider. Replaces `AZURE_AUTHORITY_URI`, still read when this one is not set.
+  - name: ENTRA_GRAPH_URI
+    version: 7.3.0
+    type: string
+    allowed: a valid base URI without slash on the end
+    short: Microsoft Graph API base URI
+    default: https://graph.microsoft.com
+    description: |
+      The Microsoft Graph endpoint the server calls at a Microsoft Entra ID login to read the user's
+      group membership (`/v1.0/me/transitiveMemberOf`). Since 6.5.3 that call is made by the
+      AnsibleForms server, not by the browser, so the server needs a route to it - behind an
+      egress proxy set `HTTPS_PROXY` and `NODE_USE_ENV_PROXY=1`. Change it for a national
+      cloud, e.g. `https://graph.microsoft.us`. Replaces `AZURE_GRAPH_URI`, still read when this
+      one is not set.
+  - name: AZURE_AUTHORITY_URI
+    version: 7.0.4
+    type: string
+    allowed: a valid base URI without slash on the end
+    short: Microsoft Entra ID sign-in authority (deprecated)
+    default: https://login.microsoftonline.com
+    description: |
+      **Deprecated: use `ENTRA_AUTHORITY_URI` ; removed in 8.0.** Still read when `ENTRA_AUTHORITY_URI`
+      is not set, with a warning in the log at start ; when both are set, `ENTRA_AUTHORITY_URI` wins.
   - name: AZURE_GRAPH_URI
     version: 4.0.3
     type: string
     allowed: a valid base URI without slash on the end
-    short: Azure Graph API base URI
+    short: Azure Graph API base URI (deprecated)
     default: https://graph.microsoft.com
     description: |
-      The Microsoft Graph endpoint the server calls at an Azure AD login to read the user's
-      group membership (`/v1.0/me/transitiveMemberOf`). Since 6.5.3 that call is made by the
-      AnsibleForms server, not by the browser, so the server needs a route to it - behind an
-      egress proxy set `HTTPS_PROXY` and `NODE_USE_ENV_PROXY=1`. Change it for a national
-      cloud, e.g. `https://graph.microsoft.us`.
+      **Deprecated: use `ENTRA_GRAPH_URI` ; removed in 8.0.** Still read when `ENTRA_GRAPH_URI` is
+      not set, with a warning in the log at start ; when both are set, `ENTRA_GRAPH_URI` wins.
   - name: ALLOW_SCHEMA_CREATION
     type: number
     allowed: 0, 1
@@ -1539,8 +1558,8 @@
     docsObjectLink: "#role-object"
     short: Roles
     description: | 
-      The roles provide RBAC.  Each role has a name and 1 or more groups (local, ldap or azuread).  The `admin` and `default` roles are mandatory (`public` is the old name of `default`, and still works).  
-      Since version 4.0.11 you can also add users (local, ldap or azuread).  
+      The roles provide RBAC.  Each role has a name and 1 or more groups (local, ldap or entraid).  The `admin` and `default` roles are mandatory (`public` is the old name of `default`, and still works).  
+      Since version 4.0.11 you can also add users (local, ldap or entraid).  
       Since version 5.0.8 options are introduced to add specific role-options.  
 
       - showDesigner: The user can see the designer
@@ -1590,7 +1609,7 @@
           groups:
           - local/admins
           - ldap/Domain Admins
-          - azuread/Domain Admins
+          - entraid/Domain Admins
         - name: operator
           groups:
           - local/operator
@@ -1692,21 +1711,24 @@
       - name: groups
         type: array
         required: true
-        allowed: A group (local, ldap or azuread)
+        allowed: A group (local, ldap or entraid)
         short: Groups
         description: |
-          A list of groups.  They must be in the format of `local/groupname` or `ldap/groupname` or `azuread/groupname`
+          A list of groups.  They must be in the format of `local/groupname` or `ldap/groupname` or `entraid/groupname`
 
-          A Microsoft Entra ID group can be named by its object id, `azuread/<object id>` : unique, where
+          A Microsoft Entra ID group can be named by its object id, `entraid/<object id>` : unique, where
           two groups can share a display name. Both work ; the object id is the one to prefer.
+
+          `azuread/`, the Microsoft Entra ID prefix of before 7.3, still works the same as `entraid/`
+          (deprecated, removed in 8.0) ; the roles editor writes `entraid/`.
       - name: users
         type: array
         required: true
-        allowed: A user (local, ldap or azuread)
+        allowed: A user (local, ldap or entraid)
         short: User
         version: 4.0.10
         description: |
-          A list of local or ldap users.  They must be in the format of `local/username` or `ldap/username` or `azuread/username`     
+          A list of local or ldap users.  They must be in the format of `local/username` or `ldap/username` or `entraid/username` (`azuread/username` before 7.3, still accepted)     
       - name: credentials
         type: array
         allowed: regular expressions, matching a whole credential name
@@ -1808,7 +1830,7 @@
             groups:
             - local/operator
             users:
-            - azuread/mike
+            - entraid/mike
           - name: architect
             groups:
             - local/architect

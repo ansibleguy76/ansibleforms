@@ -82,7 +82,7 @@ function registerAxiosInterceptor() {
         const url = error?.config?.url || '';
         if (
           url.includes('/api/v2/auth/login') ||
-          url.includes('/auth/azureadoauth2/login') ||
+          url.includes('/auth/entraid/login') ||
           url.includes('/auth/oidc/login')
         ) {
           throw error;

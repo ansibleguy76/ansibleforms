@@ -91,7 +91,7 @@ const groupsKnown = computed(() => Array.isArray(profile.value.groups));
 // the roles to show : every user also carries public, default's name before 7, so that forms still
 // listing it match - it is the same role, shown once as default
 const shownRoles = computed(() => (profile.value.roles || []).filter((r) => r !== 'public'));
-// only local accounts have a password AnsibleForms can change ; ldap, azure ad and oidc
+// only local accounts have a password AnsibleForms can change ; ldap, Entra ID and oidc
 // passwords are managed by their own provider
 const isLocal = computed(() => profile.value.type == 'local');
 // the options in their groups, as the role's page shows them (config/roles.js) ; an option the
@@ -323,7 +323,7 @@ function signInAgain() {
   localStorage.setItem('authIssuer', issuer);
   // reauth : the provider asks for the credentials again (a live provider session would answer
   // without asking), and only that sign-in counts as a recent one
-  window.location.replace(`${BaseUrl}/api/v2/auth/${issuer === 'oidc' ? 'oidc' : 'azureadoauth2'}?reauth=1`);
+  window.location.replace(`${BaseUrl}/api/v2/auth/${issuer === 'oidc' ? 'oidc' : 'entraid'}?reauth=1`);
 }
 
 // back from that sign-in : the token asked for before it
@@ -456,7 +456,7 @@ async function changePassword() {
         <!-- ===================== account ===================== -->
         <template v-if="currentView === 'account'">
           <div class="card">
-            <!-- who : the person's name when the sign-in brought one (ldap, azure ad, openid
+            <!-- who : the person's name when the sign-in brought one (ldap, Entra ID, openid
                  connect), else the username - the username itself is a row below. Styled like
                  the permissions tables' headers, without a border-bottom of its own : the list
                  group under it draws that line (a list group in a card takes the card's border
@@ -473,7 +473,7 @@ async function changePassword() {
               <li class="list-group-item af-detail">
                 <span class="af-detail-label">{{ t('profilePage.loginType') }}</span>
                 <span class="af-detail-value"
-                  ><FaIcon :icon="loginType.icon" :fixedwidth="true" class="me-2 text-body-secondary" />{{
+                  ><FaIcon :icon="loginType.icon" class="text-body-secondary" style="margin-right: 0.2rem" />{{
                     loginType.label
                   }}</span
                 >
@@ -670,7 +670,7 @@ async function changePassword() {
             </div>
           </form>
           <p v-else class="text-body-secondary mb-0">
-            <FaIcon icon="circle-info" class="me-2" />{{ t('profilePage.elsewhere', { type: profile.type }) }}
+            <FaIcon icon="circle-info" class="me-2" />{{ t('profilePage.elsewhere', { type: loginType.label }) }}
           </p>
         </template>
 

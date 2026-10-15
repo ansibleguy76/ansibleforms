@@ -1,15 +1,15 @@
-// Microsoft Entra ID (Azure AD) login, on openid-client : the authorization code flow with
+// Microsoft Entra ID (formerly Azure AD) login, on openid-client : the authorization code flow with
 // PKCE, state and nonce, the ID token checked by the library (signature, issuer, audience,
 // expiry) - and the tenant pinned. The login is against the configured tenant's own v2.0
 // issuer, never the common endpoint, and the token's `tid` must be that tenant : a user of
 // another Microsoft tenant is refused, not let in as `default`.
 //
 // The access token the same login returns is for Microsoft Graph (User.Read,
-// GroupMember.Read.All) : the login step reads the user's groups with it (lib/azureGraph.js).
+// GroupMember.Read.All) : the login step reads the user's groups with it (lib/entraGraph.js).
 import passport from 'passport';
 import * as openidClient from 'openid-client';
 import { Strategy as OpenIdClientStrategy } from 'openid-client/passport';
-import AzureAd from '../models/azureAd.model.js';
+import EntraId from '../models/entraId.model.js';
 import logger from '../lib/logger.js';
 import authConfig from '../../config/auth.config.js';
 
@@ -17,7 +17,7 @@ import authConfig from '../../config/auth.config.js';
 const NOT_A_TENANT = new Set(['', 'common', 'organizations', 'consumers']);
 
 // what the login asks for : the ID token's claims, and an access token for Graph
-export const AZURE_SCOPES = 'openid profile email User.Read GroupMember.Read.All';
+export const ENTRA_SCOPES = 'openid profile email User.Read GroupMember.Read.All';
 
 /**
  * Whether a tenant id names one tenant (a GUID or a domain), not a multi-tenant endpoint.
@@ -60,47 +60,47 @@ const initialize = async () => {
   passport.serializeUser((user, done) => done(null, user));
   passport.deserializeUser((user, done) => done(null, user));
 
-  let azure;
-  let azureConfig;
+  let entra;
+  let entraConfig;
   try {
-    azure = await AzureAd.isEnabled();
-    if (azure.enable) azureConfig = await AzureAd.find();
+    entra = await EntraId.isEnabled();
+    if (entra.enable) entraConfig = await EntraId.find();
     else logger.info('Microsoft Entra ID is not enabled');
   } catch (err) {
     logger.error('Failed to get the Microsoft Entra ID configuration. ', err);
     return false;
   }
   try {
-    passport.unuse('azure_ad_oauth2');
+    passport.unuse('entraid');
   } catch (err) {
     logger.error('Failed to remove the Microsoft Entra ID strategy. ', err);
   }
-  if (!azure?.enable) return true;
-  if (!azureConfig?.client_id || !azureConfig?.redirect_uri) {
+  if (!entra?.enable) return true;
+  if (!entraConfig?.client_id || !entraConfig?.redirect_uri) {
     logger.error('Could not enable Microsoft Entra ID : the client id and the redirect uri are required');
     return false;
   }
-  if (!isSingleTenant(azureConfig.tenant_id)) {
-    logger.error(`Could not enable Microsoft Entra ID : set the tenant id to your tenant ('${azureConfig.tenant_id || ''}' would let any Microsoft tenant log in)`);
+  if (!isSingleTenant(entraConfig.tenant_id)) {
+    logger.error(`Could not enable Microsoft Entra ID : set the tenant id to your tenant ('${entraConfig.tenant_id || ''}' would let any Microsoft tenant log in)`);
     return false;
   }
   try {
-    const tenant = encodeURIComponent(String(azureConfig.tenant_id).trim());
-    // the authority : Microsoft's public cloud, a national cloud (AZURE_AUTHORITY_URI), or in
+    const tenant = encodeURIComponent(String(entraConfig.tenant_id).trim());
+    // the authority : Microsoft's public cloud, a national cloud (ENTRA_AUTHORITY_URI), or in
     // development a local test provider over plain http
-    const authority = String(authConfig.azureAuthorityUrl || 'https://login.microsoftonline.com').replace(/\/+$/, '');
+    const authority = String(authConfig.entraAuthorityUrl || 'https://login.microsoftonline.com').replace(/\/+$/, '');
     const issuer = new URL(`${authority}/${tenant}/v2.0`);
     const plainHttp = issuer.protocol === 'http:';
     if (plainHttp && process.env.NODE_ENV !== 'development') {
       logger.error(`Could not enable Microsoft Entra ID : the authority ${authority} is not https`);
       return false;
     }
-    const config = await openidClient.discovery(issuer, azureConfig.client_id, { client_secret: azureConfig.client_secret }, undefined,
+    const config = await openidClient.discovery(issuer, entraConfig.client_id, { client_secret: entraConfig.client_secret }, undefined,
       plainHttp ? { execute: [openidClient.allowInsecureRequests] } : undefined);
     const verify = (tokens, done) => {
       try {
         const claims = tokens.claims();
-        assertTenant(claims, azureConfig.tenant_id);
+        assertTenant(claims, entraConfig.tenant_id);
         logger.debug(`Microsoft Entra ID login for subject=${claims.sub || 'unknown'}`);
         // the claims and the Graph access token, for the handoff (lib/ssoHandoff.js)
         return done(null, { claims, accessToken: tokens.access_token });
@@ -109,10 +109,10 @@ const initialize = async () => {
         return done(err);
       }
     };
-    passport.use('azure_ad_oauth2', new OpenIdClientStrategy({
+    passport.use('entraid', new OpenIdClientStrategy({
       config,
-      scope: AZURE_SCOPES,
-      callbackURL: new URL(azureConfig.redirect_uri),
+      scope: ENTRA_SCOPES,
+      callbackURL: new URL(entraConfig.redirect_uri),
     }, verify));
     logger.info('Microsoft Entra ID strategy initialized');
     return true;

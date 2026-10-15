@@ -49,7 +49,7 @@ export default {
       "Nicht authentifiziert, Login ist fuer diesen Benutzer nicht aktiviert.",
     signInBlocked:
       "Nicht authentifiziert, ein Administrator hat die Anmeldung dieses Benutzers gesperrt.",
-    azureFailed: "Azure AD Authentifizierung fehlgeschlagen",
+    entraFailed: "Azure AD Authentifizierung fehlgeschlagen",
     oidcFailed: "OIDC Authentifizierung fehlgeschlagen",
   },
   success: {

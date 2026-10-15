@@ -36,7 +36,7 @@ describe("the single sign-on providers in index.html", () => {
 
   test("the providers on are read from their models, in the card's order", async () => {
     const models = (azure, oidc) => ({
-      AzureAd: { isEnabled: async () => ({ enable: azure }) },
+      EntraId: { isEnabled: async () => ({ enable: azure }) },
       OIDC: { isEnabled: async () => ({ enable: oidc }) },
     });
     assert.deepEqual(await enabledSsoProviders(models(1, 1)), ["azuread", "oidc"]);
@@ -46,7 +46,7 @@ describe("the single sign-on providers in index.html", () => {
   });
 
   test("a model that fails : the read fails, and the caller leaves the tag out", async () => {
-    const models = { AzureAd: { isEnabled: async () => { throw new Error("db down"); } }, OIDC: { isEnabled: async () => ({ enable: 1 }) } };
+    const models = { EntraId: { isEnabled: async () => { throw new Error("db down"); } }, OIDC: { isEnabled: async () => ({ enable: 1 }) } };
     const providers = await enabledSsoProviders(models).catch(() => null);
     assert.equal(injectSsoProviders(html, providers), html);
   });

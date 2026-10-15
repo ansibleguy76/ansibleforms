@@ -3,7 +3,7 @@ import CrudModel from './crud.model.js';
 import Errors from '../lib/errors.js';
 import mysql from './db.model.js';
 import logger from '../lib/logger.js';
-import { isSingleTenant } from '../auth/auth_azuread.js';
+import { isSingleTenant } from '../auth/auth_entraid.js';
 
 class OAuth2 extends CrudModel {
     static modelName = 'oauth2';
@@ -34,7 +34,7 @@ class OAuth2 extends CrudModel {
     // preProcess writes, so everything that can refuse runs first - including the
     // required-field check and checkExist, which otherwise happen inside super.*
     // an Entra ID provider names its tenant : without one (or with common, organizations,
-    // consumers) any Microsoft tenant could sign in (auth/auth_azuread.js refuses to start)
+    // consumers) any Microsoft tenant could sign in (auth/auth_entraid.js refuses to start)
     static assertEntraTenant(provider, tenantId) {
         if (provider === 'azuread' && !isSingleTenant(tenantId)) {
             throw new Errors.BadRequestError("A Microsoft Entra ID provider needs the tenant id of your tenant (a GUID or its domain), not empty, common, organizations or consumers");

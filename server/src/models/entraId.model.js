@@ -4,7 +4,7 @@ import mysql from "./db.model.js";
 import appConfig from "../../config/app.config.js";
 import crypto from "../lib/crypto.js";
 
-class AzureAd {
+class EntraId {
   static async isEnabled() {
     // SSO switched off (ENABLE_SSO, Settings > SSO) : no provider, whatever is configured
     if (!appConfig.enableSso) return { enable: 0, groupfilter: '' };
@@ -49,4 +49,4 @@ class AzureAd {
 }
 
 
-export default AzureAd;
+export default EntraId;

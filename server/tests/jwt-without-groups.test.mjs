@@ -61,7 +61,7 @@ vi.mock("../src/lib/tokenRevocation.js", () => ({
 }));
 const TENANT = "11111111-2222-3333-4444-555555555555";
 const provider = { enable: 1, groupfilter: "", tenant_id: TENANT };
-vi.mock("../src/models/azureAd.model.js", () => ({ default: { isEnabled: async () => provider, find: async () => provider } }));
+vi.mock("../src/models/entraId.model.js", () => ({ default: { isEnabled: async () => provider, find: async () => provider } }));
 vi.mock("../src/models/audit.model.js", () => ({ default: { log: async () => {} } }));
 vi.mock("../src/lib/i18n.js", () => ({ default: { t: (_req, key) => key } }));
 vi.mock("../src/services/cron.service.js", () => ({ default: { removeSchedule: () => {}, addSchedule: () => {} } }));
@@ -101,9 +101,9 @@ const res = () => { const r = { statusCode: 200, body: null }; r.status = (c) =>
 async function azureLogin(names, { reauth = false } = {}) {
   const value = names.map((n) => ({ id: crypto.randomUUID(), displayName: n }));
   vi.stubGlobal("fetch", async () => ({ ok: true, status: 200, text: async () => JSON.stringify({ value }) }));
-  const azureToken = jwt.sign({ upn: "first.lastname@contoso.com", oid: crypto.randomUUID(), tid: TENANT, name: "First Lastname" }, "x");
+  const entraToken = jwt.sign({ upn: "first.lastname@contoso.com", oid: crypto.randomUUID(), tid: TENANT, name: "First Lastname" }, "x");
   const r = res();
-  await controller.azureadoauth2login({ body: { token: signHandoff(azureToken, "azuread", { reauth }) }, headers: {}, ip: "127.0.0.1" }, r);
+  await controller.entraidLogin({ body: { token: signHandoff(entraToken, "azuread", { reauth }) }, headers: {}, ip: "127.0.0.1" }, r);
   expect(r.statusCode).toBe(200);
   return r.body;
 }

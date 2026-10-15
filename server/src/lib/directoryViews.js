@@ -4,7 +4,7 @@
 // its counts : its roles by the login's rule (User.getRolesAndOptions - by name, through a
 // group, default always), on the groups seen at its last sign-in.
 import { everyoneName } from "./defaultRole.js";
-import { DIRECTORY_TYPES } from './directoryTypes.js';
+import { DIRECTORY_TYPES, memberRefs } from './directoryTypes.js';
 
 /**
  * A reference of the config, type/name, split : null for a local one or one of no known type.
@@ -24,7 +24,8 @@ export function splitRef(ref) {
   return DIRECTORY_TYPES.includes(type) && name ? { type, name } : null;
 }
 
-const names = (list) => (Array.isArray(list) ? list.map(String) : []);
+// the members of a role, entraid/ read as azuread/ (memberRef)
+const names = (list) => memberRefs(list);
 
 /**
  * The roles a directory user has, by the login's rule, on the groups given.

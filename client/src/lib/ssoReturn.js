@@ -79,7 +79,7 @@ function stored(storage, key) {
  *     login page with the reason (and the promise never resolves, nothing is to run meanwhile).
  */
 async function swap(handoff, provider) {
-  const endpoint = provider === 'oidc' ? 'oidc' : 'azureadoauth2';
+  const endpoint = provider === 'oidc' ? 'oidc' : 'entraid';
   let reason = 'The sign-in failed';
   try {
     // fetch, not axios : the api requests wait for this one (waitForSso)

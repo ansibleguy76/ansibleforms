@@ -67,7 +67,7 @@ describe("a failed single sign-on says why", () => {
   test("a provider error goes on, with its reason, to the error handler", async () => {
     verdict = [tokenError, false];
     const next = vi.fn();
-    await controller.azureadoauth2callback({ query: {} }, redirectRes(), next);
+    await controller.entraidCallback({ query: {} }, redirectRes(), next);
     await vi.waitFor(() => expect(next).toHaveBeenCalledWith(tokenError));
   });
 });

@@ -1,7 +1,7 @@
 'use strict';
 import User from "../../models/user.model.js";
 import Token from "../../models/token.model.js";
-import AzureAd from "../../models/azureAd.model.js";
+import EntraId from "../../models/entraId.model.js";
 import OIDC from "../../models/oidc.model.js";
 import passport from 'passport';
 import jwt from 'jsonwebtoken';
@@ -10,10 +10,10 @@ import appConfig from '../../../config/app.config.js';
 import logger from "../../lib/logger.js";
 import helpers from '../../lib/common.js';
 import { signHandoff, openToken } from '../../lib/ssoHandoff.js';
-import { fetchAzureGroups, filterGroups } from '../../lib/azureGraph.js';
+import { fetchEntraGroups, filterGroups } from '../../lib/entraGraph.js';
 import RestResult from "../../models/restResult.model.v2.js";
 import auth_oidc from "../../auth/auth_oidc.js";
-import { isSingleTenant } from "../../auth/auth_azuread.js";
+import { isSingleTenant } from "../../auth/auth_entraid.js";
 import i18n from "../../lib/i18n.js";
 import Audit from "../../models/audit.model.js";
 import { claimsDisplayName } from "../../lib/displayName.js";
@@ -184,15 +184,15 @@ export async function userToJwt(user,expiryDays,{ name, authTime, strict = false
 // get login settings
 const settings = async function(req, res) {
   try {
-    const [azureRaw, oidcRaw] = await Promise.all([
-      AzureAd.isEnabled().catch(() => ({ enable: 0, groupfilter: null })),
+    const [entraRaw, oidcRaw] = await Promise.all([
+      EntraId.isEnabled().catch(() => ({ enable: 0, groupfilter: null })),
       OIDC.isEnabled().catch(() => ({ enable: 0, issuer: null, groupfilter: null }))
     ]);
 
     // Normalize shapes regarding enable vs enabled
-    const azure = {
-      enable: !!azureRaw.enable,
-      groupfilter: azureRaw.groupfilter,
+    const entra = {
+      enable: !!entraRaw.enable,
+      groupfilter: entraRaw.groupfilter,
     };
 
     const oidc = {
@@ -201,14 +201,18 @@ const settings = async function(req, res) {
       groupfilter: oidcRaw.groupfilter,
     };
     const settings = {
-      azureAdEnabled: azure.enable,
-      azureGroupfilter: azure.groupfilter,
-      azureGraphUrl: authConfig.azureGraphUrl,
+      entraIdEnabled: entra.enable,
+      entraGroupfilter: entra.groupfilter,
+      entraGraphUrl: authConfig.entraGraphUrl,
+      // the names of before 7.3, for a caller that still reads them (removed in 8.0)
+      azureAdEnabled: entra.enable,
+      azureGroupfilter: entra.groupfilter,
+      azureGraphUrl: authConfig.entraGraphUrl,
       oidcEnabled: oidc.enabled,
       oidcIssuer: oidc.issuer,
       oidcGroupfilter: oidc.groupfilter,
       // the login page goes straight to the provider when it is the only one active (SSO_AUTO_LOGIN)
-      ssoAutoLogin: !!appConfig.ssoAutoLogin && (azure.enable !== oidc.enabled),
+      ssoAutoLogin: !!appConfig.ssoAutoLogin && (entra.enable !== oidc.enabled),
       // the profile page offers api token lifetimes up to this cap (API_TOKEN_MAX_DAYS)
       apiTokenMaxDays: authConfig.apiTokenMaxDays
     };
@@ -413,13 +417,13 @@ const errorHandler = async function(err,req, res,_next) {
  * 
  * 1. The user clicks on the identity provider login button
  * 2. A browser storage authIssuer key is set with the identity provider name (azuread, oidc, ...)
- * 3. The user is redirected to the ansibleforms backend server identity provider api https://ansibleformsurl/auth/azureadoauth2 or https://ansibleformsurl/auth/oidc, ...
+ * 3. The user is redirected to the ansibleforms backend server identity provider api https://ansibleformsurl/auth/entraid or https://ansibleformsurl/auth/oidc, ...
  * 4. The backend uses passport to authenticate the user with the identity provider and redirects the user away to the identity provider (microsft, google, ...)
- * 5. The identity provider authenticates the user and redirects the user back to the callback url https://ansibleformsurl/auth/azureadoauth2/callback or https://ansibleformsurl/auth/oidc/callback
+ * 5. The identity provider authenticates the user and redirects the user back to the callback url https://ansibleformsurl/auth/entraid/callback (the provider's redirect uri : /auth/azureadoauth2/callback when saved before 7.3) or https://ansibleformsurl/auth/oidc/callback
  * 6. The backend server receives the callback and uses passport to verify the returned payload.  it passes the payload to an authCallback function
  * 7. The authCallback function redirects the user back into the app with a HANDOFF token in the fragment (/#token=), signed by us ; the app swaps it before it draws (client lib/ssoReturn.js) : the claims the login needs, and for azuread the provider's access token sealed inside it (lib/ssoHandoff.js).
- * 8. The frontend posts the handoff token to the backend /auth/azureadoauth2/login (or /auth/oidc/login) endpoint.
- * 9. For azuread the backend opens the sealed access token and fetches the user's groups from Microsoft Graph, filtered with the provider's group filter (lib/azureGraph.js). For oidc the groups are a claim of the profile, filtered with the same group filter.
+ * 8. The frontend posts the handoff token to the backend /auth/entraid/login (or /auth/oidc/login) endpoint.
+ * 9. For azuread the backend opens the sealed access token and fetches the user's groups from Microsoft Graph, filtered with the provider's group filter (lib/entraGraph.js). For oidc the groups are a claim of the profile, filtered with the same group filter.
  * 10. The backend grabs more information from payload if needed (username,...) and assembles a user-object, the roles and options are added
  * 11. The backend converts the user object to json and signs it as a jwt token an returns it in the response
  * 12. The frontend grabs the token and stores it in the local storage, ready for jwt-bearer authentication
@@ -511,12 +515,12 @@ async function assertProviderEnabled(model, name) {
 }
 
 /**
- * The Azure groups, by name, from Graph - with the access token the handoff carries
+ * The Entra ID groups, by name, from Graph - with the access token the handoff carries
  * sealed. A handoff without one (minted before 6.5.3) falls back to the groups claim.
  */
-async function azureGroups(payload, groupfilter) {
+async function entraGroups(payload, groupfilter) {
   if (!payload.at) return filterGroups(ssoGroups(payload, 'azuread'), groupfilter);
-  const groups = await fetchAzureGroups(openToken(payload.at), authConfig.azureGraphUrl, { withIds: true });
+  const groups = await fetchEntraGroups(openToken(payload.at), authConfig.entraGraphUrl, { withIds: true });
   // the group filter is on the names, as it always was ; a kept group is known by its object id
   // (unique, the way to name it in a role) and by its name (as roles named it before 7)
   const keptNames = new Set(filterGroups(groups.map((g) => g.name), groupfilter));
@@ -539,7 +543,7 @@ function ssoGroups(payload, type) {
   return [];
 }
 
-const extractAzureUser = async function(payload, groups) {
+const extractEntraUser = async function(payload, groups) {
   return {
     // the upn when the token has it (an access token, or an ID token with the optional claim),
     // else the preferred username - the same value for a work account
@@ -559,42 +563,42 @@ const extractOidcUser = async function(payload, groups) {
   }
 };
 
-// this redirects to Azure AD login but with the proper application client id & secret
-const azureadoauth2 = async function(req, res,next) {
-  logger.debug("Redirect to azure")
-  // redirect to azure
+// this redirects to Microsoft Entra ID login but with the proper application client id & secret
+const entraid = async function(req, res,next) {
+  logger.debug("Redirect to Microsoft Entra ID")
+  // redirect to Microsoft Entra ID
   try {
-    passport.authenticate('azure_ad_oauth2', ssoStart(req))(req,res,next)
+    passport.authenticate('entraid', ssoStart(req))(req,res,next)
   } catch(err) {
-    logger.error(`Azure AD redirect failed: ${err?.message || err}`)
+    logger.error(`Microsoft Entra ID redirect failed: ${err?.message || err}`)
     next(err)
   }
 };
 
-// callback with the Azure AD access token
-const azureadoauth2callback = async function(req, res,next) {
-  logger.debug("Azure AD callback")
+// callback with the Microsoft Entra ID access token
+const entraidCallback = async function(req, res,next) {
+  logger.debug("Microsoft Entra ID callback")
   try {
-    passport.authenticate('azure_ad_oauth2', authCallback(req, res, next,"azuread"))(req, res, next)
+    passport.authenticate('entraid', authCallback(req, res, next,"azuread"))(req, res, next)
   } catch(err) {
-    logger.error(`Azure AD callback failed: ${err?.message || err}`)
+    logger.error(`Microsoft Entra ID callback failed: ${err?.message || err}`)
     next(err)
   }
 };
-// callback with the Azure AD user info (including groups)
-const azureadoauth2login = async function(req, res,_next) {
+// callback with the Microsoft Entra ID user info (including groups)
+const entraidLogin = async function(req, res,_next) {
   try {
-    logger.debug("Azure AD login")
+    logger.debug("Microsoft Entra ID login")
     const payload = await verifyHandoff(req.body.token, 'azuread')
-    const provider = await assertProviderEnabled(AzureAd, 'azuread')
+    const provider = await assertProviderEnabled(EntraId, 'azuread')
     // the tenant once more, at the login itself : the handoff of a login against another tenant
     // is refused even if the strategy was reconfigured meanwhile
-    const azureConfig = await AzureAd.find()
-    if (!isSingleTenant(azureConfig.tenant_id)) throw new Error('Microsoft Entra ID login needs the tenant id of your tenant')
-    if (payload.tid && /^[0-9a-f-]{36}$/i.test(String(azureConfig.tenant_id).trim()) && String(payload.tid).toLowerCase() !== String(azureConfig.tenant_id).trim().toLowerCase()) {
+    const entraConfig = await EntraId.find()
+    if (!isSingleTenant(entraConfig.tenant_id)) throw new Error('Microsoft Entra ID login needs the tenant id of your tenant')
+    if (payload.tid && /^[0-9a-f-]{36}$/i.test(String(entraConfig.tenant_id).trim()) && String(payload.tid).toLowerCase() !== String(entraConfig.tenant_id).trim().toLowerCase()) {
       throw new Error('This Microsoft Entra ID login is of another tenant')
     }
-    const user = await extractAzureUser(payload, await azureGroups(payload, provider.groupfilter))
+    const user = await extractEntraUser(payload, await entraGroups(payload, provider.groupfilter))
     user.type = "azuread"
     const ro = await User.getRolesAndOptions(user.groups,user)
     user.roles = ro.roles
@@ -614,7 +618,7 @@ const azureadoauth2login = async function(req, res,_next) {
 
   } catch(err){
     logger.error(helpers.getError(err))
-    return res.status(401).json(RestResult.error(i18n.t(req, 'auth.azureFailed'), helpers.getError(err)));
+    return res.status(401).json(RestResult.error(i18n.t(req, 'auth.entraFailed'), helpers.getError(err)));
   }
 };
 
@@ -672,9 +676,9 @@ export default {
   logout,
   errorHandler,
   settings,
-  azureadoauth2,
-  azureadoauth2callback,
-  azureadoauth2login,
+  entraid,
+  entraidCallback,
+  entraidLogin,
   oidc,
   oidcCallback,
   oidcLogin

@@ -16,14 +16,14 @@ export const SSO_HANDOFF_EXPIRES_IN = '5m';
 // the handoff's own validity window, so they go too.
 const PROVIDER_TOKEN_CLAIMS = ['exp', 'iat', 'nbf', 'iss'];
 
-// The claims of an Azure access token the login uses (extractAzureUser) - the rest is
+// The claims of an Entra ID access token the login uses (extractEntraUser) - the rest is
 // Graph's business : `aud`, `scp`, the signature keys, and the `groups` claim, which
 // holds object ids and can run to 200 of them (7 KB in the url). The group NAMES come
 // from Graph, fetched by the server at the login step (#548).
-const AZURE_CLAIMS = ['upn', 'oid', 'name', 'email', 'unique_name', 'preferred_username', 'tid'];
+const ENTRA_CLAIMS = ['upn', 'oid', 'name', 'email', 'unique_name', 'preferred_username', 'tid'];
 
 /**
- * The Azure access token, sealed for the trip through the browser : AES-256-GCM under
+ * The Entra ID access token, sealed for the trip through the browser : AES-256-GCM under
  * the encryption secret, base64url. The /login endpoint opens it to call Graph. It is
  * never in the clear in the url, the browser history or a proxy log - and a stolen
  * handoff is useless without the server's secret.
@@ -58,16 +58,16 @@ export function openToken(sealed) {
  */
 export function signHandoff(payload, type, { reauth = false } = {}) {
   let claims = payload;
-  // azuread : { claims : the ID token's, accessToken : for Graph } (auth/auth_azuread.js)
-  const azure = type === 'azuread' && payload && typeof payload === 'object' && payload.claims;
-  if (azure) claims = payload.claims;
+  // azuread : { claims : the ID token's, accessToken : for Graph } (auth/auth_entraid.js)
+  const entra = type === 'azuread' && payload && typeof payload === 'object' && payload.claims;
+  if (entra) claims = payload.claims;
   if (typeof claims === 'string') claims = jwt.decode(claims) || {};
   if (!claims || typeof claims !== 'object') claims = {};
   let own = { ...claims };
   for (const k of PROVIDER_TOKEN_CLAIMS) delete own[k];
-  if (type === 'azuread' && (azure || typeof payload === 'string')) {
-    own = Object.fromEntries(AZURE_CLAIMS.filter((k) => own[k] !== undefined).map((k) => [k, own[k]]));
-    own.at = sealToken(azure ? payload.accessToken : payload);
+  if (type === 'azuread' && (entra || typeof payload === 'string')) {
+    own = Object.fromEntries(ENTRA_CLAIMS.filter((k) => own[k] !== undefined).map((k) => [k, own[k]]));
+    own.at = sealToken(entra ? payload.accessToken : payload);
   }
   return jwt.sign(
     // jti : the login takes a handoff once (tokenRevocation.consumeOnce)

@@ -47,7 +47,7 @@ export default {
       "No autenticado, el inicio de sesión no está habilitado para este usuario.",
     signInBlocked:
       "No autenticado, un administrador bloqueó el inicio de sesión de este usuario.",
-    azureFailed: "La autenticación con Azure AD ha fallado",
+    entraFailed: "La autenticación con Azure AD ha fallado",
     oidcFailed: "La autenticación con OIDC ha fallado",
   },
   success: {

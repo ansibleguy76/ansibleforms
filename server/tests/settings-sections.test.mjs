@@ -15,7 +15,7 @@ describe("settings sections", () => {
     expect(maySection(r, "connections")).toBe(true);
     expect(writableSettingsFields(r)).toBe(null);
     expect(readableSettingsFields(r)).toBe(null);
-    expect(mayEnvVar(r, "AZURE_AUTHORITY_URI")).toBe(true);
+    expect(mayEnvVar(r, "ENTRA_AUTHORITY_URI")).toBe(true);
   });
 
   test("appearance on its own : its fields and variables, never the mail, the url or sign-in", () => {

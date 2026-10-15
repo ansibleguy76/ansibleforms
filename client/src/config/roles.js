@@ -4,6 +4,24 @@
 
 export const authProviders = ['local', 'ldap', 'azuread', 'oidc'];
 
+// the Microsoft Entra ID provider : kept as azuread, the type its sign-in stores, and written
+// entraid/<name> in a role since 7.3 ; an azuread/<name> of before is the same member
+const ENTRA_TYPE = 'azuread';
+const ENTRA_PREFIX = 'entraid';
+
+/**
+ * The prefix a provider is written with in a role, as the editors show it.
+ *
+ * Args:
+ *   provider (string): the provider : local, ldap, azuread, oidc.
+ *
+ * Returns:
+ *   string: its prefix, entraid for Microsoft Entra ID.
+ */
+export function providerPrefix(provider) {
+  return provider === ENTRA_TYPE ? ENTRA_PREFIX : provider;
+}
+
 // the role options in their groups, in the order they show : the role's page and its New role
 // dialog (AppRoleEditor) and the profile's Permissions view, each group under its title
 export const roleOptionGroups = [
@@ -229,18 +247,21 @@ export function roleOptionLabel(t, key) {
 }
 
 // Split a provider-prefixed entry ("local/admins") into { provider, name }.
-// Missing prefix defaults to the 'local' provider.
+// Missing prefix defaults to the 'local' provider ; entraid/ and azuread/ are both the
+// Microsoft Entra ID provider (azuread).
 export function parseProviderEntry(str) {
   // hand-edited YAML can hold non-string entries (numbers, maps) : stringify
   // defensively instead of throwing and killing the whole editor
   const s = typeof str === 'string' ? str : String(str ?? '');
   const idx = s.indexOf('/');
   if (idx === -1) return { provider: 'local', name: s };
-  return { provider: s.substring(0, idx), name: s.substring(idx + 1) };
+  const provider = s.substring(0, idx);
+  return { provider: provider === ENTRA_PREFIX ? ENTRA_TYPE : provider, name: s.substring(idx + 1) };
 }
 
+// an entry written back : Microsoft Entra ID as entraid/, an azuread/ of before included
 export function formatProviderEntry(entry) {
-  return `${entry.provider}/${entry.name}`;
+  return `${providerPrefix(entry.provider)}/${entry.name}`;
 }
 
 // Map a stored role (schema shape) to the editable shape both editors use

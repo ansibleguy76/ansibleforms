@@ -11,8 +11,8 @@ export async function rebuildLoginStrategies() {
   // a worker serves no login : it never loads the strategies
   if (!runsWeb) return;
   // imported here : the strategies and their models stay out of the modules importing this
-  const { default: authAzureAd } = await import("./auth_azuread.js");
+  const { default: authEntraId } = await import("./auth_entraid.js");
   const { default: authOidc } = await import("./auth_oidc.js");
-  await authAzureAd.initialize();
+  await authEntraId.initialize();
   await authOidc.initialize();
 }

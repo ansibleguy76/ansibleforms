@@ -1,5 +1,6 @@
 "use strict";
 import { EVERYONE_ROLES, everyoneEntry } from "../lib/defaultRole.js";
+import { memberRefs } from "../lib/directoryTypes.js";
 import crypto from "../lib/crypto.js";
 import logger from "../lib/logger.js";
 import { authenticate as ldapAuthentication } from "ldap-authentication";
@@ -328,14 +329,18 @@ class User extends CrudModel {
     // derive roles from forms
     baseConfig.roles.forEach(function (role) {
 
+      // the role's members as they are matched : entraid/<name> is azuread/<name> (memberRef)
+      const users = memberRefs(role.users);
+      const roleGroups = memberRefs(role.groups);
+
       // if we match the user, we add the role
-      if(role.users && role.users.includes(full_username)){
+      if(users.includes(full_username)){
         addRoleAndOptions(role);
       }
 
       // if the role matches one of the user's groups, we add the role
       groups.forEach(function (group) {
-        if ((role.groups && role.groups.includes(group))) {
+        if (roleGroups.includes(group)) {
           addRoleAndOptions(role);
         }
       });

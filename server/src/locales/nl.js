@@ -49,7 +49,7 @@ export default {
       "Niet geauthenticeerd, inloggen is niet ingeschakeld voor deze gebruiker.",
     signInBlocked:
       "Niet geauthenticeerd, een beheerder heeft het aanmelden van deze gebruiker geblokkeerd.",
-    azureFailed: "Azure AD authenticatie mislukt",
+    entraFailed: "Azure AD authenticatie mislukt",
     oidcFailed: "OIDC authenticatie mislukt",
   },
   success: {
