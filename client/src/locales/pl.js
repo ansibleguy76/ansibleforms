@@ -1854,7 +1854,7 @@ export default {
       roleOptionShowExtravars: 'Pokaż extravars',
       roleOptionShowAllJobLogs: 'Pokaż dzienniki wszystkich zadań',
       roleOptionShowArtifacts: 'Pokaż artefakty',
-      roleOptionShowJobs: 'Pokaż zadania',
+      roleOptionShowJobs: 'Pokaż menu Zadania',
       roleOptionAllowLogin: 'Zezwalaj na logowanie',
       roleOptionAllowBackupOps: 'Zezwalaj na operacje kopii zapasowych',
       roleOptionAllowVerboseMode: 'Zezwalaj na tryb szczegółowy (verbose)',

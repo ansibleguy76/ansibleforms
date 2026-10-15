@@ -1866,7 +1866,7 @@ export default {
       roleOptionShowExtravars: 'Mostrar extravars',
       roleOptionShowAllJobLogs: 'Mostrar todos los logs de jobs',
       roleOptionShowArtifacts: 'Mostrar artefactos',
-      roleOptionShowJobs: 'Mostrar jobs',
+      roleOptionShowJobs: 'Mostrar el menú Trabajos',
       roleOptionAllowLogin: 'Permitir inicio de sesion',
       roleOptionAllowBackupOps: 'Permitir operaciones de respaldo',
       roleOptionAllowVerboseMode: 'Permitir modo detallado',

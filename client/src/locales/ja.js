@@ -1835,7 +1835,7 @@ export default {
       roleOptionShowExtravars: 'Extravars を表示',
       roleOptionShowAllJobLogs: 'すべてのジョブログを表示',
       roleOptionShowArtifacts: 'Artifacts を表示',
-      roleOptionShowJobs: 'ジョブを表示',
+      roleOptionShowJobs: 'ジョブメニューを表示',
       roleOptionAllowLogin: 'ログインを許可',
       roleOptionAllowBackupOps: 'バックアップ操作を許可',
       roleOptionAllowVerboseMode: '詳細モードを許可',

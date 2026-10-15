@@ -1859,7 +1859,7 @@ export default {
       roleOptionShowExtravars: 'Extravars tonen',
       roleOptionShowAllJobLogs: 'Alle joblogs tonen',
       roleOptionShowArtifacts: 'Artefacten tonen',
-      roleOptionShowJobs: 'Jobs tonen',
+      roleOptionShowJobs: 'Takenmenu tonen',
       roleOptionAllowLogin: 'Inloggen toestaan',
       roleOptionAllowBackupOps: 'Backup-operaties toestaan',
       roleOptionAllowVerboseMode: 'Uitgebreide modus toestaan',

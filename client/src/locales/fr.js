@@ -1874,7 +1874,7 @@ export default {
       roleOptionShowExtravars: 'Afficher les extravars',
       roleOptionShowAllJobLogs: 'Afficher tous les logs de jobs',
       roleOptionShowArtifacts: 'Afficher les artefacts',
-      roleOptionShowJobs: 'Afficher les jobs',
+      roleOptionShowJobs: 'Afficher le menu Jobs',
       roleOptionAllowLogin: 'Autoriser la connexion',
       roleOptionAllowBackupOps: 'Autoriser les sauvegardes',
       roleOptionAllowVerboseMode: 'Autoriser le mode verbeux',

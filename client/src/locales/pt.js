@@ -1867,7 +1867,7 @@ export default {
       roleOptionShowExtravars: 'Mostrar extravars',
       roleOptionShowAllJobLogs: 'Mostrar registos de todas as tarefas',
       roleOptionShowArtifacts: 'Mostrar artefactos',
-      roleOptionShowJobs: 'Mostrar tarefas',
+      roleOptionShowJobs: 'Mostrar o menu Tarefas',
       roleOptionAllowLogin: 'Permitir início de sessão',
       roleOptionAllowBackupOps: 'Permitir operações de cópia de segurança',
       roleOptionAllowVerboseMode: 'Permitir modo detalhado',

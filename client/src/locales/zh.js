@@ -1791,7 +1791,7 @@ export default {
       roleOptionShowExtravars: '显示 Extravars',
       roleOptionShowAllJobLogs: '显示所有作业日志',
       roleOptionShowArtifacts: '显示工件',
-      roleOptionShowJobs: '显示作业',
+      roleOptionShowJobs: '显示作业菜单',
       roleOptionAllowLogin: '允许登录',
       roleOptionAllowBackupOps: '允许备份操作',
       roleOptionAllowVerboseMode: '允许详细模式',

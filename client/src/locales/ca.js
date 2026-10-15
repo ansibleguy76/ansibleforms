@@ -1872,7 +1872,7 @@ export default {
       roleOptionShowExtravars: 'Mostra les extravars',
       roleOptionShowAllJobLogs: 'Mostra els registres de totes les tasques',
       roleOptionShowArtifacts: 'Mostra els artefactes',
-      roleOptionShowJobs: 'Mostra les tasques',
+      roleOptionShowJobs: 'Mostra el menú Tasques',
       roleOptionAllowLogin: "Permet l'inici de sessió",
       roleOptionAllowBackupOps: 'Permet les operacions de còpia de seguretat',
       roleOptionAllowVerboseMode: 'Permet el mode detallat',
