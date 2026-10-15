@@ -431,6 +431,9 @@ onMounted(async () => {
         <!-- Jobs : the jobs that ran on it, the latest first ; a row opens the job -->
         <AppLinkedTable
           selectable
+          :rowActions="[
+            { title: t('common.delete'), icon: 'trash', danger: true, run: (r) => deleteTicked([r], 'job') },
+          ]"
           v-else-if="runner && activeTab === 'jobs'"
           :exportName="`${runner.name}-jobs`"
           :columns="jobColumns"

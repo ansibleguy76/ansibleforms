@@ -557,6 +557,15 @@ onMounted(async () => {
         <!-- Roles : the roles the user has, and how ; a row opens the role -->
         <AppLinkedTable
           selectable
+          :rowActions="[
+            {
+              title: t('settings.settingsPage.removeFromRole'),
+              icon: 'trash',
+              danger: true,
+              enabledWhen: (r) => !!r.direct,
+              run: (r) => removeRoles([r]),
+            },
+          ]"
           v-else-if="user && activeTab === 'roles'"
           :columns="roleColumns"
           :rows="userRoles"
@@ -589,6 +598,9 @@ onMounted(async () => {
         <!-- Jobs : the jobs it launched, the latest first ; a row opens the job -->
         <AppLinkedTable
           selectable
+          :rowActions="[
+            { title: t('common.delete'), icon: 'trash', danger: true, run: (r) => deleteTicked([r], 'job') },
+          ]"
           v-else-if="user && activeTab === 'jobs'"
           :exportName="`${user.username}-jobs`"
           :columns="jobColumns"
@@ -608,6 +620,9 @@ onMounted(async () => {
         <!-- Stored jobs : the form values it stored ; a row opens the stored job -->
         <AppLinkedTable
           selectable
+          :rowActions="[
+            { title: t('common.delete'), icon: 'trash', danger: true, run: (r) => deleteTicked([r], 'stored-jobs') },
+          ]"
           v-else-if="user && activeTab === 'stored-jobs'"
           :exportName="`${user.username}-stored-jobs`"
           :columns="storedJobColumns"
@@ -624,6 +639,9 @@ onMounted(async () => {
         <!-- Schedules : the jobs it planned with Run later ; a row opens the schedule -->
         <AppLinkedTable
           selectable
+          :rowActions="[
+            { title: t('common.delete'), icon: 'trash', danger: true, run: (r) => deleteTicked([r], 'schedule') },
+          ]"
           v-else-if="user && activeTab === 'schedules'"
           :exportName="`${user.username}-schedules`"
           :columns="scheduleColumns"

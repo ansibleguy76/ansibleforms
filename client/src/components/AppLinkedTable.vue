@@ -32,6 +32,9 @@
 /*  rows ticked ; a slot #bulk-actions="{ selected, count }" adds */
 /*  what the page does with them (Remove, Delete). None on a      */
 /*  table nothing is done with : its filter decides the export.   */
+/*  rowActions: [{ title, icon, danger?, enabledWhen?(row),       */
+/*    run(row) }] - each row's menu (⋮), the same actions one row */
+/*    at a time (Remove from role, Delete)                        */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, inject, watch } from 'vue';
@@ -53,6 +56,7 @@ const props = defineProps({
   childrenBefore: { type: String, default: '' },
   exportName: { type: String, default: '' },
   selectable: { type: Boolean, default: false },
+  rowActions: { type: Array, default: () => [] },
 });
 const { t } = useI18n();
 
@@ -344,6 +348,7 @@ function text(col, row) {
           </template>
           <!-- the room left, after the last column (v-fit-columns) -->
           <th class="af-fit-spacer"></th>
+          <th v-if="rowActions.length" class="af-row-menu-col"></th>
         </tr>
       </thead>
       <tbody>
@@ -390,11 +395,42 @@ function text(col, row) {
             </td>
           </template>
           <td class="af-fit-spacer"></td>
+          <!-- its menu : the actions of the rows ticked, for this one (none under a job's step) -->
+          <td v-if="rowActions.length" class="bs-dt-row-actions" @click.stop>
+            <div v-if="!child" class="dropdown">
+              <a
+                role="button"
+                class="bs-dt-row-menu px-2"
+                data-bs-toggle="dropdown"
+                data-bs-popper-config='{"strategy":"fixed"}'
+              >
+                <FaIcon icon="ellipsis-vertical" />
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li v-for="action in rowActions" :key="action.title">
+                  <a
+                    class="dropdown-item"
+                    :class="
+                      action.enabledWhen && !action.enabledWhen(row)
+                        ? 'disabled text-muted'
+                        : action.danger
+                          ? 'text-danger'
+                          : ''
+                    "
+                    href="#"
+                    @click.prevent="(!action.enabledWhen || action.enabledWhen(row)) && action.run(row)"
+                  >
+                    <FaIcon :icon="action.icon" class="me-2" />{{ action.title }}
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </td>
         </tr>
         <!-- none : the page's note (no job yet...), or none the filter keeps -->
         <tr v-if="!drawnRows.length">
           <td
-            :colspan="shownColumns.length + (children ? 2 : 1) + (selectable ? 1 : 0)"
+            :colspan="shownColumns.length + (children ? 2 : 1) + (selectable ? 1 : 0) + (rowActions.length ? 1 : 0)"
             class="text-center text-muted py-3"
           >
             {{ rows.length ? t('common.noData') : empty || t('common.noData') }}

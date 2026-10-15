@@ -454,6 +454,15 @@ onMounted(async () => {
         <!-- Roles : the roles it has, and how (default always) ; a row opens the role -->
         <AppLinkedTable
           selectable
+          :rowActions="[
+            {
+              title: t('settings.settingsPage.removeFromRole'),
+              icon: 'trash',
+              danger: true,
+              enabledWhen: (r) => !!r.direct,
+              run: (r) => removeRoles([r]),
+            },
+          ]"
           v-else-if="user && activeTab === 'roles'"
           :exportName="`${username}-roles`"
           :columns="roleColumns"
@@ -484,6 +493,9 @@ onMounted(async () => {
         />
         <AppLinkedTable
           selectable
+          :rowActions="[
+            { title: t('common.delete'), icon: 'trash', danger: true, run: (r) => deleteTicked([r], 'job') },
+          ]"
           v-else-if="user && activeTab === 'jobs'"
           :exportName="`${username}-jobs`"
           :columns="jobColumns"
@@ -502,6 +514,9 @@ onMounted(async () => {
         </AppLinkedTable>
         <AppLinkedTable
           selectable
+          :rowActions="[
+            { title: t('common.delete'), icon: 'trash', danger: true, run: (r) => deleteTicked([r], 'stored-jobs') },
+          ]"
           v-else-if="user && activeTab === 'stored-jobs'"
           :exportName="`${username}-stored-jobs`"
           :columns="storedJobColumns"
@@ -517,6 +532,9 @@ onMounted(async () => {
         </AppLinkedTable>
         <AppLinkedTable
           selectable
+          :rowActions="[
+            { title: t('common.delete'), icon: 'trash', danger: true, run: (r) => deleteTicked([r], 'schedule') },
+          ]"
           v-else-if="user && activeTab === 'schedules'"
           :exportName="`${username}-schedules`"
           :columns="scheduleColumns"
