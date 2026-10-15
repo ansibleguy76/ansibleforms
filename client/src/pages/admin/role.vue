@@ -405,6 +405,9 @@ onMounted(async () => {
           :selectedIds="selectedIds"
           :name="`role-${activeTab}`"
           :exportName="`${role.name}-${activeTab}`"
+          :empty="
+            activeTab === 'users' ? t('settings.settingsPage.roleNoUsers') : t('settings.settingsPage.roleNoGroups')
+          "
           @update:selectedIds="selectedIds = $event"
         >
           <template #bulk-actions="{ count }">
@@ -447,6 +450,7 @@ onMounted(async () => {
           linkColumn="name"
           name="role-forms"
           :exportName="`${role.name}-forms`"
+          :empty="t('settings.linked.noFormRole')"
           @row-click="(f) => router.push(formPath(f.name))"
         />
         <AppRoleEditor

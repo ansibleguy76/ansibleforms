@@ -974,7 +974,7 @@ export default {
       displayName: 'Name',
       firstSeen: 'Zuerst gesehen',
       lastLogin: 'Letzte Anmeldung',
-      signInHelp: 'An: Anmeldung über {source}. Aus: die Sitzungen enden jetzt und jede Anmeldung wird abgelehnt.',
+      signInHelp: 'An: Anmeldung über {source}.\nAus: die Sitzungen enden jetzt und jede Anmeldung wird abgelehnt.',
       blockSignIn: 'Anmeldung sperren',
       allowSignIn: 'Anmeldung erlauben',
       endSessions: 'Sitzungen beenden',
@@ -1115,8 +1115,9 @@ export default {
       stepGroup: 'Gruppe',
       deleteUser: 'Benutzer loeschen',
       noGroup: 'Noch keine Gruppe.',
+      noRole: 'Noch keine Rolle.',
       signInHelp:
-        'An: Anmeldung mit dem eigenen Passwort. Aus: die Sitzungen enden jetzt und jede Anmeldung wird abgelehnt.',
+        'An: Anmeldung mit dem eigenen Passwort.\nAus: die Sitzungen enden jetzt und jede Anmeldung wird abgelehnt.',
       noStoredJob: 'Noch kein gespeicherter Job.',
       noSchedule:
         'Noch kein geplanter Job: die Zeitpläne eines Benutzers sind die Jobs, die er mit Spaeter ausfuehren plant.',

@@ -499,7 +499,8 @@ onMounted(async () => {
                 @change="onSignInSwitch"
               />
             </div>
-            <div class="form-text">
+            <!-- On, then Off on its own line -->
+            <div class="form-text af-help-lines">
               {{ user.blocked ? t('settings.directory.blockedNote') : t('settings.users.signInHelp') }}
             </div>
           </div>
@@ -513,6 +514,7 @@ onMounted(async () => {
           rowKey="name"
           :to="(r) => `/settings/roles/${encodeURIComponent(r.name)}`"
           :exportName="`${user.username}-roles`"
+          :empty="t('settings.users.noRole')"
         />
         <!-- Forms : the forms its roles open ; a row opens the form -->
         <AppLinkedTable
@@ -585,6 +587,7 @@ onMounted(async () => {
           :selectedIds="selectedGroups"
           name="user-groups"
           :exportName="`${user.username}-groups`"
+          :empty="t('settings.users.noGroup')"
           @update:selectedIds="selectedGroups = $event"
           @row-click="(g) => router.push(`/settings/groups/${g.id}`)"
         >
@@ -670,6 +673,10 @@ onMounted(async () => {
   background: var(--bs-secondary-bg);
   color: var(--bs-secondary-color);
   font-weight: 600;
+}
+/* a help of several lines (Allow sign-in's On, then Off) : its line breaks kept */
+.af-help-lines {
+  white-space: pre-line;
 }
 </style>
 <route lang="yaml">

@@ -355,6 +355,7 @@ onMounted(async () => {
           :selectedIds="selectedUsers"
           name="group-users"
           :exportName="`${group.name}-users`"
+          :empty="t('settings.groups.noUsers')"
           @update:selectedIds="selectedUsers = $event"
           @row-click="(u) => router.push(`/settings/users/${u.id}`)"
         >

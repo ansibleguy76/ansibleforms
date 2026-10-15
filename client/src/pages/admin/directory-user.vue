@@ -378,7 +378,8 @@ onMounted(async () => {
                 @change="onSignInSwitch"
               />
             </div>
-            <div class="form-text">
+            <!-- On, then Off on its own line -->
+            <div class="form-text af-help-lines">
               {{
                 user.blocked
                   ? t('settings.directory.blockedNote')
@@ -404,6 +405,7 @@ onMounted(async () => {
           :rows="userRoles"
           rowKey="name"
           :to="(r) => `/settings/roles/${encodeURIComponent(r.name)}`"
+          :empty="t('settings.users.noRole')"
         />
         <AppLinkedTable
           v-else-if="user && activeTab === 'forms'"
@@ -496,6 +498,10 @@ onMounted(async () => {
   background: var(--bs-secondary-bg);
   color: var(--bs-secondary-color);
   font-weight: 600;
+}
+/* a help of several lines (Allow sign-in's On, then Off) : its line breaks kept */
+.af-help-lines {
+  white-space: pre-line;
 }
 </style>
 <route lang="yaml">

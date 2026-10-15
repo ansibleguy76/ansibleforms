@@ -16,6 +16,7 @@ import { ref, computed } from 'vue';
 import axios from 'axios';
 import { useI18n } from 'vue-i18n';
 import Helpers from '@/lib/Helpers';
+import { PILL, pill } from '@/lib/tableCells';
 // a job's times as the jobs page shows them (the server sends them in its own zone)
 import Time from '@/lib/Time';
 import { durationSeconds, formatDuration } from '@/lib/jobTime';
@@ -26,6 +27,8 @@ const JOBS_SHOWN = 100;
 const ACTIVITY_SHOWN = 100;
 // the outcomes of the audit log, as its page names them
 const OUTCOMES = { success: 'audit.outcomeSuccess', failure: 'audit.outcomeFailure', denied: 'audit.outcomeDenied' };
+// each outcome's pill colour, as the audit log's ; one not known is grey, never a success's green
+const OUTCOME_PILLS = { success: PILL.green, failure: PILL.red, denied: PILL.amber };
 
 /**
  * The jobs, stored jobs, schedules and activity of a user.
@@ -183,9 +186,18 @@ export function useUserLinks(who) {
     { key: 'action', label: t('audit.action'), value: (r) => actionLabel(r.action) },
     { key: 'target', label: t('audit.target') },
     {
+      // a pill, as the audit log's : success green, failure red, denied amber ; its own words
+      // for one not known (an own key only : 'constructor' is no outcome)
       key: 'outcome',
       label: t('audit.outcome'),
-      value: (r) => (OUTCOMES[r.outcome] ? t(OUTCOMES[r.outcome]) : r.outcome),
+      keep: true,
+      html: (r) => {
+        const known = Object.hasOwn(OUTCOMES, r.outcome);
+        return pill(
+          known ? OUTCOME_PILLS[r.outcome] : PILL.grey,
+          known ? t(OUTCOMES[r.outcome]) : String(r.outcome ?? ''),
+        );
+      },
     },
   ]);
 

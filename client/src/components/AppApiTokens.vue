@@ -138,6 +138,7 @@ watch(loaded, (done) => done && emit('count', tokens.value.length));
     linkColumn="none"
     :name="'apitokens'"
     :exportName="t('apiTokens.title')"
+    :empty="t('apiTokens.none')"
     @update:selectedIds="selectedIds = $event"
   >
     <!-- those ticked : revoked, after asking -->

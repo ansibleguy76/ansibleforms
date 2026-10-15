@@ -972,7 +972,7 @@ export default {
       firstSeen: 'Vist per primer cop',
       lastLogin: 'Darrer inici de sessió',
       signInHelp:
-        'Activat: inicia sessió a través de {source}. Desactivat: les seves sessions acaben ara i es rebutja cada inici de sessió.',
+        'Activat: inicia sessió a través de {source}.\nDesactivat: les seves sessions acaben ara i es rebutja cada inici de sessió.',
       blockSignIn: "Bloqueja l'inici de sessió",
       allowSignIn: "Permet l'inici de sessió",
       endSessions: 'Tanca les sessions',
@@ -1115,8 +1115,9 @@ export default {
       stepGroup: 'Grup',
       deleteUser: "Suprimeix l'usuari",
       noGroup: 'Encara sense grup.',
+      noRole: 'Encara cap rol.',
       signInHelp:
-        'Activat: inicia sessió amb la seva contrasenya. Desactivat: les seves sessions acaben ara i es rebutja cada inici de sessió.',
+        'Activat: inicia sessió amb la seva contrasenya.\nDesactivat: les seves sessions acaben ara i es rebutja cada inici de sessió.',
       noStoredJob: 'Encara sense treballs desats.',
       noSchedule:
         "Encara sense treballs planificats: les programacions d'un usuari són els treballs que planifica amb Executa més tard.",

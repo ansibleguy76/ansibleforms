@@ -972,7 +972,7 @@ export default {
       firstSeen: 'Visto la prima volta',
       lastLogin: 'Ultimo accesso',
       signInHelp:
-        'Attivo: accede tramite {source}. Disattivo: le sue sessioni terminano ora e ogni accesso viene rifiutato.',
+        'Attivo: accede tramite {source}.\nDisattivo: le sue sessioni terminano ora e ogni accesso viene rifiutato.',
       blockSignIn: 'Blocca accesso',
       allowSignIn: 'Consenti accesso',
       endSessions: 'Termina sessioni',
@@ -1113,8 +1113,9 @@ export default {
       stepGroup: 'Gruppo',
       deleteUser: 'Elimina utente',
       noGroup: 'Nessun gruppo ancora.',
+      noRole: 'Ancora nessun ruolo.',
       signInHelp:
-        'Attivo: accede con la propria password. Disattivo: le sue sessioni terminano ora e ogni accesso viene rifiutato.',
+        'Attivo: accede con la propria password.\nDisattivo: le sue sessioni terminano ora e ogni accesso viene rifiutato.',
       noStoredJob: 'Nessun job salvato ancora.',
       noSchedule:
         'Nessun job pianificato ancora: le pianificazioni di un utente sono i job che pianifica con Esegui piu tardi.',

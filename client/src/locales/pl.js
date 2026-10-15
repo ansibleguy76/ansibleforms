@@ -967,7 +967,7 @@ export default {
       firstSeen: 'Pierwszy raz widziany',
       lastLogin: 'Ostatnie logowanie',
       signInHelp:
-        'Włączone: logowanie przez {source}. Wyłączone: sesje kończą się teraz, a każde logowanie jest odrzucane.',
+        'Włączone: logowanie przez {source}.\nWyłączone: sesje kończą się teraz, a każde logowanie jest odrzucane.',
       blockSignIn: 'Zablokuj logowanie',
       allowSignIn: 'Zezwól na logowanie',
       endSessions: 'Zakończ sesje',
@@ -1107,8 +1107,9 @@ export default {
       stepGroup: 'Grupa',
       deleteUser: 'Usuń użytkownika',
       noGroup: 'Brak grupy.',
+      noRole: 'Brak ról.',
       signInHelp:
-        'Włączone: logowanie własnym hasłem. Wyłączone: sesje kończą się teraz, a każde logowanie jest odrzucane.',
+        'Włączone: logowanie własnym hasłem.\nWyłączone: sesje kończą się teraz, a każde logowanie jest odrzucane.',
       noStoredJob: 'Brak zapisanych zadań.',
       noSchedule: 'Brak zaplanowanych zadań: harmonogramy użytkownika to zadania zaplanowane przez Uruchom później.',
       removeFromUser: 'Usuń z użytkownika',

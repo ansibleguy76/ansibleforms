@@ -970,7 +970,7 @@ export default {
       firstSeen: 'Visto por primera vez',
       lastLogin: 'Último inicio de sesión',
       signInHelp:
-        'Activado: inicia sesión a través de {source}. Desactivado: sus sesiones terminan ahora y se rechaza cada inicio de sesión.',
+        'Activado: inicia sesión a través de {source}.\nDesactivado: sus sesiones terminan ahora y se rechaza cada inicio de sesión.',
       blockSignIn: 'Bloquear inicio de sesión',
       allowSignIn: 'Permitir inicio de sesión',
       endSessions: 'Cerrar sesiones',
@@ -1112,8 +1112,9 @@ export default {
       stepGroup: 'Grupo',
       deleteUser: 'Eliminar usuario',
       noGroup: 'Aún sin grupo.',
+      noRole: 'Aún ningún rol.',
       signInHelp:
-        'Activado: inicia sesión con su contraseña. Desactivado: sus sesiones terminan ahora y se rechaza cada inicio de sesión.',
+        'Activado: inicia sesión con su contraseña.\nDesactivado: sus sesiones terminan ahora y se rechaza cada inicio de sesión.',
       noStoredJob: 'Aún sin trabajos guardados.',
       noSchedule:
         'Aún sin trabajos planificados: las programaciones de un usuario son los trabajos que planifica con Ejecutar más tarde.',
