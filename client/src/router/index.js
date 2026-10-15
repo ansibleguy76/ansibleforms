@@ -31,6 +31,7 @@ const groups = () => import('@/pages/admin/groups.vue');
 const group = () => import('@/pages/admin/group.vue');
 const directoryGroup = () => import('@/pages/admin/directory-group.vue');
 const ldap = () => import('@/pages/admin/ldap.vue');
+const ldapDirectory = () => import('@/pages/admin/ldap-directory.vue');
 const chatSettings = () => import('@/pages/admin/chat.vue');
 const mcpSettings = () => import('@/pages/admin/mcp.vue');
 const notificationChannels = () => import('@/pages/admin/notificationChannels.vue');
@@ -186,7 +187,14 @@ const routes = [
     component: directoryGroup,
     meta: { permission: 'showSettings' },
   },
-  { path: '/settings/ldap/:tab?', name: '/settings/ldap', component: ldap, meta: { permission: 'showSettings' } },
+  // the LDAP directories, each with its page (its tabs in the address)
+  { path: '/settings/ldap', name: '/settings/ldap', component: ldap, meta: { permission: 'showSettings' } },
+  {
+    path: '/settings/ldap/:id(\\d+)/:tab?',
+    name: '/settings/ldap/:id',
+    component: ldapDirectory,
+    meta: { permission: 'showSettings' },
+  },
   // the disclaimer users accept once, and who accepted it
   {
     path: '/settings/disclaimer/:tab?',

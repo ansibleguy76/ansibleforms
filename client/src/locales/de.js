@@ -535,6 +535,11 @@ export default {
       chatsettings_check_create: 'Chat-Anbieter getestet',
       ldap_update: 'LDAP-Einstellungen aktualisiert',
       ldap_check_create: 'LDAP-Verbindung getestet',
+      ldapdirectory_create: 'LDAP-Verzeichnis hinzugefügt',
+      ldapdirectory_update: 'LDAP-Verzeichnis aktualisiert',
+      ldapdirectory_delete: 'LDAP-Verzeichnis gelöscht',
+      ldapdirectory_check_create: 'LDAP-Verzeichnis getestet',
+      ldapdirectory_move_create: 'LDAP-Verzeichnis verschoben',
       lock_create: 'Designer-Sperre gesetzt',
       lock_delete: 'Designer-Sperre aufgehoben',
       logo_create: 'Logo hochgeladen',
@@ -733,6 +738,7 @@ export default {
     // the info icon after a page title, that shows the page's description
     aboutThisPage: 'Über diese Seite',
     clear: 'Leeren',
+    remove: 'Entfernen',
     create: 'Erstellen',
     cancel: 'Abbrechen',
     delete: 'Loeschen',
@@ -1697,6 +1703,25 @@ export default {
         'Verbindung zu einem LDAP- oder Active Directory-Server für Benutzerauthentifizierung und Gruppenzuordnung.',
       enableLdap: 'LDAP aktivieren',
       enableLdapHelp: 'Benutzer melden sich mit ihrem LDAP- oder Active-Directory-Konto an',
+      nameHelp:
+        'Stellt seinen Mitgliedern in Rollen den Namen voran: corp/jane, ldap/corp/Admins. Das Verzeichnis default behält die kurzen Namen und seinen eigenen Namen.',
+      servers: 'Server',
+      serversHelp:
+        'Einer pro Feld (host, host:port oder ldaps://host:port), in dieser Reihenfolge versucht: Ist einer nicht erreichbar, wird der nächste versucht.',
+      addServer: 'Server hinzufügen',
+      domains: 'Anmeldedomänen',
+      domainsHelp:
+        "Eine pro Feld. Wer sich als benutzer{'@'}domäne mit einer davon anmeldet, geht direkt zu diesem Verzeichnis.",
+      addDomain: 'Domäne hinzufügen',
+      enabled: 'Aktiviert',
+      disabled: 'Deaktiviert',
+      directory: 'LDAP-Verzeichnis',
+      directoriesDescription:
+        "Die LDAP- und Active-Directory-Verzeichnisse, mit denen sich Benutzer anmelden. Ein Benutzername wird in ihrer Reihenfolge gesucht, außer er nennt ein Verzeichnis (corp\\jane) oder eine seiner Anmeldedomänen (jane{'@'}corp.example).",
+      editDirectory: 'Verzeichnis bearbeiten',
+      deleteDirectory: 'Verzeichnis löschen',
+      moveUp: 'Nach oben',
+      moveDown: 'Nach unten',
       tabGeneral: 'Allgemein',
       tabServer: 'Server',
       tabUsers: 'Benutzer',
@@ -1720,7 +1745,7 @@ export default {
         'Benutzerattribut mit Gruppenmitgliedschaften (z.B. memberOf). Auf groups setzen, um das Ergebnis der Gruppensuche (Gruppen-Search-Base und Gruppenklasse) zu verwenden.',
       groupsSearchBase: 'Gruppen-Search-Base',
       groupsSearchBaseDesc:
-        'Basis-DN, unter dem die Gruppensuche nach den Gruppen sucht, die den Benutzer als Mitglied führen. Die Suche läuft nur, wenn auch die Gruppenklasse gesetzt ist, und legt ihr Ergebnis im Attribut groups ab; setzen Sie daher das Gruppen-Attribut auf groups, um es zu verwenden. Leer lassen, um die Suche zu überspringen und die Gruppen aus dem Benutzereintrag zu lesen (z.B. memberOf).',
+        'Wo die Gruppen des Benutzers gesucht werden (braucht Gruppenklasse und Gruppenattribut groups). Leer: aus dem Benutzereintrag gelesen.',
       groupClass: 'Gruppenklasse',
       groupClassDesc: 'LDAP-objectClass für Gruppen (z.B. groupOfNames, posixGroup).',
       groupMemberAttribute: 'Gruppenmitglied-Attribut',
@@ -1976,6 +2001,7 @@ export default {
     clipboardHttpsRequired: 'Konnte nicht in die Zwischenablage kopieren, HTTPS erforderlich',
     ldap: {
       testTitle: 'LDAP-Verbindung testen',
+      test: 'Testen',
       testDescription: 'Geben Sie Test-Anmeldedaten ein, um die LDAP-Verbindung zu pruefen:',
       testUsername: 'Test-Benutzername',
       testUsernamePlaceholder: 'Benutzernamen eingeben',

@@ -5,9 +5,15 @@ import helpers from "../lib/common.js";
 import yaml from "yaml";
 import crypto from "../lib/crypto.js";
 import { authenticate } from 'ldap-authentication';
+import { DEFAULT_NAME, NAME_RULE, qualify, route, isUnreachable, urls } from '../lib/ldapDirectories.js';
 
 //ldap object create
 var Ldap=function(ldap){
+    // the directory : its name (DEFAULT_NAME keeps the short member names), the order a bare
+    // username is looked up in, and the sign-in domains that go straight to it
+    if (ldap.name !== undefined) this.name = String(ldap.name).trim();
+    if (ldap.position !== undefined && ldap.position !== "") this.position = parseInt(ldap.position, 10) || 1;
+    if (ldap.domains !== undefined) this.domains = ldap.domains || "";
     this.server = ldap.server;
     this.port = ldap.port;
     this.ignore_certs = (ldap.ignore_certs)?1:0;
@@ -36,28 +42,209 @@ var Ldap=function(ldap){
     this.testpassword = ldap.testpassword || ""
     this.testuser = ldap.testuser || ""
 };
-Ldap.update = function (record) {
-  logger.info(`Updating ldap ${record.server}`)
-  // Remove test fields that shouldn't be saved to the database
+// ─── the directories ──────────────────────────────────────────────────────────
+// The directory whose members keep their short names (ldap/<group>, the bare username) : the
+// one there was before several could be made. It cannot be renamed nor deleted.
+Ldap.DEFAULT_NAME = DEFAULT_NAME;
+// the pure rules (lib/ldapDirectories.js) : a member's qualified name, where a username is looked
+// up, whether a failure is an unreachable server, a directory's server urls
+Ldap.qualify = qualify;
+Ldap.route = route;
+Ldap.isUnreachable = isUnreachable;
+Ldap.urls = urls;
+
+/**
+ * A directory as stored, its bind password decrypted (an undecryptable one emptied).
+ *
+ * Args:
+ *   row (object): the row.
+ *
+ * Returns:
+ *   object: the directory.
+ */
+function decrypted(row) {
+  if (!row) return row;
+  try {
+    row.bind_user_pw = crypto.decrypt(row.bind_user_pw);
+  } catch (e) {
+    logger.error(`Couldn't decrypt the binding password of ldap directory '${row.name}', did the secretkey change ?`);
+    row.bind_user_pw = "";
+  }
+  return row;
+}
+
+/**
+ * Checks a directory's name : the rule, and 'default' reserved for the first one.
+ *
+ * Args:
+ *   name (string): the name.
+ *   current (object): the directory renamed, or none for a new one.
+ *
+ * Raises:
+ *   Error: the name breaks the rule, is taken, or renames the default directory.
+ */
+async function checkName(name, current) {
+  if (current && current.name === Ldap.DEFAULT_NAME && name !== Ldap.DEFAULT_NAME) {
+    throw new Error(`The directory '${Ldap.DEFAULT_NAME}' keeps its name : its members' names depend on it`);
+  }
+  if (!NAME_RULE.test(name || "")) {
+    throw new Error("A directory's name has letters, digits, - and _ only (at most 50)");
+  }
+  if ((!current || current.name !== Ldap.DEFAULT_NAME) && name.toLowerCase() === Ldap.DEFAULT_NAME) {
+    throw new Error(`'${Ldap.DEFAULT_NAME}' is the name of the first directory`);
+  }
+  const taken = await mysql.do("SELECT id FROM AnsibleForms.`ldap` WHERE name = ? AND id <> ?", [name, current?.id ?? 0]);
+  if (taken.length) throw new Error(`There is already a directory named '${name}'`);
+}
+
+/**
+ * The directories, in the order a bare username is looked up in.
+ *
+ * Returns:
+ *   object[]: the directories, their bind passwords decrypted.
+ */
+Ldap.findAll = async function () {
+  const rows = await mysql.do("SELECT * FROM AnsibleForms.`ldap` ORDER BY position, id");
+  return rows.map(decrypted);
+};
+
+/**
+ * A directory by its id.
+ *
+ * Args:
+ *   id (number|string): the id.
+ *
+ * Returns:
+ *   object|null: the directory, its bind password decrypted ; null when there is none.
+ */
+Ldap.findById = async function (id) {
+  const rows = await mysql.do("SELECT * FROM AnsibleForms.`ldap` WHERE id = ?", [id]);
+  return rows.length ? decrypted(rows[0]) : null;
+};
+
+/**
+ * The default directory : the one named DEFAULT_NAME, else the first (a database not patched
+ * yet has one row and no names).
+ *
+ * Returns:
+ *   object: the directory, its bind password decrypted.
+ *
+ * Raises:
+ *   string: there is no directory at all.
+ */
+Ldap.find = async function () {
+  const rows = await Ldap.findAll().catch(async () => (await mysql.do("SELECT * FROM AnsibleForms.`ldap` limit 1;")).map(decrypted));
+  const found = rows.find((r) => r.name === Ldap.DEFAULT_NAME) || rows[0];
+  if (found) return found;
+  logger.error("No ldap record in the database, something is wrong");
+  throw "No ldap record in the database, something is wrong";
+};
+
+/**
+ * Updates the default directory (the config seed's ldap section, the API's /ldap).
+ *
+ * Args:
+ *   record (object): the fields to write, converted (new Ldap).
+ */
+Ldap.update = async function (record) {
+  const current = await Ldap.find();
+  return Ldap.updateById(current.id, record);
+};
+
+/**
+ * Updates a directory.
+ *
+ * Args:
+ *   id (number|string): the directory.
+ *   record (object): the fields to write, converted (new Ldap).
+ *
+ * Raises:
+ *   Error: no such directory, or its new name is not valid.
+ */
+Ldap.updateById = async function (id, record) {
+  const current = await Ldap.findById(id);
+  if (!current) throw new Error(`No ldap directory ${id}`);
+  // the test fields and the id are never columns to write
   delete record.testuser;
   delete record.testpassword;
-  return mysql.do("UPDATE AnsibleForms.`ldap` set ?", record)
+  delete record.id;
+  if (record.name !== undefined) await checkName(record.name, current);
+  logger.info(`Updating ldap directory '${current.name}'`);
+  return mysql.do("UPDATE AnsibleForms.`ldap` set ? WHERE id = ?", [record, id]);
 };
-Ldap.find = async function() {
-  const res = await mysql.do("SELECT * FROM AnsibleForms.`ldap` limit 1;");
-  if (res.length > 0) {
-    try {
-      res[0].bind_user_pw = crypto.decrypt(res[0].bind_user_pw);
-    } catch (e) {
-      logger.error("Couldn't decrypt ldap binding password, did the secretkey change ?");
-      res[0].bind_user_pw = "";
-    }
-    return res[0];
-  } else {
-    logger.error("No ldap record in the database, something is wrong");
-    throw "No ldap record in the database, something is wrong";
+
+/**
+ * Adds a directory, last in the lookup order unless it says its own.
+ *
+ * Args:
+ *   record (object): the fields, converted (new Ldap).
+ *
+ * Returns:
+ *   number: its id.
+ *
+ * Raises:
+ *   Error: its name is not valid or taken.
+ */
+Ldap.create = async function (record) {
+  delete record.testuser;
+  delete record.testpassword;
+  delete record.id;
+  await checkName(record.name);
+  if (!record.position) {
+    const last = await mysql.do("SELECT COALESCE(MAX(position), 0) AS p FROM AnsibleForms.`ldap`");
+    record.position = (last[0]?.p || 0) + 1;
   }
-}
+  logger.info(`Adding ldap directory '${record.name}'`);
+  const res = await mysql.do("INSERT INTO AnsibleForms.`ldap` set ?", record);
+  return res.insertId;
+};
+
+/**
+ * Moves a directory one place up or down in the lookup order (the list's order), the others
+ * renumbered 1, 2, 3 ... with it.
+ *
+ * Args:
+ *   id (number|string): the directory.
+ *   direction (string): 'up' (looked up sooner) or 'down'.
+ *
+ * Returns:
+ *   boolean: false when it is already first (up) or last (down) : nothing moved.
+ *
+ * Raises:
+ *   Error: no such directory, or another direction.
+ */
+Ldap.move = async function (id, direction) {
+  if (!["up", "down"].includes(direction)) throw new Error("Move a directory up or down");
+  const rows = await mysql.do("SELECT id FROM AnsibleForms.`ldap` ORDER BY position, id");
+  const at = rows.findIndex((r) => String(r.id) === String(id));
+  if (at < 0) throw new Error(`No ldap directory ${id}`);
+  const to = direction === "up" ? at - 1 : at + 1;
+  if (to < 0 || to >= rows.length) return false;
+  [rows[at], rows[to]] = [rows[to], rows[at]];
+  for (let i = 0; i < rows.length; i++) {
+    await mysql.do("UPDATE AnsibleForms.`ldap` SET position = ? WHERE id = ?", [i + 1, rows[i].id]);
+  }
+  return true;
+};
+
+/**
+ * Deletes a directory ; never the default one.
+ *
+ * Args:
+ *   id (number|string): the directory.
+ *
+ * Raises:
+ *   Error: no such directory, it is the default one, or the config seed's.
+ */
+Ldap.deleteById = async function (id) {
+  const current = await Ldap.findById(id);
+  if (!current) throw new Error(`No ldap directory ${id}`);
+  if (current.name === Ldap.DEFAULT_NAME) throw new Error(`The directory '${Ldap.DEFAULT_NAME}' cannot be deleted : turn it off instead`);
+  if (current.managed) throw new Error("This directory comes from the config seed");
+  logger.info(`Deleting ldap directory '${current.name}'`);
+  return mysql.do("DELETE FROM AnsibleForms.`ldap` WHERE id = ?", [id]);
+};
+
 // Does an ldap-authentication failure mean 'the search found no such user' ?
 // authenticate() throws ONLY the last message of the failed result, and we always
 // call it in admin mode (no userDn, no verifyUserExists) : there a user search
@@ -71,115 +258,172 @@ Ldap.find = async function() {
 Ldap.isUserNotFound = function(message){
   return /authentication identity not found|user not found or usernameAttribute is wrong/i.test(message || "")
 }
-Ldap.check = async function(ldapConfig){
-    
-    // auth with admin
-    var badCertificates=false
-    let options = {
-      ldapOpts: {
-        url: ((ldapConfig.enable_tls==1)?"ldaps":"ldap") + "://" + ldapConfig.server + ":" + ldapConfig.port,
-        tlsOptions: {
-          // cert: cert,
-          // requestCert: tls,
-          // rejectUnauthorized: rejectUnauthorized,
-          // ca: ca
-        }
-      },
-      adminDn: ldapConfig.bind_user_dn,
-      adminPassword: crypto.decrypt(ldapConfig.bind_user_pw),
-      userPassword: ldapConfig.testpassword,
-      userSearchBase: ldapConfig.search_base,
-      usernameAttribute: ldapConfig.username_attribute,
-      username: ldapConfig.testuser,
-      // starttls: false
+/**
+ * The ldap-authentication options of a directory for a user, without the server (Ldap.urls).
+ *
+ * Args:
+ *   cfg (object): the directory.
+ *   bindPassword (string): the bind user's password, in clear.
+ *   username (string): the user, as the directory knows it.
+ *   password (string): the user's password.
+ *
+ * Returns:
+ *   object: the options.
+ *
+ * Raises:
+ *   Error: the TLS certificates are not valid.
+ */
+function authOptions(cfg, bindPassword, username, password) {
+  const options = {
+    ldapOpts: { tlsOptions: {} },
+    adminDn: cfg.bind_user_dn,
+    adminPassword: bindPassword,
+    userPassword: password,
+    userSearchBase: cfg.search_base,
+    usernameAttribute: cfg.username_attribute,
+    username,
+  };
+  // every attribute of the entry, and its groups' by name : an operational attribute (OpenLDAP's
+  // memberOf) is only returned when asked for ; Active Directory returns it either way
+  if (cfg.groups_attribute) options.attributes = ["*", cfg.groups_attribute];
+  if (cfg.groups_search_base) options.groupsSearchBase = cfg.groups_search_base;
+  if (cfg.group_class) options.groupClass = cfg.group_class;
+  if (cfg.group_member_attribute) options.groupMemberAttribute = cfg.group_member_attribute;
+  if (cfg.group_member_user_attribute) options.groupMemberUserAttribute = cfg.group_member_user_attribute;
+  if (cfg.enable_tls == 1) {
+    const verify = !(cfg.ignore_certs == 1);
+    // ldap-authentication checks certificates badly : they are checked first
+    if (verify && (!helpers.checkCertificate(cfg.cert) || !helpers.checkCertificate(cfg.ca_bundle))) {
+      throw new Error("Certificate is not valid");
     }
-    if(ldapConfig.groups_search_base){ options.groupsSearchBase = ldapConfig.groups_search_base }
-    if(ldapConfig.group_class){ options.groupClass = ldapConfig.group_class }
-    if(ldapConfig.group_member_attribute){ options.groupMemberAttribute = ldapConfig.group_member_attribute }
-    if(ldapConfig.group_member_user_attribute){ options.groupMemberUserAttribute = ldapConfig.group_member_user_attribute }
-    // console.log(options)
-    // ldap-authentication has bad cert check, so we check first !!
-    if(ldapConfig.enable_tls && !(ldapConfig.ignore_certs==1)){
-      if(!helpers.checkCertificate(ldapConfig.cert)){
-        badCertificates=true
-      }
-      if(!helpers.checkCertificate(ldapConfig.ca_bundle)){
-        badCertificates=true
-      }
-    }else{
-      ldapConfig.cert=""
-      ldapConfig.ca_bundle=""
-    }
-    // enable tls/ldaps
-    if(ldapConfig.enable_tls==1){
-      options.ldapOpts.tlsOptions.requestCert = (ldapConfig.enable_tls==1)
-      if(ldapConfig.cert!=""){
-        options.ldapOpts.tlsOptions.cert = ldapConfig.cert
-      }
-      if(ldapConfig.ca_bundle!=""){
-        options.ldapOpts.tlsOptions.ca = ldapConfig.ca_bundle
-      }
-      options.ldapOpts.tlsOptions.rejectUnauthorized = !(ldapConfig.ignore_certs==1)
-      logger.info("use tls : " + (ldapConfig.enable_tls==1))
-      logger.info("reject invalid certificates : " + !(ldapConfig.ignore_certs==1))
-    }
-
-    if(badCertificates){
-      throw new Error("Certificate is not valid")
-    }else{
-      logger.notice("Certificates are valid")
-      try{
-        // logger.debug(JSON.stringify(options))
-        logger.notice("Authenticating")
-        try{
-          var user = await authenticate(options)
-          return user
-        }catch(err){
-          // mirror the login fallback : allow a UPN-style test user (user@domain.com)
-          // against directories whose username_attribute holds the bare name, but
-          // only when the search found no user (never on a wrong password)
-          const local = (ldapConfig.testuser || "").includes("@") ? ldapConfig.testuser.split("@")[0] : ""
-          if(local && Ldap.isUserNotFound(err?.message)){
-            logger.notice(`Ldap test user '${ldapConfig.testuser}' not found, retrying as '${local}'`)
-            return await authenticate({ ...options, username: local })
-          }
-          throw err
-        }
-      }catch(err){
-        var em
-        console.log(err)
-        if(err.message){
-          em = err.message
-        }else{
-          try{ em = yaml.stringify(err)}catch(e){em = err}
-        }
-        if(err.admin){
-          if(err.admin.lde_message){
-            try{ em = yaml.stringify(err.admin.lde_message)}catch(e){em = err}
-          }
-          else if(err.admin.code){
-            try{ em = yaml.stringify(err.admin)}catch(e){em = err}
-            if(err.admin.code=="UNABLE_TO_VERIFY_LEAF_SIGNATURE"){
-              em = "Unable to verify the certificate"
-            }else if(err.admin.code==49){
-              em = "Wrong binding credentials"
-            }else if(err.admin.code=="ENOTFOUND"){
-              em = "Bad server or port (connection failed)"
-            }
-          }
-        }
-        
-        // a test user that does not exist still proves the connection and the
-        // binding credentials are fine : report ok, not a hard error
-        if(Ldap.isUserNotFound(em)){
-          logger.notice("Checking ldap connection ok")
-          return
-        }else{
-          logger.notice("Checking ldap connection result : " + em)
-          throw new Error(em, { cause: err })
-        }
-      }
-    }
+    options.ldapOpts.tlsOptions.requestCert = true;
+    if (verify && cfg.cert) options.ldapOpts.tlsOptions.cert = cfg.cert;
+    if (verify && cfg.ca_bundle) options.ldapOpts.tlsOptions.ca = cfg.ca_bundle;
+    options.ldapOpts.tlsOptions.rejectUnauthorized = verify;
+  }
+  return options;
 }
+
+/**
+ * A user's sign-in on one directory : its servers in order, the next one only when one cannot be
+ * reached ; a user@domain the directory does not know is tried again as the bare name (never on a
+ * wrong password, which would count twice against the directory's lockout).
+ *
+ * Args:
+ *   cfg (object): the directory.
+ *   bindPassword (string): the bind user's password, in clear.
+ *   username (string): the user.
+ *   password (string): the user's password.
+ *
+ * Returns:
+ *   object: the user's directory entry.
+ *
+ * Raises:
+ *   any: the directory's answer (a wrong password, no such user), or the last server's failure.
+ */
+Ldap.authenticateOn = async function (cfg, bindPassword, username, password) {
+  const servers = Ldap.urls(cfg);
+  if (!servers.length) throw new Error(`The ldap directory '${cfg.name}' has no server`);
+  const base = authOptions(cfg, bindPassword, username, password);
+  let last;
+  for (const url of servers) {
+    const options = { ...base, ldapOpts: { ...base.ldapOpts, url } };
+    try {
+      try {
+        return await authenticate(options);
+      } catch (err) {
+        const local = String(username).includes("@") ? String(username).split("@")[0] : "";
+        if (local && Ldap.isUserNotFound(err?.message)) {
+          logger.info(`Ldap user '${username}' not found in '${cfg.name}', retrying as '${local}'`);
+          return await authenticate({ ...options, username: local });
+        }
+        throw err;
+      }
+    } catch (err) {
+      if (!Ldap.isUnreachable(err)) throw err;
+      logger.warning(`Ldap server ${url} of '${cfg.name}' cannot be reached : ${err?.message || err?.admin?.code || err}`);
+      last = err;
+    }
+  }
+  throw last;
+};
+
+/**
+ * A user's sign-in across the directories (Ldap.route) : the first directory that knows the user
+ * decides - a wrong password there is the answer, never a try in the next one, which might hold
+ * someone else of that name. A directory that cannot be reached is passed over.
+ *
+ * Args:
+ *   username (string): what was typed.
+ *   password (string): the password.
+ *
+ * Returns:
+ *   object: { directory, entry } : the directory that signed the user in and the user's entry.
+ *
+ * Raises:
+ *   string: no directory is enabled.
+ *   any: the deciding directory's answer, or the last failure.
+ */
+Ldap.signIn = async function (username, password) {
+  const enabled = (await Ldap.findAll()).filter((d) => d.enable == 1);
+  if (!enabled.length) throw "No ldap configured or not enabled";
+  let last;
+  for (const { directory, username: asked } of Ldap.route(username, enabled)) {
+    try {
+      logger.info(`Checking ldap directory '${directory.name}' for user ${asked}`);
+      const entry = await Ldap.authenticateOn(directory, directory.bind_user_pw, asked, password);
+      return { directory, entry };
+    } catch (err) {
+      last = err;
+      if (Ldap.isUserNotFound(err?.message) || Ldap.isUnreachable(err)) continue;
+      throw err;
+    }
+  }
+  throw last;
+};
+
+/**
+ * A directory's test (its page's Test connection) : a sign-in of the test user, on its servers in
+ * order. A test user it does not know still proves the connection and the binding.
+ *
+ * Args:
+ *   ldapConfig (object): the directory as converted (new Ldap : its bind password encrypted), with
+ *     testuser and testpassword.
+ *
+ * Returns:
+ *   object|undefined: the test user's entry ; none when the directory does not know the user.
+ *
+ * Raises:
+ *   Error: why the directory could not be used, said plainly.
+ */
+Ldap.check = async function (ldapConfig) {
+  try {
+    logger.notice("Authenticating");
+    return await Ldap.authenticateOn(ldapConfig, crypto.decrypt(ldapConfig.bind_user_pw), ldapConfig.testuser, ldapConfig.testpassword);
+  } catch (err) {
+    let em;
+    if (err?.message) {
+      em = err.message;
+    } else {
+      try { em = yaml.stringify(err); } catch (e) { em = err; }
+    }
+    if (err?.admin) {
+      if (err.admin.lde_message) {
+        try { em = yaml.stringify(err.admin.lde_message); } catch (e) { em = err; }
+      } else if (err.admin.code) {
+        try { em = yaml.stringify(err.admin); } catch (e) { em = err; }
+        if (err.admin.code == "UNABLE_TO_VERIFY_LEAF_SIGNATURE") em = "Unable to verify the certificate";
+        else if (err.admin.code == 49) em = "Wrong binding credentials";
+        else if (err.admin.code == "ENOTFOUND") em = "Bad server or port (connection failed)";
+      }
+    }
+    if (Ldap.isUserNotFound(em)) {
+      logger.notice("Checking ldap connection ok");
+      return;
+    }
+    logger.notice("Checking ldap connection result : " + em);
+    throw new Error(em, { cause: err });
+  }
+};
 
 export default  Ldap;

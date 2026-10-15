@@ -533,6 +533,11 @@ export default {
       chatsettings_check_create: 'Proveedor de chat probado',
       ldap_update: 'Configuración LDAP actualizada',
       ldap_check_create: 'Conexión LDAP probada',
+      ldapdirectory_create: 'Directorio LDAP añadido',
+      ldapdirectory_update: 'Directorio LDAP actualizado',
+      ldapdirectory_delete: 'Directorio LDAP eliminado',
+      ldapdirectory_check_create: 'Directorio LDAP probado',
+      ldapdirectory_move_create: 'Directorio LDAP movido',
       lock_create: 'Bloqueo del diseñador tomado',
       lock_delete: 'Bloqueo del diseñador liberado',
       logo_create: 'Logo subido',
@@ -731,6 +736,7 @@ export default {
     // the info icon after a page title, that shows the page's description
     aboutThisPage: 'Acerca de esta página',
     clear: 'Borrar',
+    remove: 'Quitar',
     create: 'Crear',
     cancel: 'Cancelar',
     delete: 'Eliminar',
@@ -1690,6 +1696,25 @@ export default {
       description: 'Conexión a un servidor LDAP o Active Directory para autenticación de usuarios y mapeo de grupos.',
       enableLdap: 'Habilitar LDAP',
       enableLdapHelp: 'Los usuarios inician sesión con su cuenta de LDAP o Active Directory',
+      nameHelp:
+        'Prefija a sus miembros en los roles: corp/jane, ldap/corp/Admins. El directorio default conserva los nombres cortos y su propio nombre.',
+      servers: 'Servidores',
+      serversHelp:
+        'Uno por campo (host, host:puerto o ldaps://host:puerto), probados en este orden: si uno no responde, se prueba el siguiente.',
+      addServer: 'Añadir servidor',
+      domains: 'Dominios de inicio de sesión',
+      domainsHelp:
+        "Uno por campo. Quien inicia sesión como usuario{'@'}dominio con uno de ellos va directamente a este directorio.",
+      addDomain: 'Añadir dominio',
+      enabled: 'Activado',
+      disabled: 'Desactivado',
+      directory: 'Directorio LDAP',
+      directoriesDescription:
+        "Los directorios LDAP y Active Directory con los que inician sesión los usuarios. Un usuario se busca en su orden, salvo que nombre un directorio (corp\\jane) o uno de sus dominios (jane{'@'}corp.example).",
+      editDirectory: 'Editar directorio',
+      deleteDirectory: 'Eliminar directorio',
+      moveUp: 'Subir',
+      moveDown: 'Bajar',
       tabGeneral: 'General',
       tabServer: 'Servidor',
       tabUsers: 'Usuarios',
@@ -1713,7 +1738,7 @@ export default {
         'Atributo de usuario que lista las membresías de grupo (ej. memberOf). Póngalo en groups para usar el resultado de la búsqueda de grupos (Base de Búsqueda de Grupos y Clase de Grupo).',
       groupsSearchBase: 'Base de búsqueda de grupos',
       groupsSearchBaseDesc:
-        'DN base donde la búsqueda de grupos busca los grupos que tienen al usuario como miembro. La búsqueda solo se ejecuta si también se indica la Clase de Grupo, y guarda su resultado en el atributo groups, así que ponga groups como Atributo de Grupos para usarlo. Dejar vacío para omitir la búsqueda y leer los grupos de la entrada del usuario (ej. memberOf).',
+        'Dónde buscar los grupos del usuario (requiere Clase de grupo y Atributo de grupos en groups). Vacío: se leen de la entrada del usuario.',
       groupClass: 'Clase de grupo',
       groupClassDesc: 'objectClass LDAP utilizada para grupos (ej. groupOfNames, posixGroup).',
       groupMemberAttribute: 'Atributo de miembro de grupo',
@@ -1966,6 +1991,7 @@ export default {
     clipboardHttpsRequired: 'No se pudo copiar al portapapeles, se requiere https',
     ldap: {
       testTitle: 'Probar conexión LDAP',
+      test: 'Probar',
       testDescription: 'Ingrese las credenciales de prueba para verificar la conexión LDAP:',
       testUsername: 'Nombre de usuario de prueba',
       testUsernamePlaceholder: 'Ingrese nombre de usuario',

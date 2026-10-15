@@ -530,6 +530,11 @@ export default {
       chatsettings_check_create: 'Przetestowano dostawcę czatu',
       ldap_update: 'Zaktualizowano ustawienia LDAP',
       ldap_check_create: 'Przetestowano połączenie LDAP',
+      ldapdirectory_create: 'Dodano katalog LDAP',
+      ldapdirectory_update: 'Zaktualizowano katalog LDAP',
+      ldapdirectory_delete: 'Usunięto katalog LDAP',
+      ldapdirectory_check_create: 'Przetestowano katalog LDAP',
+      ldapdirectory_move_create: 'Przeniesiono katalog LDAP',
       lock_create: 'Założono blokadę projektanta',
       lock_delete: 'Zwolniono blokadę projektanta',
       logo_create: 'Przesłano logo',
@@ -728,6 +733,7 @@ export default {
     // the info icon after a page title, that shows the page's description
     aboutThisPage: 'O tej stronie',
     clear: 'Wyczyść',
+    remove: 'Usuń',
     create: 'Utwórz',
     cancel: 'Anuluj',
     delete: 'Usuń',
@@ -1587,6 +1593,25 @@ export default {
       label: 'LDAP',
       enableLdap: 'Włącz LDAP',
       enableLdapHelp: 'Użytkownicy logują się kontem LDAP lub Active Directory',
+      nameHelp:
+        'Poprzedza członków w rolach swoją nazwą: corp/jane, ldap/corp/Admins. Katalog default zachowuje krótkie nazwy i własną nazwę.',
+      servers: 'Serwery',
+      serversHelp:
+        'Jeden na pole (host, host:port lub ldaps://host:port), próbowane w tej kolejności: gdy jeden nie odpowiada, próbowany jest następny.',
+      addServer: 'Dodaj serwer',
+      domains: 'Domeny logowania',
+      domainsHelp:
+        "Jedna na pole. Użytkownik logujący się jako użytkownik{'@'}domena z jedną z nich trafia prosto do tego katalogu.",
+      addDomain: 'Dodaj domenę',
+      enabled: 'Włączony',
+      disabled: 'Wyłączony',
+      directory: 'Katalog LDAP',
+      directoriesDescription:
+        "Katalogi LDAP i Active Directory, przez które logują się użytkownicy. Nazwa jest szukana w ich kolejności, chyba że wskazuje katalog (corp\\jane) lub jedną z jego domen (jane{'@'}corp.example).",
+      editDirectory: 'Edytuj katalog',
+      deleteDirectory: 'Usuń katalog',
+      moveUp: 'Przenieś w górę',
+      moveDown: 'Przenieś w dół',
       tabGeneral: 'Ogólne',
       tabServer: 'Serwer',
       tabUsers: 'Użytkownicy',
@@ -1612,7 +1637,7 @@ export default {
         'Atrybut użytkownika zawierający listę członkostw w grupach (np. memberOf). Ustaw groups, aby użyć wyniku wyszukiwania grup (Baza wyszukiwania grup i Klasa grupy).',
       groupsSearchBase: 'Baza wyszukiwania grup',
       groupsSearchBaseDesc:
-        'Bazowy DN, w którym wyszukiwanie grup szuka grup zawierających użytkownika jako członka. Wyszukiwanie działa tylko wtedy, gdy ustawiona jest też Klasa grupy, a jego wynik trafia do atrybutu groups, więc aby go użyć, ustaw Atrybut grup na groups. Pozostaw puste, aby pominąć wyszukiwanie i odczytać grupy z wpisu użytkownika (np. memberOf).',
+        'Gdzie szukać grup użytkownika (wymaga Klasy grupy i Atrybutu grup ustawionego na groups). Puste: odczyt z wpisu użytkownika.',
       groupClass: 'Klasa grupy',
       groupClassDesc: 'objectClass LDAP używana dla grup (np. groupOfNames, posixGroup).',
       groupMemberAttribute: 'Atrybut członka grupy',
@@ -1951,6 +1976,7 @@ export default {
     clipboardHttpsRequired: 'Nie udało się skopiować do schowka, wymagane jest https',
     ldap: {
       testTitle: 'Testuj połączenie LDAP',
+      test: 'Testuj',
       testDescription: 'Wprowadź testowe dane logowania, aby zweryfikować połączenie LDAP:',
       testUsername: 'Testowa nazwa użytkownika',
       testUsernamePlaceholder: 'Wprowadź nazwę użytkownika',

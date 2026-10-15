@@ -168,6 +168,10 @@ export default {
       "Le mot de passe enregistre ne sert qu'au serveur enregistre : saisissez le mot de passe pour en verifier un autre",
     ldapUpdated: "LDAP mis a jour",
     failedUpdateLdap: "Echec de la mise a jour LDAP",
+    ldapCreated: "Annuaire LDAP ajouté",
+    failedCreateLdap: "Impossible d'ajouter l'annuaire LDAP",
+    ldapDeleted: "Annuaire LDAP supprimé",
+    failedDeleteLdap: "Impossible de supprimer l'annuaire LDAP",
     seedManagedSettings:
       "Les paramètres sont gérés par le seed de configuration et sont en lecture seule",
     seedManagedLdap:

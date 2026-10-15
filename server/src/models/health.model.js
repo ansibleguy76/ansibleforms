@@ -205,13 +205,15 @@ async function authenticationFacts() {
   // here printed 'local' as though it had been verified.
   // AnsibleForms-qualified, like every other query here : the pool selects no default
   // schema, so an unqualified table name fails with 'No database selected'
-  const ldap = await mysql.do('SELECT `enable` FROM AnsibleForms.`ldap` LIMIT 1');
+  // several directories : ldap is open when one of them is
+  const ldap = await mysql.do('SELECT `enable` FROM AnsibleForms.`ldap`');
+  const ldapOn = ldap.some((r) => !!r.enable);
   const oauth2 = await mysql.do('SELECT name FROM AnsibleForms.`oauth2_providers` WHERE `enable`=1');
   const providers = oauth2.map(r => r.name).filter(Boolean);
   return {
     // local accounts can never be switched off, so it is always in the list
-    methods: ['local', ...(ldap[0]?.enable ? ['ldap'] : []), ...providers],
-    ldap: !!ldap[0]?.enable,
+    methods: ['local', ...(ldapOn ? ['ldap'] : []), ...providers],
+    ldap: ldapOn,
     oauth2: providers,
   };
 }
@@ -558,46 +560,95 @@ async function runnersCheck() {
 // Whether the credentials are right is left to the LDAP page's own test button.
 const LDAP_CERT_WARN_DAYS = 14;
 
-async function ldapCheck() {
-  const rows = await mysql.do('SELECT server, port, enable_tls, ignore_certs, `enable` FROM AnsibleForms.`ldap` LIMIT 1')
-    .catch((e) => { if (e.code === 'ER_NO_SUCH_TABLE') return []; throw e; });
-  const cfg = rows[0];
-  if (!cfg || !cfg.enable) return check('ldap', OK, 'not enabled');
-  if (!cfg.server) return check('ldap', ERROR, 'no server configured', 'LDAP is enabled but no server is set');
-  const port = Number(cfg.port) || (cfg.enable_tls ? 636 : 389);
-  const target = `${cfg.server}:${port}`;
-
+/**
+ * One LDAP server opened and closed (no bind) : reached or not, and over TLS its certificate's
+ * expiry.
+ *
+ * Args:
+ *   host (string): the server.
+ *   port (number): its port.
+ *   cfg (object): its directory (enable_tls, ignore_certs).
+ *
+ * Returns:
+ *   object: { status, value, detail } as a check's.
+ */
+async function probeLdapServer(host, port, cfg) {
+  const target = `${host}:${port}`;
   const socket = await new Promise((resolve) => {
     const done = (result) => { try { conn.destroy(); } catch { /* already gone */ } resolve(result); };
     const onError = (e) => done({ ok: false, reason: e.message || String(e) });
     // rejectUnauthorized false even when ignore_certs is off : this must report an expiry,
     // not fail to connect because of one. Validity is judged below, from the certificate.
     const conn = cfg.enable_tls
-      ? tls.connect({ host: cfg.server, port, rejectUnauthorized: false, timeout: 5000 },
+      ? tls.connect({ host, port, rejectUnauthorized: false, timeout: 5000 },
           () => done({ ok: true, cert: conn.getPeerCertificate() || null, authorized: conn.authorized, authError: conn.authorizationError }))
-      : net.connect({ host: cfg.server, port, timeout: 5000 }, () => done({ ok: true }));
+      : net.connect({ host, port, timeout: 5000 }, () => done({ ok: true }));
     conn.on('error', onError);
     conn.on('timeout', () => done({ ok: false, reason: `no answer from ${target} within 5s` }));
   });
 
   if (!socket.ok) {
-    return check('ldap', ERROR, 'unreachable', { server: target, tls: !!cfg.enable_tls, reason: socket.reason });
+    return { status: ERROR, value: 'unreachable', detail: { server: target, tls: !!cfg.enable_tls, reason: socket.reason } };
   }
   const detail = { server: target, tls: !!cfg.enable_tls, note: 'Reachability only - no bind is attempted, so this says nothing about the credentials' };
-  if (!cfg.enable_tls) return check('ldap', OK, `${target} reachable`, detail);
+  if (!cfg.enable_tls) return { status: OK, value: `${target} reachable`, detail };
 
   const validTo = socket.cert?.valid_to ? new Date(socket.cert.valid_to) : null;
   if (!validTo || isNaN(validTo)) {
-    return check('ldap', OK, `${target} reachable over TLS`, { ...detail, certificate: 'not readable' });
+    return { status: OK, value: `${target} reachable over TLS`, detail: { ...detail, certificate: 'not readable' } };
   }
   const days = Math.floor((validTo.getTime() - Date.now()) / 86400000);
   const certDetail = { ...detail, certificateExpires: validTo.toISOString(), daysLeft: days,
     // an ignored certificate is a deliberate choice, but worth stating next to its expiry
     ignoringCertificateErrors: !!cfg.ignore_certs,
     authorizationError: socket.authorized ? null : (socket.authError || null) };
-  if (days < 0) return check('ldap', ERROR, `TLS certificate expired ${Math.abs(days)}d ago`, certDetail);
-  if (days <= LDAP_CERT_WARN_DAYS) return check('ldap', WARNING, `TLS certificate expires in ${days}d`, certDetail);
-  return check('ldap', OK, `${target} reachable, certificate valid ${days}d`, certDetail);
+  if (days < 0) return { status: ERROR, value: `TLS certificate expired ${Math.abs(days)}d ago`, detail: certDetail };
+  if (days <= LDAP_CERT_WARN_DAYS) return { status: WARNING, value: `TLS certificate expires in ${days}d`, detail: certDetail };
+  return { status: OK, value: `${target} reachable, certificate valid ${days}d`, detail: certDetail };
+}
+
+// the worse of two statuses
+const worse = (a, b) => ([ERROR, WARNING, OK].find((x) => x === a || x === b) || OK);
+
+/**
+ * One directory : each of its servers. All unreachable is an error ; some, a warning (the others
+ * take the sign-ins : failover) ; else the worst certificate.
+ *
+ * Args:
+ *   cfg (object): the directory.
+ *
+ * Returns:
+ *   object: { status, value, detail }, its single server's own when it has one.
+ */
+async function probeLdapDirectory(cfg) {
+  const fallbackPort = Number(cfg.port) || (cfg.enable_tls ? 636 : 389);
+  const servers = String(cfg.server || '').split(/[\s,]+/).map((x) => x.trim()).filter(Boolean)
+    .map((x) => x.replace(/^ldaps?:\/\//i, ''))
+    .map((x) => { const m = x.match(/^(.*):(\d+)$/); return m ? { host: m[1], port: Number(m[2]) } : { host: x, port: fallbackPort }; });
+  if (!servers.length) return { status: ERROR, value: 'no server configured', detail: 'LDAP is enabled but no server is set' };
+  const probes = await Promise.all(servers.map((x) => probeLdapServer(x.host, x.port, cfg)));
+  if (probes.length === 1) return probes[0];
+  const down = probes.filter((x) => x.value === 'unreachable').length;
+  const detail = { servers: probes.map((x) => ({ status: x.status, value: x.value, ...x.detail })) };
+  if (down === probes.length) return { status: ERROR, value: 'unreachable', detail };
+  if (down) return { status: WARNING, value: `${down} of ${probes.length} servers unreachable`, detail };
+  const status = probes.reduce((acc, x) => worse(acc, x.status), OK);
+  return { status, value: status === OK ? `${probes.length} servers reachable` : probes.find((x) => x.status === status).value, detail };
+}
+
+async function ldapCheck() {
+  const rows = await mysql.do('SELECT * FROM AnsibleForms.`ldap`')
+    .catch((e) => { if (e.code === 'ER_NO_SUCH_TABLE') return []; throw e; });
+  // the directories in their order (a database not patched yet has one, without a position)
+  const enabled = rows.filter((r) => !!r.enable).sort((a, b) => (a.position || 0) - (b.position || 0) || (a.id || 0) - (b.id || 0));
+  if (!enabled.length) return check('ldap', OK, 'not enabled');
+  const results = await Promise.all(enabled.map(async (cfg) => ({ name: cfg.name || 'default', ...(await probeLdapDirectory(cfg)) })));
+  // one directory : its own result, as before there were several
+  if (results.length === 1) return check('ldap', results[0].status, results[0].value, results[0].detail);
+  const status = results.reduce((acc, x) => worse(acc, x.status), OK);
+  const bad = results.filter((x) => x.status !== OK).map((x) => `${x.name}: ${x.value}`);
+  const value = bad.length ? bad.join(', ') : `${results.length} directories reachable`;
+  return check('ldap', status, value, { directories: results.map((x) => ({ name: x.name, status: x.status, value: x.value, detail: x.detail })) });
 }
 
 // Is the schema actually complete?

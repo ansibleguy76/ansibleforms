@@ -165,6 +165,10 @@ export default {
       "Das gespeicherte Passwort gilt nur fuer den gespeicherten Server : geben Sie das Passwort ein, um einen anderen zu pruefen",
     ldapUpdated: "LDAP aktualisiert",
     failedUpdateLdap: "LDAP-Aktualisierung fehlgeschlagen",
+    ldapCreated: "LDAP-Verzeichnis hinzugefügt",
+    failedCreateLdap: "LDAP-Verzeichnis konnte nicht hinzugefügt werden",
+    ldapDeleted: "LDAP-Verzeichnis gelöscht",
+    failedDeleteLdap: "LDAP-Verzeichnis konnte nicht gelöscht werden",
     seedManagedSettings:
       "Die Einstellungen werden vom Konfigurations-Seed verwaltet und sind schreibgeschützt",
     seedManagedLdap:

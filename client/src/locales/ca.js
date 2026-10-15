@@ -535,6 +535,11 @@ export default {
       chatsettings_check_create: 'Proveïdor del xat provat',
       ldap_update: 'Configuració LDAP actualitzada',
       ldap_check_create: 'Connexió LDAP provada',
+      ldapdirectory_create: 'Directori LDAP afegit',
+      ldapdirectory_update: 'Directori LDAP actualitzat',
+      ldapdirectory_delete: 'Directori LDAP eliminat',
+      ldapdirectory_check_create: 'Directori LDAP provat',
+      ldapdirectory_move_create: 'Directori LDAP mogut',
       lock_create: 'Bloqueig del dissenyador obtingut',
       lock_delete: 'Bloqueig del dissenyador alliberat',
       logo_create: 'Logotip pujat',
@@ -733,6 +738,7 @@ export default {
     // the info icon after a page title, that shows the page's description
     aboutThisPage: 'Quant a aquesta pàgina',
     clear: 'Esborra',
+    remove: 'Treu',
     create: 'Crea',
     cancel: 'Cancel·la',
     delete: 'Suprimeix',
@@ -1597,6 +1603,25 @@ export default {
       label: 'LDAP',
       enableLdap: "Activa l'LDAP",
       enableLdapHelp: 'Els usuaris inicien la sessió amb el seu compte de LDAP o Active Directory',
+      nameHelp:
+        'Prefixa els seus membres als rols: corp/jane, ldap/corp/Admins. El directori default conserva els noms curts i el seu propi nom.',
+      servers: 'Servidors',
+      serversHelp:
+        'Un per camp (host, host:port o ldaps://host:port), provats en aquest ordre: si un no respon, es prova el següent.',
+      addServer: 'Afegeix servidor',
+      domains: "Dominis d'inici de sessió",
+      domainsHelp:
+        "Un per camp. Qui inicia sessió com a usuari{'@'}domini amb un d'aquests va directament a aquest directori.",
+      addDomain: 'Afegeix domini',
+      enabled: 'Activat',
+      disabled: 'Desactivat',
+      directory: 'Directori LDAP',
+      directoriesDescription:
+        "Els directoris LDAP i Active Directory amb què inicien sessió els usuaris. Un usuari es cerca en el seu ordre, tret que anomeni un directori (corp\\jane) o un dels seus dominis (jane{'@'}corp.example).",
+      editDirectory: 'Edita el directori',
+      deleteDirectory: 'Elimina el directori',
+      moveUp: 'Puja',
+      moveDown: 'Baixa',
       tabGeneral: 'General',
       tabServer: 'Servidor',
       tabUsers: 'Usuaris',
@@ -1623,7 +1648,7 @@ export default {
         "Atribut de l'usuari que llista els grups dels quals és membre (p. ex. memberOf). Posa-hi groups per utilitzar el resultat de la cerca de grups (Base de cerca de grups i Classe de grup).",
       groupsSearchBase: 'Base de cerca de grups',
       groupsSearchBaseDesc:
-        "DN base on la cerca de grups busca els grups que tenen l'usuari com a membre. La cerca només s'executa si també s'indica la Classe de grup, i desa el resultat a l'atribut groups, així que posa groups com a Atribut de grups per utilitzar-lo. Deixa-ho buit per ometre la cerca i llegir els grups de l'entrada de l'usuari (p. ex. memberOf).",
+        "On cercar els grups de l'usuari (cal Classe de grup i Atribut de grups a groups). Buit: es llegeixen de l'entrada de l'usuari.",
       groupClass: 'Classe de grup',
       groupClassDesc: "objectClass LDAP que s'utilitza per als grups (p. ex. groupOfNames, posixGroup).",
       groupMemberAttribute: 'Atribut de membre del grup',
@@ -1971,6 +1996,7 @@ export default {
     clipboardHttpsRequired: "No s'ha pogut copiar al porta-retalls, cal https",
     ldap: {
       testTitle: 'Prova la connexió LDAP',
+      test: 'Prova',
       testDescription: 'Introdueix unes credencials de prova per verificar la connexió LDAP:',
       testUsername: 'Usuari de prova',
       testUsernamePlaceholder: "Introdueix el nom d'usuari",

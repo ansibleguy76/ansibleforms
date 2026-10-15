@@ -161,6 +161,10 @@ export default {
       "La contraseña guardada solo se usa con el servidor guardado : escriba la contraseña para comprobar otro",
     ldapUpdated: "LDAP actualizado",
     failedUpdateLdap: "Error al actualizar LDAP",
+    ldapCreated: "Directorio LDAP añadido",
+    failedCreateLdap: "No se pudo añadir el directorio LDAP",
+    ldapDeleted: "Directorio LDAP eliminado",
+    failedDeleteLdap: "No se pudo eliminar el directorio LDAP",
     seedManagedSettings:
       "Los ajustes están gestionados por el seed de configuración y son de solo lectura",
     seedManagedLdap:

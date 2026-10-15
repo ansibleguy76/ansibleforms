@@ -31,6 +31,7 @@ const LISTS = {
   runners: { buttons: [151, 139] },
   notifications: { buttons: [244] },
   syslog: { buttons: [192] },
+  ldap: { buttons: [190], selectable: false },
   backups: { buttons: [144], selectable: false },
   scheduled: { buttons: [158] },
   stored: { buttons: [166] },

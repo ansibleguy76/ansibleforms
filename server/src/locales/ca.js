@@ -161,6 +161,10 @@ export default {
       "La contrasenya desada només s'utilitza amb el servidor desat : escriviu la contrasenya per comprovar-ne un altre",
     ldapUpdated: "LDAP actualitzat",
     failedUpdateLdap: "No s'ha pogut actualitzar l'LDAP",
+    ldapCreated: "Directori LDAP afegit",
+    failedCreateLdap: "No s'ha pogut afegir el directori LDAP",
+    ldapDeleted: "Directori LDAP eliminat",
+    failedDeleteLdap: "No s'ha pogut eliminar el directori LDAP",
     seedManagedSettings:
       "La configuració la gestiona el config seed i és de només lectura",
     seedManagedLdap:

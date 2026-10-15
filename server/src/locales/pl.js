@@ -161,6 +161,10 @@ export default {
       "Zapisane hasło jest używane tylko dla zapisanego serwera : wpisz hasło, aby sprawdzić inny",
     ldapUpdated: "Zaktualizowano LDAP",
     failedUpdateLdap: "Nie udało się zaktualizować LDAP",
+    ldapCreated: "Dodano katalog LDAP",
+    failedCreateLdap: "Nie udało się dodać katalogu LDAP",
+    ldapDeleted: "Usunięto katalog LDAP",
+    failedDeleteLdap: "Nie udało się usunąć katalogu LDAP",
     seedManagedSettings:
       "Ustawieniami zarządza config seed, są tylko do odczytu",
     seedManagedLdap:

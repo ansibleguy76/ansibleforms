@@ -11,6 +11,7 @@
     { "name": "user", "description": "User management and profile" },
     { "name": "group", "description": "Group management" },
     { "name": "settings", "description": "Application settings and configuration" },
+    { "name": "ldapdirectory", "description": "The LDAP directories users sign in with (Settings > Access > LDAP)" },
     { "name": "secretstore", "description": "Secret stores (HashiCorp Vault, ...) that credentials read from" },
     { "name": "syslogserver", "description": "Syslog servers the server log and the audit entries are sent to" },
     { "name": "notificationchannel", "description": "Notification channels: SMTP servers, Slack, Microsoft Teams, Telegram and webhooks" },
@@ -1255,6 +1256,199 @@
         "tags": ["runner"],
         "summary": "Test the connection to a runner", "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
         "responses": { "200": { "description": "Connection OK, with the runner health" }, "400": { "description": "Unreachable, refused, or a different release" } }
+      }
+    },
+    "/ldapdirectory": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "ldapdirectory"
+        ],
+        "summary": "List the LDAP directories, in the order a bare username is looked up in (bind passwords masked)",
+        "responses": {
+          "200": {
+            "description": "The directories"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "ldapdirectory"
+        ],
+        "summary": "Add an LDAP directory, last in the lookup order unless it sets its position",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LdapDirectory"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Added, with its id"
+          },
+          "400": {
+            "description": "Invalid or taken name"
+          }
+        }
+      }
+    },
+    "/ldapdirectory/{id}": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "ldapdirectory"
+        ],
+        "summary": "One LDAP directory (bind password masked)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The directory"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "ldapdirectory"
+        ],
+        "summary": "Update an LDAP directory ; the default one keeps its name, and a directory of the config seed is read only",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LdapDirectory"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated"
+          },
+          "400": {
+            "description": "Invalid or taken name"
+          },
+          "403": {
+            "description": "From the config seed"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "ldapdirectory"
+        ],
+        "summary": "Delete an LDAP directory ; never the default one",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted"
+          },
+          "400": {
+            "description": "The default directory, or from the config seed"
+          }
+        }
+      }
+    },
+    "/ldapdirectory/{id}/check": {
+      "post": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "ldapdirectory"
+        ],
+        "summary": "Sign a test user in on an LDAP directory, with the fields sent (testuser, testpassword) over the stored ones ; its servers tried in order",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LdapDirectory"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The test user's entry ; empty when the directory does not know the user (the connection and the binding work)"
+          },
+          "500": {
+            "description": "Why the directory could not be used"
+          }
+        }
       }
     },
     "/secretstore": {
@@ -2788,6 +2982,87 @@
           "headers": { "type": "string", "description": "webhook: extra headers, a JSON object" },
           "verify_tls": { "type": "boolean", "default": true, "description": "webhook" },
           "payload": { "type": "string", "description": "webhook: the JSON body, with {{title}} {{text}} {{status}} {{event}} {{jobId}} {{form}} {{user}} {{link}}" }
+        }
+      },
+      "LdapDirectory": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "letters, digits, - and _ ; 'default' keeps its members' short names (ldap/<group>, the bare username), any other's are ldap/<name>/<group> and <name>/<user>"
+          },
+          "position": {
+            "type": "integer",
+            "description": "the order a bare username is looked up in, the lowest first"
+          },
+          "domains": {
+            "type": "string",
+            "description": "sign-in domains, comma separated : user@domain goes straight to this directory"
+          },
+          "enable": {
+            "type": "boolean"
+          },
+          "server": {
+            "type": "string",
+            "description": "one or more servers, comma separated, each host, host:port or ldap(s)://host:port ; the next one is tried when one cannot be reached"
+          },
+          "port": {
+            "type": "integer"
+          },
+          "enable_tls": {
+            "type": "boolean"
+          },
+          "ignore_certs": {
+            "type": "boolean"
+          },
+          "cert": {
+            "type": "string"
+          },
+          "ca_bundle": {
+            "type": "string"
+          },
+          "bind_user_dn": {
+            "type": "string"
+          },
+          "bind_user_pw": {
+            "type": "string",
+            "description": "'**********' keeps the stored one"
+          },
+          "search_base": {
+            "type": "string"
+          },
+          "username_attribute": {
+            "type": "string"
+          },
+          "mail_attribute": {
+            "type": "string"
+          },
+          "groups_attribute": {
+            "type": "string"
+          },
+          "groups_search_base": {
+            "type": "string"
+          },
+          "group_class": {
+            "type": "string"
+          },
+          "group_member_attribute": {
+            "type": "string"
+          },
+          "group_member_user_attribute": {
+            "type": "string"
+          },
+          "groupfilter": {
+            "type": "string"
+          },
+          "testuser": {
+            "type": "string",
+            "description": "check only"
+          },
+          "testpassword": {
+            "type": "string",
+            "description": "check only"
+          }
         }
       },
       "SecretStore": {

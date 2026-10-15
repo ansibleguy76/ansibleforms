@@ -191,6 +191,15 @@ CREATE TABLE `runners` (
 -- create ldap table
 DROP TABLE IF EXISTS `ldap`;
 CREATE TABLE `ldap` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  -- a directory's name : 'default' keeps the short names (ldap/<group>, the bare username) ; any
+  -- other's members are named ldap/<name>/<group> and <name>/<user>
+  `name` varchar(100) NOT NULL DEFAULT 'default',
+  -- the order a bare username is looked up in, the lowest first
+  `position` int(11) NOT NULL DEFAULT 1,
+  -- the sign-in domains (user@domain) that go straight to this directory, comma separated
+  `domains` varchar(1000) DEFAULT NULL,
+  -- one or more servers, comma separated : the next one when one cannot be reached
   `server` varchar(250) DEFAULT NULL,
   `port` int(11) DEFAULT NULL,
   `ignore_certs` tinyint(4) DEFAULT NULL,
@@ -209,7 +218,9 @@ CREATE TABLE `ldap` (
   `mail_attribute` varchar(250) DEFAULT NULL,
   `groupfilter` varchar(250) DEFAULT NULL,
   `enable` tinyint(4) DEFAULT NULL,
-  `managed` tinyint(4) DEFAULT 0
+  `managed` tinyint(4) DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 -- create chat_settings table : the model provider of the chat assistant (one row)
 DROP TABLE IF EXISTS `chat_settings`;

@@ -1,4 +1,6 @@
 'use strict';
+// /api/v2/ldap : the default LDAP directory, as before there were several (the directories are
+// /api/v2/ldapdirectory, ldapDirectory.controller.js)
 import Ldap from '../../models/ldap.model.js';
 import RestResultv2 from '../../models/restResult.model.v2.js';
 import logger from "../../lib/logger.js";
@@ -34,7 +36,7 @@ const LDAP_TARGET_FLAGS = ['enable_tls', 'ignore_certs'];
  * Returns:
  *   boolean: true when the check connects where the stored configuration does.
  */
-function sameLdapTarget(sent, stored) {
+export function sameLdapTarget(sent, stored) {
   const text = (v) => (v === null || v === undefined ? '' : String(v).trim());
   const flag = (v) => v === true || Number(v) === 1;
   return LDAP_TARGET_TEXT.every((f) => text(sent?.[f]) === text(stored?.[f]))

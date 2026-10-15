@@ -1,120 +1,62 @@
 <script setup>
+/******************************************************************/
+/*                                                                */
+/*  Settings > Access > LDAP : the directories users sign in      */
+/*  with, in the order a bare username is looked up in. Each      */
+/*  opens its own page (ldap-directory.vue) ; New asks its        */
+/*  fields, its page's tabs as steps, and puts it last. Its row's */
+/*  Move up and Move down change the lookup order. The default    */
+/*  directory keeps its members' short names and cannot be        */
+/*  deleted.                                                      */
+/*                                                                */
+/******************************************************************/
+import { ref, computed, onMounted } from 'vue';
+import axios from 'axios';
 import { toast } from 'vue-sonner';
 import Profile from '@/lib/Profile';
-import axios from 'axios';
 import getSettings from '@/config/settings';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
 const settings = computed(() => getSettings(t));
 
-// the page in tabs : General (the switch), the server and how to bind to it, where the
-// users are, and how their groups are found
-const tabs = computed(() => [
-  { key: 'general', label: t('settings.ldap.tabGeneral'), icon: 'sliders' },
-  { key: 'server', label: t('settings.ldap.tabServer'), icon: 'server' },
-  { key: 'users', label: t('settings.ldap.tabUsers'), icon: 'user' },
-  { key: 'groups', label: t('settings.ldap.tabGroups'), icon: 'users' },
-]);
-import yaml from 'yaml';
-
 const authenticated = ref(false);
-const showTestModal = ref(false);
-const currentLdap = ref(null);
-const testUser = ref('');
-const testPassword = ref('');
-const testResult = ref(null);
+// the directory being tested (its row's Test connection), as saved
+const testing = ref(null);
+const list = ref(null);
 
-function openTestModal(ldap) {
-  currentLdap.value = ldap;
-  testUser.value = '';
-  testPassword.value = '';
-  testResult.value = null;
-  showTestModal.value = true;
-}
-
-function closeTestModal() {
-  showTestModal.value = false;
-  testUser.value = '';
-  testPassword.value = '';
-  testResult.value = null;
-}
-
-async function performTest() {
-  if (!testUser.value || !testPassword.value) {
-    toast.error(t('admin.ldap.provideBoth'));
-    return;
-  }
-
+/**
+ * Moves a directory one place up or down in the lookup order, then shows the list again.
+ *
+ * Args:
+ *   item (object): the directory.
+ *   direction (string): 'up' or 'down'.
+ */
+async function move(item, direction) {
   try {
-    const testData = {
-      ...currentLdap.value,
-      testuser: testUser.value,
-      testpassword: testPassword.value,
-    };
-    const result = await axios.post(`/api/v2/ldap/check`, testData);
-    testResult.value = result.data;
-    toast.success(t('admin.ldap.connectionSuccessful'));
+    await axios.post(`/api/v2/ldapdirectory/${item.id}/move`, { direction });
+    await list.value?.loadItems();
   } catch (err) {
-    testResult.value = null;
-    const errorMessage = err.response?.data?.error || err.message;
-    const errorDetail = err.response?.data?.details || '';
-    toast.error(errorDetail ? `${errorMessage}, ${errorDetail}` : errorMessage);
+    toast.error(err.response?.data?.details || err.response?.data?.error || err.message);
   }
 }
-
-const testResultYaml = computed(() => {
-  if (!testResult.value) return '';
-  return yaml.stringify(testResult.value);
-});
 
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
-  if (!authenticated.value) {
-    return;
-  }
 });
 </script>
 <template>
-  <BsModal v-if="showTestModal" @close="closeTestModal" icon="plug">
-    <template #title>
-      {{ t('admin.ldap.testTitle') }}
-    </template>
-    <template #default>
-      <p class="mt-3 fs-6">
-        {{ t('admin.ldap.testDescription') }}
-      </p>
-      <BsInput
-        v-model="testUser"
-        :label="t('admin.ldap.testUsername')"
-        type="text"
-        :placeholder="t('admin.ldap.testUsernamePlaceholder')"
-        class="mb-3"
-      />
-      <BsInput
-        v-model="testPassword"
-        :label="t('admin.ldap.testPassword')"
-        type="password"
-        :placeholder="t('admin.ldap.testPasswordPlaceholder')"
-        class="mb-3"
-      />
-      <div v-if="testResult" class="alert alert-success mt-3">
-        <h6><faIcon icon="circle-check" class="me-2" />{{ t('admin.ldap.successTitle') }}</h6>
-        <div class="mt-3">
-          <strong>{{ t('admin.ldap.userInfo') }}</strong>
-          <pre
-            class="bg-light p-3 mt-2 rounded"
-            style="max-height: 300px; overflow-y: auto"
-          ><code>{{ testResultYaml }}</code></pre>
-        </div>
-      </div>
-    </template>
-    <template #footer>
-      <BsButton icon="check" @click="performTest">Test</BsButton>
-    </template>
-  </BsModal>
+  <AppLdapTestDialog v-if="testing" :directory="testing" @close="testing = null" />
   <AppSettingsPage>
-    <AppAdminSingle v-if="authenticated" apiVersion="2" :settings="settings.ldap" :tabs="tabs" @test="openTestModal" />
+    <AppAdminMulti
+      v-if="authenticated"
+      ref="list"
+      :settings="settings.ldapDirectories"
+      :apiVersion="2"
+      @test="(item) => (testing = item)"
+      @move_up="(item) => move(item, 'up')"
+      @move_down="(item) => move(item, 'down')"
+    />
   </AppSettingsPage>
 </template>
 <route lang="yaml">
