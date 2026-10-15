@@ -582,15 +582,15 @@ function removeUser(index) {
 /* room above each group, its title close to its options ; the first one, under the options'
    heading, only a little */
 .af-role-option-group {
-  margin-top: 1.25rem;
-  padding-top: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.25rem;
 }
 .af-role-options-title + .af-role-option-group {
   margin-top: 0;
   padding-top: 0.6rem;
 }
 .af-role-option-group-title {
-  margin: 0.25rem 0 -0.25rem;
+  margin: 0.25rem 0 0.4rem;
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.05em;
