@@ -206,11 +206,11 @@ onMounted(async () => {
             <option value="failure">{{ t('audit.outcomeFailure') }}</option>
             <option value="denied">{{ t('audit.outcomeDenied') }}</option>
           </select>
-          <!-- after the filters, as the server log has its Refresh on the title line -->
-          <BsButton cssClass="text-nowrap" :icon="loading ? 'spinner' : 'refresh'" @click="load()">{{
-            t('audit.refresh')
-          }}</BsButton>
         </div>
+        <!-- the filters at the left of the controls' row, Refresh at its right, as the server log's -->
+        <BsButton cssClass="text-nowrap" :icon="loading ? 'spinner' : 'refresh'" @click="load()">{{
+          t('audit.refresh')
+        }}</BsButton>
       </template>
       <template #default>
         <!-- the first load : the table's rows as grey placeholders (a reload keeps them shown) -->

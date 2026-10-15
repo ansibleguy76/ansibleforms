@@ -40,12 +40,11 @@
 /*  filters, columns), the buttons act on it.                     */
 /*                                                                */
 /******************************************************************/
-import { computed, provide, ref, watch, onBeforeUnmount } from 'vue';
+import { computed, provide } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { sectionOf } from '@/lib/sections';
 import { settingsSection } from '@/lib/settingsMenu';
-import { watchTitleLine } from '@/lib/titleLine';
 
 // a title of one step links to the page itself : its plain address, without a tab or a filter
 const route = useRoute();
@@ -92,20 +91,11 @@ const steps = computed(() => {
   if (!part || all[1]?.title === part.title) return all;
   return [all[0], part, ...all.slice(1)];
 });
-
-// the title and its controls on one line when they fit, the search giving way (lib/titleLine.js)
-const titleLine = ref(null);
-let stopTitleLine = () => {};
-watch(titleLine, (line) => {
-  stopTitleLine();
-  stopTitleLine = watchTitleLine(line);
-});
-onBeforeUnmount(() => stopTitleLine());
 </script>
 <template>
   <section class="section w-100" :class="{ 'mt-3': title }">
     <div class="container-fluid">
-      <div v-if="title" ref="titleLine" class="d-flex align-items-center border-bottom mb-3 pb-2 af-title-line">
+      <div v-if="title" class="d-flex align-items-center border-bottom mb-3 pb-2 af-title-line">
         <h3 v-if="steps.length > 1" :aria-label="steps.map((c) => c.title ?? '').join(' › ')">
           <template v-for="(c, i) in steps" :key="i">
             <span v-if="i > 0" class="mx-2 text-body-secondary af-crumb-separator">›</span>
@@ -131,9 +121,11 @@ onBeforeUnmount(() => stopTitleLine());
           <AppInfoPopover v-if="description" :text="description" />
         </h3>
         <slot name="feedback"></slot>
-        <!-- the view controls, then the page's buttons, top right : one box that wraps as a
-             whole, so on a narrow screen every control lines up on the same rows rather than
-             each group wrapping on its own (styles/bootstrap-override.scss, .af-title-controls) -->
+        <!-- the view controls, then the page's buttons : a row of their own under the title, on
+             every page and screen (a long title or a short one, a wide screen or a narrow one),
+             the search at its left, the buttons at its right ; one box that wraps as a whole, so
+             on a narrow screen every control lines up on the same rows rather than each group
+             wrapping on its own (styles/bootstrap-override.scss, .af-title-controls) -->
         <div v-if="$slots.headerActions || $slots.actions" class="af-title-controls">
           <slot name="headerActions"></slot>
           <div v-if="$slots.actions" class="af-header-buttons">

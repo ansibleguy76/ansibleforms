@@ -540,16 +540,15 @@ textarea:focus::placeholder {
 }
 .af-title-line {
   flex-wrap: wrap;
+  // the space between the title and its controls' row under it
   row-gap: 0.5rem;
-  // the space between the title and its controls, beside it ; under it, none
-  column-gap: 1rem;
 }
+// the controls (a table's search, its buttons, the page's own) : always a row of their own under
+// the title, so every page has them in the same place whatever its title's length or the screen's
+// width ; the buttons at its right, a table's search at its left
 .af-title-controls {
   display: flex;
-  // as wide as its controls on one line (no shrinking) : too wide beside the title, the box
-  // moves under it ; only narrower than the window does it wrap inside
-  flex: 1 0 auto;
-  max-width: 100%;
+  flex: 0 0 100%;
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
@@ -572,28 +571,31 @@ textarea:focus::placeholder {
 .af-title-controls .bs-dt-toolbar-moved > .ms-auto > * {
   margin-left: 0 !important;
 }
-// a table's search on the title line : from 12rem, growing to 20rem with the room left, so the
-// rows are decided at its smallest and it fills what remains
-.af-title-controls .bs-dt-toolbar-moved .af-table-search {
-  flex: 1 1 12rem;
-  max-width: 20rem;
+// every filter box of the title line one width, a table's (af-table-search) as a page's own
+// (BsSearch, af-search) : 20rem, narrower only when the row is ; at the row's left, the buttons
+// pushed right. !important : the pages gave theirs a width inline (320px, 16rem)
+.af-title-controls .bs-dt-toolbar-moved .af-table-search,
+.af-title-controls .af-search {
+  flex: 0 1 20rem;
+  width: 20rem !important;
   min-width: 8rem;
+  margin-right: auto;
 }
-// the title and its controls fit side by side when a table's search narrows (AppSettings measures
-// it, af-title-one-line) : one line, the search giving way down to its min-width, the buttons whole
-.af-title-line.af-title-one-line {
-  flex-wrap: nowrap;
-  > h3 {
-    flex-shrink: 0;
-  }
-  > .af-title-controls {
-    flex: 1 1 0;
-    flex-wrap: nowrap;
-  }
-  .af-title-controls .btn {
-    flex-shrink: 0;
-    white-space: nowrap;
-  }
+// a page's own search (BsSearch) or filters (the audit's) : at the row's left as a table's, the
+// buttons after them pushed right - the search itself, or the box it sits in on the page ; the
+// forms' toolbar (pages/index.vue) laid out as its own controls, its view button at the right
+.af-title-controls > .af-forms-toolbar {
+  display: contents !important;
+}
+.af-title-controls > :has(.af-search),
+.af-title-controls > :has(> .form-select) {
+  margin-right: auto;
+}
+// the form's page builds its own title line (pages/form.vue) : its buttons a row of their own
+// under the title too
+.af-page-head > .af-form-buttons {
+  flex: 0 0 100%;
+  margin-top: 0.5rem;
 }
 
 // the Required badge of an item the config must keep (the admin and default roles) : a border and
