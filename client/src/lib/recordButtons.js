@@ -41,6 +41,7 @@ const ROW_TYPES = {
   'secret-stores': 'secretstore',
   notifications: 'notificationchannel',
   syslog: 'syslogserver',
+  ldap: 'ldapdirectory',
 };
 
 /**
@@ -103,6 +104,9 @@ export function recordButtons(kind, id, isAdmin = true) {
       return [W.testConnection, ...(isAdmin ? editable([W.changeSecret]) : [])];
     case 'secret-stores':
       return [W.testConnection, ...editable()];
+    case 'ldap':
+      // Test connection ; the default directory has no Delete
+      return row?.name === 'default' ? [W.testConnection, W.save] : [W.testConnection, W.delete, W.save];
     case 'notifications':
     case 'syslog':
       return [W.sendTest, ...editable()];

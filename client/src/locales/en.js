@@ -527,6 +527,11 @@ export default {
       chatsettings_check_create: 'Chat provider tested',
       ldap_update: 'LDAP settings updated',
       ldap_check_create: 'LDAP connection tested',
+      ldapdirectory_create: 'LDAP directory added',
+      ldapdirectory_update: 'LDAP directory updated',
+      ldapdirectory_delete: 'LDAP directory deleted',
+      ldapdirectory_check_create: 'LDAP directory tested',
+      ldapdirectory_move_create: 'LDAP directory moved',
       lock_create: 'Designer lock taken',
       lock_delete: 'Designer lock released',
       logo_create: 'Logo uploaded',
@@ -724,6 +729,7 @@ export default {
     // the info icon after a page title, that shows the page's description
     aboutThisPage: 'About this page',
     clear: 'Clear',
+    remove: 'Remove',
     create: 'Create',
     cancel: 'Cancel',
     delete: 'Delete',
@@ -1662,6 +1668,25 @@ export default {
       label: 'LDAP',
       enableLdap: 'Enable LDAP',
       enableLdapHelp: 'Users sign in with their LDAP or Active Directory account',
+      nameHelp:
+        'Prefixes its members in roles : corp/jane, ldap/corp/Admins. The default directory keeps the short names and its own name.',
+      servers: 'Servers',
+      serversHelp:
+        'One per field (host, host:port or ldaps://host:port), tried in this order : when one cannot be reached, the next one is.',
+      addServer: 'Add server',
+      domains: 'Sign-in domains',
+      domainsHelp:
+        "One per field. A user signing in as user{'@'}domain with one of these goes straight to this directory.",
+      addDomain: 'Add domain',
+      enabled: 'Enabled',
+      disabled: 'Disabled',
+      directory: 'LDAP directory',
+      directoriesDescription:
+        "The LDAP and Active Directory directories users sign in with. A username is looked up in their order, unless it names a directory (corp\\jane) or one of its sign-in domains (jane{'@'}corp.example).",
+      editDirectory: 'Edit directory',
+      deleteDirectory: 'Delete directory',
+      moveUp: 'Move up',
+      moveDown: 'Move down',
       tabGeneral: 'General',
       tabServer: 'Server',
       tabUsers: 'Users',
@@ -1686,7 +1711,7 @@ export default {
         'User attribute that lists group memberships (e.g. memberOf). Set it to groups to use the result of the group search (Groups Search Base and Group Class).',
       groupsSearchBase: 'Groups search base',
       groupsSearchBaseDesc:
-        'Base DN where the group search looks for the groups that list the user as a member. The search only runs when Group Class is set as well, and it stores what it finds in the attribute groups, so set Groups Attribute to groups to use it. Leave empty to skip the search and read the groups from the user entry (e.g. memberOf).',
+        "Where to search for the user's groups (needs Group class, and Groups attribute set to groups). Empty: read them from the user entry.",
       groupClass: 'Group class',
       groupClassDesc: 'LDAP objectClass used for groups (e.g. groupOfNames, posixGroup).',
       groupMemberAttribute: 'Group member attribute',
@@ -1695,7 +1720,7 @@ export default {
       groupMemberUserAttributeDesc: 'User attribute matched against the group member attribute (e.g. dn, uid).',
       groupFilter: 'Group filter',
       groupFilterDesc:
-        'Regular expression matched against the group name. Leave empty to keep every group. Only matching groups are kept, and they are what the role mapping, the __user__ field in forms and the playbook all see.',
+        'Regular expression : only the groups whose name matches are kept, for roles, forms and playbooks. Empty keeps every group.',
     },
     mail: {
       label: 'Mail settings',
@@ -1933,6 +1958,7 @@ export default {
     clipboardHttpsRequired: 'Could not copy to clipboard, https required',
     ldap: {
       testTitle: 'Test LDAP connection',
+      test: 'Test',
       testDescription: 'Enter test credentials to verify the LDAP connection:',
       testUsername: 'Test username',
       testUsernamePlaceholder: 'Enter username',

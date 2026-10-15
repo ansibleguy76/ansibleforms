@@ -1,0 +1,105 @@
+<script setup>
+/******************************************************************/
+/*                                                                */
+/*  An LDAP directory's page (/settings/ldap/<id>), opened from   */
+/*  the directories' list : its fields in tabs, the tab kept in   */
+/*  the url -                                                     */
+/*    Details  its name (the default directory keeps its own),    */
+/*             and on or off                                      */
+/*    Server   its servers (the next one when one cannot be       */
+/*             reached), TLS, and how to bind to them             */
+/*    Users    where the users are, their attributes, and the     */
+/*             sign-in domains that go straight to it             */
+/*    Groups   how their groups are found                         */
+/*  Test connection, Delete (but the default directory's) and     */
+/*  Save top right.                                               */
+/*                                                                */
+/******************************************************************/
+import { ref, computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import axios from 'axios';
+import { toast } from 'vue-sonner';
+import { useI18n } from 'vue-i18n';
+import Profile from '@/lib/Profile';
+import getSettings from '@/config/settings';
+
+const { t } = useI18n();
+const route = useRoute();
+const router = useRouter();
+const authenticated = ref(false);
+
+const directoryId = computed(() => String(route.params.id || ''));
+// a directory's fields and actions (config/settings.js ldap), on its record : the list first in
+// the title (LDAP › corp › Server)
+const settings = computed(() => ({
+  ...getSettings(t).ldap,
+  type: `ldapdirectory/${directoryId.value}`,
+  recordTitle: 'name',
+  parentCrumbs: [{ title: t('sidebar.ldap'), icon: 'address-book', to: '/settings/ldap' }],
+}));
+// the page in tabs : on or off and where it stands, the servers and the binding, the users, the
+// groups
+const tabs = computed(() => [
+  { key: 'general', label: t('settings.common.tabDetails'), icon: 'sliders' },
+  { key: 'server', label: t('settings.ldap.tabServer'), icon: 'server' },
+  { key: 'users', label: t('settings.ldap.tabUsers'), icon: 'user' },
+  { key: 'groups', label: t('settings.ldap.tabGroups'), icon: 'users' },
+]);
+
+// the directory tested, its fields as they are on the page (saved or not)
+const testing = ref(null);
+function openTest(item) {
+  testing.value = { ...item, id: directoryId.value };
+}
+
+// Delete asks first
+const deleting = ref(null);
+/**
+ * Deletes the directory, then goes back to the directories.
+ */
+async function deleteDirectory() {
+  const name = deleting.value?.name;
+  deleting.value = null;
+  try {
+    await axios.delete(`/api/v2/ldapdirectory/${encodeURIComponent(directoryId.value)}`);
+    toast.success(`${name} ${t('settings.common.isDeleted')}`);
+    router.push('/settings/ldap');
+  } catch (err) {
+    toast.error(err.response?.data?.details || err.response?.data?.error || err.message);
+  }
+}
+
+onMounted(async () => {
+  authenticated.value = !!(await Profile.load());
+});
+</script>
+<template>
+  <AppLdapTestDialog v-if="testing" :directory="testing" @close="testing = null" />
+  <BsModal v-if="deleting" size="md" @close="deleting = null" icon="trash">
+    <template #title> {{ t('common.delete') }} {{ deleting.name }} </template>
+    <template #default>
+      <p class="mb-0 fs-6 user-select-none">
+        {{ t('settings.common.deleteConfirm') }} <strong>{{ deleting.name }}</strong
+        >?
+      </p>
+    </template>
+    <template #footer>
+      <BsButton icon="trash" @click="deleteDirectory()">{{ t('common.delete') }}</BsButton>
+    </template>
+  </BsModal>
+  <AppSettingsPage>
+    <AppAdminSingle
+      v-if="authenticated"
+      :key="directoryId"
+      apiVersion="2"
+      :settings="settings"
+      :tabs="tabs"
+      @test="openTest"
+      @delete="(item) => (deleting = item)"
+    />
+  </AppSettingsPage>
+</template>
+<route lang="yaml">
+meta:
+  layout: settings
+</route>

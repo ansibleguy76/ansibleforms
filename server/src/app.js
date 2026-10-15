@@ -50,6 +50,7 @@ import loginRoutesv2 from "./routes/v2/login.routes.js";
 import tokenRoutesv2 from "./routes/v2/token.routes.js";
 import jobRoutesv2 from "./routes/v2/job.routes.js";
 import ldapRoutes from "./routes/v2/ldap.routes.js";
+import ldapDirectoryRoutes from "./routes/v2/ldapDirectory.routes.js";
 import chatSettingsRoutes from "./routes/v2/chatSettings.routes.js";
 import chatRoutes from "./chat/router.js";
 import oauth2Routes from "./routes/v2/oauth2.routes.js";
@@ -261,6 +262,7 @@ const load = async (app) => {
   app.use(`/api/v2/favicon`, cors(), faviconRoutesv2);
   app.use(`/api/v2/sshkey`, cors(), authobj, Middleware.checkConnectionsMiddleware, sshRoutesv2);
   app.use(`/api/v2/ldap`, cors(), authobj, Middleware.checkSettingsMiddleware, ldapRoutes);
+  app.use(`/api/v2/ldapdirectory`, cors(), authobj, Middleware.checkSettingsMiddleware, ldapDirectoryRoutes);
   app.use(`/api/v2/chatsettings`, cors(), authobj, Middleware.checkConnectionsMiddleware, chatSettingsRoutes);
   app.use(`/api/v2/oauth2`, cors(), authobj, Middleware.checkSettingsMiddleware, oauth2Routes);
   app.use(`/api/v2/credential`, cors(), authobj, Middleware.checkConnectionsMiddleware, credentialRoutesv2);

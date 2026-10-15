@@ -3,7 +3,6 @@ import { EVERYONE_ROLES, everyoneEntry } from "../lib/defaultRole.js";
 import { memberRefs } from "../lib/directoryTypes.js";
 import crypto from "../lib/crypto.js";
 import logger from "../lib/logger.js";
-import { authenticate as ldapAuthentication } from "ldap-authentication";
 import Ldap from "./ldap.model.js";
 import Form from "./form.model.js";
 import yaml from "yaml";
@@ -429,8 +428,9 @@ static getGroups(user, groupObj, ldapConfig = {}) {
     // the pattern an admin writes here is the same one they would write for Entra ID or
     // OIDC (login.vue filters those before the server prefixes them too). A directory user
     // in a hundred AD groups otherwise carries all hundred through every role lookup, every
-    // token and every job.
-    return helpers.filterGroups(groups, ldapConfig.groupfilter).map((g) => "ldap/" + g);
+    // token and every job. A group of a directory other than the default one carries its
+    // name : ldap/corp/Admins (Ldap.qualify).
+    return helpers.filterGroups(groups, ldapConfig.groupfilter).map((g) => "ldap/" + Ldap.qualify(ldapConfig, g));
   } else if (user.type == "local") {
     var localgroups = groupObj.split(",");
     localgroups.forEach(function (v) {
@@ -445,91 +445,9 @@ static getGroups(user, groupObj, ldapConfig = {}) {
 }
 
 static checkLdap(username, password) {
-  return Ldap.find()
-    .then((ldapConfig) => {
-      if (ldapConfig.enable == 1) {
-        return ldapConfig;
-      } else {
-        throw "No ldap configured or not enabled";
-      }
-    })
-    .then(async (ldapConfig) => {
-      // auth with admin
-      var badCertificates = false;
-      let options = {
-        ldapOpts: {
-          url: (ldapConfig.enable_tls == 1 ? "ldaps" : "ldap") + "://" + ldapConfig.server + ":" + ldapConfig.port,
-          tlsOptions: {},
-        },
-        adminDn: ldapConfig.bind_user_dn,
-        adminPassword: ldapConfig.bind_user_pw,
-        userPassword: password,
-        userSearchBase: ldapConfig.search_base,
-        usernameAttribute: ldapConfig.username_attribute,
-        username: username,
-        // starttls: false
-      };
-      // advanced ldap properties, applied unconditionally to mirror Ldap.check
-      if (ldapConfig.groups_search_base) {
-        options.groupsSearchBase = ldapConfig.groups_search_base;
-      }
-      if (ldapConfig.group_class) {
-        options.groupClass = ldapConfig.group_class;
-      }
-      if (ldapConfig.group_member_attribute) {
-        options.groupMemberAttribute = ldapConfig.group_member_attribute;
-      }
-      if (ldapConfig.group_member_user_attribute) {
-        options.groupMemberUserAttribute = ldapConfig.group_member_user_attribute;
-      }
-      // console.log(options)
-      // ldap-authentication has bad cert check, so we check first !!
-      if (ldapConfig.enable_tls && !(ldapConfig.ignore_certs == 1)) {
-        if (!helpers.checkCertificate(ldapConfig.cert)) {
-          badCertificates = true;
-        }
-        if (!helpers.checkCertificate(ldapConfig.ca_bundle)) {
-          badCertificates = true;
-        }
-      } else {
-        ldapConfig.cert = "";
-        ldapConfig.ca_bundle = "";
-      }
-      // enable tls/ldaps
-      if (ldapConfig.enable_tls == 1) {
-        options.ldapOpts.tlsOptions.requestCert = ldapConfig.enable_tls == 1;
-        if (ldapConfig.cert != "") {
-          options.ldapOpts.tlsOptions.cert = ldapConfig.cert;
-        }
-        if (ldapConfig.ca_bundle != "") {
-          options.ldapOpts.tlsOptions.ca = ldapConfig.ca_bundle;
-        }
-        options.ldapOpts.tlsOptions.rejectUnauthorized = !(ldapConfig.ignore_certs == 1);
-        logger.info("use tls : " + (ldapConfig.enable_tls == 1));
-        logger.info("reject invalid certificates : " + !(ldapConfig.ignore_certs == 1));
-      }
-
-      if (badCertificates) {
-        throw "Certificate is not valid";
-      } else {
-        logger.info(`Checking ldap for user ${username}`);
-        // logger.debug(JSON.stringify(options))
-        try {
-          return await ldapAuthentication(options);
-        } catch (err) {
-          // allow UPN-style logins (user@domain.com) against directories whose
-          // username_attribute holds the bare name : retry with the domain
-          // stripped, but only when the search found no user (never on a wrong
-          // password, to avoid double bind attempts and lockout counters)
-          const local = username.includes("@") ? username.split("@")[0] : "";
-          if (local && Ldap.isUserNotFound(err?.message)) {
-            logger.info(`Ldap user '${username}' not found, retrying as '${local}'`);
-            return await ldapAuthentication({ ...options, username: local });
-          }
-          throw err;
-        }
-      }
-    })
+  // across the directories, the first that knows the user deciding (Ldap.signIn) : resolves
+  // { directory, entry }
+  return Ldap.signIn(username, password)
     .catch((err) => {
       var em;
       if (err.message) {

@@ -379,7 +379,7 @@ export const SECRET_STORE_TYPES = [
 ];
 
 export default function getSettings(t) {
-  return {
+  const all = {
     users: {
       type: 'user',
       route: 'users',
@@ -1832,22 +1832,47 @@ export default function getSettings(t) {
       label: t('settings.ldap.label'),
       description: t('settings.ldap.description'),
       icon: 'address-book',
-      actions: [{ name: 'test', title: t('settings.common.testConnection'), icon: 'plug', dependency: 'enable' }],
+      // Enabled under the name, as an SSO provider's Active
+      togglesLast: true,
+      // a directory's page (pages/admin/ldap-directory.vue) : its test, and Delete but on the default
+      // one, which is turned off instead
+      actions: [
+        { name: 'test', title: t('settings.common.testConnection'), icon: 'plug', dependency: 'enable' },
+        { name: 'delete', title: t('common.delete'), icon: 'trash', showWhen: (item) => item.name !== 'default' },
+      ],
       fields: [
         {
           key: 'enable',
           tab: 'general',
-          label: t('settings.ldap.enableLdap'),
+          label: t('settings.ldap.enabled'),
           help: t('settings.ldap.enableLdapHelp'),
           type: 'checkbox',
           isToggle: true,
+        },
+        // the directory : its name prefixes its members (but the default one's) ; its place in the
+        // lookup order is its place in the list (Move up, Move down)
+        {
+          key: 'name',
+          tab: 'general',
+          icon: 'tag',
+          line: 0,
+          label: t('settings.fields.name'),
+          help: t('settings.ldap.nameHelp'),
+          placeholder: 'corp',
+          required: true,
+          disabledWhen: (item, saved) => saved.name === 'default',
         },
         {
           key: 'server',
           tab: 'server',
           icon: 'server',
-          line: 0,
-          label: t('settings.fields.server'),
+          line: 1,
+          // one per input, stored comma separated ; tried in order
+          type: 'list',
+          addLabel: t('settings.ldap.addServer'),
+          label: t('settings.ldap.servers'),
+          help: t('settings.ldap.serversHelp'),
+          placeholder: 'dc1.corp.example',
           required: true,
           dependency: 'enable',
         },
@@ -1856,7 +1881,7 @@ export default function getSettings(t) {
           tab: 'server',
           icon: 'arrows-alt-v',
           type: 'number',
-          line: 0,
+          line: 2,
           label: t('settings.fields.port'),
           required: true,
           dependency: 'enable',
@@ -1867,7 +1892,7 @@ export default function getSettings(t) {
           label: t('settings.ldap.enableTls'),
           help: t('settings.ldap.enableTlsDesc'),
           type: 'checkbox',
-          line: 1,
+          line: 3,
           dependency: 'enable',
           onChange: (val, item) => {
             if (Number(item.port) === 389 || Number(item.port) === 636) item.port = val ? 636 : 389;
@@ -1880,7 +1905,7 @@ export default function getSettings(t) {
           label: t('settings.ldap.ignoreCerts'),
           help: t('settings.ldap.ignoreCertsDesc'),
           type: 'checkbox',
-          line: 1,
+          line: 4,
           dependency: 'enable_tls',
         },
         {
@@ -1889,7 +1914,7 @@ export default function getSettings(t) {
           hideWhenDisabled: true,
           icon: 'certificate',
           type: 'textarea',
-          line: 2,
+          line: 5,
           label: t('settings.fields.certificate'),
           required: true,
           dependency: 'ignore_certs',
@@ -1902,7 +1927,7 @@ export default function getSettings(t) {
           hideWhenDisabled: true,
           icon: 'certificate',
           type: 'textarea',
-          line: 2,
+          line: 6,
           label: t('settings.fields.caBundle'),
           required: true,
           dependency: 'ignore_certs',
@@ -1913,7 +1938,7 @@ export default function getSettings(t) {
           key: 'search_base',
           tab: 'users',
           icon: 'search',
-          line: 3,
+          line: 100,
           label: t('settings.ldap.searchBase'),
           help: t('settings.ldap.searchBaseDesc'),
           required: true,
@@ -1923,7 +1948,7 @@ export default function getSettings(t) {
           key: 'mail_attribute',
           tab: 'users',
           icon: 'envelope',
-          line: 3,
+          line: 102,
           label: t('settings.ldap.mailAttribute'),
           help: t('settings.ldap.mailAttributeDesc'),
           required: true,
@@ -1933,7 +1958,7 @@ export default function getSettings(t) {
           key: 'bind_user_dn',
           tab: 'server',
           icon: 'user',
-          line: 4,
+          line: 9,
           label: t('settings.ldap.bindUserDn'),
           help: t('settings.ldap.bindUserDnDesc'),
           required: true,
@@ -1943,7 +1968,7 @@ export default function getSettings(t) {
           key: 'bind_user_pw',
           tab: 'server',
           icon: 'lock',
-          line: 4,
+          line: 10,
           label: t('settings.ldap.bindUserPassword'),
           help: t('settings.ldap.bindUserPasswordDesc'),
           type: 'password',
@@ -1951,10 +1976,23 @@ export default function getSettings(t) {
           dependency: 'enable',
         },
         {
+          key: 'domains',
+          tab: 'users',
+          icon: 'at',
+          // one per input, stored comma separated
+          type: 'list',
+          addLabel: t('settings.ldap.addDomain'),
+          line: 103,
+          label: t('settings.ldap.domains'),
+          help: t('settings.ldap.domainsHelp'),
+          placeholder: 'corp.example',
+          dependency: 'enable',
+        },
+        {
           key: 'username_attribute',
           tab: 'users',
           icon: 'image-portrait',
-          line: 5,
+          line: 101,
           label: t('settings.ldap.usernameAttribute'),
           help: t('settings.ldap.usernameAttributeDesc'),
           required: true,
@@ -1964,7 +2002,7 @@ export default function getSettings(t) {
           key: 'groups_attribute',
           tab: 'groups',
           icon: 'users',
-          line: 5,
+          line: 13,
           label: t('settings.ldap.groupsAttribute'),
           help: t('settings.ldap.groupsAttributeDesc'),
           required: true,
@@ -1974,7 +2012,7 @@ export default function getSettings(t) {
           key: 'groups_search_base',
           tab: 'groups',
           icon: 'users-viewfinder',
-          line: 6,
+          line: 14,
           label: t('settings.ldap.groupsSearchBase'),
           help: t('settings.ldap.groupsSearchBaseDesc'),
           required: false,
@@ -1984,7 +2022,7 @@ export default function getSettings(t) {
           key: 'group_class',
           tab: 'groups',
           icon: 'users-rectangle',
-          line: 6,
+          line: 15,
           label: t('settings.ldap.groupClass'),
           help: t('settings.ldap.groupClassDesc'),
           required: false,
@@ -1994,7 +2032,7 @@ export default function getSettings(t) {
           key: 'group_member_attribute',
           tab: 'groups',
           icon: 'users-line',
-          line: 7,
+          line: 16,
           label: t('settings.ldap.groupMemberAttribute'),
           help: t('settings.ldap.groupMemberAttributeDesc'),
           required: false,
@@ -2004,7 +2042,7 @@ export default function getSettings(t) {
           key: 'group_member_user_attribute',
           tab: 'groups',
           icon: 'user-group',
-          line: 7,
+          line: 17,
           label: t('settings.ldap.groupMemberUserAttribute'),
           help: t('settings.ldap.groupMemberUserAttributeDesc'),
           required: false,
@@ -2014,7 +2052,7 @@ export default function getSettings(t) {
           key: 'groupfilter',
           tab: 'groups',
           icon: 'filter',
-          line: 8,
+          line: 18,
           label: t('settings.ldap.groupFilter'),
           help: t('settings.ldap.groupFilterDesc'),
           required: false,
@@ -2055,7 +2093,7 @@ export default function getSettings(t) {
           key: 'model',
           tab: 'model-provider',
           icon: 'microchip',
-          line: 0,
+          line: 1,
           label: t('settings.chat.model'),
           help: t('settings.chat.modelHelp'),
           placeholder: 'claude-sonnet-5-5 / gpt-5 / llama3.3',
@@ -2066,7 +2104,7 @@ export default function getSettings(t) {
           key: 'base_url',
           tab: 'model-provider',
           icon: 'link',
-          line: 1,
+          line: 2,
           label: t('settings.chat.baseUrl'),
           help: t('settings.chat.baseUrlHelp'),
           placeholder: 'https://<proxy>/v1',
@@ -2078,7 +2116,7 @@ export default function getSettings(t) {
           key: 'credential',
           tab: 'model-provider',
           icon: 'key',
-          line: 1,
+          line: 3,
           type: 'select',
           label: t('settings.chat.credential'),
           help: t('settings.chat.credentialHelp'),
@@ -2089,7 +2127,7 @@ export default function getSettings(t) {
           key: 'auth_type',
           tab: 'model-provider',
           icon: 'id-card',
-          line: 2,
+          line: 4,
           type: 'select',
           label: t('settings.chat.authType'),
           help: t('settings.chat.authTypeHelp'),
@@ -2106,7 +2144,7 @@ export default function getSettings(t) {
           key: 'api_version',
           tab: 'model-provider',
           icon: 'code-branch',
-          line: 2,
+          line: 5,
           label: t('settings.chat.apiVersion'),
           help: t('settings.chat.apiVersionHelp'),
           placeholder: '2024-10-21',
@@ -2116,7 +2154,7 @@ export default function getSettings(t) {
           key: 'request_user',
           tab: 'model-provider',
           icon: 'user',
-          line: 2,
+          line: 6,
           label: t('settings.chat.user'),
           help: t('settings.chat.userHelp'),
           dependency: 'provider',
@@ -2125,7 +2163,7 @@ export default function getSettings(t) {
           key: 'extra_headers',
           tab: 'model-provider',
           icon: 'list',
-          line: 3,
+          line: 7,
           type: 'textarea',
           label: t('settings.chat.extraHeaders'),
           help: t('settings.chat.extraHeadersHelp'),
@@ -2136,7 +2174,7 @@ export default function getSettings(t) {
           key: 'max_turns',
           tab: 'limits',
           icon: 'comments',
-          line: 4,
+          line: 8,
           type: 'number',
           label: t('settings.chat.maxTurns'),
           help: t('settings.chat.maxTurnsHelp'),
@@ -2146,7 +2184,7 @@ export default function getSettings(t) {
           key: 'max_tool_rounds',
           tab: 'limits',
           icon: 'arrows-rotate',
-          line: 4,
+          line: 9,
           type: 'number',
           label: t('settings.chat.maxToolRounds'),
           help: t('settings.chat.maxToolRoundsHelp'),
@@ -2156,7 +2194,7 @@ export default function getSettings(t) {
           key: 'timeout_seconds',
           tab: 'limits',
           icon: 'clock',
-          line: 4,
+          line: 10,
           type: 'number',
           label: t('settings.chat.timeout'),
           help: t('settings.chat.timeoutHelp'),
@@ -2165,7 +2203,7 @@ export default function getSettings(t) {
         {
           key: 'ignore_certs',
           tab: 'model-provider',
-          line: 5,
+          line: 11,
           type: 'checkbox',
           label: t('settings.chat.ignoreCerts'),
           help: t('settings.chat.ignoreCertsHelp'),
@@ -3537,5 +3575,97 @@ export default function getSettings(t) {
         { key: 'description', label: t('settings.fields.description'), type: 'text' },
       ],
     },
+  };
+  // the LDAP directories' list : a directory's own fields (all.ldap), its tabs the New dialog's
+  // steps
+  all.ldapDirectories = ldapDirectories(t, all.ldap);
+  return all;
+}
+
+// a new directory's values : on, the usual Active Directory port and attributes
+const NEW_DIRECTORY = { enable: true, port: 389, username_attribute: 'sAMAccountName', groups_attribute: 'memberOf' };
+
+/**
+ * Settings > Access > LDAP : the directories, each opening its own page (ldap-directory.vue). The
+ * list shows its name, servers, whether it is on and its lookup order ; New asks every field of a
+ * directory, its page's tabs as steps.
+ *
+ * Args:
+ *   t (function): the translation function.
+ *   ldap (object): a directory's settings (fields, each in its tab).
+ *
+ * Returns:
+ *   object: the list's settings (AppAdminMulti).
+ */
+function ldapDirectories(t, ldap) {
+  // the columns : the name, the servers, on or off ; never sorted, so the list is always in the
+  // lookup order
+  const column = {
+    name: { sortable: false, filterable: true },
+    server: { sortable: false, filterable: true },
+    enable: {
+      sortable: false,
+      label: t('settings.ldap.enabled'),
+      render: (v) => (v ? pill(PILL.green, t('settings.ldap.enabled')) : pill(PILL.grey, t('settings.ldap.disabled'))),
+    },
+  };
+  // the columns first, in their order ; the dialog's fields keep theirs within each step
+  const COLUMNS = ['name', 'server', 'enable'];
+  const columnOrder = (key) => (COLUMNS.includes(key) ? COLUMNS.indexOf(key) : COLUMNS.length);
+  return {
+    pageTitle: t('sidebar.ldap'),
+    type: 'ldapdirectory',
+    label: t('settings.ldap.directory'),
+    description: t('settings.ldap.directoriesDescription'),
+    icon: 'address-book',
+    selectable: false,
+    steps: [
+      { key: 'general', label: t('settings.common.tabDetails') },
+      { key: 'server', label: t('settings.ldap.tabServer') },
+      { key: 'users', label: t('settings.ldap.tabUsers') },
+      { key: 'groups', label: t('settings.ldap.tabGroups') },
+    ],
+    openPage: (item) => `/settings/ldap/${item.id}`,
+    actions: [
+      { name: 'edit', title: t('settings.ldap.editDirectory'), icon: 'pencil', color: 'edit' },
+      { name: 'test', title: t('settings.common.testConnection'), icon: 'plug', color: 'test', dividerBefore: true },
+      {
+        // its place in the lookup order : one up, one down (the page moves it, ldap.vue)
+        name: 'move_up',
+        title: t('settings.ldap.moveUp'),
+        icon: 'arrow-up',
+        color: 'change',
+        dividerBefore: true,
+        enabledWhen: (r) => !r.isFirst,
+      },
+      {
+        name: 'move_down',
+        title: t('settings.ldap.moveDown'),
+        icon: 'arrow-down',
+        color: 'change',
+        enabledWhen: (r) => !r.isLast,
+      },
+      {
+        // never the default directory : it is turned off instead
+        name: 'delete',
+        title: t('settings.ldap.deleteDirectory'),
+        icon: 'trash',
+        color: 'delete',
+        enabledWhen: (r) => r.name !== 'default',
+      },
+    ],
+    fields: [
+      { key: 'id', hidden: true, noInput: true, noTable: true },
+      ...[...ldap.fields]
+        .sort((a, b) => columnOrder(a.key) - columnOrder(b.key))
+        .map(({ tab, isToggle: _toggle, disabledWhen: _rule, ...f }) => ({
+          ...f,
+          step: tab,
+          // a new directory has no name to keep : the default one exists already
+          ...(column[f.key] || { noTable: true }),
+          // a new one : on, the usual Active Directory port and attributes
+          ...(NEW_DIRECTORY[f.key] !== undefined ? { initial: () => NEW_DIRECTORY[f.key] } : {}),
+        })),
+    ],
   };
 }

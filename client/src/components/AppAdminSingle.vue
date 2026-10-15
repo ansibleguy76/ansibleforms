@@ -5,7 +5,13 @@
 /*  Create a single admin page with a form and update/save button */
 /*                                                                */
 /*  @props:                                                       */
-/*      settings: Object                                          */
+/*      settings: Object - its type (the api path), fields and    */
+/*            actions ; a record of a list (an LDAP directory)    */
+/*            adds parentCrumbs (the steps before it, the list's) */
+/*            and recordTitle (the field naming it in the title)  */
+/*            ; a field's disabledWhen (item, saved) and an       */
+/*            action's showWhen (item) decide from the record ;   */
+/*            togglesLast puts a tab's switches under its fields  */
 /*      tabs: Array of { key, label, icon } - the form in tabs :  */
 /*            each field names its tab (field.tab, the first tab  */
 /*            when it names none) ; a slot tab-top-<key> above a  */
@@ -21,6 +27,7 @@
 /*      import: Function                                          */
 /*      saved: Function (after a successful update)               */
 /*      saveExtra: Save was pressed with extraDirty               */
+/*      delete: the record's Delete action (its page deletes it)  */
 /*                                                                */
 /*  field.valuesFrom: { url, filter?(record) } - a dropdown whose  */
 /*      choices are records of the api (a credential), by name,    */
@@ -61,7 +68,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['test', 'import', 'saved', 'saveExtra']);
+const emit = defineEmits(['test', 'import', 'saved', 'saveExtra', 'delete']);
 
 // the tab shown, kept in the address (/settings/ldap/server, composables/useRouteTab.js)
 const firstTab = computed(() => props.tabs[0]?.key || '');
@@ -77,8 +84,13 @@ const { activeTab, tabLink } = props.tabs.length
 const crumbs = computed(() => {
   const tab = props.tabs.find((x) => x.key === activeTab.value);
   if (!tab) return [];
-  const title = props.settings.pageTitle || objectLabel.value;
+  // a record of a list : the list's steps first, then the record by its name (a grey bar until
+  // it is read) ; else the page's own title
+  const title = props.settings.recordTitle
+    ? (originalItem.value?.[props.settings.recordTitle] ?? null)
+    : props.settings.pageTitle || objectLabel.value;
   return [
+    ...(props.settings.parentCrumbs || []),
     { title, icon: objectIcon.value, to: tabLink(firstTab.value) },
     { title: tab.label, icon: tab.icon, to: tabLink(tab.key) },
   ];
@@ -176,6 +188,10 @@ async function updateItem() {
 }
 
 function isDisabled(field) {
+  // a rule of the record's own (the default LDAP directory keeps its name)
+  if (typeof field.disabledWhen === 'function' && field.disabledWhen(item.value, originalItem.value || {})) {
+    return true;
+  }
   if (!field.dependency) {
     return false;
   }
@@ -333,7 +349,7 @@ defineExpose({
       <BsButton
         v-for="action in actions"
         :key="action.name"
-        v-show="!action.dependency || item[action.dependency]"
+        v-show="(!action.dependency || item[action.dependency]) && (!action.showWhen || action.showWhen(item))"
         :icon="action.icon"
         @click="doEmit(action.name)"
         >{{ action.title }}</BsButton
@@ -352,21 +368,25 @@ defineExpose({
           {{ t('settings.common.seedManagedNotice') }}
         </div>
         <slot :name="'tab-top-' + tab.key"></slot>
-        <!-- a toggle as the switches of the MCP and chat pages : its title, the switch, its help -->
-        <div v-for="field in toggleFields.filter((f) => tabOf(f) === tab.key)" :key="field.key" class="mb-3">
-          <label class="form-label fw-bold af-toggle-title" :for="'tg-' + field.key">{{ field.label }}</label>
-          <div class="form-check form-switch mb-0">
-            <input
-              :id="'tg-' + field.key"
-              v-model="item[field.key]"
-              class="form-check-input"
-              type="checkbox"
-              role="switch"
-              :disabled="isManaged || locked"
-            />
+        <!-- a toggle as the switches of the MCP and chat pages : its title, the switch, its help ; above
+             the tab's fields, or under them (settings.togglesLast : a record's Enabled under its name,
+             as an SSO provider's Active) -->
+        <template v-if="!settings.togglesLast">
+          <div v-for="field in toggleFields.filter((f) => tabOf(f) === tab.key)" :key="field.key" class="mb-3">
+            <label class="form-label fw-bold af-toggle-title" :for="'tg-' + field.key">{{ field.label }}</label>
+            <div class="form-check form-switch mb-0">
+              <input
+                :id="'tg-' + field.key"
+                v-model="item[field.key]"
+                class="form-check-input"
+                type="checkbox"
+                role="switch"
+                :disabled="isManaged || locked"
+              />
+            </div>
+            <div v-if="field.help" class="form-text">{{ field.help }}</div>
           </div>
-          <div v-if="field.help" class="form-text">{{ field.help }}</div>
-        </div>
+        </template>
         <template v-for="(cols, rIdx) in rowsOf(tab.key)" :key="rIdx">
           <div v-if="cols && cols.some((f) => isVisible(f))" class="row">
             <div
@@ -375,7 +395,22 @@ defineExpose({
               :key="field.key"
               v-show="isVisible(field)"
             >
+              <!-- several values, one per input (an LDAP directory's servers) -->
+              <BsInputList
+                v-if="field.type === 'list'"
+                v-model="$v.item[field.key].$model"
+                :label="field.label"
+                :help="field.help"
+                :icon="field.icon"
+                :placeholder="field.placeholder"
+                :required="field.required"
+                :addLabel="field.addLabel"
+                :disabled="disabledFields[field.key]"
+                :hasError="$v.item[field.key].$invalid && $v.item[field.key].$dirty && !disabledFields[field.key]"
+                :errors="$v.item[field.key].$errors"
+              />
               <BsInput
+                v-else
                 :isFloating="false"
                 :placeholder="field.placeholder"
                 :description="field.description"
@@ -393,6 +428,22 @@ defineExpose({
                 :errors="$v.item[field.key].$errors"
               />
             </div>
+          </div>
+        </template>
+        <template v-if="settings.togglesLast">
+          <div v-for="field in toggleFields.filter((f) => tabOf(f) === tab.key)" :key="field.key" class="mb-3">
+            <label class="form-label fw-bold af-toggle-title" :for="'tg-' + field.key">{{ field.label }}</label>
+            <div class="form-check form-switch mb-0">
+              <input
+                :id="'tg-' + field.key"
+                v-model="item[field.key]"
+                class="form-check-input"
+                type="checkbox"
+                role="switch"
+                :disabled="isManaged || locked"
+              />
+            </div>
+            <div v-if="field.help" class="form-text">{{ field.help }}</div>
           </div>
         </template>
       </div>
@@ -428,7 +479,22 @@ defineExpose({
               :key="field.key"
               v-show="isVisible(field)"
             >
+              <!-- several values, one per input (an LDAP directory's servers) -->
+              <BsInputList
+                v-if="field.type === 'list'"
+                v-model="$v.item[field.key].$model"
+                :label="field.label"
+                :help="field.help"
+                :icon="field.icon"
+                :placeholder="field.placeholder"
+                :required="field.required"
+                :addLabel="field.addLabel"
+                :disabled="disabledFields[field.key]"
+                :hasError="$v.item[field.key].$invalid && $v.item[field.key].$dirty && !disabledFields[field.key]"
+                :errors="$v.item[field.key].$errors"
+              />
               <BsInput
+                v-else
                 :isFloating="false"
                 :placeholder="field.placeholder"
                 :description="field.description"

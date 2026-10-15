@@ -528,6 +528,11 @@ export default {
       chatsettings_check_create: 'チャットプロバイダーをテスト',
       ldap_update: 'LDAP 設定を更新',
       ldap_check_create: 'LDAP 接続をテスト',
+      ldapdirectory_create: 'LDAP ディレクトリを追加しました',
+      ldapdirectory_update: 'LDAP ディレクトリを更新しました',
+      ldapdirectory_delete: 'LDAP ディレクトリを削除しました',
+      ldapdirectory_check_create: 'LDAP ディレクトリをテストしました',
+      ldapdirectory_move_create: 'LDAP ディレクトリを移動しました',
       lock_create: 'デザイナーのロックを取得',
       lock_delete: 'デザイナーのロックを解放',
       logo_create: 'ロゴをアップロード',
@@ -726,6 +731,7 @@ export default {
     // the info icon after a page title, that shows the page's description
     aboutThisPage: 'このページについて',
     clear: 'クリア',
+    remove: '削除',
     create: '作成',
     cancel: 'キャンセル',
     delete: '削除',
@@ -1573,6 +1579,25 @@ export default {
       label: 'LDAP',
       enableLdap: 'LDAP を有効にする',
       enableLdapHelp: 'ユーザーは LDAP または Active Directory のアカウントでサインインします',
+      nameHelp:
+        'ロールでメンバーの前に付けます：corp/jane、ldap/corp/Admins。default ディレクトリは短い名前と自身の名前を保持します。',
+      servers: 'サーバー',
+      serversHelp:
+        '1 フィールドに 1 つ（host、host:port、ldaps://host:port）。この順に試し、接続できない場合は次を試します。',
+      addServer: 'サーバーを追加',
+      domains: 'サインインドメイン',
+      domainsHelp:
+        "1 フィールドに 1 つ。これらのドメインで ユーザー{'@'}ドメイン としてサインインするとこのディレクトリに直接進みます。",
+      addDomain: 'ドメインを追加',
+      enabled: '有効',
+      disabled: '無効',
+      directory: 'LDAP ディレクトリ',
+      directoriesDescription:
+        "ユーザーがサインインに使う LDAP と Active Directory のディレクトリ。ユーザー名はその順で検索されます。ただしディレクトリ（corp\\jane）やサインインドメイン（jane{'@'}corp.example）を指定した場合は除きます。",
+      editDirectory: 'ディレクトリを編集',
+      deleteDirectory: 'ディレクトリを削除',
+      moveUp: '上へ移動',
+      moveDown: '下へ移動',
       tabGeneral: '全般',
       tabServer: 'サーバー',
       tabUsers: 'ユーザー',
@@ -1597,7 +1622,7 @@ export default {
         '所属グループを列挙するユーザー属性です (例: memberOf)。グループ検索 (グループ検索ベースとグループクラス) の結果を使う場合は groups を指定してください。',
       groupsSearchBase: 'グループ検索ベース',
       groupsSearchBaseDesc:
-        'ユーザーをメンバーとして含むグループを、グループ検索が探すベース DN です。検索はグループクラスも設定されている場合にのみ実行され、結果は属性 groups に格納されます。使用するにはグループ属性を groups に設定してください。空欄にすると検索は行われず、グループはユーザーエントリ (例: memberOf) から読み取られます。',
+        'ユーザーのグループを検索する場所（グループクラスと、グループ属性を groups にする必要があります）。空：ユーザーエントリから読み取ります。',
       groupClass: 'グループクラス',
       groupClassDesc: 'グループに使用する LDAP objectClass です (例: groupOfNames、posixGroup)。',
       groupMemberAttribute: 'グループメンバー属性',
@@ -1606,7 +1631,7 @@ export default {
       groupMemberUserAttributeDesc: 'グループメンバー属性と照合するユーザー属性です (例: dn、uid)。',
       groupFilter: 'グループフィルター',
       groupFilterDesc:
-        'グループ名と照合する正規表現です。すべてのグループを残す場合は空欄にしてください。一致したグループだけが残り、ロールのマッピング、フォームの __user__ フィールド、playbook のすべてにはそのグループだけが見えます。',
+        '正規表現：名前が一致するグループだけを残し、ロール、フォーム、プレイブックで使います。空ならすべて残します。',
     },
     runners: {
       label: 'ランナー',
@@ -1931,6 +1956,7 @@ export default {
     clipboardHttpsRequired: 'クリップボードにコピーできませんでした。https が必要です',
     ldap: {
       testTitle: 'LDAP 接続のテスト',
+      test: 'テスト',
       testDescription: 'LDAP 接続を確認するためのテスト用の認証情報を入力してください:',
       testUsername: 'テスト用ユーザー名',
       testUsernamePlaceholder: 'ユーザー名を入力',

@@ -535,6 +535,11 @@ export default {
       chatsettings_check_create: 'Fornecedor do chat testado',
       ldap_update: 'Definições LDAP atualizadas',
       ldap_check_create: 'Ligação LDAP testada',
+      ldapdirectory_create: 'Diretório LDAP adicionado',
+      ldapdirectory_update: 'Diretório LDAP atualizado',
+      ldapdirectory_delete: 'Diretório LDAP eliminado',
+      ldapdirectory_check_create: 'Diretório LDAP testado',
+      ldapdirectory_move_create: 'Diretório LDAP movido',
       lock_create: 'Bloqueio do designer obtido',
       lock_delete: 'Bloqueio do designer libertado',
       logo_create: 'Logótipo carregado',
@@ -733,6 +738,7 @@ export default {
     // the info icon after a page title, that shows the page's description
     aboutThisPage: 'Sobre esta página',
     clear: 'Limpar',
+    remove: 'Remover',
     create: 'Criar',
     cancel: 'Cancelar',
     delete: 'Eliminar',
@@ -1595,6 +1601,25 @@ export default {
       label: 'LDAP',
       enableLdap: 'Ativar LDAP',
       enableLdapHelp: 'Os utilizadores iniciam sessão com a sua conta LDAP ou Active Directory',
+      nameHelp:
+        'Prefixa os seus membros nos perfis: corp/jane, ldap/corp/Admins. O diretório default mantém os nomes curtos e o seu próprio nome.',
+      servers: 'Servidores',
+      serversHelp:
+        'Um por campo (host, host:porta ou ldaps://host:porta), tentados por esta ordem: se um não responder, tenta-se o seguinte.',
+      addServer: 'Adicionar servidor',
+      domains: 'Domínios de início de sessão',
+      domainsHelp:
+        "Um por campo. Quem inicia sessão como utilizador{'@'}domínio com um destes vai diretamente para este diretório.",
+      addDomain: 'Adicionar domínio',
+      enabled: 'Ativado',
+      disabled: 'Desativado',
+      directory: 'Diretório LDAP',
+      directoriesDescription:
+        "Os diretórios LDAP e Active Directory com que os utilizadores iniciam sessão. Um utilizador é procurado pela sua ordem, a menos que nomeie um diretório (corp\\jane) ou um dos seus domínios (jane{'@'}corp.example).",
+      editDirectory: 'Editar diretório',
+      deleteDirectory: 'Eliminar diretório',
+      moveUp: 'Mover para cima',
+      moveDown: 'Mover para baixo',
       tabGeneral: 'Geral',
       tabServer: 'Servidor',
       tabUsers: 'Utilizadores',
@@ -1621,7 +1646,7 @@ export default {
         'Atributo do utilizador que lista as pertenças a grupos (ex. memberOf). Defina-o como groups para usar o resultado da pesquisa de grupos (Base de Pesquisa de Grupos e Classe de Grupo).',
       groupsSearchBase: 'Base de pesquisa de grupos',
       groupsSearchBaseDesc:
-        'DN base onde a pesquisa de grupos procura os grupos que têm o utilizador como membro. A pesquisa só é executada se a Classe de Grupo também estiver definida, e guarda o resultado no atributo groups, por isso defina o Atributo de Grupos como groups para o usar. Deixe vazio para não pesquisar e ler os grupos da entrada do utilizador (ex. memberOf).',
+        'Onde procurar os grupos do utilizador (requer Classe de grupo e Atributo de grupos em groups). Vazio: lidos da entrada do utilizador.',
       groupClass: 'Classe de grupo',
       groupClassDesc: 'objectClass LDAP usada para os grupos (ex. groupOfNames, posixGroup).',
       groupMemberAttribute: 'Atributo de membro do grupo',
@@ -1630,7 +1655,7 @@ export default {
       groupMemberUserAttributeDesc: 'Atributo do utilizador comparado com o atributo de membro do grupo (ex. dn, uid).',
       groupFilter: 'Filtro de grupos',
       groupFilterDesc:
-        'Expressão regular comparada com o nome do grupo. Deixe vazio para manter todos os grupos. Só os grupos correspondentes são mantidos, e são eles que o mapeamento de funções, o campo __user__ nos formulários e o playbook veem.',
+        'Expressão regular: só ficam os grupos cujo nome corresponde, para perfis, formulários e playbooks. Vazio mantém todos.',
     },
     runners: {
       label: 'Runner',
@@ -1967,6 +1992,7 @@ export default {
     clipboardHttpsRequired: 'Não foi possível copiar para a área de transferência, é necessário https',
     ldap: {
       testTitle: 'Testar ligação LDAP',
+      test: 'Testar',
       testDescription: 'Introduza credenciais de teste para verificar a ligação LDAP:',
       testUsername: 'Utilizador de teste',
       testUsernamePlaceholder: 'Introduza o nome de utilizador',

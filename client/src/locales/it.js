@@ -535,6 +535,11 @@ export default {
       chatsettings_check_create: 'Fornitore della chat verificato',
       ldap_update: 'Impostazioni LDAP aggiornate',
       ldap_check_create: 'Connessione LDAP testata',
+      ldapdirectory_create: 'Directory LDAP aggiunta',
+      ldapdirectory_update: 'Directory LDAP aggiornata',
+      ldapdirectory_delete: 'Directory LDAP eliminata',
+      ldapdirectory_check_create: 'Directory LDAP testata',
+      ldapdirectory_move_create: 'Directory LDAP spostata',
       lock_create: 'Blocco del designer acquisito',
       lock_delete: 'Blocco del designer rilasciato',
       logo_create: 'Logo caricato',
@@ -733,6 +738,7 @@ export default {
     // the info icon after a page title, that shows the page's description
     aboutThisPage: 'Informazioni su questa pagina',
     clear: 'Cancella',
+    remove: 'Rimuovi',
     create: 'Crea',
     cancel: 'Annulla',
     delete: 'Elimina',
@@ -1682,6 +1688,25 @@ export default {
         "Connessione a un server LDAP o Active Directory per l'autenticazione utenti e la mappatura dei gruppi.",
       enableLdap: 'Abilita LDAP',
       enableLdapHelp: 'Gli utenti accedono con il proprio account LDAP o Active Directory',
+      nameHelp:
+        'Antepone il proprio nome ai membri nei ruoli: corp/jane, ldap/corp/Admins. La directory default mantiene i nomi brevi e il proprio nome.',
+      servers: 'Server',
+      serversHelp:
+        "Uno per campo (host, host:porta o ldaps://host:porta), provati in quest'ordine: se uno non risponde, si prova il successivo.",
+      addServer: 'Aggiungi server',
+      domains: 'Domini di accesso',
+      domainsHelp:
+        "Uno per campo. Chi accede come utente{'@'}dominio con uno di questi va direttamente a questa directory.",
+      addDomain: 'Aggiungi dominio',
+      enabled: 'Abilitata',
+      disabled: 'Disabilitata',
+      directory: 'Directory LDAP',
+      directoriesDescription:
+        "Le directory LDAP e Active Directory con cui gli utenti accedono. Un nome utente viene cercato nel loro ordine, a meno che nomini una directory (corp\\jane) o uno dei suoi domini (jane{'@'}corp.example).",
+      editDirectory: 'Modifica directory',
+      deleteDirectory: 'Elimina directory',
+      moveUp: 'Sposta su',
+      moveDown: 'Sposta giù',
       tabGeneral: 'Generale',
       tabServer: 'Server',
       tabUsers: 'Utenti',
@@ -1705,7 +1730,7 @@ export default {
         'Attributo utente che elenca le appartenenze ai gruppi (es. memberOf). Impostarlo su groups per usare il risultato della ricerca dei gruppi (Base ricerca gruppi e Classe gruppo).',
       groupsSearchBase: 'Base ricerca gruppi',
       groupsSearchBaseDesc:
-        "DN di base in cui la ricerca dei gruppi cerca i gruppi che hanno l'utente come membro. La ricerca viene eseguita solo se è impostata anche la Classe gruppo e salva il risultato nell'attributo groups, quindi impostare Attributo gruppi su groups per usarlo. Lasciare vuoto per saltare la ricerca e leggere i gruppi dalla voce dell'utente (es. memberOf).",
+        "Dove cercare i gruppi dell'utente (richiede Classe di gruppo e Attributo gruppi a groups). Vuoto: letti dalla voce dell'utente.",
       groupClass: 'Classe gruppo',
       groupClassDesc: 'objectClass LDAP utilizzata per i gruppi (es. groupOfNames, posixGroup).',
       groupMemberAttribute: 'Attributo membro gruppo',
@@ -1714,7 +1739,7 @@ export default {
       groupMemberUserAttributeDesc: "Attributo utente confrontato con l'attributo membro del gruppo (es. dn, uid).",
       groupFilter: 'Filtro gruppi',
       groupFilterDesc:
-        'Espressione regolare confrontata con il nome del gruppo. Lasciare vuoto per mantenere tutti i gruppi. Solo i gruppi corrispondenti vengono mantenuti, e sono quelli che vedono la mappatura dei ruoli, il campo __user__ nei form e il playbook.',
+        'Espressione regolare: si mantengono solo i gruppi il cui nome corrisponde, per ruoli, form e playbook. Vuoto li mantiene tutti.',
     },
     mail: {
       label: 'Impostazioni mail',
@@ -1956,6 +1981,7 @@ export default {
     clipboardHttpsRequired: 'Impossibile copiare negli appunti, HTTPS richiesto',
     ldap: {
       testTitle: 'Test connessione LDAP',
+      test: 'Prova',
       testDescription: 'Inserisci credenziali di test per verificare la connessione LDAP:',
       testUsername: 'Nome utente di test',
       testUsernamePlaceholder: 'Inserisci nome utente',

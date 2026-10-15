@@ -159,6 +159,10 @@ export default {
       "Het opgeslagen wachtwoord wordt alleen voor de opgeslagen server gebruikt : typ het wachtwoord om een andere te controleren",
     ldapUpdated: "LDAP bijgewerkt",
     failedUpdateLdap: "Kan LDAP niet bijwerken",
+    ldapCreated: "LDAP-directory toegevoegd",
+    failedCreateLdap: "Kan de LDAP-directory niet toevoegen",
+    ldapDeleted: "LDAP-directory verwijderd",
+    failedDeleteLdap: "Kan de LDAP-directory niet verwijderen",
     seedManagedSettings:
       "De instellingen worden beheerd door de configuratie-seed en zijn alleen-lezen",
     seedManagedLdap:

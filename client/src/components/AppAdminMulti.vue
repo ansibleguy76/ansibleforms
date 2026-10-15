@@ -120,7 +120,18 @@ const toolsId = `af-tools-${Math.random().toString(36).slice(2, 10)}`;
 const pagerId = `af-pager-${Math.random().toString(36).slice(2, 10)}`;
 const { t, locale } = useI18n();
 const router = useRouter();
-const emit = defineEmits(['test', 'preview', 'trigger', 'reset', 'sync', 'created', 'block_sign_in', 'allow_sign_in']);
+const emit = defineEmits([
+  'test',
+  'preview',
+  'trigger',
+  'reset',
+  'sync',
+  'created',
+  'block_sign_in',
+  'allow_sign_in',
+  'move_up',
+  'move_down',
+]);
 
 // PROPS
 
@@ -1781,6 +1792,22 @@ defineExpose({
             }}</BsButton>
           </div>
         </div>
+
+        <!-- SEVERAL VALUES, ONE PER INPUT (an LDAP directory's servers) -->
+        <BsInputList
+          v-else-if="showField(field) && field.type === 'list'"
+          v-model="$v.item[field.key].$model"
+          :isHorizontal="true"
+          :label="textOf(field.dialogLabel) || field.label"
+          :help="textOf(field.help)"
+          :icon="field.icon"
+          :placeholder="textOf(field.placeholder)"
+          :required="field.required"
+          :addLabel="field.addLabel"
+          :disabled="!!field.readonly"
+          :hasError="$v.item[field.key].$invalid && $v.item[field.key].$dirty"
+          :errors="$v.item[field.key].$errors"
+        />
 
         <!-- ALL OTHER FIELD TYPES -->
         <BsInput

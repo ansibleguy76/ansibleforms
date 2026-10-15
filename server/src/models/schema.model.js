@@ -603,7 +603,8 @@ const SCHEMA_MANIFEST = {
                                'settings.banner_show', 'settings.disclaimer_enabled',
                                'settings.forms_view', 'settings.default_timezone', 'settings.default_date_format', 'settings.header_links',
                                'tokens.replaced_at', 'repositories.pull_output', 'repositories.push_output',
-                               'repositories.pulled_at', 'repositories.pushed_at', 'repositories.push_status'] },
+                               'repositories.pulled_at', 'repositories.pushed_at', 'repositories.push_status',
+                               'ldap.id', 'ldap.name', 'ldap.position', 'ldap.domains'] },
   },
 };
 
@@ -1027,6 +1028,14 @@ async function patchVersion7(messages, success, failed) {
   // what the pull before it said. Its output was the last of either : it is the pull's now
   await checkPromise(renameColumn("repositories", "output", "pull_output", "longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL"), messages, success, failed);
   await checkPromise(addColumn("repositories", "push_output", "longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci", true, "NULL"), messages, success, failed);
+  // several LDAP directories (Settings > Access > LDAP) : the single row gets the id it never had,
+  // a name (the existing one is 'default', whose members keep their short names), the order a
+  // bare username is looked up in, and the sign-in domains that go straight to it
+  await checkPromise(addIdPrimaryKey("ldap"), messages, success, failed);
+  await checkPromise(addColumn("ldap", "name", "varchar(100)", false, "'default'"), messages, success, failed);
+  await checkPromise(addColumn("ldap", "position", "int(11)", false, "1"), messages, success, failed);
+  await checkPromise(addColumn("ldap", "domains", "varchar(1000)", true, "NULL"), messages, success, failed);
+  await checkPromise(addUniqueKey("ldap", "name"), messages, success, failed);
   // and when each ended, worked or not, shown beside the repository's Pull and Push
   await checkPromise(addColumn("repositories", "pulled_at", "datetime", true, "NULL"), messages, success, failed);
   await checkPromise(addColumn("repositories", "pushed_at", "datetime", true, "NULL"), messages, success, failed);

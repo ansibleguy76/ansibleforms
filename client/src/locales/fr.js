@@ -538,6 +538,11 @@ export default {
       chatsettings_check_create: 'Fournisseur de chat testé',
       ldap_update: 'Paramètres LDAP modifiés',
       ldap_check_create: 'Connexion LDAP testée',
+      ldapdirectory_create: 'Annuaire LDAP ajouté',
+      ldapdirectory_update: 'Annuaire LDAP mis à jour',
+      ldapdirectory_delete: 'Annuaire LDAP supprimé',
+      ldapdirectory_check_create: 'Annuaire LDAP testé',
+      ldapdirectory_move_create: 'Annuaire LDAP déplacé',
       lock_create: 'Verrou du concepteur pris',
       lock_delete: 'Verrou du concepteur libéré',
       logo_create: 'Logo téléversé',
@@ -736,6 +741,7 @@ export default {
     // the info icon after a page title, that shows the page's description
     aboutThisPage: 'À propos de cette page',
     clear: 'Effacer',
+    remove: 'Retirer',
     create: 'Créer',
     cancel: 'Annuler',
     delete: 'Supprimer',
@@ -1697,6 +1703,25 @@ export default {
         "Connexion à un serveur LDAP ou Active Directory pour l'authentification des utilisateurs et le mappage des groupes.",
       enableLdap: 'Activer LDAP',
       enableLdapHelp: 'Les utilisateurs se connectent avec leur compte LDAP ou Active Directory',
+      nameHelp:
+        "Préfixe ses membres dans les rôles : corp/jane, ldap/corp/Admins. L'annuaire default garde les noms courts et son propre nom.",
+      servers: 'Serveurs',
+      serversHelp:
+        "Un par champ (hôte, hôte:port ou ldaps://hôte:port), essayés dans cet ordre : si l'un ne répond pas, le suivant est essayé.",
+      addServer: 'Ajouter un serveur',
+      domains: 'Domaines de connexion',
+      domainsHelp:
+        "Un par champ. Un utilisateur qui se connecte en utilisateur{'@'}domaine avec l'un d'eux va directement à cet annuaire.",
+      addDomain: 'Ajouter un domaine',
+      enabled: 'Activé',
+      disabled: 'Désactivé',
+      directory: 'Annuaire LDAP',
+      directoriesDescription:
+        "Les annuaires LDAP et Active Directory avec lesquels les utilisateurs se connectent. Un nom est cherché dans leur ordre, sauf s'il nomme un annuaire (corp\\jane) ou l'un de ses domaines (jane{'@'}corp.example).",
+      editDirectory: "Modifier l'annuaire",
+      deleteDirectory: "Supprimer l'annuaire",
+      moveUp: 'Monter',
+      moveDown: 'Descendre',
       tabGeneral: 'Général',
       tabServer: 'Serveur',
       tabUsers: 'Utilisateurs',
@@ -1720,7 +1745,7 @@ export default {
         'Attribut utilisateur listant les appartenances aux groupes (ex. memberOf). Indiquez groups pour utiliser le résultat de la recherche de groupes (Base de recherche des groupes et Classe de groupe).',
       groupsSearchBase: 'Base de recherche des groupes',
       groupsSearchBaseDesc:
-        "DN de base où la recherche de groupes cherche les groupes qui comptent l'utilisateur parmi leurs membres. La recherche ne s'exécute que si la Classe de groupe est aussi renseignée, et elle place son résultat dans l'attribut groups : indiquez donc groups comme Attribut groupes pour l'utiliser. Laisser vide pour ne pas faire de recherche et lire les groupes dans l'entrée de l'utilisateur (ex. memberOf).",
+        "Où chercher les groupes de l'utilisateur (requiert Classe de groupe et Attribut de groupes à groups). Vide : lus dans l'entrée de l'utilisateur.",
       groupClass: 'Classe de groupe',
       groupClassDesc: 'objectClass LDAP utilisée pour les groupes (ex. groupOfNames, posixGroup).',
       groupMemberAttribute: 'Attribut membre du groupe',
@@ -1729,7 +1754,7 @@ export default {
       groupMemberUserAttributeDesc: "Attribut utilisateur comparé à l'attribut membre du groupe (ex. dn, uid).",
       groupFilter: 'Filtre de groupe',
       groupFilterDesc:
-        'Expression reguliere comparee au nom du groupe. Laisser vide pour conserver tous les groupes. Seuls les groupes correspondants sont conserves, et ce sont eux que voient le mappage des roles, le champ __user__ dans les formulaires et le playbook.',
+        'Expression régulière : seuls les groupes dont le nom correspond sont gardés, pour les rôles, formulaires et playbooks. Vide garde tout.',
     },
     mail: {
       label: 'Parametres mail',
@@ -1973,6 +1998,7 @@ export default {
     clipboardHttpsRequired: 'Impossible de copier dans le presse-papiers, HTTPS requis',
     ldap: {
       testTitle: 'Tester la connexion LDAP',
+      test: 'Tester',
       testDescription: 'Saisissez des identifiants de test pour verifier la connexion LDAP :',
       testUsername: "Nom d'utilisateur de test",
       testUsernamePlaceholder: "Saisissez le nom d'utilisateur",

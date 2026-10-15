@@ -48,10 +48,12 @@ passport.use(
     async (username, password, done) => {
       // authentication against database first
       try{
-        var ldapConfig = await Ldap.find()
-        var result = await User.checkLdap(username,password)
+        // the first directory that knows the user signs it in : its attributes name the user,
+        // and a directory other than the default one prefixes its name (corp/jane, Ldap.qualify)
+        var { directory: ldapConfig, entry: result } = await User.checkLdap(username,password)
         var user = {}
-        user.username = result[ldapConfig.username_attribute]
+        user.username = Ldap.qualify(ldapConfig, result[ldapConfig.username_attribute])
+        user.directory = ldapConfig.name
         user.email = result[ldapConfig.mail_attribute]
         // the person's name from the directory entry, for the header (see lib/displayName.js)
         const displayName = ldapDisplayName(result)

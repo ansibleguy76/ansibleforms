@@ -158,6 +158,10 @@ export default {
       "A palavra-passe guardada só é usada com o servidor guardado : escreva a palavra-passe para verificar outro",
     ldapUpdated: "LDAP atualizado",
     failedUpdateLdap: "Falha ao atualizar o LDAP",
+    ldapCreated: "Diretório LDAP adicionado",
+    failedCreateLdap: "Falha ao adicionar o diretório LDAP",
+    ldapDeleted: "Diretório LDAP eliminado",
+    failedDeleteLdap: "Falha ao eliminar o diretório LDAP",
     seedManagedSettings:
       "As definições são geridas pelo config seed e são só de leitura",
     seedManagedLdap:

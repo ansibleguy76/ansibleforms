@@ -158,6 +158,10 @@ export default {
       "保存されたパスワードは保存されたサーバーにのみ使用されます : 別のサーバーを確認するにはパスワードを入力してください",
     ldapUpdated: "LDAP を更新しました",
     failedUpdateLdap: "LDAP の更新に失敗しました",
+    ldapCreated: "LDAP ディレクトリを追加しました",
+    failedCreateLdap: "LDAP ディレクトリを追加できませんでした",
+    ldapDeleted: "LDAP ディレクトリを削除しました",
+    failedDeleteLdap: "LDAP ディレクトリを削除できませんでした",
     seedManagedSettings:
       "設定は config seed で管理されており、読み取り専用です",
     seedManagedLdap:

@@ -532,6 +532,11 @@ export default {
       chatsettings_check_create: 'Chatprovider getest',
       ldap_update: 'LDAP-instellingen bijgewerkt',
       ldap_check_create: 'LDAP-verbinding getest',
+      ldapdirectory_create: 'LDAP-directory toegevoegd',
+      ldapdirectory_update: 'LDAP-directory bijgewerkt',
+      ldapdirectory_delete: 'LDAP-directory verwijderd',
+      ldapdirectory_check_create: 'LDAP-directory getest',
+      ldapdirectory_move_create: 'LDAP-directory verplaatst',
       lock_create: 'Designer-vergrendeling geplaatst',
       lock_delete: 'Designer-vergrendeling vrijgegeven',
       logo_create: 'Logo geüpload',
@@ -730,6 +735,7 @@ export default {
     // the info icon after a page title, that shows the page's description
     aboutThisPage: 'Over deze pagina',
     clear: 'Wissen',
+    remove: 'Verwijderen',
     create: 'Aanmaken',
     cancel: 'Annuleren',
     delete: 'Verwijderen',
@@ -1682,6 +1688,25 @@ export default {
       description: 'Verbind met een LDAP- of Active Directory-server voor gebruikersauthenticatie en groepstoewijzing.',
       enableLdap: 'LDAP inschakelen',
       enableLdapHelp: 'Gebruikers melden zich aan met hun LDAP- of Active Directory-account',
+      nameHelp:
+        'Zet zijn naam voor zijn leden in rollen: corp/jane, ldap/corp/Admins. De directory default houdt de korte namen en zijn eigen naam.',
+      servers: 'Servers',
+      serversHelp:
+        'Eén per veld (host, host:poort of ldaps://host:poort), in deze volgorde geprobeerd: is er een onbereikbaar, dan de volgende.',
+      addServer: 'Server toevoegen',
+      domains: 'Aanmelddomeinen',
+      domainsHelp:
+        "Eén per veld. Wie zich aanmeldt als gebruiker{'@'}domein met een daarvan, gaat direct naar deze directory.",
+      addDomain: 'Domein toevoegen',
+      enabled: 'Ingeschakeld',
+      disabled: 'Uitgeschakeld',
+      directory: 'LDAP-directory',
+      directoriesDescription:
+        "De LDAP- en Active Directory-directory's waarmee gebruikers zich aanmelden. Een gebruikersnaam wordt in hun volgorde gezocht, tenzij hij een directory noemt (corp\\jane) of een van zijn domeinen (jane{'@'}corp.example).",
+      editDirectory: 'Directory bewerken',
+      deleteDirectory: 'Directory verwijderen',
+      moveUp: 'Omhoog',
+      moveDown: 'Omlaag',
       tabGeneral: 'Algemeen',
       tabServer: 'Server',
       tabUsers: 'Gebruikers',
@@ -1705,7 +1730,7 @@ export default {
         'Gebruikersattribuut dat groepslidmaatschappen bevat (bijv. memberOf). Zet het op groups om het resultaat van de groepszoekopdracht (Groepen zoekbasis en Groep klasse) te gebruiken.',
       groupsSearchBase: 'Groepen zoekbasis',
       groupsSearchBaseDesc:
-        'Basis-DN waaronder de groepszoekopdracht zoekt naar de groepen die de gebruiker als lid hebben. De zoekopdracht draait alleen als ook Groep klasse is ingevuld, en zet het resultaat in het attribuut groups; zet Groepen attribuut dus op groups om het te gebruiken. Laat leeg om niet te zoeken en de groepen uit de gebruikersentry te lezen (bijv. memberOf).',
+        'Waar de groepen van de gebruiker gezocht worden (vereist Groepsklasse en Groepsattribuut groups). Leeg: gelezen uit de gebruikersentry.',
       groupClass: 'Groep klasse',
       groupClassDesc: 'LDAP objectClass die wordt gebruikt voor groepen (bijv. groupOfNames, posixGroup).',
       groupMemberAttribute: 'Groepslid attribuut',
@@ -1715,7 +1740,7 @@ export default {
         'Gebruikersattribuut dat wordt vergeleken met het groepslidattribuut (bijv. dn, uid).',
       groupFilter: 'Groepfilter',
       groupFilterDesc:
-        'Reguliere expressie die wordt vergeleken met de groepsnaam. Laat leeg om alle groepen te behouden. Alleen overeenkomende groepen worden behouden, en die zijn wat de rolkoppeling, het __user__ veld in formulieren en de playbook zien.',
+        'Reguliere expressie: alleen groepen met een passende naam blijven, voor rollen, formulieren en playbooks. Leeg houdt alle groepen.',
     },
     mail: {
       label: 'Mail instellingen',
@@ -1956,6 +1981,7 @@ export default {
     clipboardHttpsRequired: 'Kon niet kopi\u00ebren naar klembord, https vereist',
     ldap: {
       testTitle: 'LDAP verbinding testen',
+      test: 'Testen',
       testDescription: 'Voer testgegevens in om de LDAP verbinding te verifi\u00ebren:',
       testUsername: 'Test gebruikersnaam',
       testUsernamePlaceholder: 'Voer gebruikersnaam in',

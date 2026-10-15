@@ -152,6 +152,10 @@ export default {
       "The stored password is only used for the stored server : type the password to check another one",
     ldapUpdated: "LDAP updated",
     failedUpdateLdap: "Failed to update LDAP",
+    ldapCreated: "LDAP directory added",
+    failedCreateLdap: "Failed to add the LDAP directory",
+    ldapDeleted: "LDAP directory deleted",
+    failedDeleteLdap: "Failed to delete the LDAP directory",
     seedManagedSettings:
       "Settings are managed by the config seed and are read only",
     seedManagedLdap:

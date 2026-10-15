@@ -225,6 +225,12 @@ const crudConfigs = {
     table: 'AnsibleForms.ldap',
     fields: [
       { name: 'id', isKey: true },
+      // 'default' keeps its members' short names ; any other's are <name>/<member>
+      { name: 'name', isNaturalKey: true, required: true },
+      // the order a bare username is looked up in, and the domains that go straight to it
+      { name: 'position' },
+      { name: 'domains' },
+      // one or more servers, comma separated
       { name: 'server', required: true },
       { name: 'port', required: true },
       { name: 'ignore_certs', isBoolean: true },
