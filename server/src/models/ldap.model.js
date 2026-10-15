@@ -86,6 +86,22 @@ function decrypted(row) {
  * Raises:
  *   Error: the name breaks the rule, is taken, or renames the default directory.
  */
+/**
+ * Checks the credential a directory names : one of Connections > Credentials, of type ldap.
+ *
+ * Args:
+ *   name (string): the credential's name ; none, nothing to check.
+ *
+ * Raises:
+ *   Error: no such credential, or another type.
+ */
+async function checkCredential(name) {
+  if (!name) return;
+  const rows = await mysql.do("SELECT credential_type FROM AnsibleForms.`credentials` WHERE name = ?", [name]);
+  if (!rows.length) throw new Error(`No credential named '${name}'`);
+  if (rows[0].credential_type !== "ldap") throw new Error(`An LDAP directory needs an ldap credential : '${name}' is not one`);
+}
+
 async function checkName(name, current) {
   if (current && current.name === Ldap.DEFAULT_NAME && name !== Ldap.DEFAULT_NAME) {
     throw new Error(`The directory '${Ldap.DEFAULT_NAME}' keeps its name : its members' names depend on it`);
@@ -172,6 +188,7 @@ Ldap.updateById = async function (id, record) {
   delete record.testpassword;
   delete record.id;
   if (record.name !== undefined) await checkName(record.name, current);
+  if (record.credential !== undefined) await checkCredential(record.credential);
   logger.info(`Updating ldap directory '${current.name}'`);
   return mysql.do("UPDATE AnsibleForms.`ldap` set ? WHERE id = ?", [record, id]);
 };
@@ -193,6 +210,7 @@ Ldap.create = async function (record) {
   delete record.testpassword;
   delete record.id;
   await checkName(record.name);
+  await checkCredential(record.credential);
   if (!record.position) {
     const last = await mysql.do("SELECT COALESCE(MAX(position), 0) AS p FROM AnsibleForms.`ldap`");
     record.position = (last[0]?.p || 0) + 1;

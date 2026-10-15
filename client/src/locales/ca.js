@@ -879,6 +879,8 @@ export default {
       repeatPassword: 'Repeteix la contrasenya',
       passwordsDiffer: 'Les dues contrasenyes no coincideixen',
       tabDetails: 'Detalls',
+      tabConnection: 'Connexió',
+      tabCredentials: 'Credencials',
       tabGeneral: 'General',
       testConnection: 'Prova la connexió',
       showOutput: 'Mostra la sortida',
@@ -1220,6 +1222,9 @@ export default {
       tabProviders: 'Proveïdors',
       active: 'Activat',
       useForSignIn: 'Fes-lo servir per iniciar la sessió',
+      credential: 'Credencial',
+      credentialHelp:
+        "Una credencial sso de Connexions > Credencials: el seu usuari és l'ID de client i la contrasenya el secret. Cap: l'ID i el secret de sota.",
       activeHelp:
         'Els usuaris inicien la sessió amb ell quan trien {type}; activar-lo desactiva els altres proveïdors {type}.',
       providerNotFound: "No hi ha cap proveïdor SSO amb l'id '{id}'.",
@@ -1544,6 +1549,10 @@ export default {
       loginFromStore: "L'usuari i la contrasenya es llegeixen del magatzem de secrets, a la pestanya Magatzem.",
       type_smtp: 'SMTP',
       type_smtpHint: 'Un usuari i una contrasenya per a un servidor de correu',
+      type_ldap: 'LDAP',
+      type_ldapHint: "El compte de bind d'un directori LDAP: el seu DN i contrasenya",
+      type_sso: 'SSO',
+      type_ssoHint: "El client d'un proveïdor SSO: el seu ID de client i secret",
     },
     ssh: {
       tabKey: 'Clau',
@@ -1604,7 +1613,6 @@ export default {
       label: 'LDAP',
       enableLdap: "Activa l'LDAP",
       enableLdapHelp: 'Els usuaris inicien la sessió amb el seu compte de LDAP o Active Directory',
-      tabCredentials: 'Credencials',
       credential: 'Credencial',
       credentialHelp: "Una credencial de Connexions > Credencials per al bind. Cap: l'usuari i la contrasenya de sota.",
       nameHelp:

@@ -879,6 +879,8 @@ export default {
       repeatPassword: 'Repetir palavra-passe',
       passwordsDiffer: 'As duas palavras-passe são diferentes',
       tabDetails: 'Detalhes',
+      tabConnection: 'Ligação',
+      tabCredentials: 'Credenciais',
       tabGeneral: 'Geral',
       testConnection: 'Testar ligação',
       showOutput: 'Mostrar resultado',
@@ -1219,6 +1221,9 @@ export default {
       tabProviders: 'Fornecedores',
       active: 'Ativado',
       useForSignIn: 'Usar para iniciar sessão',
+      credential: 'Credencial',
+      credentialHelp:
+        'Uma credencial sso de Ligações > Credenciais: o utilizador é o ID de cliente, a palavra-passe o segredo. Nenhuma: o ID e o segredo abaixo.',
       activeHelp:
         'Os utilizadores iniciam sessão com ele quando escolhem {type}; ativá-lo desativa os outros fornecedores {type}.',
       providerNotFound: "Não existe nenhum fornecedor SSO com o id '{id}'.",
@@ -1542,6 +1547,10 @@ export default {
       loginFromStore: 'O utilizador e a palavra-passe são lidos do cofre de segredos, no separador Armazenamento.',
       type_smtp: 'SMTP',
       type_smtpHint: 'Um utilizador e palavra-passe para um servidor de correio',
+      type_ldap: 'LDAP',
+      type_ldapHint: 'A conta de bind de um diretório LDAP: o seu DN e palavra-passe',
+      type_sso: 'SSO',
+      type_ssoHint: 'O cliente de um fornecedor SSO: o seu ID de cliente e segredo',
     },
     ssh: {
       tabKey: 'Chave',
@@ -1602,7 +1611,6 @@ export default {
       label: 'LDAP',
       enableLdap: 'Ativar LDAP',
       enableLdapHelp: 'Os utilizadores iniciam sessão com a sua conta LDAP ou Active Directory',
-      tabCredentials: 'Credenciais',
       credential: 'Credencial',
       credentialHelp:
         'Uma credencial de Ligações > Credenciais para o bind. Nenhuma: o utilizador e a palavra-passe abaixo.',

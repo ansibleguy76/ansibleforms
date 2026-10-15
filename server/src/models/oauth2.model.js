@@ -40,8 +40,27 @@ class OAuth2 extends CrudModel {
             throw new Errors.BadRequestError("A Microsoft Entra ID provider needs the tenant id of your tenant (a GUID or its domain), not empty, common, organizations or consumers");
         }
     }
+    // the client a provider signs in as : a credential (its user the client id, its password the
+    // secret), else its own client id and secret, both
+    // the credential a provider names : one of Connections > Credentials, of type sso
+    static async assertCredential(name) {
+        if (!name) return;
+        const cred = await CrudModel.findByName('credential', name);
+        if (!cred) throw new Errors.BadRequestError(`No credential named '${name}'`);
+        if (cred.credential_type !== 'sso') {
+            throw new Errors.BadRequestError(`An SSO provider needs an sso credential : '${name}' is not one`);
+        }
+    }
+    static assertClient(state) {
+        if (state.credential) return;
+        if (!state.client_id || !state.client_secret) {
+            throw new Errors.BadRequestError("An SSO provider needs a client id and a client secret, or a credential");
+        }
+    }
     static async create(data, opts = {}) {
         CrudModel.assertRequired(this.modelName, data);
+        this.assertClient(data);
+        await this.assertCredential(data.credential);
         this.assertEntraTenant(data.provider, data.tenant_id);
         // no Enable in the dialog any more : a new provider is the one its type signs in with when
         // its type has none yet ; another is chosen with Use for sign-in (enable : 1)
@@ -55,6 +74,13 @@ class OAuth2 extends CrudModel {
     static async update(data, id, opts = {}) {
         await CrudModel.checkExist(this.modelName, id);
         if (!opts.fromSeed) await CrudModel.assertNotManaged(this.modelName, id);
+        if ('credential' in data || 'client_id' in data || 'client_secret' in data) {
+            const current = (await mysql.do('SELECT client_id, client_secret, credential FROM AnsibleForms.`oauth2_providers` WHERE id=?', [id]))?.[0] || {};
+            // the masked secret (the page's) keeps the stored one
+            const secret = 'client_secret' in data && !/^\*+$/.test(String(data.client_secret || '')) ? data.client_secret : current.client_secret;
+            this.assertClient({ ...current, ...data, client_secret: secret });
+            if ('credential' in data) await this.assertCredential(data.credential);
+        }
         if ('tenant_id' in data || 'provider' in data) {
             const current = (await mysql.do('SELECT provider, tenant_id FROM AnsibleForms.`oauth2_providers` WHERE id=?', [id]))?.[0] || {};
             this.assertEntraTenant(data.provider ?? current.provider, 'tenant_id' in data ? data.tenant_id : current.tenant_id);

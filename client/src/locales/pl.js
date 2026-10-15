@@ -874,6 +874,8 @@ export default {
       repeatPassword: 'Powtórz hasło',
       passwordsDiffer: 'Hasła różnią się',
       tabDetails: 'Szczegóły',
+      tabConnection: 'Połączenie',
+      tabCredentials: 'Poświadczenia',
       tabGeneral: 'Ogólne',
       testConnection: 'Testuj połączenie',
       showOutput: 'Pokaż wynik',
@@ -1211,6 +1213,9 @@ export default {
       tabProviders: 'Dostawcy',
       active: 'Włączony',
       useForSignIn: 'Użyj do logowania',
+      credential: 'Poświadczenie',
+      credentialHelp:
+        'Poświadczenie sso z Połączenia > Poświadczenia: użytkownik to ID klienta, hasło to sekret. Brak: ID i sekret poniżej.',
       activeHelp: 'Użytkownicy logują się nim, gdy wybiorą {type}; włączenie go wyłącza pozostałych dostawców {type}.',
       providerNotFound: "Nie ma dostawcy SSO o id '{id}'.",
       changeSecret: 'Zmień sekret',
@@ -1534,6 +1539,10 @@ export default {
       loginFromStore: 'Użytkownik i hasło są odczytywane z magazynu sekretów, na karcie Magazyn.',
       type_smtp: 'SMTP',
       type_smtpHint: 'Użytkownik i hasło do serwera poczty',
+      type_ldap: 'LDAP',
+      type_ldapHint: 'Konto powiązania katalogu LDAP: jego DN i hasło',
+      type_sso: 'SSO',
+      type_ssoHint: 'Klient dostawcy SSO: jego ID klienta i sekret',
     },
     ssh: {
       tabKey: 'Klucz',
@@ -1594,7 +1603,6 @@ export default {
       label: 'LDAP',
       enableLdap: 'Włącz LDAP',
       enableLdapHelp: 'Użytkownicy logują się kontem LDAP lub Active Directory',
-      tabCredentials: 'Poświadczenia',
       credential: 'Poświadczenie',
       credentialHelp: 'Poświadczenie z Połączenia > Poświadczenia do powiązania. Brak: użytkownik i hasło poniżej.',
       nameHelp:

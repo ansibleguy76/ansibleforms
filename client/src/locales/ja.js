@@ -873,6 +873,8 @@ export default {
       repeatPassword: 'パスワードを再入力',
       passwordsDiffer: '2つのパスワードが一致しません',
       tabDetails: '詳細',
+      tabConnection: '接続',
+      tabCredentials: '認証情報',
       tabGeneral: '全般',
       testConnection: '接続テスト',
       showOutput: '出力を表示',
@@ -1204,6 +1206,9 @@ export default {
       tabProviders: 'プロバイダー',
       active: '有効',
       useForSignIn: 'サインインに使用',
+      credential: '資格情報',
+      credentialHelp:
+        '［接続 > 資格情報］の sso 資格情報：ユーザーがクライアント ID、パスワードがシークレット。なし：下の ID とシークレット。',
       activeHelp:
         '{type} を選んだユーザーはこれでサインインします。オンにすると他の {type} プロバイダーはオフになります。',
       providerNotFound: "ID '{id}' の SSO プロバイダーはありません。",
@@ -1522,6 +1527,10 @@ export default {
       loginFromStore: 'ユーザーとパスワードはシークレットストアから読み取られます（ストアタブ）。',
       type_smtp: 'SMTP',
       type_smtpHint: 'メールサーバーのユーザーとパスワード',
+      type_ldap: 'LDAP',
+      type_ldapHint: 'LDAP ディレクトリのバインドアカウント：DN とパスワード',
+      type_sso: 'SSO',
+      type_ssoHint: 'SSO プロバイダーのクライアント：クライアント ID とシークレット',
     },
     ssh: {
       tabKey: 'キー',
@@ -1580,7 +1589,6 @@ export default {
       label: 'LDAP',
       enableLdap: 'LDAP を有効にする',
       enableLdapHelp: 'ユーザーは LDAP または Active Directory のアカウントでサインインします',
-      tabCredentials: '認証情報',
       credential: '資格情報',
       credentialHelp: 'バインドに使う［接続 > 資格情報］の資格情報。なし：下のバインドユーザーとパスワード。',
       nameHelp:

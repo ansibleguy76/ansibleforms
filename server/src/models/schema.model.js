@@ -604,7 +604,8 @@ const SCHEMA_MANIFEST = {
                                'settings.forms_view', 'settings.default_timezone', 'settings.default_date_format', 'settings.header_links',
                                'tokens.replaced_at', 'repositories.pull_output', 'repositories.push_output',
                                'repositories.pulled_at', 'repositories.pushed_at', 'repositories.push_status',
-                               'ldap.id', 'ldap.name', 'ldap.position', 'ldap.domains', 'ldap.credential'] },
+                               'ldap.id', 'ldap.name', 'ldap.position', 'ldap.domains', 'ldap.credential',
+                               'oauth2_providers.credential'] },
   },
 };
 
@@ -1039,6 +1040,9 @@ async function patchVersion7(messages, success, failed) {
   // a directory can bind with a credential of Connections > Credentials instead of its own user
   // and password, as a repository can
   await checkPromise(addColumn("ldap", "credential", "varchar(250)", true, "NULL"), messages, success, failed);
+  // an SSO provider too : the credential's user its client id, its password the client secret (which
+  // can then come from a secret store)
+  await checkPromise(addColumn("oauth2_providers", "credential", "varchar(250)", true, "NULL"), messages, success, failed);
   // and when each ended, worked or not, shown beside the repository's Pull and Push
   await checkPromise(addColumn("repositories", "pulled_at", "datetime", true, "NULL"), messages, success, failed);
   await checkPromise(addColumn("repositories", "pushed_at", "datetime", true, "NULL"), messages, success, failed);
@@ -1066,7 +1070,7 @@ function fillJobRunnerKinds() {
 // REST login (it used to become ssh)
 function fillCredentialTypes() {
   return mysql
-    .do("UPDATE AnsibleForms.`credentials` SET credential_type=IF(is_database,'database','userpass') WHERE credential_type IS NULL OR credential_type NOT IN ('userpass','ssh','git','api','database','cyberark','smtp')")
+    .do("UPDATE AnsibleForms.`credentials` SET credential_type=IF(is_database,'database','userpass') WHERE credential_type IS NULL OR credential_type NOT IN ('userpass','ssh','git','api','database','cyberark','smtp','ldap','sso')")
     .then((res) => `Set the type of ${res?.affectedRows ?? 0} credential(s)`);
 }
 

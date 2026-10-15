@@ -6,7 +6,7 @@
 /*  the url -                                                     */
 /*    Details  its name (the default directory keeps its own),    */
 /*             and on or off                                      */
-/*    Server   its servers (the next one when one cannot be       */
+/*    Connection  its servers (the next one when one cannot be    */
 /*             reached) and TLS                                   */
 /*    Credentials  the account it binds with : a credential of    */
 /*             Connections > Credentials, or its own              */
@@ -43,8 +43,8 @@ const settings = computed(() => ({
 // groups
 const tabs = computed(() => [
   { key: 'general', label: t('settings.common.tabDetails'), icon: 'sliders' },
-  { key: 'server', label: t('settings.ldap.tabServer'), icon: 'server' },
-  { key: 'credentials', label: t('settings.ldap.tabCredentials'), icon: 'key' },
+  { key: 'connection', label: t('settings.common.tabConnection'), icon: 'globe' },
+  { key: 'credentials', label: t('settings.common.tabCredentials'), icon: 'key' },
   { key: 'users', label: t('settings.ldap.tabUsers'), icon: 'user' },
   { key: 'groups', label: t('settings.ldap.tabGroups'), icon: 'users' },
 ]);

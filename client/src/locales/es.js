@@ -877,6 +877,8 @@ export default {
       repeatPassword: 'Repetir contraseña',
       passwordsDiffer: 'Las dos contraseñas no coinciden',
       tabDetails: 'Detalles',
+      tabConnection: 'Conexión',
+      tabCredentials: 'Credenciales',
       tabGeneral: 'General',
       testConnection: 'Probar conexión',
       showOutput: 'Mostrar salida',
@@ -1217,6 +1219,9 @@ export default {
       tabProviders: 'Proveedores',
       active: 'Activado',
       useForSignIn: 'Usar para iniciar sesión',
+      credential: 'Credencial',
+      credentialHelp:
+        'Una credencial sso de Conexiones > Credenciales: su usuario es el ID de cliente y su contraseña el secreto. Ninguna: el ID y el secreto de abajo.',
       activeHelp:
         'Los usuarios inician sesión con él cuando eligen {type}; activarlo desactiva los demás proveedores {type}.',
       providerNotFound: "No hay ningún proveedor SSO con el id '{id}'.",
@@ -1636,6 +1641,10 @@ export default {
       loginFromStore: 'El usuario y la contraseña se leen del almacén de secretos, en la pestaña Almacén.',
       type_smtp: 'SMTP',
       type_smtpHint: 'Un usuario y contraseña para un servidor de correo',
+      type_ldap: 'LDAP',
+      type_ldapHint: 'La cuenta de bind de un directorio LDAP: su DN y contraseña',
+      type_sso: 'SSO',
+      type_ssoHint: 'El cliente de un proveedor SSO: su ID de cliente y secreto',
     },
     ssh: {
       tabKey: 'Clave',
@@ -1697,7 +1706,6 @@ export default {
       description: 'Conexión a un servidor LDAP o Active Directory para autenticación de usuarios y mapeo de grupos.',
       enableLdap: 'Habilitar LDAP',
       enableLdapHelp: 'Los usuarios inician sesión con su cuenta de LDAP o Active Directory',
-      tabCredentials: 'Credenciales',
       credential: 'Credencial',
       credentialHelp:
         'Una credencial de Conexiones > Credenciales para el bind. Ninguna: el usuario y la contraseña de abajo.',

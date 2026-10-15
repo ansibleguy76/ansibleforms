@@ -882,6 +882,8 @@ export default {
       repeatPassword: 'Passwort wiederholen',
       passwordsDiffer: 'Die beiden Passwörter unterscheiden sich',
       tabDetails: 'Details',
+      tabConnection: 'Verbindung',
+      tabCredentials: 'Anmeldedaten',
       tabGeneral: 'Allgemein',
       testConnection: 'Verbindung testen',
       showOutput: 'Ausgabe anzeigen',
@@ -1219,6 +1221,9 @@ export default {
       tabProviders: 'Anbieter',
       active: 'Aktiviert',
       useForSignIn: 'Für die Anmeldung verwenden',
+      credential: 'Anmeldedaten-Eintrag',
+      credentialHelp:
+        'Ein sso-Eintrag aus Verbindungen > Anmeldedaten: Benutzer ist die Client-ID, Passwort das Client-Geheimnis. Keiner: Client-ID und Geheimnis unten.',
       activeHelp:
         'Benutzer melden sich damit an, wenn sie {type} wählen; das Einschalten schaltet die anderen {type}-Anbieter aus.',
       providerNotFound: "Es gibt keinen SSO-Anbieter mit der ID '{id}'.",
@@ -1640,6 +1645,10 @@ export default {
       loginFromStore: 'Benutzer und Passwort werden aus dem Secret Store gelesen, auf der Registerkarte Speicher.',
       type_smtp: 'SMTP',
       type_smtpHint: 'Ein Benutzer und Passwort für einen Mailserver',
+      type_ldap: 'LDAP',
+      type_ldapHint: 'Das Bind-Konto eines LDAP-Verzeichnisses: DN und Passwort',
+      type_sso: 'SSO',
+      type_ssoHint: 'Der Client eines SSO-Anbieters: Client-ID und Client-Geheimnis',
     },
     ssh: {
       tabKey: 'Schlüssel',
@@ -1704,7 +1713,6 @@ export default {
         'Verbindung zu einem LDAP- oder Active Directory-Server für Benutzerauthentifizierung und Gruppenzuordnung.',
       enableLdap: 'LDAP aktivieren',
       enableLdapHelp: 'Benutzer melden sich mit ihrem LDAP- oder Active-Directory-Konto an',
-      tabCredentials: 'Anmeldedaten',
       credential: 'Anmeldedaten-Eintrag',
       credentialHelp:
         'Ein Eintrag aus Verbindungen > Anmeldedaten für den Bind. Keiner: Bind-Benutzer und Passwort unten.',

@@ -12,6 +12,7 @@
 /*            ; a field's disabledWhen (item, saved) and an       */
 /*            action's showWhen (item) decide from the record ;   */
 /*            togglesLast puts a tab's switches under its fields  */
+/*            ; a field's showWhen (item) hides it, unchecked     */
 /*      tabs: Array of { key, label, icon } - the form in tabs :  */
 /*            each field names its tab (field.tab, the first tab  */
 /*            when it names none) ; a slot tab-top-<key> above a  */
@@ -192,6 +193,8 @@ function isDisabled(field) {
   if (typeof field.disabledWhen === 'function' && field.disabledWhen(item.value, originalItem.value || {})) {
     return true;
   }
+  // a field its own rule hides is not checked either
+  if (typeof field.showWhen === 'function' && !field.showWhen(item.value)) return true;
   if (!field.dependency) {
     return false;
   }
@@ -228,6 +231,9 @@ const showDisabled = computed(() => !!props.settings?.showDisabledFields);
 // hiding them, but a field can opt back out with hideWhenDisabled - used for the TLS
 // certificate chain, where a certificate box is meaningless until TLS is switched on.
 function isVisible(field) {
+  // a field shown by a rule of its own (an LDAP directory's own bind user : none while a
+  // credential gives it)
+  if (typeof field.showWhen === 'function' && !field.showWhen(item.value)) return false;
   if (!disabledFields.value[field.key]) return true;
   // A seed-managed record disables every field. That must not also HIDE them -
   // visibility is about an unmet dependency, and on a page without

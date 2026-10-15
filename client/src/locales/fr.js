@@ -883,6 +883,8 @@ export default {
       repeatPassword: 'Répéter le mot de passe',
       passwordsDiffer: 'Les deux mots de passe diffèrent',
       tabDetails: 'Détails',
+      tabConnection: 'Connexion',
+      tabCredentials: 'Identifiants',
       tabGeneral: 'Général',
       testConnection: 'Tester la connexion',
       showOutput: 'Afficher la sortie',
@@ -1221,6 +1223,9 @@ export default {
       tabProviders: 'Fournisseurs',
       active: 'Activé',
       useForSignIn: 'Utiliser pour la connexion',
+      credential: 'Identifiant',
+      credentialHelp:
+        "Un identifiant sso de Connexions > Identifiants : son utilisateur est l'ID client, son mot de passe le secret. Aucun : l'ID et le secret ci-dessous.",
       activeHelp:
         "Les utilisateurs se connectent avec lui lorsqu'ils choisissent {type} ; l'activer désactive les autres fournisseurs {type}.",
       providerNotFound: "Aucun fournisseur SSO n'a l'id '{id}'.",
@@ -1642,6 +1647,10 @@ export default {
       loginFromStore: "L'utilisateur et le mot de passe sont lus dans le coffre de secrets, onglet Stockage.",
       type_smtp: 'SMTP',
       type_smtpHint: 'Un utilisateur et un mot de passe pour un serveur mail',
+      type_ldap: 'LDAP',
+      type_ldapHint: "Le compte de bind d'un annuaire LDAP : son DN et son mot de passe",
+      type_sso: 'SSO',
+      type_ssoHint: "Le client d'un fournisseur SSO : son ID client et son secret",
     },
     ssh: {
       tabKey: 'Clé',
@@ -1704,7 +1713,6 @@ export default {
         "Connexion à un serveur LDAP ou Active Directory pour l'authentification des utilisateurs et le mappage des groupes.",
       enableLdap: 'Activer LDAP',
       enableLdapHelp: 'Les utilisateurs se connectent avec leur compte LDAP ou Active Directory',
-      tabCredentials: 'Identifiants',
       credential: 'Identifiant',
       credentialHelp:
         "Un identifiant de Connexions > Identifiants pour le bind. Aucun : l'utilisateur et le mot de passe ci-dessous.",

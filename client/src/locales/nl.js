@@ -877,6 +877,8 @@ export default {
       repeatPassword: 'Herhaal wachtwoord',
       passwordsDiffer: 'De twee wachtwoorden verschillen',
       tabDetails: 'Details',
+      tabConnection: 'Verbinding',
+      tabCredentials: 'Referenties',
       tabGeneral: 'Algemeen',
       testConnection: 'Verbinding testen',
       showOutput: 'Uitvoer tonen',
@@ -1211,6 +1213,9 @@ export default {
       tabProviders: 'Providers',
       active: 'Ingeschakeld',
       useForSignIn: 'Gebruiken om aan te melden',
+      credential: 'Referentie',
+      credentialHelp:
+        'Een sso-referentie uit Verbindingen > Referenties: de gebruiker is de client-ID, het wachtwoord het geheim. Geen: de ID en het geheim hieronder.',
       activeHelp:
         'Gebruikers melden zich ermee aan als ze {type} kiezen; inschakelen schakelt de andere {type}-providers uit.',
       providerNotFound: "Er is geen SSO-provider met id '{id}'.",
@@ -1628,6 +1633,10 @@ export default {
       loginFromStore: 'Gebruiker en wachtwoord worden uit de secret store gelezen, op het tabblad Opslag.',
       type_smtp: 'SMTP',
       type_smtpHint: 'Een gebruiker en wachtwoord voor een mailserver',
+      type_ldap: 'LDAP',
+      type_ldapHint: 'Het bind-account van een LDAP-directory: DN en wachtwoord',
+      type_sso: 'SSO',
+      type_ssoHint: 'De client van een SSO-provider: client-ID en clientgeheim',
     },
     ssh: {
       tabKey: 'Sleutel',
@@ -1689,7 +1698,6 @@ export default {
       description: 'Verbind met een LDAP- of Active Directory-server voor gebruikersauthenticatie en groepstoewijzing.',
       enableLdap: 'LDAP inschakelen',
       enableLdapHelp: 'Gebruikers melden zich aan met hun LDAP- of Active Directory-account',
-      tabCredentials: 'Referenties',
       credential: 'Referentie',
       credentialHelp:
         'Een referentie uit Verbindingen > Referenties voor de bind. Geen: de bind-gebruiker en het wachtwoord hieronder.',

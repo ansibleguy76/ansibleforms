@@ -872,6 +872,8 @@ export default {
       repeatPassword: 'Repeat password',
       passwordsDiffer: 'The two passwords differ',
       tabDetails: 'Details',
+      tabConnection: 'Connection',
+      tabCredentials: 'Credentials',
       tabGeneral: 'General',
       testConnection: 'Test connection',
       showOutput: 'Show output',
@@ -1199,6 +1201,9 @@ export default {
       tabProviders: 'Providers',
       active: 'Enabled',
       useForSignIn: 'Use for sign-in',
+      credential: 'Credential',
+      credentialHelp:
+        'An sso credential of Connections > Credentials : its user is the client ID, its password the client secret. None: the client ID and secret below.',
       activeHelp: 'Users sign in with it when they choose {type}; turning it on turns off the other {type} providers.',
       providerNotFound: "There is no SSO provider with the id '{id}'.",
       changeSecret: 'Change secret',
@@ -1610,6 +1615,10 @@ export default {
       loginFromStore: 'The user and password are read from the secret store, on the Store tab.',
       type_smtp: 'SMTP',
       type_smtpHint: 'A user and password for a mail server',
+      type_ldap: 'LDAP',
+      type_ldapHint: 'The bind account of an LDAP directory : its DN and password',
+      type_sso: 'SSO',
+      type_ssoHint: 'The client of an SSO provider : its client ID and client secret',
     },
     ssh: {
       tabKey: 'Key',
@@ -1669,7 +1678,6 @@ export default {
       label: 'LDAP',
       enableLdap: 'Enable LDAP',
       enableLdapHelp: 'Users sign in with their LDAP or Active Directory account',
-      tabCredentials: 'Credentials',
       credential: 'Credential',
       credentialHelp: 'A credential of Connections > Credentials to bind with. None: the bind user and password below.',
       nameHelp:

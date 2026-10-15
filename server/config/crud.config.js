@@ -10,8 +10,11 @@ const crudConfigs = {
       { name: 'description' },
       { name: 'issuer' },
       { name: 'tenant_id'},
-      { name: 'client_id', required: true },
-      { name: 'client_secret', isEncrypted: true, required: true },
+      // required unless a credential gives them (OAuth2.assertClient)
+      { name: 'client_id' },
+      { name: 'client_secret', isEncrypted: true },
+      // a credential of Connections > Credentials : its user the client id, its password the secret
+      { name: 'credential' },
       { name: 'enable', isBoolean: true },
       { name: 'groupfilter' },
       { name: 'redirect_uri' },

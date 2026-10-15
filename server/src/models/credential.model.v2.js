@@ -30,7 +30,9 @@ class CredentialModel extends CrudModel {
   // restricted to one
   // userpass : a user and a password for any login (a REST API, a service...), the default ; ssh :
   // one for SSH to a server, the login a workflow node's playbook connects with
-  static TYPES = ['userpass', 'ssh', 'git', 'api', 'database', 'cyberark', 'smtp'];
+  // ldap : an LDAP directory's bind account (its user the bind DN) ; sso : an SSO provider's client
+  // (its user the client id, its password the client secret)
+  static TYPES = ['userpass', 'ssh', 'git', 'api', 'database', 'cyberark', 'smtp', 'ldap', 'sso'];
 
   /**
    * Keeps a credential's type and its is_database flag in step : the type sets the flag, and
