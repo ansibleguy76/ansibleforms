@@ -4923,6 +4923,7 @@ onBeforeUnmount(() => {
                 <div v-else-if="loaded && currentTab == 'Categories'">
                   <BsInput
                     type="editor"
+                    :readonly="configTemplated || !canDesignForms"
                     :isFloating="false"
                     v-model="categories"
                     @save="saveForms()"
@@ -5004,6 +5005,7 @@ onBeforeUnmount(() => {
                 <div v-else-if="loaded && currentTab == 'Constants'">
                   <BsInput
                     type="editor"
+                    :readonly="configTemplated || !canDesignForms"
                     :isFloating="false"
                     v-model="constants"
                     @save="saveForms()"
@@ -5082,6 +5084,7 @@ onBeforeUnmount(() => {
                     <div v-else-if="editorTarget" :key="'formeditor-' + currentForm">
                       <BsInput
                         type="editor"
+                        :readonly="configTemplated || !canDesignForms"
                         :isFloating="false"
                         v-model="forms[currentForm]"
                         @save="saveForms()"

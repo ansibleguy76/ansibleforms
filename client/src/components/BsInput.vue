@@ -341,6 +341,7 @@ defineProps({
         <AceEditor
           v-else-if="type === 'editor'"
           v-model="model"
+          :readonly="readonly"
           :lang="lang"
           :theme="theme"
           :liveSync="liveSync"
@@ -496,6 +497,7 @@ defineProps({
         <AceEditor
           v-else-if="type === 'editor'"
           v-model="model"
+          :readonly="readonly"
           :lang="lang"
           :theme="theme"
           :liveSync="liveSync"
