@@ -10,6 +10,7 @@
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted, watch } from 'vue';
+import BsDataTable from '@/components/BsDataTable.vue';
 import { useRoute, useRouter } from 'vue-router';
 import Profile from '@/lib/Profile';
 import { useI18n } from 'vue-i18n';
@@ -21,6 +22,7 @@ import { useRouteTab } from '@/composables/useRouteTab';
 import { useFormLinks } from '@/composables/useFormLinks';
 import { formPath } from '@/lib/formsPath';
 import { recordButtons } from '@/lib/recordButtons';
+import { esc } from '@/lib/tableCells';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -100,9 +102,62 @@ const tabs = computed(() => [
 // the forms that name the role (the admin role : every form) ; a row opens the form
 const { loadForms, formsOfRoles } = useFormLinks();
 const roleForms = computed(() => (role.value ? formsOfRoles([roleName.value]) : []));
+// ─── the Users, Groups and Forms tables ───────────────────────────────────────
+// each a table as every list : the search, Select all, the columns and the export on the title
+// line, the pager under the card. Its users : those named in it (ticked to remove them), then
+// those it gets through a local group (read only, From group says which)
+const toolsId = `af-tools-${Math.random().toString(36).slice(2, 10)}`;
+const pagerId = `af-pager-${Math.random().toString(36).slice(2, 10)}`;
+const describe = (kind, member) =>
+  (member.provider === 'local' ? localDescriptions.value[kind]?.[member.name] : '') || '';
+const userRows = computed(() =>
+  role.value
+    ? [
+        ...role.value.users.map((u) => ({
+          key: u._uid,
+          name: u.name,
+          provider: providerPrefix(u.provider),
+          description: describe('users', u),
+          from: '',
+          named: u,
+        })),
+        ...throughGroups.value.map((m) => ({
+          key: `g/${m.username}/${m.group}`,
+          name: m.username,
+          provider: 'local',
+          description: describe('users', { provider: 'local', name: m.username }),
+          from: m.group,
+        })),
+      ]
+    : [],
+);
+const groupRows = computed(() =>
+  role.value
+    ? role.value.groups.map((g) => ({
+        key: g._uid,
+        name: g.name,
+        provider: providerPrefix(g.provider),
+        description: describe('groups', g),
+        named: g,
+      }))
+    : [],
+);
+// none : an en dash, as the other empty cells
+const orDash = (v) => (v ? esc(String(v)) : '–');
+const userColumns = computed(() => [
+  { key: 'name', label: t('settings.settingsPage.name'), filterable: true },
+  { key: 'provider', label: t('settings.settingsPage.provider'), filterable: true },
+  { key: 'description', label: t('settings.fields.description'), filterable: true, render: orDash },
+  { key: 'from', label: t('settings.settingsPage.roleMemberFrom'), filterable: true, render: orDash },
+]);
+const groupColumns = computed(() => [
+  { key: 'name', label: t('settings.settingsPage.name'), filterable: true },
+  { key: 'provider', label: t('settings.settingsPage.provider'), filterable: true },
+  { key: 'description', label: t('settings.fields.description'), filterable: true, render: orDash },
+]);
 const formColumns = computed(() => [
-  { key: 'name', label: t('settings.fields.form') },
-  { key: 'description', label: t('settings.fields.description') },
+  { key: 'name', label: t('settings.fields.form'), filterable: true },
+  { key: 'description', label: t('settings.fields.description'), filterable: true, render: orDash },
 ]);
 const { activeTab, tabLink } = useRouteTab('general', (key) => tabs.value.some((x) => x.key === key));
 
@@ -191,17 +246,22 @@ async function confirmAdd() {
 }
 
 // ─── Remove from role ─────────────────────────────────────────────────────────
-// the rows ticked in the Users or Groups table ; none kept from one tab to the other
-const selected = ref([]);
-watch(activeTab, () => (selected.value = []));
+// the rows ticked in the Users or Groups table (their keys : a member's _uid) ; none kept from
+// one tab to the other
+const selectedIds = ref(new Set());
+watch(activeTab, () => (selectedIds.value = new Set()));
 
 /**
- * Removes the users or groups ticked from the role, saved at once.
+ * Removes users or groups from the role, saved at once : those ticked, or one row's.
+ *
+ * Args:
+ *   uids (Set|string[]): the members' _uid.
  */
-async function removeSelected() {
+async function removeMembers(uids) {
   const kind = activeTab.value;
-  role.value[kind] = role.value[kind].filter((e) => !selected.value.includes(e._uid));
-  selected.value = [];
+  const gone = new Set(uids);
+  role.value[kind] = role.value[kind].filter((e) => !gone.has(e._uid));
+  selectedIds.value = new Set();
   await saveRoles();
 }
 
@@ -323,37 +383,95 @@ onMounted(async () => {
         </div>
         <!-- the role loading : its fields as grey placeholders, where they come -->
         <AppSkeleton v-else-if="!loaded && !role" shape="form" :count="3" />
+        <!-- Default is everyone's : no users or groups to list -->
+        <p v-else-if="role && role._default && ['users', 'groups'].includes(activeTab)" class="text-muted small mb-0">
+          {{ t('settings.settingsPage.defaultEveryone') }}
+        </p>
+        <!-- Users, Groups : tables as every list ; a member named in the role can be ticked and
+             removed, one through a group is changed on the group -->
+        <BsDataTable
+          v-else-if="role && (activeTab === 'users' || activeTab === 'groups')"
+          :key="activeTab"
+          framed
+          :toolbarTo="'#' + toolsId"
+          :pagerTo="'#' + pagerId"
+          :items="activeTab === 'users' ? userRows : groupRows"
+          :columns="activeTab === 'users' ? userColumns : groupColumns"
+          idKey="key"
+          :selectable="!readOnly"
+          :rowSelectable="(row) => !!row.named"
+          :rowClickSelects="false"
+          linkColumn="none"
+          :selectedIds="selectedIds"
+          :name="`role-${activeTab}`"
+          :exportName="`${role.name}-${activeTab}`"
+          @update:selectedIds="selectedIds = $event"
+        >
+          <template #bulk-actions="{ count }">
+            <BsButton v-if="count" icon="trash" :disabled="readOnly" @click="removeMembers(selectedIds)"
+              >{{ t('settings.settingsPage.removeFromRole') }} ({{ count }})</BsButton
+            >
+          </template>
+          <template v-if="!readOnly" #row-actions="{ item }">
+            <div v-if="item.named" class="dropdown">
+              <a
+                role="button"
+                class="bs-dt-row-menu px-2"
+                data-bs-toggle="dropdown"
+                data-bs-popper-config='{"strategy":"fixed"}'
+              >
+                <FaIcon icon="ellipsis-vertical" />
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <a class="dropdown-item text-danger" href="#" @click.prevent="removeMembers([item.named._uid])">
+                    <FaIcon icon="trash" class="me-2" />{{ t('settings.settingsPage.removeFromRole') }}
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </template>
+        </BsDataTable>
         <!-- Forms : the forms that name the role ; a row opens the form -->
-        <AppLinkedTable
+        <BsDataTable
           v-else-if="role && activeTab === 'forms'"
+          key="forms"
+          framed
+          :toolbarTo="'#' + toolsId"
+          :pagerTo="'#' + pagerId"
+          :items="roleForms"
           :columns="formColumns"
-          :rows="roleForms"
-          rowKey="name"
-          :to="(f) => formPath(f.name)"
-          :empty="t('settings.linked.noFormRole')"
+          idKey="name"
+          :selectable="false"
+          :rowClickSelects="false"
+          linkColumn="name"
+          name="role-forms"
+          :exportName="`${role.name}-forms`"
+          @row-click="(f) => router.push(formPath(f.name))"
         />
         <AppRoleEditor
           v-else-if="role"
           v-model:role="roles[roleIndex]"
           :tab="activeTab"
-          v-model:selected="selected"
-          @removed="saveRoles()"
-          :throughGroups="throughGroups"
           :readOnly="readOnly"
           :authProviders="authProviders"
           :localGroups="sortedLocalGroups"
           :localUsers="sortedLocalUsers"
-          :localDescriptions="localDescriptions"
           :optionKeys="roleOptionKeys"
           :optionLabel="roleOptionLabel"
           :nextUid="nextUid"
         />
       </template>
+      <!-- the search, Select all, the columns and the export of the Users, Groups and Forms tables,
+           on the title line as every list has them -->
+      <template v-if="role && ['users', 'groups', 'forms'].includes(activeTab)" #headerActions>
+        <div :id="toolsId" class="af-title-flow"></div>
+      </template>
+      <!-- their pager, under the card -->
+      <template #footer>
+        <div :id="pagerId"></div>
+      </template>
       <template v-if="role" #actions>
-        <!-- what is ticked in the table : removed from the role -->
-        <BsButton v-if="selected.length" icon="trash" :disabled="readOnly" @click="removeSelected()"
-          >{{ t('settings.settingsPage.removeFromRole') }} ({{ selected.length }})</BsButton
-        >
         <!-- the tab's own add, top right as on the other pages -->
         <BsButton
           v-if="activeTab === 'users' && !role._default"

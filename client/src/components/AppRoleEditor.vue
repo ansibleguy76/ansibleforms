@@ -10,20 +10,15 @@
 /*  @model role: the role edited ({ _uid, _required, _default,     */
 /*      name, groups, users, options })                           */
 /*  @emits removed: a user or a group was removed (the page saves)*/
-/*  @model selected: the rows ticked in the page's tables (_uid)  */
 /*  @props:                                                       */
 /*      readOnly: Boolean - the config cannot be saved now        */
 /*      authProviders: Array - the providers a group or a user    */
 /*         may come from (local, ldap, ...)                       */
 /*      localGroups: Array - the local group names, sorted        */
 /*      localUsers: Array - the local user names, sorted          */
-/*      localDescriptions: Object - { users, groups } : each      */
-/*                  local one's description, by name             */
 /*      optionKeys: Array - the role options, in their order      */
 /*      optionLabel: Function - an option's label                 */
 /*      nextUid: Function - a new _uid for a group or a user      */
-/*      throughGroups: Array - the local users the role gets      */
-/*         through its local groups ({ username, group })        */
 /*      tab: String - the tab shown, chosen by the page (its tabs */
 /*         in its title line, the role's page) : no tab strip of  */
 /*         its own then                                           */
@@ -40,19 +35,16 @@ import {
   roleOptionDescription,
   providerPrefix,
 } from '@/config/roles';
-import { usePagedRows } from '@/composables/usePagedRows';
 
 const props = defineProps({
   readOnly: { type: Boolean, default: false },
   authProviders: { type: Array, default: () => [] },
   localGroups: { type: Array, default: () => [] },
   localUsers: { type: Array, default: () => [] },
-  localDescriptions: { type: Object, default: () => ({ users: {}, groups: {} }) },
   optionKeys: { type: Array, default: () => [] },
   optionLabel: { type: Function, required: true },
   nextUid: { type: Function, required: true },
   tab: { type: String, default: '' },
-  throughGroups: { type: Array, default: () => [] },
 });
 
 // the options in their groups (config/roles.js), each with its title, only those the page passes
@@ -122,33 +114,8 @@ const TabCard = (_, { slots }) =>
 const Bare = (_, { slots }) => slots.default?.();
 
 const role = defineModel('role', { type: Object, required: true });
-// a user or a group removed from the role's page (its row menu) : the page saves at once, as
-// it does for one added
+// a user or a group removed (its X) : the page may save at once
 const emit = defineEmits(['removed']);
-// the rows ticked in the role page's tables (their _uid) : its Remove from role acts on them
-const selected = defineModel('selected', { type: Array, default: () => [] });
-
-/**
- * Ticks or unticks one row.
- *
- * Args:
- *   uid (number): the row's _uid.
- */
-function toggleSelected(uid) {
-  selected.value = selected.value.includes(uid) ? selected.value.filter((x) => x !== uid) : [...selected.value, uid];
-}
-
-/**
- * Ticks every row of a list, or none when they all are.
- *
- * Args:
- *   list (object[]): the role's users or groups.
- */
-function toggleAll(list) {
-  const uids = list.map((e) => e._uid);
-  const all = uids.length > 0 && uids.every((u) => selected.value.includes(u));
-  selected.value = all ? [] : uids;
-}
 
 const { t, te } = useI18n();
 
@@ -216,14 +183,6 @@ function removeGroup(index) {
   emit('removed');
 }
 
-// ─── the role page's tables, a page at a time (AppTablePager under them) ──────
-// the users : those the role names, then those it gets through a local group (read only)
-const memberRows = computed(() => [
-  ...role.value.users.map((u) => ({ key: u._uid, named: u })),
-  ...props.throughGroups.map((m) => ({ key: `g/${m.username}/${m.group}`, via: m })),
-]);
-const { paged, setPaged } = usePagedRows();
-
 /**
  * Removes a user from the role.
  *
@@ -233,22 +192,6 @@ const { paged, setPaged } = usePagedRows();
 function removeUser(index) {
   role.value.users.splice(index, 1);
   emit('removed');
-}
-
-/**
- * A member's description, as its own page has it : a local user's or group's ; one of another
- * provider (LDAP, SSO) has none here.
- *
- * Args:
- *   kind (string): users or groups.
- *   member (object): { provider, name }.
- *
- * Returns:
- *   string: its description, or an en dash, as the other empty cells.
- */
-function describe(kind, member) {
-  const text = member?.provider === 'local' ? props.localDescriptions?.[kind]?.[member.name] : '';
-  return text || '–';
 }
 </script>
 
@@ -338,92 +281,6 @@ function describe(kind, member) {
     <!-- Users : the users of the role, each with the provider they sign in with -->
     <template v-else-if="activeTab === 'users'">
       <p v-if="role._default" class="text-muted small mb-3">{{ t('settings.settingsPage.defaultEveryone') }}</p>
-      <!-- on the role's page : a table of its users, those named in it and those it gets through a
-           group (read only, From says which), as the app's other lists -->
-      <template v-else-if="tab">
-        <p v-if="role.users.length === 0 && !throughGroups.length" class="text-muted small mb-0">
-          {{ t('settings.settingsPage.roleNoUsers') }}
-        </p>
-        <div v-else class="af-table-frame">
-          <table v-fit-columns class="table af-table af-role-members">
-            <thead>
-              <tr>
-                <th class="text-center bs-dt-select">
-                  <input
-                    type="checkbox"
-                    class="form-check-input"
-                    :disabled="readOnly || !role.users.length"
-                    :checked="role.users.length > 0 && role.users.every((u) => selected.includes(u._uid))"
-                    @change="toggleAll(role.users)"
-                  />
-                </th>
-                <th>{{ t('settings.settingsPage.name') }}</th>
-                <th>{{ t('settings.settingsPage.provider') }}</th>
-                <th>{{ t('settings.fields.description') }}</th>
-                <th>{{ t('settings.settingsPage.roleMemberFrom') }}</th>
-                <th class="af-fit-spacer"></th>
-                <th class="af-row-menu-col"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <template v-for="row in paged('users', memberRows)" :key="row.key">
-                <tr v-if="row.named" :class="{ 'bs-dt-selected': selected.includes(row.named._uid) }">
-                  <td class="text-center bs-dt-select">
-                    <input
-                      type="checkbox"
-                      class="form-check-input"
-                      :disabled="readOnly"
-                      :checked="selected.includes(row.named._uid)"
-                      @change="toggleSelected(row.named._uid)"
-                    />
-                  </td>
-                  <td>{{ row.named.name }}</td>
-                  <td>{{ providerPrefix(row.named.provider) }}</td>
-                  <td>{{ describe('users', row.named) }}</td>
-                  <!-- named in the role itself : no group -->
-                  <td class="text-muted">–</td>
-                  <td class="af-fit-spacer"></td>
-                  <td class="bs-dt-row-actions">
-                    <!-- its menu, as the rows of the other tables -->
-                    <div v-if="!readOnly" class="dropdown">
-                      <a
-                        role="button"
-                        class="bs-dt-row-menu px-2"
-                        data-bs-toggle="dropdown"
-                        data-bs-popper-config='{"strategy":"fixed"}'
-                      >
-                        <FaIcon icon="ellipsis-vertical" />
-                      </a>
-                      <ul class="dropdown-menu dropdown-menu-end">
-                        <li>
-                          <a
-                            class="dropdown-item text-danger"
-                            href="#"
-                            @click.prevent="removeUser(role.users.indexOf(row.named))"
-                          >
-                            <FaIcon icon="trash" class="me-2" />{{ t('settings.settingsPage.removeFromRole') }}
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
-                  </td>
-                </tr>
-                <tr v-else>
-                  <!-- through a group : changed on the group, not here -->
-                  <td class="text-center bs-dt-select"><input type="checkbox" class="form-check-input" disabled /></td>
-                  <td>{{ row.via.username }}</td>
-                  <td>local</td>
-                  <td>{{ describe('users', { provider: 'local', name: row.via.username }) }}</td>
-                  <td>{{ row.via.group }}</td>
-                  <td class="af-fit-spacer"></td>
-                  <td></td>
-                </tr>
-              </template>
-            </tbody>
-          </table>
-        </div>
-        <AppTablePager v-if="memberRows.length" :items="memberRows" @change="(r) => setPaged('users', r)" />
-      </template>
       <p v-else-if="!tab && role.users.length === 0" class="text-muted small mb-3">
         {{ t('settings.settingsPage.roleNoUsers') }}
       </p>
@@ -464,80 +321,6 @@ function describe(kind, member) {
     <!-- Groups : the groups of the role, each with the provider it comes from -->
     <template v-else>
       <p v-if="role._default" class="text-muted small mb-3">{{ t('settings.settingsPage.defaultEveryone') }}</p>
-      <!-- on the role's page : a table of its groups, as the users' -->
-      <template v-else-if="tab">
-        <p v-if="role.groups.length === 0" class="text-muted small mb-0">
-          {{ t('settings.settingsPage.roleNoGroups') }}
-        </p>
-        <div v-else class="af-table-frame">
-          <table v-fit-columns class="table af-table af-role-members">
-            <thead>
-              <tr>
-                <th class="text-center bs-dt-select">
-                  <input
-                    type="checkbox"
-                    class="form-check-input"
-                    :disabled="readOnly || !role.groups.length"
-                    :checked="role.groups.length > 0 && role.groups.every((g) => selected.includes(g._uid))"
-                    @change="toggleAll(role.groups)"
-                  />
-                </th>
-                <th>{{ t('settings.settingsPage.name') }}</th>
-                <th>{{ t('settings.settingsPage.provider') }}</th>
-                <th>{{ t('settings.fields.description') }}</th>
-                <th class="af-fit-spacer"></th>
-                <th class="af-row-menu-col"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="grp in paged('groups', role.groups)"
-                :key="grp._uid"
-                :class="{ 'bs-dt-selected': selected.includes(grp._uid) }"
-              >
-                <td class="text-center bs-dt-select">
-                  <input
-                    type="checkbox"
-                    class="form-check-input"
-                    :disabled="readOnly"
-                    :checked="selected.includes(grp._uid)"
-                    @change="toggleSelected(grp._uid)"
-                  />
-                </td>
-                <td>{{ grp.name }}</td>
-                <td>{{ providerPrefix(grp.provider) }}</td>
-                <td>{{ describe('groups', grp) }}</td>
-                <td class="af-fit-spacer"></td>
-                <td class="bs-dt-row-actions">
-                  <!-- its menu, as the rows of the other tables -->
-                  <div v-if="!readOnly" class="dropdown">
-                    <a
-                      role="button"
-                      class="bs-dt-row-menu px-2"
-                      data-bs-toggle="dropdown"
-                      data-bs-popper-config='{"strategy":"fixed"}'
-                    >
-                      <FaIcon icon="ellipsis-vertical" />
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                      <li>
-                        <a
-                          class="dropdown-item text-danger"
-                          href="#"
-                          @click.prevent="removeGroup(role.groups.indexOf(grp))"
-                        >
-                          <FaIcon icon="trash" class="me-2" />{{ t('settings.settingsPage.removeFromRole') }}
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <AppTablePager v-if="role.groups.length" :items="role.groups" @change="(r) => setPaged('groups', r)" />
-      </template>
       <p v-else-if="!tab && role.groups.length === 0" class="text-muted small mb-3">
         {{ t('settings.settingsPage.roleNoGroups') }}
       </p>
