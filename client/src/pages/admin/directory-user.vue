@@ -20,6 +20,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import { toast } from 'vue-sonner';
+import { deleteRecords } from '@/lib/bulkDelete';
 import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import Helpers from '@/lib/Helpers';
@@ -322,6 +323,24 @@ async function loadTokenCount() {
   tokenCount.value = res ? (res.data?.records || []).length : null;
 }
 
+/**
+ * Deletes the rows ticked in its Jobs, Stored jobs or Schedules table, after asking, then reads
+ * them again.
+ *
+ * Args:
+ *   rows (object[]): the rows ticked.
+ *   api (string): their api : job, stored-jobs or schedule.
+ */
+async function deleteTicked(rows, api) {
+  if (
+    await deleteRecords(
+      t,
+      rows.map((r) => `/api/v2/${api}/${r.id}`),
+    )
+  )
+    await loadUserLinks();
+}
+
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
@@ -434,6 +453,7 @@ onMounted(async () => {
         />
         <!-- Roles : the roles it has, and how (default always) ; a row opens the role -->
         <AppLinkedTable
+          selectable
           v-else-if="user && activeTab === 'roles'"
           :exportName="`${username}-roles`"
           :columns="roleColumns"
@@ -463,6 +483,7 @@ onMounted(async () => {
           :empty="t('settings.linked.noFormUser')"
         />
         <AppLinkedTable
+          selectable
           v-else-if="user && activeTab === 'jobs'"
           :exportName="`${username}-jobs`"
           :columns="jobColumns"
@@ -473,23 +494,42 @@ onMounted(async () => {
           :empty="t('settings.linked.noJob')"
         >
           <template #cell-status="{ row }"><AppStatusPill :status="row.status" /></template>
+          <template #bulk-actions="{ selected, count }">
+            <BsButton v-if="count" icon="trash" @click="deleteTicked(selected, 'job')"
+              >{{ t('common.delete') }} ({{ count }})</BsButton
+            >
+          </template>
         </AppLinkedTable>
         <AppLinkedTable
+          selectable
           v-else-if="user && activeTab === 'stored-jobs'"
           :exportName="`${username}-stored-jobs`"
           :columns="storedJobColumns"
           :rows="storedJobs"
           :to="(j) => `/jobs/stored/${j.id}`"
           :empty="t('settings.users.noStoredJob')"
-        />
+        >
+          <template #bulk-actions="{ selected, count }">
+            <BsButton v-if="count" icon="trash" @click="deleteTicked(selected, 'stored-jobs')"
+              >{{ t('common.delete') }} ({{ count }})</BsButton
+            >
+          </template>
+        </AppLinkedTable>
         <AppLinkedTable
+          selectable
           v-else-if="user && activeTab === 'schedules'"
           :exportName="`${username}-schedules`"
           :columns="scheduleColumns"
           :rows="schedules"
           :to="(s) => `/jobs/scheduled/${s.id}`"
           :empty="t('settings.users.noSchedule')"
-        />
+        >
+          <template #bulk-actions="{ selected, count }">
+            <BsButton v-if="count" icon="trash" @click="deleteTicked(selected, 'schedule')"
+              >{{ t('common.delete') }} ({{ count }})</BsButton
+            >
+          </template>
+        </AppLinkedTable>
         <AppLinkedTable
           v-else-if="user && activeTab === 'activity'"
           :exportName="`${username}-activity`"

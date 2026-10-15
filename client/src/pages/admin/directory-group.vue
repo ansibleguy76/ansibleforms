@@ -204,6 +204,7 @@ onMounted(async () => {
             :empty="t('settings.directory.noMember')"
           />
           <AppLinkedTable
+            selectable
             v-else-if="activeTab === 'roles'"
             :exportName="`${groupName}-roles`"
             :columns="roleColumns"

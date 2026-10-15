@@ -27,13 +27,14 @@
 /*  : a filter on every column, the columns shown, the export to  */
 /*  CSV (named after exportName, else none).                      */
 /*  exportName: the CSV file's name                               */
-/*  Each row has its checkbox, as a list's : Select all and Clear */
-/*  selection on the title line, the export then of the rows      */
-/*  ticked ; a slot #bulk-actions="{ selected, count }" adds what */
-/*  the page does with them.                                      */
+/*  selectable : each row its checkbox, as a list's - Select all  */
+/*  and Clear selection on the title line, the export then of the */
+/*  rows ticked ; a slot #bulk-actions="{ selected, count }" adds */
+/*  what the page does with them (Remove, Delete). None on a      */
+/*  table nothing is done with : its filter decides the export.   */
 /*                                                                */
 /******************************************************************/
-import { ref, computed, inject } from 'vue';
+import { ref, computed, inject, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useCellPopovers } from '@/composables/useCellPopovers';
@@ -51,6 +52,7 @@ const props = defineProps({
   children: { type: Function, default: null },
   childrenBefore: { type: String, default: '' },
   exportName: { type: String, default: '' },
+  selectable: { type: Boolean, default: false },
 });
 const { t } = useI18n();
 
@@ -123,6 +125,15 @@ function applyPreset(keys) {
 }
 // ─── the rows ticked (their key), as a list's ─────────────────────────────────
 const selected = ref(new Set());
+// rows gone (deleted, read again) : no longer ticked
+watch(
+  () => props.rows,
+  (rows) => {
+    const keys = new Set(rows.map((r) => r[props.rowKey]));
+    const kept = new Set([...selected.value].filter((k) => keys.has(k)));
+    if (kept.size !== selected.value.size) selected.value = kept;
+  },
+);
 const selectedRows = computed(() => props.rows.filter((r) => selected.value.has(r[props.rowKey])));
 const allShownTicked = computed(
   () => shownRows.value.length > 0 && shownRows.value.every((r) => selected.value.has(r[props.rowKey])),
@@ -268,14 +279,20 @@ function text(col, row) {
     <div class="d-flex align-items-center gap-2 bs-dt-toolbar-moved flex-wrap">
       <BsSearch v-model="filter" class="af-table-search" />
       <!-- the selection : how many, Clear selection, Select all, and what the page does with them -->
-      <span v-if="selected.size" class="text-muted small">{{ selected.size }} {{ t('dataTable.selected') }}</span>
-      <button v-if="selected.size" class="btn btn-outline-primary" @click="selected = new Set()">
+      <span v-if="selectable && selected.size" class="text-muted small"
+        >{{ selected.size }} {{ t('dataTable.selected') }}</span
+      >
+      <button v-if="selectable && selected.size" class="btn btn-outline-primary" @click="selected = new Set()">
         <FaIcon icon="xmark" class="me-1" />{{ t('dataTable.clearSelection') }}
       </button>
-      <button v-if="selected.size < filteredRows.length" class="btn btn-outline-primary" @click="selectAll">
+      <button
+        v-if="selectable && selected.size < filteredRows.length"
+        class="btn btn-outline-primary"
+        @click="selectAll"
+      >
         <FaIcon icon="check-double" class="me-1" />{{ t('dataTable.selectAll', { count: filteredRows.length }) }}
       </button>
-      <slot name="bulk-actions" :selected="selectedRows" :count="selected.size" />
+      <slot v-if="selectable" name="bulk-actions" :selected="selectedRows" :count="selected.size" />
       <div class="ms-auto d-flex align-items-center gap-2">
         <BsColumnPicker
           :columns="columns"
@@ -296,7 +313,7 @@ function text(col, row) {
       <thead>
         <tr>
           <!-- the page's rows ticked at once -->
-          <th class="text-center bs-dt-select">
+          <th v-if="selectable" class="text-center bs-dt-select">
             <input
               type="checkbox"
               class="form-check-input"
@@ -340,7 +357,7 @@ function text(col, row) {
           @click="open(row)"
         >
           <!-- its box (a step under a job has none : the job is ticked) -->
-          <td class="text-center bs-dt-select" @click.stop>
+          <td v-if="selectable" class="text-center bs-dt-select" @click.stop>
             <input
               v-if="!child"
               type="checkbox"
@@ -376,7 +393,10 @@ function text(col, row) {
         </tr>
         <!-- none : the page's note (no job yet...), or none the filter keeps -->
         <tr v-if="!drawnRows.length">
-          <td :colspan="shownColumns.length + (children ? 3 : 2)" class="text-center text-muted py-3">
+          <td
+            :colspan="shownColumns.length + (children ? 2 : 1) + (selectable ? 1 : 0)"
+            class="text-center text-muted py-3"
+          >
             {{ rows.length ? t('common.noData') : empty || t('common.noData') }}
           </td>
         </tr>

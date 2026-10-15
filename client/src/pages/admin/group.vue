@@ -364,6 +364,7 @@ onMounted(async () => {
           :empty="t('settings.linked.noFormGroup')"
         />
         <AppLinkedTable
+          selectable
           v-else-if="group && activeTab === 'roles'"
           :columns="roleColumns"
           :rows="groupRoles"
