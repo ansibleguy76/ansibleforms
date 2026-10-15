@@ -178,7 +178,7 @@ const repositoryItem = {
     use_for_inventories: bool,
     rebase_on_start: bool,
     cron: str,
-    // status, output and head are runtime state written by the sync, never declared
+    // status, pull_output, push_output and head are runtime state written by git, never declared
   },
 };
 

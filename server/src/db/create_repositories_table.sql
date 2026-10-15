@@ -14,7 +14,9 @@ CREATE TABLE `repositories` (
   -- who holds the status='running' claim and since when (models/repository.model.js claim)
   `claim_node` varchar(250) DEFAULT NULL,
   `claim_since` datetime DEFAULT NULL,
-  `output` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  -- what git said on the last pull (or clone, reset), and on the last push (models/repository.model.js)
+  `pull_output` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `push_output` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `head` varchar(50) DEFAULT NULL,    
   `rebase_on_start` tinyint(4) DEFAULT NULL,
   `managed` tinyint(4) DEFAULT 0,

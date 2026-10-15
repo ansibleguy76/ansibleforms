@@ -207,7 +207,9 @@ const crudConfigs = {
       { name: 'rebase_on_start', isBoolean: true },
       { name: 'cron' },
       { name: 'status' },
-      { name: 'output' },
+      // what git said on the last pull (or clone, reset), and on the last push
+      { name: 'pull_output' },
+      { name: 'push_output' },
       { name: 'head' },
       { name: 'managed', isBoolean: true }
     ],

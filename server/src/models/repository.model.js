@@ -66,7 +66,7 @@ class Repository extends CrudModel {
     Repository.clone(data.name).catch(async (e) => {
       logger.error(`Background clone of '${data.name}' failed : ${helpers.getError(e)}`)
       try {
-        await Repository.writeState("update AnsibleForms.`repositories` set output = ?, status = 'failed' where name = ?", [helpers.getError(e), data.name], { name: data.name })
+        await Repository.writeState("update AnsibleForms.`repositories` set pull_output = ?, status = 'failed' where name = ?", [helpers.getError(e), data.name], { name: data.name })
       } catch (e2) {
         logger.error(`...and the failure could not be recorded on the repository either : ${helpers.getError(e2)}`)
       }
@@ -170,7 +170,7 @@ class Repository extends CrudModel {
       await Repo.delete(name);
     } catch (e) {
       // release the claim, or a failed rm wedges the repo at 'running' for ever
-      await Repository.writeState("update AnsibleForms.`repositories` set output = ?, status = 'failed' where name = ?", [e.message, name], { name })
+      await Repository.writeState("update AnsibleForms.`repositories` set pull_output = ?, status = 'failed' where name = ?", [e.message, name], { name })
       throw e
     }
     // Deletes with its own SQL, so it must evict what CrudModel.delete would have:
@@ -218,7 +218,7 @@ class Repository extends CrudModel {
       await Repository.clone(name, true); // recreate it ; clone writes the final status
     } catch (e) {
       // release the claim so a delete failure doesn't wedge the repo at 'running'
-      await Repository.writeState("update AnsibleForms.`repositories` set output = ?, status = 'failed' where name = ?", [e.message, name], { name })
+      await Repository.writeState("update AnsibleForms.`repositories` set pull_output = ?, status = 'failed' where name = ?", [e.message, name], { name })
       throw e
     }
   }
@@ -537,7 +537,7 @@ class Repository extends CrudModel {
       status = "failed"
     }
     output = Repository.maskSecrets(output, repo) // never expose git credentials
-    await Repository.writeState("update AnsibleForms.`repositories` set output = ?,status = ? where name = ?", [output, status, name], { name })
+    await Repository.writeState("update AnsibleForms.`repositories` set pull_output = ?,status = ? where name = ?", [output, status, name], { name })
     if (status == "success") {
       // Repo.info runs `git rev-parse --short HEAD`, which exits 128 on a repository
       // whose remote is EMPTY - a case this model explicitly supports (see
@@ -586,7 +586,7 @@ class Repository extends CrudModel {
     } else {
       output = Repository.maskSecrets(output, pullRepo) // never expose git credentials
     }
-    await Repository.writeState("update AnsibleForms.`repositories` set output = ?,status = ? where name = ?", [output, status, name], { name })
+    await Repository.writeState("update AnsibleForms.`repositories` set pull_output = ?,status = ? where name = ?", [output, status, name], { name })
     if (status == "success") {
       // Repo.info runs `git rev-parse --short HEAD`, which exits 128 on a repository
       // whose remote is EMPTY - a case this model explicitly supports (see
@@ -824,7 +824,8 @@ class Repository extends CrudModel {
       status = "failed"
     }
     output = Repository.maskSecrets(output, syncRepo) // never expose git credentials
-    await Repository.writeState("update AnsibleForms.`repositories` set output = ?,status = ? where name = ?", [output, status, name], { name })
+    // the push's own output : the last pull's (pull_output) stays as it was
+    await Repository.writeState("update AnsibleForms.`repositories` set push_output = ?,status = ? where name = ?", [output, status, name], { name })
     if (status == "success") {
       // Repo.info runs `git rev-parse --short HEAD`, which exits 128 on a repository
       // whose remote is EMPTY - a case this model explicitly supports (see
