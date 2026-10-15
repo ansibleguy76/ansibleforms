@@ -1236,8 +1236,7 @@ export default {
       type_azuread: 'Microsoft Entra ID',
       type_oidc: 'Open ID',
       typeHint_azuread: 'Os utilizadores iniciam sessão com a sua conta Microsoft profissional ou escolar',
-      typeHint_oidc:
-        'Os utilizadores iniciam sessão através de um fornecedor OpenID Connect (Keycloak, Okta...)',
+      typeHint_oidc: 'Os utilizadores iniciam sessão através de um fornecedor OpenID Connect (Keycloak, Okta...)',
       stepSignIn: 'Início de sessão',
       stepGroups: 'Grupos',
       deleteProvider: 'Eliminar fornecedor',
