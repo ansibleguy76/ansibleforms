@@ -164,10 +164,9 @@ onBeforeUnmount(() => {
     }
   }
 }
-// the icon : quieter than the title it follows, the accent on hover and while open. Centred on the
-// middle of the line's letters (vertical-align: middle, from the font the browser actually uses) :
-// a fixed raise (0.55em) put it at another height with every font - Segoe UI, San Francisco,
-// Ubuntu - so on another laptop it sat higher or lower
+// the icon : quieter than the title it follows, the accent on hover and while open. No offset of
+// its own : the title it sits in centres its parts (a flex line, styles/bootstrap-override.scss,
+// .af-title-line > h3) - a fixed raise put it at another height with every font
 .af-info-btn {
   display: inline-flex;
   align-items: center;

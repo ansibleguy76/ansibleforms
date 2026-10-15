@@ -530,6 +530,14 @@ textarea:focus::placeholder {
   line-height: 0;
   vertical-align: -0.05em;
 }
+// a page's title (and a form's) : its parts - the crumbs' icons and words, the separators, the
+// (i) - in a row centred on one line, so the (i) is in the middle of the line whatever the font
+.af-title-line > h3,
+.af-page-head > h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
 .af-title-line {
   flex-wrap: wrap;
   row-gap: 0.5rem;
