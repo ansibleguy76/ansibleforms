@@ -1,0 +1,95 @@
+/******************************************************************/
+/*                                                                */
+/*  How many rows a table shows by default : as many as fit the   */
+/*  screen under its header, with its pager still in view. A size */
+/*  the user picks in the pager wins over it (BsPagination keeps  */
+/*  it in a cookie) ; until then the count follows the window.    */
+/*                                                                */
+/******************************************************************/
+
+// never fewer rows than this, however short the window : a page of 2 rows is no list
+export const FIT_MIN = 5;
+// never more : the largest size the pager offers
+export const FIT_MAX = 100;
+// the room kept under the pager, as the page's own bottom padding
+const BOTTOM_GAP = 16;
+
+/**
+ * The rows that fit a height.
+ *
+ * Args:
+ *   available (number): the height the rows may take, in px.
+ *   rowHeight (number): one row's height, in px.
+ *
+ * Returns:
+ *   number|null: the count, between FIT_MIN and FIT_MAX, or null without a row height.
+ */
+export function fitRowCount(available, rowHeight) {
+  if (!(rowHeight > 0) || !Number.isFinite(available)) return null;
+  return Math.min(FIT_MAX, Math.max(FIT_MIN, Math.floor(available / rowHeight)));
+}
+
+/**
+ * The element a table scrolls in : its nearest ancestor that scrolls, else none (the window).
+ *
+ * Args:
+ *   el (Element): the table.
+ *
+ * Returns:
+ *   Element|null: the scrolling ancestor, or null for the window.
+ */
+function scrollParent(el) {
+  for (let node = el.parentElement; node && node !== document.body; node = node.parentElement) {
+    const overflow = getComputedStyle(node).overflowY;
+    if (overflow === 'auto' || overflow === 'scroll') return node;
+  }
+  return null;
+}
+
+/**
+ * The table a pager pages : the last table before it in the page. The pager may sit under the
+ * page's card (teleported out of the table's component), so it is found by order, not nesting.
+ *
+ * Args:
+ *   pager (Element): the pager's element.
+ *
+ * Returns:
+ *   HTMLTableElement|null: the table, or null when none comes before it.
+ */
+export function pagedTable(pager) {
+  let found = null;
+  for (const table of document.querySelectorAll('table')) {
+    if (table.compareDocumentPosition(pager) & Node.DOCUMENT_POSITION_FOLLOWING) found = table;
+  }
+  return found;
+}
+
+/**
+ * The rows that fit the screen for a pager's table, measured on the page as it is : from the top
+ * of the table's rows to the bottom of what it scrolls in, less the pager under it.
+ *
+ * Args:
+ *   pager (Element): the pager's element (its block : the range and the page boxes).
+ *
+ * Returns:
+ *   number|null: the count, or null when the table shows no row to measure yet.
+ */
+export function measureFit(pager) {
+  if (!pager) return null;
+  const table = pagedTable(pager);
+  const body = table?.tBodies?.[0];
+  const rows = body ? [...body.rows].slice(0, 5) : [];
+  if (!rows.length) return null;
+  // the tallest of the first rows : a row whose text wraps would push the pager off otherwise
+  const rowHeight = Math.max(...rows.map((r) => r.getBoundingClientRect().height));
+  const scroller = scrollParent(table);
+  const box = scroller ? scroller.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
+  const scrolled = scroller ? scroller.scrollTop : window.scrollY;
+  const bodyRect = body.getBoundingClientRect();
+  // where the rows start in the scrolled content, as if it were at its top
+  const rowsTop = bodyRect.top - box.top + scrolled;
+  // what comes under the rows down to the pager's bottom : the card's end and the pager itself
+  const under = Math.max(0, pager.getBoundingClientRect().bottom - bodyRect.bottom);
+  const available = box.bottom - box.top - rowsTop - under - BOTTOM_GAP;
+  return fitRowCount(available, rowHeight);
+}
