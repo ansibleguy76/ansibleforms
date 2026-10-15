@@ -1097,9 +1097,6 @@ export default {
       announcementDelete: "Supprimer l'annonce",
       announcementStepMessage: 'Message',
       announcementStepWhen: 'Quand',
-      announcementStatus: 'Statut',
-      announcement_scheduled: 'Planifiée',
-      announcement_showing: 'Affichée',
       announcementCreatedBy: 'Créée par',
       announcementEnabled: 'Activée',
       announcementEnabledHelp:
@@ -1108,7 +1105,6 @@ export default {
       announcementDisable: 'Désactiver',
       announcementEnabledDone: "L'annonce est activée.",
       announcementDisabledDone: "L'annonce est désactivée.",
-      announcement_hidden: 'Masquée',
       announcementNotFound: 'Aucune annonce {id}.',
       announcementMissing: 'Saisissez un message.',
     },

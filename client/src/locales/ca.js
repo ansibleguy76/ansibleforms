@@ -1094,9 +1094,6 @@ export default {
       announcementDelete: "Elimina l'anunci",
       announcementStepMessage: 'Missatge',
       announcementStepWhen: 'Quan',
-      announcementStatus: 'Estat',
-      announcement_scheduled: 'Programat',
-      announcement_showing: 'Visible',
       announcementCreatedBy: 'Creat per',
       announcementEnabled: 'Activat',
       announcementEnabledHelp:
@@ -1105,7 +1102,6 @@ export default {
       announcementDisable: 'Desactiva',
       announcementEnabledDone: "L'anunci està activat.",
       announcementDisabledDone: "L'anunci està desactivat.",
-      announcement_hidden: 'Amagat',
       announcementNotFound: 'No hi ha cap anunci {id}.',
       announcementMissing: 'Introdueix un missatge.',
     },

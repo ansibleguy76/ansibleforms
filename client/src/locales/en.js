@@ -1082,9 +1082,6 @@ export default {
       announcementDelete: 'Delete announcement',
       announcementStepMessage: 'Message',
       announcementStepWhen: 'When',
-      announcementStatus: 'Status',
-      announcement_scheduled: 'Scheduled',
-      announcement_showing: 'Showing',
       announcementCreatedBy: 'Created by',
       announcementEnabled: 'Enabled',
       announcementEnabledHelp:
@@ -1093,7 +1090,6 @@ export default {
       announcementDisable: 'Disable',
       announcementEnabledDone: 'The announcement is enabled.',
       announcementDisabledDone: 'The announcement is disabled.',
-      announcement_hidden: 'Hidden',
       announcementNotFound: 'No announcement {id}.',
       announcementMissing: 'Enter a message.',
     },

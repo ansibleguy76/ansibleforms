@@ -1093,9 +1093,6 @@ export default {
       announcementDelete: 'Ankündigung löschen',
       announcementStepMessage: 'Nachricht',
       announcementStepWhen: 'Wann',
-      announcementStatus: 'Status',
-      announcement_scheduled: 'Geplant',
-      announcement_showing: 'Angezeigt',
       announcementCreatedBy: 'Erstellt von',
       announcementEnabled: 'Aktiviert',
       announcementEnabledHelp:
@@ -1104,7 +1101,6 @@ export default {
       announcementDisable: 'Deaktivieren',
       announcementEnabledDone: 'Die Ankündigung ist aktiviert.',
       announcementDisabledDone: 'Die Ankündigung ist deaktiviert.',
-      announcement_hidden: 'Ausgeblendet',
       announcementNotFound: 'Keine Ankündigung {id}.',
       announcementMissing: 'Geben Sie eine Nachricht ein.',
     },

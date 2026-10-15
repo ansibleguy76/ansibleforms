@@ -1087,9 +1087,6 @@ export default {
       announcementDelete: 'Aankondiging verwijderen',
       announcementStepMessage: 'Bericht',
       announcementStepWhen: 'Wanneer',
-      announcementStatus: 'Status',
-      announcement_scheduled: 'Gepland',
-      announcement_showing: 'Getoond',
       announcementCreatedBy: 'Gemaakt door',
       announcementEnabled: 'Ingeschakeld',
       announcementEnabledHelp:
@@ -1098,7 +1095,6 @@ export default {
       announcementDisable: 'Uitschakelen',
       announcementEnabledDone: 'De aankondiging is ingeschakeld.',
       announcementDisabledDone: 'De aankondiging is uitgeschakeld.',
-      announcement_hidden: 'Verborgen',
       announcementNotFound: 'Geen aankondiging {id}.',
       announcementMissing: 'Voer een bericht in.',
     },

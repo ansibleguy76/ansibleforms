@@ -1091,9 +1091,6 @@ export default {
       announcementDelete: 'Eliminar anuncio',
       announcementStepMessage: 'Mensaje',
       announcementStepWhen: 'Cuándo',
-      announcementStatus: 'Estado',
-      announcement_scheduled: 'Programado',
-      announcement_showing: 'Visible',
       announcementCreatedBy: 'Creado por',
       announcementEnabled: 'Habilitado',
       announcementEnabledHelp:
@@ -1102,7 +1099,6 @@ export default {
       announcementDisable: 'Deshabilitar',
       announcementEnabledDone: 'El anuncio está habilitado.',
       announcementDisabledDone: 'El anuncio está deshabilitado.',
-      announcement_hidden: 'Oculto',
       announcementNotFound: 'No hay ningún anuncio {id}.',
       announcementMissing: 'Escribe un mensaje.',
     },

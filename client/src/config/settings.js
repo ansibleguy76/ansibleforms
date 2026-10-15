@@ -294,26 +294,6 @@ export function registrationPill(t, state) {
 }
 
 /**
- * An announcement's state, as plain text : scheduled (its start ahead) or showing. An ended one
- * is deleted (models/announcement.model.js), so none is listed.
- *
- * Args:
- *   t (function): the translation function.
- *   row (object): the announcement, its start_at from the server (UTC).
- *   now (number): the moment, epoch ms.
- *
- * Returns:
- *   string: the state, escaped.
- */
-export function announcementState(t, row, now = Date.now()) {
-  const start = row?.start_at ? new Date(row.start_at).getTime() : null;
-  // disabled : hidden, whatever its dates
-  const off = row && (row.enabled === 0 || row.enabled === false);
-  const state = off ? 'hidden' : start !== null && start > now ? 'scheduled' : 'showing';
-  return escapeHtml(t(`settings.interface.announcement_${state}`));
-}
-
-/**
  * An announcement's type as a pill, in its colour : info blue, warning amber, danger red.
  *
  * Args:
@@ -3152,13 +3132,6 @@ export default function getSettings(t) {
           type: 'datetime',
           convertToUtc: true,
           render: (v) => (v ? Helpers.formatServerDate(v) : '–'),
-        },
-        {
-          // scheduled or showing : from its start, now
-          key: 'status',
-          label: t('settings.interface.announcementStatus'),
-          noInput: true,
-          render: (v, row) => announcementState(t, row),
         },
         {
           key: 'created_by',
