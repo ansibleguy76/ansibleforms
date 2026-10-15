@@ -1427,6 +1427,11 @@ export default {
       acceptedAt: 'Accepté',
       ip: 'Adresse IP',
       browser: 'Navigateur',
+      askAgain: 'Redemander',
+      askAgainConfirm:
+        "Demander à {count} utilisateur(s) d'accepter de nouveau l'avertissement ? Leur acceptation est conservée, marquée comme redemandée.",
+      askAgainDone: "{count} utilisateur(s) accepteront de nouveau l'avertissement à leur prochaine connexion.",
+      askedAgain: 'Redemandé',
     },
     notificationChannels: {
       label: 'Canal de notification',

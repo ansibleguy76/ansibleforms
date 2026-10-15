@@ -1325,6 +1325,11 @@ export default {
       acceptedAt: 'Aceite',
       ip: 'Endereço IP',
       browser: 'Navegador',
+      askAgain: 'Pedir novamente',
+      askAgainConfirm:
+        'Pedir a {count} utilizador(es) que aceitem novamente o aviso? A aceitação é mantida, marcada como pedida novamente.',
+      askAgainDone: '{count} utilizador(es) aceitarão o aviso novamente no próximo início de sessão.',
+      askedAgain: 'Pedido novamente',
     },
     notificationChannels: {
       label: 'Canal de notificação',

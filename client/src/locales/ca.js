@@ -1326,6 +1326,11 @@ export default {
       acceptedAt: 'Acceptat',
       ip: 'Adreça IP',
       browser: 'Navegador',
+      askAgain: 'Torna a demanar',
+      askAgainConfirm:
+        "Vols demanar a {count} usuari(s) que tornin a acceptar l'avís? La seva acceptació es conserva, marcada com a tornada a demanar.",
+      askAgainDone: "{count} usuari(s) tornaran a acceptar l'avís al proper inici de sessió.",
+      askedAgain: 'Tornat a demanar',
     },
     notificationChannels: {
       label: 'Canal de notificació',

@@ -1433,6 +1433,49 @@ async function bulkDelete() {
   }
 }
 
+// ─── the list's other actions on the rows ticked (settings.bulkActions) ───────
+// each { name, title, icon, appliesTo?(row), confirm?(count), done?(count), run(ids, rows) } :
+// a button beside Delete while rows are ticked, acting on those it applies to (a disclaimer
+// acceptance asked again already is left as it is), asking first when it says how
+const bulkActions = computed(() => props.settings.bulkActions || []);
+
+/**
+ * The rows ticked that a list action applies to, among those still on screen.
+ *
+ * Args:
+ *   action (object): the action (settings.bulkActions).
+ *
+ * Returns:
+ *   object[]: the rows.
+ */
+function bulkRows(action) {
+  return itemList.value.filter((r) => selectedIds.value.has(r[idKey]) && (!action.appliesTo || action.appliesTo(r)));
+}
+
+/**
+ * Runs a list action on the rows ticked it applies to, after asking when it asks, then reads the
+ * list again.
+ *
+ * Args:
+ *   action (object): the action (settings.bulkActions).
+ */
+async function runBulk(action) {
+  const rows = bulkRows(action);
+  if (!rows.length) return;
+  if (action.confirm && !confirm(action.confirm(rows.length))) return;
+  try {
+    const n = await action.run(
+      rows.map((r) => r[idKey]),
+      rows,
+    );
+    toast.success(action.done ? action.done(typeof n === 'number' ? n : rows.length) : action.title);
+    selectedIds.value = new Set();
+    await loadItems();
+  } catch (err) {
+    toast.error(Helpers.parseAxiosResponseError(err, action.title));
+  }
+}
+
 // HOOKS
 
 onMounted(async () => {
@@ -1515,6 +1558,12 @@ defineExpose({
       >
         <template v-if="dataTableSelectable" #bulk-actions="{ count }">
           <!-- in the style of the toolbar's other buttons -->
+          <!-- the list's own actions on them (settings.bulkActions), then Delete -->
+          <template v-for="action in bulkActions" :key="'bulk-' + action.name">
+            <BsButton v-if="count" :icon="action.icon" :disabled="!bulkRows(action).length" @click="runBulk(action)"
+              >{{ action.title }} ({{ bulkRows(action).length }})</BsButton
+            >
+          </template>
           <BsButton v-if="count && deleteAction" icon="trash" @click="bulkDelete">
             {{ t('common.delete') }} ({{ count }})
           </BsButton>

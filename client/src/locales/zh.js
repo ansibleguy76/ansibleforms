@@ -1275,6 +1275,10 @@ export default {
       acceptedAt: '接受时间',
       ip: 'IP 地址',
       browser: '浏览器',
+      askAgain: '再次请求',
+      askAgainConfirm: '要请 {count} 位用户再次接受免责声明吗？他们的接受记录会保留，并标记为已再次请求。',
+      askAgainDone: '{count} 位用户将在下次登录时再次接受免责声明。',
+      askedAgain: '已再次请求',
     },
     notificationChannels: {
       label: '通知通道',

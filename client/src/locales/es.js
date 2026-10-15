@@ -1422,6 +1422,11 @@ export default {
       acceptedAt: 'Aceptado',
       ip: 'Dirección IP',
       browser: 'Navegador',
+      askAgain: 'Volver a pedir',
+      askAgainConfirm:
+        '¿Pedir a {count} usuario(s) que acepten de nuevo el aviso? Su aceptación se conserva, marcada como vuelta a pedir.',
+      askAgainDone: '{count} usuario(s) aceptarán el aviso de nuevo en su próximo inicio de sesión.',
+      askedAgain: 'Vuelto a pedir',
     },
     notificationChannels: {
       label: 'Canal de notificación',

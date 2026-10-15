@@ -20,6 +20,8 @@ disclaimerVersionRouter.get('/:id', disclaimerController.version);
 // Settings > Access > Disclaimer > Acceptances : who accepted which version
 export const disclaimerAcceptanceRouter = express.Router();
 disclaimerAcceptanceRouter.get('/', disclaimerController.acceptances);
+// the ticked ones asked again : their users accept again
+disclaimerAcceptanceRouter.post('/ask-again', disclaimerController.askAgain);
 disclaimerAcceptanceRouter.get('/:id', disclaimerController.acceptance);
 
 export default router

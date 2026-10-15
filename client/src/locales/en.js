@@ -1401,6 +1401,11 @@ export default {
       acceptedAt: 'Accepted',
       ip: 'IP address',
       browser: 'Browser',
+      askAgain: 'Ask again',
+      askAgainConfirm:
+        'Ask {count} user(s) to accept the disclaimer again? Their acceptance is kept, marked as asked again.',
+      askAgainDone: '{count} user(s) will accept the disclaimer again at their next sign-in.',
+      askedAgain: 'Asked again',
     },
     notificationChannels: {
       label: 'Notification channel',

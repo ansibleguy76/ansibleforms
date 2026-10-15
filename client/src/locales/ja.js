@@ -1307,6 +1307,11 @@ export default {
       acceptedAt: '同意日時',
       ip: 'IP アドレス',
       browser: 'ブラウザー',
+      askAgain: '再同意を求める',
+      askAgainConfirm:
+        '{count} 人のユーザーに免責事項への再同意を求めますか？既存の同意は「再同意を依頼済み」として保持されます。',
+      askAgainDone: '{count} 人のユーザーが次回のサインイン時に免責事項に再同意します。',
+      askedAgain: '再同意を依頼',
     },
     notificationChannels: {
       label: '通知チャネル',

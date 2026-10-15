@@ -74,6 +74,16 @@ const version = async (req, res) => {
   }
 };
 
+// Ask again : the acceptances ticked no longer count, their users accept again { ids }
+const askAgain = async (req, res) => {
+  try {
+    const count = await Disclaimer.askAgain(req.body?.ids, req.user?.user?.username);
+    return res.json(RestResult.single({ count }));
+  } catch (err) {
+    Errors.ReturnError(res, err);
+  }
+};
+
 const acceptances = async (req, res) => {
   try {
     return res.json(RestResult.list(await Disclaimer.acceptances()));
@@ -90,4 +100,4 @@ const acceptance = async (req, res) => {
   }
 };
 
-export default { current, accept, decline, settings, saveSettings, versions, version, acceptances, acceptance };
+export default { current, accept, decline, settings, saveSettings, versions, version, acceptances, acceptance, askAgain };

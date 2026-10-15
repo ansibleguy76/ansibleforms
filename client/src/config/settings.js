@@ -2,6 +2,7 @@
 // Accepts a t() function from vue-i18n for translations
 import { editorStyle } from './editorStyle';
 import YAML from 'yaml';
+import axios from 'axios';
 import Helpers from '@/lib/Helpers';
 import { cronCell } from '@/lib/cronCell';
 import { cronValidationMessage } from './cron';
@@ -3184,6 +3185,19 @@ export default function getSettings(t) {
       // a record, never changed : no Add, no Edit, no Delete ; opened, shown in full
       noCreate: true,
       actions: [],
+      // Ask again : the ones ticked no longer count (kept, marked), their users accept again at
+      // their next sign-in ; one asked again already is left as it is
+      bulkActions: [
+        {
+          name: 'ask_again',
+          title: t('settings.disclaimer.askAgain'),
+          icon: 'rotate',
+          appliesTo: (r) => !r.asked_again_at,
+          confirm: (count) => t('settings.disclaimer.askAgainConfirm', { count }),
+          done: (count) => t('settings.disclaimer.askAgainDone', { count }),
+          run: async (ids) => (await axios.post('/api/v2/disclaimeracceptance/ask-again', { ids })).data?.count,
+        },
+      ],
       fields: [
         { key: 'id', hidden: true, noInput: true, noTable: true },
         { key: 'username', label: t('settings.disclaimer.user'), icon: 'user', readonly: true },
@@ -3219,6 +3233,26 @@ export default function getSettings(t) {
           noTable: true,
           readonly: true,
           initial: (r) => (r?.accepted_at ? Helpers.formatServerDate(r.accepted_at) : ''),
+        },
+        {
+          // asked again : when (and by whom, on hover) ; none, an en dash
+          key: 'asked_again_at',
+          label: t('settings.disclaimer.askedAgain'),
+          noInput: true,
+          render: (v, r) =>
+            v ? `<span title="${esc(r.asked_again_by || '')}">${esc(Helpers.formatServerDate(v))}</span>` : '',
+          sortValue: (r) => Date.parse(r.asked_again_at) || 0,
+        },
+        {
+          // the same, in the dialog : when and by whom
+          key: 'asked_again',
+          label: t('settings.disclaimer.askedAgain'),
+          icon: 'rotate',
+          noTable: true,
+          readonly: true,
+          showWhen: (r) => !!r?.asked_again_at,
+          initial: (r) =>
+            r?.asked_again_at ? `${Helpers.formatServerDate(r.asked_again_at)} (${r.asked_again_by || '–'})` : '',
         },
         {
           key: 'ip',

@@ -1317,6 +1317,11 @@ export default {
       acceptedAt: 'Zaakceptowano',
       ip: 'Adres IP',
       browser: 'Przeglądarka',
+      askAgain: 'Poproś ponownie',
+      askAgainConfirm:
+        'Poprosić {count} użytkownika(ów) o ponowną akceptację zastrzeżenia? Ich akceptacja zostaje zachowana, oznaczona jako ponownie poproszona.',
+      askAgainDone: '{count} użytkownik(ów) zaakceptuje zastrzeżenie ponownie przy następnym logowaniu.',
+      askedAgain: 'Ponownie poproszono',
     },
     notificationChannels: {
       label: 'Kanał powiadomień',

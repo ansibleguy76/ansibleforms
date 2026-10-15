@@ -1425,6 +1425,11 @@ export default {
       acceptedAt: 'Akzeptiert',
       ip: 'IP-Adresse',
       browser: 'Browser',
+      askAgain: 'Erneut anfragen',
+      askAgainConfirm:
+        '{count} Benutzer bitten, den Hinweis erneut zu akzeptieren? Ihre Zustimmung bleibt erhalten, als erneut angefragt markiert.',
+      askAgainDone: '{count} Benutzer akzeptieren den Hinweis bei der nächsten Anmeldung erneut.',
+      askedAgain: 'Erneut angefragt',
     },
     notificationChannels: {
       label: 'Benachrichtigungskanal',

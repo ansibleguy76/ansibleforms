@@ -1415,6 +1415,11 @@ export default {
       acceptedAt: 'Geaccepteerd',
       ip: 'IP-adres',
       browser: 'Browser',
+      askAgain: 'Opnieuw vragen',
+      askAgainConfirm:
+        '{count} gebruiker(s) vragen de disclaimer opnieuw te accepteren? Hun acceptatie blijft bewaard, gemarkeerd als opnieuw gevraagd.',
+      askAgainDone: '{count} gebruiker(s) accepteren de disclaimer opnieuw bij hun volgende aanmelding.',
+      askedAgain: 'Opnieuw gevraagd',
     },
     notificationChannels: {
       label: 'Meldingskanaal',

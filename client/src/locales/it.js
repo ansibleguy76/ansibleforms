@@ -1416,6 +1416,11 @@ export default {
       acceptedAt: 'Accettato',
       ip: 'Indirizzo IP',
       browser: 'Browser',
+      askAgain: 'Richiedi di nuovo',
+      askAgainConfirm:
+        "Chiedere a {count} utente/i di accettare di nuovo l'avviso? La loro accettazione è conservata, segnata come richiesta di nuovo.",
+      askAgainDone: "{count} utente/i accetteranno di nuovo l'avviso al prossimo accesso.",
+      askedAgain: 'Richiesto di nuovo',
     },
     notificationChannels: {
       label: 'Canale di notifica',
