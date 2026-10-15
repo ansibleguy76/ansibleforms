@@ -198,14 +198,59 @@ const PENDING_TOKEN = 'af_pending_token';
 const PENDING_MAX_MS = 5 * 60 * 1000;
 const tokenExample = computed(() => `curl -H "Authorization: Bearer $TOKEN" ${window.location.origin}/api/v2/job`);
 
+// where the token list's toolbar goes (the title line)
+const tokenToolsId = `af-token-tools-${Math.random().toString(36).slice(2, 10)}`;
+const tokenPagerId = `af-token-pager-${Math.random().toString(36).slice(2, 10)}`;
+// the New token wizard : its steps, the one shown, the furthest reached
+const tokenDialog = ref(false);
+const tokenStep = ref(0);
+const tokenReached = ref(0);
+const tokenSteps = computed(() => [
+  { key: 'token', label: t('profilePage.token.stepToken') },
+  { key: 'confirm', label: t('profilePage.token.stepConfirm') },
+  { key: 'copy', label: t('profilePage.token.stepCopy') },
+]);
+
+/** Opens the wizard on its first step, the form empty. */
+function openTokenWizard() {
+  tokenResult.value = null;
+  tokenForm.value.name = '';
+  tokenForm.value.password = '';
+  tokenStep.value = 0;
+  tokenReached.value = 0;
+  tokenDialog.value = true;
+}
+
+// a token is named : what it is for, so it is told apart in the list (and revoked as the right one)
+const tokenNamed = computed(() => !!tokenForm.value.name.trim());
+
+/** From the token (name, lifetime) to its confirmation ; only once it is named. */
+function nextTokenStep() {
+  if (!tokenNamed.value) return;
+  tokenStep.value = 1;
+  tokenReached.value = Math.max(tokenReached.value, 1);
+}
+
+/** Closes the wizard ; a token shown is gone from the page (it was shown once). */
+function closeTokenWizard() {
+  tokenDialog.value = false;
+  tokenResult.value = null;
+  tokenForm.value.password = '';
+}
+
 function showToken(token) {
   const exp = TokenStorage.decode(token).exp;
   tokenResult.value = {
     token,
-    expires: neverExpires(exp * 1000) ? t('apiTokens.neverExpires') : Time.format(exp * 1000),
+    never: neverExpires(exp * 1000),
+    expires: Time.format(exp * 1000),
   };
   tokenForm.value.name = '';
   tokensReload.value++;
+  // the last step : the token, shown once (also on the way back from an SSO sign-in)
+  tokenStep.value = 2;
+  tokenReached.value = 2;
+  tokenDialog.value = true;
 }
 
 async function createToken() {
@@ -681,85 +726,144 @@ async function changePassword() {
 
         <!-- ===================== api token ===================== -->
         <template v-else-if="currentView === 'token'">
-          <!-- the token, once : copy it now -->
-          <div v-if="tokenResult">
-            <label class="form-label fw-semibold" for="af-token">{{
-              t('profilePage.token.created', { date: tokenResult.expires })
-            }}</label>
-            <div class="input-group mb-2">
-              <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="key" /></span>
-              <input
-                id="af-token"
-                class="form-control font-monospace"
-                :value="tokenResult.token"
-                readonly
-                @focus="$event.target.select()"
+          <!-- the tokens made, each to revoke ; New token (top right) opens the wizard -->
+          <AppApiTokens
+            url="/api/v2/profile/tokens"
+            :reload="tokensReload"
+            :toolbarTo="'#' + tokenToolsId"
+            :pagerTo="'#' + tokenPagerId"
+          />
+          <!-- the wizard : the token (its name and lifetime), the confirmation (the password, or a
+               sign-in again for an SSO account), then the token itself, shown once -->
+          <BsModal v-if="tokenDialog" size="lg" icon="code" :footerClose="false" @close="closeTokenWizard">
+            <template #title>{{ t('profilePage.token.new') }}</template>
+            <template #default>
+              <AppWizardSteps
+                :steps="tokenSteps"
+                :current="tokenStep"
+                :reached="tokenReached"
+                @go="(i) => (tokenStep = i)"
               />
-              <button type="button" class="btn btn-outline-primary" @click="copyToken">
-                <FaIcon icon="copy" class="me-1" />{{ t('profilePage.token.copy') }}
-              </button>
-            </div>
-            <div class="alert alert-warning d-flex align-items-start gap-2 py-2 mb-4">
-              <FaIcon icon="triangle-exclamation" class="mt-1" /><span>{{ t('profilePage.token.once') }}</span>
-            </div>
-            <p class="mb-2 text-body-secondary">{{ t('profilePage.token.example') }}</p>
-            <pre class="af-token-example mb-4"><code>{{ tokenExample }}</code></pre>
-            <button type="button" class="btn btn-outline-primary" @click="tokenResult = null">
-              <FaIcon icon="plus" class="me-2" />{{ t('profilePage.token.another') }}
-            </button>
-          </div>
-          <!-- the request : a lifetime and the password -->
-          <form v-else class="af-field" @submit.prevent="createToken" @keydown.enter.prevent="createToken">
-            <div class="mb-3">
-              <label class="form-label fw-bold" for="af-token-days">{{ t('profilePage.token.lifetime') }}</label>
-              <div class="input-group">
-                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="hourglass-half" /></span>
-                <select id="af-token-days" v-model.number="tokenForm.days" class="form-select">
-                  <option v-for="d in TOKEN_LIFETIMES" :key="d" :value="d">
-                    {{ d === 'never' ? t('apiTokens.neverExpires') : t('profilePage.token.days', { n: d }) }}
-                  </option>
-                </select>
+              <div v-if="tokenStep === 2 && tokenResult">
+                <label class="form-label fw-semibold" for="af-token">{{
+                  tokenResult.never
+                    ? t('profilePage.token.createdNever')
+                    : t('profilePage.token.created', { date: tokenResult.expires })
+                }}</label>
+                <div class="input-group mb-2">
+                  <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="key" /></span>
+                  <input
+                    id="af-token"
+                    class="form-control font-monospace"
+                    :value="tokenResult.token"
+                    readonly
+                    @focus="$event.target.select()"
+                  />
+                  <button type="button" class="btn btn-outline-primary" @click="copyToken">
+                    <FaIcon icon="copy" class="me-1" />{{ t('profilePage.token.copy') }}
+                  </button>
+                </div>
+                <div class="alert alert-warning d-flex align-items-start gap-2 py-2 mb-4">
+                  <FaIcon icon="triangle-exclamation" class="mt-1" /><span>{{ t('profilePage.token.once') }}</span>
+                </div>
+                <p class="mb-2 text-body-secondary">{{ t('profilePage.token.example') }}</p>
+                <pre class="af-token-example mb-4"><code>{{ tokenExample }}</code></pre>
               </div>
-              <div class="form-text">{{ t('profilePage.token.lifetimeHint') }}</div>
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-bold" for="af-token-name">{{ t('profilePage.token.name') }}</label>
-              <div class="input-group">
-                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="tag" /></span>
-                <input id="af-token-name" v-model="tokenForm.name" type="text" maxlength="100" class="form-control" />
+              <!-- the request : a lifetime and the password -->
+              <div v-else-if="tokenStep === 0" class="af-field af-field-help-wide">
+                <div class="mb-3">
+                  <label class="form-label fw-bold" for="af-token-name"
+                    >{{ t('profilePage.token.name') }}<span class="text-danger ms-1">*</span></label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="tag" /></span>
+                    <input
+                      id="af-token-name"
+                      v-model="tokenForm.name"
+                      type="text"
+                      maxlength="100"
+                      required
+                      class="form-control"
+                      @keydown.enter.prevent="nextTokenStep"
+                    />
+                  </div>
+                  <div class="form-text">{{ t('profilePage.token.nameHint') }}</div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-bold" for="af-token-days">{{ t('profilePage.token.lifetime') }}</label>
+                  <div class="input-group">
+                    <span class="input-group-text text-gray-500"
+                      ><FaIcon :fixedwidth="true" icon="hourglass-half"
+                    /></span>
+                    <select id="af-token-days" v-model.number="tokenForm.days" class="form-select">
+                      <option v-for="d in TOKEN_LIFETIMES" :key="d" :value="d">
+                        {{ d === 'never' ? t('apiTokens.neverExpires') : t('profilePage.token.days', { n: d }) }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="form-text">{{ t('profilePage.token.lifetimeHint') }}</div>
+                </div>
               </div>
-              <div class="form-text">{{ t('profilePage.token.nameHint') }}</div>
-            </div>
-            <p v-if="!usesPassword" class="text-body-secondary mb-0">
-              <FaIcon icon="circle-info" class="me-2" />{{
-                t('profilePage.token.signInAgainHint', { type: loginType.label })
-              }}
-            </p>
-            <div v-else>
-              <label class="form-label fw-bold" for="af-token-password">{{ t('profilePage.token.password') }}</label>
-              <div class="input-group">
-                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="lock" /></span>
-                <input
-                  id="af-token-password"
-                  v-model="tokenForm.password"
-                  type="password"
-                  class="form-control"
-                  autocomplete="current-password"
-                />
-              </div>
-              <div class="form-text">{{ t('profilePage.token.passwordHint') }}</div>
-            </div>
-          </form>
-          <!-- the tokens made, each to revoke -->
-          <div class="mt-4 pt-3 border-top">
-            <h6 class="fw-bold mb-2">{{ t('profilePage.token.yours') }}</h6>
-            <AppApiTokens url="/api/v2/profile/tokens" :reload="tokensReload" />
-          </div>
+              <form v-else class="af-field" @submit.prevent="createToken" @keydown.enter.prevent="createToken">
+                <p v-if="!usesPassword" class="text-body-secondary mb-0">
+                  <FaIcon icon="circle-info" class="me-2" />{{
+                    t('profilePage.token.signInAgainHint', { type: loginType.label })
+                  }}
+                </p>
+                <div v-else>
+                  <label class="form-label fw-bold" for="af-token-password">{{
+                    t('profilePage.token.password')
+                  }}</label>
+                  <div class="input-group">
+                    <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="lock" /></span>
+                    <input
+                      id="af-token-password"
+                      v-model="tokenForm.password"
+                      type="password"
+                      class="form-control"
+                      autocomplete="current-password"
+                    />
+                  </div>
+                  <div class="form-text">{{ t('profilePage.token.passwordHint') }}</div>
+                </div>
+              </form>
+            </template>
+            <template #footer>
+              <BsButton v-if="tokenStep === 1" icon="arrow-left" @click="tokenStep = 0">{{
+                t('common.previous')
+              }}</BsButton>
+              <BsButton
+                v-if="tokenStep === 0"
+                icon="arrow-right"
+                :colorClass="tokenNamed ? 'primary' : 'secondary'"
+                :disabled="!tokenNamed"
+                @click="nextTokenStep"
+                >{{ t('common.next') }}</BsButton
+              >
+              <BsButton
+                v-if="tokenStep === 1"
+                icon="code"
+                :colorClass="canSubmitToken ? 'primary' : 'secondary'"
+                :disabled="!canSubmitToken"
+                @click="createToken"
+                >{{ t('profilePage.token.create') }}</BsButton
+              >
+              <BsButton icon="times" @click="closeTokenWizard">{{ t('common.close') }}</BsButton>
+            </template>
+          </BsModal>
         </template>
 
         <!-- the view's action, where the settings pages put their Save button : below the card,
              on the right, grey until the form can be sent, then the accent color -->
-        <template v-if="(currentView === 'password' && isLocal) || (currentView === 'token' && !tokenResult)" #actions>
+        <!-- the token list's pager, under the card as on the other lists -->
+        <template v-if="currentView === 'token'" #footer>
+          <div :id="tokenPagerId"></div>
+        </template>
+        <!-- the token list's search and buttons, on the title line as on the other lists -->
+        <template v-if="currentView === 'token'" #headerActions>
+          <div :id="tokenToolsId" class="af-title-flow"></div>
+        </template>
+        <template v-if="(currentView === 'password' && isLocal) || currentView === 'token'" #actions>
           <BsButton
             v-if="currentView === 'password'"
             icon="key"
@@ -768,14 +872,7 @@ async function changePassword() {
             @click="changePassword"
             >{{ t('profilePage.change') }}</BsButton
           >
-          <BsButton
-            v-else
-            icon="code"
-            :colorClass="canSubmitToken ? 'primary' : 'secondary'"
-            :disabled="!canSubmitToken"
-            @click="createToken"
-            >{{ t('profilePage.token.create') }}</BsButton
-          >
+          <BsButton v-else icon="plus" @click="openTokenWizard">{{ t('profilePage.token.new') }}</BsButton>
         </template>
       </AppSettings>
     </main>
@@ -863,13 +960,14 @@ $af-detail-line: 1.8rem;
   border: 1px solid var(--bs-border-color);
 }
 
-// one width for the fields of every view (password, api token, preferences) ; in a form only
-// its fields have that width, so their help text below can use the whole card, as in the
-// preferences cards
+// one width for the fields of every view (password, api token, preferences) ; in a form (and
+// the New token wizard's details) only its fields have that width, so their help text below can
+// use the whole width, as in the preferences cards
 .af-field {
   max-width: 480px;
 }
-form.af-field {
+form.af-field,
+.af-field.af-field-help-wide {
   max-width: none;
   .input-group {
     max-width: 480px;
