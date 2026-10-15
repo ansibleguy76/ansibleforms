@@ -9,6 +9,9 @@ CREATE TABLE `runners` (
   `username` varchar(250) DEFAULT NULL,
   `password` text DEFAULT NULL,
   `use_credentials` tinyint(4) DEFAULT 0,
+  -- a credential of Connections > Credentials it signs in with ; its own token, user and password
+  -- only while it has none
+  `credential` varchar(250) DEFAULT NULL,
   `ignore_certs` tinyint(4) DEFAULT 0,
   `ca_bundle` text DEFAULT NULL,
   `is_default` tinyint(4) DEFAULT 0,

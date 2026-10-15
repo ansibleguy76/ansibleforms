@@ -1231,11 +1231,11 @@ export default {
         'Una credencial del seu tipus a Connexions > Credencials (Microsoft Entra ID o Open ID): el seu ID de client i secret.',
       ownClient:
         'Inicia sessió amb el seu propi ID de client ({client}), anterior a les credencials, fins que es triï una credencial.',
-      activeHelp: 'Desactivat: ningú no hi inicia sessió.',
-      default: 'Predeterminat',
-      defaultHelp: "El proveïdor {type} amb què inicia sessió el botó de la pàgina d'inici; fer-lo predeterminat el fa l'únic.",
+      activeHelp:
+        'Els usuaris inicien la sessió amb ell quan trien {type}; activar-lo desactiva els altres proveïdors {type}.',
       autoLogin: "Salta la pàgina d'inici de sessió",
-      autoLoginHelp: "Els usuaris que obren l'aplicació van directament al seu inici de sessió, sense la pàgina d'inici; activar-lo el desactiva per als altres. Només per al proveïdor predeterminat.",
+      autoLoginHelp:
+        "Els usuaris que obren l'aplicació van directament al seu inici de sessió; activar-lo el desactiva per als altres. Només per a un proveïdor activat.",
       providerNotFound: "No hi ha cap proveïdor SSO amb l'id '{id}'.",
       stepType: 'Tipus',
       type_azuread: 'Microsoft Entra ID',

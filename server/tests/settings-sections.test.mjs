@@ -26,7 +26,6 @@ describe("settings sections", () => {
     for (const f of ["app_name", "default_theme", "env_label", "header_links"]) expect(writable.has(f)).toBe(true);
     for (const f of ["url", "mail_server", "mail_password", "config_source"]) expect(writable.has(f)).toBe(false);
     expect(mayEnvVar(r, "DEFAULT_LANGUAGE")).toBe(true);
-    expect(mayEnvVar(r, "ENABLE_SSO")).toBe(false);
     expect(mayEnvVar(r, "ENABLE_CHAT")).toBe(false);
   });
 

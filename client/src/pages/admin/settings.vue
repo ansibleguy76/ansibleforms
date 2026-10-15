@@ -319,9 +319,7 @@ function envHelp(e) {
 // whether this page writes at all (it says so when it does not) : the deployment's.
 // YTT_LIB_DATA_<name> is a prefix, not a variable : documented, nothing to show. LOG_COLOR_* are
 // the console's ANSI colour codes : rarely changed, documented. LOG_SYSLOG_* are imported once as a
-// syslog server (Settings > Connections > Syslog), as VAULT_* as a secret store. ENABLE_SSO and
-// SSO_AUTO_LOGIN (all SSO off, the login page skipped for the only provider) are shown here : the
-// SSO page has the providers only, each its own Enabled and Skip the login page
+// syslog server (Settings > Connections > Syslog), as VAULT_* as a secret store.
 const OWNED_ELSEWHERE =
   /^(VAULT|MCP|LOG_COLOR|LOG_SYSLOG)_|^RTE_(?!QUEUE_MINUTES$)|^(ENABLE_(MCP|CHAT)|BASE_URL|AF_ROLE|ANSIBLE_PATH|PROCESS_MAX_BUFFER|DEFAULT_LANGUAGE|SHOW_DESIGNER|ADMIN_USERNAME|ADMIN_PASSWORD|REINIT_ADMIN|NODE_ENV|ALLOW_ENV_EDIT|YTT_LIB_DATA_\{dynamic\})$/;
 

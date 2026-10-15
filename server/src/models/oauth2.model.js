@@ -8,28 +8,25 @@ import { isSingleTenant } from '../auth/auth_entraid.js';
 class OAuth2 extends CrudModel {
     static modelName = 'oauth2';
 
-    // Unset is_default on the other providers of the same type when this one is the default : the
-    // default of a type is the one its login button signs in with (several may be enabled).
+    // Unset enable on the other providers of the same type when this one is enabled : the enabled
+    // one of a type is the one its login button signs in with.
     //
     // Same trap as Awx.preProcess : this WRITES, and it ran before the required-field
     // check and before the managed guard, so a POST with no `name` answered 400 having
     // already switched off a seed-declared SSO provider. The blanket update now spares
     // managed rows, and a caller trying to displace one is refused instead.
     static async preProcess(data, _action, opts = {}) {
-        // a seed of before 7.3 says enable for the one its type signs in with : its default
-        if (opts.fromSeed && data.is_default === undefined && data.enable !== undefined) data.is_default = data.enable ? 1 : 0;
-        if (data.is_default && data.is_default !== '0') {
-            data.is_default = 1;
+        if (data.enable) {
             if (!opts.fromSeed) {
-                const held = await mysql.do('SELECT name FROM AnsibleForms.`oauth2_providers` WHERE is_default = 1 AND managed = 1 AND provider = ?', [data.provider]);
+                const held = await mysql.do('SELECT name FROM AnsibleForms.`oauth2_providers` WHERE enable = 1 AND managed = 1 AND provider = ?', [data.provider]);
                 if (held.length) {
-                    throw new Errors.AccessDeniedError(`The default '${data.provider}' provider is managed by the config seed ('${held[0].name}') and cannot be displaced here`);
+                    throw new Errors.AccessDeniedError(`The enabled '${data.provider}' provider is managed by the config seed ('${held[0].name}') and cannot be displaced here`);
                 }
             }
-            logger.info('Unsetting is_default on the other OAuth2 records of its type');
+            logger.info('Unsetting enable on all other OAuth2 records');
             // the seed clears every row of this provider type ; an API caller only the
             // unmanaged ones (see the matching note in runner.model.js)
-            await mysql.do('UPDATE AnsibleForms.`oauth2_providers` SET is_default = 0 WHERE provider = ?'
+            await mysql.do('UPDATE AnsibleForms.`oauth2_providers` SET enable = 0 WHERE provider = ?'
               + (opts.fromSeed ? '' : ' AND managed = 0'), [data.provider]);
         }
         // Skip the login page : one provider at most sends users straight to it, the others stop
@@ -81,14 +78,11 @@ class OAuth2 extends CrudModel {
         await this.assertCredential(data.credential, data.provider);
         // the tenant : its credential's (checked there), else its own
         if (!data.credential) this.assertEntraTenant(data.provider, data.tenant_id);
-        // a new provider is enabled, and the default of its type (its login button) when its type
-        // has none yet ; another is made the default with Use for sign-in (is_default : 1)
-        if (!opts.fromSeed) {
-            if (data.enable === undefined) data.enable = 1;
-            if (data.is_default === undefined) {
-                const current = await mysql.do('SELECT id FROM AnsibleForms.`oauth2_providers` WHERE is_default = 1 AND provider = ?', [data.provider]);
-                data.is_default = current.length ? 0 : 1;
-            }
+        // a new provider is the one its type signs in with when its type has none yet ; another is
+        // chosen with Use for sign-in (enable : 1)
+        if (data.enable === undefined && !opts.fromSeed) {
+            const active = await mysql.do('SELECT id FROM AnsibleForms.`oauth2_providers` WHERE enable = 1 AND provider = ?', [data.provider]);
+            data.enable = active.length ? 0 : 1;
         }
         data =await this.preProcess(data, 'create', opts);
         return super.create(this.modelName, data, opts);

@@ -112,25 +112,19 @@ async function onCredentialCreated(name) {
 }
 
 // ─── its switches ─────────────────────────────────────────────────────────────
-// Enabled ; Default (the one its type's login button signs in with : on, only by making another
-// the default does it go off) ; Skip the login page (the default provider only)
+// Enabled (its type's login button signs in with it : turning it on turns the others of its type
+// off) ; Skip the login page (an enabled provider only)
 const switches = computed(() => {
   const p = provider.value;
   if (!p) return [];
   const type = TYPES[p.provider] || p.provider;
   return [
-    { key: 'enable', label: t('settings.oauth2.active'), help: t('settings.oauth2.activeHelp') },
-    {
-      key: 'is_default',
-      label: t('settings.oauth2.default'),
-      help: t('settings.oauth2.defaultHelp', { type }),
-      disabled: !!p.is_default,
-    },
+    { key: 'enable', label: t('settings.oauth2.active'), help: t('settings.oauth2.activeHelp', { type }) },
     {
       key: 'auto_login',
       label: t('settings.oauth2.autoLogin'),
       help: t('settings.oauth2.autoLoginHelp'),
-      disabled: !p.is_default && !p.auto_login,
+      disabled: !p.enable && !p.auto_login,
     },
   ];
 });
@@ -185,12 +179,11 @@ async function save() {
 }
 
 /**
- * One of its switches, saved at once : Enabled (whether it may be used), Default (its type's
- * login button signs in with it : the others of its type stop being it, oauth2.model ; never
- * turned off here, another is made the default instead) and Skip the login page (the others stop).
+ * One of its switches, saved at once : Enabled (its type's login button signs in with it : the
+ * others of its type stop being it, oauth2.model) and Skip the login page (the others stop).
  *
  * Args:
- *   key (string): enable, is_default or auto_login.
+ *   key (string): enable or auto_login.
  *   on (boolean): the switch's new state.
  */
 async function setSwitch(key, on) {
@@ -295,8 +288,8 @@ onMounted(async () => {
               :isFloating="false"
               :label="t('settings.fields.description')"
             />
-            <!-- its switches, as LDAP's, each saved at once : whether it may be used, whether its
-                 type's login button signs in with it, whether the login page is skipped for it -->
+            <!-- its switches, as LDAP's, each saved at once : whether its type's login button signs in
+                 with it, whether the login page is skipped for it -->
             <div v-for="sw in switches" :key="sw.key" class="mb-3 af-provider-switch">
               <label class="form-label fw-bold d-block" :for="'af-provider-' + sw.key">{{ sw.label }}</label>
               <div class="form-check form-switch mb-0">

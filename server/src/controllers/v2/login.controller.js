@@ -202,15 +202,12 @@ const settings = async function(req, res) {
       groupfilter: oidcRaw.groupfilter,
     };
     const skipTo = await mysql
-      .do("SELECT provider FROM AnsibleForms.`oauth2_providers` WHERE enable = 1 AND is_default = 1 AND auto_login = 1 ORDER BY id LIMIT 1")
+      .do("SELECT provider FROM AnsibleForms.`oauth2_providers` WHERE enable = 1 AND auto_login = 1 ORDER BY id LIMIT 1")
       .then((rows) => rows[0]?.provider || null)
       .catch(() => null);
+    // the enabled provider set to Skip the login page, the login page goes straight to it
     const usable = { azuread: entra.enable, oidc: oidc.enabled };
-    const autoLogin = skipTo && usable[skipTo]
-      ? skipTo
-      : appConfig.ssoAutoLogin && entra.enable !== oidc.enabled
-        ? (entra.enable ? 'azuread' : 'oidc')
-        : null;
+    const autoLogin = skipTo && usable[skipTo] ? skipTo : null;
     const settings = {
       entraIdEnabled: entra.enable,
       entraGroupfilter: entra.groupfilter,
@@ -222,8 +219,7 @@ const settings = async function(req, res) {
       oidcEnabled: oidc.enabled,
       oidcIssuer: oidc.issuer,
       oidcGroupfilter: oidc.groupfilter,
-      // the login page goes straight to a provider : the enabled one set to Skip the login page,
-      // else (SSO_AUTO_LOGIN, deprecated since 7.3) the only one enabled
+      // the login page goes straight to a provider : the enabled one set to Skip the login page
       ssoAutoLogin: !!autoLogin,
       ssoAutoLoginProvider: autoLogin,
       // the profile page offers api token lifetimes up to this cap (API_TOKEN_MAX_DAYS)

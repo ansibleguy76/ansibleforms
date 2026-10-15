@@ -607,7 +607,7 @@ const SCHEMA_MANIFEST = {
                                'ldap.id', 'ldap.name', 'ldap.position', 'ldap.domains', 'ldap.credential',
                                'oauth2_providers.credential', 'credentials.tenant_id', 'credentials.issuer', 'credentials.redirect_uri',
                                'credentials.ignore_certs', 'credentials.ca_bundle', 'oauth2_providers.auto_login',
-                               'oauth2_providers.is_default'] },
+                               'runners.credential'] },
   },
 };
 
@@ -1062,11 +1062,10 @@ async function patchVersion7(messages, success, failed) {
   // its mail server : whether certificates are checked, the CA bundle
   await checkPromise(addColumn("credentials", "ignore_certs", "tinyint(4)", true, "NULL"), messages, success, failed);
   await checkPromise(addColumn("credentials", "ca_bundle", "text", true, "NULL"), messages, success, failed);
-  // Skip the login page, per SSO provider (it was SSO_AUTO_LOGIN, for the only one enabled)
+  // Skip the login page, per SSO provider (it was the SSO_AUTO_LOGIN variable, until 7.3)
   await checkPromise(addColumn("oauth2_providers", "auto_login", "tinyint(4)", true, "0"), messages, success, failed);
-  // the default provider of each type (its login button), apart from Enabled : several may be
-  // enabled. Added once, the enabled one of each type of before becomes its default
-  await checkPromise(addProviderDefaults(), messages, success, failed);
+  // a runner signs in with a credential of Connections > Credentials, as every other connection
+  await checkPromise(addColumn("runners", "credential", "varchar(250)", true, "NULL"), messages, success, failed);
   // and when each ended, worked or not, shown beside the repository's Pull and Push
   await checkPromise(addColumn("repositories", "pulled_at", "datetime", true, "NULL"), messages, success, failed);
   await checkPromise(addColumn("repositories", "pushed_at", "datetime", true, "NULL"), messages, success, failed);
@@ -1339,22 +1338,6 @@ export async function moveSsoClientsToCredentials() {
   const message = `Moved the client of ${done.length} SSO provider(s) to credentials (${done.join(", ")})`;
   logger.notice(message);
   return message;
-}
-
-/**
- * The default SSO provider of each type (is_default), its login button's : the column added, and
- * the enabled one of each type of before (one per type, as enable was) made its default. Once,
- * when the column is added : a default turned off since is never set again.
- *
- * Returns:
- *   Promise<string|null>: what was done, or null when the column was there already.
- */
-export async function addProviderDefaults() {
-  const has = await mysql.do("SHOW COLUMNS FROM AnsibleForms.`oauth2_providers` WHERE Field = 'is_default'");
-  if (has.length) return null;
-  await mysql.do("ALTER TABLE AnsibleForms.`oauth2_providers` ADD COLUMN `is_default` tinyint(4) DEFAULT 0");
-  const res = await mysql.do("UPDATE AnsibleForms.`oauth2_providers` SET is_default = 1 WHERE enable = 1");
-  return `Added oauth2_providers.is_default, the enabled provider of each type its default (${res?.affectedRows ?? 0})`;
 }
 
 /**

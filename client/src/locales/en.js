@@ -1212,13 +1212,10 @@ export default {
         'A credential of its type in Connections > Credentials (Microsoft Entra ID or Open ID) : its client ID and client secret.',
       ownClient:
         'It signs in with its own client ID ({client}), from before credentials, until a credential is chosen.',
-      activeHelp: 'Off: nobody signs in with it.',
-      default: 'Default',
-      defaultHelp:
-        "The {type} provider the login page's button signs in with; making it the default makes it the only one.",
+      activeHelp: 'Users sign in with it when they choose {type}; turning it on turns off the other {type} providers.',
       autoLogin: 'Skip the login page',
       autoLoginHelp:
-        'Users who open the app go straight to its sign-in; turning it on turns it off for the others. Default provider only.',
+        'Users who open the app go straight to its sign-in; turning it on turns it off for the others. Enabled provider only.',
       providerNotFound: "There is no SSO provider with the id '{id}'.",
       stepType: 'Type',
       type_azuread: 'Microsoft Entra ID',

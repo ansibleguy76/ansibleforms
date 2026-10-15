@@ -1226,11 +1226,10 @@ export default {
         'Una credenziale del suo tipo in Connessioni > Credenziali (Microsoft Entra ID o Open ID): ID client e segreto.',
       ownClient:
         'Accede con il proprio ID client ({client}), precedente alle credenziali, finché non si sceglie una credenziale.',
-      activeHelp: 'Disattivo: nessuno accede con esso.',
-      default: 'Predefinito',
-      defaultHelp: "Il provider {type} con cui accede il pulsante della pagina di accesso; renderlo predefinito lo rende l'unico.",
+      activeHelp: 'Gli utenti accedono con esso quando scelgono {type}; attivarlo disattiva gli altri provider {type}.',
       autoLogin: 'Salta la pagina di accesso',
-      autoLoginHelp: "Chi apre l'app va direttamente al suo accesso, senza la pagina di accesso; attivarlo lo disattiva per gli altri. Solo per il provider predefinito.",
+      autoLoginHelp:
+        "Chi apre l'app va direttamente al suo accesso; attivarlo lo disattiva per gli altri. Solo per un provider attivo.",
       providerNotFound: "Non esiste un provider SSO con id '{id}'.",
       stepType: 'Tipo',
       type_azuread: 'Microsoft Entra ID',

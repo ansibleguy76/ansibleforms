@@ -6,6 +6,7 @@ import logger from '../lib/logger.js';
 import mysql from './db.model.js';
 import { RUNNER_TYPES, getRunner } from '../runners/index.js';
 import { stripTrailingSlashes } from '../lib/url.js';
+import Credential from './credential.model.v2.js';
 
 // the flavours of an awx runner (none is AWX) : which product it is (its uri carries its API path)
 export const RUNNER_FLAVOURS = ['aap', 'ascender'];
@@ -50,10 +51,66 @@ class Runner extends CrudModel {
     return data;
   }
 
-  // What each type needs to work, checked on the row as it will be stored
+  /**
+   * Checks the credential a runner names : it exists and is an api one (its password the token)
+   * or a userpass one (a user and a password : an AWX's login, a Jenkins user and its API token).
+   *
+   * Args:
+   *   row (object): the runner as it will be stored.
+   *
+   * Raises:
+   *   BadRequestError: no such credential, or one of another type.
+   */
+  static async assertCredential(row) {
+    if (!row.credential) return;
+    const rows = await mysql.do('SELECT credential_type FROM AnsibleForms.`credentials` WHERE name = ?', [row.credential]);
+    if (!rows.length) throw new Errors.BadRequestError(`No credential named '${row.credential}'`);
+    const type = rows[0].credential_type;
+    const wanted = row.type === 'jenkins' ? ['userpass'] : row.type === 'awx' ? ['api', 'userpass'] : ['api'];
+    if (!wanted.includes(type)) {
+      throw new Errors.BadRequestError(`A ${row.type} runner signs in with ${wanted.join(' or ')} credentials : '${row.credential}' is ${type}`);
+    }
+  }
+
+  /**
+   * A runner as it signs in : the token, user and password of its credential (Connections >
+   * Credentials, read from its secret store when it names one), else its own.
+   *   - an api credential : its password the token
+   *   - a userpass one : an AWX's user and password (use credentials), a Jenkins user and its
+   *     API token
+   *
+   * Args:
+   *   row (object): the runner, as stored (decrypted).
+   *
+   * Returns:
+   *   Promise<object>: a copy, its secrets its credential's when it names one.
+   */
+  static async withCredential(row) {
+    if (!row?.credential) return row;
+    const exact = "^" + String(row.credential).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$";
+    const cred = await Credential.resolveCredential(exact).catch((e) => {
+      logger.error(`Couldn't read the credential '${row.credential}' of the runner '${row.name}' : ${e.message || e}`);
+      return null;
+    });
+    if (!cred) return row;
+    if (row.type === 'jenkins') return { ...row, username: cred.user || '', token: cred.password || '' };
+    if (row.type === 'awx' && cred.user) {
+      return { ...row, use_credentials: 1, username: cred.user, password: cred.password || '', token: null };
+    }
+    return { ...row, use_credentials: 0, token: cred.password || '' };
+  }
+
+  // What each type needs to work, checked on the row as it will be stored ; a credential gives
+  // its secrets (Runner.assertCredential checks it)
   static assertComplete(row) {
     const missing = (field) => { throw new Errors.BadRequestError(`A runner of type ${row.type} needs ${field}`); };
     if (!row.uri) missing('a uri');
+    if (row.credential) {
+      if (TOKEN_AND_PROJECT.includes(row.type) && !row.project) {
+        missing(row.type === 'semaphore' ? 'a project (the project id)' : 'a project (the project name)');
+      }
+      return;
+    }
     if (row.type === 'rte' && !row.token) missing('a token (the RTE_TOKEN of the RTE)');
     if (TOKEN_AND_PROJECT.includes(row.type)) {
       if (!row.token) missing('an API token');
@@ -98,6 +155,7 @@ class Runner extends CrudModel {
     CrudModel.assertRequired(this.modelName, data);
     data = this.normalize(data, opts);
     this.assertComplete(data);
+    await this.assertCredential(data);
     // The first runner of a type is its default : forms of that type that name no runner need
     // one, and nobody should have to remember the tick. Not for the seed, which declares the
     // flag itself - setting it here would flip it back on every start.
@@ -115,7 +173,7 @@ class Runner extends CrudModel {
     if (!opts.fromSeed) await CrudModel.assertNotManaged(this.modelName, id);
     data = this.normalize(data, opts);
     // the stored row decides what is missing : an update may send only what changed
-    const current = await this.findById(id);
+    const current = await this.findStoredById(id);
     // its type stays what it was made as (the forms that run on it expect it) ; an AWX one may
     // change flavour (AWX, AAP, Ascender), the same type. The config seed may change it.
     if (!opts.fromSeed && data.type !== undefined && current?.type && data.type !== current.type) {
@@ -123,6 +181,7 @@ class Runner extends CrudModel {
     }
     const merged = { ...current, ...data };
     this.assertComplete(merged);
+    if ('credential' in data) await this.assertCredential(merged);
     await this.assertDefaultAllowed(data, merged.type, opts);
     const res = await super.update(this.modelName, data, id, opts);
     if (data.is_default) await this.clearOtherDefaults(id, merged.type, opts);
@@ -133,16 +192,23 @@ class Runner extends CrudModel {
     return super.delete(this.modelName, id, opts);
   }
 
+  // read as they sign in : a runner naming a credential has its token, user and password
   static async findAll() {
-    return super.findAll(this.modelName);
+    const rows = await super.findAll(this.modelName);
+    return Promise.all((rows || []).map((r) => this.withCredential(r)));
   }
 
   static async findById(id) {
-    return super.findById(this.modelName, id);
+    return this.withCredential(await super.findById(this.modelName, id));
   }
 
   static async findByName(name) {
-    return super.findByName(this.modelName, name);
+    return this.withCredential(await super.findByName(this.modelName, name));
+  }
+
+  // as stored, its own secrets (an update merges onto these : never the credential's)
+  static async findStoredById(id) {
+    return super.findById(this.modelName, id);
   }
 
   /** the runner of this type marked default, or null */

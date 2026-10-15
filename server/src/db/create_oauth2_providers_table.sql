@@ -11,8 +11,6 @@ CREATE TABLE `oauth2_providers` (
   -- a credential of Connections > Credentials : its user the client id, its password the secret
   `credential` VARCHAR(250) DEFAULT NULL,
   `enable` TINYINT(4) DEFAULT NULL,
-  -- the one of its type the login button signs in with (one per type)
-  `is_default` tinyint(4) DEFAULT 0,
   -- the login page goes straight to it (one provider at most)
   `auto_login` TINYINT(4) DEFAULT 0,
   `groupfilter` VARCHAR(250) DEFAULT NULL,

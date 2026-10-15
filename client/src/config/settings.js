@@ -1050,40 +1050,36 @@ export default function getSettings(t) {
       ],
       actions: [
         { name: 'edit', title: t('settings.oauth2.editProvider'), icon: 'pencil', color: 'edit' },
-        // the default of its type, its login button's : the others of its type stop being it
-        // (oauth2.model) ; it is enabled with it
+        // the one its type signs in with : the others of its type stop being it (oauth2.model)
         {
           name: 'use',
           title: t('settings.oauth2.useForSignIn'),
           icon: 'right-to-bracket',
           color: 'edit',
           dividerBefore: true,
-          enabledWhen: (p) => !(p.is_default && p.enable),
-          update: (p) => ({ is_default: 1, enable: 1, provider: p.provider }),
+          enabledWhen: (p) => !p.enable,
+          update: (p) => ({ enable: 1, provider: p.provider }),
         },
         { name: 'delete', title: t('settings.oauth2.deleteProvider'), icon: 'trash', color: 'delete' },
       ],
       fields: [
-        // whether it may be used, and whether it is the one its type's login button signs in with
-        // (one per type) : yes / no columns, not in the dialog ; a new one is enabled, and the
-        // default when its type has none, another made it with Use for sign-in
+        // the provider its type's login button signs in with (one per type) : a yes / no column,
+        // not in the dialog ; a new one is it when its type has none, another is chosen with Use for
+        // sign-in
         {
           key: 'enable',
           label: t('settings.oauth2.active'),
           type: 'checkbox',
           noInput: true,
         },
-        {
-          key: 'is_default',
-          label: t('settings.oauth2.default'),
-          type: 'checkbox',
-          noInput: true,
-        },
+        { key: 'name', label: t('settings.fields.name'), required: true, icon: 'heading' },
         {
           // its type : radios, each its icon, label and a few words ; set when it is made, it stays
           key: 'provider',
           step: 'type',
           label: t('settings.oauth2.provider'),
+          // in the table : Type, as every list's
+          columnLabel: t('settings.oauth2.stepType'),
           type: 'radio',
           required: true,
           options: SSO_TYPES.map((value) => ({
@@ -1095,7 +1091,6 @@ export default function getSettings(t) {
           initial: (r) => r?.provider || 'azuread',
           render: (v) => esc(t(`settings.oauth2.type_${SSO_TYPES.includes(v) ? v : 'oidc'}`)),
         },
-        { key: 'name', label: t('settings.fields.name'), required: true, icon: 'heading' },
         { key: 'description', label: t('settings.fields.description'), required: false, icon: 'info-circle' },
         {
           // in its credential now (an entraid one) ; kept on the record for the providers that still
