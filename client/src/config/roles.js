@@ -52,7 +52,7 @@ export const roleOptionGroups = [
   {
     name: 'access',
     title: 'profilePage.groupAccess',
-    keys: ['allowLogin', 'allowChat', 'allowMcp', 'allowApiTokens', 'extendedTokenExpiration'],
+    keys: ['allowLogin', 'allowChat', 'allowMcp', 'allowFileUploads', 'allowApiTokens', 'extendedTokenExpiration'],
   },
 ];
 
@@ -110,6 +110,7 @@ export const roleOptionKeys = [
   'allowLogin',
   'allowChat',
   'allowMcp',
+  'allowFileUploads',
   'allowApiTokens',
   'extendedTokenExpiration',
 ];
@@ -133,6 +134,7 @@ const trueByDefaultOptions = [
   'showExtravars',
   'showArtifacts',
   'allowStoredJobs',
+  'allowFileUploads',
   'allowJobDeletion',
   'allowPlannedJobs',
   'allowLogin',

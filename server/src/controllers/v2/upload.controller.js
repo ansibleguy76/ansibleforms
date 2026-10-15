@@ -23,6 +23,10 @@ function uploadMulter() {
   return multer({ storage: storage, limits });
 }
 const upload = function(req, res, _next) {
+  // a role option (allowFileUploads, on unless a role turns it off) : refused before the file is read
+  if (req.user?.user?.options?.allowFileUploads === false) {
+    return res.status(403).json(RestResult.error(i18n.t(req, 'errors.noAccess'), i18n.t(req, 'errors.noFileUploadAccess')))
+  }
   const result = uploadMulter().single('file')
 
   result(req, res, function (err) {

@@ -10,6 +10,7 @@ export default {
     noInventoryDesignAccess: "デザイナーでインベントリを編集することはできません",
     noVarsFileDesignAccess: "デザイナーで変数ファイルを編集することはできません",
     noLogsAccess: "ログへのアクセス権がありません",
+    noFileUploadAccess: "あなたのロールではファイルのアップロードは許可されていません",
     noAuditAccess: "監査ログへのアクセス権がありません",
     noDatabaseAccess: "データベース操作へのアクセス権がありません",
     noScheduleAccess: "スケジュール済みジョブを管理する権限がありません",

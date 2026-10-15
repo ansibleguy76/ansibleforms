@@ -1558,6 +1558,7 @@
       - showConnectionsSettings: The user can manage Settings > Connections (repositories, credentials, secret stores, runners, SSH, notifications, chat assistant, MCP, syslog) without the other settings. Default false. (Added in 7.3.0)
       - showJobs: The user can see the jobs page. Default true.
       - showArtifacts: The user can see the artifacts an AWX job returns. Default true.
+      - allowFileUploads: The user can upload files through a form's file fields. Without it the field is read-only and the upload is refused. Default true. (Added in 7.3.0)
       - allowApiTokens: The user can make API tokens (Profile > API token), living up to API_TOKEN_MAX_DAYS. Default false. (Added in 7.3.0)
       - extendedTokenExpiration: The user can make API tokens too, and one that never expires. Default false.
       - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
@@ -1775,6 +1776,7 @@
           - showConnectionsSettings: The user can manage Settings > Connections (repositories, credentials, secret stores, runners, SSH, notifications, chat assistant, MCP, syslog) without the other settings. Default false. (Added in 7.3.0)
           - showJobs: The user can see the jobs page. Default true.
           - showArtifacts: The user can see the artifacts an AWX job returns. Default true.
+          - allowFileUploads: The user can upload files through a form's file fields. Without it the field is read-only and the upload is refused. Default true. (Added in 7.3.0)
           - allowApiTokens: The user can make API tokens (Profile > API token), living up to API_TOKEN_MAX_DAYS. Default false. (Added in 7.3.0)
           - extendedTokenExpiration: The user can make API tokens too, and one that never expires. Default false.
           - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)

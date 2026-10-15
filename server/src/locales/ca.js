@@ -10,6 +10,7 @@ export default {
     noInventoryDesignAccess: "No podeu editar els inventaris al dissenyador",
     noVarsFileDesignAccess: "No podeu editar els fitxers de variables al dissenyador",
     noLogsAccess: "No tens accés als registres",
+    noFileUploadAccess: "El vostre rol no permet pujar fitxers",
     noAuditAccess: "No tens accés al registre d'auditoria",
     noDatabaseAccess: "No tens accés a les operacions de base de dades",
     noScheduleAccess: "No tens permís per gestionar les tasques programades",

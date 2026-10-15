@@ -10,6 +10,7 @@ export default {
     noInventoryDesignAccess: "No puede editar los inventarios en el diseñador",
     noVarsFileDesignAccess: "No puede editar los archivos de variables en el diseñador",
     noLogsAccess: "No tienes acceso a los registros",
+    noFileUploadAccess: "Su rol no permite subir archivos",
     noAuditAccess: "No tienes acceso al registro de auditoría",
     noDatabaseAccess: "No tienes acceso a las operaciones de base de datos",
     noScheduleAccess: "No tienes permiso para gestionar trabajos programados",

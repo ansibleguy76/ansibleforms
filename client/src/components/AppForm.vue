@@ -43,6 +43,9 @@ const route = useRoute();
 const { t } = useI18n();
 
 const store = useAppStore();
+// a form's file fields : uploaded only with the role option allowFileUploads (on unless a role turns
+// it off) - without it the field is read-only and says why ; the server refuses the upload too
+const canUploadFiles = computed(() => store.profile?.options?.allowFileUploads !== false);
 
 // define
 const emit = defineEmits(['update:status', 'change', 'submit-action', 'abort', 'save', 'cancel']);
@@ -2792,8 +2795,13 @@ defineExpose({
                   :icon="field.icon"
                   :errors="getErrorsToDisplay(field.name)"
                   :progress="fileProgress[field.name]"
+                  :readonly="!canUploadFiles"
                   :help="
-                    typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]
+                    !canUploadFiles
+                      ? t('form.fileUploadsNotAllowed')
+                      : typeof fieldHelp[field.name] === 'object'
+                        ? fieldHelp[field.name].value
+                        : fieldHelp[field.name]
                   "
                 />
               </div>

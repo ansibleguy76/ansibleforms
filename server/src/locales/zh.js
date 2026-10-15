@@ -10,6 +10,7 @@ export default {
     noInventoryDesignAccess: "您不能在设计器中编辑清单",
     noVarsFileDesignAccess: "您不能在设计器中编辑变量文件",
     noLogsAccess: "您无权访问日志",
+    noFileUploadAccess: "您的角色不允许上传文件",
     noAuditAccess: "您无权访问审计日志",
     noDatabaseAccess: "您无权执行数据库操作",
     noScheduleAccess: "您无权管理已调度的作业",
