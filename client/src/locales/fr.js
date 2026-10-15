@@ -1017,6 +1017,7 @@ export default {
       type: 'Type',
       runner: 'Runner',
       form: 'Formulaire',
+      workflow: 'Workflow',
       usesItAs: "L'utilise comme",
       dynamicForms:
         "Ces formulaires construisent un nom d'identifiant à l'exécution, ils peuvent donc aussi utiliser celui-ci : {forms}.",

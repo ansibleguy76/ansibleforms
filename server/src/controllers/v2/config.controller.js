@@ -20,6 +20,7 @@ import { bump } from '../../lib/epochs.js';
 import { publish } from '../../lib/liveEvents.js';
 import Errors from '../../lib/errors.js';
 import { formLinks, formCredentials } from '../../lib/formLinks.js';
+import { workflowCredentials } from '../../models/workflowRun.js';
 import yaml from 'yaml';
 import { isAdminRequest } from '../../lib/adminGrants.js';
 import { canonicalJson } from '../../lib/formEngine/output.js';
@@ -530,6 +531,16 @@ const formsCredentials = async function(req,res){
   }
 }
 
+// the credentials each of the designer's workflows names (its job template nodes') : a
+// credential's Used by tab
+const workflowsCredentials = async function(req,res){
+  try{
+    res.json(RestResult.list(await workflowCredentials()))
+  }catch(err){
+    res.status(500).json(RestResult.error(i18n.t(req, 'config.failedGetFormsList'), helpers.getError(err)))
+  }
+}
+
 // designer-accessible config mode: whether the active config lives in the
 // database. Uses the shared Settings.resolveConfigInDatabase helper (the same
 // config_source/env resolution used across the models) so designers (who may
@@ -568,6 +579,7 @@ export default {
   findList,
   formsLinked,
   formsCredentials,
+  workflowsCredentials,
   findOne,
   findAll,
   backups,

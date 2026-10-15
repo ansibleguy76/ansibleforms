@@ -145,7 +145,7 @@ async function load() {
   } catch {
     credential.value = null;
   }
-  const [stores, mails, repos, directories, providers, chat, runners, forms] = await Promise.all([
+  const [stores, mails, repos, directories, providers, chat, runners, forms, workflows] = await Promise.all([
     axios.get('/api/v2/secretstore/', auth).catch(() => null),
     axios.get('/api/v2/notificationchannel/', auth).catch(() => null),
     axios.get('/api/v2/repository/', auth).catch(() => null),
@@ -154,13 +154,15 @@ async function load() {
     axios.get('/api/v2/chatsettings/', auth).catch(() => null),
     axios.get('/api/v2/runner/', auth).catch(() => null),
     axios.get('/api/v2/config/formscredentials', auth).catch(() => null),
+    axios.get('/api/v2/config/workflowscredentials', auth).catch(() => null),
   ]);
   secretStores.value = [{ name: '' }, ...(stores?.data?.records || []).map((s) => ({ name: s.name }))];
   // what names a credential : a secret store (its token or login), a notification channel (a
   // mail server's smtp login, a bot's or a webhook's token), a repository (its git login), an LDAP
   // directory (its bind account), an SSO provider (its client), a runner (its token or login), the
-  // chat assistant (its key), and a form (in its yaml : one row per credential it names, where it
-  // names it) ; the Used by tab keeps those naming this one
+  // chat assistant (its key), a form (in its yaml) and a workflow of the designer (its nodes) : one
+  // row per credential a form or a workflow names, where it names it ; the Used by tab keeps those
+  // naming this one
   users.value = [
     ...(stores?.data?.records || []).map((r) => ({ ...r, kind: 'secretStore', to: `/settings/secret-stores/${r.id}` })),
     ...(mails?.data?.records || []).map((r) => ({
@@ -176,6 +178,7 @@ async function load() {
       ? [{ name: t('sidebar.chat'), credential: chat.data.credential, kind: 'chat', to: '/settings/chat' }]
       : []),
     ...formRows(forms?.data?.records || []),
+    ...formRows(workflows?.data?.records || [], 'workflow'),
   ];
   dynamicForms.value = (forms?.data?.records || []).filter((f) => f.dynamic?.length);
   loaded.value = true;
@@ -202,8 +205,8 @@ async function update(data) {
 
 // ─── Used by ──────────────────────────────────────────────────────────────────
 // the secret stores, notification channels, repositories, LDAP directories, SSO providers,
-// runners, the chat assistant and the forms that name the credential (a channel as its login or
-// its token) ; a row opens it
+// runners, the chat assistant, the forms and the designer's workflows that name the credential (a
+// channel as its login or its token) ; a row opens it
 const users = ref([]);
 // the forms that build a credential's name when they run ($(field) in it) : they may use this one
 // when its name fits their pattern
@@ -227,16 +230,19 @@ function fitsPattern(pattern, name) {
 }
 
 /**
- * The Used by rows of the forms : one per form and credential it names, saying where (the
- * server's scan of the forms config, lib/formLinks.js formCredentials).
+ * The Used by rows of the forms, or of the designer's workflows : one per form (or workflow) and
+ * credential it names, saying where (the server's scans : lib/formLinks.js formCredentials,
+ * models/workflowRun.js workflowCredentials).
  *
  * Args:
- *   forms (object[]): { name, description, credentials: [{ name, where }] } per form.
+ *   forms (object[]): { name, description, credentials: [{ name, where }] } each.
+ *   kind (string): 'form' (a row opens the form in the designer) or 'workflow' (the designer's
+ *     Workflows, whose file the row names : the designer opens no file by its address).
  *
  * Returns:
- *   object[]: the rows, each { name, description, credential, how, kind: 'form', to }.
+ *   object[]: the rows, each { name, description, credential, how, kind, to }.
  */
-function formRows(forms) {
+function formRows(forms, kind = 'form') {
   const rows = [];
   for (const f of forms) {
     const byCredential = new Map();
@@ -247,8 +253,8 @@ function formRows(forms) {
         description: f.description,
         credential: credentialName,
         how: places.join(', '),
-        kind: 'form',
-        to: `/designer/forms/${slugOf(f.name)}`,
+        kind,
+        to: kind === 'form' ? `/designer/forms/${slugOf(f.name)}` : `/designer/workflows#${slugOf(f.name)}`,
       });
     }
   }

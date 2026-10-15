@@ -1008,6 +1008,7 @@ export default {
       type: 'Typ',
       runner: 'Runner',
       form: 'Formularz',
+      workflow: 'Workflow',
       usesItAs: 'Używa jako',
       dynamicForms:
         'Te formularze tworzą nazwę poświadczenia podczas uruchomienia, więc mogą też używać tego: {forms}.',

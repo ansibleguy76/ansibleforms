@@ -1012,6 +1012,7 @@ export default {
       type: 'Tipo',
       runner: 'Runner',
       form: 'Modulo',
+      workflow: 'Workflow',
       usesItAs: 'La usa come',
       dynamicForms:
         'Questi moduli costruiscono il nome di una credenziale quando vengono eseguiti, quindi possono usare anche questa: {forms}.',

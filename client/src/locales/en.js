@@ -1004,6 +1004,7 @@ export default {
       type: 'Type',
       runner: 'Runner',
       form: 'Form',
+      workflow: 'Workflow',
       usesItAs: 'Uses it as',
       dynamicForms: 'These forms build a credential name when they run, so they may use this one too: {forms}.',
       secretStore: 'Secret store',

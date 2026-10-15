@@ -1013,6 +1013,7 @@ export default {
       type: 'Tipo',
       runner: 'Runner',
       form: 'Formulário',
+      workflow: 'Workflow',
       usesItAs: 'Usa-a como',
       dynamicForms:
         'Estes formulários constroem o nome de uma credencial ao executar, por isso também podem usar esta: {forms}.',

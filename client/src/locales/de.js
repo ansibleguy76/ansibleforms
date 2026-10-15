@@ -1015,6 +1015,7 @@ export default {
       type: 'Typ',
       runner: 'Runner',
       form: 'Formular',
+      workflow: 'Workflow',
       usesItAs: 'Verwendet als',
       dynamicForms:
         'Diese Formulare bilden einen Credential-Namen erst beim Ausführen und können daher auch dieses verwenden: {forms}.',

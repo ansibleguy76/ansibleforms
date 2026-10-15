@@ -30,9 +30,17 @@ beforeAll(() => {
   fs.writeFileSync(path.join(root, "other", "twice.yml"), wf("twice2"));
   fs.writeFileSync(path.join(root, "dup-a.yml"), wf("dup"));
   fs.writeFileSync(path.join(root, "team", "dup-b.yml"), wf("dup"));
+  // a workflow whose nodes name credentials : the export's related.credentials, and the collection's
+  fs.writeFileSync(
+    path.join(root, "team", "creds.yml"),
+    "workflow_job_templates:\n  - name: with-creds\n    description: Deploys\n    related:\n      workflow_nodes:\n" +
+      "        - identifier: build\n          unified_job_template: { name: a.yaml, type: job_template }\n" +
+      "          related: { credentials: [{ name: vault-prod-token }, { name: linux-root, credential_type: { kind: ssh } }] }\n" +
+      "        - identifier: deploy\n          unified_job_template: { name: b.yaml, type: job_template }\n          credentials: [{ name: linux-root }]\n",
+  );
 });
 
-const { findWorkflow, listWorkflows, workflowRef, sharedWorkflowNames } = await import("../src/models/workflowRun.js");
+const { findWorkflow, listWorkflows, workflowRef, sharedWorkflowNames, workflowCredentials } = await import("../src/models/workflowRun.js");
 const nameOf = async (ref) => (await findWorkflow(ref)).workflow.name;
 
 describe("a form's workflow", () => {
@@ -92,5 +100,18 @@ describe("a form's playbook", async () => {
 
   test("a name with no such file goes as it is, for ansible-playbook to say so", () => {
     expect(playbookFile(dir, "missing")).toBe("missing");
+  });
+});
+
+describe("the credentials a workflow's nodes name, for a credential's Used by tab", () => {
+  test("each credential with its file and node ; workflows naming none are left out", async () => {
+    const found = await workflowCredentials();
+    expect(found.map((w) => w.name)).toEqual(["with-creds"]);
+    expect(found[0].description).toBe("Deploys");
+    expect(found[0].credentials).toEqual([
+      { name: "vault-prod-token", where: "team/creds.yml, node build" },
+      { name: "linux-root", where: "team/creds.yml, node build" },
+      { name: "linux-root", where: "team/creds.yml, node deploy" },
+    ]);
   });
 });

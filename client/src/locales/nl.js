@@ -1010,6 +1010,7 @@ export default {
       type: 'Type',
       runner: 'Runner',
       form: 'Formulier',
+      workflow: 'Workflow',
       usesItAs: 'Gebruikt als',
       dynamicForms:
         'Deze formulieren stellen een credentialnaam samen bij het uitvoeren, dus ze kunnen deze ook gebruiken: {forms}.',

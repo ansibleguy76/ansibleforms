@@ -1006,6 +1006,7 @@ export default {
       type: '種類',
       runner: 'ランナー',
       form: 'フォーム',
+      workflow: 'ワークフロー',
       usesItAs: '用途',
       dynamicForms:
         'これらのフォームは実行時に資格情報名を組み立てるため、この資格情報も使う可能性があります: {forms}。',

@@ -12,6 +12,7 @@ import auth_oidc from '../../auth/auth_oidc.js';
 import logger from '../../lib/logger.js';
 import Form from '../../models/form.model.js';
 import { formCredentials } from '../../lib/formLinks.js';
+import { workflowCredentials } from '../../models/workflowRun.js';
 
 // the credential types an SSO provider signs in with : a change to one of them is a change to the
 // sign-in, which reads its client, tenant or issuer and redirect URL when it starts
@@ -56,6 +57,14 @@ const credentialController = {
           }
         } catch (err) {
           logger.debug(`The forms are left out of the credentials' Used by count : ${err?.message || err}`);
+        }
+        // and the designer's workflows whose nodes name each (a workflow counts once per credential)
+        try {
+          for (const wf of await workflowCredentials()) {
+            for (const name of new Set(wf.credentials.map((c) => c.name))) usage.set(name, (usage.get(name) || 0) + 1);
+          }
+        } catch (err) {
+          logger.debug(`The workflows are left out of the credentials' Used by count : ${err?.message || err}`);
         }
         const credentials = (await CredentialModel.findAll()).map((c) => ({
           ...c,

@@ -986,6 +986,7 @@ export default {
       type: '类型',
       runner: '运行器',
       form: '表单',
+      workflow: '工作流',
       usesItAs: '用作',
       dynamicForms: '这些表单在运行时才组成凭据名称,因此也可能使用此凭据:{forms}。',
       secretStore: '密钥存储',

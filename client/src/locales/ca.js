@@ -1013,6 +1013,7 @@ export default {
       type: 'Tipus',
       runner: 'Runner',
       form: 'Formulari',
+      workflow: 'Workflow',
       usesItAs: "L'usa com a",
       dynamicForms:
         "Aquests formularis construeixen el nom d'una credencial quan s'executen, així que també poden usar aquesta: {forms}.",

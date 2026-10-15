@@ -177,8 +177,9 @@ class CredentialModel extends CrudModel {
   /**
    * How many records use each credential, as its page's Used by tab lists them : the secret
    * stores, notification channels (a login or a token), repositories, LDAP directories, SSO
-   * providers, runners and the chat assistant that name it. The forms are counted by the caller
-   * (lib/formLinks.js formCredentials), as they live in the forms config, not in a table.
+   * providers, runners and the chat assistant that name it. The forms and the designer's workflows
+   * are counted by the caller (lib/formLinks.js formCredentials, models/workflowRun.js
+   * workflowCredentials), as they live in files, not in a table.
    *
    * Returns:
    *   Promise<Map<string, number>>: the count of each credential name used at least once.
