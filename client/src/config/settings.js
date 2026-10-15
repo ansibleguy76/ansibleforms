@@ -3137,8 +3137,7 @@ export default function getSettings(t) {
       // ticked, to export them
       checkboxes: true,
       // a record, never changed : opened, its text as it was agreed to ; restored (its text the
-      // current one again, as a new version every user accepts), or deleted with who accepted it -
-      // never the current one
+      // current one again, as a new version every user accepts), or deleted with who accepted it
       noCreate: true,
       actions: [
         {
@@ -3153,11 +3152,12 @@ export default function getSettings(t) {
           run: async (ids) => (await axios.post(`/api/v2/disclaimerversion/${ids[0]}/restore`)).data?.version,
         },
         {
+          // the current one too : the one before is current again (the last one deleted switches
+          // the disclaimer off)
           name: 'delete',
           title: t('common.delete'),
           icon: 'trash',
           color: 'delete',
-          enabledWhen: (r) => !r.current,
         },
       ],
       fields: [

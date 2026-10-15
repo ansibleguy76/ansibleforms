@@ -261,20 +261,22 @@ const Disclaimer = {
   },
 
   /**
-   * Deletes a version and who accepted it ; never the current one (another is restored first).
+   * Deletes a version and who accepted it. The current one deleted, the one before is current
+   * again (its users do not accept again) ; the last one deleted, the disclaimer is switched off -
+   * it has nothing left to show.
    *
    * Args:
    *   version (number|string): its number.
    *
    * Raises:
    *   NotFoundError: no version has that number.
-   *   BadRequestError: it is the current one.
    */
   async deleteVersion(version) {
     const found = await this.version(version);
-    if (found.current) throw new Errors.BadRequestError('The current version is the one users accept : restore another first');
     await mysql.do('DELETE FROM AnsibleForms.`disclaimer_acceptances` WHERE version = ?', [found.version]);
     await mysql.do('DELETE FROM AnsibleForms.`disclaimer_versions` WHERE version = ?', [found.version]);
+    const left = await mysql.do('SELECT COUNT(*) AS n FROM AnsibleForms.`disclaimer_versions`');
+    if (!left[0]?.n) await mysql.do('UPDATE AnsibleForms.`settings` SET disclaimer_enabled = 0');
     forgetDisclaimer();
     await bump('disclaimer').catch(() => {});
   },

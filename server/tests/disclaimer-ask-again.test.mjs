@@ -32,15 +32,28 @@ test("the acceptances ticked are cleared ; none given is refused", async () => {
   await expect(Disclaimer.askAgain([], "admin")).rejects.toThrow(/No acceptance/);
 });
 
-test("a version : the current one is never deleted ; another goes with its acceptances ; restored as the next version", async () => {
+test("a version, the current one too, goes with its acceptances ; restored as the next version", async () => {
   answers = [
     { match: /FROM AnsibleForms\.`disclaimer_versions` v ORDER BY/, rows: [{ version: 3, title: "t3" }, { version: 2, title: "t2", text: "x2", checkbox_label: "ok" }] },
     { match: /MAX\(version\)/, rows: [{ v: 3 }] },
+    { match: /COUNT\(\*\) AS n FROM AnsibleForms\.`disclaimer_versions`/, rows: [{ n: 1 }] },
   ];
-  await expect(Disclaimer.deleteVersion(3)).rejects.toThrow(/current version/);
+  await Disclaimer.deleteVersion(3);
+  expect(queries.some((q) => /DELETE FROM AnsibleForms\.`disclaimer_versions` WHERE version/.test(q.sql) && q.args[0] === 3)).toBe(true);
+  // versions left : the disclaimer stays as it is
+  expect(queries.some((q) => /SET disclaimer_enabled = 0/.test(q.sql))).toBe(false);
   await Disclaimer.deleteVersion(2);
   expect(queries.some((q) => /DELETE FROM AnsibleForms\.`disclaimer_acceptances` WHERE version/.test(q.sql) && q.args[0] === 2)).toBe(true);
   expect(await Disclaimer.restoreVersion(2, "admin")).toBe(4);
   const insert = queries.find((q) => /^INSERT INTO AnsibleForms\.`disclaimer_versions`/.test(q.sql));
   expect(insert.args).toMatchObject({ version: 4, title: "t2", text: "x2", created_by: "admin" });
+});
+
+test("the last version deleted : the disclaimer is switched off", async () => {
+  answers = [
+    { match: /FROM AnsibleForms\.`disclaimer_versions` v ORDER BY/, rows: [{ version: 1, title: "t" }] },
+    { match: /COUNT\(\*\) AS n FROM AnsibleForms\.`disclaimer_versions`/, rows: [{ n: 0 }] },
+  ];
+  await Disclaimer.deleteVersion(1);
+  expect(queries.some((q) => /SET disclaimer_enabled = 0/.test(q.sql))).toBe(true);
 });
