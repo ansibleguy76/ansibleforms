@@ -30,6 +30,7 @@ import { die } from "../lib/die.js";
 import Job from "../models/job.model.js";
 import { installFatalHandlers } from "../lib/fatal.js";
 import { httpServerOptions } from "../lib/httpServerOptions.js";
+import { resumeAbandoned } from "../lib/jobResume.js";
 
 function startHealthServer() {
   const app = express();
@@ -61,6 +62,8 @@ export async function startWorker() {
   // also when it comes back as the worker waiting for the lock
   Job.abandonOwn(nodeId)
     .then((changed) => { if (changed) logger.warning(`Abandoned ${changed} jobs this worker followed before it restarted`); })
+    // the ones still running on their runner (an AWX template) are followed again (#1084)
+    .then(() => resumeAbandoned(nodeId))
     .catch((err) => logger.error("Failed to abandon jobs : " + (err.message || err)));
   keepWorkerLock({
     onAcquired: runWorker,

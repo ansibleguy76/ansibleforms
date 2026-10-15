@@ -502,6 +502,43 @@ Job.lastOrder = async function (jobId) {
   const res = await mysql.do("SELECT COALESCE(MAX(`order`),0) AS last FROM AnsibleForms.`job_output` WHERE job_id=?", [jobId]);
   return Number(res?.[0]?.last) || 0;
 };
+/**
+ * A job's output rows, in order : what a runner reads back when it follows the job again
+ * (runners/awx/api.js Awx.resume).
+ *
+ * Args:
+ *   jobId (number): the job.
+ *
+ * Returns:
+ *   Promise<object[]>: [{ order, output_type, output }].
+ */
+Job.outputRows = async function (jobId) {
+  return mysql.do("SELECT `order`, output_type, output FROM AnsibleForms.`job_output` WHERE job_id=? ORDER BY `order`", [jobId]);
+};
+/**
+ * Drops the stdout a tracker stored after it launched a job (after the "Launched template" line,
+ * or the last "Following job ... again" line) : the tracker that follows the job again reads
+ * the remote job's full stdout, which replaces it. The other lines (the launch, an abort
+ * request, an error) stay.
+ *
+ * Args:
+ *   jobId (number): the job.
+ *   rows (object[]): its output rows (Job.outputRows).
+ *
+ * Returns:
+ *   Promise<number>: the rows dropped.
+ */
+Job.dropTrackedStdout = async function (jobId, rows) {
+  const mark = (rows || [])
+    .filter((r) => /^ok: \[(Launched template |Following job )/.test(String(r.output || "")))
+    .reduce((max, r) => Math.max(max, Number(r.order)), -1);
+  if (mark < 0) return 0;
+  const res = await mysql.do(
+    "DELETE FROM AnsibleForms.`job_output` WHERE job_id=? AND output_type='stdout' AND `order`>?",
+    [jobId, mark]
+  );
+  return res?.affectedRows || 0;
+};
 Job.isAbortRequested = async function (id) {
   const res = await mysql.do(
     "SELECT abort_requested FROM AnsibleForms.`jobs` WHERE id=?;",

@@ -909,6 +909,95 @@ Awx.trackWorkflowJob = async function (
     }
   }
 };
+/**
+ * The AWX job (or workflow job) a job launched, as AWX knows it now : for following it again
+ * after the node that followed it stopped (Awx.resume).
+ *
+ * Args:
+ *   awx (object): the runner.
+ *   awxId (number): the AWX job id (jobs.awx_id).
+ *   isWorkflow (boolean): a workflow job (jobs.awx_workflow is set).
+ *
+ * Returns:
+ *   Promise<object|null>: the AWX job, or null when AWX no longer knows it (404).
+ *
+ * Raises:
+ *   Error: AWX did not answer, or answered another error.
+ */
+Awx.findRemoteJob = async function (awx, awxId, isWorkflow = false) {
+  if (!awx) throw new Errors.ApiError("No AWX runner given");
+  const get = (path) => axios.get(awx.uri + apiPrefix(awx) + path + awxId + "/", getAuthorization(awx));
+  try {
+    return (await get(isWorkflow ? "/workflow_jobs/" : "/jobs/")).data || null;
+  } catch (err) {
+    if (err?.response?.status !== 404) throw err;
+    // a workflow stopped before its first poll is not known as one yet (jobs.awx_workflow is
+    // written by the tracker) : the workflow endpoint may still know its id
+    if (isWorkflow) return null;
+    try {
+      return (await get("/workflow_jobs/")).data || null;
+    } catch (err2) {
+      if (err2?.response?.status === 404) return null;
+      throw err2;
+    }
+  }
+};
+
+/**
+ * The ids of the workflow nodes whose output a job holds already : their banner, written once
+ * per finished node by trackWorkflowJob (WORKFLOW NODE [name] (status) #id ****).
+ *
+ * Args:
+ *   rows (object[]): the job's output rows ({ output }).
+ *
+ * Returns:
+ *   number[]: the node ids.
+ */
+export function printedWorkflowNodeIds(rows) {
+  const ids = new Set();
+  for (const row of rows || []) {
+    const re = /^WORKFLOW NODE \[.*\] \(\w+\) #(\d+) \*{5,}$/gm;
+    let m;
+    while ((m = re.exec(String(row?.output || ""))) !== null) ids.add(Number(m[1]));
+  }
+  return [...ids];
+}
+
+/**
+ * Follows again an AWX job its node stopped following (a restart, a replaced pod) : the job
+ * ends with what AWX reports, its notifications sent as usual. A job's stdout tracked so far is
+ * dropped and read again in full (AWX keeps all of it), so the output has no gap ; a workflow
+ * goes on from the nodes whose output it holds.
+ *
+ * Args:
+ *   awx (object): the runner.
+ *   row (object): the job ({ id, awx_id, awx_workflow }).
+ *
+ * Returns:
+ *   Promise<any>: what the tracker returns, once the job has ended ; null when AWX no longer
+ *     knows the job (it was not resumed).
+ */
+Awx.resume = async function (awx, row) {
+  const jobid = row.id;
+  const isWorkflow = !!row.awx_workflow;
+  const remote = await Awx.findRemoteJob(awx, row.awx_id, isWorkflow);
+  if (!remote) return null;
+  const rows = await Job.outputRows(jobid);
+  const workflow = isWorkflow || remote.type === "workflow_job" || !!remote.related?.workflow_nodes;
+  // the stdout tracked before the restart : replaced by AWX's full stdout, read again below
+  if (!workflow) await Job.dropTrackedStdout(jobid, rows);
+  let counter = await Job.lastOrder(jobid);
+  await Job.printJobOutput(
+    `ok: [Following ${workflow ? "workflow job" : "job"} ${remote.id} again, after the server restarted]`,
+    "stdout",
+    jobid,
+    ++counter
+  );
+  if (workflow) {
+    return Awx.trackWorkflowJob(awx, remote, jobid, counter + 1, printedWorkflowNodeIds(rows), row.awx_workflow || "");
+  }
+  return Awx.trackJob(awx, remote, jobid, counter + 1);
+};
 Awx.getJobTextOutput = async function (awx, job) {
   if (!job) return undefined;
 

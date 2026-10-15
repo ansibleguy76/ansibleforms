@@ -19,6 +19,7 @@ import { importVaultFromEnvOnce } from "../secrets/importVaultEnv.js";
 import { importSyslogFromEnvOnce } from "../lib/syslogServers.js";
 import { nodeId } from "../lib/role.js";
 import { die } from "../lib/die.js";
+import { resumeAbandoned } from "../lib/jobResume.js";
 
 // The worker's start : the database bootstrap and every background task. It runs only in the
 // process holding the worker lock (lib/workerLock.js) - AF_ROLE unset, or a worker - so
@@ -263,6 +264,8 @@ const initOnce = async function({ boot = false } = {}){
     .then((changed)=>{
       logger.warning(`Abandoned ${changed} jobs`)
     })
+    // the ones still running on their runner (an AWX template) are followed again (#1084)
+    .then(()=>resumeAbandoned(nodeId))
     .catch((err)=>{
       logger.error("Failed to abandon jobs : " + err)
     })
