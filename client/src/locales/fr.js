@@ -1401,8 +1401,6 @@ export default {
       publishedBy: 'Publiée par',
       publishedAt: 'Publiée',
       tabAcceptances: 'Acceptations',
-      acceptance: 'Acceptation',
-      acceptancesDescription: "Qui a accepté quelle version de l'avertissement, quand et d'où.",
       enabled: 'Exiger un avertissement',
       enabledHelp:
         "Chaque utilisateur l'accepte une fois après s'être connecté ; d'ici là, l'application n'affiche rien d'autre. Les jetons d'API ne sont pas concernés.",
@@ -1433,6 +1431,14 @@ export default {
       askAgainDone: "{count} utilisateur(s) accepteront de nouveau l'avertissement à leur prochaine connexion.",
       restore: 'Activer cette version',
       versionEnabled: 'Activé',
+      label: 'Avertissement',
+      labelPlural: 'Avertissements',
+      editDisclaimer: "Modifier l'avertissement",
+      enabledHelpVersion:
+        "Activé : les utilisateurs acceptent cet avertissement à leur prochaine requête, les autres sont désactivés. Désactivé : aucun avertissement n'est demandé.",
+      askAgainTextVersion:
+        "{count} utilisateur(s) ont accepté ce texte. Leur demander de l'accepter de nouveau, ou le garder comme correction (personne n'est redemandé) ?",
+      notFound: 'Aucun avertissement {id}.',
       restoreConfirm: "Activer la version {version} ? Ceux qui l'ont acceptée ne sont pas redemandés.",
       restoreDone: 'La version {version} est activée.',
     },

@@ -1281,8 +1281,6 @@ export default {
       publishedBy: '公開者',
       publishedAt: '公開日時',
       tabAcceptances: '同意記録',
-      acceptance: '同意',
-      acceptancesDescription: '誰が免責事項のどの版に、いつ、どこから同意したか。',
       enabled: '免責事項を必須にする',
       enabledHelp:
         '各ユーザーはサインイン後に一度同意します。それまでアプリは他に何も表示しません。API トークンには求めません。',
@@ -1312,6 +1310,14 @@ export default {
       askAgainDone: '{count} 人のユーザーが次回のサインイン時に免責事項に再同意します。',
       restore: 'このバージョンを有効にする',
       versionEnabled: '有効',
+      label: '免責事項',
+      labelPlural: '免責事項',
+      editDisclaimer: '免責事項を編集',
+      enabledHelpVersion:
+        'オン：ユーザーは次回のリクエスト時にこの免責事項に同意し、他はオフになります。オフ：免責事項は求められません。',
+      askAgainTextVersion:
+        '{count} 人のユーザーがこの文面に同意しています。再同意を求めますか、それとも修正として保持しますか（再同意は求めません）？',
+      notFound: '免責事項 {id} はありません。',
       restoreConfirm: 'バージョン {version} を有効にしますか？すでに同意したユーザーには再同意を求めません。',
       restoreDone: 'バージョン {version} を有効にしました。',
     },

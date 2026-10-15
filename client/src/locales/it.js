@@ -1390,8 +1390,6 @@ export default {
       publishedBy: 'Pubblicata da',
       publishedAt: 'Pubblicata',
       tabAcceptances: 'Accettazioni',
-      acceptance: 'Accettazione',
-      acceptancesDescription: 'Chi ha accettato quale versione del disclaimer, quando e da dove.',
       enabled: 'Richiedi un disclaimer',
       enabledHelp:
         "Ogni utente lo accetta una volta dopo l'accesso; fino ad allora l'applicazione non mostra nient'altro. Ai token API non viene chiesto.",
@@ -1422,6 +1420,14 @@ export default {
       askAgainDone: "{count} utente/i accetteranno di nuovo l'avviso al prossimo accesso.",
       restore: 'Abilita questa versione',
       versionEnabled: 'Abilitato',
+      label: 'Avviso',
+      labelPlural: 'Avvisi',
+      editDisclaimer: 'Modifica avviso',
+      enabledHelpVersion:
+        'Attivo: gli utenti accettano questo avviso alla prossima richiesta, e gli altri sono disattivati. Disattivo: nessun avviso viene richiesto.',
+      askAgainTextVersion:
+        '{count} utente/i hanno accettato questo testo. Chiedere di accettarlo di nuovo, o tenerlo come correzione (a nessuno viene richiesto di nuovo)?',
+      notFound: 'Nessun avviso {id}.',
       restoreConfirm: "Abilitare la versione {version}? A chi l'ha già accettata non viene richiesto di nuovo.",
       restoreDone: 'La versione {version} è abilitata.',
     },

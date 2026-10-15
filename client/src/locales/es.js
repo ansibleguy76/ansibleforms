@@ -1396,8 +1396,6 @@ export default {
       publishedBy: 'Publicado por',
       publishedAt: 'Publicado',
       tabAcceptances: 'Aceptaciones',
-      acceptance: 'Aceptación',
-      acceptancesDescription: 'Quién aceptó qué versión del aviso legal, cuándo y desde dónde.',
       enabled: 'Exigir un aviso legal',
       enabledHelp:
         'Cada usuario lo acepta una vez tras iniciar sesión; hasta entonces la aplicación no muestra nada más. A los tokens de API no se les pide.',
@@ -1427,6 +1425,14 @@ export default {
       askAgainDone: '{count} usuario(s) aceptarán el aviso de nuevo en su próximo inicio de sesión.',
       restore: 'Habilitar esta versión',
       versionEnabled: 'Habilitado',
+      label: 'Aviso',
+      labelPlural: 'Avisos',
+      editDisclaimer: 'Editar aviso',
+      enabledHelpVersion:
+        'Activado: los usuarios aceptan este aviso en su próxima petición, y los demás se desactivan. Desactivado: no se pide ningún aviso.',
+      askAgainTextVersion:
+        '{count} usuario(s) aceptaron este texto. ¿Pedirles que lo acepten de nuevo, o mantenerlo como corrección (no se pide a nadie de nuevo)?',
+      notFound: 'Ningún aviso {id}.',
       restoreConfirm: '¿Habilitar la versión {version}? A quienes ya la aceptaron no se les vuelve a pedir.',
       restoreDone: 'La versión {version} está habilitada.',
     },

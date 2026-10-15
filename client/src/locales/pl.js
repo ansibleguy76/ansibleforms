@@ -1291,8 +1291,6 @@ export default {
       publishedBy: 'Opublikował',
       publishedAt: 'Opublikowano',
       tabAcceptances: 'Akceptacje',
-      acceptance: 'Akceptacja',
-      acceptancesDescription: 'Kto zaakceptował którą wersję zastrzeżenia, kiedy i skąd.',
       enabled: 'Wymagaj zastrzeżenia',
       enabledHelp:
         'Każdy użytkownik akceptuje je raz po zalogowaniu; do tego czasu aplikacja nie pokazuje nic innego. Tokeny API nie są pytane.',
@@ -1323,6 +1321,14 @@ export default {
       askAgainDone: '{count} użytkownik(ów) zaakceptuje zastrzeżenie ponownie przy następnym logowaniu.',
       restore: 'Włącz tę wersję',
       versionEnabled: 'Włączona',
+      label: 'Zastrzeżenie',
+      labelPlural: 'Zastrzeżenia',
+      editDisclaimer: 'Edytuj zastrzeżenie',
+      enabledHelpVersion:
+        'Włączone: użytkownicy akceptują to zastrzeżenie przy następnym żądaniu, a pozostałe są wyłączone. Wyłączone: żadne zastrzeżenie nie jest wymagane.',
+      askAgainTextVersion:
+        '{count} użytkownik(ów) zaakceptowało ten tekst. Poprosić ich o ponowną akceptację, czy zachować jako poprawkę (nikt nie jest proszony ponownie)?',
+      notFound: 'Brak zastrzeżenia {id}.',
       restoreConfirm: 'Włączyć wersję {version}? Ci, którzy ją zaakceptowali, nie zostaną poproszeni ponownie.',
       restoreDone: 'Wersja {version} jest włączona.',
     },

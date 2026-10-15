@@ -1399,8 +1399,6 @@ export default {
       publishedBy: 'Veröffentlicht von',
       publishedAt: 'Veröffentlicht',
       tabAcceptances: 'Zustimmungen',
-      acceptance: 'Zustimmung',
-      acceptancesDescription: 'Wer welche Version des Haftungsausschlusses wann und von wo akzeptiert hat.',
       enabled: 'Haftungsausschluss verlangen',
       enabledHelp:
         'Jeder Benutzer akzeptiert ihn einmal nach der Anmeldung; bis dahin zeigt die Anwendung nichts anderes. API-Tokens werden nicht gefragt.',
@@ -1430,6 +1428,14 @@ export default {
       askAgainDone: '{count} Benutzer akzeptieren den Hinweis bei der nächsten Anmeldung erneut.',
       restore: 'Diese Version aktivieren',
       versionEnabled: 'Aktiviert',
+      label: 'Hinweis',
+      labelPlural: 'Hinweise',
+      editDisclaimer: 'Hinweis bearbeiten',
+      enabledHelpVersion:
+        'An: Benutzer akzeptieren diesen Hinweis bei der nächsten Anfrage, die anderen sind aus. Aus: kein Hinweis wird verlangt.',
+      askAgainTextVersion:
+        '{count} Benutzer haben diesen Text akzeptiert. Sie erneut fragen, oder als Korrektur behalten (niemand wird erneut gefragt)?',
+      notFound: 'Kein Hinweis {id}.',
       restoreConfirm: 'Version {version} aktivieren? Wer sie akzeptiert hat, wird nicht erneut gefragt.',
       restoreDone: 'Version {version} ist aktiviert.',
     },

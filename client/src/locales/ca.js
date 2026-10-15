@@ -1300,8 +1300,6 @@ export default {
       publishedBy: 'Publicat per',
       publishedAt: 'Publicat',
       tabAcceptances: 'Acceptacions',
-      acceptance: 'Acceptació',
-      acceptancesDescription: "Qui ha acceptat quina versió de l'avís legal, quan i des d'on.",
       enabled: 'Exigeix un avís legal',
       enabledHelp:
         "Cada usuari l'accepta una vegada després d'iniciar la sessió; fins aleshores l'aplicació no mostra res més. Als tokens d'API no se'ls demana.",
@@ -1331,6 +1329,14 @@ export default {
       askAgainDone: "{count} usuari(s) tornaran a acceptar l'avís al proper inici de sessió.",
       restore: 'Activa aquesta versió',
       versionEnabled: 'Activat',
+      label: 'Avís',
+      labelPlural: 'Avisos',
+      editDisclaimer: "Edita l'avís",
+      enabledHelpVersion:
+        'Activat: els usuaris accepten aquest avís a la propera petició, i els altres es desactiven. Desactivat: no es demana cap avís.',
+      askAgainTextVersion:
+        '{count} usuari(s) han acceptat aquest text. Vols demanar-los que el tornin a acceptar, o conservar-lo com a correcció (no es torna a demanar a ningú)?',
+      notFound: 'Cap avís {id}.',
       restoreConfirm:
         "Vols activar la versió {version}? Als usuaris que ja l'havien acceptada no se'ls torna a demanar.",
       restoreDone: 'La versió {version} està activada.',

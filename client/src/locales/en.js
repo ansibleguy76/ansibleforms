@@ -1375,8 +1375,6 @@ export default {
       publishedBy: 'Published by',
       publishedAt: 'Published',
       tabAcceptances: 'Acceptances',
-      acceptance: 'Acceptance',
-      acceptancesDescription: 'Who accepted which version of the disclaimer, when and from where.',
       enabled: 'Require a disclaimer',
       enabledHelp:
         'Every user accepts it once after signing in; until then the app shows nothing else. API tokens are not asked.',
@@ -1406,6 +1404,14 @@ export default {
       askAgainDone: '{count} user(s) will accept the disclaimer again at their next sign-in.',
       restore: 'Enable this version',
       versionEnabled: 'Enabled',
+      label: 'Disclaimer',
+      labelPlural: 'Disclaimers',
+      editDisclaimer: 'Edit disclaimer',
+      enabledHelpVersion:
+        'On: users accept this disclaimer at their next request, and the others are off. Off: no disclaimer is asked.',
+      askAgainTextVersion:
+        '{count} user(s) accepted this text. Ask them to accept it again, or keep it as a correction (no one is asked again)?',
+      notFound: 'No disclaimer {id}.',
       restoreConfirm: 'Enable version {version}? Users who accepted it are not asked again.',
       restoreDone: 'Version {version} is enabled.',
     },

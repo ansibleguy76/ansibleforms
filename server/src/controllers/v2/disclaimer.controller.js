@@ -74,7 +74,37 @@ const version = async (req, res) => {
   }
 };
 
-// a version deleted (never the current one), with who accepted it
+// a disclaimer added : a new version, not enabled
+const createVersion = async (req, res) => {
+  try {
+    const version = await Disclaimer.createVersion(req.body, req.user?.user?.username);
+    return res.json(RestResult.single({ id: version, version }));
+  } catch (err) {
+    Errors.ReturnError(res, err);
+  }
+};
+
+// a version's words changed : a correction, or (askAgain) everyone accepting it again
+const updateVersion = async (req, res) => {
+  try {
+    await Disclaimer.updateVersion(req.params.id, req.body);
+    return res.json(RestResult.single(await Disclaimer.version(req.params.id)));
+  } catch (err) {
+    Errors.ReturnError(res, err);
+  }
+};
+
+// a version enabled (the one users accept) or disabled (the disclaimer off) { enabled }
+const enableVersion = async (req, res) => {
+  try {
+    await Disclaimer.enableVersion(req.params.id, req.body?.enabled !== false && req.body?.enabled !== 0, req.user?.user?.username);
+    return res.json(RestResult.single(await Disclaimer.version(req.params.id)));
+  } catch (err) {
+    Errors.ReturnError(res, err);
+  }
+};
+
+// a version deleted, with who accepted it
 const deleteVersion = async (req, res) => {
   try {
     await Disclaimer.deleteVersion(req.params.id);
@@ -106,7 +136,7 @@ const askAgain = async (req, res) => {
 
 const acceptances = async (req, res) => {
   try {
-    return res.json(RestResult.list(await Disclaimer.acceptances()));
+    return res.json(RestResult.list(await Disclaimer.acceptances(req.query.version)));
   } catch (err) {
     Errors.ReturnError(res, err);
   }
@@ -120,4 +150,4 @@ const acceptance = async (req, res) => {
   }
 };
 
-export default { current, accept, decline, settings, saveSettings, versions, version, acceptances, acceptance, askAgain, deleteVersion, restoreVersion };
+export default { current, accept, decline, settings, saveSettings, versions, version, acceptances, acceptance, askAgain, deleteVersion, restoreVersion, createVersion, updateVersion, enableVersion };
