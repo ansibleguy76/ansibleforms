@@ -161,6 +161,7 @@ onMounted(async () => {
           </div>
           <AppLinkedTable
             v-else-if="activeTab === 'users'"
+            :exportName="`${groupName}-users`"
             :columns="memberColumns"
             :rows="members"
             rowKey="username"
@@ -169,6 +170,7 @@ onMounted(async () => {
           />
           <AppLinkedTable
             v-else-if="activeTab === 'roles'"
+            :exportName="`${groupName}-roles`"
             :columns="roleColumns"
             :rows="groupRoles"
             rowKey="name"
@@ -177,6 +179,7 @@ onMounted(async () => {
           />
           <AppLinkedTable
             v-else
+            :exportName="`${groupName}-forms`"
             :columns="formColumns"
             :rows="groupForms"
             rowKey="name"

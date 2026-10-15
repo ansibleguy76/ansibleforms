@@ -22,7 +22,8 @@ import Profile from '@/lib/Profile';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { useRoleAssignments } from '@/composables/useRoleAssignments';
-import { usePagedRows } from '@/composables/usePagedRows';
+import { esc } from '@/lib/tableCells';
+import BsDataTable from '@/components/BsDataTable.vue';
 import { useFormLinks } from '@/composables/useFormLinks';
 import { formPath } from '@/lib/formsPath';
 import { recordButtons } from '@/lib/recordButtons';
@@ -114,7 +115,11 @@ const formColumns = computed(() => [
   { key: 'description', label: t('settings.fields.description') },
 ]);
 // the rows of the page shown of the Users and Roles tables (their pager under them)
-const { paged, setPaged } = usePagedRows();
+// the Roles table : the role (a row opens it) and what it is for
+const roleColumns = computed(() => [
+  { key: 'name', label: t('settings.common.role') },
+  { key: 'description', label: t('settings.fields.description') },
+]);
 const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
 // the title : Groups › <name>, each step a link : Groups back to the list, the name to this page
@@ -158,7 +163,17 @@ async function saveDetails() {
 // Add user : a dialog with the users not in the group ; saved at once. Removing (a row's menu,
 // or the rows ticked) is saved at once too, except from a user's only group.
 const addingUser = ref(null); // the user id picked, null while the dialog is closed
-const selectedUsers = ref([]); // the user rows ticked (their id)
+const selectedUsers = ref(new Set()); // the user rows ticked (their id)
+// the Users table's controls (its search, Select all, columns, export) on the title line, its
+// pager under the card, as every list ; none : an en dash, as the other empty cells
+const toolsId = `af-tools-${Math.random().toString(36).slice(2, 10)}`;
+const pagerId = `af-pager-${Math.random().toString(36).slice(2, 10)}`;
+const orDash = (v) => (v ? esc(String(v)) : '–');
+const userColumns = computed(() => [
+  { key: 'username', label: t('settings.fields.username'), filterable: true },
+  { key: 'description', label: t('settings.fields.description'), filterable: true, render: orDash },
+  { key: 'email', label: t('settings.fields.email'), filterable: true, render: orDash },
+]);
 
 /**
  * Adds the user picked to the group.
@@ -188,24 +203,9 @@ async function removeUsers(ids) {
       break;
     }
   }
-  selectedUsers.value = [];
+  selectedUsers.value = new Set();
   await load();
 }
-
-/**
- * Ticks or unticks a user row.
- *
- * Args:
- *   id (number): the user.
- */
-function toggleUser(id) {
-  selectedUsers.value = selectedUsers.value.includes(id)
-    ? selectedUsers.value.filter((x) => x !== id)
-    : [...selectedUsers.value, id];
-}
-
-// the rows that can be ticked : not a user's only group
-const removable = computed(() => members.value.filter((u) => !onlyGroup(u)));
 
 // ─── Delete ───────────────────────────────────────────────────────────────────
 const confirmDelete = ref(false);
@@ -327,121 +327,77 @@ onMounted(async () => {
           :rows="groupForms"
           rowKey="name"
           :to="(f) => formPath(f.name)"
+          :exportName="`${group.name}-forms`"
           :empty="t('settings.linked.noFormGroup')"
         />
-        <template v-else-if="group && activeTab === 'roles'">
-          <p v-if="!groupRoles.length" class="text-muted small mb-0">{{ t('settings.groups.noRole') }}</p>
-          <div v-else class="af-table-frame">
-            <table v-fit-columns class="table af-table">
-              <thead>
-                <tr>
-                  <th>{{ t('settings.common.role') }}</th>
-                  <th>{{ t('settings.fields.description') }}</th>
-                  <th class="af-fit-spacer"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="r in paged('roles', groupRoles)"
-                  :key="r.name"
-                  role="button"
-                  @click="router.push(`/settings/roles/${encodeURIComponent(r.name)}`)"
-                >
-                  <td class="af-row-open">{{ r.name }}</td>
-                  <td>{{ r.description || '–' }}</td>
-                  <td class="af-fit-spacer"></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <AppTablePager v-if="groupRoles.length" :items="groupRoles" @change="(r) => setPaged('roles', r)" />
-        </template>
-        <template v-else-if="group">
-          <p v-if="!members.length" class="text-muted small mb-0">{{ t('settings.groups.noUsers') }}</p>
-          <div v-else class="af-table-frame">
-            <table v-fit-columns class="table af-table">
-              <thead>
-                <tr>
-                  <th class="text-center bs-dt-select">
-                    <input
-                      type="checkbox"
-                      class="form-check-input"
-                      :disabled="!removable.length"
-                      :checked="removable.length > 0 && removable.every((u) => selectedUsers.includes(u.id))"
-                      @change="
-                        selectedUsers = removable.every((u) => selectedUsers.includes(u.id))
-                          ? []
-                          : removable.map((u) => u.id)
-                      "
-                    />
-                  </th>
-                  <th>{{ t('settings.fields.username') }}</th>
-                  <th>{{ t('settings.fields.description') }}</th>
-                  <th>{{ t('settings.fields.email') }}</th>
-                  <th class="af-fit-spacer"></th>
-                  <th class="af-row-menu-col"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <!-- a row opens the user's page, as every list ; its box and its menu do their own -->
-                <tr
-                  v-for="u in paged('users', members)"
-                  :key="u.id"
-                  role="button"
-                  :class="{ 'bs-dt-selected': selectedUsers.includes(u.id) }"
-                  @click="router.push(`/settings/users/${u.id}`)"
-                >
-                  <td class="text-center bs-dt-select" @click.stop>
-                    <!-- this group is the user's only one : it stays (a user keeps one group) -->
-                    <input
-                      type="checkbox"
-                      class="form-check-input"
-                      :disabled="onlyGroup(u)"
-                      :title="onlyGroup(u) ? t('settings.users.keepOneGroup') : null"
-                      :checked="selectedUsers.includes(u.id)"
-                      @change="toggleUser(u.id)"
-                    />
-                  </td>
-                  <td class="af-row-open">{{ u.username }}</td>
-                  <td>{{ u.description || '–' }}</td>
-                  <td>{{ u.email || '–' }}</td>
-                  <td class="af-fit-spacer"></td>
-                  <td class="bs-dt-row-actions" @click.stop>
-                    <div class="dropdown">
-                      <a
-                        role="button"
-                        class="bs-dt-row-menu px-2"
-                        data-bs-toggle="dropdown"
-                        data-bs-popper-config='{"strategy":"fixed"}'
-                      >
-                        <FaIcon icon="ellipsis-vertical" />
-                      </a>
-                      <ul class="dropdown-menu dropdown-menu-end">
-                        <li>
-                          <a
-                            class="dropdown-item"
-                            :class="onlyGroup(u) ? 'disabled text-muted' : 'text-danger'"
-                            href="#"
-                            @click.prevent="removeUsers([u.id])"
-                          >
-                            <FaIcon icon="trash" class="me-2" />{{ t('settings.groups.removeFromGroup') }}
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <AppTablePager v-if="members.length" :items="members" @change="(r) => setPaged('users', r)" />
-        </template>
+        <AppLinkedTable
+          v-else-if="group && activeTab === 'roles'"
+          :columns="roleColumns"
+          :rows="groupRoles"
+          rowKey="name"
+          :to="(r) => `/settings/roles/${encodeURIComponent(r.name)}`"
+          :exportName="`${group.name}-roles`"
+          :empty="t('settings.groups.noRole')"
+        />
+        <!-- Users : the users in the group, a table as every list ; ticked, removed (not from a
+             user's only group : a user keeps one) ; a row opens the user -->
+        <BsDataTable
+          v-else-if="group"
+          framed
+          :toolbarTo="'#' + toolsId"
+          :pagerTo="'#' + pagerId"
+          :items="members"
+          :columns="userColumns"
+          idKey="id"
+          :rowClickSelects="false"
+          :rowSelectable="(u) => !onlyGroup(u)"
+          linkColumn="username"
+          :selectedIds="selectedUsers"
+          name="group-users"
+          :exportName="`${group.name}-users`"
+          @update:selectedIds="selectedUsers = $event"
+          @row-click="(u) => router.push(`/settings/users/${u.id}`)"
+        >
+          <template #bulk-actions="{ count }">
+            <BsButton v-if="count" icon="trash" @click="removeUsers([...selectedUsers])"
+              >{{ t('settings.groups.removeFromGroup') }} ({{ count }})</BsButton
+            >
+          </template>
+          <template #row-actions="{ item }">
+            <div class="dropdown">
+              <a
+                role="button"
+                class="bs-dt-row-menu px-2"
+                data-bs-toggle="dropdown"
+                data-bs-popper-config='{"strategy":"fixed"}'
+              >
+                <FaIcon icon="ellipsis-vertical" />
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <a
+                    class="dropdown-item"
+                    :class="onlyGroup(item) ? 'disabled text-muted' : 'text-danger'"
+                    href="#"
+                    @click.prevent="removeUsers([item.id])"
+                  >
+                    <FaIcon icon="trash" class="me-2" />{{ t('settings.groups.removeFromGroup') }}
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </template>
+        </BsDataTable>
+      </template>
+      <!-- the Users table's search, Select all, columns and export, on the title line -->
+      <template v-if="group && activeTab === 'users'" #headerActions>
+        <div :id="toolsId" class="af-title-flow"></div>
+      </template>
+      <!-- its pager, under the card -->
+      <template #footer>
+        <div :id="pagerId"></div>
       </template>
       <template v-if="group" #actions>
-        <!-- the users ticked : removed from the group -->
-        <BsButton v-if="activeTab === 'users' && selectedUsers.length" icon="trash" @click="removeUsers(selectedUsers)"
-          >{{ t('settings.groups.removeFromGroup') }} ({{ selectedUsers.length }})</BsButton
-        >
         <BsButton
           v-if="activeTab === 'users'"
           icon="plus"

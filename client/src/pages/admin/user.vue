@@ -28,7 +28,8 @@ import Profile from '@/lib/Profile';
 import { formPath } from '@/lib/formsPath';
 import { useFormLinks } from '@/composables/useFormLinks';
 import { useUserLinks } from '@/composables/useUserLinks';
-import { usePagedRows } from '@/composables/usePagedRows';
+import { esc } from '@/lib/tableCells';
+import BsDataTable from '@/components/BsDataTable.vue';
 import { setSignInBlocked } from '@/lib/signIn';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
@@ -40,6 +41,9 @@ const route = useRoute();
 const router = useRouter();
 const authenticated = ref(false);
 const loaded = ref(false);
+// how many API tokens it has : the count of its tab, read at once (its table reads them only when
+// its tab is open, and says the count again after a revoke)
+const tokenCount = ref(null);
 
 // ─── the user and the groups ──────────────────────────────────────────────────
 const userId = computed(() => String(route.params.id || ''));
@@ -135,10 +139,13 @@ const {
 } = useUserLinks(who);
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
-// Details (username, description, email), Groups, Roles, Forms, Jobs, Stored jobs, Schedules,
-// Activity ; the tab kept in the url
+// Details (username, description, email) first, then the others by their name (Activity, API
+// tokens, Forms, Groups, Jobs, Roles, Schedules, Stored jobs in English) ; the tab kept in the url
 const tabs = computed(() => [
   { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
+  ...otherTabs.value.slice().sort((a, b) => a.label.localeCompare(b.label)),
+]);
+const otherTabs = computed(() => [
   { key: 'groups', label: t('settings.settingsPage.groups'), icon: 'users', count: userGroups.value.length },
   { key: 'roles', label: t('settings.settingsPage.roles'), icon: 'user-shield', count: userRoles.value.length },
   { key: 'forms', label: t('settings.linked.forms'), icon: 'rectangle-list', count: userForms.value.length },
@@ -152,7 +159,7 @@ const tabs = computed(() => [
   { key: 'schedules', label: t('settings.schedules.labelPlural'), icon: 'clock', count: userSchedules.value.length },
   { key: 'activity', label: t('settings.linked.activity'), icon: 'clipboard-list', count: activity.value.length },
   // its api tokens, each to revoke (#1068)
-  { key: 'tokens', label: t('apiTokens.tab'), icon: 'code' },
+  { key: 'tokens', label: t('apiTokens.tab'), icon: 'code', count: tokenCount.value },
 ]);
 
 // ─── Roles ────────────────────────────────────────────────────────────────────
@@ -184,7 +191,12 @@ function givenBy(r) {
   return parts.join(' · ');
 }
 // the rows of the page shown of the Groups and Roles tables (their pager under them)
-const { paged, setPaged } = usePagedRows();
+// its table : the role (a row opens it), how the user has it, what it is for
+const roleColumns = computed(() => [
+  { key: 'name', label: t('settings.common.role') },
+  { key: 'given', label: t('settings.common.roleGivenBy'), value: (r) => givenBy(r) },
+  { key: 'description', label: t('settings.fields.description') },
+]);
 const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
 // the title : Users › <username>, each step a link : Users back to the list, the name to this page
@@ -232,7 +244,21 @@ async function saveDetails() {
 // Add group : a dialog with the groups the user is not in yet ; saved at once. Removing (a row's
 // menu, or the rows ticked) is saved at once too ; a user keeps at least one group.
 const addingGroup = ref(null); // the group id picked, null while the dialog is closed
-const selectedGroups = ref([]); // the group rows ticked (their id)
+const selectedGroups = ref(new Set()); // the group rows ticked (their id)
+// the Groups table's controls (its search, Select all, columns, export) on the title line, its
+// pager under the card, as every list
+const toolsId = `af-tools-${Math.random().toString(36).slice(2, 10)}`;
+const pagerId = `af-pager-${Math.random().toString(36).slice(2, 10)}`;
+// none : an en dash, as the other empty cells
+const groupColumns = computed(() => [
+  { key: 'name', label: t('settings.fields.name'), filterable: true },
+  {
+    key: 'description',
+    label: t('settings.fields.description'),
+    filterable: true,
+    render: (v) => (v ? esc(String(v)) : '–'),
+  },
+]);
 const freeGroups = computed(() => groups.value.filter((g) => !userGroups.value.some((u) => u.id === g.id)));
 
 /**
@@ -263,20 +289,8 @@ async function removeGroups(ids) {
       break;
     }
   }
-  selectedGroups.value = [];
+  selectedGroups.value = new Set();
   await load();
-}
-
-/**
- * Ticks or unticks a group row.
- *
- * Args:
- *   id (number): the group.
- */
-function toggleGroup(id) {
-  selectedGroups.value = selectedGroups.value.includes(id)
-    ? selectedGroups.value.filter((x) => x !== id)
-    : [...selectedGroups.value, id];
 }
 
 // ─── Change password ──────────────────────────────────────────────────────────
@@ -351,11 +365,21 @@ async function deleteUser() {
   }
 }
 
+// how many API tokens it has (loadTokenCount)
+/**
+ * Reads how many API tokens the user has ; unknown on an error (no count shown).
+ */
+async function loadTokenCount() {
+  const res = await axios.get(`/api/v2/user/${encodeURIComponent(userId.value)}/tokens`).catch(() => null);
+  tokenCount.value = res ? (res.data?.records || []).length : null;
+}
+
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
   await Promise.all([load(), loadRoles(), loadForms()]);
   await loadUserLinks();
+  loadTokenCount();
   // opened from the list's Add to group : the dialog open at once, the url left clean
   if (route.query.add && user.value) {
     // in every group already : the dialog says so, its Save off
@@ -435,26 +459,8 @@ onMounted(async () => {
         </div>
         <!-- the record loading : its fields as grey placeholders, where they come -->
         <AppSkeleton v-else-if="!loaded && !user" shape="form" :count="3" />
-        <!-- Details : the username, its description and email -->
+        <!-- Details : the username, its description and email, then whether it may sign in -->
         <div v-else-if="user && activeTab === 'details'" class="af-user-details">
-          <!-- Allow sign-in : saved at once, as a runner's Default ; never off for the admin user -->
-          <div class="mb-3">
-            <label class="form-label fw-bold d-block" for="af-sign-in">{{ t('settings.directory.allowSignIn') }}</label>
-            <div class="form-check form-switch mb-0">
-              <input
-                id="af-sign-in"
-                class="form-check-input"
-                type="checkbox"
-                role="switch"
-                :checked="!user.blocked"
-                :disabled="isAdminUser && !user.blocked"
-                @change="onSignInSwitch"
-              />
-            </div>
-            <div class="form-text">
-              {{ user.blocked ? t('settings.directory.blockedNote') : t('settings.users.signInHelp') }}
-            </div>
-          </div>
           <BsInput
             class="af-user-field"
             v-model="edit.username"
@@ -479,40 +485,39 @@ onMounted(async () => {
             :hasError="!emailValid"
             :label="t('settings.fields.email')"
           />
+          <!-- Allow sign-in : saved at once, as a runner's Default ; never off for the admin user -->
+          <div class="mb-0">
+            <label class="form-label fw-bold d-block" for="af-sign-in">{{ t('settings.directory.allowSignIn') }}</label>
+            <div class="form-check form-switch mb-0">
+              <input
+                id="af-sign-in"
+                class="form-check-input"
+                type="checkbox"
+                role="switch"
+                :checked="!user.blocked"
+                :disabled="isAdminUser && !user.blocked"
+                @change="onSignInSwitch"
+              />
+            </div>
+            <div class="form-text">
+              {{ user.blocked ? t('settings.directory.blockedNote') : t('settings.users.signInHelp') }}
+            </div>
+          </div>
         </div>
         <!-- Groups : the group it belongs to, as the app's other tables -->
         <!-- Roles : the roles the user has, and how ; a row opens the role -->
-        <template v-else-if="user && activeTab === 'roles'">
-          <div class="af-table-frame">
-            <table v-fit-columns class="table af-table">
-              <thead>
-                <tr>
-                  <th>{{ t('settings.common.role') }}</th>
-                  <th>{{ t('settings.common.roleGivenBy') }}</th>
-                  <th>{{ t('settings.fields.description') }}</th>
-                  <th class="af-fit-spacer"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="r in paged('roles', userRoles)"
-                  :key="r.name"
-                  role="button"
-                  @click="router.push(`/settings/roles/${encodeURIComponent(r.name)}`)"
-                >
-                  <td class="af-row-open">{{ r.name }}</td>
-                  <td>{{ givenBy(r) }}</td>
-                  <td>{{ r.description || '–' }}</td>
-                  <td class="af-fit-spacer"></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <AppTablePager :items="userRoles" @change="(r) => setPaged('roles', r)" />
-        </template>
+        <AppLinkedTable
+          v-else-if="user && activeTab === 'roles'"
+          :columns="roleColumns"
+          :rows="userRoles"
+          rowKey="name"
+          :to="(r) => `/settings/roles/${encodeURIComponent(r.name)}`"
+          :exportName="`${user.username}-roles`"
+        />
         <!-- Forms : the forms its roles open ; a row opens the form -->
         <AppLinkedTable
           v-else-if="user && activeTab === 'forms'"
+          :exportName="`${user.username}-forms`"
           :columns="formColumns"
           :rows="userForms"
           rowKey="name"
@@ -522,6 +527,7 @@ onMounted(async () => {
         <!-- Jobs : the jobs it launched, the latest first ; a row opens the job -->
         <AppLinkedTable
           v-else-if="user && activeTab === 'jobs'"
+          :exportName="`${user.username}-jobs`"
           :columns="jobColumns"
           :children="stepsOf"
           childrenBefore="form"
@@ -534,6 +540,7 @@ onMounted(async () => {
         <!-- Stored jobs : the form values it stored ; a row opens the stored job -->
         <AppLinkedTable
           v-else-if="user && activeTab === 'stored-jobs'"
+          :exportName="`${user.username}-stored-jobs`"
           :columns="storedJobColumns"
           :rows="userStoredJobs"
           :to="(j) => `/jobs/stored/${j.id}`"
@@ -542,6 +549,7 @@ onMounted(async () => {
         <!-- Schedules : the jobs it planned with Run later ; a row opens the schedule -->
         <AppLinkedTable
           v-else-if="user && activeTab === 'schedules'"
+          :exportName="`${user.username}-schedules`"
           :columns="scheduleColumns"
           :rows="userSchedules"
           :to="(s) => `/jobs/scheduled/${s.id}`"
@@ -550,101 +558,83 @@ onMounted(async () => {
         <!-- Activity : what the audit log recorded it doing, the latest first -->
         <AppLinkedTable
           v-else-if="user && activeTab === 'activity'"
+          :exportName="`${user.username}-activity`"
           :columns="activityColumns"
           :rows="activity"
           :empty="t('settings.linked.noActivity')"
         />
         <AppApiTokens
           v-else-if="user && activeTab === 'tokens'"
+          @count="(n) => (tokenCount = n)"
           :url="`/api/v2/user/${encodeURIComponent(userId)}/tokens`"
+          :toolbarTo="'#' + toolsId"
+          :pagerTo="'#' + pagerId"
         />
-        <template v-else-if="user">
-          <p v-if="!userGroups.length" class="text-muted small mb-0">{{ t('settings.users.noGroup') }}</p>
-          <div v-else class="af-table-frame">
-            <table v-fit-columns class="table af-table">
-              <thead>
-                <tr>
-                  <th class="text-center bs-dt-select">
-                    <input
-                      type="checkbox"
-                      class="form-check-input"
-                      :checked="userGroups.length > 0 && userGroups.every((g) => selectedGroups.includes(g.id))"
-                      @change="
-                        selectedGroups = userGroups.every((g) => selectedGroups.includes(g.id))
-                          ? []
-                          : userGroups.map((g) => g.id)
-                      "
-                    />
-                  </th>
-                  <th>{{ t('settings.fields.name') }}</th>
-                  <th>{{ t('settings.fields.description') }}</th>
-                  <th class="af-fit-spacer"></th>
-                  <th class="af-row-menu-col"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <!-- a row opens the group's page, as every list ; its box and its menu do their own -->
-                <tr
-                  v-for="g in paged('groups', userGroups)"
-                  :key="g.id"
-                  role="button"
-                  :class="{ 'bs-dt-selected': selectedGroups.includes(g.id) }"
-                  @click="router.push(`/settings/groups/${g.id}`)"
-                >
-                  <td class="text-center bs-dt-select" @click.stop>
-                    <input
-                      type="checkbox"
-                      class="form-check-input"
-                      :checked="selectedGroups.includes(g.id)"
-                      @change="toggleGroup(g.id)"
-                    />
-                  </td>
-                  <td class="af-row-open">{{ g.name }}</td>
-                  <!-- an en dash when the group says nothing -->
-                  <td>{{ g.description || '–' }}</td>
-                  <td class="af-fit-spacer"></td>
-                  <td class="bs-dt-row-actions" @click.stop>
-                    <div class="dropdown">
-                      <a
-                        role="button"
-                        class="bs-dt-row-menu px-2"
-                        data-bs-toggle="dropdown"
-                        data-bs-popper-config='{"strategy":"fixed"}'
-                      >
-                        <FaIcon icon="ellipsis-vertical" />
-                      </a>
-                      <ul class="dropdown-menu dropdown-menu-end">
-                        <li>
-                          <!-- its last group : a user keeps one -->
-                          <a
-                            class="dropdown-item"
-                            :class="userGroups.length > 1 ? 'text-danger' : 'disabled text-muted'"
-                            href="#"
-                            @click.prevent="removeGroups([g.id])"
-                          >
-                            <FaIcon icon="trash" class="me-2" />{{ t('settings.users.removeFromUser') }}
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <AppTablePager v-if="userGroups.length" :items="userGroups" @change="(r) => setPaged('groups', r)" />
-        </template>
+        <!-- Groups : the groups it is in, a table as every list ; ticked, removed (a user keeps one) ;
+             a row opens the group -->
+        <BsDataTable
+          v-else-if="user"
+          framed
+          :toolbarTo="'#' + toolsId"
+          :pagerTo="'#' + pagerId"
+          :items="userGroups"
+          :columns="groupColumns"
+          idKey="id"
+          :rowClickSelects="false"
+          linkColumn="name"
+          :selectedIds="selectedGroups"
+          name="user-groups"
+          :exportName="`${user.username}-groups`"
+          @update:selectedIds="selectedGroups = $event"
+          @row-click="(g) => router.push(`/settings/groups/${g.id}`)"
+        >
+          <template #bulk-actions="{ count }">
+            <BsButton
+              v-if="count"
+              icon="trash"
+              :disabled="count >= userGroups.length"
+              :title="count >= userGroups.length ? t('settings.users.keepOneGroup') : null"
+              @click="removeGroups([...selectedGroups])"
+              >{{ t('settings.users.removeFromUser') }} ({{ count }})</BsButton
+            >
+          </template>
+          <template #row-actions="{ item }">
+            <div class="dropdown">
+              <a
+                role="button"
+                class="bs-dt-row-menu px-2"
+                data-bs-toggle="dropdown"
+                data-bs-popper-config='{"strategy":"fixed"}'
+              >
+                <FaIcon icon="ellipsis-vertical" />
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <!-- its last group : a user keeps one -->
+                  <a
+                    class="dropdown-item"
+                    :class="userGroups.length > 1 ? 'text-danger' : 'disabled text-muted'"
+                    href="#"
+                    @click.prevent="removeGroups([item.id])"
+                  >
+                    <FaIcon icon="trash" class="me-2" />{{ t('settings.users.removeFromUser') }}
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </template>
+        </BsDataTable>
+      </template>
+      <!-- the Groups and API tokens tables' search, Select all, columns and export, on the title line
+           (the other tabs' tables put theirs there themselves, AppLinkedTable) -->
+      <template v-if="user && ['groups', 'tokens'].includes(activeTab)" #headerActions>
+        <div :id="toolsId" class="af-title-flow"></div>
+      </template>
+      <!-- its pager, under the card -->
+      <template #footer>
+        <div :id="pagerId"></div>
       </template>
       <template v-if="user" #actions>
-        <!-- the groups ticked : removed, unless that would leave none -->
-        <BsButton
-          v-if="activeTab === 'groups' && selectedGroups.length"
-          icon="trash"
-          :disabled="selectedGroups.length >= userGroups.length"
-          :title="selectedGroups.length >= userGroups.length ? t('settings.users.keepOneGroup') : null"
-          @click="removeGroups(selectedGroups)"
-          >{{ t('settings.users.removeFromUser') }} ({{ selectedGroups.length }})</BsButton
-        >
         <BsButton
           v-if="activeTab === 'groups'"
           icon="plus"

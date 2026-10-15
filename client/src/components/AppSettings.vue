@@ -28,7 +28,9 @@
 /*      footer        free content directly under the card        */
 /*  A table's pager in the card (AppTablePager, a record page's   */
 /*  tab) moves under the card, as a list's : provided as          */
-/*  'afPagerTo', its place right under the card.                  */
+/*  'afPagerTo', its place right under the card. Its controls     */
+/*  (the filter, the columns, the export) move to the title line, */
+/*  as a list's : provided as 'afToolbarTo'.                      */
 /*      actions       the page's buttons, top right               */
 /*      headerActions view controls, next to the title            */
 /*                                                                */
@@ -53,6 +55,9 @@ const { t } = useI18n();
 // under the card : where the pager of a table in it goes (AppTablePager), as a list's
 const pagerId = `af-card-pager-${Math.random().toString(36).slice(2, 10)}`;
 provide('afPagerTo', `#${pagerId}`);
+// on the title line : where the controls of a table in it go (AppLinkedTable), as a list's
+const toolbarId = `af-card-tools-${Math.random().toString(36).slice(2, 10)}`;
+provide('afToolbarTo', `#${toolbarId}`);
 
 const props = defineProps({
   icon: {
@@ -127,6 +132,8 @@ const steps = computed(() => {
              on a narrow screen every control lines up on the same rows rather than each group
              wrapping on its own (styles/bootstrap-override.scss, .af-title-controls) -->
         <div v-if="$slots.headerActions || $slots.actions" class="af-title-controls">
+          <!-- the controls of a table in the card (AppLinkedTable), first as a list's search -->
+          <div :id="toolbarId" class="af-title-flow"></div>
           <slot name="headerActions"></slot>
           <div v-if="$slots.actions" class="af-header-buttons">
             <slot name="actions"></slot>

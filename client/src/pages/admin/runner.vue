@@ -393,6 +393,7 @@ onMounted(async () => {
         <!-- Forms : the forms that run on it ; a row opens the form -->
         <AppLinkedTable
           v-else-if="runner && activeTab === 'forms'"
+          :exportName="`${runner.name}-forms`"
           :columns="formColumns"
           :rows="runnerForms"
           rowKey="name"
@@ -402,6 +403,7 @@ onMounted(async () => {
         <!-- Jobs : the jobs that ran on it, the latest first ; a row opens the job -->
         <AppLinkedTable
           v-else-if="runner && activeTab === 'jobs'"
+          :exportName="`${runner.name}-jobs`"
           :columns="jobColumns"
           :rows="runnerJobs"
           :to="(j) => `/jobs/${j.id}`"

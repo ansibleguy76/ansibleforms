@@ -36,6 +36,9 @@ const route = useRoute();
 const router = useRouter();
 const authenticated = ref(false);
 const loaded = ref(false);
+// how many API tokens it has : the count of its tab, read at once (its table reads them only when
+// its tab is open, and says the count again after a revoke)
+const tokenCount = ref(null);
 
 // ─── the user ─────────────────────────────────────────────────────────────────
 const source = computed(() => String(route.params.type || ''));
@@ -127,8 +130,12 @@ const {
 } = useUserLinks(who);
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
+// Details first, then the others by their name, as a local user's page
 const tabs = computed(() => [
   { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
+  ...otherTabs.value.slice().sort((a, b) => a.label.localeCompare(b.label)),
+]);
+const otherTabs = computed(() => [
   { key: 'groups', label: t('settings.settingsPage.groups'), icon: 'users', count: userGroups.value.length },
   { key: 'roles', label: t('settings.settingsPage.roles'), icon: 'user-shield', count: userRoles.value.length },
   { key: 'forms', label: t('settings.linked.forms'), icon: 'rectangle-list', count: userForms.value.length },
@@ -142,8 +149,11 @@ const tabs = computed(() => [
   { key: 'schedules', label: t('settings.schedules.labelPlural'), icon: 'clock', count: schedules.value.length },
   { key: 'activity', label: t('settings.linked.activity'), icon: 'clipboard-list', count: activity.value.length },
   // its api tokens, each to revoke (#1068)
-  { key: 'tokens', label: t('apiTokens.tab'), icon: 'code' },
+  { key: 'tokens', label: t('apiTokens.tab'), icon: 'code', count: tokenCount.value },
 ]);
+// the API tokens table's controls on the title line, its pager under the card
+const toolsId = `af-tools-${Math.random().toString(36).slice(2, 10)}`;
+const pagerId = `af-pager-${Math.random().toString(36).slice(2, 10)}`;
 const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
 // the title : Users › <name>, each step a link, and the open tab last
@@ -269,11 +279,21 @@ async function forget() {
   }
 }
 
+// how many API tokens it has (loadTokenCount)
+/**
+ * Reads how many API tokens the user has ; unknown on an error (no count shown).
+ */
+async function loadTokenCount() {
+  const res = await axios.get(`${apiPath.value}/tokens`).catch(() => null);
+  tokenCount.value = res ? (res.data?.records || []).length : null;
+}
+
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
   await Promise.all([load(), loadRoles(), loadForms()]);
   await loadUserLinks();
+  loadTokenCount();
 });
 </script>
 <template>
@@ -335,8 +355,18 @@ onMounted(async () => {
           <div v-else class="alert alert-secondary py-2">
             <FaIcon icon="circle-info" class="me-2" />{{ t('settings.directory.readOnlyNote', { source: sourceName }) }}
           </div>
+          <BsInput
+            v-for="d in details"
+            :key="d.key"
+            class="af-user-field"
+            :modelValue="d.value"
+            :icon="d.icon"
+            :isFloating="false"
+            :disabled="true"
+            :label="d.label"
+          />
           <!-- Sign-in : allowed, or blocked by an admin ; saved at once, as a runner's Default -->
-          <div class="mb-3">
+          <div class="mb-0">
             <label class="form-label fw-bold d-block" for="af-sign-in">{{ t('settings.directory.allowSignIn') }}</label>
             <div class="form-check form-switch mb-0">
               <input
@@ -356,20 +386,11 @@ onMounted(async () => {
               }}
             </div>
           </div>
-          <BsInput
-            v-for="d in details"
-            :key="d.key"
-            class="af-user-field"
-            :modelValue="d.value"
-            :icon="d.icon"
-            :isFloating="false"
-            :disabled="true"
-            :label="d.label"
-          />
         </div>
         <!-- Groups : those of its last sign-in ; a row opens the group -->
         <AppLinkedTable
           v-else-if="user && activeTab === 'groups'"
+          :exportName="`${username}-groups`"
           :columns="groupColumns"
           :rows="userGroups"
           :to="(g) => `/settings/groups/${encodeURIComponent(source)}/${encodeURIComponent(g.name)}`"
@@ -378,6 +399,7 @@ onMounted(async () => {
         <!-- Roles : the roles it has, and how (default always) ; a row opens the role -->
         <AppLinkedTable
           v-else-if="user && activeTab === 'roles'"
+          :exportName="`${username}-roles`"
           :columns="roleColumns"
           :rows="userRoles"
           rowKey="name"
@@ -385,6 +407,7 @@ onMounted(async () => {
         />
         <AppLinkedTable
           v-else-if="user && activeTab === 'forms'"
+          :exportName="`${username}-forms`"
           :columns="formColumns"
           :rows="userForms"
           rowKey="name"
@@ -393,6 +416,7 @@ onMounted(async () => {
         />
         <AppLinkedTable
           v-else-if="user && activeTab === 'jobs'"
+          :exportName="`${username}-jobs`"
           :columns="jobColumns"
           :children="stepsOf"
           childrenBefore="form"
@@ -404,6 +428,7 @@ onMounted(async () => {
         </AppLinkedTable>
         <AppLinkedTable
           v-else-if="user && activeTab === 'stored-jobs'"
+          :exportName="`${username}-stored-jobs`"
           :columns="storedJobColumns"
           :rows="storedJobs"
           :to="(j) => `/jobs/stored/${j.id}`"
@@ -411,6 +436,7 @@ onMounted(async () => {
         />
         <AppLinkedTable
           v-else-if="user && activeTab === 'schedules'"
+          :exportName="`${username}-schedules`"
           :columns="scheduleColumns"
           :rows="schedules"
           :to="(s) => `/jobs/scheduled/${s.id}`"
@@ -418,11 +444,27 @@ onMounted(async () => {
         />
         <AppLinkedTable
           v-else-if="user && activeTab === 'activity'"
+          :exportName="`${username}-activity`"
           :columns="activityColumns"
           :rows="activity"
           :empty="t('settings.linked.noActivity')"
         />
-        <AppApiTokens v-else-if="user && activeTab === 'tokens'" :url="`${apiPath}/tokens`" />
+        <AppApiTokens
+          v-else-if="user && activeTab === 'tokens'"
+          @count="(n) => (tokenCount = n)"
+          :url="`${apiPath}/tokens`"
+          :toolbarTo="'#' + toolsId"
+          :pagerTo="'#' + pagerId"
+        />
+      </template>
+      <!-- the API tokens table's search, Select all, columns and export, on the title line (the
+           other tabs' tables put theirs there themselves, AppLinkedTable) -->
+      <template v-if="user && activeTab === 'tokens'" #headerActions>
+        <div :id="toolsId" class="af-title-flow"></div>
+      </template>
+      <!-- its pager, under the card -->
+      <template #footer>
+        <div :id="pagerId"></div>
       </template>
       <template v-if="user" #actions>
         <BsButton icon="right-from-bracket" :disabled="!user.seen" @click="endSessions()">{{

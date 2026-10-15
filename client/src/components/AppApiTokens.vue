@@ -13,6 +13,8 @@
 /*      toolbarTo: String - a selector the table's search and     */
 /*         buttons move to (the profile's title line) ; else in   */
 /*         the table's own bar                                    */
+/*  @emits count: Number - how many tokens it lists, once read    */
+/*      and after a revoke (the count of the page's tab)          */
 /*  The list of the other pages (BsDataTable) : search, columns,  */
 /*  export, pager, a row's menu with Revoke.                      */
 /*                                                                */
@@ -34,10 +36,15 @@ const props = defineProps({
   pagerTo: { type: String, default: null },
 });
 
+const emit = defineEmits(['count']);
 const { t } = useI18n();
 const tokens = ref([]);
 const loaded = ref(false);
+// the tokens Revoke asks about : a row's, or those ticked
 const revoking = ref(null);
+// the rows ticked (their sid), as a list's
+const selectedIds = ref(new Set());
+const tokenName = (token) => token.name || Time.format(token.created_at);
 
 // the columns : what the token is for, when it was made, when it ends, when it was last used
 const columns = computed(() => [
@@ -76,28 +83,40 @@ async function load() {
   }
 }
 
+/**
+ * Revokes the tokens asked about, one after the other ; a failure stops there and says why.
+ */
 async function revoke() {
-  const token = revoking.value;
-  if (!token) return;
-  try {
-    await axios.delete(`${props.url}/${encodeURIComponent(token.sid)}`);
-    toast.success(t('apiTokens.revoked'));
-    tokens.value = tokens.value.filter((x) => x.sid !== token.sid);
-  } catch (err) {
-    toast.error(Helpers.parseAxiosResponseError(err, t('apiTokens.failed')));
-  } finally {
-    revoking.value = null;
+  const list = revoking.value || [];
+  for (const token of list) {
+    try {
+      await axios.delete(`${props.url}/${encodeURIComponent(token.sid)}`);
+      tokens.value = tokens.value.filter((x) => x.sid !== token.sid);
+    } catch (err) {
+      toast.error(Helpers.parseAxiosResponseError(err, t('apiTokens.failed')));
+      break;
+    }
   }
+  if (list.length && !tokens.value.some((x) => list.some((r) => r.sid === x.sid)))
+    toast.success(t('apiTokens.revoked'));
+  selectedIds.value = new Set();
+  revoking.value = null;
 }
 
 watch(() => [props.url, props.reload], load, { immediate: true });
+// how many, for the count of the page's tab
+watch(
+  () => tokens.value.length,
+  (n) => loaded.value && emit('count', n),
+);
+watch(loaded, (done) => done && emit('count', tokens.value.length));
 </script>
 <template>
   <BsModal v-if="revoking" size="md" icon="ban" @close="revoking = null">
     <template #title>{{ t('apiTokens.revoke') }}</template>
     <template #default>
       <p class="mb-0 fs-6">
-        {{ t('apiTokens.revokeConfirm', { name: revoking.name || Time.format(revoking.created_at) }) }}
+        {{ t('apiTokens.revokeConfirm', { name: revoking.map(tokenName).join(', ') }) }}
       </p>
     </template>
     <template #footer>
@@ -114,10 +133,19 @@ watch(() => [props.url, props.reload], load, { immediate: true });
     :items="tokens"
     :columns="columns"
     idKey="sid"
-    :selectable="false"
+    :selectedIds="selectedIds"
+    :rowClickSelects="false"
+    linkColumn="none"
     :name="'apitokens'"
     :exportName="t('apiTokens.title')"
+    @update:selectedIds="selectedIds = $event"
   >
+    <!-- those ticked : revoked, after asking -->
+    <template #bulk-actions="{ count }">
+      <BsButton v-if="count" icon="ban" @click="revoking = tokens.filter((x) => selectedIds.has(x.sid))"
+        >{{ t('apiTokens.revoke') }} ({{ count }})</BsButton
+      >
+    </template>
     <template #row-actions="{ item }">
       <div class="dropdown">
         <a
@@ -131,7 +159,7 @@ watch(() => [props.url, props.reload], load, { immediate: true });
         </a>
         <ul class="dropdown-menu dropdown-menu-end">
           <li>
-            <a class="dropdown-item text-danger" href="#" @click.prevent="revoking = item">
+            <a class="dropdown-item text-danger" href="#" @click.prevent="revoking = [item]">
               <FaIcon icon="ban" class="me-2" />{{ t('apiTokens.revoke') }}
             </a>
           </li>

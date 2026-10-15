@@ -411,6 +411,7 @@ onMounted(async () => {
         <!-- Used by : what names the credential ; a row opens it -->
         <AppLinkedTable
           v-else-if="credential && shownTab === 'used-by'"
+          :exportName="`${credential.name}-used-by`"
           :columns="usedByColumns"
           :rows="usedBy"
           rowKey="to"
