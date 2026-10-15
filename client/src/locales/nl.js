@@ -931,7 +931,7 @@ export default {
       source: 'Bron',
       sourceLocal: 'Lokaal',
       sourceLdap: 'LDAP',
-      sourceAzuread: 'Entra ID',
+      sourceAzuread: 'Microsoft Entra ID',
       sourceOidc: 'OIDC',
       blocked: 'Aanmelden geblokkeerd',
       blockedShort: 'Geblokkeerd',
@@ -1171,7 +1171,7 @@ export default {
     oauth2: {
       label: 'SSO provider',
       labelPlural: 'SSO providers',
-      description: 'Configureer externe identiteitsproviders voor single sign-on (Entra ID, OIDC, enz.).',
+      description: 'Configureer externe identiteitsproviders voor single sign-on (Microsoft Entra ID, OIDC, enz.).',
       editProvider: 'Provider bewerken',
       tabProviders: 'Providers',
       active: 'Actief',

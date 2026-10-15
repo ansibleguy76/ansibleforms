@@ -929,7 +929,7 @@ export default {
       source: 'Źródło',
       sourceLocal: 'Lokalny',
       sourceLdap: 'LDAP',
-      sourceAzuread: 'Entra ID',
+      sourceAzuread: 'Microsoft Entra ID',
       sourceOidc: 'OIDC',
       blocked: 'Logowanie zablokowane',
       blockedShort: 'Zablokowany',
@@ -1171,7 +1171,8 @@ export default {
     oauth2: {
       label: 'Dostawca SSO',
       labelPlural: 'Dostawcy SSO',
-      description: 'Skonfiguruj zewnętrznych dostawców tożsamości do logowania jednokrotnego (Entra ID, OIDC itp.).',
+      description:
+        'Skonfiguruj zewnętrznych dostawców tożsamości do logowania jednokrotnego (Microsoft Entra ID, OIDC itp.).',
       editProvider: 'Edytuj dostawcę',
       tabProviders: 'Dostawcy',
       active: 'Aktywny',

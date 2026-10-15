@@ -933,7 +933,7 @@ export default {
       source: 'Origine',
       sourceLocal: 'Locale',
       sourceLdap: 'LDAP',
-      sourceAzuread: 'Entra ID',
+      sourceAzuread: 'Microsoft Entra ID',
       sourceOidc: 'OIDC',
       blocked: 'Accesso bloccato',
       blockedShort: 'Bloccato',
@@ -1175,7 +1175,7 @@ export default {
     oauth2: {
       label: 'Provider SSO',
       labelPlural: 'Provider SSO',
-      description: 'Configurare provider di identità esterni per il single sign-on (Entra ID, OIDC, ecc.).',
+      description: 'Configurare provider di identità esterni per il single sign-on (Microsoft Entra ID, OIDC, ecc.).',
       editProvider: 'Modifica provider',
       tabProviders: 'Provider',
       active: 'Attivo',

@@ -33,7 +33,7 @@ const Profile = {
     const types = {
       local: { label: t('profilePage.localAccount'), icon: 'house-user' },
       ldap: { label: 'LDAP', icon: 'address-book' },
-      azuread: { label: 'Entra ID', icon: 'fab,microsoft' },
+      azuread: { label: 'Microsoft Entra ID', icon: 'fab,microsoft' },
       oidc: { label: 'OpenID Connect', icon: 'fab,openid' },
     };
     return types[type] || { label: type || '', icon: 'user' };

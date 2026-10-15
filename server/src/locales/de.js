@@ -120,7 +120,7 @@ export default {
     cantChangePasswordLdap:
       "Du kannst das Passwort fuer einen LDAP-Benutzer nicht aendern",
     directoryTypeUnknown:
-      "Kein LDAP-, Entra-ID- oder OIDC-Benutzer bzw. -Gruppe",
+      "Kein LDAP-, Microsoft-Entra-ID- oder OIDC-Benutzer bzw. -Gruppe",
     directoryUserKept:
       "Ein Administrator hat diesen Benutzer gesperrt: erlaube die Anmeldung, bevor du ihn vergisst",
     failedDirectoryUser:

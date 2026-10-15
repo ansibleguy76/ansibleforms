@@ -929,7 +929,7 @@ export default {
       source: 'Origen',
       sourceLocal: 'Local',
       sourceLdap: 'LDAP',
-      sourceAzuread: 'Entra ID',
+      sourceAzuread: 'Microsoft Entra ID',
       sourceOidc: 'OIDC',
       blocked: 'Inicio de sesión bloqueado',
       blockedShort: 'Bloqueado',
@@ -1174,7 +1174,8 @@ export default {
     oauth2: {
       label: 'Proveedor SSO',
       labelPlural: 'Proveedores SSO',
-      description: 'Configurar proveedores de identidad externos para inicio de sesión único (Entra ID, OIDC, etc.).',
+      description:
+        'Configurar proveedores de identidad externos para inicio de sesión único (Microsoft Entra ID, OIDC, etc.).',
       editProvider: 'Editar proveedor',
       tabProviders: 'Proveedores',
       active: 'Activo',

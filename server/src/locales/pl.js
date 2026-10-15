@@ -118,7 +118,7 @@ export default {
     currentPasswordWrong: "Obecne hasło jest nieprawidłowe",
     cantChangePasswordLdap: "Nie można zmienić hasła użytkownika LDAP",
     directoryTypeUnknown:
-      "To nie jest użytkownik ani grupa LDAP, Entra ID lub OIDC",
+      "To nie jest użytkownik ani grupa LDAP, Microsoft Entra ID lub OIDC",
     directoryUserKept:
       "Administrator zablokował tego użytkownika: zezwól na logowanie, zanim go zapomnisz",
     failedDirectoryUser:

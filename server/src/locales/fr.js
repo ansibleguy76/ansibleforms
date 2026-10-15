@@ -123,7 +123,7 @@ export default {
     cantChangePasswordLdap:
       "Vous ne pouvez pas changer le mot de passe d'un utilisateur LDAP",
     directoryTypeUnknown:
-      "Pas un utilisateur ou un groupe LDAP, Entra ID ou OIDC",
+      "Pas un utilisateur ou un groupe LDAP, Microsoft Entra ID ou OIDC",
     directoryUserKept:
       "Un administrateur a bloqué cet utilisateur : autorisez sa connexion avant de l'oublier",
     failedDirectoryUser:

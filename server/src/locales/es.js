@@ -118,7 +118,7 @@ export default {
     currentPasswordWrong: "La contraseña actual no es correcta",
     cantChangePasswordLdap:
       "No puedes cambiar la contraseña de un usuario LDAP",
-    directoryTypeUnknown: "No es un usuario o grupo LDAP, Entra ID u OIDC",
+    directoryTypeUnknown: "No es un usuario o grupo LDAP, Microsoft Entra ID u OIDC",
     directoryUserKept:
       "Un administrador bloqueó este usuario: permite su inicio de sesión antes de olvidarlo",
     failedDirectoryUser: "No se pudo leer o cambiar el usuario LDAP o SSO",

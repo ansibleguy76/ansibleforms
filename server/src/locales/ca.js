@@ -117,7 +117,7 @@ export default {
       "Cal la teva contrasenya actual per establir-ne una de nova",
     currentPasswordWrong: "La contrasenya actual no és correcta",
     cantChangePasswordLdap: "No pots canviar la contrasenya d'un usuari LDAP",
-    directoryTypeUnknown: "No és un usuari o grup LDAP, Entra ID o OIDC",
+    directoryTypeUnknown: "No és un usuari o grup LDAP, Microsoft Entra ID o OIDC",
     directoryUserKept:
       "Un administrador ha bloquejat aquest usuari: permet-ne l'inici de sessió abans d'oblidar-lo",
     failedDirectoryUser: "No s'ha pogut llegir o canviar l'usuari LDAP o SSO",

@@ -928,7 +928,7 @@ export default {
       source: 'ソース',
       sourceLocal: 'ローカル',
       sourceLdap: 'LDAP',
-      sourceAzuread: 'Entra ID',
+      sourceAzuread: 'Microsoft Entra ID',
       sourceOidc: 'OIDC',
       blocked: 'サインインはブロック中',
       blockedShort: 'ブロック中',
@@ -1166,7 +1166,7 @@ export default {
     oauth2: {
       label: 'SSO プロバイダー',
       labelPlural: 'SSO プロバイダー',
-      description: 'シングルサインオン用の外部 ID プロバイダー (Entra ID、OIDC など) を設定します。',
+      description: 'シングルサインオン用の外部 ID プロバイダー (Microsoft Entra ID、OIDC など) を設定します。',
       editProvider: 'プロバイダーを編集',
       tabProviders: 'プロバイダー',
       active: '有効',

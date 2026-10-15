@@ -105,7 +105,7 @@ export default {
     currentPasswordRequired: "设置新密码需要提供您的当前密码",
     currentPasswordWrong: "当前密码不正确",
     cantChangePasswordLdap: "无法更改 LDAP 用户的密码",
-    directoryTypeUnknown: "不是 LDAP、Entra ID 或 OIDC 用户或组",
+    directoryTypeUnknown: "不是 LDAP、Microsoft Entra ID 或 OIDC 用户或组",
     directoryUserKept: "管理员已阻止此用户：请先允许其登录再忘记它",
     failedDirectoryUser: "无法读取或更改 LDAP 或 SSO 用户",
     cantBlockAdmin: "admin 用户不能被阻止：它是重新进入的途径",

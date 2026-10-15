@@ -59,12 +59,11 @@ function reloadPage() {
 
 // how the signed-in account signs in, shown under its name in the user menu
 const loginType = computed(() => Profile.loginType(t, store.profile?.type));
-// the person's name when the sign-in brought one (ldap, azure ad, openid connect), else
-// the username ; with a name shown, the username goes on the line under it
+// the person's name when the sign-in brought one (ldap, microsoft entra id, openid connect),
+// else the username ; with a name shown, the username goes on the line under it, and how the
+// account signs in on a line of its own under that
 const displayName = computed(() => store.profile?.displayName || store.profile?.username || '');
-const userMeta = computed(() =>
-  store.profile?.displayName ? `${store.profile.username} · ${loginType.value.label}` : loginType.value.label,
-);
+const userSubname = computed(() => (store.profile?.displayName ? store.profile.username : ''));
 
 // the approvals bell : the count is loaded when the header appears (also right after a
 // login, which used to leave it at 0 until a reload), and again whenever the jobs change
@@ -503,7 +502,8 @@ const buildMismatch = computed(() => {
             <span class="af-avatar af-avatar-lg"><font-awesome-icon icon="user" /></span>
             <span class="d-flex flex-column lh-sm">
               <strong>{{ displayName }}</strong>
-              <small class="af-menu-meta">{{ userMeta }}</small>
+              <small v-if="userSubname" class="af-menu-meta">{{ userSubname }}</small>
+              <small class="af-menu-meta af-menu-type">{{ loginType.label }}</small>
             </span>
           </li>
           <li><hr class="dropdown-divider" /></li>
@@ -835,6 +835,11 @@ const buildMismatch = computed(() => {
   .af-menu-meta {
     color: var(--bs-secondary-color);
     font-size: 0.85rem;
+  }
+  // how the account signs in (Local account, LDAP, Microsoft Entra ID) : lighter, under its name
+  .af-menu-type {
+    color: var(--bs-tertiary-color);
+    padding-top: 0.25rem;
   }
 
   // collapsed (mobile) menu: plain stacked list

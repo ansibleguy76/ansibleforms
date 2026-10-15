@@ -587,9 +587,9 @@ const azureadoauth2login = async function(req, res,_next) {
     // the tenant once more, at the login itself : the handoff of a login against another tenant
     // is refused even if the strategy was reconfigured meanwhile
     const azureConfig = await AzureAd.find()
-    if (!isSingleTenant(azureConfig.tenant_id)) throw new Error('Entra ID login needs the tenant id of your tenant')
+    if (!isSingleTenant(azureConfig.tenant_id)) throw new Error('Microsoft Entra ID login needs the tenant id of your tenant')
     if (payload.tid && /^[0-9a-f-]{36}$/i.test(String(azureConfig.tenant_id).trim()) && String(payload.tid).toLowerCase() !== String(azureConfig.tenant_id).trim().toLowerCase()) {
-      throw new Error('This Entra ID login is of another tenant')
+      throw new Error('This Microsoft Entra ID login is of another tenant')
     }
     const user = await extractAzureUser(payload, await azureGroups(payload, provider.groupfilter))
     user.type = "azuread"

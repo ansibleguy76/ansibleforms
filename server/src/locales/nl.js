@@ -115,7 +115,7 @@ export default {
     currentPasswordWrong: "Het huidige wachtwoord is niet juist",
     cantChangePasswordLdap:
       "U kunt het wachtwoord van een LDAP gebruiker niet wijzigen",
-    directoryTypeUnknown: "Geen LDAP-, Entra ID- of OIDC-gebruiker of -groep",
+    directoryTypeUnknown: "Geen LDAP-, Microsoft Entra ID- of OIDC-gebruiker of -groep",
     directoryUserKept:
       "Een beheerder heeft deze gebruiker geblokkeerd: sta het aanmelden toe voordat je hem vergeet",
     failedDirectoryUser:
