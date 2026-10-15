@@ -538,10 +538,15 @@ textarea:focus::placeholder {
   flex-wrap: wrap;
   align-items: center;
 }
+// the title, its controls, the line under them and what follows : 16px apart each (the row gap,
+// the line's padding above it, pb-3, and its margin below it, mb-3), the title without its own
+// margin
 .af-title-line {
   flex-wrap: wrap;
-  // the space between the title and its controls' row under it
-  row-gap: 0.5rem;
+  row-gap: 1rem;
+  > h3 {
+    margin-bottom: 0;
+  }
 }
 // the controls (a table's search, its buttons, the page's own) : always a row of their own under
 // the title, so every page has them in the same place whatever its title's length or the screen's
@@ -600,10 +605,10 @@ textarea:focus::placeholder {
   margin-right: auto;
 }
 // the form's page builds its own title line (pages/form.vue) : its buttons a row of their own
-// under the title too
+// under the title too, 16px under it as the other pages'
 .af-page-head > .af-form-buttons {
   flex: 0 0 100%;
-  margin-top: 0.5rem;
+  margin-top: 1rem;
 }
 
 // the Required badge of an item the config must keep (the admin and default roles) : a border and

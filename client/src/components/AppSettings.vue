@@ -95,7 +95,7 @@ const steps = computed(() => {
 <template>
   <section class="section w-100" :class="{ 'mt-3': title }">
     <div class="container-fluid">
-      <div v-if="title" class="d-flex align-items-center border-bottom mb-3 pb-2 af-title-line">
+      <div v-if="title" class="d-flex align-items-center border-bottom mb-3 pb-3 af-title-line">
         <h3 v-if="steps.length > 1" :aria-label="steps.map((c) => c.title ?? '').join(' › ')">
           <template v-for="(c, i) in steps" :key="i">
             <span v-if="i > 0" class="mx-2 text-body-secondary af-crumb-separator">›</span>
