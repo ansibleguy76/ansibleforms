@@ -8,11 +8,6 @@ export const authProviders = ['local', 'ldap', 'azuread', 'oidc'];
 // dialog (AppRoleEditor) and the profile's Permissions view, each group under its title
 export const roleOptionGroups = [
   {
-    name: 'pages',
-    title: 'profilePage.groupPages',
-    keys: ['showDebugButtons'],
-  },
-  {
     name: 'settings',
     title: 'nav.settings',
     keys: [
@@ -43,6 +38,7 @@ export const roleOptionGroups = [
       'showJobs',
       'showAllJobLogs',
       'showExtravars',
+      'showDebugButtons',
       'showArtifacts',
       'allowVerboseMode',
       'allowJobRelaunch',
@@ -60,7 +56,6 @@ export const roleOptionGroups = [
 
 // every role option, in the groups' order
 export const roleOptionKeys = [
-  'showDebugButtons',
   'showSettings',
   'showAppearanceSettings',
   'showConnectionsSettings',
@@ -76,6 +71,7 @@ export const roleOptionKeys = [
   'showJobs',
   'showAllJobLogs',
   'showExtravars',
+  'showDebugButtons',
   'showArtifacts',
   'allowVerboseMode',
   'allowJobRelaunch',
