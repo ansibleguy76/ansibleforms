@@ -3,7 +3,6 @@
 import { editorStyle } from './editorStyle';
 import YAML from 'yaml';
 import Helpers from '@/lib/Helpers';
-import Time from '@/lib/Time';
 import { cronCell } from '@/lib/cronCell';
 import { cronValidationMessage } from './cron';
 import { PILL, pill, esc } from '@/lib/tableCells';
@@ -113,13 +112,13 @@ export function statusPill(t, value) {
  * Args:
  *   t (function): the translation function.
  *   repo (object): the repository, with status (its last pull) and pulled_at.
- *   short (boolean): the date without its seconds (a table's cell).
+ *   withDate (boolean): when it ended beside it (the repository's page ; not the list's table).
  *
  * Returns:
  *   string: the pill's markup.
  */
-export function repositoryPullPill(t, repo, short = false) {
-  return statusPill(t, repo?.status) + pillDate(repo?.pulled_at, short);
+export function repositoryPullPill(t, repo, withDate = true) {
+  return statusPill(t, repo?.status) + (withDate ? pillDate(repo?.pulled_at) : '');
 }
 
 /**
@@ -128,21 +127,13 @@ export function repositoryPullPill(t, repo, short = false) {
  *
  * Args:
  *   value (string): the server's timestamp, or none.
- *   short (boolean): without its seconds and zone (a table's cell, where room is short), in full
- *     on hover.
  *
  * Returns:
  *   string: the date's markup, escaped, or ''.
  */
-function pillDate(value, short = false) {
-  const full = value ? Helpers.formatServerDate(value) : '';
-  if (!full) return '';
-  if (!short) return ` <span class="af-pill-date">${esc(full)}</span>`;
-  // the date and the time in the user's zone, the zone's name left to the tooltip
-  let text = Time.format(value, 'YYYY-MM-DD HH:mm');
-  const zone = Time.zoneName(new Date(value), Time.zone());
-  if (zone && text.endsWith(` ${zone}`)) text = text.slice(0, -zone.length - 1);
-  return ` <span class="af-pill-date" title="${esc(full)}">${esc(text)}</span>`;
+function pillDate(value) {
+  const text = value ? Helpers.formatServerDate(value) : '';
+  return text ? ` <span class="af-pill-date">${esc(text)}</span>` : '';
 }
 
 /**
@@ -154,13 +145,13 @@ function pillDate(value, short = false) {
  * Args:
  *   t (function): the translation function.
  *   repo (object): the repository, with unpushed, push_status and pushed_at.
- *   short (boolean): the date without its seconds (a table's cell).
+ *   withDate (boolean): when it ended beside it (the repository's page ; not the list's table).
  *
  * Returns:
  *   string: the pill's markup.
  */
-export function repositoryPushPill(t, repo, short = false) {
-  const date = pillDate(repo?.pushed_at, short);
+export function repositoryPushPill(t, repo, withDate = true) {
+  const date = withDate ? pillDate(repo?.pushed_at) : '';
   if (repo?.push_status === 'failed') return statusPill(t, 'failed') + date;
   if (repo?.unpushed) {
     return pill(PILL.unpushed, t('settings.repositories.notPushed'), t('settings.repositories.notPushedHint')) + date;
@@ -799,22 +790,19 @@ export default function getSettings(t) {
           key: 'branch',
           icon: 'code-branch',
           // left out on a narrow table, after the head
-          hideBelow: 1000,
+          hideBelow: 740,
           label: t('settings.fields.branch'),
           placeholder: 'main',
           readonly: false,
         },
         // a commit's 7 characters
-        // left out sooner than the branch : the pull and push dates beside their pills take room
-        { key: 'head', label: t('settings.fields.head'), noInput: true, hideBelow: 1100 },
+        { key: 'head', label: t('settings.fields.head'), noInput: true, hideBelow: 900 },
         // its last pull (clone, sync or reset) : running, success or failed
         {
           key: 'status',
           label: t('settings.fields.pull'),
           noInput: true,
-          // the pill and its date whole : the description gives way rather than them
-          width: '16rem',
-          render: (v, row) => repositoryPullPill(t, row, true),
+          render: (v, row) => repositoryPullPill(t, row, false),
           sortValue: (r) => ({ failed: 0, running: 1, success: 2 })[r.status] ?? 3,
         },
         // its push : changes saved here (the designer's Save) and not pushed yet, or none
@@ -822,8 +810,7 @@ export default function getSettings(t) {
           key: 'unpushed',
           label: t('settings.fields.push'),
           noInput: true,
-          width: '16rem',
-          render: (v, row) => repositoryPushPill(t, row, true),
+          render: (v, row) => repositoryPushPill(t, row, false),
           sortValue: (r) => (r.push_status === 'failed' ? 0 : r.unpushed ? 1 : r.push_status === 'success' ? 2 : 3),
         },
         {
