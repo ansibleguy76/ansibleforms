@@ -420,7 +420,7 @@ export default {
   },
   disclaimer: {
     accept: 'Aceptar',
-    decline: 'Rechazar y cerrar sesión',
+    decline: 'Rechazar',
   },
   sidebar: {
     sections: {

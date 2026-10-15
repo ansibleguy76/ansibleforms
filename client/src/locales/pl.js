@@ -417,7 +417,7 @@ export default {
   },
   disclaimer: {
     accept: 'Akceptuj',
-    decline: 'Odrzuć i wyloguj',
+    decline: 'Odrzuć',
   },
   sidebar: {
     sections: {

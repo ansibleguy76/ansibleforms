@@ -419,7 +419,7 @@ export default {
   },
   disclaimer: {
     accept: 'Accepteren',
-    decline: 'Weigeren en afmelden',
+    decline: 'Weigeren',
   },
   sidebar: {
     sections: {

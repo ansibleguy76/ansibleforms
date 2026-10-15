@@ -414,7 +414,7 @@ export default {
   },
   disclaimer: {
     accept: 'Accept',
-    decline: 'Decline and sign out',
+    decline: 'Decline',
   },
   sidebar: {
     sections: {

@@ -422,7 +422,7 @@ export default {
   },
   disclaimer: {
     accept: 'Accetta',
-    decline: 'Rifiuta ed esci',
+    decline: 'Rifiuta',
   },
   sidebar: {
     sections: {

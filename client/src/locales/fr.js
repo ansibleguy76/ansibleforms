@@ -425,7 +425,7 @@ export default {
   },
   disclaimer: {
     accept: 'Accepter',
-    decline: 'Refuser et se déconnecter',
+    decline: 'Refuser',
   },
   sidebar: {
     sections: {

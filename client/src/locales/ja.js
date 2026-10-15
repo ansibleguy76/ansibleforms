@@ -415,7 +415,7 @@ export default {
   },
   disclaimer: {
     accept: '同意する',
-    decline: '同意せずサインアウト',
+    decline: '同意しない',
   },
   sidebar: {
     sections: {

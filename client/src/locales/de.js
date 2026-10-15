@@ -422,7 +422,7 @@ export default {
   },
   disclaimer: {
     accept: 'Akzeptieren',
-    decline: 'Ablehnen und abmelden',
+    decline: 'Ablehnen',
   },
   sidebar: {
     sections: {

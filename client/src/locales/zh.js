@@ -409,7 +409,7 @@ export default {
   },
   disclaimer: {
     accept: '接受',
-    decline: '拒绝并退出登录',
+    decline: '拒绝',
   },
   sidebar: {
     sections: {
