@@ -344,6 +344,9 @@ export default {
       allowVarsFileDesign: 'Editar os ficheiros de variáveis no designer (sem isso: só leitura).',
       showLogs: 'Ver o registo do servidor.',
       showAuditLog: 'Ver o registo de auditoria, sem as restantes definições.',
+      showAppearanceSettings: 'Alterar as definições de aparência, sem as restantes definições.',
+      showConnectionsSettings:
+        'Gerir as definições de ligações (credenciais, runners...), sem as restantes definições.',
       showJobs: 'Ver a página de tarefas.',
       showDebugButtons: 'Ver os botões de depuração num formulário.',
       allowJobRelaunch: 'Relançar tarefas com os dados do formulário de uma execução anterior.',
@@ -1866,6 +1869,8 @@ export default {
       roleOptionShowAuditLog: 'Mostrar o registo de auditoria',
       roleOptionShowDebugButtons: 'Mostrar botões de depuração',
       roleOptionShowSettings: 'Mostrar o menu Definições',
+      roleOptionShowAppearanceSettings: 'Mostrar as definições de aparência',
+      roleOptionShowConnectionsSettings: 'Mostrar as definições de ligações',
       roleOptionShowExtravars: 'Mostrar extravars',
       roleOptionShowAllJobLogs: 'Mostrar registos de todas as tarefas',
       roleOptionShowArtifacts: 'Mostrar artefactos',

@@ -250,7 +250,7 @@ const load = async (app) => {
   app.use(`/api/v2/events`, cors(), authobj, eventsRoutesv2);
   app.use(`/api/v2/user`, cors(), authobj, Middleware.checkSettingsMiddleware, userRoutesv2);
   app.use(`/api/v2/group`, cors(), authobj, Middleware.checkSettingsMiddleware, groupRoutesv2);
-  app.use(`/api/v2/settings`, cors(), authobj, Middleware.checkSettingsMiddleware, settingsRoutesv2);
+  app.use(`/api/v2/settings`, cors(), authobj, Middleware.checkAnySettingsMiddleware, settingsRoutesv2);
   app.use(`/api/v2/health`, cors(), authobj, Middleware.checkSettingsMiddleware, healthRoutesv2);
   app.use(`/api/v2/audit`, cors(), authobj, Middleware.checkAuditMiddleware, auditRoutesv2);
   // the LDAP and SSO users and groups of Settings > Users and Groups (models/directoryUser.model.js)
@@ -259,25 +259,25 @@ const load = async (app) => {
   app.use(`/api/v2/logo`, cors(), logoRoutesv2);
   // the website icon : the same rules as the logo (public to read, settings to change)
   app.use(`/api/v2/favicon`, cors(), faviconRoutesv2);
-  app.use(`/api/v2/sshkey`, cors(), authobj, Middleware.checkSettingsMiddleware, sshRoutesv2);
+  app.use(`/api/v2/sshkey`, cors(), authobj, Middleware.checkConnectionsMiddleware, sshRoutesv2);
   app.use(`/api/v2/ldap`, cors(), authobj, Middleware.checkSettingsMiddleware, ldapRoutes);
-  app.use(`/api/v2/chatsettings`, cors(), authobj, Middleware.checkSettingsMiddleware, chatSettingsRoutes);
+  app.use(`/api/v2/chatsettings`, cors(), authobj, Middleware.checkConnectionsMiddleware, chatSettingsRoutes);
   app.use(`/api/v2/oauth2`, cors(), authobj, Middleware.checkSettingsMiddleware, oauth2Routes);
-  app.use(`/api/v2/credential`, cors(), authobj, Middleware.checkSettingsMiddleware, credentialRoutesv2);
-  app.use(`/api/v2/secretstore`, cors(), authobj, Middleware.checkSettingsMiddleware, secretStoreRoutesv2);
-  app.use(`/api/v2/runner`, cors(), authobj, Middleware.checkSettingsMiddleware, runnerRoutesv2);
-  app.use(`/api/v2/notificationchannel`, cors(), authobj, Middleware.checkSettingsMiddleware, notificationChannelRoutesv2);
+  app.use(`/api/v2/credential`, cors(), authobj, Middleware.checkConnectionsMiddleware, credentialRoutesv2);
+  app.use(`/api/v2/secretstore`, cors(), authobj, Middleware.checkConnectionsMiddleware, secretStoreRoutesv2);
+  app.use(`/api/v2/runner`, cors(), authobj, Middleware.checkConnectionsMiddleware, runnerRoutesv2);
+  app.use(`/api/v2/notificationchannel`, cors(), authobj, Middleware.checkConnectionsMiddleware, notificationChannelRoutesv2);
   // the syslog servers the server log and the audit entries go to (Connections > Syslog)
-  app.use(`/api/v2/syslogserver`, cors(), authobj, Middleware.checkSettingsMiddleware, syslogServerRoutesv2);
+  app.use(`/api/v2/syslogserver`, cors(), authobj, Middleware.checkConnectionsMiddleware, syslogServerRoutesv2);
   // Settings > Appearance > Announcements
-  app.use(`/api/v2/announcement`, cors(), authobj, Middleware.checkSettingsMiddleware, announcementRoutesv2);
+  app.use(`/api/v2/announcement`, cors(), authobj, Middleware.checkAppearanceMiddleware, announcementRoutesv2);
   // the disclaimer : read and accepted by every signed-in user, edited and its acceptances read
   // in Settings > Access > Disclaimer
   app.use(`/api/v2/disclaimer`, cors(), authobj, disclaimerRoutesv2);
   app.use(`/api/v2/disclaimersettings`, cors(), authobj, Middleware.checkSettingsMiddleware, disclaimerSettingsRouter);
   app.use(`/api/v2/disclaimerversion`, cors(), authobj, Middleware.checkSettingsMiddleware, disclaimerVersionRouter);
   app.use(`/api/v2/disclaimeracceptance`, cors(), authobj, Middleware.checkSettingsMiddleware, disclaimerAcceptanceRouter);
-  app.use(`/api/v2/knownhosts`, cors(), authobj, Middleware.checkSettingsMiddleware, knownhostsRoutes);
+  app.use(`/api/v2/knownhosts`, cors(), authobj, Middleware.checkConnectionsMiddleware, knownhostsRoutes);
   // allowScheduledJobs for everything ; allowPlannedJobs only for creating a one-time run
   app.use(`/api/v2/schedule`, cors(), authobj, Middleware.checkScheduleOrPlannedJobsMiddleware, Middleware.resourceScope, scheduleRoutes);
   app.use(`/api/v2/stored-jobs`, cors(), authobj, Middleware.checkStoredJobsMiddleware, storedJobsRoutes);
@@ -285,7 +285,7 @@ const load = async (app) => {
   // backup/restore/list routes
   app.use(`/api/v2/backup`, cors(), authobj, backupRoutes);
   app.use(`/api/v2/log`, cors(), authobj, Middleware.checkLogsMiddleware, logRoutesv2);
-  app.use(`/api/v2/repository`, cors(), authobj, Middleware.checkSettingsMiddleware, repositoryRoutesv2);
+  app.use(`/api/v2/repository`, cors(), authobj, Middleware.checkConnectionsMiddleware, repositoryRoutesv2);
   // forms repositories (issue #414) : designer users can push without settings access
   app.use(`/api/v2/forms-repos`, cors(), authobj, Middleware.checkDesignerMiddleware, formsReposRoutes);
   // the designer's playbooks and vars files (their folder, or their repository)

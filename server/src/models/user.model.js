@@ -35,6 +35,10 @@ function applyOptionDefaults(options, isAdmin) {
   if (options.showLogs === undefined) options.showLogs = isAdmin;
   // the audit log on its own (the settings give it too) : as the server log, the admins'
   if (options.showAuditLog === undefined) options.showAuditLog = isAdmin;
+  // a part of the settings on its own (lib/settingsSections.js) : off unless a role turns it on
+  // (showSettings gives every part)
+  if (options.showAppearanceSettings === undefined) options.showAppearanceSettings = false;
+  if (options.showConnectionsSettings === undefined) options.showConnectionsSettings = false;
   if (options.allowBackupOps === undefined) options.allowBackupOps = isAdmin;
   if (options.showJobs === undefined) options.showJobs = true;
   if (options.showDebugButtons === undefined) options.showDebugButtons = true;

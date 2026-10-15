@@ -345,6 +345,9 @@ export default {
       allowVarsFileDesign: 'Editar els fitxers de variables al dissenyador (sense: només lectura).',
       showLogs: 'Veure el registre del servidor.',
       showAuditLog: "Veure el registre d'auditoria, sense la resta de la configuració.",
+      showAppearanceSettings: "Canviar la configuració d'aparença, sense la resta de la configuració.",
+      showConnectionsSettings:
+        'Gestionar la configuració de connexions (credencials, runners...), sense la resta de la configuració.',
       showJobs: 'Veure la pàgina de tasques.',
       showDebugButtons: "Veure els botons de depuració d'un formulari.",
       allowJobRelaunch: "Rellançar tasques amb les dades del formulari d'una execució anterior.",
@@ -1871,6 +1874,8 @@ export default {
       roleOptionShowAuditLog: "Mostra el registre d'auditoria",
       roleOptionShowDebugButtons: 'Mostra els botons de depuració',
       roleOptionShowSettings: 'Mostra el menú Configuració',
+      roleOptionShowAppearanceSettings: "Mostra la configuració d'aparença",
+      roleOptionShowConnectionsSettings: 'Mostra la configuració de connexions',
       roleOptionShowExtravars: 'Mostra les extravars',
       roleOptionShowAllJobLogs: 'Mostra els registres de totes les tasques',
       roleOptionShowArtifacts: 'Mostra els artefactes',

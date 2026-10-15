@@ -10,7 +10,7 @@ const router = express.Router();
 const authenticate = passport.authenticate("jwt", { session: false });
 
 router.get('/', faviconController.get);
-router.post('/', authenticate, Middleware.checkSettingsMiddleware, faviconController.update);
-router.delete('/', authenticate, Middleware.checkSettingsMiddleware, faviconController.remove);
+router.post('/', authenticate, Middleware.checkAppearanceMiddleware, faviconController.update);
+router.delete('/', authenticate, Middleware.checkAppearanceMiddleware, faviconController.remove);
 
 export default router

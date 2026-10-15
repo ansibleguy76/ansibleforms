@@ -1553,6 +1553,8 @@
       - showExtravars: The user can see the extravars on a form
       - showLogs: The user can see the server log (Settings > Server log)
       - showAuditLog: The user can see the audit log (Settings > Audit log) without the other settings. Default : admins. (Added in 7.3.0)
+      - showAppearanceSettings: The user can change Settings > Appearance (defaults, name, logo, icon, links, environment label, announcements) without the other settings. Default false. (Added in 7.3.0)
+      - showConnectionsSettings: The user can manage Settings > Connections (repositories, credentials, secret stores, runners, SSH, notifications, chat assistant, MCP, syslog) without the other settings. Default false. (Added in 7.3.0)
       - showJobs: The user can see the jobs page. Default true.
       - showArtifacts: The user can see the artifacts an AWX job returns. Default true.
       - allowApiTokens: The user can make API tokens (Profile > API token), living up to API_TOKEN_MAX_DAYS. Default false. (Added in 7.3.0)
@@ -1765,6 +1767,8 @@
           - showExtravars: The user can see the extravars on a form
           - showLogs: The user can see the server log (Settings > Server log)
           - showAuditLog: The user can see the audit log (Settings > Audit log) without the other settings. Default : admins. (Added in 7.3.0)
+          - showAppearanceSettings: The user can change Settings > Appearance (defaults, name, logo, icon, links, environment label, announcements) without the other settings. Default false. (Added in 7.3.0)
+          - showConnectionsSettings: The user can manage Settings > Connections (repositories, credentials, secret stores, runners, SSH, notifications, chat assistant, MCP, syslog) without the other settings. Default false. (Added in 7.3.0)
           - showJobs: The user can see the jobs page. Default true.
           - showArtifacts: The user can see the artifacts an AWX job returns. Default true.
           - allowApiTokens: The user can make API tokens (Profile > API token), living up to API_TOKEN_MAX_DAYS. Default false. (Added in 7.3.0)

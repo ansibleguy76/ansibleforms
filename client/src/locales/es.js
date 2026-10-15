@@ -342,6 +342,9 @@ export default {
       allowVarsFileDesign: 'Editar los archivos de variables en el diseñador (sin ello: solo lectura).',
       showLogs: 'Ver el registro del servidor.',
       showAuditLog: 'Ver el registro de auditoría, sin el resto de la configuración.',
+      showAppearanceSettings: 'Cambiar la configuración de apariencia, sin el resto de la configuración.',
+      showConnectionsSettings:
+        'Gestionar la configuración de conexiones (credenciales, runners...), sin el resto de la configuración.',
       showJobs: 'Ver la página de jobs.',
       showDebugButtons: 'Ver los botones de depuración en un formulario.',
       allowJobRelaunch: 'Relanzar jobs con los datos del formulario de una ejecución anterior.',
@@ -1865,6 +1868,8 @@ export default {
       roleOptionShowAuditLog: 'Mostrar el registro de auditoría',
       roleOptionShowDebugButtons: 'Mostrar botones de depuracion',
       roleOptionShowSettings: 'Mostrar el menú Configuración',
+      roleOptionShowAppearanceSettings: 'Mostrar la configuración de apariencia',
+      roleOptionShowConnectionsSettings: 'Mostrar la configuración de conexiones',
       roleOptionShowExtravars: 'Mostrar extravars',
       roleOptionShowAllJobLogs: 'Mostrar todos los logs de jobs',
       roleOptionShowArtifacts: 'Mostrar artefactos',

@@ -343,6 +343,9 @@ export default {
       allowVarsFileDesign: 'De variabelenbestanden in de designer bewerken (zonder: alleen lezen).',
       showLogs: 'Het serverlog zien.',
       showAuditLog: 'Het auditlogboek zien, zonder de overige instellingen.',
+      showAppearanceSettings: 'De uiterlijk-instellingen wijzigen, zonder de overige instellingen.',
+      showConnectionsSettings:
+        'De verbindingsinstellingen beheren (referenties, runners...), zonder de overige instellingen.',
       showJobs: 'De jobspagina zien.',
       showDebugButtons: 'De debugknoppen op een formulier zien.',
       allowJobRelaunch: 'Jobs opnieuw starten met de formuliergegevens van een eerdere uitvoering.',
@@ -1858,6 +1861,8 @@ export default {
       roleOptionShowAuditLog: 'Auditlogboek tonen',
       roleOptionShowDebugButtons: 'Debug-knoppen tonen',
       roleOptionShowSettings: 'Instellingenmenu tonen',
+      roleOptionShowAppearanceSettings: 'Uiterlijk-instellingen tonen',
+      roleOptionShowConnectionsSettings: 'Verbindingsinstellingen tonen',
       roleOptionShowExtravars: 'Extravars tonen',
       roleOptionShowAllJobLogs: 'Alle joblogs tonen',
       roleOptionShowArtifacts: 'Artefacten tonen',

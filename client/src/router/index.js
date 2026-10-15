@@ -155,7 +155,7 @@ const routes = [
     path: '/settings/credentials',
     name: '/settings/credentials',
     component: credentials,
-    meta: { permission: 'showSettings' },
+    meta: { permission: ['showSettings', 'showConnectionsSettings'] },
   },
   {
     path: '/settings/credentials/:id(\\d+)/:tab?',
@@ -198,15 +198,20 @@ const routes = [
     path: '/settings/chat/:tab?',
     name: '/settings/chat',
     component: chatSettings,
-    meta: { permission: 'showSettings' },
+    meta: { permission: ['showSettings', 'showConnectionsSettings'] },
   },
-  { path: '/settings/mcp/:tab?', name: '/settings/mcp', component: mcpSettings, meta: { permission: 'showSettings' } },
+  {
+    path: '/settings/mcp/:tab?',
+    name: '/settings/mcp',
+    component: mcpSettings,
+    meta: { permission: ['showSettings', 'showConnectionsSettings'] },
+  },
   // Settings > Connections > Syslog : the syslog servers, and a server's own page
   {
     path: '/settings/syslog',
     name: '/settings/syslog',
     component: syslogServers,
-    meta: { permission: 'showSettings' },
+    meta: { permission: ['showSettings', 'showConnectionsSettings'] },
   },
   {
     path: '/settings/syslog/:id(\\d+)/:tab?',
@@ -220,55 +225,70 @@ const routes = [
     path: '/settings/notifications',
     name: '/settings/notifications',
     component: notificationChannels,
-    meta: { permission: 'showSettings' },
+    meta: { permission: ['showSettings', 'showConnectionsSettings'] },
   },
   {
     path: '/settings/notifications/:id(\\d+)/:tab?',
     name: '/settings/notifications/:id',
     component: notificationChannel,
-    meta: { permission: 'showSettings' },
+    meta: { permission: ['showSettings', 'showConnectionsSettings'] },
   },
-  { path: '/settings/logo/:tab?', name: '/settings/logo', component: logo, meta: { permission: 'showSettings' } },
+  {
+    path: '/settings/logo/:tab?',
+    name: '/settings/logo',
+    component: logo,
+    meta: { permission: ['showSettings', 'showAppearanceSettings'] },
+  },
   // Settings > Appearance : the website icon, and the theme and language by default
-  { path: '/settings/icon', name: '/settings/icon', component: favicon, meta: { permission: 'showSettings' } },
+  {
+    path: '/settings/icon',
+    name: '/settings/icon',
+    component: favicon,
+    meta: { permission: ['showSettings', 'showAppearanceSettings'] },
+  },
   {
     path: '/settings/defaults',
     name: '/settings/defaults',
     component: defaultsPage,
-    meta: { permission: 'showSettings' },
+    meta: { permission: ['showSettings', 'showAppearanceSettings'] },
   },
   // Settings > Appearance : the app's name, the header's links, the label beside the logo, the
   // announcements
-  { path: '/settings/name', name: '/settings/name', component: namePage, meta: { permission: 'showSettings' } },
+  {
+    path: '/settings/name',
+    name: '/settings/name',
+    component: namePage,
+    meta: { permission: ['showSettings', 'showAppearanceSettings'] },
+  },
   {
     path: '/settings/links/:tab?',
     name: '/settings/links',
     component: linksPage,
-    meta: { permission: 'showSettings' },
+    meta: { permission: ['showSettings', 'showAppearanceSettings'] },
   },
   {
     path: '/settings/environment',
     name: '/settings/environment',
     component: environmentPage,
-    meta: { permission: 'showSettings' },
+    meta: { permission: ['showSettings', 'showAppearanceSettings'] },
   },
   {
     path: '/settings/announcements/:tab?',
     name: '/settings/announcements',
     component: announcementsPage,
-    meta: { permission: 'showSettings' },
+    meta: { permission: ['showSettings', 'showAppearanceSettings'] },
   },
   {
     path: '/settings/repositories',
     name: '/settings/repositories',
     component: repositories,
-    meta: { permission: 'showSettings' },
+    meta: { permission: ['showSettings', 'showConnectionsSettings'] },
   },
   {
     path: '/settings/repositories/:id(\\d+)/:tab?',
     name: '/settings/repositories/:id',
     component: repository,
-    meta: { permission: 'showSettings' },
+    meta: { permission: ['showSettings', 'showConnectionsSettings'] },
   },
   {
     path: '/settings/general/:tab?',
@@ -284,7 +304,12 @@ const routes = [
     component: role,
     meta: { permission: 'showSettings' },
   },
-  { path: '/settings/ssh/:tab?', name: '/settings/ssh', component: ssh, meta: { permission: 'showSettings' } },
+  {
+    path: '/settings/ssh/:tab?',
+    name: '/settings/ssh',
+    component: ssh,
+    meta: { permission: ['showSettings', 'showConnectionsSettings'] },
+  },
   { path: '/settings/users', name: '/settings/users', component: users, meta: { permission: 'showSettings' } },
   // a user's page : its Details and Groups tabs
   {
@@ -316,16 +341,21 @@ const routes = [
     path: '/settings/secret-stores',
     name: '/settings/secret-stores',
     component: secretStores,
-    meta: { permission: 'showSettings' },
+    meta: { permission: ['showSettings', 'showConnectionsSettings'] },
   },
   {
     path: '/settings/secret-stores/:id(\\d+)/:tab?',
     name: '/settings/secret-stores/:id',
     component: secretStore,
-    meta: { permission: 'showSettings' },
+    meta: { permission: ['showSettings', 'showConnectionsSettings'] },
   },
   // /api/v2/runner is behind checkSettingsMiddleware, so the guard matches
-  { path: '/settings/runners', name: '/settings/runners', component: runners, meta: { permission: 'showSettings' } },
+  {
+    path: '/settings/runners',
+    name: '/settings/runners',
+    component: runners,
+    meta: { permission: ['showSettings', 'showConnectionsSettings'] },
+  },
   {
     path: '/settings/runners/:id(\\d+)/:tab?',
     name: '/settings/runners/:id',

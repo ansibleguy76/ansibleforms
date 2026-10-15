@@ -272,3 +272,25 @@ describe("the audit log : with the settings, or with showAuditLog on its own", (
     assert.equal(res.statusCode, 403);
   });
 });
+
+describe("a part of the settings on its own", () => {
+  const cases = [
+    ["checkAppearanceMiddleware", "showAppearanceSettings", "showConnectionsSettings"],
+    ["checkConnectionsMiddleware", "showConnectionsSettings", "showAppearanceSettings"],
+  ];
+  for (const [guard, own, other] of cases) {
+    test(`${guard} : showSettings or ${own} pass, ${other} alone is refused`, () => {
+      assert.equal(run(Middleware[guard], withOption("showSettings", true)).nexted, true);
+      assert.equal(run(Middleware[guard], withOption(own, true)).nexted, true);
+      const { res, nexted } = run(Middleware[guard], withOption(other, true));
+      assert.equal(nexted, false);
+      assert.equal(res.statusCode, 403);
+    });
+  }
+  test("checkAnySettingsMiddleware : any part passes, none is refused", () => {
+    for (const opt of ["showSettings", "showAppearanceSettings", "showConnectionsSettings"]) {
+      assert.equal(run(Middleware.checkAnySettingsMiddleware, withOption(opt, true)).nexted, true, opt);
+    }
+    assert.equal(run(Middleware.checkAnySettingsMiddleware, withOption("showLogs", true)).nexted, false);
+  });
+});

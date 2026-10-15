@@ -23,6 +23,7 @@ import { formLinks } from '../../lib/formLinks.js';
 import yaml from 'yaml';
 import { isAdminRequest } from '../../lib/adminGrants.js';
 import { canonicalJson } from '../../lib/formEngine/output.js';
+import { mayEnvVar } from '../../lib/settingsSections.js';
 
 /**
  * Refuses to a non-admin a configuration whose roles differ from the active ones. The roles
@@ -122,6 +123,11 @@ const saveEnv = async function(req,res){
     const names = Object.keys(updates)
     if(names.length === 0){
       return res.status(400).json(RestResult.error(i18n.t(req, 'config.failedSaveEnvVars'), i18n.t(req, 'config.noEnvVarsGiven')))
+    }
+    // a part of the settings on its own (lib/settingsSections.js) : only its variables change
+    const outside = names.filter((name) => !mayEnvVar(req, name))
+    if(outside.length){
+      return res.status(403).json(RestResult.error(i18n.t(req, 'config.failedSaveEnvVars'), `${i18n.t(req, 'errors.noSettingsAccess')} (${outside.join(', ')})`))
     }
     // 403 and not 401 : App.vue's axios interceptor treats any 401 as a dead session
     // and signs the user out. Refused at the endpoint, not merely greyed out in the UI.
@@ -326,7 +332,8 @@ const env = async function(req,res){
       item.default = x.default ?? null
       return item
     });
-    res.json(RestResult.single(env))
+    // a part of the settings on its own (lib/settingsSections.js) : only its variables
+    res.json(RestResult.single(env.filter((item) => mayEnvVar(req, item.name))))
   }catch(err){
     res.status(500).json(RestResult.error(i18n.t(req, 'config.failedGetEnvVars'), helpers.getError(err)))
   }
