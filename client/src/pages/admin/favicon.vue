@@ -175,7 +175,7 @@ onMounted(async () => {
           <input
             ref="fileInput"
             class="form-control"
-            style="max-width: 400px"
+            style="max-width: 40rem"
             type="file"
             accept="image/png,image/x-icon,.ico,image/svg+xml,image/webp,image/gif,image/jpeg"
             @change="onFileChange"

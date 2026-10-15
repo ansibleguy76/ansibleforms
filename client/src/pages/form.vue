@@ -1833,7 +1833,7 @@ onBeforeUnmount(() => {
 
           <!-- TITLE : the form's (a subform's while editing one), its help in the info popover,
                its buttons at the right ; the divider under it, as on the other pages -->
-          <div class="d-flex flex-wrap align-items-center border-bottom mb-3 pb-2 af-page-head">
+          <div class="d-flex flex-wrap align-items-center border-bottom mb-3 pb-3 af-page-head">
             <h3 class="mb-0 me-3">
               <!-- the section first, as every page's title (lib/sections.js) : Forms › the form -->
               <router-link :to="formsPath('')" class="af-crumb-link"
@@ -2313,7 +2313,7 @@ onBeforeUnmount(() => {
       <AppPageSkeleton v-else-if="!formNotFound" />
       <!-- not found : the page's title and its divider, as a form's, then why on one line -->
       <div v-else class="section container-fluid w-100 mt-3">
-        <div class="d-flex flex-wrap align-items-center border-bottom mb-3 pb-2 af-page-head">
+        <div class="d-flex flex-wrap align-items-center border-bottom mb-3 pb-3 af-page-head">
           <h3 class="mb-0 me-3">
             <router-link :to="formsPath('')" class="af-crumb-link"
               ><span class="me-2"><FaIcon icon="rectangle-list" /></span>{{ t('nav.forms') }}</router-link

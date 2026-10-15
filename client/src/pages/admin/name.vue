@@ -76,9 +76,9 @@ onMounted(async () => {
 :deep(.card-body > :last-child > .mb-3:last-child) {
   margin-bottom: 0 !important;
 }
-/* as wide as the other short fields of the settings pages */
+/* as wide as the other fields of the settings pages */
 .af-interface-field :deep(.input-group) {
-  max-width: 20rem;
+  max-width: 40rem;
 }
 </style>
 <route lang="yaml">

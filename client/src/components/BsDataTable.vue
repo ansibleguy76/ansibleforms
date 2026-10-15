@@ -16,7 +16,7 @@
  *                             share the room left (v-fit-columns, as every table)
  *                           hideBelow?: a width in px - the column is left out while the table
  *                             is narrower, so the wide ones keep room on a small screen }]
- *  pageSize       Number  Initial page size (default 25) — a page size the user
+ *  pageSize       Number  Initial page size (default 10) — a page size the user
  *                         picked before (cookie, needs `name`) wins over it
  *  name           String  Cookie key for pagination and column persistence ; also
  *                         enables column presets (kept in this browser's localStorage)
@@ -59,7 +59,7 @@ const { t } = useI18n();
 const props = defineProps({
   items: { type: Array, required: true },
   columns: { type: Array, required: true },
-  pageSize: { type: Number, default: 25 },
+  pageSize: { type: Number, default: 10 },
   name: { type: String, default: null },
   selectedIds: { type: Object, default: () => new Set() }, // Set
   idKey: { type: String, default: 'id' },

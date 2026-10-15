@@ -19,6 +19,9 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { sectionOf } from '@/lib/sections';
+import { useTileCount } from '@/lib/formTiles';
+// the grey tiles while the forms load : as many as fill the grid at this width (lib/formTiles.js)
+const tileCount = useTileCount();
 
 // INIT
 
@@ -56,10 +59,10 @@ const crumbs = computed(() => [
               :crumbs="crumbs"
               :description="t('forms.pageDescription')"
             >
-              <AppSkeleton shape="tiles" :count="8" />
+              <AppSkeleton shape="tiles" :count="tileCount" />
             </AppSettings>
             <AppSettings v-else bare title=" " icon="folder">
-              <AppSkeleton shape="tiles" :count="8" />
+              <AppSkeleton shape="tiles" :count="tileCount" />
             </AppSettings>
           </div>
         </div>

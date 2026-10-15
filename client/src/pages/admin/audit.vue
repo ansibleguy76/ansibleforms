@@ -16,7 +16,7 @@ const total = ref(0);
 const offset = ref(0);
 // seeded to match BsPagination's :perPage below, so its first emit is a no-op rather
 // than an immediate refetch at a different size
-const pageSize = ref(25);
+const pageSize = ref(10);
 // the (offset:limit) we last ASKED the server for. Comparing against what has already
 // arrived is not enough : the pager can emit twice before the first response lands,
 // and both emits would then pass the guard and fire duplicate requests.
@@ -206,11 +206,11 @@ onMounted(async () => {
             <option value="failure">{{ t('audit.outcomeFailure') }}</option>
             <option value="denied">{{ t('audit.outcomeDenied') }}</option>
           </select>
-          <!-- after the filters, as the server log has its Refresh on the title line -->
-          <BsButton cssClass="text-nowrap" :icon="loading ? 'spinner' : 'refresh'" @click="load()">{{
-            t('audit.refresh')
-          }}</BsButton>
         </div>
+        <!-- the filters at the left of the controls' row, Refresh at its right, as the server log's -->
+        <BsButton cssClass="text-nowrap" :icon="loading ? 'spinner' : 'refresh'" @click="load()">{{
+          t('audit.refresh')
+        }}</BsButton>
       </template>
       <template #default>
         <!-- the first load : the table's rows as grey placeholders (a reload keeps them shown) -->
@@ -291,7 +291,7 @@ onMounted(async () => {
           <BsPagination
             :key="filterVersion"
             :dataList="pageIndexes"
-            :perPage="25"
+            :perPage="10"
             :buttonsShown="7"
             name="audit"
             @change="onPageChange"

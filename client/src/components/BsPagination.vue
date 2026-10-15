@@ -6,7 +6,10 @@
 /*  @props:                                         */
 /*      dataList: Array - List of items to paginate  */
 /*      perPage: Number - Initial items per page      */
-/*        (default 10, a stored cookie wins over it)  */
+/*        (default 10). Without a size the user      */
+/*        picked (a cookie), the largest size offered  */
+/*        that fits the screen wins over it            */
+/*        (lib/tableFit.js)                            */
 /*      buttonsShown: Number - Number of buttons     */
 /*      index: Number - Index of the item to show    */
 /*      currentPage: Number - the page shown, from   */
@@ -17,7 +20,8 @@
 /*                                                  */
 /****************************************************/
 
-import { watch, ref } from 'vue';
+import { watch, ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue';
+import { measureFit, fitSize, nearestSize } from '@/lib/tableFit';
 import Helpers from '@/lib/Helpers';
 import { useI18n } from 'vue-i18n';
 
@@ -44,6 +48,12 @@ const page = ref(0);
 // the prop only seeds the initial page size : a perPage the user picked
 // before is restored from the cookie on mount and wins over it
 const pageSize = ref(props.perPage);
+// the sizes offered, as PatternFly's and so the Ansible Automation Platform's : the screen picks
+// among them too, never a size of its own
+const SIZES = [10, 20, 50, 100];
+// the page size follows the screen until the user picks one (or picked one before)
+const fitting = ref(true);
+const navEl = ref(null);
 
 // METHODS
 
@@ -152,14 +162,42 @@ watch(pages, (list) => {
   }
 });
 
-// persist perPage when changed
-watch(pageSize, (val) => {
+// the size the user picks : kept (a cookie, when the pager has a name), and the screen no longer
+// sets it
+function pickSize() {
+  fitting.value = false;
   if (props.name) {
     try {
-      Helpers.setCookie(`pagination_${props.name}_perPage`, String(val), 365);
+      Helpers.setCookie(`pagination_${props.name}_perPage`, String(pageSize.value), 365);
     } catch (e) {}
   }
-});
+}
+
+// the rows that fit the screen, measured once the table shows rows : the pager's block (the range
+// and the boxes) and the table above it. Rows not there yet (a list still loading) : tried again
+// a little later, a few times
+let fitTimer = null;
+function fitToScreen(tries = 10) {
+  clearTimeout(fitTimer);
+  if (!fitting.value) return;
+  nextTick(() => {
+    if (!fitting.value || !navEl.value) return;
+    const count = measureFit(navEl.value.closest('.af-table-pager') || navEl.value);
+    if (count) {
+      // the largest size offered that fits, else the smallest
+      const size = fitSize(count, SIZES);
+      if (size !== pageSize.value) pageSize.value = size;
+    } else if (tries > 0) {
+      fitTimer = setTimeout(() => fitToScreen(tries - 1), 300);
+    }
+  });
+}
+// the window resized : fitted again, a moment after the last change
+let resizeTimer = null;
+function onResize() {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => fitToScreen(0), 200);
+}
 
 // EVENTS
 
@@ -168,11 +206,29 @@ onMounted(() => {
   if (props.name) {
     const saved = Helpers.getCookie(`pagination_${props.name}_perPage`);
     if (saved && !isNaN(parseInt(saved))) {
-      pageSize.value = parseInt(saved);
+      // a size no longer offered (25, before 20 replaced it) : the nearest one
+      pageSize.value = nearestSize(parseInt(saved), SIZES);
+      fitting.value = false;
     }
   }
   setPage(props.currentPage > 0 ? Math.min(props.currentPage, pages.value.length) : pageByIndex.value);
+  fitToScreen();
+  window.addEventListener('resize', onResize);
 });
+
+onBeforeUnmount(() => {
+  clearTimeout(fitTimer);
+  clearTimeout(resizeTimer);
+  window.removeEventListener('resize', onResize);
+});
+
+// the list arriving (it was empty while loading) : its rows to measure now
+watch(
+  () => props.dataList?.length > 0,
+  (has) => {
+    if (has) fitToScreen();
+  },
+);
 
 // the page set from outside (Back to an address with another page)
 watch(
@@ -185,12 +241,9 @@ watch(
 <template>
   <!-- the page size, then the page boxes : the size outside the list, so Previous is its first
        box and gets the rounded left corners, as Next the right ones -->
-  <nav aria-label="Pagination" class="af-pager-nav">
-    <select class="form-select af-page-size" v-model="pageSize" :aria-label="t('common.pageSize')">
-      <option :value="10">10</option>
-      <option :value="25">25</option>
-      <option :value="50">50</option>
-      <option :value="100">100</option>
+  <nav ref="navEl" aria-label="Pagination" class="af-pager-nav">
+    <select class="form-select af-page-size" v-model="pageSize" :aria-label="t('common.pageSize')" @change="pickSize">
+      <option v-for="size in SIZES" :key="size" :value="size">{{ size }}</option>
     </select>
     <ul class="pagination justify-content-end user-select-none">
       <!-- Previous and Next disabled at either end : no button there, no pointer -->

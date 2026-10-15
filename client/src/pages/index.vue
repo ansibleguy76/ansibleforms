@@ -5,6 +5,9 @@ import Helpers from '@/lib/Helpers';
 import { useRoute, useRouter } from 'vue-router';
 import { formsPath, categoryFromPath, formPath } from '@/lib/formsPath';
 import { useAppStore } from '@/stores/app';
+import { useTileCount } from '@/lib/formTiles';
+// the grey tiles while the forms load : as many as fill the grid at this width (lib/formTiles.js)
+const tileCount = useTileCount();
 
 const { t } = useI18n();
 
@@ -209,7 +212,7 @@ onMounted(async () => {
               :crumbs="categoryTitle.crumbs"
               :description="t('forms.pageDescription')"
             >
-              <AppSkeleton shape="tiles" :count="8" />
+              <AppSkeleton shape="tiles" :count="tileCount" />
             </AppSettings>
           </div>
           <div v-else-if="authenticated && forms" class="col h-100 bg-body">
