@@ -1764,7 +1764,9 @@ export default {
       defaultLanguage: 'Domyślny język',
       defaultLanguageHelp: 'Domyślny język dla nowych użytkowników, którzy nie wybrali jeszcze języka.',
       defaultTheme: 'Domyślny motyw',
-      defaultThemeHelp: 'Domyślny motyw dla nowych użytkowników, którzy nie wybrali jeszcze motywu.',
+      defaultThemeHelp:
+        'Motyw dla użytkowników, którzy żadnego nie wybrali. Zgodnie z przeglądarką pokazuje jasny lub ciemny jak w przeglądarce.',
+      themeSystem: 'Zgodnie z przeglądarką',
       configSource: 'Źródło konfiguracji',
       configSourceHelp: 'Wybierz, skąd jest wczytywana konfiguracja (kategorie, role, stałe).',
       tabConfiguration: 'Konfiguracja',

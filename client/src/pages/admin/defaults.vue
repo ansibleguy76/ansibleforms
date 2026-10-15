@@ -30,7 +30,11 @@ const loaded = ref(false);
 // the theme and its colour, the forms view, the time zone
 const theme = ref(lookOf({})); // as edited
 const savedTheme = ref(null); // as saved
-const themeOptions = Theme.themes().map((th) => ({ value: th.value, label: th.title }));
+// Follow the browser first (the default : light or dark as the user's browser is), then the themes
+const themeOptions = computed(() => [
+  { value: 'system', label: t('settings.settingsPage.themeSystem') },
+  ...Theme.themes().map((th) => ({ value: th.value, label: th.title })),
+]);
 // the colours a Color theme offers
 const colorPalette = [
   { label: 'Blue', hex: '#008cba' },
@@ -72,7 +76,8 @@ const formsViews = computed(() =>
  */
 function lookOf(row) {
   return {
-    default_theme: row?.default_theme || 'light',
+    // none set : Follow the browser, as the app does without one (lib/Theme.js)
+    default_theme: row?.default_theme || 'system',
     default_theme_color: Theme.current(row?.default_theme_color || '#008cba'),
     forms_view: row?.forms_view || 'tiles',
     default_timezone: row?.default_timezone || 'UTC',

@@ -1746,7 +1746,9 @@ export default {
       defaultLanguage: '既定の言語',
       defaultLanguageHelp: 'まだ言語を選択していない新しいユーザーの既定の言語です。',
       defaultTheme: '既定のテーマ',
-      defaultThemeHelp: 'まだテーマを選択していない新しいユーザーの既定のテーマです。',
+      defaultThemeHelp:
+        'テーマを選んでいないユーザーのテーマ。「ブラウザーに合わせる」はブラウザーの設定に合わせてライトまたはダークで表示します。',
+      themeSystem: 'ブラウザーに合わせる',
       configSource: '設定のソース',
       configSourceHelp: '設定 (カテゴリ、ロール、定数) の読み込み元を選択します。',
       tabConfiguration: '設定',

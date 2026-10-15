@@ -1778,7 +1778,9 @@ export default {
       defaultLanguage: 'Idioma predefinido',
       defaultLanguageHelp: 'O idioma predefinido para novos utilizadores que ainda não escolheram um idioma.',
       defaultTheme: 'Tema predefinido',
-      defaultThemeHelp: 'O tema predefinido para novos utilizadores que ainda não escolheram um tema.',
+      defaultThemeHelp:
+        'O tema para os utilizadores que não escolheram um. Seguir o navegador mostra claro ou escuro conforme o navegador.',
+      themeSystem: 'Seguir o navegador',
       configSource: 'Origem da configuração',
       configSourceHelp: 'Escolha de onde é carregada a configuração (categorias, funções, constantes).',
       tabConfiguration: 'Configuração',

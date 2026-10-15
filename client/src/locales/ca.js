@@ -1782,7 +1782,9 @@ export default {
       defaultLanguage: 'Idioma predeterminat',
       defaultLanguageHelp: "L'idioma predeterminat per als usuaris nous que encara no n'han triat cap.",
       defaultTheme: 'Tema predeterminat',
-      defaultThemeHelp: "El tema predeterminat per als usuaris nous que encara no n'han triat cap.",
+      defaultThemeHelp:
+        "El tema per als usuaris que no n'han triat cap. Segueix el navegador el mostra clar o fosc segons el navegador.",
+      themeSystem: 'Segueix el navegador',
       configSource: 'Origen de la configuració',
       configSourceHelp: "Tria d'on es carrega la configuració (categories, rols, constants).",
       tabConfiguration: 'Configuració',

@@ -1745,7 +1745,9 @@ export default {
       defaultLanguage: 'Default language',
       defaultLanguageHelp: "The default language for new users who haven't chosen a language yet.",
       defaultTheme: 'Default theme',
-      defaultThemeHelp: "The default theme for new users who haven't chosen a theme yet.",
+      defaultThemeHelp:
+        "The theme for users who haven't chosen one. Follow the browser shows light or dark as their browser is set.",
+      themeSystem: 'Follow the browser',
       configSource: 'Configuration source',
       configSourceHelp: 'Choose where the configuration (categories, roles, constants) is loaded from.',
       tabConfiguration: 'Configuration',

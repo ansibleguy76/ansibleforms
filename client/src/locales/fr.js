@@ -1783,7 +1783,9 @@ export default {
       defaultLanguage: 'Langue par defaut',
       defaultLanguageHelp: "La langue par defaut pour les nouveaux utilisateurs qui n'ont pas encore choisi de langue.",
       defaultTheme: 'Theme par defaut',
-      defaultThemeHelp: "Le theme par defaut pour les nouveaux utilisateurs qui n'ont pas encore choisi de theme.",
+      defaultThemeHelp:
+        "Le thème des utilisateurs qui n'en ont pas choisi. Suivre le navigateur l'affiche clair ou sombre comme leur navigateur.",
+      themeSystem: 'Suivre le navigateur',
       configSource: 'Source de configuration',
       configSourceHelp: "Choisissez d'ou la configuration (categories, roles, constantes) est chargee.",
       tabConfiguration: 'Configuration',

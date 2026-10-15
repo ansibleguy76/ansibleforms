@@ -1786,7 +1786,9 @@ export default {
       defaultLanguage: 'Standardsprache',
       defaultLanguageHelp: 'Die Standardsprache fuer neue Benutzer, die noch keine Sprache gewaehlt haben.',
       defaultTheme: 'Standarddesign',
-      defaultThemeHelp: 'Das Standarddesign fuer neue Benutzer, die noch kein Design gewaehlt haben.',
+      defaultThemeHelp:
+        'Das Design für Benutzer, die keines gewählt haben. Dem Browser folgen zeigt hell oder dunkel wie im Browser eingestellt.',
+      themeSystem: 'Dem Browser folgen',
       configSource: 'Konfigurationsquelle',
       configSourceHelp: 'Waehlen Sie, woher die Konfiguration (Kategorien, Rollen, Konstanten) geladen wird.',
       tabConfiguration: 'Konfiguration',

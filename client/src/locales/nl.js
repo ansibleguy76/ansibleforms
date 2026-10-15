@@ -1769,7 +1769,9 @@ export default {
       defaultLanguage: 'Standaardtaal',
       defaultLanguageHelp: 'De standaardtaal voor nieuwe gebruikers die nog geen taal hebben gekozen.',
       defaultTheme: 'Standaardthema',
-      defaultThemeHelp: 'Het standaardthema voor nieuwe gebruikers die nog geen thema hebben gekozen.',
+      defaultThemeHelp:
+        'Het thema voor gebruikers die er geen kozen. Browser volgen toont licht of donker zoals hun browser.',
+      themeSystem: 'Browser volgen',
       configSource: 'Configuratiebron',
       configSourceHelp: 'Kies waar de configuratie (categorieën, rollen, constanten) wordt geladen.',
       tabConfiguration: 'Configuratie',
