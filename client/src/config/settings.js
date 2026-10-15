@@ -1001,13 +1001,13 @@ export default function getSettings(t) {
       steps: [
         { key: 'provider', label: t('settings.oauth2.stepProvider') },
         {
-          // where the app signs in : the issuer (Open ID) and the redirect URL
+          // where the app signs in : the tenant (Entra ID), the issuer (Open ID), the redirect URL
           key: 'connection',
           label: t('settings.common.tabConnection'),
           notes: (item) => [item.provider === 'oidc' && { text: t('admin.oauth2.openIdTestedWith') }],
         },
         {
-          // as whom : the tenant (Entra ID), the client id and secret, or an sso credential ; the
+          // as whom : an sso credential (its user the client id, its password the secret) ; the
           // permissions the Entra ID app needs
           key: 'credentials',
           label: t('settings.common.tabCredentials'),
@@ -1083,7 +1083,7 @@ export default function getSettings(t) {
         { key: 'description', label: t('settings.fields.description'), required: false, icon: 'info-circle' },
         {
           key: 'tenant_id',
-          step: 'credentials',
+          step: 'connection',
           label: t('settings.oauth2.tenantId'),
           // required for Entra ID : the field only shows (and is only checked) for azuread
           required: true,
@@ -1093,14 +1093,11 @@ export default function getSettings(t) {
           hidden: true,
         },
         {
+          // in its credential now ; kept on the record for the providers that still have one
           key: 'client_id',
-          step: 'credentials',
-          label: t('settings.oauth2.clientId'),
-          required: true,
-          icon: 'key',
-          // its own client : none while an sso credential gives it
-          showWhen: (item) => ['azuread', 'oidc'].includes(item.provider) && !item.credential,
+          noInput: true,
           hidden: true,
+          noTable: true,
         },
         {
           key: 'issuer',
@@ -1113,14 +1110,11 @@ export default function getSettings(t) {
           hidden: true,
         },
         {
+          // in its credential now ; kept on the record for the providers that still have one
           key: 'client_secret',
-          step: 'credentials',
-          label: t('settings.oauth2.clientSecret'),
-          type: 'password',
-          required: true,
-          icon: 'lock',
-          showWhen: (item) => !item.credential,
+          noInput: true,
           hidden: true,
+          noTable: true,
         },
         {
           // an sso credential of Connections > Credentials instead : its user the client id, its
@@ -1129,6 +1123,7 @@ export default function getSettings(t) {
           step: 'credentials',
           label: t('settings.oauth2.credential'),
           help: t('settings.oauth2.credentialHelp'),
+          required: true,
           type: 'select',
           icon: 'key',
           parent: 'credentials',
@@ -2022,34 +2017,6 @@ export default function getSettings(t) {
           dependency: 'enable',
         },
         {
-          key: 'bind_user_dn',
-          tab: 'credentials',
-          icon: 'user',
-          line: 51,
-          label: t('settings.ldap.bindUserDn'),
-          help: t('settings.ldap.bindUserDnDesc'),
-          required: true,
-          // the chosen credential's user, read only ; else its own, edited here
-          fromCredential: { field: 'credential', pick: 'user' },
-          disabledWhen: (item) => !!item.credential,
-          dependency: 'enable',
-        },
-        {
-          key: 'bind_user_pw',
-          tab: 'credentials',
-          icon: 'lock',
-          line: 52,
-          label: t('settings.ldap.bindUserPassword'),
-          help: t('settings.ldap.bindUserPasswordDesc'),
-          type: 'password',
-          required: true,
-          // the chosen credential's password, masked ; else its own : left as it is, the stored
-          // one is kept, typed, it is replaced
-          fromCredential: { field: 'credential', pick: 'password' },
-          disabledWhen: (item) => !!item.credential,
-          dependency: 'enable',
-        },
-        {
           key: 'domains',
           tab: 'users',
           icon: 'at',
@@ -2199,9 +2166,9 @@ export default function getSettings(t) {
         },
         {
           key: 'auth_type',
-          tab: 'credentials',
+          tab: 'model-provider',
           icon: 'id-card',
-          line: 4,
+          line: 20,
           type: 'select',
           label: t('settings.chat.authType'),
           help: t('settings.chat.authTypeHelp'),
@@ -3737,6 +3704,8 @@ function ldapDirectories(t, ldap) {
           ...(column[f.key] || { noTable: true }),
           // a new one : on, the usual Active Directory port and attributes
           ...(NEW_DIRECTORY[f.key] !== undefined ? { initial: () => NEW_DIRECTORY[f.key] } : {}),
+          // a new one binds with a credential (one from before credentials may have its own account)
+          ...(f.key === 'credential' ? { required: true } : {}),
         })),
     ],
   };

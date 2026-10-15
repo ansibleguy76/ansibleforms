@@ -1203,7 +1203,9 @@ export default {
       useForSignIn: 'Use for sign-in',
       credential: 'Credential',
       credentialHelp:
-        'An sso credential of Connections > Credentials : its user is the client ID, its password the client secret. None: the client ID and secret below.',
+        'An sso credential of Connections > Credentials : its user is the client ID, its password the client secret.',
+      ownClient:
+        'It signs in with its own client ID ({client}), from before credentials, until a credential is chosen.',
       activeHelp: 'Users sign in with it when they choose {type}; turning it on turns off the other {type} providers.',
       providerNotFound: "There is no SSO provider with the id '{id}'.",
       changeSecret: 'Change secret',
@@ -1319,9 +1321,8 @@ export default {
       changeToken: 'Change token',
       changeAuth: 'Change authentication',
       defaultHelp: 'The default for {forms}: turned on here, turned off by making another runner the default.',
-      passwordOnPage: 'The password is changed with Change password, top right.',
-      tokenOnPage_rte: 'The RTE_TOKEN of the RTE is changed with Change token, top right.',
-      tokenOnPage_api: 'The API token is changed with Change token, top right.',
+      tokenKeep_rte: 'The current RTE_TOKEN is kept unless you type a new one.',
+      tokenKeep_api: 'The current API token is kept unless you type a new one.',
       kind_semaphore: 'Semaphore UI',
       kind_rundeck: 'Rundeck',
       type_semaphore: 'Semaphore',
@@ -1596,7 +1597,7 @@ export default {
       type_ssh: 'SSH',
       type_sshHint: 'A user and password for SSH to a server',
       type_userpass: 'User and password',
-      type_userpassHint: 'A user and password for any other login, as the credentials from before 7',
+      type_userpassHint: 'A user and password for any other login, as the credentials from before v7',
       type_git: 'Git',
       type_gitHint: 'A user and password or token for git repositories',
       type_api: 'API',
@@ -1678,7 +1679,8 @@ export default {
       enableLdap: 'Enable LDAP',
       enableLdapHelp: 'Users sign in with their LDAP or Active Directory account',
       credential: 'Credential',
-      credentialHelp: 'A credential of Connections > Credentials to bind with. None: the bind user and password below.',
+      credentialHelp:
+        'An ldap credential of Connections > Credentials : its user is the bind DN. None : a directory from before credentials binds with its own bind user.',
       nameHelp:
         'Prefixes its members in roles : corp/jane, ldap/corp/Admins. The default directory keeps the short names and its own name.',
       servers: 'Servers',

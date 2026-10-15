@@ -5,11 +5,10 @@
 /*  providers' list : the steps of its dialog as tabs, the tab    */
 /*  kept in the url -                                             */
 /*    Details     its type (fixed), name and description          */
-/*    Connection  where the app signs in (issuer, redirect url)   */
-/*    Credentials as whom : an sso credential first, then its     */
-/*                tenant (Entra ID), client id and secret - the   */
-/*                credential's, read only, or its own, edited     */
-/*                here (the secret masked : typed, replaced)      */
+/*    Connection  where the app signs in (tenant, issuer,         */
+/*                redirect url)                                   */
+/*    Credentials as whom : an sso credential of Connections >    */
+/*                Credentials (its client id and secret)          */
 /*    Groups      the group filter, and its help                  */
 /*  Details' Enabled switch makes it the one its type signs in    */
 /*  with ; Delete and Save top right.                             */
@@ -39,7 +38,9 @@ const providerId = computed(() => String(route.params.id || ''));
 const provider = ref(null); // as saved
 const edit = ref(null); // as edited
 // what this page edits : the secret has its own dialog (Change secret)
-const EDITED = ['name', 'description', 'tenant_id', 'client_id', 'credential', 'issuer', 'redirect_uri', 'groupfilter'];
+// its client is its credential's (Connections > Credentials) : a client id of its own, from before
+// credentials, is kept on the record and shown, not edited
+const EDITED = ['name', 'description', 'tenant_id', 'credential', 'issuer', 'redirect_uri', 'groupfilter'];
 // the sso credentials of Connections > Credentials, none first : its own client id and secret
 const credentials = ref([{ name: '' }]);
 async function loadCredentials() {
@@ -47,17 +48,11 @@ async function loadCredentials() {
   const all = res?.data?.records || [];
   credentials.value = [{ name: '' }, ...all.filter((c) => c.credential_type === 'sso')];
 }
-// the credential chosen : its user is the client id shown (read only), its password the secret
-const chosenCredential = computed(() =>
-  edit.value?.credential ? credentials.value.find((c) => c.name === edit.value.credential) || {} : null,
-);
-// a new client secret typed in its tab ; empty, the stored one is kept
-const newSecret = ref('');
+
 const TYPES = { azuread: 'Microsoft Entra ID', oidc: 'Open ID' };
 
 const dirty = computed(
-  () =>
-    !!provider.value && (EDITED.some((k) => (edit.value[k] ?? '') !== (provider.value[k] ?? '')) || !!newSecret.value),
+  () => !!provider.value && EDITED.some((k) => (edit.value[k] ?? '') !== (provider.value[k] ?? '')),
 );
 
 // leaving with the provider changed and unsaved asks first
@@ -144,11 +139,8 @@ async function save() {
   const data = Object.fromEntries(
     EDITED.map((k) => [k, typeof edit.value[k] === 'string' ? edit.value[k].trim() : edit.value[k]]),
   );
-  // its own client's new secret, typed in the tab (none while a credential gives it)
-  if (newSecret.value && !data.credential) data.client_secret = newSecret.value;
   if (await update(data)) {
     toast.success(`${data.name} ${t('settings.common.isUpdated')}`);
-    newSecret.value = '';
     await load();
   }
 }
@@ -289,8 +281,18 @@ onMounted(async () => {
               </div>
             </div>
           </template>
-          <!-- Connection : where the app signs in with it -->
+          <!-- Connection : where the app signs in with it - its tenant (Entra ID), its issuer (Open
+               ID), the redirect URL -->
           <template v-else-if="activeTab === 'connection'">
+            <BsInput
+              v-if="provider.provider === 'azuread'"
+              class="af-provider-field"
+              v-model="edit.tenant_id"
+              icon="building"
+              :required="true"
+              :isFloating="false"
+              :label="t('settings.oauth2.tenantId')"
+            />
             <BsInput
               v-if="provider.provider === 'oidc'"
               class="af-provider-field"
@@ -310,8 +312,8 @@ onMounted(async () => {
               :label="t('settings.oauth2.redirectUrl')"
             />
           </template>
-          <!-- Credentials : as whom - an sso credential first, then the tenant (Entra ID), the
-               client id and the secret : the credential's, read only, or its own, edited here -->
+          <!-- Credentials : as whom - an sso credential of Connections > Credentials (its user the
+               client id, its password the secret) ; one from before credentials says its own -->
           <template v-else-if="activeTab === 'credentials'">
             <BsInput
               class="af-provider-field"
@@ -325,54 +327,9 @@ onMounted(async () => {
               :help="t('settings.oauth2.credentialHelp')"
               :label="t('settings.oauth2.credential')"
             />
-            <BsInput
-              v-if="provider.provider === 'azuread'"
-              class="af-provider-field"
-              v-model="edit.tenant_id"
-              icon="building"
-              :required="true"
-              :isFloating="false"
-              :label="t('settings.oauth2.tenantId')"
-            />
-            <BsInput
-              v-if="chosenCredential"
-              class="af-provider-field"
-              :modelValue="chosenCredential.user || ''"
-              icon="key"
-              :isFloating="false"
-              :disabled="true"
-              :label="t('settings.oauth2.clientId')"
-            />
-            <BsInput
-              v-else
-              class="af-provider-field"
-              v-model="edit.client_id"
-              icon="key"
-              :isFloating="false"
-              :required="true"
-              :label="t('settings.oauth2.clientId')"
-            />
-            <BsInput
-              v-if="chosenCredential"
-              class="af-provider-field"
-              modelValue="**********"
-              type="password"
-              icon="lock"
-              :isFloating="false"
-              :disabled="true"
-              :label="t('settings.oauth2.clientSecret')"
-            />
-            <BsInput
-              v-else
-              class="af-provider-field"
-              v-model="newSecret"
-              type="password"
-              icon="lock"
-              :isFloating="false"
-              placeholder="**********"
-              :help="t('settings.common.passwordKeep')"
-              :label="t('settings.oauth2.clientSecret')"
-            />
+            <p v-if="provider.client_id && !edit.credential" class="form-text mb-0">
+              {{ t('settings.oauth2.ownClient', { client: provider.client_id }) }}
+            </p>
           </template>
           <!-- Groups : which of the user's groups the app keeps -->
           <template v-else>

@@ -1225,7 +1225,9 @@ export default {
       useForSignIn: 'Utiliser pour la connexion',
       credential: 'Identifiant',
       credentialHelp:
-        "Un identifiant sso de Connexions > Identifiants : son utilisateur est l'ID client, son mot de passe le secret. Aucun : l'ID et le secret ci-dessous.",
+        "Un identifiant sso de Connexions > Identifiants : son utilisateur est l'ID client, son mot de passe le secret.",
+      ownClient:
+        "Il se connecte avec son propre ID client ({client}), d'avant les identifiants, jusqu'au choix d'un identifiant.",
       activeHelp:
         "Les utilisateurs se connectent avec lui lorsqu'ils choisissent {type} ; l'activer désactive les autres fournisseurs {type}.",
       providerNotFound: "Aucun fournisseur SSO n'a l'id '{id}'.",
@@ -1345,9 +1347,8 @@ export default {
       changeToken: 'Changer le jeton',
       changeAuth: "Changer l'authentification",
       defaultHelp: "Le défaut pour {forms} : activé ici, désactivé en faisant d'un autre runner le défaut.",
-      passwordOnPage: 'Le mot de passe se change avec Changer le mot de passe, en haut à droite.',
-      tokenOnPage_rte: 'Le RTE_TOKEN du RTE se change avec Changer le jeton, en haut à droite.',
-      tokenOnPage_api: 'Le jeton API se change avec Changer le jeton, en haut à droite.',
+      tokenKeep_rte: 'Le RTE_TOKEN actuel est conservé sauf si vous en saisissez un nouveau.',
+      tokenKeep_api: "Le jeton d'API actuel est conservé sauf si vous en saisissez un nouveau.",
       kind_semaphore: 'Semaphore UI',
       kind_rundeck: 'Rundeck',
       type_semaphore: 'Semaphore',
@@ -1629,7 +1630,7 @@ export default {
       type_sshHint: 'Un utilisateur et un mot de passe pour SSH vers un serveur',
       type_userpass: 'Utilisateur et mot de passe',
       type_userpassHint:
-        "Un utilisateur et un mot de passe pour toute autre connexion, comme les identifiants d'avant la 7",
+        "Un utilisateur et un mot de passe pour toute autre connexion, comme les identifiants d'avant la v7",
       type_git: 'Git',
       type_gitHint: 'Un utilisateur et un mot de passe ou un jeton pour des dépôts git',
       type_api: 'API',
@@ -1715,7 +1716,7 @@ export default {
       enableLdapHelp: 'Les utilisateurs se connectent avec leur compte LDAP ou Active Directory',
       credential: 'Identifiant',
       credentialHelp:
-        "Un identifiant de Connexions > Identifiants pour le bind. Aucun : l'utilisateur et le mot de passe ci-dessous.",
+        "Un identifiant ldap de Connexions > Identifiants : son utilisateur est le DN de bind. Aucun : un annuaire d'avant les identifiants se lie avec son propre utilisateur.",
       nameHelp:
         "Préfixe ses membres dans les rôles : corp/jane, ldap/corp/Admins. L'annuaire default garde les noms courts et son propre nom.",
       servers: 'Serveurs',

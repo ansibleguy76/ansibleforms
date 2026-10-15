@@ -1223,7 +1223,9 @@ export default {
       useForSignIn: 'Für die Anmeldung verwenden',
       credential: 'Anmeldedaten-Eintrag',
       credentialHelp:
-        'Ein sso-Eintrag aus Verbindungen > Anmeldedaten: Benutzer ist die Client-ID, Passwort das Client-Geheimnis. Keiner: Client-ID und Geheimnis unten.',
+        'Ein sso-Eintrag aus Verbindungen > Anmeldedaten: der Benutzer ist die Client-ID, das Passwort das Client-Geheimnis.',
+      ownClient:
+        'Es meldet sich mit seiner eigenen Client-ID ({client}) von vor den Anmeldedaten an, bis ein Eintrag gewählt ist.',
       activeHelp:
         'Benutzer melden sich damit an, wenn sie {type} wählen; das Einschalten schaltet die anderen {type}-Anbieter aus.',
       providerNotFound: "Es gibt keinen SSO-Anbieter mit der ID '{id}'.",
@@ -1344,9 +1346,8 @@ export default {
       changeAuth: 'Authentifizierung ändern',
       defaultHelp:
         'Der Standard für {forms}: hier eingeschaltet, ausgeschaltet, indem ein anderer Runner Standard wird.',
-      passwordOnPage: 'Das Passwort ändern Sie mit Passwort ändern, oben rechts.',
-      tokenOnPage_rte: 'Das RTE_TOKEN des RTE ändern Sie mit Token ändern, oben rechts.',
-      tokenOnPage_api: 'Das API-Token ändern Sie mit Token ändern, oben rechts.',
+      tokenKeep_rte: 'Das aktuelle RTE_TOKEN bleibt, außer Sie geben ein neues ein.',
+      tokenKeep_api: 'Das aktuelle API-Token bleibt, außer Sie geben ein neues ein.',
       kind_semaphore: 'Semaphore UI',
       kind_rundeck: 'Rundeck',
       type_semaphore: 'Semaphore',
@@ -1626,7 +1627,7 @@ export default {
       type_ssh: 'SSH',
       type_sshHint: 'Benutzer und Passwort für SSH zu einem Server',
       type_userpass: 'Benutzer und Passwort',
-      type_userpassHint: 'Benutzer und Passwort für jede andere Anmeldung, wie die Anmeldedaten von vor Version 7',
+      type_userpassHint: 'Benutzer und Passwort für jede andere Anmeldung, wie die Anmeldedaten von vor v7',
       type_git: 'Git',
       type_gitHint: 'Benutzer und Passwort oder Token für Git-Repositorys',
       type_api: 'API',
@@ -1714,7 +1715,7 @@ export default {
       enableLdapHelp: 'Benutzer melden sich mit ihrem LDAP- oder Active-Directory-Konto an',
       credential: 'Anmeldedaten-Eintrag',
       credentialHelp:
-        'Ein Eintrag aus Verbindungen > Anmeldedaten für den Bind. Keiner: Bind-Benutzer und Passwort unten.',
+        'Ein ldap-Eintrag aus Verbindungen > Anmeldedaten: der Benutzer ist der Bind-DN. Keiner: ein Verzeichnis von vor den Anmeldedaten bindet mit eigenem Bind-Benutzer.',
       nameHelp:
         'Stellt seinen Mitgliedern in Rollen den Namen voran: corp/jane, ldap/corp/Admins. Das Verzeichnis default behält die kurzen Namen und seinen eigenen Namen.',
       servers: 'Server',

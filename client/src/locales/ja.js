@@ -1208,7 +1208,8 @@ export default {
       useForSignIn: 'サインインに使用',
       credential: '資格情報',
       credentialHelp:
-        '［接続 > 資格情報］の sso 資格情報：ユーザーがクライアント ID、パスワードがシークレット。なし：下の ID とシークレット。',
+        '［接続 > 資格情報］の sso 資格情報：ユーザーがクライアント ID、パスワードがクライアントシークレット。',
+      ownClient: '資格情報を選ぶまで、資格情報より前の自身のクライアント ID（{client}）でサインインします。',
       activeHelp:
         '{type} を選んだユーザーはこれでサインインします。オンにすると他の {type} プロバイダーはオフになります。',
       providerNotFound: "ID '{id}' の SSO プロバイダーはありません。",
@@ -1508,7 +1509,7 @@ export default {
       type_ssh: 'SSH',
       type_sshHint: 'サーバーへの SSH 用のユーザーとパスワード',
       type_userpass: 'ユーザーとパスワード',
-      type_userpassHint: 'その他のログイン用のユーザーとパスワード（7 より前の資格情報もこの種類）',
+      type_userpassHint: 'その他のログイン用のユーザーとパスワード（v7 より前の資格情報もこの種類）',
       type_git: 'Git',
       type_gitHint: 'git リポジトリ用のユーザーとパスワードまたはトークン',
       type_api: 'API',
@@ -1589,7 +1590,8 @@ export default {
       enableLdap: 'LDAP を有効にする',
       enableLdapHelp: 'ユーザーは LDAP または Active Directory のアカウントでサインインします',
       credential: '資格情報',
-      credentialHelp: 'バインドに使う［接続 > 資格情報］の資格情報。なし：下のバインドユーザーとパスワード。',
+      credentialHelp:
+        '［接続 > 資格情報］の ldap 資格情報：ユーザーがバインド DN。なし：資格情報より前のディレクトリは自身のバインドユーザーを使います。',
       nameHelp:
         'ロールでメンバーの前に付けます：corp/jane、ldap/corp/Admins。default ディレクトリは短い名前と自身の名前を保持します。',
       servers: 'サーバー',
@@ -1708,9 +1710,8 @@ export default {
       changeToken: 'トークンを変更',
       changeAuth: '認証を変更',
       defaultHelp: '{forms}の既定：ここでオンにし、別のランナーを既定にするとオフになります。',
-      passwordOnPage: 'パスワードは右上の「パスワードを変更」で変更します。',
-      tokenOnPage_rte: 'RTE の RTE_TOKEN は右上の「トークンを変更」で変更します。',
-      tokenOnPage_api: 'API トークンは右上の「トークンを変更」で変更します。',
+      tokenKeep_rte: '新しく入力しない限り、現在の RTE_TOKEN が保持されます。',
+      tokenKeep_api: '新しく入力しない限り、現在の API トークンが保持されます。',
       kind_semaphore: 'Semaphore UI',
       kind_rundeck: 'Rundeck',
       type_semaphore: 'Semaphore',

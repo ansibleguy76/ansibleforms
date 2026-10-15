@@ -1224,7 +1224,9 @@ export default {
       useForSignIn: 'Fes-lo servir per iniciar la sessió',
       credential: 'Credencial',
       credentialHelp:
-        "Una credencial sso de Connexions > Credencials: el seu usuari és l'ID de client i la contrasenya el secret. Cap: l'ID i el secret de sota.",
+        "Una credencial sso de Connexions > Credencials: el seu usuari és l'ID de client i la contrasenya el secret.",
+      ownClient:
+        'Inicia sessió amb el seu propi ID de client ({client}), anterior a les credencials, fins que es triï una credencial.',
       activeHelp:
         'Els usuaris inicien la sessió amb ell quan trien {type}; activar-lo desactiva els altres proveïdors {type}.',
       providerNotFound: "No hi ha cap proveïdor SSO amb l'id '{id}'.",
@@ -1531,7 +1533,7 @@ export default {
       type_sshHint: 'Un usuari i una contrasenya per a SSH a un servidor',
       type_userpass: 'Usuari i contrasenya',
       type_userpassHint:
-        "Un usuari i contrasenya per a qualsevol altre inici de sessió, com les credencials d'abans de la 7",
+        "Un usuari i contrasenya per a qualsevol altre inici de sessió, com les credencials d'abans de la v7",
       type_git: 'Git',
       type_gitHint: 'Un usuari i una contrasenya o un token per a repositoris git',
       type_api: 'API',
@@ -1614,7 +1616,8 @@ export default {
       enableLdap: "Activa l'LDAP",
       enableLdapHelp: 'Els usuaris inicien la sessió amb el seu compte de LDAP o Active Directory',
       credential: 'Credencial',
-      credentialHelp: "Una credencial de Connexions > Credencials per al bind. Cap: l'usuari i la contrasenya de sota.",
+      credentialHelp:
+        'Una credencial ldap de Connexions > Credencials: el seu usuari és el DN de bind. Cap: un directori anterior a les credencials usa el seu propi usuari de bind.',
       nameHelp:
         'Prefixa els seus membres als rols: corp/jane, ldap/corp/Admins. El directori default conserva els noms curts i el seu propi nom.',
       servers: 'Servidors',
@@ -1738,9 +1741,8 @@ export default {
       changeToken: 'Canvia el token',
       changeAuth: "Canvia l'autenticació",
       defaultHelp: "El predeterminat per a {forms}: s'activa aquí i es desactiva fent predeterminat un altre runner.",
-      passwordOnPage: 'La contrasenya es canvia amb Canvia la contrasenya, a dalt a la dreta.',
-      tokenOnPage_rte: 'El RTE_TOKEN del RTE es canvia amb Canvia el token, a dalt a la dreta.',
-      tokenOnPage_api: "El token d'API es canvia amb Canvia el token, a dalt a la dreta.",
+      tokenKeep_rte: "L'RTE_TOKEN actual es conserva tret que n'escriguis un de nou.",
+      tokenKeep_api: "El token d'API actual es conserva tret que n'escriguis un de nou.",
       kind_semaphore: 'Semaphore UI',
       kind_rundeck: 'Rundeck',
       type_semaphore: 'Semaphore',

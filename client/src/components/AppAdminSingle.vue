@@ -12,9 +12,6 @@
 /*            ; a field's disabledWhen (item, saved) and an       */
 /*            action's showWhen (item) decide from the record ;   */
 /*            togglesLast puts a tab's switches under its fields  */
-/*            ; a field's showWhen (item) hides it, unchecked ;   */
-/*            fromCredential { field, pick } shows the chosen     */
-/*            credential's user (or password, masked), read only  */
 /*      tabs: Array of { key, label, icon } - the form in tabs :  */
 /*            each field names its tab (field.tab, the first tab  */
 /*            when it names none) ; a slot tab-top-<key> above a  */
@@ -195,8 +192,6 @@ function isDisabled(field) {
   if (typeof field.disabledWhen === 'function' && field.disabledWhen(item.value, originalItem.value || {})) {
     return true;
   }
-  // a field its own rule hides is not checked either
-  if (typeof field.showWhen === 'function' && !field.showWhen(item.value)) return true;
   if (!field.dependency) {
     return false;
   }
@@ -233,9 +228,6 @@ const showDisabled = computed(() => !!props.settings?.showDisabledFields);
 // hiding them, but a field can opt back out with hideWhenDisabled - used for the TLS
 // certificate chain, where a certificate box is meaningless until TLS is switched on.
 function isVisible(field) {
-  // a field shown by a rule of its own (an LDAP directory's own bind user : none while a
-  // credential gives it)
-  if (typeof field.showWhen === 'function' && !field.showWhen(item.value)) return false;
   if (!disabledFields.value[field.key]) return true;
   // A seed-managed record disables every field. That must not also HIDE them -
   // visibility is about an unmet dependency, and on a page without
@@ -304,27 +296,6 @@ for (const field of fields.value) {
 
 // the choices of the dropdowns that load them (field.valuesFrom), by field key
 const loadedValues = ref({});
-// the records of a dropdown filled from the api (valuesFrom), by its field
-const loadedRecords = ref({});
-/**
- * What a field shows of the credential its record names (field.fromCredential : { field, pick }) :
- * the credential's user, or its password masked ; null when the record names none (the field is
- * the record's own, edited as usual).
- *
- * Args:
- *   field (object): the field.
- *
- * Returns:
- *   string|null: the value shown, read only.
- */
-function credentialValue(field) {
-  const rule = field.fromCredential;
-  const name = rule ? item.value?.[rule.field] : '';
-  if (!name) return null;
-  if (rule.pick === 'password') return '**********';
-  const cred = (loadedRecords.value[rule.field] || []).find((r) => r.name === name);
-  return cred?.[rule.pick] ?? '';
-}
 
 /**
  * Loads the choices of the dropdowns that name an api list (field.valuesFrom) : the records'
@@ -338,8 +309,6 @@ async function loadValues() {
       { value: '', label: '' },
       ...records.map((r) => ({ value: r.name, label: r.name })),
     ];
-    // the records themselves : a field that shows a chosen credential's value (fromCredential)
-    loadedRecords.value[field.key] = records;
   }
 }
 
@@ -440,17 +409,6 @@ defineExpose({
                 :hasError="$v.item[field.key].$invalid && $v.item[field.key].$dirty && !disabledFields[field.key]"
                 :errors="$v.item[field.key].$errors"
               />
-              <!-- the chosen credential's value, read only : edited in Connections > Credentials -->
-              <BsInput
-                v-else-if="credentialValue(field) !== null"
-                :isFloating="false"
-                :modelValue="credentialValue(field)"
-                :icon="field.icon"
-                :help="field.help"
-                :type="field.type"
-                :label="field.label"
-                :disabled="true"
-              />
               <BsInput
                 v-else
                 :isFloating="false"
@@ -534,17 +492,6 @@ defineExpose({
                 :disabled="disabledFields[field.key]"
                 :hasError="$v.item[field.key].$invalid && $v.item[field.key].$dirty && !disabledFields[field.key]"
                 :errors="$v.item[field.key].$errors"
-              />
-              <!-- the chosen credential's value, read only : edited in Connections > Credentials -->
-              <BsInput
-                v-else-if="credentialValue(field) !== null"
-                :isFloating="false"
-                :modelValue="credentialValue(field)"
-                :icon="field.icon"
-                :help="field.help"
-                :type="field.type"
-                :label="field.label"
-                :disabled="true"
               />
               <BsInput
                 v-else

@@ -5,16 +5,16 @@
 /*  the credentials' list : the steps of its dialog as tabs, the  */
 /*  tab kept in the url -                                         */
 /*    Details     its name and description                        */
-/*    Type        SSH, Git, API, Database or CyberArk             */
-/*    Login       its user (a CyberArk's AppID, client            */
-/*                certificate and key)                            */
+/*    Type        what it is for (SSH, Git, LDAP, SSO ...)        */
+/*    Login       its user and password (a CyberArk's AppID,      */
+/*                client certificate and key) ; the password      */
+/*                masked : left empty kept, typed replaced        */
 /*    Store       where the user and password are kept : the app's*/
 /*                database, or a secret store (not a CyberArk's)  */
 /*    Connection  a host and port (SSH, a database), a database's */
 /*                type and name                                   */
-/*  Test connection (a database), Change password and Delete top  */
-/*  right, beside Save. A credential of the config seed is read   */
-/*  only.                                                         */
+/*  Test connection (a database), Delete and Save top right. A    */
+/*  credential of the config seed is read only.                   */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted } from 'vue';
@@ -107,7 +107,8 @@ const fromStore = computed(() => !isCyberark.value && edit.value?.secret_source 
 const dirty = computed(
   () =>
     !!credential.value &&
-    EDITED.some((k) => String(edit.value[k] ?? '') !== String(editable(credential.value)[k] ?? '')),
+    (EDITED.some((k) => String(edit.value[k] ?? '') !== String(editable(credential.value)[k] ?? '')) ||
+      !!newPassword.value),
 );
 // leaving with the credential changed and unsaved asks first
 useUnsavedGuard(
@@ -244,6 +245,8 @@ async function save() {
     Object.assign(data, { secret_store: e.secret_store, secret_ref: e.secret_ref.trim() });
   } else {
     Object.assign(data, { secret_store: '', secret_ref: '', user: e.user.trim() });
+    // its new password, typed in its Login tab
+    if (newPassword.value && !isCyberark.value) data.password = newPassword.value;
   }
   if (isCyberark.value) {
     data.client_cert = e.client_cert;
@@ -252,6 +255,7 @@ async function save() {
   }
   if (await update(data)) {
     toast.success(`${data.name} ${t('settings.common.isUpdated')}`);
+    newPassword.value = '';
     await load();
   }
 }
@@ -274,21 +278,24 @@ async function testConnection() {
   }
 }
 
-// Change password : typed twice, as a user's
-const changingPassword = ref(false);
-
-/**
- * Saves the new password.
- *
- * Args:
- *   password (string): the password, typed twice.
- */
-async function savePassword(password) {
-  if (await update({ password })) {
-    changingPassword.value = false;
-    toast.success(`${credential.value.name} ${t('settings.common.isUpdated')}`);
-  }
-}
+// its password, typed in its Login tab ; empty, the stored one is kept
+const newPassword = ref('');
+// the user and the password as its type names them : an LDAP one's bind DN and password, an SSO
+// one's client id and secret, a CyberArk one's AppID
+const userLabel = computed(
+  () =>
+    ({
+      cyberark: t('settings.secretStores.appId'),
+      ldap: t('settings.ldap.bindUserDn'),
+      sso: t('settings.oauth2.clientId'),
+    })[edit.value?.credential_type] || t('settings.fields.user'),
+);
+const passwordLabel = computed(
+  () =>
+    ({ ldap: t('settings.ldap.bindUserPassword'), sso: t('settings.oauth2.clientSecret') })[
+      edit.value?.credential_type
+    ] || t('settings.fields.password'),
+);
 
 // Delete asks first
 const confirmDelete = ref(false);
@@ -326,7 +333,6 @@ onMounted(async () => {
       <BsButton icon="trash" @click="deleteCredential()">{{ t('common.delete') }}</BsButton>
     </template>
   </BsModal>
-  <AppChangePasswordDialog v-if="changingPassword" icon="lock" @save="savePassword" @close="changingPassword = false" />
   <AppSettingsPage>
     <AppSettings
       v-if="authenticated"
@@ -419,7 +425,7 @@ onMounted(async () => {
                   icon="user"
                   :isFloating="false"
                   :help="isCyberark ? t('settings.secretStores.appIdHelp') : ''"
-                  :label="isCyberark ? t('settings.secretStores.appId') : t('settings.fields.user')"
+                  :label="userLabel"
                 />
                 <template v-if="isCyberark">
                   <BsInput
@@ -443,7 +449,19 @@ onMounted(async () => {
                     :label="t('settings.secretStores.clientKey')"
                   />
                 </template>
-                <p v-else class="form-text mb-0">{{ t('settings.runners.passwordOnPage') }}</p>
+                <!-- its password, masked : left empty, the stored one is kept ; typed, replaced -->
+                <BsInput
+                  v-else
+                  class="af-credential-field"
+                  v-model="newPassword"
+                  type="password"
+                  icon="lock"
+                  placeholder="**********"
+                  :isFloating="false"
+                  :disabled="managed"
+                  :help="t('settings.common.passwordKeep')"
+                  :label="passwordLabel"
+                />
               </template>
             </template>
             <!-- Store : the app's database, or a secret store and the place in it -->
@@ -553,13 +571,6 @@ onMounted(async () => {
           >{{ t('settings.common.testConnection') }}</BsButton
         >
         <template v-if="!managed">
-          <BsButton
-            v-if="!isCyberark && !fromStore"
-            icon="lock"
-            cssClass="text-nowrap"
-            @click="changingPassword = true"
-            >{{ t('settings.common.changePassword') }}</BsButton
-          >
           <BsButton icon="trash" @click="confirmDelete = true">{{ t('common.delete') }}</BsButton>
           <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
         </template>

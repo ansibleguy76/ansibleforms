@@ -1219,7 +1219,9 @@ export default {
       useForSignIn: "Usa per l'accesso",
       credential: 'Credenziale',
       credentialHelp:
-        "Una credenziale sso di Connessioni > Credenziali: l'utente è l'ID client, la password il segreto. Nessuna: l'ID e il segreto qui sotto.",
+        "Una credenziale sso di Connessioni > Credenziali: l'utente è l'ID client, la password il segreto.",
+      ownClient:
+        'Accede con il proprio ID client ({client}), precedente alle credenziali, finché non si sceglie una credenziale.',
       activeHelp: 'Gli utenti accedono con esso quando scelgono {type}; attivarlo disattiva gli altri provider {type}.',
       providerNotFound: "Non esiste un provider SSO con id '{id}'.",
       changeSecret: 'Cambia il secret',
@@ -1337,9 +1339,8 @@ export default {
       changeToken: 'Cambia token',
       changeAuth: 'Cambia autenticazione',
       defaultHelp: 'Il predefinito per {forms}: attivato qui, disattivato rendendo predefinito un altro runner.',
-      passwordOnPage: 'La password si cambia con Cambia password, in alto a destra.',
-      tokenOnPage_rte: "L'RTE_TOKEN dell'RTE si cambia con Cambia token, in alto a destra.",
-      tokenOnPage_api: 'Il token API si cambia con Cambia token, in alto a destra.',
+      tokenKeep_rte: "L'RTE_TOKEN attuale resta salvo che ne digiti uno nuovo.",
+      tokenKeep_api: 'Il token API attuale resta salvo che ne digiti uno nuovo.',
       kind_semaphore: 'Semaphore UI',
       kind_rundeck: 'Rundeck',
       type_semaphore: 'Semaphore',
@@ -1613,7 +1614,7 @@ export default {
       type_ssh: 'SSH',
       type_sshHint: 'Un utente e una password per SSH verso un server',
       type_userpass: 'Utente e password',
-      type_userpassHint: 'Utente e password per qualsiasi altro accesso, come le credenziali precedenti alla 7',
+      type_userpassHint: 'Utente e password per qualsiasi altro accesso, come le credenziali precedenti alla v7',
       type_git: 'Git',
       type_gitHint: 'Un utente e una password o un token per repository git',
       type_api: 'API',
@@ -1699,7 +1700,7 @@ export default {
       enableLdapHelp: 'Gli utenti accedono con il proprio account LDAP o Active Directory',
       credential: 'Credenziale',
       credentialHelp:
-        "Una credenziale di Connessioni > Credenziali per il bind. Nessuna: l'utente e la password qui sotto.",
+        "Una credenziale ldap di Connessioni > Credenziali: l'utente è il DN di bind. Nessuna: una directory precedente alle credenziali usa il proprio utente di bind.",
       nameHelp:
         'Antepone il proprio nome ai membri nei ruoli: corp/jane, ldap/corp/Admins. La directory default mantiene i nomi brevi e il proprio nome.',
       servers: 'Server',

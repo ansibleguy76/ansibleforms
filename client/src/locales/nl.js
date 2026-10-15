@@ -1215,7 +1215,9 @@ export default {
       useForSignIn: 'Gebruiken om aan te melden',
       credential: 'Referentie',
       credentialHelp:
-        'Een sso-referentie uit Verbindingen > Referenties: de gebruiker is de client-ID, het wachtwoord het geheim. Geen: de ID en het geheim hieronder.',
+        'Een sso-referentie uit Verbindingen > Referenties: de gebruiker is de client-ID, het wachtwoord het clientgeheim.',
+      ownClient:
+        'Het meldt zich aan met zijn eigen client-ID ({client}) van vóór referenties, tot er een referentie gekozen is.',
       activeHelp:
         'Gebruikers melden zich ermee aan als ze {type} kiezen; inschakelen schakelt de andere {type}-providers uit.',
       providerNotFound: "Er is geen SSO-provider met id '{id}'.",
@@ -1334,9 +1336,8 @@ export default {
       changeToken: 'Token wijzigen',
       changeAuth: 'Authenticatie wijzigen',
       defaultHelp: 'De standaard voor {forms}: hier aangezet, uitgezet door een andere runner standaard te maken.',
-      passwordOnPage: 'Het wachtwoord wijzigt u met Wachtwoord wijzigen, rechtsboven.',
-      tokenOnPage_rte: 'Het RTE_TOKEN van de RTE wijzigt u met Token wijzigen, rechtsboven.',
-      tokenOnPage_api: 'Het API-token wijzigt u met Token wijzigen, rechtsboven.',
+      tokenKeep_rte: 'Het huidige RTE_TOKEN blijft, tenzij u een nieuw typt.',
+      tokenKeep_api: 'Het huidige API-token blijft, tenzij u een nieuw typt.',
       kind_semaphore: 'Semaphore UI',
       kind_rundeck: 'Rundeck',
       type_semaphore: 'Semaphore',
@@ -1614,7 +1615,7 @@ export default {
       type_ssh: 'SSH',
       type_sshHint: 'Een gebruiker en wachtwoord voor SSH naar een server',
       type_userpass: 'Gebruiker en wachtwoord',
-      type_userpassHint: 'Een gebruiker en wachtwoord voor elke andere aanmelding, zoals de referenties van vóór 7',
+      type_userpassHint: 'Een gebruiker en wachtwoord voor elke andere aanmelding, zoals de referenties van vóór v7',
       type_git: 'Git',
       type_gitHint: 'Een gebruiker en wachtwoord of token voor git-repositories',
       type_api: 'API',
@@ -1699,7 +1700,7 @@ export default {
       enableLdapHelp: 'Gebruikers melden zich aan met hun LDAP- of Active Directory-account',
       credential: 'Referentie',
       credentialHelp:
-        'Een referentie uit Verbindingen > Referenties voor de bind. Geen: de bind-gebruiker en het wachtwoord hieronder.',
+        'Een ldap-referentie uit Verbindingen > Referenties: de gebruiker is de bind-DN. Geen: een directory van vóór referenties bindt met zijn eigen bind-gebruiker.',
       nameHelp:
         'Zet zijn naam voor zijn leden in rollen: corp/jane, ldap/corp/Admins. De directory default houdt de korte namen en zijn eigen naam.',
       servers: 'Servers',

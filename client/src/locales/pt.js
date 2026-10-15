@@ -1223,7 +1223,9 @@ export default {
       useForSignIn: 'Usar para iniciar sessão',
       credential: 'Credencial',
       credentialHelp:
-        'Uma credencial sso de Ligações > Credenciais: o utilizador é o ID de cliente, a palavra-passe o segredo. Nenhuma: o ID e o segredo abaixo.',
+        'Uma credencial sso de Ligações > Credenciais: o utilizador é o ID de cliente, a palavra-passe o segredo.',
+      ownClient:
+        'Inicia sessão com o seu próprio ID de cliente ({client}), anterior às credenciais, até se escolher uma credencial.',
       activeHelp:
         'Os utilizadores iniciam sessão com ele quando escolhem {type}; ativá-lo desativa os outros fornecedores {type}.',
       providerNotFound: "Não existe nenhum fornecedor SSO com o id '{id}'.",
@@ -1528,7 +1530,8 @@ export default {
       type_ssh: 'SSH',
       type_sshHint: 'Um utilizador e uma palavra-passe para SSH a um servidor',
       type_userpass: 'Utilizador e palavra-passe',
-      type_userpassHint: 'Um utilizador e palavra-passe para qualquer outro acesso, como as credenciais anteriores à 7',
+      type_userpassHint:
+        'Um utilizador e palavra-passe para qualquer outro acesso, como as credenciais anteriores à v7',
       type_git: 'Git',
       type_gitHint: 'Um utilizador e uma palavra-passe ou um token para repositórios git',
       type_api: 'API',
@@ -1612,7 +1615,7 @@ export default {
       enableLdapHelp: 'Os utilizadores iniciam sessão com a sua conta LDAP ou Active Directory',
       credential: 'Credencial',
       credentialHelp:
-        'Uma credencial de Ligações > Credenciais para o bind. Nenhuma: o utilizador e a palavra-passe abaixo.',
+        'Uma credencial ldap de Ligações > Credenciais: o utilizador é o DN de bind. Nenhuma: um diretório anterior às credenciais usa o seu próprio utilizador de bind.',
       nameHelp:
         'Prefixa os seus membros nos perfis: corp/jane, ldap/corp/Admins. O diretório default mantém os nomes curtos e o seu próprio nome.',
       servers: 'Servidores',
@@ -1735,9 +1738,8 @@ export default {
       changeToken: 'Alterar token',
       changeAuth: 'Alterar autenticação',
       defaultHelp: 'O predefinido para {forms}: ligado aqui, desligado tornando outro runner o predefinido.',
-      passwordOnPage: 'A palavra-passe muda-se com Alterar palavra-passe, em cima à direita.',
-      tokenOnPage_rte: 'O RTE_TOKEN do RTE muda-se com Alterar token, em cima à direita.',
-      tokenOnPage_api: 'O token de API muda-se com Alterar token, em cima à direita.',
+      tokenKeep_rte: 'O RTE_TOKEN atual mantém-se, a menos que escreva um novo.',
+      tokenKeep_api: 'O token de API atual mantém-se, a menos que escreva um novo.',
       kind_semaphore: 'Semaphore UI',
       kind_rundeck: 'Rundeck',
       type_semaphore: 'Semaphore',

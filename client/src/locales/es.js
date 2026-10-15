@@ -1221,7 +1221,9 @@ export default {
       useForSignIn: 'Usar para iniciar sesión',
       credential: 'Credencial',
       credentialHelp:
-        'Una credencial sso de Conexiones > Credenciales: su usuario es el ID de cliente y su contraseña el secreto. Ninguna: el ID y el secreto de abajo.',
+        'Una credencial sso de Conexiones > Credenciales: su usuario es el ID de cliente y su contraseña el secreto.',
+      ownClient:
+        'Inicia sesión con su propio ID de cliente ({client}), anterior a las credenciales, hasta que se elija una credencial.',
       activeHelp:
         'Los usuarios inician sesión con él cuando eligen {type}; activarlo desactiva los demás proveedores {type}.',
       providerNotFound: "No hay ningún proveedor SSO con el id '{id}'.",
@@ -1340,9 +1342,8 @@ export default {
       changeToken: 'Cambiar token',
       changeAuth: 'Cambiar autenticación',
       defaultHelp: 'El predeterminado para {forms}: se activa aquí y se desactiva haciendo predeterminado otro runner.',
-      passwordOnPage: 'La contraseña se cambia con Cambiar contraseña, arriba a la derecha.',
-      tokenOnPage_rte: 'El RTE_TOKEN del RTE se cambia con Cambiar token, arriba a la derecha.',
-      tokenOnPage_api: 'El token de API se cambia con Cambiar token, arriba a la derecha.',
+      tokenKeep_rte: 'El RTE_TOKEN actual se conserva salvo que escribas uno nuevo.',
+      tokenKeep_api: 'El token de API actual se conserva salvo que escribas uno nuevo.',
       kind_semaphore: 'Semaphore UI',
       kind_rundeck: 'Rundeck',
       type_semaphore: 'Semaphore',
@@ -1623,7 +1624,7 @@ export default {
       type_sshHint: 'Un usuario y una contraseña para SSH a un servidor',
       type_userpass: 'Usuario y contraseña',
       type_userpassHint:
-        'Un usuario y contraseña para cualquier otro inicio de sesión, como las credenciales anteriores a la 7',
+        'Un usuario y contraseña para cualquier otro inicio de sesión, como las credenciales anteriores a la v7',
       type_git: 'Git',
       type_gitHint: 'Un usuario y una contraseña o un token para repositorios git',
       type_api: 'API',
@@ -1708,7 +1709,7 @@ export default {
       enableLdapHelp: 'Los usuarios inician sesión con su cuenta de LDAP o Active Directory',
       credential: 'Credencial',
       credentialHelp:
-        'Una credencial de Conexiones > Credenciales para el bind. Ninguna: el usuario y la contraseña de abajo.',
+        'Una credencial ldap de Conexiones > Credenciales: su usuario es el DN de bind. Ninguna: un directorio anterior a las credenciales usa su propio usuario de bind.',
       nameHelp:
         'Prefija a sus miembros en los roles: corp/jane, ldap/corp/Admins. El directorio default conserva los nombres cortos y su propio nombre.',
       servers: 'Servidores',

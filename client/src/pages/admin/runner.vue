@@ -15,7 +15,7 @@
 /*    Forms           the forms that run on it, by name or as the */
 /*                    default of its type                         */
 /*    Jobs            the jobs that ran on it, the latest first   */
-/*  Test connection, Change token (or password) and Delete top    */
+/*  Test connection, Delete and Save top right ; its token (or    */
 /*  right, beside Save. A runner of the config seed is read only. */
 /*                                                                */
 /******************************************************************/
@@ -110,7 +110,9 @@ const usesCredentials = computed(() => isAwxKind.value && !!edit.value?.use_cred
 const isJenkins = computed(() => edit.value?.kind === 'jenkins');
 const hasUsername = computed(() => usesCredentials.value || isJenkins.value);
 const dirty = computed(
-  () => !!runner.value && EDITED.some((k) => String(edit.value[k] ?? '') !== String(editable(runner.value)[k] ?? '')),
+  () =>
+    !!runner.value &&
+    (EDITED.some((k) => String(edit.value[k] ?? '') !== String(editable(runner.value)[k] ?? '')) || !!newSecret.value),
 );
 // leaving with the runner changed and unsaved asks first
 useUnsavedGuard(
@@ -260,8 +262,11 @@ async function save() {
     ignore_certs: e.skip_verify ? 1 : 0,
     ca_bundle: !e.skip_verify && e.custom_ca ? e.ca_bundle : '',
   };
+  // its new token or password, typed in its Credentials tab
+  if (newSecret.value) data[secretKey.value] = newSecret.value;
   if (await update(data)) {
     toast.success(`${data.name} ${t('settings.common.isUpdated')}`);
+    newSecret.value = '';
     await load();
   }
 }
@@ -294,22 +299,10 @@ async function testConnection() {
   }
 }
 
-// Change token, or Change password with a user and password : its secret, asked in a dialog
-const changingSecret = ref(false);
+// its token, or its password with a user and password : typed in its Credentials tab ; empty, the
+// stored one is kept
+const newSecret = ref('');
 const secretKey = computed(() => (usesCredentials.value ? 'password' : 'token'));
-
-/**
- * Saves the new token or password.
- *
- * Args:
- *   secret (string): the token (pasted once) or the password (typed twice).
- */
-async function saveSecret(secret) {
-  if (await update({ [secretKey.value]: secret })) {
-    changingSecret.value = false;
-    toast.success(`${runner.value.name} ${t('settings.common.isUpdated')}`);
-  }
-}
 
 // Delete asks first
 const confirmDelete = ref(false);
@@ -348,16 +341,6 @@ onMounted(async () => {
       <BsButton icon="trash" @click="deleteRunner()">{{ t('common.delete') }}</BsButton>
     </template>
   </BsModal>
-  <!-- a token is pasted once ; a password typed twice -->
-  <AppChangePasswordDialog
-    v-if="changingSecret"
-    icon="rocket"
-    :title="usesCredentials ? t('settings.common.changePassword') : t('settings.runners.changeToken')"
-    :label="usesCredentials ? t('settings.fields.password') : t('settings.fields.token')"
-    :repeat="usesCredentials"
-    @save="saveSecret"
-    @close="changingSecret = false"
-  />
   <AppSettingsPage>
     <AppSettings
       v-if="authenticated"
@@ -572,13 +555,23 @@ onMounted(async () => {
                 :label="t('settings.fields.username')"
               />
               <p v-if="hasProject" class="form-text mb-2">{{ t(`settings.runners.tokenHelp_${edit.kind}`) }}</p>
-              <p class="form-text mb-0" :class="{ 'mt-3': isAwxKind && !usesCredentials }">
-                {{
+              <!-- its token or password, masked : left empty, the stored one is kept ; typed, replaced -->
+              <BsInput
+                class="af-runner-field"
+                :class="{ 'mt-3': isAwxKind && !usesCredentials }"
+                v-model="newSecret"
+                type="password"
+                :icon="usesCredentials ? 'lock' : 'key'"
+                :isFloating="false"
+                placeholder="**********"
+                :disabled="readOnly"
+                :help="
                   usesCredentials
-                    ? t('settings.runners.passwordOnPage')
-                    : t(`settings.runners.tokenOnPage_${isRte ? 'rte' : 'api'}`)
-                }}
-              </p>
+                    ? t('settings.common.passwordKeep')
+                    : t(`settings.runners.tokenKeep_${isRte ? 'rte' : 'api'}`)
+                "
+                :label="usesCredentials ? t('settings.fields.password') : t('settings.fields.token')"
+              />
             </template>
           </fieldset>
         </div>
@@ -588,9 +581,6 @@ onMounted(async () => {
           t('settings.common.testConnection')
         }}</BsButton>
         <template v-if="!readOnly">
-          <BsButton icon="lock" cssClass="text-nowrap" @click="changingSecret = true">{{
-            usesCredentials ? t('settings.common.changePassword') : t('settings.runners.changeToken')
-          }}</BsButton>
           <BsButton icon="trash" @click="confirmDelete = true">{{ t('common.delete') }}</BsButton>
           <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
         </template>
