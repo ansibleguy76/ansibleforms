@@ -219,7 +219,7 @@ function removeUser(index) {
         :placeholder="t('settings.settingsPage.roleDescriptionPlaceholder')"
         :disabled="readOnly"
       />
-      <label class="form-label fw-bold">{{ t('settings.settingsPage.options') }}</label>
+      <label class="form-label fw-bold af-role-options-title">{{ t('settings.settingsPage.options') }}</label>
       <!-- the options in their groups (config/roles.js), each under its title -->
       <div v-for="group in optionGroups" :key="group.name" class="af-role-option-group">
         <div class="af-role-option-group-title">{{ group.title }}</div>
@@ -505,10 +505,15 @@ function removeUser(index) {
   padding-bottom: 0.5rem;
 }
 /* a group of options : its title small, in capitals and grey, as the settings menu's sections */
-/* room above each group but the first, and its title close to its options */
-.af-role-option-group + .af-role-option-group {
+/* room above each group, its title close to its options ; the first one, under the options'
+   heading, only a little */
+.af-role-option-group {
   margin-top: 1.25rem;
   padding-top: 0.5rem;
+}
+.af-role-options-title + .af-role-option-group {
+  margin-top: 0;
+  padding-top: 0.25rem;
 }
 .af-role-option-group-title {
   margin: 0.25rem 0 -0.25rem;
