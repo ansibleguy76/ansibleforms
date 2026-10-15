@@ -297,6 +297,9 @@ const ldapSection = {
     ca_bundle: str,
     bind_user_dn: str,
     bind_user_pw: str,
+    // a credential of the credentials section to bind with instead (optional : the user and
+    // password above are still declared)
+    credential: str,
     search_base: str,
     username_attribute: str,
     groups_attribute: str,

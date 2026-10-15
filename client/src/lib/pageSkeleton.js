@@ -45,7 +45,7 @@ const SETTINGS_TABS = {
   disclaimer: 3,
   sso: 2,
   ssh: 2,
-  chat: 3,
+  chat: 4,
   mcp: 6,
 };
 // the pages whose content is not fields : the checks' rows, the server log's lines

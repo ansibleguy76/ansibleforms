@@ -10,7 +10,7 @@
 /*                    Jenkins                                     */
 /*    Connection      its address (and project), how its          */
 /*                    certificate is checked                      */
-/*    Authentication  a token, or a user and password (AWX), a    */
+/*    Credentials  a token, or a user and password (AWX), a       */
 /*                    user and its token (Jenkins)                */
 /*    Forms           the forms that run on it, by name or as the */
 /*                    default of its type                         */
@@ -165,7 +165,7 @@ const tabs = computed(() => [
   { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
   { key: 'type', label: t('settings.runners.stepType'), icon: 'shapes' },
   { key: 'connection', label: t('settings.runners.stepConnection'), icon: 'globe' },
-  { key: 'authentication', label: t('settings.runners.stepAuth'), icon: 'key' },
+  { key: 'credentials', label: t('settings.runners.stepAuth'), icon: 'key' },
   { key: 'forms', label: t('settings.linked.forms'), icon: 'rectangle-list', count: runnerForms.value.length },
   { key: 'jobs', label: t('settings.linked.jobs'), icon: 'history', count: runnerJobs.value.length },
 ]);

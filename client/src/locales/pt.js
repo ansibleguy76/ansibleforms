@@ -1558,6 +1558,7 @@ export default {
     chat: {
       tabGeneral: 'Geral',
       tabProvider: 'Fornecedor do modelo',
+      tabCredentials: 'Credenciais',
       tabLimits: 'Limites',
       label: 'Assistente de chat',
       description:
@@ -1601,6 +1602,10 @@ export default {
       label: 'LDAP',
       enableLdap: 'Ativar LDAP',
       enableLdapHelp: 'Os utilizadores iniciam sessão com a sua conta LDAP ou Active Directory',
+      tabCredentials: 'Credenciais',
+      credential: 'Credencial',
+      credentialHelp:
+        'Uma credencial de Ligações > Credenciais para o bind. Nenhuma: o utilizador e a palavra-passe abaixo.',
       nameHelp:
         'Prefixa os seus membros nos perfis: corp/jane, ldap/corp/Admins. O diretório default mantém os nomes curtos e o seu próprio nome.',
       servers: 'Servidores',
@@ -1696,7 +1701,7 @@ export default {
       editDefaults: 'Editar predefinidos',
       flavour: 'Produto',
       skipVerify: 'Ignorar a verificação do certificado',
-      stepAuth: 'Autenticação',
+      stepAuth: 'Credenciais',
       stepConnection: 'Ligação',
       stepRunner: 'Runner',
       stepType: 'Tipo',

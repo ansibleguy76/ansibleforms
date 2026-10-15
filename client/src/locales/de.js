@@ -1311,7 +1311,7 @@ export default {
       editDefaults: 'Standards bearbeiten',
       flavour: 'Produkt',
       skipVerify: 'Zertifikatsprüfung überspringen',
-      stepAuth: 'Authentifizierung',
+      stepAuth: 'Anmeldedaten',
       stepConnection: 'Verbindung',
       stepRunner: 'Runner',
       stepType: 'Typ',
@@ -1657,6 +1657,7 @@ export default {
     chat: {
       tabGeneral: 'Allgemein',
       tabProvider: 'Modellanbieter',
+      tabCredentials: 'Anmeldedaten',
       tabLimits: 'Grenzen',
       label: 'Chat-Assistent',
       description:
@@ -1703,6 +1704,10 @@ export default {
         'Verbindung zu einem LDAP- oder Active Directory-Server für Benutzerauthentifizierung und Gruppenzuordnung.',
       enableLdap: 'LDAP aktivieren',
       enableLdapHelp: 'Benutzer melden sich mit ihrem LDAP- oder Active-Directory-Konto an',
+      tabCredentials: 'Anmeldedaten',
+      credential: 'Anmeldedaten-Eintrag',
+      credentialHelp:
+        'Ein Eintrag aus Verbindungen > Anmeldedaten für den Bind. Keiner: Bind-Benutzer und Passwort unten.',
       nameHelp:
         'Stellt seinen Mitgliedern in Rollen den Namen voran: corp/jane, ldap/corp/Admins. Das Verzeichnis default behält die kurzen Namen und seinen eigenen Namen.',
       servers: 'Server',

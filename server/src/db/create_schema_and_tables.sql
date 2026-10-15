@@ -208,6 +208,8 @@ CREATE TABLE `ldap` (
   `ca_bundle` text DEFAULT NULL,
   `bind_user_dn` varchar(250) DEFAULT NULL,
   `bind_user_pw` text DEFAULT NULL,
+  -- a credential of Connections > Credentials to bind with instead of the user and password above
+  `credential` varchar(250) DEFAULT NULL,
   `search_base` varchar(250) DEFAULT NULL,
   `username_attribute` varchar(250) DEFAULT NULL,
   `groups_search_base` varchar(250) DEFAULT NULL,

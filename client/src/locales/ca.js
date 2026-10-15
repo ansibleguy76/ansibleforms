@@ -1560,6 +1560,7 @@ export default {
     chat: {
       tabGeneral: 'General',
       tabProvider: 'Proveïdor del model',
+      tabCredentials: 'Credencials',
       tabLimits: 'Límits',
       label: 'Assistent de xat',
       description:
@@ -1603,6 +1604,9 @@ export default {
       label: 'LDAP',
       enableLdap: "Activa l'LDAP",
       enableLdapHelp: 'Els usuaris inicien la sessió amb el seu compte de LDAP o Active Directory',
+      tabCredentials: 'Credencials',
+      credential: 'Credencial',
+      credentialHelp: "Una credencial de Connexions > Credencials per al bind. Cap: l'usuari i la contrasenya de sota.",
       nameHelp:
         'Prefixa els seus membres als rols: corp/jane, ldap/corp/Admins. El directori default conserva els noms curts i el seu propi nom.',
       servers: 'Servidors',
@@ -1699,7 +1703,7 @@ export default {
       editDefaults: 'Edita els predeterminats',
       flavour: 'Producte',
       skipVerify: 'Omet la verificació del certificat',
-      stepAuth: 'Autenticació',
+      stepAuth: 'Credencials',
       stepConnection: 'Connexió',
       stepRunner: 'Runner',
       stepType: 'Tipus',

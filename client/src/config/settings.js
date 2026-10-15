@@ -1955,25 +1955,51 @@ export default function getSettings(t) {
           dependency: 'enable',
         },
         {
-          key: 'bind_user_dn',
-          tab: 'server',
-          icon: 'user',
-          line: 9,
-          label: t('settings.ldap.bindUserDn'),
-          help: t('settings.ldap.bindUserDnDesc'),
-          required: true,
+          // a credential of Connections > Credentials to bind with, or none : its own bind user and
+          // password below
+          key: 'credential',
+          tab: 'credentials',
+          icon: 'key',
+          line: 50,
+          type: 'select',
+          label: t('settings.ldap.credential'),
+          help: t('settings.ldap.credentialHelp'),
+          // its page's dropdown (AppAdminSingle) and the New dialog's (AppAdminMulti)
+          valuesFrom: {
+            url: '/api/v2/credential/',
+            filter: (c) => !c.credential_type || c.credential_type === 'userpass',
+          },
+          parent: 'credentials',
+          values: 'credential',
+          valueKey: 'name',
+          labelKey: 'name',
+          clearable: true,
           dependency: 'enable',
         },
         {
+          key: 'bind_user_dn',
+          tab: 'credentials',
+          icon: 'user',
+          line: 51,
+          label: t('settings.ldap.bindUserDn'),
+          help: t('settings.ldap.bindUserDnDesc'),
+          required: true,
+          // its own account : greyed while a credential is chosen
+          dependency: 'credential',
+          negateDependency: true,
+        },
+        {
           key: 'bind_user_pw',
-          tab: 'server',
+          tab: 'credentials',
           icon: 'lock',
-          line: 10,
+          line: 52,
           label: t('settings.ldap.bindUserPassword'),
           help: t('settings.ldap.bindUserPasswordDesc'),
           type: 'password',
           required: true,
-          dependency: 'enable',
+          // its own account : greyed while a credential is chosen
+          dependency: 'credential',
+          negateDependency: true,
         },
         {
           key: 'domains',
@@ -2114,7 +2140,7 @@ export default function getSettings(t) {
           // the key : the password of an api credential of Connections > Credentials (a key
           // saved before credentials keeps working while none is chosen)
           key: 'credential',
-          tab: 'model-provider',
+          tab: 'credentials',
           icon: 'key',
           line: 3,
           type: 'select',
@@ -2125,7 +2151,7 @@ export default function getSettings(t) {
         },
         {
           key: 'auth_type',
-          tab: 'model-provider',
+          tab: 'credentials',
           icon: 'id-card',
           line: 4,
           type: 'select',
@@ -2253,7 +2279,7 @@ export default function getSettings(t) {
         { key: 'runner', label: t('settings.runners.stepRunner') },
         { key: 'type', label: t('settings.runners.stepType') },
         { key: 'connection', label: t('settings.runners.stepConnection') },
-        { key: 'authentication', label: t('settings.runners.stepAuth') },
+        { key: 'credentials', label: t('settings.runners.stepAuth') },
       ],
       // the kind chosen is stored as a type and a flavour : an RTE, or an awx runner that is an
       // AWX, an AAP or an Ascender. What the api adds or the RTE writes (state, node_id) is
@@ -2292,7 +2318,7 @@ export default function getSettings(t) {
           icon: 'key',
           color: 'change',
           dividerBefore: true,
-          to: (r) => `/settings/runners/${r.id}/authentication`,
+          to: (r) => `/settings/runners/${r.id}/credentials`,
         },
         { name: 'delete', title: t('settings.runners.deleteRunner'), icon: 'trash', color: 'delete' },
       ],
@@ -2402,7 +2428,7 @@ export default function getSettings(t) {
         {
           // an AWX, AAP or Ascender : an API token, or a user and password - radio buttons
           key: 'use_credentials',
-          step: 'authentication',
+          step: 'credentials',
           label: t('settings.runners.stepAuth'),
           type: 'radio',
           options: [
@@ -2421,7 +2447,7 @@ export default function getSettings(t) {
         },
         {
           key: 'token',
-          step: 'authentication',
+          step: 'credentials',
           // shown when editing too, as ******** : left empty, the stored one stays
           onEdit: true,
           keepHelp: t('settings.common.tokenKeep'),
@@ -2441,7 +2467,7 @@ export default function getSettings(t) {
         },
         {
           key: 'username',
-          step: 'authentication',
+          step: 'credentials',
           icon: 'user',
           line: 2,
           label: t('settings.fields.username'),
@@ -2453,7 +2479,7 @@ export default function getSettings(t) {
         },
         {
           key: 'password',
-          step: 'authentication',
+          step: 'credentials',
           onEdit: true,
           icon: 'lock',
           line: 2,
@@ -3619,6 +3645,7 @@ function ldapDirectories(t, ldap) {
     steps: [
       { key: 'general', label: t('settings.common.tabDetails') },
       { key: 'server', label: t('settings.ldap.tabServer') },
+      { key: 'credentials', label: t('settings.ldap.tabCredentials') },
       { key: 'users', label: t('settings.ldap.tabUsers') },
       { key: 'groups', label: t('settings.ldap.tabGroups') },
     ],

@@ -239,6 +239,8 @@ const crudConfigs = {
       { name: 'ca_bundle' },
       { name: 'bind_user_dn', required: true },
       { name: 'bind_user_pw', isEncrypted: true, required: true },
+      // a credential of Connections > Credentials, bound with instead of the user and password
+      { name: 'credential' },
       { name: 'search_base', required: true },
       { name: 'username_attribute', required: true },
       { name: 'groups_attribute' },

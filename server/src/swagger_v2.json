@@ -3028,6 +3028,10 @@
             "type": "string",
             "description": "'**********' keeps the stored one"
           },
+          "credential": {
+            "type": "string",
+            "description": "a credential of Connections > Credentials to bind with instead of bind_user_dn and bind_user_pw"
+          },
           "search_base": {
             "type": "string"
           },

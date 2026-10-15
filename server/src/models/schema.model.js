@@ -604,7 +604,7 @@ const SCHEMA_MANIFEST = {
                                'settings.forms_view', 'settings.default_timezone', 'settings.default_date_format', 'settings.header_links',
                                'tokens.replaced_at', 'repositories.pull_output', 'repositories.push_output',
                                'repositories.pulled_at', 'repositories.pushed_at', 'repositories.push_status',
-                               'ldap.id', 'ldap.name', 'ldap.position', 'ldap.domains'] },
+                               'ldap.id', 'ldap.name', 'ldap.position', 'ldap.domains', 'ldap.credential'] },
   },
 };
 
@@ -1036,6 +1036,9 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addColumn("ldap", "position", "int(11)", false, "1"), messages, success, failed);
   await checkPromise(addColumn("ldap", "domains", "varchar(1000)", true, "NULL"), messages, success, failed);
   await checkPromise(addUniqueKey("ldap", "name"), messages, success, failed);
+  // a directory can bind with a credential of Connections > Credentials instead of its own user
+  // and password, as a repository can
+  await checkPromise(addColumn("ldap", "credential", "varchar(250)", true, "NULL"), messages, success, failed);
   // and when each ended, worked or not, shown beside the repository's Pull and Push
   await checkPromise(addColumn("repositories", "pulled_at", "datetime", true, "NULL"), messages, success, failed);
   await checkPromise(addColumn("repositories", "pushed_at", "datetime", true, "NULL"), messages, success, failed);

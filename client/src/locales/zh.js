@@ -1496,6 +1496,7 @@ export default {
     chat: {
       tabGeneral: '常规',
       tabProvider: '模型提供商',
+      tabCredentials: '凭据',
       tabLimits: '限制',
       label: '聊天助手',
       description:
@@ -1539,6 +1540,9 @@ export default {
       label: 'LDAP',
       enableLdap: '启用 LDAP',
       enableLdapHelp: '用户使用其 LDAP 或 Active Directory 帐户登录',
+      tabCredentials: '凭据',
+      credential: '凭据',
+      credentialHelp: '用于绑定的“连接 > 凭据”中的凭据。无：使用下方的绑定用户和密码。',
       nameHelp: '在角色中作为其成员的前缀：corp/jane、ldap/corp/Admins。default 目录保留短名称和自己的名称。',
       servers: '服务器',
       serversHelp: '每个字段一个（host、host:port 或 ldaps://host:port），按此顺序尝试：某个无法访问时尝试下一个。',
@@ -1625,7 +1629,7 @@ export default {
       editDefaults: '编辑默认',
       flavour: '产品',
       skipVerify: '跳过证书验证',
-      stepAuth: '认证',
+      stepAuth: '凭据',
       stepConnection: '连接',
       stepRunner: '运行器',
       stepType: '类型',

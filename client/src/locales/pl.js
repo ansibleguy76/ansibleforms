@@ -1550,6 +1550,7 @@ export default {
     chat: {
       tabGeneral: 'Ogólne',
       tabProvider: 'Dostawca modelu',
+      tabCredentials: 'Poświadczenia',
       tabLimits: 'Limity',
       label: 'Asystent czatu',
       description:
@@ -1593,6 +1594,9 @@ export default {
       label: 'LDAP',
       enableLdap: 'Włącz LDAP',
       enableLdapHelp: 'Użytkownicy logują się kontem LDAP lub Active Directory',
+      tabCredentials: 'Poświadczenia',
+      credential: 'Poświadczenie',
+      credentialHelp: 'Poświadczenie z Połączenia > Poświadczenia do powiązania. Brak: użytkownik i hasło poniżej.',
       nameHelp:
         'Poprzedza członków w rolach swoją nazwą: corp/jane, ldap/corp/Admins. Katalog default zachowuje krótkie nazwy i własną nazwę.',
       servers: 'Serwery',
@@ -1686,7 +1690,7 @@ export default {
       editDefaults: 'Edytuj domyślne',
       flavour: 'Produkt',
       skipVerify: 'Pomiń weryfikację certyfikatu',
-      stepAuth: 'Uwierzytelnianie',
+      stepAuth: 'Poświadczenia',
       stepConnection: 'Połączenie',
       stepRunner: 'Runner',
       stepType: 'Typ',

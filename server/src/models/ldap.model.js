@@ -6,6 +6,7 @@ import yaml from "yaml";
 import crypto from "../lib/crypto.js";
 import { authenticate } from 'ldap-authentication';
 import { DEFAULT_NAME, NAME_RULE, qualify, route, isUnreachable, urls } from '../lib/ldapDirectories.js';
+import Credential from './credential.model.v2.js';
 
 //ldap object create
 var Ldap=function(ldap){
@@ -21,6 +22,8 @@ var Ldap=function(ldap){
     this.cert = ldap.cert;
     this.ca_bundle = ldap.ca_bundle;
     this.bind_user_dn = ldap.bind_user_dn;
+    // a credential of Connections > Credentials to bind with instead (Ldap.bindAccount)
+    if (ldap.credential !== undefined) this.credential = ldap.credential || "";
     // Handle bind_user_pw: undefined = don't update, "" = clear password, "value" = encrypt
     if (ldap.bind_user_pw !== undefined) {
         if (ldap.bind_user_pw === "") {
@@ -305,6 +308,30 @@ function authOptions(cfg, bindPassword, username, password) {
 }
 
 /**
+ * The account a directory binds with : the credential it names (Connections > Credentials, read
+ * from its secret store when it has one), else its own bind user and password.
+ *
+ * Args:
+ *   cfg (object): the directory.
+ *   ownPassword (string): its own bind password, in clear.
+ *
+ * Returns:
+ *   object: { dn, password } : the bind user and its password, in clear.
+ *
+ * Raises:
+ *   Error: the credential it names is not found or has no user.
+ */
+Ldap.bindAccount = async function (cfg, ownPassword) {
+  if (!cfg.credential) return { dn: cfg.bind_user_dn, password: ownPassword };
+  const exact = "^" + String(cfg.credential).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$";
+  const cred = await Credential.resolveCredential(exact);
+  if (!cred || !cred.user) {
+    throw new Error(`The ldap directory '${cfg.name}' uses the credential '${cfg.credential}', which is not found`);
+  }
+  return { dn: cred.user, password: cred.password };
+};
+
+/**
  * A user's sign-in on one directory : its servers in order, the next one only when one cannot be
  * reached ; a user@domain the directory does not know is tried again as the bare name (never on a
  * wrong password, which would count twice against the directory's lockout).
@@ -324,7 +351,9 @@ function authOptions(cfg, bindPassword, username, password) {
 Ldap.authenticateOn = async function (cfg, bindPassword, username, password) {
   const servers = Ldap.urls(cfg);
   if (!servers.length) throw new Error(`The ldap directory '${cfg.name}' has no server`);
-  const base = authOptions(cfg, bindPassword, username, password);
+  // its credential's account, else its own
+  const account = await Ldap.bindAccount(cfg, bindPassword);
+  const base = authOptions({ ...cfg, bind_user_dn: account.dn }, account.password, username, password);
   let last;
   for (const url of servers) {
     const options = { ...base, ldapOpts: { ...base.ldapOpts, url } };
@@ -399,7 +428,9 @@ Ldap.signIn = async function (username, password) {
 Ldap.check = async function (ldapConfig) {
   try {
     logger.notice("Authenticating");
-    return await Ldap.authenticateOn(ldapConfig, crypto.decrypt(ldapConfig.bind_user_pw), ldapConfig.testuser, ldapConfig.testpassword);
+    // its own bind password only when it binds with it (not with a credential)
+    const own = ldapConfig.credential ? "" : crypto.decrypt(ldapConfig.bind_user_pw);
+    return await Ldap.authenticateOn(ldapConfig, own, ldapConfig.testuser, ldapConfig.testpassword);
   } catch (err) {
     let em;
     if (err?.message) {

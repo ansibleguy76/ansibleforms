@@ -1302,7 +1302,7 @@ export default {
       editDefaults: 'Standaarden bewerken',
       flavour: 'Product',
       skipVerify: 'Certificaatcontrole overslaan',
-      stepAuth: 'Authenticatie',
+      stepAuth: 'Referenties',
       stepConnection: 'Verbinding',
       stepRunner: 'Runner',
       stepType: 'Type',
@@ -1644,6 +1644,7 @@ export default {
     chat: {
       tabGeneral: 'Algemeen',
       tabProvider: 'Modelaanbieder',
+      tabCredentials: 'Referenties',
       tabLimits: 'Limieten',
       label: 'Chat-assistent',
       description:
@@ -1688,6 +1689,10 @@ export default {
       description: 'Verbind met een LDAP- of Active Directory-server voor gebruikersauthenticatie en groepstoewijzing.',
       enableLdap: 'LDAP inschakelen',
       enableLdapHelp: 'Gebruikers melden zich aan met hun LDAP- of Active Directory-account',
+      tabCredentials: 'Referenties',
+      credential: 'Referentie',
+      credentialHelp:
+        'Een referentie uit Verbindingen > Referenties voor de bind. Geen: de bind-gebruiker en het wachtwoord hieronder.',
       nameHelp:
         'Zet zijn naam voor zijn leden in rollen: corp/jane, ldap/corp/Admins. De directory default houdt de korte namen en zijn eigen naam.',
       servers: 'Servers',

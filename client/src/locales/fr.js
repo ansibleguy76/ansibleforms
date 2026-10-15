@@ -1313,7 +1313,7 @@ export default {
       editDefaults: 'Modifier les défauts',
       flavour: 'Produit',
       skipVerify: 'Ignorer la vérification du certificat',
-      stepAuth: 'Authentification',
+      stepAuth: 'Identifiants',
       stepConnection: 'Connexion',
       stepRunner: 'Runner',
       stepType: 'Type',
@@ -1658,6 +1658,7 @@ export default {
     chat: {
       tabGeneral: 'Général',
       tabProvider: 'Fournisseur du modèle',
+      tabCredentials: 'Identifiants',
       tabLimits: 'Limites',
       label: 'Assistant de chat',
       description:
@@ -1703,6 +1704,10 @@ export default {
         "Connexion à un serveur LDAP ou Active Directory pour l'authentification des utilisateurs et le mappage des groupes.",
       enableLdap: 'Activer LDAP',
       enableLdapHelp: 'Les utilisateurs se connectent avec leur compte LDAP ou Active Directory',
+      tabCredentials: 'Identifiants',
+      credential: 'Identifiant',
+      credentialHelp:
+        "Un identifiant de Connexions > Identifiants pour le bind. Aucun : l'utilisateur et le mot de passe ci-dessous.",
       nameHelp:
         "Préfixe ses membres dans les rôles : corp/jane, ldap/corp/Admins. L'annuaire default garde les noms courts et son propre nom.",
       servers: 'Serveurs',

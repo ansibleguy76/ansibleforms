@@ -1536,6 +1536,7 @@ export default {
     chat: {
       tabGeneral: '一般',
       tabProvider: 'モデルプロバイダー',
+      tabCredentials: '認証情報',
       tabLimits: '制限',
       label: 'チャットアシスタント',
       description:
@@ -1579,6 +1580,9 @@ export default {
       label: 'LDAP',
       enableLdap: 'LDAP を有効にする',
       enableLdapHelp: 'ユーザーは LDAP または Active Directory のアカウントでサインインします',
+      tabCredentials: '認証情報',
+      credential: '資格情報',
+      credentialHelp: 'バインドに使う［接続 > 資格情報］の資格情報。なし：下のバインドユーザーとパスワード。',
       nameHelp:
         'ロールでメンバーの前に付けます：corp/jane、ldap/corp/Admins。default ディレクトリは短い名前と自身の名前を保持します。',
       servers: 'サーバー',
@@ -1670,7 +1674,7 @@ export default {
       editDefaults: '既定を編集',
       flavour: '製品',
       skipVerify: '証明書の検証をスキップ',
-      stepAuth: '認証',
+      stepAuth: '認証情報',
       stepConnection: '接続',
       stepRunner: 'ランナー',
       stepType: '種類',

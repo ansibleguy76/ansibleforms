@@ -1287,7 +1287,7 @@ export default {
       editDefaults: 'Edit defaults',
       flavour: 'Product',
       skipVerify: 'Skip certificate verification',
-      stepAuth: 'Authentication',
+      stepAuth: 'Credentials',
       stepConnection: 'Connection',
       stepRunner: 'Runner',
       stepType: 'Type',
@@ -1625,6 +1625,7 @@ export default {
     chat: {
       tabGeneral: 'General',
       tabProvider: 'Model provider',
+      tabCredentials: 'Credentials',
       tabLimits: 'Limits',
       label: 'Chat assistant',
       description:
@@ -1668,6 +1669,9 @@ export default {
       label: 'LDAP',
       enableLdap: 'Enable LDAP',
       enableLdapHelp: 'Users sign in with their LDAP or Active Directory account',
+      tabCredentials: 'Credentials',
+      credential: 'Credential',
+      credentialHelp: 'A credential of Connections > Credentials to bind with. None: the bind user and password below.',
       nameHelp:
         'Prefixes its members in roles : corp/jane, ldap/corp/Admins. The default directory keeps the short names and its own name.',
       servers: 'Servers',

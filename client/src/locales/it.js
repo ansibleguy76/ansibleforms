@@ -1305,7 +1305,7 @@ export default {
       editDefaults: 'Modifica predefiniti',
       flavour: 'Prodotto',
       skipVerify: 'Salta la verifica del certificato',
-      stepAuth: 'Autenticazione',
+      stepAuth: 'Credenziali',
       stepConnection: 'Connessione',
       stepRunner: 'Runner',
       stepType: 'Tipo',
@@ -1643,6 +1643,7 @@ export default {
     chat: {
       tabGeneral: 'Generale',
       tabProvider: 'Fornitore del modello',
+      tabCredentials: 'Credenziali',
       tabLimits: 'Limiti',
       label: 'Assistente chat',
       description:
@@ -1688,6 +1689,10 @@ export default {
         "Connessione a un server LDAP o Active Directory per l'autenticazione utenti e la mappatura dei gruppi.",
       enableLdap: 'Abilita LDAP',
       enableLdapHelp: 'Gli utenti accedono con il proprio account LDAP o Active Directory',
+      tabCredentials: 'Credenziali',
+      credential: 'Credenziale',
+      credentialHelp:
+        "Una credenziale di Connessioni > Credenziali per il bind. Nessuna: l'utente e la password qui sotto.",
       nameHelp:
         'Antepone il proprio nome ai membri nei ruoli: corp/jane, ldap/corp/Admins. La directory default mantiene i nomi brevi e il proprio nome.',
       servers: 'Server',
