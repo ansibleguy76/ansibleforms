@@ -473,7 +473,7 @@ async function changePassword() {
               <li class="list-group-item af-detail">
                 <span class="af-detail-label">{{ t('profilePage.loginType') }}</span>
                 <span class="af-detail-value"
-                  ><FaIcon :icon="loginType.icon" :fixedwidth="true" class="me-1 text-body-secondary" />{{
+                  ><FaIcon :icon="loginType.icon" class="text-body-secondary" style="margin-right: 0.2rem" />{{
                     loginType.label
                   }}</span
                 >
