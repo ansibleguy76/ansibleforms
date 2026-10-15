@@ -281,6 +281,7 @@ export default {
   },
   // a user's api tokens : the profile's list, and a user's page in settings (AppApiTokens)
   apiTokens: {
+    title: 'API-Token',
     name: 'Name',
     createdAt: 'Erstellt',
     expiresAt: 'Läuft ab',
@@ -316,6 +317,10 @@ export default {
       lifetime: 'Gültig für',
       days: '{n} Tage',
       password: 'Ihr Passwort',
+      new: 'Neues Token',
+      stepToken: 'Token',
+      stepConfirm: 'Bestätigen',
+      stepCopy: 'Kopieren',
       create: 'Token erstellen',
       created: 'Ihr Token, gültig bis {date}',
       copy: 'Kopieren',

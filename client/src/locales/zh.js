@@ -276,6 +276,7 @@ export default {
   },
   // a user's api tokens : the profile's list, and a user's page in settings (AppApiTokens)
   apiTokens: {
+    title: 'API 令牌',
     name: '名称',
     createdAt: '创建时间',
     expiresAt: '过期时间',
@@ -307,6 +308,10 @@ export default {
       lifetime: '有效期',
       days: '{n} 天',
       password: '您的密码',
+      new: '新令牌',
+      stepToken: '令牌',
+      stepConfirm: '确认',
+      stepCopy: '复制',
       create: '创建 token',
       created: '您的 token，有效期至 {date}',
       copy: '复制',

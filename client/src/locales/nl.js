@@ -281,6 +281,7 @@ export default {
   },
   // a user's api tokens : the profile's list, and a user's page in settings (AppApiTokens)
   apiTokens: {
+    title: 'API-tokens',
     name: 'Naam',
     createdAt: 'Gemaakt',
     expiresAt: 'Verloopt',
@@ -314,6 +315,10 @@ export default {
       lifetime: 'Geldig voor',
       days: '{n} dagen',
       password: 'Je wachtwoord',
+      new: 'Nieuw token',
+      stepToken: 'Token',
+      stepConfirm: 'Bevestigen',
+      stepCopy: 'Kopiëren',
       create: 'Token aanmaken',
       created: 'Je token, geldig tot {date}',
       copy: 'Kopiëren',

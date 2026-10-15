@@ -279,6 +279,7 @@ export default {
   },
   // a user's api tokens : the profile's list, and a user's page in settings (AppApiTokens)
   apiTokens: {
+    title: 'API トークン',
     name: '名前',
     createdAt: '作成日時',
     expiresAt: '有効期限',
@@ -312,6 +313,10 @@ export default {
       lifetime: '有効期間',
       days: '{n} 日',
       password: 'パスワード',
+      new: '新しいトークン',
+      stepToken: 'トークン',
+      stepConfirm: '確認',
+      stepCopy: 'コピー',
       create: 'トークンを作成',
       created: 'トークン ({date} まで有効)',
       copy: 'コピー',

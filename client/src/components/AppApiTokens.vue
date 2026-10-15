@@ -10,25 +10,58 @@
 /*      url: String - the list ; a token is revoked at <url>/<sid>*/
 /*      reload: Number - changed, the list is read again (a token */
 /*         just made)                                             */
+/*      toolbarTo: String - a selector the table's search and     */
+/*         buttons move to (the profile's title line) ; else in   */
+/*         the table's own bar                                    */
+/*  The list of the other pages (BsDataTable) : search, columns,  */
+/*  export, pager, a row's menu with Revoke.                      */
 /*                                                                */
 /******************************************************************/
-import { ref, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import axios from 'axios';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import Time from '@/lib/Time';
 import { neverExpires } from '@/lib/apiTokens';
 import Helpers from '@/lib/Helpers';
+import { esc } from '@/lib/tableCells';
 
 const props = defineProps({
   url: { type: String, required: true },
   reload: { type: Number, default: 0 },
+  toolbarTo: { type: String, default: null },
 });
 
 const { t } = useI18n();
 const tokens = ref([]);
 const loaded = ref(false);
 const revoking = ref(null);
+
+// the columns : what the token is for, when it was made, when it ends, when it was last used
+const columns = computed(() => [
+  { key: 'name', label: t('apiTokens.name'), sortable: true, filterable: true, render: (v) => esc(v || '–') },
+  {
+    key: 'created_at',
+    label: t('apiTokens.createdAt'),
+    sortable: true,
+    render: (v) => esc(Time.format(v)),
+    sortValue: (row) => Date.parse(row.created_at) || 0,
+  },
+  {
+    key: 'expires_at',
+    label: t('apiTokens.expiresAt'),
+    sortable: true,
+    render: (v) => esc(neverExpires(v) ? t('apiTokens.neverExpires') : Time.format(v)),
+    sortValue: (row) => Date.parse(row.expires_at) || 0,
+  },
+  {
+    key: 'last_used_at',
+    label: t('apiTokens.lastUsedAt'),
+    sortable: true,
+    render: (v) => esc(v ? Time.format(v) : t('apiTokens.neverUsed')),
+    sortValue: (row) => Date.parse(row.last_used_at) || 0,
+  },
+]);
 
 async function load() {
   try {
@@ -69,37 +102,38 @@ watch(() => [props.url, props.reload], load, { immediate: true });
       <BsButton icon="ban" @click="revoke()">{{ t('apiTokens.revoke') }}</BsButton>
     </template>
   </BsModal>
-  <div class="af-api-tokens">
-    <p v-if="loaded && !tokens.length" class="text-body-secondary mb-0">{{ t('apiTokens.none') }}</p>
-    <div v-else-if="tokens.length" class="table-responsive">
-      <table class="table table-sm align-middle mb-0">
-        <thead>
-          <tr>
-            <th>{{ t('apiTokens.name') }}</th>
-            <th>{{ t('apiTokens.createdAt') }}</th>
-            <th>{{ t('apiTokens.expiresAt') }}</th>
-            <th>{{ t('apiTokens.lastUsedAt') }}</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="token in tokens" :key="token.sid">
-            <td>{{ token.name || '–' }}</td>
-            <td class="text-nowrap">{{ Time.format(token.created_at) }}</td>
-            <td class="text-nowrap">
-              {{ neverExpires(token.expires_at) ? t('apiTokens.neverExpires') : Time.format(token.expires_at) }}
-            </td>
-            <td class="text-nowrap">
-              {{ token.last_used_at ? Time.format(token.last_used_at) : t('apiTokens.neverUsed') }}
-            </td>
-            <td class="text-end">
-              <button type="button" class="btn btn-sm btn-outline-danger" @click="revoking = token">
-                <FaIcon icon="ban" class="me-1" />{{ t('apiTokens.revoke') }}
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+  <!-- the tokens in the list of the other pages, a row's menu to revoke one -->
+  <AppSkeleton v-if="!loaded" shape="table" :count="3" />
+  <BsDataTable
+    v-else
+    framed
+    :toolbarTo="toolbarTo"
+    :items="tokens"
+    :columns="columns"
+    idKey="sid"
+    :selectable="false"
+    :name="'apitokens'"
+    :exportName="t('apiTokens.title')"
+  >
+    <template #row-actions="{ item }">
+      <div class="dropdown">
+        <a
+          role="button"
+          class="bs-dt-row-menu px-2"
+          data-bs-toggle="dropdown"
+          data-bs-popper-config='{"strategy":"fixed"}'
+          @click.stop
+        >
+          <FaIcon icon="ellipsis-vertical" />
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li>
+            <a class="dropdown-item text-danger" href="#" @click.prevent="revoking = item">
+              <FaIcon icon="ban" class="me-2" />{{ t('apiTokens.revoke') }}
+            </a>
+          </li>
+        </ul>
+      </div>
+    </template>
+  </BsDataTable>
 </template>
