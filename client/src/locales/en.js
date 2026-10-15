@@ -963,7 +963,8 @@ export default {
       displayName: 'Name',
       firstSeen: 'First seen',
       lastLogin: 'Last sign-in',
-      signInHelp: 'On: they sign in through {source}. Off: their sessions end now and every sign-in is refused.',
+      signInHelp:
+        "On: the user signs in through {source}.\nOff: the user's sessions end now and every sign-in is refused.",
       blockSignIn: 'Block sign-in',
       allowSignIn: 'Allow sign-in',
       endSessions: 'End sessions',
@@ -973,7 +974,7 @@ export default {
       forgetConfirm:
         'Forget {name}? Their record goes and comes back at their next sign-in. Their jobs, stored jobs and schedules stay.',
       blockedNote:
-        'An administrator blocked the sign-in of this user: their sessions ended and every sign-in is refused.',
+        "An administrator blocked the sign-in of this user: the user's sessions ended and every sign-in is refused.",
       neverNote:
         'The roles of the configuration name this user, but they never signed in: their groups are known at their first sign-in.',
       readOnlyNote:
@@ -1101,7 +1102,9 @@ export default {
       stepGroup: 'Group',
       deleteUser: 'Delete user',
       noGroup: 'No group yet.',
-      signInHelp: 'On: they sign in with their password. Off: their sessions end now and every sign-in is refused.',
+      noRole: 'No role yet.',
+      signInHelp:
+        "On: the user signs in with a password.\nOff: the user's sessions end now and every sign-in is refused.",
       noStoredJob: 'No stored job yet.',
       noSchedule: "No planned job yet: a user's schedules are the jobs they plan with Run later.",
       removeFromUser: 'Remove from user',
@@ -1784,6 +1787,7 @@ export default {
       defaultEveryone: 'Everyone, automatically',
       roleNoUsers: 'No users in this role yet.',
       roleNoGroups: 'No groups in this role yet.',
+      noRoleLeft: 'Already in every role.',
       roleNotFound: "There is no role named '{name}'.",
       roleNamePlaceholder: 'New role name',
       roleDescriptionPlaceholder: 'What the role is for, e.g. Launches the network forms',

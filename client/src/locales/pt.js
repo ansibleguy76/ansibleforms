@@ -972,7 +972,7 @@ export default {
       firstSeen: 'Visto pela primeira vez',
       lastLogin: 'Último início de sessão',
       signInHelp:
-        'Ligado: inicia sessão através de {source}. Desligado: as sessões terminam agora e cada início de sessão é recusado.',
+        'Ligado: inicia sessão através de {source}.\nDesligado: as sessões terminam agora e cada início de sessão é recusado.',
       blockSignIn: 'Bloquear início de sessão',
       allowSignIn: 'Permitir início de sessão',
       endSessions: 'Terminar sessões',
@@ -1114,8 +1114,9 @@ export default {
       stepGroup: 'Grupo',
       deleteUser: 'Eliminar utilizador',
       noGroup: 'Ainda sem grupo.',
+      noRole: 'Ainda nenhuma função.',
       signInHelp:
-        'Ligado: inicia sessão com a sua palavra-passe. Desligado: as sessões terminam agora e cada início de sessão é recusado.',
+        'Ligado: inicia sessão com a sua palavra-passe.\nDesligado: as sessões terminam agora e cada início de sessão é recusado.',
       noStoredJob: 'Ainda sem trabalhos guardados.',
       noSchedule:
         'Ainda sem trabalhos planeados: os agendamentos de um utilizador são os trabalhos que planeia com Executar mais tarde.',
@@ -1815,6 +1816,7 @@ export default {
       defaultEveryone: 'Todos, automaticamente',
       roleNoUsers: 'Esta função ainda não tem utilizadores.',
       roleNoGroups: 'Esta função ainda não tem grupos.',
+      noRoleLeft: 'Já está em todas as funções.',
       roleNotFound: "Não existe nenhuma função chamada '{name}'.",
       roleNamePlaceholder: 'Nome da nova função',
       roleDescriptionPlaceholder: 'Para que serve a função, p. ex. Lança os formulários de rede',

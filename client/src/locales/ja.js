@@ -965,7 +965,7 @@ export default {
       firstSeen: '初回確認',
       lastLogin: '最終サインイン',
       signInHelp:
-        'オン：{source} 経由でサインインします。オフ：セッションは直ちに終了し、すべてのサインインが拒否されます。',
+        'オン：{source} 経由でサインインします。\nオフ：セッションは直ちに終了し、すべてのサインインが拒否されます。',
       blockSignIn: 'サインインをブロック',
       allowSignIn: 'サインインを許可',
       endSessions: 'セッションを終了',
@@ -1104,8 +1104,9 @@ export default {
       stepGroup: 'グループ',
       deleteUser: 'ユーザーを削除',
       noGroup: 'まだグループがありません。',
+      noRole: 'ロールはまだありません。',
       signInHelp:
-        'オン：パスワードでサインインします。オフ：セッションは直ちに終了し、すべてのサインインが拒否されます。',
+        'オン：パスワードでサインインします。\nオフ：セッションは直ちに終了し、すべてのサインインが拒否されます。',
       noStoredJob: '保存されたジョブはまだありません。',
       noSchedule: '計画されたジョブはまだありません。ユーザーのスケジュールは「後で実行」で計画したジョブです。',
       removeFromUser: 'ユーザーから削除',
@@ -1782,6 +1783,7 @@ export default {
       defaultEveryone: '全員（自動）',
       roleNoUsers: 'このロールにはまだユーザーがいません。',
       roleNoGroups: 'このロールにはまだグループがありません。',
+      noRoleLeft: 'すでにすべてのロールに含まれています。',
       roleNotFound: "'{name}' という名前のロールはありません。",
       roleNamePlaceholder: '新しいロールの名前',
       roleDescriptionPlaceholder: 'ロールの用途（例: ネットワークフォームを実行）',

@@ -969,7 +969,7 @@ export default {
       displayName: 'Naam',
       firstSeen: 'Eerst gezien',
       lastLogin: 'Laatst aangemeld',
-      signInHelp: 'Aan: aanmelden via {source}. Uit: de sessies eindigen nu en elke aanmelding wordt geweigerd.',
+      signInHelp: 'Aan: aanmelden via {source}.\nUit: de sessies eindigen nu en elke aanmelding wordt geweigerd.',
       blockSignIn: 'Aanmelden blokkeren',
       allowSignIn: 'Aanmelden toestaan',
       endSessions: 'Sessies beëindigen',
@@ -1108,8 +1108,9 @@ export default {
       stepGroup: 'Groep',
       deleteUser: 'Gebruiker verwijderen',
       noGroup: 'Nog geen groep.',
+      noRole: 'Nog geen rol.',
       signInHelp:
-        'Aan: aanmelden met het eigen wachtwoord. Uit: de sessies eindigen nu en elke aanmelding wordt geweigerd.',
+        'Aan: aanmelden met het eigen wachtwoord.\nUit: de sessies eindigen nu en elke aanmelding wordt geweigerd.',
       noStoredJob: 'Nog geen opgeslagen job.',
       noSchedule:
         "Nog geen geplande job: de schema's van een gebruiker zijn de jobs die hij plant met Later uitvoeren.",
@@ -1805,6 +1806,7 @@ export default {
       defaultEveryone: 'Iedereen, automatisch',
       roleNoUsers: 'Deze rol heeft nog geen gebruikers.',
       roleNoGroups: 'Deze rol heeft nog geen groepen.',
+      noRoleLeft: 'Al in elke rol.',
       roleNotFound: "Er is geen rol met de naam '{name}'.",
       roleNamePlaceholder: 'Naam van de nieuwe rol',
       roleDescriptionPlaceholder: 'Waar de rol voor is, bv. Start de netwerkformulieren',

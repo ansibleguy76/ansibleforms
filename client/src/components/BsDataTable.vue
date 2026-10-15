@@ -35,6 +35,8 @@
  *                         under the page's card (AppSettings' footer), as every table has it
  *  toolbarTo      String  A selector the toolbar (search, columns, export) moves to, such as
  *                         the page's title line, as the Forms page has its search there
+ *  empty          String  The note of a table with no rows at all (No job yet.) ; else, and
+ *                         when the filter keeps none, the common No data
  *  framed         Boolean The table in a bordered box : a grey header bar with small
  *                         uppercase labels, figures in tabular digits (the inventory pages)
  *
@@ -74,6 +76,7 @@ const props = defineProps({
   // checkboxes and a click on a row only says so (row-click), as on a list that opens a row
   rowClickSelects: { type: Boolean, default: true },
   framed: { type: Boolean, default: false },
+  empty: { type: String, default: '' },
   toolbarTo: { type: String, default: null },
   pagerTo: { type: String, default: null },
 });
@@ -736,7 +739,7 @@ function exportCsv() {
               "
               class="text-center text-muted py-3"
             >
-              {{ t('common.noData') }}
+              {{ !items.length && empty ? empty : t('common.noData') }}
             </td>
           </tr>
         </tbody>

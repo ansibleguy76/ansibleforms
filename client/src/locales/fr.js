@@ -976,7 +976,7 @@ export default {
       firstSeen: 'Vu la première fois',
       lastLogin: 'Dernière connexion',
       signInHelp:
-        'Activé : connexion via {source}. Désactivé : ses sessions se terminent maintenant et chaque connexion est refusée.',
+        'Activé : connexion via {source}.\nDésactivé : ses sessions se terminent maintenant et chaque connexion est refusée.',
       blockSignIn: 'Bloquer la connexion',
       allowSignIn: 'Autoriser la connexion',
       endSessions: 'Terminer les sessions',
@@ -1117,8 +1117,9 @@ export default {
       stepGroup: 'Groupe',
       deleteUser: "Supprimer l'utilisateur",
       noGroup: 'Pas encore de groupe.',
+      noRole: 'Aucun rôle pour l’instant.',
       signInHelp:
-        'Activé : connexion avec son mot de passe. Désactivé : ses sessions se terminent maintenant et chaque connexion est refusée.',
+        'Activé : connexion avec son mot de passe.\nDésactivé : ses sessions se terminent maintenant et chaque connexion est refusée.',
       noStoredJob: 'Pas encore de job enregistré.',
       noSchedule:
         "Pas encore de job planifié : les planifications d'un utilisateur sont les jobs qu'il planifie avec Executer plus tard.",
@@ -1821,6 +1822,7 @@ export default {
       defaultEveryone: 'Tout le monde, automatiquement',
       roleNoUsers: "Ce rôle n'a pas encore d'utilisateurs.",
       roleNoGroups: "Ce rôle n'a pas encore de groupes.",
+      noRoleLeft: 'Déjà dans tous les rôles.',
       roleNotFound: "Il n'y a pas de rôle nommé '{name}'.",
       roleNamePlaceholder: 'Nom du nouveau rôle',
       roleDescriptionPlaceholder: 'À quoi sert le rôle, p. ex. Lance les formulaires réseau',
