@@ -308,7 +308,7 @@ onMounted(async () => {
           </template>
           <!-- Type : Entra ID or Open ID, set when it was made -->
           <template v-else-if="activeTab === 'type'">
-            <div v-for="kind in SSO_TYPES" :key="kind" class="form-check af-short-check">
+            <div v-for="kind in SSO_TYPES" :key="kind" class="form-check af-short-check af-type-option">
               <input
                 :id="'af-ssotype-' + kind"
                 :checked="kind === provider.provider"

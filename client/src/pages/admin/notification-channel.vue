@@ -484,7 +484,7 @@ onMounted(async () => {
 
             <!-- Type : what it is, set when it was made -->
             <template v-else-if="activeTab === 'type'">
-              <div v-for="kind in CHANNEL_TYPES" :key="kind" class="form-check af-short-check">
+              <div v-for="kind in CHANNEL_TYPES" :key="kind" class="form-check af-short-check af-type-option">
                 <input
                   :id="'af-chtype-' + kind"
                   :checked="kind === type"

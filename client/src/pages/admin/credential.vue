@@ -468,7 +468,7 @@ onMounted(async () => {
             <!-- Type : what it is for, each its label and a few grey words ; set when it was made (what
                  uses it expects it) -->
             <template v-else-if="shownTab === 'type'">
-              <div v-for="kind in CREDENTIAL_TYPES" :key="kind" class="form-check af-short-check">
+              <div v-for="kind in CREDENTIAL_TYPES" :key="kind" class="form-check af-short-check af-type-option">
                 <input
                   :id="'af-ctype-' + kind"
                   v-model="edit.credential_type"

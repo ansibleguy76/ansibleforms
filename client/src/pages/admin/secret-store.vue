@@ -355,7 +355,7 @@ onMounted(async () => {
             <!-- Type : CyberArk CCP or HashiCorp Vault, set when it was made (the credentials that read
                  from it expect it) ; a Vault's Enterprise switch under it -->
             <template v-else-if="activeTab === 'type'">
-              <div v-for="type in TYPES" :key="type.value" class="form-check af-short-check">
+              <div v-for="type in TYPES" :key="type.value" class="form-check af-short-check af-type-option">
                 <input
                   :id="'af-type-' + type.value"
                   v-model="edit.type"
@@ -370,7 +370,7 @@ onMounted(async () => {
                   <span class="text-body-secondary small">{{ t(`settings.secretStores.type_${type.value}Hint`) }}</span>
                 </label>
               </div>
-              <div v-if="isVault" class="form-check form-switch mt-3">
+              <div v-if="isVault" class="form-check form-switch mt-3 af-type-option">
                 <input
                   id="af-store-enterprise"
                   v-model="edit.vault_enterprise"

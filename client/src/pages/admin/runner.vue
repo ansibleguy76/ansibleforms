@@ -469,7 +469,7 @@ onMounted(async () => {
             </template>
             <!-- Type : RTE, AWX, AAP, Ascender, Semaphore or Rundeck, each its label and a few grey words -->
             <template v-else-if="activeTab === 'type'">
-              <div v-for="kind in RUNNER_KINDS" :key="kind" class="form-check af-short-check">
+              <div v-for="kind in RUNNER_KINDS" :key="kind" class="form-check af-short-check af-type-option">
                 <input
                   :id="'af-kind-' + kind"
                   v-model="edit.kind"
