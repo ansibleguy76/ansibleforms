@@ -108,6 +108,17 @@ const zoneCards = computed(() => [
     title: t('settings.common.zoneApp', { zone: appZone.value }),
   },
 ]);
+// the picker's time options (its version 12 takes them in one object, not as props) : the clock
+// shown for the types with a time, on 24 hours, and an empty picker opening on now on the zone
+// picked, not on the browser's clock
+const timeConfig = computed(() => {
+  const config = { enableTimePicker: hasTimePicker.value, is24: true };
+  if (isMoment.value) {
+    const wall = Time.toWallClock(new Date(), zone.value);
+    if (wall) config.startTime = { hours: wall.getHours(), minutes: wall.getMinutes() };
+  }
+  return config;
+});
 // the moment on both clocks, the picked one first : nothing ambiguous before saving
 const bothClocks = computed(() => {
   if (!zonesDiffer.value) return '';
@@ -525,19 +536,22 @@ watch(
     @focus="focus"
     @input="input"
     :auto-apply="['date', 'month', 'week'].includes(dateType)"
-    :enable-time-picker="hasTimePicker"
     :month-picker="dateType == 'month'"
     :week-picker="dateType == 'week'"
     :quarter-picker="dateType == 'quarter'"
     :year-picker="dateType == 'year'"
     :time-picker="dateType == 'time'"
-    :is-24="true"
+    :time-config="timeConfig"
     :dark="theme == 'dark'"
     :teleport="teleport ? 'body' : undefined"
   >
-    <!-- the clock a moment is picked on : the browser's or the app's -->
-    <template v-if="zonesDiffer" #menu-header>
+    <!-- the clock a moment is picked on : the browser's or the app's, else the one zone it is -->
+    <template v-if="isMoment" #menu-header>
+      <div v-if="!zonesDiffer" class="p-2 text-center small text-body-secondary af-zone-only">
+        {{ Time.zoneLabel(shownMoment, zone) }}
+      </div>
       <div
+        v-else
         class="btn-group btn-group-sm w-100 p-2 af-zone-switch"
         role="group"
         :aria-label="t('settings.common.zonePick')"
