@@ -83,6 +83,22 @@ describe('keys built by concatenation are covered too', () => {
   const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
   const read = (p) => readFileSync(path.join(root, '..', p), 'utf8');
 
+  it('every role option has a description (its (i) on the role page, the profile)', () => {
+    const roles = read('client/src/config/roles.js');
+    const block = roles.slice(
+      roles.indexOf('export const roleOptionKeys'),
+      roles.indexOf('];', roles.indexOf('export const roleOptionKeys')),
+    );
+    const keys = [...block.matchAll(/'([A-Za-z]+)'/g)].map((m) => m[1]);
+    const gaps = [];
+    for (const k of keys)
+      for (const lang of LANGS) {
+        const key = `profilePage.optionDescription.${k}`;
+        if (maps[lang][key] === undefined) gaps.push(`${lang}: ${key}`);
+      }
+    expect(gaps).toEqual([]);
+  });
+
   it('every role option has a label', () => {
     const roles = read('client/src/config/roles.js');
     const block = roles.slice(

@@ -27,7 +27,7 @@ import { languages, fallbackLanguage } from '@/config/languages';
 import dayjs from 'dayjs';
 import Time, { DATE_FORMATS } from '@/lib/Time';
 import { profileViews, profileMenuViews } from '@/config/profileViews';
-import { roleOptionGroups } from '@/config/roles';
+import { roleOptionGroups, roleOptionDescription } from '@/config/roles';
 import BaseUrl from '@/lib/BaseUrl';
 import { neverExpires } from '@/lib/apiTokens';
 import { rememberSsoOrigin, ssoSettled, ssoReturning } from '@/lib/ssoReturn';
@@ -37,7 +37,7 @@ import { rememberSsoOrigin, ssoSettled, ssoReturning } from '@/lib/ssoReturn';
 const store = useAppStore();
 const route = useRoute();
 const router = useRouter();
-const { t, locale } = useI18n();
+const { t, te, locale } = useI18n();
 
 // the same swatches as the header's theme switcher
 const palette = [
@@ -100,38 +100,6 @@ const PERMISSION_GROUPS = [
   ...roleOptionGroups.map((g) => ({ name: g.name, title: () => t(g.title), keys: g.keys })),
   { name: 'other', title: () => t('profilePage.groupOther'), keys: [] },
 ];
-// what each option lets the user do (spelled out per key, so the i18n key check finds them)
-const OPTION_DESCRIPTIONS = {
-  showSettings: () => t('profilePage.optionDescription.showSettings'),
-  showDesigner: () => t('profilePage.optionDescription.showDesigner'),
-  allowFormDesign: () => t('profilePage.optionDescription.allowFormDesign'),
-  allowPlaybookDesign: () => t('profilePage.optionDescription.allowPlaybookDesign'),
-  allowWorkflowDesign: () => t('profilePage.optionDescription.allowWorkflowDesign'),
-  allowInventoryDesign: () => t('profilePage.optionDescription.allowInventoryDesign'),
-  allowVarsFileDesign: () => t('profilePage.optionDescription.allowVarsFileDesign'),
-  showLogs: () => t('profilePage.optionDescription.showLogs'),
-  showAuditLog: () => t('profilePage.optionDescription.showAuditLog'),
-  showAppearanceSettings: () => t('profilePage.optionDescription.showAppearanceSettings'),
-  showConnectionsSettings: () => t('profilePage.optionDescription.showConnectionsSettings'),
-  showJobs: () => t('profilePage.optionDescription.showJobs'),
-  showDebugButtons: () => t('profilePage.optionDescription.showDebugButtons'),
-  allowJobRelaunch: () => t('profilePage.optionDescription.allowJobRelaunch'),
-  allowJobDeletion: () => t('profilePage.optionDescription.allowJobDeletion'),
-  manageAllJobs: () => t('profilePage.optionDescription.manageAllJobs'),
-  allowVerboseMode: () => t('profilePage.optionDescription.allowVerboseMode'),
-  allowScheduledJobs: () => t('profilePage.optionDescription.allowScheduledJobs'),
-  allowStoredJobs: () => t('profilePage.optionDescription.allowStoredJobs'),
-  allowPlannedJobs: () => t('profilePage.optionDescription.allowPlannedJobs'),
-  showAllJobLogs: () => t('profilePage.optionDescription.showAllJobLogs'),
-  showArtifacts: () => t('profilePage.optionDescription.showArtifacts'),
-  showExtravars: () => t('profilePage.optionDescription.showExtravars'),
-  allowLogin: () => t('profilePage.optionDescription.allowLogin'),
-  allowBackupOps: () => t('profilePage.optionDescription.allowBackupOps'),
-  allowChat: () => t('profilePage.optionDescription.allowChat'),
-  allowMcp: () => t('profilePage.optionDescription.allowMcp'),
-  allowApiTokens: () => t('profilePage.optionDescription.allowApiTokens'),
-  extendedTokenExpiration: () => t('profilePage.optionDescription.extendedTokenExpiration'),
-};
 const permissionGroups = computed(() => {
   const opts = profile.value.options || {};
   // showExtraVars (capital V) is the server's legacy spelling of showExtravars, listed under
@@ -140,7 +108,7 @@ const permissionGroups = computed(() => {
   return PERMISSION_GROUPS.map((g) => {
     const keys = g.keys.filter((k) => k in opts);
     if (g.name === 'other') keys.push(...Object.keys(opts).filter((k) => !grouped.has(k)));
-    const options = keys.map((k) => ({ key: k, description: OPTION_DESCRIPTIONS[k]?.() || '', value: !!opts[k] }));
+    const options = keys.map((k) => ({ key: k, description: roleOptionDescription(t, te, k), value: !!opts[k] }));
     return { name: g.name, title: g.title(), options, allowed: options.filter((o) => o.value).length };
   }).filter((g) => g.options.length);
 });

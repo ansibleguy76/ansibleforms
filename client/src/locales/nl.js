@@ -352,7 +352,8 @@ export default {
       showDebugButtons: 'De debugknoppen op een formulier zien.',
       allowJobRelaunch: 'Jobs opnieuw starten met de formuliergegevens van een eerdere uitvoering.',
       allowJobDeletion: 'Taken verwijderen: de eigen, of alle voor een admin. Zonder: de geschiedenis blijft volledig.',
-      manageAllJobs: 'De taken van alle gebruikers afbreken, verwijderen en opnieuw starten, niet alleen de eigen.',
+      manageAllJobs:
+        'De taken van alle gebruikers afbreken, verwijderen en opnieuw starten, niet alleen de eigen. Verwijderen en opnieuw starten vragen ook hun eigen opties.',
       allowVerboseMode: 'Jobs in verbose-modus uitvoeren.',
       allowScheduledJobs: 'Planningen maken en beheren op de pagina Planner, terugkerend of eenmalig.',
       allowStoredJobs: 'Jobgegevens opslaan en later weer laden.',

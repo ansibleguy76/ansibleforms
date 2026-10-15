@@ -356,7 +356,8 @@ export default {
       showDebugButtons: 'Voir les boutons de débogage sur un formulaire.',
       allowJobRelaunch: "Relancer des jobs avec les données de formulaire d'une exécution précédente.",
       allowJobDeletion: "Supprimer des jobs : les vôtres, ou tous pour un admin. Sinon : l'historique reste complet.",
-      manageAllJobs: 'Interrompre, supprimer et relancer les jobs de tous les utilisateurs, pas seulement les vôtres.',
+      manageAllJobs:
+        'Interrompre, supprimer et relancer les jobs de tous les utilisateurs, pas seulement les vôtres. Supprimer et relancer demandent aussi leurs options.',
       allowVerboseMode: 'Lancer des jobs en mode verbeux.',
       allowScheduledJobs: 'Créer et gérer des planifications sur la page Planifications, récurrentes ou ponctuelles.',
       allowStoredJobs: "Enregistrer les données d'un job et les recharger plus tard.",

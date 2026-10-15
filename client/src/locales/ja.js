@@ -348,7 +348,8 @@ export default {
       showDebugButtons: 'フォームのデバッグボタンを表示します。',
       allowJobRelaunch: '以前の実行時のフォームデータでジョブを再起動します。',
       allowJobDeletion: 'ジョブを削除します（自分のもの、管理者はすべて）。なしの場合：履歴はそのまま残ります。',
-      manageAllJobs: '自分のものだけでなく、全ユーザーのジョブを中止・削除・再実行します。',
+      manageAllJobs:
+        '自分のものだけでなく、全ユーザーのジョブを中止・削除・再実行します。削除と再実行にはそれぞれのオプションも必要です。',
       allowVerboseMode: 'ジョブを詳細モードで実行します。',
       allowScheduledJobs: 'スケジュールページでスケジュールを作成・管理します（定期または1回）。',
       allowStoredJobs: 'ジョブのデータを保存し、後で再び読み込みます。',

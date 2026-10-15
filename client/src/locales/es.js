@@ -352,7 +352,8 @@ export default {
       allowJobRelaunch: 'Relanzar jobs con los datos del formulario de una ejecución anterior.',
       allowJobDeletion:
         'Eliminar trabajos: los propios, o todos para un administrador. Sin ello: el historial queda completo.',
-      manageAllJobs: 'Abortar, eliminar y relanzar los trabajos de todos los usuarios, no solo los propios.',
+      manageAllJobs:
+        'Abortar, eliminar y relanzar los trabajos de todos los usuarios, no solo los propios. Eliminar y relanzar también necesitan sus opciones.',
       allowVerboseMode: 'Ejecutar jobs en modo verbose.',
       allowScheduledJobs: 'Crear y gestionar programaciones en la página Programaciones, recurrentes o puntuales.',
       allowStoredJobs: 'Guardar los datos de un job y volver a cargarlos después.',

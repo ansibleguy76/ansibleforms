@@ -343,7 +343,7 @@ export default {
       showDebugButtons: '查看表单上的调试按钮。',
       allowJobRelaunch: '使用之前运行的表单数据重新运行作业。',
       allowJobDeletion: '删除作业：自己的作业，管理员可删除所有作业。否则：作业历史保持完整。',
-      manageAllJobs: '中止、删除和重新启动所有用户的作业，而不仅是自己的。',
+      manageAllJobs: '中止、删除和重新启动所有用户的作业，而不仅是自己的。删除和重新启动还需要各自的选项。',
       allowVerboseMode: '以详细模式运行作业。',
       allowScheduledJobs: '在调度页面创建和管理调度，周期性或一次性。',
       allowStoredJobs: '保存作业数据，以便以后再次加载。',

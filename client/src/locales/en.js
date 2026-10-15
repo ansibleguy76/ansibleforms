@@ -347,7 +347,8 @@ export default {
       showDebugButtons: 'See the debug buttons on a form.',
       allowJobRelaunch: 'Relaunch jobs with the form data of an earlier run.',
       allowJobDeletion: 'Delete jobs: your own, or every job for an admin. Without it the job history stays whole.',
-      manageAllJobs: 'Abort, delete and relaunch the jobs of every user, not only your own.',
+      manageAllJobs:
+        'Abort, delete and relaunch the jobs of every user, not only your own. Deleting and relaunching also need Allow deleting jobs and Allow job relaunch.',
       allowVerboseMode: 'Run jobs in verbose mode.',
       allowScheduledJobs: 'Create and manage schedules on the Schedules page, recurring or one-time.',
       allowStoredJobs: 'Store job data and load it again later.',

@@ -56,6 +56,23 @@ export const roleOptionGroups = [
   },
 ];
 
+/**
+ * What a role option gives, in words : its description (profilePage.optionDescription.<key>), the
+ * same on the role's page (the (i) beside each toggle) and on the profile's Permissions view.
+ *
+ * Args:
+ *   t (Function): vue-i18n's translate function.
+ *   te (Function): vue-i18n's "has this key" function.
+ *   key (string): the option.
+ *
+ * Returns:
+ *   string: the description ; '' for an option without one (a hand-written key).
+ */
+export function roleOptionDescription(t, te, key) {
+  const path = `profilePage.optionDescription.${key}`;
+  return te(path) ? t(path) : '';
+}
+
 // the options another one already gives : with it on, they are on whatever the role says (the
 // server's guards accept either), so the role editor shows them on and greyed out
 export const roleOptionIncludedIn = {

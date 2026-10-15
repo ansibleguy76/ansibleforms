@@ -349,7 +349,8 @@ export default {
       showDebugButtons: 'Wyświetlanie przycisków debugowania w formularzu.',
       allowJobRelaunch: 'Ponowne uruchamianie zadań z danymi formularza z wcześniejszego uruchomienia.',
       allowJobDeletion: 'Usuwać zadania: własne, a administrator wszystkie. Bez tego historia pozostaje pełna.',
-      manageAllJobs: 'Przerywać, usuwać i ponownie uruchamiać zadania wszystkich użytkowników, nie tylko własne.',
+      manageAllJobs:
+        'Przerywać, usuwać i ponownie uruchamiać zadania wszystkich użytkowników, nie tylko własne. Usuwanie i ponowne uruchamianie wymagają też swoich opcji.',
       allowVerboseMode: 'Uruchamianie zadań w trybie szczegółowym (verbose).',
       allowScheduledJobs: 'Tworzyć harmonogramy i nimi zarządzać na stronie Harmonogramy, cykliczne lub jednorazowe.',
       allowStoredJobs: 'Zapisywanie danych zadania i ponowne wczytywanie ich później.',

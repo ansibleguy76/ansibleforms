@@ -353,7 +353,8 @@ export default {
       showDebugButtons: 'Vedere i pulsanti di debug su un form.',
       allowJobRelaunch: "Rilanciare i job con i dati del form di un'esecuzione precedente.",
       allowJobDeletion: 'Eliminare job: i propri, o tutti per un admin. Senza: lo storico resta completo.',
-      manageAllJobs: 'Interrompere, eliminare e rilanciare i job di tutti gli utenti, non solo i propri.',
+      manageAllJobs:
+        'Interrompere, eliminare e rilanciare i job di tutti gli utenti, non solo i propri. Eliminare e rilanciare richiedono anche le loro opzioni.',
       allowVerboseMode: 'Eseguire i job in modalità verbose.',
       allowScheduledJobs: 'Creare e gestire pianificazioni nella pagina Pianificazioni, ricorrenti o una tantum.',
       allowStoredJobs: 'Salvare i dati di un job e ricaricarli più tardi.',

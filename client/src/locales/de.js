@@ -353,7 +353,8 @@ export default {
       showDebugButtons: 'Die Debug-Schaltflächen auf einem Formular sehen.',
       allowJobRelaunch: 'Jobs mit den Formulardaten eines früheren Laufs neu starten.',
       allowJobDeletion: 'Jobs löschen: die eigenen, als Admin alle. Ohne: der Jobverlauf bleibt vollständig.',
-      manageAllJobs: 'Die Jobs aller Benutzer abbrechen, löschen und neu starten, nicht nur die eigenen.',
+      manageAllJobs:
+        'Die Jobs aller Benutzer abbrechen, löschen und neu starten, nicht nur die eigenen. Löschen und Neustarten brauchen auch die Optionen dafür.',
       allowVerboseMode: 'Jobs im Verbose-Modus ausführen.',
       allowScheduledJobs: 'Zeitpläne auf der Seite Zeitpläne erstellen und verwalten, wiederkehrend oder einmalig.',
       allowStoredJobs: 'Jobdaten speichern und später wieder laden.',

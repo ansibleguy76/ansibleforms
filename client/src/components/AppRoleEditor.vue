@@ -30,7 +30,7 @@
 
 import { ref, computed, h } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { requiredRoleDescription, roleOptionGroups, roleOptionIncludedIn } from '@/config/roles';
+import { requiredRoleDescription, roleOptionGroups, roleOptionIncludedIn, roleOptionDescription } from '@/config/roles';
 import { usePagedRows } from '@/composables/usePagedRows';
 
 const props = defineProps({
@@ -59,6 +59,23 @@ const props = defineProps({
 function includedBy(key) {
   const by = roleOptionIncludedIn[key];
   return by && role.value.options?.[by] ? by : null;
+}
+
+/**
+ * The popover of an option : what it gives (config/roles.js) and, for a part of the settings, that
+ * Show all settings includes it.
+ *
+ * Args:
+ *   key (string): the option.
+ *
+ * Returns:
+ *   string: the text ; '' for none.
+ */
+function optionHelp(key) {
+  const description = roleOptionDescription(t, te, key);
+  const by = roleOptionIncludedIn[key];
+  const included = by ? t('settings.settingsPage.roleOptionIncluded', { option: props.optionLabel(by) }) + '.' : '';
+  return [description, included].filter(Boolean).join(' ');
 }
 
 const optionGroups = computed(() => {
@@ -107,7 +124,7 @@ function toggleAll(list) {
   selected.value = all ? [] : uids;
 }
 
-const { t } = useI18n();
+const { t, te } = useI18n();
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
 // the role in three tabs : General (its name and options), its users and its groups, each of
@@ -241,23 +258,26 @@ function removeUser(index) {
           <div v-for="optKey in group.keys" :key="optKey" class="col">
             <!-- given by another option that is on (Show all settings) : on, greyed out, its own value
                  kept for when that one is turned off -->
-            <BsInput
-              v-if="includedBy(optKey)"
-              type="checkbox"
-              :isSwitch="true"
-              :modelValue="true"
-              :label="optionLabel(optKey)"
-              :disabled="true"
-              :title="t('settings.settingsPage.roleOptionIncluded', { option: optionLabel(includedBy(optKey)) })"
-            />
-            <BsInput
-              v-else
-              type="checkbox"
-              :isSwitch="true"
-              v-model="role.options[optKey]"
-              :label="optionLabel(optKey)"
-              :disabled="readOnly"
-            />
+            <div class="af-role-option">
+              <BsInput
+                v-if="includedBy(optKey)"
+                type="checkbox"
+                :isSwitch="true"
+                :modelValue="true"
+                :label="optionLabel(optKey)"
+                :disabled="true"
+              />
+              <BsInput
+                v-else
+                type="checkbox"
+                :isSwitch="true"
+                v-model="role.options[optKey]"
+                :label="optionLabel(optKey)"
+                :disabled="readOnly"
+              />
+              <!-- what it gives, and when another option covers it, that it does -->
+              <AppInfoPopover v-if="optionHelp(optKey)" :text="optionHelp(optKey)" placement="top" />
+            </div>
           </div>
         </div>
       </div>
@@ -525,6 +545,34 @@ function removeUser(index) {
   align-items: center;
   justify-content: center;
   padding: 0 0.75rem;
+}
+/* a toggle and its (i) right after the label, on one line : the switch without its own bottom
+   margin, the row's room given by the option itself */
+.af-role-option {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.4rem 0;
+}
+.role-options .af-role-option :deep(.mb-3) {
+  margin-bottom: 0 !important;
+}
+.af-role-option :deep(.form-check) {
+  margin-bottom: 0;
+}
+/* BsInput's field label is empty for a switch (its label is the switch's own) : not drawn here, so
+   the row is the switch, its label and the (i), centred together */
+.af-role-option :deep(.form-label) {
+  display: none;
+}
+/* the (i) of a page title is sized and raised for the title : here, beside a label, its own size
+   and centred on the label's line */
+.af-role-option :deep(.af-info-btn) {
+  align-self: center;
+  margin: 0;
+  padding: 0 0.15rem;
+  font-size: 0.8rem;
+  vertical-align: middle;
 }
 .role-options {
   /* the switches take back their own margin : this gives the group its room at the bottom */
