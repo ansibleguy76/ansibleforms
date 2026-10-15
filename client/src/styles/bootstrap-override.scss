@@ -698,3 +698,14 @@ textarea:focus::placeholder {
   white-space: nowrap;
   overflow: hidden;
 }
+
+/* a Type tab's options (credentials, runners, secret stores, notification channels, SSO
+   providers), set when the record was made : the radios and switches are disabled, their words
+   stay readable - the chosen option as normal text, the others in the secondary colour, a
+   switch's label and help as they are (Bootstrap fades a disabled check's label to half) */
+.af-type-option .form-check-input:disabled ~ .form-check-label {
+  opacity: 1;
+}
+.af-type-option .form-check-input[type='radio']:disabled:not(:checked) ~ .form-check-label {
+  color: var(--bs-secondary-color);
+}

@@ -1813,9 +1813,10 @@ defineExpose({
           </div>
         </div>
 
-        <!-- SEVERAL VALUES, ONE PER INPUT (an LDAP directory's servers) -->
+        <!-- SEVERAL VALUES, ONE PER INPUT (an LDAP directory's servers ; listWhen : a field that is
+             a list for some records only, an ldap credential's servers) -->
         <BsInputList
-          v-else-if="showField(field) && field.type === 'list'"
+          v-else-if="showField(field) && (field.type === 'list' || field.listWhen?.(item))"
           v-model="$v.item[field.key].$model"
           :isHorizontal="true"
           :label="textOf(field.dialogLabel) || field.label"
@@ -1831,7 +1832,7 @@ defineExpose({
 
         <!-- ALL OTHER FIELD TYPES -->
         <BsInput
-          v-else-if="showField(field) && field.type !== 'datetime' && field.type !== 'cron'"
+          v-else-if="showField(field) && field.type !== 'datetime' && field.type !== 'cron' && !field.listWhen?.(item)"
           :isHorizontal="true"
           :type="field.type"
           :placeholder="action == 'edit' && field.onEdit ? '********' : textOf(field.placeholder)"

@@ -1228,12 +1228,14 @@ export default {
       active: 'Activé',
       useForSignIn: 'Utiliser pour la connexion',
       credential: 'Identifiant',
-      credentialHelp:
-        'Un identifiant de son type dans Connexions > Identifiants (Microsoft Entra ID ou Open ID) : son ID client et son secret.',
+      credentialHelp: 'Un identifiant de son type : Microsoft Entra ID ou Open ID.',
       ownClient:
         "Il se connecte avec son propre ID client ({client}), d'avant les identifiants, jusqu'au choix d'un identifiant.",
       activeHelp:
         "Les utilisateurs se connectent avec lui lorsqu'ils choisissent {type} ; l'activer désactive les autres fournisseurs {type}.",
+      autoLogin: 'Passer la page de connexion',
+      autoLoginHelp:
+        "Activé : pas de page de connexion, les utilisateurs arrivent directement dans l'application par ce fournisseur ; l'activer le désactive pour les autres.",
       providerNotFound: "Aucun fournisseur SSO n'a l'id '{id}'.",
       stepType: 'Type',
       type_azuread: 'Microsoft Entra ID',
@@ -1330,6 +1332,13 @@ export default {
       flavour: 'Produit',
       skipVerify: 'Ignorer la vérification du certificat',
       stepAuth: 'Identifiants',
+      credential: 'Identifiant',
+      credentialHelp_api: 'Un identifiant api de Connexions > Identifiants : son mot de passe est le jeton.',
+      credentialHelp_awx:
+        "Un identifiant api (son mot de passe est le jeton d'API) ou userpass (un utilisateur et un mot de passe).",
+      credentialHelp_jenkins: "Un identifiant userpass : l'utilisateur Jenkins et son jeton d'API.",
+      ownToken: "Il se connecte avec son propre jeton, d'avant les identifiants, jusqu'au choix d'un identifiant.",
+      ownTokenRte: "Il se connecte avec le jeton d'enregistrement de son RTE, jusqu'au choix d'un identifiant.",
       stepConnection: 'Connexion',
       stepRunner: 'Runner',
       stepType: 'Type',
@@ -1567,6 +1576,7 @@ export default {
       clientKeyHelp: 'Clé privée PEM du certificat client. Stockée chiffrée.',
       enterprise: 'Vault Enterprise',
       enterpriseHelp: 'Ses espaces de noms, une fonction de Vault Enterprise et HCP Vault.',
+      namespaceRequired: 'Le namespace est obligatoire pour un Vault Enterprise.',
       kv1Hint: 'Le moteur KV sans versions',
       kv2Hint: 'Le moteur KV versionné, par défaut depuis Vault 0.10',
       stepAuth: 'Identifiants',
@@ -1658,7 +1668,7 @@ export default {
       type_smtp: 'SMTP',
       type_smtpHint: 'Un serveur de messagerie, son port et TLS, et sa connexion (aucune pour un relais)',
       type_ldap: 'LDAP',
-      type_ldapHint: "Le compte de bind d'un annuaire LDAP : son DN et son mot de passe",
+      type_ldapHint: "Les serveurs, le TLS et le compte de bind d'un annuaire LDAP : son DN et son mot de passe",
       type_entraid: 'Microsoft Entra ID',
       type_entraidHint:
         "L'application d'un fournisseur Microsoft Entra ID : son ID de locataire, son ID client et son secret",
@@ -1728,7 +1738,7 @@ export default {
       enableLdapHelp: 'Les utilisateurs se connectent avec leur compte LDAP ou Active Directory',
       credential: 'Identifiant',
       credentialHelp:
-        "Un identifiant ldap de Connexions > Identifiants : son utilisateur est le DN de bind. Aucun : un annuaire d'avant les identifiants se lie avec son propre utilisateur.",
+        "Un identifiant ldap de Connexions > Identifiants : les serveurs de l'annuaire, le port, le TLS et les certificats, et le DN et le mot de passe de bind.",
       nameHelp:
         "Préfixe ses membres dans les rôles : corp/jane, ldap/corp/Admins. L'annuaire default garde les noms courts et son propre nom.",
       servers: 'Serveurs',
@@ -1767,10 +1777,10 @@ export default {
       usernameAttributeDesc: 'Attribut LDAP utilisé comme identifiant de connexion (ex. sAMAccountName, uid).',
       groupsAttribute: 'Attribut groupes',
       groupsAttributeDesc:
-        'Attribut utilisateur listant les appartenances aux groupes (ex. memberOf). Indiquez groups pour utiliser le résultat de la recherche de groupes (Base de recherche des groupes et Classe de groupe).',
+        "L'attribut listant les groupes d'un utilisateur (memberOf), ou groups pour le résultat de la recherche de groupes.",
       groupsSearchBase: 'Base de recherche des groupes',
       groupsSearchBaseDesc:
-        "Où chercher les groupes de l'utilisateur (requiert Classe de groupe et Attribut de groupes à groups). Vide : lus dans l'entrée de l'utilisateur.",
+        "Où commence la recherche de groupes (avec Classe de groupe, et Attribut des groupes groups). Vide : groupes lus sur l'utilisateur.",
       groupClass: 'Classe de groupe',
       groupClassDesc: 'objectClass LDAP utilisée pour les groupes (ex. groupOfNames, posixGroup).',
       groupMemberAttribute: 'Attribut membre du groupe',

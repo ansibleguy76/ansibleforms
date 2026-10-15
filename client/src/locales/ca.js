@@ -1227,12 +1227,14 @@ export default {
       active: 'Activat',
       useForSignIn: 'Fes-lo servir per iniciar la sessió',
       credential: 'Credencial',
-      credentialHelp:
-        'Una credencial del seu tipus a Connexions > Credencials (Microsoft Entra ID o Open ID): el seu ID de client i secret.',
+      credentialHelp: 'Una credencial del seu tipus: Microsoft Entra ID o Open ID.',
       ownClient:
         'Inicia sessió amb el seu propi ID de client ({client}), anterior a les credencials, fins que es triï una credencial.',
       activeHelp:
         'Els usuaris inicien la sessió amb ell quan trien {type}; activar-lo desactiva els altres proveïdors {type}.',
+      autoLogin: "Salta la pàgina d'inici de sessió",
+      autoLoginHelp:
+        "Activat: sense pàgina d'inici de sessió, els usuaris entren directament a l'aplicació amb aquest proveïdor; activar-lo el desactiva per als altres.",
       providerNotFound: "No hi ha cap proveïdor SSO amb l'id '{id}'.",
       stepType: 'Tipus',
       type_azuread: 'Microsoft Entra ID',
@@ -1471,6 +1473,7 @@ export default {
       clientKeyHelp: 'Clau privada PEM del certificat de client. Es desa xifrada.',
       enterprise: 'Vault Enterprise',
       enterpriseHelp: 'Els seus espais de noms, una funció de Vault Enterprise i HCP Vault.',
+      namespaceRequired: 'El namespace és obligatori per a un Vault Enterprise.',
       kv1Hint: 'El motor KV sense versions',
       kv2Hint: 'El motor KV amb versions, el predeterminat des de Vault 0.10',
       stepAuth: 'Credencials',
@@ -1561,7 +1564,7 @@ export default {
       type_smtp: 'SMTP',
       type_smtpHint: 'Un servidor de correu, el seu port i TLS, i el seu inici de sessió (cap per a un relay)',
       type_ldap: 'LDAP',
-      type_ldapHint: "El compte de bind d'un directori LDAP: el seu DN i contrasenya",
+      type_ldapHint: "Els servidors, el TLS i el compte de bind d'un directori LDAP: el seu DN i contrasenya",
       type_entraid: 'Microsoft Entra ID',
       type_entraidHint: "L'aplicació d'un proveïdor Microsoft Entra ID: el seu ID de tenant, ID de client i secret",
       type_oidc: 'Open ID',
@@ -1628,7 +1631,7 @@ export default {
       enableLdapHelp: 'Els usuaris inicien la sessió amb el seu compte de LDAP o Active Directory',
       credential: 'Credencial',
       credentialHelp:
-        'Una credencial ldap de Connexions > Credencials: el seu usuari és el DN de bind. Cap: un directori anterior a les credencials usa el seu propi usuari de bind.',
+        'Una credencial ldap de Connexions > Credencials: els servidors del directori, el port, el TLS i els certificats, i el DN i la contrasenya de bind.',
       nameHelp:
         'Prefixa els seus membres als rols: corp/jane, ldap/corp/Admins. El directori default conserva els noms curts i el seu propi nom.',
       servers: 'Servidors',
@@ -1670,10 +1673,10 @@ export default {
         "Atribut LDAP que s'utilitza com a nom d'usuari d'inici de sessió (p. ex. sAMAccountName, uid).",
       groupsAttribute: 'Atribut de grups',
       groupsAttributeDesc:
-        "Atribut de l'usuari que llista els grups dels quals és membre (p. ex. memberOf). Posa-hi groups per utilitzar el resultat de la cerca de grups (Base de cerca de grups i Classe de grup).",
+        "L'atribut que llista els grups d'un usuari (memberOf), o groups per al resultat de la cerca de grups.",
       groupsSearchBase: 'Base de cerca de grups',
       groupsSearchBaseDesc:
-        "On cercar els grups de l'usuari (cal Classe de grup i Atribut de grups a groups). Buit: es llegeixen de l'entrada de l'usuari.",
+        "On comença la cerca de grups (amb Classe de grup, i Atribut de grups groups). Buit: grups llegits de l'usuari.",
       groupClass: 'Classe de grup',
       groupClassDesc: "objectClass LDAP que s'utilitza per als grups (p. ex. groupOfNames, posixGroup).",
       groupMemberAttribute: 'Atribut de membre del grup',
@@ -1726,6 +1729,13 @@ export default {
       flavour: 'Producte',
       skipVerify: 'Omet la verificació del certificat',
       stepAuth: 'Credencials',
+      credential: 'Credencial',
+      credentialHelp_api: 'Una credencial api de Connexions > Credencials: la seva contrasenya és el token.',
+      credentialHelp_awx:
+        "Una credencial api (la contrasenya és el token de l'API) o una userpass (un usuari i una contrasenya).",
+      credentialHelp_jenkins: "Una credencial userpass: l'usuari de Jenkins i el seu token de l'API.",
+      ownToken: "Inicia sessió amb el seu propi token, d'abans de les credencials, fins que se n'esculli una.",
+      ownTokenRte: "Inicia sessió amb el token amb què es va registrar el seu RTE, fins que s'esculli una credencial.",
       stepConnection: 'Connexió',
       stepRunner: 'Runner',
       stepType: 'Tipus',

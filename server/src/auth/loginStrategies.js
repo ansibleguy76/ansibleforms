@@ -1,5 +1,5 @@
 // The SSO login strategies (Entra ID, OIDC) rebuilt from what is configured now : a provider
-// saved, a database restored, SSO switched on or off (ENABLE_SSO) or the Entra ID authority
+// saved, a database restored, a provider switched on or off or the Entra ID authority
 // changed. Each strategy is built once, so the login page offering a provider is not enough -
 // without a rebuild its button leads to "Unknown authentication strategy".
 import { runsWeb } from "../lib/role.js";

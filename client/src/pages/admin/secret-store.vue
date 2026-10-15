@@ -6,7 +6,8 @@
 /*  the tab kept in the url -                                     */
 /*    Details     its name and description                        */
 /*    Type        HashiCorp Vault or CyberArk CCP, and whether a  */
-/*                Vault is a Vault Enterprise                     */
+/*                Vault is a Vault Enterprise (both set when it   */
+/*                was made, read only)                            */
 /*    Connection  its address and how its certificate is checked  */
 /*    Credentials its credential, or a new one : a Vault's        */
 /*                password is its token, a CyberArk's is a        */
@@ -204,6 +205,11 @@ async function save() {
     toast.warning(t('settings.secretStores.fieldsRequired'));
     return;
   }
+  // a Vault Enterprise keeps its namespace (its switch is set when it was made)
+  if (isVault.value && e.vault_enterprise && !String(e.namespace || '').trim()) {
+    toast.warning(t('settings.secretStores.namespaceRequired'));
+    return;
+  }
   const data = {
     name: e.name.trim(),
     description: e.description.trim(),
@@ -349,7 +355,7 @@ onMounted(async () => {
             <!-- Type : CyberArk CCP or HashiCorp Vault, set when it was made (the credentials that read
                  from it expect it) ; a Vault's Enterprise switch under it -->
             <template v-else-if="activeTab === 'type'">
-              <div v-for="type in TYPES" :key="type.value" class="form-check af-short-check">
+              <div v-for="type in TYPES" :key="type.value" class="form-check af-short-check af-type-option">
                 <input
                   :id="'af-type-' + type.value"
                   v-model="edit.type"
@@ -364,13 +370,14 @@ onMounted(async () => {
                   <span class="text-body-secondary small">{{ t(`settings.secretStores.type_${type.value}Hint`) }}</span>
                 </label>
               </div>
-              <div v-if="isVault" class="form-check form-switch mt-3">
+              <div v-if="isVault" class="form-check form-switch mt-3 af-type-option">
                 <input
                   id="af-store-enterprise"
                   v-model="edit.vault_enterprise"
                   class="form-check-input"
                   type="checkbox"
                   role="switch"
+                  disabled
                 />
                 <label class="form-check-label" for="af-store-enterprise">{{
                   t('settings.secretStores.enterprise')
@@ -438,12 +445,6 @@ onMounted(async () => {
                 "
                 :label="t('settings.secretStores.credential')"
               />
-              <BsButton
-                v-if="!managed"
-                icon="plus"
-                @click="creator?.newItem({ credential_type: isVault ? 'api' : 'cyberark' })"
-                >{{ t('settings.repositories.newCredential') }}</BsButton
-              >
               <!-- a store from before credentials : its own token or AppID, until one is chosen -->
               <p v-if="(isVault ? store.token : store.app_id) && !edit.credential" class="form-text mt-3 mb-0">
                 {{ t(isVault ? 'settings.secretStores.ownToken' : 'settings.secretStores.ownLogin') }}
@@ -458,6 +459,7 @@ onMounted(async () => {
                   v-model="edit.namespace"
                   icon="folder"
                   :isFloating="false"
+                  :required="true"
                   :help="t('settings.secretStores.namespaceHelp')"
                   :label="t('settings.secretStores.namespace')"
                 />
@@ -519,6 +521,14 @@ onMounted(async () => {
         </div>
       </template>
       <template v-if="store" #actions>
+        <!-- Credentials : a new api (Vault) or cyberark credential, chosen once made -->
+        <BsButton
+          v-if="activeTab === 'credentials'"
+          icon="plus"
+          :disabled="managed"
+          @click="creator?.newItem({ credential_type: isVault ? 'api' : 'cyberark' })"
+          >{{ t('settings.repositories.newCredential') }}</BsButton
+        >
         <BsButton icon="plug" cssClass="text-nowrap" :disabled="testing" @click="testConnection()">{{
           t('settings.common.testConnection')
         }}</BsButton>

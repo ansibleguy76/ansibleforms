@@ -43,7 +43,7 @@ const oidcIssuer = ref('');
 // the providers read from the server : until then the buttons of last time, in grey
 const settingsRead = ref(false);
 const lastSso = rememberedSso();
-// SSO_AUTO_LOGIN, on with exactly one provider active (the server says so) : this page goes
+// Skip the login page, on for an enabled SSO provider (the server says which) : this page goes
 // straight to that provider instead of showing its form
 const ssoAutoLogin = ref(false);
 // the flag logout.vue leaves for this tab : just signed out, the page stays
@@ -110,8 +110,10 @@ async function getSettings(token) {
     // lock anyone out or loop : the form at /login?local, after signing out, after an SSO error
     if (!token && ssoAutoLogin.value && mayGoStraightToSso()) {
       loading.value = true;
-      if (entraIdEnabled.value) authEntraId();
-      else if (oidcEnabled.value) authOidc();
+      // the provider set to Skip the login page (the server says which)
+      const to = result.data.ssoAutoLoginProvider;
+      if (to === 'azuread' && entraIdEnabled.value) authEntraId();
+      else if (to === 'oidc' && oidcEnabled.value) authOidc();
     }
 
     if (token && entraIdEnabled.value) {
@@ -131,7 +133,7 @@ async function getSettings(token) {
   }
 }
 /**
- * Whether the login page may send the user straight to the SSO provider (SSO_AUTO_LOGIN).
+ * Whether the login page may send the user straight to the SSO provider (Skip the login page).
  *
  * Returns:
  *   boolean: false on /login?local (the form, for the local admin or a provider that fails),

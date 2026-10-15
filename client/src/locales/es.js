@@ -1224,12 +1224,14 @@ export default {
       active: 'Activado',
       useForSignIn: 'Usar para iniciar sesión',
       credential: 'Credencial',
-      credentialHelp:
-        'Una credencial de su tipo en Conexiones > Credenciales (Microsoft Entra ID u Open ID): su ID de cliente y secreto.',
+      credentialHelp: 'Una credencial de su tipo: Microsoft Entra ID u Open ID.',
       ownClient:
         'Inicia sesión con su propio ID de cliente ({client}), anterior a las credenciales, hasta que se elija una credencial.',
       activeHelp:
         'Los usuarios inician sesión con él cuando eligen {type}; activarlo desactiva los demás proveedores {type}.',
+      autoLogin: 'Saltar la página de inicio de sesión',
+      autoLoginHelp:
+        'Activado: sin página de inicio de sesión, los usuarios entran directamente en la aplicación con este proveedor; activarlo lo desactiva en los demás.',
       providerNotFound: "No hay ningún proveedor SSO con el id '{id}'.",
       stepType: 'Tipo',
       type_azuread: 'Microsoft Entra ID',
@@ -1325,6 +1327,13 @@ export default {
       flavour: 'Producto',
       skipVerify: 'Omitir la verificación del certificado',
       stepAuth: 'Credenciales',
+      credential: 'Credencial',
+      credentialHelp_api: 'Una credencial api de Conexiones > Credenciales: su contraseña es el token.',
+      credentialHelp_awx:
+        'Una credencial api (su contraseña es el token de la API) o una userpass (un usuario y una contraseña).',
+      credentialHelp_jenkins: 'Una credencial userpass: el usuario de Jenkins y su token de la API.',
+      ownToken: 'Inicia sesión con su propio token, de antes de las credenciales, hasta que se elija una.',
+      ownTokenRte: 'Inicia sesión con el token con el que se registró su RTE, hasta que se elija una credencial.',
       stepConnection: 'Conexión',
       stepRunner: 'Runner',
       stepType: 'Tipo',
@@ -1561,6 +1570,7 @@ export default {
       clientKeyHelp: 'Clave privada PEM del certificado de cliente. Se guarda cifrada.',
       enterprise: 'Vault Enterprise',
       enterpriseHelp: 'Sus espacios de nombres, una función de Vault Enterprise y HCP Vault.',
+      namespaceRequired: 'El namespace es obligatorio para un Vault Enterprise.',
       kv1Hint: 'El motor KV sin versiones',
       kv2Hint: 'El motor KV con versiones, el predeterminado desde Vault 0.10',
       stepAuth: 'Credenciales',
@@ -1652,7 +1662,7 @@ export default {
       type_smtp: 'SMTP',
       type_smtpHint: 'Un servidor de correo, su puerto y TLS, y su inicio de sesión (ninguno para un relay)',
       type_ldap: 'LDAP',
-      type_ldapHint: 'La cuenta de bind de un directorio LDAP: su DN y contraseña',
+      type_ldapHint: 'Los servidores, el TLS y la cuenta de bind de un directorio LDAP: su DN y contraseña',
       type_entraid: 'Microsoft Entra ID',
       type_entraidHint: 'La aplicación de un proveedor Microsoft Entra ID: su ID de tenant, ID de cliente y secreto',
       type_oidc: 'Open ID',
@@ -1720,7 +1730,7 @@ export default {
       enableLdapHelp: 'Los usuarios inician sesión con su cuenta de LDAP o Active Directory',
       credential: 'Credencial',
       credentialHelp:
-        'Una credencial ldap de Conexiones > Credenciales: su usuario es el DN de bind. Ninguna: un directorio anterior a las credenciales usa su propio usuario de bind.',
+        'Una credencial ldap de Conexiones > Credenciales: los servidores del directorio, el puerto, el TLS y los certificados, y el DN y la contraseña de bind.',
       nameHelp:
         'Prefija a sus miembros en los roles: corp/jane, ldap/corp/Admins. El directorio default conserva los nombres cortos y su propio nombre.',
       servers: 'Servidores',
@@ -1759,10 +1769,10 @@ export default {
       usernameAttributeDesc: 'Atributo LDAP usado como nombre de inicio de sesión (ej. sAMAccountName, uid).',
       groupsAttribute: 'Atributo de grupos',
       groupsAttributeDesc:
-        'Atributo de usuario que lista las membresías de grupo (ej. memberOf). Póngalo en groups para usar el resultado de la búsqueda de grupos (Base de Búsqueda de Grupos y Clase de Grupo).',
+        'El atributo con los grupos de un usuario (memberOf), o groups para el resultado de la búsqueda de grupos.',
       groupsSearchBase: 'Base de búsqueda de grupos',
       groupsSearchBaseDesc:
-        'Dónde buscar los grupos del usuario (requiere Clase de grupo y Atributo de grupos en groups). Vacío: se leen de la entrada del usuario.',
+        'Dónde empieza la búsqueda de grupos (con Clase de grupo, y Atributo de grupos groups). Vacío: grupos del usuario.',
       groupClass: 'Clase de grupo',
       groupClassDesc: 'objectClass LDAP utilizada para grupos (ej. groupOfNames, posixGroup).',
       groupMemberAttribute: 'Atributo de miembro de grupo',

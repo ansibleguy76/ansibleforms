@@ -20,46 +20,37 @@ describe('a runner kind and what is stored', () => {
     }
   });
 
-  it('a Semaphore or a Rundeck keeps its project and signs in with a token', () => {
-    expect(save({ kind: 'semaphore', project: ' 1 ', use_credentials: true })).toMatchObject({
+  it('a Semaphore or a Rundeck keeps its project ; a Jenkins its folder', () => {
+    expect(save({ kind: 'semaphore', project: ' 1 ' })).toMatchObject({
       type: 'semaphore',
       project: '1',
-      use_credentials: false,
       flavour: null,
     });
     expect(save({ kind: 'rundeck', project: 'af' })).toMatchObject({ type: 'rundeck', project: 'af' });
-  });
-
-  it('a Jenkins keeps its folder and its user, and signs in with its token', () => {
-    expect(save({ kind: 'jenkins', project: ' ops ', username: 'af', use_credentials: true })).toMatchObject({
+    expect(save({ kind: 'jenkins', project: ' ops ' })).toMatchObject({
       type: 'jenkins',
       project: 'ops',
-      username: 'af',
-      use_credentials: false,
       flavour: null,
     });
   });
 
-  it("a Jenkins' user shows with it, an AWX's only with a user and password", () => {
-    const username = runners.fields.find((f) => f.key === 'username');
-    expect(username.showWhen({ kind: 'jenkins', use_credentials: false })).toBe(true);
-    expect(username.showWhen({ kind: 'awx', use_credentials: true })).toBe(true);
-    expect(username.showWhen({ kind: 'awx', use_credentials: false })).toBe(false);
-    expect(username.showWhen({ kind: 'semaphore', use_credentials: false })).toBe(false);
+  it('the others store no project', () => {
+    expect(save({ kind: 'aap', project: 'leftover' })).toMatchObject({ type: 'awx', flavour: 'aap', project: null });
+    expect(save({ kind: 'rte', project: 'leftover' })).toMatchObject({ type: 'rte', project: null });
   });
 
-  it('the others store no project ; an awx runner keeps its choice of a user and password', () => {
-    expect(save({ kind: 'aap', project: 'leftover', use_credentials: true })).toMatchObject({
-      type: 'awx',
-      flavour: 'aap',
-      project: null,
-      use_credentials: true,
-    });
-    expect(save({ kind: 'rte', project: 'leftover' })).toMatchObject({
-      type: 'rte',
-      project: null,
-      use_credentials: false,
-    });
+  it('it signs in with a credential of its kind : an api one, a userpass one for a Jenkins, either for an AWX', () => {
+    const credential = runners.fields.find((f) => f.key === 'credential');
+    const offered = (kind) =>
+      ['api', 'userpass', 'ssh'].filter((type) =>
+        credential.choicesWhen({ name: 'c', credential_type: type }, { kind }),
+      );
+    expect(offered('rte')).toEqual(['api']);
+    expect(offered('semaphore')).toEqual(['api']);
+    expect(offered('jenkins')).toEqual(['userpass']);
+    expect(offered('aap')).toEqual(['api', 'userpass']);
+    expect(credential.createDefaults({ kind: 'jenkins' })).toEqual({ credential_type: 'userpass' });
+    expect(credential.createDefaults({ kind: 'rte' })).toEqual({ credential_type: 'api' });
   });
 
   it('the defaults dialog has a group per runner type', () => {

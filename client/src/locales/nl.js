@@ -1218,12 +1218,14 @@ export default {
       active: 'Ingeschakeld',
       useForSignIn: 'Gebruiken om aan te melden',
       credential: 'Referentie',
-      credentialHelp:
-        'Een referentie van zijn type uit Verbindingen > Referenties (Microsoft Entra ID of Open ID): client-ID en clientgeheim.',
+      credentialHelp: 'Een referentie van zijn type: Microsoft Entra ID of Open ID.',
       ownClient:
         'Het meldt zich aan met zijn eigen client-ID ({client}) van vóór referenties, tot er een referentie gekozen is.',
       activeHelp:
         'Gebruikers melden zich ermee aan als ze {type} kiezen; inschakelen schakelt de andere {type}-providers uit.',
+      autoLogin: 'Aanmeldpagina overslaan',
+      autoLoginHelp:
+        'Aan: geen aanmeldpagina, gebruikers komen via deze provider direct in de app; aanzetten zet het bij de andere uit.',
       providerNotFound: "Er is geen SSO-provider met id '{id}'.",
       stepType: 'Type',
       type_azuread: 'Microsoft Entra ID',
@@ -1319,6 +1321,13 @@ export default {
       flavour: 'Product',
       skipVerify: 'Certificaatcontrole overslaan',
       stepAuth: 'Referenties',
+      credential: 'Referentie',
+      credentialHelp_api: 'Een api-referentie uit Verbindingen > Referenties: het wachtwoord is het token.',
+      credentialHelp_awx:
+        'Een api-referentie (het wachtwoord is het API-token) of een userpass-referentie (gebruiker en wachtwoord).',
+      credentialHelp_jenkins: 'Een userpass-referentie: de Jenkins-gebruiker en zijn API-token.',
+      ownToken: 'Meldt zich aan met zijn eigen token van vóór referenties, tot er een referentie gekozen is.',
+      ownTokenRte: 'Meldt zich aan met het token waarmee zijn RTE zich registreerde, tot er een referentie gekozen is.',
       stepConnection: 'Verbinding',
       stepRunner: 'Runner',
       stepType: 'Type',
@@ -1554,6 +1563,7 @@ export default {
       clientKeyHelp: 'PEM private key van het clientcertificaat. Wordt versleuteld opgeslagen.',
       enterprise: 'Vault Enterprise',
       enterpriseHelp: 'Zijn namespaces, een functie van Vault Enterprise en HCP Vault.',
+      namespaceRequired: 'De namespace is verplicht voor een Vault Enterprise.',
       kv1Hint: 'De KV-engine zonder versies',
       kv2Hint: 'De KV-engine met versies, standaard sinds Vault 0.10',
       stepAuth: 'Referenties',
@@ -1643,7 +1653,7 @@ export default {
       type_smtp: 'SMTP',
       type_smtpHint: 'Een mailserver, de poort en TLS, en de login (geen voor een relay)',
       type_ldap: 'LDAP',
-      type_ldapHint: 'Het bind-account van een LDAP-directory: DN en wachtwoord',
+      type_ldapHint: 'De servers, TLS en het bind-account van een LDAP-directory: DN en wachtwoord',
       type_entraid: 'Microsoft Entra ID',
       type_entraidHint: 'De app van een Microsoft Entra ID-provider: tenant-ID, client-ID en clientgeheim',
       type_oidc: 'Open ID',
@@ -1711,7 +1721,7 @@ export default {
       enableLdapHelp: 'Gebruikers melden zich aan met hun LDAP- of Active Directory-account',
       credential: 'Referentie',
       credentialHelp:
-        'Een ldap-referentie uit Verbindingen > Referenties: de gebruiker is de bind-DN. Geen: een directory van vóór referenties bindt met zijn eigen bind-gebruiker.',
+        'Een ldap-referentie uit Verbindingen > Referenties: de servers, poort, TLS en certificaten van de directory, en de bind-DN en het wachtwoord.',
       nameHelp:
         'Zet zijn naam voor zijn leden in rollen: corp/jane, ldap/corp/Admins. De directory default houdt de korte namen en zijn eigen naam.',
       servers: 'Servers',
@@ -1750,10 +1760,10 @@ export default {
       usernameAttributeDesc: 'LDAP-attribuut dat wordt gebruikt als inlognaam (bijv. sAMAccountName, uid).',
       groupsAttribute: 'Groepen attribuut',
       groupsAttributeDesc:
-        'Gebruikersattribuut dat groepslidmaatschappen bevat (bijv. memberOf). Zet het op groups om het resultaat van de groepszoekopdracht (Groepen zoekbasis en Groep klasse) te gebruiken.',
+        'Het attribuut met de groepen van een gebruiker (memberOf), of groups voor het resultaat van de groepszoekopdracht.',
       groupsSearchBase: 'Groepen zoekbasis',
       groupsSearchBaseDesc:
-        'Waar de groepen van de gebruiker gezocht worden (vereist Groepsklasse en Groepsattribuut groups). Leeg: gelezen uit de gebruikersentry.',
+        'Waar het zoeken naar groepen begint (met Groepsklasse, en Groepenattribuut groups). Leeg: groepen uit de gebruiker.',
       groupClass: 'Groep klasse',
       groupClassDesc: 'LDAP objectClass die wordt gebruikt voor groepen (bijv. groupOfNames, posixGroup).',
       groupMemberAttribute: 'Groepslid attribuut',

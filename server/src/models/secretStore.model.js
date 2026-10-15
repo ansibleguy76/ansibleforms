@@ -139,6 +139,20 @@ class SecretStore extends CrudModel {
         throw new Errors.BadRequestError(`A secret store keeps the type it was made as : '${current.name}' is ${current.type}. Make a new secret store for another type`);
       }
     }
+    // a Vault Enterprise (a namespace) stays one, and a Vault without stays without : a part of its
+    // type, the paths of the credentials that read from it expect it ; the config seed may change it
+    if (!opts.fromSeed && data.namespace !== undefined) {
+      const current = await this.findById(id);
+      const was = !!String(current?.namespace || "").trim();
+      const now = !!String(data.namespace || "").trim();
+      if (current?.type === "vault" && was !== now) {
+        throw new Errors.BadRequestError(
+          was
+            ? `'${current.name}' is a Vault Enterprise : its namespace is required`
+            : `'${current.name}' is not a Vault Enterprise : it takes no namespace. Make a new secret store for a Vault Enterprise`,
+        );
+      }
+    }
     const res = await super.update(this.modelName, this.normalize(data, { creating: false }), id, opts);
     clearSecretCache();
     return res;

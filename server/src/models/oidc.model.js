@@ -2,7 +2,6 @@
 'use strict';
 import logger from "../lib/logger.js";
 import mysql from "./db.model.js";
-import appConfig from "../../config/app.config.js";
 import crypto from "../lib/crypto.js";
 import Credential from "./credential.model.v2.js";
 import { redirectUrl } from "../lib/ssoCallback.js";
@@ -10,8 +9,6 @@ import { redirectUrl } from "../lib/ssoCallback.js";
 
 class OIDC {
   static async isEnabled() {
-    // SSO switched off (ENABLE_SSO, Settings > SSO) : no provider, whatever is configured
-    if (!appConfig.enableSso) return { enable: 0, groupfilter: '', issuer: '' };
     // the issuer : its credential's, else its own (from before credentials held it)
     const res = await mysql.do("SELECT p.enable, p.groupfilter, COALESCE(NULLIF(c.issuer,''), p.issuer) AS issuer FROM AnsibleForms.`oauth2_providers` p LEFT JOIN AnsibleForms.`credentials` c ON c.name = p.credential WHERE p.provider='oidc' AND p.enable;");
     if (res.length > 0) {

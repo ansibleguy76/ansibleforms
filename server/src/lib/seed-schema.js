@@ -63,6 +63,9 @@ const credentialItem = {
     tenant_id: str,
     issuer: str,
     redirect_uri: str,
+    // an ldap credential's TLS : certificates not checked, the CA bundle
+    ignore_certs: bool,
+    ca_bundle: str,
     // a credential can take its user and password from a secret store instead of
     // carrying them here at all : the store's name and the place in it
     secret_store: str,
@@ -116,6 +119,8 @@ const runnerItem = {
     use_credentials: bool,
     username: str,
     password: str,
+    // a credential of the credentials section it signs in with, instead of its own
+    credential: str,
     ignore_certs: bool,
     ca_bundle: str,
     is_default: bool,
@@ -155,6 +160,8 @@ const oauth2Item = {
     client_secret: str,
     credential: str,
     enable: bool,
+    // the login page goes straight to it (one provider at most)
+    auto_login: bool,
     groupfilter: str,
     redirect_uri: str,
     scope: str,

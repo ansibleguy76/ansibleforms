@@ -1226,12 +1226,14 @@ export default {
       active: 'Aktiviert',
       useForSignIn: 'Für die Anmeldung verwenden',
       credential: 'Anmeldedaten-Eintrag',
-      credentialHelp:
-        'Ein Eintrag seines Typs aus Verbindungen > Anmeldedaten (Microsoft Entra ID oder Open ID): Client-ID und Client-Geheimnis.',
+      credentialHelp: 'Ein Eintrag seines Typs: Microsoft Entra ID oder Open ID.',
       ownClient:
         'Es meldet sich mit seiner eigenen Client-ID ({client}) von vor den Anmeldedaten an, bis ein Eintrag gewählt ist.',
       activeHelp:
         'Benutzer melden sich damit an, wenn sie {type} wählen; das Einschalten schaltet die anderen {type}-Anbieter aus.',
+      autoLogin: 'Anmeldeseite überspringen',
+      autoLoginHelp:
+        'An: keine Anmeldeseite, Benutzer gelangen über diesen Anbieter direkt in die App; einschalten schaltet es bei den anderen aus.',
       providerNotFound: "Es gibt keinen SSO-Anbieter mit der ID '{id}'.",
       stepType: 'Typ',
       type_azuread: 'Microsoft Entra ID',
@@ -1328,6 +1330,13 @@ export default {
       flavour: 'Produkt',
       skipVerify: 'Zertifikatsprüfung überspringen',
       stepAuth: 'Anmeldedaten',
+      credential: 'Zugangsdaten',
+      credentialHelp_api: 'Ein api-Eintrag aus Verbindungen > Anmeldedaten: das Passwort ist das Token.',
+      credentialHelp_awx:
+        'Ein api-Eintrag (das Passwort ist das API-Token) oder ein userpass-Eintrag (Benutzer und Passwort).',
+      credentialHelp_jenkins: 'Ein userpass-Eintrag: der Jenkins-Benutzer und sein API-Token.',
+      ownToken: 'Meldet sich mit dem eigenen Token von vor den Zugangsdaten an, bis ein Eintrag gewählt wird.',
+      ownTokenRte: 'Meldet sich mit dem Token an, mit dem sich sein RTE registriert hat, bis ein Eintrag gewählt wird.',
       stepConnection: 'Verbindung',
       stepRunner: 'Runner',
       stepType: 'Typ',
@@ -1564,6 +1573,7 @@ export default {
       clientKeyHelp: 'PEM-Privatschlüssel des Client-Zertifikats. Wird verschlüsselt gespeichert.',
       enterprise: 'Vault Enterprise',
       enterpriseHelp: 'Seine Namespaces, eine Funktion von Vault Enterprise und HCP Vault.',
+      namespaceRequired: 'Der Namespace ist für ein Vault Enterprise erforderlich.',
       kv1Hint: 'Die KV-Engine ohne Versionen',
       kv2Hint: 'Die versionierte KV-Engine, Standard seit Vault 0.10',
       stepAuth: 'Anmeldedaten',
@@ -1655,7 +1665,7 @@ export default {
       type_smtp: 'SMTP',
       type_smtpHint: 'Ein Mailserver, sein Port und TLS und seine Anmeldung (keine für ein Relay)',
       type_ldap: 'LDAP',
-      type_ldapHint: 'Das Bind-Konto eines LDAP-Verzeichnisses: DN und Passwort',
+      type_ldapHint: 'Server, TLS und Bind-Konto eines LDAP-Verzeichnisses: DN und Passwort',
       type_entraid: 'Microsoft Entra ID',
       type_entraidHint: 'Die App eines Microsoft Entra ID-Anbieters: Mandanten-ID, Client-ID und Client-Geheimnis',
       type_oidc: 'Open ID',
@@ -1726,7 +1736,7 @@ export default {
       enableLdapHelp: 'Benutzer melden sich mit ihrem LDAP- oder Active-Directory-Konto an',
       credential: 'Anmeldedaten-Eintrag',
       credentialHelp:
-        'Ein ldap-Eintrag aus Verbindungen > Anmeldedaten: der Benutzer ist der Bind-DN. Keiner: ein Verzeichnis von vor den Anmeldedaten bindet mit eigenem Bind-Benutzer.',
+        'Ein ldap-Eintrag aus Verbindungen > Anmeldedaten: Server, Port, TLS und Zertifikate des Verzeichnisses sowie Bind-DN und Passwort.',
       nameHelp:
         'Stellt seinen Mitgliedern in Rollen den Namen voran: corp/jane, ldap/corp/Admins. Das Verzeichnis default behält die kurzen Namen und seinen eigenen Namen.',
       servers: 'Server',
@@ -1765,10 +1775,10 @@ export default {
       usernameAttributeDesc: 'LDAP-Attribut, das als Anmeldename verwendet wird (z.B. sAMAccountName, uid).',
       groupsAttribute: 'Gruppen-Attribut',
       groupsAttributeDesc:
-        'Benutzerattribut mit Gruppenmitgliedschaften (z.B. memberOf). Auf groups setzen, um das Ergebnis der Gruppensuche (Gruppen-Search-Base und Gruppenklasse) zu verwenden.',
+        'Das Attribut mit den Gruppen eines Benutzers (memberOf), oder groups für das Ergebnis der Gruppensuche.',
       groupsSearchBase: 'Gruppen-Search-Base',
       groupsSearchBaseDesc:
-        'Wo die Gruppen des Benutzers gesucht werden (braucht Gruppenklasse und Gruppenattribut groups). Leer: aus dem Benutzereintrag gelesen.',
+        'Wo die Gruppensuche beginnt (mit Gruppenklasse und Gruppenattribut groups). Leer: Gruppen aus dem Benutzer.',
       groupClass: 'Gruppenklasse',
       groupClassDesc: 'LDAP-objectClass für Gruppen (z.B. groupOfNames, posixGroup).',
       groupMemberAttribute: 'Gruppenmitglied-Attribut',

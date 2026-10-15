@@ -312,6 +312,35 @@ async function loadValues() {
   }
 }
 
+// its credential dropdown, if it has one (createWith credentials) : Add credential top right
+const credentialField = computed(() => props.settings.fields.find((f) => f.createWith === 'credentials') || null);
+
+/**
+ * The credential type Add credential presets for a dropdown (its createDefaults).
+ *
+ * Args:
+ *   field (object): the dropdown's field.
+ *
+ * Returns:
+ *   string: the type, empty for none.
+ */
+function createType(field) {
+  const defaults = typeof field.createDefaults === 'function' ? field.createDefaults(item.value) : field.createDefaults;
+  return defaults?.credential_type || '';
+}
+
+/**
+ * Chooses the credential just made with Add credential : the dropdowns read again, it chosen.
+ *
+ * Args:
+ *   field (object): the dropdown's field.
+ *   name (string): the new credential's name.
+ */
+async function onCredentialCreated(field, name) {
+  await loadValues();
+  item.value[field.key] = name;
+}
+
 // the record read once : until then its fields as grey placeholders (a save reads it again with
 // the fields kept on screen)
 const loaded = ref(false);
@@ -342,6 +371,14 @@ defineExpose({
       </ul>
     </template>
     <template #actions>
+      <!-- Add credential, first as every page's Add, while the tab of its credential dropdown is
+           open : a new credential of its type, chosen once made -->
+      <AppNewCredentialButton
+        v-if="credentialField && (!tabs.length || activeTab === tabOf(credentialField))"
+        :type="createType(credentialField)"
+        :disabled="!!disabledFields[credentialField.key] || isManaged"
+        @created="(name) => onCredentialCreated(credentialField, name)"
+      />
       <!-- the action bar holds buttons only : the 'isAction' checkbox row that
                  used to render here reached nothing, because the only fields carrying
                  that flag live in the runners and oauth2_providers blocks, and both of

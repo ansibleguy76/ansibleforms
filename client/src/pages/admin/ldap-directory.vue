@@ -6,10 +6,10 @@
 /*  the url -                                                     */
 /*    Details  its name (the default directory keeps its own),    */
 /*             and on or off                                      */
-/*    Connection  its servers (the next one when one cannot be    */
-/*             reached) and TLS                                   */
-/*    Credentials  the account it binds with : a credential of    */
-/*             Connections > Credentials, or its own              */
+/*    Credentials  where it connects and as whom : an ldap        */
+/*             credential of Connections > Credentials (its       */
+/*             servers, the next one when one cannot be reached,  */
+/*             TLS, and the bind account)                         */
 /*    Users    where the users are, their attributes, and the     */
 /*             sign-in domains that go straight to it             */
 /*    Groups   how their groups are found                         */
@@ -39,11 +39,10 @@ const settings = computed(() => ({
   recordTitle: 'name',
   parentCrumbs: [{ title: t('sidebar.ldap'), icon: 'address-book', to: '/settings/ldap' }],
 }));
-// the page in tabs : on or off and where it stands, the servers and the binding, the users, the
-// groups
+// the page in tabs : on or off and where it stands, its credential (the servers and the binding),
+// the users, the groups
 const tabs = computed(() => [
   { key: 'general', label: t('settings.common.tabDetails'), icon: 'sliders' },
-  { key: 'connection', label: t('settings.common.tabConnection'), icon: 'globe' },
   { key: 'credentials', label: t('settings.common.tabCredentials'), icon: 'key' },
   { key: 'users', label: t('settings.ldap.tabUsers'), icon: 'user' },
   { key: 'groups', label: t('settings.ldap.tabGroups'), icon: 'users' },

@@ -321,7 +321,7 @@ function envHelp(e) {
 // the console's ANSI colour codes : rarely changed, documented. LOG_SYSLOG_* are imported once as a
 // syslog server (Settings > Connections > Syslog), as VAULT_* as a secret store.
 const OWNED_ELSEWHERE =
-  /^(VAULT|MCP|LOG_COLOR|LOG_SYSLOG)_|^RTE_(?!QUEUE_MINUTES$)|^(ENABLE_(MCP|CHAT|SSO)|SSO_AUTO_LOGIN|BASE_URL|AF_ROLE|ANSIBLE_PATH|PROCESS_MAX_BUFFER|DEFAULT_LANGUAGE|SHOW_DESIGNER|ADMIN_USERNAME|ADMIN_PASSWORD|REINIT_ADMIN|NODE_ENV|ALLOW_ENV_EDIT|YTT_LIB_DATA_\{dynamic\})$/;
+  /^(VAULT|MCP|LOG_COLOR|LOG_SYSLOG)_|^RTE_(?!QUEUE_MINUTES$)|^(ENABLE_(MCP|CHAT)|BASE_URL|AF_ROLE|ANSIBLE_PATH|PROCESS_MAX_BUFFER|DEFAULT_LANGUAGE|SHOW_DESIGNER|ADMIN_USERNAME|ADMIN_PASSWORD|REINIT_ADMIN|NODE_ENV|ALLOW_ENV_EDIT|YTT_LIB_DATA_\{dynamic\})$/;
 
 const envGroups = computed(() => {
   if (!env.value || !Array.isArray(env.value)) return [];

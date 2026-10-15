@@ -191,12 +191,8 @@ export function schedulePill(t, state) {
 }
 
 // ─── SSO providers (Access > SSO) ────────────────────────────────────────────
-// the types a provider can be, in the order the wizard offers them, and each one's icon
+// the types a provider can be, in the order the wizard offers them
 export const SSO_TYPES = ['azuread', 'oidc'];
-export const SSO_ICONS = {
-  azuread: 'fab,microsoft',
-  oidc: 'fab,openid',
-};
 
 // ─── notification channels (Connections > Notifications) ─────────────────────
 // the types a channel can be, in the order the wizard offers them, and each one's icon
@@ -1063,31 +1059,33 @@ export default function getSettings(t) {
         { name: 'delete', title: t('settings.oauth2.deleteProvider'), icon: 'trash', color: 'delete' },
       ],
       fields: [
-        // the provider its type signs in with (one per type) : a yes / no column, not in the dialog ;
-        // a new one is it when its type has none, another is chosen with Use for sign-in
+        // the provider its type's login button signs in with (one per type) : a yes / no column,
+        // not in the dialog ; a new one is it when its type has none, another is chosen with Use for
+        // sign-in
         {
           key: 'enable',
           label: t('settings.oauth2.active'),
           type: 'checkbox',
           noInput: true,
         },
+        { key: 'name', label: t('settings.fields.name'), required: true, icon: 'heading' },
         {
-          // its type : radios, each its icon, label and a few words ; set when it is made, it stays
+          // its type : radios, each its label and a few words ; set when it is made, it stays
           key: 'provider',
           step: 'type',
           label: t('settings.oauth2.provider'),
+          // in the table : Type, as every list's
+          columnLabel: t('settings.oauth2.stepType'),
           type: 'radio',
           required: true,
           options: SSO_TYPES.map((value) => ({
             value,
-            icon: SSO_ICONS[value],
             label: t(`settings.oauth2.type_${value}`),
             hint: t(`settings.oauth2.typeHint_${value}`),
           })),
           initial: (r) => r?.provider || 'azuread',
           render: (v) => esc(t(`settings.oauth2.type_${SSO_TYPES.includes(v) ? v : 'oidc'}`)),
         },
-        { key: 'name', label: t('settings.fields.name'), required: true, icon: 'heading' },
         { key: 'description', label: t('settings.fields.description'), required: false, icon: 'info-circle' },
         {
           // in its credential now (an entraid one) ; kept on the record for the providers that still
@@ -1676,13 +1674,19 @@ export default function getSettings(t) {
           key: 'host',
           step: 'login',
           dependency: 'credential_type',
-          dependencyValues: ['ssh', 'database', 'smtp'],
+          dependencyValues: ['ssh', 'database', 'smtp', 'ldap'],
           label: t('settings.fields.host'),
-          // an smtp one's host is its mail server, which it needs
-          dialogLabel: (r) => (r.credential_type === 'smtp' ? t('settings.mail.mailServer') : null),
-          help: (r) => (r.credential_type === 'smtp' ? t('settings.mail.mailServerHelp') : null),
-          placeholder: (r) => (r.credential_type === 'smtp' ? 'smtp.example.com' : ''),
-          requiredWhen: (r) => r.credential_type === 'smtp',
+          // an smtp one's host is its mail server, an ldap one's its directory's servers (one per
+          // input, tried in order) : both need it
+          dialogLabel: (r) =>
+            ({ smtp: t('settings.mail.mailServer'), ldap: t('settings.ldap.servers') })[r.credential_type] || null,
+          help: (r) =>
+            ({ smtp: t('settings.mail.mailServerHelp'), ldap: t('settings.ldap.serversHelp') })[r.credential_type] ||
+            null,
+          placeholder: (r) => ({ smtp: 'smtp.example.com', ldap: 'dc1.corp.example' })[r.credential_type] || '',
+          listWhen: (r) => r.credential_type === 'ldap',
+          addLabel: t('settings.ldap.addServer'),
+          requiredWhen: (r) => ['smtp', 'ldap'].includes(r.credential_type),
           // no column : most credentials connect to nothing, an ssh, a database or an smtp one
           // shows it on its page
           noTable: true,
@@ -1695,7 +1699,7 @@ export default function getSettings(t) {
           key: 'port',
           step: 'login',
           dependency: 'credential_type',
-          dependencyValues: ['ssh', 'database', 'smtp'],
+          dependencyValues: ['ssh', 'database', 'smtp', 'ldap'],
           label: t('settings.fields.port'),
           dialogLabel: (r) => (r.credential_type === 'smtp' ? t('settings.mail.mailPort') : null),
           help: (r) => (r.credential_type === 'smtp' ? t('settings.mail.mailPortHelp') : null),
@@ -1707,13 +1711,15 @@ export default function getSettings(t) {
           icon: 'arrows-alt-v',
         },
         {
-          // an smtp one : TLS to its mail server
+          // an smtp or an ldap one : TLS to its servers
           key: 'secure',
           step: 'login',
           dependency: 'credential_type',
-          dependencyValues: ['smtp'],
+          dependencyValues: ['smtp', 'ldap'],
           label: t('settings.mail.useTls'),
-          help: t('settings.mail.useTlsHelp'),
+          dialogLabel: (r) => (r.credential_type === 'ldap' ? t('settings.ldap.enableTls') : null),
+          help: (r) =>
+            r.credential_type === 'ldap' ? t('settings.ldap.enableTlsDesc') : t('settings.mail.useTlsHelp'),
           type: 'checkbox',
           noTable: true,
           hidden: true,
@@ -1819,18 +1825,45 @@ export default function getSettings(t) {
           dependencyValues: ['entraid', 'oidc'],
         },
         {
-          // a cyberark credential : the client certificate and key its AppID may be restricted to
+          // an ldap one with TLS : its servers' certificates not checked
+          key: 'ignore_certs',
+          step: 'login',
+          label: t('settings.ldap.ignoreCerts'),
+          help: t('settings.ldap.ignoreCertsDesc'),
+          type: 'checkbox',
+          noTable: true,
+          hidden: true,
+          required: false,
+          filterable: false,
+          showWhen: (r) => r.credential_type === 'ldap' && !!r.secure,
+        },
+        {
+          // a cyberark credential : the client certificate and key its AppID may be restricted to ;
+          // an ldap one with its certificates checked : the client certificate its servers check
           key: 'client_cert',
           step: 'login',
           icon: 'certificate',
           type: 'textarea',
           label: t('settings.secretStores.clientCert'),
-          help: t('settings.secretStores.clientCertHelp'),
+          dialogLabel: (r) => (r.credential_type === 'ldap' ? t('settings.fields.certificate') : null),
+          help: (r) => (r.credential_type === 'cyberark' ? t('settings.secretStores.clientCertHelp') : null),
           placeholder: '-----BEGIN CERTIFICATE-----',
           hidden: true,
           noTable: true,
-          dependency: 'credential_type',
-          dependencyValues: ['cyberark'],
+          showWhen: (r) =>
+            r.credential_type === 'cyberark' || (r.credential_type === 'ldap' && !!r.secure && !r.ignore_certs),
+        },
+        {
+          // an ldap one with its certificates checked : the CA bundle they are checked against
+          key: 'ca_bundle',
+          step: 'login',
+          icon: 'certificate',
+          type: 'textarea',
+          label: t('settings.fields.caBundle'),
+          placeholder: '-----BEGIN CERTIFICATE-----',
+          hidden: true,
+          noTable: true,
+          showWhen: (r) => r.credential_type === 'ldap' && !!r.secure && !r.ignore_certs,
         },
         {
           key: 'client_key',
@@ -1953,78 +1986,6 @@ export default function getSettings(t) {
           disabledWhen: (item, saved) => saved.name === 'default',
         },
         {
-          key: 'server',
-          tab: 'connection',
-          icon: 'server',
-          line: 1,
-          // one per input, stored comma separated ; tried in order
-          type: 'list',
-          addLabel: t('settings.ldap.addServer'),
-          label: t('settings.ldap.servers'),
-          help: t('settings.ldap.serversHelp'),
-          placeholder: 'dc1.corp.example',
-          required: true,
-          dependency: 'enable',
-        },
-        {
-          key: 'port',
-          tab: 'connection',
-          icon: 'arrows-alt-v',
-          type: 'number',
-          line: 2,
-          label: t('settings.fields.port'),
-          required: true,
-          dependency: 'enable',
-        },
-        {
-          key: 'enable_tls',
-          tab: 'connection',
-          label: t('settings.ldap.enableTls'),
-          help: t('settings.ldap.enableTlsDesc'),
-          type: 'checkbox',
-          line: 3,
-          dependency: 'enable',
-          onChange: (val, item) => {
-            if (Number(item.port) === 389 || Number(item.port) === 636) item.port = val ? 636 : 389;
-          },
-        },
-        {
-          key: 'ignore_certs',
-          tab: 'connection',
-          hideWhenDisabled: true,
-          label: t('settings.ldap.ignoreCerts'),
-          help: t('settings.ldap.ignoreCertsDesc'),
-          type: 'checkbox',
-          line: 4,
-          dependency: 'enable_tls',
-        },
-        {
-          key: 'cert',
-          tab: 'connection',
-          hideWhenDisabled: true,
-          icon: 'certificate',
-          type: 'textarea',
-          line: 5,
-          label: t('settings.fields.certificate'),
-          required: true,
-          dependency: 'ignore_certs',
-          negateDependency: true,
-          placeholder: '-----BEGIN CERTIFICATE-----',
-        },
-        {
-          key: 'ca_bundle',
-          tab: 'connection',
-          hideWhenDisabled: true,
-          icon: 'certificate',
-          type: 'textarea',
-          line: 6,
-          label: t('settings.fields.caBundle'),
-          required: true,
-          dependency: 'ignore_certs',
-          negateDependency: true,
-          placeholder: '-----BEGIN CERTIFICATE-----',
-        },
-        {
           key: 'search_base',
           tab: 'users',
           icon: 'search',
@@ -2045,8 +2006,8 @@ export default function getSettings(t) {
           dependency: 'enable',
         },
         {
-          // a credential of Connections > Credentials to bind with, or none : its own bind user and
-          // password below
+          // where it connects and as whom : an ldap credential of Connections > Credentials (its
+          // servers, port, TLS and certificates, and the bind DN and password)
           key: 'credential',
           tab: 'credentials',
           icon: 'key',
@@ -2055,7 +2016,7 @@ export default function getSettings(t) {
           label: t('settings.ldap.credential'),
           help: t('settings.ldap.credentialHelp'),
           // its page's dropdown (AppAdminSingle) and the New dialog's (AppAdminMulti) : the ldap
-          // credentials only, none first (its own bind user and password)
+          // credentials only
           valuesFrom: { url: '/api/v2/credential/', filter: (c) => c.credential_type === 'ldap' },
           parent: 'credentials',
           values: 'credential',
@@ -2067,6 +2028,7 @@ export default function getSettings(t) {
           createWith: 'credentials',
           createLabel: t('settings.repositories.newCredential'),
           createDefaults: { credential_type: 'ldap' },
+          required: true,
           dependency: 'enable',
         },
         {
@@ -2215,6 +2177,9 @@ export default function getSettings(t) {
           label: t('settings.chat.credential'),
           help: t('settings.chat.credentialHelp'),
           valuesFrom: { url: '/api/v2/credential/', filter: (c) => c.credential_type === 'api' },
+          // Add credential under it : a new api credential
+          createWith: 'credentials',
+          createDefaults: { credential_type: 'api' },
           dependency: 'provider',
         },
         {
@@ -2358,9 +2323,6 @@ export default function getSettings(t) {
         // only when checked against one
         ignore_certs: !!skip_verify,
         ca_bundle: !skip_verify && custom_ca ? item.ca_bundle || '' : '',
-        // an RTE, a Semaphore, a Rundeck and a Jenkins take a token (a Jenkins with its user) ; a
-        // user and password are an awx runner's choice only
-        ...(AWX_RUNNER_KINDS.includes(kind) ? {} : { use_credentials: false }),
         type: kind === 'rte' || PROJECT_RUNNER_KINDS.includes(kind) ? kind : 'awx',
         flavour: ['aap', 'ascender'].includes(kind) ? kind : null,
         // the project : a Semaphore's, a Rundeck's or a Jenkins' (its folder) only
@@ -2494,68 +2456,37 @@ export default function getSettings(t) {
           dependencyValues: PROJECT_RUNNER_KINDS,
         },
         {
-          // an AWX, AAP or Ascender : an API token, or a user and password - radio buttons
-          key: 'use_credentials',
+          // as whom : a credential of Connections > Credentials - an api one (its password the
+          // token : an RTE's RTE_TOKEN, a Semaphore's, a Rundeck's, an AWX's API token) or a
+          // userpass one (an AWX's user and password, a Jenkins user and its API token)
+          key: 'credential',
           step: 'credentials',
-          label: t('settings.runners.stepAuth'),
-          type: 'radio',
-          options: [
-            { value: false, label: t('settings.runners.authToken'), hint: t('settings.runners.authTokenHint') },
-            { value: true, label: t('settings.runners.authUser'), hint: t('settings.runners.authUserHint') },
-          ],
-          initial: (r) => !!r?.use_credentials,
-          // an RTE, a Semaphore, a Rundeck, a Jenkins : always a token
-          defaultMap: { rte: false, semaphore: false, rundeck: false, jenkins: false },
-          columnType: 'checkbox',
-          filterType: 'boolean',
-          hidden: true,
-          password_related: true,
-          dependency: 'kind',
-          dependencyValues: AWX_RUNNER_KINDS,
-        },
-        {
-          key: 'token',
-          step: 'credentials',
-          // shown when editing too, as ******** : left empty, the stored one stays
-          onEdit: true,
-          keepHelp: t('settings.common.tokenKeep'),
-          icon: 'lock',
-          line: 1,
-          label: t('settings.fields.token'),
-          type: 'password',
-          required: false,
-          hidden: true,
-          // an RTE's RTE_TOKEN, a Semaphore's, a Rundeck's or a Jenkins' user token, or an AWX's API token
+          icon: 'key',
+          label: t('settings.runners.credential'),
           help: (r) =>
             t(
-              `settings.runners.tokenHelp_${r.kind === 'rte' || !r.kind ? 'rte' : PROJECT_RUNNER_KINDS.includes(r.kind) ? r.kind : 'api'}`,
+              `settings.runners.credentialHelp_${r.kind === 'jenkins' ? 'jenkins' : AWX_RUNNER_KINDS.includes(r.kind) ? 'awx' : 'api'}`,
             ),
-          dependency: 'use_credentials',
-          negateDependency: true,
-        },
-        {
-          key: 'username',
-          step: 'credentials',
-          icon: 'user',
-          line: 2,
-          label: t('settings.fields.username'),
-          required: false,
+          type: 'select',
+          parent: 'credentials',
+          values: 'credential',
+          valueKey: 'name',
+          labelKey: 'name',
+          required: true,
+          // the credentials of the kinds it signs in with
+          choicesWhen: (c, item) =>
+            !c?.name ||
+            (item.kind === 'jenkins'
+              ? ['userpass']
+              : AWX_RUNNER_KINDS.includes(item.kind)
+                ? ['api', 'userpass']
+                : ['api']
+            ).includes(c.credential_type),
+          createWith: 'credentials',
+          createLabel: t('settings.repositories.newCredential'),
+          createDefaults: (item) => ({ credential_type: item.kind === 'jenkins' ? 'userpass' : 'api' }),
           hidden: true,
-          // an AWX's with a user and password ; a Jenkins' always : its API token is that user's
-          showWhen: (r) => !!r.use_credentials || r.kind === 'jenkins',
-          help: (r) => (r.kind === 'jenkins' ? t('settings.runners.usernameHelp_jenkins') : ''),
-        },
-        {
-          key: 'password',
-          step: 'credentials',
-          onEdit: true,
-          icon: 'lock',
-          line: 2,
-          label: t('settings.fields.password'),
-          type: 'password',
-          required: false,
-          hidden: true,
-          dependency: 'use_credentials',
+          noTable: true,
         },
         {
           // the certificate not checked at all : off by default (not stored : ignore_certs is)
@@ -2718,7 +2649,7 @@ export default function getSettings(t) {
           hidden: true,
         },
         {
-          // its type : radios, each its icon, label and a few words ; set when it is made, it stays
+          // its type : radios, each its label and a few words ; set when it is made, it stays
           key: 'type',
           step: 'type',
           label: t('settings.notificationChannels.type'),
@@ -2726,7 +2657,6 @@ export default function getSettings(t) {
           required: true,
           options: CHANNEL_TYPES.map((value) => ({
             value,
-            icon: CHANNEL_ICONS[value],
             label: t(`settings.notificationChannels.type_${value}`),
             hint: t(`settings.notificationChannels.typeHint_${value}`),
           })),

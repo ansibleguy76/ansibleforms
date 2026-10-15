@@ -8,7 +8,8 @@ import { isSingleTenant } from '../auth/auth_entraid.js';
 class OAuth2 extends CrudModel {
     static modelName = 'oauth2';
 
-    // Unset enable on the other providers of the same type when this one is enabled.
+    // Unset enable on the other providers of the same type when this one is enabled : the enabled
+    // one of a type is the one its login button signs in with.
     //
     // Same trap as Awx.preProcess : this WRITES, and it ran before the required-field
     // check and before the managed guard, so a POST with no `name` answered 400 having
@@ -27,6 +28,12 @@ class OAuth2 extends CrudModel {
             // unmanaged ones (see the matching note in runner.model.js)
             await mysql.do('UPDATE AnsibleForms.`oauth2_providers` SET enable = 0 WHERE provider = ?'
               + (opts.fromSeed ? '' : ' AND managed = 0'), [data.provider]);
+        }
+        // Skip the login page : one provider at most sends users straight to it, the others stop
+        if (data.auto_login && data.auto_login !== '0') {
+            data.auto_login = 1;
+            await mysql.do('UPDATE AnsibleForms.`oauth2_providers` SET auto_login = 0 WHERE auto_login = 1'
+              + (opts.fromSeed ? '' : ' AND COALESCE(managed, 0) = 0'));
         }
         return data;
     }
@@ -71,8 +78,8 @@ class OAuth2 extends CrudModel {
         await this.assertCredential(data.credential, data.provider);
         // the tenant : its credential's (checked there), else its own
         if (!data.credential) this.assertEntraTenant(data.provider, data.tenant_id);
-        // no Enable in the dialog any more : a new provider is the one its type signs in with when
-        // its type has none yet ; another is chosen with Use for sign-in (enable : 1)
+        // a new provider is the one its type signs in with when its type has none yet ; another is
+        // chosen with Use for sign-in (enable : 1)
         if (data.enable === undefined && !opts.fromSeed) {
             const active = await mysql.do('SELECT id FROM AnsibleForms.`oauth2_providers` WHERE enable = 1 AND provider = ?', [data.provider]);
             data.enable = active.length ? 0 : 1;

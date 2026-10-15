@@ -211,6 +211,11 @@ Ldap.create = async function (record) {
   delete record.id;
   await checkName(record.name);
   await checkCredential(record.credential);
+  // where it connects : its credential's servers (its own, from before, only for the config seed
+  // and the API of before)
+  if (!String(record.server || "").trim() && !(await Ldap.connectionOf(record.credential))) {
+    throw new Error("An LDAP directory needs an ldap credential with its servers (host)");
+  }
   if (!record.position) {
     const last = await mysql.do("SELECT COALESCE(MAX(position), 0) AS p FROM AnsibleForms.`ldap`");
     record.position = (last[0]?.p || 0) + 1;
@@ -326,6 +331,50 @@ function authOptions(cfg, bindPassword, username, password) {
 }
 
 /**
+ * Where a credential connects an LDAP directory : its servers (host, in failover order), port,
+ * TLS, whether certificates are checked, the client certificate and the CA bundle. None for a
+ * credential without servers (one from before credentials held them).
+ *
+ * Args:
+ *   name (string): the credential's name.
+ *
+ * Returns:
+ *   Promise<object|null>: { server, port, enable_tls, ignore_certs, cert, ca_bundle }, or null.
+ */
+Ldap.connectionOf = async function (name) {
+  if (!name) return null;
+  const rows = await mysql.do(
+    "SELECT host, port, secure, ignore_certs, client_cert, ca_bundle FROM AnsibleForms.`credentials` WHERE name = ?",
+    [name],
+  );
+  const c = rows[0];
+  if (!c || !String(c.host || "").trim()) return null;
+  return {
+    server: String(c.host).trim(),
+    port: c.port || null,
+    enable_tls: c.secure ? 1 : 0,
+    ignore_certs: c.ignore_certs ? 1 : 0,
+    cert: c.client_cert || null,
+    ca_bundle: c.ca_bundle || null,
+  };
+};
+
+/**
+ * A directory as it connects : its credential's servers, port, TLS and certificates (the
+ * credential holds where and as whom), else its own (from before credentials held them).
+ *
+ * Args:
+ *   cfg (object): the directory.
+ *
+ * Returns:
+ *   Promise<object>: a copy, its connection its credential's when it has one.
+ */
+Ldap.withConnection = async function (cfg) {
+  const connection = await Ldap.connectionOf(cfg?.credential).catch(() => null);
+  return connection ? { ...cfg, ...connection } : cfg;
+};
+
+/**
  * The account a directory binds with : the credential it names (Connections > Credentials, read
  * from its secret store when it has one), else its own bind user and password.
  *
@@ -366,7 +415,9 @@ Ldap.bindAccount = async function (cfg, ownPassword) {
  * Raises:
  *   any: the directory's answer (a wrong password, no such user), or the last server's failure.
  */
-Ldap.authenticateOn = async function (cfg, bindPassword, username, password) {
+Ldap.authenticateOn = async function (directory, bindPassword, username, password) {
+  // where it connects : its credential's servers and TLS, else its own
+  const cfg = await Ldap.withConnection(directory);
   const servers = Ldap.urls(cfg);
   if (!servers.length) throw new Error(`The ldap directory '${cfg.name}' has no server`);
   // its credential's account, else its own

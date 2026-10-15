@@ -620,7 +620,10 @@ const worse = (a, b) => ([ERROR, WARNING, OK].find((x) => x === a || x === b) ||
  * Returns:
  *   object: { status, value, detail }, its single server's own when it has one.
  */
-async function probeLdapDirectory(cfg) {
+async function probeLdapDirectory(directory) {
+  // where it connects : its credential's servers and TLS, else its own
+  const { default: Ldap } = await import('./ldap.model.js');
+  const cfg = await Ldap.withConnection(directory);
   const fallbackPort = Number(cfg.port) || (cfg.enable_tls ? 636 : 389);
   const servers = String(cfg.server || '').split(/[\s,]+/).map((x) => x.trim()).filter(Boolean)
     .map((x) => x.replace(/^ldaps?:\/\//i, ''))

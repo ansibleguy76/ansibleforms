@@ -484,7 +484,7 @@ onMounted(async () => {
 
             <!-- Type : what it is, set when it was made -->
             <template v-else-if="activeTab === 'type'">
-              <div v-for="kind in CHANNEL_TYPES" :key="kind" class="form-check af-short-check">
+              <div v-for="kind in CHANNEL_TYPES" :key="kind" class="form-check af-short-check af-type-option">
                 <input
                   :id="'af-chtype-' + kind"
                   :checked="kind === type"
@@ -495,11 +495,7 @@ onMounted(async () => {
                   disabled
                 />
                 <label class="form-check-label" :for="'af-chtype-' + kind">
-                  <span class="af-short-label"
-                    ><FaIcon :icon="CHANNEL_ICONS[kind]" class="me-2" fixedwidth />{{
-                      t(`settings.notificationChannels.type_${kind}`)
-                    }}</span
-                  >
+                  <span class="af-short-label">{{ t(`settings.notificationChannels.type_${kind}`) }}</span>
                   <span class="text-body-secondary small">{{
                     t(`settings.notificationChannels.typeHint_${kind}`)
                   }}</span>
@@ -535,9 +531,6 @@ onMounted(async () => {
                 :help="t('settings.notificationChannels.helpCredential')"
                 :label="t('settings.notificationChannels.credential')"
               />
-              <BsButton v-if="!managed" icon="plus" @click="newCredential('credential', 'smtp')">{{
-                t('settings.repositories.newCredential')
-              }}</BsButton>
             </template>
 
             <!-- slack, teams : Webhook, its address (a secret : shown masked, kept unless retyped) -->
@@ -570,9 +563,6 @@ onMounted(async () => {
                 :help="t('settings.notificationChannels.tokenCredentialHelp_telegram')"
                 :label="t('settings.notificationChannels.tokenCredential_telegram')"
               />
-              <BsButton v-if="!managed" icon="plus" @click="newCredential('token_credential', 'api')">{{
-                t('settings.repositories.newCredential')
-              }}</BsButton>
             </template>
             <!-- webhook : Credentials, the api credential of its bearer token (none : no token) -->
             <template v-else-if="type === 'webhook' && activeTab === 'credentials'">
@@ -588,9 +578,6 @@ onMounted(async () => {
                 :help="t('settings.notificationChannels.tokenCredentialHelp_webhook')"
                 :label="t('settings.notificationChannels.tokenCredential_webhook')"
               />
-              <BsButton v-if="!managed" icon="plus" @click="newCredential('token_credential', 'api')">{{
-                t('settings.repositories.newCredential')
-              }}</BsButton>
             </template>
             <!-- telegram : Bot, the chat and the Bot API -->
             <template v-else-if="type === 'telegram' && activeTab === 'connection'">
@@ -679,6 +666,15 @@ onMounted(async () => {
         </div>
       </template>
       <template v-if="channel" #actions>
+        <!-- Credentials : a new credential of the type its field takes (mail : smtp, a token : api),
+             chosen once made -->
+        <BsButton
+          v-if="activeTab === 'credentials'"
+          icon="plus"
+          :disabled="managed"
+          @click="type === 'mail' ? newCredential('credential', 'smtp') : newCredential('token_credential', 'api')"
+          >{{ t('settings.repositories.newCredential') }}</BsButton
+        >
         <!-- a notification through it, as saved : unsaved changes are saved first -->
         <BsButton
           icon="paper-plane"

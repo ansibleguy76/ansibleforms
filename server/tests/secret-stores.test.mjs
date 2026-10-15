@@ -324,6 +324,15 @@ describe("saving a store", () => {
     vi.restoreAllMocks();
   });
 
+  test("a Vault Enterprise stays one, a Vault without a namespace stays without", async () => {
+    const { vi } = await import("vitest");
+    vi.spyOn(SecretStore, "findById").mockResolvedValue(vaultRow({ namespace: "ops" }));
+    await assert.rejects(SecretStore.update({ namespace: "" }, 1), /namespace is required/);
+    vi.spyOn(SecretStore, "findById").mockResolvedValue(vaultRow());
+    await assert.rejects(SecretStore.update({ namespace: "ops" }, 1), /not a Vault Enterprise/);
+    vi.restoreAllMocks();
+  });
+
   test("extra must be a JSON object", async () => {
     await assert.rejects(SecretStore.create({ name: "x", type: "vault", url: "u", extra: "[1]" }), /JSON object/);
     await assert.rejects(SecretStore.create({ name: "x", type: "vault", url: "u", extra: "{nope" }), /not valid JSON/);

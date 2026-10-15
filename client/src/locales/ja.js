@@ -1211,11 +1211,13 @@ export default {
       active: '有効',
       useForSignIn: 'サインインに使用',
       credential: '資格情報',
-      credentialHelp:
-        '［接続 > 資格情報］のその種類の資格情報（Microsoft Entra ID または Open ID）：クライアント ID とシークレット。',
+      credentialHelp: 'その種類の資格情報：Microsoft Entra ID または Open ID。',
       ownClient: '資格情報を選ぶまで、資格情報より前の自身のクライアント ID（{client}）でサインインします。',
       activeHelp:
         '{type} を選んだユーザーはこれでサインインします。オンにすると他の {type} プロバイダーはオフになります。',
+      autoLogin: 'ログインページをスキップ',
+      autoLoginHelp:
+        'オン：ログインページを表示せず、このプロバイダーで直接アプリに入ります。オンにすると他ではオフになります。',
       providerNotFound: "ID '{id}' の SSO プロバイダーはありません。",
       stepType: '種類',
       type_azuread: 'Microsoft Entra ID',
@@ -1450,6 +1452,7 @@ export default {
       clientKeyHelp: 'クライアント証明書の PEM 秘密鍵です。暗号化して保存されます。',
       enterprise: 'Vault Enterprise',
       enterpriseHelp: 'その名前空間 (Vault Enterprise と HCP Vault の機能)。',
+      namespaceRequired: 'Vault Enterprise にはネームスペースが必須です。',
       kv1Hint: 'バージョンなしの KV エンジン',
       kv2Hint: 'バージョン管理された KV エンジン (Vault 0.10 以降の既定)',
       stepAuth: '認証情報',
@@ -1537,7 +1540,7 @@ export default {
       type_smtp: 'SMTP',
       type_smtpHint: 'メールサーバー、そのポートと TLS、ログイン（リレーの場合はなし）',
       type_ldap: 'LDAP',
-      type_ldapHint: 'LDAP ディレクトリのバインドアカウント：DN とパスワード',
+      type_ldapHint: 'LDAP ディレクトリのサーバー、TLS、バインドアカウント：DN とパスワード',
       type_entraid: 'Microsoft Entra ID',
       type_entraidHint: 'Microsoft Entra ID プロバイダーのアプリ：テナント ID、クライアント ID、シークレット',
       type_oidc: 'Open ID',
@@ -1602,7 +1605,7 @@ export default {
       enableLdapHelp: 'ユーザーは LDAP または Active Directory のアカウントでサインインします',
       credential: '資格情報',
       credentialHelp:
-        '［接続 > 資格情報］の ldap 資格情報：ユーザーがバインド DN。なし：資格情報より前のディレクトリは自身のバインドユーザーを使います。',
+        '［接続 > 資格情報］の ldap 資格情報：ディレクトリのサーバー、ポート、TLS と証明書、バインド DN とパスワード。',
       nameHelp:
         'ロールでメンバーの前に付けます：corp/jane、ldap/corp/Admins。default ディレクトリは短い名前と自身の名前を保持します。',
       servers: 'サーバー',
@@ -1641,11 +1644,10 @@ export default {
       usernameAttribute: 'ユーザー名属性',
       usernameAttributeDesc: 'ログインユーザー名として使用する LDAP 属性です (例: sAMAccountName、uid)。',
       groupsAttribute: 'グループ属性',
-      groupsAttributeDesc:
-        '所属グループを列挙するユーザー属性です (例: memberOf)。グループ検索 (グループ検索ベースとグループクラス) の結果を使う場合は groups を指定してください。',
+      groupsAttributeDesc: 'ユーザーのグループを列挙する属性（memberOf）。グループ検索の結果を使う場合は groups。',
       groupsSearchBase: 'グループ検索ベース',
       groupsSearchBaseDesc:
-        'ユーザーのグループを検索する場所（グループクラスと、グループ属性を groups にする必要があります）。空：ユーザーエントリから読み取ります。',
+        'グループ検索の開始位置（グループクラスと、グループ属性 groups が必要）。空の場合：ユーザーから読み取ります。',
       groupClass: 'グループクラス',
       groupClassDesc: 'グループに使用する LDAP objectClass です (例: groupOfNames、posixGroup)。',
       groupMemberAttribute: 'グループメンバー属性',
@@ -1695,6 +1697,12 @@ export default {
       flavour: '製品',
       skipVerify: '証明書の検証をスキップ',
       stepAuth: '認証情報',
+      credential: '資格情報',
+      credentialHelp_api: '［接続 > 資格情報］の api 資格情報：パスワードがトークンです。',
+      credentialHelp_awx: 'api 資格情報（パスワードが API トークン）または userpass 資格情報（ユーザーとパスワード）。',
+      credentialHelp_jenkins: 'userpass 資格情報：Jenkins ユーザーとその API トークン。',
+      ownToken: '資格情報を選ぶまで、資格情報以前の独自トークンでサインインします。',
+      ownTokenRte: '資格情報を選ぶまで、RTE が登録したトークンでサインインします。',
       stepConnection: '接続',
       stepRunner: 'ランナー',
       stepType: '種類',

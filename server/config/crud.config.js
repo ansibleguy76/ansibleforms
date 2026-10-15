@@ -16,6 +16,8 @@ const crudConfigs = {
       // a credential of Connections > Credentials : its user the client id, its password the secret
       { name: 'credential' },
       { name: 'enable', isBoolean: true },
+      // the login page goes straight to it (Skip the login page) : one provider at most
+      { name: 'auto_login', isBoolean: true },
       { name: 'groupfilter' },
       { name: 'redirect_uri' },
       { name: 'scope' },
@@ -49,6 +51,10 @@ const crudConfigs = {
       // an oidc credential's issuer ; an entraid or oidc one's redirect URL
       { name: 'issuer' },
       { name: 'redirect_uri' },
+      // an ldap credential's TLS : certificates not checked, the CA bundle (its client certificate
+      // is client_cert)
+      { name: 'ignore_certs', isBoolean: true },
+      { name: 'ca_bundle' },
       { name: 'description' },
       { name: 'db_type' },
       { name: 'vault_path' },
@@ -73,6 +79,9 @@ const crudConfigs = {
       { name: 'username' },
       { name: 'password', isEncrypted: true },
       { name: 'use_credentials', isBoolean: true },
+      // a credential of Connections > Credentials it signs in with (Runner.withCredential) ; its own
+      // token, user and password above only while it has none
+      { name: 'credential' },
       { name: 'ignore_certs', isBoolean: true },
       { name: 'ca_bundle' },
       { name: 'is_default', isBoolean: true },

@@ -22,7 +22,7 @@ var userType = store.profile?.type || 'local';
 // the server ends this session : its access token and refresh token stop working at once, not
 // when they expire (server/src/lib/tokenRevocation.js). Fire and forget : the logout goes on
 // whatever the answer.
-// just signed out : the login page stays in this tab, rather than SSO_AUTO_LOGIN sending them
+// just signed out : the login page stays in this tab, rather than Skip the login page sending them
 // back to the provider, whose session would sign them in again (pages/login.vue)
 try {
   sessionStorage.setItem('af_signed_out', '1');

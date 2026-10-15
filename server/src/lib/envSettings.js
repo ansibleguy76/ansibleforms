@@ -87,7 +87,6 @@ const LIVE = {
   AWX_API_PREFIX: { key: 'awxApiPrefix', parse: v => v },
   SHOW_DESIGNER: { key: 'showDesigner', parse: v => v == 1 },
   // the login page reads it per request, through /api/v2/auth/settings
-  SSO_AUTO_LOGIN: { key: 'ssoAutoLogin', parse: v => v == 1 },
   // app.js mounts the MCP server always, behind a gate reading this per request
   ENABLE_MCP: { key: 'enableMcp', parse: v => v == 1 },
   // the chat route's gate, the chat button and the chat service read it per request
@@ -220,9 +219,6 @@ const LIVE_CUSTOM = {
   // the Entra ID strategy discovers its issuer from it when built : rebuilt
   ENTRA_AUTHORITY_URI: () => { authConfig.entraAuthorityUrl = entraEnv('ENTRA_AUTHORITY_URI'); rebuildLoginSoon(); },
   AZURE_AUTHORITY_URI: () => { authConfig.entraAuthorityUrl = entraEnv('ENTRA_AUTHORITY_URI'); rebuildLoginSoon(); },
-  // the login page reads it per request (EntraId.isEnabled, OIDC.isEnabled), the strategies
-  // its buttons lead to when built : rebuilt, or SSO switched on offers a login that fails
-  ENABLE_SSO: (v) => { appConfig.enableSso = v == 1; rebuildLoginSoon(); },
   // winston keeps the level as a mutable property on the logger and each transport.
   // logConfig holds its own captured copy, which the Status page reports - update both, or
   // the level changes while the page keeps claiming the old one.

@@ -97,7 +97,8 @@ class CredentialModel extends CrudModel {
 
   /**
    * The fields a type cannot do without : an Entra ID credential's tenant (the sign-in needs it),
-   * an Open ID one's issuer, an smtp one's host (the mail server). A create of one without it is
+   * an Open ID one's issuer, an smtp one's host (the mail server), an ldap one's host (its
+   * directory's servers). A create of one without it is
    * refused, and so is an update that empties it ; a type without a tenant or an issuer keeps
    * none.
    *
@@ -133,6 +134,9 @@ class CredentialModel extends CrudModel {
     }
     if (data.credential_type === 'smtp' && empty('host')) {
       throw new Errors.BadRequestError('An smtp credential needs its mail server (host)');
+    }
+    if (data.credential_type === 'ldap' && empty('host')) {
+      throw new Errors.BadRequestError('An ldap credential needs its directory servers (host)');
     }
     if (data.tenant_id !== undefined && data.tenant_id !== null) data.tenant_id = String(data.tenant_id).trim();
     return data;

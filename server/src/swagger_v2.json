@@ -3004,7 +3004,7 @@
           },
           "server": {
             "type": "string",
-            "description": "one or more servers, comma separated, each host, host:port or ldap(s)://host:port ; the next one is tried when one cannot be reached"
+            "description": "one or more servers, comma separated, each host, host:port or ldap(s)://host:port ; the next one is tried when one cannot be reached. Read : its ldap credential's servers (host). Written : deprecated since 7.3, used only while the credential has none ; port, enable_tls, ignore_certs, cert and ca_bundle the same"
           },
           "port": {
             "type": "integer"
@@ -3099,10 +3099,12 @@
           "name": { "type": "string", "description": "Credential name.", "example": "db-main" },
           "user": { "type": "string", "description": "Database user (leave empty when using a secret store).", "example": "dbuser" },
           "password": { "type": "string", "description": "Database password (leave empty when using a secret store).", "example": "secret" },
-          "host": { "type": "string", "description": "Where it connects : an ssh or a database one's host, an smtp one's mail server (required for smtp).", "example": "localhost" },
+          "host": { "type": "string", "description": "Where it connects : an ssh or a database one's host, an smtp one's mail server, an ldap one's directory servers in failover order (required for smtp and ldap).", "example": "localhost" },
           "port": { "type": "integer", "description": "Its host's port (ssh, database, smtp).", "example": 3306 },
           "db_name": { "type": "string", "description": "Database name.", "example": "mydb" },
-          "secure": { "type": "boolean", "description": "Use a secure connection (an smtp one : TLS).", "example": false },
+          "secure": { "type": "boolean", "description": "Use a secure connection (an smtp or an ldap one : TLS).", "example": false },
+          "ignore_certs": { "type": "boolean", "description": "An ldap credential : the servers' certificates not checked" },
+          "ca_bundle": { "type": "string", "description": "An ldap credential : the CA bundle its servers' certificates are checked against (its client certificate is client_cert)" },
           "is_database": { "type": "boolean", "description": "Is this a database credential?", "example": true },
           "used_by_count": { "type": "integer", "readOnly": true, "description": "In the list : how many secret stores, notification channels, repositories, LDAP directories, SSO providers and chat settings use it" },
           "credential_type": { "type": "string", "enum": ["userpass", "ssh", "git", "api", "database", "cyberark", "smtp", "ldap", "entraid", "oidc"], "description": "What the credential is for ; is_database follows it", "example": "git" },

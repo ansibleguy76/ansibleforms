@@ -1226,12 +1226,14 @@ export default {
       active: 'Ativado',
       useForSignIn: 'Usar para iniciar sessão',
       credential: 'Credencial',
-      credentialHelp:
-        'Uma credencial do seu tipo em Ligações > Credenciais (Microsoft Entra ID ou Open ID): o ID de cliente e o segredo.',
+      credentialHelp: 'Uma credencial do seu tipo: Microsoft Entra ID ou Open ID.',
       ownClient:
         'Inicia sessão com o seu próprio ID de cliente ({client}), anterior às credenciais, até se escolher uma credencial.',
       activeHelp:
         'Os utilizadores iniciam sessão com ele quando escolhem {type}; ativá-lo desativa os outros fornecedores {type}.',
+      autoLogin: 'Saltar a página de início de sessão',
+      autoLoginHelp:
+        'Ligado: sem página de início de sessão, os utilizadores entram diretamente na aplicação por este fornecedor; ligá-lo desliga-o nos outros.',
       providerNotFound: "Não existe nenhum fornecedor SSO com o id '{id}'.",
       stepType: 'Tipo',
       type_azuread: 'Microsoft Entra ID',
@@ -1470,6 +1472,7 @@ export default {
       clientKeyHelp: 'Chave privada PEM do certificado de cliente. Guardada encriptada.',
       enterprise: 'Vault Enterprise',
       enterpriseHelp: 'Os seus namespaces, uma funcionalidade do Vault Enterprise e do HCP Vault.',
+      namespaceRequired: 'O namespace é obrigatório para um Vault Enterprise.',
       kv1Hint: 'O motor KV sem versões',
       kv2Hint: 'O motor KV com versões, o predefinido desde o Vault 0.10',
       stepAuth: 'Credenciais',
@@ -1559,7 +1562,7 @@ export default {
       type_smtp: 'SMTP',
       type_smtpHint: 'Um servidor de correio, a sua porta e TLS, e o seu início de sessão (nenhum para um relay)',
       type_ldap: 'LDAP',
-      type_ldapHint: 'A conta de bind de um diretório LDAP: o seu DN e palavra-passe',
+      type_ldapHint: 'Os servidores, o TLS e a conta de bind de um diretório LDAP: o seu DN e palavra-passe',
       type_entraid: 'Microsoft Entra ID',
       type_entraidHint: 'A aplicação de um fornecedor Microsoft Entra ID: o ID de tenant, ID de cliente e segredo',
       type_oidc: 'Open ID',
@@ -1626,7 +1629,7 @@ export default {
       enableLdapHelp: 'Os utilizadores iniciam sessão com a sua conta LDAP ou Active Directory',
       credential: 'Credencial',
       credentialHelp:
-        'Uma credencial ldap de Ligações > Credenciais: o utilizador é o DN de bind. Nenhuma: um diretório anterior às credenciais usa o seu próprio utilizador de bind.',
+        'Uma credencial ldap de Ligações > Credenciais: os servidores do diretório, a porta, o TLS e os certificados, e o DN e a palavra-passe de bind.',
       nameHelp:
         'Prefixa os seus membros nos perfis: corp/jane, ldap/corp/Admins. O diretório default mantém os nomes curtos e o seu próprio nome.',
       servers: 'Servidores',
@@ -1668,10 +1671,10 @@ export default {
         'Atributo LDAP usado como nome de utilizador de início de sessão (ex. sAMAccountName, uid).',
       groupsAttribute: 'Atributo de grupos',
       groupsAttributeDesc:
-        'Atributo do utilizador que lista as pertenças a grupos (ex. memberOf). Defina-o como groups para usar o resultado da pesquisa de grupos (Base de Pesquisa de Grupos e Classe de Grupo).',
+        'O atributo com os grupos de um utilizador (memberOf), ou groups para o resultado da pesquisa de grupos.',
       groupsSearchBase: 'Base de pesquisa de grupos',
       groupsSearchBaseDesc:
-        'Onde procurar os grupos do utilizador (requer Classe de grupo e Atributo de grupos em groups). Vazio: lidos da entrada do utilizador.',
+        'Onde começa a pesquisa de grupos (com Classe de grupo, e Atributo de grupos groups). Vazio: grupos lidos do utilizador.',
       groupClass: 'Classe de grupo',
       groupClassDesc: 'objectClass LDAP usada para os grupos (ex. groupOfNames, posixGroup).',
       groupMemberAttribute: 'Atributo de membro do grupo',
@@ -1723,6 +1726,13 @@ export default {
       flavour: 'Produto',
       skipVerify: 'Ignorar a verificação do certificado',
       stepAuth: 'Credenciais',
+      credential: 'Credencial',
+      credentialHelp_api: 'Uma credencial api de Ligações > Credenciais: a palavra-passe é o token.',
+      credentialHelp_awx:
+        'Uma credencial api (a palavra-passe é o token da API) ou userpass (um utilizador e uma palavra-passe).',
+      credentialHelp_jenkins: 'Uma credencial userpass: o utilizador Jenkins e o seu token da API.',
+      ownToken: 'Inicia sessão com o seu próprio token, de antes das credenciais, até ser escolhida uma.',
+      ownTokenRte: 'Inicia sessão com o token com que o seu RTE se registou, até ser escolhida uma credencial.',
       stepConnection: 'Ligação',
       stepRunner: 'Runner',
       stepType: 'Tipo',

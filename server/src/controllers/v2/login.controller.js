@@ -2,6 +2,7 @@
 import User from "../../models/user.model.js";
 import Token from "../../models/token.model.js";
 import EntraId from "../../models/entraId.model.js";
+import mysql from "../../models/db.model.js";
 import OIDC from "../../models/oidc.model.js";
 import passport from 'passport';
 import jwt from 'jsonwebtoken';
@@ -200,6 +201,13 @@ const settings = async function(req, res) {
       issuer: oidcRaw.issuer,
       groupfilter: oidcRaw.groupfilter,
     };
+    const skipTo = await mysql
+      .do("SELECT provider FROM AnsibleForms.`oauth2_providers` WHERE enable = 1 AND auto_login = 1 ORDER BY id LIMIT 1")
+      .then((rows) => rows[0]?.provider || null)
+      .catch(() => null);
+    // the enabled provider set to Skip the login page, the login page goes straight to it
+    const usable = { azuread: entra.enable, oidc: oidc.enabled };
+    const autoLogin = skipTo && usable[skipTo] ? skipTo : null;
     const settings = {
       entraIdEnabled: entra.enable,
       entraGroupfilter: entra.groupfilter,
@@ -211,8 +219,9 @@ const settings = async function(req, res) {
       oidcEnabled: oidc.enabled,
       oidcIssuer: oidc.issuer,
       oidcGroupfilter: oidc.groupfilter,
-      // the login page goes straight to the provider when it is the only one active (SSO_AUTO_LOGIN)
-      ssoAutoLogin: !!appConfig.ssoAutoLogin && (entra.enable !== oidc.enabled),
+      // the login page goes straight to a provider : the enabled one set to Skip the login page
+      ssoAutoLogin: !!autoLogin,
+      ssoAutoLoginProvider: autoLogin,
       // the profile page offers api token lifetimes up to this cap (API_TOKEN_MAX_DAYS)
       apiTokenMaxDays: authConfig.apiTokenMaxDays
     };

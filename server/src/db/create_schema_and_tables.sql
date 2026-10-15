@@ -73,6 +73,10 @@ CREATE TABLE `credentials` (
   -- an Entra ID or Open ID credential's redirect URL, as registered with its client (empty : the
   -- app's address and the type's callback path)
   `redirect_uri` varchar(1000) DEFAULT NULL,
+  -- an ldap credential's TLS : certificates not checked, the CA bundle (its servers are host, its
+  -- client certificate client_cert)
+  `ignore_certs` tinyint(4) DEFAULT NULL,
+  `ca_bundle` text DEFAULT NULL,
   `vault_path` varchar(500) DEFAULT NULL,
   `managed` tinyint(4) DEFAULT 0,
   -- the secret store a credential reads its user and password from, and where in it
@@ -185,6 +189,9 @@ CREATE TABLE `runners` (
   `username` varchar(250) DEFAULT NULL,
   `password` text DEFAULT NULL,
   `use_credentials` tinyint(4) DEFAULT 0,
+  -- a credential of Connections > Credentials it signs in with ; its own token, user and password
+  -- only while it has none
+  `credential` varchar(250) DEFAULT NULL,
   `ignore_certs` tinyint(4) DEFAULT 0,
   `ca_bundle` text DEFAULT NULL,
   `is_default` tinyint(4) DEFAULT 0,
@@ -352,6 +359,8 @@ CREATE TABLE `oauth2_providers` (
   -- a credential of Connections > Credentials : its user the client id, its password the secret
   `credential` VARCHAR(250) DEFAULT NULL,
   `enable` TINYINT(4) DEFAULT NULL,
+  -- the login page goes straight to it (one provider at most)
+  `auto_login` tinyint(4) DEFAULT 0,
   `groupfilter` VARCHAR(250) DEFAULT NULL,
   `redirect_uri` TEXT DEFAULT NULL,
   `scope` TEXT DEFAULT NULL,

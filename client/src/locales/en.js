@@ -1208,11 +1208,13 @@ export default {
       active: 'Enabled',
       useForSignIn: 'Use for sign-in',
       credential: 'Credential',
-      credentialHelp:
-        'A credential of its type in Connections > Credentials (Microsoft Entra ID or Open ID) : its client ID and client secret.',
+      credentialHelp: 'A credential of its type: Microsoft Entra ID or Open ID.',
       ownClient:
         'It signs in with its own client ID ({client}), from before credentials, until a credential is chosen.',
       activeHelp: 'Users sign in with it when they choose {type}; turning it on turns off the other {type} providers.',
+      autoLogin: 'Skip the login page',
+      autoLoginHelp:
+        'On: no login page, users go straight to the app through this provider; turning it on turns it off for the others.',
       providerNotFound: "There is no SSO provider with the id '{id}'.",
       stepType: 'Type',
       type_azuread: 'Microsoft Entra ID',
@@ -1306,6 +1308,12 @@ export default {
       flavour: 'Product',
       skipVerify: 'Skip certificate verification',
       stepAuth: 'Credentials',
+      credential: 'Credential',
+      credentialHelp_api: 'An api credential of Connections > Credentials: its password is the token.',
+      credentialHelp_awx: 'An api credential (its password the API token) or a userpass one (a user and a password).',
+      credentialHelp_jenkins: 'A userpass credential: the Jenkins user and its API token.',
+      ownToken: 'It signs in with its own token, from before credentials, until a credential is chosen.',
+      ownTokenRte: 'It signs in with the token its RTE registered with, until a credential is chosen.',
       stepConnection: 'Connection',
       stepRunner: 'Runner',
       stepType: 'Type',
@@ -1539,6 +1547,7 @@ export default {
       clientKeyHelp: 'PEM private key of the client certificate. Stored encrypted.',
       enterprise: 'Vault Enterprise',
       enterpriseHelp: 'Its namespaces, a feature of Vault Enterprise and HCP Vault.',
+      namespaceRequired: 'The namespace is required for a Vault Enterprise.',
       kv1Hint: 'The KV engine without versions',
       kv2Hint: 'The versioned KV engine, the default since Vault 0.10',
       stepAuth: 'Credentials',
@@ -1627,7 +1636,7 @@ export default {
       type_smtp: 'SMTP',
       type_smtpHint: 'A mail server, its port and TLS, and its login (none for a relay)',
       type_ldap: 'LDAP',
-      type_ldapHint: 'The bind account of an LDAP directory : its DN and password',
+      type_ldapHint: "An LDAP directory's servers, TLS and bind account : its bind DN and password",
       type_entraid: 'Microsoft Entra ID',
       type_entraidHint: 'The app of a Microsoft Entra ID provider : its tenant ID, client ID and client secret',
       type_oidc: 'Open ID',
@@ -1693,7 +1702,7 @@ export default {
       enableLdapHelp: 'Users sign in with their LDAP or Active Directory account',
       credential: 'Credential',
       credentialHelp:
-        'An ldap credential of Connections > Credentials : its user is the bind DN. None : a directory from before credentials binds with its own bind user.',
+        "An ldap credential of Connections > Credentials: the directory's servers, port, TLS and certificates, and the bind DN and password.",
       nameHelp:
         'Prefixes its members in roles : corp/jane, ldap/corp/Admins. The default directory keeps the short names and its own name.',
       servers: 'Servers',
@@ -1732,11 +1741,10 @@ export default {
       usernameAttribute: 'Username attribute',
       usernameAttributeDesc: 'LDAP attribute used as the login username (e.g. sAMAccountName, uid).',
       groupsAttribute: 'Groups attribute',
-      groupsAttributeDesc:
-        'User attribute that lists group memberships (e.g. memberOf). Set it to groups to use the result of the group search (Groups Search Base and Group Class).',
+      groupsAttributeDesc: "The attribute listing a user's groups (memberOf), or groups for the group search's result.",
       groupsSearchBase: 'Groups search base',
       groupsSearchBaseDesc:
-        "Where to search for the user's groups (needs Group class, and Groups attribute set to groups). Empty: read them from the user entry.",
+        'Where the group search starts (with Group class, and Groups attribute groups). Empty: groups read from the user.',
       groupClass: 'Group class',
       groupClassDesc: 'LDAP objectClass used for groups (e.g. groupOfNames, posixGroup).',
       groupMemberAttribute: 'Group member attribute',
