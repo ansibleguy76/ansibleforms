@@ -6,13 +6,14 @@
 /*  tab kept in the url -                                         */
 /*    Details     its name and description                        */
 /*    Type        what it is for (SSH, Git, LDAP, SSO ...)        */
-/*    Login       its user and password (a CyberArk's AppID,      */
-/*                client certificate and key) ; the password      */
-/*                masked : left empty kept, typed replaced        */
+/*    Login       where it connects (SSH, a database : the host   */
+/*                and port, a database's type and name), its user */
+/*                and password (a CyberArk's AppID, client        */
+/*                certificate and key ; an Entra ID one's tenant) */
+/*                ; the password masked : left empty kept, typed  */
+/*                replaced                                        */
 /*    Store       where the user and password are kept : the app's*/
 /*                database, or a secret store (not a CyberArk's)  */
-/*    Connection  a host and port (SSH, a database), a database's */
-/*                type and name                                   */
 /*  Test connection (a database), Delete and Save top right. A    */
 /*  credential of the config seed is read only.                   */
 /*                                                                */
@@ -195,27 +196,28 @@ const usedByColumns = computed(() => [
 ]);
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
-// the dialog's steps : Store not for a CyberArk's, Connection for SSH and a database only ;
-// then what uses it
+// the dialog's steps : Store not for a CyberArk's ; then what uses it. Where an SSH or a database
+// credential connects is in its Login tab, with its user and password
 const tabs = computed(() =>
   [
     { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
     { key: 'type', label: t('settings.credentials.stepType'), icon: 'shapes' },
     { key: 'login', label: t('settings.credentials.stepLogin'), icon: 'user' },
     !isCyberark.value && { key: 'store', label: t('settings.credentials.stepStore'), icon: 'vault' },
-    ['ssh', 'database'].includes(type.value) && {
-      key: 'connection',
-      label: t('settings.credentials.stepConnection'),
-      icon: 'server',
-    },
     { key: 'used-by', label: t('settings.linked.usedBy'), icon: 'link', count: usedBy.value.length },
   ].filter(Boolean),
 );
 const { activeTab, tabLink } = useRouteTab('details', (key) =>
   ['details', 'type', 'login', 'store', 'connection', 'used-by'].includes(key),
 );
-// a tab the type does not have (Connection of an API credential) : its first
-const shownTab = computed(() => (tabs.value.some((x) => x.key === activeTab.value) ? activeTab.value : 'details'));
+// a tab the type does not have (Store of a CyberArk credential) : its first ; the Connection tab of
+// before (a link kept) is the Login tab now
+const shownTab = computed(() => {
+  const key = activeTab.value === 'connection' ? 'login' : activeTab.value;
+  return tabs.value.some((x) => x.key === key) ? key : 'details';
+});
+// an SSH or a database credential connects somewhere : its host and port in its Login tab
+const hasConnection = computed(() => ['ssh', 'database'].includes(type.value));
 
 // the title : Credentials › <name>, each step a link
 const pageCrumbs = computed(() => [
@@ -433,6 +435,46 @@ onMounted(async () => {
             <!-- Login : its user (read from a store : nothing here) ; a CyberArk's AppID,
                client certificate and key -->
             <template v-else-if="shownTab === 'login'">
+              <!-- where it connects (SSH, a database) : a database's type, the host and port, a
+                   database's name ; then the user and password -->
+              <template v-if="hasConnection">
+                <BsInput
+                  v-if="isDatabase"
+                  class="af-credential-field"
+                  v-model="edit.db_type"
+                  type="select"
+                  icon="database"
+                  :isFloating="false"
+                  :values="DB_TYPES"
+                  valueKey="value"
+                  labelKey="label"
+                  :required="true"
+                  :label="t('settings.credentials.databaseType')"
+                />
+                <BsInput
+                  class="af-credential-field"
+                  v-model="edit.host"
+                  icon="server"
+                  :isFloating="false"
+                  :label="t('settings.fields.host')"
+                />
+                <BsInput
+                  class="af-credential-field"
+                  v-model="edit.port"
+                  type="number"
+                  icon="arrows-alt-v"
+                  :isFloating="false"
+                  :label="t('settings.fields.port')"
+                />
+                <BsInput
+                  v-if="isDatabase"
+                  class="af-credential-field"
+                  v-model="edit.db_name"
+                  icon="database"
+                  :isFloating="false"
+                  :label="t('settings.credentials.database')"
+                />
+              </template>
               <p v-if="fromStore" class="form-text mb-0">{{ t('settings.credentials.loginFromStore') }}</p>
               <template v-else>
                 <!-- an Entra ID one's tenant : the tenant id the app is in, first as in
@@ -492,7 +534,7 @@ onMounted(async () => {
               </template>
             </template>
             <!-- Store : the app's database, or a secret store and the place in it -->
-            <template v-else-if="shownTab === 'store'">
+            <template v-else>
               <div
                 v-for="opt in [
                   {
@@ -543,45 +585,6 @@ onMounted(async () => {
                   :isFloating="false"
                   :help="t('settings.credentials.secretRefHelp')"
                   :label="t('settings.credentials.secretRef')"
-                />
-              </template>
-            </template>
-            <!-- Connection : a host and port ; a database's type and name -->
-            <template v-else>
-              <BsInput
-                class="af-credential-field"
-                v-model="edit.host"
-                icon="server"
-                :isFloating="false"
-                :label="t('settings.fields.host')"
-              />
-              <BsInput
-                class="af-credential-field"
-                v-model="edit.port"
-                type="number"
-                icon="arrows-alt-v"
-                :isFloating="false"
-                :label="t('settings.fields.port')"
-              />
-              <template v-if="isDatabase">
-                <BsInput
-                  class="af-credential-field"
-                  v-model="edit.db_type"
-                  type="select"
-                  icon="database"
-                  :isFloating="false"
-                  :values="DB_TYPES"
-                  valueKey="value"
-                  labelKey="label"
-                  :required="true"
-                  :label="t('settings.credentials.databaseType')"
-                />
-                <BsInput
-                  class="af-credential-field"
-                  v-model="edit.db_name"
-                  icon="database"
-                  :isFloating="false"
-                  :label="t('settings.credentials.database')"
                 />
               </template>
             </template>
