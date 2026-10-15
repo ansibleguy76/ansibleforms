@@ -3133,6 +3133,8 @@ export default function getSettings(t) {
       description: t('settings.disclaimer.versionsDescription'),
       icon: 'layer-group',
       selectable: false,
+      // ticked, to export them
+      checkboxes: true,
       // a record, never changed : opened, its text as it was agreed to
       noCreate: true,
       actions: [],
@@ -3177,6 +3179,8 @@ export default function getSettings(t) {
       description: t('settings.disclaimer.acceptancesDescription'),
       icon: 'user-check',
       selectable: false,
+      // ticked, to export them
+      checkboxes: true,
       // a record, never changed : no Add, no Edit, no Delete ; opened, shown in full
       noCreate: true,
       actions: [],

@@ -1001,8 +1001,11 @@ const isInvalidPassword = computed(() => {
 // BsDataTable mode (always on — BsDataTable is the only table renderer)
 // the list's delete action : with one, the rows get checkboxes, to delete several at once
 const deleteAction = computed(() => actions.value.find((a) => a.name === 'delete') || null);
-// checkboxes : a list that is selectable (the default), or one whose rows can be deleted
-const dataTableSelectable = computed(() => props.settings.selectable !== false || !!deleteAction.value);
+// checkboxes : a list that is selectable (the default), one whose rows can be deleted, or one that
+// asks for them (checkboxes : a read-only list, the rows ticked exported)
+const dataTableSelectable = computed(
+  () => props.settings.selectable !== false || !!deleteAction.value || !!props.settings.checkboxes,
+);
 // the table's controls on the title line (BsDataTable's toolbar), their widths in pixels as their
 // labels make them : the search, Select all on a list whose rows can be ticked, the columns, the
 // export (lib/listControls.js)
@@ -1512,7 +1515,9 @@ defineExpose({
       >
         <template v-if="dataTableSelectable" #bulk-actions="{ count }">
           <!-- in the style of the toolbar's other buttons -->
-          <BsButton v-if="count" icon="trash" @click="bulkDelete"> {{ t('common.delete') }} ({{ count }}) </BsButton>
+          <BsButton v-if="count && deleteAction" icon="trash" @click="bulkDelete">
+            {{ t('common.delete') }} ({{ count }})
+          </BsButton>
         </template>
         <template v-if="dataTableShowRowMenu" #row-actions="{ item }">
           <div class="dropdown">
