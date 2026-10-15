@@ -19,13 +19,15 @@
 /*      view: String - 'yaml' (the text) or 'visual' (a           */
 /*         vars file's variables, an inventory's groups and       */
 /*         hosts)                                                 */
+/*      filter: String - the designer's search (its title line) : */
+/*         the files whose path has it, with their folders        */
 /*                                                                */
 /*  @emit:                                                        */
 /*      init: the editor, for the toolbar's undo, find ...        */
 /*      reveal: the Visual tab asks for the YAML (on a line)      */
 /*                                                                */
 /******************************************************************/
-import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter, onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router';
 import axios from 'axios';
 import { toast } from 'vue-sonner';
@@ -54,6 +56,8 @@ const props = defineProps({
   editorStyle: { type: [String, Object], default: 'width: 100%;height: 75vh;font-size:1rem' },
   // the designer's forms ({ name, text }) : a vars file's Preview says which load it
   forms: { type: Array, default: () => [] },
+  // the designer's filter (the search on its title line) : the files whose path has it
+  filter: { type: String, default: '' },
 });
 
 // ─── state ────────────────────────────────────────────────────────────────────
@@ -82,8 +86,8 @@ const leavingTo = ref(null); // what to do once the changes are dropped : go to 
 
 // ─── the explorer ─────────────────────────────────────────────────────────────
 const collapsed = ref(new Set());
-const filter = ref('');
-const searching = ref(false);
+// the designer's search, on its title line, as every page's
+const filter = computed(() => props.filter || '');
 
 /**
  * The explorer's rows : the folders and files, a folder before its content, each with its
@@ -456,16 +460,6 @@ function startResize(e) {
   document.addEventListener('mouseup', onUp);
 }
 
-const searchInput = ref(null);
-async function toggleSearch() {
-  searching.value = !searching.value;
-  if (!searching.value) filter.value = '';
-  else {
-    await nextTick();
-    searchInput.value?.focus();
-  }
-}
-
 // ─── leaving with changes ─────────────────────────────────────────────────────
 // another page, or another section or tab of the designer : asked first, as another file is.
 // The designer asks before it switches (leave, exposed) ; an address asks through the router.
@@ -693,9 +687,6 @@ defineExpose({
               :title="allCollapsed ? t('designer.expandAll') : t('designer.collapseAll')"
               ><FaIcon :icon="allCollapsed ? 'angles-down' : 'angles-up'"
             /></span>
-            <span role="button" class="tree-add-btn" @click="toggleSearch()" :title="t('designer.search')"
-              ><FaIcon icon="magnifying-glass"
-            /></span>
             <template v-if="!readOnly && isInventories">
               <span
                 role="button"
@@ -714,15 +705,6 @@ defineExpose({
               /></span>
             </template>
           </span>
-        </div>
-        <div v-if="searching" class="tree-search-bar">
-          <input
-            ref="searchInput"
-            v-model="filter"
-            type="text"
-            class="form-control form-control-sm"
-            :placeholder="t('designer.search') + '...'"
-          />
         </div>
         <div class="file-tree-content">
           <div v-if="listing.truncated" class="small text-warning-emphasis py-1">
@@ -956,8 +938,7 @@ defineExpose({
   min-height: 0;
   max-height: 100%;
 }
-.file-tree-header,
-.tree-search-bar {
+.file-tree-header {
   flex-shrink: 0;
 }
 .file-tree-header {
@@ -968,10 +949,6 @@ defineExpose({
   color: var(--bs-secondary-color);
   padding: 0.5rem 0.5rem 0.5rem 0.75rem;
   background: var(--bs-card-bg, var(--bs-body-bg));
-  border-bottom: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.25);
-}
-.tree-search-bar {
-  padding: 0.4rem 0.5rem;
   border-bottom: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.25);
 }
 .file-tree-content {

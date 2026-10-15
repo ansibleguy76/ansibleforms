@@ -2376,21 +2376,19 @@ function deleteForm(id) {
 }
 
 const collapsedPaths = ref(new Set());
-const treeSearch = ref(false);
+// the search on the title line, as every page's : it filters the tree of the section open, the
+// forms' (fileTreeFlat) or a file section's (AppProjectFiles' filter) ; another section starts
+// with it empty
 const treeFilter = ref('');
-const treeSearchInput = ref(null);
-
-// the search box is only in the dom once treeSearch is on : focus it after vue
-// has rendered it, otherwise the toggle just shows an input nobody can type in
-// without clicking it first
-function toggleTreeSearch() {
-  treeSearch.value = !treeSearch.value;
-  if (!treeSearch.value) {
-    treeFilter.value = '';
-    return;
-  }
-  nextTick(() => treeSearchInput.value?.focus());
-}
+const hasTree = computed(() => currentTab.value === 'Forms' || !!FILE_SECTIONS[currentTab.value]);
+watch(currentTab, () => (treeFilter.value = ''));
+// the designer turned off (its trees gone, the search disabled) : the search emptied with them
+watch(
+  () => !!lock.value?.match,
+  (ours) => {
+    if (!ours) treeFilter.value = '';
+  },
+);
 
 function toggleCollapse(key) {
   if (collapsedPaths.value.has(key)) {
@@ -4773,8 +4771,10 @@ onBeforeUnmount(() => {
             </div>
           </Transition>
         </template>
-        <!-- the designer's on/off switch, on the right of the title row -->
+        <!-- the search of the section's tree at the left, the designer's on/off switch at the right -->
         <template #headerActions>
+          <!-- in its place on a section with a tree, usable once the designer is ours (its trees show) -->
+          <BsSearch v-if="hasTree && loaded" v-model="treeFilter" :disabled="!lock?.match" />
           <template v-if="lock">
             <popper v-if="lock.lock && !lock.match">
               <!-- someone else's : the switch on and disabled, the lock is theirs until they
@@ -4943,6 +4943,7 @@ onBeforeUnmount(() => {
                     ref="projectFiles"
                     :kind="FILE_SECTIONS[currentTab]"
                     :forms="formsForPreview"
+                    :filter="treeFilter"
                     :view="editorView"
                     :readOnly="!(lock && lock.match) || !canDesignFiles(FILE_SECTIONS[currentTab])"
                     :theme="editorTheme"
@@ -5133,9 +5134,6 @@ onBeforeUnmount(() => {
                         :title="allTreeCollapsed ? t('designer.expandAll') : t('designer.collapseAll')"
                         ><FaIcon :icon="allTreeCollapsed ? 'angles-down' : 'angles-up'"
                       /></span>
-                      <span role="button" class="tree-add-btn" @click="toggleTreeSearch()" :title="t('designer.search')"
-                        ><FaIcon icon="magnifying-glass"
-                      /></span>
                       <span role="button" class="tree-add-btn" @click="openNewFolder()" :title="t('designer.newFolder')"
                         ><FaIcon icon="folder"
                       /></span>
@@ -5143,15 +5141,6 @@ onBeforeUnmount(() => {
                         ><FaIcon icon="file"
                       /></span>
                     </span>
-                  </div>
-                  <div v-if="treeSearch" class="tree-search-bar">
-                    <input
-                      type="text"
-                      class="form-control form-control-sm"
-                      v-model="treeFilter"
-                      :placeholder="t('designer.search') + '...'"
-                      ref="treeSearchInput"
-                    />
                   </div>
                   <div class="file-tree-content">
                     <template v-for="(item, idx) in fileTreeFlat" :key="'tree-' + idx">
@@ -5367,8 +5356,7 @@ onBeforeUnmount(() => {
   min-height: 0;
   max-height: 100%;
 }
-.file-tree-header,
-.tree-search-bar {
+.file-tree-header {
   flex-shrink: 0;
 }
 .file-tree-header {
@@ -5381,10 +5369,6 @@ onBeforeUnmount(() => {
   // buttons of the rows below
   padding: 0.5rem 0.5rem 0.5rem 0.75rem;
   background: var(--bs-card-bg, var(--bs-body-bg));
-  border-bottom: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.25);
-}
-.tree-search-bar {
-  padding: 0.4rem 0.5rem;
   border-bottom: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.25);
 }
 .file-tree-content {
