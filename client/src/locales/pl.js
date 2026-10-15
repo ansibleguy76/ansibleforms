@@ -1366,7 +1366,6 @@ export default {
       typeHint_teams: 'Karta na kanale Teams, przez webhook Workflows',
       typeHint_telegram: 'Wiadomość od bota na czacie Telegram',
       typeHint_webhook: 'Żądanie JSON do dowolnego endpointu HTTP',
-      address: 'Adres',
       addressWebhook: 'Webhook przychodzący',
       addressChat: 'Czat {chat}',
       credential: 'Poświadczenie',

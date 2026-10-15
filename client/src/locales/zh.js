@@ -1321,7 +1321,6 @@ export default {
       typeHint_teams: '通过 Workflows Webhook 发到 Teams 频道的卡片',
       typeHint_telegram: '机器人在 Telegram 聊天中发送的消息',
       typeHint_webhook: '发往任意 HTTP 端点的 JSON 请求',
-      address: '地址',
       addressWebhook: '传入 Webhook',
       addressChat: '聊天 {chat}',
       credential: '凭据',

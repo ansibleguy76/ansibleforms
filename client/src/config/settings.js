@@ -2643,13 +2643,6 @@ export default function getSettings(t) {
         },
         { key: 'name', step: 'channel', label: t('settings.fields.name'), required: true, icon: 'heading' },
         {
-          key: 'description',
-          step: 'channel',
-          label: t('settings.fields.description'),
-          icon: 'info-circle',
-          hidden: true,
-        },
-        {
           // its type : radios, each its label and a few words ; set when it is made, it stays
           key: 'type',
           step: 'type',
@@ -2665,13 +2658,11 @@ export default function getSettings(t) {
           render: (v) => esc(t(`settings.notificationChannels.type_${CHANNEL_TYPES.includes(v) ? v : 'mail'}`)),
         },
         {
-          // where it sends, as the table shows it : not a field of the dialog
-          key: 'address',
-          label: t('settings.notificationChannels.address'),
-          noInput: true,
-          render: (v, row) => esc(channelAddress(t, row)),
-          sortValue: (r) => channelAddress(t, r),
-          hideBelow: 740,
+          // what it is for : a column after the type
+          key: 'description',
+          step: 'channel',
+          label: t('settings.fields.description'),
+          icon: 'info-circle',
         },
         // ─── mail ───
         {
