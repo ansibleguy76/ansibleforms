@@ -105,6 +105,20 @@ const isRte = computed(() => edit.value?.kind === 'rte');
 const hasProject = computed(() => PROJECT_RUNNER_KINDS.includes(edit.value?.kind));
 // an AWX, an AAP or an Ascender take a token or a user and password ; the others a token
 const isAwxKind = computed(() => AWX_RUNNER_KINDS.includes(edit.value?.kind));
+/**
+ * Whether its Type tab can switch to a kind : its type stays what it was made as (the forms that
+ * run on it expect it), an AWX one may change product (AWX, AAP, Ascender : one type).
+ *
+ * Args:
+ *   kind (string): a kind of RUNNER_KINDS.
+ *
+ * Returns:
+ *   boolean: whether it can be chosen.
+ */
+function kindAllowed(kind) {
+  const saved = runner.value ? runnerKind(runner.value) : edit.value?.kind;
+  return kind === saved || (AWX_RUNNER_KINDS.includes(kind) && AWX_RUNNER_KINDS.includes(saved));
+}
 const usesCredentials = computed(() => isAwxKind.value && !!edit.value?.use_credentials);
 // a Jenkins signs in with a user and that user's API token ; its folder (project) is optional
 const isJenkins = computed(() => edit.value?.kind === 'jenkins');
@@ -452,6 +466,7 @@ onMounted(async () => {
                   type="radio"
                   name="af-runner-kind"
                   :value="kind"
+                  :disabled="!kindAllowed(kind)"
                 />
                 <label class="form-check-label" :for="'af-kind-' + kind">
                   <span class="af-short-label">{{ t(`settings.runners.type_${kind}`) }}</span>

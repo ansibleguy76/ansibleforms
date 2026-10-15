@@ -119,6 +119,14 @@ describe("what each type needs", () => {
     await Runner.update({ description: "only this changes" }, 1);
     await assert.rejects(Runner.update({ use_credentials: 1 }, 2), /username and a password/);
   });
+
+  test("its type stays what it was made as ; an AWX one may change flavour ; the seed may change it", async () => {
+    await assert.rejects(Runner.update({ type: "awx" }, 1), /keeps the type it was made as : 'rte-1' is rte/);
+    await Runner.update({ type: "awx", flavour: "ascender" }, 2);
+    assert.equal(rows[1].flavour, "ascender");
+    await Runner.update({ type: "awx", uri: "https://awx", token: "t" }, 1, { fromSeed: true });
+    assert.equal(rows[0].type, "awx");
+  });
 });
 
 describe("the product of an awx runner (flavour)", () => {

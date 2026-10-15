@@ -442,7 +442,8 @@ onMounted(async () => {
                 :label="t('settings.fields.description')"
               />
             </template>
-            <!-- Type : what it is for, each its label and a few grey words -->
+            <!-- Type : what it is for, each its label and a few grey words ; set when it was made (what
+                 uses it expects it) -->
             <template v-else-if="shownTab === 'type'">
               <div v-for="kind in CREDENTIAL_TYPES" :key="kind" class="form-check af-short-check">
                 <input
@@ -452,6 +453,7 @@ onMounted(async () => {
                   type="radio"
                   name="af-credential-type"
                   :value="kind"
+                  disabled
                 />
                 <label class="form-check-label" :for="'af-ctype-' + kind">
                   <span class="af-short-label">{{ t(`settings.credentials.type_${kind}`) }}</span>

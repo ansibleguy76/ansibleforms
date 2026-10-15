@@ -346,7 +346,8 @@ onMounted(async () => {
                 :label="t('settings.fields.description')"
               />
             </template>
-            <!-- Type : CyberArk CCP or HashiCorp Vault, a Vault's Enterprise switch under it -->
+            <!-- Type : CyberArk CCP or HashiCorp Vault, set when it was made (the credentials that read
+                 from it expect it) ; a Vault's Enterprise switch under it -->
             <template v-else-if="activeTab === 'type'">
               <div v-for="type in TYPES" :key="type.value" class="form-check af-short-check">
                 <input
@@ -356,6 +357,7 @@ onMounted(async () => {
                   type="radio"
                   name="af-store-type"
                   :value="type.value"
+                  disabled
                 />
                 <label class="form-check-label" :for="'af-type-' + type.value">
                   <span class="af-short-label">{{ type.short || type.label }}</span>

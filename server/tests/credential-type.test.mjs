@@ -69,3 +69,18 @@ describe("an SSO credential's redirect URL", () => {
     assert.equal(Credential.requireTypeFields({ credential_type: "userpass", redirect_uri: "https://f/cb" }, true).redirect_uri, null);
   });
 });
+
+describe("a credential keeps the type it was made as", () => {
+  test("an update to another type is refused ; the same type, or none sent, goes on ; the seed may change it", async () => {
+    const { vi } = await import("vitest");
+    vi.spyOn(Credential, "findById").mockResolvedValue({ name: "smtp-office365", credential_type: "smtp" });
+    await assert.rejects(Credential.update({ credential_type: "api" }, 5), /keeps the type it was made as : 'smtp-office365' is smtp/);
+    const { default: CrudModel } = await import("../src/models/crud.model.js");
+    const saved = vi.spyOn(CrudModel, "update").mockResolvedValue(true);
+    await Credential.update({ credential_type: "smtp", host: "smtp.example.com" }, 5);
+    await Credential.update({ description: "d" }, 5);
+    await Credential.update({ credential_type: "api" }, 5, { fromSeed: true });
+    assert.equal(saved.mock.calls.length, 3);
+    vi.restoreAllMocks();
+  });
+});

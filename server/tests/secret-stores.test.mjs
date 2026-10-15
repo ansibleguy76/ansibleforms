@@ -317,6 +317,13 @@ describe("saving a store", () => {
     await assert.rejects(SecretStore.create({ name: "x", type: "keepass", url: "u" }), /Unknown secret store type/);
   });
 
+  test("its type stays what it was made as", async () => {
+    const { vi } = await import("vitest");
+    vi.spyOn(SecretStore, "findById").mockResolvedValue(vaultRow());
+    await assert.rejects(SecretStore.update({ type: "cyberark_ccp" }, 1), /keeps the type it was made as : 'vault' is vault/);
+    vi.restoreAllMocks();
+  });
+
   test("extra must be a JSON object", async () => {
     await assert.rejects(SecretStore.create({ name: "x", type: "vault", url: "u", extra: "[1]" }), /JSON object/);
     await assert.rejects(SecretStore.create({ name: "x", type: "vault", url: "u", extra: "{nope" }), /not valid JSON/);

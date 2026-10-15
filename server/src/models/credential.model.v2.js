@@ -147,6 +147,14 @@ class CredentialModel extends CrudModel {
     // the api shows the client key masked ; the mask sent back means "unchanged", and an
     // empty one too (the dialog leaves a secret empty to keep it)
     if (data.client_key === '**********' || data.client_key === '') delete data.client_key;
+    // its type stays what it was made as (what uses it expects it : an SSO provider an entraid
+    // one, a mail channel an smtp one) ; the config seed may change it
+    if (!opts.fromSeed && data.credential_type !== undefined && data.credential_type !== null && data.credential_type !== '') {
+      const current = await this.findById(id);
+      if (current?.credential_type && data.credential_type !== current.credential_type) {
+        throw new Errors.BadRequestError(`A credential keeps the type it was made as : '${current.name}' is ${current.credential_type}. Make a new credential for another type`);
+      }
+    }
     return super.update(this.modelName, this.requireTypeFields(this.mirrorType(this.mirrorVaultPath(this.normalizePort(data)))), id, opts);
   }
 
