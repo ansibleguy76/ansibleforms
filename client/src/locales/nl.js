@@ -1806,6 +1806,7 @@ export default {
       defaultEveryone: 'Iedereen, automatisch',
       roleNoUsers: 'Deze rol heeft nog geen gebruikers.',
       roleNoGroups: 'Deze rol heeft nog geen groepen.',
+      noRoleLeft: 'Al in elke rol.',
       roleNotFound: "Er is geen rol met de naam '{name}'.",
       roleNamePlaceholder: 'Naam van de nieuwe rol',
       roleDescriptionPlaceholder: 'Waar de rol voor is, bv. Start de netwerkformulieren',

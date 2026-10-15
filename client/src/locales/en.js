@@ -1787,6 +1787,7 @@ export default {
       defaultEveryone: 'Everyone, automatically',
       roleNoUsers: 'No users in this role yet.',
       roleNoGroups: 'No groups in this role yet.',
+      noRoleLeft: 'Already in every role.',
       roleNotFound: "There is no role named '{name}'.",
       roleNamePlaceholder: 'New role name',
       roleDescriptionPlaceholder: 'What the role is for, e.g. Launches the network forms',

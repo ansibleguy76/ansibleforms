@@ -1816,6 +1816,7 @@ export default {
       defaultEveryone: 'Todos, automaticamente',
       roleNoUsers: 'Esta função ainda não tem utilizadores.',
       roleNoGroups: 'Esta função ainda não tem grupos.',
+      noRoleLeft: 'Já está em todas as funções.',
       roleNotFound: "Não existe nenhuma função chamada '{name}'.",
       roleNamePlaceholder: 'Nome da nova função',
       roleDescriptionPlaceholder: 'Para que serve a função, p. ex. Lança os formulários de rede',

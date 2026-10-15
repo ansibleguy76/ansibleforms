@@ -1805,6 +1805,7 @@ export default {
       defaultEveryone: 'Tutti, automaticamente',
       roleNoUsers: 'Questo ruolo non ha ancora utenti.',
       roleNoGroups: 'Questo ruolo non ha ancora gruppi.',
+      noRoleLeft: 'Già in tutti i ruoli.',
       roleNotFound: "Non esiste un ruolo chiamato '{name}'.",
       roleNamePlaceholder: 'Nome del nuovo ruolo',
       roleDescriptionPlaceholder: 'A cosa serve il ruolo, ad es. Avvia i moduli di rete',

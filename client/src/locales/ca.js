@@ -1820,6 +1820,7 @@ export default {
       defaultEveryone: 'Tothom, automàticament',
       roleNoUsers: 'Aquest rol encara no té usuaris.',
       roleNoGroups: 'Aquest rol encara no té grups.',
+      noRoleLeft: 'Ja és a tots els rols.',
       roleNotFound: "No hi ha cap rol anomenat '{name}'.",
       roleNamePlaceholder: 'Nom del nou rol',
       roleDescriptionPlaceholder: 'Per a què serveix el rol, p. ex. Llança els formularis de xarxa',

@@ -1783,6 +1783,7 @@ export default {
       defaultEveryone: '全員（自動）',
       roleNoUsers: 'このロールにはまだユーザーがいません。',
       roleNoGroups: 'このロールにはまだグループがありません。',
+      noRoleLeft: 'すでにすべてのロールに含まれています。',
       roleNotFound: "'{name}' という名前のロールはありません。",
       roleNamePlaceholder: '新しいロールの名前',
       roleDescriptionPlaceholder: 'ロールの用途（例: ネットワークフォームを実行）',

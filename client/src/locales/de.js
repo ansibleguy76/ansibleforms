@@ -1822,6 +1822,7 @@ export default {
       defaultEveryone: 'Alle, automatisch',
       roleNoUsers: 'Diese Rolle hat noch keine Benutzer.',
       roleNoGroups: 'Diese Rolle hat noch keine Gruppen.',
+      noRoleLeft: 'Bereits in jeder Rolle.',
       roleNotFound: "Es gibt keine Rolle namens '{name}'.",
       roleNamePlaceholder: 'Name der neuen Rolle',
       roleDescriptionPlaceholder: 'Wofür die Rolle ist, z. B. Startet die Netzwerkformulare',

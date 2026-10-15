@@ -1731,6 +1731,7 @@ export default {
       defaultEveryone: '所有人（自动）',
       roleNoUsers: '此角色还没有用户。',
       roleNoGroups: '此角色还没有组。',
+      noRoleLeft: '已在所有角色中。',
       roleNotFound: "没有名为 '{name}' 的角色。",
       roleNamePlaceholder: '新角色名称',
       roleDescriptionPlaceholder: '角色的用途，例如：运行网络表单',

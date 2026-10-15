@@ -1815,6 +1815,7 @@ export default {
       defaultEveryone: 'Todos, automáticamente',
       roleNoUsers: 'Este rol aún no tiene usuarios.',
       roleNoGroups: 'Este rol aún no tiene grupos.',
+      noRoleLeft: 'Ya está en todos los roles.',
       roleNotFound: "No hay ningún rol llamado '{name}'.",
       roleNamePlaceholder: 'Nombre del nuevo rol',
       roleDescriptionPlaceholder: 'Para qué sirve el rol, p. ej. Lanza los formularios de red',

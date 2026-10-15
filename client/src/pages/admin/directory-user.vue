@@ -28,6 +28,7 @@ import { sourceLabel } from '@/config/settings';
 import { setSignInBlocked } from '@/lib/signIn';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { useRoleAssignments } from '@/composables/useRoleAssignments';
+import { useRoleMembership } from '@/composables/useRoleMembership';
 import { useFormLinks } from '@/composables/useFormLinks';
 import { useUserLinks } from '@/composables/useUserLinks';
 
@@ -74,6 +75,39 @@ const userGroups = computed(() =>
 // ─── Roles, Forms ─────────────────────────────────────────────────────────────
 // the roles it has, by the login's rule on the groups of its last sign-in ; a row opens the role
 const { loadRoles, rolesOfUser } = useRoleAssignments();
+
+// ─── Add role / Remove from role ──────────────────────────────────────────────
+// Add role names it in a role of the forms config ; the roles ticked are taken out of those
+// named in by its own name (not those through a group, nor default : everyone's) ; both saved at once, as the roles' pages save
+const { roleNames, readOnly: rolesReadOnly, addTo, removeFrom } = useRoleMembership();
+const addingRole = ref(false);
+// the roles it can be added to : those it is not named in yet
+const roleChoices = computed(() => {
+  const named = new Set(userRoles.value.filter((r) => r.direct).map((r) => r.name));
+  return roleNames.value.filter((n) => !named.has(n));
+});
+/**
+ * Names it in the role picked, then reads the roles again.
+ *
+ * Args:
+ *   roleName (string): the role.
+ */
+async function addRole(roleName) {
+  if (await addTo(roleName, 'users', source.value, username.value)) {
+    addingRole.value = false;
+    await loadRoles();
+  }
+}
+/**
+ * Takes it out of the roles ticked that name it, then reads the roles again.
+ *
+ * Args:
+ *   rows (object[]): the rows ticked.
+ */
+async function removeRoles(rows) {
+  const names = rows.filter((r) => r.direct).map((r) => r.name);
+  if (names.length && (await removeFrom(names, 'users', source.value, username.value))) await loadRoles();
+}
 const userRoles = computed(() =>
   user.value
     ? rolesOfUser(
@@ -297,6 +331,7 @@ onMounted(async () => {
 });
 </script>
 <template>
+  <AppAddRoleDialog v-if="addingRole" :choices="roleChoices" @save="addRole" @close="addingRole = false" />
   <AppBlockSignInDialog
     v-if="confirming === 'block'"
     :name="user?.username || username"
@@ -406,7 +441,18 @@ onMounted(async () => {
           rowKey="name"
           :to="(r) => `/settings/roles/${encodeURIComponent(r.name)}`"
           :empty="t('settings.users.noRole')"
-        />
+        >
+          <!-- the roles ticked that name it : taken out of them -->
+          <template #bulk-actions="{ selected, count }">
+            <BsButton
+              v-if="count"
+              icon="trash"
+              :disabled="rolesReadOnly || !selected.some((r) => r.direct)"
+              @click="removeRoles(selected)"
+              >{{ t('settings.settingsPage.removeFromRole') }} ({{ count }})</BsButton
+            >
+          </template>
+        </AppLinkedTable>
         <AppLinkedTable
           v-else-if="user && activeTab === 'forms'"
           :exportName="`${username}-forms`"
@@ -469,6 +515,9 @@ onMounted(async () => {
         <div :id="pagerId"></div>
       </template>
       <template v-if="user" #actions>
+        <BsButton v-if="activeTab === 'roles'" icon="plus" :disabled="rolesReadOnly" @click="addingRole = true">{{
+          t('settings.settingsPage.addRole')
+        }}</BsButton>
         <BsButton icon="right-from-bracket" :disabled="!user.seen" @click="endSessions()">{{
           t('settings.directory.endSessions')
         }}</BsButton>
