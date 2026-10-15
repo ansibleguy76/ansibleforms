@@ -361,6 +361,7 @@ export default {
     },
     groupPages: "Pagina's en menu's",
     groupJobs: 'Jobs',
+    groupAccess: 'Toegang en integraties',
     groupOther: 'Overig',
     allowedCount: '{n} van {total} toegestaan',
     localAccount: 'Lokaal account',

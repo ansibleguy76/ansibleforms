@@ -363,6 +363,7 @@ export default {
     },
     groupPages: 'Seiten und Menüs',
     groupJobs: 'Jobs',
+    groupAccess: 'Zugang und Integrationen',
     groupOther: 'Sonstiges',
     allowedCount: '{n} von {total} erlaubt',
     localAccount: 'Lokales Konto',

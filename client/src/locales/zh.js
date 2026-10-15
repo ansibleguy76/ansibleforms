@@ -354,6 +354,7 @@ export default {
     },
     groupPages: '页面和菜单',
     groupJobs: '作业',
+    groupAccess: '访问和集成',
     groupOther: '其他',
     allowedCount: '已允许 {n} / {total}',
     localAccount: '本地账户',

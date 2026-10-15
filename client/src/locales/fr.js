@@ -365,6 +365,7 @@ export default {
     },
     groupPages: 'Pages et menus',
     groupJobs: 'Jobs',
+    groupAccess: 'Accès et intégrations',
     groupOther: 'Autres',
     allowedCount: '{n} sur {total} autorisés',
     localAccount: 'Compte local',

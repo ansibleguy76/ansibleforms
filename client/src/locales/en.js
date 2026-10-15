@@ -358,6 +358,7 @@ export default {
     },
     groupPages: 'Pages and menus',
     groupJobs: 'Jobs',
+    groupAccess: 'Access and integrations',
     groupOther: 'Other',
     allowedCount: '{n} of {total} allowed',
     localAccount: 'Local account',

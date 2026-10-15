@@ -363,6 +363,7 @@ export default {
     },
     groupPages: 'Pàgines i menús',
     groupJobs: 'Tasques',
+    groupAccess: 'Accés i integracions',
     groupOther: 'Altres',
     allowedCount: '{n} de {total} permesos',
     localAccount: 'Compte local',

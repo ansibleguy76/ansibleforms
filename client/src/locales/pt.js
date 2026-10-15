@@ -362,6 +362,7 @@ export default {
     },
     groupPages: 'Páginas e menus',
     groupJobs: 'Tarefas',
+    groupAccess: 'Acesso e integrações',
     groupOther: 'Outros',
     allowedCount: '{n} de {total} permitidas',
     localAccount: 'Conta local',

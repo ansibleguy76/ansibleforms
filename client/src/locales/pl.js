@@ -360,6 +360,7 @@ export default {
     },
     groupPages: 'Strony i menu',
     groupJobs: 'Zadania',
+    groupAccess: 'Dostęp i integracje',
     groupOther: 'Inne',
     allowedCount: 'Dozwolone: {n} z {total}',
     localAccount: 'Konto lokalne',

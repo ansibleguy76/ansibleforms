@@ -4,26 +4,61 @@
 
 export const authProviders = ['local', 'ldap', 'azuread', 'oidc'];
 
+// the role options in their groups, in the order they show : the role's page and its New role
+// dialog (AppRoleEditor) and the profile's Permissions view, each group under its title
+export const roleOptionGroups = [
+  {
+    name: 'pages',
+    title: 'profilePage.groupPages',
+    keys: ['showSettings', 'showLogs', 'showJobs', 'showDebugButtons'],
+  },
+  {
+    name: 'designer',
+    title: 'nav.designer',
+    keys: ['showDesigner', 'allowPlaybookDesign', 'allowWorkflowDesign', 'allowInventoryDesign', 'allowVarsFileDesign'],
+  },
+  {
+    name: 'jobs',
+    title: 'profilePage.groupJobs',
+    keys: [
+      'showAllJobLogs',
+      'showExtravars',
+      'showArtifacts',
+      'allowVerboseMode',
+      'allowJobRelaunch',
+      'allowScheduledJobs',
+      'allowPlannedJobs',
+      'allowStoredJobs',
+    ],
+  },
+  {
+    name: 'access',
+    title: 'profilePage.groupAccess',
+    keys: ['allowLogin', 'allowBackupOps', 'allowChat', 'allowMcp', 'allowApiTokens', 'extendedTokenExpiration'],
+  },
+];
+
+// every role option, in the groups' order
 export const roleOptionKeys = [
+  'showSettings',
+  'showLogs',
+  'showJobs',
+  'showDebugButtons',
   'showDesigner',
   'allowPlaybookDesign',
   'allowWorkflowDesign',
   'allowInventoryDesign',
   'allowVarsFileDesign',
-  'showLogs',
-  'showDebugButtons',
-  'showSettings',
-  'showExtravars',
   'showAllJobLogs',
+  'showExtravars',
   'showArtifacts',
-  'showJobs',
-  'allowLogin',
-  'allowBackupOps',
   'allowVerboseMode',
   'allowJobRelaunch',
   'allowScheduledJobs',
-  'allowStoredJobs',
   'allowPlannedJobs',
+  'allowStoredJobs',
+  'allowLogin',
+  'allowBackupOps',
   'allowChat',
   'allowMcp',
   'allowApiTokens',

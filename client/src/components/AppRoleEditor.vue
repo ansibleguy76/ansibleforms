@@ -30,7 +30,7 @@
 
 import { ref, computed, h } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { requiredRoleDescription } from '@/config/roles';
+import { requiredRoleDescription, roleOptionGroups } from '@/config/roles';
 import { usePagedRows } from '@/composables/usePagedRows';
 
 const props = defineProps({
@@ -43,6 +43,19 @@ const props = defineProps({
   nextUid: { type: Function, required: true },
   tab: { type: String, default: '' },
   throughGroups: { type: Array, default: () => [] },
+});
+
+// the options in their groups (config/roles.js), each with its title, only those the page passes
+// (optionKeys) ; an option in no group, last, under none
+const optionGroups = computed(() => {
+  const keys = props.optionKeys;
+  const groups = roleOptionGroups
+    .map((g) => ({ name: g.name, title: t(g.title), keys: g.keys.filter((k) => keys.includes(k)) }))
+    .filter((g) => g.keys.length);
+  const grouped = new Set(roleOptionGroups.flatMap((g) => g.keys));
+  const rest = keys.filter((k) => !grouped.has(k));
+  if (rest.length) groups.push({ name: 'other', title: '', keys: rest });
+  return groups;
 });
 
 // what holds the tabs' content : under the editor's own tab strip (a dialog), a card the tabs
@@ -207,15 +220,19 @@ function removeUser(index) {
         :disabled="readOnly"
       />
       <label class="form-label fw-bold">{{ t('settings.settingsPage.options') }}</label>
-      <div class="row row-cols-2 row-cols-md-3 g-0 role-options mb-3">
-        <div v-for="optKey in optionKeys" :key="optKey" class="col">
-          <BsInput
-            type="checkbox"
-            :isSwitch="true"
-            v-model="role.options[optKey]"
-            :label="optionLabel(optKey)"
-            :disabled="readOnly"
-          />
+      <!-- the options in their groups (config/roles.js), each under its title -->
+      <div v-for="group in optionGroups" :key="group.name" class="af-role-option-group">
+        <div class="af-role-option-group-title">{{ group.title }}</div>
+        <div class="row row-cols-2 row-cols-md-3 g-0 role-options">
+          <div v-for="optKey in group.keys" :key="optKey" class="col">
+            <BsInput
+              type="checkbox"
+              :isSwitch="true"
+              v-model="role.options[optKey]"
+              :label="optionLabel(optKey)"
+              :disabled="readOnly"
+            />
+          </div>
         </div>
       </div>
     </template>
@@ -484,8 +501,23 @@ function removeUser(index) {
   padding: 0 0.75rem;
 }
 .role-options {
-  margin-top: -0.5rem;
-  /* the switches take back their own margin : this gives the tab its room at the bottom */
+  /* the switches take back their own margin : this gives the group its room at the bottom */
+  padding-bottom: 0.5rem;
+}
+/* a group of options : its title small, in capitals and grey, as the settings menu's sections */
+/* room above each group but the first, and its title close to its options */
+.af-role-option-group + .af-role-option-group {
+  margin-top: 1rem;
+}
+.af-role-option-group-title {
+  margin: 0.25rem 0 -0.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--bs-secondary-color);
+}
+.af-role-option-group:last-child .role-options {
   padding-bottom: 0.75rem;
 }
 .role-options :deep(.mb-3) {

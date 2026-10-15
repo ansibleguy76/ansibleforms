@@ -27,6 +27,7 @@ import { languages, fallbackLanguage } from '@/config/languages';
 import dayjs from 'dayjs';
 import Time, { DATE_FORMATS } from '@/lib/Time';
 import { profileViews, profileMenuViews } from '@/config/profileViews';
+import { roleOptionGroups } from '@/config/roles';
 import BaseUrl from '@/lib/BaseUrl';
 import { neverExpires } from '@/lib/apiTokens';
 import { rememberSsoOrigin, ssoSettled, ssoReturning } from '@/lib/ssoReturn';
@@ -93,43 +94,11 @@ const shownRoles = computed(() => (profile.value.roles || []).filter((r) => r !=
 // only local accounts have a password AnsibleForms can change ; ldap, azure ad and oidc
 // passwords are managed by their own provider
 const isLocal = computed(() => profile.value.type == 'local');
-// the options grouped by what they are about ; an option the server sends that is not in
-// a group (a hand-written key) lands in "other", under its own name
+// the options in their groups, as the role's page shows them (config/roles.js) ; an option the
+// server sends that is in no group (a hand-written key) lands in "other", under its own name
 const PERMISSION_GROUPS = [
-  {
-    name: 'pages',
-    title: () => t('profilePage.groupPages'),
-    keys: [
-      'showSettings',
-      'showDesigner',
-      'allowPlaybookDesign',
-      'allowWorkflowDesign',
-      'allowInventoryDesign',
-      'allowVarsFileDesign',
-      'showLogs',
-      'showJobs',
-      'showDebugButtons',
-    ],
-  },
-  {
-    name: 'jobs',
-    title: () => t('profilePage.groupJobs'),
-    keys: [
-      'allowJobRelaunch',
-      'allowVerboseMode',
-      'allowScheduledJobs',
-      'allowStoredJobs',
-      'allowPlannedJobs',
-      'showAllJobLogs',
-      'showArtifacts',
-      'showExtravars',
-    ],
-  },
-  {
-    name: 'other',
-    title: () => t('profilePage.groupOther'),
-    keys: ['allowLogin', 'allowBackupOps', 'allowChat', 'allowMcp', 'allowApiTokens', 'extendedTokenExpiration'],
-  },
+  ...roleOptionGroups.map((g) => ({ name: g.name, title: () => t(g.title), keys: g.keys })),
+  { name: 'other', title: () => t('profilePage.groupOther'), keys: [] },
 ];
 // what each option lets the user do (spelled out per key, so the i18n key check finds them)
 const OPTION_DESCRIPTIONS = {

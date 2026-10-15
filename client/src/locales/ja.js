@@ -359,6 +359,7 @@ export default {
     },
     groupPages: 'ページとメニュー',
     groupJobs: 'ジョブ',
+    groupAccess: 'アクセスと連携',
     groupOther: 'その他',
     allowedCount: '{total} 件中 {n} 件を許可',
     localAccount: 'ローカルアカウント',
