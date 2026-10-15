@@ -794,6 +794,7 @@ export default function getSettings(t) {
           label: t('settings.fields.branch'),
           placeholder: 'main',
           readonly: false,
+          required: true,
         },
         // a commit's 7 characters
         { key: 'head', label: t('settings.fields.head'), noInput: true, hideBelow: 900 },

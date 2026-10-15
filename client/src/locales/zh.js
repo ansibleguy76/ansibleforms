@@ -1144,7 +1144,7 @@ export default {
         '此仓库即一个以其名称命名的清单: 根目录包含 inventory.yaml、group_vars 和 host_vars。playbook 表单用 inventory: <仓库名称> 指定它;设计器编辑并推送回去。',
       useInventoriesHint: '一个清单: 根目录含 inventory.yaml、group_vars 和 host_vars',
       useInventoriesShort: '清单',
-      fieldsRequired: '名称、URI 和描述为必填项。',
+      fieldsRequired: '名称、分支、URI 和描述为必填项。',
       noOutput: '暂无输出：拉取仓库以查看 git 的输出。',
       noPushOutput: '此仓库从未推送过。',
       noPushTarget: 'AnsibleForms 不会写入此仓库（表单、配置、playbook、工作流或清单），因此没有可推送的内容。',

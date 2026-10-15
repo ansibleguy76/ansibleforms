@@ -1184,7 +1184,7 @@ export default {
         'Dieses Repository ist ein Inventar mit seinem Namen: seine Wurzel enthält inventory.yaml, group_vars und host_vars. Ein Playbook-Formular nennt es mit inventory: <Repository-Name>; der Designer bearbeitet es und pusht es zurück.',
       useInventoriesHint: 'Ein Inventar: inventory.yaml, group_vars und host_vars in seiner Wurzel',
       useInventoriesShort: 'Inventare',
-      fieldsRequired: 'Name, URI und Beschreibung sind erforderlich.',
+      fieldsRequired: 'Name, Branch, URI und Beschreibung sind erforderlich.',
       noOutput: 'Noch keine Ausgabe: Repository pullen, um die Meldungen von git zu sehen.',
       noPushOutput: 'Dieses Repository wurde noch nie gepusht.',
       noPushTarget:

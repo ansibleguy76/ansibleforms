@@ -286,7 +286,7 @@ function fail(err) {
  */
 async function save() {
   const data = toSave.value;
-  if (!data.name || !data.uri || !data.description) {
+  if (!data.name || !String(data.branch || '').trim() || !data.uri || !data.description) {
     toast.warning(t('settings.repositories.fieldsRequired'));
     return;
   }
@@ -457,6 +457,7 @@ onMounted(async () => {
               icon="code-branch"
               placeholder="main"
               :isFloating="false"
+              :required="true"
               :label="t('settings.fields.branch')"
             />
             <BsInput

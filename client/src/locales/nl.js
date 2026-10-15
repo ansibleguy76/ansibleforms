@@ -1176,7 +1176,7 @@ export default {
         'Deze repository is een inventaris, met zijn naam: de hoofdmap bevat inventory.yaml, group_vars en host_vars. Een playbookformulier noemt hem met inventory: <repositorynaam>; de designer bewerkt en pusht hem terug.',
       useInventoriesHint: 'Een inventaris: inventory.yaml, group_vars en host_vars in de hoofdmap',
       useInventoriesShort: 'Inventarissen',
-      fieldsRequired: 'Naam, URI en beschrijving zijn verplicht.',
+      fieldsRequired: 'Naam, branch, URI en beschrijving zijn verplicht.',
       noOutput: 'Nog geen uitvoer: pull de repository om te zien wat git zegt.',
       noPushOutput: 'Deze repository is nog nooit gepusht.',
       noPushTarget:

@@ -1170,7 +1170,7 @@ export default {
         'このリポジトリはその名前のインベントリです: ルートに inventory.yaml、group_vars、host_vars があります。プレイブックのフォームは inventory: <リポジトリ名> で指定し、デザイナーで編集してプッシュします。',
       useInventoriesHint: 'インベントリ: ルートに inventory.yaml、group_vars、host_vars',
       useInventoriesShort: 'インベントリ',
-      fieldsRequired: '名前、URI、説明は必須です。',
+      fieldsRequired: '名前、ブランチ、URI、説明は必須です。',
       noOutput: 'まだ出力はありません：リポジトリをプルすると git の出力が表示されます。',
       noPushOutput: 'このリポジトリは一度もプッシュされていません。',
       noPushTarget:

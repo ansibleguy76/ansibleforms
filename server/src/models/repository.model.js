@@ -9,6 +9,7 @@ import fse from "fs-extra";
 import appConfig from "../../config/app.config.js";
 import CrudModel from './crud.model.js';
 import Credential from './credential.model.v2.js';
+import Errors from '../lib/errors.js';
 import { bump } from '../lib/epochs.js';
 import { nodeId, NODE_DEAD_SECONDS, uptimeSeconds } from '../lib/role.js';
 
@@ -56,6 +57,11 @@ class Repository extends CrudModel {
   // opts carries { fromSeed:true } for the declarative config seed only
   static async create(data, opts = {}) {
     logger.info(`Creating repository ${data.name}`);
+    // the branch it pulls and pushes is required, as its name ; the seed's own may leave it out
+    // (the remote's default)
+    if (!opts.fromSeed && !String(data.branch ?? "").trim()) {
+      throw new Errors.BadRequestError("Missing required field: branch");
+    }
     const insertId = await super.create(this.modelName, data, opts);
     // Don't await - clone happens in background (it can take minutes and the API has to
     // answer the create now). But the rejection must not escape: clone() throws before it

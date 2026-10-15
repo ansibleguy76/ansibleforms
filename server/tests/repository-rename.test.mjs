@@ -130,3 +130,13 @@ describe("an ordinary update that is not a rename", () => {
     assert.equal(queries.some(q => /set status = 'running'/.test(q.sql)), false);
   });
 });
+
+describe("a new repository names its branch", () => {
+  test("refused without one, as without a name", async () => {
+    await assert.rejects(Repository.create({ name: "r", uri: "https://x/r.git", branch: "  " }), /branch/);
+    await assert.rejects(Repository.create({ name: "r", uri: "https://x/r.git" }), /branch/);
+  });
+  test("the seed's own may leave it out (the remote's default)", async () => {
+    assert.equal(await Repository.create({ name: "r", uri: "https://x/r.git" }, { fromSeed: true }), 1);
+  });
+});

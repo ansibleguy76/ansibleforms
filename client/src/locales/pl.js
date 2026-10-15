@@ -1175,7 +1175,7 @@ export default {
         'To repozytorium jest inwentarzem o jego nazwie: katalog główny zawiera inventory.yaml, group_vars i host_vars. Formularz playbooka wskazuje go przez inventory: <nazwa repozytorium>; projektant go edytuje i wypycha z powrotem.',
       useInventoriesHint: 'Inwentarz: inventory.yaml, group_vars i host_vars w katalogu głównym',
       useInventoriesShort: 'Inwentarze',
-      fieldsRequired: 'Nazwa, URI i opis są wymagane.',
+      fieldsRequired: 'Nazwa, gałąź, URI i opis są wymagane.',
       noOutput: 'Brak wyniku: wykonaj pull repozytorium, aby zobaczyć komunikaty git.',
       noPushOutput: 'To repozytorium nigdy nie zostało wypchnięte (push).',
       noPushTarget:

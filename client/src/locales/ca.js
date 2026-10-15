@@ -1184,7 +1184,7 @@ export default {
         "Aquest repositori és un inventari, amb el seu nom: la seva arrel conté inventory.yaml, group_vars i host_vars. Un formulari de playbook el nomena amb inventory: <nom del repositori>; el dissenyador l'edita i el torna a enviar.",
       useInventoriesHint: 'Un inventari: inventory.yaml, group_vars i host_vars a la seva arrel',
       useInventoriesShort: 'Inventaris',
-      fieldsRequired: 'El nom, la URI i la descripció són obligatoris.',
+      fieldsRequired: 'El nom, la branca, la URI i la descripció són obligatoris.',
       noOutput: 'Encara no hi ha sortida: feu pull del repositori per veure què diu git.',
       noPushOutput: "Aquest repositori no s'ha enviat mai (push).",
       noPushTarget:

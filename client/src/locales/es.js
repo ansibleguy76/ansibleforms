@@ -1181,7 +1181,7 @@ export default {
         'Este repositorio es un inventario, con su nombre: su raíz contiene inventory.yaml, group_vars y host_vars. Un formulario de playbook lo nombra con inventory: <nombre del repositorio>; el diseñador lo edita y lo envía de vuelta.',
       useInventoriesHint: 'Un inventario: inventory.yaml, group_vars y host_vars en su raíz',
       useInventoriesShort: 'Inventarios',
-      fieldsRequired: 'El nombre, la URI y la descripción son obligatorios.',
+      fieldsRequired: 'El nombre, la rama, la URI y la descripción son obligatorios.',
       noOutput: 'Aún no hay salida: haz pull del repositorio para ver lo que dice git.',
       noPushOutput: 'Este repositorio nunca se ha enviado (push).',
       noPushTarget:

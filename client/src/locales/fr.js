@@ -1186,7 +1186,7 @@ export default {
         'Ce dépôt est un inventaire, à son nom : sa racine contient inventory.yaml, group_vars et host_vars. Un formulaire de playbook le nomme avec inventory: <nom du dépôt> ; le designer le modifie et le repousse.',
       useInventoriesHint: 'Un inventaire : inventory.yaml, group_vars et host_vars à sa racine',
       useInventoriesShort: 'Inventaires',
-      fieldsRequired: "Le nom, l'URI et la description sont obligatoires.",
+      fieldsRequired: "Le nom, la branche, l'URI et la description sont obligatoires.",
       noOutput: 'Pas encore de sortie : faites un pull du dépôt pour voir ce que dit git.',
       noPushOutput: "Ce dépôt n'a jamais été poussé (push).",
       noPushTarget:

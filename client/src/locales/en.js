@@ -1165,7 +1165,7 @@ export default {
         'This repository is an inventory, named after it: its root holds inventory.yaml, group_vars and host_vars. A playbook form names it with inventory: <repository name>; the designer edits it and pushes it back.',
       useInventoriesHint: 'An inventory: inventory.yaml, group_vars and host_vars at its root',
       useInventoriesShort: 'Inventories',
-      fieldsRequired: 'Name, URI and description are required.',
+      fieldsRequired: 'Name, branch, URI and description are required.',
       noOutput: 'No output yet: pull the repository to see what git says.',
       noPushOutput: 'This repository has never been pushed.',
       noPushTarget:
