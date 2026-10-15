@@ -54,6 +54,14 @@ export const roleOptionGroups = [
   },
 ];
 
+// the options another one already gives : with it on, they are on whatever the role says (the
+// server's guards accept either), so the role editor shows them on and greyed out
+export const roleOptionIncludedIn = {
+  showAppearanceSettings: 'showSettings',
+  showConnectionsSettings: 'showSettings',
+  showAuditLog: 'showSettings',
+};
+
 // every role option, in the groups' order
 export const roleOptionKeys = [
   'showSettings',

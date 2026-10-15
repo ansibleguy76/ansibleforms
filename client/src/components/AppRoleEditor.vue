@@ -30,7 +30,7 @@
 
 import { ref, computed, h } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { requiredRoleDescription, roleOptionGroups } from '@/config/roles';
+import { requiredRoleDescription, roleOptionGroups, roleOptionIncludedIn } from '@/config/roles';
 import { usePagedRows } from '@/composables/usePagedRows';
 
 const props = defineProps({
@@ -47,6 +47,20 @@ const props = defineProps({
 
 // the options in their groups (config/roles.js), each with its title, only those the page passes
 // (optionKeys) ; an option in no group, last, under none
+/**
+ * The option that already gives this one, when it is on (Show all settings gives the parts).
+ *
+ * Args:
+ *   key (string): the option.
+ *
+ * Returns:
+ *   string|null: the option that gives it, or null.
+ */
+function includedBy(key) {
+  const by = roleOptionIncludedIn[key];
+  return by && role.value.options?.[by] ? by : null;
+}
+
 const optionGroups = computed(() => {
   const keys = props.optionKeys;
   const groups = roleOptionGroups
@@ -225,7 +239,19 @@ function removeUser(index) {
         <div class="af-role-option-group-title">{{ group.title }}</div>
         <div class="row row-cols-2 row-cols-md-3 g-0 role-options">
           <div v-for="optKey in group.keys" :key="optKey" class="col">
+            <!-- given by another option that is on (Show all settings) : on, greyed out, its own value
+                 kept for when that one is turned off -->
             <BsInput
+              v-if="includedBy(optKey)"
+              type="checkbox"
+              :isSwitch="true"
+              :modelValue="true"
+              :label="optionLabel(optKey)"
+              :disabled="true"
+              :title="t('settings.settingsPage.roleOptionIncluded', { option: optionLabel(includedBy(optKey)) })"
+            />
+            <BsInput
+              v-else
               type="checkbox"
               :isSwitch="true"
               v-model="role.options[optKey]"
