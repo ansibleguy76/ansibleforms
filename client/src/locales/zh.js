@@ -357,7 +357,7 @@ export default {
       allowMcp: '在启用时，从 AI 代理使用 MCP 服务器。',
       allowFileUploads: '通过表单的文件字段上传文件。',
       allowApiTokens: '为脚本创建 API 令牌，最长为实例允许的有效期。',
-      extendedTokenExpiration: '同样可创建 API 令牌，包括永不过期的令牌。',
+      extendedTokenExpiration: '也可创建永不过期的 API 令牌。',
     },
     groupPages: '页面和菜单',
     groupJobs: '作业',

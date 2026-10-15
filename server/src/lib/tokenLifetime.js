@@ -2,9 +2,9 @@
 /*                                                                */
 /*  An api token's lifetime, by the user's role options :         */
 /*    allowApiTokens          tokens up to API_TOKEN_MAX_DAYS     */
-/*    extendedTokenExpiration tokens too (a role that had it      */
-/*                            before allowApiTokens keeps them),  */
-/*                            and one that never expires          */
+/*    extendedTokenExpiration with it, one that never expires     */
+/*  A role from before allowApiTokens, with only the extended one,*/
+/*  is given allowApiTokens (user.model.js), so it keeps them.    */
 /*  A token that never expires lives NEVER_DAYS : far enough to   */
 /*  be never, near enough for every date column and FROM_UNIXTIME */
 /*  (MariaDB's ends in 2106). It still ends when it is revoked,   */
@@ -18,7 +18,8 @@ import authConfig from '../../config/auth.config.js';
 export const NEVER_DAYS = 50 * 365;
 
 /**
- * Whether a user may make api tokens : a role with allowApiTokens, or with extendedTokenExpiration.
+ * Whether a user may make api tokens : allowApiTokens ; unset, as a role from before it, the
+ * extended option (user.model.js gives it that value too).
  *
  * Args:
  *   user (object): the user, with its resolved options.
@@ -28,11 +29,13 @@ export const NEVER_DAYS = 50 * 365;
  */
 export function mayMakeApiTokens(user) {
   const options = user?.options || {};
-  return !!(options.allowApiTokens || options.extendedTokenExpiration);
+  if (options.allowApiTokens === undefined) return !!options.extendedTokenExpiration;
+  return !!options.allowApiTokens;
 }
 
 /**
- * Whether a user may make an api token that never expires : a role with extendedTokenExpiration.
+ * Whether a user may make an api token that never expires : extendedTokenExpiration, with api
+ * tokens (allowApiTokens) - the extended option adds to the tokens, it does not give them.
  *
  * Args:
  *   user (object): the user, with its resolved options.
@@ -41,7 +44,7 @@ export function mayMakeApiTokens(user) {
  *   boolean: true when it may.
  */
 export function mayMakeNeverExpiringTokens(user) {
-  return !!user?.options?.extendedTokenExpiration;
+  return mayMakeApiTokens(user) && !!user?.options?.extendedTokenExpiration;
 }
 
 /**

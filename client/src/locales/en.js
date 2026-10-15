@@ -362,7 +362,7 @@ export default {
       allowMcp: 'Use the MCP server from an AI agent, when it is enabled.',
       allowFileUploads: "Upload files through a form's file fields.",
       allowApiTokens: 'Make API tokens for scripts, up to the longest lifetime the instance allows.',
-      extendedTokenExpiration: 'Make API tokens too, including one that never expires.',
+      extendedTokenExpiration: 'Also make API tokens that never expire.',
     },
     groupPages: 'Pages and menus',
     groupJobs: 'Jobs',

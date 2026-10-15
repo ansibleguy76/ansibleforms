@@ -45,9 +45,9 @@ export function profileViews(t, options) {
       icon: 'code',
       label: () => t('profilePage.menu.token'),
       description: () => t('profilePage.description.token'),
-      // api tokens are a role option (allowApiTokens, or extendedTokenExpiration : tokens too, and
-      // one that never expires) : the view is only there for the roles that have one
-      visible: () => !!(options()?.allowApiTokens || options()?.extendedTokenExpiration),
+      // api tokens are a role option (allowApiTokens ; the server gives it to a role from before it
+      // that only has extendedTokenExpiration) : the view is only there for the roles that have it
+      visible: () => !!options()?.allowApiTokens,
     },
   ];
 }

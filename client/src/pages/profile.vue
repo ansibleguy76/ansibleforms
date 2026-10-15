@@ -155,7 +155,9 @@ const canSavePassword = computed(() => {
 // plus the cap itself, so a longer choice is never silently shortened.
 const tokenMaxDays = ref(90);
 // a role with extendedTokenExpiration may also make one that never expires ('never')
-const canNeverExpire = computed(() => !!profile.value?.options?.extendedTokenExpiration);
+const canNeverExpire = computed(
+  () => !!profile.value?.options?.allowApiTokens && !!profile.value?.options?.extendedTokenExpiration,
+);
 const TOKEN_LIFETIMES = computed(() => {
   const max = tokenMaxDays.value;
   const list = [30, 90, 180, 365].filter((d) => d <= max);

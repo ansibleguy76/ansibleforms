@@ -23,7 +23,21 @@ describe("api token lifetime", () => {
     expect(apiTokenDays(u, "never")).toBe(null);
   });
 
-  test("extendedTokenExpiration alone : tokens too (a role from before allowApiTokens), and never", () => {
+  test("allowApiTokens off, extendedTokenExpiration on : no token at all - extended adds to tokens", () => {
+    const u = user({ allowApiTokens: false, extendedTokenExpiration: true });
+    expect(mayMakeApiTokens(u)).toBe(false);
+    expect(mayMakeNeverExpiringTokens(u)).toBe(false);
+    expect(apiTokenDays(u, "never")).toBe(null);
+    expect(apiTokenDays(u, 30)).toBe(null);
+  });
+
+  test("both on : days and never", () => {
+    const u = user({ allowApiTokens: true, extendedTokenExpiration: true });
+    expect(apiTokenDays(u, 30)).toBe(30);
+    expect(apiTokenDays(u, "never")).toBe(NEVER_DAYS);
+  });
+
+  test("extendedTokenExpiration alone, allowApiTokens unset : a role from before it keeps its tokens, and never", () => {
     const u = user({ extendedTokenExpiration: true });
     expect(mayMakeApiTokens(u)).toBe(true);
     expect(apiTokenDays(u, 30)).toBe(30);

@@ -1559,8 +1559,8 @@
       - showJobs: The user can see the jobs page. Default true.
       - showArtifacts: The user can see the artifacts an AWX job returns. Default true.
       - allowFileUploads: The user can upload files through a form's file fields. Without it the field is read-only and the upload is refused. Default true. (Added in 7.3.0)
-      - allowApiTokens: The user can make API tokens (Profile > API token), living up to API_TOKEN_MAX_DAYS. Default false. (Added in 7.3.0)
-      - extendedTokenExpiration: The user can make API tokens too, and one that never expires. Default false.
+      - allowApiTokens: The user can make API tokens (Profile > API token), living up to API_TOKEN_MAX_DAYS. Default false (true for a role that only sets extendedTokenExpiration, as before this option). (Added in 7.3.0)
+      - extendedTokenExpiration: With allowApiTokens, the user can also make API tokens that never expire. Default false.
       - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
       - allowLogin: The user can login.
       - allowBackupOps: The user can perform database operations, such as backup and restore.
@@ -1777,8 +1777,8 @@
           - showJobs: The user can see the jobs page. Default true.
           - showArtifacts: The user can see the artifacts an AWX job returns. Default true.
           - allowFileUploads: The user can upload files through a form's file fields. Without it the field is read-only and the upload is refused. Default true. (Added in 7.3.0)
-          - allowApiTokens: The user can make API tokens (Profile > API token), living up to API_TOKEN_MAX_DAYS. Default false. (Added in 7.3.0)
-          - extendedTokenExpiration: The user can make API tokens too, and one that never expires. Default false.
+          - allowApiTokens: The user can make API tokens (Profile > API token), living up to API_TOKEN_MAX_DAYS. Default false (true for a role that only sets extendedTokenExpiration, as before this option). (Added in 7.3.0)
+          - extendedTokenExpiration: With allowApiTokens, the user can also make API tokens that never expire. Default false.
           - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
           - allowLogin: The user can login.
           - allowBackupOps: The user can perform database operations, such as backup and restore.

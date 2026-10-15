@@ -368,7 +368,7 @@ export default {
       allowMcp: 'Den MCP-Server von einem KI-Agenten aus nutzen, wenn er aktiviert ist.',
       allowFileUploads: 'Dateien über die Dateifelder eines Formulars hochladen.',
       allowApiTokens: 'API-Token für Skripte erstellen, bis zur längsten Laufzeit, die die Instanz erlaubt.',
-      extendedTokenExpiration: 'Ebenfalls API-Token erstellen, auch eines, das nie abläuft.',
+      extendedTokenExpiration: 'Auch API-Token erstellen, die nie ablaufen.',
     },
     groupPages: 'Seiten und Menüs',
     groupJobs: 'Jobs',

@@ -364,7 +364,7 @@ export default {
       allowMcp: 'Korzystanie z serwera MCP z agenta AI, gdy jest włączony.',
       allowFileUploads: 'Przesyłać pliki przez pola plików formularza.',
       allowApiTokens: 'Tworzyć tokeny API dla skryptów, do najdłuższego czasu, na jaki pozwala instancja.',
-      extendedTokenExpiration: 'Tworzyć także tokeny API, w tym taki, który nigdy nie wygasa.',
+      extendedTokenExpiration: 'Tworzyć także tokeny API, które nigdy nie wygasają.',
     },
     groupPages: 'Strony i menu',
     groupJobs: 'Zadania',

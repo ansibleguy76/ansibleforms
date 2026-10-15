@@ -370,7 +370,7 @@ export default {
       allowMcp: "Fer servir el servidor MCP des d'un agent d'IA, quan està activat.",
       allowFileUploads: "Pujar fitxers amb els camps de fitxer d'un formulari.",
       allowApiTokens: "Crear tokens d'API per a scripts, fins a la durada màxima que permet la instància.",
-      extendedTokenExpiration: "També crear tokens d'API, inclòs un que no caduca mai.",
+      extendedTokenExpiration: "També crear tokens d'API que no caduquen mai.",
     },
     groupPages: 'Pàgines i menús',
     groupJobs: 'Tasques',

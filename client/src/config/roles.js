@@ -81,8 +81,6 @@ export const roleOptionIncludedIn = {
   showAuditLog: 'showSettings',
   // acting on every user's jobs means seeing them (job.model.js seesAllJobs)
   showAllJobLogs: 'manageAllJobs',
-  // extended tokens are tokens too (lib/tokenLifetime.js mayMakeApiTokens)
-  allowApiTokens: 'extendedTokenExpiration',
 };
 
 // the options that only matter with another one on : without it, the role editor shows them off
@@ -93,6 +91,8 @@ export const roleOptionNeeds = {
   allowWorkflowDesign: 'showDesigner',
   allowInventoryDesign: 'showDesigner',
   allowVarsFileDesign: 'showDesigner',
+  // extended tokens add Never expires to the tokens (lib/tokenLifetime.js)
+  extendedTokenExpiration: 'allowApiTokens',
 };
 
 // every role option, in the groups' order
@@ -252,6 +252,9 @@ export function roleToEditable(r) {
   }
   // allowMcp absent : the server gives it the role's allowChat (user.model.js), so it shows that
   if (!r.options || r.options.allowMcp === undefined) options.allowMcp = options.allowChat;
+  // allowApiTokens absent : a role from before it, whose extendedTokenExpiration gave the tokens -
+  // the server gives it that value (user.model.js), so it shows that
+  if (!r.options || r.options.allowApiTokens === undefined) options.allowApiTokens = !!options.extendedTokenExpiration;
   return {
     name: r.name || '',
     // what the role is for, in a few words (the roles list shows it)

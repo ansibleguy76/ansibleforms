@@ -367,7 +367,7 @@ export default {
       allowMcp: 'De MCP-server gebruiken vanuit een AI-agent, wanneer die is ingeschakeld.',
       allowFileUploads: 'Bestanden uploaden via de bestandsvelden van een formulier.',
       allowApiTokens: 'API-tokens voor scripts maken, tot de langste geldigheid die de instantie toestaat.',
-      extendedTokenExpiration: 'Ook API-tokens maken, ook een die nooit verloopt.',
+      extendedTokenExpiration: 'Ook API-tokens maken die nooit verlopen.',
     },
     groupPages: "Pagina's en menu's",
     groupJobs: 'Jobs',

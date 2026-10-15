@@ -370,7 +370,7 @@ export default {
       allowMcp: 'Usar o servidor MCP a partir de um agente de IA, quando está ativo.',
       allowFileUploads: 'Carregar ficheiros pelos campos de ficheiro de um formulário.',
       allowApiTokens: 'Criar tokens de API para scripts, até à duração máxima que a instância permite.',
-      extendedTokenExpiration: 'Criar também tokens de API, incluindo um que nunca expira.',
+      extendedTokenExpiration: 'Criar também tokens de API que nunca expiram.',
     },
     groupPages: 'Páginas e menus',
     groupJobs: 'Tarefas',

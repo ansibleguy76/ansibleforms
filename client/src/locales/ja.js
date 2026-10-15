@@ -363,7 +363,7 @@ export default {
       allowMcp: '有効な場合、AI エージェントから MCP サーバーを使用します。',
       allowFileUploads: 'フォームのファイル項目からファイルをアップロードします。',
       allowApiTokens: 'スクリプト用の API トークンを作成する（インスタンスが許す最長の有効期間まで）。',
-      extendedTokenExpiration: 'API トークンも作成する（期限のないものを含む）。',
+      extendedTokenExpiration: '期限のない API トークンも作成します。',
     },
     groupPages: 'ページとメニュー',
     groupJobs: 'ジョブ',
