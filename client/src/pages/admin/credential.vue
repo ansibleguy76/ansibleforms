@@ -30,6 +30,7 @@ import { CREDENTIAL_TYPES } from '@/config/settings';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { recordButtons } from '@/lib/recordButtons';
+import { ssoCallbackUrl, SSO_EXAMPLE_BASE } from '@/lib/ssoCallback';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -52,6 +53,8 @@ const EDITED = [
   'client_cert',
   'client_key',
   'tenant_id',
+  'issuer',
+  'redirect_uri',
   'secret_source',
   'secret_store',
   'secret_ref',
@@ -92,6 +95,8 @@ function editable(record) {
     client_cert: record.client_cert ?? '',
     client_key: '',
     tenant_id: record.tenant_id ?? '',
+    issuer: record.issuer ?? '',
+    redirect_uri: record.redirect_uri ?? '',
     secret_source: record.secret_store ? 'store' : 'local',
     secret_store: record.secret_store ?? '',
     secret_ref: record.secret_ref ?? '',
@@ -222,6 +227,13 @@ const shownTab = computed(() => {
 // tab (an smtp one's the mail server, and its TLS)
 const hasConnection = computed(() => ['ssh', 'database', 'smtp'].includes(type.value));
 const isSmtp = computed(() => type.value === 'smtp');
+// an Entra ID or Open ID one : the app registration of an SSO provider, its redirect URL too
+const isSso = computed(() => ['entraid', 'oidc'].includes(type.value));
+// the redirect URL it gets when left empty : the app's address (Settings > URL) and the callback
+const appUrl = ref('');
+const defaultRedirect = computed(
+  () => ssoCallbackUrl(type.value, appUrl.value) || ssoCallbackUrl(type.value, SSO_EXAMPLE_BASE),
+);
 
 // the title : Credentials › <name>, each step a link
 const pageCrumbs = computed(() => [
@@ -266,6 +278,10 @@ async function save() {
     Object.assign(data, { secret_store: '', secret_ref: '', user: e.user.trim() });
     // an Entra ID one's tenant
     data.tenant_id = e.credential_type === 'entraid' ? e.tenant_id.trim() : '';
+    // an Open ID one's issuer
+    data.issuer = e.credential_type === 'oidc' ? e.issuer.trim() : '';
+    // an Entra ID or Open ID one's redirect URL : empty, the app's address and the callback path
+    data.redirect_uri = isSso.value ? e.redirect_uri.trim() : '';
     // its new password, typed in its Login tab
     if (newPassword.value && !isCyberark.value) data.password = newPassword.value;
   }
@@ -342,6 +358,11 @@ onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
   await load();
+  // the app's address : an SSO credential's redirect URL when left empty
+  axios
+    .get('/api/v2/settings')
+    .then((res) => (appUrl.value = res.data?.url || ''))
+    .catch(() => {});
 });
 </script>
 <template>
@@ -510,6 +531,17 @@ onMounted(async () => {
                   :required="true"
                   :label="t('settings.oauth2.tenantId')"
                 />
+                <!-- an Open ID one's issuer : the provider's address, first as the tenant -->
+                <BsInput
+                  v-if="edit.credential_type === 'oidc'"
+                  class="af-credential-field"
+                  v-model="edit.issuer"
+                  icon="globe"
+                  placeholder="https://id.example.com/realms/main"
+                  :isFloating="false"
+                  :required="true"
+                  :label="t('settings.oauth2.issuer')"
+                />
                 <BsInput
                   class="af-credential-field"
                   v-model="edit.user"
@@ -552,6 +584,17 @@ onMounted(async () => {
                   :disabled="managed"
                   :help="t('settings.common.passwordKeep')"
                   :label="passwordLabel"
+                />
+                <!-- an Entra ID or Open ID one's redirect URL, as registered with its client -->
+                <BsInput
+                  v-if="isSso"
+                  class="af-credential-field"
+                  v-model="edit.redirect_uri"
+                  icon="link"
+                  :placeholder="defaultRedirect"
+                  :isFloating="false"
+                  :help="t('settings.oauth2.redirectHelp')"
+                  :label="t('settings.oauth2.redirectUrl')"
                 />
               </template>
             </template>

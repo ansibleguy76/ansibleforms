@@ -1232,8 +1232,12 @@ export default {
       activeHelp:
         'Os utilizadores iniciam sessão com ele quando escolhem {type}; ativá-lo desativa os outros fornecedores {type}.',
       providerNotFound: "Não existe nenhum fornecedor SSO com o id '{id}'.",
-      changeSecret: 'Alterar o segredo',
-      stepProvider: 'Fornecedor',
+      stepType: 'Tipo',
+      type_azuread: 'Microsoft Entra ID',
+      type_oidc: 'Open ID',
+      typeHint_azuread: 'Os utilizadores iniciam sessão com a sua conta Microsoft profissional ou escolar',
+      typeHint_oidc:
+        'Os utilizadores iniciam sessão através de um fornecedor OpenID Connect (Keycloak, Okta...)',
       stepSignIn: 'Início de sessão',
       stepGroups: 'Grupos',
       deleteProvider: 'Eliminar fornecedor',
@@ -1243,6 +1247,8 @@ export default {
       clientSecret: 'Client secret',
       groupFilter: 'Filtro de grupos',
       redirectUrl: 'URI de redirecionamento',
+      redirectHelp:
+        'Tal como registado com o cliente no fornecedor de identidade. Vazio: o URL da aplicação (Definições > URL) e o caminho de retorno mostrado.',
       issuer: 'Emissor',
       scope: 'Âmbito',
       authUrl: 'URL de autenticação',
@@ -1557,7 +1563,7 @@ export default {
       type_entraid: 'Microsoft Entra ID',
       type_entraidHint: 'A aplicação de um fornecedor Microsoft Entra ID: o ID de tenant, ID de cliente e segredo',
       type_oidc: 'Open ID',
-      type_oidcHint: 'O cliente de um fornecedor Open ID: o seu ID de cliente e segredo',
+      type_oidcHint: 'O cliente de um fornecedor Open ID: o emissor, ID de cliente e segredo',
     },
     ssh: {
       tabKey: 'Chave',

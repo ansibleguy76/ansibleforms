@@ -5,13 +5,15 @@ import mysql from "./db.model.js";
 import appConfig from "../../config/app.config.js";
 import crypto from "../lib/crypto.js";
 import Credential from "./credential.model.v2.js";
+import { redirectUrl } from "../lib/ssoCallback.js";
 
 
 class OIDC {
   static async isEnabled() {
     // SSO switched off (ENABLE_SSO, Settings > SSO) : no provider, whatever is configured
     if (!appConfig.enableSso) return { enable: 0, groupfilter: '', issuer: '' };
-    const res = await mysql.do("SELECT enable,groupfilter,issuer FROM AnsibleForms.`oauth2_providers` WHERE provider='oidc' AND enable;");
+    // the issuer : its credential's, else its own (from before credentials held it)
+    const res = await mysql.do("SELECT p.enable, p.groupfilter, COALESCE(NULLIF(c.issuer,''), p.issuer) AS issuer FROM AnsibleForms.`oauth2_providers` p LEFT JOIN AnsibleForms.`credentials` c ON c.name = p.credential WHERE p.provider='oidc' AND p.enable;");
     if (res.length > 0) {
       return res[0];
     } else {
@@ -39,7 +41,10 @@ class OIDC {
           return null;
         });
         record.client_id = cred?.user || "";
+        record.credential_redirect_uri = cred?.redirect_uri || "";
         record.client_secret = cred?.password || "";
+        // an Open ID credential holds the issuer too
+        record.issuer = cred?.issuer || record.issuer;
       }
       return {
         client_id: record.client_id || "",
@@ -47,7 +52,8 @@ class OIDC {
         enable: record.enable || 0,
         groupfilter: record.groupfilter || "",
         issuer: record.issuer || "",
-        redirect_uri: record.redirect_uri || ""
+        // its credential's, else its own (from before), else the app's address and the callback path
+        redirect_uri: await redirectUrl("oidc", record.credential_redirect_uri, record.redirect_uri)
       };
     } else {
       return {

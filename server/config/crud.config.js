@@ -46,6 +46,9 @@ const crudConfigs = {
       { name: 'client_key', isEncrypted: true },
       // an entraid credential's tenant
       { name: 'tenant_id' },
+      // an oidc credential's issuer ; an entraid or oidc one's redirect URL
+      { name: 'issuer' },
+      { name: 'redirect_uri' },
       { name: 'description' },
       { name: 'db_type' },
       { name: 'vault_path' },

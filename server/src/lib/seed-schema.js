@@ -59,8 +59,10 @@ const credentialItem = {
     credential_type: { type: "string", enum: ["userpass", "ssh", "git", "api", "database", "cyberark", "smtp", "ldap", "entraid", "oidc"] },
     client_cert: str,
     client_key: str,
-    // an entraid credential's tenant
+    // an entraid credential's tenant, an oidc one's issuer ; an entraid or oidc one's redirect URL
     tenant_id: str,
+    issuer: str,
+    redirect_uri: str,
     // a credential can take its user and password from a secret store instead of
     // carrying them here at all : the store's name and the place in it
     secret_store: str,

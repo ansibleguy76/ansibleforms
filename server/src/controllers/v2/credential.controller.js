@@ -7,6 +7,29 @@ import postgres from '../../lib/postgres.js';
 import mssql from '../../lib/mssql.js';
 import oracle from '../../lib/oracle.js';
 import mongodb from '../../lib/mongodb.js';
+import auth_entraid from '../../auth/auth_entraid.js';
+import auth_oidc from '../../auth/auth_oidc.js';
+import logger from '../../lib/logger.js';
+
+// the credential types an SSO provider signs in with : a change to one of them is a change to the
+// sign-in, which reads its client, tenant or issuer and redirect URL when it starts
+const SSO_TYPES = ['entraid', 'oidc'];
+
+/**
+ * Starts the SSO sign-ins again, with their credentials as they are now. A failure is logged : the
+ * credential was saved, its provider says why it cannot sign in.
+ *
+ * Returns:
+ *   Promise<void>: settles once both have started.
+ */
+async function reloadSso() {
+  try {
+    await auth_entraid.initialize();
+    await auth_oidc.initialize();
+  } catch (err) {
+    logger.error(`Could not start the SSO sign-in again after a credential changed : ${err?.message || err}`);
+  }
+}
 
 const credentialController = {
   async find(req, res) {
@@ -56,7 +79,9 @@ const credentialController = {
 
   async update(req, res) {
     try {
+      const before = await CredentialModel.findById(req.params.id).catch(() => null);
       await CredentialModel.update(req.body, req.params.id);
+      if ([before?.credential_type, req.body?.credential_type].some((t) => SSO_TYPES.includes(t))) await reloadSso();
       res.json(RestResult.single({ message: i18n.t(req, 'success.updated', { resource: 'Credential' }) }));
     } catch (err) {
       Errors.ReturnError(res, err);
@@ -65,7 +90,9 @@ const credentialController = {
 
   async delete(req, res) {
     try {
+      const before = await CredentialModel.findById(req.params.id).catch(() => null);
       await CredentialModel.delete(req.params.id);
+      if (SSO_TYPES.includes(before?.credential_type)) await reloadSso();
       res.json(RestResult.single({ message: i18n.t(req, 'success.deleted', { resource: 'Credential' }) }));
     } catch (err) {
       Errors.ReturnError(res, err);

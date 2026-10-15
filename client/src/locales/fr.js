@@ -1234,8 +1234,11 @@ export default {
       activeHelp:
         "Les utilisateurs se connectent avec lui lorsqu'ils choisissent {type} ; l'activer désactive les autres fournisseurs {type}.",
       providerNotFound: "Aucun fournisseur SSO n'a l'id '{id}'.",
-      changeSecret: 'Changer le secret',
-      stepProvider: 'Fournisseur',
+      stepType: 'Type',
+      type_azuread: 'Microsoft Entra ID',
+      type_oidc: 'Open ID',
+      typeHint_azuread: 'Les utilisateurs se connectent avec leur compte Microsoft professionnel ou scolaire',
+      typeHint_oidc: 'Les utilisateurs se connectent via un fournisseur OpenID Connect (Keycloak, Okta...)',
       stepSignIn: 'Connexion',
       stepGroups: 'Groupes',
       deleteProvider: 'Supprimer le fournisseur',
@@ -1245,6 +1248,8 @@ export default {
       clientSecret: 'Secret client',
       groupFilter: 'Filtre de groupe',
       redirectUrl: 'URI de redirection',
+      redirectHelp:
+        "Telle qu'enregistrée avec le client chez le fournisseur d'identité. Vide : l'URL de l'application (Paramètres > URL) et le chemin de retour affiché.",
       issuer: 'Issuer',
       scope: 'Scope',
       authUrl: "URL d'authentification",
@@ -1657,7 +1662,7 @@ export default {
       type_entraidHint:
         "L'application d'un fournisseur Microsoft Entra ID : son ID de locataire, son ID client et son secret",
       type_oidc: 'Open ID',
-      type_oidcHint: "Le client d'un fournisseur Open ID : son ID client et son secret",
+      type_oidcHint: "Le client d'un fournisseur Open ID : son émetteur, son ID client et son secret",
     },
     ssh: {
       tabKey: 'Clé',

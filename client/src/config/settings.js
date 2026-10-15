@@ -7,7 +7,7 @@ import { cronCell } from '@/lib/cronCell';
 import { cronValidationMessage } from './cron';
 import { PILL, pill, esc } from '@/lib/tableCells';
 import { formPath } from '@/lib/formsPath';
-import { ssoCallbackUrl, ssoCallbackBase, ssoCallbackPath, SSO_EXAMPLE_BASE } from '@/lib/ssoCallback';
+import { ssoCallbackUrl, SSO_EXAMPLE_BASE } from '@/lib/ssoCallback';
 
 // A cron field is validated with the SAME check the editor uses (config/cron.js), which
 // is the only thing that keeps the two from disagreeing.
@@ -189,6 +189,14 @@ export function schedulePill(t, state) {
   const label = known[state] ? t(`settings.schedules.state_${state}`) : state;
   return pill(known[state], label);
 }
+
+// ─── SSO providers (Access > SSO) ────────────────────────────────────────────
+// the types a provider can be, in the order the wizard offers them, and each one's icon
+export const SSO_TYPES = ['azuread', 'oidc'];
+export const SSO_ICONS = {
+  azuread: 'fab,microsoft',
+  oidc: 'fab,openid',
+};
 
 // ─── notification channels (Connections > Notifications) ─────────────────────
 // the types a channel can be, in the order the wizard offers them, and each one's icon
@@ -1006,20 +1014,20 @@ export default function getSettings(t) {
       selectable: false,
       // a provider has its own page (pages/admin/sso-provider.vue) : its row and Edit open it, Add the wizard
       openPage: (item) => `/settings/sso/${item.id}`,
-      // the dialog in steps : the provider, where it signs in, as whom, its groups. The help a
-      // provider needs (the permissions of an Entra ID app, what Open ID was tested with) is in
-      // the step it is for
+      // the dialog in steps, as its page's tabs : its details, its type, as whom and where it signs
+      // in (a credential of its type : the app registration, its redirect URL too), its groups. The help a provider
+      // needs (the permissions of an Entra ID app, what Open ID was tested with) is in the step it
+      // is for
       steps: [
-        { key: 'provider', label: t('settings.oauth2.stepProvider') },
+        { key: 'provider', label: t('settings.common.tabDetails') },
         {
-          // where the app signs in : the issuer (Open ID) and the redirect URL
-          key: 'connection',
-          label: t('settings.common.tabConnection'),
+          key: 'type',
+          label: t('settings.oauth2.stepType'),
           notes: (item) => [item.provider === 'oidc' && { text: t('admin.oauth2.openIdTestedWith') }],
         },
         {
-          // as whom : a credential of its type (an entraid one with its tenant, an oidc one) ; the
-          // permissions the Entra ID app needs
+          // as whom and where : a credential of its type (an entraid one with its tenant, an oidc
+          // one with its issuer) ; the permissions the Entra ID app needs
           key: 'credentials',
           label: t('settings.common.tabCredentials'),
           notes: (item) => [
@@ -1040,11 +1048,6 @@ export default function getSettings(t) {
           ],
         },
       ],
-      // the redirect URL : the address typed and the provider's callback path, joined
-      beforeSave: ({ redirect_base, ...item }) => ({
-        ...item,
-        redirect_uri: ssoCallbackUrl(item.provider, redirect_base, item.redirect_uri),
-      }),
       actions: [
         { name: 'edit', title: t('settings.oauth2.editProvider'), icon: 'pencil', color: 'edit' },
         // the one its type signs in with : the others of its type stop being it (oauth2.model)
@@ -1056,14 +1059,6 @@ export default function getSettings(t) {
           dividerBefore: true,
           enabledWhen: (p) => !p.enable,
           update: (p) => ({ enable: 1, provider: p.provider }),
-        },
-        {
-          name: 'change_password',
-          dividerBefore: true,
-          // a provider has a client secret, not a password
-          title: t('settings.oauth2.changeSecret'),
-          icon: 'lock',
-          color: 'change',
         },
         { name: 'delete', title: t('settings.oauth2.deleteProvider'), icon: 'trash', color: 'delete' },
       ],
@@ -1077,18 +1072,20 @@ export default function getSettings(t) {
           noInput: true,
         },
         {
+          // its type : radios, each its icon, label and a few words ; set when it is made, it stays
           key: 'provider',
+          step: 'type',
           label: t('settings.oauth2.provider'),
+          type: 'radio',
           required: true,
-          icon: 'cloud',
-          type: 'select',
-          parent: 'providers',
-          values: [
-            { label: 'Microsoft Entra ID', value: 'azuread' },
-            { label: 'Open ID', value: 'oidc' },
-          ],
-          valueKey: 'value',
-          labelKey: 'label',
+          options: SSO_TYPES.map((value) => ({
+            value,
+            icon: SSO_ICONS[value],
+            label: t(`settings.oauth2.type_${value}`),
+            hint: t(`settings.oauth2.typeHint_${value}`),
+          })),
+          initial: (r) => r?.provider || 'azuread',
+          render: (v) => esc(t(`settings.oauth2.type_${SSO_TYPES.includes(v) ? v : 'oidc'}`)),
         },
         { key: 'name', label: t('settings.fields.name'), required: true, icon: 'heading' },
         { key: 'description', label: t('settings.fields.description'), required: false, icon: 'info-circle' },
@@ -1108,14 +1105,12 @@ export default function getSettings(t) {
           noTable: true,
         },
         {
+          // in its credential now (an oidc one) ; kept on the record for the providers that still
+          // have one
           key: 'issuer',
-          step: 'connection',
-          label: t('settings.oauth2.issuer'),
-          required: true,
-          icon: 'globe',
-          dependency: 'provider',
-          dependencyValues: ['oidc'],
+          noInput: true,
           hidden: true,
+          noTable: true,
         },
         {
           // in its credential now ; kept on the record for the providers that still have one
@@ -1150,31 +1145,11 @@ export default function getSettings(t) {
           hidden: true,
           noTable: true,
         },
-        // the redirect URL : stored whole, typed as its address with the callback path beside it
-        // (redirect_base) ; Save joins them (beforeSave)
         {
+          // in its credential now (its redirect URL) ; kept on the record for the providers that
+          // still have one
           key: 'redirect_uri',
-          label: t('settings.oauth2.redirectUrl'),
           noInput: true,
-          hidden: true,
-        },
-        {
-          key: 'redirect_base',
-          step: 'connection',
-          label: t('settings.oauth2.redirectUrl'),
-          // a sign-in needs the full URL (the server reads it as one)
-          required: true,
-          icon: 'link',
-          dependency: 'provider',
-          dependencyValues: ['azuread', 'oidc'],
-          // a new provider : the app's address (the URL setting), when it has one
-          defaultMap: {
-            azuread: (config) => ssoCallbackBase('azuread', config.url),
-            oidc: (config) => ssoCallbackBase('oidc', config.url),
-          },
-          placeholder: SSO_EXAMPLE_BASE,
-          suffix: (item) => ssoCallbackPath(item.provider, item.redirect_uri),
-          initial: (r) => ssoCallbackBase(r?.provider, r?.redirect_uri),
           hidden: true,
           noTable: true,
         },
@@ -1188,7 +1163,7 @@ export default function getSettings(t) {
         },
         {
           key: 'scope',
-          step: 'connection',
+          step: 'provider',
           label: t('settings.oauth2.scope'),
           required: false,
           icon: 'list',
@@ -1198,7 +1173,7 @@ export default function getSettings(t) {
         },
         {
           key: 'auth_url',
-          step: 'connection',
+          step: 'provider',
           label: t('settings.oauth2.authUrl'),
           required: false,
           icon: 'globe',
@@ -1208,7 +1183,7 @@ export default function getSettings(t) {
         },
         {
           key: 'token_url',
-          step: 'connection',
+          step: 'provider',
           label: t('settings.oauth2.tokenUrl'),
           required: false,
           icon: 'globe',
@@ -1218,7 +1193,7 @@ export default function getSettings(t) {
         },
         {
           key: 'userinfo_url',
-          step: 'connection',
+          step: 'provider',
           label: t('settings.oauth2.userinfoUrl'),
           required: false,
           icon: 'globe',
@@ -1228,7 +1203,7 @@ export default function getSettings(t) {
         },
         {
           key: 'extra',
-          step: 'connection',
+          step: 'provider',
           label: t('settings.oauth2.extra'),
           type: 'textarea',
           required: false,
@@ -1738,6 +1713,19 @@ export default function getSettings(t) {
           dependencyValues: ['database'],
         },
         {
+          // an oidc credential's issuer : the provider's address, first as an entraid one's tenant
+          key: 'issuer',
+          step: 'login',
+          icon: 'globe',
+          label: t('settings.oauth2.issuer'),
+          placeholder: 'https://id.example.com/realms/main',
+          required: true,
+          hidden: true,
+          noTable: true,
+          dependency: 'credential_type',
+          dependencyValues: ['oidc'],
+        },
+        {
           // an entraid credential's tenant : the tenant id the Entra ID app is in, first
           // as in the Entra admin center (tenant, client id, secret) ; the sign-in needs it
           key: 'tenant_id',
@@ -1794,6 +1782,21 @@ export default function getSettings(t) {
           // a cyberark credential has a client key instead
           dependency: 'credential_type',
           dependencyValues: ['userpass', 'ssh', 'git', 'api', 'database', 'smtp', 'ldap', 'entraid', 'oidc'],
+        },
+        {
+          // an entraid or oidc credential's redirect URL, as registered with the client : empty,
+          // the app's address and the type's callback path (shown as its placeholder)
+          key: 'redirect_uri',
+          step: 'login',
+          icon: 'link',
+          label: t('settings.oauth2.redirectUrl'),
+          help: t('settings.oauth2.redirectHelp'),
+          placeholder: (r, config) =>
+            ssoCallbackUrl(r.credential_type, config?.url) || ssoCallbackUrl(r.credential_type, SSO_EXAMPLE_BASE),
+          hidden: true,
+          noTable: true,
+          dependency: 'credential_type',
+          dependencyValues: ['entraid', 'oidc'],
         },
         {
           // a cyberark credential : the client certificate and key its AppID may be restricted to

@@ -1224,8 +1224,11 @@ export default {
       activeHelp:
         'Gebruikers melden zich ermee aan als ze {type} kiezen; inschakelen schakelt de andere {type}-providers uit.',
       providerNotFound: "Er is geen SSO-provider met id '{id}'.",
-      changeSecret: 'Secret wijzigen',
-      stepProvider: 'Provider',
+      stepType: 'Type',
+      type_azuread: 'Microsoft Entra ID',
+      type_oidc: 'Open ID',
+      typeHint_azuread: 'Gebruikers melden zich aan met hun Microsoft werk- of schoolaccount',
+      typeHint_oidc: 'Gebruikers melden zich aan via een OpenID Connect-provider (Keycloak, Okta...)',
       stepSignIn: 'Aanmelden',
       stepGroups: 'Groepen',
       deleteProvider: 'Provider verwijderen',
@@ -1235,6 +1238,8 @@ export default {
       clientSecret: 'Client secret',
       groupFilter: 'Groepfilter',
       redirectUrl: 'Omleidings-URI',
+      redirectHelp:
+        'Zoals geregistreerd bij de client bij de identiteitsprovider. Leeg: de URL van de app (Instellingen > URL) en het getoonde callbackpad.',
       issuer: 'Issuer',
       scope: 'Scope',
       authUrl: 'Auth URL',
@@ -1641,7 +1646,7 @@ export default {
       type_entraid: 'Microsoft Entra ID',
       type_entraidHint: 'De app van een Microsoft Entra ID-provider: tenant-ID, client-ID en clientgeheim',
       type_oidc: 'Open ID',
-      type_oidcHint: 'De client van een Open ID-provider: client-ID en clientgeheim',
+      type_oidcHint: 'De client van een Open ID-provider: uitgever, client-ID en clientgeheim',
     },
     ssh: {
       tabKey: 'Sleutel',

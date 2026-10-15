@@ -1232,8 +1232,11 @@ export default {
       activeHelp:
         'Benutzer melden sich damit an, wenn sie {type} wählen; das Einschalten schaltet die anderen {type}-Anbieter aus.',
       providerNotFound: "Es gibt keinen SSO-Anbieter mit der ID '{id}'.",
-      changeSecret: 'Secret ändern',
-      stepProvider: 'Anbieter',
+      stepType: 'Typ',
+      type_azuread: 'Microsoft Entra ID',
+      type_oidc: 'Open ID',
+      typeHint_azuread: 'Benutzer melden sich mit ihrem Microsoft-Geschäfts- oder Schulkonto an',
+      typeHint_oidc: 'Benutzer melden sich über einen OpenID-Connect-Anbieter an (Keycloak, Okta...)',
       stepSignIn: 'Anmeldung',
       stepGroups: 'Gruppen',
       deleteProvider: 'Anbieter loeschen',
@@ -1243,6 +1246,8 @@ export default {
       clientSecret: 'Client-Secret',
       groupFilter: 'Gruppenfilter',
       redirectUrl: 'Umleitungs-URI',
+      redirectHelp:
+        'Wie beim Client des Identitätsanbieters registriert. Leer: die URL der App (Einstellungen > URL) und der angezeigte Callback-Pfad.',
       issuer: 'Issuer',
       scope: 'Scope',
       authUrl: 'Auth-URL',
@@ -1653,7 +1658,7 @@ export default {
       type_entraid: 'Microsoft Entra ID',
       type_entraidHint: 'Die App eines Microsoft Entra ID-Anbieters: Mandanten-ID, Client-ID und Client-Geheimnis',
       type_oidc: 'Open ID',
-      type_oidcHint: 'Der Client eines Open ID-Anbieters: Client-ID und Client-Geheimnis',
+      type_oidcHint: 'Der Client eines Open ID-Anbieters: Aussteller, Client-ID und Client-Geheimnis',
     },
     ssh: {
       tabKey: 'Schlüssel',

@@ -1216,8 +1216,11 @@ export default {
       activeHelp:
         '{type} を選んだユーザーはこれでサインインします。オンにすると他の {type} プロバイダーはオフになります。',
       providerNotFound: "ID '{id}' の SSO プロバイダーはありません。",
-      changeSecret: 'シークレットを変更',
-      stepProvider: 'プロバイダー',
+      stepType: '種類',
+      type_azuread: 'Microsoft Entra ID',
+      type_oidc: 'Open ID',
+      typeHint_azuread: 'ユーザーは Microsoft の職場または学校アカウントでサインインします',
+      typeHint_oidc: 'ユーザーは OpenID Connect プロバイダー（Keycloak、Okta など）でサインインします',
       stepSignIn: 'サインイン',
       stepGroups: 'グループ',
       deleteProvider: 'プロバイダーを削除',
@@ -1227,6 +1230,8 @@ export default {
       clientSecret: 'クライアントシークレット',
       groupFilter: 'グループフィルター',
       redirectUrl: 'リダイレクト URI',
+      redirectHelp:
+        'ID プロバイダーでクライアントに登録したとおり。空の場合：アプリの URL（設定 > URL）と表示のコールバックパス。',
       issuer: '発行者 (Issuer)',
       scope: 'スコープ',
       authUrl: '認可 URL',
@@ -1535,7 +1540,7 @@ export default {
       type_entraid: 'Microsoft Entra ID',
       type_entraidHint: 'Microsoft Entra ID プロバイダーのアプリ：テナント ID、クライアント ID、シークレット',
       type_oidc: 'Open ID',
-      type_oidcHint: 'Open ID プロバイダーのクライアント：クライアント ID とシークレット',
+      type_oidcHint: 'Open ID プロバイダーのクライアント：発行者、クライアント ID とシークレット',
     },
     ssh: {
       tabKey: 'キー',

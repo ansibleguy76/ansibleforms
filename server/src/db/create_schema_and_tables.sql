@@ -68,6 +68,11 @@ CREATE TABLE `credentials` (
   `client_key` text DEFAULT NULL,
   -- an Entra ID credential's tenant (its user the client id, its password the client secret)
   `tenant_id` varchar(250) DEFAULT NULL,
+  -- an Open ID credential's issuer (the provider's address)
+  `issuer` varchar(500) DEFAULT NULL,
+  -- an Entra ID or Open ID credential's redirect URL, as registered with its client (empty : the
+  -- app's address and the type's callback path)
+  `redirect_uri` varchar(1000) DEFAULT NULL,
   `vault_path` varchar(500) DEFAULT NULL,
   `managed` tinyint(4) DEFAULT 0,
   -- the secret store a credential reads its user and password from, and where in it

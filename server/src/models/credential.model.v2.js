@@ -32,7 +32,8 @@ class CredentialModel extends CrudModel {
   // one for SSH to a server, the login a workflow node's playbook connects with
   // ldap : an LDAP directory's bind account (its user the bind DN) ; entraid and oidc : an SSO
   // provider's client (its user the client id, its password the client secret ; an entraid one its
-  // tenant too) ; smtp : a mail server (its host, port and TLS) and its login (none for a relay)
+  // tenant too, an oidc one its issuer) ; smtp : a mail server (its host, port and TLS) and its
+  // login (none for a relay)
   static TYPES = ['userpass', 'ssh', 'git', 'api', 'database', 'cyberark', 'smtp', 'ldap', 'entraid', 'oidc'];
 
   /**
@@ -96,8 +97,9 @@ class CredentialModel extends CrudModel {
 
   /**
    * The fields a type cannot do without : an Entra ID credential's tenant (the sign-in needs it),
-   * an smtp one's host (the mail server). A create of one without it is refused, and so is an
-   * update that empties it ; a type without a tenant keeps none.
+   * an Open ID one's issuer, an smtp one's host (the mail server). A create of one without it is
+   * refused, and so is an update that empties it ; a type without a tenant or an issuer keeps
+   * none.
    *
    * Args:
    *   data (object): the record written.
@@ -107,7 +109,8 @@ class CredentialModel extends CrudModel {
    *   object: the record.
    *
    * Raises:
-   *   BadRequestError: an Entra ID credential without a tenant, an smtp one without a host.
+   *   BadRequestError: an Entra ID credential without a tenant, an Open ID one without an
+   *     issuer, an smtp one without a host.
    */
   static requireTypeFields(data, creating = false) {
     const empty = (key) => (data[key] === undefined ? creating : !String(data[key] ?? '').trim());
@@ -115,6 +118,18 @@ class CredentialModel extends CrudModel {
       if (creating || data.tenant_id !== undefined) data.tenant_id = null;
     } else if (data.credential_type === 'entraid' && empty('tenant_id')) {
       throw new Errors.BadRequestError('A Microsoft Entra ID credential needs its tenant ID (tenant_id)');
+    }
+    if (data.credential_type !== undefined && data.credential_type !== 'oidc') {
+      if (creating || data.issuer !== undefined) data.issuer = null;
+    } else if (data.credential_type === 'oidc' && empty('issuer')) {
+      throw new Errors.BadRequestError('An Open ID credential needs its issuer (the provider\'s address)');
+    }
+    if (data.issuer !== undefined && data.issuer !== null) data.issuer = String(data.issuer).trim();
+    // a redirect URL : an entraid or an oidc one's only
+    if (data.credential_type !== undefined && !['entraid', 'oidc'].includes(data.credential_type)) {
+      if (creating || data.redirect_uri !== undefined) data.redirect_uri = null;
+    } else if (data.redirect_uri !== undefined && data.redirect_uri !== null) {
+      data.redirect_uri = String(data.redirect_uri).trim() || null;
     }
     if (data.credential_type === 'smtp' && empty('host')) {
       throw new Errors.BadRequestError('An smtp credential needs its mail server (host)');
@@ -301,7 +316,8 @@ function assertInlineAllowed(spec, inline, scope = currentScope()) {
   if (!scope.secretStores && scope.credentials) assertCredentialAllowed(spec, scope);
 }
 
-const ROW_SQL = "SELECT host,port,db_name,name,user,password,secure,db_type,is_database,vault_path,secret_store,secret_ref FROM AnsibleForms.`credentials` WHERE name REGEXP ?";
+// an SSO credential its tenant (Entra ID) or issuer (Open ID) and its redirect URL too
+const ROW_SQL = "SELECT host,port,db_name,name,user,password,secure,db_type,is_database,vault_path,secret_store,secret_ref,tenant_id,issuer,redirect_uri FROM AnsibleForms.`credentials` WHERE name REGEXP ?";
 
 async function lookupRow(nameOrRegex, fallbackName) {
   let res = await mysql.do(ROW_SQL, nameOrRegex);

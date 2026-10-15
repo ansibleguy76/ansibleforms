@@ -44,7 +44,28 @@ describe("an Entra ID credential's tenant", () => {
   });
 
   test("another type keeps none : an Open ID one, a type changed away from Entra ID", () => {
-    assert.equal(Credential.requireTypeFields({ credential_type: "oidc", tenant_id: "t-1" }, true).tenant_id, null);
+    assert.equal(Credential.requireTypeFields({ credential_type: "oidc", issuer: "https://id.example.com", tenant_id: "t-1" }, true).tenant_id, null);
     assert.equal(Credential.requireTypeFields({ credential_type: "userpass", tenant_id: "t-1" }).tenant_id, null);
+  });
+});
+
+describe("an Open ID credential's issuer, an smtp one's host", () => {
+  test("an Open ID one needs its issuer ; another type keeps none", () => {
+    assert.throws(() => Credential.requireTypeFields({ credential_type: "oidc" }, true), /needs its issuer/);
+    assert.equal(Credential.requireTypeFields({ credential_type: "oidc", issuer: " https://id.example.com " }, true).issuer, "https://id.example.com");
+    assert.equal(Credential.requireTypeFields({ credential_type: "entraid", tenant_id: "t", issuer: "x" }, true).issuer, null);
+  });
+
+  test("an smtp one needs its mail server", () => {
+    assert.throws(() => Credential.requireTypeFields({ credential_type: "smtp" }, true), /needs its mail server/);
+    assert.equal(Credential.requireTypeFields({ credential_type: "smtp", host: "smtp.example.com" }, true).host, "smtp.example.com");
+  });
+});
+
+describe("an SSO credential's redirect URL", () => {
+  test("an Entra ID or Open ID one keeps it, trimmed, empty as none ; another type keeps none", () => {
+    assert.equal(Credential.requireTypeFields({ credential_type: "entraid", tenant_id: "t", redirect_uri: " https://f/cb " }, true).redirect_uri, "https://f/cb");
+    assert.equal(Credential.requireTypeFields({ credential_type: "oidc", issuer: "https://i", redirect_uri: "" }, true).redirect_uri, null);
+    assert.equal(Credential.requireTypeFields({ credential_type: "userpass", redirect_uri: "https://f/cb" }, true).redirect_uri, null);
   });
 });

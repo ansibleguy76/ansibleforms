@@ -584,6 +584,13 @@ function newItem(defaults = {}) {
       }
     }
   });
+  // the defaults of a field that follows another set from the start (an SSO provider is Entra ID
+  // at first : its redirect URL, on the first step, from the app's address)
+  fields.value.forEach((field) => {
+    if (field.defaultMap && field.dependency && item.value[field.dependency] && !item.value[field.key]) {
+      setFieldDefaults(field.dependency);
+    }
+  });
   action.value = 'new';
 }
 async function createItem() {
@@ -796,7 +803,8 @@ const title = computed(() => {
  *   string: the text for the record shown.
  */
 function textOf(value) {
-  return typeof value === 'function' ? value(item.value || {}) : value;
+  // a rule gets the record and the app's settings (its URL : an SSO credential's redirect URL)
+  return typeof value === 'function' ? value(item.value || {}, config.value || {}) : value;
 }
 
 // ─── create from a dropdown ──────────────────────────────────────────────────

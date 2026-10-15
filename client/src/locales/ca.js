@@ -1233,8 +1233,11 @@ export default {
       activeHelp:
         'Els usuaris inicien la sessió amb ell quan trien {type}; activar-lo desactiva els altres proveïdors {type}.',
       providerNotFound: "No hi ha cap proveïdor SSO amb l'id '{id}'.",
-      changeSecret: 'Canvia el secret',
-      stepProvider: 'Proveïdor',
+      stepType: 'Tipus',
+      type_azuread: 'Microsoft Entra ID',
+      type_oidc: 'Open ID',
+      typeHint_azuread: 'Els usuaris inicien sessió amb el seu compte Microsoft de feina o escola',
+      typeHint_oidc: 'Els usuaris inicien sessió amb un proveïdor OpenID Connect (Keycloak, Okta...)',
       stepSignIn: 'Inici de sessió',
       stepGroups: 'Grups',
       deleteProvider: 'Suprimeix el proveïdor',
@@ -1244,6 +1247,8 @@ export default {
       clientSecret: 'Secret del client',
       groupFilter: 'Filtre de grups',
       redirectUrl: 'URI de redirecció',
+      redirectHelp:
+        "Tal com està registrat amb el client al proveïdor d'identitat. Buit: l'URL de l'aplicació (Configuració > URL) i el camí de retorn mostrat.",
       issuer: 'Emissor',
       scope: 'Abast',
       authUrl: "URL d'autenticació",
@@ -1559,7 +1564,7 @@ export default {
       type_entraid: 'Microsoft Entra ID',
       type_entraidHint: "L'aplicació d'un proveïdor Microsoft Entra ID: el seu ID de tenant, ID de client i secret",
       type_oidc: 'Open ID',
-      type_oidcHint: "El client d'un proveïdor Open ID: el seu ID de client i secret",
+      type_oidcHint: "El client d'un proveïdor Open ID: el seu emissor, ID de client i secret",
     },
     ssh: {
       tabKey: 'Clau',

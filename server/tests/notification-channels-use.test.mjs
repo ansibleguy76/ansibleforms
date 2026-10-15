@@ -39,7 +39,7 @@ const Job = (await import("../src/models/job.model.js")).default;
 const { default: Settings } = await import("../src/models/settings.model.js");
 const { channelsOfForm } = await import("../src/models/form.model.js");
 const { default: NotificationChannel } = await import("../src/models/notificationChannel.model.js");
-const { moveMailServersToChannels, copyMailSettingsToServers, moveMailServersToCredentials } = await import("../src/models/schema.model.js");
+const { moveMailServersToChannels, copyMailSettingsToServers, moveMailServersToCredentials, moveSsoClientsToCredentials } = await import("../src/models/schema.model.js");
 
 beforeEach(() => {
   queries.length = 0;
@@ -230,5 +230,26 @@ describe("a mail channel sends through its credential's server", () => {
     vi.spyOn(NotificationChannel, "resolveCredential").mockResolvedValue({ user: "", password: "" });
     const config = await NotificationChannel.toMailConfig({ name: "r", credential: "relay-smtp" });
     expect(config).toMatchObject({ mail_server: "relay.example.com", mail_username: "" });
+  });
+});
+
+describe("an SSO provider's client moves to a credential of its type", () => {
+  test("its own client : a new credential, named after it, with its tenant ; the provider's emptied", async () => {
+    answers = [{ match: /FROM AnsibleForms\.`oauth2_providers`/, rows: [{ id: 3, name: "Contoso Entra ID", provider: "azuread", tenant_id: "t-1", redirect_uri: "https://f/cb", client_id: "c-1", client_secret: "enc", credential: null }] }];
+    expect(await moveSsoClientsToCredentials()).toMatch(/Contoso Entra ID into contoso-entra-id-sso/);
+    const insert = queries.find((q) => /^INSERT INTO AnsibleForms\.`credentials`/.test(q.sql));
+    expect(insert.args).toEqual(["contoso-entra-id-sso", "c-1", "enc", "The client of the SSO provider Contoso Entra ID", "entraid", "t-1", null, "https://f/cb"]);
+    expect(queries.find((q) => /SET client_id = NULL/.test(q.sql)).args).toEqual(["contoso-entra-id-sso", 3]);
+  });
+
+  test("a credential already : its issuer copied into it when it has none", async () => {
+    answers = [{ match: /FROM AnsibleForms\.`oauth2_providers`/, rows: [{ id: 4, name: "kc", provider: "oidc", issuer: "https://kc/realms/a", credential: "kc-app" }] }];
+    expect(await moveSsoClientsToCredentials()).toMatch(/kc kept kc-app/);
+    const into = queries.find((q) => /^UPDATE AnsibleForms\.`credentials` SET issuer/.test(q.sql));
+    expect(into.args).toEqual(["https://kc/realms/a", "kc-app"]);
+  });
+
+  test("nothing of its own left : nothing to do", async () => {
+    expect(await moveSsoClientsToCredentials()).toBe(null);
   });
 });

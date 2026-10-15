@@ -605,7 +605,7 @@ const SCHEMA_MANIFEST = {
                                'tokens.replaced_at', 'repositories.pull_output', 'repositories.push_output',
                                'repositories.pulled_at', 'repositories.pushed_at', 'repositories.push_status',
                                'ldap.id', 'ldap.name', 'ldap.position', 'ldap.domains', 'ldap.credential',
-                               'oauth2_providers.credential', 'credentials.tenant_id'] },
+                               'oauth2_providers.credential', 'credentials.tenant_id', 'credentials.issuer', 'credentials.redirect_uri'] },
   },
 };
 
@@ -954,6 +954,8 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(copyMailSettingsToServers(), messages, success, failed);
   // a mail channel's server, port and TLS belong to its smtp credential, with its login
   await checkPromise(moveMailServersToCredentials(), messages, success, failed);
+  // an SSO provider's client (and its tenant or issuer) belongs to a credential of its type
+  await checkPromise(moveSsoClientsToCredentials(), messages, success, failed);
   // the syslog servers the server log and the audit entries go to (Connections > Syslog) ; the
   // LOG_SYSLOG_* variables of before become the first, once (lib/syslogServers.js)
   const syslogBuffer = fs.readFileSync(`${__dirname}/../db/create_syslog_servers_table.sql`);
@@ -1048,6 +1050,10 @@ async function patchVersion7(messages, success, failed) {
   // an Entra ID credential holds its tenant, as Microsoft's own credential does (tenant, client id,
   // client secret)
   await checkPromise(addColumn("credentials", "tenant_id", "varchar(250)", true, "NULL"), messages, success, failed);
+  // and an Open ID one its issuer : where the provider is and as whom, one credential
+  await checkPromise(addColumn("credentials", "issuer", "varchar(500)", true, "NULL"), messages, success, failed);
+  // and the redirect URL registered with the client : the app registration as one credential
+  await checkPromise(addColumn("credentials", "redirect_uri", "varchar(1000)", true, "NULL"), messages, success, failed);
   // and when each ended, worked or not, shown beside the repository's Pull and Push
   await checkPromise(addColumn("repositories", "pulled_at", "datetime", true, "NULL"), messages, success, failed);
   await checkPromise(addColumn("repositories", "pushed_at", "datetime", true, "NULL"), messages, success, failed);
@@ -1255,6 +1261,69 @@ export async function moveMailServersToCredentials() {
     await mysql.do("UPDATE AnsibleForms.`notification_channels` SET server = NULL, port = NULL, secure = 0, credential = ? WHERE id = ?", [name, c.id]);
   }
   const message = `Moved the server of ${channels.length} mail channel(s) to their smtp credential${done.length ? ` (${done.join(", ")})` : ""}`;
+  logger.notice(message);
+  return message;
+}
+
+/**
+ * The client of each SSO provider in a credential of its type, with its tenant (Entra ID) or its
+ * issuer (Open ID) and its redirect URL : the app registration at the identity provider is one
+ * credential, as a mail channel's server and login are.
+ *   - a provider with its own client (from before credentials) : a new credential of its type,
+ *     named after it, its user the client id, its password the client secret (copied as stored :
+ *     the same key encrypts both tables)
+ *   - a provider with a credential : its tenant or issuer, and its redirect URL, copied into it
+ *     when it has none
+ * The provider's own client, tenant, issuer and redirect URL then emptied. Not a seeded provider : the seed owns
+ * it, and its own are still used while it has no credential. Idempotent : only a provider with
+ * its own client, tenant, issuer or redirect URL left.
+ *
+ * Returns:
+ *   Promise<string|null>: what was done, or null when there was nothing to do.
+ */
+export async function moveSsoClientsToCredentials() {
+  const providers = await mysql.do(
+    "SELECT id, name, provider, tenant_id, issuer, redirect_uri, client_id, client_secret, credential FROM AnsibleForms.`oauth2_providers` " +
+      "WHERE COALESCE(managed, 0) = 0 AND (COALESCE(client_id, '') <> '' OR COALESCE(tenant_id, '') <> '' OR COALESCE(issuer, '') <> '' OR COALESCE(redirect_uri, '') <> '')",
+  );
+  if (!providers.length) return null;
+  const done = [];
+  for (const p of providers) {
+    const type = p.provider === "azuread" ? "entraid" : "oidc";
+    const tenant = type === "entraid" ? p.tenant_id || null : null;
+    const issuer = type === "oidc" ? p.issuer || null : null;
+    let name = p.credential || null;
+    if (name) {
+      // its credential : the tenant or the issuer it lacks
+      const column = type === "entraid" ? "tenant_id" : "issuer";
+      const value = type === "entraid" ? tenant : issuer;
+      if (value) {
+        await mysql.do(`UPDATE AnsibleForms.\`credentials\` SET ${column} = ? WHERE name = ? AND (${column} IS NULL OR ${column} = '')`, [value, name]);
+      }
+      if (p.redirect_uri) {
+        await mysql.do("UPDATE AnsibleForms.`credentials` SET redirect_uri = ? WHERE name = ? AND (redirect_uri IS NULL OR redirect_uri = '')", [p.redirect_uri, name]);
+      }
+      done.push(`${p.name} kept ${name}`);
+    } else if (p.client_id) {
+      const slug = String(p.name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || type;
+      name = await freeCredentialName(`${slug}-sso`);
+      await mysql.do(
+        "INSERT INTO AnsibleForms.`credentials` (name, user, password, description, is_database, credential_type, tenant_id, issuer, redirect_uri) VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?)",
+        [name, p.client_id, p.client_secret || null, `The client of the SSO provider ${p.name}`, type, tenant, issuer, p.redirect_uri || null],
+      );
+      done.push(`${p.name} into ${name}`);
+    } else {
+      // no client and no credential : nothing signs in with it yet ; its own kept for when one is
+      // chosen
+      continue;
+    }
+    await mysql.do(
+      "UPDATE AnsibleForms.`oauth2_providers` SET client_id = NULL, client_secret = NULL, tenant_id = NULL, issuer = NULL, redirect_uri = NULL, credential = ? WHERE id = ?",
+      [name, p.id],
+    );
+  }
+  if (!done.length) return null;
+  const message = `Moved the client of ${done.length} SSO provider(s) to credentials (${done.join(", ")})`;
   logger.notice(message);
   return message;
 }

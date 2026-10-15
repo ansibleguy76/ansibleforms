@@ -3,9 +3,10 @@
 /*  callback, as registered at the identity provider.                */
 /*  ──────────────────────────────────────────────────────────────── */
 
-// the callback path of each provider type
+// the callback path of each provider type (and of each SSO credential type : entraid, oidc)
 const CALLBACK_PATHS = {
   azuread: '/api/v2/auth/entraid/callback',
+  entraid: '/api/v2/auth/entraid/callback',
   oidc: '/api/v2/auth/oidc/callback',
 };
 

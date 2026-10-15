@@ -4,6 +4,7 @@ import mysql from "./db.model.js";
 import appConfig from "../../config/app.config.js";
 import crypto from "../lib/crypto.js";
 import Credential from "./credential.model.v2.js";
+import { redirectUrl } from "../lib/ssoCallback.js";
 
 class EntraId {
   static async isEnabled() {
@@ -37,6 +38,7 @@ class EntraId {
           return null;
         });
         record.client_id = cred?.user || "";
+        record.credential_redirect_uri = cred?.redirect_uri || "";
         record.client_secret = cred?.password || "";
         // an Entra ID credential holds the tenant too
         record.tenant_id = cred?.tenant_id || record.tenant_id;
@@ -47,7 +49,8 @@ class EntraId {
         client_secret: record.client_secret || "",
         enable: record.enable || 0,
         groupfilter: record.groupfilter || "",
-        redirect_uri: record.redirect_uri || ""
+        // its credential's, else its own (from before), else the app's address and the callback path
+        redirect_uri: await redirectUrl("entraid", record.credential_redirect_uri, record.redirect_uri)
       };
     } else {
       return {
