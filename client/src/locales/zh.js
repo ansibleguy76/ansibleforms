@@ -1188,7 +1188,7 @@ export default {
       ownClient: '在选择凭据之前，它使用凭据之前自己的客户端 ID（{client}）登录。',
       activeHelp: '用户选择 {type} 时使用它登录；开启它会关闭其他 {type} 提供商。',
       autoLogin: '跳过登录页',
-      autoLoginHelp: '打开应用的用户将直接进入其登录；开启后其他提供程序的此项将关闭。仅适用于已启用的提供程序。',
+      autoLoginHelp: '开启：不显示登录页，用户通过此提供程序直接进入应用；开启后其他提供程序的此项将关闭。',
       providerNotFound: "没有 ID 为 '{id}' 的 SSO 提供商。",
       stepType: '类型',
       type_azuread: 'Microsoft Entra ID',

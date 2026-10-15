@@ -1229,7 +1229,7 @@ export default {
       activeHelp: 'Gli utenti accedono con esso quando scelgono {type}; attivarlo disattiva gli altri provider {type}.',
       autoLogin: 'Salta la pagina di accesso',
       autoLoginHelp:
-        "Chi apre l'app va direttamente al suo accesso; attivarlo lo disattiva per gli altri. Solo per un provider attivo.",
+        "Attivo: nessuna pagina di accesso, gli utenti entrano direttamente nell'app tramite questo provider; attivarlo lo disattiva per gli altri.",
       providerNotFound: "Non esiste un provider SSO con id '{id}'.",
       stepType: 'Tipo',
       type_azuread: 'Microsoft Entra ID',

@@ -1234,7 +1234,7 @@ export default {
         'Os utilizadores iniciam sessão com ele quando escolhem {type}; ativá-lo desativa os outros fornecedores {type}.',
       autoLogin: 'Saltar a página de início de sessão',
       autoLoginHelp:
-        'Quem abre a aplicação vai diretamente ao seu início de sessão; ligá-lo desliga-o nos outros. Só para um fornecedor ativado.',
+        'Ligado: sem página de início de sessão, os utilizadores entram diretamente na aplicação por este fornecedor; ligá-lo desliga-o nos outros.',
       providerNotFound: "Não existe nenhum fornecedor SSO com o id '{id}'.",
       stepType: 'Tipo',
       type_azuread: 'Microsoft Entra ID',

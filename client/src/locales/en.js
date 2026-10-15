@@ -1215,7 +1215,7 @@ export default {
       activeHelp: 'Users sign in with it when they choose {type}; turning it on turns off the other {type} providers.',
       autoLogin: 'Skip the login page',
       autoLoginHelp:
-        'Users who open the app go straight to its sign-in; turning it on turns it off for the others. Enabled provider only.',
+        'On: no login page, users go straight to the app through this provider; turning it on turns it off for the others.',
       providerNotFound: "There is no SSO provider with the id '{id}'.",
       stepType: 'Type',
       type_azuread: 'Microsoft Entra ID',

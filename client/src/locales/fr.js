@@ -1236,7 +1236,7 @@ export default {
         "Les utilisateurs se connectent avec lui lorsqu'ils choisissent {type} ; l'activer désactive les autres fournisseurs {type}.",
       autoLogin: 'Passer la page de connexion',
       autoLoginHelp:
-        "Qui ouvre l'application va directement à sa connexion ; l'activer le désactive pour les autres. Seulement pour un fournisseur activé.",
+        "Activé : pas de page de connexion, les utilisateurs arrivent directement dans l'application par ce fournisseur ; l'activer le désactive pour les autres.",
       providerNotFound: "Aucun fournisseur SSO n'a l'id '{id}'.",
       stepType: 'Type',
       type_azuread: 'Microsoft Entra ID',

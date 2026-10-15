@@ -1235,7 +1235,7 @@ export default {
         'Els usuaris inicien la sessió amb ell quan trien {type}; activar-lo desactiva els altres proveïdors {type}.',
       autoLogin: "Salta la pàgina d'inici de sessió",
       autoLoginHelp:
-        "Els usuaris que obren l'aplicació van directament al seu inici de sessió; activar-lo el desactiva per als altres. Només per a un proveïdor activat.",
+        "Activat: sense pàgina d'inici de sessió, els usuaris entren directament a l'aplicació amb aquest proveïdor; activar-lo el desactiva per als altres.",
       providerNotFound: "No hi ha cap proveïdor SSO amb l'id '{id}'.",
       stepType: 'Tipus',
       type_azuread: 'Microsoft Entra ID',

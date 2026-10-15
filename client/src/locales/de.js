@@ -1234,7 +1234,7 @@ export default {
         'Benutzer melden sich damit an, wenn sie {type} wählen; das Einschalten schaltet die anderen {type}-Anbieter aus.',
       autoLogin: 'Anmeldeseite überspringen',
       autoLoginHelp:
-        'Wer die App öffnet, geht direkt zu seiner Anmeldung; einschalten schaltet es bei den anderen aus. Nur für einen aktivierten Anbieter.',
+        'An: keine Anmeldeseite, Benutzer gelangen über diesen Anbieter direkt in die App; einschalten schaltet es bei den anderen aus.',
       providerNotFound: "Es gibt keinen SSO-Anbieter mit der ID '{id}'.",
       stepType: 'Typ',
       type_azuread: 'Microsoft Entra ID',

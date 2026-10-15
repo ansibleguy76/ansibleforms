@@ -1224,7 +1224,7 @@ export default {
       activeHelp: 'Użytkownicy logują się nim, gdy wybiorą {type}; włączenie go wyłącza pozostałych dostawców {type}.',
       autoLogin: 'Pomiń stronę logowania',
       autoLoginHelp:
-        'Kto otwiera aplikację, przechodzi od razu do jego logowania; włączenie wyłącza to u pozostałych. Tylko dla włączonego dostawcy.',
+        'Włączone: bez strony logowania, użytkownicy wchodzą prosto do aplikacji przez tego dostawcę; włączenie wyłącza to u pozostałych.',
       providerNotFound: "Nie ma dostawcy SSO o id '{id}'.",
       stepType: 'Typ',
       type_azuread: 'Microsoft Entra ID',

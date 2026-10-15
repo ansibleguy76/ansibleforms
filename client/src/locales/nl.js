@@ -1226,7 +1226,7 @@ export default {
         'Gebruikers melden zich ermee aan als ze {type} kiezen; inschakelen schakelt de andere {type}-providers uit.',
       autoLogin: 'Aanmeldpagina overslaan',
       autoLoginHelp:
-        'Wie de app opent, gaat direct naar zijn aanmelding; aanzetten zet het bij de andere uit. Alleen voor een ingeschakelde provider.',
+        'Aan: geen aanmeldpagina, gebruikers komen via deze provider direct in de app; aanzetten zet het bij de andere uit.',
       providerNotFound: "Er is geen SSO-provider met id '{id}'.",
       stepType: 'Type',
       type_azuread: 'Microsoft Entra ID',
