@@ -2,7 +2,7 @@
 // folder, and only text files open in the editor.
 import { test, describe } from "vitest";
 import assert from "node:assert/strict";
-import { safeRelativePath, isInside, isTextBuffer, textHas } from "../src/lib/projectFiles.js";
+import { safeRelativePath, isInside, isTextBuffer } from "../src/lib/projectFiles.js";
 
 describe("safeRelativePath", () => {
   test("keeps a plain path, normalized", () => {
@@ -39,18 +39,5 @@ describe("isTextBuffer", () => {
   test("a NUL byte makes it binary", () => {
     assert.equal(isTextBuffer(Buffer.from("- hosts: all\n")), true);
     assert.equal(isTextBuffer(Buffer.from([0x50, 0x00, 0x51])), false);
-  });
-});
-
-// the designer's search in the files' text
-describe("textHas", () => {
-  test("finds a term whatever its case", () => {
-    assert.equal(textHas("hosts: Postgres_servers\n", "postgres"), true);
-    assert.equal(textHas("- name: install", "NAME"), true);
-  });
-  test("finds nothing for an absent or empty term", () => {
-    assert.equal(textHas("hosts: web", "db"), false);
-    assert.equal(textHas("hosts: web", ""), false);
-    assert.equal(textHas(null, "web"), false);
   });
 });

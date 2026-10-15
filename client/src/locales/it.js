@@ -2382,7 +2382,6 @@ export default {
     chooseIcon: 'Scegli icona',
     chooseBackground: 'Scegli sfondo',
     searchIcons: 'Cerca icone',
-    inContent: 'nel contenuto',
     noIconsFound: 'Nessuna icona trovata',
     selectFormFirst: 'Seleziona prima un modulo',
     preview: 'Anteprima',

@@ -2403,7 +2403,6 @@ export default {
     chooseIcon: 'Symbol wählen',
     chooseBackground: 'Hintergrund wählen',
     searchIcons: 'Symbole suchen',
-    inContent: 'im Inhalt',
     noIconsFound: 'Keine Symbole gefunden',
     selectFormFirst: 'Zuerst ein Formular auswählen',
     preview: 'Vorschau',

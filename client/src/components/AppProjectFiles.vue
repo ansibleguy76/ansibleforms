@@ -19,15 +19,13 @@
 /*      view: String - 'yaml' (the text) or 'visual' (a           */
 /*         vars file's variables, an inventory's groups and       */
 /*         hosts)                                                 */
-/*      filter: String - the designer's search (its title line) : */
-/*         the files whose path has it, with their folders        */
 /*                                                                */
 /*  @emit:                                                        */
 /*      init: the editor, for the toolbar's undo, find ...        */
 /*      reveal: the Visual tab asks for the YAML (on a line)      */
 /*                                                                */
 /******************************************************************/
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRouter, onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router';
 import axios from 'axios';
 import { toast } from 'vue-sonner';
@@ -56,8 +54,6 @@ const props = defineProps({
   editorStyle: { type: [String, Object], default: 'width: 100%;height: 75vh;font-size:1rem' },
   // the designer's forms ({ name, text }) : a vars file's Preview says which load it
   forms: { type: Array, default: () => [] },
-  // the designer's filter (the search on its title line) : the files whose path has it
-  filter: { type: String, default: '' },
 });
 
 // ─── state ────────────────────────────────────────────────────────────────────
@@ -86,39 +82,13 @@ const leavingTo = ref(null); // what to do once the changes are dropped : go to 
 
 // ─── the explorer ─────────────────────────────────────────────────────────────
 const collapsed = ref(new Set());
-// the designer's search, on its title line, as every page's
-const filter = computed(() => props.filter || '');
-// the files whose text has the search too (the server reads them : GET /files/<kind>/search),
-// asked a moment after the last key ; a search of fewer than 2 characters matches names only
-const contentMatches = ref(new Set());
-let searchTimer = null;
-let searchSeq = 0;
-watch(
-  [filter, () => props.kind],
-  ([q]) => {
-    clearTimeout(searchTimer);
-    const term = q.trim();
-    if (term.length < 2) {
-      contentMatches.value = new Set();
-      return;
-    }
-    const seq = ++searchSeq;
-    searchTimer = setTimeout(async () => {
-      try {
-        const result = await axios.get(`${api.value}/search`, { params: { q: term } });
-        // an answer to an older search (typed over since) is dropped
-        if (seq === searchSeq) contentMatches.value = new Set(result.data?.matches || []);
-      } catch {
-        if (seq === searchSeq) contentMatches.value = new Set();
-      }
-    }, 300);
-  },
-  { immediate: true },
-);
+// the explorer's search (its magnifying glass) : the files whose name or path has it
+const filter = ref('');
+const searching = ref(false);
 
 /**
  * The explorer's rows : the folders and files, a folder before its content, each with its
- * depth. A filter shows the files whose path or text has it, with their folders, all open.
+ * depth. A filter shows the files whose path has it, with their folders, all open.
  */
 const rows = computed(() => {
   const root = { folders: new Map(), files: [] };
@@ -132,11 +102,9 @@ const rows = computed(() => {
   };
   const needle = filter.value.trim().toLowerCase();
   for (const f of listing.value.files) {
-    // by its path, else by its text (found by the server) : the tree says which
-    const byName = !needle || f.path.toLowerCase().includes(needle);
-    if (!byName && !contentMatches.value.has(f.path)) continue;
+    if (needle && !f.path.toLowerCase().includes(needle)) continue;
     const parts = f.path.split('/');
-    folderAt(parts.slice(0, -1)).files.push({ name: parts.at(-1), path: f.path, inContent: !byName });
+    folderAt(parts.slice(0, -1)).files.push({ name: parts.at(-1), path: f.path });
   }
   if (!needle) for (const d of extraFolders.value) folderAt(d.split('/'));
   const out = [];
@@ -147,7 +115,7 @@ const rows = computed(() => {
       if (needle || !collapsed.value.has(path)) walk(node.folders.get(name), path, depth + 1);
     }
     for (const f of node.files.sort((a, b) => a.name.localeCompare(b.name))) {
-      out.push({ type: 'file', name: f.name, path: f.path, depth, inContent: f.inContent });
+      out.push({ type: 'file', name: f.name, path: f.path, depth });
     }
   };
   walk(root, '', 0);
@@ -489,6 +457,23 @@ function startResize(e) {
   document.addEventListener('mouseup', onUp);
 }
 
+// the explorer's search box : shown by its magnifying glass and focused once in the dom, emptied
+// when hidden
+const searchInput = ref(null);
+async function toggleSearch() {
+  searching.value = !searching.value;
+  if (!searching.value) filter.value = '';
+  else {
+    await nextTick();
+    searchInput.value?.focus();
+  }
+}
+// its X (and Escape) : emptied, the box kept open and focused
+function clearSearch() {
+  filter.value = '';
+  searchInput.value?.focus();
+}
+
 // ─── leaving with changes ─────────────────────────────────────────────────────
 // another page, or another section or tab of the designer : asked first, as another file is.
 // The designer asks before it switches (leave, exposed) ; an address asks through the router.
@@ -524,10 +509,7 @@ function onBeforeUnload(e) {
   if (dirty.value) e.preventDefault();
 }
 window.addEventListener('beforeunload', onBeforeUnload);
-onBeforeUnmount(() => {
-  window.removeEventListener('beforeunload', onBeforeUnload);
-  clearTimeout(searchTimer);
-});
+onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnload));
 
 /** Saves the changes, then goes where the dialog was opened for ; a failed save stays. */
 async function saveAndGo() {
@@ -719,6 +701,9 @@ defineExpose({
               :title="allCollapsed ? t('designer.expandAll') : t('designer.collapseAll')"
               ><FaIcon :icon="allCollapsed ? 'angles-down' : 'angles-up'"
             /></span>
+            <span role="button" class="tree-add-btn" @click="toggleSearch()" :title="t('designer.search')"
+              ><FaIcon icon="magnifying-glass"
+            /></span>
             <template v-if="!readOnly && isInventories">
               <span
                 role="button"
@@ -737,6 +722,28 @@ defineExpose({
               /></span>
             </template>
           </span>
+        </div>
+        <div v-if="searching" class="tree-search-bar">
+          <div class="tree-search-box">
+            <input
+              ref="searchInput"
+              v-model="filter"
+              type="text"
+              class="form-control form-control-sm"
+              :placeholder="t('designer.search') + '...'"
+              @keydown.esc="clearSearch()"
+            />
+            <button
+              v-if="filter"
+              type="button"
+              class="tree-search-clear"
+              :title="t('common.clear')"
+              :aria-label="t('common.clear')"
+              @click="clearSearch()"
+            >
+              <FaIcon icon="xmark" />
+            </button>
+          </div>
         </div>
         <div class="file-tree-content">
           <div v-if="listing.truncated" class="small text-warning-emphasis py-1">
@@ -814,8 +821,6 @@ defineExpose({
                   class="text-secondary me-2 flex-shrink-0"
                 />
                 <span class="text-truncate" :title="item.path">{{ item.name }}</span>
-                <!-- found in its text, not its name -->
-                <span v-if="item.inContent" class="af-tree-in-content">{{ t('designer.inContent') }}</span>
               </span>
               <span v-if="!readOnly" class="d-flex gap-2 flex-shrink-0 ms-2">
                 <span
@@ -972,7 +977,8 @@ defineExpose({
   min-height: 0;
   max-height: 100%;
 }
-.file-tree-header {
+.file-tree-header,
+.tree-search-bar {
   flex-shrink: 0;
 }
 .file-tree-header {
@@ -984,6 +990,31 @@ defineExpose({
   padding: 0.5rem 0.5rem 0.5rem 0.75rem;
   background: var(--bs-card-bg, var(--bs-body-bg));
   border-bottom: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.25);
+}
+.tree-search-bar {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.25);
+}
+/* the X inside the box, at its right, while something is typed : it empties it (as the page
+   filters' X, BsSearch.vue) */
+.tree-search-box {
+  position: relative;
+}
+.tree-search-box .form-control {
+  padding-right: 1.75rem;
+}
+.tree-search-clear {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  border: 0;
+  background: transparent;
+  color: var(--bs-secondary-color);
+  padding: 0 0.5rem;
+}
+.tree-search-clear:hover {
+  color: var(--bs-body-color);
 }
 .file-tree-content {
   padding: 0.25rem 0.5rem;

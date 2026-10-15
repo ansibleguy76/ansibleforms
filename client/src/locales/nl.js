@@ -2383,7 +2383,6 @@ export default {
     chooseIcon: 'Pictogram kiezen',
     chooseBackground: 'Achtergrond kiezen',
     searchIcons: 'Pictogrammen zoeken',
-    inContent: 'in inhoud',
     noIconsFound: 'Geen pictogrammen gevonden',
     selectFormFirst: 'Selecteer eerst een formulier',
     preview: 'Voorbeeld',

@@ -15,27 +15,6 @@ export const MAX_FILE_BYTES = 2 * 1024 * 1024;
 // a listing stops here : a folder this big is not one to browse in the designer
 export const MAX_LISTED_FILES = 5000;
 
-// a search in the files' text (the designer's search) : at least this many characters, at most
-// this many, and no more than this many bytes read in all - a search stops there and says so
-export const MIN_SEARCH_CHARS = 2;
-export const MAX_SEARCH_CHARS = 200;
-export const MAX_SEARCHED_BYTES = 50 * 1024 * 1024;
-
-/**
- * Whether a file's text has a search term, whatever the case.
- *
- * Args:
- *   text (string): the file's text.
- *   term (string): what is searched, trimmed.
- *
- * Returns:
- *   boolean: true when the text has it.
- */
-export function textHas(text, term) {
-  if (!term) return false;
-  return String(text ?? "").toLowerCase().includes(String(term).toLowerCase());
-}
-
 // one path segment : letters, digits and the usual punctuation of file names - never a
 // hidden one (.git, .env) and never . or ..
 const SEGMENT = /^[\p{L}\p{N}_@+=,~-][\p{L}\p{N} _.@+=,~-]*$/u;

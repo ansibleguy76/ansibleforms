@@ -611,15 +611,6 @@ textarea:focus::placeholder {
   margin-top: 1rem;
 }
 
-// a designer tree's row found by its text, not its name (the designer's search) : said after it,
-// small and grey
-.af-tree-in-content {
-  margin-left: 0.5rem;
-  font-size: 0.75em;
-  color: var(--bs-secondary-color);
-  white-space: nowrap;
-}
-
 // the Required badge of an item the config must keep (the admin and default roles) : a border and
 // darker text, so it reads on a white row as on a hovered one
 .af-required-badge {

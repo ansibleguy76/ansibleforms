@@ -2371,7 +2371,6 @@ export default {
     chooseIcon: 'Wybierz ikonę',
     chooseBackground: 'Wybierz tło',
     searchIcons: 'Szukaj ikon',
-    inContent: 'w treści',
     noIconsFound: 'Nie znaleziono ikon',
     selectFormFirst: 'Najpierw wybierz formularz',
     preview: 'Podgląd',
