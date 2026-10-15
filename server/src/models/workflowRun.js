@@ -574,7 +574,7 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
           lines = [{ output: e.message, output_type: "stderr" }];
         }
         const repo = await Repository.findByName(node.name).catch(() => null);
-        if (repo?.output && status === "successful") lines = [{ output: repo.output, output_type: "stdout" }];
+        if (repo?.pull_output && status === "successful") lines = [{ output: repo.pull_output, output_type: "stdout" }];
         await finish(node, status, lines);
       } else if (node.type === "workflow_approval_template") {
         // the approval queue : askApproval when it is this one's turn, its outcome on the ticks

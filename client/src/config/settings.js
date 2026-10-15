@@ -106,35 +106,57 @@ export function statusPill(t, value) {
 
 /**
  * A repository's last pull as a pill : running blue, success green, failed red ; never pulled
- * (no status yet) an en dash. Its clone, sync and reset write the same status.
+ * (no status yet) an en dash. Its clone, sync and reset write the same status. When it ended
+ * follows it, grey.
  *
  * Args:
  *   t (function): the translation function.
- *   repo (object): the repository, with status (its last pull).
+ *   repo (object): the repository, with status (its last pull) and pulled_at.
+ *   withDate (boolean): when it ended beside it (the repository's page ; not the list's table).
  *
  * Returns:
  *   string: the pill's markup.
  */
-export function repositoryPullPill(t, repo) {
-  return statusPill(t, repo?.status);
+export function repositoryPullPill(t, repo, withDate = true) {
+  return statusPill(t, repo?.status) + (withDate ? pillDate(repo?.pulled_at) : '');
 }
 
 /**
- * A repository's push as a pill : changes saved here and not pushed yet, pending changes in the
- * designer's push orange (something waits) ; else nothing to push, success green.
+ * When a repository's last pull or push ended, beside its pill : grey, in the user's zone and date
+ * format ; nothing when it never ran.
+ *
+ * Args:
+ *   value (string): the server's timestamp, or none.
+ *
+ * Returns:
+ *   string: the date's markup, escaped, or ''.
+ */
+function pillDate(value) {
+  const text = value ? Helpers.formatServerDate(value) : '';
+  return text ? ` <span class="af-pill-date">${esc(text)}</span>` : '';
+}
+
+/**
+ * A repository's push as a pill : its last push failed red ; else changes saved here and not
+ * pushed yet, pending changes in the designer's push orange (something waits) ; else its last
+ * push worked, success green ; never pushed (or a repository the app does not write to) an en
+ * dash, as a pull that never ran. When the last push ended follows it, grey.
  *
  * Args:
  *   t (function): the translation function.
- *   repo (object): the repository, with unpushed.
+ *   repo (object): the repository, with unpushed, push_status and pushed_at.
+ *   withDate (boolean): when it ended beside it (the repository's page ; not the list's table).
  *
  * Returns:
  *   string: the pill's markup.
  */
-export function repositoryPushPill(t, repo) {
+export function repositoryPushPill(t, repo, withDate = true) {
+  const date = withDate ? pillDate(repo?.pushed_at) : '';
+  if (repo?.push_status === 'failed') return statusPill(t, 'failed') + date;
   if (repo?.unpushed) {
-    return pill(PILL.unpushed, t('settings.repositories.notPushed'), t('settings.repositories.notPushedHint'));
+    return pill(PILL.unpushed, t('settings.repositories.notPushed'), t('settings.repositories.notPushedHint')) + date;
   }
-  return statusPill(t, 'success');
+  return repo?.push_status === 'success' ? statusPill(t, 'success') + date : emptyPill();
 }
 
 /**
@@ -730,20 +752,29 @@ export default function getSettings(t) {
           to: (r) => `/settings/repositories/${r.id}/credentials`,
         },
         {
-          // what git said the last time : its page's Last Output tab
+          // what git said on the last pull : its page's Last pull output tab
           name: 'preview',
           icon: 'terminal',
-          title: t('settings.common.showOutput'),
+          title: t('settings.repositories.showPullOutput'),
           color: 'preview',
           dividerBefore: true,
-          to: (r) => `/settings/repositories/${r.id}/last-output`,
+          to: (r) => `/settings/repositories/${r.id}/pull-output`,
+        },
+        {
+          // and on the last push : its page's Last push output tab
+          name: 'preview_push',
+          icon: 'terminal',
+          title: t('settings.repositories.showPushOutput'),
+          color: 'preview',
+          to: (r) => `/settings/repositories/${r.id}/push-output`,
         },
         { name: 'delete', icon: 'trash', title: t('settings.repositories.deleteRepository'), color: 'delete' },
       ],
       fields: [
         // no columns : the id, and git's output (on the repository's page)
         { key: 'id', hidden: true, noInput: true, noTable: true },
-        { key: 'output', hidden: true, noInput: true, noTable: true },
+        { key: 'pull_output', hidden: true, noInput: true, noTable: true },
+        { key: 'push_output', hidden: true, noInput: true, noTable: true },
         {
           key: 'name',
           icon: 'heading',
@@ -763,6 +794,7 @@ export default function getSettings(t) {
           label: t('settings.fields.branch'),
           placeholder: 'main',
           readonly: false,
+          required: true,
         },
         // a commit's 7 characters
         { key: 'head', label: t('settings.fields.head'), noInput: true, hideBelow: 900 },
@@ -771,7 +803,7 @@ export default function getSettings(t) {
           key: 'status',
           label: t('settings.fields.pull'),
           noInput: true,
-          render: (v, row) => repositoryPullPill(t, row),
+          render: (v, row) => repositoryPullPill(t, row, false),
           sortValue: (r) => ({ failed: 0, running: 1, success: 2 })[r.status] ?? 3,
         },
         // its push : changes saved here (the designer's Save) and not pushed yet, or none
@@ -779,8 +811,8 @@ export default function getSettings(t) {
           key: 'unpushed',
           label: t('settings.fields.push'),
           noInput: true,
-          render: (v, row) => repositoryPushPill(t, row),
-          sortValue: (r) => (r.unpushed ? 0 : 1),
+          render: (v, row) => repositoryPushPill(t, row, false),
+          sortValue: (r) => (r.push_status === 'failed' ? 0 : r.unpushed ? 1 : r.push_status === 'success' ? 2 : 3),
         },
         {
           // a credential of Connections > Credentials, or a New one : the user and password git

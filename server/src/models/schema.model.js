@@ -312,6 +312,31 @@ function dropColumn(table, name) {
     });
 }
 
+// PATCHING : rename a column, keeping its data, when it still has its old name (and the new one
+// is not there yet) : a second run finds it renamed and does nothing
+function renameColumn(table, from, to, fieldtype) {
+  var db = "AnsibleForms";
+  var checksql = "SHOW COLUMNS FROM ??.?? WHERE Field IN (?, ?)";
+  var sql = `ALTER TABLE ??.?? CHANGE COLUMN ?? ?? ${fieldtype}`;
+  logger.debug(`renaming column '${from}' to '${to}' on table '${table}'`);
+  return mysql
+    .do(checksql, [db, table, from, to])
+    .then((checkres) => {
+      const names = checkres.map((c) => c.Field);
+      return names.includes(from) && !names.includes(to) ? mysql.do(sql, [db, table, from, to]) : false;
+    })
+    .then((res) => {
+      if (!res) {
+        const done = `Column '${from}' of '${table}' is already '${to}'`;
+        logger.debug(done);
+        return done;
+      }
+      const message = `renamed column '${from}' to '${to}' on '${table}'`;
+      logger.warning(message);
+      return message;
+    });
+}
+
 // PATCHING : Add a table to the schema
 // Add an index when it is not already there. SHOW INDEX is the cheap existence check ;
 // ALTER TABLE ADD KEY has no IF NOT EXISTS in mysql.
@@ -577,7 +602,8 @@ const SCHEMA_MANIFEST = {
                                'settings.app_name', 'settings.env_label', 'settings.env_label_show', 'settings.env_label_color',
                                'settings.banner_show', 'settings.disclaimer_enabled',
                                'settings.forms_view', 'settings.default_timezone', 'settings.default_date_format', 'settings.header_links',
-                               'tokens.replaced_at'] },
+                               'tokens.replaced_at', 'repositories.pull_output', 'repositories.push_output',
+                               'repositories.pulled_at', 'repositories.pushed_at', 'repositories.push_status'] },
   },
 };
 
@@ -997,6 +1023,15 @@ async function patchVersion7(messages, success, failed) {
   // a request that refreshed with it at the same time is told so instead of being refused as
   // an unknown token (models/token.model.js, #1062)
   await checkPromise(addColumn("tokens", "replaced_at", "datetime", true, "NULL"), messages, success, failed);
+  // what git said on a repository's last pull and on its last push, apart : a push no longer hides
+  // what the pull before it said. Its output was the last of either : it is the pull's now
+  await checkPromise(renameColumn("repositories", "output", "pull_output", "longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL"), messages, success, failed);
+  await checkPromise(addColumn("repositories", "push_output", "longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci", true, "NULL"), messages, success, failed);
+  // and when each ended, worked or not, shown beside the repository's Pull and Push
+  await checkPromise(addColumn("repositories", "pulled_at", "datetime", true, "NULL"), messages, success, failed);
+  await checkPromise(addColumn("repositories", "pushed_at", "datetime", true, "NULL"), messages, success, failed);
+  // how the last push ended : it wrote the pull's status (a failed push read as a failed pull)
+  await checkPromise(addColumn("repositories", "push_status", "varchar(50)", true, "NULL"), messages, success, failed);
   // the API tokens issued, listed and revoked on the profile and the user's page (models/apiToken.model.js)
   const apiTokens = fs.readFileSync(`${__dirname}/../db/create_api_tokens_table.sql`);
   await checkPromise(addTable("api_tokens", apiTokens.toString()), messages, success, failed);

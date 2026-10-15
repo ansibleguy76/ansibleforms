@@ -195,6 +195,13 @@
   line-height: 1;
   vertical-align: middle;
 }
+/* when a repository's last pull or push ended, beside its pill (config/settings.js pillDate) */
+.af-pill-date {
+  margin-left: 0.4rem;
+  font-size: 0.85em;
+  color: var(--bs-secondary-color);
+  white-space: nowrap;
+}
 .af-pill-label {
   display: block;
   text-box: trim-both cap alphabetic;

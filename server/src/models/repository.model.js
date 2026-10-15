@@ -9,6 +9,7 @@ import fse from "fs-extra";
 import appConfig from "../../config/app.config.js";
 import CrudModel from './crud.model.js';
 import Credential from './credential.model.v2.js';
+import Errors from '../lib/errors.js';
 import { bump } from '../lib/epochs.js';
 import { nodeId, NODE_DEAD_SECONDS, uptimeSeconds } from '../lib/role.js';
 
@@ -56,6 +57,11 @@ class Repository extends CrudModel {
   // opts carries { fromSeed:true } for the declarative config seed only
   static async create(data, opts = {}) {
     logger.info(`Creating repository ${data.name}`);
+    // the branch it pulls and pushes is required, as its name ; the seed's own may leave it out
+    // (the remote's default)
+    if (!opts.fromSeed && !String(data.branch ?? "").trim()) {
+      throw new Errors.BadRequestError("Missing required field: branch");
+    }
     const insertId = await super.create(this.modelName, data, opts);
     // Don't await - clone happens in background (it can take minutes and the API has to
     // answer the create now). But the rejection must not escape: clone() throws before it
@@ -66,7 +72,7 @@ class Repository extends CrudModel {
     Repository.clone(data.name).catch(async (e) => {
       logger.error(`Background clone of '${data.name}' failed : ${helpers.getError(e)}`)
       try {
-        await Repository.writeState("update AnsibleForms.`repositories` set output = ?, status = 'failed' where name = ?", [helpers.getError(e), data.name], { name: data.name })
+        await Repository.writeState("update AnsibleForms.`repositories` set pull_output = ?, pulled_at = NOW(), status = 'failed' where name = ?", [helpers.getError(e), data.name], { name: data.name })
       } catch (e2) {
         logger.error(`...and the failure could not be recorded on the repository either : ${helpers.getError(e2)}`)
       }
@@ -170,7 +176,7 @@ class Repository extends CrudModel {
       await Repo.delete(name);
     } catch (e) {
       // release the claim, or a failed rm wedges the repo at 'running' for ever
-      await Repository.writeState("update AnsibleForms.`repositories` set output = ?, status = 'failed' where name = ?", [e.message, name], { name })
+      await Repository.writeState("update AnsibleForms.`repositories` set pull_output = ?, status = 'failed' where name = ?", [e.message, name], { name })
       throw e
     }
     // Deletes with its own SQL, so it must evict what CrudModel.delete would have:
@@ -218,7 +224,7 @@ class Repository extends CrudModel {
       await Repository.clone(name, true); // recreate it ; clone writes the final status
     } catch (e) {
       // release the claim so a delete failure doesn't wedge the repo at 'running'
-      await Repository.writeState("update AnsibleForms.`repositories` set output = ?, status = 'failed' where name = ?", [e.message, name], { name })
+      await Repository.writeState("update AnsibleForms.`repositories` set pull_output = ?, pulled_at = NOW(), status = 'failed' where name = ?", [e.message, name], { name })
       throw e
     }
   }
@@ -537,7 +543,7 @@ class Repository extends CrudModel {
       status = "failed"
     }
     output = Repository.maskSecrets(output, repo) // never expose git credentials
-    await Repository.writeState("update AnsibleForms.`repositories` set output = ?,status = ? where name = ?", [output, status, name], { name })
+    await Repository.writeState("update AnsibleForms.`repositories` set pull_output = ?, pulled_at = NOW(), status = ? where name = ?", [output, status, name], { name })
     if (status == "success") {
       // Repo.info runs `git rev-parse --short HEAD`, which exits 128 on a repository
       // whose remote is EMPTY - a case this model explicitly supports (see
@@ -586,7 +592,7 @@ class Repository extends CrudModel {
     } else {
       output = Repository.maskSecrets(output, pullRepo) // never expose git credentials
     }
-    await Repository.writeState("update AnsibleForms.`repositories` set output = ?,status = ? where name = ?", [output, status, name], { name })
+    await Repository.writeState("update AnsibleForms.`repositories` set pull_output = ?, pulled_at = NOW(), status = ? where name = ?", [output, status, name], { name })
     if (status == "success") {
       // Repo.info runs `git rev-parse --short HEAD`, which exits 128 on a repository
       // whose remote is EMPTY - a case this model explicitly supports (see
@@ -796,6 +802,11 @@ class Repository extends CrudModel {
   // (use_for_playbooks), with their own message ; its vars files from the forms repository.
   static async sync(name, triggeredBy, message = undefined) {
     var output, status, head, syncRepo = null
+    // the last pull's status, given back when the push ends : a push has its own (push_status),
+    // and must not read as a failed or a fresh pull. Never 'running' : the SELECT and the claim are
+    // separate statements, so it could catch another operation's claim (as claimForWrite)
+    const before = await mysql.do("SELECT status FROM AnsibleForms.`repositories` WHERE name = ?", [name])
+    const pullStatus = before[0]?.status && before[0].status !== "running" ? before[0].status : null
     // atomic check-and-set : refuse concurrent syncs of the same repository
     // (eg the settings page button while a designer push is in flight)
     const claimed = await Repository.claim(name)
@@ -824,7 +835,9 @@ class Repository extends CrudModel {
       status = "failed"
     }
     output = Repository.maskSecrets(output, syncRepo) // never expose git credentials
-    await Repository.writeState("update AnsibleForms.`repositories` set output = ?,status = ? where name = ?", [output, status, name], { name })
+    // the push's own output, status and time ; the last pull's status back as it was (the claim
+    // released with it)
+    await Repository.writeState("update AnsibleForms.`repositories` set push_output = ?, push_status = ?, pushed_at = NOW(), status = ? where name = ?", [output, status, pullStatus, name], { name })
     if (status == "success") {
       // Repo.info runs `git rev-parse --short HEAD`, which exits 128 on a repository
       // whose remote is EMPTY - a case this model explicitly supports (see

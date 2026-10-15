@@ -9,7 +9,10 @@
 /*    Credentials  the credential git uses                        */
 /*    Usage        what the app reads from it                     */
 /*    Schedule     the scheduled pull, clone on app start         */
-/*    Output       what git said the last time                    */
+/*    Last pull output  what git said on the last pull (or clone, */
+/*                 reset)                                         */
+/*    Last push output  what git said on the last push (none on   */
+/*                 a repository the app does not write to)        */
 /*  Pull, Reset, Push to repo and Delete top right, beside Save.  */
 /*                                                                */
 /******************************************************************/
@@ -141,8 +144,23 @@ useUnsavedGuard(
 );
 
 const running = computed(() => repo.value?.status === 'running');
-// git's output, a line each (the trailing newline adds none)
-const outputLines = computed(() => (repo.value?.output || '').replace(/\n$/, '').split('\n'));
+// git's output on the tab open (the last pull's, else the last push's), a line each (the trailing
+// newline adds none)
+const shownOutput = computed(
+  () => (activeTab.value === 'push-output' ? repo.value?.push_output : repo.value?.pull_output) || '',
+);
+// the box shows OUTPUT_ROWS numbered lines at least, as a textarea's rows : nothing yet, its first
+// line says why ; more output, more lines
+const OUTPUT_ROWS = 4;
+const outputLines = computed(() => {
+  const lines = shownOutput.value ? shownOutput.value.replace(/\n$/, '').split('\n') : [emptyOutput.value];
+  return [...lines, ...Array(Math.max(0, OUTPUT_ROWS - lines.length)).fill('')];
+});
+// why there is no output yet : never pulled, never pushed, or a repository the app does not write to
+const emptyOutput = computed(() => {
+  if (activeTab.value !== 'push-output') return t('settings.repositories.noOutput');
+  return t(canPush.value ? 'settings.repositories.noPushOutput' : 'settings.repositories.noPushTarget');
+});
 // pushed back : only what the designer writes to it, its forms, settings, playbooks, workflows or inventories
 // (and, on the button, only when it has changes not pushed yet)
 const canPush = computed(
@@ -225,13 +243,15 @@ function watchRun() {
 onBeforeUnmount(() => clearInterval(poll));
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
-// the dialog's steps, and the last output
+// the dialog's steps, and git's last outputs : the pull's and the push's (none on a repository
+// the app does not write to, the tab says so)
 const tabs = computed(() => [
   { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
   { key: 'credentials', label: t('settings.repositories.stepCredentials'), icon: 'key' },
   { key: 'usage', label: t('settings.repositories.stepUsage'), icon: 'list-check' },
   { key: 'schedule', label: t('settings.repositories.stepSchedule'), icon: 'stopwatch' },
-  { key: 'last-output', label: t('admin.lastOutput'), icon: 'terminal' },
+  { key: 'pull-output', label: t('settings.repositories.lastPullOutput'), icon: 'terminal' },
+  { key: 'push-output', label: t('settings.repositories.lastPushOutput'), icon: 'terminal' },
 ]);
 const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
@@ -266,7 +286,7 @@ function fail(err) {
  */
 async function save() {
   const data = toSave.value;
-  if (!data.name || !data.uri || !data.description) {
+  if (!data.name || !String(data.branch || '').trim() || !data.uri || !data.description) {
     toast.warning(t('settings.repositories.fieldsRequired'));
     return;
   }
@@ -437,6 +457,7 @@ onMounted(async () => {
               icon="code-branch"
               placeholder="main"
               :isFloating="false"
+              :required="true"
               :label="t('settings.fields.branch')"
             />
             <BsInput
@@ -532,16 +553,17 @@ onMounted(async () => {
               <div class="form-text mt-1">{{ t('settings.repositories.helpCloneOnStart') }}</div>
             </div>
           </template>
-          <!-- Output : what git said the last time -->
+          <!-- Output : what git said on the last pull, or the last push -->
           <template v-else>
             <!-- as the server log shows its lines : each with its number in a grey column -->
-            <div v-if="repo.output" class="af-repo-output font-monospace" tabindex="0" role="region">
+            <div class="af-repo-output font-monospace" tabindex="0" role="region">
               <div v-for="(line, i) in outputLines" :key="i" class="af-repo-output-line">
                 <span class="af-line-no af-repo-line-no">{{ i + 1 }}</span
-                ><span class="af-repo-line">{{ line }}</span>
+                ><span class="af-repo-line" :class="{ 'af-repo-output-empty': !shownOutput && i === 0 }">{{
+                  line
+                }}</span>
               </div>
             </div>
-            <p v-else class="text-body-secondary mb-0">{{ t('settings.repositories.noOutput') }}</p>
           </template>
         </div>
       </template>
@@ -614,6 +636,12 @@ onMounted(async () => {
 }
 .af-repo-output-line {
   display: flex;
+}
+/* no output yet : the reason, grey, as the first line */
+.af-repo-output-empty {
+  color: var(--bs-secondary-color);
+  font-style: italic;
+  white-space: normal;
 }
 .af-repo-line-no {
   flex: 0 0 3rem;
