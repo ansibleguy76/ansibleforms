@@ -767,7 +767,7 @@ async function changePassword() {
                 <pre class="af-token-example mb-4"><code>{{ tokenExample }}</code></pre>
               </div>
               <!-- the request : a lifetime and the password -->
-              <div v-else-if="tokenStep === 0" class="af-field">
+              <div v-else-if="tokenStep === 0" class="af-field af-field-help-wide">
                 <div class="mb-3">
                   <label class="form-label fw-bold" for="af-token-name"
                     >{{ t('profilePage.token.name') }}<span class="text-danger ms-1">*</span></label
@@ -957,13 +957,14 @@ $af-detail-line: 1.8rem;
   border: 1px solid var(--bs-border-color);
 }
 
-// one width for the fields of every view (password, api token, preferences) ; in a form only
-// its fields have that width, so their help text below can use the whole card, as in the
-// preferences cards
+// one width for the fields of every view (password, api token, preferences) ; in a form (and
+// the New token wizard's details) only its fields have that width, so their help text below can
+// use the whole width, as in the preferences cards
 .af-field {
   max-width: 480px;
 }
-form.af-field {
+form.af-field,
+.af-field.af-field-help-wide {
   max-width: none;
   .input-group {
     max-width: 480px;
