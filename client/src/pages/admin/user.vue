@@ -28,7 +28,6 @@ import Profile from '@/lib/Profile';
 import { formPath } from '@/lib/formsPath';
 import { useFormLinks } from '@/composables/useFormLinks';
 import { useUserLinks } from '@/composables/useUserLinks';
-import { esc } from '@/lib/tableCells';
 import BsDataTable from '@/components/BsDataTable.vue';
 import { setSignInBlocked } from '@/lib/signIn';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
@@ -286,12 +285,7 @@ const pagerId = `af-pager-${Math.random().toString(36).slice(2, 10)}`;
 // none : an en dash, as the other empty cells
 const groupColumns = computed(() => [
   { key: 'name', label: t('settings.fields.name'), filterable: true },
-  {
-    key: 'description',
-    label: t('settings.fields.description'),
-    filterable: true,
-    render: (v) => (v ? esc(String(v)) : '–'),
-  },
+  { key: 'description', label: t('settings.fields.description'), filterable: true },
 ]);
 const freeGroups = computed(() => groups.value.filter((g) => !userGroups.value.some((u) => u.id === g.id)));
 

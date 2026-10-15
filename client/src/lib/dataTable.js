@@ -48,3 +48,44 @@ export function csvCell(text) {
   if (/^[=+\-@\t\r]/.test(v) && !/^-\d+([.,]\d+)?$/.test(v)) v = "'" + v;
   return /[",;\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
 }
+
+/**
+ * Whether a column sorts : every column with a name does (a click on its header : A to Z, then Z
+ * to A) ; one without (a caret's, a checkbox's, a row menu's) does not.
+ *
+ * Args:
+ *   col (object): the column ({ key, label, ... }).
+ *
+ * Returns:
+ *   boolean: true when its header sorts the rows.
+ */
+export function isSortable(col) {
+  return !!col && String(col.label ?? '').trim() !== '';
+}
+
+/**
+ * Two rows in a column's order : by its sortValue(row) when it has one (a date), else by its raw
+ * value when both are numbers or yes / no, else by their text, alphabetically - case aside, and
+ * "file2" before "file10".
+ *
+ * Args:
+ *   a (object): a row.
+ *   b (object): another row.
+ *   col (object): the column sorted by.
+ *   dir (number): 1 ascending (A to Z), -1 descending.
+ *   textOf (Function): (row, col) => the cell's text.
+ *
+ * Returns:
+ *   number: negative when a comes first, positive when b does, 0 when equal.
+ */
+export function compareRows(a, b, col, dir, textOf) {
+  const raw = (row) => (col.sortValue ? col.sortValue(row) : row[col.key]);
+  let ra = raw(a);
+  let rb = raw(b);
+  if (typeof ra === 'boolean') ra = Number(ra);
+  if (typeof rb === 'boolean') rb = Number(rb);
+  if (typeof ra === 'number' && typeof rb === 'number') return (ra - rb) * dir;
+  const ta = String(textOf(a, col) ?? '');
+  const tb = String(textOf(b, col) ?? '');
+  return ta.localeCompare(tb, undefined, { numeric: true, sensitivity: 'base' }) * dir;
+}

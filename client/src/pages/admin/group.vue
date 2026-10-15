@@ -23,7 +23,6 @@ import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { useRoleAssignments } from '@/composables/useRoleAssignments';
 import { useRoleMembership } from '@/composables/useRoleMembership';
-import { esc } from '@/lib/tableCells';
 import BsDataTable from '@/components/BsDataTable.vue';
 import { useFormLinks } from '@/composables/useFormLinks';
 import { formPath } from '@/lib/formsPath';
@@ -202,11 +201,10 @@ const selectedUsers = ref(new Set()); // the user rows ticked (their id)
 // pager under the card, as every list ; none : an en dash, as the other empty cells
 const toolsId = `af-tools-${Math.random().toString(36).slice(2, 10)}`;
 const pagerId = `af-pager-${Math.random().toString(36).slice(2, 10)}`;
-const orDash = (v) => (v ? esc(String(v)) : '–');
 const userColumns = computed(() => [
   { key: 'username', label: t('settings.fields.username'), filterable: true },
-  { key: 'description', label: t('settings.fields.description'), filterable: true, render: orDash },
-  { key: 'email', label: t('settings.fields.email'), filterable: true, render: orDash },
+  { key: 'description', label: t('settings.fields.description'), filterable: true },
+  { key: 'email', label: t('settings.fields.email'), filterable: true },
 ]);
 
 /**

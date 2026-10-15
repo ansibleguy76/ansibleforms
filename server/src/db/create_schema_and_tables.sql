@@ -209,6 +209,8 @@ CREATE TABLE `ldap` (
   -- a directory's name : 'default' keeps the short names (ldap/<group>, the bare username) ; any
   -- other's members are named ldap/<name>/<group> and <name>/<user>
   `name` varchar(100) NOT NULL DEFAULT 'default',
+  -- what it is, for the list and its page
+  `description` varchar(250) DEFAULT NULL,
   -- the order a bare username is looked up in, the lowest first
   `position` int(11) NOT NULL DEFAULT 1,
   -- the sign-in domains (user@domain) that go straight to this directory, comma separated

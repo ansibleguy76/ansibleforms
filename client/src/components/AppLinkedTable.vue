@@ -37,7 +37,8 @@ import { ref, computed, inject } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useCellPopovers } from '@/composables/useCellPopovers';
-import { csvCell, htmlToText } from '@/lib/dataTable';
+import { csvCell, htmlToText, isSortable, compareRows } from '@/lib/dataTable';
+import { EMPTY_CELL, orEmpty } from '@/lib/tableCells';
 import BsSearch from './BsSearch.vue';
 import BsColumnPicker from './BsColumnPicker.vue';
 
@@ -74,10 +75,30 @@ function plain(col, row) {
   const v = col.html ? htmlToText(col.html(row)) : col.value ? col.value(row) : row[col.key];
   return v === null || v === undefined ? '' : String(v);
 }
+// the order : a named column's header clicked sorts by it, A to Z, again Z to A (lib/dataTable.js)
+const sortKey = ref(null);
+const sortDir = ref(1);
+/**
+ * Sorts by a column : the same one again turns the order round.
+ *
+ * Args:
+ *   col (object): the column whose header was clicked.
+ */
+function toggleSort(col) {
+  if (!isSortable(col)) return;
+  if (sortKey.value === col.key) sortDir.value = -sortDir.value;
+  else {
+    sortKey.value = col.key;
+    sortDir.value = 1;
+  }
+}
 const filteredRows = computed(() => {
   const q = filter.value.trim().toLowerCase();
-  if (!q) return props.rows;
-  return props.rows.filter((row) => props.columns.some((col) => plain(col, row).toLowerCase().includes(q)));
+  const rows = q
+    ? props.rows.filter((row) => props.columns.some((col) => plain(col, row).toLowerCase().includes(q)))
+    : props.rows;
+  const col = props.columns.find((c) => c.key === sortKey.value);
+  return col ? [...rows].sort((a, b) => compareRows(a, b, col, sortDir.value, (r, c) => plain(c, r))) : rows;
 });
 /**
  * Shows or hides a column (the picker's tick).
@@ -238,7 +259,7 @@ function open(row) {
  */
 function text(col, row) {
   const v = col.value ? col.value(row) : row[col.key];
-  return v === null || v === undefined || v === '' ? '–' : String(v);
+  return v === null || v === undefined || String(v).trim() === '' ? EMPTY_CELL : String(v);
 }
 </script>
 <template>
@@ -287,8 +308,21 @@ function text(col, row) {
           <template v-for="col in shownColumns" :key="col.key">
             <!-- the caret's own column, before its column (a job's form) -->
             <th v-if="children && col.key === childrenBefore" class="af-expand-col"></th>
-            <th :class="col.class" :data-fit-keep="col.keep ? '' : null">
+            <th
+              :class="[col.class, { 'bs-dt-sortable': isSortable(col) }]"
+              :data-fit-keep="col.keep ? '' : null"
+              :role="isSortable(col) ? 'button' : null"
+              @click="toggleSort(col)"
+            >
               {{ col.label }}
+              <!-- its order : the arrow of the one sorted by, the pair greyed on the others -->
+              <span v-if="isSortable(col)" class="text-muted ms-1 af-sort-icon">
+                <FaIcon v-if="sortKey === col.key" :icon="sortDir === 1 ? 'sort-up' : 'sort-down'" /><FaIcon
+                  v-else
+                  icon="sort"
+                  class="opacity-25"
+                />
+              </span>
             </th>
           </template>
           <!-- the room left, after the last column (v-fit-columns) -->
@@ -333,7 +367,7 @@ function text(col, row) {
             <td :class="[col.class, { 'af-row-open': i === 0 && target(row), 'af-child-row': i === 0 && child }]">
               <slot :name="`cell-${col.key}`" :row="row">
                 <!-- eslint-disable-next-line vue/no-v-html -- html() is escaped by its column -->
-                <span v-if="col.html" v-html="col.html(row)"></span>
+                <span v-if="col.html" v-html="orEmpty(col.html(row))"></span>
                 <template v-else>{{ text(col, row) }}</template>
               </slot>
             </td>
@@ -352,3 +386,13 @@ function text(col, row) {
   <!-- the rows shown, the page size and the pages, under the table as a list's -->
   <AppTablePager :items="filteredRows" @change="(r) => (pageRows = r)" />
 </template>
+<style scoped>
+/* a header that sorts : the pointer, and its arrows small as every list's */
+.bs-dt-sortable {
+  cursor: pointer;
+  user-select: none;
+}
+.af-sort-icon {
+  font-size: 0.7em;
+}
+</style>
