@@ -739,19 +739,12 @@ export default function getSettings(t) {
           to: (r) => `/settings/repositories/${r.id}/pull-output`,
         },
         {
-          // and on the last push : a repository the app writes to only, as Push
+          // and on the last push : its page's Last push output tab
           name: 'preview_push',
           icon: 'terminal',
           title: t('settings.repositories.showPushOutput'),
           color: 'preview',
           to: (r) => `/settings/repositories/${r.id}/push-output`,
-          dependency: [
-            'use_for_forms',
-            'use_for_config',
-            'use_for_playbooks',
-            'use_for_workflows',
-            'use_for_inventories',
-          ],
         },
         { name: 'delete', icon: 'trash', title: t('settings.repositories.deleteRepository'), color: 'delete' },
       ],

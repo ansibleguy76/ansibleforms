@@ -1177,7 +1177,9 @@ export default {
       useInventoriesShort: 'Inwentarze',
       fieldsRequired: 'Nazwa, URI i opis są wymagane.',
       noOutput: 'Brak wyniku: wykonaj pull repozytorium, aby zobaczyć komunikaty git.',
-      noPushOutput: 'Brak wyniku push: wykonaj push repozytorium, aby zobaczyć komunikaty git.',
+      noPushOutput: 'To repozytorium nigdy nie zostało wypchnięte (push).',
+      noPushTarget:
+        'AnsibleForms nie zapisuje do tego repozytorium (formularze, konfiguracja, playbooki, workflowy lub inwentarze), więc nie ma czego wypychać.',
       lastPullOutput: 'Wynik ostatniego pull',
       lastPushOutput: 'Wynik ostatniego push',
       showPullOutput: 'Pokaż wynik ostatniego pull',

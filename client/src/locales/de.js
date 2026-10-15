@@ -1186,7 +1186,9 @@ export default {
       useInventoriesShort: 'Inventare',
       fieldsRequired: 'Name, URI und Beschreibung sind erforderlich.',
       noOutput: 'Noch keine Ausgabe: Repository pullen, um die Meldungen von git zu sehen.',
-      noPushOutput: 'Noch keine Push-Ausgabe: Repository pushen, um die Meldungen von git zu sehen.',
+      noPushOutput: 'Dieses Repository wurde noch nie gepusht.',
+      noPushTarget:
+        'AnsibleForms schreibt nicht in dieses Repository (Formulare, Konfiguration, Playbooks, Workflows oder Inventare), daher gibt es nichts zu pushen.',
       lastPullOutput: 'Ausgabe des letzten Pulls',
       lastPushOutput: 'Ausgabe des letzten Pushs',
       showPullOutput: 'Ausgabe des letzten Pulls anzeigen',

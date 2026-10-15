@@ -1178,7 +1178,9 @@ export default {
       useInventoriesShort: 'Inventarissen',
       fieldsRequired: 'Naam, URI en beschrijving zijn verplicht.',
       noOutput: 'Nog geen uitvoer: pull de repository om te zien wat git zegt.',
-      noPushOutput: 'Nog geen push-uitvoer: push de repository om te zien wat git zegt.',
+      noPushOutput: 'Deze repository is nog nooit gepusht.',
+      noPushTarget:
+        'AnsibleForms schrijft niet naar deze repository (formulieren, configuratie, playbooks, workflows of inventarissen), dus er is niets te pushen.',
       lastPullOutput: 'Uitvoer van laatste pull',
       lastPushOutput: 'Uitvoer van laatste push',
       showPullOutput: 'Uitvoer van laatste pull tonen',

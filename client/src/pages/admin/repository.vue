@@ -11,8 +11,8 @@
 /*    Schedule     the scheduled pull, clone on app start         */
 /*    Last pull output  what git said on the last pull (or clone, */
 /*                 reset)                                         */
-/*    Last push output  what git said on the last push : a        */
-/*                 repository the app writes to only              */
+/*    Last push output  what git said on the last push (none on   */
+/*                 a repository the app does not write to)        */
 /*  Pull, Reset, Push to repo and Delete top right, beside Save.  */
 /*                                                                */
 /******************************************************************/
@@ -149,7 +149,18 @@ const running = computed(() => repo.value?.status === 'running');
 const shownOutput = computed(
   () => (activeTab.value === 'push-output' ? repo.value?.push_output : repo.value?.pull_output) || '',
 );
-const outputLines = computed(() => shownOutput.value.replace(/\n$/, '').split('\n'));
+// the box shows OUTPUT_ROWS numbered lines at least, as a textarea's rows : nothing yet, its first
+// line says why ; more output, more lines
+const OUTPUT_ROWS = 4;
+const outputLines = computed(() => {
+  const lines = shownOutput.value ? shownOutput.value.replace(/\n$/, '').split('\n') : [emptyOutput.value];
+  return [...lines, ...Array(Math.max(0, OUTPUT_ROWS - lines.length)).fill('')];
+});
+// why there is no output yet : never pulled, never pushed, or a repository the app does not write to
+const emptyOutput = computed(() => {
+  if (activeTab.value !== 'push-output') return t('settings.repositories.noOutput');
+  return t(canPush.value ? 'settings.repositories.noPushOutput' : 'settings.repositories.noPushTarget');
+});
 // pushed back : only what the designer writes to it, its forms, settings, playbooks, workflows or inventories
 // (and, on the button, only when it has changes not pushed yet)
 const canPush = computed(
@@ -232,25 +243,17 @@ function watchRun() {
 onBeforeUnmount(() => clearInterval(poll));
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
-// the dialog's steps, and git's last outputs : the pull's, and the push's of a repository the app
-// writes to
-const OUTPUT_TABS = ['pull-output', 'push-output'];
+// the dialog's steps, and git's last outputs : the pull's and the push's (none on a repository
+// the app does not write to, the tab says so)
 const tabs = computed(() => [
   { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
   { key: 'credentials', label: t('settings.repositories.stepCredentials'), icon: 'key' },
   { key: 'usage', label: t('settings.repositories.stepUsage'), icon: 'list-check' },
   { key: 'schedule', label: t('settings.repositories.stepSchedule'), icon: 'stopwatch' },
   { key: 'pull-output', label: t('settings.repositories.lastPullOutput'), icon: 'terminal' },
-  ...(canPush.value
-    ? [{ key: 'push-output', label: t('settings.repositories.lastPushOutput'), icon: 'terminal' }]
-    : []),
+  { key: 'push-output', label: t('settings.repositories.lastPushOutput'), icon: 'terminal' },
 ]);
-// the output tabs are known before the repository is (an address opened directly) : the push's
-// whether or not it shows, the repository not loaded yet
-const { activeTab, tabLink } = useRouteTab(
-  'details',
-  (key) => OUTPUT_TABS.includes(key) || tabs.value.some((x) => x.key === key),
-);
+const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
 // the title : Repositories › <name>, each step a link
 const pageCrumbs = computed(() => [
@@ -552,17 +555,14 @@ onMounted(async () => {
           <!-- Output : what git said on the last pull, or the last push -->
           <template v-else>
             <!-- as the server log shows its lines : each with its number in a grey column -->
-            <div v-if="shownOutput" class="af-repo-output font-monospace" tabindex="0" role="region">
+            <div class="af-repo-output font-monospace" tabindex="0" role="region">
               <div v-for="(line, i) in outputLines" :key="i" class="af-repo-output-line">
                 <span class="af-line-no af-repo-line-no">{{ i + 1 }}</span
-                ><span class="af-repo-line">{{ line }}</span>
+                ><span class="af-repo-line" :class="{ 'af-repo-output-empty': !shownOutput && i === 0 }">{{
+                  line
+                }}</span>
               </div>
             </div>
-            <p v-else class="text-body-secondary mb-0">
-              {{
-                t(activeTab === 'push-output' ? 'settings.repositories.noPushOutput' : 'settings.repositories.noOutput')
-              }}
-            </p>
           </template>
         </div>
       </template>
@@ -635,6 +635,12 @@ onMounted(async () => {
 }
 .af-repo-output-line {
   display: flex;
+}
+/* no output yet : the reason, grey, as the first line */
+.af-repo-output-empty {
+  color: var(--bs-secondary-color);
+  font-style: italic;
+  white-space: normal;
 }
 .af-repo-line-no {
   flex: 0 0 3rem;

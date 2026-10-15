@@ -1182,7 +1182,9 @@ export default {
       useInventoriesShort: 'Inventari',
       fieldsRequired: 'Nome, URI e descrizione sono obbligatori.',
       noOutput: 'Nessun output ancora: esegui un pull del repository per vedere cosa dice git.',
-      noPushOutput: 'Nessun output di push ancora: esegui un push del repository per vedere cosa dice git.',
+      noPushOutput: 'Questo repository non è mai stato inviato (push).',
+      noPushTarget:
+        "AnsibleForms non scrive in questo repository (form, configurazione, playbook, workflow o inventari), quindi non c'è nulla da inviare.",
       lastPullOutput: "Output dell'ultimo pull",
       lastPushOutput: "Output dell'ultimo push",
       showPullOutput: "Mostra output dell'ultimo pull",

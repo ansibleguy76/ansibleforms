@@ -1185,7 +1185,9 @@ export default {
       useInventoriesShort: 'Inventários',
       fieldsRequired: 'O nome, o URI e a descrição são obrigatórios.',
       noOutput: 'Ainda sem saída: faça pull do repositório para ver o que o git diz.',
-      noPushOutput: 'Ainda sem saída de push: faça push do repositório para ver o que o git diz.',
+      noPushOutput: 'Este repositório nunca foi enviado (push).',
+      noPushTarget:
+        'O AnsibleForms não escreve neste repositório (formulários, configuração, playbooks, workflows ou inventários), por isso não há nada a enviar.',
       lastPullOutput: 'Saída do último pull',
       lastPushOutput: 'Saída do último push',
       showPullOutput: 'Mostrar saída do último pull',

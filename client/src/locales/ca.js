@@ -1186,7 +1186,9 @@ export default {
       useInventoriesShort: 'Inventaris',
       fieldsRequired: 'El nom, la URI i la descripció són obligatoris.',
       noOutput: 'Encara no hi ha sortida: feu pull del repositori per veure què diu git.',
-      noPushOutput: 'Encara no hi ha sortida de push: feu push del repositori per veure què diu git.',
+      noPushOutput: "Aquest repositori no s'ha enviat mai (push).",
+      noPushTarget:
+        'AnsibleForms no escriu en aquest repositori (formularis, configuració, playbooks, workflows o inventaris), així que no hi ha res a enviar.',
       lastPullOutput: "Sortida de l'últim pull",
       lastPushOutput: "Sortida de l'últim push",
       showPullOutput: "Mostra la sortida de l'últim pull",

@@ -1172,7 +1172,9 @@ export default {
       useInventoriesShort: 'インベントリ',
       fieldsRequired: '名前、URI、説明は必須です。',
       noOutput: 'まだ出力はありません：リポジトリをプルすると git の出力が表示されます。',
-      noPushOutput: 'まだプッシュの出力はありません：リポジトリをプッシュすると git の出力が表示されます。',
+      noPushOutput: 'このリポジトリは一度もプッシュされていません。',
+      noPushTarget:
+        'AnsibleForms はこのリポジトリ（フォーム、設定、プレイブック、ワークフロー、インベントリ）に書き込まないため、プッシュするものはありません。',
       lastPullOutput: '前回のプルの出力',
       lastPushOutput: '前回のプッシュの出力',
       showPullOutput: '前回のプルの出力を表示',
