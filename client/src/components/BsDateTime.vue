@@ -122,6 +122,14 @@ const timeConfig = computed(() => {
   }
   return config;
 });
+// the clock open (not the calendar's days) : the zones are a time's, so they show with it only
+const timeOpen = ref(false);
+function overlayToggle({ open, overlay }) {
+  if (overlay === 'time') timeOpen.value = open;
+}
+// the calendar kept on the screen : on a short window it has room neither above nor below the
+// field, and it slides up or down to stay whole, over the field if it must
+const floating = { flip: { padding: 8 }, shift: { crossAxis: true, padding: 8 } };
 // the moment on every clock, the picked one first : nothing ambiguous before saving
 const bothClocks = computed(() => {
   if (!zonesDiffer.value) return '';
@@ -537,6 +545,8 @@ watch(
     ref="dp"
     text-input
     @internal-model-change="internalChange"
+    @overlay-toggle="overlayToggle"
+    @closed="timeOpen = false"
     v-model="pickerModel"
     @blur="blur"
     @focus="focus"
@@ -548,16 +558,18 @@ watch(
     :year-picker="dateType == 'year'"
     :time-picker="dateType == 'time'"
     :time-config="timeConfig"
+    :floating="floating"
     :dark="theme == 'dark'"
     :teleport="teleport ? 'body' : undefined"
   >
-    <!-- the clock a moment is picked on : the browser's or the app's, else the one zone it is -->
+    <!-- the clock a moment is picked on, over the time : the browser's, the app's or UTC, else the
+         one zone it is -->
     <template v-if="isMoment" #menu-header>
-      <div v-if="!zonesDiffer" class="p-2 text-center small text-body-secondary af-zone-only">
+      <div v-if="timeOpen && !zonesDiffer" class="p-2 text-center small text-body-secondary af-zone-only">
         {{ Time.zoneLabel(shownMoment, zone) }}
       </div>
       <div
-        v-else
+        v-else-if="timeOpen"
         class="btn-group btn-group-sm w-100 p-2 af-zone-switch"
         role="group"
         :aria-label="t('settings.common.zonePick')"
