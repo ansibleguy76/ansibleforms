@@ -97,6 +97,7 @@ export const roleOptionKeys = [
 // variant is not exposed by this editor, so it is not listed here (unknown keys
 // found in hand-written yaml are preserved verbatim by serializeRole).
 const trueByDefaultOptions = [
+  'allowFormDesign',
   'allowPlaybookDesign',
   'allowWorkflowDesign',
   'allowInventoryDesign',
