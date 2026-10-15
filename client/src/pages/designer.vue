@@ -2376,6 +2376,7 @@ function deleteForm(id) {
 }
 
 const collapsedPaths = ref(new Set());
+// the forms explorer's search (its magnifying glass) : the forms and files whose name has it
 const treeSearch = ref(false);
 const treeFilter = ref('');
 const treeSearchInput = ref(null);
@@ -2391,6 +2392,68 @@ function toggleTreeSearch() {
   }
   nextTick(() => treeSearchInput.value?.focus());
 }
+// its X (and Escape) : emptied, the box kept open and focused
+function clearTreeSearch() {
+  treeFilter.value = '';
+  treeSearchInput.value?.focus();
+}
+
+// the search on the title line, as every page's : it searches the YAML open (a form's, a file's,
+// the categories' or the constants'), usable on the YAML tab once the designer is mine ; another
+// section or tab starts with it empty
+const editorSearch = ref('');
+watch(currentTab, () => (editorSearch.value = ''));
+watch(editorView, (view) => {
+  if (view !== 'yaml') editorSearch.value = '';
+});
+// the search in the editor open (a form's YAML, a file's) : every match highlighted, the first one
+// from the cursor selected and scrolled to the middle ; again when another form or file opens
+// (once read)
+let markTimer = null;
+function markSearch() {
+  const editor = activeEditor.value;
+  if (!editor?.session || projectFiles.value?.busy) return;
+  const q = editorSearch.value.trim();
+  const re = q.length >= 2 ? new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi') : null;
+  editor.session.highlight(re);
+  editor.renderer.updateBackMarkers();
+  if (!re) return;
+  editor.find(q, { caseSensitive: false, wrap: true, skipCurrent: false });
+  // the match in the editor's middle, not on its last line
+  editor.renderer.scrollCursorIntoView(null, 0.5);
+  // the lines from their start while the match fits the width : no sideways scroll that cuts the
+  // beginning of every line for a match near the right edge
+  const end = editor.getSelectionRange().end;
+  const right = editor.renderer.$cursorLayer.getPixelPosition(end, false).left;
+  if (right + editor.renderer.characterWidth * 2 < editor.renderer.$size.scrollerWidth) {
+    editor.renderer.scrollToX(0);
+  }
+}
+watch(
+  [
+    editorSearch,
+    activeEditor,
+    currentForm,
+    editorView,
+    () => projectFiles.value?.selected,
+    () => projectFiles.value?.busy,
+  ],
+  () => {
+    clearTimeout(markTimer);
+    markTimer = setTimeout(markSearch, 300);
+  },
+);
+onBeforeUnmount(() => clearTimeout(markTimer));
+// the designer turned off (its trees gone, the searches disabled) : the searches emptied with them
+watch(
+  () => !!lock.value?.match,
+  (ours) => {
+    if (!ours) {
+      treeFilter.value = '';
+      editorSearch.value = '';
+    }
+  },
+);
 
 function toggleCollapse(key) {
   if (collapsedPaths.value.has(key)) {
@@ -4773,8 +4836,12 @@ onBeforeUnmount(() => {
             </div>
           </Transition>
         </template>
-        <!-- the designer's on/off switch, on the right of the title row -->
+        <!-- the search of the section's tree at the left, the designer's on/off switch at the right -->
         <template #headerActions>
+          <!-- always in its place ; usable on the YAML tab once the designer is mine (locked by me) :
+               it marks what it finds in the YAML open. Disabled while the designer is off or someone
+               else's, and on the Visual and Preview tabs -->
+          <BsSearch v-model="editorSearch" :disabled="!lock?.match || editorView !== 'yaml'" />
           <template v-if="lock">
             <popper v-if="lock.lock && !lock.match">
               <!-- someone else's : the switch on and disabled, the lock is theirs until they
@@ -5116,14 +5183,15 @@ onBeforeUnmount(() => {
               <AppExplorerColumn v-else-if="currentTab == 'Forms'" class="designer-tree">
                 <div class="file-tree-panel">
                   <div class="file-tree-header d-flex justify-content-between align-items-center">
-                    <span class="d-flex align-items-center"
+                    <!-- its heading on one line, cut with an ellipsis when narrow (as the file sections') -->
+                    <span class="d-flex align-items-center min-w-0"
                       ><span
                         role="button"
                         class="tree-add-btn me-2"
                         :title="t('designer.files.hideExplorer')"
                         @click="explorerFolded = true"
                         ><FaIcon icon="chevron-right" /></span
-                      >{{ t('designer.fileExplorer') }}</span
+                      ><span class="text-truncate">{{ t('designer.fileExplorer') }}</span></span
                     >
                     <span class="d-flex gap-2">
                       <span
@@ -5145,13 +5213,26 @@ onBeforeUnmount(() => {
                     </span>
                   </div>
                   <div v-if="treeSearch" class="tree-search-bar">
-                    <input
-                      type="text"
-                      class="form-control form-control-sm"
-                      v-model="treeFilter"
-                      :placeholder="t('designer.search') + '...'"
-                      ref="treeSearchInput"
-                    />
+                    <div class="tree-search-box">
+                      <input
+                        type="text"
+                        class="form-control form-control-sm"
+                        v-model="treeFilter"
+                        :placeholder="t('designer.search') + '...'"
+                        ref="treeSearchInput"
+                        @keydown.esc="clearTreeSearch()"
+                      />
+                      <button
+                        v-if="treeFilter"
+                        type="button"
+                        class="tree-search-clear"
+                        :title="t('common.clear')"
+                        :aria-label="t('common.clear')"
+                        @click="clearTreeSearch()"
+                      >
+                        <FaIcon icon="xmark" />
+                      </button>
+                    </div>
                   </div>
                   <div class="file-tree-content">
                     <template v-for="(item, idx) in fileTreeFlat" :key="'tree-' + idx">
@@ -5386,6 +5467,27 @@ onBeforeUnmount(() => {
 .tree-search-bar {
   padding: 0.4rem 0.5rem;
   border-bottom: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.25);
+}
+/* the X inside the box, at its right, while something is typed : it empties it (as the page
+   filters' X, BsSearch.vue) */
+.tree-search-box {
+  position: relative;
+}
+.tree-search-box .form-control {
+  padding-right: 1.75rem;
+}
+.tree-search-clear {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  border: 0;
+  background: transparent;
+  color: var(--bs-secondary-color);
+  padding: 0 0.5rem;
+}
+.tree-search-clear:hover {
+  color: var(--bs-body-color);
 }
 .file-tree-content {
   padding: 0.25rem 0.5rem;

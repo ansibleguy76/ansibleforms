@@ -11,6 +11,8 @@
 /*  @props:                                                       */
 /*      placeholder: String - "Filter" when none : every search   */
 /*                   box in a page filters what the page shows    */
+/*      disabled: Boolean - shown in its place but not usable     */
+/*                   (nothing to filter yet : the designer off)   */
 /*                                                                */
 /******************************************************************/
 
@@ -23,6 +25,7 @@ const search = defineModel({ type: String, default: '' });
 
 const props = defineProps({
   placeholder: { type: String, default: '' },
+  disabled: { type: Boolean, default: false },
 });
 
 // INIT
@@ -51,10 +54,11 @@ function clear() {
       class="form-control"
       :class="{ 'af-search-has-clear': search }"
       :placeholder="props.placeholder || t('common.filter')"
+      :disabled="props.disabled"
       @keydown.esc="clear"
     />
     <button
-      v-if="search"
+      v-if="search && !props.disabled"
       type="button"
       class="btn af-search-clear"
       :title="t('common.clear')"

@@ -82,6 +82,7 @@ const leavingTo = ref(null); // what to do once the changes are dropped : go to 
 
 // ─── the explorer ─────────────────────────────────────────────────────────────
 const collapsed = ref(new Set());
+// the explorer's search (its magnifying glass) : the files whose name or path has it
 const filter = ref('');
 const searching = ref(false);
 
@@ -456,6 +457,8 @@ function startResize(e) {
   document.addEventListener('mouseup', onUp);
 }
 
+// the explorer's search box : shown by its magnifying glass and focused once in the dom, emptied
+// when hidden
 const searchInput = ref(null);
 async function toggleSearch() {
   searching.value = !searching.value;
@@ -464,6 +467,11 @@ async function toggleSearch() {
     await nextTick();
     searchInput.value?.focus();
   }
+}
+// its X (and Escape) : emptied, the box kept open and focused
+function clearSearch() {
+  filter.value = '';
+  searchInput.value?.focus();
 }
 
 // ─── leaving with changes ─────────────────────────────────────────────────────
@@ -716,13 +724,26 @@ defineExpose({
           </span>
         </div>
         <div v-if="searching" class="tree-search-bar">
-          <input
-            ref="searchInput"
-            v-model="filter"
-            type="text"
-            class="form-control form-control-sm"
-            :placeholder="t('designer.search') + '...'"
-          />
+          <div class="tree-search-box">
+            <input
+              ref="searchInput"
+              v-model="filter"
+              type="text"
+              class="form-control form-control-sm"
+              :placeholder="t('designer.search') + '...'"
+              @keydown.esc="clearSearch()"
+            />
+            <button
+              v-if="filter"
+              type="button"
+              class="tree-search-clear"
+              :title="t('common.clear')"
+              :aria-label="t('common.clear')"
+              @click="clearSearch()"
+            >
+              <FaIcon icon="xmark" />
+            </button>
+          </div>
         </div>
         <div class="file-tree-content">
           <div v-if="listing.truncated" class="small text-warning-emphasis py-1">
@@ -973,6 +994,27 @@ defineExpose({
 .tree-search-bar {
   padding: 0.4rem 0.5rem;
   border-bottom: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.25);
+}
+/* the X inside the box, at its right, while something is typed : it empties it (as the page
+   filters' X, BsSearch.vue) */
+.tree-search-box {
+  position: relative;
+}
+.tree-search-box .form-control {
+  padding-right: 1.75rem;
+}
+.tree-search-clear {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  border: 0;
+  background: transparent;
+  color: var(--bs-secondary-color);
+  padding: 0 0.5rem;
+}
+.tree-search-clear:hover {
+  color: var(--bs-body-color);
 }
 .file-tree-content {
   padding: 0.25rem 0.5rem;
