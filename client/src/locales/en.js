@@ -1197,7 +1197,7 @@ export default {
       description: 'Configure external identity providers for single sign-on (Microsoft Entra ID, OIDC, etc.).',
       editProvider: 'Edit provider',
       tabProviders: 'Providers',
-      active: 'Active',
+      active: 'Enabled',
       useForSignIn: 'Use for sign-in',
       activeHelp: 'Users sign in with it when they choose {type}; turning it on turns off the other {type} providers.',
       providerNotFound: "There is no SSO provider with the id '{id}'.",
@@ -1679,7 +1679,6 @@ export default {
         "One per field. A user signing in as user{'@'}domain with one of these goes straight to this directory.",
       addDomain: 'Add domain',
       enabled: 'Enabled',
-      disabled: 'Disabled',
       directory: 'LDAP directory',
       directoriesDescription:
         "The LDAP and Active Directory directories users sign in with. A username is looked up in their order, unless it names a directory (corp\\jane) or one of its sign-in domains (jane{'@'}corp.example).",

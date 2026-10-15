@@ -1217,7 +1217,7 @@ export default {
       description: 'Externe Identitätsanbieter für Single Sign-On konfigurieren (Microsoft Entra ID, OIDC, usw.).',
       editProvider: 'Anbieter bearbeiten',
       tabProviders: 'Anbieter',
-      active: 'Aktiv',
+      active: 'Aktiviert',
       useForSignIn: 'Für die Anmeldung verwenden',
       activeHelp:
         'Benutzer melden sich damit an, wenn sie {type} wählen; das Einschalten schaltet die anderen {type}-Anbieter aus.',
@@ -1714,7 +1714,6 @@ export default {
         "Eine pro Feld. Wer sich als benutzer{'@'}domäne mit einer davon anmeldet, geht direkt zu diesem Verzeichnis.",
       addDomain: 'Domäne hinzufügen',
       enabled: 'Aktiviert',
-      disabled: 'Deaktiviert',
       directory: 'LDAP-Verzeichnis',
       directoriesDescription:
         "Die LDAP- und Active-Directory-Verzeichnisse, mit denen sich Benutzer anmelden. Ein Benutzername wird in ihrer Reihenfolge gesucht, außer er nennt ein Verzeichnis (corp\\jane) oder eine seiner Anmeldedomänen (jane{'@'}corp.example).",

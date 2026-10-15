@@ -1217,7 +1217,7 @@ export default {
         'Configure fornecedores de identidade externos para início de sessão único (Microsoft Entra ID, OIDC, etc.).',
       editProvider: 'Editar fornecedor',
       tabProviders: 'Fornecedores',
-      active: 'Ativo',
+      active: 'Ativado',
       useForSignIn: 'Usar para iniciar sessão',
       activeHelp:
         'Os utilizadores iniciam sessão com ele quando escolhem {type}; ativá-lo desativa os outros fornecedores {type}.',
@@ -1612,7 +1612,6 @@ export default {
         "Um por campo. Quem inicia sessão como utilizador{'@'}domínio com um destes vai diretamente para este diretório.",
       addDomain: 'Adicionar domínio',
       enabled: 'Ativado',
-      disabled: 'Desativado',
       directory: 'Diretório LDAP',
       directoriesDescription:
         "Os diretórios LDAP e Active Directory com que os utilizadores iniciam sessão. Um utilizador é procurado pela sua ordem, a menos que nomeie um diretório (corp\\jane) ou um dos seus domínios (jane{'@'}corp.example).",

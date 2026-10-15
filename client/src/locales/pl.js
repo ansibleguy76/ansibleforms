@@ -1209,7 +1209,7 @@ export default {
         'Skonfiguruj zewnętrznych dostawców tożsamości do logowania jednokrotnego (Microsoft Entra ID, OIDC itp.).',
       editProvider: 'Edytuj dostawcę',
       tabProviders: 'Dostawcy',
-      active: 'Aktywny',
+      active: 'Włączony',
       useForSignIn: 'Użyj do logowania',
       activeHelp: 'Użytkownicy logują się nim, gdy wybiorą {type}; włączenie go wyłącza pozostałych dostawców {type}.',
       providerNotFound: "Nie ma dostawcy SSO o id '{id}'.",
@@ -1604,7 +1604,6 @@ export default {
         "Jedna na pole. Użytkownik logujący się jako użytkownik{'@'}domena z jedną z nich trafia prosto do tego katalogu.",
       addDomain: 'Dodaj domenę',
       enabled: 'Włączony',
-      disabled: 'Wyłączony',
       directory: 'Katalog LDAP',
       directoriesDescription:
         "Katalogi LDAP i Active Directory, przez które logują się użytkownicy. Nazwa jest szukana w ich kolejności, chyba że wskazuje katalog (corp\\jane) lub jedną z jego domen (jane{'@'}corp.example).",

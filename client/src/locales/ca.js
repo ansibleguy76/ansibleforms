@@ -1218,7 +1218,7 @@ export default {
         "Configura proveïdors d'identitat externs per a l'inici de sessió únic (Microsoft Entra ID, OIDC, etc.).",
       editProvider: 'Edita el proveïdor',
       tabProviders: 'Proveïdors',
-      active: 'Actiu',
+      active: 'Activat',
       useForSignIn: 'Fes-lo servir per iniciar la sessió',
       activeHelp:
         'Els usuaris inicien la sessió amb ell quan trien {type}; activar-lo desactiva els altres proveïdors {type}.',
@@ -1614,7 +1614,6 @@ export default {
         "Un per camp. Qui inicia sessió com a usuari{'@'}domini amb un d'aquests va directament a aquest directori.",
       addDomain: 'Afegeix domini',
       enabled: 'Activat',
-      disabled: 'Desactivat',
       directory: 'Directori LDAP',
       directoriesDescription:
         "Els directoris LDAP i Active Directory amb què inicien sessió els usuaris. Un usuari es cerca en el seu ordre, tret que anomeni un directori (corp\\jane) o un dels seus dominis (jane{'@'}corp.example).",

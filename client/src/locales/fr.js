@@ -1219,7 +1219,7 @@ export default {
         "Configurer des fournisseurs d'identité externes pour l'authentification unique (Microsoft Entra ID, OIDC, etc.).",
       editProvider: 'Modifier le fournisseur',
       tabProviders: 'Fournisseurs',
-      active: 'Actif',
+      active: 'Activé',
       useForSignIn: 'Utiliser pour la connexion',
       activeHelp:
         "Les utilisateurs se connectent avec lui lorsqu'ils choisissent {type} ; l'activer désactive les autres fournisseurs {type}.",
@@ -1714,7 +1714,6 @@ export default {
         "Un par champ. Un utilisateur qui se connecte en utilisateur{'@'}domaine avec l'un d'eux va directement à cet annuaire.",
       addDomain: 'Ajouter un domaine',
       enabled: 'Activé',
-      disabled: 'Désactivé',
       directory: 'Annuaire LDAP',
       directoriesDescription:
         "Les annuaires LDAP et Active Directory avec lesquels les utilisateurs se connectent. Un nom est cherché dans leur ordre, sauf s'il nomme un annuaire (corp\\jane) ou l'un de ses domaines (jane{'@'}corp.example).",

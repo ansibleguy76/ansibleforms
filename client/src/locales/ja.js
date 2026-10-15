@@ -1590,7 +1590,6 @@ export default {
         "1 フィールドに 1 つ。これらのドメインで ユーザー{'@'}ドメイン としてサインインするとこのディレクトリに直接進みます。",
       addDomain: 'ドメインを追加',
       enabled: '有効',
-      disabled: '無効',
       directory: 'LDAP ディレクトリ',
       directoriesDescription:
         "ユーザーがサインインに使う LDAP と Active Directory のディレクトリ。ユーザー名はその順で検索されます。ただしディレクトリ（corp\\jane）やサインインドメイン（jane{'@'}corp.example）を指定した場合は除きます。",

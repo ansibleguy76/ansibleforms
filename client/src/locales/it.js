@@ -1213,7 +1213,7 @@ export default {
       description: 'Configurare provider di identità esterni per il single sign-on (Microsoft Entra ID, OIDC, ecc.).',
       editProvider: 'Modifica provider',
       tabProviders: 'Provider',
-      active: 'Attivo',
+      active: 'Abilitato',
       useForSignIn: "Usa per l'accesso",
       activeHelp: 'Gli utenti accedono con esso quando scelgono {type}; attivarlo disattiva gli altri provider {type}.',
       providerNotFound: "Non esiste un provider SSO con id '{id}'.",
@@ -1403,7 +1403,7 @@ export default {
       deleteChannel: 'Elimina canale di notifica',
       enable: 'Attiva',
       disable: 'Disattiva',
-      enabled: 'Attivo',
+      enabled: 'Abilitato',
       enabledHelp: 'Se gli vengono inviate notifiche.',
       useForMail: 'Imposta come predefinito',
       active: 'Predefinito',
@@ -1698,8 +1698,7 @@ export default {
       domainsHelp:
         "Uno per campo. Chi accede come utente{'@'}dominio con uno di questi va direttamente a questa directory.",
       addDomain: 'Aggiungi dominio',
-      enabled: 'Abilitata',
-      disabled: 'Disabilitata',
+      enabled: 'Abilitato',
       directory: 'Directory LDAP',
       directoriesDescription:
         "Le directory LDAP e Active Directory con cui gli utenti accedono. Un nome utente viene cercato nel loro ordine, a meno che nomini una directory (corp\\jane) o uno dei suoi domini (jane{'@'}corp.example).",

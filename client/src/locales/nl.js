@@ -1209,7 +1209,7 @@ export default {
       description: 'Configureer externe identiteitsproviders voor single sign-on (Microsoft Entra ID, OIDC, enz.).',
       editProvider: 'Provider bewerken',
       tabProviders: 'Providers',
-      active: 'Actief',
+      active: 'Ingeschakeld',
       useForSignIn: 'Gebruiken om aan te melden',
       activeHelp:
         'Gebruikers melden zich ermee aan als ze {type} kiezen; inschakelen schakelt de andere {type}-providers uit.',
@@ -1699,7 +1699,6 @@ export default {
         "Eén per veld. Wie zich aanmeldt als gebruiker{'@'}domein met een daarvan, gaat direct naar deze directory.",
       addDomain: 'Domein toevoegen',
       enabled: 'Ingeschakeld',
-      disabled: 'Uitgeschakeld',
       directory: 'LDAP-directory',
       directoriesDescription:
         "De LDAP- en Active Directory-directory's waarmee gebruikers zich aanmelden. Een gebruikersnaam wordt in hun volgorde gezocht, tenzij hij een directory noemt (corp\\jane) of een van zijn domeinen (jane{'@'}corp.example).",

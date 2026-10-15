@@ -1215,7 +1215,7 @@ export default {
         'Configurar proveedores de identidad externos para inicio de sesión único (Microsoft Entra ID, OIDC, etc.).',
       editProvider: 'Editar proveedor',
       tabProviders: 'Proveedores',
-      active: 'Activo',
+      active: 'Activado',
       useForSignIn: 'Usar para iniciar sesión',
       activeHelp:
         'Los usuarios inician sesión con él cuando eligen {type}; activarlo desactiva los demás proveedores {type}.',
@@ -1707,7 +1707,6 @@ export default {
         "Uno por campo. Quien inicia sesión como usuario{'@'}dominio con uno de ellos va directamente a este directorio.",
       addDomain: 'Añadir dominio',
       enabled: 'Activado',
-      disabled: 'Desactivado',
       directory: 'Directorio LDAP',
       directoriesDescription:
         "Los directorios LDAP y Active Directory con los que inician sesión los usuarios. Un usuario se busca en su orden, salvo que nombre un directorio (corp\\jane) o uno de sus dominios (jane{'@'}corp.example).",

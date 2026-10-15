@@ -1547,7 +1547,6 @@ export default {
       domainsHelp: "每个字段一个。以 用户{'@'}域 登录且域在其中的用户直接进入此目录。",
       addDomain: '添加域',
       enabled: '已启用',
-      disabled: '已禁用',
       directory: 'LDAP 目录',
       directoriesDescription:
         "用户用来登录的 LDAP 和 Active Directory 目录。用户名按其顺序查找，除非它指定了目录（corp\\jane）或其登录域之一（jane{'@'}corp.example）。",

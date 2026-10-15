@@ -3598,19 +3598,16 @@ const NEW_DIRECTORY = { enable: true, port: 389, username_attribute: 'sAMAccount
  *   object: the list's settings (AppAdminMulti).
  */
 function ldapDirectories(t, ldap) {
-  // the columns : the name, the servers, on or off ; never sorted, so the list is always in the
-  // lookup order
+  // the columns : on or off (first, as every list's Enabled), the name, the servers ; never sorted,
+  // so the list is always in the lookup order
   const column = {
     name: { sortable: false, filterable: true },
     server: { sortable: false, filterable: true },
-    enable: {
-      sortable: false,
-      label: t('settings.ldap.enabled'),
-      render: (v) => (v ? pill(PILL.green, t('settings.ldap.enabled')) : pill(PILL.grey, t('settings.ldap.disabled'))),
-    },
+    // a ✓ as every list's Enabled, first as theirs
+    enable: { sortable: false, label: t('settings.ldap.enabled'), type: 'checkbox' },
   };
   // the columns first, in their order ; the dialog's fields keep theirs within each step
-  const COLUMNS = ['name', 'server', 'enable'];
+  const COLUMNS = ['enable', 'name', 'server'];
   const columnOrder = (key) => (COLUMNS.includes(key) ? COLUMNS.indexOf(key) : COLUMNS.length);
   return {
     pageTitle: t('sidebar.ldap'),
