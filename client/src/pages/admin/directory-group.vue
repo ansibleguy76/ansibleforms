@@ -239,7 +239,9 @@ onMounted(async () => {
           />
         </template>
       </template>
-      <template v-if="group && activeTab === 'roles'" #actions>
+      <!-- always there once the group is : the tab tables put their controls in this toolbar, so a
+           slot that comes and goes with the tab tore it down under them and froze the tabs -->
+      <template v-if="group" #actions>
         <BsButton v-if="activeTab === 'roles'" icon="plus" :disabled="rolesReadOnly" @click="addingRole = true">{{
           t('settings.settingsPage.addRole')
         }}</BsButton>
