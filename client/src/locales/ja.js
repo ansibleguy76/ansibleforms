@@ -824,6 +824,7 @@ export default {
       month: '月',
       dayOfWeek: '曜日',
       placeholder: '* * * * *',
+      placeholderZone: '* * * * * {zone}',
       invalid: '無効な cron 式です',
       invalidStep:
         '数値の接頭辞付きのステップ (例: 7/10) はサポートされていません - */step または min-max/step を使用してください',
@@ -851,7 +852,9 @@ export default {
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
       zoneBrowser: 'ブラウザのタイムゾーン ({zone})',
       zoneApp: 'アプリのタイムゾーン ({zone})',
+      zoneUtc: '協定世界時 (UTC)',
       zonePick: '日時のタイムゾーン',
+      datePlaceholderZone: '{format} {zone}',
       datePlaceholders: {
         date: 'YYYY-MM-DD',
         datetime: 'YYYY-MM-DD HH:mm',
@@ -1746,7 +1749,9 @@ export default {
       defaultLanguage: '既定の言語',
       defaultLanguageHelp: 'まだ言語を選択していない新しいユーザーの既定の言語です。',
       defaultTheme: '既定のテーマ',
-      defaultThemeHelp: 'まだテーマを選択していない新しいユーザーの既定のテーマです。',
+      defaultThemeHelp:
+        'テーマを選んでいないユーザーのテーマ。「ブラウザーに合わせる」はブラウザーの設定に合わせてライトまたはダークで表示します。',
+      themeSystem: 'ブラウザーに合わせる',
       configSource: '設定のソース',
       configSourceHelp: '設定 (カテゴリ、ロール、定数) の読み込み元を選択します。',
       tabConfiguration: '設定',

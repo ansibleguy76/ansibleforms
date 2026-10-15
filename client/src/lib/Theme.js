@@ -16,8 +16,13 @@ var Theme = {
   // (so a refresh keeps the rendered theme), which is why an explicit choice gets
   // its own key - the same split as the af_language cookie for the language.
   applyServerDefault(theme, color) {
-    if (!theme) return;
     if (Theme.isUserChoice()) return;
+    // none set, or Follow the browser : light or dark as the browser is, and as it changes
+    if (!theme || theme === 'system') {
+      Theme.followBrowser();
+      return;
+    }
+    Theme.stopFollowingBrowser();
     Theme.set(theme);
     if (theme === 'color' && color) {
       Theme.applyColor(color);
@@ -149,6 +154,22 @@ var Theme = {
       { title: 'Dark', value: 'dark', icon: 'moon' },
       { title: 'Color', value: 'color', icon: 'palette' },
     ];
+  },
+  // the browser's light / dark preference followed live (a system that switches at night) while
+  // the user has not picked a theme of their own
+  followBrowser() {
+    Theme.clearColor();
+    Theme.set(Theme.getMediaPreference());
+    if (Theme._media || typeof window === 'undefined' || !window.matchMedia) return;
+    Theme._media = window.matchMedia('(prefers-color-scheme: dark)');
+    Theme._onMedia = () => {
+      if (!Theme.isUserChoice()) Theme.set(Theme.getMediaPreference());
+    };
+    Theme._media.addEventListener?.('change', Theme._onMedia);
+  },
+  stopFollowingBrowser() {
+    Theme._media?.removeEventListener?.('change', Theme._onMedia);
+    Theme._media = null;
   },
   getMediaPreference() {
     const hasDarkPreference = window.matchMedia('(prefers-color-scheme: dark)').matches;

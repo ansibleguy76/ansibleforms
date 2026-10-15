@@ -822,6 +822,8 @@ export default {
       month: 'Month',
       dayOfWeek: 'Weekday',
       placeholder: '* * * * *',
+      // the zone the scheduler runs the expression in
+      placeholderZone: '* * * * * {zone}',
       invalid: 'Invalid cron expression',
       invalidStep: 'Stepping with a numeric prefix (e.g. 7/10) is not supported - use */step or min-max/step',
       unsupported: 'Cannot preview: this expression uses a cron feature the editor does not support',
@@ -848,7 +850,10 @@ export default {
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
       zoneBrowser: "Your browser's time zone ({zone})",
       zoneApp: "The app's time zone ({zone})",
+      zoneUtc: 'Coordinated Universal Time (UTC)',
       zonePick: 'Time zone of the date and time',
+      // a date and time that is a moment : its format and the zone it is picked on
+      datePlaceholderZone: '{format} {zone}',
       datePlaceholders: {
         date: 'YYYY-MM-DD',
         datetime: 'YYYY-MM-DD HH:mm',
@@ -1745,7 +1750,9 @@ export default {
       defaultLanguage: 'Default language',
       defaultLanguageHelp: "The default language for new users who haven't chosen a language yet.",
       defaultTheme: 'Default theme',
-      defaultThemeHelp: "The default theme for new users who haven't chosen a theme yet.",
+      defaultThemeHelp:
+        "The theme for users who haven't chosen one. Follow the browser shows light or dark as their browser is set.",
+      themeSystem: 'Follow the browser',
       configSource: 'Configuration source',
       configSourceHelp: 'Choose where the configuration (categories, roles, constants) is loaded from.',
       tabConfiguration: 'Configuration',

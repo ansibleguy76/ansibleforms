@@ -829,6 +829,7 @@ export default {
       month: 'Mes',
       dayOfWeek: 'Día sem.',
       placeholder: '* * * * *',
+      placeholderZone: '* * * * * {zone}',
       invalid: 'Expresión cron inválida',
       invalidStep: 'El paso con prefijo numérico (p. ej. 7/10) no es compatible - use */paso o min-max/paso',
       unsupported: 'No se puede previsualizar: esta expresión usa una función cron que el editor no admite',
@@ -855,7 +856,9 @@ export default {
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
       zoneBrowser: 'La zona horaria de tu navegador ({zone})',
       zoneApp: 'La zona horaria de la aplicación ({zone})',
+      zoneUtc: 'Tiempo universal coordinado (UTC)',
       zonePick: 'Zona horaria de la fecha y hora',
+      datePlaceholderZone: '{format} {zone}',
       datePlaceholders: {
         date: 'AAAA-MM-DD',
         datetime: 'AAAA-MM-DD HH:mm',
@@ -1777,7 +1780,9 @@ export default {
       defaultLanguage: 'Idioma predeterminado',
       defaultLanguageHelp: 'El idioma predeterminado para nuevos usuarios que aún no han elegido un idioma.',
       defaultTheme: 'Tema predeterminado',
-      defaultThemeHelp: 'El tema predeterminado para nuevos usuarios que aun no han elegido un tema.',
+      defaultThemeHelp:
+        'El tema para los usuarios que no han elegido uno. Seguir el navegador lo muestra claro u oscuro según su navegador.',
+      themeSystem: 'Seguir el navegador',
       configSource: 'Origen de configuración',
       configSourceHelp: 'Elija de dónde se carga la configuración (categorías, roles, constantes).',
       tabConfiguration: 'Configuración',

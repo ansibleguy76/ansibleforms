@@ -814,6 +814,7 @@ export default {
       month: '月',
       dayOfWeek: '星期',
       placeholder: '* * * * *',
+      placeholderZone: '* * * * * {zone}',
       invalid: '无效的 cron 表达式',
       invalidStep: '不支持带数字前缀的步长（例如 7/10），请使用 */步长 或 最小值-最大值/步长',
       unsupported: '无法预览：此表达式使用了编辑器不支持的 cron 功能',
@@ -840,7 +841,9 @@ export default {
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
       zoneBrowser: '浏览器的时区 ({zone})',
       zoneApp: '应用的时区 ({zone})',
+      zoneUtc: '协调世界时 (UTC)',
       zonePick: '日期和时间的时区',
+      datePlaceholderZone: '{format} {zone}',
       datePlaceholders: {
         date: 'YYYY-MM-DD',
         datetime: 'YYYY-MM-DD HH:mm',
@@ -1704,7 +1707,8 @@ export default {
       defaultLanguage: '默认语言',
       defaultLanguageHelp: '尚未选择语言的新用户使用的默认语言。',
       defaultTheme: '默认主题',
-      defaultThemeHelp: '尚未选择主题的新用户使用的默认主题。',
+      defaultThemeHelp: '未选择主题的用户所用的主题。“跟随浏览器”按浏览器设置显示浅色或深色。',
+      themeSystem: '跟随浏览器',
       configSource: '配置来源',
       configSourceHelp: '选择从何处加载配置（类别、角色、常量）。',
       tabConfiguration: '配置',

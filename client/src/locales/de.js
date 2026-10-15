@@ -832,6 +832,7 @@ export default {
       month: 'Monat',
       dayOfWeek: 'Wochentag',
       placeholder: '* * * * *',
+      placeholderZone: '* * * * * {zone}',
       invalid: 'Ungültiger Cron-Ausdruck',
       invalidStep:
         'Schrittweite mit numerischem Präfix (z. B. 7/10) wird nicht unterstützt - verwenden Sie */Schritt oder Min-Max/Schritt',
@@ -860,7 +861,9 @@ export default {
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
       zoneBrowser: 'Die Zeitzone Ihres Browsers ({zone})',
       zoneApp: 'Die Zeitzone der Anwendung ({zone})',
+      zoneUtc: 'Koordinierte Weltzeit (UTC)',
       zonePick: 'Zeitzone von Datum und Uhrzeit',
+      datePlaceholderZone: '{format} {zone}',
       datePlaceholders: {
         date: 'JJJJ-MM-TT',
         datetime: 'JJJJ-MM-TT HH:mm',
@@ -1786,7 +1789,9 @@ export default {
       defaultLanguage: 'Standardsprache',
       defaultLanguageHelp: 'Die Standardsprache fuer neue Benutzer, die noch keine Sprache gewaehlt haben.',
       defaultTheme: 'Standarddesign',
-      defaultThemeHelp: 'Das Standarddesign fuer neue Benutzer, die noch kein Design gewaehlt haben.',
+      defaultThemeHelp:
+        'Das Design für Benutzer, die keines gewählt haben. Dem Browser folgen zeigt hell oder dunkel wie im Browser eingestellt.',
+      themeSystem: 'Dem Browser folgen',
       configSource: 'Konfigurationsquelle',
       configSourceHelp: 'Waehlen Sie, woher die Konfiguration (Kategorien, Rollen, Konstanten) geladen wird.',
       tabConfiguration: 'Konfiguration',

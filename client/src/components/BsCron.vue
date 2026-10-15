@@ -41,6 +41,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { normalizeParts, cronValidationMessage } from '@/config/cron';
 import { describeCron } from '@/config/cronDescribe';
+import Time from '@/lib/Time';
 
 const { t, locale } = useI18n();
 const emit = defineEmits(['update:modelValue']);
@@ -671,7 +672,7 @@ function formatDate(d) {
           :class="{ 'is-invalid': hasError || !!expressionError }"
           :value="modelValue"
           @input="emit('update:modelValue', $event.target.value)"
-          :placeholder="t('settings.cron.placeholder')"
+          :placeholder="t('settings.cron.placeholderZone', { zone: Time.zoneLabel(new Date(), timeZone) })"
         />
       </div>
     </div>

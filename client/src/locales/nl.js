@@ -828,6 +828,7 @@ export default {
       month: 'Maand',
       dayOfWeek: 'Weekdag',
       placeholder: '* * * * *',
+      placeholderZone: '* * * * * {zone}',
       invalid: 'Ongeldige cron-expressie',
       invalidStep:
         'Stapgrootte met numeriek voorvoegsel (bijv. 7/10) wordt niet ondersteund - gebruik */stap of min-max/stap',
@@ -855,7 +856,9 @@ export default {
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
       zoneBrowser: 'De tijdzone van je browser ({zone})',
       zoneApp: 'De tijdzone van de applicatie ({zone})',
+      zoneUtc: 'Gecoördineerde wereldtijd (UTC)',
       zonePick: 'Tijdzone van datum en tijd',
+      datePlaceholderZone: '{format} {zone}',
       datePlaceholders: {
         date: 'JJJJ-MM-DD',
         datetime: 'JJJJ-MM-DD UU:mm',
@@ -1769,7 +1772,9 @@ export default {
       defaultLanguage: 'Standaardtaal',
       defaultLanguageHelp: 'De standaardtaal voor nieuwe gebruikers die nog geen taal hebben gekozen.',
       defaultTheme: 'Standaardthema',
-      defaultThemeHelp: 'Het standaardthema voor nieuwe gebruikers die nog geen thema hebben gekozen.',
+      defaultThemeHelp:
+        'Het thema voor gebruikers die er geen kozen. Browser volgen toont licht of donker zoals hun browser.',
+      themeSystem: 'Browser volgen',
       configSource: 'Configuratiebron',
       configSourceHelp: 'Kies waar de configuratie (categorieën, rollen, constanten) wordt geladen.',
       tabConfiguration: 'Configuratie',

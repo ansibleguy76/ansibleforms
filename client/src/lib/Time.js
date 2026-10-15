@@ -179,6 +179,21 @@ const Time = {
     return name;
   },
   /**
+   * A zone as a field names it : its short name, then its name (CEST (Europe/Madrid)). A zone
+   * whose short name is its name (UTC) or that has none is named once.
+   *
+   * Args:
+   *   date (Date): the moment, as summer and winter names differ.
+   *   zone (string): an IANA zone name.
+   *
+   * Returns:
+   *   string: the label.
+   */
+  zoneLabel(date, zone) {
+    const name = Time.zoneName(date, zone);
+    return !name || name === zone ? zone : `${name} (${zone})`;
+  },
+  /**
    * A moment as the wall clock of a zone, held in a local Date : the date picker works on the
    * browser's local Date, so 09:00 UTC picked on the UTC clock is a Date whose local hours are 9.
    *

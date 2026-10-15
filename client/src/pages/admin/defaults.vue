@@ -15,7 +15,7 @@ import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import Helpers from '@/lib/Helpers';
 import Theme from '@/lib/Theme';
-import Time, { DATE_FORMATS } from '@/lib/Time';
+import Time, { BROWSER, DATE_FORMATS } from '@/lib/Time';
 import dayjs from 'dayjs';
 import State from '@/lib/State';
 import { useEnvVars } from '@/composables/useEnvVars';
@@ -30,7 +30,11 @@ const loaded = ref(false);
 // the theme and its colour, the forms view, the time zone
 const theme = ref(lookOf({})); // as edited
 const savedTheme = ref(null); // as saved
-const themeOptions = Theme.themes().map((th) => ({ value: th.value, label: th.title }));
+// Follow the browser first (the default : light or dark as the user's browser is), then the themes
+const themeOptions = computed(() => [
+  { value: 'system', label: t('settings.settingsPage.themeSystem') },
+  ...Theme.themes().map((th) => ({ value: th.value, label: th.title })),
+]);
 // the colours a Color theme offers
 const colorPalette = [
   { label: 'Blue', hex: '#008cba' },
@@ -56,7 +60,29 @@ const timezones = computed(() => [
     .map((z) => ({ value: z, label: z })),
 ]);
 // the date formats, each shown as today's date reads in it
-const dateFormats = computed(() => DATE_FORMATS.map((f) => ({ value: f, label: `${dayjs().format(f)}  (${f})` })));
+// each date format as the app writes a date with it : the date, the time and the zone, in the
+// default time zone chosen above, then the pattern
+const dateFormats = computed(() => {
+  // each user's browser : this one's zone, as this admin's own browser shows it
+  const pref = theme.value.default_timezone || 'UTC';
+  const zone = pref === BROWSER ? Time.browserZone() : pref;
+  const now = new Date();
+  let name = zone;
+  try {
+    name = Time.zoneName(now, zone) || zone;
+  } catch {
+    // an unknown zone : its own name
+  }
+  return DATE_FORMATS.map((f) => {
+    let example;
+    try {
+      example = dayjs(now).tz(zone).format(`${f} HH:mm`);
+    } catch {
+      example = dayjs(now).utc().format(`${f} HH:mm`);
+    }
+    return { value: f, label: `${example} ${name}  (${f})` };
+  });
+});
 const formsViews = computed(() =>
   ['tiles', 'list'].map((v) => ({ value: v, label: t(`settings.interface.formsView_${v}`) })),
 );
@@ -72,7 +98,8 @@ const formsViews = computed(() =>
  */
 function lookOf(row) {
   return {
-    default_theme: row?.default_theme || 'light',
+    // none set : Follow the browser, as the app does without one (lib/Theme.js)
+    default_theme: row?.default_theme || 'system',
     default_theme_color: Theme.current(row?.default_theme_color || '#008cba'),
     forms_view: row?.forms_view || 'tiles',
     default_timezone: row?.default_timezone || 'UTC',
@@ -189,7 +216,7 @@ onMounted(async () => {
             <!-- the language : an environment variable -->
             <template v-for="e in languageEnv" :key="e.name">
               <div class="mt-4"></div>
-              <AppEnvField v-model="envEdits[e.name]" :e="e" />
+              <AppEnvField v-model="envEdits[e.name]" :e="e" class="af-defaults-wide" />
             </template>
             <!-- the forms list's view and the time zone : in the database -->
             <BsInput
@@ -240,9 +267,11 @@ onMounted(async () => {
 :deep(.card-body > :last-child > .mb-3:last-child) {
   margin-bottom: 0 !important;
 }
-/* as wide as the language below it (AppEnvField : a dropdown's width on the settings pages) */
-.af-interface-field :deep(.input-group) {
-  max-width: 20rem;
+/* the page's dropdowns one width, wider than the settings pages' usual one : a date format shows
+   its example in full (a date, a time and a zone), the language below it as wide */
+.af-interface-field :deep(.input-group),
+.af-defaults-wide :deep(.input-group.input-group) {
+  max-width: 26rem;
 }
 </style>
 <route lang="yaml">

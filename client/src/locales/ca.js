@@ -831,6 +831,7 @@ export default {
       month: 'Mes',
       dayOfWeek: 'Dia de la setmana',
       placeholder: '* * * * *',
+      placeholderZone: '* * * * * {zone}',
       invalid: 'Expressió cron no vàlida',
       invalidStep: "No s'admet un pas amb un prefix numèric (p. ex. 7/10) - utilitza */pas o min-max/pas",
       unsupported: "No es pot previsualitzar: aquesta expressió utilitza una funció de cron que l'editor no admet",
@@ -857,7 +858,9 @@ export default {
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
       zoneBrowser: 'La zona horària del teu navegador ({zone})',
       zoneApp: "La zona horària de l'aplicació ({zone})",
+      zoneUtc: 'Temps universal coordinat (UTC)',
       zonePick: 'Zona horària de la data i hora',
+      datePlaceholderZone: '{format} {zone}',
       datePlaceholders: {
         date: 'AAAA-MM-DD',
         datetime: 'AAAA-MM-DD HH:mm',
@@ -1782,7 +1785,9 @@ export default {
       defaultLanguage: 'Idioma predeterminat',
       defaultLanguageHelp: "L'idioma predeterminat per als usuaris nous que encara no n'han triat cap.",
       defaultTheme: 'Tema predeterminat',
-      defaultThemeHelp: "El tema predeterminat per als usuaris nous que encara no n'han triat cap.",
+      defaultThemeHelp:
+        "El tema per als usuaris que no n'han triat cap. Segueix el navegador el mostra clar o fosc segons el navegador.",
+      themeSystem: 'Segueix el navegador',
       configSource: 'Origen de la configuració',
       configSourceHelp: "Tria d'on es carrega la configuració (categories, rols, constants).",
       tabConfiguration: 'Configuració',
