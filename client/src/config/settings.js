@@ -327,7 +327,18 @@ const SIGN_IN_TYPES = { local: 'Local', ldap: 'LDAP', azuread: 'Microsoft Entra 
 
 // what a credential is for (its type), in the order the dialog offers them
 // userpass : a user and a password for any login, the default ; ssh : one for SSH to a server
-export const CREDENTIAL_TYPES = ['userpass', 'ssh', 'git', 'api', 'database', 'cyberark', 'smtp', 'ldap', 'sso'];
+export const CREDENTIAL_TYPES = [
+  'userpass',
+  'ssh',
+  'git',
+  'api',
+  'database',
+  'cyberark',
+  'smtp',
+  'ldap',
+  'entraid',
+  'oidc',
+];
 
 // The flavours of an awx runner (server/src/models/runner.model.js has the same list) : which
 // product it is (its uri carries its API path)
@@ -1001,13 +1012,13 @@ export default function getSettings(t) {
       steps: [
         { key: 'provider', label: t('settings.oauth2.stepProvider') },
         {
-          // where the app signs in : the tenant (Entra ID), the issuer (Open ID), the redirect URL
+          // where the app signs in : the issuer (Open ID) and the redirect URL
           key: 'connection',
           label: t('settings.common.tabConnection'),
           notes: (item) => [item.provider === 'oidc' && { text: t('admin.oauth2.openIdTestedWith') }],
         },
         {
-          // as whom : an sso credential (its user the client id, its password the secret) ; the
+          // as whom : a credential of its type (an entraid one with its tenant, an oidc one) ; the
           // permissions the Entra ID app needs
           key: 'credentials',
           label: t('settings.common.tabCredentials'),
@@ -1082,15 +1093,12 @@ export default function getSettings(t) {
         { key: 'name', label: t('settings.fields.name'), required: true, icon: 'heading' },
         { key: 'description', label: t('settings.fields.description'), required: false, icon: 'info-circle' },
         {
+          // in its credential now (an entraid one) ; kept on the record for the providers that still
+          // have one
           key: 'tenant_id',
-          step: 'connection',
-          label: t('settings.oauth2.tenantId'),
-          // required for Entra ID : the field only shows (and is only checked) for azuread
-          required: true,
-          icon: 'building',
-          dependency: 'provider',
-          dependencyValues: ['azuread'],
+          noInput: true,
           hidden: true,
+          noTable: true,
         },
         {
           // in its credential now ; kept on the record for the providers that still have one
@@ -1131,10 +1139,12 @@ export default function getSettings(t) {
           valueKey: 'name',
           labelKey: 'name',
           clearable: true,
-          choicesWhen: (c) => !c?.name || c.credential_type === 'sso',
+          // the credentials of its type : an Entra ID provider's entraid ones, an Open ID one's oidc
+          choicesWhen: (c, item) =>
+            !c?.name || c.credential_type === (item.provider === 'azuread' ? 'entraid' : 'oidc'),
           createWith: 'credentials',
           createLabel: t('settings.repositories.newCredential'),
-          createDefaults: { credential_type: 'sso' },
+          createDefaults: (item) => ({ credential_type: item.provider === 'azuread' ? 'entraid' : 'oidc' }),
           dependency: 'provider',
           dependencyValues: ['azuread', 'oidc'],
           hidden: true,
@@ -1564,8 +1574,8 @@ export default function getSettings(t) {
       // a credential has its own page (pages/admin/credential.vue) : its row and Edit open it, New
       // the wizard
       openPage: (item) => `/settings/credentials/${item.id}`,
-      // in the row menu, as the runners' : editing, the test (a database's), the password, then
-      // Delete last, each apart
+      // in the row menu, as the runners' : editing, the test (a database's), then Delete last, each
+      // apart (its password is changed on its page)
       actions: [
         { name: 'edit', title: t('settings.credentials.editCredential'), icon: 'pencil', color: 'edit' },
         {
@@ -1575,16 +1585,6 @@ export default function getSettings(t) {
           color: 'test',
           dependency: 'is_database',
           dividerBefore: true,
-        },
-        {
-          // its password, typed twice ; a CyberArk's client key and one read from a secret store
-          // are not passwords to change
-          name: 'change_password',
-          title: t('settings.common.changePassword'),
-          icon: 'lock',
-          color: 'change',
-          dividerBefore: true,
-          enabledWhen: (c) => c.credential_type !== 'cyberark' && !c.secret_store,
         },
         { name: 'delete', title: t('settings.credentials.deleteCredential'), icon: 'trash', color: 'delete' },
       ],
@@ -1660,18 +1660,35 @@ export default function getSettings(t) {
           filterable: true,
         },
         {
+          // an entraid credential's tenant : the tenant id the Entra ID app is in, first
+          // as in the Entra admin center (tenant, client id, secret) ; the sign-in needs it
+          key: 'tenant_id',
+          step: 'login',
+          icon: 'building',
+          label: t('settings.oauth2.tenantId'),
+          required: true,
+          hidden: true,
+          noTable: true,
+          dependency: 'credential_type',
+          dependencyValues: ['entraid'],
+        },
+        {
           key: 'user',
           step: 'login',
           label: t('settings.fields.user'),
-          // a cyberark credential's user is its AppID, an ldap one's the bind DN, an sso one's the
-          // client id
+          // a cyberark credential's user is its AppID, an ldap one's the bind DN, an entraid or oidc
+          // one's the client id
           dialogLabel: (r) =>
             ({
               cyberark: t('settings.secretStores.appId'),
               ldap: t('settings.ldap.bindUserDn'),
-              sso: t('settings.oauth2.clientId'),
+              entraid: t('settings.oauth2.clientId'),
+              oidc: t('settings.oauth2.clientId'),
             })[r.credential_type] || null,
           help: (r) => (r.credential_type === 'cyberark' ? t('settings.secretStores.appIdHelp') : null),
+          // no column : what it is depends on the type (a user, a bind DN, a client id), its page
+          // shows it
+          noTable: true,
           sortable: true,
           required: false,
           filterable: true,
@@ -1689,14 +1706,16 @@ export default function getSettings(t) {
           filterable: false,
           icon: 'lock',
           hidden: true,
-          // an ldap credential's password is the bind password, an sso one's the client secret
+          // an ldap credential's password is the bind password, an entraid or oidc one's the client secret
           dialogLabel: (r) =>
-            ({ ldap: t('settings.ldap.bindUserPassword'), sso: t('settings.oauth2.clientSecret') })[
-              r.credential_type
-            ] || null,
+            ({
+              ldap: t('settings.ldap.bindUserPassword'),
+              entraid: t('settings.oauth2.clientSecret'),
+              oidc: t('settings.oauth2.clientSecret'),
+            })[r.credential_type] || null,
           // a cyberark credential has a client key instead
           dependency: 'credential_type',
-          dependencyValues: ['userpass', 'ssh', 'git', 'api', 'database', 'smtp', 'ldap', 'sso'],
+          dependencyValues: ['userpass', 'ssh', 'git', 'api', 'database', 'smtp', 'ldap', 'entraid', 'oidc'],
         },
         {
           // a cyberark credential : the client certificate and key its AppID may be restricted to
@@ -1771,6 +1790,9 @@ export default function getSettings(t) {
           dependency: 'credential_type',
           dependencyValues: ['ssh', 'database'],
           label: t('settings.fields.host'),
+          // no column : most credentials connect to nothing, an ssh or a database one shows it
+          // on its page
+          noTable: true,
           sortable: true,
           required: false,
           filterable: true,
@@ -1782,6 +1804,7 @@ export default function getSettings(t) {
           dependency: 'credential_type',
           dependencyValues: ['ssh', 'database'],
           label: t('settings.fields.port'),
+          noTable: true,
           type: 'number',
           sortable: true,
           required: false,

@@ -605,7 +605,7 @@ const SCHEMA_MANIFEST = {
                                'tokens.replaced_at', 'repositories.pull_output', 'repositories.push_output',
                                'repositories.pulled_at', 'repositories.pushed_at', 'repositories.push_status',
                                'ldap.id', 'ldap.name', 'ldap.position', 'ldap.domains', 'ldap.credential',
-                               'oauth2_providers.credential'] },
+                               'oauth2_providers.credential', 'credentials.tenant_id'] },
   },
 };
 
@@ -1043,6 +1043,9 @@ async function patchVersion7(messages, success, failed) {
   // an SSO provider too : the credential's user its client id, its password the client secret (which
   // can then come from a secret store)
   await checkPromise(addColumn("oauth2_providers", "credential", "varchar(250)", true, "NULL"), messages, success, failed);
+  // an Entra ID credential holds its tenant, as Microsoft's own credential does (tenant, client id,
+  // client secret)
+  await checkPromise(addColumn("credentials", "tenant_id", "varchar(250)", true, "NULL"), messages, success, failed);
   // and when each ended, worked or not, shown beside the repository's Pull and Push
   await checkPromise(addColumn("repositories", "pulled_at", "datetime", true, "NULL"), messages, success, failed);
   await checkPromise(addColumn("repositories", "pushed_at", "datetime", true, "NULL"), messages, success, failed);
@@ -1070,7 +1073,7 @@ function fillJobRunnerKinds() {
 // REST login (it used to become ssh)
 function fillCredentialTypes() {
   return mysql
-    .do("UPDATE AnsibleForms.`credentials` SET credential_type=IF(is_database,'database','userpass') WHERE credential_type IS NULL OR credential_type NOT IN ('userpass','ssh','git','api','database','cyberark','smtp','ldap','sso')")
+    .do("UPDATE AnsibleForms.`credentials` SET credential_type=IF(is_database,'database','userpass') WHERE credential_type IS NULL OR credential_type NOT IN ('userpass','ssh','git','api','database','cyberark','smtp','ldap','entraid','oidc')")
     .then((res) => `Set the type of ${res?.affectedRows ?? 0} credential(s)`);
 }
 

@@ -1014,6 +1014,9 @@ export default {
       secretStore: 'Cofre de segredos',
       notificationChannel: 'Canal de notificação',
       repository: 'Repositório',
+      ldapDirectory: 'Diretório LDAP',
+      ssoProvider: 'Fornecedor SSO',
+      chat: 'Assistente de chat',
       noFormRole: 'Nenhum formulário nomeia este papel.',
       noFormGroup: 'Nenhum papel do grupo abre um formulário.',
       noFormUser: 'Nenhum papel do utilizador abre um formulário.',
@@ -1223,7 +1226,7 @@ export default {
       useForSignIn: 'Usar para iniciar sessão',
       credential: 'Credencial',
       credentialHelp:
-        'Uma credencial sso de Ligações > Credenciais: o utilizador é o ID de cliente, a palavra-passe o segredo.',
+        'Uma credencial do seu tipo em Ligações > Credenciais (Microsoft Entra ID ou Open ID): o ID de cliente e o segredo.',
       ownClient:
         'Inicia sessão com o seu próprio ID de cliente ({client}), anterior às credenciais, até se escolher uma credencial.',
       activeHelp:
@@ -1551,8 +1554,10 @@ export default {
       type_smtpHint: 'Um utilizador e palavra-passe para um servidor de correio',
       type_ldap: 'LDAP',
       type_ldapHint: 'A conta de bind de um diretório LDAP: o seu DN e palavra-passe',
-      type_sso: 'SSO',
-      type_ssoHint: 'O cliente de um fornecedor SSO: o seu ID de cliente e segredo',
+      type_entraid: 'Microsoft Entra ID',
+      type_entraidHint: 'A aplicação de um fornecedor Microsoft Entra ID: o ID de tenant, ID de cliente e segredo',
+      type_oidc: 'Open ID',
+      type_oidcHint: 'O cliente de um fornecedor Open ID: o seu ID de cliente e segredo',
     },
     ssh: {
       tabKey: 'Chave',

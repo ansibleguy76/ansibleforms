@@ -104,7 +104,7 @@ import axios from 'axios';
 import Helpers from '@/lib/Helpers';
 import { useVuelidate } from '@vuelidate/core';
 import yaml from 'yaml';
-import { required, helpers, email, sameAs } from '@vuelidate/validators';
+import { required, requiredIf, helpers, email, sameAs } from '@vuelidate/validators';
 import { useI18n } from 'vue-i18n';
 import BsDataTable from './BsDataTable.vue';
 import getSettings from '@/config/settings';
@@ -211,7 +211,13 @@ function getRules() {
   const ruleObj = { item: {} };
   fields.value.forEach((field) => {
     var rule = {};
-    if (field.required) {
+    if (field.required && field.dependency && Array.isArray(field.dependencyValues)) {
+      // a field of some types only (an Entra ID credential's tenant) : required while it is shown
+      rule.required = helpers.withMessage(
+        `${field.label} is required`,
+        requiredIf(() => field.dependencyValues.includes(item.value[field.dependency])),
+      );
+    } else if (field.required) {
       rule.required = helpers.withMessage(`${field.label} is required`, required);
     }
     if (field.type == 'email') {

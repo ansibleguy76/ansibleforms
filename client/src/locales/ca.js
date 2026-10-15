@@ -1014,6 +1014,9 @@ export default {
       secretStore: 'Magatzem de secrets',
       notificationChannel: 'Canal de notificació',
       repository: 'Repositori',
+      ldapDirectory: 'Directori LDAP',
+      ssoProvider: 'Proveïdor SSO',
+      chat: 'Assistent de xat',
       noFormRole: 'Cap formulari nomena aquest rol.',
       noFormGroup: 'Cap rol del grup obre un formulari.',
       noFormUser: "Cap rol de l'usuari obre un formulari.",
@@ -1224,7 +1227,7 @@ export default {
       useForSignIn: 'Fes-lo servir per iniciar la sessió',
       credential: 'Credencial',
       credentialHelp:
-        "Una credencial sso de Connexions > Credencials: el seu usuari és l'ID de client i la contrasenya el secret.",
+        'Una credencial del seu tipus a Connexions > Credencials (Microsoft Entra ID o Open ID): el seu ID de client i secret.',
       ownClient:
         'Inicia sessió amb el seu propi ID de client ({client}), anterior a les credencials, fins que es triï una credencial.',
       activeHelp:
@@ -1553,8 +1556,10 @@ export default {
       type_smtpHint: 'Un usuari i una contrasenya per a un servidor de correu',
       type_ldap: 'LDAP',
       type_ldapHint: "El compte de bind d'un directori LDAP: el seu DN i contrasenya",
-      type_sso: 'SSO',
-      type_ssoHint: "El client d'un proveïdor SSO: el seu ID de client i secret",
+      type_entraid: 'Microsoft Entra ID',
+      type_entraidHint: "L'aplicació d'un proveïdor Microsoft Entra ID: el seu ID de tenant, ID de client i secret",
+      type_oidc: 'Open ID',
+      type_oidcHint: "El client d'un proveïdor Open ID: el seu ID de client i secret",
     },
     ssh: {
       tabKey: 'Clau',

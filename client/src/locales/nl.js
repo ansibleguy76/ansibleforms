@@ -1011,6 +1011,9 @@ export default {
       secretStore: 'Secret store',
       notificationChannel: 'Meldingskanaal',
       repository: 'Repository',
+      ldapDirectory: 'LDAP-directory',
+      ssoProvider: 'SSO-provider',
+      chat: 'Chatassistent',
       noFormRole: 'Geen formulier noemt deze rol.',
       noFormGroup: 'Geen rol van de groep opent een formulier.',
       noFormUser: 'Geen rol van de gebruiker opent een formulier.',
@@ -1215,7 +1218,7 @@ export default {
       useForSignIn: 'Gebruiken om aan te melden',
       credential: 'Referentie',
       credentialHelp:
-        'Een sso-referentie uit Verbindingen > Referenties: de gebruiker is de client-ID, het wachtwoord het clientgeheim.',
+        'Een referentie van zijn type uit Verbindingen > Referenties (Microsoft Entra ID of Open ID): client-ID en clientgeheim.',
       ownClient:
         'Het meldt zich aan met zijn eigen client-ID ({client}) van vóór referenties, tot er een referentie gekozen is.',
       activeHelp:
@@ -1635,8 +1638,10 @@ export default {
       type_smtpHint: 'Een gebruiker en wachtwoord voor een mailserver',
       type_ldap: 'LDAP',
       type_ldapHint: 'Het bind-account van een LDAP-directory: DN en wachtwoord',
-      type_sso: 'SSO',
-      type_ssoHint: 'De client van een SSO-provider: client-ID en clientgeheim',
+      type_entraid: 'Microsoft Entra ID',
+      type_entraidHint: 'De app van een Microsoft Entra ID-provider: tenant-ID, client-ID en clientgeheim',
+      type_oidc: 'Open ID',
+      type_oidcHint: 'De client van een Open ID-provider: client-ID en clientgeheim',
     },
     ssh: {
       tabKey: 'Sleutel',

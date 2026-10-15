@@ -66,6 +66,8 @@ CREATE TABLE `credentials` (
   -- a cyberark credential's client certificate and key (PEM)
   `client_cert` text DEFAULT NULL,
   `client_key` text DEFAULT NULL,
+  -- an Entra ID credential's tenant (its user the client id, its password the client secret)
+  `tenant_id` varchar(250) DEFAULT NULL,
   `vault_path` varchar(500) DEFAULT NULL,
   `managed` tinyint(4) DEFAULT 0,
   -- the secret store a credential reads its user and password from, and where in it

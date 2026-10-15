@@ -1018,6 +1018,9 @@ export default {
       secretStore: 'Coffre de secrets',
       notificationChannel: 'Canal de notification',
       repository: 'Dépôt',
+      ldapDirectory: 'Annuaire LDAP',
+      ssoProvider: 'Fournisseur SSO',
+      chat: 'Assistant de chat',
       noFormRole: 'Aucun formulaire ne nomme ce rôle.',
       noFormGroup: "Aucun rôle du groupe n'ouvre de formulaire.",
       noFormUser: "Aucun rôle de l'utilisateur n'ouvre de formulaire.",
@@ -1225,7 +1228,7 @@ export default {
       useForSignIn: 'Utiliser pour la connexion',
       credential: 'Identifiant',
       credentialHelp:
-        "Un identifiant sso de Connexions > Identifiants : son utilisateur est l'ID client, son mot de passe le secret.",
+        'Un identifiant de son type dans Connexions > Identifiants (Microsoft Entra ID ou Open ID) : son ID client et son secret.',
       ownClient:
         "Il se connecte avec son propre ID client ({client}), d'avant les identifiants, jusqu'au choix d'un identifiant.",
       activeHelp:
@@ -1650,8 +1653,11 @@ export default {
       type_smtpHint: 'Un utilisateur et un mot de passe pour un serveur mail',
       type_ldap: 'LDAP',
       type_ldapHint: "Le compte de bind d'un annuaire LDAP : son DN et son mot de passe",
-      type_sso: 'SSO',
-      type_ssoHint: "Le client d'un fournisseur SSO : son ID client et son secret",
+      type_entraid: 'Microsoft Entra ID',
+      type_entraidHint:
+        "L'application d'un fournisseur Microsoft Entra ID : son ID de locataire, son ID client et son secret",
+      type_oidc: 'Open ID',
+      type_oidcHint: "Le client d'un fournisseur Open ID : son ID client et son secret",
     },
     ssh: {
       tabKey: 'Clé',

@@ -44,6 +44,8 @@ const crudConfigs = {
       // a cyberark credential's client certificate and key (PEM) : how its AppID is restricted
       { name: 'client_cert' },
       { name: 'client_key', isEncrypted: true },
+      // an entraid credential's tenant
+      { name: 'tenant_id' },
       { name: 'description' },
       { name: 'db_type' },
       { name: 'vault_path' },

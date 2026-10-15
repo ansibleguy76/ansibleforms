@@ -38,6 +38,8 @@ class EntraId {
         });
         record.client_id = cred?.user || "";
         record.client_secret = cred?.password || "";
+        // an Entra ID credential holds the tenant too
+        record.tenant_id = cred?.tenant_id || record.tenant_id;
       }
       return {
         tenant_id: record.tenant_id || null,

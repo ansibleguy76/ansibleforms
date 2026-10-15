@@ -5,10 +5,10 @@
 /*  providers' list : the steps of its dialog as tabs, the tab    */
 /*  kept in the url -                                             */
 /*    Details     its type (fixed), name and description          */
-/*    Connection  where the app signs in (tenant, issuer,         */
-/*                redirect url)                                   */
-/*    Credentials as whom : an sso credential of Connections >    */
-/*                Credentials (its client id and secret)          */
+/*    Connection  where the app signs in (issuer, redirect url)   */
+/*    Credentials as whom : a credential of its type (Entra ID :  */
+/*                tenant, client id and secret ; Open ID : client */
+/*                id and secret)                                  */
 /*    Groups      the group filter, and its help                  */
 /*  Details' Enabled switch makes it the one its type signs in    */
 /*  with ; Delete and Save top right.                             */
@@ -40,13 +40,16 @@ const edit = ref(null); // as edited
 // what this page edits : the secret has its own dialog (Change secret)
 // its client is its credential's (Connections > Credentials) : a client id of its own, from before
 // credentials, is kept on the record and shown, not edited
-const EDITED = ['name', 'description', 'tenant_id', 'credential', 'issuer', 'redirect_uri', 'groupfilter'];
+const EDITED = ['name', 'description', 'credential', 'issuer', 'redirect_uri', 'groupfilter'];
 // the sso credentials of Connections > Credentials, none first : its own client id and secret
 const credentials = ref([{ name: '' }]);
 async function loadCredentials() {
   const res = await axios.get('/api/v2/credential/').catch(() => null);
   const all = res?.data?.records || [];
-  credentials.value = [{ name: '' }, ...all.filter((c) => c.credential_type === 'sso')];
+  // the credentials of its type : an Entra ID provider's entraid ones (with the tenant), an Open
+  // ID one's oidc
+  const type = provider.value?.provider === 'azuread' ? 'entraid' : 'oidc';
+  credentials.value = [{ name: '' }, ...all.filter((c) => c.credential_type === type)];
 }
 
 const TYPES = { azuread: 'Microsoft Entra ID', oidc: 'Open ID' };
@@ -175,9 +178,10 @@ async function deleteProvider() {
 
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
-  loadCredentials();
   if (!authenticated.value) return;
   await load();
+  // its type's credentials : known once the provider is read
+  loadCredentials();
 });
 </script>
 <template>
@@ -281,18 +285,8 @@ onMounted(async () => {
               </div>
             </div>
           </template>
-          <!-- Connection : where the app signs in with it - its tenant (Entra ID), its issuer (Open
-               ID), the redirect URL -->
+          <!-- Connection : where the app signs in with it - its issuer (Open ID), the redirect URL -->
           <template v-else-if="activeTab === 'connection'">
-            <BsInput
-              v-if="provider.provider === 'azuread'"
-              class="af-provider-field"
-              v-model="edit.tenant_id"
-              icon="building"
-              :required="true"
-              :isFloating="false"
-              :label="t('settings.oauth2.tenantId')"
-            />
             <BsInput
               v-if="provider.provider === 'oidc'"
               class="af-provider-field"

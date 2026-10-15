@@ -1004,6 +1004,9 @@ export default {
       secretStore: 'Secret store',
       notificationChannel: 'Notification channel',
       repository: 'Repository',
+      ldapDirectory: 'LDAP directory',
+      ssoProvider: 'SSO provider',
+      chat: 'Chat assistant',
       noFormRole: 'No form names this role.',
       noFormGroup: "None of the group's roles opens a form.",
       noFormUser: "None of the user's roles opens a form.",
@@ -1203,7 +1206,7 @@ export default {
       useForSignIn: 'Use for sign-in',
       credential: 'Credential',
       credentialHelp:
-        'An sso credential of Connections > Credentials : its user is the client ID, its password the client secret.',
+        'A credential of its type in Connections > Credentials (Microsoft Entra ID or Open ID) : its client ID and client secret.',
       ownClient:
         'It signs in with its own client ID ({client}), from before credentials, until a credential is chosen.',
       activeHelp: 'Users sign in with it when they choose {type}; turning it on turns off the other {type} providers.',
@@ -1617,8 +1620,10 @@ export default {
       type_smtpHint: 'A user and password for a mail server',
       type_ldap: 'LDAP',
       type_ldapHint: 'The bind account of an LDAP directory : its DN and password',
-      type_sso: 'SSO',
-      type_ssoHint: 'The client of an SSO provider : its client ID and client secret',
+      type_entraid: 'Microsoft Entra ID',
+      type_entraidHint: 'The app of a Microsoft Entra ID provider : its tenant ID, client ID and client secret',
+      type_oidc: 'Open ID',
+      type_oidcHint: 'The client of an Open ID provider : its client ID and client secret',
     },
     ssh: {
       tabKey: 'Key',

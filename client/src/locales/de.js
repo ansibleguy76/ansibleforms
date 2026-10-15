@@ -1016,6 +1016,9 @@ export default {
       secretStore: 'Secret Store',
       notificationChannel: 'Benachrichtigungskanal',
       repository: 'Repository',
+      ldapDirectory: 'LDAP-Verzeichnis',
+      ssoProvider: 'SSO-Anbieter',
+      chat: 'Chat-Assistent',
       noFormRole: 'Kein Formular nennt diese Rolle.',
       noFormGroup: 'Keine Rolle der Gruppe öffnet ein Formular.',
       noFormUser: 'Keine Rolle des Benutzers öffnet ein Formular.',
@@ -1223,7 +1226,7 @@ export default {
       useForSignIn: 'Für die Anmeldung verwenden',
       credential: 'Anmeldedaten-Eintrag',
       credentialHelp:
-        'Ein sso-Eintrag aus Verbindungen > Anmeldedaten: der Benutzer ist die Client-ID, das Passwort das Client-Geheimnis.',
+        'Ein Eintrag seines Typs aus Verbindungen > Anmeldedaten (Microsoft Entra ID oder Open ID): Client-ID und Client-Geheimnis.',
       ownClient:
         'Es meldet sich mit seiner eigenen Client-ID ({client}) von vor den Anmeldedaten an, bis ein Eintrag gewählt ist.',
       activeHelp:
@@ -1647,8 +1650,10 @@ export default {
       type_smtpHint: 'Ein Benutzer und Passwort für einen Mailserver',
       type_ldap: 'LDAP',
       type_ldapHint: 'Das Bind-Konto eines LDAP-Verzeichnisses: DN und Passwort',
-      type_sso: 'SSO',
-      type_ssoHint: 'Der Client eines SSO-Anbieters: Client-ID und Client-Geheimnis',
+      type_entraid: 'Microsoft Entra ID',
+      type_entraidHint: 'Die App eines Microsoft Entra ID-Anbieters: Mandanten-ID, Client-ID und Client-Geheimnis',
+      type_oidc: 'Open ID',
+      type_oidcHint: 'Der Client eines Open ID-Anbieters: Client-ID und Client-Geheimnis',
     },
     ssh: {
       tabKey: 'Schlüssel',

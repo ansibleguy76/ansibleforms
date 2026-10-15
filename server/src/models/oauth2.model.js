@@ -42,13 +42,21 @@ class OAuth2 extends CrudModel {
     }
     // the client a provider signs in as : a credential (its user the client id, its password the
     // secret), else its own client id and secret, both
-    // the credential a provider names : one of Connections > Credentials, of type sso
-    static async assertCredential(name) {
+    // the credential type of a provider : an Entra ID one's entraid, an Open ID one's oidc
+    static credentialTypeOf(provider) {
+        return provider === 'azuread' ? 'entraid' : 'oidc';
+    }
+    // the credential a provider names : one of Connections > Credentials, of its provider's type
+    static async assertCredential(name, provider) {
         if (!name) return;
         const cred = await CrudModel.findByName('credential', name);
         if (!cred) throw new Errors.BadRequestError(`No credential named '${name}'`);
-        if (cred.credential_type !== 'sso') {
-            throw new Errors.BadRequestError(`An SSO provider needs an sso credential : '${name}' is not one`);
+        const type = this.credentialTypeOf(provider);
+        if (cred.credential_type !== type) {
+            throw new Errors.BadRequestError(`This SSO provider needs an ${type} credential : '${name}' is not one`);
+        }
+        if (type === 'entraid' && !isSingleTenant(cred.tenant_id)) {
+            throw new Errors.BadRequestError(`The credential '${name}' needs the tenant id of your tenant (a GUID or its domain)`);
         }
     }
     static assertClient(state) {
@@ -60,8 +68,9 @@ class OAuth2 extends CrudModel {
     static async create(data, opts = {}) {
         CrudModel.assertRequired(this.modelName, data);
         this.assertClient(data);
-        await this.assertCredential(data.credential);
-        this.assertEntraTenant(data.provider, data.tenant_id);
+        await this.assertCredential(data.credential, data.provider);
+        // the tenant : its credential's (checked there), else its own
+        if (!data.credential) this.assertEntraTenant(data.provider, data.tenant_id);
         // no Enable in the dialog any more : a new provider is the one its type signs in with when
         // its type has none yet ; another is chosen with Use for sign-in (enable : 1)
         if (data.enable === undefined && !opts.fromSeed) {
@@ -75,15 +84,17 @@ class OAuth2 extends CrudModel {
         await CrudModel.checkExist(this.modelName, id);
         if (!opts.fromSeed) await CrudModel.assertNotManaged(this.modelName, id);
         if ('credential' in data || 'client_id' in data || 'client_secret' in data) {
-            const current = (await mysql.do('SELECT client_id, client_secret, credential FROM AnsibleForms.`oauth2_providers` WHERE id=?', [id]))?.[0] || {};
+            const current = (await mysql.do('SELECT provider, client_id, client_secret, credential FROM AnsibleForms.`oauth2_providers` WHERE id=?', [id]))?.[0] || {};
             // the masked secret (the page's) keeps the stored one
             const secret = 'client_secret' in data && !/^\*+$/.test(String(data.client_secret || '')) ? data.client_secret : current.client_secret;
             this.assertClient({ ...current, ...data, client_secret: secret });
-            if ('credential' in data) await this.assertCredential(data.credential);
+            if ('credential' in data) await this.assertCredential(data.credential, data.provider ?? current.provider);
         }
-        if ('tenant_id' in data || 'provider' in data) {
-            const current = (await mysql.do('SELECT provider, tenant_id FROM AnsibleForms.`oauth2_providers` WHERE id=?', [id]))?.[0] || {};
-            this.assertEntraTenant(data.provider ?? current.provider, 'tenant_id' in data ? data.tenant_id : current.tenant_id);
+        if ('tenant_id' in data || 'provider' in data || 'credential' in data) {
+            const current = (await mysql.do('SELECT provider, tenant_id, credential FROM AnsibleForms.`oauth2_providers` WHERE id=?', [id]))?.[0] || {};
+            // the tenant : its credential's (checked with it), else its own
+            const credential = 'credential' in data ? data.credential : current.credential;
+            if (!credential) this.assertEntraTenant(data.provider ?? current.provider, 'tenant_id' in data ? data.tenant_id : current.tenant_id);
         }
         data = await this.preProcess(data, 'update', opts);
         return super.update(this.modelName, data, id, opts);

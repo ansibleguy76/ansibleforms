@@ -1007,6 +1007,9 @@ export default {
       secretStore: 'シークレットストア',
       notificationChannel: '通知チャネル',
       repository: 'リポジトリ',
+      ldapDirectory: 'LDAP ディレクトリ',
+      ssoProvider: 'SSO プロバイダー',
+      chat: 'チャットアシスタント',
       noFormRole: 'このロールを指定するフォームはありません。',
       noFormGroup: 'グループのどのロールもフォームを開きません。',
       noFormUser: 'ユーザーのどのロールもフォームを開きません。',
@@ -1208,7 +1211,7 @@ export default {
       useForSignIn: 'サインインに使用',
       credential: '資格情報',
       credentialHelp:
-        '［接続 > 資格情報］の sso 資格情報：ユーザーがクライアント ID、パスワードがクライアントシークレット。',
+        '［接続 > 資格情報］のその種類の資格情報（Microsoft Entra ID または Open ID）：クライアント ID とシークレット。',
       ownClient: '資格情報を選ぶまで、資格情報より前の自身のクライアント ID（{client}）でサインインします。',
       activeHelp:
         '{type} を選んだユーザーはこれでサインインします。オンにすると他の {type} プロバイダーはオフになります。',
@@ -1529,8 +1532,10 @@ export default {
       type_smtpHint: 'メールサーバーのユーザーとパスワード',
       type_ldap: 'LDAP',
       type_ldapHint: 'LDAP ディレクトリのバインドアカウント：DN とパスワード',
-      type_sso: 'SSO',
-      type_ssoHint: 'SSO プロバイダーのクライアント：クライアント ID とシークレット',
+      type_entraid: 'Microsoft Entra ID',
+      type_entraidHint: 'Microsoft Entra ID プロバイダーのアプリ：テナント ID、クライアント ID、シークレット',
+      type_oidc: 'Open ID',
+      type_oidcHint: 'Open ID プロバイダーのクライアント：クライアント ID とシークレット',
     },
     ssh: {
       tabKey: 'キー',

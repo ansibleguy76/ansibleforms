@@ -31,3 +31,20 @@ describe("a credential's type and its is_database flag", () => {
     assert.throws(() => Credential.mirrorType({ credential_type: "kerberos" }), /Unknown credential type 'kerberos'/);
   });
 });
+
+describe("an Entra ID credential's tenant", () => {
+  test("a create without one is refused, an update that empties it too", () => {
+    assert.throws(() => Credential.requireTenant({ credential_type: "entraid" }, true), /needs its tenant ID/);
+    assert.throws(() => Credential.requireTenant({ credential_type: "entraid", tenant_id: " " }), /needs its tenant ID/);
+  });
+
+  test("one with it keeps it, trimmed ; an update that does not send it leaves the stored one", () => {
+    assert.equal(Credential.requireTenant({ credential_type: "entraid", tenant_id: " t-1 " }, true).tenant_id, "t-1");
+    assert.equal(Credential.requireTenant({ credential_type: "entraid" }).tenant_id, undefined);
+  });
+
+  test("another type keeps none : an Open ID one, a type changed away from Entra ID", () => {
+    assert.equal(Credential.requireTenant({ credential_type: "oidc", tenant_id: "t-1" }, true).tenant_id, null);
+    assert.equal(Credential.requireTenant({ credential_type: "userpass", tenant_id: "t-1" }).tenant_id, null);
+  });
+});

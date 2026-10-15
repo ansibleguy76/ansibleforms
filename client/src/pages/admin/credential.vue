@@ -50,6 +50,7 @@ const EDITED = [
   'user',
   'client_cert',
   'client_key',
+  'tenant_id',
   'secret_source',
   'secret_store',
   'secret_ref',
@@ -88,6 +89,7 @@ function editable(record) {
     user: record.user ?? '',
     client_cert: record.client_cert ?? '',
     client_key: '',
+    tenant_id: record.tenant_id ?? '',
     secret_source: record.secret_store ? 'store' : 'local',
     secret_store: record.secret_store ?? '',
     secret_ref: record.secret_ref ?? '',
@@ -130,14 +132,18 @@ async function load() {
   } catch {
     credential.value = null;
   }
-  const [stores, mails, repos] = await Promise.all([
+  const [stores, mails, repos, directories, providers, chat] = await Promise.all([
     axios.get('/api/v2/secretstore/', auth).catch(() => null),
     axios.get('/api/v2/notificationchannel/', auth).catch(() => null),
     axios.get('/api/v2/repository/', auth).catch(() => null),
+    axios.get('/api/v2/ldapdirectory/', auth).catch(() => null),
+    axios.get('/api/v2/oauth2/', auth).catch(() => null),
+    axios.get('/api/v2/chatsettings/', auth).catch(() => null),
   ]);
   secretStores.value = [{ name: '' }, ...(stores?.data?.records || []).map((s) => ({ name: s.name }))];
   // what names a credential : a secret store (its token or login), a notification channel (a
-  // mail server's smtp login, a bot's or a webhook's token), a repository (its git login) ; the
+  // mail server's smtp login, a bot's or a webhook's token), a repository (its git login), an LDAP
+  // directory (its bind account), an SSO provider (its client), the chat assistant (its key) ; the
   // Used by tab keeps those naming this one
   users.value = [
     ...(stores?.data?.records || []).map((r) => ({ ...r, kind: 'secretStore', to: `/settings/secret-stores/${r.id}` })),
@@ -147,6 +153,11 @@ async function load() {
       to: `/settings/notifications/${r.id}`,
     })),
     ...(repos?.data?.records || []).map((r) => ({ ...r, kind: 'repository', to: `/settings/repositories/${r.id}` })),
+    ...(directories?.data?.records || []).map((r) => ({ ...r, kind: 'ldapDirectory', to: `/settings/ldap/${r.id}` })),
+    ...(providers?.data?.records || []).map((r) => ({ ...r, kind: 'ssoProvider', to: `/settings/sso/${r.id}` })),
+    ...(chat?.data?.credential
+      ? [{ name: t('sidebar.chat'), credential: chat.data.credential, kind: 'chat', to: '/settings/chat' }]
+      : []),
   ];
   loaded.value = true;
 }
@@ -171,8 +182,8 @@ async function update(data) {
 }
 
 // ─── Used by ──────────────────────────────────────────────────────────────────
-// the secret stores, notification channels and repositories that name the credential (a channel
-// as its login or its token) ; a row opens it
+// the secret stores, notification channels, repositories, LDAP directories, SSO providers and the
+// chat assistant that name the credential (a channel as its login or its token) ; a row opens it
 const users = ref([]);
 const usedBy = computed(() =>
   credential.value ? users.value.filter((u) => [u.credential, u.token_credential].includes(credential.value.name)) : [],
@@ -245,6 +256,8 @@ async function save() {
     Object.assign(data, { secret_store: e.secret_store, secret_ref: e.secret_ref.trim() });
   } else {
     Object.assign(data, { secret_store: '', secret_ref: '', user: e.user.trim() });
+    // an Entra ID one's tenant
+    data.tenant_id = e.credential_type === 'entraid' ? e.tenant_id.trim() : '';
     // its new password, typed in its Login tab
     if (newPassword.value && !isCyberark.value) data.password = newPassword.value;
   }
@@ -281,20 +294,23 @@ async function testConnection() {
 // its password, typed in its Login tab ; empty, the stored one is kept
 const newPassword = ref('');
 // the user and the password as its type names them : an LDAP one's bind DN and password, an SSO
-// one's client id and secret, a CyberArk one's AppID
+// one's (Entra ID, Open ID) client id and secret, a CyberArk one's AppID
 const userLabel = computed(
   () =>
     ({
       cyberark: t('settings.secretStores.appId'),
       ldap: t('settings.ldap.bindUserDn'),
-      sso: t('settings.oauth2.clientId'),
+      entraid: t('settings.oauth2.clientId'),
+      oidc: t('settings.oauth2.clientId'),
     })[edit.value?.credential_type] || t('settings.fields.user'),
 );
 const passwordLabel = computed(
   () =>
-    ({ ldap: t('settings.ldap.bindUserPassword'), sso: t('settings.oauth2.clientSecret') })[
-      edit.value?.credential_type
-    ] || t('settings.fields.password'),
+    ({
+      ldap: t('settings.ldap.bindUserPassword'),
+      entraid: t('settings.oauth2.clientSecret'),
+      oidc: t('settings.oauth2.clientSecret'),
+    })[edit.value?.credential_type] || t('settings.fields.password'),
 );
 
 // Delete asks first
@@ -419,6 +435,17 @@ onMounted(async () => {
             <template v-else-if="shownTab === 'login'">
               <p v-if="fromStore" class="form-text mb-0">{{ t('settings.credentials.loginFromStore') }}</p>
               <template v-else>
+                <!-- an Entra ID one's tenant : the tenant id the app is in, first as in
+                     the Entra admin center (tenant, client id, secret) -->
+                <BsInput
+                  v-if="edit.credential_type === 'entraid'"
+                  class="af-credential-field"
+                  v-model="edit.tenant_id"
+                  icon="building"
+                  :isFloating="false"
+                  :required="true"
+                  :label="t('settings.oauth2.tenantId')"
+                />
                 <BsInput
                   class="af-credential-field"
                   v-model="edit.user"
