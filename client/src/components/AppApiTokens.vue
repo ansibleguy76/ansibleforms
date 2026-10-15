@@ -30,6 +30,8 @@ const props = defineProps({
   url: { type: String, required: true },
   reload: { type: Number, default: 0 },
   toolbarTo: { type: String, default: null },
+  // a selector the pager moves to (under the page's card, as the other lists) ; else in the table
+  pagerTo: { type: String, default: null },
 });
 
 const { t } = useI18n();
@@ -108,6 +110,7 @@ watch(() => [props.url, props.reload], load, { immediate: true });
     v-else
     framed
     :toolbarTo="toolbarTo"
+    :pagerTo="pagerTo"
     :items="tokens"
     :columns="columns"
     idKey="sid"

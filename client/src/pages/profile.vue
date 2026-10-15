@@ -200,6 +200,7 @@ const tokenExample = computed(() => `curl -H "Authorization: Bearer $TOKEN" ${wi
 
 // where the token list's toolbar goes (the title line)
 const tokenToolsId = `af-token-tools-${Math.random().toString(36).slice(2, 10)}`;
+const tokenPagerId = `af-token-pager-${Math.random().toString(36).slice(2, 10)}`;
 // the New token wizard : its steps, the one shown, the furthest reached
 const tokenDialog = ref(false);
 const tokenStep = ref(0);
@@ -445,7 +446,7 @@ async function changePassword() {
         :title="view.label()"
         :icon="view.icon"
         :description="pageDescription"
-        :bare="['account', 'preferences', 'permissions', 'token'].includes(currentView)"
+        :bare="['account', 'preferences', 'permissions'].includes(currentView)"
       >
         <!-- ===================== account ===================== -->
         <template v-if="currentView === 'account'">
@@ -721,7 +722,12 @@ async function changePassword() {
         <!-- ===================== api token ===================== -->
         <template v-else-if="currentView === 'token'">
           <!-- the tokens made, each to revoke ; New token (top right) opens the wizard -->
-          <AppApiTokens url="/api/v2/profile/tokens" :reload="tokensReload" :toolbarTo="'#' + tokenToolsId" />
+          <AppApiTokens
+            url="/api/v2/profile/tokens"
+            :reload="tokensReload"
+            :toolbarTo="'#' + tokenToolsId"
+            :pagerTo="'#' + tokenPagerId"
+          />
           <!-- the wizard : the token (its name and lifetime), the confirmation (the password, or a
                sign-in again for an SSO account), then the token itself, shown once -->
           <BsModal v-if="tokenDialog" size="lg" icon="code" :footerClose="false" @close="closeTokenWizard">
@@ -833,6 +839,10 @@ async function changePassword() {
 
         <!-- the view's action, where the settings pages put their Save button : below the card,
              on the right, grey until the form can be sent, then the accent color -->
+        <!-- the token list's pager, under the card as on the other lists -->
+        <template v-if="currentView === 'token'" #footer>
+          <div :id="tokenPagerId"></div>
+        </template>
         <!-- the token list's search and buttons, on the title line as on the other lists -->
         <template v-if="currentView === 'token'" #headerActions>
           <div :id="tokenToolsId" class="af-title-flow"></div>
