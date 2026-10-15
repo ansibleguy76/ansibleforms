@@ -316,7 +316,7 @@ export default {
       days: '{n} dagen',
       password: 'Je wachtwoord',
       new: 'Nieuw token',
-      stepToken: 'Token',
+      stepToken: 'Details',
       stepConfirm: 'Bevestigen',
       stepCopy: 'Kopiëren',
       create: 'Token aanmaken',
@@ -328,7 +328,7 @@ export default {
       failed: 'Het token kon niet worden aangemaakt. Controleer je wachtwoord.',
       another: 'Nog een token aanmaken',
       name: 'Naam',
-      nameHint: 'Optioneel: waarvoor het token is, zodat je het herkent in de lijst hieronder.',
+      nameHint: 'Waarvoor het token dient, zodat je het in de lijst herkent.',
       signInAgainHint:
         'Je bent aangemeld met {type}: hier is geen wachtwoord te bevestigen. Om een token te maken meld je je nog een keer aan met {type} en voer je je gegevens in; het token wordt gemaakt als je terug bent.',
       signingInAgain: 'Opnieuw aanmelden om het token te maken…',

@@ -316,7 +316,7 @@ export default {
       days: '{n} dies',
       password: 'La teva contrasenya',
       new: 'Nou token',
-      stepToken: 'Token',
+      stepToken: 'Detalls',
       stepConfirm: 'Confirma',
       stepCopy: 'Copia',
       create: 'Crea el token',
@@ -330,7 +330,7 @@ export default {
       failed: "No s'ha pogut crear el token. Comprova la teva contrasenya.",
       another: 'Crea un altre token',
       name: 'Nom',
-      nameHint: 'Opcional: per a què és el token, així el reconeixes a la llista de sota.',
+      nameHint: 'Per a què serveix el token, per reconèixer-lo a la llista.',
       signInAgainHint:
         'Has iniciat sessió amb {type}: aquí no hi ha contrasenya per confirmar. Per crear un token tornes a iniciar sessió amb {type}, introduint les teves credencials, i el token es crea en tornar.',
       signingInAgain: 'Tornant a iniciar sessió per crear el token…',

@@ -221,8 +221,12 @@ function openTokenWizard() {
   tokenDialog.value = true;
 }
 
-/** From the token (name, lifetime) to its confirmation. */
+// a token is named : what it is for, so it is told apart in the list (and revoked as the right one)
+const tokenNamed = computed(() => !!tokenForm.value.name.trim());
+
+/** From the token (name, lifetime) to its confirmation ; only once it is named. */
 function nextTokenStep() {
+  if (!tokenNamed.value) return;
   tokenStep.value = 1;
   tokenReached.value = Math.max(tokenReached.value, 1);
 }
@@ -765,6 +769,24 @@ async function changePassword() {
               <!-- the request : a lifetime and the password -->
               <div v-else-if="tokenStep === 0" class="af-field">
                 <div class="mb-3">
+                  <label class="form-label fw-bold" for="af-token-name"
+                    >{{ t('profilePage.token.name') }}<span class="text-danger ms-1">*</span></label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="tag" /></span>
+                    <input
+                      id="af-token-name"
+                      v-model="tokenForm.name"
+                      type="text"
+                      maxlength="100"
+                      required
+                      class="form-control"
+                      @keydown.enter.prevent="nextTokenStep"
+                    />
+                  </div>
+                  <div class="form-text">{{ t('profilePage.token.nameHint') }}</div>
+                </div>
+                <div class="mb-3">
                   <label class="form-label fw-bold" for="af-token-days">{{ t('profilePage.token.lifetime') }}</label>
                   <div class="input-group">
                     <span class="input-group-text text-gray-500"
@@ -777,20 +799,6 @@ async function changePassword() {
                     </select>
                   </div>
                   <div class="form-text">{{ t('profilePage.token.lifetimeHint') }}</div>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label fw-bold" for="af-token-name">{{ t('profilePage.token.name') }}</label>
-                  <div class="input-group">
-                    <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="tag" /></span>
-                    <input
-                      id="af-token-name"
-                      v-model="tokenForm.name"
-                      type="text"
-                      maxlength="100"
-                      class="form-control"
-                    />
-                  </div>
-                  <div class="form-text">{{ t('profilePage.token.nameHint') }}</div>
                 </div>
               </div>
               <form v-else class="af-field" @submit.prevent="createToken" @keydown.enter.prevent="createToken">
@@ -821,9 +829,14 @@ async function changePassword() {
               <BsButton v-if="tokenStep === 1" icon="arrow-left" @click="tokenStep = 0">{{
                 t('common.previous')
               }}</BsButton>
-              <BsButton v-if="tokenStep === 0" icon="arrow-right" @click="nextTokenStep">{{
-                t('common.next')
-              }}</BsButton>
+              <BsButton
+                v-if="tokenStep === 0"
+                icon="arrow-right"
+                :colorClass="tokenNamed ? 'primary' : 'secondary'"
+                :disabled="!tokenNamed"
+                @click="nextTokenStep"
+                >{{ t('common.next') }}</BsButton
+              >
               <BsButton
                 v-if="tokenStep === 1"
                 icon="code"

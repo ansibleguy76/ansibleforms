@@ -315,7 +315,7 @@ export default {
       days: '{n} días',
       password: 'Tu contraseña',
       new: 'Nuevo token',
-      stepToken: 'Token',
+      stepToken: 'Detalles',
       stepConfirm: 'Confirmar',
       stepCopy: 'Copiar',
       create: 'Crear token',
@@ -327,7 +327,7 @@ export default {
       failed: 'No se pudo crear el token. Comprueba tu contraseña.',
       another: 'Crear otro token',
       name: 'Nombre',
-      nameHint: 'Opcional: para qué es el token, así lo reconoces en la lista de abajo.',
+      nameHint: 'Para qué sirve el token, para reconocerlo en la lista.',
       signInAgainHint:
         'Iniciaste sesión con {type}: aquí no hay contraseña que confirmar. Para crear un token vuelves a iniciar sesión con {type}, introduciendo tus credenciales, y el token se crea al volver.',
       signingInAgain: 'Volviendo a iniciar sesión para crear el token…',

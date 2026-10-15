@@ -313,7 +313,7 @@ export default {
       days: '{n} days',
       password: 'Your password',
       new: 'New token',
-      stepToken: 'Token',
+      stepToken: 'Details',
       stepConfirm: 'Confirm',
       stepCopy: 'Copy',
       create: 'Create token',
@@ -325,7 +325,7 @@ export default {
       failed: 'The token could not be created. Check your password.',
       another: 'Create another token',
       name: 'Name',
-      nameHint: 'Optional: what the token is for, so you recognise it in the list below.',
+      nameHint: 'What the token is for, so you recognise it in the list.',
       signInAgainHint:
         'You signed in with {type}: there is no password to confirm here. To create a token you sign in with {type} once more, entering your credentials, and the token is created when you are back.',
       signingInAgain: 'Signing in again to create the token…',

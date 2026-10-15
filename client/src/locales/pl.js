@@ -315,7 +315,7 @@ export default {
       days: 'Liczba dni: {n}',
       password: 'Twoje hasło',
       new: 'Nowy token',
-      stepToken: 'Token',
+      stepToken: 'Szczegóły',
       stepConfirm: 'Potwierdź',
       stepCopy: 'Kopiuj',
       create: 'Utwórz token',
@@ -327,7 +327,7 @@ export default {
       failed: 'Nie udało się utworzyć tokenu. Sprawdź hasło.',
       another: 'Utwórz kolejny token',
       name: 'Nazwa',
-      nameHint: 'Opcjonalnie: do czego służy token, aby rozpoznać go na liście poniżej.',
+      nameHint: 'Do czego służy token, aby rozpoznać go na liście.',
       signInAgainHint:
         'Zalogowano przez {type}: nie ma tu hasła do potwierdzenia. Aby utworzyć token, zalogujesz się jeszcze raz przez {type}, podając dane logowania, a token zostanie utworzony po powrocie.',
       signingInAgain: 'Ponowne logowanie w celu utworzenia tokenu…',

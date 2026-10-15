@@ -314,7 +314,7 @@ export default {
       days: '{n} 日',
       password: 'パスワード',
       new: '新しいトークン',
-      stepToken: 'トークン',
+      stepToken: '詳細',
       stepConfirm: '確認',
       stepCopy: 'コピー',
       create: 'トークンを作成',
@@ -326,7 +326,7 @@ export default {
       failed: 'トークンを作成できませんでした。パスワードを確認してください。',
       another: '別のトークンを作成',
       name: '名前',
-      nameHint: '任意：トークンの用途。下の一覧で見分けられるようにします。',
+      nameHint: 'トークンの用途。一覧で見分けるためのものです。',
       signInAgainHint:
         '{type} でサインインしています。ここで確認するパスワードはありません。トークンを作成するには、{type} でもう一度資格情報を入力してサインインします。戻るとトークンが作成されます。',
       signingInAgain: 'トークンを作成するために再度サインインしています…',

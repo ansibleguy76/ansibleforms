@@ -309,7 +309,7 @@ export default {
       days: '{n} 天',
       password: '您的密码',
       new: '新令牌',
-      stepToken: '令牌',
+      stepToken: '详细信息',
       stepConfirm: '确认',
       stepCopy: '复制',
       create: '创建 token',
@@ -321,7 +321,7 @@ export default {
       failed: '无法创建 token。请检查您的密码。',
       another: '再创建一个 token',
       name: '名称',
-      nameHint: '可选：令牌的用途，便于在下方列表中识别。',
+      nameHint: '令牌的用途，便于在列表中识别。',
       signInAgainHint:
         '您通过 {type} 登录：这里没有需要确认的密码。要创建令牌，请再次通过 {type} 输入凭据登录，返回后即会创建令牌。',
       signingInAgain: '正在重新登录以创建令牌…',
