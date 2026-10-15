@@ -1306,7 +1306,7 @@ export default {
       addressWebhook: '传入 Webhook',
       addressChat: '聊天 {chat}',
       credential: '凭据',
-      helpCredential: '连接 > 凭据中的 smtp 凭据。无需登录的中继留空。',
+      helpCredential: '连接 > 凭据中的 smtp 凭据：邮件服务器、其端口和 TLS，以及登录（中继无需用户）。',
       webhookUrl: 'Webhook 地址',
       webhookUrlHelp_slack: 'Slack 频道的传入 Webhook (Slack 应用 > Incoming Webhooks): 属于机密, 保存后不再显示。',
       webhookUrlHelp_teams:
@@ -1487,7 +1487,7 @@ export default {
       fieldsRequired: '名称和描述为必填项。',
       loginFromStore: '用户和密码从密钥库读取，见“存储”选项卡。',
       type_smtp: 'SMTP',
-      type_smtpHint: '邮件服务器的用户和密码',
+      type_smtpHint: '邮件服务器、其端口和 TLS，以及登录（中继无需）',
       type_ldap: 'LDAP',
       type_ldapHint: 'LDAP 目录的绑定账户：其 DN 和密码',
       type_entraid: 'Microsoft Entra ID',

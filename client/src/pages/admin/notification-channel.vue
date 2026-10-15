@@ -4,11 +4,14 @@
 /*  A notification channel's page (/settings/notifications/<id>), */
 /*  opened from the channels' list : the steps of its dialog as   */
 /*  tabs, by its type, the tab kept in the url -                  */
-/*    Details     its name, description, type (it stays), whether */
-/*                it is sent to (Enabled), and for mail whether   */
-/*                it is the one the app sends with (Active)       */
-/*    mail        Connection (host, port, TLS), Sender (from,     */
-/*                smtp credential)                                */
+/*    Details     its name, description, whether it is sent to    */
+/*                (Enabled), and for mail whether it is the one   */
+/*                the app sends with (Active)                     */
+/*    Type        what it is (it stays), the types as radio       */
+/*                buttons                                         */
+/*    mail        Sender (the from address), Credentials (its     */
+/*                smtp credential : the mail server, its port and */
+/*                TLS, and the login)                             */
 /*    slack/teams Webhook (its address, a secret)                 */
 /*    telegram    Bot (its token's credential, the chat, the Bot  */
 /*                API)                                            */
@@ -29,6 +32,7 @@ import Profile from '@/lib/Profile';
 import Helpers from '@/lib/Helpers';
 import getSettings, {
   CHANNEL_ICONS,
+  CHANNEL_TYPES,
   DEFAULT_PAYLOAD,
   PAYLOAD_PLACEHOLDERS,
   channelType,
@@ -51,7 +55,7 @@ const edit = ref(null); // as edited
 const type = computed(() => channelType(channel.value));
 // the fields each type edits, besides its name and description
 const EDITED_BY_TYPE = {
-  mail: ['server', 'port', 'secure', 'from_address', 'credential'],
+  mail: ['from_address', 'credential'],
   slack: ['webhook_url'],
   teams: ['webhook_url'],
   telegram: ['token_credential', 'chat_id', 'api_url'],
@@ -81,9 +85,6 @@ function editable(record) {
     description: record.description ?? '',
     enabled: !!record.enabled,
     is_active: !!record.is_active,
-    server: record.server ?? '',
-    port: record.port ?? '',
-    secure: !!record.secure,
     from_address: record.from_address ?? '',
     credential: record.credential ?? '',
     // masked by the API : sent back as it is, it stays
@@ -193,10 +194,11 @@ async function onCredentialCreated(name) {
 }
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
+// mail : where it sends and as whom are its smtp credential (the server, port, TLS, login)
 const TABS_BY_TYPE = {
   mail: [
-    { key: 'connection', label: 'stepConnection', icon: 'server' },
-    { key: 'sender', label: 'stepSender', icon: 'key' },
+    { key: 'sender', label: 'stepSender', icon: 'envelope' },
+    { key: 'credentials', label: 'tabCredentials', icon: 'key' },
   ],
   slack: [{ key: 'connection', label: 'stepWebhook', icon: 'link' }],
   teams: [{ key: 'connection', label: 'stepWebhook', icon: 'link' }],
@@ -208,7 +210,14 @@ const TABS_BY_TYPE = {
 };
 const tabs = computed(() => [
   { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
-  ...TABS_BY_TYPE[type.value].map((x) => ({ ...x, label: t(`settings.notificationChannels.${x.label}`) })),
+  { key: 'type', label: t('settings.notificationChannels.stepType'), icon: 'shapes' },
+  ...TABS_BY_TYPE[type.value].map((x) => ({
+    ...x,
+    label:
+      x.label === 'tabCredentials'
+        ? t('settings.common.tabCredentials')
+        : t(`settings.notificationChannels.${x.label}`),
+  })),
 ]);
 const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
@@ -431,7 +440,7 @@ onMounted(async () => {
             <FaIcon icon="lock" class="me-2" />{{ t('settings.common.seedManagedNotice') }}
           </div>
           <fieldset :disabled="managed">
-            <!-- Details : what it is called, its type, whether it is sent to (and for mail, used) -->
+            <!-- Details : what it is called, whether it is sent to (and for mail, used) -->
             <template v-if="activeTab === 'details'">
               <BsInput
                 class="af-channel-field"
@@ -448,31 +457,6 @@ onMounted(async () => {
                 :isFloating="false"
                 :label="t('settings.fields.description')"
               />
-              <div class="mb-3">
-                <div class="form-label fw-bold">{{ t('settings.notificationChannels.type') }}</div>
-                <!-- set when it was made : it stays -->
-                <span
-                  ><FaIcon :icon="CHANNEL_ICONS[type]" class="me-2" fixedwidth />{{
-                    t(`settings.notificationChannels.type_${type}`)
-                  }}</span
-                >
-              </div>
-              <div class="mb-3">
-                <label class="form-label fw-bold d-block" for="af-channel-enabled">{{
-                  t('settings.notificationChannels.enabled')
-                }}</label>
-                <!-- saved with Save -->
-                <div class="form-check form-switch mb-0">
-                  <input
-                    id="af-channel-enabled"
-                    v-model="edit.enabled"
-                    class="form-check-input"
-                    type="checkbox"
-                    role="switch"
-                  />
-                </div>
-                <div class="form-text">{{ t('settings.notificationChannels.enabledHelp') }}</div>
-              </div>
               <div v-if="type === 'mail'" class="mb-3">
                 <label class="form-label fw-bold d-block" for="af-channel-active">{{
                   t('settings.notificationChannels.active')
@@ -492,40 +476,31 @@ onMounted(async () => {
               </div>
             </template>
 
-            <!-- mail : Connection, its host, port and TLS -->
-            <template v-else-if="type === 'mail' && activeTab === 'connection'">
-              <BsInput
-                class="af-channel-field"
-                v-model="edit.server"
-                icon="server"
-                placeholder="smtp.example.com"
-                :isFloating="false"
-                :required="true"
-                :help="t('settings.mail.mailServerHelp')"
-                :label="t('settings.mail.mailServer')"
-              />
-              <BsInput
-                class="af-channel-field"
-                v-model="edit.port"
-                type="number"
-                icon="arrows-alt-v"
-                :isFloating="false"
-                :help="t('settings.mail.mailPortHelp')"
-                :label="t('settings.mail.mailPort')"
-              />
-              <div class="form-check form-switch mb-3">
+            <!-- Type : what it is, set when it was made -->
+            <template v-else-if="activeTab === 'type'">
+              <div v-for="kind in CHANNEL_TYPES" :key="kind" class="form-check af-short-check">
                 <input
-                  id="af-channel-tls"
-                  v-model="edit.secure"
+                  :id="'af-chtype-' + kind"
+                  :checked="kind === type"
                   class="form-check-input"
-                  type="checkbox"
-                  role="switch"
+                  type="radio"
+                  name="af-channel-type"
+                  :value="kind"
+                  disabled
                 />
-                <label class="form-check-label" for="af-channel-tls">{{ t('settings.mail.useTls') }}</label>
-                <div class="form-text mt-1">{{ t('settings.mail.useTlsHelp') }}</div>
+                <label class="form-check-label" :for="'af-chtype-' + kind">
+                  <span class="af-short-label"
+                    ><FaIcon :icon="CHANNEL_ICONS[kind]" class="me-2" fixedwidth />{{
+                      t(`settings.notificationChannels.type_${kind}`)
+                    }}</span
+                  >
+                  <span class="text-body-secondary small">{{
+                    t(`settings.notificationChannels.typeHint_${kind}`)
+                  }}</span>
+                </label>
               </div>
             </template>
-            <!-- mail : Sender, the from address and the login -->
+            <!-- mail : Sender, the from address -->
             <template v-else-if="type === 'mail' && activeTab === 'sender'">
               <BsInput
                 class="af-channel-field"
@@ -538,6 +513,9 @@ onMounted(async () => {
                 :help="t('settings.mail.mailFromHelp')"
                 :label="t('settings.mail.mailFrom')"
               />
+            </template>
+            <!-- mail : Credentials, its smtp credential (the mail server, its port and TLS, the login) -->
+            <template v-else-if="type === 'mail' && activeTab === 'credentials'">
               <BsInput
                 class="af-channel-field"
                 v-model="edit.credential"
@@ -547,6 +525,7 @@ onMounted(async () => {
                 :values="credentialsOf('smtp')"
                 valueKey="name"
                 labelKey="name"
+                :required="true"
                 :help="t('settings.notificationChannels.helpCredential')"
                 :label="t('settings.notificationChannels.credential')"
               />
@@ -730,6 +709,14 @@ onMounted(async () => {
 .af-channel-tab fieldset > :last-child,
 .af-channel-tab fieldset > :last-child :deep(.mb-3:last-child) {
   margin-bottom: 0 !important;
+}
+/* the radio buttons : their labels one width, so the grey hints line up, as a credential's */
+.af-short-check {
+  margin-bottom: 0.6rem;
+}
+.af-short-label {
+  display: inline-block;
+  min-width: 12rem;
 }
 </style>
 <route lang="yaml">

@@ -1338,7 +1338,8 @@ export default {
       addressWebhook: '受信 Webhook',
       addressChat: 'チャット {chat}',
       credential: '認証情報',
-      helpCredential: '接続 > 認証情報の smtp 認証情報。ログインのないリレーの場合は空にします。',
+      helpCredential:
+        '接続 > 認証情報の smtp 認証情報：メールサーバー、そのポートと TLS、ログイン（リレーの場合はユーザーなし）。',
       webhookUrl: 'Webhook アドレス',
       webhookUrlHelp_slack:
         'Slack チャネルの受信 Webhook (Slack アプリ > Incoming Webhooks): 秘密情報で、保存後は再表示されません。',
@@ -1528,7 +1529,7 @@ export default {
       fieldsRequired: '名前と説明は必須です。',
       loginFromStore: 'ユーザーとパスワードはシークレットストアから読み取られます（ストアタブ）。',
       type_smtp: 'SMTP',
-      type_smtpHint: 'メールサーバーのユーザーとパスワード',
+      type_smtpHint: 'メールサーバー、そのポートと TLS、ログイン（リレーの場合はなし）',
       type_ldap: 'LDAP',
       type_ldapHint: 'LDAP ディレクトリのバインドアカウント：DN とパスワード',
       type_entraid: 'Microsoft Entra ID',

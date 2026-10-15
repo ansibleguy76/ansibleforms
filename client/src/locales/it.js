@@ -1441,7 +1441,8 @@ export default {
       addressWebhook: 'Webhook in entrata',
       addressChat: 'Chat {chat}',
       credential: 'Credenziale',
-      helpCredential: 'Una credenziale smtp di Connessioni > Credenziali. Vuota per un relay senza accesso.',
+      helpCredential:
+        "Una credenziale smtp di Connessioni > Credenziali: il server di posta, la porta e TLS, e l'accesso (nessun utente per un relay).",
       webhookUrl: 'Indirizzo del webhook',
       webhookUrlHelp_slack:
         'Il webhook in entrata del canale Slack (app Slack > Incoming Webhooks): un segreto, non più mostrato una volta salvato.',
@@ -1633,7 +1634,7 @@ export default {
       fieldsRequired: 'Nome e descrizione sono obbligatori.',
       loginFromStore: 'Utente e password sono letti dal secret store, nella scheda Archivio.',
       type_smtp: 'SMTP',
-      type_smtpHint: 'Un utente e una password per un server mail',
+      type_smtpHint: 'Un server di posta, la sua porta e TLS, e il suo accesso (nessuno per un relay)',
       type_ldap: 'LDAP',
       type_ldapHint: "L'account di bind di una directory LDAP: il suo DN e la password",
       type_entraid: 'Microsoft Entra ID',

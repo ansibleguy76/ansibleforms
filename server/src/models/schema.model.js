@@ -952,6 +952,8 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addTable("notification_channels", channelsBuffer.toString()), messages, success, failed);
   await checkPromise(moveMailServersToChannels(), messages, success, failed);
   await checkPromise(copyMailSettingsToServers(), messages, success, failed);
+  // a mail channel's server, port and TLS belong to its smtp credential, with its login
+  await checkPromise(moveMailServersToCredentials(), messages, success, failed);
   // the syslog servers the server log and the audit entries go to (Connections > Syslog) ; the
   // LOG_SYSLOG_* variables of before become the first, once (lib/syslogServers.js)
   const syslogBuffer = fs.readFileSync(`${__dirname}/../db/create_syslog_servers_table.sql`);
@@ -1183,6 +1185,78 @@ export async function copyMailSettingsToServers() {
     ["default", "From the mail settings", s.mail_server, s.mail_port || null, s.mail_secure ? 1 : 0, s.mail_from || null, credential],
   );
   return "Copied the mail settings to the mail channel 'default'" + (credential ? ", its login to the credential 'mail-login'" : "");
+}
+
+/**
+ * A credential name not taken yet : the one asked for, else with -2, -3... after it.
+ *
+ * Args:
+ *   name (string): the name wanted.
+ *
+ * Returns:
+ *   Promise<string>: a free name.
+ */
+async function freeCredentialName(name) {
+  for (let n = 1; ; n++) {
+    const candidate = n === 1 ? name : `${name}-${n}`;
+    const taken = await mysql.do("SELECT 1 FROM AnsibleForms.`credentials` WHERE name = ?", [candidate]);
+    if (!taken.length) return candidate;
+  }
+}
+
+/**
+ * The server, port and TLS of each mail channel moved to its smtp credential, with its login :
+ * where it sends and as whom are one credential, as an SSH or a database one holds its host.
+ *   - its credential has no server yet : the channel's goes into it
+ *   - it has the same one : nothing to copy
+ *   - it has another (two channels shared one login, each its server) : a copy of the credential
+ *     with the channel's server, the channel then names the copy
+ *   - no credential (a relay, no login) : a new smtp credential, <channel>-smtp, without a user
+ * The channel's own then emptied. Not a seeded channel : the seed owns it, and its own server is
+ * still used while its credential has none. Idempotent : only a channel with a server left.
+ *
+ * Returns:
+ *   Promise<string|null>: what was done, or null when there was nothing to do.
+ */
+export async function moveMailServersToCredentials() {
+  const channels = await mysql.do(
+    "SELECT id, name, server, port, secure, credential FROM AnsibleForms.`notification_channels` " +
+      "WHERE type = 'mail' AND COALESCE(managed, 0) = 0 AND server IS NOT NULL AND server <> ''",
+  );
+  if (!channels.length) return null;
+  const done = [];
+  for (const c of channels) {
+    const server = String(c.server).trim();
+    const port = c.port || null;
+    const secure = c.secure ? 1 : 0;
+    const creds = c.credential ? await mysql.do("SELECT * FROM AnsibleForms.`credentials` WHERE name = ?", [c.credential]) : [];
+    const cred = creds[0];
+    let name = cred?.name || null;
+    if (cred && !String(cred.host || "").trim()) {
+      await mysql.do("UPDATE AnsibleForms.`credentials` SET host = ?, port = ?, secure = ? WHERE id = ?", [server, port, secure, cred.id]);
+      done.push(`${c.name} into ${name}`);
+    } else if (cred && (String(cred.host).trim() !== server || (cred.port || null) !== port || (cred.secure ? 1 : 0) !== secure)) {
+      // a copy : its login (stored encrypted, the same key for both rows) and the channel's server
+      name = await freeCredentialName(`${cred.name}-${c.name}`);
+      await mysql.do(
+        "INSERT INTO AnsibleForms.`credentials` (name, user, password, description, is_database, credential_type, secret_store, secret_ref, host, port, secure) " +
+          "SELECT ?, user, password, ?, 0, 'smtp', secret_store, secret_ref, ?, ?, ? FROM AnsibleForms.`credentials` WHERE id = ?",
+        [name, `The login of ${cred.name}, with the server of the mail channel ${c.name}`, server, port, secure, cred.id],
+      );
+      done.push(`${c.name} into a copy of ${cred.name}, ${name}`);
+    } else if (!cred) {
+      name = await freeCredentialName(`${c.name}-smtp`);
+      await mysql.do(
+        "INSERT INTO AnsibleForms.`credentials` (name, description, is_database, credential_type, host, port, secure) VALUES (?, ?, 0, 'smtp', ?, ?, ?)",
+        [name, `The server of the mail channel ${c.name}`, server, port, secure],
+      );
+      done.push(`${c.name} into ${name}`);
+    }
+    await mysql.do("UPDATE AnsibleForms.`notification_channels` SET server = NULL, port = NULL, secure = 0, credential = ? WHERE id = ?", [name, c.id]);
+  }
+  const message = `Moved the server of ${channels.length} mail channel(s) to their smtp credential${done.length ? ` (${done.join(", ")})` : ""}`;
+  logger.notice(message);
+  return message;
 }
 
 // the tables 7.0.0 drops : their presence means an upgrade is pending

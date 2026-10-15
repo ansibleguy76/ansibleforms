@@ -1681,10 +1681,15 @@ export default function getSettings(t) {
           key: 'host',
           step: 'login',
           dependency: 'credential_type',
-          dependencyValues: ['ssh', 'database'],
+          dependencyValues: ['ssh', 'database', 'smtp'],
           label: t('settings.fields.host'),
-          // no column : most credentials connect to nothing, an ssh or a database one shows it
-          // on its page
+          // an smtp one's host is its mail server, which it needs
+          dialogLabel: (r) => (r.credential_type === 'smtp' ? t('settings.mail.mailServer') : null),
+          help: (r) => (r.credential_type === 'smtp' ? t('settings.mail.mailServerHelp') : null),
+          placeholder: (r) => (r.credential_type === 'smtp' ? 'smtp.example.com' : ''),
+          requiredWhen: (r) => r.credential_type === 'smtp',
+          // no column : most credentials connect to nothing, an ssh, a database or an smtp one
+          // shows it on its page
           noTable: true,
           sortable: true,
           required: false,
@@ -1695,14 +1700,30 @@ export default function getSettings(t) {
           key: 'port',
           step: 'login',
           dependency: 'credential_type',
-          dependencyValues: ['ssh', 'database'],
+          dependencyValues: ['ssh', 'database', 'smtp'],
           label: t('settings.fields.port'),
+          dialogLabel: (r) => (r.credential_type === 'smtp' ? t('settings.mail.mailPort') : null),
+          help: (r) => (r.credential_type === 'smtp' ? t('settings.mail.mailPortHelp') : null),
           noTable: true,
           type: 'number',
           sortable: true,
           required: false,
           filterable: false,
           icon: 'arrows-alt-v',
+        },
+        {
+          // an smtp one : TLS to its mail server
+          key: 'secure',
+          step: 'login',
+          dependency: 'credential_type',
+          dependencyValues: ['smtp'],
+          label: t('settings.mail.useTls'),
+          help: t('settings.mail.useTlsHelp'),
+          type: 'checkbox',
+          noTable: true,
+          hidden: true,
+          required: false,
+          filterable: false,
         },
         {
           key: 'db_name',
@@ -2588,12 +2609,10 @@ export default function getSettings(t) {
       steps: [
         { key: 'channel', label: t('settings.notificationChannels.stepChannel') },
         { key: 'type', label: t('settings.notificationChannels.stepType') },
-        {
-          key: 'connection',
-          label: t('settings.notificationChannels.stepConnection'),
-          when: (i) => channelType(i) === 'mail',
-        },
+        // mail : the from address, then its smtp credential (the mail server, its port and TLS, the
+        // login)
         { key: 'sender', label: t('settings.notificationChannels.stepSender'), when: (i) => channelType(i) === 'mail' },
+        { key: 'credentials', label: t('settings.common.tabCredentials'), when: (i) => channelType(i) === 'mail' },
         {
           key: 'connection',
           label: t('settings.notificationChannels.stepWebhook'),
@@ -2715,39 +2734,6 @@ export default function getSettings(t) {
         },
         // ─── mail ───
         {
-          key: 'server',
-          step: 'connection',
-          label: t('settings.mail.mailServer'),
-          help: t('settings.mail.mailServerHelp'),
-          placeholder: 'smtp.example.com',
-          required: true,
-          icon: 'server',
-          hidden: true,
-          showWhen: (i) => channelType(i) === 'mail',
-        },
-        {
-          key: 'port',
-          step: 'connection',
-          type: 'number',
-          label: t('settings.mail.mailPort'),
-          help: t('settings.mail.mailPortHelp'),
-          initial: (r) => r?.port ?? 587,
-          icon: 'arrows-alt-v',
-          hidden: true,
-          showWhen: (i) => channelType(i) === 'mail',
-        },
-        {
-          key: 'secure',
-          step: 'connection',
-          type: 'checkbox',
-          flush: true,
-          label: t('settings.mail.useTls'),
-          help: t('settings.mail.useTlsHelp'),
-          initial: (r) => (r?.id ? !!r.secure : true),
-          hidden: true,
-          showWhen: (i) => channelType(i) === 'mail',
-        },
-        {
           key: 'from_address',
           step: 'sender',
           type: 'email',
@@ -2760,10 +2746,11 @@ export default function getSettings(t) {
           showWhen: (i) => channelType(i) === 'mail',
         },
         {
-          // its login : an smtp credential of Connections > Credentials, or a New one ; none for
-          // a relay that takes mail without a login
+          // where it sends and as whom : an smtp credential of Connections > Credentials (the mail
+          // server, its port and TLS, the login ; no user for a relay), or a New one
           key: 'credential',
-          step: 'sender',
+          step: 'credentials',
+          requiredWhen: (i) => channelType(i) === 'mail',
           icon: 'key',
           label: t('settings.notificationChannels.credential'),
           help: t('settings.notificationChannels.helpCredential'),
@@ -2776,7 +2763,7 @@ export default function getSettings(t) {
           createWith: 'credentials',
           createLabel: t('settings.repositories.newCredential'),
           createDefaults: { credential_type: 'smtp' },
-          // the smtp credentials only, none first (a relay without a login)
+          // the smtp credentials only
           choicesWhen: (c) => !c?.name || c.credential_type === 'smtp',
           hidden: true,
           showWhen: (i) => channelType(i) === 'mail',

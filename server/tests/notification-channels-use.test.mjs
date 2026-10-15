@@ -39,7 +39,7 @@ const Job = (await import("../src/models/job.model.js")).default;
 const { default: Settings } = await import("../src/models/settings.model.js");
 const { channelsOfForm } = await import("../src/models/form.model.js");
 const { default: NotificationChannel } = await import("../src/models/notificationChannel.model.js");
-const { moveMailServersToChannels, copyMailSettingsToServers } = await import("../src/models/schema.model.js");
+const { moveMailServersToChannels, copyMailSettingsToServers, moveMailServersToCredentials } = await import("../src/models/schema.model.js");
 
 beforeEach(() => {
   queries.length = 0;
@@ -173,5 +173,62 @@ describe("the mail servers of a release candidate become mail channels", () => {
     expect(await copyMailSettingsToServers()).toMatch(/mail channel 'default'/);
     const insert = queries.find((q) => /INSERT INTO AnsibleForms\.`notification_channels`/.test(q.sql));
     expect(insert.sql).toMatch(/VALUES \(\?, \?, 'mail', 1/);
+  });
+});
+
+describe("a mail channel's server moves to its smtp credential", () => {
+  const channel = (over) => ({ id: 1, name: "office", server: "smtp.example.com", port: 587, secure: 1, credential: "o365", ...over });
+
+  test("no channel with a server left : nothing to do", async () => {
+    expect(await moveMailServersToCredentials()).toBe(null);
+  });
+
+  test("a credential without a server : the channel's goes into it, the channel's emptied", async () => {
+    answers = [
+      { match: /FROM AnsibleForms\.`notification_channels`/, rows: [channel()] },
+      { match: /SELECT \* FROM AnsibleForms\.`credentials` WHERE name/, rows: [{ id: 9, name: "o365", host: null }] },
+    ];
+    expect(await moveMailServersToCredentials()).toMatch(/office into o365/);
+    const into = queries.find((q) => /^UPDATE AnsibleForms\.`credentials` SET host/.test(q.sql));
+    expect(into.args).toEqual(["smtp.example.com", 587, 1, 9]);
+    const emptied = queries.find((q) => /^UPDATE AnsibleForms\.`notification_channels` SET server = NULL/.test(q.sql));
+    expect(emptied.args).toEqual(["o365", 1]);
+  });
+
+  test("a credential with another server : a copy with the channel's, which the channel then names", async () => {
+    answers = [
+      { match: /FROM AnsibleForms\.`notification_channels`/, rows: [channel()] },
+      { match: /SELECT \* FROM AnsibleForms\.`credentials` WHERE name/, rows: [{ id: 9, name: "o365", host: "other.example.com", port: 25, secure: 0 }] },
+    ];
+    expect(await moveMailServersToCredentials()).toMatch(/a copy of o365, o365-office/);
+    expect(queries.find((q) => /^INSERT INTO AnsibleForms\.`credentials`/.test(q.sql)).args.slice(2, 5)).toEqual(["smtp.example.com", 587, 1]);
+    expect(queries.find((q) => /SET server = NULL/.test(q.sql)).args).toEqual(["o365-office", 1]);
+  });
+
+  test("no credential (a relay) : a new smtp one without a user", async () => {
+    answers = [{ match: /FROM AnsibleForms\.`notification_channels`/, rows: [channel({ name: "relay", credential: null, port: 25, secure: 0 })] }];
+    expect(await moveMailServersToCredentials()).toMatch(/relay into relay-smtp/);
+    const insert = queries.find((q) => /^INSERT INTO AnsibleForms\.`credentials`/.test(q.sql));
+    expect(insert.sql).toMatch(/'smtp'/);
+    expect(insert.args).toEqual(["relay-smtp", "The server of the mail channel relay", "smtp.example.com", 25, 0]);
+  });
+});
+
+describe("a mail channel sends through its credential's server", () => {
+  test("the credential's server, port and TLS ; its own while the credential has none", async () => {
+    answers = [{ match: /credential/, rows: [{ name: "o365", host: "smtp.office365.com", port: 587, secure: 1 }] }];
+    vi.spyOn(NotificationChannel, "resolveCredential").mockResolvedValue({ user: "u", password: "p" });
+    const config = await NotificationChannel.toMailConfig({ name: "m", server: "old.example.com", port: 25, credential: "o365", from_address: "af@example.com" });
+    expect(config).toMatchObject({ mail_server: "smtp.office365.com", mail_port: 587, mail_secure: 1, mail_username: "u" });
+    answers = [{ match: /credential/, rows: [{ name: "old-login", host: null }] }];
+    const legacy = await NotificationChannel.toMailConfig({ name: "m", server: "old.example.com", port: 25, credential: "old-login" });
+    expect(legacy).toMatchObject({ mail_server: "old.example.com", mail_port: 25 });
+  });
+
+  test("a relay's credential has no user : no login", async () => {
+    answers = [{ match: /credential/, rows: [{ name: "relay-smtp", host: "relay.example.com", port: 25 }] }];
+    vi.spyOn(NotificationChannel, "resolveCredential").mockResolvedValue({ user: "", password: "" });
+    const config = await NotificationChannel.toMailConfig({ name: "r", credential: "relay-smtp" });
+    expect(config).toMatchObject({ mail_server: "relay.example.com", mail_username: "" });
   });
 });

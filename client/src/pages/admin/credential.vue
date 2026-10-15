@@ -57,6 +57,7 @@ const EDITED = [
   'secret_ref',
   'host',
   'port',
+  'secure',
   'db_type',
   'db_name',
 ];
@@ -96,6 +97,7 @@ function editable(record) {
     secret_ref: record.secret_ref ?? '',
     host: record.host ?? '',
     port: record.port ?? '',
+    secure: !!record.secure,
     db_type: record.db_type || 'mysql',
     db_name: record.db_name ?? '',
   };
@@ -216,8 +218,10 @@ const shownTab = computed(() => {
   const key = activeTab.value === 'connection' ? 'login' : activeTab.value;
   return tabs.value.some((x) => x.key === key) ? key : 'details';
 });
-// an SSH or a database credential connects somewhere : its host and port in its Login tab
-const hasConnection = computed(() => ['ssh', 'database'].includes(type.value));
+// an SSH, a database or an smtp credential connects somewhere : its host and port in its Login
+// tab (an smtp one's the mail server, and its TLS)
+const hasConnection = computed(() => ['ssh', 'database', 'smtp'].includes(type.value));
+const isSmtp = computed(() => type.value === 'smtp');
 
 // the title : Credentials › <name>, each step a link
 const pageCrumbs = computed(() => [
@@ -249,8 +253,10 @@ async function save() {
     name: e.name.trim(),
     description: e.description.trim(),
     credential_type: e.credential_type,
-    host: ['ssh', 'database'].includes(e.credential_type) ? e.host.trim() : '',
-    port: ['ssh', 'database'].includes(e.credential_type) && String(e.port ?? '').trim() !== '' ? e.port : null,
+    host: hasConnection.value ? e.host.trim() : '',
+    port: hasConnection.value && String(e.port ?? '').trim() !== '' ? e.port : null,
+    // an smtp one's TLS
+    secure: e.credential_type === 'smtp' && e.secure ? 1 : 0,
     db_type: isDatabase.value ? e.db_type : '',
     db_name: isDatabase.value ? e.db_name.trim() : '',
   };
@@ -435,8 +441,8 @@ onMounted(async () => {
             <!-- Login : its user (read from a store : nothing here) ; a CyberArk's AppID,
                client certificate and key -->
             <template v-else-if="shownTab === 'login'">
-              <!-- where it connects (SSH, a database) : a database's type, the host and port, a
-                   database's name ; then the user and password -->
+              <!-- where it connects (SSH, a database, a mail server) : a database's type, the host
+                   and port, a database's name, a mail server's TLS ; then the user and password -->
               <template v-if="hasConnection">
                 <BsInput
                   v-if="isDatabase"
@@ -455,8 +461,11 @@ onMounted(async () => {
                   class="af-credential-field"
                   v-model="edit.host"
                   icon="server"
+                  :placeholder="isSmtp ? 'smtp.example.com' : ''"
                   :isFloating="false"
-                  :label="t('settings.fields.host')"
+                  :required="isSmtp"
+                  :help="isSmtp ? t('settings.mail.mailServerHelp') : ''"
+                  :label="isSmtp ? t('settings.mail.mailServer') : t('settings.fields.host')"
                 />
                 <BsInput
                   class="af-credential-field"
@@ -464,8 +473,21 @@ onMounted(async () => {
                   type="number"
                   icon="arrows-alt-v"
                   :isFloating="false"
-                  :label="t('settings.fields.port')"
+                  :help="isSmtp ? t('settings.mail.mailPortHelp') : ''"
+                  :label="isSmtp ? t('settings.mail.mailPort') : t('settings.fields.port')"
                 />
+                <!-- an smtp one : TLS -->
+                <div v-if="isSmtp" class="form-check form-switch mb-3">
+                  <input
+                    id="af-credential-tls"
+                    v-model="edit.secure"
+                    class="form-check-input"
+                    type="checkbox"
+                    role="switch"
+                  />
+                  <label class="form-check-label" for="af-credential-tls">{{ t('settings.mail.useTls') }}</label>
+                  <div class="form-text mt-1">{{ t('settings.mail.useTlsHelp') }}</div>
+                </div>
                 <BsInput
                   v-if="isDatabase"
                   class="af-credential-field"

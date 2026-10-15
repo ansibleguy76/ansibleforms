@@ -1348,7 +1348,8 @@ export default {
       addressWebhook: 'Webhook przychodzący',
       addressChat: 'Czat {chat}',
       credential: 'Poświadczenie',
-      helpCredential: 'Poświadczenie smtp z Połączenia > Poświadczenia. Puste dla przekaźnika bez logowania.',
+      helpCredential:
+        'Poświadczenie smtp z Połączenia > Poświadczenia: serwer poczty, jego port i TLS oraz logowanie (bez użytkownika dla przekaźnika).',
       webhookUrl: 'Adres webhooka',
       webhookUrlHelp_slack:
         'Webhook przychodzący kanału Slack (aplikacja Slack > Incoming Webhooks): sekret, po zapisaniu nigdy więcej nie jest pokazywany.',
@@ -1540,7 +1541,7 @@ export default {
       fieldsRequired: 'Nazwa i opis są wymagane.',
       loginFromStore: 'Użytkownik i hasło są odczytywane z magazynu sekretów, na karcie Magazyn.',
       type_smtp: 'SMTP',
-      type_smtpHint: 'Użytkownik i hasło do serwera poczty',
+      type_smtpHint: 'Serwer poczty, jego port i TLS oraz logowanie (brak dla przekaźnika)',
       type_ldap: 'LDAP',
       type_ldapHint: 'Konto powiązania katalogu LDAP: jego DN i hasło',
       type_entraid: 'Microsoft Entra ID',

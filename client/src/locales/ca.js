@@ -1357,7 +1357,8 @@ export default {
       addressWebhook: "Webhook d'entrada",
       addressChat: 'Xat {chat}',
       credential: 'Credencial',
-      helpCredential: 'Una credencial smtp de Connexions > Credencials. Buida per a un relay sense inici de sessió.',
+      helpCredential:
+        "Una credencial smtp de Connexions > Credencials: el servidor de correu, el seu port i TLS, i l'inici de sessió (sense usuari per a un relay).",
       webhookUrl: 'Adreça del webhook',
       webhookUrlHelp_slack:
         "El webhook d'entrada del canal de Slack (app de Slack > Incoming Webhooks): un secret, mai no es torna a mostrar un cop desat.",
@@ -1552,7 +1553,7 @@ export default {
       fieldsRequired: 'El nom i la descripció són obligatoris.',
       loginFromStore: "L'usuari i la contrasenya es llegeixen del magatzem de secrets, a la pestanya Magatzem.",
       type_smtp: 'SMTP',
-      type_smtpHint: 'Un usuari i una contrasenya per a un servidor de correu',
+      type_smtpHint: 'Un servidor de correu, el seu port i TLS, i el seu inici de sessió (cap per a un relay)',
       type_ldap: 'LDAP',
       type_ldapHint: "El compte de bind d'un directori LDAP: el seu DN i contrasenya",
       type_entraid: 'Microsoft Entra ID',

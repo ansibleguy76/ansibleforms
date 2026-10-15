@@ -238,8 +238,8 @@ describe("a channel checked by its type", () => {
     await expect(NotificationChannel.update({ type: "teams" }, 5)).rejects.toThrow(/stays what it was made as/);
   });
 
-  test("mail needs its server and an smtp credential ; the first one is active", async () => {
-    await expect(NotificationChannel.create({ name: "m", type: "mail" })).rejects.toThrow(/needs its server/);
+  test("mail needs an smtp credential with its server (or its own, from before) ; the first one is active", async () => {
+    await expect(NotificationChannel.create({ name: "m", type: "mail" })).rejects.toThrow(/needs an smtp credential with its server/);
     rows.api = { name: "api", credential_type: "api" };
     await expect(NotificationChannel.create({ name: "m", type: "mail", server: "smtp", credential: "api" })).rejects.toThrow(/needs an smtp credential/);
     const data = { name: "m", type: "mail", server: "smtp" };

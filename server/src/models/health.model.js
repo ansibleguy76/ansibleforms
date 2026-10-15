@@ -983,7 +983,7 @@ Health.check = async function () {
     const { default: NotificationChannel } = await import('./notificationChannel.model.js');
     const active = await NotificationChannel.findActive();
     const mail = active
-      ? { mail_server: active.server, mail_port: active.port, mail_secure: active.secure, mail_username: active.credential }
+      ? { ...(await NotificationChannel.withServer([active]).then(([c]) => ({ mail_server: c.server, mail_port: c.port, mail_secure: c.secure }))), mail_username: active.credential }
       : await Settings.findMailSettings();
     add('mail', mail?.mail_server ? `${mail.mail_server}:${mail.mail_port || '?'}` : 'not configured', {
       // never the password, and the username only as a yes/no

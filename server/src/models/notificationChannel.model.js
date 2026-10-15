@@ -1,7 +1,9 @@
 // Where notifications go (Settings > Connections > Notifications) : a channel of one type -
 //   mail      an SMTP server : approval requests and job notifications by mail. Several can be
-//             kept, one is active : the one the app sends its mail with. Its login is an smtp
-//             credential of Connections > Credentials (none for a relay).
+//             kept, one is active : the one the app sends its mail with. Its server, port, TLS and
+//             login are an smtp credential of Connections > Credentials (the user left empty for
+//             a relay) ; its own server, port and TLS (from before 7.3) are used only while the
+//             credential has no server.
 //   slack     an incoming webhook of a Slack channel
 //   teams     a Microsoft Teams webhook (a Workflows webhook, or an incoming webhook)
 //   telegram  a bot posting in a chat : its token the password of an api credential
@@ -142,8 +144,11 @@ class NotificationChannel extends CrudModel {
       data.port = null;
     }
     if (type === 'mail') {
-      if (missing('server')) throw new Errors.BadRequestError('A mail channel needs its server');
       await this.assertCredential(data, 'credential', 'smtp', 'mail');
+      // where it sends : its credential's server, else its own (from before credentials held it)
+      if (missing('server') && !(await this.credentialServer(merged.credential))) {
+        throw new Errors.BadRequestError('A mail channel needs an smtp credential with its server (host)');
+      }
     } else if (data.is_active) {
       // only mail has an active one
       data.is_active = 0;
@@ -279,8 +284,47 @@ class NotificationChannel extends CrudModel {
   }
 
   /**
-   * A mail channel as the mail sender takes it (Settings.maildo) : its address, and the user
-   * and password of its credential (read from a secret store when the credential names one).
+   * The server an smtp credential names : its host, port and TLS. None without a credential, or
+   * for one without a host (one from before credentials held the server).
+   *
+   * Args:
+   *   name (string): the credential's name.
+   *
+   * Returns:
+   *   Promise<object|null>: { server, port, secure }, or null.
+   */
+  static async credentialServer(name) {
+    if (!name) return null;
+    const cred = await CrudModel.findByName('credential', name);
+    if (!cred?.host || !String(cred.host).trim()) return null;
+    return { server: String(cred.host).trim(), port: cred.port || null, secure: cred.secure ? 1 : 0 };
+  }
+
+  /**
+   * Mail channels as the API hands them out : the server they send through, their credential's
+   * (server, port and secure as before, so a reader of the API sees where the mail goes).
+   *
+   * Args:
+   *   channels (object[]): the channels, as stored.
+   *
+   * Returns:
+   *   Promise<object[]>: copies, a mail channel's server, port and secure those it uses.
+   */
+  static async withServer(channels) {
+    return Promise.all(
+      (channels || []).map(async (c) => {
+        if (!c || c.type !== 'mail') return c;
+        const server = await this.credentialServer(c.credential).catch(() => null);
+        return server ? { ...c, ...server } : c;
+      }),
+    );
+  }
+
+  /**
+   * A mail channel as the mail sender takes it (Settings.maildo) : the server, port and TLS of
+   * its credential (its own, from before, while the credential has none), and the credential's
+   * user and password (read from a secret store when the credential names one ; none for a
+   * relay).
    *
    * Args:
    *   server (object): the mail channel.
@@ -293,17 +337,18 @@ class NotificationChannel extends CrudModel {
    *   Error: the credential it names does not exist.
    */
   static async toMailConfig(server) {
+    const own = (await this.credentialServer(server.credential)) || server;
     const config = {
-      mail_server: server.server,
-      mail_port: server.port,
-      mail_secure: server.secure ? 1 : 0,
+      mail_server: own.server,
+      mail_port: own.port,
+      mail_secure: own.secure ? 1 : 0,
       mail_username: '',
       mail_password: '',
       mail_from: server.from_address,
     };
     if (server.credential) {
       const cred = await this.resolveCredential(server.credential);
-      if (!cred || !cred.user) {
+      if (!cred) {
         logger.error(`Mail channel '${server.name}' uses the credential '${server.credential}', which is not found`);
         throw new Error(`Mail channel '${server.name}' uses the credential '${server.credential}', which is not found`);
       }

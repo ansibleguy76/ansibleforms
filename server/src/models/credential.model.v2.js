@@ -1,33 +1,22 @@
-import CrudModel from "./crud.model.js";
-import Errors from "../lib/errors.js";
-import logger from "../lib/logger.js";
-import mysql from "./db.model.js";
-import crypto from "../lib/crypto.js";
-import {
-  readSecret,
-  mapPayloadToCredential,
-  parseInlineSecret,
-  VAULT_STORE_NAME,
-} from "../secrets/providers/index.js";
-import dbConfig from "../../config/db.config.js";
-import {
-  currentScope,
-  assertCredentialAllowed,
-  assertSecretStoreAllowed,
-} from "../lib/resourceScope.js";
+import CrudModel from './crud.model.js';
+import Errors from '../lib/errors.js';
+import logger from '../lib/logger.js';
+import mysql from './db.model.js';
+import crypto from '../lib/crypto.js';
+import { readSecret, mapPayloadToCredential, parseInlineSecret, VAULT_STORE_NAME } from '../secrets/providers/index.js';
+import dbConfig from '../../config/db.config.js';
+import { currentScope, assertCredentialAllowed, assertSecretStoreAllowed } from "../lib/resourceScope.js";
 
 class CredentialModel extends CrudModel {
-  static modelName = "credential";
+  static modelName = 'credential';
 
   // vault_path is deprecated : a credential names its store and the place in it. A write
   // that still uses vault_path is pointed at the store named `vault`, and a write that
   // names a store clears vault_path, so the two can never disagree.
   static mirrorVaultPath(data) {
-    if (data.secret_store === "") data.secret_store = null;
+    if (data.secret_store === '') data.secret_store = null;
     if (data.vault_path && !data.secret_store) {
-      logger.warning(
-        `Credential '${data.name || ""}' : vault_path is deprecated since 7 and removed in 8 - use secret_store and secret_ref`,
-      );
+      logger.warning(`Credential '${data.name || ''}' : vault_path is deprecated since 7 and removed in 8 - use secret_store and secret_ref`);
       data.secret_store = VAULT_STORE_NAME;
       data.secret_ref = data.vault_path;
     } else if (data.secret_store !== undefined) {
@@ -43,19 +32,8 @@ class CredentialModel extends CrudModel {
   // one for SSH to a server, the login a workflow node's playbook connects with
   // ldap : an LDAP directory's bind account (its user the bind DN) ; entraid and oidc : an SSO
   // provider's client (its user the client id, its password the client secret ; an entraid one its
-  // tenant too)
-  static TYPES = [
-    "userpass",
-    "ssh",
-    "git",
-    "api",
-    "database",
-    "cyberark",
-    "smtp",
-    "ldap",
-    "entraid",
-    "oidc",
-  ];
+  // tenant too) ; smtp : a mail server (its host, port and TLS) and its login (none for a relay)
+  static TYPES = ['userpass', 'ssh', 'git', 'api', 'database', 'cyberark', 'smtp', 'ldap', 'entraid', 'oidc'];
 
   /**
    * Keeps a credential's type and its is_database flag in step : the type sets the flag, and
@@ -73,24 +51,17 @@ class CredentialModel extends CrudModel {
    *   Error: an unknown type.
    */
   static mirrorType(data, creating = false) {
-    if (
-      data.credential_type !== undefined &&
-      data.credential_type !== null &&
-      data.credential_type !== ""
-    ) {
+    if (data.credential_type !== undefined && data.credential_type !== null && data.credential_type !== '') {
       if (!this.TYPES.includes(data.credential_type)) {
-        throw new Errors.BadRequestError(
-          `Unknown credential type '${data.credential_type}' : one of ${this.TYPES.join(", ")}`,
-        );
+        throw new Errors.BadRequestError(`Unknown credential type '${data.credential_type}' : one of ${this.TYPES.join(', ')}`);
       }
-      data.is_database = data.credential_type === "database" ? 1 : 0;
+      data.is_database = data.credential_type === 'database' ? 1 : 0;
     } else if (data.is_database !== undefined) {
-      if (data.is_database && data.is_database !== "0")
-        data.credential_type = "database";
-      else if (creating) data.credential_type = "userpass";
+      if (data.is_database && data.is_database !== '0') data.credential_type = 'database';
+      else if (creating) data.credential_type = 'userpass';
     } else if (creating) {
       // the column's default makes it a database credential : say so
-      data.credential_type = "database";
+      data.credential_type = 'database';
     }
     return data;
   }
@@ -111,81 +82,57 @@ class CredentialModel extends CrudModel {
    */
   static normalizePort(data) {
     if (data.port === undefined) return data;
-    if (data.port === null || String(data.port).trim() === "") {
+    if (data.port === null || String(data.port).trim() === '') {
       data.port = null;
       return data;
     }
     const port = Number(String(data.port).trim());
     if (!Number.isInteger(port) || port < 1 || port > 65535) {
-      throw new Errors.BadRequestError(
-        `A credential's port is a whole number from 1 to 65535 : '${data.port}' is not`,
-      );
+      throw new Errors.BadRequestError(`A credential's port is a whole number from 1 to 65535 : '${data.port}' is not`);
     }
     data.port = port;
     return data;
   }
 
   /**
-   * An Entra ID credential's tenant : the tenant its app is in, which the sign-in needs. A create
-   * of one without it is refused, and so is an update that empties it ; another type keeps none.
+   * The fields a type cannot do without : an Entra ID credential's tenant (the sign-in needs it),
+   * an smtp one's host (the mail server). A create of one without it is refused, and so is an
+   * update that empties it ; a type without a tenant keeps none.
    *
    * Args:
    *   data (object): the record written.
-   *   creating (boolean): a create (the type and the tenant are all there).
+   *   creating (boolean): a create (the type and its fields are all there).
    *
    * Returns:
    *   object: the record.
    *
    * Raises:
-   *   BadRequestError: an Entra ID credential without a tenant.
+   *   BadRequestError: an Entra ID credential without a tenant, an smtp one without a host.
    */
-  static requireTenant(data, creating = false) {
-    if (
-      data.credential_type !== undefined &&
-      data.credential_type !== "entraid"
-    ) {
+  static requireTypeFields(data, creating = false) {
+    const empty = (key) => (data[key] === undefined ? creating : !String(data[key] ?? '').trim());
+    if (data.credential_type !== undefined && data.credential_type !== 'entraid') {
       if (creating || data.tenant_id !== undefined) data.tenant_id = null;
-      return data;
+    } else if (data.credential_type === 'entraid' && empty('tenant_id')) {
+      throw new Errors.BadRequestError('A Microsoft Entra ID credential needs its tenant ID (tenant_id)');
     }
-    const empty =
-      data.tenant_id === undefined
-        ? creating
-        : !String(data.tenant_id ?? "").trim();
-    if (data.credential_type === "entraid" && empty) {
-      throw new Errors.BadRequestError(
-        "A Microsoft Entra ID credential needs its tenant ID (tenant_id)",
-      );
+    if (data.credential_type === 'smtp' && empty('host')) {
+      throw new Errors.BadRequestError('An smtp credential needs its mail server (host)');
     }
-    if (data.tenant_id !== undefined && data.tenant_id !== null)
-      data.tenant_id = String(data.tenant_id).trim();
+    if (data.tenant_id !== undefined && data.tenant_id !== null) data.tenant_id = String(data.tenant_id).trim();
     return data;
   }
 
   // opts carries { fromSeed:true } for the declarative config seed only
   static async create(data, opts = {}) {
-    return super.create(
-      this.modelName,
-      this.requireTenant(
-        this.mirrorType(this.mirrorVaultPath(this.normalizePort(data)), true),
-        true,
-      ),
-      opts,
-    );
+    return super.create(this.modelName, this.requireTypeFields(this.mirrorType(this.mirrorVaultPath(this.normalizePort(data)), true), true), opts);
   }
 
   static async update(data, id, opts = {}) {
     // the api shows the client key masked ; the mask sent back means "unchanged", and an
     // empty one too (the dialog leaves a secret empty to keep it)
-    if (data.client_key === "**********" || data.client_key === "")
-      delete data.client_key;
-    return super.update(
-      this.modelName,
-      this.requireTenant(
-        this.mirrorType(this.mirrorVaultPath(this.normalizePort(data))),
-      ),
-      id,
-      opts,
-    );
+    if (data.client_key === '**********' || data.client_key === '') delete data.client_key;
+    return super.update(this.modelName, this.requireTypeFields(this.mirrorType(this.mirrorVaultPath(this.normalizePort(data)))), id, opts);
   }
 
   static async delete(id, opts = {}) {
@@ -253,9 +200,7 @@ class CredentialModel extends CrudModel {
       try {
         result.password = crypto.decrypt(result.password);
       } catch {
-        logger.error(
-          "Failed to decrypt the password.  Did the secretkey change ?",
-        );
+        logger.error("Failed to decrypt the password.  Did the secretkey change ?");
         result.password = "";
       }
     }
@@ -294,9 +239,7 @@ class CredentialModel extends CrudModel {
     if (spec === "__self__") return assertCredentialAllowed("__self__", scope);
     const inline = parseInlineSecret(String(spec));
     if (inline) return assertInlineAllowed(String(spec), inline, scope);
-    const [name, fallback = ""] = String(spec)
-      .split(",")
-      .map((v) => v.trim());
+    const [name, fallback = ""] = String(spec).split(",").map((v) => v.trim());
     let row;
     try {
       row = await this.lookupCachedRow(name, fallback);
@@ -329,14 +272,10 @@ class CredentialModel extends CrudModel {
         continue;
       }
       try {
-        const [name, fallback = ""] = String(value)
-          .split(",")
-          .map((v) => v.trim());
+        const [name, fallback = ""] = String(value).split(",").map((v) => v.trim());
         credentials[key] = await this.resolveCredential(name, fallback);
       } catch (err) {
-        logger.error(
-          `Cannot resolve credential '${key}' : ${err.message || err}`,
-        );
+        logger.error(`Cannot resolve credential '${key}' : ${err.message || err}`);
       }
     }
     return credentials;
@@ -359,20 +298,16 @@ class CredentialModel extends CrudModel {
 function assertInlineAllowed(spec, inline, scope = currentScope()) {
   if (!scope) return;
   assertSecretStoreAllowed(inline.store, scope);
-  if (!scope.secretStores && scope.credentials)
-    assertCredentialAllowed(spec, scope);
+  if (!scope.secretStores && scope.credentials) assertCredentialAllowed(spec, scope);
 }
 
-const ROW_SQL =
-  "SELECT host,port,db_name,name,user,password,secure,db_type,is_database,vault_path,secret_store,secret_ref FROM AnsibleForms.`credentials` WHERE name REGEXP ?";
+const ROW_SQL = "SELECT host,port,db_name,name,user,password,secure,db_type,is_database,vault_path,secret_store,secret_ref FROM AnsibleForms.`credentials` WHERE name REGEXP ?";
 
 async function lookupRow(nameOrRegex, fallbackName) {
   let res = await mysql.do(ROW_SQL, nameOrRegex);
   if (!res.length && fallbackName) res = await mysql.do(ROW_SQL, fallbackName);
   if (!res.length) {
-    throw new Errors.NotFoundError(
-      `No credential found with filter ${nameOrRegex}${fallbackName ? ` or ${fallbackName}` : ""}`,
-    );
+    throw new Errors.NotFoundError(`No credential found with filter ${nameOrRegex}${fallbackName ? ` or ${fallbackName}` : ""}`);
   }
   return res[0];
 }
@@ -380,8 +315,7 @@ async function lookupRow(nameOrRegex, fallbackName) {
 // Where the row's user and password live : the store it names, or - for a row written
 // before secret stores existed - the store named `vault` at its vault_path.
 function secretSource(row) {
-  if (row.secret_store)
-    return { store: row.secret_store, ref: row.secret_ref || "" };
+  if (row.secret_store) return { store: row.secret_store, ref: row.secret_ref || "" };
   if (row.vault_path) return { store: VAULT_STORE_NAME, ref: row.vault_path };
   return null;
 }
@@ -396,17 +330,14 @@ async function overlaySecret(result, source, isDatabase) {
   try {
     mapped = mapPayloadToCredential(await readSecret(source.store, source.ref));
   } catch (e) {
-    logger.error(
-      `Failed to read credential '${result.name}' from secret store '${source.store}': ${e.message}`,
-    );
+    logger.error(`Failed to read credential '${result.name}' from secret store '${source.store}': ${e.message}`);
     throw e;
   }
   result.user = mapped.user || result.user || "";
   result.password = mapped.password || "";
   if (isEmpty(result.host) && !isEmpty(mapped.host)) result.host = mapped.host;
   if (isEmpty(result.port) && !isEmpty(mapped.port)) result.port = mapped.port;
-  if (isDatabase && isEmpty(result.db_name) && !isEmpty(mapped.db_name))
-    result.db_name = mapped.db_name;
+  if (isDatabase && isEmpty(result.db_name) && !isEmpty(mapped.db_name)) result.db_name = mapped.db_name;
 }
 
 // An inline secret carries the whole connection itself, under the keys mapPayloadToCredential
@@ -415,9 +346,7 @@ async function overlaySecret(result, source, isDatabase) {
 async function resolveInlineSecret(name, source) {
   // no log here : the caller reports the error, and the store name comes from the
   // inline reference, which CodeQL cannot tell apart from the secrets next to it
-  const mapped = mapPayloadToCredential(
-    await readSecret(source.store, source.ref),
-  );
+  const mapped = mapPayloadToCredential(await readSecret(source.store, source.ref));
   if (!mapped.db_type) return { ...mapped, name };
   return {
     name,
@@ -427,10 +356,7 @@ async function resolveInlineSecret(name, source) {
     port: mapped.port ?? null,
     db_name: mapped.db_name || "",
     db_type: mapped.db_type,
-    secure:
-      mapped.secure === true || mapped.secure === 1 || mapped.secure === "true"
-        ? 1
-        : 0,
+    secure: mapped.secure === true || mapped.secure === 1 || mapped.secure === "true" ? 1 : 0,
     is_database: 1,
     multipleStatements: true,
   };

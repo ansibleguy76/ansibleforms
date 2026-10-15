@@ -217,6 +217,12 @@ function getRules() {
         `${field.label} is required`,
         requiredIf(() => field.dependencyValues.includes(item.value[field.dependency])),
       );
+    } else if (field.requiredWhen) {
+      // required by a rule of its own (an smtp credential's host : its mail server)
+      rule.required = helpers.withMessage(
+        `${field.label} is required`,
+        requiredIf(() => !!field.requiredWhen(item.value)),
+      );
     } else if (field.required) {
       rule.required = helpers.withMessage(`${field.label} is required`, required);
     }
@@ -1808,7 +1814,7 @@ defineExpose({
           :help="textOf(field.help)"
           :icon="field.icon"
           :placeholder="textOf(field.placeholder)"
-          :required="field.required"
+          :required="field.required || !!field.requiredWhen?.(item)"
           :addLabel="field.addLabel"
           :disabled="!!field.readonly"
           :hasError="$v.item[field.key].$invalid && $v.item[field.key].$dirty"
@@ -1831,7 +1837,7 @@ defineExpose({
           :rows="field.rows || 3"
           v-model="$v.item[field.key].$model"
           :isFloating="false"
-          :required="field.required"
+          :required="field.required || !!field.requiredWhen?.(item)"
           :label="textOf(field.dialogLabel) || field.label"
           :hasError="$v.item[field.key].$invalid && $v.item[field.key].$dirty"
           :errors="$v.item[field.key].$errors"

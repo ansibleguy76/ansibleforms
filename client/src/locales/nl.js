@@ -1439,7 +1439,8 @@ export default {
       addressWebhook: 'Inkomende webhook',
       addressChat: 'Chat {chat}',
       credential: 'Inloggegevens',
-      helpCredential: 'Een smtp-inloggegeven van Verbindingen > Inloggegevens. Leeg voor een relay zonder login.',
+      helpCredential:
+        'Een smtp-inloggegeven van Verbindingen > Inloggegevens: de mailserver, de poort en TLS, en de login (geen gebruiker voor een relay).',
       webhookUrl: 'Webhookadres',
       webhookUrlHelp_slack:
         'De inkomende webhook van het Slack-kanaal (Slack-app > Incoming Webhooks): een geheim, na het opslaan nooit meer getoond.',
@@ -1634,7 +1635,7 @@ export default {
       fieldsRequired: 'Naam en beschrijving zijn verplicht.',
       loginFromStore: 'Gebruiker en wachtwoord worden uit de secret store gelezen, op het tabblad Opslag.',
       type_smtp: 'SMTP',
-      type_smtpHint: 'Een gebruiker en wachtwoord voor een mailserver',
+      type_smtpHint: 'Een mailserver, de poort en TLS, en de login (geen voor een relay)',
       type_ldap: 'LDAP',
       type_ldapHint: 'Het bind-account van een LDAP-directory: DN en wachtwoord',
       type_entraid: 'Microsoft Entra ID',
