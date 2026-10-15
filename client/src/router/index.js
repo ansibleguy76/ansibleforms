@@ -45,6 +45,7 @@ const linksPage = () => import('@/pages/admin/links.vue');
 const namePage = () => import('@/pages/admin/name.vue');
 const environmentPage = () => import('@/pages/admin/environment.vue');
 const announcementsPage = () => import('@/pages/admin/announcements.vue');
+const announcementPage = () => import('@/pages/admin/announcement.vue');
 const disclaimerPage = () => import('@/pages/admin/disclaimer.vue');
 const disclaimerVersion = () => import('@/pages/admin/disclaimer-version.vue');
 const repositories = () => import('@/pages/admin/repositories.vue');
@@ -288,9 +289,16 @@ const routes = [
     meta: { permission: ['showSettings', 'showAppearanceSettings'] },
   },
   {
-    path: '/settings/announcements/:tab?',
+    path: '/settings/announcements',
     name: '/settings/announcements',
     component: announcementsPage,
+    meta: { permission: ['showSettings', 'showAppearanceSettings'] },
+  },
+  // an announcement's page : its message, type, start, end and switch
+  {
+    path: '/settings/announcements/:id(\\d+)',
+    name: '/settings/announcements/:id',
+    component: announcementPage,
     meta: { permission: ['showSettings', 'showAppearanceSettings'] },
   },
   {

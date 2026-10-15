@@ -33,6 +33,7 @@ const SETTINGS_LISTS = [
   'ldap',
   'sso',
   'disclaimer',
+  'announcements',
   'notifications',
   'syslog',
   'audit-log',
@@ -43,7 +44,6 @@ const SETTINGS_TABS = {
   general: 11,
   status: 2,
   links: 2,
-  announcements: 2,
   ssh: 2,
   chat: 4,
   mcp: 6,
@@ -118,7 +118,7 @@ function settingsPage(words, path, section, t) {
     };
   }
   const tabs = SETTINGS_TABS[page] || 0;
-  // a tab that is a list (the SSO page's providers, the announcements' list ...) : its table, its
+  // a tab that is a list (the SSH page's known hosts ...) : its table, its
   // controls on the title line (lib/listControls.js)
   const tabList = rest[0] ? listControls(`${page}/${rest[0]}`) : null;
   return {

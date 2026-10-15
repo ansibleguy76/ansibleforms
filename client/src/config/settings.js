@@ -307,7 +307,9 @@ export function registrationPill(t, state) {
  */
 export function announcementState(t, row, now = Date.now()) {
   const start = row?.start_at ? new Date(row.start_at).getTime() : null;
-  const state = start !== null && start > now ? 'scheduled' : 'showing';
+  // disabled : hidden, whatever its dates
+  const off = row && (row.enabled === 0 || row.enabled === false);
+  const state = off ? 'hidden' : start !== null && start > now ? 'scheduled' : 'showing';
   return escapeHtml(t(`settings.interface.announcement_${state}`));
 }
 
@@ -3053,6 +3055,9 @@ export default function getSettings(t) {
       description: t('settings.interface.announcementDescription'),
       icon: 'bullhorn',
       selectable: false,
+      // an announcement has its own page (pages/admin/announcement.vue) : its row and Edit open it,
+      // Add announcement the wizard (a new one, enabled)
+      openPage: (item) => `/settings/announcements/${item.id}`,
       // New opens the wizard : what it says, then when it shows
       steps: [
         { key: 'message', label: t('settings.interface.announcementStepMessage') },
@@ -3060,10 +3065,49 @@ export default function getSettings(t) {
       ],
       actions: [
         { name: 'edit', title: t('settings.interface.announcementEdit'), icon: 'pencil', color: 'edit' },
-        { name: 'delete', title: t('settings.interface.announcementDelete'), icon: 'trash', color: 'delete' },
+        {
+          // Enable : shown under the header again, from its start until its end
+          name: 'enable',
+          title: t('settings.interface.announcementEnable'),
+          icon: 'check',
+          color: 'change',
+          enabledWhen: (r) => !r.enabled,
+          dividerBefore: true,
+          done: () => t('settings.interface.announcementEnabledDone'),
+          run: async (ids) => {
+            await axios.put(`/api/v2/announcement/${ids[0]}`, { enabled: true });
+            return 1;
+          },
+        },
+        {
+          // Disable : hidden, kept to show again
+          name: 'disable',
+          title: t('settings.interface.announcementDisable'),
+          icon: 'ban',
+          color: 'change',
+          enabledWhen: (r) => !!r.enabled,
+          done: () => t('settings.interface.announcementDisabledDone'),
+          run: async (ids) => {
+            await axios.put(`/api/v2/announcement/${ids[0]}`, { enabled: false });
+            return 1;
+          },
+        },
+        {
+          name: 'delete',
+          title: t('settings.interface.announcementDelete'),
+          icon: 'trash',
+          color: 'delete',
+        },
       ],
       fields: [
         { key: 'id', hidden: true, noInput: true, noTable: true },
+        {
+          // shown under the header or not, first as every list's Enabled ; a new one is
+          key: 'enabled',
+          label: t('settings.interface.announcementEnabled'),
+          type: 'checkbox',
+          noInput: true,
+        },
         {
           key: 'message',
           label: t('settings.interface.banner'),

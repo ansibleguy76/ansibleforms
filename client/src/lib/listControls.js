@@ -35,15 +35,13 @@ const LISTS = {
   // Add SSO provider ; Add disclaimer
   sso: { buttons: [190] },
   disclaimer: { buttons: [160] },
+  // Add announcement
+  announcements: { buttons: [207] },
   backups: { buttons: [144], selectable: false },
   scheduled: { buttons: [158] },
   stored: { buttons: [166] },
   // the lists in a tab of a page : by the page's word and the tab's
-  'sso/providers': { buttons: [191] },
-  'announcements/list': { buttons: [207] },
   'ssh/known-hosts': { buttons: [178] },
-  'disclaimer/versions': { buttons: [], selectable: false },
-  'disclaimer/acceptances': { buttons: [], selectable: false },
 };
 
 /**

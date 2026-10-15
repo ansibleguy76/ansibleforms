@@ -607,7 +607,7 @@ const SCHEMA_MANIFEST = {
                                'ldap.id', 'ldap.name', 'ldap.position', 'ldap.domains', 'ldap.credential',
                                'oauth2_providers.credential', 'credentials.tenant_id', 'credentials.issuer', 'credentials.redirect_uri',
                                'credentials.ignore_certs', 'credentials.ca_bundle', 'oauth2_providers.auto_login',
-                               'runners.credential', 'ldap.description', 'settings.disclaimer_version'] },
+                               'runners.credential', 'ldap.description', 'settings.disclaimer_version', 'announcements.enabled'] },
   },
 };
 
@@ -1072,6 +1072,9 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addColumn("ldap", "description", "varchar(250)", true, "NULL"), messages, success, failed);
   // the disclaimer version users accept, as Restore chose it ; none : the latest
   await checkPromise(addColumn("settings", "disclaimer_version", "int(11)", true, "NULL"), messages, success, failed);
+  // each announcement enabled on its own ; the switch of before (all of them hidden) moves in
+  await checkPromise(addColumn("announcements", "enabled", "tinyint(4)", false, "1"), messages, success, failed);
+  await checkPromise(moveBannerSwitchToAnnouncements(), messages, success, failed);
   // and when each ended, worked or not, shown beside the repository's Pull and Push
   await checkPromise(addColumn("repositories", "pulled_at", "datetime", true, "NULL"), messages, success, failed);
   await checkPromise(addColumn("repositories", "pushed_at", "datetime", true, "NULL"), messages, success, failed);
@@ -1279,6 +1282,24 @@ export async function moveMailServersToCredentials() {
     await mysql.do("UPDATE AnsibleForms.`notification_channels` SET server = NULL, port = NULL, secure = 0, credential = ? WHERE id = ?", [name, c.id]);
   }
   const message = `Moved the server of ${channels.length} mail channel(s) to their smtp credential${done.length ? ` (${done.join(", ")})` : ""}`;
+  logger.notice(message);
+  return message;
+}
+
+/**
+ * The announcements' switch of before (Settings > Appearance > Announcements, all of them shown
+ * or hidden) on each announcement : switched off, every announcement is disabled, and the switch
+ * is set back on, so this runs once. Idempotent : only while the switch is off.
+ *
+ * Returns:
+ *   Promise<string|null>: what was done, or null when there was nothing to do.
+ */
+export async function moveBannerSwitchToAnnouncements() {
+  const rows = await mysql.do("SELECT banner_show FROM AnsibleForms.`settings` LIMIT 1");
+  if (!rows.length || rows[0].banner_show !== 0) return null;
+  const res = await mysql.do("UPDATE AnsibleForms.`announcements` SET enabled = 0");
+  await mysql.do("UPDATE AnsibleForms.`settings` SET banner_show = 1");
+  const message = `Announcements were hidden : disabled ${res.affectedRows || 0} announcement(s), each now enabled on its own`;
   logger.notice(message);
   return message;
 }

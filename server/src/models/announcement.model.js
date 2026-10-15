@@ -3,7 +3,7 @@
 /*                                                                */
 /*  The announcements under the header (Settings > Appearance >   */
 /*  Announcements) : a message, its type (info, warning, danger)  */
-/*  and the moments it starts and ends showing. Several can show  */
+/*  whether it is enabled, and the moments it starts and ends showing. Several can show  */
 /*  at once ; the public config carries those running now         */
 /*  (routes/v2/app.routes.js). Once ended, one is deleted : the   */
 /*  list keeps those to come and those showing only.              */
@@ -43,7 +43,7 @@ export function toDbMoment(value) {
  * start.
  *
  * Args:
- *   data (object): what the page sent - message, level, start_at, end_at.
+ *   data (object): what the page sent - message, level, enabled, start_at, end_at.
  *   partial (boolean): an update, where a field left out stays as it is.
  *
  * Returns:
@@ -67,7 +67,11 @@ export function announcementFields(data, partial = false) {
     if (!ANNOUNCEMENT_LEVELS.includes(level)) throw new Errors.BadRequestError(`Unknown type : ${level}`);
     out.level = level;
   }
-  // step 3 : its start and its end, each optional
+  // step 3 : enabled, unless switched off
+  if (!partial || data.enabled !== undefined) {
+    out.enabled = data.enabled === false || data.enabled === 0 || data.enabled === '0' ? 0 : 1;
+  }
+  // step 4 : its start and its end, each optional
   if (!partial || data.start_at !== undefined) out.start_at = toDbMoment(data.start_at);
   if (!partial || data.end_at !== undefined) out.end_at = toDbMoment(data.end_at);
   if (out.start_at && out.end_at && out.end_at <= out.start_at) {
@@ -118,7 +122,7 @@ export function isRunning(a, now = Date.now()) {
 
 // ─── the table ──────────────────────────────────────────────────────────────
 
-const COLUMNS = 'id, message, level, start_at, end_at, created_by, created_at';
+const COLUMNS = 'id, message, level, enabled, start_at, end_at, created_by, created_at';
 
 const Announcement = {
   /**
@@ -162,7 +166,7 @@ const Announcement = {
   },
 
   /**
-   * Those not ended yet, for the public config : which run now is decided per request, so one
+   * Those enabled and not ended yet, for the public config : which run now is decided per request, so one
    * scheduled to start shows without a save.
    *
    * Returns:
@@ -171,7 +175,7 @@ const Announcement = {
   async findNotEnded() {
     await this.purgeEnded();
     return mysql.do(
-      'SELECT id, message, level, start_at, end_at FROM AnsibleForms.`announcements` WHERE end_at IS NULL OR end_at > UTC_TIMESTAMP() ORDER BY COALESCE(start_at, created_at) DESC, id DESC',
+      'SELECT id, message, level, start_at, end_at FROM AnsibleForms.`announcements` WHERE enabled = 1 AND (end_at IS NULL OR end_at > UTC_TIMESTAMP()) ORDER BY COALESCE(start_at, created_at) DESC, id DESC',
     );
   },
 
@@ -179,7 +183,7 @@ const Announcement = {
    * Adds an announcement.
    *
    * Args:
-   *   data (object): message, level, start_at, end_at.
+   *   data (object): message, level, enabled, start_at, end_at.
    *   user (string): who adds it.
    *
    * Returns:
@@ -198,7 +202,7 @@ const Announcement = {
    *
    * Args:
    *   id (number|string): its id.
-   *   data (object): message, level, start_at, end_at.
+   *   data (object): message, level, enabled, start_at, end_at.
    *
    * Raises:
    *   NotFoundError: no announcement has that id.
