@@ -158,6 +158,11 @@ const oauth2Item = {
     client_secret: str,
     credential: str,
     enable: bool,
+    // the one of its type the login button signs in with (one per type) ; without it, enable says
+    // it (a seed of before 7.3)
+    is_default: bool,
+    // the login page goes straight to it (one provider at most)
+    auto_login: bool,
     groupfilter: str,
     redirect_uri: str,
     scope: str,
@@ -412,12 +417,12 @@ function assertSingletonFlags(doc) {
   }
   const byProvider = {};
   for (const item of doc.oauth2?.items || []) {
-    if (!item.enable) continue;
+    if (!(item.is_default ?? item.enable)) continue;
     (byProvider[item.provider] = byProvider[item.provider] || []).push(item.name);
   }
   for (const [provider, names] of Object.entries(byProvider)) {
     if (names.length > 1) {
-      throw new Error(`Seed file enables more than one '${provider}' oauth2 provider : ${names.sort().join(", ")}`);
+      throw new Error(`Seed file makes more than one '${provider}' oauth2 provider the default (is_default, else enable) : ${names.sort().join(", ")}`);
     }
   }
 }

@@ -1214,8 +1214,11 @@ export default {
       credentialHelp:
         '［接続 > 資格情報］のその種類の資格情報（Microsoft Entra ID または Open ID）：クライアント ID とシークレット。',
       ownClient: '資格情報を選ぶまで、資格情報より前の自身のクライアント ID（{client}）でサインインします。',
-      activeHelp:
-        '{type} を選んだユーザーはこれでサインインします。オンにすると他の {type} プロバイダーはオフになります。',
+      activeHelp: 'オフ：誰もこれでサインインしません。',
+      default: '既定',
+      defaultHelp: 'ログインページのボタンがサインインに使う {type} プロバイダー。既定にすると唯一のものになります。',
+      autoLogin: 'ログインページをスキップ',
+      autoLoginHelp: 'アプリを開いたユーザーはログインページを経ずに直接このサインインへ進みます。オンにすると他ではオフになります。既定のプロバイダーのみ。',
       providerNotFound: "ID '{id}' の SSO プロバイダーはありません。",
       stepType: '種類',
       type_azuread: 'Microsoft Entra ID',

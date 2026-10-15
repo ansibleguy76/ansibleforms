@@ -199,14 +199,21 @@ describe("the seed schema refuses anything it does not understand", () => {
     ] } }), true);
   });
 
-  test("two enabled oauth2 providers of the SAME type are rejected", () => {
+  test("two default oauth2 providers of the SAME type are rejected (enable alone, from before 7.3, says it)", () => {
     assert.throws(
       () => validateSeed({ oauth2: { items: [
         { name: "a", provider: "azuread", client_id: "c", client_secret: "s", enable: true },
         { name: "b", provider: "azuread", client_id: "c", client_secret: "s", enable: true },
       ] } }),
-      /enables more than one 'azuread' oauth2 provider : a, b/
+      /more than one 'azuread' oauth2 provider the default .*: a, b/
     );
+  });
+
+  test("several enabled oauth2 providers of a type, one of them the default : fine", () => {
+    assert.equal(validateSeed({ oauth2: { items: [
+      { name: "a", provider: "azuread", client_id: "c", client_secret: "s", enable: true, is_default: true },
+      { name: "b", provider: "azuread", client_id: "c", client_secret: "s", enable: true, is_default: false },
+    ] } }), true);
   });
 
   // different provider types are independent, so this must stay allowed

@@ -1230,8 +1230,11 @@ export default {
         'Ein Eintrag seines Typs aus Verbindungen > Anmeldedaten (Microsoft Entra ID oder Open ID): Client-ID und Client-Geheimnis.',
       ownClient:
         'Es meldet sich mit seiner eigenen Client-ID ({client}) von vor den Anmeldedaten an, bis ein Eintrag gewählt ist.',
-      activeHelp:
-        'Benutzer melden sich damit an, wenn sie {type} wählen; das Einschalten schaltet die anderen {type}-Anbieter aus.',
+      activeHelp: 'Aus: niemand meldet sich damit an.',
+      default: 'Standard',
+      defaultHelp: 'Der {type}-Anbieter, mit dem die Schaltfläche der Anmeldeseite anmeldet; ihn zum Standard zu machen, macht ihn zum einzigen.',
+      autoLogin: 'Anmeldeseite überspringen',
+      autoLoginHelp: 'Wer die App öffnet, geht direkt zu seiner Anmeldung, ohne die Anmeldeseite; einschalten schaltet es bei den anderen aus. Nur für den Standardanbieter.',
       providerNotFound: "Es gibt keinen SSO-Anbieter mit der ID '{id}'.",
       stepType: 'Typ',
       type_azuread: 'Microsoft Entra ID',

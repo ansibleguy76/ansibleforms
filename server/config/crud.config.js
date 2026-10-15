@@ -16,6 +16,10 @@ const crudConfigs = {
       // a credential of Connections > Credentials : its user the client id, its password the secret
       { name: 'credential' },
       { name: 'enable', isBoolean: true },
+      // the one of its type the login button signs in with (one per type)
+      { name: 'is_default', isBoolean: true },
+      // the login page goes straight to it (Skip the login page) : one provider at most
+      { name: 'auto_login', isBoolean: true },
       { name: 'groupfilter' },
       { name: 'redirect_uri' },
       { name: 'scope' },

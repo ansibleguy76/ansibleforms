@@ -1221,7 +1221,11 @@ export default {
       credentialHelp:
         'Poświadczenie jego typu z Połączenia > Poświadczenia (Microsoft Entra ID lub Open ID): ID klienta i sekret.',
       ownClient: 'Loguje się własnym ID klienta ({client}) sprzed poświadczeń, dopóki nie wybierzesz poświadczenia.',
-      activeHelp: 'Użytkownicy logują się nim, gdy wybiorą {type}; włączenie go wyłącza pozostałych dostawców {type}.',
+      activeHelp: 'Wyłączone: nikt się nim nie loguje.',
+      default: 'Domyślny',
+      defaultHelp: 'Dostawca {type}, którym loguje przycisk strony logowania; ustawienie go jako domyślnego czyni go jedynym.',
+      autoLogin: 'Pomiń stronę logowania',
+      autoLoginHelp: 'Kto otwiera aplikację, przechodzi od razu do jego logowania, bez strony logowania; włączenie wyłącza to u pozostałych. Tylko dla domyślnego dostawcy.',
       providerNotFound: "Nie ma dostawcy SSO o id '{id}'.",
       stepType: 'Typ',
       type_azuread: 'Microsoft Entra ID',

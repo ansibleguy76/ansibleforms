@@ -208,7 +208,7 @@ async function authenticationFacts() {
   // several directories : ldap is open when one of them is
   const ldap = await mysql.do('SELECT `enable` FROM AnsibleForms.`ldap`');
   const ldapOn = ldap.some((r) => !!r.enable);
-  const oauth2 = await mysql.do('SELECT name FROM AnsibleForms.`oauth2_providers` WHERE `enable`=1');
+  const oauth2 = await mysql.do('SELECT name FROM AnsibleForms.`oauth2_providers` WHERE `enable`=1 AND `is_default`=1');
   const providers = oauth2.map(r => r.name).filter(Boolean);
   return {
     // local accounts can never be switched off, so it is always in the list

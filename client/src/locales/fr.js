@@ -1232,8 +1232,11 @@ export default {
         'Un identifiant de son type dans Connexions > Identifiants (Microsoft Entra ID ou Open ID) : son ID client et son secret.',
       ownClient:
         "Il se connecte avec son propre ID client ({client}), d'avant les identifiants, jusqu'au choix d'un identifiant.",
-      activeHelp:
-        "Les utilisateurs se connectent avec lui lorsqu'ils choisissent {type} ; l'activer désactive les autres fournisseurs {type}.",
+      activeHelp: "Désactivé : personne ne s'y connecte.",
+      default: 'Par défaut',
+      defaultHelp: 'Le fournisseur {type} avec lequel le bouton de la page de connexion connecte ; le rendre par défaut en fait le seul.',
+      autoLogin: 'Passer la page de connexion',
+      autoLoginHelp: "Qui ouvre l'application va directement à sa connexion, sans la page de connexion ; l'activer le désactive pour les autres. Seulement pour le fournisseur par défaut.",
       providerNotFound: "Aucun fournisseur SSO n'a l'id '{id}'.",
       stepType: 'Type',
       type_azuread: 'Microsoft Entra ID',

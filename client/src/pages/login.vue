@@ -110,8 +110,10 @@ async function getSettings(token) {
     // lock anyone out or loop : the form at /login?local, after signing out, after an SSO error
     if (!token && ssoAutoLogin.value && mayGoStraightToSso()) {
       loading.value = true;
-      if (entraIdEnabled.value) authEntraId();
-      else if (oidcEnabled.value) authOidc();
+      // the provider set to Skip the login page (the server says which)
+      const to = result.data.ssoAutoLoginProvider || (entraIdEnabled.value ? 'azuread' : 'oidc');
+      if (to === 'azuread' && entraIdEnabled.value) authEntraId();
+      else if (to === 'oidc' && oidcEnabled.value) authOidc();
     }
 
     if (token && entraIdEnabled.value) {

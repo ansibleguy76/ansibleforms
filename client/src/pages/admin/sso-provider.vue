@@ -111,6 +111,30 @@ async function onCredentialCreated(name) {
   edit.value.credential = name;
 }
 
+// ─── its switches ─────────────────────────────────────────────────────────────
+// Enabled ; Default (the one its type's login button signs in with : on, only by making another
+// the default does it go off) ; Skip the login page (the default provider only)
+const switches = computed(() => {
+  const p = provider.value;
+  if (!p) return [];
+  const type = TYPES[p.provider] || p.provider;
+  return [
+    { key: 'enable', label: t('settings.oauth2.active'), help: t('settings.oauth2.activeHelp') },
+    {
+      key: 'is_default',
+      label: t('settings.oauth2.default'),
+      help: t('settings.oauth2.defaultHelp', { type }),
+      disabled: !!p.is_default,
+    },
+    {
+      key: 'auto_login',
+      label: t('settings.oauth2.autoLogin'),
+      help: t('settings.oauth2.autoLoginHelp'),
+      disabled: !p.is_default && !p.auto_login,
+    },
+  ];
+});
+
 // ─── tabs ─────────────────────────────────────────────────────────────────────
 // the dialog's steps : Details, Type, Credentials, Groups
 const tabs = computed(() => [
@@ -129,7 +153,7 @@ const notes = computed(() => {
 
 // the title : SSO › <name>, each step a link : SSO back to the providers, the name to this page
 const pageCrumbs = computed(() => [
-  { title: t('sidebar.oauth2'), icon: 'right-to-bracket', to: '/settings/sso/providers' },
+  { title: t('sidebar.oauth2'), icon: 'right-to-bracket', to: '/settings/sso' },
   {
     title: provider.value?.name || (loaded.value ? providerId.value : null),
     icon: 'right-to-bracket',
@@ -161,15 +185,17 @@ async function save() {
 }
 
 /**
- * Turns the provider on or off for sign-in, saved at once : on, the others of its type stop
- * being it (oauth2.model) ; off, its type offers no provider until another is turned on.
+ * One of its switches, saved at once : Enabled (whether it may be used), Default (its type's
+ * login button signs in with it : the others of its type stop being it, oauth2.model ; never
+ * turned off here, another is made the default instead) and Skip the login page (the others stop).
  *
  * Args:
+ *   key (string): enable, is_default or auto_login.
  *   on (boolean): the switch's new state.
  */
-async function setActive(on) {
-  if (await update({ enable: on ? 1 : 0, provider: provider.value.provider })) await load();
-  else await load();
+async function setSwitch(key, on) {
+  await update({ [key]: on ? 1 : 0, provider: provider.value.provider });
+  await load();
 }
 
 // Delete asks first
@@ -182,7 +208,7 @@ async function deleteProvider() {
   confirmDelete.value = false;
   try {
     await axios.delete(`/api/v2/oauth2/${encodeURIComponent(providerId.value)}`);
-    router.push('/settings/sso/providers');
+    router.push('/settings/sso');
   } catch (err) {
     toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
   }
@@ -269,24 +295,22 @@ onMounted(async () => {
               :isFloating="false"
               :label="t('settings.fields.description')"
             />
-            <!-- whether users sign in with it : a switch, as LDAP's, saved at once -->
-            <div class="mb-0">
-              <label class="form-label fw-bold d-block" for="af-provider-active">{{
-                t('settings.oauth2.active')
-              }}</label>
+            <!-- its switches, as LDAP's, each saved at once : whether it may be used, whether its
+                 type's login button signs in with it, whether the login page is skipped for it -->
+            <div v-for="sw in switches" :key="sw.key" class="mb-3 af-provider-switch">
+              <label class="form-label fw-bold d-block" :for="'af-provider-' + sw.key">{{ sw.label }}</label>
               <div class="form-check form-switch mb-0">
                 <input
-                  id="af-provider-active"
+                  :id="'af-provider-' + sw.key"
                   class="form-check-input"
                   type="checkbox"
                   role="switch"
-                  :checked="!!provider.enable"
-                  @change="setActive($event.target.checked)"
+                  :checked="!!provider[sw.key]"
+                  :disabled="sw.disabled"
+                  @change="setSwitch(sw.key, $event.target.checked)"
                 />
               </div>
-              <div class="form-text">
-                {{ t('settings.oauth2.activeHelp', { type: TYPES[provider.provider] || provider.provider }) }}
-              </div>
+              <div class="form-text">{{ sw.help }}</div>
             </div>
           </template>
           <!-- Type : Entra ID or Open ID, set when it was made -->
@@ -385,6 +409,10 @@ onMounted(async () => {
 .af-short-label {
   display: inline-block;
   min-width: 12rem;
+}
+/* the last switch : the tab's end, the card's padding below it */
+.af-provider-switch:last-child {
+  margin-bottom: 0 !important;
 }
 </style>
 <route lang="yaml">

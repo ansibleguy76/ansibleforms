@@ -1222,8 +1222,11 @@ export default {
         'Een referentie van zijn type uit Verbindingen > Referenties (Microsoft Entra ID of Open ID): client-ID en clientgeheim.',
       ownClient:
         'Het meldt zich aan met zijn eigen client-ID ({client}) van vóór referenties, tot er een referentie gekozen is.',
-      activeHelp:
-        'Gebruikers melden zich ermee aan als ze {type} kiezen; inschakelen schakelt de andere {type}-providers uit.',
+      activeHelp: 'Uit: niemand meldt zich ermee aan.',
+      default: 'Standaard',
+      defaultHelp: 'De {type}-provider waarmee de knop van de aanmeldpagina aanmeldt; hem standaard maken maakt hem de enige.',
+      autoLogin: 'Aanmeldpagina overslaan',
+      autoLoginHelp: 'Wie de app opent, gaat direct naar zijn aanmelding, zonder de aanmeldpagina; aanzetten zet het bij de andere uit. Alleen voor de standaardprovider.',
       providerNotFound: "Er is geen SSO-provider met id '{id}'.",
       stepType: 'Type',
       type_azuread: 'Microsoft Entra ID',

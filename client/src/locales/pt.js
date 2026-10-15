@@ -1230,8 +1230,11 @@ export default {
         'Uma credencial do seu tipo em Ligações > Credenciais (Microsoft Entra ID ou Open ID): o ID de cliente e o segredo.',
       ownClient:
         'Inicia sessão com o seu próprio ID de cliente ({client}), anterior às credenciais, até se escolher uma credencial.',
-      activeHelp:
-        'Os utilizadores iniciam sessão com ele quando escolhem {type}; ativá-lo desativa os outros fornecedores {type}.',
+      activeHelp: 'Desligado: ninguém inicia sessão com ele.',
+      default: 'Predefinido',
+      defaultHelp: 'O fornecedor {type} com que o botão da página de início de sessão autentica; torná-lo predefinido torna-o o único.',
+      autoLogin: 'Saltar a página de início de sessão',
+      autoLoginHelp: 'Quem abre a aplicação vai diretamente ao seu início de sessão, sem a página de início; ligá-lo desliga-o nos outros. Só para o fornecedor predefinido.',
       providerNotFound: "Não existe nenhum fornecedor SSO com o id '{id}'.",
       stepType: 'Tipo',
       type_azuread: 'Microsoft Entra ID',
