@@ -1870,7 +1870,7 @@ export default {
       roleOptionAllowVarsFileDesign: 'Modifier les fichiers de variables',
       roleOptionShowLogs: 'Afficher les logs',
       roleOptionShowDebugButtons: 'Afficher les boutons de debug',
-      roleOptionShowSettings: 'Afficher les parametres',
+      roleOptionShowSettings: 'Afficher le menu Paramètres',
       roleOptionShowExtravars: 'Afficher les extravars',
       roleOptionShowAllJobLogs: 'Afficher tous les logs de jobs',
       roleOptionShowArtifacts: 'Afficher les artefacts',

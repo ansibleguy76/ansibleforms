@@ -1868,7 +1868,7 @@ export default {
       roleOptionAllowVarsFileDesign: 'Editar fitxers de variables',
       roleOptionShowLogs: 'Mostra els registres',
       roleOptionShowDebugButtons: 'Mostra els botons de depuració',
-      roleOptionShowSettings: 'Mostra la configuració',
+      roleOptionShowSettings: 'Mostra el menú Configuració',
       roleOptionShowExtravars: 'Mostra les extravars',
       roleOptionShowAllJobLogs: 'Mostra els registres de totes les tasques',
       roleOptionShowArtifacts: 'Mostra els artefactes',

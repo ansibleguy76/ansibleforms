@@ -1832,7 +1832,7 @@ export default {
       roleOptionAllowVarsFileDesign: 'Edit vars files',
       roleOptionShowLogs: 'Show logs',
       roleOptionShowDebugButtons: 'Show debug buttons',
-      roleOptionShowSettings: 'Show settings',
+      roleOptionShowSettings: 'Show settings menu',
       roleOptionShowExtravars: 'Show extravars',
       roleOptionShowAllJobLogs: 'Show all job logs',
       roleOptionShowArtifacts: 'Show artifacts',

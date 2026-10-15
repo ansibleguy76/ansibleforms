@@ -1787,7 +1787,7 @@ export default {
       roleOptionAllowVarsFileDesign: '编辑变量文件',
       roleOptionShowLogs: '显示日志',
       roleOptionShowDebugButtons: '显示调试按钮',
-      roleOptionShowSettings: '显示设置',
+      roleOptionShowSettings: '显示设置菜单',
       roleOptionShowExtravars: '显示 Extravars',
       roleOptionShowAllJobLogs: '显示所有作业日志',
       roleOptionShowArtifacts: '显示工件',

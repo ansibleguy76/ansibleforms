@@ -1855,7 +1855,7 @@ export default {
       roleOptionAllowVarsFileDesign: 'Variabelenbestanden bewerken',
       roleOptionShowLogs: 'Logs tonen',
       roleOptionShowDebugButtons: 'Debug-knoppen tonen',
-      roleOptionShowSettings: 'Instellingen tonen',
+      roleOptionShowSettings: 'Instellingenmenu tonen',
       roleOptionShowExtravars: 'Extravars tonen',
       roleOptionShowAllJobLogs: 'Alle joblogs tonen',
       roleOptionShowArtifacts: 'Artefacten tonen',

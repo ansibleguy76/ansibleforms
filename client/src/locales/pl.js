@@ -1850,7 +1850,7 @@ export default {
       roleOptionAllowVarsFileDesign: 'Edytować pliki zmiennych',
       roleOptionShowLogs: 'Pokaż dzienniki',
       roleOptionShowDebugButtons: 'Pokaż przyciski debugowania',
-      roleOptionShowSettings: 'Pokaż ustawienia',
+      roleOptionShowSettings: 'Pokaż menu Ustawienia',
       roleOptionShowExtravars: 'Pokaż extravars',
       roleOptionShowAllJobLogs: 'Pokaż dzienniki wszystkich zadań',
       roleOptionShowArtifacts: 'Pokaż artefakty',

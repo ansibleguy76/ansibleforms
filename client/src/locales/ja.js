@@ -1831,7 +1831,7 @@ export default {
       roleOptionAllowVarsFileDesign: '変数ファイルを編集',
       roleOptionShowLogs: 'ログを表示',
       roleOptionShowDebugButtons: 'デバッグボタンを表示',
-      roleOptionShowSettings: '設定を表示',
+      roleOptionShowSettings: '設定メニューを表示',
       roleOptionShowExtravars: 'Extravars を表示',
       roleOptionShowAllJobLogs: 'すべてのジョブログを表示',
       roleOptionShowArtifacts: 'Artifacts を表示',

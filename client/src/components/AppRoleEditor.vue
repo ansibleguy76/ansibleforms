@@ -513,7 +513,7 @@ function removeUser(index) {
 }
 .af-role-options-title + .af-role-option-group {
   margin-top: 0;
-  padding-top: 0.25rem;
+  padding-top: 0.6rem;
 }
 .af-role-option-group-title {
   margin: 0.25rem 0 -0.25rem;
