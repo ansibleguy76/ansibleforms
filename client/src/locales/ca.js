@@ -332,8 +332,7 @@ export default {
       another: 'Crea un altre token',
       name: 'Nom',
       nameHint: 'Per a què serveix el token, per reconèixer-lo a la llista.',
-      signInAgainHint:
-        'Has iniciat sessió amb {type}: aquí no hi ha contrasenya per confirmar. Per crear un token tornes a iniciar sessió amb {type}, introduint les teves credencials, i el token es crea en tornar.',
+      signInAgainHint: 'Per confirmar que sou vós, {type} us pot demanar que torneu a iniciar la sessió.',
       signingInAgain: 'Tornant a iniciar sessió per crear el token…',
       failedSession: "No s'ha pogut crear el token.",
       yours: 'Els teus tokens',

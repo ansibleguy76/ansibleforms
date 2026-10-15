@@ -329,8 +329,7 @@ export default {
       another: 'Utwórz kolejny token',
       name: 'Nazwa',
       nameHint: 'Do czego służy token, aby rozpoznać go na liście.',
-      signInAgainHint:
-        'Zalogowano przez {type}: nie ma tu hasła do potwierdzenia. Aby utworzyć token, zalogujesz się jeszcze raz przez {type}, podając dane logowania, a token zostanie utworzony po powrocie.',
+      signInAgainHint: 'Aby potwierdzić tożsamość, {type} może poprosić o ponowne zalogowanie.',
       signingInAgain: 'Ponowne logowanie w celu utworzenia tokenu…',
       failedSession: 'Nie udało się utworzyć tokenu.',
       yours: 'Twoje tokeny',

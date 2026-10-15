@@ -323,8 +323,7 @@ export default {
       another: '再创建一个 token',
       name: '名称',
       nameHint: '令牌的用途，便于在列表中识别。',
-      signInAgainHint:
-        '您通过 {type} 登录：这里没有需要确认的密码。要创建令牌，请再次通过 {type} 输入凭据登录，返回后即会创建令牌。',
+      signInAgainHint: '为确认是您本人，{type} 可能会要求您重新登录。',
       signingInAgain: '正在重新登录以创建令牌…',
       failedSession: '无法创建令牌。',
       yours: '您的令牌',

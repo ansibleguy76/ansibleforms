@@ -334,8 +334,7 @@ export default {
       another: 'Créer un autre token',
       name: 'Nom',
       nameHint: 'À quoi sert le jeton, pour le reconnaître dans la liste.',
-      signInAgainHint:
-        "Vous vous êtes connecté avec {type} : il n'y a pas de mot de passe à confirmer ici. Pour créer un jeton, vous vous reconnectez avec {type} en saisissant vos identifiants, et le jeton est créé à votre retour.",
+      signInAgainHint: "Pour confirmer que c'est vous, {type} peut vous demander de vous reconnecter.",
       signingInAgain: 'Reconnexion pour créer le jeton…',
       failedSession: "Le jeton n'a pas pu être créé.",
       yours: 'Vos jetons',

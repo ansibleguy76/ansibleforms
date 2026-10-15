@@ -327,8 +327,7 @@ export default {
       another: 'Create another token',
       name: 'Name',
       nameHint: 'What the token is for, so you recognise it in the list.',
-      signInAgainHint:
-        'You signed in with {type}: there is no password to confirm here. To create a token you sign in with {type} once more, entering your credentials, and the token is created when you are back.',
+      signInAgainHint: "To confirm it's you, {type} may ask you to sign in again.",
       signingInAgain: 'Signing in again to create the token…',
       failedSession: 'The token could not be created.',
       yours: 'Your tokens',

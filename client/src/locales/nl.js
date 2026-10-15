@@ -330,8 +330,7 @@ export default {
       another: 'Nog een token aanmaken',
       name: 'Naam',
       nameHint: 'Waarvoor het token dient, zodat je het in de lijst herkent.',
-      signInAgainHint:
-        'Je bent aangemeld met {type}: hier is geen wachtwoord te bevestigen. Om een token te maken meld je je nog een keer aan met {type} en voer je je gegevens in; het token wordt gemaakt als je terug bent.',
+      signInAgainHint: 'Om te bevestigen dat jij het bent, kan {type} je vragen opnieuw aan te melden.',
       signingInAgain: 'Opnieuw aanmelden om het token te maken…',
       failedSession: 'Het token kon niet worden gemaakt.',
       yours: 'Jouw tokens',
