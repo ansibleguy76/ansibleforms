@@ -1,10 +1,11 @@
 /******************************************************************/
 /*                                                                */
 /*  How many rows a table shows by default : the largest of the   */
-/*  pager's sizes that fits the screen under its header, with its */
-/*  pager still in view (the smallest when none fits). A size the */
-/*  user picks in the pager wins over it (BsPagination keeps it   */
-/*  in a cookie) ; until then the size follows the window.        */
+/*  pager's sizes that (nearly) fits the screen under its header, */
+/*  its pager in view or just under it (the smallest when none    */
+/*  fits). A size the user picks in the pager wins over it        */
+/*  (BsPagination keeps it in a cookie) ; until then the size     */
+/*  follows the window.                                           */
 /*                                                                */
 /******************************************************************/
 
@@ -14,6 +15,9 @@ export const FIT_MIN = 5;
 export const FIT_MAX = 100;
 // the room kept under the pager, as the page's own bottom padding
 const BOTTOM_GAP = 16;
+// a size is taken when the screen holds this share of its rows : room for 18 rows shows 20 (the
+// pager a little under the fold) rather than 10 and half the screen empty
+export const FIT_SHARE = 0.85;
 
 /**
  * The rows that fit a height.
@@ -31,8 +35,9 @@ export function fitRowCount(available, rowHeight) {
 }
 
 /**
- * The page size for the rows that fit : the largest size offered that is not more, else the
- * smallest. A size of its own (18) would be one the pager does not offer.
+ * The page size for the rows that fit : the largest size offered whose rows the screen nearly
+ * holds (FIT_SHARE of them : 17 rows of room for 20), else the smallest. A size of its own (18)
+ * would be one the pager does not offer.
  *
  * Args:
  *   count (number): the rows that fit.
@@ -42,7 +47,7 @@ export function fitRowCount(available, rowHeight) {
  *   number: one of the sizes.
  */
 export function fitSize(count, sizes) {
-  return sizes.filter((size) => size <= count).pop() ?? sizes[0];
+  return sizes.filter((size) => size * FIT_SHARE <= count).pop() ?? sizes[0];
 }
 
 /**

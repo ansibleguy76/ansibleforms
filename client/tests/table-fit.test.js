@@ -25,11 +25,13 @@ describe('fitRowCount', () => {
 describe('fitSize', () => {
   const sizes = [10, 20, 50, 100];
 
-  it('takes the largest size that fits', () => {
-    expect(fitSize(18, sizes)).toBe(10);
-    expect(fitSize(20, sizes)).toBe(20);
-    expect(fitSize(49, sizes)).toBe(20);
-    expect(fitSize(100, sizes)).toBe(100);
+  it('takes the largest size the screen nearly holds', () => {
+    expect(fitSize(16, sizes)).toBe(10);
+    expect(fitSize(17, sizes)).toBe(20);
+    expect(fitSize(18, sizes)).toBe(20);
+    expect(fitSize(42, sizes)).toBe(20);
+    expect(fitSize(43, sizes)).toBe(50);
+    expect(fitSize(85, sizes)).toBe(100);
   });
 
   it('takes the smallest when none fits', () => {
