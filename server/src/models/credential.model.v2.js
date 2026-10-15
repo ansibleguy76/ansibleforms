@@ -177,7 +177,8 @@ class CredentialModel extends CrudModel {
   /**
    * How many records use each credential, as its page's Used by tab lists them : the secret
    * stores, notification channels (a login or a token), repositories, LDAP directories, SSO
-   * providers and the chat assistant that name it.
+   * providers, runners and the chat assistant that name it. The forms are counted by the caller
+   * (lib/formLinks.js formCredentials), as they live in the forms config, not in a table.
    *
    * Returns:
    *   Promise<Map<string, number>>: the count of each credential name used at least once.
@@ -191,6 +192,7 @@ class CredentialModel extends CrudModel {
         "UNION ALL SELECT credential FROM AnsibleForms.`repositories` " +
         "UNION ALL SELECT credential FROM AnsibleForms.`ldap` " +
         "UNION ALL SELECT credential FROM AnsibleForms.`oauth2_providers` " +
+        "UNION ALL SELECT credential FROM AnsibleForms.`runners` " +
         "UNION ALL SELECT credential FROM AnsibleForms.`chat_settings`" +
         ") used WHERE name IS NOT NULL AND name <> '' GROUP BY name",
     );

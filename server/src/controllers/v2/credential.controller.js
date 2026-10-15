@@ -10,6 +10,8 @@ import mongodb from '../../lib/mongodb.js';
 import auth_entraid from '../../auth/auth_entraid.js';
 import auth_oidc from '../../auth/auth_oidc.js';
 import logger from '../../lib/logger.js';
+import Form from '../../models/form.model.js';
+import { formCredentials } from '../../lib/formLinks.js';
 
 // the credential types an SSO provider signs in with : a change to one of them is a change to the
 // sign-in, which reads its client, tenant or issuer and redirect URL when it starts
@@ -46,6 +48,15 @@ const credentialController = {
         // how many records use each (used_by_count), as its Used by tab lists them ; a count that
         // cannot be read leaves the list as it is
         const usage = await CredentialModel.usageCounts().catch(() => new Map());
+        // and the forms that name each (a form counts once per credential, wherever it names it)
+        try {
+          const config = await Form.load(undefined, undefined, true);
+          for (const form of formCredentials(config.forms)) {
+            for (const name of new Set(form.credentials.map((c) => c.name))) usage.set(name, (usage.get(name) || 0) + 1);
+          }
+        } catch (err) {
+          logger.debug(`The forms are left out of the credentials' Used by count : ${err?.message || err}`);
+        }
         const credentials = (await CredentialModel.findAll()).map((c) => ({
           ...c,
           // Mask passwords before returning to API

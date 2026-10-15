@@ -26,6 +26,8 @@ router.get('/', middleware.checkDesignerMiddleware, configController.findAll);
 router.get('/formlist', configController.findList);
 // every form, its roles and its runners : the settings pages' Forms tabs
 router.get('/formslinked', middleware.checkAnySettingsMiddleware, configController.formsLinked);
+// the credentials each form names, for a credential's Used by tab (lib/formLinks.js formCredentials)
+router.get('/formscredentials', middleware.checkAnySettingsMiddleware, configController.formsCredentials);
 // flat list of form names (for dropdowns : datasources and schedules)
 router.get('/formnames', middleware.checkSettingsOrScheduledJobsMiddleware, configController.formNames);
 // get one config (no admin)

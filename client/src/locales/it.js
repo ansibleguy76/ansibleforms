@@ -1009,7 +1009,12 @@ export default {
       asDefault: 'Come runner predefinito',
       job: 'Job',
       status: 'Stato',
-      kind: 'Tipo',
+      type: 'Tipo',
+      runner: 'Runner',
+      form: 'Modulo',
+      usesItAs: 'La usa come',
+      dynamicForms:
+        'Questi moduli costruiscono il nome di una credenziale quando vengono eseguiti, quindi possono usare anche questa: {forms}.',
       secretStore: 'Archivio segreti',
       notificationChannel: 'Canale di notifica',
       repository: 'Repository',

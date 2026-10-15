@@ -1005,7 +1005,12 @@ export default {
       asDefault: 'Jako domyślny runner',
       job: 'Zadanie',
       status: 'Status',
-      kind: 'Rodzaj',
+      type: 'Typ',
+      runner: 'Runner',
+      form: 'Formularz',
+      usesItAs: 'Używa jako',
+      dynamicForms:
+        'Te formularze tworzą nazwę poświadczenia podczas uruchomienia, więc mogą też używać tego: {forms}.',
       secretStore: 'Magazyn sekretów',
       notificationChannel: 'Kanał powiadomień',
       repository: 'Repozytorium',

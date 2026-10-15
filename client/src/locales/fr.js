@@ -1014,7 +1014,12 @@ export default {
       asDefault: 'Comme runner par défaut',
       job: 'Job',
       status: 'Statut',
-      kind: 'Type',
+      type: 'Type',
+      runner: 'Runner',
+      form: 'Formulaire',
+      usesItAs: "L'utilise comme",
+      dynamicForms:
+        "Ces formulaires construisent un nom d'identifiant à l'exécution, ils peuvent donc aussi utiliser celui-ci : {forms}.",
       secretStore: 'Coffre de secrets',
       notificationChannel: 'Canal de notification',
       repository: 'Dépôt',

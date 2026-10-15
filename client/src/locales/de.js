@@ -1012,7 +1012,12 @@ export default {
       asDefault: 'Als Standard-Runner',
       job: 'Job',
       status: 'Status',
-      kind: 'Art',
+      type: 'Typ',
+      runner: 'Runner',
+      form: 'Formular',
+      usesItAs: 'Verwendet als',
+      dynamicForms:
+        'Diese Formulare bilden einen Credential-Namen erst beim Ausführen und können daher auch dieses verwenden: {forms}.',
       secretStore: 'Secret Store',
       notificationChannel: 'Benachrichtigungskanal',
       repository: 'Repository',

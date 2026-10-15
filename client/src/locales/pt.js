@@ -1010,7 +1010,12 @@ export default {
       asDefault: 'Como runner predefinido',
       job: 'Trabalho',
       status: 'Estado',
-      kind: 'Tipo',
+      type: 'Tipo',
+      runner: 'Runner',
+      form: 'Formulário',
+      usesItAs: 'Usa-a como',
+      dynamicForms:
+        'Estes formulários constroem o nome de uma credencial ao executar, por isso também podem usar esta: {forms}.',
       secretStore: 'Cofre de segredos',
       notificationChannel: 'Canal de notificação',
       repository: 'Repositório',

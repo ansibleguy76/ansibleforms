@@ -19,7 +19,7 @@ import { fileURLToPath } from 'url';
 import { bump } from '../../lib/epochs.js';
 import { publish } from '../../lib/liveEvents.js';
 import Errors from '../../lib/errors.js';
-import { formLinks } from '../../lib/formLinks.js';
+import { formLinks, formCredentials } from '../../lib/formLinks.js';
 import yaml from 'yaml';
 import { isAdminRequest } from '../../lib/adminGrants.js';
 import { canonicalJson } from '../../lib/formEngine/output.js';
@@ -519,6 +519,17 @@ const formsLinked = async function(req,res){
   }
 }
 
+// the credentials each form names (subforms included), and the forms that build one at launch :
+// a credential's Used by tab
+const formsCredentials = async function(req,res){
+  try{
+    var formConfig = await Form.load(undefined,undefined,true)
+    res.json(RestResult.list(formCredentials(formConfig.forms)))
+  }catch(err){
+    res.status(500).json(RestResult.error(i18n.t(req, 'config.failedGetFormsList'), helpers.getError(err)))
+  }
+}
+
 // designer-accessible config mode: whether the active config lives in the
 // database. Uses the shared Settings.resolveConfigInDatabase helper (the same
 // config_source/env resolution used across the models) so designers (who may
@@ -556,6 +567,7 @@ const configTemplated = async function(req,res){
 export default {
   findList,
   formsLinked,
+  formsCredentials,
   findOne,
   findAll,
   backups,
