@@ -1425,11 +1425,10 @@ export default {
       askAgain: 'Volver a pedir',
       askAgainConfirm: '¿Pedir a {count} usuario(s) que acepten de nuevo el aviso? Su aceptación se borra.',
       askAgainDone: '{count} usuario(s) aceptarán el aviso de nuevo en su próximo inicio de sesión.',
-      restore: 'Restaurar',
+      restore: 'Habilitar esta versión',
       versionEnabled: 'Habilitado',
-      restoreConfirm:
-        '¿Volver a hacer de la versión {version} el aviso actual? A quienes ya la aceptaron no se les vuelve a pedir.',
-      restoreDone: 'La versión {version} vuelve a ser el aviso actual.',
+      restoreConfirm: '¿Habilitar la versión {version}? A quienes ya la aceptaron no se les vuelve a pedir.',
+      restoreDone: 'La versión {version} está habilitada.',
     },
     notificationChannels: {
       label: 'Canal de notificación',

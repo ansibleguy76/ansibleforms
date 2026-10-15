@@ -1420,11 +1420,10 @@ export default {
       askAgainConfirm:
         "Chiedere a {count} utente/i di accettare di nuovo l'avviso? La loro accettazione viene cancellata.",
       askAgainDone: "{count} utente/i accetteranno di nuovo l'avviso al prossimo accesso.",
-      restore: 'Ripristina',
+      restore: 'Abilita questa versione',
       versionEnabled: 'Abilitato',
-      restoreConfirm:
-        "Rendere di nuovo la versione {version} l'avviso attuale? A chi l'ha già accettata non viene richiesto di nuovo.",
-      restoreDone: "La versione {version} è di nuovo l'avviso attuale.",
+      restoreConfirm: "Abilitare la versione {version}? A chi l'ha già accettata non viene richiesto di nuovo.",
+      restoreDone: 'La versione {version} è abilitata.',
     },
     notificationChannels: {
       label: 'Canale di notifica',

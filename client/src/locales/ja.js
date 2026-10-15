@@ -1310,11 +1310,10 @@ export default {
       askAgain: '再同意を求める',
       askAgainConfirm: '{count} 人のユーザーに免責事項への再同意を求めますか？既存の同意は消去されます。',
       askAgainDone: '{count} 人のユーザーが次回のサインイン時に免責事項に再同意します。',
-      restore: '復元',
+      restore: 'このバージョンを有効にする',
       versionEnabled: '有効',
-      restoreConfirm:
-        'バージョン {version} を再び現在の免責事項にしますか？すでに同意したユーザーには再同意を求めません。',
-      restoreDone: 'バージョン {version} が再び現在の免責事項になりました。',
+      restoreConfirm: 'バージョン {version} を有効にしますか？すでに同意したユーザーには再同意を求めません。',
+      restoreDone: 'バージョン {version} を有効にしました。',
     },
     notificationChannels: {
       label: '通知チャネル',

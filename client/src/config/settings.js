@@ -3141,9 +3141,10 @@ export default function getSettings(t) {
       noCreate: true,
       actions: [
         {
+          // Enable this version : the one users accept (who accepted it is not asked again)
           name: 'restore',
           title: t('settings.disclaimer.restore'),
-          icon: 'rotate-left',
+          icon: 'toggle-on',
           color: 'change',
           // the current one is the disclaimer already
           enabledWhen: (r) => !r.current,

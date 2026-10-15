@@ -1428,11 +1428,10 @@ export default {
       askAgain: 'Erneut anfragen',
       askAgainConfirm: '{count} Benutzer bitten, den Hinweis erneut zu akzeptieren? Ihre Zustimmung wird gelöscht.',
       askAgainDone: '{count} Benutzer akzeptieren den Hinweis bei der nächsten Anmeldung erneut.',
-      restore: 'Wiederherstellen',
+      restore: 'Diese Version aktivieren',
       versionEnabled: 'Aktiviert',
-      restoreConfirm:
-        'Version {version} wieder zum aktuellen Hinweis machen? Wer sie akzeptiert hat, wird nicht erneut gefragt.',
-      restoreDone: 'Version {version} ist wieder der aktuelle Hinweis.',
+      restoreConfirm: 'Version {version} aktivieren? Wer sie akzeptiert hat, wird nicht erneut gefragt.',
+      restoreDone: 'Version {version} ist aktiviert.',
     },
     notificationChannels: {
       label: 'Benachrichtigungskanal',

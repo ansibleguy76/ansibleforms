@@ -1278,10 +1278,10 @@ export default {
       askAgain: '再次请求',
       askAgainConfirm: '要请 {count} 位用户再次接受免责声明吗？他们的接受记录将被清除。',
       askAgainDone: '{count} 位用户将在下次登录时再次接受免责声明。',
-      restore: '恢复',
+      restore: '启用此版本',
       versionEnabled: '已启用',
-      restoreConfirm: '将版本 {version} 重新设为当前免责声明吗？已接受过它的用户不会再被要求接受。',
-      restoreDone: '版本 {version} 已重新成为当前免责声明。',
+      restoreConfirm: '启用版本 {version} 吗？已接受过它的用户不会再被要求接受。',
+      restoreDone: '版本 {version} 已启用。',
     },
     notificationChannels: {
       label: '通知通道',

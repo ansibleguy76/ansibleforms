@@ -1418,11 +1418,10 @@ export default {
       askAgain: 'Opnieuw vragen',
       askAgainConfirm: '{count} gebruiker(s) vragen de disclaimer opnieuw te accepteren? Hun acceptatie wordt gewist.',
       askAgainDone: '{count} gebruiker(s) accepteren de disclaimer opnieuw bij hun volgende aanmelding.',
-      restore: 'Herstellen',
+      restore: 'Deze versie inschakelen',
       versionEnabled: 'Ingeschakeld',
-      restoreConfirm:
-        'Versie {version} weer de huidige disclaimer maken? Wie hem al accepteerde, wordt niet opnieuw gevraagd.',
-      restoreDone: 'Versie {version} is weer de huidige disclaimer.',
+      restoreConfirm: 'Versie {version} inschakelen? Wie hem al accepteerde, wordt niet opnieuw gevraagd.',
+      restoreDone: 'Versie {version} is ingeschakeld.',
     },
     notificationChannels: {
       label: 'Meldingskanaal',

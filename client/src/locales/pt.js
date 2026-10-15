@@ -1328,11 +1328,10 @@ export default {
       askAgain: 'Pedir novamente',
       askAgainConfirm: 'Pedir a {count} utilizador(es) que aceitem novamente o aviso? A aceitação é apagada.',
       askAgainDone: '{count} utilizador(es) aceitarão o aviso novamente no próximo início de sessão.',
-      restore: 'Restaurar',
+      restore: 'Ativar esta versão',
       versionEnabled: 'Ativada',
-      restoreConfirm:
-        'Tornar a versão {version} novamente o aviso atual? Quem já a aceitou não volta a ser solicitado.',
-      restoreDone: 'A versão {version} é novamente o aviso atual.',
+      restoreConfirm: 'Ativar a versão {version}? Quem já a aceitou não volta a ser solicitado.',
+      restoreDone: 'A versão {version} está ativada.',
     },
     notificationChannels: {
       label: 'Canal de notificação',

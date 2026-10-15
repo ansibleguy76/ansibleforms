@@ -1321,11 +1321,10 @@ export default {
       askAgainConfirm:
         'Poprosić {count} użytkownika(ów) o ponowną akceptację zastrzeżenia? Ich akceptacja zostanie usunięta.',
       askAgainDone: '{count} użytkownik(ów) zaakceptuje zastrzeżenie ponownie przy następnym logowaniu.',
-      restore: 'Przywróć',
+      restore: 'Włącz tę wersję',
       versionEnabled: 'Włączona',
-      restoreConfirm:
-        'Ustawić ponownie wersję {version} jako bieżące zastrzeżenie? Ci, którzy ją zaakceptowali, nie zostaną poproszeni ponownie.',
-      restoreDone: 'Wersja {version} jest znów bieżącym zastrzeżeniem.',
+      restoreConfirm: 'Włączyć wersję {version}? Ci, którzy ją zaakceptowali, nie zostaną poproszeni ponownie.',
+      restoreDone: 'Wersja {version} jest włączona.',
     },
     notificationChannels: {
       label: 'Kanał powiadomień',
