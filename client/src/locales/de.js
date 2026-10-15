@@ -339,6 +339,7 @@ export default {
     optionDescription: {
       showSettings: 'Die Einstellungsseiten sehen.',
       showDesigner: 'Den Designer sehen und verwenden.',
+      allowFormDesign: 'Die Formulare im Designer bearbeiten: Kategorien, Konstanten und Formulare (ohne: nur lesen).',
       allowPlaybookDesign: 'Die Playbooks im Designer bearbeiten (ohne: nur lesen).',
       allowWorkflowDesign: 'Die Workflows im Designer bearbeiten (ohne: nur lesen).',
       allowInventoryDesign: 'Die Inventare im Designer bearbeiten (ohne: nur lesen).',
@@ -1873,6 +1874,7 @@ export default {
       noRoles: 'Keine Rollen konfiguriert',
       noConstants: 'Keine Konstanten konfiguriert',
       roleOptionShowDesigner: 'Designer anzeigen',
+      roleOptionAllowFormDesign: 'Formulare bearbeiten',
       roleOptionAllowPlaybookDesign: 'Playbooks bearbeiten',
       roleOptionAllowWorkflowDesign: 'Workflows bearbeiten',
       roleOptionAllowInventoryDesign: 'Inventare bearbeiten',

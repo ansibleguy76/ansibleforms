@@ -104,6 +104,7 @@ const PERMISSION_GROUPS = [
 const OPTION_DESCRIPTIONS = {
   showSettings: () => t('profilePage.optionDescription.showSettings'),
   showDesigner: () => t('profilePage.optionDescription.showDesigner'),
+  allowFormDesign: () => t('profilePage.optionDescription.allowFormDesign'),
   allowPlaybookDesign: () => t('profilePage.optionDescription.allowPlaybookDesign'),
   allowWorkflowDesign: () => t('profilePage.optionDescription.allowWorkflowDesign'),
   allowInventoryDesign: () => t('profilePage.optionDescription.allowInventoryDesign'),

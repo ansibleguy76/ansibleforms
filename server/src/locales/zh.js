@@ -4,6 +4,7 @@ export default {
     notAdmin: "您不是管理员",
     noSettingsAccess: "您无权访问设置",
     noDesignerAccess: "您无权访问设计器",
+    noFormDesignAccess: "您不能在设计器中编辑表单",
     noPlaybookDesignAccess: "您不能在设计器中编辑 playbook",
     noWorkflowDesignAccess: "您不能在设计器中编辑工作流",
     noInventoryDesignAccess: "您不能在设计器中编辑清单",

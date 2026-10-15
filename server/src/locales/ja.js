@@ -4,6 +4,7 @@ export default {
     notAdmin: "管理者ではありません",
     noSettingsAccess: "設定へのアクセス権がありません",
     noDesignerAccess: "デザイナーへのアクセス権がありません",
+    noFormDesignAccess: "デザイナーでフォームを編集することはできません",
     noPlaybookDesignAccess: "デザイナーで playbook を編集することはできません",
     noWorkflowDesignAccess: "デザイナーでワークフローを編集することはできません",
     noInventoryDesignAccess: "デザイナーでインベントリを編集することはできません",

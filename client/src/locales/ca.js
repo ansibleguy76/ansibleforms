@@ -339,6 +339,8 @@ export default {
     optionDescription: {
       showSettings: 'Veure les pàgines de configuració.',
       showDesigner: 'Veure i utilitzar el dissenyador.',
+      allowFormDesign:
+        'Editar els formularis al dissenyador: categories, constants i formularis (sense: només lectura).',
       allowPlaybookDesign: 'Editar els playbooks al dissenyador (sense: només lectura).',
       allowWorkflowDesign: 'Editar els fluxos de treball al dissenyador (sense: només lectura).',
       allowInventoryDesign: 'Editar els inventaris al dissenyador (sense: només lectura).',
@@ -1866,6 +1868,7 @@ export default {
       noRoles: 'No hi ha cap rol configurat',
       noConstants: 'No hi ha cap constant configurada',
       roleOptionShowDesigner: 'Mostra el dissenyador',
+      roleOptionAllowFormDesign: 'Editar formularis',
       roleOptionAllowPlaybookDesign: 'Editar playbooks',
       roleOptionAllowWorkflowDesign: 'Editar fluxos de treball',
       roleOptionAllowInventoryDesign: 'Editar inventaris',
@@ -1874,8 +1877,8 @@ export default {
       roleOptionShowAuditLog: "Mostra el registre d'auditoria",
       roleOptionShowDebugButtons: 'Mostra els botons de depuració',
       roleOptionShowSettings: 'Mostra el menú Configuració',
-      roleOptionShowAppearanceSettings: "Mostra la configuració d'aparença",
-      roleOptionShowConnectionsSettings: 'Mostra la configuració de connexions',
+      roleOptionShowAppearanceSettings: "Mostra la configuració d'Aparença",
+      roleOptionShowConnectionsSettings: 'Mostra la configuració de Connexions',
       roleOptionShowExtravars: 'Mostra les extravars',
       roleOptionShowAllJobLogs: 'Mostra els registres de totes les tasques',
       roleOptionShowArtifacts: 'Mostra els artefactes',

@@ -1544,6 +1544,7 @@
       Since version 5.0.8 options are introduced to add specific role-options.  
 
       - showDesigner: The user can see the designer
+      - allowFormDesign: The user can edit the forms config in the designer (categories, constants, forms : save, restore, pull and push the forms repositories). Without it the designer shows them read-only. Default true. (Added in 7.3.0)
       - allowPlaybookDesign: The user can edit the playbooks in the designer (save, new, remove, push). Without it the designer shows them read-only. Default true. (Added in 7.0.0)
       - allowWorkflowDesign: The user can edit the workflows in the designer (save, new, remove, push). Without it the designer shows them read-only. Default true. (Added in 7.1.0)
       - allowInventoryDesign: The user can edit the inventories in the designer (save, new, remove, push). Without it the designer shows them read-only. Default true. (Added in 7.1.0)
@@ -1758,6 +1759,7 @@
           The options are:
 
           - showDesigner: The user can see the designer
+          - allowFormDesign: The user can edit the forms config in the designer (categories, constants, forms : save, restore, pull and push the forms repositories). Without it the designer shows them read-only. Default true. (Added in 7.3.0)
           - allowPlaybookDesign: The user can edit the playbooks in the designer (save, new, remove, push). Without it the designer shows them read-only. Default true. (Added in 7.0.0)
           - allowWorkflowDesign: The user can edit the workflows in the designer (save, new, remove, push). Without it the designer shows them read-only. Default true. (Added in 7.1.0)
           - allowInventoryDesign: The user can edit the inventories in the designer (save, new, remove, push). Without it the designer shows them read-only. Default true. (Added in 7.1.0)

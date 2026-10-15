@@ -330,6 +330,7 @@ export default {
     optionDescription: {
       showSettings: '查看设置页面。',
       showDesigner: '查看和使用设计器。',
+      allowFormDesign: '在设计器中编辑表单：类别、常量和表单（否则：只读）。',
       allowPlaybookDesign: '在设计器中编辑 playbook（否则：只读）。',
       allowWorkflowDesign: '在设计器中编辑工作流（否则：只读）。',
       allowInventoryDesign: '在设计器中编辑清单（否则：只读）。',
@@ -1784,6 +1785,7 @@ export default {
       noRoles: '未配置角色',
       noConstants: '未配置常量',
       roleOptionShowDesigner: '显示设计器',
+      roleOptionAllowFormDesign: '编辑表单',
       roleOptionAllowPlaybookDesign: '编辑 playbook',
       roleOptionAllowWorkflowDesign: '编辑工作流',
       roleOptionAllowInventoryDesign: '编辑清单',

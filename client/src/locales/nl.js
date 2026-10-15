@@ -337,6 +337,8 @@ export default {
     optionDescription: {
       showSettings: "De instellingenpagina's zien.",
       showDesigner: 'De designer zien en gebruiken.',
+      allowFormDesign:
+        'De formulieren in de designer bewerken: categorieën, constanten en formulieren (zonder: alleen lezen).',
       allowPlaybookDesign: 'De playbooks in de designer bewerken (zonder: alleen lezen).',
       allowWorkflowDesign: 'De workflows in de designer bewerken (zonder: alleen lezen).',
       allowInventoryDesign: 'De inventarissen in de designer bewerken (zonder: alleen lezen).',
@@ -1853,6 +1855,7 @@ export default {
       noRoles: 'Geen rollen geconfigureerd',
       noConstants: 'Geen constanten geconfigureerd',
       roleOptionShowDesigner: 'Ontwerper tonen',
+      roleOptionAllowFormDesign: 'Formulieren bewerken',
       roleOptionAllowPlaybookDesign: 'Playbooks bewerken',
       roleOptionAllowWorkflowDesign: 'Workflows bewerken',
       roleOptionAllowInventoryDesign: 'Inventarissen bewerken',
@@ -1862,7 +1865,7 @@ export default {
       roleOptionShowDebugButtons: 'Debug-knoppen tonen',
       roleOptionShowSettings: 'Instellingenmenu tonen',
       roleOptionShowAppearanceSettings: 'Uiterlijk-instellingen tonen',
-      roleOptionShowConnectionsSettings: 'Verbindingsinstellingen tonen',
+      roleOptionShowConnectionsSettings: 'Verbindingen-instellingen tonen',
       roleOptionShowExtravars: 'Extravars tonen',
       roleOptionShowAllJobLogs: 'Alle joblogs tonen',
       roleOptionShowArtifacts: 'Artefacten tonen',

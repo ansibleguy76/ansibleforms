@@ -25,6 +25,8 @@ function applyOptionDefaults(options, isAdmin) {
   // in the designer, each kind of file written (saved, new, removed, pushed) : on for every
   // designer unless a role says otherwise
   if (options.allowPlaybookDesign === undefined) options.allowPlaybookDesign = true;
+  // the forms config in the designer (categories, constants, forms) : as the files, on unless a role says otherwise
+  if (options.allowFormDesign === undefined) options.allowFormDesign = true;
   // api tokens (lib/tokenLifetime.js) : off unless a role turns them on ; extendedTokenExpiration
   // (tokens too, and one that never expires) off as well
   if (options.allowApiTokens === undefined) options.allowApiTokens = false;

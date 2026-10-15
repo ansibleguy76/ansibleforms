@@ -294,3 +294,12 @@ describe("a part of the settings on its own", () => {
     assert.equal(run(Middleware.checkAnySettingsMiddleware, withOption("showLogs", true)).nexted, false);
   });
 });
+
+describe("the designer's forms config is written only with allowFormDesign", () => {
+  test("allowFormDesign passes, false is refused with 403", () => {
+    assert.equal(run(Middleware.checkFormDesignMiddleware, withOption("allowFormDesign", true)).nexted, true);
+    const { res, nexted } = run(Middleware.checkFormDesignMiddleware, withOption("allowFormDesign", false));
+    assert.equal(nexted, false);
+    assert.equal(res.statusCode, 403);
+  });
+});

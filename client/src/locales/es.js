@@ -336,6 +336,8 @@ export default {
     optionDescription: {
       showSettings: 'Ver las páginas de ajustes.',
       showDesigner: 'Ver y usar el designer.',
+      allowFormDesign:
+        'Editar los formularios en el diseñador: categorías, constantes y formularios (sin ello: solo lectura).',
       allowPlaybookDesign: 'Editar los playbooks en el diseñador (sin ello: solo lectura).',
       allowWorkflowDesign: 'Editar los flujos de trabajo en el diseñador (sin ello: solo lectura).',
       allowInventoryDesign: 'Editar los inventarios en el diseñador (sin ello: solo lectura).',
@@ -1860,6 +1862,7 @@ export default {
       noRoles: 'Sin roles configurados',
       noConstants: 'Sin constantes configuradas',
       roleOptionShowDesigner: 'Mostrar disenador',
+      roleOptionAllowFormDesign: 'Editar formularios',
       roleOptionAllowPlaybookDesign: 'Editar playbooks',
       roleOptionAllowWorkflowDesign: 'Editar flujos de trabajo',
       roleOptionAllowInventoryDesign: 'Editar inventarios',
@@ -1868,8 +1871,8 @@ export default {
       roleOptionShowAuditLog: 'Mostrar el registro de auditoría',
       roleOptionShowDebugButtons: 'Mostrar botones de depuracion',
       roleOptionShowSettings: 'Mostrar el menú Configuración',
-      roleOptionShowAppearanceSettings: 'Mostrar la configuración de apariencia',
-      roleOptionShowConnectionsSettings: 'Mostrar la configuración de conexiones',
+      roleOptionShowAppearanceSettings: 'Mostrar la configuración de Apariencia',
+      roleOptionShowConnectionsSettings: 'Mostrar la configuración de Conexiones',
       roleOptionShowExtravars: 'Mostrar extravars',
       roleOptionShowAllJobLogs: 'Mostrar todos los logs de jobs',
       roleOptionShowArtifacts: 'Mostrar artefactos',

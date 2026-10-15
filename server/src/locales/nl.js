@@ -4,6 +4,7 @@ export default {
     notAdmin: "U bent geen beheerder",
     noSettingsAccess: "U heeft geen toegang tot instellingen",
     noDesignerAccess: "U heeft geen toegang tot de designer",
+    noFormDesignAccess: "Je mag de formulieren in de designer niet bewerken",
     noPlaybookDesignAccess: "Je mag de playbooks in de designer niet bewerken",
     noWorkflowDesignAccess: "Je mag de workflows in de designer niet bewerken",
     noInventoryDesignAccess: "Je mag de inventarissen in de designer niet bewerken",

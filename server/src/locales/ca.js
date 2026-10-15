@@ -4,6 +4,7 @@ export default {
     notAdmin: "No ets administrador",
     noSettingsAccess: "No tens accés a la configuració",
     noDesignerAccess: "No tens accés al dissenyador",
+    noFormDesignAccess: "No podeu editar els formularis al dissenyador",
     noPlaybookDesignAccess: "No podeu editar els playbooks al dissenyador",
     noWorkflowDesignAccess: "No podeu editar els fluxos de treball al dissenyador",
     noInventoryDesignAccess: "No podeu editar els inventaris al dissenyador",

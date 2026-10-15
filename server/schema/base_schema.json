@@ -51,6 +51,7 @@
             "type": "object",
             "properties": {
               "showDesigner": { "type": "boolean"},
+              "allowFormDesign": { "type": "boolean" },
               "allowPlaybookDesign": { "type": "boolean" },
               "allowWorkflowDesign": { "type": "boolean" },
               "allowInventoryDesign": { "type": "boolean" },
@@ -109,6 +110,7 @@
             "type": "object",
             "properties": {
               "showDesigner": { "type": "boolean"},
+              "allowFormDesign": { "type": "boolean" },
               "allowPlaybookDesign": { "type": "boolean" },
               "allowWorkflowDesign": { "type": "boolean" },
               "allowInventoryDesign": { "type": "boolean" },

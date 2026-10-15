@@ -338,6 +338,8 @@ export default {
     optionDescription: {
       showSettings: 'Ver as páginas de definições.',
       showDesigner: 'Ver e utilizar o designer.',
+      allowFormDesign:
+        'Editar os formulários no designer: categorias, constantes e formulários (sem isso: só leitura).',
       allowPlaybookDesign: 'Editar os playbooks no designer (sem isso: só leitura).',
       allowWorkflowDesign: 'Editar os fluxos de trabalho no designer (sem isso: só leitura).',
       allowInventoryDesign: 'Editar os inventários no designer (sem isso: só leitura).',
@@ -1861,6 +1863,7 @@ export default {
       noRoles: 'Nenhuma função configurada',
       noConstants: 'Nenhuma constante configurada',
       roleOptionShowDesigner: 'Mostrar designer',
+      roleOptionAllowFormDesign: 'Editar formulários',
       roleOptionAllowPlaybookDesign: 'Editar playbooks',
       roleOptionAllowWorkflowDesign: 'Editar fluxos de trabalho',
       roleOptionAllowInventoryDesign: 'Editar inventários',
@@ -1869,8 +1872,8 @@ export default {
       roleOptionShowAuditLog: 'Mostrar o registo de auditoria',
       roleOptionShowDebugButtons: 'Mostrar botões de depuração',
       roleOptionShowSettings: 'Mostrar o menu Definições',
-      roleOptionShowAppearanceSettings: 'Mostrar as definições de aparência',
-      roleOptionShowConnectionsSettings: 'Mostrar as definições de ligações',
+      roleOptionShowAppearanceSettings: 'Mostrar as definições de Aparência',
+      roleOptionShowConnectionsSettings: 'Mostrar as definições de Ligações',
       roleOptionShowExtravars: 'Mostrar extravars',
       roleOptionShowAllJobLogs: 'Mostrar registos de todas as tarefas',
       roleOptionShowArtifacts: 'Mostrar artefactos',

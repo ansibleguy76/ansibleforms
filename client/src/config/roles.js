@@ -15,12 +15,26 @@ export const roleOptionGroups = [
   {
     name: 'settings',
     title: 'nav.settings',
-    keys: ['showSettings', 'showAppearanceSettings', 'showConnectionsSettings', 'showLogs', 'showAuditLog'],
+    keys: [
+      'showSettings',
+      'showAppearanceSettings',
+      'showConnectionsSettings',
+      'showLogs',
+      'showAuditLog',
+      'allowBackupOps',
+    ],
   },
   {
     name: 'designer',
     title: 'nav.designer',
-    keys: ['showDesigner', 'allowPlaybookDesign', 'allowWorkflowDesign', 'allowInventoryDesign', 'allowVarsFileDesign'],
+    keys: [
+      'showDesigner',
+      'allowFormDesign',
+      'allowPlaybookDesign',
+      'allowWorkflowDesign',
+      'allowInventoryDesign',
+      'allowVarsFileDesign',
+    ],
   },
   {
     name: 'jobs',
@@ -40,7 +54,7 @@ export const roleOptionGroups = [
   {
     name: 'access',
     title: 'profilePage.groupAccess',
-    keys: ['allowLogin', 'allowBackupOps', 'allowChat', 'allowMcp', 'allowApiTokens', 'extendedTokenExpiration'],
+    keys: ['allowLogin', 'allowChat', 'allowMcp', 'allowApiTokens', 'extendedTokenExpiration'],
   },
 ];
 
@@ -52,7 +66,9 @@ export const roleOptionKeys = [
   'showConnectionsSettings',
   'showLogs',
   'showAuditLog',
+  'allowBackupOps',
   'showDesigner',
+  'allowFormDesign',
   'allowPlaybookDesign',
   'allowWorkflowDesign',
   'allowInventoryDesign',
@@ -67,7 +83,6 @@ export const roleOptionKeys = [
   'allowPlannedJobs',
   'allowStoredJobs',
   'allowLogin',
-  'allowBackupOps',
   'allowChat',
   'allowMcp',
   'allowApiTokens',

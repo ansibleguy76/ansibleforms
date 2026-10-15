@@ -4,6 +4,7 @@ export default {
     notAdmin: "You are not an admin",
     noSettingsAccess: "You do not have access to settings",
     noDesignerAccess: "You do not have access to designer",
+    noFormDesignAccess: "You may not edit the forms in the designer",
     noPlaybookDesignAccess: "You may not edit the playbooks in the designer",
     noWorkflowDesignAccess: "You may not edit the workflows in the designer",
     noInventoryDesignAccess: "You may not edit the inventories in the designer",

@@ -4,9 +4,9 @@ import configController from '../../controllers/v2/config.controller.js';
 import middleware from '../../lib/middleware.js';
 
 // designer routes only (admin !!)
-router.post('/', middleware.checkDesignerMiddleware, configController.save);
+router.post('/', middleware.checkDesignerMiddleware, middleware.checkFormDesignMiddleware, configController.save);
 router.post('/check', middleware.checkDesignerMiddleware, configController.validate);
-router.post('/restore/:backupName', middleware.checkDesignerMiddleware, configController.restore);
+router.post('/restore/:backupName', middleware.checkDesignerMiddleware, middleware.checkFormDesignMiddleware, configController.restore);
 router.get('/backups', middleware.checkDesignerMiddleware, configController.backups);
 router.get('/env', middleware.checkAnySettingsMiddleware, configController.env);
 // writes persistent/.env ; refuses anything already set in the real environment

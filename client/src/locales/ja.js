@@ -335,6 +335,7 @@ export default {
     optionDescription: {
       showSettings: '設定ページを表示します。',
       showDesigner: 'デザイナーを表示して使用します。',
+      allowFormDesign: 'デザイナーでフォームを編集する：カテゴリ、定数、フォーム（なしの場合：読み取り専用）。',
       allowPlaybookDesign: 'デザイナーで playbook を編集する（なしの場合：読み取り専用）。',
       allowWorkflowDesign: 'デザイナーでワークフローを編集する（なしの場合：読み取り専用）。',
       allowInventoryDesign: 'デザイナーでインベントリを編集する（なしの場合：読み取り専用）。',
@@ -1828,6 +1829,7 @@ export default {
       noRoles: 'ロールが設定されていません',
       noConstants: '定数が設定されていません',
       roleOptionShowDesigner: 'デザイナーを表示',
+      roleOptionAllowFormDesign: 'フォームを編集',
       roleOptionAllowPlaybookDesign: 'playbook を編集',
       roleOptionAllowWorkflowDesign: 'ワークフローを編集',
       roleOptionAllowInventoryDesign: 'インベントリを編集',
