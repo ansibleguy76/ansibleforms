@@ -4,12 +4,16 @@
 /*  An SSO provider's page (/settings/sso/<id>), opened from the     */
 /*  providers' list : the steps of its dialog as tabs, the tab    */
 /*  kept in the url -                                             */
-/*    Details  its type (fixed), name and description             */
-/*    Sign-in  how the app signs in with it (tenant, client id,   */
-/*             issuer, redirect url), its help as in the dialog   */
-/*    Groups   the group filter, and its help                     */
-/*  Details' Active switch makes it the one its type signs in     */
-/*  with ; Change secret and Delete top right.                    */
+/*    Details     its name, description, and whether users sign   */
+/*                in with it                                      */
+/*    Type        Entra ID or Open ID (fixed), as radio buttons   */
+/*    Credentials where and as whom : a credential of its type,   */
+/*                its app registration (Entra ID : tenant, client */
+/*                id, secret, redirect URL ; Open ID : issuer,    */
+/*                client id, secret, redirect URL)                */
+/*    Groups      the group filter, and its help                  */
+/*  Details' Enabled switch makes it the one its type signs in    */
+/*  with ; Delete and Save top right.                             */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted } from 'vue';
@@ -18,11 +22,10 @@ import axios from 'axios';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
-import getSettings from '@/config/settings';
+import getSettings, { SSO_TYPES, SSO_ICONS } from '@/config/settings';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { recordButtons } from '@/lib/recordButtons';
-import { ssoCallbackUrl, SSO_EXAMPLE_BASE } from '@/lib/ssoCallback';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -36,7 +39,20 @@ const providerId = computed(() => String(route.params.id || ''));
 const provider = ref(null); // as saved
 const edit = ref(null); // as edited
 // what this page edits : the secret has its own dialog (Change secret)
-const EDITED = ['name', 'description', 'tenant_id', 'client_id', 'issuer', 'redirect_uri', 'groupfilter'];
+// its client is its credential's (Connections > Credentials) : a client id of its own, from before
+// credentials, is kept on the record and shown, not edited
+const EDITED = ['name', 'description', 'credential', 'groupfilter'];
+// the sso credentials of Connections > Credentials, none first : its own client id and secret
+const credentials = ref([{ name: '' }]);
+async function loadCredentials() {
+  const res = await axios.get('/api/v2/credential/').catch(() => null);
+  const all = res?.data?.records || [];
+  // the credentials of its type : an Entra ID provider's entraid ones (with the tenant), an Open
+  // ID one's oidc
+  const type = provider.value?.provider === 'azuread' ? 'entraid' : 'oidc';
+  credentials.value = [{ name: '' }, ...all.filter((c) => c.credential_type === type)];
+}
+
 const TYPES = { azuread: 'Microsoft Entra ID', oidc: 'Open ID' };
 
 const dirty = computed(
@@ -85,10 +101,11 @@ async function update(data) {
 }
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
-// the dialog's steps : Details (its Provider step), Sign-in, Groups
+// the dialog's steps : Details, Type, Credentials, Groups
 const tabs = computed(() => [
   { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
-  { key: 'sign-in', label: t('settings.oauth2.stepSignIn'), icon: 'right-to-bracket' },
+  { key: 'type', label: t('settings.oauth2.stepType'), icon: 'shapes' },
+  { key: 'credentials', label: t('settings.common.tabCredentials'), icon: 'key' },
   { key: 'groups', label: t('settings.oauth2.stepGroups'), icon: 'users' },
 ]);
 const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
@@ -144,22 +161,6 @@ async function setActive(on) {
   else await load();
 }
 
-// Change secret : the client secret, typed twice, as a password
-const changingSecret = ref(false);
-
-/**
- * Saves the new client secret.
- *
- * Args:
- *   secret (string): the secret, typed twice.
- */
-async function saveSecret(secret) {
-  if (await update({ client_secret: secret })) {
-    changingSecret.value = false;
-    toast.success(`${provider.value.name} ${t('settings.common.isUpdated')}`);
-  }
-}
-
 // Delete asks first
 const confirmDelete = ref(false);
 
@@ -180,6 +181,8 @@ onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
   await load();
+  // its type's credentials : known once the provider is read
+  loadCredentials();
 });
 </script>
 <template>
@@ -195,16 +198,6 @@ onMounted(async () => {
       <BsButton icon="trash" @click="deleteProvider()">{{ t('common.delete') }}</BsButton>
     </template>
   </BsModal>
-  <!-- the client secret : pasted from the provider's console, asked once -->
-  <AppChangePasswordDialog
-    v-if="changingSecret"
-    icon="right-to-bracket"
-    :title="t('settings.oauth2.changeSecret')"
-    :label="t('settings.oauth2.clientSecret')"
-    :repeat="false"
-    @save="saveSecret"
-    @close="changingSecret = false"
-  />
   <AppSettingsPage>
     <AppSettings
       v-if="authenticated"
@@ -248,16 +241,8 @@ onMounted(async () => {
               <li v-for="(line, l) in note.items" :key="l">{{ line }}</li>
             </ul>
           </div>
-          <!-- Details : its type (fixed : a provider does not change type), name, description -->
+          <!-- Details : its name, description, whether users sign in with it -->
           <template v-if="activeTab === 'details'">
-            <BsInput
-              class="af-provider-field"
-              :modelValue="TYPES[provider.provider] || provider.provider"
-              icon="cloud"
-              :isFloating="false"
-              :disabled="true"
-              :label="t('settings.oauth2.provider')"
-            />
             <BsInput
               class="af-provider-field"
               v-model="edit.name"
@@ -293,43 +278,47 @@ onMounted(async () => {
               </div>
             </div>
           </template>
-          <!-- Sign-in : how the app signs in with it -->
-          <template v-else-if="activeTab === 'sign-in'">
+          <!-- Type : Entra ID or Open ID, set when it was made -->
+          <template v-else-if="activeTab === 'type'">
+            <div v-for="kind in SSO_TYPES" :key="kind" class="form-check af-short-check">
+              <input
+                :id="'af-ssotype-' + kind"
+                :checked="kind === provider.provider"
+                class="form-check-input"
+                type="radio"
+                name="af-sso-type"
+                :value="kind"
+                disabled
+              />
+              <label class="form-check-label" :for="'af-ssotype-' + kind">
+                <span class="af-short-label"
+                  ><FaIcon :icon="SSO_ICONS[kind]" class="me-2" fixedwidth />{{
+                    t(`settings.oauth2.type_${kind}`)
+                  }}</span
+                >
+                <span class="text-body-secondary small">{{ t(`settings.oauth2.typeHint_${kind}`) }}</span>
+              </label>
+            </div>
+          </template>
+          <!-- Credentials : where and as whom - a credential of its type of Connections >
+               Credentials (its user the client id, its password the secret, its tenant or issuer) ;
+               one from before credentials says its own -->
+          <template v-else-if="activeTab === 'credentials'">
             <BsInput
-              v-if="provider.provider === 'azuread'"
               class="af-provider-field"
-              v-model="edit.tenant_id"
-              icon="building"
-              :required="true"
-              :isFloating="false"
-              :label="t('settings.oauth2.tenantId')"
-            />
-            <BsInput
-              class="af-provider-field"
-              v-model="edit.client_id"
+              v-model="edit.credential"
+              type="select"
               icon="key"
               :isFloating="false"
-              :required="true"
-              :label="t('settings.oauth2.clientId')"
+              :values="credentials"
+              valueKey="name"
+              labelKey="name"
+              :help="t('settings.oauth2.credentialHelp')"
+              :label="t('settings.oauth2.credential')"
             />
-            <BsInput
-              v-if="provider.provider === 'oidc'"
-              class="af-provider-field"
-              v-model="edit.issuer"
-              icon="globe"
-              :isFloating="false"
-              :required="true"
-              :label="t('settings.oauth2.issuer')"
-            />
-            <BsInput
-              class="af-provider-field"
-              v-model="edit.redirect_uri"
-              icon="link"
-              :placeholder="ssoCallbackUrl(provider.provider, SSO_EXAMPLE_BASE)"
-              :required="true"
-              :isFloating="false"
-              :label="t('settings.oauth2.redirectUrl')"
-            />
+            <p v-if="provider.client_id && !edit.credential" class="form-text mb-0">
+              {{ t('settings.oauth2.ownClient', { client: provider.client_id }) }}
+            </p>
           </template>
           <!-- Groups : which of the user's groups the app keeps -->
           <template v-else>
@@ -344,7 +333,6 @@ onMounted(async () => {
         </div>
       </template>
       <template v-if="provider" #actions>
-        <BsButton icon="lock" @click="changingSecret = true">{{ t('settings.oauth2.changeSecret') }}</BsButton>
         <BsButton icon="trash" @click="confirmDelete = true">{{ t('common.delete') }}</BsButton>
         <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
       </template>
@@ -372,6 +360,14 @@ onMounted(async () => {
 }
 .af-provider-note ul {
   padding-left: 1.25rem;
+}
+/* the radio buttons : their labels one width, so the grey hints line up, as a credential's */
+.af-short-check {
+  margin-bottom: 0.6rem;
+}
+.af-short-label {
+  display: inline-block;
+  min-width: 12rem;
 }
 </style>
 <route lang="yaml">

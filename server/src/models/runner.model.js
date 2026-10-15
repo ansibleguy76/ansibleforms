@@ -116,6 +116,11 @@ class Runner extends CrudModel {
     data = this.normalize(data, opts);
     // the stored row decides what is missing : an update may send only what changed
     const current = await this.findById(id);
+    // its type stays what it was made as (the forms that run on it expect it) ; an AWX one may
+    // change flavour (AWX, AAP, Ascender), the same type. The config seed may change it.
+    if (!opts.fromSeed && data.type !== undefined && current?.type && data.type !== current.type) {
+      throw new Errors.BadRequestError(`A runner keeps the type it was made as : '${current.name}' is ${current.type}. Make a new runner for another type`);
+    }
     const merged = { ...current, ...data };
     this.assertComplete(merged);
     await this.assertDefaultAllowed(data, merged.type, opts);

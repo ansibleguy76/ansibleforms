@@ -10,12 +10,12 @@
 /*                    Jenkins                                     */
 /*    Connection      its address (and project), how its          */
 /*                    certificate is checked                      */
-/*    Authentication  a token, or a user and password (AWX), a    */
+/*    Credentials  a token, or a user and password (AWX), a       */
 /*                    user and its token (Jenkins)                */
 /*    Forms           the forms that run on it, by name or as the */
 /*                    default of its type                         */
 /*    Jobs            the jobs that ran on it, the latest first   */
-/*  Test connection, Change token (or password) and Delete top    */
+/*  Test connection, Delete and Save top right ; its token (or    */
 /*  right, beside Save. A runner of the config seed is read only. */
 /*                                                                */
 /******************************************************************/
@@ -105,12 +105,28 @@ const isRte = computed(() => edit.value?.kind === 'rte');
 const hasProject = computed(() => PROJECT_RUNNER_KINDS.includes(edit.value?.kind));
 // an AWX, an AAP or an Ascender take a token or a user and password ; the others a token
 const isAwxKind = computed(() => AWX_RUNNER_KINDS.includes(edit.value?.kind));
+/**
+ * Whether its Type tab can switch to a kind : its type stays what it was made as (the forms that
+ * run on it expect it), an AWX one may change product (AWX, AAP, Ascender : one type).
+ *
+ * Args:
+ *   kind (string): a kind of RUNNER_KINDS.
+ *
+ * Returns:
+ *   boolean: whether it can be chosen.
+ */
+function kindAllowed(kind) {
+  const saved = runner.value ? runnerKind(runner.value) : edit.value?.kind;
+  return kind === saved || (AWX_RUNNER_KINDS.includes(kind) && AWX_RUNNER_KINDS.includes(saved));
+}
 const usesCredentials = computed(() => isAwxKind.value && !!edit.value?.use_credentials);
 // a Jenkins signs in with a user and that user's API token ; its folder (project) is optional
 const isJenkins = computed(() => edit.value?.kind === 'jenkins');
 const hasUsername = computed(() => usesCredentials.value || isJenkins.value);
 const dirty = computed(
-  () => !!runner.value && EDITED.some((k) => String(edit.value[k] ?? '') !== String(editable(runner.value)[k] ?? '')),
+  () =>
+    !!runner.value &&
+    (EDITED.some((k) => String(edit.value[k] ?? '') !== String(editable(runner.value)[k] ?? '')) || !!newSecret.value),
 );
 // leaving with the runner changed and unsaved asks first
 useUnsavedGuard(
@@ -160,12 +176,12 @@ async function update(data) {
 }
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
-// the dialog's steps : Runner, Type, Connection, Authentication ; then what runs on it
+// the dialog's steps : Runner, Type, Credentials, Connection ; then what runs on it
 const tabs = computed(() => [
   { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
   { key: 'type', label: t('settings.runners.stepType'), icon: 'shapes' },
+  { key: 'credentials', label: t('settings.runners.stepAuth'), icon: 'key' },
   { key: 'connection', label: t('settings.runners.stepConnection'), icon: 'globe' },
-  { key: 'authentication', label: t('settings.runners.stepAuth'), icon: 'key' },
   { key: 'forms', label: t('settings.linked.forms'), icon: 'rectangle-list', count: runnerForms.value.length },
   { key: 'jobs', label: t('settings.linked.jobs'), icon: 'history', count: runnerJobs.value.length },
 ]);
@@ -260,8 +276,11 @@ async function save() {
     ignore_certs: e.skip_verify ? 1 : 0,
     ca_bundle: !e.skip_verify && e.custom_ca ? e.ca_bundle : '',
   };
+  // its new token or password, typed in its Credentials tab
+  if (newSecret.value) data[secretKey.value] = newSecret.value;
   if (await update(data)) {
     toast.success(`${data.name} ${t('settings.common.isUpdated')}`);
+    newSecret.value = '';
     await load();
   }
 }
@@ -294,22 +313,10 @@ async function testConnection() {
   }
 }
 
-// Change token, or Change password with a user and password : its secret, asked in a dialog
-const changingSecret = ref(false);
+// its token, or its password with a user and password : typed in its Credentials tab ; empty, the
+// stored one is kept
+const newSecret = ref('');
 const secretKey = computed(() => (usesCredentials.value ? 'password' : 'token'));
-
-/**
- * Saves the new token or password.
- *
- * Args:
- *   secret (string): the token (pasted once) or the password (typed twice).
- */
-async function saveSecret(secret) {
-  if (await update({ [secretKey.value]: secret })) {
-    changingSecret.value = false;
-    toast.success(`${runner.value.name} ${t('settings.common.isUpdated')}`);
-  }
-}
 
 // Delete asks first
 const confirmDelete = ref(false);
@@ -348,16 +355,6 @@ onMounted(async () => {
       <BsButton icon="trash" @click="deleteRunner()">{{ t('common.delete') }}</BsButton>
     </template>
   </BsModal>
-  <!-- a token is pasted once ; a password typed twice -->
-  <AppChangePasswordDialog
-    v-if="changingSecret"
-    icon="rocket"
-    :title="usesCredentials ? t('settings.common.changePassword') : t('settings.runners.changeToken')"
-    :label="usesCredentials ? t('settings.fields.password') : t('settings.fields.token')"
-    :repeat="usesCredentials"
-    @save="saveSecret"
-    @close="changingSecret = false"
-  />
   <AppSettingsPage>
     <AppSettings
       v-if="authenticated"
@@ -469,6 +466,7 @@ onMounted(async () => {
                   type="radio"
                   name="af-runner-kind"
                   :value="kind"
+                  :disabled="!kindAllowed(kind)"
                 />
                 <label class="form-check-label" :for="'af-kind-' + kind">
                   <span class="af-short-label">{{ t(`settings.runners.type_${kind}`) }}</span>
@@ -572,13 +570,23 @@ onMounted(async () => {
                 :label="t('settings.fields.username')"
               />
               <p v-if="hasProject" class="form-text mb-2">{{ t(`settings.runners.tokenHelp_${edit.kind}`) }}</p>
-              <p class="form-text mb-0" :class="{ 'mt-3': isAwxKind && !usesCredentials }">
-                {{
+              <!-- its token or password, masked : left empty, the stored one is kept ; typed, replaced -->
+              <BsInput
+                class="af-runner-field"
+                :class="{ 'mt-3': isAwxKind && !usesCredentials }"
+                v-model="newSecret"
+                type="password"
+                :icon="usesCredentials ? 'lock' : 'key'"
+                :isFloating="false"
+                placeholder="**********"
+                :disabled="readOnly"
+                :help="
                   usesCredentials
-                    ? t('settings.runners.passwordOnPage')
-                    : t(`settings.runners.tokenOnPage_${isRte ? 'rte' : 'api'}`)
-                }}
-              </p>
+                    ? t('settings.common.passwordKeep')
+                    : t(`settings.runners.tokenKeep_${isRte ? 'rte' : 'api'}`)
+                "
+                :label="usesCredentials ? t('settings.fields.password') : t('settings.fields.token')"
+              />
             </template>
           </fieldset>
         </div>
@@ -588,9 +596,6 @@ onMounted(async () => {
           t('settings.common.testConnection')
         }}</BsButton>
         <template v-if="!readOnly">
-          <BsButton icon="lock" cssClass="text-nowrap" @click="changingSecret = true">{{
-            usesCredentials ? t('settings.common.changePassword') : t('settings.runners.changeToken')
-          }}</BsButton>
           <BsButton icon="trash" @click="confirmDelete = true">{{ t('common.delete') }}</BsButton>
           <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
         </template>

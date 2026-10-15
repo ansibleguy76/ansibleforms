@@ -7,7 +7,7 @@ import { cronCell } from '@/lib/cronCell';
 import { cronValidationMessage } from './cron';
 import { PILL, pill, esc } from '@/lib/tableCells';
 import { formPath } from '@/lib/formsPath';
-import { ssoCallbackUrl, ssoCallbackBase, ssoCallbackPath, SSO_EXAMPLE_BASE } from '@/lib/ssoCallback';
+import { ssoCallbackUrl, SSO_EXAMPLE_BASE } from '@/lib/ssoCallback';
 
 // A cron field is validated with the SAME check the editor uses (config/cron.js), which
 // is the only thing that keeps the two from disagreeing.
@@ -190,6 +190,14 @@ export function schedulePill(t, state) {
   return pill(known[state], label);
 }
 
+// ─── SSO providers (Access > SSO) ────────────────────────────────────────────
+// the types a provider can be, in the order the wizard offers them, and each one's icon
+export const SSO_TYPES = ['azuread', 'oidc'];
+export const SSO_ICONS = {
+  azuread: 'fab,microsoft',
+  oidc: 'fab,openid',
+};
+
 // ─── notification channels (Connections > Notifications) ─────────────────────
 // the types a channel can be, in the order the wizard offers them, and each one's icon
 export const CHANNEL_TYPES = ['mail', 'slack', 'teams', 'telegram', 'webhook'];
@@ -327,7 +335,18 @@ const SIGN_IN_TYPES = { local: 'Local', ldap: 'LDAP', azuread: 'Microsoft Entra 
 
 // what a credential is for (its type), in the order the dialog offers them
 // userpass : a user and a password for any login, the default ; ssh : one for SSH to a server
-export const CREDENTIAL_TYPES = ['userpass', 'ssh', 'git', 'api', 'database', 'cyberark', 'smtp'];
+export const CREDENTIAL_TYPES = [
+  'userpass',
+  'ssh',
+  'git',
+  'api',
+  'database',
+  'cyberark',
+  'smtp',
+  'ldap',
+  'entraid',
+  'oidc',
+];
 
 // The flavours of an awx runner (server/src/models/runner.model.js has the same list) : which
 // product it is (its uri carries its API path)
@@ -995,20 +1014,27 @@ export default function getSettings(t) {
       selectable: false,
       // a provider has its own page (pages/admin/sso-provider.vue) : its row and Edit open it, Add the wizard
       openPage: (item) => `/settings/sso/${item.id}`,
-      // the dialog in steps : the provider, how the app signs in with it, its groups. The help a
-      // provider needs (the permissions of an Entra ID app, what Open ID was tested with) is in
-      // the step it is for
+      // the dialog in steps, as its page's tabs : its details, its type, as whom and where it signs
+      // in (a credential of its type : the app registration, its redirect URL too), its groups. The help a provider
+      // needs (the permissions of an Entra ID app, what Open ID was tested with) is in the step it
+      // is for
       steps: [
-        { key: 'provider', label: t('settings.oauth2.stepProvider') },
+        { key: 'provider', label: t('settings.common.tabDetails') },
         {
-          key: 'sign-in',
-          label: t('settings.oauth2.stepSignIn'),
+          key: 'type',
+          label: t('settings.oauth2.stepType'),
+          notes: (item) => [item.provider === 'oidc' && { text: t('admin.oauth2.openIdTestedWith') }],
+        },
+        {
+          // as whom and where : a credential of its type (an entraid one with its tenant, an oidc
+          // one with its issuer) ; the permissions the Entra ID app needs
+          key: 'credentials',
+          label: t('settings.common.tabCredentials'),
           notes: (item) => [
             item.provider === 'azuread' && {
               title: t('admin.oauth2.requiredPermissions'),
               items: [t('admin.oauth2.delegatedUserRead'), t('admin.oauth2.delegatedGroupRead')],
             },
-            item.provider === 'oidc' && { text: t('admin.oauth2.openIdTestedWith') },
           ],
         },
         {
@@ -1022,11 +1048,6 @@ export default function getSettings(t) {
           ],
         },
       ],
-      // the redirect URL : the address typed and the provider's callback path, joined
-      beforeSave: ({ redirect_base, ...item }) => ({
-        ...item,
-        redirect_uri: ssoCallbackUrl(item.provider, redirect_base, item.redirect_uri),
-      }),
       actions: [
         { name: 'edit', title: t('settings.oauth2.editProvider'), icon: 'pencil', color: 'edit' },
         // the one its type signs in with : the others of its type stop being it (oauth2.model)
@@ -1038,14 +1059,6 @@ export default function getSettings(t) {
           dividerBefore: true,
           enabledWhen: (p) => !p.enable,
           update: (p) => ({ enable: 1, provider: p.provider }),
-        },
-        {
-          name: 'change_password',
-          dividerBefore: true,
-          // a provider has a client secret, not a password
-          title: t('settings.oauth2.changeSecret'),
-          icon: 'lock',
-          color: 'change',
         },
         { name: 'delete', title: t('settings.oauth2.deleteProvider'), icon: 'trash', color: 'delete' },
       ],
@@ -1059,86 +1072,84 @@ export default function getSettings(t) {
           noInput: true,
         },
         {
+          // its type : radios, each its icon, label and a few words ; set when it is made, it stays
           key: 'provider',
+          step: 'type',
           label: t('settings.oauth2.provider'),
+          type: 'radio',
           required: true,
-          icon: 'cloud',
-          type: 'select',
-          parent: 'providers',
-          values: [
-            { label: 'Microsoft Entra ID', value: 'azuread' },
-            { label: 'Open ID', value: 'oidc' },
-          ],
-          valueKey: 'value',
-          labelKey: 'label',
+          options: SSO_TYPES.map((value) => ({
+            value,
+            icon: SSO_ICONS[value],
+            label: t(`settings.oauth2.type_${value}`),
+            hint: t(`settings.oauth2.typeHint_${value}`),
+          })),
+          initial: (r) => r?.provider || 'azuread',
+          render: (v) => esc(t(`settings.oauth2.type_${SSO_TYPES.includes(v) ? v : 'oidc'}`)),
         },
         { key: 'name', label: t('settings.fields.name'), required: true, icon: 'heading' },
         { key: 'description', label: t('settings.fields.description'), required: false, icon: 'info-circle' },
         {
+          // in its credential now (an entraid one) ; kept on the record for the providers that still
+          // have one
           key: 'tenant_id',
-          step: 'sign-in',
-          label: t('settings.oauth2.tenantId'),
-          // required for Entra ID : the field only shows (and is only checked) for azuread
-          required: true,
-          icon: 'building',
-          dependency: 'provider',
-          dependencyValues: ['azuread'],
-          hidden: true,
-        },
-        {
-          key: 'client_id',
-          step: 'sign-in',
-          label: t('settings.oauth2.clientId'),
-          required: true,
-          icon: 'key',
-          dependency: 'provider',
-          dependencyValues: ['azuread', 'oidc'],
-          hidden: true,
-        },
-        {
-          key: 'issuer',
-          step: 'sign-in',
-          label: t('settings.oauth2.issuer'),
-          required: true,
-          icon: 'globe',
-          dependency: 'provider',
-          dependencyValues: ['oidc'],
-          hidden: true,
-        },
-        {
-          key: 'client_secret',
-          step: 'sign-in',
-          label: t('settings.oauth2.clientSecret'),
-          type: 'password',
-          required: true,
-          icon: 'lock',
-          hidden: true,
-        },
-        // the redirect URL : stored whole, typed as its address with the callback path beside it
-        // (redirect_base) ; Save joins them (beforeSave)
-        {
-          key: 'redirect_uri',
-          label: t('settings.oauth2.redirectUrl'),
           noInput: true,
           hidden: true,
+          noTable: true,
         },
         {
-          key: 'redirect_base',
-          step: 'sign-in',
-          label: t('settings.oauth2.redirectUrl'),
-          // a sign-in needs the full URL (the server reads it as one)
+          // in its credential now ; kept on the record for the providers that still have one
+          key: 'client_id',
+          noInput: true,
+          hidden: true,
+          noTable: true,
+        },
+        {
+          // in its credential now (an oidc one) ; kept on the record for the providers that still
+          // have one
+          key: 'issuer',
+          noInput: true,
+          hidden: true,
+          noTable: true,
+        },
+        {
+          // in its credential now ; kept on the record for the providers that still have one
+          key: 'client_secret',
+          noInput: true,
+          hidden: true,
+          noTable: true,
+        },
+        {
+          // an sso credential of Connections > Credentials instead : its user the client id, its
+          // password the client secret (which can then come from a secret store)
+          key: 'credential',
+          step: 'credentials',
+          label: t('settings.oauth2.credential'),
+          help: t('settings.oauth2.credentialHelp'),
           required: true,
-          icon: 'link',
+          type: 'select',
+          icon: 'key',
+          parent: 'credentials',
+          values: 'credential',
+          valueKey: 'name',
+          labelKey: 'name',
+          clearable: true,
+          // the credentials of its type : an Entra ID provider's entraid ones, an Open ID one's oidc
+          choicesWhen: (c, item) =>
+            !c?.name || c.credential_type === (item.provider === 'azuread' ? 'entraid' : 'oidc'),
+          createWith: 'credentials',
+          createLabel: t('settings.repositories.newCredential'),
+          createDefaults: (item) => ({ credential_type: item.provider === 'azuread' ? 'entraid' : 'oidc' }),
           dependency: 'provider',
           dependencyValues: ['azuread', 'oidc'],
-          // a new provider : the app's address (the URL setting), when it has one
-          defaultMap: {
-            azuread: (config) => ssoCallbackBase('azuread', config.url),
-            oidc: (config) => ssoCallbackBase('oidc', config.url),
-          },
-          placeholder: SSO_EXAMPLE_BASE,
-          suffix: (item) => ssoCallbackPath(item.provider, item.redirect_uri),
-          initial: (r) => ssoCallbackBase(r?.provider, r?.redirect_uri),
+          hidden: true,
+          noTable: true,
+        },
+        {
+          // in its credential now (its redirect URL) ; kept on the record for the providers that
+          // still have one
+          key: 'redirect_uri',
+          noInput: true,
           hidden: true,
           noTable: true,
         },
@@ -1152,7 +1163,7 @@ export default function getSettings(t) {
         },
         {
           key: 'scope',
-          step: 'sign-in',
+          step: 'provider',
           label: t('settings.oauth2.scope'),
           required: false,
           icon: 'list',
@@ -1162,7 +1173,7 @@ export default function getSettings(t) {
         },
         {
           key: 'auth_url',
-          step: 'sign-in',
+          step: 'provider',
           label: t('settings.oauth2.authUrl'),
           required: false,
           icon: 'globe',
@@ -1172,7 +1183,7 @@ export default function getSettings(t) {
         },
         {
           key: 'token_url',
-          step: 'sign-in',
+          step: 'provider',
           label: t('settings.oauth2.tokenUrl'),
           required: false,
           icon: 'globe',
@@ -1182,7 +1193,7 @@ export default function getSettings(t) {
         },
         {
           key: 'userinfo_url',
-          step: 'sign-in',
+          step: 'provider',
           label: t('settings.oauth2.userinfoUrl'),
           required: false,
           icon: 'globe',
@@ -1192,7 +1203,7 @@ export default function getSettings(t) {
         },
         {
           key: 'extra',
-          step: 'sign-in',
+          step: 'provider',
           label: t('settings.oauth2.extra'),
           type: 'textarea',
           required: false,
@@ -1506,9 +1517,9 @@ export default function getSettings(t) {
       description: t('settings.credentials.description'),
       icon: 'lock',
       selectable: false,
-      // the dialog in steps : what the credential is, what it is for, its user and password,
-      // where they are kept, what it connects to (a login's or a database's host ; git and an
-      // api have their address where they are used)
+      // the dialog in steps : what the credential is, what it is for, its login (where an ssh or
+      // a database one connects, its user and password ; git and an api have their address where
+      // they are used), where the user and password are kept
       steps: [
         { key: 'credential', label: t('settings.credentials.stepCredential') },
         { key: 'type', label: t('settings.credentials.stepType') },
@@ -1518,11 +1529,6 @@ export default function getSettings(t) {
           key: 'store',
           label: t('settings.credentials.stepStore'),
           when: (item) => item.credential_type !== 'cyberark',
-        },
-        {
-          key: 'connection',
-          label: t('settings.credentials.stepConnection'),
-          when: (item) => ['ssh', 'database'].includes(item.credential_type),
         },
       ],
       // where the user and password are kept is not stored : a secret store (then the user and
@@ -1538,8 +1544,8 @@ export default function getSettings(t) {
       // a credential has its own page (pages/admin/credential.vue) : its row and Edit open it, New
       // the wizard
       openPage: (item) => `/settings/credentials/${item.id}`,
-      // in the row menu, as the runners' : editing, the test (a database's), the password, then
-      // Delete last, each apart
+      // in the row menu, as the runners' : editing, the test (a database's), then Delete last, each
+      // apart (its password is changed on its page)
       actions: [
         { name: 'edit', title: t('settings.credentials.editCredential'), icon: 'pencil', color: 'edit' },
         {
@@ -1549,16 +1555,6 @@ export default function getSettings(t) {
           color: 'test',
           dependency: 'is_database',
           dividerBefore: true,
-        },
-        {
-          // its password, typed twice ; a CyberArk's client key and one read from a secret store
-          // are not passwords to change
-          name: 'change_password',
-          title: t('settings.common.changePassword'),
-          icon: 'lock',
-          color: 'change',
-          dividerBefore: true,
-          enabledWhen: (c) => c.credential_type !== 'cyberark' && !c.secret_store,
         },
         { name: 'delete', title: t('settings.credentials.deleteCredential'), icon: 'trash', color: 'delete' },
       ],
@@ -1634,12 +1630,151 @@ export default function getSettings(t) {
           filterable: true,
         },
         {
+          key: 'description',
+          label: t('settings.fields.description'),
+          sortable: false,
+          required: true,
+          filterable: false,
+          icon: 'info-circle',
+        },
+        {
+          // how many records use it (the server counts them, as its Used by tab lists them) : a
+          // column, to the right
+          key: 'used_by_count',
+          label: t('settings.linked.usedBy'),
+          noInput: true,
+          align: 'end',
+          filterable: false,
+          filterType: 'number',
+          // none : an en dash, as the other empty cells
+          render: (v) => (v ? String(v) : '–'),
+        },
+        {
+          key: 'db_type',
+          step: 'login',
+          label: t('settings.credentials.databaseType'),
+          type: 'select',
+          sortable: false,
+          hidden: true,
+          required: true,
+          parent: 'databases',
+          values: [
+            { value: 'mysql', label: 'MySQL' },
+            { value: 'mssql', label: 'MSSQL' },
+            { value: 'postgres', label: 'PostgreSQL' },
+            { value: 'oracle', label: 'Oracle' },
+            { value: 'mongodb', label: 'MongoDB' },
+          ],
+          labelKey: 'label',
+          valueKey: 'value',
+          filterable: true,
+          icon: 'database',
+          dependency: 'credential_type',
+          dependencyValues: ['database'],
+        },
+        {
+          key: 'host',
+          step: 'login',
+          dependency: 'credential_type',
+          dependencyValues: ['ssh', 'database', 'smtp'],
+          label: t('settings.fields.host'),
+          // an smtp one's host is its mail server, which it needs
+          dialogLabel: (r) => (r.credential_type === 'smtp' ? t('settings.mail.mailServer') : null),
+          help: (r) => (r.credential_type === 'smtp' ? t('settings.mail.mailServerHelp') : null),
+          placeholder: (r) => (r.credential_type === 'smtp' ? 'smtp.example.com' : ''),
+          requiredWhen: (r) => r.credential_type === 'smtp',
+          // no column : most credentials connect to nothing, an ssh, a database or an smtp one
+          // shows it on its page
+          noTable: true,
+          sortable: true,
+          required: false,
+          filterable: true,
+          icon: 'server',
+        },
+        {
+          key: 'port',
+          step: 'login',
+          dependency: 'credential_type',
+          dependencyValues: ['ssh', 'database', 'smtp'],
+          label: t('settings.fields.port'),
+          dialogLabel: (r) => (r.credential_type === 'smtp' ? t('settings.mail.mailPort') : null),
+          help: (r) => (r.credential_type === 'smtp' ? t('settings.mail.mailPortHelp') : null),
+          noTable: true,
+          type: 'number',
+          sortable: true,
+          required: false,
+          filterable: false,
+          icon: 'arrows-alt-v',
+        },
+        {
+          // an smtp one : TLS to its mail server
+          key: 'secure',
+          step: 'login',
+          dependency: 'credential_type',
+          dependencyValues: ['smtp'],
+          label: t('settings.mail.useTls'),
+          help: t('settings.mail.useTlsHelp'),
+          type: 'checkbox',
+          noTable: true,
+          hidden: true,
+          required: false,
+          filterable: false,
+        },
+        {
+          key: 'db_name',
+          step: 'login',
+          label: t('settings.credentials.database'),
+          sortable: false,
+          hidden: true,
+          required: false,
+          filterable: false,
+          icon: 'database',
+          dependency: 'credential_type',
+          dependencyValues: ['database'],
+        },
+        {
+          // an oidc credential's issuer : the provider's address, first as an entraid one's tenant
+          key: 'issuer',
+          step: 'login',
+          icon: 'globe',
+          label: t('settings.oauth2.issuer'),
+          placeholder: 'https://id.example.com/realms/main',
+          required: true,
+          hidden: true,
+          noTable: true,
+          dependency: 'credential_type',
+          dependencyValues: ['oidc'],
+        },
+        {
+          // an entraid credential's tenant : the tenant id the Entra ID app is in, first
+          // as in the Entra admin center (tenant, client id, secret) ; the sign-in needs it
+          key: 'tenant_id',
+          step: 'login',
+          icon: 'building',
+          label: t('settings.oauth2.tenantId'),
+          required: true,
+          hidden: true,
+          noTable: true,
+          dependency: 'credential_type',
+          dependencyValues: ['entraid'],
+        },
+        {
           key: 'user',
           step: 'login',
           label: t('settings.fields.user'),
-          // a cyberark credential's user is its AppID
-          dialogLabel: (r) => (r.credential_type === 'cyberark' ? t('settings.secretStores.appId') : null),
+          // a cyberark credential's user is its AppID, an ldap one's the bind DN, an entraid or oidc
+          // one's the client id
+          dialogLabel: (r) =>
+            ({
+              cyberark: t('settings.secretStores.appId'),
+              ldap: t('settings.ldap.bindUserDn'),
+              entraid: t('settings.oauth2.clientId'),
+              oidc: t('settings.oauth2.clientId'),
+            })[r.credential_type] || null,
           help: (r) => (r.credential_type === 'cyberark' ? t('settings.secretStores.appIdHelp') : null),
+          // no column : what it is depends on the type (a user, a bind DN, a client id), its page
+          // shows it
+          noTable: true,
           sortable: true,
           required: false,
           filterable: true,
@@ -1657,9 +1792,31 @@ export default function getSettings(t) {
           filterable: false,
           icon: 'lock',
           hidden: true,
+          // an ldap credential's password is the bind password, an entraid or oidc one's the client secret
+          dialogLabel: (r) =>
+            ({
+              ldap: t('settings.ldap.bindUserPassword'),
+              entraid: t('settings.oauth2.clientSecret'),
+              oidc: t('settings.oauth2.clientSecret'),
+            })[r.credential_type] || null,
           // a cyberark credential has a client key instead
           dependency: 'credential_type',
-          dependencyValues: ['userpass', 'ssh', 'git', 'api', 'database', 'smtp'],
+          dependencyValues: ['userpass', 'ssh', 'git', 'api', 'database', 'smtp', 'ldap', 'entraid', 'oidc'],
+        },
+        {
+          // an entraid or oidc credential's redirect URL, as registered with the client : empty,
+          // the app's address and the type's callback path (shown as its placeholder)
+          key: 'redirect_uri',
+          step: 'login',
+          icon: 'link',
+          label: t('settings.oauth2.redirectUrl'),
+          help: t('settings.oauth2.redirectHelp'),
+          placeholder: (r, config) =>
+            ssoCallbackUrl(r.credential_type, config?.url) || ssoCallbackUrl(r.credential_type, SSO_EXAMPLE_BASE),
+          hidden: true,
+          noTable: true,
+          dependency: 'credential_type',
+          dependencyValues: ['entraid', 'oidc'],
         },
         {
           // a cyberark credential : the client certificate and key its AppID may be restricted to
@@ -1727,73 +1884,6 @@ export default function getSettings(t) {
           step: 'store',
           dependency: 'secret_source',
           dependencyValues: ['store'],
-        },
-        {
-          key: 'host',
-          step: 'connection',
-          dependency: 'credential_type',
-          dependencyValues: ['ssh', 'database'],
-          label: t('settings.fields.host'),
-          sortable: true,
-          required: false,
-          filterable: true,
-          icon: 'server',
-        },
-        {
-          key: 'port',
-          step: 'connection',
-          dependency: 'credential_type',
-          dependencyValues: ['ssh', 'database'],
-          label: t('settings.fields.port'),
-          type: 'number',
-          sortable: true,
-          required: false,
-          filterable: false,
-          icon: 'arrows-alt-v',
-        },
-        {
-          key: 'description',
-          label: t('settings.fields.description'),
-          sortable: false,
-          hidden: true,
-          required: true,
-          filterable: false,
-          icon: 'info-circle',
-        },
-        {
-          key: 'db_type',
-          step: 'connection',
-          label: t('settings.credentials.databaseType'),
-          type: 'select',
-          sortable: false,
-          hidden: true,
-          required: true,
-          parent: 'databases',
-          values: [
-            { value: 'mysql', label: 'MySQL' },
-            { value: 'mssql', label: 'MSSQL' },
-            { value: 'postgres', label: 'PostgreSQL' },
-            { value: 'oracle', label: 'Oracle' },
-            { value: 'mongodb', label: 'MongoDB' },
-          ],
-          labelKey: 'label',
-          valueKey: 'value',
-          filterable: true,
-          icon: 'database',
-          dependency: 'credential_type',
-          dependencyValues: ['database'],
-        },
-        {
-          key: 'db_name',
-          step: 'connection',
-          label: t('settings.credentials.database'),
-          sortable: false,
-          hidden: true,
-          required: false,
-          filterable: false,
-          icon: 'database',
-          dependency: 'credential_type',
-          dependencyValues: ['database'],
         },
       ],
     },
@@ -1864,7 +1954,7 @@ export default function getSettings(t) {
         },
         {
           key: 'server',
-          tab: 'server',
+          tab: 'connection',
           icon: 'server',
           line: 1,
           // one per input, stored comma separated ; tried in order
@@ -1878,7 +1968,7 @@ export default function getSettings(t) {
         },
         {
           key: 'port',
-          tab: 'server',
+          tab: 'connection',
           icon: 'arrows-alt-v',
           type: 'number',
           line: 2,
@@ -1888,7 +1978,7 @@ export default function getSettings(t) {
         },
         {
           key: 'enable_tls',
-          tab: 'server',
+          tab: 'connection',
           label: t('settings.ldap.enableTls'),
           help: t('settings.ldap.enableTlsDesc'),
           type: 'checkbox',
@@ -1900,7 +1990,7 @@ export default function getSettings(t) {
         },
         {
           key: 'ignore_certs',
-          tab: 'server',
+          tab: 'connection',
           hideWhenDisabled: true,
           label: t('settings.ldap.ignoreCerts'),
           help: t('settings.ldap.ignoreCertsDesc'),
@@ -1910,7 +2000,7 @@ export default function getSettings(t) {
         },
         {
           key: 'cert',
-          tab: 'server',
+          tab: 'connection',
           hideWhenDisabled: true,
           icon: 'certificate',
           type: 'textarea',
@@ -1923,7 +2013,7 @@ export default function getSettings(t) {
         },
         {
           key: 'ca_bundle',
-          tab: 'server',
+          tab: 'connection',
           hideWhenDisabled: true,
           icon: 'certificate',
           type: 'textarea',
@@ -1955,24 +2045,28 @@ export default function getSettings(t) {
           dependency: 'enable',
         },
         {
-          key: 'bind_user_dn',
-          tab: 'server',
-          icon: 'user',
-          line: 9,
-          label: t('settings.ldap.bindUserDn'),
-          help: t('settings.ldap.bindUserDnDesc'),
-          required: true,
-          dependency: 'enable',
-        },
-        {
-          key: 'bind_user_pw',
-          tab: 'server',
-          icon: 'lock',
-          line: 10,
-          label: t('settings.ldap.bindUserPassword'),
-          help: t('settings.ldap.bindUserPasswordDesc'),
-          type: 'password',
-          required: true,
+          // a credential of Connections > Credentials to bind with, or none : its own bind user and
+          // password below
+          key: 'credential',
+          tab: 'credentials',
+          icon: 'key',
+          line: 50,
+          type: 'select',
+          label: t('settings.ldap.credential'),
+          help: t('settings.ldap.credentialHelp'),
+          // its page's dropdown (AppAdminSingle) and the New dialog's (AppAdminMulti) : the ldap
+          // credentials only, none first (its own bind user and password)
+          valuesFrom: { url: '/api/v2/credential/', filter: (c) => c.credential_type === 'ldap' },
+          parent: 'credentials',
+          values: 'credential',
+          valueKey: 'name',
+          labelKey: 'name',
+          clearable: true,
+          choicesWhen: (c) => !c?.name || c.credential_type === 'ldap',
+          // the New dialog's : a new ldap credential
+          createWith: 'credentials',
+          createLabel: t('settings.repositories.newCredential'),
+          createDefaults: { credential_type: 'ldap' },
           dependency: 'enable',
         },
         {
@@ -2114,7 +2208,7 @@ export default function getSettings(t) {
           // the key : the password of an api credential of Connections > Credentials (a key
           // saved before credentials keeps working while none is chosen)
           key: 'credential',
-          tab: 'model-provider',
+          tab: 'credentials',
           icon: 'key',
           line: 3,
           type: 'select',
@@ -2127,7 +2221,7 @@ export default function getSettings(t) {
           key: 'auth_type',
           tab: 'model-provider',
           icon: 'id-card',
-          line: 4,
+          line: 20,
           type: 'select',
           label: t('settings.chat.authType'),
           help: t('settings.chat.authTypeHelp'),
@@ -2252,8 +2346,8 @@ export default function getSettings(t) {
       steps: [
         { key: 'runner', label: t('settings.runners.stepRunner') },
         { key: 'type', label: t('settings.runners.stepType') },
+        { key: 'credentials', label: t('settings.runners.stepAuth') },
         { key: 'connection', label: t('settings.runners.stepConnection') },
-        { key: 'authentication', label: t('settings.runners.stepAuth') },
       ],
       // the kind chosen is stored as a type and a flavour : an RTE, or an awx runner that is an
       // AWX, an AAP or an Ascender. What the api adds or the RTE writes (state, node_id) is
@@ -2292,7 +2386,7 @@ export default function getSettings(t) {
           icon: 'key',
           color: 'change',
           dividerBefore: true,
-          to: (r) => `/settings/runners/${r.id}/authentication`,
+          to: (r) => `/settings/runners/${r.id}/credentials`,
         },
         { name: 'delete', title: t('settings.runners.deleteRunner'), icon: 'trash', color: 'delete' },
       ],
@@ -2402,7 +2496,7 @@ export default function getSettings(t) {
         {
           // an AWX, AAP or Ascender : an API token, or a user and password - radio buttons
           key: 'use_credentials',
-          step: 'authentication',
+          step: 'credentials',
           label: t('settings.runners.stepAuth'),
           type: 'radio',
           options: [
@@ -2421,7 +2515,7 @@ export default function getSettings(t) {
         },
         {
           key: 'token',
-          step: 'authentication',
+          step: 'credentials',
           // shown when editing too, as ******** : left empty, the stored one stays
           onEdit: true,
           keepHelp: t('settings.common.tokenKeep'),
@@ -2441,7 +2535,7 @@ export default function getSettings(t) {
         },
         {
           key: 'username',
-          step: 'authentication',
+          step: 'credentials',
           icon: 'user',
           line: 2,
           label: t('settings.fields.username'),
@@ -2453,7 +2547,7 @@ export default function getSettings(t) {
         },
         {
           key: 'password',
-          step: 'authentication',
+          step: 'credentials',
           onEdit: true,
           icon: 'lock',
           line: 2,
@@ -2529,10 +2623,12 @@ export default function getSettings(t) {
       steps: [
         { key: 'channel', label: t('settings.notificationChannels.stepChannel') },
         { key: 'type', label: t('settings.notificationChannels.stepType') },
+        // its credential first, as on every page : mail's smtp one (the mail server, its port and
+        // TLS, the login), a Telegram bot's or a webhook's token ; then mail's from address
         {
-          key: 'connection',
-          label: t('settings.notificationChannels.stepConnection'),
-          when: (i) => channelType(i) === 'mail',
+          key: 'credentials',
+          label: t('settings.common.tabCredentials'),
+          when: (i) => ['mail', 'telegram', 'webhook'].includes(channelType(i)),
         },
         { key: 'sender', label: t('settings.notificationChannels.stepSender'), when: (i) => channelType(i) === 'mail' },
         {
@@ -2656,39 +2752,6 @@ export default function getSettings(t) {
         },
         // ─── mail ───
         {
-          key: 'server',
-          step: 'connection',
-          label: t('settings.mail.mailServer'),
-          help: t('settings.mail.mailServerHelp'),
-          placeholder: 'smtp.example.com',
-          required: true,
-          icon: 'server',
-          hidden: true,
-          showWhen: (i) => channelType(i) === 'mail',
-        },
-        {
-          key: 'port',
-          step: 'connection',
-          type: 'number',
-          label: t('settings.mail.mailPort'),
-          help: t('settings.mail.mailPortHelp'),
-          initial: (r) => r?.port ?? 587,
-          icon: 'arrows-alt-v',
-          hidden: true,
-          showWhen: (i) => channelType(i) === 'mail',
-        },
-        {
-          key: 'secure',
-          step: 'connection',
-          type: 'checkbox',
-          flush: true,
-          label: t('settings.mail.useTls'),
-          help: t('settings.mail.useTlsHelp'),
-          initial: (r) => (r?.id ? !!r.secure : true),
-          hidden: true,
-          showWhen: (i) => channelType(i) === 'mail',
-        },
-        {
           key: 'from_address',
           step: 'sender',
           type: 'email',
@@ -2701,10 +2764,11 @@ export default function getSettings(t) {
           showWhen: (i) => channelType(i) === 'mail',
         },
         {
-          // its login : an smtp credential of Connections > Credentials, or a New one ; none for
-          // a relay that takes mail without a login
+          // where it sends and as whom : an smtp credential of Connections > Credentials (the mail
+          // server, its port and TLS, the login ; no user for a relay), or a New one
           key: 'credential',
-          step: 'sender',
+          step: 'credentials',
+          requiredWhen: (i) => channelType(i) === 'mail',
           icon: 'key',
           label: t('settings.notificationChannels.credential'),
           help: t('settings.notificationChannels.helpCredential'),
@@ -2717,7 +2781,7 @@ export default function getSettings(t) {
           createWith: 'credentials',
           createLabel: t('settings.repositories.newCredential'),
           createDefaults: { credential_type: 'smtp' },
-          // the smtp credentials only, none first (a relay without a login)
+          // the smtp credentials only
           choicesWhen: (c) => !c?.name || c.credential_type === 'smtp',
           hidden: true,
           showWhen: (i) => channelType(i) === 'mail',
@@ -2767,7 +2831,7 @@ export default function getSettings(t) {
           // telegram : its bot token ; webhook : a bearer token - each the password of an api
           // credential of Connections > Credentials, or a New one
           key: 'token_credential',
-          step: 'connection',
+          step: 'credentials',
           icon: 'key',
           label: t('settings.notificationChannels.tokenCredential_webhook'),
           dialogLabel: (i) =>
@@ -3245,8 +3309,8 @@ export default function getSettings(t) {
       steps: [
         { key: 'store', label: t('settings.secretStores.stepStore') },
         { key: 'type', label: t('settings.secretStores.stepType') },
-        { key: 'connection', label: t('settings.secretStores.stepConnection') },
         { key: 'credentials', label: t('settings.secretStores.stepAuth') },
+        { key: 'connection', label: t('settings.secretStores.stepConnection') },
         { key: 'options', label: t('settings.secretStores.stepOptions') },
       ],
       // the switches are not stored : ignore_certs, a CA bundle and a namespace are
@@ -3598,19 +3662,16 @@ const NEW_DIRECTORY = { enable: true, port: 389, username_attribute: 'sAMAccount
  *   object: the list's settings (AppAdminMulti).
  */
 function ldapDirectories(t, ldap) {
-  // the columns : the name, the servers, on or off ; never sorted, so the list is always in the
-  // lookup order
+  // the columns : on or off (first, as every list's Enabled), the name, the servers ; never sorted,
+  // so the list is always in the lookup order
   const column = {
     name: { sortable: false, filterable: true },
     server: { sortable: false, filterable: true },
-    enable: {
-      sortable: false,
-      label: t('settings.ldap.enabled'),
-      render: (v) => (v ? pill(PILL.green, t('settings.ldap.enabled')) : pill(PILL.grey, t('settings.ldap.disabled'))),
-    },
+    // a ✓ as every list's Enabled, first as theirs
+    enable: { sortable: false, label: t('settings.ldap.enabled'), type: 'checkbox' },
   };
   // the columns first, in their order ; the dialog's fields keep theirs within each step
-  const COLUMNS = ['name', 'server', 'enable'];
+  const COLUMNS = ['enable', 'name', 'server'];
   const columnOrder = (key) => (COLUMNS.includes(key) ? COLUMNS.indexOf(key) : COLUMNS.length);
   return {
     pageTitle: t('sidebar.ldap'),
@@ -3621,7 +3682,8 @@ function ldapDirectories(t, ldap) {
     selectable: false,
     steps: [
       { key: 'general', label: t('settings.common.tabDetails') },
-      { key: 'server', label: t('settings.ldap.tabServer') },
+      { key: 'connection', label: t('settings.common.tabConnection') },
+      { key: 'credentials', label: t('settings.common.tabCredentials') },
       { key: 'users', label: t('settings.ldap.tabUsers') },
       { key: 'groups', label: t('settings.ldap.tabGroups') },
     ],
@@ -3665,6 +3727,8 @@ function ldapDirectories(t, ldap) {
           ...(column[f.key] || { noTable: true }),
           // a new one : on, the usual Active Directory port and attributes
           ...(NEW_DIRECTORY[f.key] !== undefined ? { initial: () => NEW_DIRECTORY[f.key] } : {}),
+          // a new one binds with a credential (one from before credentials may have its own account)
+          ...(f.key === 'credential' ? { required: true } : {}),
         })),
     ],
   };

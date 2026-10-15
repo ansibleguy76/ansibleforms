@@ -92,16 +92,11 @@ export function recordButtons(kind, id, isAdmin = true) {
   const editable = (extra = []) => (managed ? [] : [...extra, W.delete, W.save]);
   switch (kind) {
     case 'credentials': {
-      // not known : a credential of its own password (Change password), no database
-      const cyberark = row?.credential_type === 'cyberark';
-      const fromStore = !cyberark && !!row?.secret_store;
-      return [
-        ...(row?.is_database ? [W.testConnection] : []),
-        ...editable(!cyberark && !fromStore ? [W.changePassword] : []),
-      ];
+      // its password in its Login tab ; a database one can be tested
+      return [...(row?.is_database ? [W.testConnection] : []), ...editable()];
     }
     case 'runners':
-      return [W.testConnection, ...(isAdmin ? editable([W.changeSecret]) : [])];
+      return [W.testConnection, ...(isAdmin ? editable() : [])];
     case 'secret-stores':
       return [W.testConnection, ...editable()];
     case 'ldap':
@@ -111,9 +106,9 @@ export function recordButtons(kind, id, isAdmin = true) {
     case 'syslog':
       return [W.sendTest, ...editable()];
     case 'repositories':
-      return [W.pull, W.push, W.reset, ...(row?.user && !row?.credential ? [W.changePassword] : []), W.delete, W.save];
+      return [W.pull, W.push, W.reset, W.delete, W.save];
     case 'sso':
-      return [W.changeSecret, W.delete, W.save];
+      return [W.delete, W.save];
     case 'users':
       return [W.changePassword, W.delete, W.save];
     case 'groups':

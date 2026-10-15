@@ -56,9 +56,13 @@ const credentialItem = {
     secure: bool,
     is_database: bool,
     // what it is for (is_database follows it) ; without it, is_database decides
-    credential_type: { type: "string", enum: ["userpass", "ssh", "git", "api", "database", "cyberark", "smtp"] },
+    credential_type: { type: "string", enum: ["userpass", "ssh", "git", "api", "database", "cyberark", "smtp", "ldap", "entraid", "oidc"] },
     client_cert: str,
     client_key: str,
+    // an entraid credential's tenant, an oidc one's issuer ; an entraid or oidc one's redirect URL
+    tenant_id: str,
+    issuer: str,
+    redirect_uri: str,
     // a credential can take its user and password from a secret store instead of
     // carrying them here at all : the store's name and the place in it
     secret_store: str,
@@ -138,7 +142,9 @@ export function foldAwxIntoRunners(doc) {
 const oauth2Item = {
   type: "object",
   additionalProperties: false,
-  required: ["name", "provider", "client_id", "client_secret"],
+  required: ["name", "provider"],
+  // its client : its own id and secret, or a credential of the credentials section
+  anyOf: [{ required: ["client_id", "client_secret"] }, { required: ["credential"] }],
   properties: {
     name: str,
     description: str,
@@ -147,6 +153,7 @@ const oauth2Item = {
     tenant_id: str,
     client_id: str,
     client_secret: str,
+    credential: str,
     enable: bool,
     groupfilter: str,
     redirect_uri: str,
@@ -297,6 +304,9 @@ const ldapSection = {
     ca_bundle: str,
     bind_user_dn: str,
     bind_user_pw: str,
+    // a credential of the credentials section to bind with instead (optional : the user and
+    // password above are still declared)
+    credential: str,
     search_base: str,
     username_attribute: str,
     groups_attribute: str,

@@ -44,7 +44,8 @@ const repo = ref(null); // as saved
 const edit = ref(null); // as edited
 const others = ref([]); // the other repositories : who already has a one-only usage
 const credentials = ref([]); // the credentials it can use
-// what this page edits : the password of a repository that still has its own has its dialog
+// what this page edits : its login is its credential's (Connections > Credentials) ; a user of its
+// own, from before credentials, is shown, not edited
 const EDITED = [
   'name',
   'branch',
@@ -323,25 +324,6 @@ async function run(what) {
   if (running.value) watchRun();
 }
 
-// Change password : a repository that still has its own user and password (no credential)
-const changingPassword = ref(false);
-
-/**
- * Saves its own password.
- *
- * Args:
- *   password (string): the password, typed twice.
- */
-async function savePassword(password) {
-  try {
-    await axios.put(`/api/v2/repository/${encodeURIComponent(repoName.value)}`, { password });
-    changingPassword.value = false;
-    toast.success(`${repo.value.name} ${t('settings.common.isUpdated')}`);
-  } catch (err) {
-    fail(err);
-  }
-}
-
 // Delete asks first
 const confirmDelete = ref(false);
 
@@ -380,13 +362,6 @@ onMounted(async () => {
       <BsButton icon="trash" @click="deleteRepo()">{{ t('common.delete') }}</BsButton>
     </template>
   </BsModal>
-  <AppChangePasswordDialog
-    v-if="changingPassword"
-    icon="fab,git"
-    :label="t('settings.repositories.placeholderPassword')"
-    @save="savePassword"
-    @close="changingPassword = false"
-  />
   <AppSettingsPage>
     <!-- a title from the first frame (a space until the repository's name is read) : without one
          the title line is left out, and the page jumps when it comes -->
@@ -493,6 +468,7 @@ onMounted(async () => {
               :help="t('settings.repositories.helpCredential')"
               :label="t('settings.repositories.credential')"
             />
+            <!-- a repository from before credentials : its own user, until a credential is chosen -->
             <p v-if="repo.user && !edit.credential" class="form-text mb-0">
               {{ t('settings.repositories.ownUser', { user: repo.user }) }}
             </p>
@@ -583,9 +559,6 @@ onMounted(async () => {
         >
         <BsButton icon="redo" cssClass="text-nowrap" :disabled="running" @click="run('reset')">{{
           t('settings.repositories.reset')
-        }}</BsButton>
-        <BsButton v-if="repo.user && !repo.credential" icon="lock" @click="changingPassword = true">{{
-          t('settings.common.changePassword')
         }}</BsButton>
         <BsButton icon="trash" @click="confirmDelete = true">{{ t('common.delete') }}</BsButton>
         <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>

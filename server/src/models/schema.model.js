@@ -604,7 +604,8 @@ const SCHEMA_MANIFEST = {
                                'settings.forms_view', 'settings.default_timezone', 'settings.default_date_format', 'settings.header_links',
                                'tokens.replaced_at', 'repositories.pull_output', 'repositories.push_output',
                                'repositories.pulled_at', 'repositories.pushed_at', 'repositories.push_status',
-                               'ldap.id', 'ldap.name', 'ldap.position', 'ldap.domains'] },
+                               'ldap.id', 'ldap.name', 'ldap.position', 'ldap.domains', 'ldap.credential',
+                               'oauth2_providers.credential', 'credentials.tenant_id', 'credentials.issuer', 'credentials.redirect_uri'] },
   },
 };
 
@@ -951,6 +952,10 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addTable("notification_channels", channelsBuffer.toString()), messages, success, failed);
   await checkPromise(moveMailServersToChannels(), messages, success, failed);
   await checkPromise(copyMailSettingsToServers(), messages, success, failed);
+  // a mail channel's server, port and TLS belong to its smtp credential, with its login
+  await checkPromise(moveMailServersToCredentials(), messages, success, failed);
+  // an SSO provider's client (and its tenant or issuer) belongs to a credential of its type
+  await checkPromise(moveSsoClientsToCredentials(), messages, success, failed);
   // the syslog servers the server log and the audit entries go to (Connections > Syslog) ; the
   // LOG_SYSLOG_* variables of before become the first, once (lib/syslogServers.js)
   const syslogBuffer = fs.readFileSync(`${__dirname}/../db/create_syslog_servers_table.sql`);
@@ -1036,6 +1041,19 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addColumn("ldap", "position", "int(11)", false, "1"), messages, success, failed);
   await checkPromise(addColumn("ldap", "domains", "varchar(1000)", true, "NULL"), messages, success, failed);
   await checkPromise(addUniqueKey("ldap", "name"), messages, success, failed);
+  // a directory can bind with a credential of Connections > Credentials instead of its own user
+  // and password, as a repository can
+  await checkPromise(addColumn("ldap", "credential", "varchar(250)", true, "NULL"), messages, success, failed);
+  // an SSO provider too : the credential's user its client id, its password the client secret (which
+  // can then come from a secret store)
+  await checkPromise(addColumn("oauth2_providers", "credential", "varchar(250)", true, "NULL"), messages, success, failed);
+  // an Entra ID credential holds its tenant, as Microsoft's own credential does (tenant, client id,
+  // client secret)
+  await checkPromise(addColumn("credentials", "tenant_id", "varchar(250)", true, "NULL"), messages, success, failed);
+  // and an Open ID one its issuer : where the provider is and as whom, one credential
+  await checkPromise(addColumn("credentials", "issuer", "varchar(500)", true, "NULL"), messages, success, failed);
+  // and the redirect URL registered with the client : the app registration as one credential
+  await checkPromise(addColumn("credentials", "redirect_uri", "varchar(1000)", true, "NULL"), messages, success, failed);
   // and when each ended, worked or not, shown beside the repository's Pull and Push
   await checkPromise(addColumn("repositories", "pulled_at", "datetime", true, "NULL"), messages, success, failed);
   await checkPromise(addColumn("repositories", "pushed_at", "datetime", true, "NULL"), messages, success, failed);
@@ -1063,7 +1081,7 @@ function fillJobRunnerKinds() {
 // REST login (it used to become ssh)
 function fillCredentialTypes() {
   return mysql
-    .do("UPDATE AnsibleForms.`credentials` SET credential_type=IF(is_database,'database','userpass') WHERE credential_type IS NULL OR credential_type NOT IN ('userpass','ssh','git','api','database','cyberark','smtp')")
+    .do("UPDATE AnsibleForms.`credentials` SET credential_type=IF(is_database,'database','userpass') WHERE credential_type IS NULL OR credential_type NOT IN ('userpass','ssh','git','api','database','cyberark','smtp','ldap','entraid','oidc')")
     .then((res) => `Set the type of ${res?.affectedRows ?? 0} credential(s)`);
 }
 
@@ -1173,6 +1191,141 @@ export async function copyMailSettingsToServers() {
     ["default", "From the mail settings", s.mail_server, s.mail_port || null, s.mail_secure ? 1 : 0, s.mail_from || null, credential],
   );
   return "Copied the mail settings to the mail channel 'default'" + (credential ? ", its login to the credential 'mail-login'" : "");
+}
+
+/**
+ * A credential name not taken yet : the one asked for, else with -2, -3... after it.
+ *
+ * Args:
+ *   name (string): the name wanted.
+ *
+ * Returns:
+ *   Promise<string>: a free name.
+ */
+async function freeCredentialName(name) {
+  for (let n = 1; ; n++) {
+    const candidate = n === 1 ? name : `${name}-${n}`;
+    const taken = await mysql.do("SELECT 1 FROM AnsibleForms.`credentials` WHERE name = ?", [candidate]);
+    if (!taken.length) return candidate;
+  }
+}
+
+/**
+ * The server, port and TLS of each mail channel moved to its smtp credential, with its login :
+ * where it sends and as whom are one credential, as an SSH or a database one holds its host.
+ *   - its credential has no server yet : the channel's goes into it
+ *   - it has the same one : nothing to copy
+ *   - it has another (two channels shared one login, each its server) : a copy of the credential
+ *     with the channel's server, the channel then names the copy
+ *   - no credential (a relay, no login) : a new smtp credential, <channel>-smtp, without a user
+ * The channel's own then emptied. Not a seeded channel : the seed owns it, and its own server is
+ * still used while its credential has none. Idempotent : only a channel with a server left.
+ *
+ * Returns:
+ *   Promise<string|null>: what was done, or null when there was nothing to do.
+ */
+export async function moveMailServersToCredentials() {
+  const channels = await mysql.do(
+    "SELECT id, name, server, port, secure, credential FROM AnsibleForms.`notification_channels` " +
+      "WHERE type = 'mail' AND COALESCE(managed, 0) = 0 AND server IS NOT NULL AND server <> ''",
+  );
+  if (!channels.length) return null;
+  const done = [];
+  for (const c of channels) {
+    const server = String(c.server).trim();
+    const port = c.port || null;
+    const secure = c.secure ? 1 : 0;
+    const creds = c.credential ? await mysql.do("SELECT * FROM AnsibleForms.`credentials` WHERE name = ?", [c.credential]) : [];
+    const cred = creds[0];
+    let name = cred?.name || null;
+    if (cred && !String(cred.host || "").trim()) {
+      await mysql.do("UPDATE AnsibleForms.`credentials` SET host = ?, port = ?, secure = ? WHERE id = ?", [server, port, secure, cred.id]);
+      done.push(`${c.name} into ${name}`);
+    } else if (cred && (String(cred.host).trim() !== server || (cred.port || null) !== port || (cred.secure ? 1 : 0) !== secure)) {
+      // a copy : its login (stored encrypted, the same key for both rows) and the channel's server
+      name = await freeCredentialName(`${cred.name}-${c.name}`);
+      await mysql.do(
+        "INSERT INTO AnsibleForms.`credentials` (name, user, password, description, is_database, credential_type, secret_store, secret_ref, host, port, secure) " +
+          "SELECT ?, user, password, ?, 0, 'smtp', secret_store, secret_ref, ?, ?, ? FROM AnsibleForms.`credentials` WHERE id = ?",
+        [name, `The login of ${cred.name}, with the server of the mail channel ${c.name}`, server, port, secure, cred.id],
+      );
+      done.push(`${c.name} into a copy of ${cred.name}, ${name}`);
+    } else if (!cred) {
+      name = await freeCredentialName(`${c.name}-smtp`);
+      await mysql.do(
+        "INSERT INTO AnsibleForms.`credentials` (name, description, is_database, credential_type, host, port, secure) VALUES (?, ?, 0, 'smtp', ?, ?, ?)",
+        [name, `The server of the mail channel ${c.name}`, server, port, secure],
+      );
+      done.push(`${c.name} into ${name}`);
+    }
+    await mysql.do("UPDATE AnsibleForms.`notification_channels` SET server = NULL, port = NULL, secure = 0, credential = ? WHERE id = ?", [name, c.id]);
+  }
+  const message = `Moved the server of ${channels.length} mail channel(s) to their smtp credential${done.length ? ` (${done.join(", ")})` : ""}`;
+  logger.notice(message);
+  return message;
+}
+
+/**
+ * The client of each SSO provider in a credential of its type, with its tenant (Entra ID) or its
+ * issuer (Open ID) and its redirect URL : the app registration at the identity provider is one
+ * credential, as a mail channel's server and login are.
+ *   - a provider with its own client (from before credentials) : a new credential of its type,
+ *     named after it, its user the client id, its password the client secret (copied as stored :
+ *     the same key encrypts both tables)
+ *   - a provider with a credential : its tenant or issuer, and its redirect URL, copied into it
+ *     when it has none
+ * The provider's own client, tenant, issuer and redirect URL then emptied. Not a seeded provider : the seed owns
+ * it, and its own are still used while it has no credential. Idempotent : only a provider with
+ * its own client, tenant, issuer or redirect URL left.
+ *
+ * Returns:
+ *   Promise<string|null>: what was done, or null when there was nothing to do.
+ */
+export async function moveSsoClientsToCredentials() {
+  const providers = await mysql.do(
+    "SELECT id, name, provider, tenant_id, issuer, redirect_uri, client_id, client_secret, credential FROM AnsibleForms.`oauth2_providers` " +
+      "WHERE COALESCE(managed, 0) = 0 AND (COALESCE(client_id, '') <> '' OR COALESCE(tenant_id, '') <> '' OR COALESCE(issuer, '') <> '' OR COALESCE(redirect_uri, '') <> '')",
+  );
+  if (!providers.length) return null;
+  const done = [];
+  for (const p of providers) {
+    const type = p.provider === "azuread" ? "entraid" : "oidc";
+    const tenant = type === "entraid" ? p.tenant_id || null : null;
+    const issuer = type === "oidc" ? p.issuer || null : null;
+    let name = p.credential || null;
+    if (name) {
+      // its credential : the tenant or the issuer it lacks
+      const column = type === "entraid" ? "tenant_id" : "issuer";
+      const value = type === "entraid" ? tenant : issuer;
+      if (value) {
+        await mysql.do(`UPDATE AnsibleForms.\`credentials\` SET ${column} = ? WHERE name = ? AND (${column} IS NULL OR ${column} = '')`, [value, name]);
+      }
+      if (p.redirect_uri) {
+        await mysql.do("UPDATE AnsibleForms.`credentials` SET redirect_uri = ? WHERE name = ? AND (redirect_uri IS NULL OR redirect_uri = '')", [p.redirect_uri, name]);
+      }
+      done.push(`${p.name} kept ${name}`);
+    } else if (p.client_id) {
+      const slug = String(p.name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || type;
+      name = await freeCredentialName(`${slug}-sso`);
+      await mysql.do(
+        "INSERT INTO AnsibleForms.`credentials` (name, user, password, description, is_database, credential_type, tenant_id, issuer, redirect_uri) VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?)",
+        [name, p.client_id, p.client_secret || null, `The client of the SSO provider ${p.name}`, type, tenant, issuer, p.redirect_uri || null],
+      );
+      done.push(`${p.name} into ${name}`);
+    } else {
+      // no client and no credential : nothing signs in with it yet ; its own kept for when one is
+      // chosen
+      continue;
+    }
+    await mysql.do(
+      "UPDATE AnsibleForms.`oauth2_providers` SET client_id = NULL, client_secret = NULL, tenant_id = NULL, issuer = NULL, redirect_uri = NULL, credential = ? WHERE id = ?",
+      [name, p.id],
+    );
+  }
+  if (!done.length) return null;
+  const message = `Moved the client of ${done.length} SSO provider(s) to credentials (${done.join(", ")})`;
+  logger.notice(message);
+  return message;
 }
 
 // the tables 7.0.0 drops : their presence means an upgrade is pending

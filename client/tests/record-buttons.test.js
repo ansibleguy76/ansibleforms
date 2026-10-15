@@ -13,9 +13,9 @@ describe('the buttons of a record page', () => {
     expect(recordButtons('runners', '1')).toHaveLength(1);
   });
 
-  it('a runner made in the app : Test, Change, Delete and Save ; for an admin only', () => {
+  it('a runner made in the app : Test, Delete and Save (its token in its tab) ; for an admin only', () => {
     rememberRows('runner', [{ id: 2, managed: 0 }]);
-    expect(recordButtons('runners', 2)).toHaveLength(4);
+    expect(recordButtons('runners', 2)).toHaveLength(3);
     expect(recordButtons('runners', 2, false)).toHaveLength(1);
   });
 
@@ -23,7 +23,7 @@ describe('the buttons of a record page', () => {
     expect(recordButtons('runners', 9)).toHaveLength(1);
   });
 
-  it('a credential : Test for a database, no password change from a store or CyberArk', () => {
+  it('a credential : Test for a database, then Delete and Save (its password in its Login tab)', () => {
     rememberRows('credential', [
       { id: 1, is_database: 1, credential_type: 'database' },
       { id: 2, credential_type: 'ssh' },
@@ -31,11 +31,11 @@ describe('the buttons of a record page', () => {
       { id: 4, credential_type: 'cyberark' },
       { id: 5, credential_type: 'ssh', managed: 1 },
     ]);
-    expect([1, 2, 3, 4, 5].map((id) => recordButtons('credentials', id).length)).toEqual([4, 3, 2, 2, 0]);
+    expect([1, 2, 3, 4, 5].map((id) => recordButtons('credentials', id).length)).toEqual([3, 2, 2, 2, 0]);
   });
 
-  it('a credential not known : one made in the app, with its own password', () => {
-    expect(recordButtons('credentials', 7)).toHaveLength(3);
+  it('a credential not known : Delete and Save', () => {
+    expect(recordButtons('credentials', 7)).toHaveLength(2);
   });
 
   it('a seeded secret store, channel or syslog server loses Delete and Save', () => {
@@ -47,10 +47,10 @@ describe('the buttons of a record page', () => {
     expect(recordButtons('syslog', 1)).toHaveLength(3);
   });
 
-  it('a repository with its own login has Change password', () => {
+  it('a repository has the same buttons with its own login or a credential (the password in its tab)', () => {
     rememberRows('repository', [{ id: 1 }, { id: 2, user: 'git', credential: null }]);
     expect(recordButtons('repositories', 1)).toHaveLength(5);
-    expect(recordButtons('repositories', 2)).toHaveLength(6);
+    expect(recordButtons('repositories', 2)).toHaveLength(5);
   });
 
   it('a reserved role has no Delete', () => {

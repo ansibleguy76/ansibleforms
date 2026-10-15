@@ -76,9 +76,14 @@ const update = async function (req, res) {
     if (existing.managed) {
       return res.status(403).json(RestResultv2.error(i18n.t(req, 'resources.failedUpdateLdap'), i18n.t(req, 'resources.seedManagedLdap')));
     }
-    // the masked password : the stored one kept
-    if (req.body.bind_user_pw === MASK) req.body.bind_user_pw = existing.bind_user_pw;
-    const record = { ...new Ldap(req.body) };
+    // what was sent over what is stored : a field not sent is kept (the converting constructor
+    // would otherwise empty it, or switch a flag off) ; the masked password, the stored one
+    const sent = { ...existing, ...req.body };
+    if (sent.bind_user_pw === MASK) sent.bind_user_pw = existing.bind_user_pw;
+    const record = { ...new Ldap(sent) };
+    delete record.id;
+    delete record.testuser;
+    delete record.testpassword;
     delete record.managed;
     await Ldap.updateById(req.params.id, record);
     res.status(200).json(RestResultv2.single({ message: i18n.t(req, 'resources.ldapUpdated') }));

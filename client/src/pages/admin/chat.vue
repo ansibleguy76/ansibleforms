@@ -13,11 +13,13 @@ const settings = computed(() => getSettings(t));
 const authenticated = ref(false);
 const testing = ref(false);
 
-// the page in tabs : General (the switch and what the assistant may do), the model provider,
-// and the limits of a conversation ; each field of settings.chat names its tab
+// the page in tabs : General (the switch and what the assistant may do), the model provider, the
+// key it is called with (a credential), and the limits of a conversation ; each field of
+// settings.chat names its tab
 const tabs = computed(() => [
   { key: 'general', label: t('settings.chat.tabGeneral'), icon: 'sliders' },
   { key: 'model-provider', label: t('settings.chat.tabProvider'), icon: 'robot' },
+  { key: 'credentials', label: t('settings.chat.tabCredentials'), icon: 'key' },
   { key: 'limits', label: t('settings.chat.tabLimits'), icon: 'gauge' },
 ]);
 

@@ -66,6 +66,13 @@ CREATE TABLE `credentials` (
   -- a cyberark credential's client certificate and key (PEM)
   `client_cert` text DEFAULT NULL,
   `client_key` text DEFAULT NULL,
+  -- an Entra ID credential's tenant (its user the client id, its password the client secret)
+  `tenant_id` varchar(250) DEFAULT NULL,
+  -- an Open ID credential's issuer (the provider's address)
+  `issuer` varchar(500) DEFAULT NULL,
+  -- an Entra ID or Open ID credential's redirect URL, as registered with its client (empty : the
+  -- app's address and the type's callback path)
+  `redirect_uri` varchar(1000) DEFAULT NULL,
   `vault_path` varchar(500) DEFAULT NULL,
   `managed` tinyint(4) DEFAULT 0,
   -- the secret store a credential reads its user and password from, and where in it
@@ -208,6 +215,8 @@ CREATE TABLE `ldap` (
   `ca_bundle` text DEFAULT NULL,
   `bind_user_dn` varchar(250) DEFAULT NULL,
   `bind_user_pw` text DEFAULT NULL,
+  -- a credential of Connections > Credentials to bind with instead of the user and password above
+  `credential` varchar(250) DEFAULT NULL,
   `search_base` varchar(250) DEFAULT NULL,
   `username_attribute` varchar(250) DEFAULT NULL,
   `groups_search_base` varchar(250) DEFAULT NULL,
@@ -340,6 +349,8 @@ CREATE TABLE `oauth2_providers` (
   `tenant_id` TEXT DEFAULT NULL,
   `client_id` TEXT DEFAULT NULL,
   `client_secret` TEXT DEFAULT NULL,
+  -- a credential of Connections > Credentials : its user the client id, its password the secret
+  `credential` VARCHAR(250) DEFAULT NULL,
   `enable` TINYINT(4) DEFAULT NULL,
   `groupfilter` VARCHAR(250) DEFAULT NULL,
   `redirect_uri` TEXT DEFAULT NULL,

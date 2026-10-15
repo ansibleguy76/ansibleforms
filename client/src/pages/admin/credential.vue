@@ -5,16 +5,17 @@
 /*  the credentials' list : the steps of its dialog as tabs, the  */
 /*  tab kept in the url -                                         */
 /*    Details     its name and description                        */
-/*    Type        SSH, Git, API, Database or CyberArk             */
-/*    Login       its user (a CyberArk's AppID, client            */
-/*                certificate and key)                            */
+/*    Type        what it is for (SSH, Git, LDAP, SSO ...)        */
+/*    Login       where it connects (SSH, a database : the host   */
+/*                and port, a database's type and name), its user */
+/*                and password (a CyberArk's AppID, client        */
+/*                certificate and key ; an Entra ID one's tenant) */
+/*                ; the password masked : left empty kept, typed  */
+/*                replaced                                        */
 /*    Store       where the user and password are kept : the app's*/
 /*                database, or a secret store (not a CyberArk's)  */
-/*    Connection  a host and port (SSH, a database), a database's */
-/*                type and name                                   */
-/*  Test connection (a database), Change password and Delete top  */
-/*  right, beside Save. A credential of the config seed is read   */
-/*  only.                                                         */
+/*  Test connection (a database), Delete and Save top right. A    */
+/*  credential of the config seed is read only.                   */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted } from 'vue';
@@ -29,6 +30,7 @@ import { CREDENTIAL_TYPES } from '@/config/settings';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { recordButtons } from '@/lib/recordButtons';
+import { ssoCallbackUrl, SSO_EXAMPLE_BASE } from '@/lib/ssoCallback';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -50,11 +52,15 @@ const EDITED = [
   'user',
   'client_cert',
   'client_key',
+  'tenant_id',
+  'issuer',
+  'redirect_uri',
   'secret_source',
   'secret_store',
   'secret_ref',
   'host',
   'port',
+  'secure',
   'db_type',
   'db_name',
 ];
@@ -88,11 +94,15 @@ function editable(record) {
     user: record.user ?? '',
     client_cert: record.client_cert ?? '',
     client_key: '',
+    tenant_id: record.tenant_id ?? '',
+    issuer: record.issuer ?? '',
+    redirect_uri: record.redirect_uri ?? '',
     secret_source: record.secret_store ? 'store' : 'local',
     secret_store: record.secret_store ?? '',
     secret_ref: record.secret_ref ?? '',
     host: record.host ?? '',
     port: record.port ?? '',
+    secure: !!record.secure,
     db_type: record.db_type || 'mysql',
     db_name: record.db_name ?? '',
   };
@@ -107,7 +117,8 @@ const fromStore = computed(() => !isCyberark.value && edit.value?.secret_source 
 const dirty = computed(
   () =>
     !!credential.value &&
-    EDITED.some((k) => String(edit.value[k] ?? '') !== String(editable(credential.value)[k] ?? '')),
+    (EDITED.some((k) => String(edit.value[k] ?? '') !== String(editable(credential.value)[k] ?? '')) ||
+      !!newPassword.value),
 );
 // leaving with the credential changed and unsaved asks first
 useUnsavedGuard(
@@ -129,14 +140,18 @@ async function load() {
   } catch {
     credential.value = null;
   }
-  const [stores, mails, repos] = await Promise.all([
+  const [stores, mails, repos, directories, providers, chat] = await Promise.all([
     axios.get('/api/v2/secretstore/', auth).catch(() => null),
     axios.get('/api/v2/notificationchannel/', auth).catch(() => null),
     axios.get('/api/v2/repository/', auth).catch(() => null),
+    axios.get('/api/v2/ldapdirectory/', auth).catch(() => null),
+    axios.get('/api/v2/oauth2/', auth).catch(() => null),
+    axios.get('/api/v2/chatsettings/', auth).catch(() => null),
   ]);
   secretStores.value = [{ name: '' }, ...(stores?.data?.records || []).map((s) => ({ name: s.name }))];
   // what names a credential : a secret store (its token or login), a notification channel (a
-  // mail server's smtp login, a bot's or a webhook's token), a repository (its git login) ; the
+  // mail server's smtp login, a bot's or a webhook's token), a repository (its git login), an LDAP
+  // directory (its bind account), an SSO provider (its client), the chat assistant (its key) ; the
   // Used by tab keeps those naming this one
   users.value = [
     ...(stores?.data?.records || []).map((r) => ({ ...r, kind: 'secretStore', to: `/settings/secret-stores/${r.id}` })),
@@ -146,6 +161,11 @@ async function load() {
       to: `/settings/notifications/${r.id}`,
     })),
     ...(repos?.data?.records || []).map((r) => ({ ...r, kind: 'repository', to: `/settings/repositories/${r.id}` })),
+    ...(directories?.data?.records || []).map((r) => ({ ...r, kind: 'ldapDirectory', to: `/settings/ldap/${r.id}` })),
+    ...(providers?.data?.records || []).map((r) => ({ ...r, kind: 'ssoProvider', to: `/settings/sso/${r.id}` })),
+    ...(chat?.data?.credential
+      ? [{ name: t('sidebar.chat'), credential: chat.data.credential, kind: 'chat', to: '/settings/chat' }]
+      : []),
   ];
   loaded.value = true;
 }
@@ -170,8 +190,8 @@ async function update(data) {
 }
 
 // ─── Used by ──────────────────────────────────────────────────────────────────
-// the secret stores, notification channels and repositories that name the credential (a channel
-// as its login or its token) ; a row opens it
+// the secret stores, notification channels, repositories, LDAP directories, SSO providers and the
+// chat assistant that name the credential (a channel as its login or its token) ; a row opens it
 const users = ref([]);
 const usedBy = computed(() =>
   credential.value ? users.value.filter((u) => [u.credential, u.token_credential].includes(credential.value.name)) : [],
@@ -183,27 +203,37 @@ const usedByColumns = computed(() => [
 ]);
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
-// the dialog's steps : Store not for a CyberArk's, Connection for SSH and a database only ;
-// then what uses it
+// the dialog's steps : Store not for a CyberArk's ; then what uses it. Where an SSH or a database
+// credential connects is in its Login tab, with its user and password
 const tabs = computed(() =>
   [
     { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
     { key: 'type', label: t('settings.credentials.stepType'), icon: 'shapes' },
     { key: 'login', label: t('settings.credentials.stepLogin'), icon: 'user' },
     !isCyberark.value && { key: 'store', label: t('settings.credentials.stepStore'), icon: 'vault' },
-    ['ssh', 'database'].includes(type.value) && {
-      key: 'connection',
-      label: t('settings.credentials.stepConnection'),
-      icon: 'server',
-    },
     { key: 'used-by', label: t('settings.linked.usedBy'), icon: 'link', count: usedBy.value.length },
   ].filter(Boolean),
 );
 const { activeTab, tabLink } = useRouteTab('details', (key) =>
   ['details', 'type', 'login', 'store', 'connection', 'used-by'].includes(key),
 );
-// a tab the type does not have (Connection of an API credential) : its first
-const shownTab = computed(() => (tabs.value.some((x) => x.key === activeTab.value) ? activeTab.value : 'details'));
+// a tab the type does not have (Store of a CyberArk credential) : its first ; the Connection tab of
+// before (a link kept) is the Login tab now
+const shownTab = computed(() => {
+  const key = activeTab.value === 'connection' ? 'login' : activeTab.value;
+  return tabs.value.some((x) => x.key === key) ? key : 'details';
+});
+// an SSH, a database or an smtp credential connects somewhere : its host and port in its Login
+// tab (an smtp one's the mail server, and its TLS)
+const hasConnection = computed(() => ['ssh', 'database', 'smtp'].includes(type.value));
+const isSmtp = computed(() => type.value === 'smtp');
+// an Entra ID or Open ID one : the app registration of an SSO provider, its redirect URL too
+const isSso = computed(() => ['entraid', 'oidc'].includes(type.value));
+// the redirect URL it gets when left empty : the app's address (Settings > URL) and the callback
+const appUrl = ref('');
+const defaultRedirect = computed(
+  () => ssoCallbackUrl(type.value, appUrl.value) || ssoCallbackUrl(type.value, SSO_EXAMPLE_BASE),
+);
 
 // the title : Credentials › <name>, each step a link
 const pageCrumbs = computed(() => [
@@ -235,8 +265,10 @@ async function save() {
     name: e.name.trim(),
     description: e.description.trim(),
     credential_type: e.credential_type,
-    host: ['ssh', 'database'].includes(e.credential_type) ? e.host.trim() : '',
-    port: ['ssh', 'database'].includes(e.credential_type) && String(e.port ?? '').trim() !== '' ? e.port : null,
+    host: hasConnection.value ? e.host.trim() : '',
+    port: hasConnection.value && String(e.port ?? '').trim() !== '' ? e.port : null,
+    // an smtp one's TLS
+    secure: e.credential_type === 'smtp' && e.secure ? 1 : 0,
     db_type: isDatabase.value ? e.db_type : '',
     db_name: isDatabase.value ? e.db_name.trim() : '',
   };
@@ -244,6 +276,14 @@ async function save() {
     Object.assign(data, { secret_store: e.secret_store, secret_ref: e.secret_ref.trim() });
   } else {
     Object.assign(data, { secret_store: '', secret_ref: '', user: e.user.trim() });
+    // an Entra ID one's tenant
+    data.tenant_id = e.credential_type === 'entraid' ? e.tenant_id.trim() : '';
+    // an Open ID one's issuer
+    data.issuer = e.credential_type === 'oidc' ? e.issuer.trim() : '';
+    // an Entra ID or Open ID one's redirect URL : empty, the app's address and the callback path
+    data.redirect_uri = isSso.value ? e.redirect_uri.trim() : '';
+    // its new password, typed in its Login tab
+    if (newPassword.value && !isCyberark.value) data.password = newPassword.value;
   }
   if (isCyberark.value) {
     data.client_cert = e.client_cert;
@@ -252,6 +292,7 @@ async function save() {
   }
   if (await update(data)) {
     toast.success(`${data.name} ${t('settings.common.isUpdated')}`);
+    newPassword.value = '';
     await load();
   }
 }
@@ -274,21 +315,27 @@ async function testConnection() {
   }
 }
 
-// Change password : typed twice, as a user's
-const changingPassword = ref(false);
-
-/**
- * Saves the new password.
- *
- * Args:
- *   password (string): the password, typed twice.
- */
-async function savePassword(password) {
-  if (await update({ password })) {
-    changingPassword.value = false;
-    toast.success(`${credential.value.name} ${t('settings.common.isUpdated')}`);
-  }
-}
+// its password, typed in its Login tab ; empty, the stored one is kept
+const newPassword = ref('');
+// the user and the password as its type names them : an LDAP one's bind DN and password, an SSO
+// one's (Entra ID, Open ID) client id and secret, a CyberArk one's AppID
+const userLabel = computed(
+  () =>
+    ({
+      cyberark: t('settings.secretStores.appId'),
+      ldap: t('settings.ldap.bindUserDn'),
+      entraid: t('settings.oauth2.clientId'),
+      oidc: t('settings.oauth2.clientId'),
+    })[edit.value?.credential_type] || t('settings.fields.user'),
+);
+const passwordLabel = computed(
+  () =>
+    ({
+      ldap: t('settings.ldap.bindUserPassword'),
+      entraid: t('settings.oauth2.clientSecret'),
+      oidc: t('settings.oauth2.clientSecret'),
+    })[edit.value?.credential_type] || t('settings.fields.password'),
+);
 
 // Delete asks first
 const confirmDelete = ref(false);
@@ -311,6 +358,11 @@ onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
   await load();
+  // the app's address : an SSO credential's redirect URL when left empty
+  axios
+    .get('/api/v2/settings')
+    .then((res) => (appUrl.value = res.data?.url || ''))
+    .catch(() => {});
 });
 </script>
 <template>
@@ -326,7 +378,6 @@ onMounted(async () => {
       <BsButton icon="trash" @click="deleteCredential()">{{ t('common.delete') }}</BsButton>
     </template>
   </BsModal>
-  <AppChangePasswordDialog v-if="changingPassword" icon="lock" @save="savePassword" @close="changingPassword = false" />
   <AppSettingsPage>
     <AppSettings
       v-if="authenticated"
@@ -391,7 +442,8 @@ onMounted(async () => {
                 :label="t('settings.fields.description')"
               />
             </template>
-            <!-- Type : what it is for, each its label and a few grey words -->
+            <!-- Type : what it is for, each its label and a few grey words ; set when it was made (what
+                 uses it expects it) -->
             <template v-else-if="shownTab === 'type'">
               <div v-for="kind in CREDENTIAL_TYPES" :key="kind" class="form-check af-short-check">
                 <input
@@ -401,6 +453,7 @@ onMounted(async () => {
                   type="radio"
                   name="af-credential-type"
                   :value="kind"
+                  disabled
                 />
                 <label class="form-check-label" :for="'af-ctype-' + kind">
                   <span class="af-short-label">{{ t(`settings.credentials.type_${kind}`) }}</span>
@@ -411,15 +464,93 @@ onMounted(async () => {
             <!-- Login : its user (read from a store : nothing here) ; a CyberArk's AppID,
                client certificate and key -->
             <template v-else-if="shownTab === 'login'">
+              <!-- where it connects (SSH, a database, a mail server) : a database's type, the host
+                   and port, a database's name, a mail server's TLS ; then the user and password -->
+              <template v-if="hasConnection">
+                <BsInput
+                  v-if="isDatabase"
+                  class="af-credential-field"
+                  v-model="edit.db_type"
+                  type="select"
+                  icon="database"
+                  :isFloating="false"
+                  :values="DB_TYPES"
+                  valueKey="value"
+                  labelKey="label"
+                  :required="true"
+                  :label="t('settings.credentials.databaseType')"
+                />
+                <BsInput
+                  class="af-credential-field"
+                  v-model="edit.host"
+                  icon="server"
+                  :placeholder="isSmtp ? 'smtp.example.com' : ''"
+                  :isFloating="false"
+                  :required="isSmtp"
+                  :help="isSmtp ? t('settings.mail.mailServerHelp') : ''"
+                  :label="isSmtp ? t('settings.mail.mailServer') : t('settings.fields.host')"
+                />
+                <BsInput
+                  class="af-credential-field"
+                  v-model="edit.port"
+                  type="number"
+                  icon="arrows-alt-v"
+                  :isFloating="false"
+                  :help="isSmtp ? t('settings.mail.mailPortHelp') : ''"
+                  :label="isSmtp ? t('settings.mail.mailPort') : t('settings.fields.port')"
+                />
+                <!-- an smtp one : TLS -->
+                <div v-if="isSmtp" class="form-check form-switch mb-3">
+                  <input
+                    id="af-credential-tls"
+                    v-model="edit.secure"
+                    class="form-check-input"
+                    type="checkbox"
+                    role="switch"
+                  />
+                  <label class="form-check-label" for="af-credential-tls">{{ t('settings.mail.useTls') }}</label>
+                  <div class="form-text mt-1">{{ t('settings.mail.useTlsHelp') }}</div>
+                </div>
+                <BsInput
+                  v-if="isDatabase"
+                  class="af-credential-field"
+                  v-model="edit.db_name"
+                  icon="database"
+                  :isFloating="false"
+                  :label="t('settings.credentials.database')"
+                />
+              </template>
               <p v-if="fromStore" class="form-text mb-0">{{ t('settings.credentials.loginFromStore') }}</p>
               <template v-else>
+                <!-- an Entra ID one's tenant : the tenant id the app is in, first as in
+                     the Entra admin center (tenant, client id, secret) -->
+                <BsInput
+                  v-if="edit.credential_type === 'entraid'"
+                  class="af-credential-field"
+                  v-model="edit.tenant_id"
+                  icon="building"
+                  :isFloating="false"
+                  :required="true"
+                  :label="t('settings.oauth2.tenantId')"
+                />
+                <!-- an Open ID one's issuer : the provider's address, first as the tenant -->
+                <BsInput
+                  v-if="edit.credential_type === 'oidc'"
+                  class="af-credential-field"
+                  v-model="edit.issuer"
+                  icon="globe"
+                  placeholder="https://id.example.com/realms/main"
+                  :isFloating="false"
+                  :required="true"
+                  :label="t('settings.oauth2.issuer')"
+                />
                 <BsInput
                   class="af-credential-field"
                   v-model="edit.user"
                   icon="user"
                   :isFloating="false"
                   :help="isCyberark ? t('settings.secretStores.appIdHelp') : ''"
-                  :label="isCyberark ? t('settings.secretStores.appId') : t('settings.fields.user')"
+                  :label="userLabel"
                 />
                 <template v-if="isCyberark">
                   <BsInput
@@ -443,11 +574,34 @@ onMounted(async () => {
                     :label="t('settings.secretStores.clientKey')"
                   />
                 </template>
-                <p v-else class="form-text mb-0">{{ t('settings.runners.passwordOnPage') }}</p>
+                <!-- its password, masked : left empty, the stored one is kept ; typed, replaced -->
+                <BsInput
+                  v-else
+                  class="af-credential-field"
+                  v-model="newPassword"
+                  type="password"
+                  icon="lock"
+                  placeholder="**********"
+                  :isFloating="false"
+                  :disabled="managed"
+                  :help="t('settings.common.passwordKeep')"
+                  :label="passwordLabel"
+                />
+                <!-- an Entra ID or Open ID one's redirect URL, as registered with its client -->
+                <BsInput
+                  v-if="isSso"
+                  class="af-credential-field"
+                  v-model="edit.redirect_uri"
+                  icon="link"
+                  :placeholder="defaultRedirect"
+                  :isFloating="false"
+                  :help="t('settings.oauth2.redirectHelp')"
+                  :label="t('settings.oauth2.redirectUrl')"
+                />
               </template>
             </template>
             <!-- Store : the app's database, or a secret store and the place in it -->
-            <template v-else-if="shownTab === 'store'">
+            <template v-else>
               <div
                 v-for="opt in [
                   {
@@ -501,45 +655,6 @@ onMounted(async () => {
                 />
               </template>
             </template>
-            <!-- Connection : a host and port ; a database's type and name -->
-            <template v-else>
-              <BsInput
-                class="af-credential-field"
-                v-model="edit.host"
-                icon="server"
-                :isFloating="false"
-                :label="t('settings.fields.host')"
-              />
-              <BsInput
-                class="af-credential-field"
-                v-model="edit.port"
-                type="number"
-                icon="arrows-alt-v"
-                :isFloating="false"
-                :label="t('settings.fields.port')"
-              />
-              <template v-if="isDatabase">
-                <BsInput
-                  class="af-credential-field"
-                  v-model="edit.db_type"
-                  type="select"
-                  icon="database"
-                  :isFloating="false"
-                  :values="DB_TYPES"
-                  valueKey="value"
-                  labelKey="label"
-                  :required="true"
-                  :label="t('settings.credentials.databaseType')"
-                />
-                <BsInput
-                  class="af-credential-field"
-                  v-model="edit.db_name"
-                  icon="database"
-                  :isFloating="false"
-                  :label="t('settings.credentials.database')"
-                />
-              </template>
-            </template>
           </fieldset>
         </div>
       </template>
@@ -553,13 +668,6 @@ onMounted(async () => {
           >{{ t('settings.common.testConnection') }}</BsButton
         >
         <template v-if="!managed">
-          <BsButton
-            v-if="!isCyberark && !fromStore"
-            icon="lock"
-            cssClass="text-nowrap"
-            @click="changingPassword = true"
-            >{{ t('settings.common.changePassword') }}</BsButton
-          >
           <BsButton icon="trash" @click="confirmDelete = true">{{ t('common.delete') }}</BsButton>
           <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
         </template>

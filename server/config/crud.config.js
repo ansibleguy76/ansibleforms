@@ -10,8 +10,11 @@ const crudConfigs = {
       { name: 'description' },
       { name: 'issuer' },
       { name: 'tenant_id'},
-      { name: 'client_id', required: true },
-      { name: 'client_secret', isEncrypted: true, required: true },
+      // required unless a credential gives them (OAuth2.assertClient)
+      { name: 'client_id' },
+      { name: 'client_secret', isEncrypted: true },
+      // a credential of Connections > Credentials : its user the client id, its password the secret
+      { name: 'credential' },
       { name: 'enable', isBoolean: true },
       { name: 'groupfilter' },
       { name: 'redirect_uri' },
@@ -41,6 +44,11 @@ const crudConfigs = {
       // a cyberark credential's client certificate and key (PEM) : how its AppID is restricted
       { name: 'client_cert' },
       { name: 'client_key', isEncrypted: true },
+      // an entraid credential's tenant
+      { name: 'tenant_id' },
+      // an oidc credential's issuer ; an entraid or oidc one's redirect URL
+      { name: 'issuer' },
+      { name: 'redirect_uri' },
       { name: 'description' },
       { name: 'db_type' },
       { name: 'vault_path' },
@@ -239,6 +247,8 @@ const crudConfigs = {
       { name: 'ca_bundle' },
       { name: 'bind_user_dn', required: true },
       { name: 'bind_user_pw', isEncrypted: true, required: true },
+      // a credential of Connections > Credentials, bound with instead of the user and password
+      { name: 'credential' },
       { name: 'search_base', required: true },
       { name: 'username_attribute', required: true },
       { name: 'groups_attribute' },

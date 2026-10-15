@@ -104,7 +104,7 @@ import axios from 'axios';
 import Helpers from '@/lib/Helpers';
 import { useVuelidate } from '@vuelidate/core';
 import yaml from 'yaml';
-import { required, helpers, email, sameAs } from '@vuelidate/validators';
+import { required, requiredIf, helpers, email, sameAs } from '@vuelidate/validators';
 import { useI18n } from 'vue-i18n';
 import BsDataTable from './BsDataTable.vue';
 import getSettings from '@/config/settings';
@@ -211,7 +211,19 @@ function getRules() {
   const ruleObj = { item: {} };
   fields.value.forEach((field) => {
     var rule = {};
-    if (field.required) {
+    if (field.required && field.dependency && Array.isArray(field.dependencyValues)) {
+      // a field of some types only (an Entra ID credential's tenant) : required while it is shown
+      rule.required = helpers.withMessage(
+        `${field.label} is required`,
+        requiredIf(() => field.dependencyValues.includes(item.value[field.dependency])),
+      );
+    } else if (field.requiredWhen) {
+      // required by a rule of its own (an smtp credential's host : its mail server)
+      rule.required = helpers.withMessage(
+        `${field.label} is required`,
+        requiredIf(() => !!field.requiredWhen(item.value)),
+      );
+    } else if (field.required) {
       rule.required = helpers.withMessage(`${field.label} is required`, required);
     }
     if (field.type == 'email') {
@@ -572,6 +584,13 @@ function newItem(defaults = {}) {
       }
     }
   });
+  // the defaults of a field that follows another set from the start (an SSO provider is Entra ID
+  // at first : its redirect URL, on the first step, from the app's address)
+  fields.value.forEach((field) => {
+    if (field.defaultMap && field.dependency && item.value[field.dependency] && !item.value[field.key]) {
+      setFieldDefaults(field.dependency);
+    }
+  });
   action.value = 'new';
 }
 async function createItem() {
@@ -784,7 +803,8 @@ const title = computed(() => {
  *   string: the text for the record shown.
  */
 function textOf(value) {
-  return typeof value === 'function' ? value(item.value || {}) : value;
+  // a rule gets the record and the app's settings (its URL : an SSO credential's redirect URL)
+  return typeof value === 'function' ? value(item.value || {}, config.value || {}) : value;
 }
 
 // ─── create from a dropdown ──────────────────────────────────────────────────
@@ -1802,7 +1822,7 @@ defineExpose({
           :help="textOf(field.help)"
           :icon="field.icon"
           :placeholder="textOf(field.placeholder)"
-          :required="field.required"
+          :required="field.required || !!field.requiredWhen?.(item)"
           :addLabel="field.addLabel"
           :disabled="!!field.readonly"
           :hasError="$v.item[field.key].$invalid && $v.item[field.key].$dirty"
@@ -1825,7 +1845,7 @@ defineExpose({
           :rows="field.rows || 3"
           v-model="$v.item[field.key].$model"
           :isFloating="false"
-          :required="field.required"
+          :required="field.required || !!field.requiredWhen?.(item)"
           :label="textOf(field.dialogLabel) || field.label"
           :hasError="$v.item[field.key].$invalid && $v.item[field.key].$dirty"
           :errors="$v.item[field.key].$errors"

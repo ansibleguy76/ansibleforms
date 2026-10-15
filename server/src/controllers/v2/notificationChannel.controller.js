@@ -11,8 +11,12 @@ import i18n from "../../lib/i18n.js";
 
 const find = async (req, res) => {
   try {
-    if (req.query.name) return res.json(RestResult.single(NotificationChannel.masked(await NotificationChannel.findByName(req.query.name))));
-    return res.json(RestResult.list((await NotificationChannel.findAll()).map((c) => NotificationChannel.masked(c))));
+    if (req.query.name) {
+      const [channel] = await NotificationChannel.withServer([await NotificationChannel.findByName(req.query.name)]);
+      return res.json(RestResult.single(NotificationChannel.masked(channel)));
+    }
+    const channels = await NotificationChannel.withServer(await NotificationChannel.findAll());
+    return res.json(RestResult.list(channels.map((c) => NotificationChannel.masked(c))));
   } catch (err) {
     Errors.ReturnError(res, err);
   }
@@ -34,7 +38,8 @@ const findById = async (req, res) => {
   try {
     const channel = await NotificationChannel.findById(req.params.id);
     if (!channel) throw new Errors.NotFoundError(`No notification channel with id ${req.params.id}`);
-    return res.json(RestResult.single(NotificationChannel.masked(channel)));
+    const [shown] = await NotificationChannel.withServer([channel]);
+    return res.json(RestResult.single(NotificationChannel.masked(shown)));
   } catch (err) {
     Errors.ReturnError(res, err);
   }

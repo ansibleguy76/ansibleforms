@@ -131,6 +131,14 @@ class SecretStore extends CrudModel {
 
   static async update(data, id, opts = {}) {
     if (!opts.fromSeed) await this.assertCredentialUsable(data, id);
+    // its type stays what it was made as (the credentials that read from it expect it) ; the
+    // config seed may change it
+    if (!opts.fromSeed && data.type !== undefined) {
+      const current = await this.findById(id);
+      if (current?.type && data.type !== current.type) {
+        throw new Errors.BadRequestError(`A secret store keeps the type it was made as : '${current.name}' is ${current.type}. Make a new secret store for another type`);
+      }
+    }
     const res = await super.update(this.modelName, this.normalize(data, { creating: false }), id, opts);
     clearSecretCache();
     return res;

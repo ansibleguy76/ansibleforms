@@ -30,7 +30,11 @@ class CredentialModel extends CrudModel {
   // restricted to one
   // userpass : a user and a password for any login (a REST API, a service...), the default ; ssh :
   // one for SSH to a server, the login a workflow node's playbook connects with
-  static TYPES = ['userpass', 'ssh', 'git', 'api', 'database', 'cyberark', 'smtp'];
+  // ldap : an LDAP directory's bind account (its user the bind DN) ; entraid and oidc : an SSO
+  // provider's client (its user the client id, its password the client secret ; an entraid one its
+  // tenant too, an oidc one its issuer) ; smtp : a mail server (its host, port and TLS) and its
+  // login (none for a relay)
+  static TYPES = ['userpass', 'ssh', 'git', 'api', 'database', 'cyberark', 'smtp', 'ldap', 'entraid', 'oidc'];
 
   /**
    * Keeps a credential's type and its is_database flag in step : the type sets the flag, and
@@ -91,16 +95,67 @@ class CredentialModel extends CrudModel {
     return data;
   }
 
+  /**
+   * The fields a type cannot do without : an Entra ID credential's tenant (the sign-in needs it),
+   * an Open ID one's issuer, an smtp one's host (the mail server). A create of one without it is
+   * refused, and so is an update that empties it ; a type without a tenant or an issuer keeps
+   * none.
+   *
+   * Args:
+   *   data (object): the record written.
+   *   creating (boolean): a create (the type and its fields are all there).
+   *
+   * Returns:
+   *   object: the record.
+   *
+   * Raises:
+   *   BadRequestError: an Entra ID credential without a tenant, an Open ID one without an
+   *     issuer, an smtp one without a host.
+   */
+  static requireTypeFields(data, creating = false) {
+    const empty = (key) => (data[key] === undefined ? creating : !String(data[key] ?? '').trim());
+    if (data.credential_type !== undefined && data.credential_type !== 'entraid') {
+      if (creating || data.tenant_id !== undefined) data.tenant_id = null;
+    } else if (data.credential_type === 'entraid' && empty('tenant_id')) {
+      throw new Errors.BadRequestError('A Microsoft Entra ID credential needs its tenant ID (tenant_id)');
+    }
+    if (data.credential_type !== undefined && data.credential_type !== 'oidc') {
+      if (creating || data.issuer !== undefined) data.issuer = null;
+    } else if (data.credential_type === 'oidc' && empty('issuer')) {
+      throw new Errors.BadRequestError('An Open ID credential needs its issuer (the provider\'s address)');
+    }
+    if (data.issuer !== undefined && data.issuer !== null) data.issuer = String(data.issuer).trim();
+    // a redirect URL : an entraid or an oidc one's only
+    if (data.credential_type !== undefined && !['entraid', 'oidc'].includes(data.credential_type)) {
+      if (creating || data.redirect_uri !== undefined) data.redirect_uri = null;
+    } else if (data.redirect_uri !== undefined && data.redirect_uri !== null) {
+      data.redirect_uri = String(data.redirect_uri).trim() || null;
+    }
+    if (data.credential_type === 'smtp' && empty('host')) {
+      throw new Errors.BadRequestError('An smtp credential needs its mail server (host)');
+    }
+    if (data.tenant_id !== undefined && data.tenant_id !== null) data.tenant_id = String(data.tenant_id).trim();
+    return data;
+  }
+
   // opts carries { fromSeed:true } for the declarative config seed only
   static async create(data, opts = {}) {
-    return super.create(this.modelName, this.mirrorType(this.mirrorVaultPath(this.normalizePort(data)), true), opts);
+    return super.create(this.modelName, this.requireTypeFields(this.mirrorType(this.mirrorVaultPath(this.normalizePort(data)), true), true), opts);
   }
 
   static async update(data, id, opts = {}) {
     // the api shows the client key masked ; the mask sent back means "unchanged", and an
     // empty one too (the dialog leaves a secret empty to keep it)
     if (data.client_key === '**********' || data.client_key === '') delete data.client_key;
-    return super.update(this.modelName, this.mirrorType(this.mirrorVaultPath(this.normalizePort(data))), id, opts);
+    // its type stays what it was made as (what uses it expects it : an SSO provider an entraid
+    // one, a mail channel an smtp one) ; the config seed may change it
+    if (!opts.fromSeed && data.credential_type !== undefined && data.credential_type !== null && data.credential_type !== '') {
+      const current = await this.findById(id);
+      if (current?.credential_type && data.credential_type !== current.credential_type) {
+        throw new Errors.BadRequestError(`A credential keeps the type it was made as : '${current.name}' is ${current.credential_type}. Make a new credential for another type`);
+      }
+    }
+    return super.update(this.modelName, this.requireTypeFields(this.mirrorType(this.mirrorVaultPath(this.normalizePort(data)))), id, opts);
   }
 
   static async delete(id, opts = {}) {
@@ -113,6 +168,29 @@ class CredentialModel extends CrudModel {
 
   static async findAll() {
     return super.findAll(this.modelName);
+  }
+
+  /**
+   * How many records use each credential, as its page's Used by tab lists them : the secret
+   * stores, notification channels (a login or a token), repositories, LDAP directories, SSO
+   * providers and the chat assistant that name it.
+   *
+   * Returns:
+   *   Promise<Map<string, number>>: the count of each credential name used at least once.
+   */
+  static async usageCounts() {
+    const rows = await mysql.do(
+      "SELECT name, COUNT(*) AS n FROM (" +
+        "SELECT credential AS name FROM AnsibleForms.`secret_stores` " +
+        "UNION ALL SELECT credential FROM AnsibleForms.`notification_channels` " +
+        "UNION ALL SELECT token_credential FROM AnsibleForms.`notification_channels` " +
+        "UNION ALL SELECT credential FROM AnsibleForms.`repositories` " +
+        "UNION ALL SELECT credential FROM AnsibleForms.`ldap` " +
+        "UNION ALL SELECT credential FROM AnsibleForms.`oauth2_providers` " +
+        "UNION ALL SELECT credential FROM AnsibleForms.`chat_settings`" +
+        ") used WHERE name IS NOT NULL AND name <> '' GROUP BY name",
+    );
+    return new Map((rows || []).map((r) => [r.name, Number(r.n) || 0]));
   }
 
   static async findById(id) {
@@ -269,7 +347,8 @@ function assertInlineAllowed(spec, inline, scope = currentScope()) {
   if (!scope.secretStores && scope.credentials) assertCredentialAllowed(spec, scope);
 }
 
-const ROW_SQL = "SELECT host,port,db_name,name,user,password,secure,db_type,is_database,vault_path,secret_store,secret_ref FROM AnsibleForms.`credentials` WHERE name REGEXP ?";
+// an SSO credential its tenant (Entra ID) or issuer (Open ID) and its redirect URL too
+const ROW_SQL = "SELECT host,port,db_name,name,user,password,secure,db_type,is_database,vault_path,secret_store,secret_ref,tenant_id,issuer,redirect_uri FROM AnsibleForms.`credentials` WHERE name REGEXP ?";
 
 async function lookupRow(nameOrRegex, fallbackName) {
   let res = await mysql.do(ROW_SQL, nameOrRegex);
