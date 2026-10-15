@@ -41,6 +41,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { databaseUserPrivileges } from './lib/dbPrivileges.js';
+import { resumeAbandoned } from './lib/jobResume.js';
 
 const __filename = fileURLToPath(import.meta.url);
 // the server folder : the built client lives in ./views next to index.js
@@ -121,9 +122,11 @@ export async function startApp(){
     // not the worker (an app node, or a second AF_ROLE unset process) : the schema is the
     // worker's to create and to patch
     await waitForTheWorkersSchema();
-    // the jobs this node followed before it restarted (the worker's start does this too)
+    // the jobs this node followed before it restarted (the worker's start does this too) ; then
+    // the ones still running on their runner (an AWX template) are followed again (#1084)
     Job.abandonOwn(nodeId)
       .then((changed) => { if (changed) logger.warning(`Abandoned ${changed} jobs this node followed before it restarted`); })
+      .then(() => resumeAbandoned(nodeId))
       .catch((err) => logger.error('Failed to abandon jobs : ' + (err.message || err)));
   }
   await ansibleforms.load(app);

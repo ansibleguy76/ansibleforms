@@ -7,6 +7,7 @@ import Credential from "../../models/credential.model.v2.js";
 import Job from "../../models/job.model.js";
 import Awx, { check } from "./api.js";
 import { forgetJobSecrets } from "../../lib/outputMask.js";
+import { safeParse } from "../../lib/safejson.js";
 
 export default {
   type: "awx",
@@ -22,6 +23,23 @@ export default {
     await Job.registerOutputSecrets(jobId, { form: rows?.[0]?.form, extravars, credentials });
     try {
       return await Awx.launch(runner, extravars, credentials, jobId, await Job.lastOrder(jobId));
+    } finally {
+      forgetJobSecrets(jobId);
+    }
+  },
+  // follows again a job its node stopped following (lib/jobResume.js) : resolves once it has
+  // ended, null when AWX no longer knows it. Its output is masked as at its launch.
+  async resume(ctx) {
+    const { jobId, runner } = ctx;
+    const rows = await mysql.do("SELECT form, extravars, credentials, awx_id, awx_workflow FROM AnsibleForms.`jobs` WHERE id=?", [jobId]);
+    const row = rows?.[0];
+    if (!row?.awx_id) return null;
+    const extravars = safeParse(row.extravars, {}, `job.extravars id=${jobId}`) || {};
+    const credentialMap = safeParse(row.credentials, {}, `job.credentials id=${jobId}`) || {};
+    const credentials = await Credential.resolveCredentialMap(extravars.__credentials__ || credentialMap).catch(() => ({}));
+    await Job.registerOutputSecrets(jobId, { form: row.form, extravars, credentials });
+    try {
+      return await Awx.resume(runner, { id: jobId, awx_id: row.awx_id, awx_workflow: row.awx_workflow });
     } finally {
       forgetJobSecrets(jobId);
     }

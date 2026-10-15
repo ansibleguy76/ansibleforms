@@ -19,6 +19,7 @@ import { forgetOldNodes } from '../lib/nodes.js';
 import { nodeId } from '../lib/role.js';
 import { purgeRevocations } from '../lib/tokenRevocation.js';
 import ApiToken from '../models/apiToken.model.js';
+import { resumeAbandoned } from '../lib/jobResume.js';
 
 // the cron registry is re-read from the database this often even without a change notice
 // (lib/epochs.js), in case one was missed
@@ -354,6 +355,9 @@ class CronService {
         const changed = await Job.abandonDeadNodes(nodeId);
         if (changed > 0) {
           logger.warning(`Abandoned ${changed} jobs followed by a node that stopped answering`);
+          // the ones still running on their runner (an AWX template) are followed again here
+          // (#1084)
+          await resumeAbandoned(nodeId);
         }
       } catch (err) {
         logger.error('Failed to abandon the jobs of stopped nodes:', err);

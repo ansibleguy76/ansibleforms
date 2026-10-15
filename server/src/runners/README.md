@@ -148,6 +148,12 @@ Every process writes a heartbeat in `nodes` (RTEs too). A job belongs to the RTE
 - The worker, every minute: abandons the jobs of any node (RTE or app) whose heartbeat is two
   minutes old - a pod replaced under a new name included - and releases the repository and
   schedule claims those nodes held. Hourly: jobs older than a day that nobody owns.
+- Right after a start or the worker's sweep abandoned jobs: the abandoned jobs of the last 24
+  hours that still run on a runner which can follow them again (AWX, AAP, Ascender: `resume`
+  in the runner) are taken over in one statement, back to `running`, and followed by this
+  node until they end with what the runner reports (`lib/jobResume.js`). Their stdout is read
+  again in full; a step of a multistep then fails its multistep, whose loop is gone. A job the
+  runner no longer knows stays abandoned, with an end and a line saying why.
 
 ## The RTE API
 
@@ -276,8 +282,9 @@ See [examples/rte](../../../examples/rte).
   folder's name and what to mount.
 - A multistep job, an AWX, a Semaphore and a Rundeck job are followed by the app node that
   started them: when that node goes, the job is abandoned (within two minutes on a cluster, at
-  its restart otherwise). A step already handed to an RTE still finishes; the others go on over
-  there.
+  its restart otherwise). An AWX job is then followed again by another node, or by the same
+  one once it is back; a Semaphore, Rundeck or Jenkins job stays abandoned. A step already
+  handed to an RTE still finishes; the others go on over there.
 - Semaphore and Rundeck runners have no default: a template form that names no runner goes to
   the default awx runner, so such a form names its runner. The task / execution id is kept in
   `jobs.awx_id`.
