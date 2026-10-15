@@ -214,11 +214,7 @@ onMounted(async () => {
           >
             <!-- the roles ticked that name it : taken out of them -->
             <template #bulk-actions="{ selected, count }">
-              <BsButton
-                v-if="count"
-                icon="trash"
-                :disabled="rolesReadOnly"
-                @click="removeRoles(selected)"
+              <BsButton v-if="count" icon="trash" :disabled="rolesReadOnly" @click="removeRoles(selected)"
                 >{{ t('settings.settingsPage.removeFromRole') }} ({{ count }})</BsButton
               >
             </template>
