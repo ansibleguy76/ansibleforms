@@ -17,6 +17,8 @@
 /*         may come from (local, ldap, ...)                       */
 /*      localGroups: Array - the local group names, sorted        */
 /*      localUsers: Array - the local user names, sorted          */
+/*      localDescriptions: Object - { users, groups } : each      */
+/*                  local one's description, by name             */
 /*      optionKeys: Array - the role options, in their order      */
 /*      optionLabel: Function - an option's label                 */
 /*      nextUid: Function - a new _uid for a group or a user      */
@@ -45,6 +47,7 @@ const props = defineProps({
   authProviders: { type: Array, default: () => [] },
   localGroups: { type: Array, default: () => [] },
   localUsers: { type: Array, default: () => [] },
+  localDescriptions: { type: Object, default: () => ({ users: {}, groups: {} }) },
   optionKeys: { type: Array, default: () => [] },
   optionLabel: { type: Function, required: true },
   nextUid: { type: Function, required: true },
@@ -231,6 +234,22 @@ function removeUser(index) {
   role.value.users.splice(index, 1);
   emit('removed');
 }
+
+/**
+ * A member's description, as its own page has it : a local user's or group's ; one of another
+ * provider (LDAP, SSO) has none here.
+ *
+ * Args:
+ *   kind (string): users or groups.
+ *   member (object): { provider, name }.
+ *
+ * Returns:
+ *   string: its description, or an en dash, as the other empty cells.
+ */
+function describe(kind, member) {
+  const text = member?.provider === 'local' ? props.localDescriptions?.[kind]?.[member.name] : '';
+  return text || '–';
+}
 </script>
 
 <template>
@@ -340,6 +359,7 @@ function removeUser(index) {
                 </th>
                 <th>{{ t('settings.settingsPage.name') }}</th>
                 <th>{{ t('settings.settingsPage.provider') }}</th>
+                <th>{{ t('settings.fields.description') }}</th>
                 <th>{{ t('settings.settingsPage.roleMemberFrom') }}</th>
                 <th class="af-fit-spacer"></th>
                 <th class="af-row-menu-col"></th>
@@ -359,6 +379,7 @@ function removeUser(index) {
                   </td>
                   <td>{{ row.named.name }}</td>
                   <td>{{ providerPrefix(row.named.provider) }}</td>
+                  <td>{{ describe('users', row.named) }}</td>
                   <!-- named in the role itself : no group -->
                   <td class="text-muted">–</td>
                   <td class="af-fit-spacer"></td>
@@ -392,6 +413,7 @@ function removeUser(index) {
                   <td class="text-center bs-dt-select"><input type="checkbox" class="form-check-input" disabled /></td>
                   <td>{{ row.via.username }}</td>
                   <td>local</td>
+                  <td>{{ describe('users', { provider: 'local', name: row.via.username }) }}</td>
                   <td>{{ row.via.group }}</td>
                   <td class="af-fit-spacer"></td>
                   <td></td>
@@ -462,6 +484,7 @@ function removeUser(index) {
                 </th>
                 <th>{{ t('settings.settingsPage.name') }}</th>
                 <th>{{ t('settings.settingsPage.provider') }}</th>
+                <th>{{ t('settings.fields.description') }}</th>
                 <th class="af-fit-spacer"></th>
                 <th class="af-row-menu-col"></th>
               </tr>
@@ -483,6 +506,7 @@ function removeUser(index) {
                 </td>
                 <td>{{ grp.name }}</td>
                 <td>{{ providerPrefix(grp.provider) }}</td>
+                <td>{{ describe('groups', grp) }}</td>
                 <td class="af-fit-spacer"></td>
                 <td class="bs-dt-row-actions">
                   <!-- its menu, as the rows of the other tables -->

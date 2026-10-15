@@ -25,8 +25,8 @@ export const EVERYONE_ROLES = ['default', 'public'];
  *   save (Function): useFormsConfig's save (successLabel) => Promise<boolean>.
  *
  * Returns:
- *   object: { sortedLocalGroups, sortedLocalUsers, loadLocalNames, usersThroughGroups,
- *     stampRoleFlags, validateRoles, saveRoles }.
+ *   object: { sortedLocalGroups, sortedLocalUsers, localDescriptions, loadLocalNames,
+ *     usersThroughGroups, stampRoleFlags, validateRoles, saveRoles }.
  */
 export function useRoleSupport(roles, save) {
   const { t } = useI18n();
@@ -37,6 +37,8 @@ export function useRoleSupport(roles, save) {
   const localMembers = ref([]);
   // the local groups' ids and names, to name a member's group
   const groupIds = ref([]);
+  // the description of each local user and group, by name : a column of the role's tables
+  const localDescriptions = ref({ users: {}, groups: {} });
 
   // ─── the local groups and users a role can name ──────────────────────────────
   const sortedLocalGroups = computed(() => [...localGroups.value].sort());
@@ -56,6 +58,7 @@ export function useRoleSupport(roles, save) {
           const records = result.data.records || result.data;
           localGroups.value = records.map((g) => g.name);
           groupIds.value = records.map((g) => [g.id, g.name]);
+          localDescriptions.value.groups = Object.fromEntries(records.map((g) => [g.name, g.description || '']));
         })
         .catch(() => (localGroups.value = groupIds.value = [])),
       axios
@@ -63,6 +66,7 @@ export function useRoleSupport(roles, save) {
         .then((result) => {
           const records = result.data.records || result.data;
           localUsers.value = records.map((u) => u.username);
+          localDescriptions.value.users = Object.fromEntries(records.map((u) => [u.username, u.description || '']));
           localMembers.value = records.map((u) => ({ username: u.username, groupIds: u.group_ids || [u.group_id] }));
         })
         .catch(() => (localUsers.value = [])),
@@ -169,6 +173,7 @@ export function useRoleSupport(roles, save) {
   return {
     sortedLocalGroups,
     sortedLocalUsers,
+    localDescriptions,
     loadLocalNames,
     usersThroughGroups,
     stampRoleFlags,

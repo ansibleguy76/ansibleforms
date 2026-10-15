@@ -41,8 +41,15 @@ const {
   roleOptionLabel,
   authProviders,
 } = useFormsConfig();
-const { sortedLocalGroups, sortedLocalUsers, loadLocalNames, usersThroughGroups, stampRoleFlags, saveRoles } =
-  useRoleSupport(roles, save);
+const {
+  sortedLocalGroups,
+  sortedLocalUsers,
+  localDescriptions,
+  loadLocalNames,
+  usersThroughGroups,
+  stampRoleFlags,
+  saveRoles,
+} = useRoleSupport(roles, save);
 
 // leaving with the role changed and unsaved asks first
 useUnsavedGuard(
@@ -336,6 +343,7 @@ onMounted(async () => {
           :authProviders="authProviders"
           :localGroups="sortedLocalGroups"
           :localUsers="sortedLocalUsers"
+          :localDescriptions="localDescriptions"
           :optionKeys="roleOptionKeys"
           :optionLabel="roleOptionLabel"
           :nextUid="nextUid"
