@@ -1621,7 +1621,6 @@ export default {
       secretFromStoreHint: 'Bei Verwendung aus HashiCorp Vault oder CyberArk gelesen',
       secretLocal: 'Datenbank',
       secretLocalHint: 'Verschlüsselt in der AnsibleForms-Datenbank',
-      stepConnection: 'Verbindung',
       stepCredential: 'Anmeldedaten',
       stepLogin: 'Anmeldung',
       stepStore: 'Speicher',

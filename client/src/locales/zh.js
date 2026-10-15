@@ -1462,7 +1462,6 @@ export default {
       secretFromStoreHint: '使用时从 HashiCorp Vault 或 CyberArk 读取',
       secretLocal: '数据库',
       secretLocalHint: '加密存储在 AnsibleForms 数据库中',
-      stepConnection: '连接',
       stepCredential: '凭据',
       stepLogin: '登录',
       stepStore: '存储',

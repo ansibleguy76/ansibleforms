@@ -1591,7 +1591,6 @@ export default {
       secretFromStoreHint: 'Read from HashiCorp Vault or CyberArk when used',
       secretLocal: 'Database',
       secretLocalHint: 'Encrypted in the AnsibleForms database',
-      stepConnection: 'Connection',
       stepCredential: 'Credential',
       stepLogin: 'Login',
       stepStore: 'Store',

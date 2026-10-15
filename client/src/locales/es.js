@@ -1617,7 +1617,6 @@ export default {
       secretFromStoreHint: 'Leídos de HashiCorp Vault o CyberArk al usarse',
       secretLocal: 'Base de datos',
       secretLocalHint: 'Cifrados en la base de datos de AnsibleForms',
-      stepConnection: 'Conexión',
       stepCredential: 'Credencial',
       stepLogin: 'Acceso',
       stepStore: 'Almacén',

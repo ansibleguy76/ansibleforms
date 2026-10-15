@@ -1609,7 +1609,6 @@ export default {
       secretFromStoreHint: 'Bij gebruik gelezen uit HashiCorp Vault of CyberArk',
       secretLocal: 'Database',
       secretLocalHint: 'Versleuteld in de AnsibleForms-database',
-      stepConnection: 'Verbinding',
       stepCredential: 'Referentie',
       stepLogin: 'Aanmelding',
       stepStore: 'Opslag',

@@ -1623,7 +1623,6 @@ export default {
       secretFromStoreHint: "Lus depuis HashiCorp Vault ou CyberArk à l'usage",
       secretLocal: 'Base de données',
       secretLocalHint: "Chiffrés dans la base de données d'AnsibleForms",
-      stepConnection: 'Connexion',
       stepCredential: 'Identifiant',
       stepLogin: 'Connexion',
       stepStore: 'Stockage',
