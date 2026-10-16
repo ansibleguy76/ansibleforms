@@ -12,6 +12,7 @@
     type: string
     allowed: a valid nodejs environment
     short: The Node.js environment 
+    hint: The Node.js environment, production or development.
     required: false
     description: Nodejs can have multiple environments, like development or production
     default: production
@@ -19,7 +20,7 @@
     type: string
     allowed: a valid IP or FQDN
     short: Database host
-    hint: Host name or IP address of the MySQL server.
+    hint: Host name or IP address of the MySQL or MariaDB server.
     required: true
     description: |
       Ansible Forms requires a MySQL database connection to store the configuration of the application.  
@@ -28,7 +29,7 @@
     type: number
     allowed: a positive integer
     short: Database port
-    hint: The TCP port MySQL/MariaDB listens on
+    hint: The TCP port MySQL or MariaDB listens on.
     default: 3306
     description: |
       Port of the MySQL or MariaDB server. Required at startup together with DB_HOST,
@@ -140,6 +141,7 @@
     type: number
     allowed: a valid TCP port
     short: HTTP port
+    hint: The port the web application listens on.
     description: The listening port of the web application
     default: 8000
   - name: BASE_URL
@@ -245,7 +247,7 @@
     type: string
     allowed: a valid file path
     short: Config seed file
-    hint: Declare runners, credentials, secret stores, SSO providers, repositories, LDAP, syslog servers, notification channels and settings in a file instead of clicking them together
+    hint: A file declaring runners, credentials, SSO, repositories and settings, instead of clicking them together.
     default: ""
     description: |
       Path to a declarative config seed. When set, the yaml file it points to is applied at
@@ -259,7 +261,7 @@
     type: integer
     allowed: 0 or a number of seconds
     short: Config seed reload interval (seconds)
-    hint: How often the seed file is re-read, so a change in git reaches a running instance
+    hint: How often the seed file is read again, so a change in git reaches a running instance.
     default: 60
     description: |
       How often the config seed file is checked and re-applied when its content has changed,
@@ -275,7 +277,7 @@
     type: boolean
     allowed: 0, 1
     short: Allow editing these settings
-    hint: Turn off where the environment is declared elsewhere, so nothing here can be saved
+    hint: Turn off where the environment is declared elsewhere, so nothing here can be saved.
     default: 1
     description: |
       Whether the settings pages may write persistent/.env. Set it to 0 in a declarative
@@ -308,6 +310,7 @@
     type: string
     allowed: a valid directory path
     short: Form backups folder
+    hint: The folder the forms backups are written to.
     default: "%PERSISTENT_FOLDER%/forms_backups"
     description: | 
       When backups are made, they end up in this path    
@@ -383,6 +386,7 @@
     type: number
     allowed: 0 or 1
     short: An RTE adds itself as a runner
+    hint: "On an RTE: 1 adds it under Connections > Runners when it starts, no click or config seed needed."
     default: "1"
     description: |
       On an RTE (`AF_ROLE=rte`): 1 (the default) and the RTE adds itself under Connections >
@@ -404,7 +408,7 @@
     allowed: 0 or a positive integer
     default: 10
     short: How many playbooks an RTE runs at once
-    hint: Read by an RTE ; 0 sets no limit
+    hint: Read by an RTE; 0 sets no limit.
     description: |
       Read by an RTE (`AF_ROLE=rte`). A full RTE does not take another job: the job waits, says
       so in its output, and is handed over as soon as a playbook ends (see RTE_QUEUE_MINUTES).
@@ -416,7 +420,7 @@
     allowed: 0 or a positive integer
     default: 25
     short: How long a stopping RTE waits for its running playbooks
-    hint: Read by an RTE ; keep it below the container's stop timeout
+    hint: "Read by an RTE; keep it below the container's stop timeout."
     description: |
       Read by an RTE. On a stop (SIGTERM: a rolling update, a scale down) it takes no new job and
       waits this long for the running playbooks to end ; those still running then end as
@@ -428,7 +432,7 @@
     allowed: 0 or a positive integer
     default: 60
     short: Wait for a busy RTE (minutes)
-    hint: Read by the app nodes and the worker
+    hint: Read by the app nodes and the worker.
     description: |
       A job handed to an RTE that is full (RTE_MAX_JOBS) or stopping waits for it, asking again
       every 10 seconds, for this many minutes ; then it fails and says why. An abort ends the
@@ -438,6 +442,7 @@
     type: string
     allowed: an http:// or https:// address, without a slash on the end
     short: The address the app reaches an RTE on
+    hint: "On an RTE that registers itself: the address the app calls it on, usually its service name."
     description: |
       On an RTE (`AF_ROLE=rte`) that registers itself (`RTE_REGISTER`): the address the app
       calls it on, usually the service name - `http://rte:8000` in docker compose, the service
@@ -466,6 +471,7 @@
     type: string
     allowed: a valid base URI without slash on the end
     short: Microsoft Entra ID sign-in authority
+    hint: The Microsoft identity platform a Microsoft Entra ID sign-in is sent to.
     default: https://login.microsoftonline.com
     description: |
       The Microsoft identity platform the server sends a Microsoft Entra ID sign-in to, with the tenant id
@@ -479,6 +485,7 @@
     type: string
     allowed: a valid base URI without slash on the end
     short: Microsoft Graph API base URI
+    hint: "The Microsoft Graph endpoint that reads a Microsoft Entra ID user's groups at login."
     default: https://graph.microsoft.com
     description: |
       The Microsoft Graph endpoint the server calls at a Microsoft Entra ID login to read the user's
@@ -529,7 +536,7 @@
     allowed: 0, 1
     default: 1
     short: Back up the database before an upgrade
-    hint: 0 upgrades without a backup
+    hint: "0 upgrades without a backup."
     description: |
       When a new release's upgrade would lose data - the tables 7.0.0 drops (staging, datasource,
       awx...) - the worker takes a regular backup first (it shows on the Backups page,
@@ -572,7 +579,7 @@
     type: number
     allowed: a number of bytes, from 1024 to 1048576
     short: Request header size limit (bytes)
-    hint: The largest request header the server accepts ; a larger one is refused with 431. Takes effect after a restart.
+    hint: The largest request header the server accepts; a larger one is refused with 431.
     required: false
     default: 16384
     description: |
@@ -670,7 +677,7 @@
     type: boolean
     allowed: 0, 1
     short: Enable the MCP server for AI agents
-    hint: Serves the Model Context Protocol endpoint on /api/v2/mcp
+    hint: Serves the Model Context Protocol endpoint on /api/v2/mcp.
     default: 0
     description: |
       Serves an MCP (Model Context Protocol) server on `/api/v2/mcp`, so an AI agent or an
@@ -696,7 +703,7 @@
     type: boolean
     allowed: 0, 1
     short: Block launching, relaunching and planning jobs (read-only)
-    hint: AI clients can list, open and fill in forms, but not launch or relaunch jobs
+    hint: AI clients can list, open and fill in forms, but not launch or relaunch jobs.
     default: 0
     description: |
       With 1, the MCP server is read-only: it offers no `launch_job`, `relaunch_job`,
@@ -710,7 +717,7 @@
     type: boolean
     allowed: 0, 1
     short: Only allow the forms offered in the chat
-    hint: MCP offers only the forms with enableForChat, the chat assistant's list ; otherwise every form the user may open
+    hint: MCP offers only the forms with enableForChat; otherwise every form the user may open.
     default: 0
     description: |
       With 0 (the default) an MCP client sees every form the user's roles may open. With 1
@@ -722,7 +729,7 @@
     type: boolean
     allowed: 0, 1
     short: Enable the chat assistant
-    hint: A chat in the browser that fills in and launches forms with an AI model
+    hint: A chat in the browser that fills in and launches forms with an AI model.
     default: 0
     description: |
       Shows a chat button on every page. The assistant fills in a form with the user by
@@ -740,7 +747,7 @@
     allowed: a positive integer
     default: 90
     short: API token maximum life (days)
-    hint: A login with ?expiryDays= longer than this is cut to it
+    hint: A login with ?expiryDays= longer than this is cut to it.
     description: |
       A role with the `allowApiTokens` option may log in with `?expiryDays=<n>` and get an access
       token that lives n days, for scripts and integrations. It lives this many days at most: a
@@ -763,7 +770,7 @@
     allowed: 0 or a positive integer
     default: 8
     short: Minimum password length
-    hint: 0 checks no length
+    hint: "0 checks no length."
     description: |
       A local password set through the application - a new user, an admin setting it, a user
       changing their own - needs at least this many characters, and is neither the username nor
@@ -776,7 +783,7 @@
     allowed: 0, 1
     default: 1
     short: Enforce the Content-Security-Policy
-    hint: 0 sends it report only ; applied without a restart
+    hint: "0 sends it report only; applied without a restart."
     description: |
       The web app is served with a Content-Security-Policy: scripts from the app itself only, so
       a script injected into a page does not run, and no other site may frame it. It allows what
@@ -791,7 +798,7 @@
     allowed: 0 or a positive integer
     default: 120
     short: Sign-in requests a minute from one address
-    hint: 0 turns it off
+    hint: "0 turns it off."
     description: |
       A ceiling on the authentication endpoints - the login, the logout, the token refresh and the
       single sign-on callbacks - per client address and per app node: above it they answer 429
@@ -804,7 +811,7 @@
     allowed: 0 or a positive integer
     default: 5
     short: Failed sign-ins before an account locks
-    hint: 0 turns the account lockout off
+    hint: "0 turns the account lockout off."
     description: |
       After this many failed logins in a row, an account (local or LDAP) is locked for
       LOGIN_LOCKOUT_MINUTES: every attempt is refused with status 429 before any password is
@@ -817,7 +824,7 @@
     allowed: 0 or a positive integer
     default: 30
     short: Failed sign-ins from one address before it is held back
-    hint: 0 turns the per-address limit off
+    hint: "0 turns the per-address limit off."
     description: |
       One address trying many accounts: after this many failed logins within
       LOGIN_LOCKOUT_MINUTES, every login from it is refused with status 429 until that window
@@ -829,7 +836,7 @@
     allowed: 0 or a positive integer
     default: 15
     short: Account lockout (minutes)
-    hint: Also the window the failures are counted in ; 0 turns both limits off
+    hint: Also the window the failures are counted in; 0 turns both limits off.
     description: |
       How long an account stays locked after LOGIN_MAX_FAILURES failed logins, and the window
       in which the failures of an account and of an address are counted. 0 turns the lockout and
@@ -847,7 +854,7 @@
       description: Launches whose field values break the form's rules are refused
     default: enforce
     short: Validate every launch
-    hint: off does nothing, log logs what would be refused, enforce refuses the launch
+    hint: off does nothing, log logs what would be refused, enforce refuses the launch.
     description: |
       Checks every launch from the browser or the REST API (`POST /api/v2/job`) on the
       server against the form's validation rules - `required`, `regex`, `minValue`/`maxValue`,
@@ -1020,6 +1027,7 @@
     type: number
     allowed: a valid number
     short: The playbook output an RTE stores per stream
+    hint: "Read by an RTE: past this many bytes on one stream, a playbook's output is no longer stored."
     default: 50 * 1024 * 1024
     description: |
       Read by an RTE (`AF_ROLE=rte`): past this many bytes on one stream (stdout, stderr), a
@@ -1034,7 +1042,7 @@
     allowed: a long random string
     default: none (metrics off)
     short: Prometheus metrics token
-    hint: Unset, /api/v2/metrics answers 404 ; applied without a restart
+    hint: Unset, /api/v2/metrics answers 404; applied without a restart.
     description: |
       Set, an app node (`AF_ROLE` `all` or `app`) serves Prometheus metrics at `/api/v2/metrics`
       and an RTE at `/metrics`, to a scraper that sends `Authorization: Bearer <METRICS_TOKEN>`.
@@ -1052,7 +1060,7 @@
     allowed: text, json
     default: text
     short: Log format
-    hint: json writes one JSON object a line ; applied without a restart
+    hint: json writes one JSON object a line; applied without a restart.
     description: |
       `text` (default): `<time> <level>: <message>`, colored in the console and the log file.
       `json`: one JSON object a line - `time` (ISO), `level`, `message`, `requestId`, `role` and
@@ -1097,6 +1105,7 @@
     allowed: a valid folder path
     default: "%PERSISTENT_FOLDER%/logs"
     short: Logs folder
+    hint: The folder of the log files, ansibleforms.log and ansibleforms.errors.log.
     description: | 
       Ansible Forms maintains 2 logfiles.  `ansibleforms.log` and `ansibleforms.errors.log`   
     changelog:
@@ -1446,7 +1455,7 @@
     allowed: a positive number
     default: 5
     short: AWX silence before a job is given up (minutes)
-    hint: Read by the app node or worker following the job
+    hint: Read by the app node or worker following the job.
     description: |
       While an AWX job runs, the app asks AWX for its status and output every second. When AWX
       does not answer (a network blip, a restart, a busy controller) it tries again with a
