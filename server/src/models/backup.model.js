@@ -157,7 +157,7 @@ async function copyFileIfExists(src,dest,mode){
 // rather than merely sensitive: ENCRYPTION_SECRET decrypts every stored credential (so it
 // would defeat the dump's encryption if shipped with it) and ACCESS_TOKEN_SECRET signs
 // sessions. Neither is readable through the API at all - see REFUSED in lib/envSettings.js.
-const ENV_BACKUP_EXCLUDE = ['ENCRYPTION_SECRET', 'ACCESS_TOKEN_SECRET'];
+const ENV_BACKUP_EXCLUDE = ['ENCRYPTION_SECRET', 'ENCRYPTION_SECRET_PREVIOUS', 'ACCESS_TOKEN_SECRET'];
 
 /**
  * The name a line assigns, read with DOTENV'S OWN grammar.

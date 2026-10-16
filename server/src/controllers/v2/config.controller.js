@@ -213,7 +213,7 @@ const saveEnv = async function(req,res){
 // <service>_TOKEN look like. HTTPS_KEY is deliberately NOT matched: it is a path to a key
 // file, not the key itself, and the path is useful to see. PASSWORD and SECRET are trailing
 // too, for the same reason : PASSWORD_MIN_LENGTH is a number, and it was hidden as a secret.
-const SECRET_ENV_NAME = /_PASSWORD$|_SECRET$|_TOKEN$/;
+const SECRET_ENV_NAME = /_PASSWORD$|_SECRET$|_TOKEN$|_SECRET_PREVIOUS$/;
 const MASK = "*** NOT REVEALED ***";
 // the state an unset secret is in : the page says it instead of the mask
 const SECRET_STATES = { ENCRYPTION_SECRET: 'default', ACCESS_TOKEN_SECRET: 'random' };

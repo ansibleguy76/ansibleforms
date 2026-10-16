@@ -35,7 +35,8 @@ export const MANAGED_ENV_PATH = process.env.MANAGED_ENV_PATH
 // Never editable from the UI. Each of these can destroy data or hand out access, and a
 // settings page is the wrong place to do that - the reason is shown in the field.
 export const REFUSED = {
-  ENCRYPTION_SECRET: 'Changing this makes every stored credential impossible to decrypt',
+  ENCRYPTION_SECRET: 'Set in the environment of every node : the stored secrets are re-encrypted with it on the next start',
+  ENCRYPTION_SECRET_PREVIOUS: 'Set in the environment of the worker, for the one start that re-encrypts the stored secrets',
   ACCESS_TOKEN_SECRET: 'Changing this invalidates every session and signs out all users',
   ADMIN_PASSWORD: 'Change the admin password from the Users page instead',
   ADMIN_USERNAME: 'Change the admin account from the Users page instead',

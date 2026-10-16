@@ -26,6 +26,20 @@ export function jobsListSize(value) {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+/**
+ * The 32-byte AES key of a secret : the secret followed by a fixed pad, cut to 32 characters.
+ * Without a secret it is the public default, in this source.
+ *
+ * Args:
+ *   secret (string): ENCRYPTION_SECRET (or ENCRYPTION_SECRET_PREVIOUS) ; empty : the default.
+ *
+ * Returns:
+ *   string: the key.
+ */
+function encryptionKeyOf(secret) {
+  return ((secret || "undefinedvOVH6sdmpNWjRRIqCc7rdxs") + "vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3").substring(0, 32);
+}
+
 var app_config = {
   port: process.env.PORT || 8000,
   // host the app under a url subpath, for example behind a reverse proxy (issue #106)
@@ -100,7 +114,12 @@ var app_config = {
   yttLibData: {},
   yttVarsPrefix: process.env.YTT_VARS_PREFIX || "",
   helpPath: path.resolve(__dirname + "/../help.yaml"),
-  encryptionSecret: ((process.env.ENCRYPTION_SECRET || "undefinedvOVH6sdmpNWjRRIqCc7rdxs") + "vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3").substring(0, 32),
+  encryptionSecret: encryptionKeyOf(process.env.ENCRYPTION_SECRET),
+  // the key the stored secrets were encrypted with before ENCRYPTION_SECRET was changed : they
+  // are re-encrypted with the new one on the next start (lib/keyRotation.js), then it is unused.
+  // The public default is tried too, so setting ENCRYPTION_SECRET for the first time needs none.
+  encryptionSecretPrevious: process.env.ENCRYPTION_SECRET_PREVIOUS ? encryptionKeyOf(process.env.ENCRYPTION_SECRET_PREVIOUS) : null,
+  encryptionSecretDefault: encryptionKeyOf(""),
   // without ENCRYPTION_SECRET the key above is the fallback in this public source : index.js
   // warns at startup. The fallback itself stays - changing it would make every credential
   // already stored with it unreadable.

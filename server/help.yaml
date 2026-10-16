@@ -1380,10 +1380,28 @@
     allowed: a strong encryption string
     short: Encryption secret
     default: "*** NOT REVEALED ***"
+    hint: The key the stored passwords and tokens are encrypted with.
     description: |
-      Ansible Forms encrypts passwords in the database using this secret.  
-      We strongly advise you to set a custom entryption secret to uniquely protect your passwords.  
-      The secret must be 32 character long, however, we extend or cut the secret if this is not the case.
+      Ansible Forms encrypts the passwords and tokens it stores in the database with this secret.
+      Set your own : without it they are encrypted with a default key that is public in the source code.
+      The secret must be 32 characters long ; a shorter one is extended and a longer one cut.
+      Setting it, or changing it, re-encrypts every stored secret with it on the next start, in one
+      transaction, so none is lost : from the default key the first time, from
+      ENCRYPTION_SECRET_PREVIOUS after that. Set the same value on every app node, the worker and
+      every RTE that registers itself.
+  - name: ENCRYPTION_SECRET_PREVIOUS
+    type: string
+    allowed: the previous ENCRYPTION_SECRET
+    short: Previous encryption secret
+    hint: The ENCRYPTION_SECRET before this one, to re-encrypt the stored secrets from.
+    default: ""
+    version: 7.3.0
+    description: |
+      When ENCRYPTION_SECRET changes from a key of your own to another, set this to the old one for
+      one start : every stored secret is re-encrypted from it to the new ENCRYPTION_SECRET, then it
+      is not used and can be removed. Not needed when ENCRYPTION_SECRET is set for the first time
+      (the stored secrets are then re-encrypted from the default key). When the stored secrets were
+      encrypted with a key that is neither, nothing is changed and the log says so.
   - name: ANSIBLE_PATH
     type: string
     allowed: a valid path

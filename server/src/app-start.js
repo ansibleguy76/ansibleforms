@@ -136,7 +136,7 @@ export async function startApp(){
   }
 
   if (appConfig.encryptionSecretIsDefault) {
-    logger.warning('[SECURITY] ENCRYPTION_SECRET is not set. Stored passwords are encrypted with the default key, which is public in the source code. Set ENCRYPTION_SECRET before you store credentials: changing it later makes the existing ones unreadable.');
+    logger.warning('[SECURITY] ENCRYPTION_SECRET is not set. Stored passwords are encrypted with the default key, which is public in the source code. Set ENCRYPTION_SECRET: the stored ones are re-encrypted with it on the next start.');
   }
 
   // the database user : rights beyond the AnsibleForms schema are a risk worth saying once
