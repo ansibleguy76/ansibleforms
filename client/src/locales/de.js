@@ -1687,6 +1687,7 @@ export default {
       server: 'Server',
       serverHelp: 'Die Adresse des Secret Stores, für den diese Anmeldung gilt.',
       noServer: 'Seine Anmeldeinformation hat keinen Server: Fügen Sie auf deren Seite einen hinzu.',
+      noneOfType: 'Noch keine Zugangsdaten vom Typ {type}',
       type_rte: 'RTE',
       type_rteHint: 'Token und Adresse einer RTE, ein Runner für Playbooks und Workflows',
       type_awx: 'AWX',

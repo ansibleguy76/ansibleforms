@@ -1569,6 +1569,7 @@ export default {
       server: 'Serwer',
       serverHelp: 'Adres magazynu sekretów, do którego służy to logowanie.',
       noServer: 'Jego poświadczenie nie ma serwera: dodaj go na stronie poświadczenia.',
+      noneOfType: 'Brak jeszcze poświadczeń typu {type}',
       type_rte: 'RTE',
       type_rteHint: 'Token i adres RTE, runnera dla playbooków i workflowów',
       type_awx: 'AWX',

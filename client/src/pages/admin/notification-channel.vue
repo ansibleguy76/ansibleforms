@@ -37,6 +37,7 @@ import getSettings, {
   PAYLOAD_PLACEHOLDERS,
   channelType,
   channelAddress,
+  noCredentialsText,
 } from '@/config/settings';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
@@ -525,6 +526,7 @@ onMounted(async () => {
                 icon="key"
                 :isFloating="false"
                 :values="credentialsOf('smtp')"
+                :emptyText="noCredentialsText(t, 'smtp')"
                 valueKey="name"
                 labelKey="name"
                 :required="true"
@@ -558,6 +560,7 @@ onMounted(async () => {
                 :isFloating="false"
                 :required="true"
                 :values="credentialsOf('api')"
+                :emptyText="noCredentialsText(t, 'api')"
                 valueKey="name"
                 labelKey="name"
                 :help="t('settings.notificationChannels.tokenCredentialHelp_telegram')"
@@ -573,6 +576,7 @@ onMounted(async () => {
                 icon="key"
                 :isFloating="false"
                 :values="credentialsOf('api')"
+                :emptyText="noCredentialsText(t, 'api')"
                 valueKey="name"
                 labelKey="name"
                 :help="t('settings.notificationChannels.tokenCredentialHelp_webhook')"

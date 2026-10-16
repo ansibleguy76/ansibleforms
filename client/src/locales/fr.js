@@ -1693,6 +1693,7 @@ export default {
       server: 'Serveur',
       serverHelp: "L'adresse du coffre de secrets pour lequel vaut cette connexion.",
       noServer: "Son identifiant n'a pas de serveur : ajoutez-en un sur la page de l'identifiant.",
+      noneOfType: "Pas encore d'identifiants de type {type}",
       type_rte: 'RTE',
       type_rteHint: "Le jeton et l'adresse d'un RTE, un runner pour les playbooks et workflows",
       type_awx: 'AWX',

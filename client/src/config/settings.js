@@ -366,6 +366,20 @@ export const CREDENTIAL_SERVER_EXAMPLE = {
 };
 
 /**
+ * What an empty credential dropdown says : no credential of the type it lists yet.
+ *
+ * Args:
+ *   t (function): the translation.
+ *   type (string): the credential type the dropdown lists.
+ *
+ * Returns:
+ *   string: the message, the type by its name.
+ */
+export function noCredentialsText(t, type) {
+  return t('settings.credentials.noneOfType', { type: t(`settings.credentials.type_${type}`) });
+}
+
+/**
  * What a credential's fields are called for its type, and what they say : a CyberArk's user is its
  * AppID, an RTE's password its RTE_TOKEN, an AWX's a token or a password, a runner's server its
  * address with what it ends with.

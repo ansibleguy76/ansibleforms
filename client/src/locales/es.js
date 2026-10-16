@@ -1684,6 +1684,7 @@ export default {
       server: 'Servidor',
       serverHelp: 'La dirección del almacén de secretos para el que sirve este acceso.',
       noServer: 'Su credencial no tiene servidor: añade uno en la página de la credencial.',
+      noneOfType: 'Aún no hay credenciales de tipo {type}',
       type_rte: 'RTE',
       type_rteHint: 'El token y la dirección de un RTE, un runner para playbooks y workflows',
       type_awx: 'AWX',

@@ -1676,6 +1676,7 @@ export default {
       server: 'Server',
       serverHelp: "L'indirizzo dell'archivio di segreti per cui vale questo accesso.",
       noServer: 'La sua credenziale non ha un server: aggiungilo nella pagina della credenziale.',
+      noneOfType: 'Ancora nessuna credenziale di tipo {type}',
       type_rte: 'RTE',
       type_rteHint: "Il token e l'indirizzo di un RTE, un runner per playbook e workflow",
       type_awx: 'AWX',

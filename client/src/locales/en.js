@@ -1659,6 +1659,7 @@ export default {
       server: 'Server',
       serverHelp: 'The address of the secret store this login is for.',
       noServer: "Its credential has no server: add one on the credential's page.",
+      noneOfType: 'No credentials of type {type} yet',
       type_rte: 'RTE',
       type_rteHint: 'The token and address of an RTE, a runner for playbooks and workflows',
       type_awx: 'AWX',
