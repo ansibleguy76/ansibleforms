@@ -15,6 +15,7 @@ Removed in 8.0.0. Each logs a warning when it is used.
 | the config seed's `awx:` section | `runners:` items with `type: awx` | 7.0.0 |
 | `LOCK_PATH` (no longer read) | nothing: the designer lock is kept in the database | 7.0.0 |
 | an `api` or `userpass` credential on a runner of the config seed (it logs a warning ; through the API and the GUI a runner takes a credential of its kind only) | a credential of the runner's kind : `credential_type: rte`, `awx`, `aap`, `ascender`, `semaphore`, `rundeck` or `jenkins`, with its server in `url` | 7.3.0 |
+| a runner of the config seed with its own `token`, or `username` and `password` (it logs a warning, and the seed makes a credential of its kind named after the runner, that the runner names) | a credential of the runner's kind in the `credentials` section, with its server in `url`, named by the runner with `credential:` | 7.3.0 |
 
 ## Upgrading from 6.5 to 7.0.0 - read first
 

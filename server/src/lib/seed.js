@@ -27,7 +27,7 @@ import yaml from "yaml";
 import logger from "./logger.js";
 import crypto from "./crypto.js";
 import appConfig from "../../config/app.config.js";
-import { validateSeed, interpolateEnv, foldAwxIntoRunners } from "./seed-schema.js";
+import { validateSeed, interpolateEnv, foldAwxIntoRunners, foldRunnerSecretsIntoCredentials } from "./seed-schema.js";
 import CrudModel from "../models/crud.model.js";
 import OAuth2 from "../models/oauth2.model.js";
 import Credential from "../models/credential.model.v2.js";
@@ -62,6 +62,16 @@ const listSections = [
     remove: (row) => SecretStore.delete(row.id, seedOpts),
   },
   {
+    // before the runners that name them
+    key: "credentials",
+    modelName: "credential",
+    label: "credential",
+    defaults: { description: "" },
+    create: (d) => Credential.create(d, seedOpts),
+    update: (d, row) => Credential.update(d, row.id, seedOpts),
+    remove: (row) => Credential.delete(row.id, seedOpts),
+  },
+  {
     key: "runners",
     modelName: "runner",
     label: "runner",
@@ -73,15 +83,6 @@ const listSections = [
     // it wrote at the declared address is adopted, or that RTE would be two runners
     findAdoptable: (item) => Runner.findRegisteredAt(item),
     adopt: (d, row) => Runner.adoptRegistered(d, row, seedOpts),
-  },
-  {
-    key: "credentials",
-    modelName: "credential",
-    label: "credential",
-    defaults: { description: "" },
-    create: (d) => Credential.create(d, seedOpts),
-    update: (d, row) => Credential.update(d, row.id, seedOpts),
-    remove: (row) => Credential.delete(row.id, seedOpts),
   },
   {
     key: "oauth2",
@@ -440,6 +441,14 @@ async function applySeedNow({ schemaIsReady = true } = {}) {
   if (doc.awx) {
     logger.warning("The config seed's awx: section is deprecated since 7 and removed in 8: declare those connections under runners: with type: awx");
     doc = foldAwxIntoRunners(doc);
+  }
+  // a runner's own token, or user and password : deprecated since 7.3 in favour of a credential
+  // of its kind (credential:), removed in 8. Applied as such a credential, named after the runner
+  const runnerSecrets = foldRunnerSecretsIntoCredentials(doc);
+  doc = runnerSecrets.doc;
+  for (const name of runnerSecrets.folded) {
+    const credential = doc.runners.items.find((r) => r.name === name).credential;
+    logger.warning(`The config seed's runner '${name}' carries its own token or user and password, deprecated since 7.3 and removed in 8: declare a credential of its kind with its url and name it with credential: (applied now as the credential '${credential}')`);
   }
 
   const summary = { created: [], updated: [], released: [], pruned: [], adopted: [], recloned: [], unchanged: 0 };
