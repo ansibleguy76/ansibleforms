@@ -177,9 +177,13 @@ onUnmounted(() => {
             <div v-else-if="clearedAfter !== null && !filtered.length" class="text-body-secondary fst-italic py-2">
               {{ t('logs.cleared') }}
             </div>
-            <div v-for="(t, i) in filtered" :key="i">
-              <div class="text-end pe-1 me-3 d-inline-block af-line-no" style="width: 40px">{{ i + 1 }}</div>
-              <span v-for="(s, si) in t" :key="si" v-text="s.text" :class="s.foreground || ''"></span>
+            <!-- a line : its number, then its text in a column of its own, so a long line wraps
+                 under its own start and the number's grey runs down beside it -->
+            <div v-for="(t, i) in filtered" :key="i" class="d-flex">
+              <div class="text-end pe-1 me-3 af-line-no flex-shrink-0" style="width: 40px">{{ i + 1 }}</div>
+              <div class="af-line-text">
+                <span v-for="(s, si) in t" :key="si" v-text="s.text" :class="s.foreground || ''"></span>
+              </div>
             </div>
             <!-- scrolled up : back to the bottom, following again -->
             <AppFollowButton :show="paused" :new-lines="newLines" @click="jumpToEnd" />
@@ -197,6 +201,11 @@ onUnmounted(() => {
   /* the line numbers' grey column from the card's left border, and the lines from its top
      and bottom : the card body's padding taken back */
   margin: calc(-1 * var(--bs-card-spacer-y)) 0 calc(-1 * var(--bs-card-spacer-y)) calc(-1 * var(--bs-card-spacer-x));
+}
+/* the text column takes the rest of the row, and may shrink below its longest word */
+.af-line-text {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 </style>
 <route lang="yaml">
