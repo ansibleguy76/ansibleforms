@@ -9,6 +9,7 @@
 /*      menu: Object                                              */
 /*      forms: Array                                              */
 /*      roles: Array                                              */
+/*      marked: Array - more categories highlighted, as paths     */
 /*                                                                */
 /******************************************************************/
 
@@ -32,6 +33,8 @@ const props = defineProps({
   // the designer's preview : a click on a sub category is handed up (it highlights it there),
   // never a navigation to the Forms page
   preview: { type: Boolean, default: false },
+  // a form's page : the form's categories, each highlighted and opened to, next to currentPath
+  marked: { type: Array, default: () => [] },
 });
 
 // COMPUTED
@@ -40,9 +43,9 @@ const path = computed(() => {
   return props.parent ? props.parent + '/' + props.menu.name : props.menu.name;
 });
 
-const isActive = computed(() => {
-  var x = props.currentPath.split('/');
-  var y = path.value.split('/');
+// whether the category of path parts `y` is `current` or one of its parents
+function leadsTo(current, y) {
+  var x = current.split('/');
   for (let i = 0; i < x.length; i++) {
     if (i < y.length) {
       if (x[i] != y[i]) return false;
@@ -51,10 +54,19 @@ const isActive = computed(() => {
     }
   }
   return true;
+}
+
+const isActive = computed(() => {
+  var y = path.value.split('/');
+  return leadsTo(props.currentPath, y) || props.marked.some((m) => leadsTo(m, y));
+});
+
+const isSelected = computed(() => {
+  return props.currentPath == path.value;
 });
 
 const isHighLighted = computed(() => {
-  return props.currentPath == path.value;
+  return isSelected.value || props.marked.includes(path.value);
 });
 
 // METHODS
@@ -114,7 +126,7 @@ const hasChildren = computed(() =>
 const folded = ref(false);
 const isOpen = computed(() => isActive.value && !folded.value);
 function onClick() {
-  if (hasChildren.value && isHighLighted.value) {
+  if (hasChildren.value && isSelected.value) {
     folded.value = !folded.value;
     return;
   }
@@ -154,6 +166,7 @@ function onClick() {
           :menu="item"
           :forms="forms"
           :roles="roles"
+          :marked="marked"
         />
       </ul>
     </Transition>

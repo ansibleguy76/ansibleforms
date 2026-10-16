@@ -16,6 +16,8 @@
 /*      currentCategory: String - the category highlighted, as    */
 /*                  Infra/Linux ; empty for All Forms ; null while*/
 /*                  the page does not know it yet (an empty menu) */
+/*      formCategories: Array - a form's page : the form's        */
+/*                  categories, all highlighted instead           */
 /*                                                                */
 /*  @emits:                                                       */
 /*      select: String - a category was clicked ('' : All Forms)  */
@@ -46,6 +48,11 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  // a form's page : the categories the form is in (null elsewhere), every one highlighted
+  formCategories: {
+    type: Array,
+    default: null,
+  },
 });
 
 // the categories and forms : the page's once it has them, else the menu's own ; meanwhile the
@@ -66,10 +73,12 @@ watch(
 );
 const forms = computed(() => config.value?.forms || []);
 const roles = computed(() => TokenStorage.getPayload()?.user?.roles || []);
-const isAll = computed(() => !props.currentCategory);
+const isAll = computed(() => !props.formCategories && !props.currentCategory);
 // the categories loaded and the one to highlight known : the menu shows, not before (no All
 // Forms with 0 forms, highlighted, then another category)
-const ready = computed(() => !!config.value?.forms && props.currentCategory !== null);
+const ready = computed(
+  () => !!config.value?.forms && (props.formCategories !== null || props.currentCategory !== null),
+);
 
 onMounted(async () => {
   if (props.formConfig) return;
@@ -111,7 +120,8 @@ onMounted(async () => {
         @click="(path) => emit('select', path)"
         v-for="item in config?.categories"
         :key="item.name"
-        :currentPath="currentCategory"
+        :currentPath="formCategories ? '' : currentCategory || ''"
+        :marked="formCategories || []"
         parent=""
         :menu="item"
         :forms="forms"
