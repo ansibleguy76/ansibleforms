@@ -83,6 +83,15 @@ function openActiveSection() {
   }
 }
 watch(() => route.path, openActiveSection);
+// an in-page entry marked active once the page has read what it shows (a job's page : its
+// status, after the job loads) opens its section too. Only when that section changes : one
+// the user closes while it holds the active entry stays closed
+watch(
+  () => (props.sections || []).findIndex((s) => (s.items || []).some((i) => i.active)),
+  (idx) => {
+    if (idx >= 0) openActiveSection();
+  },
+);
 
 // The scroll position too : following a link remounts the menu at its top, so the item just
 // clicked could leave the screen. Kept for the browser tab only (sessionStorage), and put

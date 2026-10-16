@@ -95,6 +95,15 @@ function selectStatus(status) {
 const isJobPage = computed(() => !!route.params.id);
 // the list a job was opened from (its status filter) : where its page goes back to
 const listPath = computed(() => jobsPath(statusFilter.value));
+// the status highlighted in the left menu : on a job's page the job's own (a step's, its main
+// job's : the menu counts the main jobs), read with the job or else from the list ; on the
+// list its filter
+const menuStatus = computed(() => {
+  if (!isJobPage.value) return statusFilter.value;
+  const listed = jobs.value.find((j) => String(j.id) === String(route.params.id));
+  if (listed?.parent_id) return jobs.value.find((j) => j.id === listed.parent_id)?.status ?? null;
+  return job.value?.status ?? listed?.status ?? null;
+});
 function backToJobs() {
   router.push({ path: listPath.value, query: route.query });
 }
@@ -1275,7 +1284,7 @@ onMounted(async () => {
       </div>
     </Teleport>
     <main class="d-flex flex-nowrap af-settings-layout">
-      <AppJobsSidebar :jobs="jobs || []" :loaded="jobsLoaded" :status="statusFilter" @select="selectStatus" />
+      <AppJobsSidebar :jobs="jobs || []" :loaded="jobsLoaded" :status="menuStatus" @select="selectStatus" />
       <AppSettings :title="pageTitle.title" :crumbs="pageCrumbs" :description="pageDescription" :icon="pageTitle.icon">
         <template #headerActions>
           <!-- a job's page : the actions the list offers on its row (same rules) ; back to the list
