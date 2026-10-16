@@ -204,10 +204,19 @@ describe("the backup shell command quotes every value it interpolates", () => {
     const cmds = [...backup.matchAll(/const (?:dumpCmd|restoreCmd) = `[^`]*`/g)].map(m => m[0]);
     assert.equal(cmds.length, 2, "expected the dump and the restore command");
     for (const c of cmds) {
-      for (const v of ["dbHost", "dbUser", "dbPort", "dbName", "dbPassword"]) {
+      for (const v of ["dbHost", "dbUser", "dbPort", "dbName"]) {
         assert.match(c, new RegExp(`shQuote\\(${v}\\)`), `${v} is not quoted in ${c.slice(0, 40)}...`);
       }
     }
+  });
+
+  test("the password is never in the command : the shell reads it from the environment", () => {
+    const cmds = [...backup.matchAll(/const (?:dumpCmd|restoreCmd) = `[^`]*`/g)].map(m => m[0]);
+    for (const c of cmds) {
+      assert.doesNotMatch(c, /dbPassword/, "the command text is logged and shown : no password in it");
+      assert.match(c, /-p"\$AF_DB_PASSWORD"/);
+    }
+    assert.equal([...backup.matchAll(/env: \{ AF_DB_PASSWORD: dbPassword/g)].length, 2, "the dump and the restore pass it");
   });
 
   test("the old hand-rolled password escape is gone", () => {

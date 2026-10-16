@@ -391,12 +391,15 @@ class BackupModel {
     }
     await fs.mkdir(backupFolder, { recursive: true });
     try {
-      const dumpCmd = `${appConfig.mysqldumpCommand} -h ${shQuote(dbHost)} -u${shQuote(dbUser)} -p${shQuote(dbPassword)} -P ${shQuote(dbPort)} ${RUNTIME_TABLES} ${shQuote(dbName)} > "${backupFile}"`;
+      // the password reaches the command through the environment : the shell puts it in place
+      // of "$AF_DB_PASSWORD" when it runs it, so the command text (logged, shown in the job
+      // output, in an error) never holds it, and a wrapper (docker exec ...) still gets it
+      const dumpCmd = `${appConfig.mysqldumpCommand} -h ${shQuote(dbHost)} -u${shQuote(dbUser)} -p"$AF_DB_PASSWORD" -P ${shQuote(dbPort)} ${RUNTIME_TABLES} ${shQuote(dbName)} > "${backupFile}"`;
       const cmdObj = {
         command: dumpCmd,
         directory: process.cwd(),
         description: `Database backup to ${backupFile}`,
-        maskedCommand: `${appConfig.mysqldumpCommand} -h ${shQuote(dbHost)} -u${shQuote(dbUser)} -p'*****' -P ${shQuote(dbPort)} ${RUNTIME_TABLES} ${shQuote(dbName)} > "${backupFile}"`
+        env: { AF_DB_PASSWORD: dbPassword ?? '' }
       };
       // explicit timeout : the default is 60s, which no real database can dump in
       await Cmd.executeSilentCommand(cmdObj, true, false, appConfig.backupCommandTimeoutSeconds);
@@ -447,12 +450,13 @@ class BackupModel {
     if (backupFileSize === 0) {
       throw new Errors.BadRequestError(`Backup '${folder}' has no usable database dump (ansibleforms.sql is missing or empty), so there is nothing to restore. The backup that created it most likely failed.`);
     }
-    const restoreCmd = `${appConfig.mysqlCommand} -h ${shQuote(dbHost)} -u${shQuote(dbUser)} -p${shQuote(dbPassword)} -P ${shQuote(dbPort)} ${shQuote(dbName)} < "${backupFile}"`;
+    // the password through the environment, as for the backup (doBackup)
+    const restoreCmd = `${appConfig.mysqlCommand} -h ${shQuote(dbHost)} -u${shQuote(dbUser)} -p"$AF_DB_PASSWORD" -P ${shQuote(dbPort)} ${shQuote(dbName)} < "${backupFile}"`;
     const cmdObj = {
       command: restoreCmd,
       directory: process.cwd(),
       description: `Database restore from ${backupFile}`,
-      maskedCommand: `${appConfig.mysqlCommand} -h ${shQuote(dbHost)} -u${shQuote(dbUser)} -p'*****' -P ${shQuote(dbPort)} ${shQuote(dbName)} < "${backupFile}"`
+      env: { AF_DB_PASSWORD: dbPassword ?? '' }
     };
     // The one place a timeout is destructive rather than merely annoying: this replays a
     // dump that DROPs and CREATEs each table in turn, so being killed part way leaves some

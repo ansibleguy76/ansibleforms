@@ -37,6 +37,19 @@ Cmd.killChildren = (pid) => {
   }
 };
 
+/**
+ * Text with the user and password of every address in it masked : git writes the address it
+ * was given in its errors (fatal: unable to access 'https://user:token@host/...'), so a
+ * repository's token would reach the log, the job output and the error otherwise.
+ *
+ * Args:
+ *   text (string): a command's output.
+ *
+ * Returns:
+ *   string: the text, every scheme://user:password@ written scheme://user:*******@.
+ */
+Cmd.maskUrlCredentials = (text) => String(text ?? "").replace(/([a-z][a-z0-9+.-]*:\/\/[^\s:@/]+):[^\s@]+@/gi, "$1:*******@");
+
 Cmd.runCommand = (cmd) => {
   return exec(cmd, {});
 };
@@ -54,7 +67,9 @@ Cmd.executeSilentCommand = async (cmd,silent=false,singleLine=false,timeoutSecon
       var cmdlist = command.split(' ')
       var basecmd = cmdlist[0]
       var parameters = cmdlist.slice(1)
-      var child = spawn(basecmd,parameters,{shell:true,stdio:["ignore","pipe","pipe"],cwd:directory,detached:true});
+      // cmd.env : variables the command reads (a password the shell puts in place of its name),
+      // so the secret is never in the command text that is logged and shown
+      var child = spawn(basecmd,parameters,{shell:true,stdio:["ignore","pipe","pipe"],cwd:directory,detached:true,env:{...process.env,...(cmd.env||{})}});
         var timeout = setTimeout(()=>{
           Cmd.killChildren(child.pid)
         },timeoutSeconds*1000)
@@ -68,15 +83,11 @@ Cmd.executeSilentCommand = async (cmd,silent=false,singleLine=false,timeoutSecon
         
         // add output eventlistener to the process to save output
         child.stdout.on('data',function(data){
-          var txt=data.toString()
-          // txt = Cmd.maskGitToken(txt)
-          out.push(txt)
+          out.push(Cmd.maskUrlCredentials(data.toString()))
         })
         // add error eventlistener to the process to save output
         child.stderr.on('data',function(data){
-          var txt=data.toString()
-          // txt = Cmd.maskGitToken(txt)
-          out.push(txt)
+          out.push(Cmd.maskUrlCredentials(data.toString()))
         })
         // add close eventlistener to the process to handle status update : 'close', not 'exit',
         // because 'exit' can fire before the output is read, and a quick command (git status)
@@ -114,9 +125,7 @@ Cmd.executeSilentCommand = async (cmd,silent=false,singleLine=false,timeoutSecon
         })
         // add error eventlistener to the process; set failed
         child.on('error',function(data){
-          var txt=data.toString()
-          // txt = Cmd.maskGitToken(txt)
-          out.push(txt)
+          out.push(Cmd.maskUrlCredentials(data.toString()))
           reject(new Error(out.join('\n')))
           return
         })
