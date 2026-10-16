@@ -14,6 +14,7 @@ Removed in 8.0.0. Each logs a warning when it is used.
 | `type: multistep` on a form (its `steps`) | `type: workflow` : nodes with `runner`, `if_extra_var` (for `ifExtraVar`), `extra_vars_key` (for `key`), approval nodes | 7.0.0 |
 | the config seed's `awx:` section | `runners:` items with `type: awx` | 7.0.0 |
 | `LOCK_PATH` (no longer read) | nothing: the designer lock is kept in the database | 7.0.0 |
+| an `api` or `userpass` credential on a runner of the config seed (it logs a warning ; through the API and the GUI a runner takes a credential of its kind only) | a credential of the runner's kind : `credential_type: rte`, `awx`, `aap`, `ascender`, `semaphore`, `rundeck` or `jenkins`, with its server in `url` | 7.3.0 |
 
 ## Upgrading from 6.5 to 7.0.0 - read first
 
