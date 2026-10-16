@@ -35,7 +35,7 @@ beforeEach(() => {
 });
 
 describe("ending a job", () => {
-  test("the first end wins : its status, its last line, one mail", async () => {
+  test("the first end wins: its status, its last line, one mail", async () => {
     await Job.endJobStatus(1, 9, "stdout", "success", "ok: [Playbook finished]");
     await Job.endJobStatus(1, 10, "stderr", "failed", "[ERROR]: the RTE lost job 1");
     expect(row.status).toBe("success");

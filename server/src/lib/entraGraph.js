@@ -20,7 +20,7 @@ export async function fetchEntraGroups(accessToken, graphUrl, { fetchImpl = fetc
     const text = await res.text();
     let json = null;
     try { json = text ? JSON.parse(text) : null; } catch { /* not json */ }
-    if (!res.ok) throw new Error(`Microsoft Graph returned ${res.status}${json?.error?.code ? ` ${json.error.code}` : ''} : ${json?.error?.message || text.slice(0, 200)}`);
+    if (!res.ok) throw new Error(`Microsoft Graph returned ${res.status}${json?.error?.code ? ` ${json.error.code}` : ''}: ${json?.error?.message || text.slice(0, 200)}`);
     // withIds : { id, name } - the object id is unique, a display name is not
     for (const g of json?.value || []) {
       if (withIds) { if (g?.id) names.push({ id: String(g.id), name: String(g.displayName || '') }); }

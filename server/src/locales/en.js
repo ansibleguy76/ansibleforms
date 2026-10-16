@@ -26,7 +26,7 @@ export default {
     refreshTokenReplaced: "Refresh token already used by a concurrent refresh",
     apiTokenFromApiToken: "An API token cannot make another API token",
     apiTokenNotAllowed: "Your role does not allow API tokens",
-    apiTokenSignInAgain: "Sign in again to make an API token : your last sign-in is too long ago",
+    apiTokenSignInAgain: "Sign in again to make an API token: your last sign-in is too long ago",
     apiTokenLifetime: "The lifetime must be a number of days, at most {max}",
     apiTokenFailed: "Could not make the API token",
     apiTokensFailed: "Could not read or change the API tokens",
@@ -38,9 +38,9 @@ export default {
     authFailed: "Authentication failed",
     invalidCredentials: "Invalid credentials",
     tooManyFailures:
-      "Too many failed logins : try again in {minutes} minute(s)",
+      "Too many failed logins: try again in {minutes} minute(s)",
     passwordChangeRequired:
-      "Change your password first : it is the public default password",
+      "Change your password first: it is the public default password",
     disclaimerRequired: "Accept the disclaimer first",
     disclaimerAccepted: "The disclaimer is accepted",
     loginDisabled: "Not authenticated, login is not enabled for this user.",
@@ -103,7 +103,7 @@ export default {
     runnerAdded: "Runner added",
     runnerNotFound: "Runner not found",
     runnerAdminOnly:
-      "Only an admin can add, change or delete a runner : a runner receives the credentials of the jobs it runs",
+      "Only an admin can add, change or delete a runner: a runner receives the credentials of the jobs it runs",
     defaultPasswordRefused:
       "Choose another password than the public default one",
     passwordTooShort: "The password needs at least {min} characters",
@@ -116,9 +116,9 @@ export default {
     cantChangePasswordLdap: "You can't change the password for an LDAP user",
     directoryTypeUnknown: "Not an LDAP, Microsoft Entra ID or OIDC user or group",
     directoryUserKept:
-      "An administrator blocked this user : allow its sign-in before forgetting it",
+      "An administrator blocked this user: allow its sign-in before forgetting it",
     failedDirectoryUser: "The LDAP or SSO user could not be read or changed",
-    cantBlockAdmin: "The admin user cannot be blocked : it is the way back in",
+    cantBlockAdmin: "The admin user cannot be blocked: it is the way back in",
     cantBlockYourself: "You cannot block your own sign-in",
     groupNotFound: "No such group found",
     groupHasUsers: "Unknown group or group has users",
@@ -149,7 +149,7 @@ export default {
     failedFindLdap: "Failed to find LDAP",
     ldapCheckFailed: "LDAP check failed",
     storedPasswordOtherServer:
-      "The stored password is only used for the stored server : type the password to check another one",
+      "The stored password is only used for the stored server: type the password to check another one",
     ldapUpdated: "LDAP updated",
     failedUpdateLdap: "Failed to update LDAP",
     ldapCreated: "LDAP directory added",
@@ -268,10 +268,10 @@ export default {
   },
   // what a notification channel (Connections > Notifications) says : a test, a job's end
   notifications: {
-    testText: "A test notification from {who} : the channel '{name}' receives it.",
+    testText: "A test notification from {who}: the channel '{name}' receives it.",
     testSent: "Test notification sent to {name}",
     testFailed: "Test notification failed",
-    statusText: "Job {jobid} of the form '{form}' ended : {status}.",
+    statusText: "Job {jobid} of the form '{form}' ended: {status}.",
     openJob: "Open the job",
   },
 };

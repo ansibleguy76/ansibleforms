@@ -48,13 +48,13 @@ describe("the groups come from Graph, through the server", () => {
     expect(graph.calls.every((c) => c.auth === "Bearer tok")).toBe(true);
   });
 
-  test("the group filter : a regular expression, an invalid one lets everything through", () => {
+  test("the group filter: a regular expression, an invalid one lets everything through", () => {
     expect(filterGroups(["af-admins", "everyone"], "^af-")).toEqual(["af-admins"]);
     expect(filterGroups(["af-admins", "everyone"], "")).toEqual(["af-admins", "everyone"]);
     expect(filterGroups(["af-admins"], "(")).toEqual(["af-admins"]);
   });
 
-  test("the login : handoff in, Graph called with the opened access token, filtered groups by id and by name, a jwt out", async () => {
+  test("the login: handoff in, Graph called with the opened access token, filtered groups by id and by name, a jwt out", async () => {
     vi.stubGlobal("fetch", graph([{ value: [{ id: "g1", displayName: "af-admins" }, { id: "g2", displayName: "everyone" }] }]));
     const r = res();
     await controller.entraidLogin(req(signHandoff(entraToken, "azuread")), r);
@@ -67,7 +67,7 @@ describe("the groups come from Graph, through the server", () => {
     expect(user.groups).toBeUndefined();
   });
 
-  test("the openid-client login : the ID token's claims and the Graph access token, sealed", async () => {
+  test("the openid-client login: the ID token's claims and the Graph access token, sealed", async () => {
     vi.stubGlobal("fetch", graph([{ value: [{ id: "g1", displayName: "af-admins" }] }]));
     const claims = { sub: "s", tid: TENANT, iss: `https://login.microsoftonline.com/${TENANT}/v2.0`, preferred_username: "alice@example.com", oid: "1234" };
     const r = res();
@@ -86,7 +86,7 @@ describe("the groups come from Graph, through the server", () => {
     expect(graph.calls).toHaveLength(0);
   });
 
-  test("no tenant configured : refused, never any tenant", async () => {
+  test("no tenant configured: refused, never any tenant", async () => {
     provider.tenant_id = "";
     try {
       const r = res();
@@ -127,7 +127,7 @@ describe("the groups come from Graph, through the server", () => {
 });
 
 describe("the Entra ID strategy", () => {
-  test("one tenant only : common, organizations, consumers or none are refused", async () => {
+  test("one tenant only: common, organizations, consumers or none are refused", async () => {
     const { isSingleTenant } = await import("../src/auth/auth_entraid.js");
     expect(isSingleTenant(TENANT)).toBe(true);
     expect(isSingleTenant("contoso.onmicrosoft.com")).toBe(true);

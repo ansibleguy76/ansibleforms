@@ -56,8 +56,8 @@ describe("the registry follows the database", () => {
     const before = { repo: cronService.jobs.repositories.get("forms"), sched: cronService.jobs.schedules.get(1) };
     schedules = [{ ...schedules[0], cron: "30 2 * * *" }];
     await cronService.resync();
-    assert.equal(cronService.jobs.repositories.get("forms"), before.repo, "untouched : same task");
-    assert.notEqual(cronService.jobs.schedules.get(1), before.sched, "changed : a new task");
+    assert.equal(cronService.jobs.repositories.get("forms"), before.repo, "untouched: same task");
+    assert.notEqual(cronService.jobs.schedules.get(1), before.sched, "changed: a new task");
   });
 
   test("a new row is added and a removed one dropped", async () => {

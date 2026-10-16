@@ -41,7 +41,7 @@ describe.each([
     const fin = fn.indexOf("finally");
     assert.ok(fin > -1, "the release must not sit on the success path only");
     assert.match(fn.slice(fin), /if\s*\(\s*lockAcquired\s*\)/);
-    assert.match(fn.slice(fin), /Lock\.delete\(user, \{ onlyMine: true \}\)/, "only its own lock : never one a designer took meanwhile");
+    assert.match(fn.slice(fin), /Lock\.delete\(user, \{ onlyMine: true \}\)/, "only its own lock: never one a designer took meanwhile");
   });
 
   test("it releases only what it acquired", () => {

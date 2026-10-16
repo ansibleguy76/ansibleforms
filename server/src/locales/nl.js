@@ -27,7 +27,7 @@ export default {
     refreshTokenReplaced: "Refresh token is al gebruikt door een gelijktijdige vernieuwing",
     apiTokenFromApiToken: "Een API-token kan geen ander API-token maken",
     apiTokenNotAllowed: "Je rol staat geen API-tokens toe",
-    apiTokenSignInAgain: "Meld je opnieuw aan om een API-token te maken : je laatste aanmelding is te lang geleden",
+    apiTokenSignInAgain: "Meld je opnieuw aan om een API-token te maken: je laatste aanmelding is te lang geleden",
     apiTokenLifetime: "De looptijd moet een aantal dagen zijn, hoogstens {max}",
     apiTokenFailed: "Het API-token kon niet worden gemaakt",
     apiTokensFailed: "De API-tokens konden niet worden gelezen of gewijzigd",
@@ -40,9 +40,9 @@ export default {
     authFailed: "Authenticatie mislukt",
     invalidCredentials: "Ongeldige inloggegevens",
     tooManyFailures:
-      "Te veel mislukte aanmeldingen : probeer het over {minutes} minuut/minuten opnieuw",
+      "Te veel mislukte aanmeldingen: probeer het over {minutes} minuut/minuten opnieuw",
     passwordChangeRequired:
-      "Wijzig eerst uw wachtwoord : het is het publiek bekende standaardwachtwoord",
+      "Wijzig eerst uw wachtwoord: het is het publiek bekende standaardwachtwoord",
     disclaimerRequired: "Accepteer eerst de disclaimer",
     disclaimerAccepted: "De disclaimer is geaccepteerd",
     loginDisabled:
@@ -106,7 +106,7 @@ export default {
     runnerAdded: "Runner toegevoegd",
     runnerNotFound: "Runner niet gevonden",
     runnerAdminOnly:
-      "Alleen een admin kan een runner toevoegen, wijzigen of verwijderen : een runner ontvangt de credentials van de jobs die hij uitvoert",
+      "Alleen een admin kan een runner toevoegen, wijzigen of verwijderen: een runner ontvangt de credentials van de jobs die hij uitvoert",
     defaultPasswordRefused:
       "Kies een ander wachtwoord dan het publieke standaardwachtwoord",
     passwordTooShort: "Het wachtwoord heeft minstens {min} tekens nodig",
@@ -156,7 +156,7 @@ export default {
     failedFindLdap: "Kan LDAP niet vinden",
     ldapCheckFailed: "LDAP controle mislukt",
     storedPasswordOtherServer:
-      "Het opgeslagen wachtwoord wordt alleen voor de opgeslagen server gebruikt : typ het wachtwoord om een andere te controleren",
+      "Het opgeslagen wachtwoord wordt alleen voor de opgeslagen server gebruikt: typ het wachtwoord om een andere te controleren",
     ldapUpdated: "LDAP bijgewerkt",
     failedUpdateLdap: "Kan LDAP niet bijwerken",
     ldapCreated: "LDAP-directory toegevoegd",
@@ -275,10 +275,10 @@ export default {
   },
   // what a notification channel (Connections > Notifications) says : a test, a job's end
   notifications: {
-    testText: "Een testmelding van {who} : het kanaal '{name}' ontvangt ze.",
+    testText: "Een testmelding van {who}: het kanaal '{name}' ontvangt ze.",
     testSent: "Testmelding verstuurd naar {name}",
     testFailed: "Testmelding mislukt",
-    statusText: "Job {jobid} van het formulier '{form}' is klaar : {status}.",
+    statusText: "Job {jobid} van het formulier '{form}' is klaar: {status}.",
     openJob: "Job openen",
   },
 };

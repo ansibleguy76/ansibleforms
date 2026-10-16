@@ -33,7 +33,7 @@ export async function resolveJobSecrets(extravars = {}, creds = {}) {
       const c = await Credential.resolveCredential(extravars.__ansibleCredentials__);
       ansible = { user: c.user, password: c.password };
     } catch (err) {
-      logger.error("Failed to get ansible credentials : ", err);
+      logger.error("Failed to get ansible credentials: ", err);
       ansible = { error: err.message || String(err) };
     }
   }
@@ -43,7 +43,7 @@ export async function resolveJobSecrets(extravars = {}, creds = {}) {
       const c = await Credential.resolveCredential(extravars.__vaultCredentials__);
       vault = { password: c.password };
     } catch (err) {
-      logger.error("Failed to get vault credentials : ", err);
+      logger.error("Failed to get vault credentials: ", err);
       vault = { error: err.message || String(err) };
     }
   }

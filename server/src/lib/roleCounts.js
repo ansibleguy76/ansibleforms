@@ -17,7 +17,7 @@ export async function configRoles() {
     const baseConfig = await Form.load(null, null, null, true);
     return Array.isArray(baseConfig?.roles) ? baseConfig.roles : [];
   } catch (err) {
-    logger.warning(`Roles not counted, the config could not be read : ${err}`);
+    logger.warning(`Roles not counted, the config could not be read: ${err}`);
     return [];
   }
 }

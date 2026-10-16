@@ -105,7 +105,7 @@ export function applyTrustProxy(app) {
   if (value === true) {
     logger.warning('[SECURITY] TRUST_PROXY=true trusts X-Forwarded-For from every client. Unless the application is reachable ONLY through the reverse proxy, anybody can choose the address the audit trail records. Prefer the number of proxies or their addresses.');
   } else if (value !== false) {
-    logger.notice(`Client addresses are read from X-Forwarded-For through trusted proxies : ${Array.isArray(value) ? value.join(', ') : `${value} hop(s)`}`);
+    logger.notice(`Client addresses are read from X-Forwarded-For through trusted proxies: ${Array.isArray(value) ? value.join(', ') : `${value} hop(s)`}`);
   }
   return true;
 }

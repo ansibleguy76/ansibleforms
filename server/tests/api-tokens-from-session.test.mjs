@@ -140,7 +140,7 @@ describe("making a token from a session", () => {
     expect(payload.exp - payload.iat).toBe(authConfig.apiTokenMaxDays * 86400);
   });
 
-  test("a sign-in too long ago, or a session from before the sign-in time was kept : sign in again", async () => {
+  test("a sign-in too long ago, or a session from before the sign-in time was kept: sign in again", async () => {
     for (const authTime of [now() - RECENT_SIGN_IN_SECONDS - 30, null]) {
       const res = await call(controller.create, { authTime, body: { expiryDays: 30 } });
       expect(res.statusCode).toBe(403);
@@ -207,7 +207,7 @@ describe("listing and revoking", () => {
     expect((await call(controller.findForUser, { params: { type: "nope", name: "x" } })).statusCode).toBe(400);
   });
 
-  test("a local user's tokens by its id : an admin account's only for an admin, an unknown id is 404", async () => {
+  test("a local user's tokens by its id: an admin account's only for an admin, an unknown id is 404", async () => {
     const made = await call(controller.create, { user: { username: "scripter", type: "local", options: { extendedTokenExpiration: true } }, body: { expiryDays: 5 } });
     const sid = jwt.decode(made.body.token).sid;
     const list = await call(controller.findForUser, { params: { id: "7" } });

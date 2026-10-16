@@ -857,7 +857,7 @@ function getDefaultValue(fieldname, value) {
         r = Helpers.evalSandbox(_value);
         return r;
       } catch (err) {
-        console.log(`Error evaluating default value : ${err.toString()}`);
+        console.log(`Error evaluating default value: ${err.toString()}`);
       }
     } else {
       return _value;

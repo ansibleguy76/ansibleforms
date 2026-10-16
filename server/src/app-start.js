@@ -77,7 +77,7 @@ async function waitForTheWorkersSchema() {
       reason = `the schema cannot be checked (${e.message || e})`;
     }
     if (!reason) return;
-    if (attempt % 12 === 0) logger.notice(`Waiting for the worker to create or patch the schema : ${reason}`);
+    if (attempt % 12 === 0) logger.notice(`Waiting for the worker to create or patch the schema: ${reason}`);
     await new Promise((resolve) => setTimeout(resolve, 5000));
   }
 }
@@ -91,7 +91,7 @@ export async function startApp(){
   // Several app nodes must sign and accept the same tokens : a secret generated per process
   // makes every node refuse what another one signed - a login that works one request in two
   if (ROLE === 'app' && authConfig.secretIsGenerated) {
-    await die('AF_ROLE=app needs ACCESS_TOKEN_SECRET, the same on every app node : refusing to start');
+    await die('AF_ROLE=app needs ACCESS_TOKEN_SECRET, the same on every app node: refusing to start');
   }
 
   await waitForDatabase();
@@ -108,9 +108,9 @@ export async function startApp(){
     if (worker) {
       await runWorker();
     } else if (workerLockMiss() === 'unreachable') {
-      logger.warning('Could not ask the database for the worker lock : this process serves the web app and keeps trying');
+      logger.warning('Could not ask the database for the worker lock: this process serves the web app and keeps trying');
     } else {
-      logger.warning('Another process holds the worker lock : this one serves the web app and takes over the background work when that process stops');
+      logger.warning('Another process holds the worker lock: this one serves the web app and takes over the background work when that process stops');
     }
     keepWorkerLock({ onAcquired: runWorker, onLost: stopLostWorker });
     // released at once on a stop, so a waiting worker takes over without waiting for the
@@ -127,26 +127,26 @@ export async function startApp(){
     Job.abandonOwn(nodeId)
       .then((changed) => { if (changed) logger.warning(`Abandoned ${changed} jobs this node followed before it restarted`); })
       .then(() => resumeAbandoned(nodeId))
-      .catch((err) => logger.error('Failed to abandon jobs : ' + (err.message || err)));
+      .catch((err) => logger.error('Failed to abandon jobs: ' + (err.message || err)));
   }
   await ansibleforms.load(app);
 
   if (getExpressionMode() === 'legacy') {
-    logger.warning('[SECURITY] EXPRESSION_SANITIZER=legacy : server expressions use the 6.2.1 rules, which let any authenticated user run code on the server. Rewrite the expressions the log reports and go back to strict.');
+    logger.warning('[SECURITY] EXPRESSION_SANITIZER=legacy: server expressions use the 6.2.1 rules, which let any authenticated user run code on the server. Rewrite the expressions the log reports and go back to strict.');
   }
 
   if (appConfig.encryptionSecretIsDefault) {
-    logger.warning('[SECURITY] ENCRYPTION_SECRET is not set. Stored passwords are encrypted with the default key, which is public in the source code. Set ENCRYPTION_SECRET before you store credentials : changing it later makes the existing ones unreadable.');
+    logger.warning('[SECURITY] ENCRYPTION_SECRET is not set. Stored passwords are encrypted with the default key, which is public in the source code. Set ENCRYPTION_SECRET before you store credentials: changing it later makes the existing ones unreadable.');
   }
 
   // the database user : rights beyond the AnsibleForms schema are a risk worth saying once
   databaseUserPrivileges()
     .then(({ user, privileges }) => {
       if (privileges.length) {
-        logger.warning(`[SECURITY] The database user ${user} has rights on every database (${privileges.slice(0, 6).join(', ')}${privileges.length > 6 ? ', ...' : ''}). AnsibleForms needs only ALL PRIVILEGES ON AnsibleForms.* : connect with such a user (see DB_USER).`);
+        logger.warning(`[SECURITY] The database user ${user} has rights on every database (${privileges.slice(0, 6).join(', ')}${privileges.length > 6 ? ', ...' : ''}). AnsibleForms needs only ALL PRIVILEGES ON AnsibleForms.*: connect with such a user (see DB_USER).`);
       }
     })
-    .catch((err) => logger.debug(`Could not read the database user's privileges : ${err.message || err}`));
+    .catch((err) => logger.debug(`Could not read the database user's privileges: ${err.message || err}`));
 
   // the Entra ID variables of before 7.3 (AZURE_*) : still read, said once
   for (const warning of entraEnvWarnings()) logger.warning(warning);
@@ -256,13 +256,13 @@ export async function startApp(){
   process.on('SIGHUP', () => {
     // an app node next to a worker : the worker applies the seed, told through the database
     if (!holdsWorkerLock()) {
-      logger.notice('SIGHUP : asking the worker to re-apply the config seed');
+      logger.notice('SIGHUP: asking the worker to re-apply the config seed');
       bump('seed');
       return;
     }
     // never awaited : a signal handler that blocks would hold the event loop while the seed
     // clones a repository, and reloadConfigSeed reports its own outcome to the log either way
     reloadConfigSeed({ force: true, trigger: 'SIGHUP' })
-      .catch((err) => logger.error('SIGHUP config seed reload failed : ' + (err.message || err)));
+      .catch((err) => logger.error('SIGHUP config seed reload failed: ' + (err.message || err)));
   });
 }

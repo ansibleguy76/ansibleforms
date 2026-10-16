@@ -346,16 +346,16 @@ export function compareExtravars(client, server, ignore = []) {
  */
 export function describeLaunchErrors(errors) {
   const parts = [];
-  if (errors?.missing?.length) parts.push(`missing : ${errors.missing.join(', ')}`);
+  if (errors?.missing?.length) parts.push(`missing: ${errors.missing.join(', ')}`);
   const rules = Object.entries(errors?.validationErrors || {}).map(([n, errs]) => `${n} (${errs.map((e) => e.type).join(', ')})`);
-  if (rules.length) parts.push(`failing rules : ${rules.join(', ')}`);
+  if (rules.length) parts.push(`failing rules: ${rules.join(', ')}`);
   const rows = describeRowErrors(errors?.rowErrors);
-  if (rows.length) parts.push(`failing rows : ${rows.join(', ')}`);
+  if (rows.length) parts.push(`failing rows: ${rows.join(', ')}`);
   const other = (errors?.invalid || [])
     .filter((n) => !(n in (errors?.validationErrors || {})) && !(n in (errors?.rowErrors || {})));
-  if (other.length) parts.push(`invalid : ${other.join(', ')}`);
-  if (errors?.waiting?.length) parts.push(`not resolvable : ${errors.waiting.join(', ')}`);
-  if (errors?.uploads?.length) parts.push(`uploads : ${errors.uploads.map((u) => `${u.field} (${u.reason})`).join(', ')}`);
+  if (other.length) parts.push(`invalid: ${other.join(', ')}`);
+  if (errors?.waiting?.length) parts.push(`not resolvable: ${errors.waiting.join(', ')}`);
+  if (errors?.uploads?.length) parts.push(`uploads: ${errors.uploads.map((u) => `${u.field} (${u.reason})`).join(', ')}`);
   return parts.join(' ; ');
 }
 

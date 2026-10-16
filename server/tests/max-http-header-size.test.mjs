@@ -45,18 +45,18 @@ async function statusFor(env, bytes) {
 }
 
 describe("MAX_HTTP_HEADER_SIZE", () => {
-  test("unset : Node's own limit, a 19 KB token is refused with 431", async () => {
+  test("unset: Node's own limit, a 19 KB token is refused with 431", async () => {
     expect(httpServerOptions({})).toEqual({});
     expect(await statusFor({}, 14000)).toBe(200);
     expect(await statusFor({}, 19000)).toBe(431);
   });
 
-  test("raised : the same request is accepted", async () => {
+  test("raised: the same request is accepted", async () => {
     expect(httpServerOptions({ MAX_HTTP_HEADER_SIZE: "65536" })).toEqual({ maxHeaderSize: 65536 });
     expect(await statusFor({ MAX_HTTP_HEADER_SIZE: "65536" }, 19000)).toBe(200);
   });
 
-  test("a value that is no number in range is ignored : Node's own limit applies", () => {
+  test("a value that is no number in range is ignored: Node's own limit applies", () => {
     for (const v of ["", " ", "abc", "16k", "-1", "100", "99999999", "1.5"]) expect(maxHeaderSize(v)).toBeUndefined();
     expect(maxHeaderSize(" 32768 ")).toBe(32768);
   });
@@ -66,7 +66,7 @@ describe("MAX_HTTP_HEADER_SIZE", () => {
       const src = readFileSync(path.join(serverRoot, file), "utf8");
       const creates = src.match(/https?\.createServer\([^)]*\)/g) || [];
       expect(creates.length, file).toBeGreaterThan(0);
-      for (const c of creates) expect(c, `${file} : ${c}`).toMatch(/httpServerOptions\(\)|serverOptions/);
+      for (const c of creates) expect(c, `${file}: ${c}`).toMatch(/httpServerOptions\(\)|serverOptions/);
     }
   });
 

@@ -50,7 +50,7 @@ beforeEach(() => {
 });
 
 describe("a starting process ends only the jobs it may", () => {
-  test("an app node : only the jobs it followed itself", async () => {
+  test("an app node: only the jobs it followed itself", async () => {
     await Job.abandonOwn("app-a");
     const { sql, params } = calls[0];
     assert.match(sql, /host IS NULL and \(tracker=\?\)/);
@@ -58,17 +58,17 @@ describe("a starting process ends only the jobs it may", () => {
     assert.doesNotMatch(sql, /tracker IS NULL/, "jobs nobody follows are the worker's to end, once");
   });
 
-  test("the worker : its own, and the jobs from before 7 that nobody follows", async () => {
+  test("the worker: its own, and the jobs from before 7 that nobody follows", async () => {
     await Job.abandonOwn("worker-a", { untracked: true });
     assert.match(calls[0].sql, /\(tracker=\? or tracker IS NULL\)/);
   });
 
-  test("a starting app node never ends a job an RTE runs (host set) : it carries on", async () => {
+  test("a starting app node never ends a job an RTE runs (host set): it carries on", async () => {
     await Job.abandonOwn("app-a");
     assert.match(calls[0].sql, /host IS NULL/);
   });
 
-  test("the dead-node sweep : the RTE running a job owns it, else the node following it", async () => {
+  test("the dead-node sweep: the RTE running a job owns it, else the node following it", async () => {
     await Job.abandonDeadNodes("worker-a");
     const { sql, params } = calls[0];
     const owner = "COALESCE\\(j\\.host, j\\.tracker\\)";
@@ -107,7 +107,7 @@ describe("the designer lock lives in the database", () => {
     assert.equal((await Lock.delete(user)).deleted, false, "deleting a free lock is idempotent");
   });
 
-  test("exclusive : a held lock is refused to another user with 423, and kept", async () => {
+  test("exclusive: a held lock is refused to another user with 423, and kept", async () => {
     appConfig.showDesigner = true;
     await Lock.set(user);
     await assert.rejects(Lock.set(bob), (e) => e.status === 423 && /locked by alice/.test(e.message));
@@ -137,7 +137,7 @@ describe("the designer lock lives in the database", () => {
 });
 
 describe("AF_ROLE", () => {
-  test("every process names itself <role>-<hostname>-<port> : nothing to set", async () => {
+  test("every process names itself <role>-<hostname>-<port>: nothing to set", async () => {
     const { nodeId } = await import("../src/lib/role.js");
     const os = await import("os");
     assert.equal(nodeId, `af-${os.hostname()}-${process.env.PORT || 8000}`);

@@ -641,7 +641,7 @@
     "launchValidation": {
       "type": "string",
       "enum": ["off", "log", "enforce"],
-      "description": "Check every launch of this form on the server : log what would be refused, or enforce (refuse, and run the extravars the server builds). The stricter of this and LAUNCH_VALIDATION wins."
+      "description": "Check every launch of this form on the server: log what would be refused, or enforce (refuse, and run the extravars the server builds). The stricter of this and LAUNCH_VALIDATION wins."
     },
     "enableForChat": {
       "type": "boolean",

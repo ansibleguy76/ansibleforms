@@ -60,9 +60,9 @@ const drainSeconds = () => Math.max(0, parseInt(process.env.RTE_DRAIN_SECONDS ??
  */
 async function drainJobs() {
   const until = Date.now() + drainSeconds() * 1000;
-  if (activeJobs.size) logger.notice(`RTE : stopping, waiting up to ${drainSeconds()} seconds for ${activeJobs.size} running job(s)`);
+  if (activeJobs.size) logger.notice(`RTE: stopping, waiting up to ${drainSeconds()} seconds for ${activeJobs.size} running job(s)`);
   while (activeJobs.size && Date.now() < until) await new Promise((r) => setTimeout(r, 500));
-  if (activeJobs.size) logger.warning(`RTE : stopping with ${activeJobs.size} job(s) still running : they end as abandoned`);
+  if (activeJobs.size) logger.warning(`RTE: stopping with ${activeJobs.size} job(s) still running: they end as abandoned`);
 }
 
 function ansibleVersion() {
@@ -80,7 +80,7 @@ function bearer(token) {
   return (req, res, next) => {
     const given = Buffer.from(String(req.headers.authorization || "").replace(/^Bearer\s+/i, ""));
     if (given.length === expected.length && timingSafeEqual(given, expected)) return next();
-    logger.warning(`RTE : refused a call without the right token from ${req.ip}`);
+    logger.warning(`RTE: refused a call without the right token from ${req.ip}`);
     return res.status(401).json({ error: "invalid token" });
   };
 }
@@ -92,7 +92,7 @@ async function abandonOwnJobs() {
     [runnerIdentity()]
   );
   if (res?.changedRows) {
-    logger.warning(`RTE : abandoned ${res.changedRows} job(s) left running by a previous start`);
+    logger.warning(`RTE: abandoned ${res.changedRows} job(s) left running by a previous start`);
     // the browsers see them stop
     publish("jobs");
   }
@@ -120,7 +120,7 @@ export async function prepareDatabase({ firstDelayMs = 1000, maxDelayMs = 15000 
     try {
       await mysql.do("SELECT 1");
     } catch (e) {
-      logger.warning(`RTE : database not ready yet (${e.message || e}), trying again in ${delay / 1000} seconds`);
+      logger.warning(`RTE: database not ready yet (${e.message || e}), trying again in ${delay / 1000} seconds`);
       failed = true;
       await new Promise((r) => setTimeout(r, delay));
       delay = Math.min(delay * 2, maxDelayMs);
@@ -129,10 +129,10 @@ export async function prepareDatabase({ firstDelayMs = 1000, maxDelayMs = 15000 
     try {
       // the first query on the jobs table : it fails while the app has not created the schema
       await abandonOwnJobs();
-      if (failed) logger.notice("RTE : the database and its schema are ready");
+      if (failed) logger.notice("RTE: the database and its schema are ready");
       return true;
     } catch (e) {
-      logger.warning(`RTE : database schema not ready yet (${e.message || e}) - the app creates it on its first start - trying again in ${delay / 1000} seconds`);
+      logger.warning(`RTE: database schema not ready yet (${e.message || e}) - the app creates it on its first start - trying again in ${delay / 1000} seconds`);
       failed = true;
       await new Promise((r) => setTimeout(r, delay));
       delay = Math.min(delay * 2, maxDelayMs);
@@ -146,10 +146,10 @@ async function acceptJob(req, res) {
   // the app says which contract it speaks (rte/contract.js) ; an app of another contract would
   // read and write the job differently, so the job is refused rather than run half right
   if (req.body?.contract !== undefined && req.body.contract !== RTE_CONTRACT) {
-    return res.status(409).json({ error: `this RTE speaks contract ${RTE_CONTRACT}, the app contract ${req.body.contract} : run the same contract on both` });
+    return res.status(409).json({ error: `this RTE speaks contract ${RTE_CONTRACT}, the app contract ${req.body.contract}: run the same contract on both` });
   }
   // starting, stopping, or full : not claimed, the app tries again (runners/rte.js)
-  if (starting) return res.status(503).json({ error: "this RTE is starting : its database is not ready yet", busy: true });
+  if (starting) return res.status(503).json({ error: "this RTE is starting: its database is not ready yet", busy: true });
   if (isStopping()) return res.status(503).json({ error: "this RTE is stopping", busy: true });
   if (maxJobs() && activeJobs.size >= maxJobs() && !activeJobs.has(jobId)) {
     return res.status(503).json({ error: `this RTE runs ${activeJobs.size} jobs already (RTE_MAX_JOBS)`, busy: true });
@@ -177,9 +177,9 @@ async function acceptJob(req, res) {
   if (activeJobs.has(jobId)) return res.status(202).json({ jobId, status: "running" });
 
   activeJobs.add(jobId);
-  logger.notice(`RTE : running job ${jobId}`);
+  logger.notice(`RTE: running job ${jobId}`);
   runAnsibleJob({ jobId, secrets })
-    .catch((err) => logger.error(`RTE : job ${jobId} failed : ${err.message || err}`))
+    .catch((err) => logger.error(`RTE: job ${jobId} failed: ${err.message || err}`))
     .finally(() => activeJobs.delete(jobId));
   return res.status(202).json({ jobId, status: "running" });
 }
@@ -203,7 +203,7 @@ async function cancelJob(req, res) {
     try {
       process.kill(-pid, "SIGTERM");
     } catch (e) {
-      logger.debug(`RTE : could not signal job ${jobId} : ${e.message}`);
+      logger.debug(`RTE: could not signal job ${jobId}: ${e.message}`);
     }
   }
   return res.status(202).json({ jobId, status: "cancelling" });
@@ -228,7 +228,7 @@ export { acceptJob, jobStatus, cancelJob, activeJobs, bearer, drainJobs };
 export async function startRte({ firstDelayMs, maxDelayMs } = {}) {
   const token = process.env.RTE_TOKEN || "";
   if (token.length < 16) {
-    console.error("RTE : set RTE_TOKEN (at least 16 characters) ; refusing to start");
+    console.error("RTE: set RTE_TOKEN (at least 16 characters) ; refusing to start");
     process.exit(1);
   }
   // an uncaught exception exits to restart clean ; its running playbooks end as abandoned
@@ -237,7 +237,7 @@ export async function startRte({ firstDelayMs, maxDelayMs } = {}) {
   // a job's secrets come sealed from the app : the key only stores this RTE's token when it
   // registers itself (RTE_REGISTER). Without registration it needs no ENCRYPTION_SECRET at all.
   if (appConfig.encryptionSecretIsDefault && String(process.env.RTE_REGISTER ?? "").trim() !== "0") {
-    logger.warning('[SECURITY] ENCRYPTION_SECRET is not set. This RTE registers itself and stores its token encrypted with the default key, which is public in the source code : set the same ENCRYPTION_SECRET as the app, or RTE_REGISTER=0 and add the runner under Connections > Runners or in the config seed.');
+    logger.warning('[SECURITY] ENCRYPTION_SECRET is not set. This RTE registers itself and stores its token encrypted with the default key, which is public in the source code: set the same ENCRYPTION_SECRET as the app, or RTE_REGISTER=0 and add the runner under Connections > Runners or in the config seed.');
   }
   // not ready until the database work below is done
   starting = true;
@@ -255,7 +255,7 @@ export async function startRte({ firstDelayMs, maxDelayMs } = {}) {
   const api = express.Router();
   api.use(bearer(token));
   const wrap = (fn) => (req, res) => fn(req, res).catch((err) => {
-    logger.error(`RTE : ${req.method} ${req.path} : ${err.message || err}`);
+    logger.error(`RTE: ${req.method} ${req.path}: ${err.message || err}`);
     res.status(500).json({ error: err.message || String(err) });
   });
   api.get("/health", wrap(async (req, res) => res.json({
@@ -280,7 +280,7 @@ export async function startRte({ firstDelayMs, maxDelayMs } = {}) {
   app.get("/ready", (req, res) => (starting ? res.status(503).json({ status: "not ready", reason: "starting" }) : probes.ready(req, res)));
   // Prometheus metrics, with METRICS_TOKEN only (lib/metrics.js)
   addScrapeGauge("af_rte_running_jobs", "The playbooks this RTE runs now", [], async (g) => g.set(activeJobs.size));
-  addScrapeGauge("af_rte_max_jobs", "How many playbooks this RTE runs at once (RTE_MAX_JOBS, 0 : no limit)", [], async (g) => g.set(maxJobs()));
+  addScrapeGauge("af_rte_max_jobs", "How many playbooks this RTE runs at once (RTE_MAX_JOBS, 0: no limit)", [], async (g) => g.set(maxJobs()));
   app.get("/metrics", metricsHandler());
 
   const port = appConfig.port;
@@ -289,7 +289,7 @@ export async function startRte({ firstDelayMs, maxDelayMs } = {}) {
     : http.createServer(httpServerOptions(), app);
   // a port that is taken is fatal : an RTE that heartbeats but listens nowhere looks alive
   server.on("error", (err) => {
-    console.error(`RTE : cannot listen on port ${port} : ${err.message}`);
+    console.error(`RTE: cannot listen on port ${port}: ${err.message}`);
     process.exit(1);
   });
   // a stop : no new jobs. A playbook still running ends with the container ; this RTE abandons
@@ -324,11 +324,11 @@ export async function startRte({ firstDelayMs, maxDelayMs } = {}) {
         running.length ? [runnerIdentity(), running] : [runnerIdentity()]
       ).then((r) => {
         if (r?.changedRows) publish("jobs");
-      }).catch((e) => logger.error(`RTE : hourly cleanup failed : ${e.message}`));
+      }).catch((e) => logger.error(`RTE: hourly cleanup failed: ${e.message}`));
     }, 3600 * 1000).unref();
   } catch (err) {
     // a start that failed halfway : listening but never ready. Exit, the container restarts it
-    logger.crit(`RTE : start failed, exiting to restart clean : ${err?.stack || err}`);
+    logger.crit(`RTE: start failed, exiting to restart clean: ${err?.stack || err}`);
     process.exit(1);
     return;
   }

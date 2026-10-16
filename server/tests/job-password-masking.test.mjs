@@ -59,7 +59,7 @@ describe("a job read through the API", () => {
     expect(JSON.parse(job.extravars).secrets.pw).toBe("s3cr3t");
   });
 
-  test("a launch refreshes the definition masking uses : a password field just added is masked at once", async () => {
+  test("a launch refreshes the definition masking uses: a password field just added is masked at once", async () => {
     // the cache holds the definition from the reads above ; the form then gains a password
     const current = (await Form.load()).forms[0];
     const edited = { ...current, fields: [...current.fields.filter((f) => f.name !== "host"), { name: "host", type: "password" }] };

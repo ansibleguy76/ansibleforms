@@ -28,7 +28,7 @@ export default {
     refreshTokenReplaced: "Refresh-Token wurde bereits von einer gleichzeitigen Erneuerung verwendet",
     apiTokenFromApiToken: "Ein API-Token kann kein weiteres API-Token erstellen",
     apiTokenNotAllowed: "Ihre Rolle erlaubt keine API-Tokens",
-    apiTokenSignInAgain: "Melden Sie sich erneut an, um ein API-Token zu erstellen : Ihre letzte Anmeldung liegt zu lange zurück",
+    apiTokenSignInAgain: "Melden Sie sich erneut an, um ein API-Token zu erstellen: Ihre letzte Anmeldung liegt zu lange zurück",
     apiTokenLifetime: "Die Laufzeit muss eine Anzahl von Tagen sein, höchstens {max}",
     apiTokenFailed: "Das API-Token konnte nicht erstellt werden",
     apiTokensFailed: "Die API-Tokens konnten nicht gelesen oder geändert werden",
@@ -40,9 +40,9 @@ export default {
     authFailed: "Authentifizierung fehlgeschlagen",
     invalidCredentials: "Ungueltige Zugangsdaten",
     tooManyFailures:
-      "Zu viele fehlgeschlagene Anmeldungen : versuchen Sie es in {minutes} Minute(n) erneut",
+      "Zu viele fehlgeschlagene Anmeldungen: versuchen Sie es in {minutes} Minute(n) erneut",
     passwordChangeRequired:
-      "Ändern Sie zuerst Ihr Passwort : es ist das öffentlich bekannte Standardpasswort",
+      "Ändern Sie zuerst Ihr Passwort: es ist das öffentlich bekannte Standardpasswort",
     disclaimerRequired: "Akzeptieren Sie zuerst den Haftungsausschluss",
     disclaimerAccepted: "Der Haftungsausschluss ist akzeptiert",
     loginDisabled:
@@ -110,7 +110,7 @@ export default {
     runnerAdded: "Runner hinzugefügt",
     runnerNotFound: "Runner nicht gefunden",
     runnerAdminOnly:
-      "Nur ein Admin kann einen Runner hinzufuegen, aendern oder loeschen : ein Runner erhaelt die Zugangsdaten der Jobs, die er ausfuehrt",
+      "Nur ein Admin kann einen Runner hinzufuegen, aendern oder loeschen: ein Runner erhaelt die Zugangsdaten der Jobs, die er ausfuehrt",
     defaultPasswordRefused:
       "Wählen Sie ein anderes Passwort als das öffentliche Standardpasswort",
     passwordTooShort: "Das Passwort braucht mindestens {min} Zeichen",
@@ -162,7 +162,7 @@ export default {
     failedFindLdap: "LDAP konnte nicht gefunden werden",
     ldapCheckFailed: "LDAP-Pruefung fehlgeschlagen",
     storedPasswordOtherServer:
-      "Das gespeicherte Passwort gilt nur fuer den gespeicherten Server : geben Sie das Passwort ein, um einen anderen zu pruefen",
+      "Das gespeicherte Passwort gilt nur fuer den gespeicherten Server: geben Sie das Passwort ein, um einen anderen zu pruefen",
     ldapUpdated: "LDAP aktualisiert",
     failedUpdateLdap: "LDAP-Aktualisierung fehlgeschlagen",
     ldapCreated: "LDAP-Verzeichnis hinzugefügt",
@@ -283,10 +283,10 @@ export default {
   },
   // what a notification channel (Connections > Notifications) says : a test, a job's end
   notifications: {
-    testText: "Eine Testbenachrichtigung von {who} : der Kanal '{name}' empfängt sie.",
+    testText: "Eine Testbenachrichtigung von {who}: der Kanal '{name}' empfängt sie.",
     testSent: "Testbenachrichtigung an {name} gesendet",
     testFailed: "Testbenachrichtigung fehlgeschlagen",
-    statusText: "Job {jobid} des Formulars '{form}' ist beendet : {status}.",
+    statusText: "Job {jobid} des Formulars '{form}' ist beendet: {status}.",
     openJob: "Job öffnen",
   },
 };

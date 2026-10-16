@@ -36,7 +36,7 @@ const jqDef = await fsPromises.readFile(path.join(__dirname, 'jq.definitions'), 
 const jqCustomDef = await fsPromises.readFile(new URL('./jq.custom.definitions', import.meta.url), 'utf8');
 
 const combinedJqDef = (jqDef + jqCustomDef).replace(/(\r\n|\n|\r)/gm, "");
-logger.debug("jq definitions loaded : " + combinedJqDef)
+logger.debug("jq definitions loaded: " + combinedJqDef)
 
 const fnGetNumberedName=function(names,pattern,value,fillgap=false){
   var nr=null
@@ -114,7 +114,7 @@ const fnJq=async function(input,jqe){
     try{
       result=await jq.run(combinedJqDef+jqe, input, { input:"json",output:"json" })
     }catch(e){
-      logger.error("Error in fnJq : ",e)
+      logger.error("Error in fnJq: ",e)
       throw(e)
     }
     return result
@@ -126,12 +126,12 @@ const fnCopy=function(input){
 const fnSort=function(input,sort){
   let result=input
   if(!Array.isArray(input)){
-    const e = "Warning in fnSort : input is not an array"
+    const e = "Warning in fnSort: input is not an array"
     logger.warning(e)
     throw(new Error(e))
   }
   if(!sort){
-    const e = "Warning in fnSort : sort list not provided"
+    const e = "Warning in fnSort: sort list not provided"
     logger.warning(e)
     throw(new Error(e))
   }
@@ -169,7 +169,7 @@ const fnSort=function(input,sort){
   try{
     result.sort(s)
   }catch(e){
-    logger.error("[fnSort] error in fnSort : ",e)
+    logger.error("[fnSort] error in fnSort: ",e)
     throw(e)
   }
   return result
@@ -184,7 +184,7 @@ const fnReadJsonFile = async function(path,jqe=null) {
       result=await jq.run(combinedJqDef+jqe, result, { input:"json",output:"json" })
     }
   }catch(e){
-    logger.error("Error in fnReadJsonFile : ",e)
+    logger.error("Error in fnReadJsonFile: ",e)
     throw(e)
   }
   return result
@@ -199,7 +199,7 @@ const fnReadYamlFile = async function(path,jqe=null) {
       result=await jq.run(combinedJqDef+jqe, result, { input:"json",output:"json" })
     }
   }catch(e){
-    logger.error("Error in fnReadYamlFile : ",e)
+    logger.error("Error in fnReadYamlFile: ",e)
     throw(e)
   }
   return result
@@ -240,7 +240,7 @@ const fnCredentials = async function(name,fallbackname="",credJqe=null){
             result = await credentialModel.resolveCredential(name, fallbackname)
           } catch (e) {
             if (!(e instanceof Errors.NotFoundError)) throw e
-            logger.warning(`fnCredentials : no credential matches '${name}'${fallbackname ? ` or '${fallbackname}'` : ""}`)
+            logger.warning(`fnCredentials: no credential matches '${name}'${fallbackname ? ` or '${fallbackname}'` : ""}`)
           }
         }
         if (result && credJqe) {
@@ -369,7 +369,7 @@ const fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort=n
     }
     if(sort)result=fnSort(result,sort)
   }catch(e){
-    logger.error("Error in fnRestAdvanced : ",e)
+    logger.error("Error in fnRestAdvanced: ",e)
     throw(e)
   }
   return result
@@ -398,7 +398,7 @@ const fnSsh = async function(user,host,cmd,jqe=null){
     // calls were not real escaping (single replace, not all occurrences, and
     // no protection against $(), backticks, ;, &&, ||).
     const command=`ssh ${shellQuote(`${user}@${host}`)} ${shellQuote(cmd)}`
-    logger.debug(`invoking ssh : ${command}`)
+    logger.debug(`invoking ssh: ${command}`)
     // without AnsibleForms' own variables, as a playbook : ssh reads its own configuration
     var child = exec(command,{encoding: "UTF-8", env: playbookEnv()});
     var output=[]

@@ -49,13 +49,13 @@ export async function runTurn({ session, message, selection, settings, handlers,
     const calls = result.toolCalls || [];
     if (!result.text && !calls.length && !retriedEmpty) {
       retriedEmpty = true;
-      logger.debug(`chat ${session.id.slice(0, 8)} : empty model reply, retrying`);
+      logger.debug(`chat ${session.id.slice(0, 8)}: empty model reply, retrying`);
       continue;
     }
     const unfounded = !calls.length && !proposals.length && UNFOUNDED_LAUNCH.test(result.text || '');
     if (unfounded && !retriedUnfounded) {
       retriedUnfounded = true;
-      logger.debug(`chat ${session.id.slice(0, 8)} : the model described a launch that did not happen, nudging`);
+      logger.debug(`chat ${session.id.slice(0, 8)}: the model described a launch that did not happen, nudging`);
       session.messages.push({ role: 'user', text: NUDGE });
       continue;
     }
@@ -84,7 +84,7 @@ export async function runTurn({ session, message, selection, settings, handlers,
       if (outcome.job) job = outcome.job;
     }
   }
-  logger.info(`chat ${session.id.slice(0, 8)} : tool round limit`);
+  logger.info(`chat ${session.id.slice(0, 8)}: tool round limit`);
   throw new ChatError('tool_round_limit', 'This message needed too many steps. Say what you want in one message, or start a new conversation.', 429);
 }
 

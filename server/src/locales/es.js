@@ -26,7 +26,7 @@ export default {
     refreshTokenReplaced: "El token de actualización ya lo ha usado otra renovación simultánea",
     apiTokenFromApiToken: "Un token de API no puede crear otro token de API",
     apiTokenNotAllowed: "Tu rol no permite tokens de API",
-    apiTokenSignInAgain: "Vuelve a iniciar sesión para crear un token de API : tu último inicio de sesión es demasiado antiguo",
+    apiTokenSignInAgain: "Vuelve a iniciar sesión para crear un token de API: tu último inicio de sesión es demasiado antiguo",
     apiTokenLifetime: "La duración debe ser un número de días, como máximo {max}",
     apiTokenFailed: "No se pudo crear el token de API",
     apiTokensFailed: "No se pudieron leer o cambiar los tokens de API",
@@ -38,9 +38,9 @@ export default {
     authFailed: "Autenticación fallida",
     invalidCredentials: "Credenciales no válidas",
     tooManyFailures:
-      "Demasiados inicios de sesión fallidos : inténtelo de nuevo en {minutes} minuto(s)",
+      "Demasiados inicios de sesión fallidos: inténtelo de nuevo en {minutes} minuto(s)",
     passwordChangeRequired:
-      "Cambie primero su contraseña : es la contraseña predeterminada pública",
+      "Cambie primero su contraseña: es la contraseña predeterminada pública",
     disclaimerRequired: "Acepta primero el aviso legal",
     disclaimerAccepted: "El aviso legal está aceptado",
     loginDisabled:
@@ -109,7 +109,7 @@ export default {
     runnerAdded: "Runner añadido",
     runnerNotFound: "Runner no encontrado",
     runnerAdminOnly:
-      "Solo un admin puede añadir, cambiar o eliminar un runner : un runner recibe las credenciales de los trabajos que ejecuta",
+      "Solo un admin puede añadir, cambiar o eliminar un runner: un runner recibe las credenciales de los trabajos que ejecuta",
     defaultPasswordRefused:
       "Elija otra contraseña distinta de la predeterminada pública",
     passwordTooShort: "La contraseña necesita al menos {min} caracteres",
@@ -158,7 +158,7 @@ export default {
     failedFindLdap: "Error al buscar LDAP",
     ldapCheckFailed: "La verificación de LDAP ha fallado",
     storedPasswordOtherServer:
-      "La contraseña guardada solo se usa con el servidor guardado : escriba la contraseña para comprobar otro",
+      "La contraseña guardada solo se usa con el servidor guardado: escriba la contraseña para comprobar otro",
     ldapUpdated: "LDAP actualizado",
     failedUpdateLdap: "Error al actualizar LDAP",
     ldapCreated: "Directorio LDAP añadido",
@@ -280,10 +280,10 @@ export default {
   },
   // what a notification channel (Connections > Notifications) says : a test, a job's end
   notifications: {
-    testText: "Una notificación de prueba de {who} : el canal '{name}' la recibe.",
+    testText: "Una notificación de prueba de {who}: el canal '{name}' la recibe.",
     testSent: "Notificación de prueba enviada a {name}",
     testFailed: "La notificación de prueba falló",
-    statusText: "El trabajo {jobid} del formulario '{form}' terminó : {status}.",
+    statusText: "El trabajo {jobid} del formulario '{form}' terminó: {status}.",
     openJob: "Abrir el trabajo",
   },
 };

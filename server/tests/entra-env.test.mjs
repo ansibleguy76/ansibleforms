@@ -18,7 +18,7 @@ describe("the Entra ID environment variables", () => {
     expect(entraEnvWarnings({ ENTRA_AUTHORITY_URI: "x", ENTRA_GRAPH_URI: "y" })).toEqual([]);
   });
 
-  test("only the old name set : it is used, with a warning", () => {
+  test("only the old name set: it is used, with a warning", () => {
     const env = { AZURE_AUTHORITY_URI: "https://login.chinacloudapi.cn", AZURE_GRAPH_URI: "https://microsoftgraph.chinacloudapi.cn" };
     expect(entraEnv("ENTRA_AUTHORITY_URI", env)).toBe("https://login.chinacloudapi.cn");
     expect(entraEnv("ENTRA_GRAPH_URI", env)).toBe("https://microsoftgraph.chinacloudapi.cn");
@@ -28,7 +28,7 @@ describe("the Entra ID environment variables", () => {
     ]);
   });
 
-  test("both set : the new one wins, the old one is warned about", () => {
+  test("both set: the new one wins, the old one is warned about", () => {
     const env = { ENTRA_AUTHORITY_URI: "https://new", AZURE_AUTHORITY_URI: "https://old" };
     expect(entraEnv("ENTRA_AUTHORITY_URI", env)).toBe("https://new");
     const [warning] = entraEnvWarnings(env);
@@ -36,14 +36,14 @@ describe("the Entra ID environment variables", () => {
     expect(warning).toMatch(/ENTRA_AUTHORITY_URI is set too and wins/);
   });
 
-  test("neither set : Microsoft's public cloud", () => {
+  test("neither set: Microsoft's public cloud", () => {
     expect(entraEnv("ENTRA_AUTHORITY_URI", {})).toBe("https://login.microsoftonline.com");
     expect(entraEnv("ENTRA_GRAPH_URI", {})).toBe("https://graph.microsoft.com");
     expect(entraEnvWarnings({})).toEqual([]);
     expect(ENTRA_ENV_ALIASES).toEqual({ ENTRA_AUTHORITY_URI: "AZURE_AUTHORITY_URI", ENTRA_GRAPH_URI: "AZURE_GRAPH_URI" });
   });
 
-  test("saved from the settings page : either name applies at once, the new one winning", () => {
+  test("saved from the settings page: either name applies at once, the new one winning", () => {
     const saved = authConfig.entraGraphUrl;
     try {
       expect(Env.applyLive("AZURE_GRAPH_URI", "https://old.example")).toBe(true);

@@ -28,7 +28,7 @@ function sanitizeExpression(expr, mode = 'strict', log = logger){
     try {
       sanitizeExpression(expr, 'strict', { error: () => {} })
     } catch (e) {
-      log.warning(`EXPRESSION_SANITIZER=legacy let through an expression the strict rules refuse (${e.message}) : ${expr}`)
+      log.warning(`EXPRESSION_SANITIZER=legacy let through an expression the strict rules refuse (${e.message}): ${expr}`)
     }
     if(sanitized.match(/\r|\n/)){
       message="Abuse attempt of eval function, attempt to have multilines"

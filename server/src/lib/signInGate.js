@@ -32,7 +32,7 @@ export async function admitSignIn(user, extra = {}) {
       ? await DirectoryUser.isBlocked(user.type, user.username)
       : await User.isBlocked(user.username);
   } catch (err) {
-    logger.error(`The sign-in block of ${user.type}/${user.username} could not be read : ${helpers.getError(err)}`);
+    logger.error(`The sign-in block of ${user.type}/${user.username} could not be read: ${helpers.getError(err)}`);
   }
   if (blocked) return false;
   if (directory) await DirectoryUser.recordSignIn({ ...user, ...extra });

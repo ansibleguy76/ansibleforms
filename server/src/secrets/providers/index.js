@@ -103,7 +103,7 @@ export function parseInlineSecret(name) {
   if (lower.startsWith("secret:")) {
     const rest = name.slice(7);
     const colon = rest.indexOf(":");
-    if (colon < 1) throw new Errors.BadRequestError(`'${name}' : use secret:<store>:<ref>`);
+    if (colon < 1) throw new Errors.BadRequestError(`'${name}': use secret:<store>:<ref>`);
     return { store: rest.slice(0, colon).trim(), ref: rest.slice(colon + 1).trim() };
   }
   return null;

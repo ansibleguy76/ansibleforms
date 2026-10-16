@@ -104,10 +104,10 @@ export function createChatService({
       // the conversation learns what the click did : "did it work ?" can then be answered
       // (the job tool), and the operator may refer to this job without retyping its id
       if (jobId) {
-        session.messages.push({ role: 'user', text: `[The operator clicked ${plan.label} : job ${jobId} was launched for the form '${plan.form}'.]` });
+        session.messages.push({ role: 'user', text: `[The operator clicked ${plan.label}: job ${jobId} was launched for the form '${plan.form}'.]` });
         session.operatorMessages.push(`job ${jobId}`);
       }
-      logger.notice(`Chat : ${user.username} launched '${plan.form}' as job ${jobId} (plan ${plan.planId})`);
+      logger.notice(`Chat: ${user.username} launched '${plan.form}' as job ${jobId} (plan ${plan.planId})`);
       audit({
         user, ip, action: 'chat.launch', targetType: 'job', target: jobId,
         detail: { form: plan.form, provider: (await loadSettings().catch(() => ({})))?.provider, payloadHash: plan.payloadHash, planId: plan.planId, relaunchOf: plan.sourceJobId || undefined },

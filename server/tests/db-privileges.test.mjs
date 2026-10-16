@@ -13,7 +13,7 @@ describe("server-wide privileges", () => {
     ])).toEqual(["ALL PRIVILEGES"]);
   });
 
-  test("a user limited to the AnsibleForms schema has none : USAGE is only the right to connect", () => {
+  test("a user limited to the AnsibleForms schema has none: USAGE is only the right to connect", () => {
     expect(serverWidePrivileges([
       "GRANT USAGE ON *.* TO `ansibleforms`@`%` IDENTIFIED BY PASSWORD '*ABC'",
       "GRANT ALL PRIVILEGES ON `AnsibleForms`.* TO `ansibleforms`@`%`",

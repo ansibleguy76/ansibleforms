@@ -86,7 +86,7 @@ function serializeDetail(detail) {
     return text.length > MAX_DETAIL ? text.slice(0, MAX_DETAIL) + '...[truncated]' : text;
   } catch (e) {
     // a cyclic or unserializable detail must not lose the whole entry
-    logger.warning(`Audit detail could not be serialized : ${e.message || e}`);
+    logger.warning(`Audit detail could not be serialized: ${e.message || e}`);
     return null;
   }
 }
@@ -193,7 +193,7 @@ Audit.log = async function (entry) {
     // one that was never switched on
     // never re-stringify entry.action here : it may be the very thing that threw
     try {
-      logger.error(`Failed to write an audit entry : ${e.message || e}`);
+      logger.error(`Failed to write an audit entry: ${e.message || e}`);
     } catch {
       // nothing left to do ; auditing must not escalate into an unhandled rejection
     }

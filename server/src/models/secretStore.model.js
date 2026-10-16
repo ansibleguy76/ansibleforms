@@ -44,7 +44,7 @@ class SecretStore extends CrudModel {
         let extra = data.extra;
         if (typeof extra === 'string') {
           try { extra = JSON.parse(extra); } catch (e) {
-            throw new Errors.BadRequestError(`extra is not valid JSON : ${e.message}`);
+            throw new Errors.BadRequestError(`extra is not valid JSON: ${e.message}`);
           }
         }
         if (!extra || typeof extra !== 'object' || Array.isArray(extra)) {
@@ -83,13 +83,13 @@ class SecretStore extends CrudModel {
     if (type && cred.credential_type !== wanted) {
       throw new Errors.BadRequestError(
         type === 'cyberark_ccp'
-          ? `A CyberArk secret store needs a cyberark credential : '${data.credential}' is not one`
-          : `A HashiCorp Vault secret store needs a vault credential : '${data.credential}' is not one`,
+          ? `A CyberArk secret store needs a cyberark credential: '${data.credential}' is not one`
+          : `A HashiCorp Vault secret store needs a vault credential: '${data.credential}' is not one`,
       );
     }
     if (cred.secret_store) {
       throw new Errors.BadRequestError(
-        `The credential '${data.credential}' reads its password from a secret store : a secret store needs one that keeps its own`,
+        `The credential '${data.credential}' reads its password from a secret store: a secret store needs one that keeps its own`,
       );
     }
   }
@@ -161,7 +161,7 @@ class SecretStore extends CrudModel {
     }
     const url = data.url !== undefined ? data.url : current?.url;
     if ((creating || current) && !String(url || '').trim()) {
-      throw new Errors.BadRequestError('A secret store needs its address : a credential with a server address, or its own url');
+      throw new Errors.BadRequestError('A secret store needs its address: a credential with a server address, or its own url');
     }
   }
 
@@ -187,7 +187,7 @@ class SecretStore extends CrudModel {
     if (!opts.fromSeed && data.type !== undefined) {
       const current = await this.findById(id);
       if (current?.type && data.type !== current.type) {
-        throw new Errors.BadRequestError(`A secret store keeps the type it was made as : '${current.name}' is ${current.type}. Make a new secret store for another type`);
+        throw new Errors.BadRequestError(`A secret store keeps the type it was made as: '${current.name}' is ${current.type}. Make a new secret store for another type`);
       }
     }
     // a Vault Enterprise (a namespace) stays one, and a Vault without stays without : a part of its
@@ -199,8 +199,8 @@ class SecretStore extends CrudModel {
       if (current?.type === "vault" && was !== now) {
         throw new Errors.BadRequestError(
           was
-            ? `'${current.name}' is a Vault Enterprise : its namespace is required`
-            : `'${current.name}' is not a Vault Enterprise : it takes no namespace. Make a new secret store for a Vault Enterprise`,
+            ? `'${current.name}' is a Vault Enterprise: its namespace is required`
+            : `'${current.name}' is not a Vault Enterprise: it takes no namespace. Make a new secret store for a Vault Enterprise`,
         );
       }
     }

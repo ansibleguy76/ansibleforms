@@ -32,7 +32,7 @@ describe("payload and extravars", () => {
     expect(launched.extravars).toEqual({ who: "b" });
   });
 
-  test("both sent : extravars wins", async () => {
+  test("both sent: extravars wins", async () => {
     await controller.launch({ body: { formName: "f", extravars: { who: "a" }, payload: { who: "b" } }, user }, res());
     expect(launched.extravars).toEqual({ who: "a" });
   });

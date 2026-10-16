@@ -63,7 +63,7 @@ describe("the awx table becomes runners of type awx", () => {
     assert.equal(runners.length, 3, "nothing copied twice");
   });
 
-  test("a name an rte already has keeps the awx table : nothing is lost", async () => {
+  test("a name an rte already has keeps the awx table: nothing is lost", async () => {
     runners.push({ name: "aap-test", type: "rte" });
     assert.match(await copyAwxToRunners(), /aap-test could not move to runners/);
     assert.equal(dropped, 0);

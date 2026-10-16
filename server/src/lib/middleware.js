@@ -140,7 +140,7 @@ Middleware.disclaimerGate = async (req, res, next) => {
     if (!(await Disclaimer.isRequired(user))) return next();
   } catch (e) {
     // a database before its patch (no table yet) : no disclaimer to wait for
-    logger.debug(`Could not read the disclaimer : ${e.message || e}`);
+    logger.debug(`Could not read the disclaimer: ${e.message || e}`);
     return next();
   }
   return res.status(403).json({ ...RestResult.error(i18n.t(req, 'auth.disclaimerRequired')), code: 'disclaimer_required' });
@@ -160,7 +160,7 @@ Middleware.resourceScope = async (req, res, next) => {
       scope = scopeFromRoles(user, (await Form.load(null, null, null, true))?.roles || []);
     }
   } catch (e) {
-    logger.error(`Could not read the roles' resource scope : ${e.message || e}`);
+    logger.error(`Could not read the roles' resource scope: ${e.message || e}`);
     return res.status(500).json(RestResult.error(i18n.t(req, 'errors.noAccess'), 'The roles could not be read'));
   }
   return runWithScope(scope, next);

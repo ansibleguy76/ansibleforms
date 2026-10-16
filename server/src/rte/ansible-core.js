@@ -105,7 +105,7 @@ export function takeArtifacts(file) {
     const parsed = JSON.parse(fs.readFileSync(file, "utf8"));
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) data = parsed;
   } catch (e) {
-    if (e.code !== "ENOENT") logger.warning(`The set_stats data in ${file} could not be read : ${e.message}`);
+    if (e.code !== "ENOENT") logger.warning(`The set_stats data in ${file} could not be read: ${e.message}`);
   }
   try {
     fs.unlinkSync(file);
@@ -288,7 +288,7 @@ async function launchPlaybook(ev, secrets, jobid, counter) {
     // a credential's password is never a template
     hiddenExtravars = JSON.stringify(markUnsafe(hiddenExtravars));
   } catch (err) {
-    logger.error("Failed to get ansible credentials : ", err);
+    logger.error("Failed to get ansible credentials: ", err);
     await Job.endJobStatus(
       jobid,
       counter + 1,
@@ -308,7 +308,7 @@ async function launchPlaybook(ev, secrets, jobid, counter) {
       registerJobSecrets(jobid, [vaultPassword]);
     }
   } catch (err) {
-    logger.error("Failed to get vault credentials : ", err);
+    logger.error("Failed to get vault credentials: ", err);
     await Job.endJobStatus(
       jobid,
       counter + 1,
@@ -362,16 +362,16 @@ async function launchPlaybook(ev, secrets, jobid, counter) {
     artifactsFile: path.join(os.tmpdir(), `af_artifacts_${jobid}.json`),
   };
 
-  logger.notice("Running from directory : " + cmdObj.directory);
-  logger.notice("Running playbook : " + playbook);
+  logger.notice("Running from directory: " + cmdObj.directory);
+  logger.notice("Running playbook: " + playbook);
   // the keys only : the values include the resolved credentials
-  logger.debug("extravars : " + Object.keys(merged).join(", "));
-  logger.debug("inventory : " + inventory);
+  logger.debug("extravars: " + Object.keys(merged).join(", "));
+  logger.debug("inventory: " + inventory);
   try {
     await executeCommand(cmdObj, jobid, counter);
     return true;
   } catch (err) {
-    logger.error("Ansible job failed : ", err);
+    logger.error("Ansible job failed: ", err);
     return false;
   }
 }
@@ -409,7 +409,7 @@ export function executeCommand(cmd, jobid, counter) {
       try {
         fs.unlinkSync(file);
       } catch (e) {
-        if (e.code !== "ENOENT") logger.error(`[Job ${jobid}] Could not remove ${file} : ${e.message}`);
+        if (e.code !== "ENOENT") logger.error(`[Job ${jobid}] Could not remove ${file}: ${e.message}`);
       }
     }
     filepath = undefined;
@@ -432,7 +432,7 @@ export function executeCommand(cmd, jobid, counter) {
       // the playbook folder is a mount or a repository on the RTE : say so, rather than fail
       // writing the extravars file into a folder that is not there
       if (!directory || !fs.existsSync(directory)) {
-        throw new Error(`the playbook folder ${directory || "(none)"} does not exist on RTE ${runnerIdentity()} : mount the playbooks or the repository there, or set ANSIBLE_PATH`);
+        throw new Error(`the playbook folder ${directory || "(none)"} does not exist on RTE ${runnerIdentity()}: mount the playbooks or the repository there, or set ANSIBLE_PATH`);
       }
       if (extravarsFileName) {
         logger.debug(`Storing extravars to file ${extravarsFileName}`);
@@ -462,7 +462,7 @@ export function executeCommand(cmd, jobid, counter) {
       child.stdout.setEncoding("utf8");
       child.stderr.setEncoding("utf8");
       // a playbook that prompts gets end-of-input instead of waiting for ever
-      child.stdin.on("error", (e) => logger.debug(`[Job ${jobid}] stdin : ${e.message}`));
+      child.stdin.on("error", (e) => logger.debug(`[Job ${jobid}] stdin: ${e.message}`));
       child.stdin.end(stdin);
 
       const stopProcess = (why) => {
@@ -473,7 +473,7 @@ export function executeCommand(cmd, jobid, counter) {
           process.kill(-child.pid, "SIGTERM");
         } catch (e) {
           // no process group (already gone, or a platform without them) : walk the tree
-          logger.debug(`[Job ${jobid}] Process group kill failed : ${e.message}`);
+          logger.debug(`[Job ${jobid}] Process group kill failed: ${e.message}`);
           Cmd.killChildren(child.pid);
         }
       };
@@ -483,7 +483,7 @@ export function executeCommand(cmd, jobid, counter) {
       // the output, written in batches (lib/outputBatcher.js) : past PROCESS_MAX_BUFFER bytes on
       // a stream it is no longer stored, and the playbook goes on
       const output = createOutputBatcher({
-        write: (record) => Job.createOutput(record).catch((error) => logger.error("Failed to create output : ", error)),
+        write: (record) => Job.createOutput(record).catch((error) => logger.error("Failed to create output: ", error)),
         jobId: jobid,
         nextOrder: () => ++counter,
         maxBytes: Number(appConfig.processMaxBuffer) || 0,
@@ -505,14 +505,14 @@ export function executeCommand(cmd, jobid, counter) {
           }
           if (final) await fs.promises.unlink(jobLogPath);
         } catch (e) {
-          if (e.code !== "ENOENT") logger.debug(`[Job ${jobid}] Job log sync failed : ${e.message}`);
+          if (e.code !== "ENOENT") logger.debug(`[Job ${jobid}] Job log sync failed: ${e.message}`);
         }
       };
       // a quiet playbook writes no output for minutes, so the flag is also polled
       abortPoll = setInterval(() => {
         Job.isAbortRequested(jobid)
           .then(stopIfAborted)
-          .catch((e) => logger.debug(`[Job ${jobid}] Abort check failed : ${e.message}`));
+          .catch((e) => logger.debug(`[Job ${jobid}] Abort check failed: ${e.message}`));
         syncJobLog();
       }, 2000);
 
@@ -623,7 +623,7 @@ export function executeCommand(cmd, jobid, counter) {
           ++counter,
           "stderr",
           "failed",
-          `${task} failed : ` + data
+          `${task} failed: ` + data
         );
         reject(data);
       });
@@ -636,9 +636,9 @@ export function executeCommand(cmd, jobid, counter) {
         ++counter,
         "stderr",
         "failed",
-        `[ERROR]: ${task} failed : ${e.message || e}`
+        `[ERROR]: ${task} failed: ${e.message || e}`
       )
-        .catch((err) => logger.error(`[Job ${jobid}] Failed to end the job : ${err.message}`))
+        .catch((err) => logger.error(`[Job ${jobid}] Failed to end the job: ${err.message}`))
         // rejected once the end is written : whoever waits on the run sees the job ended
         .finally(() => reject(e));
     }

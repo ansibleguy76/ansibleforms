@@ -7,7 +7,7 @@ const { passwordProblem } = await import("../src/lib/passwordPolicy.js");
 beforeEach(() => { appConfig.passwordMinLength = 12; });
 
 describe("the password policy", () => {
-  test("long enough, not the username, not the default : fine", () => {
+  test("long enough, not the username, not the default: fine", () => {
     expect(passwordProblem("correct horse battery", "bob")).toBe(null);
   });
 

@@ -7,7 +7,7 @@ process.env.LOG_PATH = process.env.LOG_PATH || "/tmp/ansibleforms-test-logs";
 vi.mock("../src/models/db.model.js", () => ({ default: { do: async () => [] } }));
 const { announcementFields, isRunning, toDbMoment, MAX_MESSAGE } = await import("../src/models/announcement.model.js");
 
-test("a new announcement : its message trimmed, info by default, its moments in UTC", () => {
+test("a new announcement: its message trimmed, info by default, its moments in UTC", () => {
   expect(announcementFields({ message: "  Maintenance Sunday 22:00 ", start_at: "2026-10-20T20:00:00.000Z", end_at: "2099-10-20T23:00:00+02:00" })).toEqual({
     message: "Maintenance Sunday 22:00",
     level: "info",
@@ -19,7 +19,7 @@ test("a new announcement : its message trimmed, info by default, its moments in 
   expect(announcementFields({ message: "y".repeat(600) }).message).toHaveLength(MAX_MESSAGE);
 });
 
-test("refused : no message, an unknown type, a date that is none, an end before its start or past", () => {
+test("refused: no message, an unknown type, a date that is none, an end before its start or past", () => {
   expect(() => announcementFields({ message: "   " })).toThrow(/message/);
   expect(() => announcementFields({ message: "x", level: "loud" })).toThrow(/type/);
   expect(() => announcementFields({ message: "x", end_at: "not a date" })).toThrow(/date/);

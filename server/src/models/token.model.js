@@ -83,7 +83,7 @@ Token.replace = async function (username, username_type, old_refresh_token, new_
   // the user's tokens replaced longer ago than the grace serve nothing any more
   await mysql
     .do("DELETE FROM AnsibleForms.`tokens` WHERE username=? AND username_type=? AND replaced_at < UTC_TIMESTAMP() - INTERVAL ? SECOND", [username, username_type, Token.REPLACED_GRACE_SECONDS])
-    .catch((err) => logger.warning(`Could not remove replaced tokens for ${username} (${username_type}) : ${err}`));
+    .catch((err) => logger.warning(`Could not remove replaced tokens for ${username} (${username_type}): ${err}`));
   return true;
 };
 

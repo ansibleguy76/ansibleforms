@@ -77,7 +77,7 @@ describe("ordinary expressions still work", () => {
     "1 + 2 * 3",
     "'a' + 'b'",
     "fn.len('abc') > 2",
-    "fn.a() ? 'yes' : 'no'",
+    "fn.a() ? 'yes': 'no'",
   ]) {
     test(`accepts ${expr}`, () => {
       assert.equal(sanitizeExpression(expr), expr);

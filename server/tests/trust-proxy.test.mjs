@@ -88,7 +88,7 @@ describe("parseTrustProxy", () => {
 });
 
 describe("the address req.ip reports", () => {
-  test("unset : the forwarded header is ignored, so a client cannot choose its address", async () => {
+  test("unset: the forwarded header is ignored, so a client cannot choose its address", async () => {
     delete process.env.TRUST_PROXY;
     const app = ipApp();
     expect(applyTrustProxy(app)).toBe(true);
@@ -97,14 +97,14 @@ describe("the address req.ip reports", () => {
     expect(ip).toMatch(/127\.0\.0\.1$/);
   });
 
-  test("one trusted hop : the client behind the proxy is recorded", async () => {
+  test("one trusted hop: the client behind the proxy is recorded", async () => {
     process.env.TRUST_PROXY = "1";
     const app = ipApp();
     applyTrustProxy(app);
     expect(await ipSeen(app, CLIENT)).toBe(CLIENT);
   });
 
-  test("one trusted hop : an address the client prepends itself is not taken", async () => {
+  test("one trusted hop: an address the client prepends itself is not taken", async () => {
     // the client sent 'X-Forwarded-For: 6.6.6.6', the proxy appended the real peer
     process.env.TRUST_PROXY = "1";
     const app = ipApp();
@@ -112,7 +112,7 @@ describe("the address req.ip reports", () => {
     expect(await ipSeen(app, `6.6.6.6, ${CLIENT}`)).toBe(CLIENT);
   });
 
-  test("a list : only a peer in it is believed", async () => {
+  test("a list: only a peer in it is believed", async () => {
     process.env.TRUST_PROXY = "loopback";
     const trusted = ipApp();
     applyTrustProxy(trusted);

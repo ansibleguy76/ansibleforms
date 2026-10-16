@@ -45,7 +45,7 @@ const get = async function (req, res) {
 const update = function (req, res) {
   uploadMulter.single('favicon')(req, res, async function (err) {
     if (err) {
-      logger.error(`Website icon upload error : ${err.toString()}`)
+      logger.error(`Website icon upload error: ${err.toString()}`)
       return res.status(400).json(RestResult.error(i18n.t(req, 'resources.failedUpdateFavicon'), err.toString()));
     }
     if (!req.file || !req.file.buffer || req.file.buffer.length === 0) {

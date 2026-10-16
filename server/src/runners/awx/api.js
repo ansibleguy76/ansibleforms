@@ -93,7 +93,7 @@ export function getAuthorization(awx) {
 // AWX stopped answering while a job was followed : end ours, rather than leave it 'running'
 // until the daily sweep. The job in AWX may well go on.
 function lostContact(jobid, counter, job, message) {
-  return endLost(jobid, counter, `[ERROR]: lost contact with AWX while following AWX job ${job?.id} (${message}) : it may still be running, check it in AWX`);
+  return endLost(jobid, counter, `[ERROR]: lost contact with AWX while following AWX job ${job?.id} (${message}): it may still be running, check it in AWX`);
 }
 
 /** proves the connection works : it lists the job templates the credentials can see */
@@ -110,10 +110,10 @@ export async function check(awx) {
     // say so, rather than a bare 404
     if (status === 404 && apiPrefix(awx)) {
       const controller = await axios.get(`${awx.uri}/api/controller/v2/ping/`, { ...getAuthorization(awx), timeout: 10000 }).then(() => true, () => false);
-      if (controller) throw new Errors.BadRequestError(`${awx.uri} is an Ansible Automation Platform 2.5+ gateway : set the uri to ${String(awx.uri).replace(/\/+$/, "")}/api/controller/v2`);
+      if (controller) throw new Errors.BadRequestError(`${awx.uri} is an Ansible Automation Platform 2.5+ gateway: set the uri to ${String(awx.uri).replace(/\/+$/, "")}/api/controller/v2`);
     }
-    if (status) throw new Errors.BadRequestError(`AWX at ${awx.uri} answered ${status} : ${err.message}`);
-    throw new Errors.BadRequestError(`AWX at ${awx.uri} is unreachable : ${err.code || err.message}`);
+    if (status) throw new Errors.BadRequestError(`AWX at ${awx.uri} answered ${status}: ${err.message}`);
+    throw new Errors.BadRequestError(`AWX at ${awx.uri} is unreachable: ${err.code || err.message}`);
   }
   if (!data?.results) throw new Errors.BadRequestError(`AWX at ${awx.uri} did not answer like AWX (no job templates list)`);
   return { templates: data.count ?? data.results.length };
@@ -146,9 +146,9 @@ Awx.abortJob = async function (awx, id, isWorkflow = false) {
       logger.error(message);
       throw new Errors.ConflictError(message);
     } else {
-      logger.error("Failed to abort awx job : ", error);
+      logger.error("Failed to abort awx job: ", error);
       throw new Errors.ApiError(
-        `Failed to abort awx job ${id} : ${error.message}`
+        `Failed to abort awx job ${id}: ${error.message}`
       );
     }
   }
@@ -318,19 +318,19 @@ Awx.launchTemplate = async function (
     postdata.job_tags = tags;
   }
 
-  logger.notice("Running template : " + template.name);
+  logger.notice("Running template: " + template.name);
   // the names only : the values hold the credentials mapped into the template
-  logger.info("extravars : " + Object.keys(safeParse(extravars) || {}).join(", "));
-  logger.info("inventory : " + inventory);
-  logger.info("execution_environment : " + executionEnvironment);
-  logger.info("instance_groups : " + instanceGroups);
-  logger.info("credentials : " + awxCredentialList);
-  logger.info("check : " + check);
-  logger.info("diff : " + diff);
-  logger.info("verbose : " + verbose);
-  logger.info("tags : " + tags);
-  logger.info("limit : " + limit);
-  logger.info("scm_branch : " + scmBranch);
+  logger.info("extravars: " + Object.keys(safeParse(extravars) || {}).join(", "));
+  logger.info("inventory: " + inventory);
+  logger.info("execution_environment: " + executionEnvironment);
+  logger.info("instance_groups: " + instanceGroups);
+  logger.info("credentials: " + awxCredentialList);
+  logger.info("check: " + check);
+  logger.info("diff: " + diff);
+  logger.info("verbose: " + verbose);
+  logger.info("tags: " + tags);
+  logger.info("limit: " + limit);
+  logger.info("scm_branch: " + scmBranch);
   // post
   if (template.related === undefined) {
     message = `Failed to launch, no launch attribute found for template ${template.name}`;
@@ -368,7 +368,7 @@ Awx.launchTemplate = async function (
           `Failed to launch template ${template.name}. ${message}`
         );
       } else {
-        logger.error("Failed to launch : ", error);
+        logger.error("Failed to launch: ", error);
         await Job.endJobStatus(
           jobid,
           counter + 1,
@@ -468,7 +468,7 @@ Awx.trackJob = async function (
     var j = axiosResult.data;
     if (j) {
       // logger.debug(inspect(j))
-      logger.debug(`awx job status : ` + j.status);
+      logger.debug(`awx job status: ` + j.status);
       try {
         // get text output
         const o = await Awx.getJobTextOutput(awx, job);
@@ -639,7 +639,7 @@ Awx.trackJob = async function (
   } catch (e) {
     // the status itself did not come : the same tolerance - one failed request used to end a
     // job that was running fine in AWX
-    logger.error("Failed to track job : ", e);
+    logger.error("Failed to track job: ", e);
     const r = contact.failed();
     if (r.giveUp) return lostContact(jobid, counter + 1, job, e.message);
     logger.warning(`AWX did not answer for jobid ${jobid} [${r.failures}], retrying in ${r.waitMs / 1000}s`);
@@ -772,7 +772,7 @@ Awx.trackWorkflowJob = async function (
       const axiosResult = await axios.get(serverOf(awxConfig) + job.url, axiosConfig);
       var j = axiosResult.data;
       if (!j) throw new Error(`could not find workflow job with id ${job.id}`);
-      logger.debug(`awx workflow job status : ` + j.status);
+      logger.debug(`awx workflow job status: ` + j.status);
       // get the workflow nodes
       const nodes = await Awx.getWorkflowNodes(awx, j);
       // store the workflow graph json, the client uses this to visualize the workflow
@@ -805,7 +805,7 @@ Awx.trackWorkflowJob = async function (
             (await Awx.getJobTextOutput(awx, childResult.data)) || "";
         } catch (e) {
           logger.warning(
-            `Failed to get output of workflow node ${node.name} : ${e.message}`
+            `Failed to get output of workflow node ${node.name}: ${e.message}`
           );
         }
         const banner = workflowStatusLine(

@@ -31,7 +31,7 @@ const update = function (req, res) {
   uploadMulter.single('logo')(req, res, async function (err) {
     if (err) {
       // multer errors, eg file too large
-      logger.error(`Logo upload error : ${err.toString()}`)
+      logger.error(`Logo upload error: ${err.toString()}`)
       return res.status(400).json(RestResult.error(i18n.t(req, 'resources.failedUpdateLogo'), err.toString()));
     }
     if (!req.file || !req.file.buffer || req.file.buffer.length === 0) {

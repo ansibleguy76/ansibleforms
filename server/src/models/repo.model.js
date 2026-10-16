@@ -50,7 +50,7 @@ Repo.maskGitToken =(data)=>{
       // console.log("==> " + rep)
       return masked
     }catch(e){
-      logger.error("Failed to maskGitToken : ",e)
+      logger.error("Failed to maskGitToken: ",e)
       return data
     }
   }else{
@@ -147,15 +147,15 @@ Repo.clone = async function (uri,name,branch=undefined) {
       logger.notice("Repository already exists, pulling instead")
       return await Repo.pull(name)
     }else{
-      logger.notice(`Cloning repository : ${Repo.maskGitToken(uri)}`)
+      logger.notice(`Cloning repository: ${Repo.maskGitToken(uri)}`)
       try{
         fs.accessSync(config.repoPath)
       }catch(e){
         try{
-          logger.notice("Force creating path : " + directory)
+          logger.notice("Force creating path: " + directory)
           fs.mkdirSync(directory, { recursive: true,force:true });
         }catch(err){
-          logger.error("Failed to create the path : ", err)
+          logger.error("Failed to create the path: ", err)
           throw err
         }
       }
@@ -179,7 +179,7 @@ Repo.clone = async function (uri,name,branch=undefined) {
       if(match && uri){
         var host = match[1]
         validateHostname(host);
-        logger.notice(`Found host in command : ${host}; adding it to known_hosts`)
+        logger.notice(`Found host in command: ${host}; adding it to known_hosts`)
         cmd = `ssh-keyscan ${quote([host])} >> ~/.ssh/known_hosts ; ${cmd}`
       }else{
         logger.warning(`No host found in command`)
@@ -218,7 +218,7 @@ Repo.addKnownHosts = async function (hosts) {
     logger.notice(`Adding keys for hosts ${hosts}`)
     var safeHosts = hostList.map(h => quote([h])).join(' ')
     var cmd = `ssh-keyscan ${safeHosts} >> ~/.ssh/known_hosts`
-    logger.notice(`Running cmd : ${cmd}`)
+    logger.notice(`Running cmd: ${cmd}`)
     return new Promise((resolve, reject) => {
       var known_hosts = Cmd.runCommand(cmd)
       var output = []
@@ -233,7 +233,7 @@ Repo.addKnownHosts = async function (hosts) {
       // spawn/exec can fail before the process exists (ENOENT); without this the promise
       // would never settle and the caller would hang for ever
       known_hosts.on('error', function(e){
-        reject(new Error(`Adding keys failed to start : ${e.message}`))
+        reject(new Error(`Adding keys failed to start: ${e.message}`))
       });
       known_hosts.on('exit', function(code){
         logger.debug('exit')

@@ -52,7 +52,7 @@ test("a version, the current one too, goes with its acceptances ; restored, it i
   expect(chosen.args).toEqual([2]);
 });
 
-test("the last version deleted : the disclaimer is switched off", async () => {
+test("the last version deleted: the disclaimer is switched off", async () => {
   answers = [
     { match: /FROM AnsibleForms\.`disclaimer_versions` v ORDER BY/, rows: [{ version: 1, title: "t" }] },
     { match: /COUNT\(\*\) AS n FROM AnsibleForms\.`disclaimer_versions`/, rows: [{ n: 0 }] },

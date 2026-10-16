@@ -35,7 +35,7 @@ vi.mock("../src/models/job.model.js", () => ({
   guardLaunch: async (args) => {
     guarded = args;
     if (args.formObj?.launchValidation === "enforce" && !args.rawFormData?.host) {
-      const err = new Error("The form data of 'Strict Form' is not valid - missing : host");
+      const err = new Error("The form data of 'Strict Form' is not valid - missing: host");
       err.name = "ValidationError";
       throw err;
     }
@@ -295,7 +295,7 @@ describe("POST /api/v2/schedule", () => {
     return res;
   }
 
-  test("an admin's Run later is planned : it runs as them, with their form values", async () => {
+  test("an admin's Run later is planned: it runs as them, with their form values", async () => {
     const r = await post(scheduler, planBody({ planned: true, raw_form_data: { username: "x" } }));
     assert.equal(r.statusCode, 201);
     assert.equal(JSON.parse(created.owner).username, "bob", "it runs as the admin who planned it");

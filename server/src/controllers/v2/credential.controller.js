@@ -30,7 +30,7 @@ async function reloadSso() {
     await auth_entraid.initialize();
     await auth_oidc.initialize();
   } catch (err) {
-    logger.error(`Could not start the SSO sign-in again after a credential changed : ${err?.message || err}`);
+    logger.error(`Could not start the SSO sign-in again after a credential changed: ${err?.message || err}`);
   }
 }
 
@@ -56,7 +56,7 @@ const credentialController = {
             for (const name of new Set(form.credentials.map((c) => c.name))) usage.set(name, (usage.get(name) || 0) + 1);
           }
         } catch (err) {
-          logger.debug(`The forms are left out of the credentials' Used by count : ${err?.message || err}`);
+          logger.debug(`The forms are left out of the credentials' Used by count: ${err?.message || err}`);
         }
         // and the designer's workflows whose nodes name each (a workflow counts once per credential)
         try {
@@ -64,7 +64,7 @@ const credentialController = {
             for (const name of new Set(wf.credentials.map((c) => c.name))) usage.set(name, (usage.get(name) || 0) + 1);
           }
         } catch (err) {
-          logger.debug(`The workflows are left out of the credentials' Used by count : ${err?.message || err}`);
+          logger.debug(`The workflows are left out of the credentials' Used by count: ${err?.message || err}`);
         }
         const credentials = (await CredentialModel.findAll()).map((c) => ({
           ...c,

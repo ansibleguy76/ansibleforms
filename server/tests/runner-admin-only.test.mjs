@@ -39,13 +39,13 @@ const admin = { username: "admin", roles: ["admin"], options: { showSettings: tr
 beforeEach(() => { calls.length = 0; });
 
 describe("changing a runner", () => {
-  test.each([["create", "create"], ["update", "update"], ["delete", "delete"]])("%s : refused for a user with settings access only", async (_n, fn) => {
+  test.each([["create", "create"], ["update", "update"], ["delete", "delete"]])("%s: refused for a user with settings access only", async (_n, fn) => {
     const r = await call(controller[fn], settingsUser);
     expect(r.status).toBe(403);
     expect(calls).toEqual([]);
   });
 
-  test.each([["create", "create"], ["update", "update"], ["delete", "delete"]])("%s : an admin may", async (_n, fn) => {
+  test.each([["create", "create"], ["update", "update"], ["delete", "delete"]])("%s: an admin may", async (_n, fn) => {
     const r = await call(controller[fn], admin);
     expect(r.status).toBeLessThan(300);
     expect(calls.length).toBe(1);

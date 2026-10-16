@@ -17,7 +17,7 @@ describe("a credential's type and its is_database flag", () => {
     for (const type of ["userpass", "ssh", "git", "api"]) assert.equal(Credential.mirrorType({ credential_type: type }).is_database, 0);
   });
 
-  test("the flag alone sets the type : database, or userpass on a create", () => {
+  test("the flag alone sets the type: database, or userpass on a create", () => {
     assert.equal(Credential.mirrorType({ is_database: 1 }).credential_type, "database");
     assert.equal(Credential.mirrorType({ is_database: 0 }, true).credential_type, "userpass");
     assert.equal(Credential.mirrorType({ is_database: 0 }).credential_type, undefined, "an update leaves the stored type");
@@ -43,7 +43,7 @@ describe("an Entra ID credential's tenant", () => {
     assert.equal(Credential.requireTypeFields({ credential_type: "entraid" }).tenant_id, undefined);
   });
 
-  test("another type keeps none : an Open ID one, a type changed away from Entra ID", () => {
+  test("another type keeps none: an Open ID one, a type changed away from Entra ID", () => {
     assert.equal(Credential.requireTypeFields({ credential_type: "oidc", issuer: "https://id.example.com", tenant_id: "t-1" }, true).tenant_id, null);
     assert.equal(Credential.requireTypeFields({ credential_type: "userpass", tenant_id: "t-1" }).tenant_id, null);
   });
@@ -74,7 +74,7 @@ describe("a credential keeps the type it was made as", () => {
   test("an update to another type is refused ; the same type, or none sent, goes on ; the seed may change it", async () => {
     const { vi } = await import("vitest");
     vi.spyOn(Credential, "findById").mockResolvedValue({ name: "smtp-office365", credential_type: "smtp" });
-    await assert.rejects(Credential.update({ credential_type: "api" }, 5), /keeps the type it was made as : 'smtp-office365' is smtp/);
+    await assert.rejects(Credential.update({ credential_type: "api" }, 5), /keeps the type it was made as: 'smtp-office365' is smtp/);
     const { default: CrudModel } = await import("../src/models/crud.model.js");
     const saved = vi.spyOn(CrudModel, "update").mockResolvedValue(true);
     await Credential.update({ credential_type: "smtp", host: "smtp.example.com" }, 5);

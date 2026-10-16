@@ -91,7 +91,7 @@ describe("a raw expression is refused for an ordinary user", () => {
     const res = await call({ formName: "Unsaved", fieldName: "f", expression: "1+1" }, designerUser);
     assert.equal(res.statusCode, 200);
     assert.equal(ran.expr, "1+1");
-    assert.equal(formLoadArgs, null, "nothing to bind to : the raw text is evaluated as before");
+    assert.equal(formLoadArgs, null, "nothing to bind to: the raw text is evaluated as before");
   });
 });
 
@@ -228,7 +228,7 @@ describe("the server splice gives the expression the browser would have run", ()
     "'$(name)'.length",
     '"hi $(name)!"',
     "$(n) + 1",
-    "$(flag) ? 1 : 0",
+    "$(flag) ? 1: 0",
     "'$(empty)' || 'x'",
     "'$(host)'",
     "'$(host.ip)'",

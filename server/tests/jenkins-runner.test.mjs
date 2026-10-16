@@ -180,7 +180,7 @@ describe("a job on Jenkins", () => {
     assert.equal(jobRow.awx_id, 7, "the build number is the job's external id");
     assert.match(text(), /^ok: \[Running on Jenkins ci \(http:\/\/127\.0\.0\.1:\d+\)\]/);
     assert.match(text(), /ok: \[Queued job ci\/deploy, parameters who, count, tags, dry_run, db\]/);
-    assert.match(text(), /Waiting in the Jenkins queue : Waiting for next available executor/);
+    assert.match(text(), /Waiting in the Jenkins queue: Waiting for next available executor/);
     assert.match(text(), /ok: \[Launched job ci\/deploy with build #7\]/);
     assert.match(text(), /ok: \[Successfully completed job ci\/deploy, build #7\]$/);
   });
@@ -242,11 +242,11 @@ describe("a job on Jenkins", () => {
 
   test("an unknown or a disabled job fails the job before anything is built", { timeout: 20000 }, async () => {
     await assert.rejects(run({ __template__: "nope" }), (e) => e.jobEnded === true);
-    assert.match(text(), /\[ERROR\]: Failed to launch job ci\/nope : No job 'ci\/nope' on Jenkins/);
+    assert.match(text(), /\[ERROR\]: Failed to launch job ci\/nope: No job 'ci\/nope' on Jenkins/);
     jobRow = { id: 5, status: "running" };
     outputs = [];
     await assert.rejects(run({ __template__: "off" }), (e) => e.jobEnded === true);
-    assert.match(text(), /cannot be built : it is disabled, or a folder/);
+    assert.match(text(), /cannot be built: it is disabled, or a folder/);
     assert.equal(built(), undefined);
   });
 

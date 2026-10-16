@@ -23,14 +23,14 @@ let exiting = false;
  */
 export function installFatalHandlers(role, exit = (code) => process.exit(code)) {
   process.on("uncaughtException", (err) => {
-    logger.crit(`${role} : uncaught exception, exiting to restart clean : ${err?.stack || err}`);
+    logger.crit(`${role}: uncaught exception, exiting to restart clean: ${err?.stack || err}`);
     if (exiting) return;
     exiting = true;
     // a second for the log to reach its file and syslog
     setTimeout(() => exit(1), 1000).unref?.();
   });
   process.on("unhandledRejection", (reason) => {
-    logger.error(`${role} : unhandled promise rejection : ${reason?.stack || reason}`);
+    logger.error(`${role}: unhandled promise rejection: ${reason?.stack || reason}`);
   });
 }
 

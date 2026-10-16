@@ -32,7 +32,7 @@ export function everyoneEntry(roles) {
   const found = list.find((r) => r?.name === DEFAULT_ROLE) || list.find((r) => r?.name === LEGACY_DEFAULT_ROLE);
   if (found?.name === LEGACY_DEFAULT_ROLE && !warnedLegacy) {
     warnedLegacy = true;
-    logger.warning("Role 'public' is deprecated since 7 : rename it to 'default' in config.yaml (forms listing public keep working)");
+    logger.warning("Role 'public' is deprecated since 7: rename it to 'default' in config.yaml (forms listing public keep working)");
   }
   return found;
 }
@@ -51,7 +51,7 @@ export function everyoneName(roles) {
 export function assertOneEveryoneRole(roles) {
   const names = new Set((Array.isArray(roles) ? roles : []).map((r) => (typeof r?.name === "string" ? r.name.trim() : "")));
   if (names.has(DEFAULT_ROLE) && names.has(LEGACY_DEFAULT_ROLE)) {
-    throw new Error("The roles 'default' and 'public' are the same role ('public' is its old name) : keep one, 'default'");
+    throw new Error("The roles 'default' and 'public' are the same role ('public' is its old name): keep one, 'default'");
   }
 }
 

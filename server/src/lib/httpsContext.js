@@ -38,7 +38,7 @@ export function applySecureContext() {
     cert = fs.readFileSync(certPath);
   } catch (e) {
     // the previous context stays in place : a missing file must not take TLS down
-    logger.warning(`Could not read the new key/certificate, keeping the current one : ${e.message}`);
+    logger.warning(`Could not read the new key/certificate, keeping the current one: ${e.message}`);
     return false;
   }
   try {
@@ -46,7 +46,7 @@ export function applySecureContext() {
     logger.notice(`TLS certificate reloaded from ${certPath}`);
     return true;
   } catch (e) {
-    logger.warning(`Could not apply the new certificate, keeping the current one : ${e.message}`);
+    logger.warning(`Could not apply the new certificate, keeping the current one: ${e.message}`);
     return false;
   }
 }

@@ -52,7 +52,7 @@ export default {
     try {
       await Awx.abortJob(ctx.runner, awxId, !!rows[0].awx_workflow);
     } catch (err) {
-      logger.debug(`Job ${ctx.jobId} : AWX did not take the cancel (${err.message}) ; the tracker will`);
+      logger.debug(`Job ${ctx.jobId}: AWX did not take the cancel (${err.message}) ; the tracker will`);
     }
   },
 };

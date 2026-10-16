@@ -289,7 +289,7 @@ class CronService {
       for (const [name, cron] of wanted) {
         if (this.signatures.repositories.get(name) !== cron) this.addRepository(name, cron);
       }
-      logger.debug(`Repository cron jobs in sync : ${this.jobs.repositories.size}`);
+      logger.debug(`Repository cron jobs in sync: ${this.jobs.repositories.size}`);
     } catch (err) {
       logger.error('Failed to sync the repository cron jobs:', err);
     }
@@ -309,7 +309,7 @@ class CronService {
           this.addSchedule(r.id, r.name, r.cron, r.one_time_run, r.run_at);
         }
       }
-      logger.debug(`Schedule cron jobs in sync : ${this.jobs.schedules.size}`);
+      logger.debug(`Schedule cron jobs in sync: ${this.jobs.schedules.size}`);
     } catch (err) {
       logger.error('Failed to sync the schedule cron jobs:', err);
     }

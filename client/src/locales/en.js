@@ -405,7 +405,7 @@ export default {
     confirmPassword: 'Confirm new password',
     mismatch: 'The new passwords do not match.',
     changed: 'Your password is changed.',
-    changedSignIn: 'Your password is changed : sign in again with the new one',
+    changedSignIn: 'Your password is changed: sign in again with the new one',
     changeFailed: 'The password could not be changed',
     change: 'Change password',
     elsewhere: 'You sign in with {type}, so your password is managed there and cannot be changed here.',
@@ -1688,11 +1688,11 @@ export default {
       type_smtp: 'SMTP',
       type_smtpHint: 'A mail server, its port and TLS, and its login (none for a relay)',
       type_ldap: 'LDAP',
-      type_ldapHint: "An LDAP directory's servers, TLS and bind account : its bind DN and password",
+      type_ldapHint: "An LDAP directory's servers, TLS and bind account: its bind DN and password",
       type_entraid: 'Microsoft Entra ID',
-      type_entraidHint: 'The app of a Microsoft Entra ID provider : its tenant ID, client ID and client secret',
+      type_entraidHint: 'The app of a Microsoft Entra ID provider: its tenant ID, client ID and client secret',
       type_oidc: 'Open ID',
-      type_oidcHint: 'The client of an Open ID provider : its issuer, client ID and client secret',
+      type_oidcHint: 'The client of an Open ID provider: its issuer, client ID and client secret',
     },
     ssh: {
       tabKey: 'Key',
@@ -1756,10 +1756,10 @@ export default {
       credentialHelp:
         "An ldap credential of Connections > Credentials: the directory's servers, port, TLS and certificates, and the bind DN and password.",
       nameHelp:
-        'Prefixes its members in roles : corp/jane, ldap/corp/Admins. The default directory keeps the short names and its own name.',
+        'Prefixes its members in roles: corp/jane, ldap/corp/Admins. The default directory keeps the short names and its own name.',
       servers: 'Servers',
       serversHelp:
-        'One per field (host, host:port or ldaps://host:port), tried in this order : when one cannot be reached, the next one is.',
+        'One per field (host, host:port or ldaps://host:port), tried in this order: when one cannot be reached, the next one is.',
       addServer: 'Add server',
       domains: 'Sign-in domains',
       domainsHelp:
@@ -1805,7 +1805,7 @@ export default {
       groupMemberUserAttributeDesc: 'User attribute matched against the group member attribute (e.g. dn, uid).',
       groupFilter: 'Group filter',
       groupFilterDesc:
-        'Regular expression : only the groups whose name matches are kept, for roles, forms and playbooks. Empty keeps every group.',
+        'Regular expression: only the groups whose name matches are kept, for roles, forms and playbooks. Empty keeps every group.',
     },
     mail: {
       label: 'Mail settings',
@@ -2112,7 +2112,7 @@ export default {
       groupVarsHelp: "The group's name: its variables go in {inventory}/group_vars/<name>.yaml.",
       newHostVars: 'New host vars file',
       hostVarsHelp: "The host's name, as in the inventory: its variables go in {inventory}/host_vars/<name>.yaml.",
-      inventoryRepository: 'A repository : pushed with Push',
+      inventoryRepository: 'A repository: pushed with Push',
       noInventories: 'No inventories yet: create one with New inventory.',
       inventoryPlugin: 'A dynamic inventory: the {plugin} plugin reads its hosts when the playbook runs.',
       inventoryEmpty: 'No groups or hosts yet: add them in the YAML tab.',
@@ -2151,7 +2151,7 @@ export default {
       workflowPathHelp:
         "The workflow's file in the workflows folder, with its subfolders (deploy.yml, team/deploy.yml). A form runs it by this file, as it names a playbook.",
       sharedWorkflowNames:
-        'A workflow named {names} is in another file too : a form that runs it by its name stops. Rename it, or name its file in the form.',
+        'A workflow named {names} is in another file too: a form that runs it by its name stops. Rename it, or name its file in the form.',
       folderHelp: "The folder's path; it is kept once a file is saved in it.",
       create: 'Create',
       deleteConfirm: 'Are you sure you want to delete',
@@ -2184,7 +2184,7 @@ export default {
     previewForm: 'Preview form',
     previewHint: 'The form as it is now, unsaved edits included. Its submit runs nothing.',
     previewRefresh: 'Refresh the preview',
-    previewNotRun: 'This is a preview : the form was not run',
+    previewNotRun: 'This is a preview: the form was not run',
     visual: 'Visual',
     runnerDefault: 'Default runner of its type',
     helpIcon: 'Shown on its tile and in the forms list.',
@@ -2327,7 +2327,7 @@ export default {
     visualValuesHelp: 'A YAML list: one value per line (- dev), or objects (- name: Rome).',
     visualNotANumber: 'not a number',
     visualDeleteField: 'Delete field',
-    visualYamlError: 'The YAML cannot be shown here : fix it in the YAML tab',
+    visualYamlError: 'The YAML cannot be shown here: fix it in the YAML tab',
     visualNotAList: 'not a list',
     visualNotAMap: 'not a map',
     menuPreviewHint:

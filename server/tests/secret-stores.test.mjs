@@ -146,7 +146,7 @@ describe("a vault ref cannot leave its path", () => {
     "secret\\..\\auth",
   ];
   for (const ref of escapes) {
-    test(`refused, and Vault never asked : ${ref}`, async () => {
+    test(`refused, and Vault never asked: ${ref}`, async () => {
       storeRows.vault = vaultRow();
       await assert.rejects(() => Registry.readSecret("vault", ref), /is not allowed/);
       assert.equal(requests.length, 0);
@@ -242,7 +242,7 @@ describe("the first start with VAULT_* imports them once", () => {
     }
   });
 
-  test("imported before : nothing is created, even when the store was deleted since", async () => {
+  test("imported before: nothing is created, even when the store was deleted since", async () => {
     const spy = vi.spyOn(SecretStore, "create");
     try {
       assert.equal(await Import.importVaultFromEnvOnce({ env: env(), marker: fakeMarker(new Date()) }), "ignored");
@@ -271,7 +271,7 @@ describe("the first start with VAULT_* imports them once", () => {
     assert.equal(marker.at, null);
   });
 
-  test("the variables are not read at runtime : no store row, no secret", async () => {
+  test("the variables are not read at runtime: no store row, no secret", async () => {
     process.env.VAULT_ADDR = url;
     process.env.VAULT_TOKEN = "hvs.env";
     await assert.rejects(Registry.readSecret("vault", "secret/app"), /No secret store named 'vault'/);
@@ -320,7 +320,7 @@ describe("saving a store", () => {
   test("its type stays what it was made as", async () => {
     const { vi } = await import("vitest");
     vi.spyOn(SecretStore, "findById").mockResolvedValue(vaultRow());
-    await assert.rejects(SecretStore.update({ type: "cyberark_ccp" }, 1), /keeps the type it was made as : 'vault' is vault/);
+    await assert.rejects(SecretStore.update({ type: "cyberark_ccp" }, 1), /keeps the type it was made as: 'vault' is vault/);
     vi.restoreAllMocks();
   });
 
@@ -368,7 +368,7 @@ describe("a store's token from a credential", () => {
     await assert.rejects(Registry.checkStore(vaultRow({ credential: "gone" })), /'gone', which is not found/);
   });
 
-  test("saving : the credential must exist and keep its own password", async () => {
+  test("saving: the credential must exist and keep its own password", async () => {
     await assert.rejects(SecretStore.update({ credential: "gone" }, 1), /No credential named 'gone'/);
     storeRows["from-store"] = { name: "from-store", password: "", secret_store: "vault" };
     await assert.rejects(SecretStore.update({ credential: "from-store" }, 1), /reads its password from a secret store/);
@@ -385,7 +385,7 @@ describe("a store's token from a credential", () => {
     assert.equal(store.client_key, "KEY");
   });
 
-  test("saving : a store's credential must match its type", async () => {
+  test("saving: a store's credential must match its type", async () => {
     storeRows["ccp-login"] = { name: "ccp-login", credential_type: "cyberark", secret_store: null };
     storeRows["vault-token"] = { name: "vault-token", credential_type: "vault", secret_store: null };
     storeRows["api-token"] = { name: "api-token", credential_type: "api", secret_store: null };
@@ -396,14 +396,14 @@ describe("a store's token from a credential", () => {
     assert.equal((await SecretStore.create({ name: "c", type: "cyberark_ccp", url: "u", credential: "ccp-login" })).credential, "ccp-login");
   });
 
-  test("saving : an empty credential is none, and the config seed is not checked", async () => {
+  test("saving: an empty credential is none, and the config seed is not checked", async () => {
     assert.equal((await SecretStore.update({ credential: "" }, 1)).credential, null);
     assert.equal((await SecretStore.create({ name: "s", type: "vault", url: "u", credential: "later" }, { fromSeed: true })).credential, "later");
   });
 });
 
 describe("a store's address from its credential", () => {
-  test("a credential with an address : the store connects there, with its TLS", async () => {
+  test("a credential with an address: the store connects there, with its TLS", async () => {
     storeRows.vault = vaultRow({ url: "", token: null, credential: "vault-token" });
     storeRows["vault-token"] = { name: "vault-token", credential_type: "api", password: "hvs.from-credential", url, ignore_certs: 1, ca_bundle: "CA", secret_store: null };
     const store = await SecretStore.findByName("vault");
@@ -415,13 +415,13 @@ describe("a store's address from its credential", () => {
     assert.equal(requests[0].token, "hvs.from-credential");
   });
 
-  test("a credential without one : the store's own", async () => {
+  test("a credential without one: the store's own", async () => {
     storeRows.vault = vaultRow({ credential: "vault-token" });
     storeRows["vault-token"] = { name: "vault-token", credential_type: "api", password: "t", secret_store: null };
     assert.equal((await SecretStore.findByName("vault")).url, url);
   });
 
-  test("saving : the credential's address empties the store's own, and one of them is needed", async () => {
+  test("saving: the credential's address empties the store's own, and one of them is needed", async () => {
     storeRows["vault-token"] = { name: "vault-token", credential_type: "vault", password: "t", url: "https://vault:8200", secret_store: null };
     const saved = await SecretStore.create({ name: "v", type: "vault", url: "https://old:8200", ignore_certs: 1, credential: "vault-token" });
     assert.equal(saved.url, "");

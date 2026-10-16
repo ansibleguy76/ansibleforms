@@ -54,7 +54,7 @@ describe("the seed schema refuses anything it does not understand", () => {
     assert.equal(validateSeed(minimal), true);
   });
 
-  test("an empty document is valid : it declares nothing and releases everything", () => {
+  test("an empty document is valid: it declares nothing and releases everything", () => {
     assert.equal(validateSeed({}), true);
   });
 
@@ -133,7 +133,7 @@ describe("the seed schema refuses anything it does not understand", () => {
   test("duplicate names in a section are rejected", () => {
     assert.throws(
       () => validateSeed({ credentials: { items: [{ name: "dup" }, { name: "dup" }] } }),
-      /duplicate credentials names : dup/
+      /duplicate credentials names: dup/
     );
   });
 
@@ -156,18 +156,18 @@ describe("the seed schema refuses anything it does not understand", () => {
         { name: "a", type: "awx", uri: "u", is_default: true },
         { name: "b", type: "awx", uri: "u", is_default: true },
       ] } }),
-      /is_default on more than one runner of type awx : a, b/
+      /is_default on more than one runner of type awx: a, b/
     );
   });
 
-  test("one default per type is fine : the default rte and the default awx", () => {
+  test("one default per type is fine: the default rte and the default awx", () => {
     assert.equal(validateSeed({ runners: { items: [
       { name: "rte", type: "rte", uri: "u", is_default: true },
       { name: "aap", type: "awx", uri: "u", is_default: true },
     ] } }), true);
   });
 
-  test("an awx runner may say which product it is : aap or ascender, nothing else", () => {
+  test("an awx runner may say which product it is: aap or ascender, nothing else", () => {
     assert.equal(validateSeed({ runners: { items: [
       { name: "aap", type: "awx", uri: "https://aap.example.com/api/controller/v2", flavour: "aap" },
       { name: "asc", type: "awx", uri: "https://asc.example.com/api/v2", flavour: "ascender" },
@@ -184,11 +184,11 @@ describe("the seed schema refuses anything it does not understand", () => {
         awx: { items: [{ name: "old", uri: "u", is_default: true }] },
         runners: { items: [{ name: "new", type: "awx", uri: "u", is_default: true }] },
       }),
-      /is_default on more than one runner of type awx : new, old/
+      /is_default on more than one runner of type awx: new, old/
     );
     assert.throws(
       () => validateSeed({ awx: { items: [{ name: "x", uri: "u" }] }, runners: { items: [{ name: "x", type: "rte", uri: "u" }] } }),
-      /duplicate runners names : x/
+      /duplicate runners names: x/
     );
   });
 
@@ -205,7 +205,7 @@ describe("the seed schema refuses anything it does not understand", () => {
         { name: "a", provider: "azuread", client_id: "c", client_secret: "s", enable: true },
         { name: "b", provider: "azuread", client_id: "c", client_secret: "s", enable: true },
       ] } }),
-      /enables more than one 'azuread' oauth2 provider : a, b/
+      /enables more than one 'azuread' oauth2 provider: a, b/
     );
   });
 
@@ -248,13 +248,13 @@ describe("secrets come from the environment, never from the file", () => {
   // The failure this prevents : storing the literal string '${SEED_LDAP_PW}' as the
   // bind password, which authenticates against nothing and looks configured.
   test("an unresolved reference is fatal", () => {
-    assert.throws(() => interpolateEnv({ pw: "${NOT_SET}" }, {}), /undefined environment variables : NOT_SET/);
+    assert.throws(() => interpolateEnv({ pw: "${NOT_SET}" }, {}), /undefined environment variables: NOT_SET/);
   });
 
   test("every missing variable is named, sorted, in one error", () => {
     assert.throws(
       () => interpolateEnv({ a: "${ZZ}", b: "${AA}" }, {}),
-      /undefined environment variables : AA, ZZ/
+      /undefined environment variables: AA, ZZ/
     );
   });
 
@@ -486,7 +486,7 @@ describe("the chat assistant's provider is seedable (a single-row section)", () 
   test("a fully declared chat section validates, its key from the environment", () => {
     assert.equal(validateSeed({ chat: FULL_CHAT }), true);
     assert.equal(interpolateEnv({ chat: FULL_CHAT }, { CHAT_API_KEY: "sk-live" }).chat.api_key, "sk-live");
-    assert.throws(() => interpolateEnv({ chat: FULL_CHAT }, {}), /undefined environment variables : CHAT_API_KEY/);
+    assert.throws(() => interpolateEnv({ chat: FULL_CHAT }, {}), /undefined environment variables: CHAT_API_KEY/);
   });
 
   test("every field is required, and the provider is one we have", () => {
@@ -495,7 +495,7 @@ describe("the chat assistant's provider is seedable (a single-row section)", () 
     assert.throws(() => validateSeed({ chat: { ...FULL_CHAT, provider: "watson" } }), /validation failed/);
   });
 
-  test("applied : adopted, the key encrypted, the row managed", async () => {
+  test("applied: adopted, the key encrypted, the row managed", async () => {
     const writes = [];
     dbHandler = async (sql, rec) => {
       if (/^UPDATE/.test(sql)) { writes.push(rec); return { affectedRows: 1 }; }

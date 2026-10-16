@@ -59,7 +59,7 @@ async function safely(key, fn) {
   try {
     return await fn();
   } catch (e) {
-    logger.warning(`Health check '${key}' failed : ${e.message || e}`);
+    logger.warning(`Health check '${key}' failed: ${e.message || e}`);
     // 'failed' rather than null : a null value renders an empty cell next to a red dot,
     // which says nothing until you open the detail. Reproduced by stopping the database,
     // where four rows went red with no text at all.
@@ -502,7 +502,7 @@ async function secretStoresCheck() {
     ? `${results.length} store(s) reachable`
     : failing.length === 1 && results.length === 1
       ? failing[0].value
-      : `${failing.length} of ${results.length} store(s) need attention : ${failing.map((r) => r.name).join(', ')}`;
+      : `${failing.length} of ${results.length} store(s) need attention: ${failing.map((r) => r.name).join(', ')}`;
   // one store failing : its reason is the check's reason, as it was for the single Vault
   const reason = failing.length === 1 ? failing[0].reason : undefined;
   return check('secretStores', worst, value, { ...(reason ? { reason } : {}), stores: results });
@@ -515,7 +515,7 @@ async function secretStoresCheck() {
 async function runnersCheck() {
   const runners = await Runner.findAll() || [];
   if (!runners.length) {
-    return check('runners', WARNING, 'none configured', { reason: 'Since 7 jobs run on runners : add one under Connections > Runners (an RTE for playbooks ; AWX/AAP, Semaphore, Rundeck or Jenkins for templates)' });
+    return check('runners', WARNING, 'none configured', { reason: 'Since 7 jobs run on runners: add one under Connections > Runners (an RTE for playbooks ; AWX/AAP, Semaphore, Rundeck or Jenkins for templates)' });
   }
   const results = await Promise.all(runners.map(async (runner) => {
     const base = { name: runner.name, type: runner.type, uri: runner.uri, isDefault: !!runner.is_default };
@@ -534,12 +534,12 @@ async function runnersCheck() {
     ? `${results.length} runner(s) reachable`
     : failing.length === 1 && results.length === 1
       ? failing[0].value
-      : `${failing.length} of ${results.length} runner(s) need attention : ${failing.map((r) => r.name).join(', ')}`;
+      : `${failing.length} of ${results.length} runner(s) need attention: ${failing.map((r) => r.name).join(', ')}`;
   const reason = failing.length === 1 ? failing[0].reason : undefined;
   // a playbook form that names no runner runs on the default RTE : without one it fails
   if (worst === OK && !runners.some((r) => r.type === 'rte' && r.is_default)) {
     return check('runners', WARNING, 'no default RTE', {
-      reason: 'Playbook forms that name no runner fail : mark an RTE as default under Connections > Runners',
+      reason: 'Playbook forms that name no runner fail: mark an RTE as default under Connections > Runners',
       runners: results,
     });
   }
@@ -702,7 +702,7 @@ async function storageCheck() {
     jobRetentionDays: keep,
     auditRetentionDays: appConfig.auditRetentionDays,
     nightlyBackupRetention: appConfig.nightlyBackupRetention,
-    note: pruning ? null : 'Job history and output are never pruned : set JOB_RETENTION_DAYS to enable it',
+    note: pruning ? null : 'Job history and output are never pruned: set JOB_RETENTION_DAYS to enable it',
   });
 }
 
@@ -781,15 +781,15 @@ async function expressionsCheck() {
 async function secretsCheck() {
   const problems = [];
   if (appConfig.encryptionSecretIsDefault) {
-    problems.push('ENCRYPTION_SECRET is the public default : stored passwords can be read with the source code');
+    problems.push('ENCRYPTION_SECRET is the public default: stored passwords can be read with the source code');
   }
   if (!process.env.ACCESS_TOKEN_SECRET) {
-    problems.push('ACCESS_TOKEN_SECRET is not set : a random one each start, so every session ends at a restart');
+    problems.push('ACCESS_TOKEN_SECRET is not set: a random one each start, so every session ends at a restart');
   }
   if (problems.length) {
     return check('secrets', WARNING, problems.length === 2 ? 'both unsafe' : 'one unsafe', {
       problems,
-      note: 'Set them in the environment (docker-compose, kubernetes) : changing ENCRYPTION_SECRET later makes the stored passwords unreadable, so set it before storing any',
+      note: 'Set them in the environment (docker-compose, kubernetes): changing ENCRYPTION_SECRET later makes the stored passwords unreadable, so set it before storing any',
     });
   }
   return check('secrets', OK, 'set');
@@ -928,7 +928,7 @@ Health.check = async function () {
     add('databaseHost', `${dbConfig.host}:${dbConfig.port}`, { schema: 'AnsibleForms' });
   } catch (e) {
     // the check row already reports the failure ; do not repeat it here
-    logger.debug(`Health info: database facts unavailable : ${e.message || e}`);
+    logger.debug(`Health info: database facts unavailable: ${e.message || e}`);
   }
   // Beside the config source, because it answers the same question for the other half of
   // the configuration : config.yaml has a source, and so do the admin objects.
@@ -945,7 +945,7 @@ Health.check = async function () {
     } catch (e) {
       // let it be absent rather than print a count it could not read : the whole premise
       // of this list is that it never claims a fact it did not establish
-      logger.debug(`Health info: seed facts unavailable : ${e.message || e}`);
+      logger.debug(`Health info: seed facts unavailable: ${e.message || e}`);
     }
   }
   try {
@@ -957,7 +957,7 @@ Health.check = async function () {
       note: cfg.templated ? 'The config is a ytt template, so the designer and config editors are read-only' : null,
     });
   } catch (e) {
-    logger.debug(`Health info: config source unavailable : ${e.message || e}`);
+    logger.debug(`Health info: config source unavailable: ${e.message || e}`);
   }
   // All four in one line on purpose : 0 means 'delete nothing' for each of them, but they
   // are four separate code paths and the value is easiest to get wrong when you can only
@@ -974,7 +974,7 @@ Health.check = async function () {
     const auth = await authenticationFacts();
     add('authentication', auth.methods.join(', '), { ldap: auth.ldap, oauth2: auth.oauth2 });
   } catch (e) {
-    logger.debug(`Health info: authentication facts unavailable : ${e.message || e}`);
+    logger.debug(`Health info: authentication facts unavailable: ${e.message || e}`);
   }
   // 'where is the log file' opens most support threads, and LOG_PATH is overridable so
   // the answer is not guessable from the install layout
@@ -995,7 +995,7 @@ Health.check = async function () {
       note: mail?.mail_server ? null : 'Approval requests and job notifications are sent by mail, so they go nowhere until this is set',
     });
   } catch (e) {
-    logger.debug(`Health info: mail settings unavailable : ${e.message || e}`);
+    logger.debug(`Health info: mail settings unavailable: ${e.message || e}`);
   }
   add('logs', `${logConfig.level} \u00b7 ${logConfig.path}`, {
     level: logConfig.level,

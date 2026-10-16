@@ -41,7 +41,7 @@ export async function applyChangedEnv() {
     if (!EnvSettings.applyLive(name, now ?? "", docs.get(name)?.default)) restart.push(name);
   }
   if (restart.length) {
-    logger.warning(`Environment settings changed on another node take effect here after a restart : ${restart.join(", ")}`);
+    logger.warning(`Environment settings changed on another node take effect here after a restart: ${restart.join(", ")}`);
   }
 }
 

@@ -25,7 +25,7 @@ const handle = (fn) => async (req, res) => {
   } catch (err) {
     const known = errorStatus(err);
     if (known) return res.status(known.status).json(known.body);
-    logger.error(`Chat error : ${err?.message || err}`);
+    logger.error(`Chat error: ${err?.message || err}`);
     res.status(500).json({ error: { code: 'internal_error', message: 'The chat failed - see the server log' } });
   }
 };

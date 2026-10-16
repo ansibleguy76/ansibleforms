@@ -45,7 +45,7 @@ afterAll(async () => {
 
 const token = (options) => jwt.sign({ access: true, user: { username: 'x', type: 'local', roles: ['default'], options } }, secret);
 
-test('reading the logo needs no login : the login page shows it', async () => {
+test('reading the logo needs no login: the login page shows it', async () => {
   const res = await fetch(baseUrl);
   expect(res.status).toBe(200);
   expect((await res.json()).logo).toMatch(/^data:image\/png/);

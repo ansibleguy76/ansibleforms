@@ -60,10 +60,10 @@ Cmd.executeSilentCommand = async (cmd,silent=false,singleLine=false,timeoutSecon
         },timeoutSeconds*1000)
         var out=[]
         if(!singleLine){
-          out.push(`Running command : ${maskedCommand}`)
+          out.push(`Running command: ${maskedCommand}`)
         }
         if(!silent){
-          logger.notice(`Running command : ${maskedCommand}`)          
+          logger.notice(`Running command: ${maskedCommand}`)          
         }
         
         // add output eventlistener to the process to save output
@@ -83,7 +83,7 @@ Cmd.executeSilentCommand = async (cmd,silent=false,singleLine=false,timeoutSecon
         // then resolves with no output at all
         child.on('close',function(data){
           clearTimeout(timeout)
-          logger.info(description + " finished : " + data)
+          logger.info(description + " finished: " + data)
           // always push something to
           // remove all \n from the end of the output and \r\n
           out = out.map((line)=>{

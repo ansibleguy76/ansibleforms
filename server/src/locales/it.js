@@ -26,7 +26,7 @@ export default {
     refreshTokenReplaced: "Refresh token già usato da un rinnovo concorrente",
     apiTokenFromApiToken: "Un token API non può creare un altro token API",
     apiTokenNotAllowed: "Il tuo ruolo non consente token API",
-    apiTokenSignInAgain: "Accedi di nuovo per creare un token API : il tuo ultimo accesso è troppo vecchio",
+    apiTokenSignInAgain: "Accedi di nuovo per creare un token API: il tuo ultimo accesso è troppo vecchio",
     apiTokenLifetime: "La durata deve essere un numero di giorni, al massimo {max}",
     apiTokenFailed: "Impossibile creare il token API",
     apiTokensFailed: "Impossibile leggere o modificare i token API",
@@ -38,9 +38,9 @@ export default {
     authFailed: "Autenticazione non riuscita",
     invalidCredentials: "Credenziali non valide",
     tooManyFailures:
-      "Troppi accessi non riusciti : riprova tra {minutes} minuto/i",
+      "Troppi accessi non riusciti: riprova tra {minutes} minuto/i",
     passwordChangeRequired:
-      "Cambia prima la password : è la password predefinita pubblica",
+      "Cambia prima la password: è la password predefinita pubblica",
     disclaimerRequired: "Accetta prima il disclaimer",
     disclaimerAccepted: "Il disclaimer è accettato",
     loginDisabled: "Non autenticato, login non abilitato per questo utente.",
@@ -104,7 +104,7 @@ export default {
     runnerAdded: "Runner aggiunto",
     runnerNotFound: "Runner non trovato",
     runnerAdminOnly:
-      "Solo un admin può aggiungere, modificare o eliminare un runner : un runner riceve le credenziali dei job che esegue",
+      "Solo un admin può aggiungere, modificare o eliminare un runner: un runner riceve le credenziali dei job che esegue",
     defaultPasswordRefused:
       "Scegli una password diversa da quella predefinita pubblica",
     passwordTooShort: "La password deve avere almeno {min} caratteri",
@@ -153,7 +153,7 @@ export default {
     failedFindLdap: "Impossibile trovare LDAP",
     ldapCheckFailed: "Verifica LDAP non riuscita",
     storedPasswordOtherServer:
-      "La password salvata si usa solo con il server salvato : digita la password per verificarne un altro",
+      "La password salvata si usa solo con il server salvato: digita la password per verificarne un altro",
     ldapUpdated: "LDAP aggiornato",
     failedUpdateLdap: "Aggiornamento LDAP non riuscito",
     ldapCreated: "Directory LDAP aggiunta",
@@ -273,10 +273,10 @@ export default {
   },
   // what a notification channel (Connections > Notifications) says : a test, a job's end
   notifications: {
-    testText: "Una notifica di prova da {who} : il canale '{name}' la riceve.",
+    testText: "Una notifica di prova da {who}: il canale '{name}' la riceve.",
     testSent: "Notifica di prova inviata a {name}",
     testFailed: "Notifica di prova non riuscita",
-    statusText: "Il job {jobid} del modulo '{form}' è terminato : {status}.",
+    statusText: "Il job {jobid} del modulo '{form}' è terminato: {status}.",
     openJob: "Apri il job",
   },
 };

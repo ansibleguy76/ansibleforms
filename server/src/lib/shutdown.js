@@ -39,7 +39,7 @@ export function onShutdown(name, fn) {
 async function shutdown(signal) {
   if (stopping) return;
   stopping = true;
-  logger.notice(`${signal} : stopping`);
+  logger.notice(`${signal}: stopping`);
   setTimeout(() => {
     logger.warning(`Did not stop within ${STOP_WITHIN_MS / 1000} seconds, exiting anyway`);
     process.exit(0);
@@ -48,7 +48,7 @@ async function shutdown(signal) {
     try {
       await fn();
     } catch (e) {
-      logger.warning(`Stopping ${name} failed : ${e.message || e}`);
+      logger.warning(`Stopping ${name} failed: ${e.message || e}`);
     }
   }
   process.exit(0);

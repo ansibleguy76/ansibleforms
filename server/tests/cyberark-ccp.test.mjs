@@ -76,7 +76,7 @@ describe("the reference", () => {
     assert.deepEqual(buildQuery(ccpRow(), "Query=Safe=Linux;Object=root-srv01"), { AppID: "forms", Query: "Safe=Linux;Object=root-srv01", QueryFormat: "Exact" });
   });
 
-  test("an AppID in the reference is ignored : the store's identity cannot be borrowed", () => {
+  test("an AppID in the reference is ignored: the store's identity cannot be borrowed", () => {
     assert.equal(buildQuery(ccpRow(), "AppID=other;Safe=a;Object=b").AppID, "forms");
   });
 
@@ -143,7 +143,7 @@ describe("reading an account", () => {
 });
 
 describe("checking the store", () => {
-  test("without check_ref : an APPAP answer proves CCP is there and knows the AppID", async () => {
+  test("without check_ref: an APPAP answer proves CCP is there and knows the AppID", async () => {
     const info = await Registry.checkStore(ccpRow());
     assert.match(info.note, /AppID accepted.*APPAP282E/);
     assert.equal(requests[0].q.AppID, "forms");
@@ -153,7 +153,7 @@ describe("checking the store", () => {
     await assert.rejects(Registry.checkStore(ccpRow({ app_id: "other" })), /refused AppID 'other'/);
   });
 
-  test("with check_ref : a real read, reporting who and where but never the password", async () => {
+  test("with check_ref: a real read, reporting who and where but never the password", async () => {
     const info = await Registry.checkStore(ccpRow({ extra: '{"check_ref":"Safe=Linux;Object=root-srv01"}' }));
     assert.equal(info.userName, "root");
     assert.equal(info.address, "srv01.example.com");

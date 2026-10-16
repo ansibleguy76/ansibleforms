@@ -242,7 +242,7 @@ export async function resolveForm({
     try {
       return evalSandbox(r.value);
     } catch (err) {
-      warnings.push(`'${f.name}' : evaluating the default failed : ${err.message}`);
+      warnings.push(`'${f.name}': evaluating the default failed: ${err.message}`);
       return undefined;
     }
   }
@@ -298,7 +298,7 @@ export async function resolveForm({
       patch.value = p.v;
     }
     if (!ok && has(f.name) && !isEmptyValue(inputValue, f.type)) {
-      warnings.push(`'${f.name}' : the given value is not one of the available options`);
+      warnings.push(`'${f.name}': the given value is not one of the available options`);
       patch.notInOptions = true;
     }
   }
@@ -379,8 +379,8 @@ export async function resolveForm({
     const isExpression = !!f.expression;
     const src = await runSource(f);
     if (!src.ok && src.missing) {
-      warnings.push(`'${f.name}' could not be evaluated : a field it refers to never produced a value (${src.missing.join(', ')})`);
-      return finish(f, { status: 'error', error: `unresolved placeholder(s) : ${src.missing.join(', ')}`, value: fallback(), source: 'default' });
+      warnings.push(`'${f.name}' could not be evaluated: a field it refers to never produced a value (${src.missing.join(', ')})`);
+      return finish(f, { status: 'error', error: `unresolved placeholder(s): ${src.missing.join(', ')}`, value: fallback(), source: 'default' });
     }
     if (!src.ok) {
       return finish(f, { status: 'error', error: src.error, value: fallback(), source: 'default' });
@@ -484,7 +484,7 @@ export async function resolveForm({
       }
       for (const pw of res._passwordsVisible || []) rowPasswordsVisible.push(`${f.name}${single ? '' : `[${i}]`}.${pw}`);
       for (const w of res.warnings) {
-        const tagged = `${f.name}${single ? '' : `[${i}]`} : ${w}`;
+        const tagged = `${f.name}${single ? '' : `[${i}]`}: ${w}`;
         if (!warnings.includes(tagged)) warnings.push(tagged);
       }
     }
@@ -541,7 +541,7 @@ export async function resolveForm({
     s.validationErrors = v.errors;
     for (const w of v.warnings) if (!warnings.includes(w)) warnings.push(w);
     if (f.name in validityUsed && validityUsed[f.name] !== (v.errors.length === 0)) {
-      warnings.push(`'${f.name}' : its validity changed after a field depending on it was shown or hidden (a validation that depends back on it) ; visibility may differ from the browser`);
+      warnings.push(`'${f.name}': its validity changed after a field depending on it was shown or hidden (a validation that depends back on it) ; visibility may differ from the browser`);
     }
   }
 

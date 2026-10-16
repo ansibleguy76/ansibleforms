@@ -166,7 +166,7 @@ const Disclaimer = {
     const current = await this.current();
     if (!current.enabled) throw new Errors.BadRequestError('No disclaimer to accept');
     if (Number(version) !== current.version) {
-      throw new Errors.BadRequestError('The disclaimer changed : read it again');
+      throw new Errors.BadRequestError('The disclaimer changed: read it again');
     }
     await mysql.do(
       'INSERT IGNORE INTO AnsibleForms.`disclaimer_acceptances` SET ?',

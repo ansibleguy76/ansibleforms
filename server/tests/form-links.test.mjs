@@ -40,7 +40,7 @@ test("a multistep form runs where each of its steps runs, each place once", () =
 // the credentials a form names, for a credential's Used by tab
 const { formCredentials, credentialsOfForm, expressionCredentials } = await import("../src/lib/formLinks.js");
 
-test("a form's credentials : its yaml, a step's, a query field's dbConfig, its expressions", () => {
+test("a form's credentials: its yaml, a step's, a query field's dbConfig, its expressions", () => {
   const used = credentialsOfForm({
     name: "Deploy",
     credentials: { vcenter: "vcenter-prod", db: "$(env)-db" },
@@ -70,7 +70,7 @@ test("a form's credentials : its yaml, a step's, a query field's dbConfig, its e
   expect(used.dynamic).toEqual([{ pattern: "$(env)-db", where: "credentials: db" }]);
 });
 
-test("an expression's credentials : literal names only, the others make it dynamic", () => {
+test("an expression's credentials: literal names only, the others make it dynamic", () => {
   expect(expressionCredentials("fn.fnRestBasic('get', 'https://x', null, 'snow-api', '.result')")).toEqual({ names: ["snow-api"], patterns: [], dynamic: false });
   expect(expressionCredentials("fn.fnCredentials('a', 'b')")).toEqual({ names: ["a", "b"], patterns: [], dynamic: false });
   expect(expressionCredentials("fn.fnCredentials('a')")).toEqual({ names: ["a"], patterns: [], dynamic: false });

@@ -28,7 +28,7 @@ describe("a lock left behind", () => {
     expect(del[1]).toEqual([1, JSON.stringify(lock)]);
   });
 
-  test("changed while it was released : read once more, never in a loop", async () => {
+  test("changed while it was released: read once more, never in a loop", async () => {
     const stale = { username: "bob", type: "local", created: at(LOCK_STALE_SECONDS + 600) };
     // the release deletes nothing (its holder came back) : the row as it is now is answered
     db.mockImplementation(async (sql) => (String(sql).startsWith("SELECT") ? row(stale) : { affectedRows: 0 }));

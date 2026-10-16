@@ -18,7 +18,7 @@ export const TOOLS = [
   },
   {
     name: 'resolve',
-    description: 'Evaluate a form with the answers so far : missing fields, choices, errors. When complete it stores a summary the operator can approve. Does not launch.',
+    description: 'Evaluate a form with the answers so far: missing fields, choices, errors. When complete it stores a summary the operator can approve. Does not launch.',
     parameters: {
       type: 'object',
       properties: { form: { type: 'string' }, answers: { type: 'object' } },
@@ -27,7 +27,7 @@ export const TOOLS = [
   },
   {
     name: 'plan',
-    description: 'Same as resolve for a form you believe is complete : stores the summary the operator can approve. Does not launch.',
+    description: 'Same as resolve for a form you believe is complete: stores the summary the operator can approve. Does not launch.',
     parameters: {
       type: 'object',
       properties: { form: { type: 'string' }, answers: { type: 'object' } },
@@ -134,7 +134,7 @@ async function chatForm(name, ctx) {
 function prepareValues(info, answers) {
   const unknown = Object.keys(answers).filter((k) => !info.slots.includes(k));
   if (unknown.length) {
-    return { errors: unknown.map((k) => ({ slot: k, code: 'unknown_answer', message: `'${k}' is not a slot of ${info.form} ; use one of : ${info.slots.join(', ')}` })) };
+    return { errors: unknown.map((k) => ({ slot: k, code: 'unknown_answer', message: `'${k}' is not a slot of ${info.form} ; use one of: ${info.slots.join(', ')}` })) };
   }
   const values = {};
   for (const [k, v] of Object.entries(answers)) {
@@ -154,7 +154,7 @@ function summaryOf(info, fields, values) {
     if (v === undefined || v === null || v === '') continue;
     parts.push(`${s.label} ${Array.isArray(v) ? v.join(', ') : v}`);
   }
-  return parts.length ? `${info.form} : ${parts.join(', ')}` : info.form;
+  return parts.length ? `${info.form}: ${parts.join(', ')}` : info.form;
 }
 
 async function resolve(args, ctx, planOnly) {

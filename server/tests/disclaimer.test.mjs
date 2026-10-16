@@ -43,7 +43,7 @@ async function gate(req) {
 
 const user = { user: { username: "jane", type: "local" } };
 
-test("not accepted : refused with its code, but for the disclaimer, the profile and the events", async () => {
+test("not accepted: refused with its code, but for the disclaimer, the profile and the events", async () => {
   required = true;
   const refused = await gate({ baseUrl: "/api/v2/config", user });
   expect(refused.passed).toBe(false);

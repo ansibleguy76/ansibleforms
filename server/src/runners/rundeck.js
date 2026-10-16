@@ -35,10 +35,10 @@ function describe(err, runner) {
   const status = err?.response?.status;
   const at = `Rundeck at ${runner.uri}`;
   const said = err?.response?.data?.message || err?.response?.data?.error;
-  if (status === 401 || status === 403) return `${at} refused the token : check the API token stored here${said ? ` (${said})` : ""}`;
-  if (status === 404) return err.what === "project" ? `${at} has no project ${runner.project}` : `${at} : ${said || "not found"}`;
-  if (status) return `${at} answered ${status} : ${said || err.message}`;
-  return `${at} is unreachable : ${err.code || err.message}`;
+  if (status === 401 || status === 403) return `${at} refused the token: check the API token stored here${said ? ` (${said})` : ""}`;
+  if (status === 404) return err.what === "project" ? `${at} has no project ${runner.project}` : `${at}: ${said || "not found"}`;
+  if (status) return `${at} answered ${status}: ${said || err.message}`;
+  return `${at} is unreachable: ${err.code || err.message}`;
 }
 
 const project = (runner) => encodeURIComponent(runner.project);
@@ -77,7 +77,7 @@ async function findJob(http, runner, template) {
   const { data } = await http.get(`${API}/project/${project(runner)}/jobs`, { params });
   const found = (Array.isArray(data) ? data : []).filter((j) => j.name === name && (group === null || (j.group || "") === group));
   if (!found.length) throw new Errors.NotFoundError(`No job '${wanted}' in Rundeck project ${runner.project}`);
-  if (found.length > 1) throw new Errors.BadRequestError(`Several jobs are called '${name}' in Rundeck project ${runner.project} : name it with its group (group/${name})`);
+  if (found.length > 1) throw new Errors.BadRequestError(`Several jobs are called '${name}' in Rundeck project ${runner.project}: name it with its group (group/${name})`);
   return found[0];
 }
 
@@ -119,12 +119,12 @@ async function launchJob(runner, extravars, credentials, jobid, counter) {
   } catch (err) {
     const name = job ? jobLabel(job) : extravars.__template__;
     const why = err instanceof Errors.NotFoundError || err instanceof Errors.BadRequestError ? err.message : describe(err, runner);
-    logger.error(`Job ${jobid} : could not run job ${name} on Rundeck : ${why}`);
+    logger.error(`Job ${jobid}: could not run job ${name} on Rundeck: ${why}`);
     // "failed" : endJobStatus also mails the status
-    await Job.endJobStatus(jobid, counter + 1, "stderr", "failed", `[ERROR]: Failed to launch job ${name} : ${why}`);
+    await Job.endJobStatus(jobid, counter + 1, "stderr", "failed", `[ERROR]: Failed to launch job ${name}: ${why}`);
     throw jobEnded(new Errors.ApiError(why));
   }
-  logger.info(`Job ${jobid} : Rundeck execution ${execution.id} of job ${jobLabel(job)}`);
+  logger.info(`Job ${jobid}: Rundeck execution ${execution.id} of job ${jobLabel(job)}`);
   await Job.update({ awx_id: execution.id }, jobid);
   const withOptions = sentOptions.length ? `, options ${sentOptions.join(", ")}` : "";
   await Job.printJobOutput(`ok: [Launched job ${jobLabel(job)} with execution id ${execution.id}${withOptions}]`, "stdout", jobid, ++counter);
@@ -154,9 +154,9 @@ async function trackExecution(runner, job, executionId, jobid, counter) {
       const message = describe(err, runner);
       const r = contact.failed();
       if (r.giveUp) {
-        return lostContact(jobid, counter + 1, `[ERROR]: lost contact with Rundeck while following execution ${executionId} (${message}) : it may still be running, check it in Rundeck`);
+        return lostContact(jobid, counter + 1, `[ERROR]: lost contact with Rundeck while following execution ${executionId} (${message}): it may still be running, check it in Rundeck`);
       }
-      logger.warning(`Job ${jobid} : Rundeck did not answer [${r.failures}], retrying in ${r.waitMs / 1000}s : ${message}`);
+      logger.warning(`Job ${jobid}: Rundeck did not answer [${r.failures}], retrying in ${r.waitMs / 1000}s: ${message}`);
       await delay(r.waitMs);
       continue;
     }
@@ -191,7 +191,7 @@ async function trackExecution(runner, job, executionId, jobid, counter) {
         const { data } = await http.get(`${API}/execution/${executionId}`);
         status = data?.status || status;
       } catch (err) {
-        logger.warning(`Job ${jobid} : could not read the end status of execution ${executionId}, taking ${status} : ${err.message}`);
+        logger.warning(`Job ${jobid}: could not read the end status of execution ${executionId}, taking ${status}: ${err.message}`);
       }
       const ended = STATUS[status] || "failed";
       if (ended === "success") {
@@ -251,7 +251,7 @@ export default {
     try {
       await client(ctx.runner).get(`${API}/execution/${executionId}/abort`);
     } catch (err) {
-      logger.debug(`Job ${ctx.jobId} : Rundeck did not take the abort (${err.message}) ; the tracker will`);
+      logger.debug(`Job ${ctx.jobId}: Rundeck did not take the abort (${err.message}) ; the tracker will`);
     }
   },
 };

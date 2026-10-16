@@ -37,7 +37,7 @@ export function resolveInventory(item, roots, isDir) {
     }
   }
   if (found.length > 1) {
-    throw new Error(`Inventory '${value}' is both a repository and a folder of the inventories folder (INVENTORY_PATH) : rename one of them`);
+    throw new Error(`Inventory '${value}' is both a repository and a folder of the inventories folder (INVENTORY_PATH): rename one of them`);
   }
   return found.length ? found[0].dir : item;
 }

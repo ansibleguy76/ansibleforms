@@ -127,7 +127,7 @@ export async function groupsOf(user, { cached = true } = {}) {
   try {
     groups = (await storedGroups(user)) || [];
   } catch (err) {
-    logger.error(`The groups of ${user.type}/${user.username} could not be read : ${helpers.getError(err)}`);
+    logger.error(`The groups of ${user.type}/${user.username} could not be read: ${helpers.getError(err)}`);
     return [];
   }
   // bounded : the oldest entry goes first (a Map keeps the order of insertion)

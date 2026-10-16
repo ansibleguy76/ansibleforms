@@ -189,7 +189,7 @@ describe("a job on Rundeck", () => {
     outputs = [];
     script = [["running", "step 1"], ["succeeded", "done"]];
     await run({});
-    assert.ok(text().split("\n").includes("step 1"), "one node : no prefix");
+    assert.ok(text().split("\n").includes("step 1"), "one node: no prefix");
   });
 
   test("a bare name and a uuid name the job too", { timeout: 20000 }, async () => {
@@ -240,7 +240,7 @@ describe("a job on Rundeck", () => {
 
   test("an unknown job, or two of one name, fail the job before anything runs", { timeout: 20000 }, async () => {
     await assert.rejects(run({ __template__: "tests/nope" }), (e) => e.jobEnded === true);
-    assert.match(text(), /\[ERROR\]: Failed to launch job tests\/nope : No job 'tests\/nope' in Rundeck project af/);
+    assert.match(text(), /\[ERROR\]: Failed to launch job tests\/nope: No job 'tests\/nope' in Rundeck project af/);
     jobs.push({ id: "99999999-2222-3333-4444-555555555555", name: "af-demo", group: "other", options: [] });
     jobRow = { id: 5, status: "running" };
     outputs = [];
@@ -253,7 +253,7 @@ describe("a job on Rundeck", () => {
     refuseRun = true;
     await assert.rejects(run({}), (e) => e.jobEnded === true);
     assert.equal(jobRow.status, "failed");
-    assert.match(text(), /answered 400 : Option 'count' is required/);
+    assert.match(text(), /answered 400: Option 'count' is required/);
   });
 
   test("an output read that fails is retried, not the end of the job", { timeout: 20000 }, async () => {

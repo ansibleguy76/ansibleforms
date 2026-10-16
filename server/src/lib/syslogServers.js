@@ -89,7 +89,7 @@ async function writeMarker() {
 export async function importSyslogFromEnvOnce({ env = process.env, marker = { read: readMarker, write: writeMarker }, model = null } = {}) {
   if (!syslogEnvIsSet(env)) return "none";
   if (await marker.read()) {
-    logger.warning("The LOG_SYSLOG_* environment variables are ignored : they were imported as the syslog server 'syslog' before - manage it under Connections > Syslog and remove them from the environment");
+    logger.warning("The LOG_SYSLOG_* environment variables are ignored: they were imported as the syslog server 'syslog' before - manage it under Connections > Syslog and remove them from the environment");
     return "ignored";
   }
   const SyslogServer = model || (await import("../models/syslogServer.model.js")).default;
@@ -125,7 +125,7 @@ export async function reloadSyslogServers({ force = false } = {}) {
     servers = await mysql.tryDo("SELECT * FROM AnsibleForms.`syslog_servers` ORDER BY id");
     imported = await readMarker().catch(() => null);
   } catch (e) {
-    logger.debug(`Could not read the syslog servers : ${e.message || e}`);
+    logger.debug(`Could not read the syslog servers: ${e.message || e}`);
     return null;
   }
   const retireEnv = !!imported || (servers || []).length > 0;
@@ -134,7 +134,7 @@ export async function reloadSyslogServers({ force = false } = {}) {
   appliedKey = key;
   const result = applySyslogServers(servers || [], { retireEnv });
   for (const { name, error } of result.failed) {
-    logger.error(`Syslog server '${name}' could not be applied : ${error}`);
+    logger.error(`Syslog server '${name}' could not be applied: ${error}`);
   }
   return result;
 }

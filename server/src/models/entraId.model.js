@@ -31,7 +31,7 @@ class EntraId {
       if (record.credential) {
         const exact = "^" + String(record.credential).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$";
         const cred = await Credential.resolveCredential(exact).catch((e) => {
-          logger.error(`Couldn't read the credential '${record.credential}' of the azuread provider : ${e.message || e}`);
+          logger.error(`Couldn't read the credential '${record.credential}' of the azuread provider: ${e.message || e}`);
           return null;
         });
         record.client_id = cred?.user || "";

@@ -122,7 +122,7 @@ describe("what each type needs", () => {
   });
 
   test("its type stays what it was made as ; an AWX one may change flavour ; the seed may change it", async () => {
-    await assert.rejects(Runner.update({ type: "awx" }, 1), /keeps the type it was made as : 'rte-1' is rte/);
+    await assert.rejects(Runner.update({ type: "awx" }, 1), /keeps the type it was made as: 'rte-1' is rte/);
     await Runner.update({ type: "awx", flavour: "ascender" }, 2);
     assert.equal(rows[1].flavour, "ascender");
     await Runner.update({ type: "awx", uri: "https://awx", token: "t" }, 1, { fromSeed: true });
@@ -231,7 +231,7 @@ describe("runners an RTE registered itself", () => {
 describe("a runner's address from its credential", () => {
   const login = (over) => ({ id: 50, name: "jenkins-login", credential_type: "jenkins", url: "https://jenkins.example.com", ignore_certs: 1, ca_bundle: "CA", ...over });
 
-  test("a credential with an address : no uri of its own is needed, and one sent is emptied", async () => {
+  test("a credential with an address: no uri of its own is needed, and one sent is emptied", async () => {
     rows.push(login());
     await Runner.create({ name: "j", type: "jenkins", credential: "jenkins-login" });
     assert.equal(rows.at(-1).uri, "");
@@ -240,7 +240,7 @@ describe("a runner's address from its credential", () => {
     assert.equal(rows.at(-1).ignore_certs, 0);
   });
 
-  test("a credential without one : its own uri is needed", async () => {
+  test("a credential without one: its own uri is needed", async () => {
     rows.push(login({ url: null }));
     await assert.rejects(Runner.create({ name: "j", type: "jenkins", credential: "jenkins-login" }), /needs an address/);
     await Runner.create({ name: "j", type: "jenkins", uri: "http://own", credential: "jenkins-login" });
@@ -265,7 +265,7 @@ describe("a runner's credential is of its kind", () => {
   test("a jenkins needs a jenkins one, an awx runner an awx, aap or ascender one", async () => {
     rows.push({ id: 60, name: "j", credential_type: "jenkins", url: "http://j" }, { id: 61, name: "a", credential_type: "aap", url: "https://a/api/controller/v2" }, { id: 62, name: "p", credential_type: "userpass" });
     await Runner.create({ name: "jk", type: "jenkins", credential: "j" });
-    await assert.rejects(Runner.create({ name: "jk2", type: "jenkins", credential: "a" }), /A jenkins runner signs in with a jenkins credential : 'a' is aap/);
+    await assert.rejects(Runner.create({ name: "jk2", type: "jenkins", credential: "a" }), /A jenkins runner signs in with a jenkins credential: 'a' is aap/);
     await Runner.create({ name: "aap", type: "awx", flavour: "aap", credential: "a" });
     await assert.rejects(Runner.create({ name: "jk3", type: "jenkins", uri: "http://own", credential: "p" }), /is userpass/);
   });

@@ -318,7 +318,7 @@ describe("the conversation loop", () => {
     expect(allToolText(model.histories.at(-1))).toMatch(/not_allowed/);
   });
 
-  test("off or unconfigured : no conversation", async () => {
+  test("off or unconfigured: no conversation", async () => {
     const off = createChatService({ deps, complete: vi.fn(), loadSettings: async () => ({}), enabled: () => false });
     await expect(off.openSession(user)).rejects.toMatchObject({ code: "chat_disabled" });
     expect(await off.config()).toEqual({ enabled: false });

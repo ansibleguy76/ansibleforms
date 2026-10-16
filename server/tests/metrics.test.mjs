@@ -16,7 +16,7 @@ function scrape(headers = {}) {
 }
 
 describe("the metrics", () => {
-  test("off without METRICS_TOKEN : 404", async () => {
+  test("off without METRICS_TOKEN: 404", async () => {
     delete process.env.METRICS_TOKEN;
     expect((await scrape()).statusCode).toBe(404);
   });

@@ -71,7 +71,7 @@ export function createOutputBatcher({ write, jobId, nextOrder, maxBytes = 0 }) {
         const room = Math.max(0, maxBytes - stored[s]);
         chunk = Buffer.from(chunk).subarray(0, room).toString("utf8");
         capped[s] = true;
-        chunk += `\n[WARNING]: the ${s} of this job passed PROCESS_MAX_BUFFER (${maxBytes} bytes) : the rest is not stored, the playbook goes on\n`;
+        chunk += `\n[WARNING]: the ${s} of this job passed PROCESS_MAX_BUFFER (${maxBytes} bytes): the rest is not stored, the playbook goes on\n`;
       }
       stored[s] += Buffer.byteLength(chunk);
       pending.push({ stream: s, text: chunk });

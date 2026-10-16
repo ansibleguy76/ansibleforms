@@ -31,7 +31,7 @@ const upload = function(req, res, _next) {
 
   result(req, res, function (err) {
       if(err) {
-          logger.error(`Upload error : ${err.toString()}`)
+          logger.error(`Upload error: ${err.toString()}`)
           return res.status(400).json(RestResult.error(i18n.t(req, 'resources.fileUploadFailed'), err.toString()))
       } 
       // A multipart POST with no `file` part leaves req.file undefined. Dereferencing it

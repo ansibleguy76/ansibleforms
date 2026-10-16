@@ -38,7 +38,7 @@ export async function heartbeat() {
     return true;
   } catch (e) {
     // no nodes table yet (an unpatched schema) : the worker's patch adds it
-    logger.debug(`Node heartbeat failed : ${e.message || e}`);
+    logger.debug(`Node heartbeat failed: ${e.message || e}`);
     return false;
   }
 }

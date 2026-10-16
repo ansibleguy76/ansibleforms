@@ -60,7 +60,7 @@ class OAuth2 extends CrudModel {
         if (!cred) throw new Errors.BadRequestError(`No credential named '${name}'`);
         const type = this.credentialTypeOf(provider);
         if (cred.credential_type !== type) {
-            throw new Errors.BadRequestError(`This SSO provider needs an ${type} credential : '${name}' is not one`);
+            throw new Errors.BadRequestError(`This SSO provider needs an ${type} credential: '${name}' is not one`);
         }
         if (type === 'entraid' && !isSingleTenant(cred.tenant_id)) {
             throw new Errors.BadRequestError(`The credential '${name}' needs the tenant id of your tenant (a GUID or its domain)`);

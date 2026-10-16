@@ -27,7 +27,7 @@ const execute = async function(req, res) {
     } catch (err) {
       if (err instanceof QueryPolicyError) {
         if (err.statusCode === 403) {
-          logger.warning(`Refused a raw expression from ${user.username || 'unknown'} : send formName and fieldName instead`);
+          logger.warning(`Refused a raw expression from ${user.username || 'unknown'}: send formName and fieldName instead`);
           return res.status(403).json(RestResult.error(i18n.t(req, 'errors.noAccess'), err.detail));
         }
         return res.status(err.statusCode).json(RestResult.error(err.message));
@@ -48,14 +48,14 @@ const execute = async function(req, res) {
       const result = await Expression.execute(expression, noLog)
       if(!noLog){
         try{
-          logger.debug(`expression result : ${helpers.logSafe(JSON.stringify(result))}`)
+          logger.debug(`expression result: ${helpers.logSafe(JSON.stringify(result))}`)
         }catch(e){
           //
         }
       }
       res.json(RestResult.single(result))
     } catch(err) {
-      logger.error(`Error in expression : ${err}`)
+      logger.error(`Error in expression: ${err}`)
       res.status(500).json(RestResult.error(err.toString()))
     }
 };

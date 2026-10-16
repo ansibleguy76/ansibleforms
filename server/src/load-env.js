@@ -15,12 +15,12 @@ const __dirname = path.dirname(__filename);
 // dotenv never overwrites a variable that is already set.
 const managedEnv = process.env.MANAGED_ENV_PATH || `${__dirname}/../persistent/.env`;
 if (existsSync(managedEnv)) {
-  console.log(`Importing managed env file : ${managedEnv}`);
+  console.log(`Importing managed env file: ${managedEnv}`);
   dotenv.config({ path: managedEnv });
 }
 
 if (process.env.NODE_ENV !== 'production' || process.env.FORCE_DOTENV==1 || process.env.FORCE_DOTENV=="1" ){
-  console.log(`Importing .env file : ${__dirname}/../.env.${process.env.NODE_ENV}` )
+  console.log(`Importing .env file: ${__dirname}/../.env.${process.env.NODE_ENV}` )
   dotenv.config({ path: `${__dirname}/../.env.${process.env.NODE_ENV}` })
 }else{
   console.log(`Not importing .env file, running in production mode` )

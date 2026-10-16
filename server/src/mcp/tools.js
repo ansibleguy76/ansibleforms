@@ -93,7 +93,7 @@ export function createHandlers({ user, deps, policy = {} }) {
 
   function refuseWhenReadOnly(what = 'jobs cannot be launched or relaunched through it') {
     if (policy.readOnly) {
-      throw new ToolError(`This MCP server is read only : ${what}`, 'access_denied');
+      throw new ToolError(`This MCP server is read only: ${what}`, 'access_denied');
     }
   }
 
@@ -181,7 +181,7 @@ export function createHandlers({ user, deps, policy = {} }) {
     const text = String(runAt ?? '').trim();
     if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})$/i.test(text)) {
       throw new ToolError(`${what} must be an ISO 8601 time with its offset or Z, such as 2026-10-15T22:00:00+02:00 or `
-        + `2026-10-15T20:00:00Z, not '${text}' : a time without a zone is ambiguous`, 'invalid_request');
+        + `2026-10-15T20:00:00Z, not '${text}': a time without a zone is ambiguous`, 'invalid_request');
     }
     const when = new Date(text);
     // a date that does not exist (30 February, 24:00) is moved by the parser without a word :
@@ -310,7 +310,7 @@ export function createHandlers({ user, deps, policy = {} }) {
     const stale = Object.keys(data).filter((k) => !known.has(k));
     const kept = Object.fromEntries(Object.entries(data).filter(([k]) => known.has(k)));
     const warnings = [];
-    if (stale.length) warnings.push(`Stored job '${row.name}' has values for fields the form no longer has, left out : ${stale.join(', ')}`);
+    if (stale.length) warnings.push(`Stored job '${row.name}' has values for fields the form no longer has, left out: ${stale.join(', ')}`);
     if (storedSummary(row).expired) warnings.push(`Stored job '${row.name}' has expired`);
     return { values: { ...kept, ...(values || {}) }, warnings };
   }
@@ -419,12 +419,12 @@ export function createHandlers({ user, deps, policy = {} }) {
       const notAnOption = res.fields.filter((f) => f.notInOptions && res.invalid.includes(f.name)).map((f) => f.name);
       const failing = Object.entries(res.validationErrors)
         .map(([name, errs]) => `${name} (${errs.map((e) => e.description ? `${e.type}: ${e.description}` : e.type).join(', ')})`);
-      if (res.missing.length) parts.push(`missing input for : ${res.missing.join(', ')}`);
-      if (notAnOption.length) parts.push(`not one of the options : ${notAnOption.join(', ')}`);
-      if (failing.length) parts.push(`validation failed : ${failing.join(' ; ')}`);
+      if (res.missing.length) parts.push(`missing input for: ${res.missing.join(', ')}`);
+      if (notAnOption.length) parts.push(`not one of the options: ${notAnOption.join(', ')}`);
+      if (failing.length) parts.push(`validation failed: ${failing.join(' ; ')}`);
       const rows = describeRowErrors(res.rowErrors);
-      if (rows.length) parts.push(`list rows failing : ${rows.join(', ')}`);
-      if (res.waiting.length) parts.push(`not resolvable yet : ${res.waiting.join(', ')}`);
+      if (rows.length) parts.push(`list rows failing: ${rows.join(', ')}`);
+      if (res.waiting.length) parts.push(`not resolvable yet: ${res.waiting.join(', ')}`);
       throw new ToolError(`The form is not complete - ${parts.join(' ; ')}. Call resolve_field to see what is needed.`,
         'form_incomplete', {
           missing: res.missing, invalid: res.invalid, waiting: res.waiting, validationErrors: res.validationErrors,
@@ -482,7 +482,7 @@ export function createHandlers({ user, deps, policy = {} }) {
     async resolveField(args) {
       // a stored job's values, for the whole form (not a subform's row)
       if (args.subform && args.storedJob) {
-        throw new ToolError('A stored job holds the values of a whole form : resolve it without `subform`', 'invalid_request');
+        throw new ToolError('A stored job holds the values of a whole form: resolve it without `subform`', 'invalid_request');
       }
       const fromStored = await overStored(args.form, args.values, args.storedJob);
       const { res, formObj } = await resolveFor({ ...args, values: fromStored.values });
@@ -549,7 +549,7 @@ export function createHandlers({ user, deps, policy = {} }) {
       let when = null;
       if (cronExpr) {
         const problem = cronError(cronExpr);
-        if (problem) throw new ToolError(`Not a cron schedule : ${problem}`, 'invalid_request');
+        if (problem) throw new ToolError(`Not a cron schedule: ${problem}`, 'invalid_request');
         Object.assign(data, { cron: cronExpr, one_time_run: false });
       } else {
         when = momentOf(runAt);
@@ -661,9 +661,9 @@ export function createHandlers({ user, deps, policy = {} }) {
         throw err;
       }
       const warnings = [];
-      if (passwords.length) warnings.push(`Password fields are never stored, supply them when you launch : ${passwords.join(', ')}`);
-      if (unknown.length) warnings.push(`Not fields of the form, left out : ${unknown.join(', ')}`);
-      if (other.length) warnings.push(`Not stored (constants and reserved fields) : ${other.join(', ')}`);
+      if (passwords.length) warnings.push(`Password fields are never stored, supply them when you launch: ${passwords.join(', ')}`);
+      if (unknown.length) warnings.push(`Not fields of the form, left out: ${unknown.join(', ')}`);
+      if (other.length) warnings.push(`Not stored (constants and reserved fields): ${other.join(', ')}`);
       return {
         id, name: storedName, form: formObj.name, expiresAt: expires ? expires.toISOString() : null,
         stored: Object.keys(kept), leftOut: { passwords, unknown, other }, warnings,
@@ -728,9 +728,9 @@ const valuesSchema = z.record(z.string(), z.any())
 // a stored job to start from (#1070) : what Load does on the form
 const storedJobSchema = z.object({
   id: z.number().int().positive().optional().describe('Stored job id, from list_stored_jobs'),
-  name: z.string().optional().describe('Or its name : one of your own stored jobs of this form'),
+  name: z.string().optional().describe('Or its name: one of your own stored jobs of this form'),
 }).optional().describe('Start from the values of one of your own stored jobs ; `values` are laid over them. Password fields '
-  + 'are not stored : supply them in `values`. launch_job and plan_job then need the expectedPayloadHash resolve_field returned.');
+  + 'are not stored: supply them in `values`. launch_job and plan_job then need the expectedPayloadHash resolve_field returned.');
 
 /**
  * Wrap a handler : the result as JSON text and as structured content, a refusal as a tool
@@ -754,7 +754,7 @@ export function describeError(err) {
   if (err?.statusCode) {
     return { code: err.statusCode === 403 ? 'access_denied' : err.statusCode === 404 ? 'not_found' : 'invalid_request', message: err.message };
   }
-  return { code: 'internal_error', message: `Internal error : ${err?.message || err}` };
+  return { code: 'internal_error', message: `Internal error: ${err?.message || err}` };
 }
 
 function wrap(fn) {
@@ -788,7 +788,7 @@ export function registerTools(server, handlers, policy = {}, user = {}) {
 
   server.registerTool('get_form', {
     title: 'Get form',
-    description: 'The full definition of one form : its fields (type, label, required, regex, default, '
+    description: 'The full definition of one form: its fields (type, label, required, regex, default, '
       + 'dependencies, and per field `dynamic` and `dependsOn`), subforms, constants and varsFiles data. '
       + 'Use it to understand the form ; use resolve_field to evaluate it.',
     inputSchema: { name: z.string().describe('Form name, as returned by list_forms') },
@@ -797,7 +797,7 @@ export function registerTools(server, handlers, policy = {}, user = {}) {
 
   server.registerTool('resolve_field', {
     title: 'Resolve form fields',
-    description: 'Evaluate a form for the values filled in so far, in dependency order : which fields are '
+    description: 'Evaluate a form for the values filled in so far, in dependency order: which fields are '
       + 'visible, their defaults, computed expression and query values, and the options of every choice '
       + 'field. Fields whose inputs are not there yet come back as `waiting` with `waitingFor`. '
       + '`missing` lists fields that need a value from you ; `invalid` lists choices that are not among the '
@@ -822,7 +822,7 @@ export function registerTools(server, handlers, policy = {}, user = {}) {
 
   if (!policy.readOnly) server.registerTool('launch_job', {
     title: 'Launch job',
-    description: 'Launch the form with the given values, exactly as a browser submission would : the form '
+    description: 'Launch the form with the given values, exactly as a browser submission would: the form '
       + 'is resolved and validated first and the launch is refused while fields are missing, invalid, fail '
       + 'validation or are unresolved '
       + '(code `form_incomplete`), or when `expectedPayloadHash` no longer matches (code '
@@ -840,12 +840,12 @@ export function registerTools(server, handlers, policy = {}, user = {}) {
 
   if (!policy.readOnly) server.registerTool('relaunch_job', {
     title: 'Relaunch job with changes',
-    description: 'Launch a job again with some fields changed : the values the job was launched with, '
+    description: 'Launch a job again with some fields changed: the values the job was launched with, '
       + 'with `values` laid over them, are resolved and validated like launch_job and launched as a new '
       + 'job by you. Uploads of the original are reused. Without `values` it replays the job as it ran '
       + '(unless the form is under launch validation enforce). A relaunch through the check is refused '
       + 'for a password field the form shows - passwords are never stored with the values. Call it with `preview: true` '
-      + 'first : that returns `modeledExtravars` (passwords masked), `credentials` and a `payloadHash` '
+      + 'first: that returns `modeledExtravars` (passwords masked), `credentials` and a `payloadHash` '
       + 'without launching - confirm them with the user, then call again with `expectedPayloadHash`. '
       + 'Refused while fields are missing, invalid or fail validation (code `form_incomplete`), for a '
       + 'wizard form or a shown password field (`unsupported`), with changes for a job that stored no form values, such as one a schedule launched (`no_form_data`), or when the payload changed (`payload_mismatch`).',
@@ -862,7 +862,7 @@ export function registerTools(server, handlers, policy = {}, user = {}) {
   // ─── schedules (#1069) ───
   if (!policy.readOnly && options.allowPlannedJobs) server.registerTool('plan_job', {
     title: 'Plan a job (Run later)',
-    description: 'Run the form once, later, as you : what Run later does on the form. The values are resolved '
+    description: 'Run the form once, later, as you: what Run later does on the form. The values are resolved '
       + 'and validated like launch_job now, and checked again when the run fires. `run_at` is an ISO 8601 '
       + 'time WITH its offset or Z (2026-10-15T22:00:00+02:00) ; a time without a zone is refused. The answer '
       + 'gives the run time in UTC and on the app\'s clock. Refused while the form is incomplete (code '
@@ -872,7 +872,7 @@ export function registerTools(server, handlers, policy = {}, user = {}) {
       form: z.string().describe('Form name'),
       values: valuesSchema.optional(),
       storedJob: storedJobSchema,
-      run_at: z.string().describe('When to run it : ISO 8601 with its offset or Z'),
+      run_at: z.string().describe('When to run it: ISO 8601 with its offset or Z'),
       name: z.string().min(1).max(255).describe('A name for the planned run, as listed under Jobs > Scheduled ; names are unique'),
       verbose: z.boolean().optional().describe('Verbose ansible output (needs the allowVerboseMode role option)'),
       expectedPayloadHash: z.string().optional().describe('The payloadHash resolve_field returned for the approved values'),
@@ -882,7 +882,7 @@ export function registerTools(server, handlers, policy = {}, user = {}) {
 
   if (!policy.readOnly && options.allowScheduledJobs) server.registerTool('create_schedule', {
     title: 'Create schedule',
-    description: 'A schedule of a form, as in Settings > Schedules : recurring with `cron` (five fields, such as '
+    description: 'A schedule of a form, as in Settings > Schedules: recurring with `cron` (five fields, such as '
       + '"0 22 * * 1-5"), or one run with `run_at` (ISO 8601 with its offset or Z). It runs as the Schedule '
       + 'Service with the given extra vars, NOT as you and without the form\'s validation - to run a form '
       + 'once as yourself, use plan_job.',
@@ -890,7 +890,7 @@ export function registerTools(server, handlers, policy = {}, user = {}) {
       form: z.string().describe('Form name'),
       name: z.string().min(1).max(255).describe('A name for the schedule ; names are unique'),
       cron: z.string().optional().describe('A cron expression, for a recurring schedule'),
-      run_at: z.string().optional().describe('One run at this time : ISO 8601 with its offset or Z'),
+      run_at: z.string().optional().describe('One run at this time: ISO 8601 with its offset or Z'),
       extraVars: z.record(z.string(), z.any()).optional().describe('The extra vars the job gets'),
     },
     annotations: { readOnlyHint: false, destructiveHint: true },
@@ -899,7 +899,7 @@ export function registerTools(server, handlers, policy = {}, user = {}) {
   if (options.allowPlannedJobs || options.allowScheduledJobs) {
     server.registerTool('list_schedules', {
       title: 'List schedules',
-      description: 'The schedules you may see : with allowScheduledJobs all of them, else the runs you planned. '
+      description: 'The schedules you may see: with allowScheduledJobs all of them, else the runs you planned. '
         + 'Per schedule its form, when it runs (runAt or cron, nextRun), whether it runs as you (planned) and how '
         + 'its last run went.',
       inputSchema: { form: z.string().optional().describe('Only the schedules of this form') },
@@ -925,7 +925,7 @@ export function registerTools(server, handlers, policy = {}, user = {}) {
   if (options.allowStoredJobs) {
     server.registerTool('list_stored_jobs', {
       title: 'List stored jobs',
-      description: 'The stored jobs you may see (values saved under a name with Store on a form) : your own, or '
+      description: 'The stored jobs you may see (values saved under a name with Store on a form): your own, or '
         + 'everyone\'s for a settings user. Name, description, form, created and expiry ; not the values - '
         + 'get_stored_job has them. One marked `usable` (your own, of a form you may launch) can be passed as '
         + '`storedJob` to resolve_field, launch_job or plan_job to start from it.',
@@ -955,7 +955,7 @@ export function registerTools(server, handlers, policy = {}, user = {}) {
         name: z.string().min(1).max(255).describe('A name, unique among your stored jobs of this form'),
         values: valuesSchema,
         description: z.string().optional().describe('What these values are for'),
-        expires_at: z.string().optional().describe('When it expires : ISO 8601 with its offset or Z ; none, it does not'),
+        expires_at: z.string().optional().describe('When it expires: ISO 8601 with its offset or Z ; none, it does not'),
       },
       annotations: { readOnlyHint: false, destructiveHint: false },
     }, wrap((a) => handlers.storeJob(a)));

@@ -47,7 +47,7 @@ export function registration(env = process.env, { https = false, port = 8000, ip
   if (String(env.RTE_REGISTER ?? "").trim() === "0") return null;
   const given = stripTrailingSlashes(String(env.RTE_URL || "").trim());
   if (!given) {
-    if (!ip) throw new Error("this container has no IPv4 address to register : set RTE_URL to the address the app reaches it on");
+    if (!ip) throw new Error("this container has no IPv4 address to register: set RTE_URL to the address the app reaches it on");
     return { uri: `${https ? "https" : "http"}://${ip}:${port}`, name: nodeId, token: env.RTE_TOKEN || "", nodeId };
   }
   let url;
@@ -88,7 +88,7 @@ export async function registerOnce(reg) {
 
   if (mine?.managed) {
     if (mine.token !== reg.token) {
-      logger.warning(`RTE : the config seed declares runner '${mine.name}' (${reg.uri}) with another token than this RTE's RTE_TOKEN : jobs on it will be refused`);
+      logger.warning(`RTE: the config seed declares runner '${mine.name}' (${reg.uri}) with another token than this RTE's RTE_TOKEN: jobs on it will be refused`);
     }
     // a row an RTE registered at the same address : written while the seed created its own
     // (both found no row), so this RTE would be two runners. The seed's row stays.
@@ -112,7 +112,7 @@ export async function registerOnce(reg) {
   } else {
     const taken = rows.find((r) => r.name === reg.name);
     if (taken) {
-      logger.warning(`RTE : a runner named '${reg.name}' exists with another address (${taken.uri}) : not registering ${reg.uri} - change RTE_URL, or add this RTE under Connections > Runners`);
+      logger.warning(`RTE: a runner named '${reg.name}' exists with another address (${taken.uri}): not registering ${reg.uri} - change RTE_URL, or add this RTE under Connections > Runners`);
       return null;
     }
     const id = await Runner.create(
@@ -139,24 +139,24 @@ export function registerSelf(env = process.env, { https = false, port = 8000, ch
   try {
     reg = registration(env, { https, port });
   } catch (e) {
-    logger.error(`RTE : ${e.message} ; not registering as a runner`);
+    logger.error(`RTE: ${e.message} ; not registering as a runner`);
     return null;
   }
   if (!reg) {
-    logger.notice("RTE : RTE_REGISTER=0, so this RTE does not add itself as a runner : add it under Connections > Runners");
+    logger.notice("RTE: RTE_REGISTER=0, so this RTE does not add itself as a runner: add it under Connections > Runners");
     return null;
   }
-  logger.notice(`RTE : registers itself as runner '${reg.name}' (${reg.uri})${env.RTE_URL ? "" : " ; set RTE_URL for a fixed address and name"}`);
+  logger.notice(`RTE: registers itself as runner '${reg.name}' (${reg.uri})${env.RTE_URL ? "" : " ; set RTE_URL for a fixed address and name"}`);
   let failing = false;
   let timer = null;
   const tick = async () => {
     try {
       const done = await registerOnce(reg);
-      if (done) logger.notice(`RTE : ${done}`);
+      if (done) logger.notice(`RTE: ${done}`);
       failing = false;
     } catch (e) {
       // the first failure says why ; the next ones only in debug, until it works again
-      const message = `RTE : could not register as a runner, retrying : ${e.message || e}`;
+      const message = `RTE: could not register as a runner, retrying: ${e.message || e}`;
       if (failing) logger.debug(message);
       else logger.warning(message);
       failing = true;

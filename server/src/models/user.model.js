@@ -471,8 +471,8 @@ static checkLdap(username, password) {
           }
         }
       }
-      logger.error("Error connecting to ldap : " + em);
-      throw "Ldap : " + em;
+      logger.error("Error connecting to ldap: " + em);
+      throw "Ldap: " + em;
     });
   }
 }

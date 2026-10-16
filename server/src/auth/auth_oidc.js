@@ -55,7 +55,7 @@ const initialize = async () => {
     const execute = [];
     if (issuerUrl.protocol === 'http:') {
       if (process.env.NODE_ENV !== 'development') {
-        logger.error(`Could not enable OIDC : the issuer ${issuerUrl.href} is not https`);
+        logger.error(`Could not enable OIDC: the issuer ${issuerUrl.href} is not https`);
         return false;
       }
       execute.push(openidClient.allowInsecureRequests);

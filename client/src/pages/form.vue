@@ -1171,7 +1171,7 @@ async function clip(v, doNotStringify = false, asYaml = false) {
       await copyToClipboard(v);
       toast.success('Copied to clipboard');
     } catch (err) {
-      toast.error('Error copying to clipboard : \n' + err.toString());
+      toast.error('Error copying to clipboard: \n' + err.toString());
     }
   } else {
     try {
@@ -1182,7 +1182,7 @@ async function clip(v, doNotStringify = false, asYaml = false) {
       }
       toast.success('Copied to clipboard');
     } catch (err) {
-      toast.error('Error copying to clipboard : \n' + err.toString());
+      toast.error('Error copying to clipboard: \n' + err.toString());
     }
   }
 }
@@ -1500,7 +1500,7 @@ async function getJob(id, final) {
         const subjobresult = await axios.get(`/api/v2/job/${lastsubjob}`);
         subjob.value = subjobresult.data;
       } catch (e) {
-        console.error('Error getting job : ' + lastsubjob);
+        console.error('Error getting job: ' + lastsubjob);
       }
     }
     // if the job is not final, we need to keep checking

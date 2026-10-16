@@ -78,12 +78,12 @@ router.post('/', async (req, res) => {
     await server.connect(transport);
     await transport.handleRequest(req, res, req.body);
   } catch (err) {
-    logger.error(`MCP request failed : ${err?.message || err}`);
+    logger.error(`MCP request failed: ${err?.message || err}`);
     if (!res.headersSent) jsonRpcError(res, 500, -32603, 'Internal server error');
   }
 });
 
 // every other method, GET and DELETE included
-router.all('/', (req, res) => jsonRpcError(res, 405, -32000, 'Method not allowed : this MCP server is stateless, use POST'));
+router.all('/', (req, res) => jsonRpcError(res, 405, -32000, 'Method not allowed: this MCP server is stateless, use POST'));
 
 export default router;

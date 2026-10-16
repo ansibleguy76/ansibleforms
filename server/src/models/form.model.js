@@ -120,7 +120,7 @@ async function restoreConfigFile(snapshot){
     fse.copySync(snapshot,targetConfigPath)
   }finally{
     if(repoName && token !== undefined){
-      await Repository.releaseWrite(repoName, token).catch(e => logger.error(`Failed to release write-lock on '${repoName}' : ${e.message}`))
+      await Repository.releaseWrite(repoName, token).catch(e => logger.error(`Failed to release write-lock on '${repoName}': ${e.message}`))
     }
   }
 }
@@ -305,7 +305,7 @@ let renameRetried = false
  */
 async function saveRenamedRole(renamed) {
   if (appConfig.useYtt && !Settings.resolveConfigInDatabase(await Settings.findFormsYaml())) {
-    logger.warning("Role 'public' is renamed 'default' in the config loaded : rename it in the ytt template too")
+    logger.warning("Role 'public' is renamed 'default' in the config loaded: rename it in the ytt template too")
     return { text: renamed, saved: true }
   }
   try {
@@ -316,7 +316,7 @@ async function saveRenamedRole(renamed) {
     // said once, then quietly : until the write goes through, every minute tries again
     const log = renameRetried ? logger.debug : logger.warning
     renameRetried = true
-    log.call(logger, `Role 'public' could not be renamed 'default' in the config yet, tried again in a minute : ${e.message}`)
+    log.call(logger, `Role 'public' could not be renamed 'default' in the config yet, tried again in a minute: ${e.message}`)
     return { text: renamed, saved: false }
   }
 }
@@ -703,7 +703,7 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
               isFile = st.isFile();
             } catch (e) {
               // a broken symlink : name it rather than dropping it silently
-              warn(`Skipping '${fullPath}' : it is a symbolic link that does not resolve (${e.code || e.message})`);
+              warn(`Skipping '${fullPath}': it is a symbolic link that does not resolve (${e.code || e.message})`);
               continue;
             }
           }
@@ -955,7 +955,7 @@ function assertNoDuplicateRoles(obj){
     seen.add(name)
   }
   if(duplicates.size > 0){
-    const message = `Duplicate role name(s) : ${[...duplicates].join(", ")}. Each role must appear once.`
+    const message = `Duplicate role name(s): ${[...duplicates].join(", ")}. Each role must appear once.`
     logger.error(message)
     throw new Error(message)
   }
@@ -985,7 +985,7 @@ Form.assertRequiredRoles = function(obj){
   const missing = ['admin'].filter(n => !names.has(n))
   if (!names.has('default') && !names.has('public')) missing.push('default')
   if(missing.length > 0){
-    const message = `The role(s) ${missing.join(", ")} cannot be deleted : the app needs them.`
+    const message = `The role(s) ${missing.join(", ")} cannot be deleted: the app needs them.`
     logger.error(message)
     throw new Error(message)
   }
@@ -1045,11 +1045,11 @@ const REMOVED_IN_7 = 'removed in 7.0.0, see https://ansibleforms.com/upgrade-7'
 export function removedIn7(form){
   const found = []
   if (form && typeof form === 'object') {
-    if (form.disableRelaunch !== undefined) found.push(`Form '${form.name}' : disableRelaunch was ${REMOVED_IN_7} - use allowRelaunch: false`)
+    if (form.disableRelaunch !== undefined) found.push(`Form '${form.name}': disableRelaunch was ${REMOVED_IN_7} - use allowRelaunch: false`)
     for (const f of Array.isArray(form.fields) ? form.fields : []) {
       if (!f || typeof f !== 'object') continue
-      if (f.type === 'table' || f.tableFields !== undefined) found.push(`Field '${f.name}' : the table field was ${REMOVED_IN_7} - use a list field with a subform`)
-      if (f.noOutput !== undefined) found.push(`Field '${f.name}' : noOutput was ${REMOVED_IN_7} - use output: false`)
+      if (f.type === 'table' || f.tableFields !== undefined) found.push(`Field '${f.name}': the table field was ${REMOVED_IN_7} - use a list field with a subform`)
+      if (f.noOutput !== undefined) found.push(`Field '${f.name}': noOutput was ${REMOVED_IN_7} - use output: false`)
     }
   }
   return found
@@ -1061,9 +1061,9 @@ const DEPRECATED_IN_7 = 'deprecated since 7 and removed in 8'
 export function deprecatedIn7_3(form){
   const found = []
   if (form && typeof form === 'object') {
-    if (form.hasApproval !== undefined) found.push(`Form '${form.name}' : hasApproval is ${DEPRECATED_IN_7} - it has no effect, an approval point is set with approval`)
+    if (form.hasApproval !== undefined) found.push(`Form '${form.name}': hasApproval is ${DEPRECATED_IN_7} - it has no effect, an approval point is set with approval`)
     for (const s of Array.isArray(form.steps) ? form.steps : []) {
-      if (s && typeof s === 'object' && s.hasApproval !== undefined) found.push(`Step '${s.name}' of form '${form.name}' : hasApproval is ${DEPRECATED_IN_7} - it has no effect, an approval point is set with approval`)
+      if (s && typeof s === 'object' && s.hasApproval !== undefined) found.push(`Step '${s.name}' of form '${form.name}': hasApproval is ${DEPRECATED_IN_7} - it has no effect, an approval point is set with approval`)
     }
   }
   return found
@@ -1075,7 +1075,7 @@ export function deprecatedIn7_3(form){
 const warnedMultistep = new Set()
 export function deprecatedMultistep(form){
   if (form?.type !== 'multistep') return null
-  return `Form '${form.name}' : type multistep is ${DEPRECATED_IN_7} - use type workflow (Designer > Workflows), whose nodes run on any runner, with a condition (if_extra_var) and their own values (extra_vars_key)`
+  return `Form '${form.name}': type multistep is ${DEPRECATED_IN_7} - use type workflow (Designer > Workflows), whose nodes run on any runner, with a condition (if_extra_var) and their own values (extra_vars_key)`
 }
 /**
  * The notification channels a form names (its notifications, its approval, its steps') :
@@ -1112,10 +1112,10 @@ async function warnUnknownChannels(form){
     for (const name of names) {
       if (known.has(name)) continue
       warnedChannels.add(`${form.name}\u0000${name}`)
-      logger.warning(`Form '${form.name}' names the notification channel '${name}', which is not there (Connections > Notifications) : its notifications skip it`)
+      logger.warning(`Form '${form.name}' names the notification channel '${name}', which is not there (Connections > Notifications): its notifications skip it`)
     }
   } catch (e) {
-    logger.debug(`The notification channels of form '${form.name}' could not be checked : ${e.message}`)
+    logger.debug(`The notification channels of form '${form.name}' could not be checked: ${e.message}`)
   }
 }
 Form.validateForm = function(obj){
@@ -1216,7 +1216,7 @@ Form.parse = function(data){
     logger.info("Parsing yaml data")
     formsConfig = yaml.parse(data.forms,{prettyErrors:true})
   }catch(err){
-    logger.error("Error : ", err)
+    logger.error("Error: ", err)
     throw new Error(Helpers.getError(err,"Failed to parse yaml"), { cause: err })
   }
   return formsConfig
@@ -1427,7 +1427,7 @@ Form.save = async function(data){
   // than written into the base config
   const homeless = (formsConfig.forms || []).filter(item => !item.source).map(item => item.name || '(no name)')
   if (homeless.length) {
-    throw new Error(`Every form must be saved to a file in the forms folder ; not in a file : ${homeless.join(", ")}`)
+    throw new Error(`Every form must be saved to a file in the forms folder ; not in a file: ${homeless.join(", ")}`)
   }
   formsConfig.forms = formsConfig.forms.filter(item => {
     var src = item.source
@@ -1447,7 +1447,7 @@ Form.save = async function(data){
   for (const g of Object.values(groups)) {
     const probe = path.resolve(formsPath(), g.source)
     if (g.source.includes("\0") || path.isAbsolute(g.source) || !probe.startsWith(path.resolve(formsPath()) + path.sep)) {
-      throw new Error(`Invalid form source '${g.source}' : must be a path inside the forms folder`)
+      throw new Error(`Invalid form source '${g.source}': must be a path inside the forms folder`)
     }
   }
 
@@ -1539,12 +1539,12 @@ Form.save = async function(data){
               definedNames = null   // unparseable
             }
             if (definedNames === null) {
-              logger.warning(`Not removing '${existing}' from '${dirEntry.path}' : it could not be parsed, so it was never loaded and cannot have been deleted here`)
+              logger.warning(`Not removing '${existing}' from '${dirEntry.path}': it could not be parsed, so it was never loaded and cannot have been deleted here`)
               continue
             }
             const stillDefined = definedNames.filter(n => savedFormNames.has(n))
             if (stillDefined.length > 0) {
-              logger.warning(`Not removing '${existing}' from '${dirEntry.path}' : it defines ${stillDefined.join(", ")}, which the configuration still has - most likely a duplicate form name that the loader skipped`)
+              logger.warning(`Not removing '${existing}' from '${dirEntry.path}': it defines ${stillDefined.join(", ")}, which the configuration still has - most likely a duplicate form name that the loader skipped`)
               continue
             }
             logger.debug(`Removing deleted form file '${existing}' from '${dirEntry.path}'`)
@@ -1569,14 +1569,14 @@ Form.save = async function(data){
   }
   catch(err) {
     // handle error
-    logger.error("Failed to save forms : ",err)
+    logger.error("Failed to save forms: ",err)
     throw new Error(Helpers.getError(err,"Failed to save forms"), { cause: err })
   }
   finally {
     // release the working-tree locks, restoring each repo's prior status (the
     // save is not a git op, so its status must reflect the last pull/sync)
     for (const h of held) {
-      await Repository.releaseWrite(h.name, h.token).catch(e => logger.error(`Failed to release write-lock on '${h.name}' : ${e.message}`))
+      await Repository.releaseWrite(h.name, h.token).catch(e => logger.error(`Failed to release write-lock on '${h.name}': ${e.message}`))
     }
   }
 

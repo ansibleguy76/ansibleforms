@@ -108,15 +108,15 @@ describe("the hand-over", () => {
     const ok = await rte.launch({ jobId: 7, runner });
     assert.equal(ok, false);
     assert.equal(posted.length, 0);
-    assert.match(ended[0].line, /could not prepare the job's credentials for the RTE : secret store unreachable/);
+    assert.match(ended[0].line, /could not prepare the job's credentials for the RTE: secret store unreachable/);
   });
 
-  test("refused by the RTE (409) : the job fails with the RTE's reason, and an abort flag is cleared", async () => {
+  test("refused by the RTE (409): the job fails with the RTE's reason, and an abort flag is cleared", async () => {
     postAnswer = refused(409, "job 7 is claimed by another runner");
     const ok = await rte.launch({ jobId: 7, runner });
     assert.equal(ok, false);
     assert.equal(ended.length, 1);
-    assert.match(ended[0].line, /did not take the job : job 7 is claimed by another runner/);
+    assert.match(ended[0].line, /did not take the job: job 7 is claimed by another runner/);
     assert.equal(abortResets, 1);
   });
 
@@ -126,14 +126,14 @@ describe("the hand-over", () => {
     assert.match(ended[0].line, /refused the token/);
   });
 
-  test("no answer, and the RTE did not claim it : the job fails as unreachable", async () => {
+  test("no answer, and the RTE did not claim it: the job fails as unreachable", async () => {
     postAnswer = noAnswer;
     const ok = await rte.launch({ jobId: 7, runner });
     assert.equal(ok, false);
-    assert.match(ended[0].line, /unreachable : ECONNABORTED/);
+    assert.match(ended[0].line, /unreachable: ECONNABORTED/);
   });
 
-  test("no answer, and the RTE already ran and ended it : its success stands, no second end", async () => {
+  test("no answer, and the RTE already ran and ended it: its success stands, no second end", async () => {
     // a short playbook : claimed, run, ended - and the RTE clears jobs.host at the end
     postAnswer = async () => { row.status = "success"; row.host = null; return noAnswer(); };
     const ok = await rte.launch({ jobId: 7, runner });
@@ -142,7 +142,7 @@ describe("the hand-over", () => {
     assert.equal(ended.length, 0, "no second end line, no second mail");
   });
 
-  test("no answer, but the RTE claimed it : the app follows the job, it never fails a running one", async () => {
+  test("no answer, but the RTE claimed it: the app follows the job, it never fails a running one", async () => {
     postAnswer = async () => { row.host = "rte-1-8000"; setTimeout(() => { row.status = "success"; }, 50); return noAnswer(); };
     const ok = await rte.launch({ jobId: 7, runner });
     assert.equal(ok, true);
@@ -153,7 +153,7 @@ describe("the hand-over", () => {
 describe("replicas behind one address", () => {
   // the app asks the RTE every 30 polls of a second ; two `unknown` answers in a row used to fail
   // the job, though another replica behind the same address was running it fine
-  test("a replica that does not run it says unknown, the one that claimed it is alive : followed on", async () => {
+  test("a replica that does not run it says unknown, the one that claimed it is alive: followed on", async () => {
     getStatus = "unknown";
     claimerAlive = true;
     vi.useFakeTimers();
@@ -170,7 +170,7 @@ describe("replicas behind one address", () => {
     }
   });
 
-  test("nobody alive holds it : it is lost, and failed once", async () => {
+  test("nobody alive holds it: it is lost, and failed once", async () => {
     getStatus = "unknown";
     claimerAlive = false;
     vi.useFakeTimers();
@@ -206,7 +206,7 @@ describe("a busy RTE", () => {
     }
   });
 
-  test("an abort ends the wait : aborted, never handed over", async () => {
+  test("an abort ends the wait: aborted, never handed over", async () => {
     vi.useFakeTimers();
     try {
       postAnswer = busy;

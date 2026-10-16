@@ -167,7 +167,7 @@ const formsRepoSyncAll = async function(req, res) {
       }
     }
     if (failed) {
-      return res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedSyncRepository'), results.filter(r => r.status === "failed").map(r => `${r.name} : ${r.output}`).join("\n")));
+      return res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedSyncRepository'), results.filter(r => r.status === "failed").map(r => `${r.name}: ${r.output}`).join("\n")));
     }
     res.json(RestResult.single({ results }));
   } catch(err) {
@@ -209,7 +209,7 @@ const formsRepoPullAll = async function(req, res) {
       }
     }
     if (failed) {
-      return res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedPullRepository'), results.filter(r => r.status === "failed").map(r => `${r.name} : ${r.output}`).join("\n")));
+      return res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedPullRepository'), results.filter(r => r.status === "failed").map(r => `${r.name}: ${r.output}`).join("\n")));
     }
     res.json(RestResult.single({ results }));
   } catch(err) {

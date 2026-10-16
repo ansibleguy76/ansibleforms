@@ -200,7 +200,7 @@ const launch = async function(req, res) {
             res.status(422).json(RestResultv2.error(i18n.t(req, 'jobs.invalidFormData'), err.details || err.message));
             return;
           }
-          logger.error("Errors in job launch : ", err)
+          logger.error("Errors in job launch: ", err)
           try{
             res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedLaunch'), err.toString()));
           }catch(e){}
@@ -276,7 +276,7 @@ const approveJob = async function(req, res) {
       } else if (err.name === 'ConflictError') {
         res.status(409).json(RestResultv2.error(err.message));
       } else {
-        logger.error(`Error : ${err.toString()}`)
+        logger.error(`Error: ${err.toString()}`)
         res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedApprove'), err.toString()));
       }
     }    
@@ -307,7 +307,7 @@ const rejectJob = async function(req, res) {
       } else if (err.name === 'ConflictError') {
         res.status(409).json(RestResultv2.error(err.message));
       } else {
-        logger.error(`Error : ${err.toString()}`)
+        logger.error(`Error: ${err.toString()}`)
         res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedReject'), err.toString()));
       }
     }    

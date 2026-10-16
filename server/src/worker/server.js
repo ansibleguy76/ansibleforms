@@ -43,7 +43,7 @@ function startHealthServer() {
     : http.createServer(httpServerOptions(), app);
   // a port that is taken is fatal : a worker that works but answers no healthcheck is restarted
   // over and over, and loses the lock each time
-  server.on("error", (err) => die(`Worker : cannot listen on port ${port} : ${err.message}`));
+  server.on("error", (err) => die(`Worker: cannot listen on port ${port}: ${err.message}`));
   onShutdown("health server", () => new Promise((resolve) => server.close(() => resolve())));
   server.listen(port, () => logger.notice(`Worker '${nodeId}' ${appVersion} listening on ${httpsConfig.https ? "https" : "http"} port ${port}`));
 }
@@ -52,7 +52,7 @@ export async function startWorker() {
   installFatalHandlers("worker");
 
   if (appConfig.encryptionSecretIsDefault) {
-    logger.warning('[SECURITY] ENCRYPTION_SECRET is not set. The worker stores and reads credentials (the config seed) with the default key, which is public in the source code : set the same ENCRYPTION_SECRET as the app nodes.');
+    logger.warning('[SECURITY] ENCRYPTION_SECRET is not set. The worker stores and reads credentials (the config seed) with the default key, which is public in the source code: set the same ENCRYPTION_SECRET as the app nodes.');
   }
   await waitForDatabase();
   onShutdown("database", () => mysql.end());
@@ -64,10 +64,10 @@ export async function startWorker() {
     .then((changed) => { if (changed) logger.warning(`Abandoned ${changed} jobs this worker followed before it restarted`); })
     // the ones still running on their runner (an AWX template) are followed again (#1084)
     .then(() => resumeAbandoned(nodeId))
-    .catch((err) => logger.error("Failed to abandon jobs : " + (err.message || err)));
+    .catch((err) => logger.error("Failed to abandon jobs: " + (err.message || err)));
   keepWorkerLock({
     onAcquired: runWorker,
-    onWaiting: () => logger.notice("Another process holds the worker lock : waiting to take over when it stops"),
+    onWaiting: () => logger.notice("Another process holds the worker lock: waiting to take over when it stops"),
     onLost: stopLostWorker,
   });
   onShutdown("worker lock", () => releaseWorkerLock());
@@ -76,10 +76,10 @@ export async function startWorker() {
   // SIGHUP re-applies the config seed (see app-start.js) - when this is the worker at work
   process.on("SIGHUP", () => {
     if (!holdsWorkerLock()) {
-      logger.notice("SIGHUP : this worker is waiting for the lock, the one at work applies the seed");
+      logger.notice("SIGHUP: this worker is waiting for the lock, the one at work applies the seed");
       return;
     }
     reloadConfigSeed({ force: true, trigger: "SIGHUP" })
-      .catch((err) => logger.error("SIGHUP config seed reload failed : " + (err.message || err)));
+      .catch((err) => logger.error("SIGHUP config seed reload failed: " + (err.message || err)));
   });
 }

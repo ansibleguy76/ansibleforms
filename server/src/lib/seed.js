@@ -225,7 +225,7 @@ async function applyListSection(section, cfg, summary) {
       // is authoritative) but it is not obvious from the file, so say so out loud -
       // otherwise the only signal is somebody's hand-made entry quietly changing.
       if (!existing.managed) {
-        logger.warning(`Config seed adopts the existing ${section.label} '${item.name}', which was not managed before : its declared fields are now enforced from the seed file`);
+        logger.warning(`Config seed adopts the existing ${section.label} '${item.name}', which was not managed before: its declared fields are now enforced from the seed file`);
         summary.adopted.push(`${section.label}:${item.name}`);
       }
       await section.update(data, existing);
@@ -237,7 +237,7 @@ async function applyListSection(section, cfg, summary) {
     // second row next to it
     const adoptable = section.findAdoptable ? await section.findAdoptable(item) : null;
     if (adoptable) {
-      logger.warning(`Config seed adopts the ${section.label} '${adoptable.name}' (${adoptable.uri}), which its RTE registered itself, as '${item.name}' : its declared fields are now enforced from the seed file`);
+      logger.warning(`Config seed adopts the ${section.label} '${adoptable.name}' (${adoptable.uri}), which its RTE registered itself, as '${item.name}': its declared fields are now enforced from the seed file`);
       summary.adopted.push(`${section.label}:${item.name}`);
       await section.adopt(buildRecord(section, item, true), adoptable);
       summary.updated.push(`${section.label}:${item.name}`);
@@ -283,12 +283,12 @@ async function ensureRepositoryClones(doc, summary) {
   for (const item of doc.repositories?.items || []) {
     const dir = path.join(appConfig.repoPath, item.name);
     if (fs.existsSync(dir)) continue;
-    logger.warning(`Seeded repository '${item.name}' has no working tree : cloning it again`);
+    logger.warning(`Seeded repository '${item.name}' has no working tree: cloning it again`);
     summary.recloned.push(`repository:${item.name}`);
     // not awaited, exactly like the create path : a slow clone must not delay the boot,
     // and the claim serialises it against the rebase block that runs later
     Repository.clone(item.name).catch((e) => {
-      logger.error(`Re-clone of seeded repository '${item.name}' failed : ${e.message || e}`);
+      logger.error(`Re-clone of seeded repository '${item.name}' failed: ${e.message || e}`);
     });
   }
 }
@@ -318,7 +318,7 @@ async function applyLdap(cfg, summary) {
   // Same signal as for the list sections : taking over a hand-configured directory is
   // the most consequential adoption of all, so it must not happen silently.
   if (!stored?.managed) {
-    logger.warning("Config seed adopts the existing ldap configuration, which was not managed before : its declared fields are now enforced from the seed file");
+    logger.warning("Config seed adopts the existing ldap configuration, which was not managed before: its declared fields are now enforced from the seed file");
     summary.adopted.push("ldap");
   }
   record.managed = 1;
@@ -343,7 +343,7 @@ async function applySettings(cfg, summary) {
     return;
   }
   if (!stored?.managed) {
-    logger.warning("Config seed adopts the existing mail/url settings, which were not managed before : its declared fields are now enforced from the seed file");
+    logger.warning("Config seed adopts the existing mail/url settings, which were not managed before: its declared fields are now enforced from the seed file");
     summary.adopted.push("settings");
   }
   record.managed = 1;
@@ -369,7 +369,7 @@ export async function applyChat(declared, summary) {
     return;
   }
   if (!stored?.managed) {
-    logger.warning("Config seed adopts the existing chat settings, which were not managed before : its declared fields are now enforced from the seed file");
+    logger.warning("Config seed adopts the existing chat settings, which were not managed before: its declared fields are now enforced from the seed file");
     summary.adopted.push("chat");
   }
   record.managed = 1;
@@ -438,7 +438,7 @@ async function applySeedNow({ schemaIsReady = true } = {}) {
   doc = interpolateEnv(doc);
   validateSeed(doc);
   if (doc.awx) {
-    logger.warning("The config seed's awx: section is deprecated since 7 and removed in 8 : declare those connections under runners: with type: awx");
+    logger.warning("The config seed's awx: section is deprecated since 7 and removed in 8: declare those connections under runners: with type: awx");
     doc = foldAwxIntoRunners(doc);
   }
 
@@ -507,7 +507,7 @@ export function _resetSeedState() {
 function recordFailure(hash, err, trigger) {
   const error = err.message || String(err);
   lastFailure = { hash, error, at: new Date().toISOString() };
-  logger.error(`Config seed reload (${trigger}) failed, keeping the configuration already in force : ${error}`);
+  logger.error(`Config seed reload (${trigger}) failed, keeping the configuration already in force: ${error}`);
   return { status: "failed", error };
 }
 
@@ -608,7 +608,7 @@ async function logApply(seedPath, summary, outcome) {
     unchanged: summary.unchanged,
   };
   if (outcome === 'success') logger.notice(
-    `Config seed applied : ${counts.created} created, ${counts.updated} updated, ` +
+    `Config seed applied: ${counts.created} created, ${counts.updated} updated, ` +
     `${counts.released} released, ${counts.pruned} pruned, ${counts.unchanged} unchanged`
   );
 

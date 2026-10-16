@@ -108,7 +108,7 @@ describe("AWX's scheduling rules", () => {
     expect(nextStep(nodes, s)).toEqual({ start: ["notify"], skip: ["deploy"] });
   });
 
-  test("all parents must converge : every link into it must fire", () => {
+  test("all parents must converge: every link into it must fire", () => {
     const conv = nodes.map((n) => (n.identifier === "notify" ? { ...n, converge: true } : n));
     // build failed : its failure link fires, but deploy never runs - its always link never will
     const s = stateOf(conv, { build: "failed" });

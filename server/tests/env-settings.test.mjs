@@ -149,7 +149,7 @@ describe("editing environment variables", () => {
     assert.equal(Env.validate("JOB_RETENTION_DAYS", "0", { type: "number" }), null);
   });
 
-  test("LAUNCH_VALIDATION is enforce unless off or log is set : a typo does not switch it off", () => {
+  test("LAUNCH_VALIDATION is enforce unless off or log is set: a typo does not switch it off", () => {
     const saved = process.env.LAUNCH_VALIDATION;
     try {
       for (const [value, expected] of [["off", "off"], ["LOG", "log"], ["enforce", "enforce"], ["0", "enforce"], ["of", "enforce"]]) {

@@ -78,7 +78,7 @@ export async function claim(job, self = nodeId) {
 async function giveUp(job, reason) {
   await Job.printJobOutput(`[ERROR]: ${reason}`, "stderr", job.id, (await Job.lastOrder(job.id)) + 1);
   await mysql.do("UPDATE AnsibleForms.`jobs` SET status='abandoned', `end`=NOW() WHERE id=? AND status='running'", [job.id]);
-  logger.warning(`Job ${job.id} stays abandoned : ${reason}`);
+  logger.warning(`Job ${job.id} stays abandoned: ${reason}`);
 }
 
 /**
@@ -97,7 +97,7 @@ async function endParent(job) {
     (await Job.lastOrder(parent)) + 1,
     "stderr",
     "failed",
-    `[ERROR]: the server restarted while step '${job.step || job.id}' ran (job ${job.id}) : that step ended with ${status}, the steps after it were not run`
+    `[ERROR]: the server restarted while step '${job.step || job.id}' ran (job ${job.id}): that step ended with ${status}, the steps after it were not run`
   );
 }
 
@@ -110,19 +110,19 @@ async function endParent(job) {
 async function follow(job) {
   try {
     const row = await Runner.findByName(job.runner).catch(() => null);
-    if (!row) return giveUp(job, `the runner '${job.runner}' it ran on is gone : check the job on the runner itself`);
+    if (!row) return giveUp(job, `the runner '${job.runner}' it ran on is gone: check the job on the runner itself`);
     const impl = getRunner(row.type);
-    if (!impl.resume) return giveUp(job, `a ${row.type} runner's jobs cannot be followed again after a restart : check the job on the runner itself`);
+    if (!impl.resume) return giveUp(job, `a ${row.type} runner's jobs cannot be followed again after a restart: check the job on the runner itself`);
     logger.notice(`Following job ${job.id} again on runner '${row.name}' (remote job ${job.awx_id})`);
     const result = await impl.resume({ jobId: job.id, runner: row, job });
-    if (result === null) return giveUp(job, `the runner no longer knows job ${job.awx_id} : its end is unknown`);
+    if (result === null) return giveUp(job, `the runner no longer knows job ${job.awx_id}: its end is unknown`);
   } catch (err) {
-    logger.error(`Following job ${job.id} again failed : ${err.message || err}`);
+    logger.error(`Following job ${job.id} again failed: ${err.message || err}`);
     // the tracker ends the job itself when it loses its runner ; anything else leaves it here
     const rows = await mysql.do("SELECT status FROM AnsibleForms.`jobs` WHERE id=?", [job.id]).catch(() => []);
-    if (rows?.[0]?.status === "running") await giveUp(job, `could not follow it again : ${err.message || err}`).catch(() => {});
+    if (rows?.[0]?.status === "running") await giveUp(job, `could not follow it again: ${err.message || err}`).catch(() => {});
   }
-  if (job.parent_id) await endParent(job).catch((err) => logger.error(`Ending the multistep of job ${job.id} failed : ${err.message || err}`));
+  if (job.parent_id) await endParent(job).catch((err) => logger.error(`Ending the multistep of job ${job.id} failed: ${err.message || err}`));
 }
 
 /**
@@ -142,7 +142,7 @@ export async function resumeAbandoned(self = nodeId) {
     if (!(await claim(job, self))) continue;
     taken++;
     // not awaited : a job may run for hours
-    follow(job).catch((err) => logger.error(`Job ${job.id} : ${err.message || err}`));
+    follow(job).catch((err) => logger.error(`Job ${job.id}: ${err.message || err}`));
   }
   if (taken) logger.warning(`Following ${taken} abandoned job(s) again on their runner`);
   return taken;

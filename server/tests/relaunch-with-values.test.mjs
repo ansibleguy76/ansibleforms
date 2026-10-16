@@ -135,7 +135,7 @@ describe("a relaunch without changes", () => {
   };
   const jobWithPw = () => ({ ...storedJob(), extravars: JSON.stringify({ vm: { name: "prod-1" }, size: 10, acls: [{ who: "bob" }], secrets: { pw: "s3cr3t" }, __verbose__: true }) });
 
-  test("off / log : a replay of the stored extravars - passwords included, on the server", async () => {
+  test("off / log: a replay of the stored extravars - passwords included, on the server", async () => {
     Form.load.mockResolvedValue({ constants: {}, forms: [withPw()] });
     Job.findById = vi.fn(async () => jobWithPw());
     const r = await Job.relaunchWithValues({ user, id: 42 });
@@ -155,7 +155,7 @@ describe("a relaunch without changes", () => {
     expect(Job.launch).not.toHaveBeenCalled();
   });
 
-  test("enforce : through the engine - refused when a password field is shown", async () => {
+  test("enforce: through the engine - refused when a password field is shown", async () => {
     Form.load.mockResolvedValue({ constants: {}, forms: [{ ...withPw(), launchValidation: "enforce" }] });
     Job.findById = vi.fn(async () => jobWithPw());
     await expect(Job.relaunchWithValues({ user, id: 42 })).rejects.toMatchObject({ code: "unsupported", details: { passwordFields: ["pw"] } });
@@ -164,7 +164,7 @@ describe("a relaunch without changes", () => {
     expect(Job.launch).not.toHaveBeenCalled();
   });
 
-  test("enforce : a hidden password field does not stand in the way - the server builds the extravars", async () => {
+  test("enforce: a hidden password field does not stand in the way - the server builds the extravars", async () => {
     const f = { ...structuredClone(form), launchValidation: "enforce", fields: [...form.fields, { name: "pw", type: "password", dependencies: [{ name: "MODE", values: ["manual"] }] }] };
     Form.load.mockResolvedValue({ constants: { MODE: "auto" }, forms: [f] });
     Job.findById = vi.fn(async () => jobWithPw());
@@ -213,7 +213,7 @@ describe("a job launched by a schedule", () => {
     expect(err.message).toContain("launched by a schedule");
   });
 
-  test("under enforce, only who may manage schedules replays one : not a user who merely manages every job", async () => {
+  test("under enforce, only who may manage schedules replays one: not a user who merely manages every job", async () => {
     Form.load.mockResolvedValue({ constants: {}, forms: [{ ...structuredClone(form), launchValidation: "enforce" }] });
     Job.findById = vi.fn(async () => scheduleJob());
     const watcher = { username: "eve", type: "local", roles: ["ops"], options: { allowJobRelaunch: true, manageAllJobs: true } };

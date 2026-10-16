@@ -56,7 +56,7 @@ const warnedAwxAlias = new Set();
 function warnAwxAlias(name) {
   if (warnedAwxAlias.has(name)) return;
   warnedAwxAlias.add(name);
-  logger.warning(`Form property awx: '${name}' is deprecated since 7 and removed in 8 : use runner: '${name}'`);
+  logger.warning(`Form property awx: '${name}' is deprecated since 7 and removed in 8: use runner: '${name}'`);
 }
 
 /**
@@ -83,7 +83,7 @@ export async function resolveRunner({ jobType, formType, extravars }) {
     if (!row) throw new Errors.NotFoundError(`No runner named '${name}' - add it under Connections > Runners`);
     const impl = getRunner(row.type);
     if (runnerType && row.type !== runnerType) {
-      throw new Errors.BadRequestError(`Runner '${name}' is ${RUNNER_LABEL[row.type] || row.type} runner, this form is of type ${formType} : name ${RUNNER_LABEL[runnerType] || runnerType} runner`);
+      throw new Errors.BadRequestError(`Runner '${name}' is ${RUNNER_LABEL[row.type] || row.type} runner, this form is of type ${formType}: name ${RUNNER_LABEL[runnerType] || runnerType} runner`);
     }
     if (!impl.capabilities[what]) throw new Errors.BadRequestError(`Runner '${name}' (${row.type}) cannot run a ${what}`);
     return { impl, row };
@@ -92,7 +92,7 @@ export async function resolveRunner({ jobType, formType, extravars }) {
   const row = await Runner.findDefault(defaultType);
   if (row) return { impl: getRunner(row.type), row };
   const forms = runnerType ? `for a form of type ${formType}` : `to run this ${what}`;
-  throw new Errors.NotFoundError(`No runner ${forms} : add one of type ${defaultType} under Connections > Runners and mark it as default, or name it on the form with runner: <name>`);
+  throw new Errors.NotFoundError(`No runner ${forms}: add one of type ${defaultType} under Connections > Runners and mark it as default, or name it on the form with runner: <name>`);
 }
 
 /**

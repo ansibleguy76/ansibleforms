@@ -20,7 +20,7 @@ describe("req and requiredReq (vuelidate parity)", () => {
     [null, false, false],
     [undefined, false, false],
     [new Date("nope"), false, false],
-  ])("%j : req %s, requiredReq %s", (value, r, rr) => {
+  ])("%j: req %s, requiredReq %s", (value, r, rr) => {
     expect(req(value)).toBe(r);
     expect(requiredReq(value)).toBe(rr);
   });
@@ -69,7 +69,7 @@ describe("validateField", () => {
     expect(types(validateField({ ...field, required: true }, "", ctxOf()))).toEqual(["required"]);
   });
 
-  test("a placeholder limit : resolved, unresolvable (passes), non-numeric (passes with a warning)", () => {
+  test("a placeholder limit: resolved, unresolvable (passes), non-numeric (passes with a warning)", () => {
     const field = { name: "n", type: "number", maxValue: "$(hi)" };
     expect(types(validateField(field, 20, ctxOf({ hi: 10 })))).toEqual(["maxValue"]);
     expect(validateField(field, 20, ctxOf({})).errors).toEqual([]);

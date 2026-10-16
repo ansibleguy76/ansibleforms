@@ -119,7 +119,7 @@ async function check(store, { timeoutMs = 10000 } = {}) {
     const status = e?.response?.status;
     if (status === 403) throw new Error("Vault refused the token (403) - check the token and its policies", { cause: e });
     if (status === 404) throw new Error("Vault did not recognise the token endpoint (404) - check the url", { cause: e });
-    throw new Error(`Could not reach Vault at ${store.url} : ${e.message}`, { cause: e });
+    throw new Error(`Could not reach Vault at ${store.url}: ${e.message}`, { cause: e });
   }
 }
 
@@ -133,7 +133,7 @@ async function mounts(store) {
   try {
     res = await axios.get(`${baseUrl(store)}/v1/sys/internal/ui/mounts`, { headers: headers(store), ...agentsFor(store), timeout: 5000 });
   } catch (e) {
-    throw new Error(`Could not list the Vault mounts : ${e.message}`, { cause: e });
+    throw new Error(`Could not list the Vault mounts: ${e.message}`, { cause: e });
   }
   const secret = res?.data?.data?.secret || {};
   return Object.entries(secret)

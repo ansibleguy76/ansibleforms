@@ -263,7 +263,7 @@ describe("the designer's files are written only with their own option", () => {
   });
 });
 
-describe("the audit log : with the settings, or with showAuditLog on its own", () => {
+describe("the audit log: with the settings, or with showAuditLog on its own", () => {
   test("showSettings or showAuditLog lets through, neither refuses with 403", () => {
     assert.equal(run(Middleware.checkAuditMiddleware, { roles: [], options: { showSettings: true } }).nexted, true);
     assert.equal(run(Middleware.checkAuditMiddleware, { roles: [], options: { showAuditLog: true } }).nexted, true);
@@ -279,7 +279,7 @@ describe("a part of the settings on its own", () => {
     ["checkConnectionsMiddleware", "showConnectionsSettings", "showAppearanceSettings"],
   ];
   for (const [guard, own, other] of cases) {
-    test(`${guard} : showSettings or ${own} pass, ${other} alone is refused`, () => {
+    test(`${guard}: showSettings or ${own} pass, ${other} alone is refused`, () => {
       assert.equal(run(Middleware[guard], withOption("showSettings", true)).nexted, true);
       assert.equal(run(Middleware[guard], withOption(own, true)).nexted, true);
       const { res, nexted } = run(Middleware[guard], withOption(other, true));
@@ -287,7 +287,7 @@ describe("a part of the settings on its own", () => {
       assert.equal(res.statusCode, 403);
     });
   }
-  test("checkAnySettingsMiddleware : any part passes, none is refused", () => {
+  test("checkAnySettingsMiddleware: any part passes, none is refused", () => {
     for (const opt of ["showSettings", "showAppearanceSettings", "showConnectionsSettings"]) {
       assert.equal(run(Middleware.checkAnySettingsMiddleware, withOption(opt, true)).nexted, true, opt);
     }

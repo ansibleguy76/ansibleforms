@@ -162,7 +162,7 @@ export async function userToJwt(user,expiryDays,{ name, authTime, strict = false
     try {
       await ApiToken.record({ sid, username: user.username, type: user.type || 'local', name, createdAt: new Date(iat * 1000), expiresAt: expires_at })
     } catch (err) {
-      logger.error(`Failed to record the api token of ${user.username} : ${err}`)
+      logger.error(`Failed to record the api token of ${user.username}: ${err}`)
       if (strict) {
         await revokeSession(sid, expires_at.getTime())
         throw err
@@ -178,7 +178,7 @@ export async function userToJwt(user,expiryDays,{ name, authTime, strict = false
   try {
     await Token.store(user.username,user.type,refreshtoken)
   } catch (err) {
-    logger.error(`Failed to store token for ${user.username} : ${err}`)
+    logger.error(`Failed to store token for ${user.username}: ${err}`)
   }
   return api ? { token, refreshtoken, expires_at } : { token, refreshtoken }
 }
@@ -272,7 +272,7 @@ const basic = async function(req, res,next) {
             // password" for a real one - so the login form was a username oracle. The
             // reason is in the log and in the audit trail, where an operator can see it
             // and an attacker cannot.
-            if (e) logger.debug(`Local authentication failed : ${e}`);
+            if (e) logger.debug(`Local authentication failed: ${e}`);
             return res.status(401).json(RestResult.error(i18n.t(req, 'auth.authFailed'), i18n.t(req, 'auth.invalidCredentials')));
           }
           // we found a user (local or ldap) with correct password; we start the login process (a function attached by passport !)
@@ -331,7 +331,7 @@ const basic_ldap = async function(req, res,next) {
           // Generic answer, same as the local branch above: `reason` distinguishes an
           // unknown username from a wrong password, and also carries ldap internals
           // (bind failures, server names) that no anonymous caller should see.
-          if (reason) logger.debug(`Ldap authentication failed : ${reason}`);
+          if (reason) logger.debug(`Ldap authentication failed: ${reason}`);
           return res.status(401).json(RestResult.error(i18n.t(req, 'auth.authFailed'), i18n.t(req, 'auth.invalidCredentials')));
         }
         // we found a user (local or ldap) with correct password; we start the login process (a function attached by passport !)
@@ -380,7 +380,7 @@ const logout = async function(req, res, _next){
       if (refreshtoken && payload?.user?.username) await Token.delete(payload.user.username, payload.user.type, refreshtoken)
     }
   } catch (err) {
-    logger.debug(`Logout : the token could not be read, nothing revoked : ${err.message || err}`)
+    logger.debug(`Logout: the token could not be read, nothing revoked: ${err.message || err}`)
   }
   req.logout((err) => {
     if (err) {
@@ -470,7 +470,7 @@ export const authCallback = function(req, res, next, type) {
     try {
       if (err) {
         // the provider's reason, and the code it goes with, in the log as on the login page
-        logger.error(`${type} sign-in failed : ${ssoErrorMessage(err)}${err?.error ? ` (${err.error})` : ''}`)
+        logger.error(`${type} sign-in failed: ${ssoErrorMessage(err)}${err?.error ? ` (${err.error})` : ''}`)
         return next(err)
       }
       // no error and no user : the strategy failed the sign-in (a state that does not match,
@@ -478,7 +478,7 @@ export const authCallback = function(req, res, next, type) {
       // page failed later on it with nothing to say why
       if (!payload) {
         const reason = new Error('The identity provider did not sign you in - start again from the login page')
-        logger.error(`${type} sign-in failed : no user from the identity provider`)
+        logger.error(`${type} sign-in failed: no user from the identity provider`)
         return next(reason)
       }
       // a sign-in asked for again (?reauth=1, prompt=login) : said so in the handoff, once
