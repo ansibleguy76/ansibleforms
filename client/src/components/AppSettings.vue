@@ -103,7 +103,9 @@ const steps = computed(() => {
       <div v-if="title" class="d-flex align-items-center border-bottom mb-3 pb-3 af-title-line">
         <h3 v-if="steps.length > 1" :aria-label="steps.map((c) => c.title ?? '').join(' › ')">
           <template v-for="(c, i) in steps" :key="i">
-            <span v-if="i > 0" class="mx-2 text-body-secondary af-crumb-separator">›</span>
+            <span v-if="i > 0" class="mx-2 text-body-secondary af-crumb-separator"
+              ><FaIcon icon="chevron-right"
+            /></span>
             <!-- a step with a route : a link, in the title's own look -->
             <!-- a step not known yet (a record's name while it loads) : a grey bar in its place, after
                  its icon when it has one -->
