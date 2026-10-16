@@ -157,6 +157,15 @@ async function applyFilters() {
   await load();
 }
 
+// the filters back to every user, action and outcome ; nothing to do when they are already
+const filtered = computed(() => !!(filterActor.value || filterAction.value || filterOutcome.value));
+async function resetFilters() {
+  filterActor.value = '';
+  filterAction.value = '';
+  filterOutcome.value = '';
+  await applyFilters();
+}
+
 function toggle(id) {
   expanded.value[id] = !expanded.value[id];
 }
@@ -207,7 +216,16 @@ onMounted(async () => {
             <option value="denied">{{ t('audit.outcomeDenied') }}</option>
           </select>
         </div>
-        <!-- the filters at the left of the controls' row, Refresh at its right, as the server log's -->
+        <!-- the filters at the left of the controls' row, Reset and Refresh at its right, as the
+             server log's Clear and Refresh -->
+        <BsButton
+          cssClass="text-nowrap"
+          icon="eraser"
+          :title="t('audit.resetHint')"
+          :disabled="!filtered"
+          @click="resetFilters()"
+          >{{ t('audit.reset') }}</BsButton
+        >
         <BsButton cssClass="text-nowrap" :icon="loading ? 'spinner' : 'refresh'" @click="load()">{{
           t('audit.refresh')
         }}</BsButton>

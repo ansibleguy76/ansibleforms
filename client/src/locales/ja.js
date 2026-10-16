@@ -619,6 +619,8 @@ export default {
     allUsers: 'すべてのユーザー',
     allActions: 'すべての操作',
     allOutcomes: 'すべての結果',
+    reset: 'リセット',
+    resetHint: 'すべてのユーザー、すべての操作、すべての結果に戻します',
     empty: '監査エントリはまだありません',
     emptyHint: '記録はこのバージョンのインストール時から始まるため、それ以前の内容は含まれません。',
     refresh: '更新',
