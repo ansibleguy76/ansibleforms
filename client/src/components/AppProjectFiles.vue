@@ -763,10 +763,11 @@ defineExpose({
                   class="me-1 flex-shrink-0 tree-chevron"
                   size="xs"
                 />
-                <!-- an inventory that is a repository : git's mark -->
+                <!-- an inventory that is a repository : the Inventories section's mark (its tooltip
+                     says it is a repository) -->
                 <FaIcon
                   v-if="isInventories && item.depth === 0 && repositoryInventories.includes(item.name)"
-                  icon="fab,git"
+                  icon="sitemap"
                   class="text-secondary me-2 flex-shrink-0"
                   :title="t('designer.files.inventoryRepository')"
                 />
