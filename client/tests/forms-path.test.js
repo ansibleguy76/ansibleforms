@@ -34,6 +34,13 @@ describe('the forms list addresses', () => {
     expect(categoryFromPath('expressions/missing', categories)).toBeNull();
   });
 
+  it('read a category typed by its name, whatever its case', () => {
+    expect(categoryFromPath('Expressions', categories)).toBe('Expressions');
+    expect(categoryFromPath('EXPRESSIONS/Test1', categories)).toBe('Expressions/Test1');
+    expect(categoryFromPath('Network Ops/Café Débâcle', categories)).toBe('Network Ops/Café Débâcle');
+    expect(categoryFromPath('All', categories)).toBe('');
+  });
+
   it('go there and back for every category', () => {
     for (const path of ['Default', 'Expressions/Test1', 'Network Ops/Café Débâcle']) {
       expect(categoryFromPath(formsPath(path).slice('/forms/'.length), categories)).toBe(path);
@@ -45,6 +52,9 @@ describe('the forms list addresses', () => {
     const forms = [{ name: 'Approval demo' }, { name: 'Test 1' }, { name: 'test-1' }];
     expect(formFromPath('approval-demo', forms)).toBe('Approval demo');
     expect(formFromPath('missing', forms)).toBeNull();
+    // typed by its name, whatever its case
+    expect(formFromPath('Approval-Demo', forms)).toBe('Approval demo');
+    expect(formFromPath('Approval demo', forms)).toBe('Approval demo');
     // two forms that read the same : the one named exactly so
     expect(formFromPath('test-1', forms)).toBe('test-1');
   });

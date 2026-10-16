@@ -7,7 +7,8 @@
 /*  may be in several, or in none). A name is written in the      */
 /*  address as a page's would be : lower case, words joined by a  */
 /*  dash ('Network Ops' is network-ops), and read back against    */
-/*  the names of the forms config.                                */
+/*  the names of the forms config, whatever its case or spelling  */
+/*  in the address (/forms/Network%20Ops is network-ops too).     */
 /*                                                                */
 /******************************************************************/
 
@@ -59,7 +60,9 @@ export function formsPath(category) {
  *     (/forms/all, or nothing) ; null when no category has that address.
  */
 export function categoryFromPath(slugs, categories) {
-  const parts = (Array.isArray(slugs) ? slugs : String(slugs || '').split('/')).filter(Boolean);
+  // a part as an address writes it : a link typed by the category's name (/forms/Expressions,
+  // /forms/Network Ops) names the same category as its own address
+  const parts = (Array.isArray(slugs) ? slugs : String(slugs || '').split('/')).map(slugOf).filter(Boolean);
   if (!parts.length || (parts.length === 1 && parts[0] === ALL_FORMS)) return '';
   const names = [];
   let level = categories || [];
@@ -97,7 +100,8 @@ export function formPath(name) {
  *     read the same in an address ('Test 1', 'test-1') ; null when no form has it.
  */
 export function formFromPath(slug, forms) {
-  const named = (forms || []).filter((f) => slugOf(f.name) === slug);
+  // /form/Approval-Demo or /form/Approval demo is /form/approval-demo
+  const named = (forms || []).filter((f) => slugOf(f.name) === slugOf(slug));
   if (!named.length) return null;
   return (named.find((f) => f.name === slug) || named[0]).name;
 }

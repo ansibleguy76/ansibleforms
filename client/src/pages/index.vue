@@ -58,6 +58,8 @@ const currentCategory = computed(() => categoryInPath.value || '');
 // again once the config is loaded, since until then no address names a category
 watch([categoryInPath, () => formConfig.value?.categories], ([category, categories]) => {
   if (category === null && categories) router.replace(formsPath('')).catch((_e) => {});
+  // a category named another way (/forms/Expressions) : at its own address, /forms/expressions
+  else if (category && route.path !== formsPath(category)) router.replace(formsPath(category)).catch((_e) => {});
 });
 
 const filteredFormsBySearch = computed(() => {
