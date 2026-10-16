@@ -18,7 +18,7 @@ export const DESIGNER_ACTIONS = {
   // saving it : checked, written locally, pushed to its repository, or an earlier one restored
   validate: { icon: 'check', title: 'designer.validate' },
   save: { icon: 'save', title: 'designer.save' },
-  push: { icon: 'code-branch', title: 'designer.saveRepository' },
+  push: { icon: 'fab,git', title: 'designer.saveRepository' },
   restore: { icon: 'trash-arrow-up', title: 'designer.restore' },
   // editing its text (the YAML tab)
   undo: { icon: 'rotate-left', title: 'designer.undo' },
