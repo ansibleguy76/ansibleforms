@@ -1362,7 +1362,7 @@ export default {
       tokenHelp_rte: 'Das RTE_TOKEN der RTE.',
       tokenHelp_api: 'Ein API-Token.',
       type_rte: 'RTE',
-      type_rteHint: 'Ein Laufzeitumgebungs-Container für Playbook-Formulare',
+      type_rteHint: 'Ein Laufzeitumgebungs-Container, um Ansible-Playbooks und Workflows auszuführen',
       type_awx: 'AWX',
       type_awxHint: 'AWX, für Vorlagen-Formulare',
       type_aap: 'AAP',
@@ -1376,7 +1376,6 @@ export default {
       notFound: "Es gibt keinen Runner mit der ID '{id}'.",
       fieldsRequired: 'Name und URI sind erforderlich.',
       changeToken: 'Token ändern',
-      changeAuth: 'Authentifizierung ändern',
       defaultHelp:
         'Der Standard für {forms}: hier eingeschaltet, ausgeschaltet, indem ein anderer Runner Standard wird.',
       tokenKeep_rte: 'Das aktuelle RTE_TOKEN bleibt, außer Sie geben ein neues ein.',
