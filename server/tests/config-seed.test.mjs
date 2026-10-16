@@ -31,7 +31,7 @@ vi.mock("../src/models/db.model.js", () => ({
   },
 }));
 
-const { validateSeed, interpolateEnv } = await import("../src/lib/seed-schema.js");
+const { validateSeed, interpolateEnv, foldRunnerSecretsIntoCredentials } = await import("../src/lib/seed-schema.js");
 const appConfig = (await import("./__mocks__/app.config.js")).default;
 appConfig.encryptionSecret ||= "0123456789abcdef0123456789abcdef";
 const { buildRecord, listSections, canonicalJson, applyChat, differs } = await import("../src/lib/seed.js");
@@ -423,10 +423,48 @@ describe("secret stores are seedable", () => {
 });
 
 describe("runners are seedable", () => {
-  test("a runner validates, and lands before the credentials that may run on it", () => {
+  test("a runner validates, and lands after the credentials it may name", () => {
     assert.doesNotThrow(() => validateSeed({ runners: { items: [{ name: "rte-vmware", type: "rte", uri: "https://rte:8000", token: "${RTE_TOKEN}", is_default: true }] } }));
     const keys = listSections.map((s) => s.key);
-    assert.ok(keys.includes("runners"));
+    assert.ok(keys.indexOf("credentials") < keys.indexOf("runners"), "a runner naming a credential of the seed needs it stored first");
+  });
+
+  test("a runner's own token becomes a credential of its kind, named after it, that the runner names", () => {
+    const { doc, folded } = foldRunnerSecretsIntoCredentials({
+      runners: { items: [{ name: "rte-dev", type: "rte", uri: "http://rte:8010", token: "t", is_default: true }] },
+    });
+    assert.deepEqual(folded, ["rte-dev"]);
+    assert.deepEqual(doc.runners.items[0], { name: "rte-dev", type: "rte", uri: "http://rte:8010", is_default: true, credential: "rte-dev" });
+    assert.deepEqual(doc.credentials.items[0], {
+      name: "rte-dev", description: "The credential of the runner rte-dev", credential_type: "rte", url: "http://rte:8010", password: "t",
+    });
+  });
+
+  test("an awx flavour, a jenkins user and an awx login keep what they sign in with", () => {
+    const { doc } = foldRunnerSecretsIntoCredentials({
+      credentials: { prune: true, items: [{ name: "aap", credential_type: "api", password: "x" }] },
+      runners: { items: [
+        { name: "aap", type: "awx", flavour: "aap", uri: "https://aap/api/controller/v2", token: "tok", ignore_certs: true },
+        { name: "ci", type: "jenkins", uri: "https://jenkins", username: "af", token: "jt", project: "ops" },
+        { name: "awx", type: "awx", uri: "https://awx/api/v2", use_credentials: true, username: "admin", password: "pw" },
+        { name: "named", type: "rte", uri: "http://rte", credential: "rte-login" },
+      ] },
+    });
+    const byName = Object.fromEntries(doc.credentials.items.map((c) => [c.name, c]));
+    assert.equal(doc.credentials.prune, true, "the section's own settings are kept");
+    assert.equal(doc.runners.items[0].credential, "aap-runner", "a name the section already has is not taken over");
+    assert.equal(byName["aap-runner"].credential_type, "aap");
+    assert.equal(byName["aap-runner"].ignore_certs, true);
+    assert.deepEqual([byName.ci.user, byName.ci.password, byName.ci.credential_type], ["af", "jt", "jenkins"]);
+    assert.deepEqual([byName.awx.user, byName.awx.password, byName.awx.credential_type], ["admin", "pw", "awx"]);
+    assert.equal(doc.runners.items[3].credential, "rte-login", "one that names a credential is left alone");
+    assert.equal(byName.named, undefined);
+    assert.equal(doc.runners.items[2].use_credentials, undefined);
+  });
+
+  test("a seed whose runners all name a credential is returned as it is", () => {
+    const seed = { runners: { items: [{ name: "x", type: "awx", credential: "awx-login" }] } };
+    assert.equal(foldRunnerSecretsIntoCredentials(seed).doc, seed);
   });
 
   test("semaphore, rundeck and jenkins runners are seedable, with their project", () => {

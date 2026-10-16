@@ -121,6 +121,8 @@ const runnerItem = {
     type: { type: "string", enum: ["rte", "awx", "semaphore", "rundeck", "jenkins"] },
     description: str,
     uri: str,
+    // its own secrets : deprecated since 7.3 in favour of credential, removed in 8. The seed
+    // turns them into a credential of its kind (foldRunnerSecretsIntoCredentials)
     token: str,
     use_credentials: bool,
     username: str,
@@ -148,6 +150,52 @@ export function foldAwxIntoRunners(doc) {
   runners.items = [...(runners.items || []), ...(awx.items || []).map((item) => ({ ...item, type: "awx" }))];
   if (awx.prune && runners.prune === undefined) runners.prune = awx.prune;
   return { ...rest, runners };
+}
+
+/**
+ * A runner's own secrets in the seed (its token, or its user and password) as a credential of its
+ * kind : deprecated since 7.3, removed in 8. Each such runner names a new credential of the
+ * credentials section, called after it, carrying its address, its TLS and its secrets, so the
+ * runner looks like one declared with `credential:` (its page then shows that credential). A
+ * runner that already names a credential is left alone. Returns a new document and the names of
+ * the runners folded ; the warning is the caller's.
+ *
+ * Args:
+ *   doc (object): the seed document, validated.
+ *
+ * Returns:
+ *   { doc: object, folded: string[] }: the document, and the runners whose secrets moved.
+ */
+export function foldRunnerSecretsIntoCredentials(doc) {
+  const items = doc?.runners?.items || [];
+  const own = (r) => !r.credential && !!(r.token || r.username || r.password);
+  if (!items.some(own)) return { doc, folded: [] };
+  const credentials = doc.credentials ? { ...doc.credentials } : { items: [] };
+  credentials.items = [...(credentials.items || [])];
+  const taken = new Set(credentials.items.map((c) => c.name));
+  const folded = [];
+  const runnerItems = items.map((r) => {
+    if (!own(r)) return r;
+    let name = r.name;
+    if (taken.has(name)) name = `${r.name}-runner`;
+    for (let i = 2; taken.has(name); i++) name = `${r.name}-runner-${i}`;
+    taken.add(name);
+    const kind = r.type === "awx" ? r.flavour || "awx" : r.type;
+    // a jenkins user and its API token ; an awx user and password (use_credentials) ; else a token
+    const user = r.type === "jenkins" || (r.type === "awx" && r.use_credentials) ? r.username : undefined;
+    const secret = r.type === "awx" && r.use_credentials ? r.password : r.token;
+    const credential = { name, description: `The credential of the runner ${r.name}`, credential_type: kind };
+    if (r.uri !== undefined) credential.url = r.uri;
+    if (user !== undefined) credential.user = user;
+    if (secret !== undefined) credential.password = secret;
+    if (r.ignore_certs !== undefined) credential.ignore_certs = r.ignore_certs;
+    if (r.ca_bundle !== undefined) credential.ca_bundle = r.ca_bundle;
+    credentials.items.push(credential);
+    folded.push(r.name);
+    const { token, username, password, use_credentials, ...rest } = r;
+    return { ...rest, credential: name };
+  });
+  return { doc: { ...doc, runners: { ...doc.runners, items: runnerItems }, credentials }, folded };
 }
 
 const oauth2Item = {
