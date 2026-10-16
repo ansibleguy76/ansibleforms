@@ -33,24 +33,14 @@ const realExecute = Cmd.executeSilentCommand;
 let tmpRoot;
 let cmdCalls;
 
-// mirror what the real shell redirect does : `cmd > "file"` creates the file before
-// the command runs, which is why a missing binary leaves a 0-byte dump behind
-function dumpTargetOf(command) {
-  const m = command.match(/> "([^"]+)"/);
-  return m ? m[1] : null;
-}
-
-// default: the dump binary exists and writes a plausible dump
+// the dump is written to the command's stdoutFile (Cmd streams it there, no shell redirect) ;
+// a missing dump binary is caught by Cmd.isAvailable before anything is created
 function behave({ toolFound = true, dumpWrites = "-- MySQL dump\nCREATE TABLE x();\n", dumpFails = false } = {}) {
+  Cmd.isAvailable = () => toolFound;
   Cmd.executeSilentCommand = async (cmd) => {
-    cmdCalls.push(cmd.command);
-    if (cmd.command.startsWith("command -v")) {
-      if (!toolFound) throw new Error("not found");
-      return "";
-    }
-    const target = dumpTargetOf(cmd.command);
-    if (target) await fs.writeFile(target, dumpWrites);
-    if (dumpFails) throw new Error("/bin/sh: 1: mariadb-dump: not found");
+    cmdCalls.push(cmd.command + (cmd.stdinFile ? ` (input ${cmd.stdinFile})` : ""));
+    if (cmd.stdoutFile) await fs.writeFile(cmd.stdoutFile, dumpWrites);
+    if (dumpFails) throw new Error("mariadb-dump: not found");
     return "";
   };
 }
@@ -70,6 +60,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   Cmd.executeSilentCommand = realExecute;
+  Cmd.isAvailable = () => true;
   await fs.rm(tmpRoot, { recursive: true, force: true });
 });
 
@@ -171,7 +162,8 @@ describe("restore refuses a backup that is not a restore point", () => {
     await fs.writeFile(path.join(tmpRoot, folder, "ansibleforms.sql"), "-- dump\n");
     const result = await BackupModel.restore(folder, false);
     assert.match(result.message, /Restore completed/);
-    assert.equal(cmdCalls.some((c) => c.includes("< ")), true);
+    // the dump is the restore command's input (Cmd streams the file in, no shell redirect)
+    assert.equal(cmdCalls.some((c) => c.includes(`(input ${path.join(tmpRoot, folder, "ansibleforms.sql")})`)), true);
   });
 });
 

@@ -23,3 +23,23 @@ describe("a command's output never carries an address's password", () => {
     }
   });
 });
+
+describe("a command never runs through a shell", () => {
+  test("it is split into its program and arguments, quotes grouping as in sh", () => {
+    assert.deepEqual(Cmd.splitCommand(`git -c user.name="Ansible Forms" commit -m 'a b'`), ["git", "-c", "user.name=Ansible Forms", "commit", "-m", "a b"]);
+  });
+
+  test("a shell operator is refused, so an argument can never become a second command", () => {
+    for (const command of ["git pull; rm -rf /", "mysqldump db > /tmp/x", "a | b", "a && b", "a & b"]) {
+      assert.throws(() => Cmd.splitCommand(command), /shell operator/, command);
+    }
+  });
+
+  test("a $NAME is filled in from the command's own environment only", () => {
+    assert.deepEqual(Cmd.splitCommand(`mysql -p"$AF_DB_PASSWORD" -u"$USER"`, { AF_DB_PASSWORD: "p w;$x" }), ["mysql", "-pp w;$x", "-u$USER"]);
+  });
+
+  test("a $(...) or a backquote is text, never run", () => {
+    assert.deepEqual(Cmd.splitCommand("git clone 'http://h/$(id)`id`.git'"), ["git", "clone", "http://h/$(id)`id`.git"]);
+  });
+});

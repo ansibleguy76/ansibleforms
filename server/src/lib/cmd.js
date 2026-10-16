@@ -1,39 +1,35 @@
-import { spawn, exec, execSync } from 'child_process';
+import { spawn } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import { parse } from 'shell-quote';
 import logger from './logger.js';
 var Cmd = function(){
 
 }
 
+/**
+ * Stops a command and every process it started : it runs detached, in a process group of its
+ * own (executeSilentCommand), so the whole group gets the signal.
+ *
+ * Args:
+ *   pid (number): the command's process id.
+ */
 Cmd.killChildren = (pid) => {
-  const children = [];
-
-  // Defensive: pid must be numeric. Anything else is an injection attempt
-  // or a programming bug. Reject loudly rather than splice into a shell command.
+  // Defensive: pid must be numeric. Anything else is an injection attempt or a programming bug.
   const numericPid = parseInt(pid, 10);
   if (!Number.isInteger(numericPid) || numericPid <= 0) {
     logger.warning(`Cmd.killChildren: refusing non-numeric pid ${JSON.stringify(pid)}`);
     return;
   }
-
   try {
-    const psRes = execSync(`ps -opid="" -oppid="" |grep ${numericPid}`).toString().trim().split(/\n/);
-
-    (psRes || []).forEach(pidGroup => {
-      const [actual, parent] = pidGroup.trim().split(/ +/);
-
-      if (parent && parent.toString() === numericPid.toString()) {
-        children.push(parseInt(actual, 10));
-      }
-    });
+    process.kill(-numericPid, 'SIGTERM');
   } catch (e) {
-    logger.debug(`Cmd.killChildren: ps lookup failed for pid ${numericPid}: ${e.message}`);
-  }
-  try {
-    logger.debug(`Killing process ${numericPid}`)
-    process.kill(numericPid);
-    children.forEach(childPid => Cmd.killChildren(childPid));
-  } catch (e) {
-    logger.debug(`Cmd.killChildren: process.kill failed for pid ${numericPid}: ${e.message}`);
+    // not a group leader (or gone already) : the process itself
+    try {
+      process.kill(numericPid, 'SIGTERM');
+    } catch (e2) {
+      logger.debug(`Cmd.killChildren: process.kill failed for pid ${numericPid}: ${e2.message}`);
+    }
   }
 };
 
@@ -50,91 +46,171 @@ Cmd.killChildren = (pid) => {
  */
 Cmd.maskUrlCredentials = (text) => String(text ?? "").replace(/([a-z][a-z0-9+.-]*:\/\/[^\s:@/]+):[^\s@]+@/gi, "$1:*******@");
 
-Cmd.runCommand = (cmd) => {
-  return exec(cmd, {});
+/**
+ * A command as the program and its arguments, read as a shell would split it but never run by
+ * one : quotes and backslashes group and escape as in sh, a $NAME of `env` is put in its place
+ * (any other stays as it is written), and a shell operator (; | & && || > < and the like) is
+ * refused, since nothing would carry it out.
+ *
+ * Args:
+ *   command (string): the command line (a configured one, GIT_PULL_COMMAND, may have options).
+ *   env (object): the variables a $NAME may name.
+ *
+ * Returns:
+ *   string[]: the program, then its arguments.
+ *
+ * Raises:
+ *   Error: an empty command, or one with a shell operator.
+ */
+Cmd.splitCommand = (command, env = {}) => {
+  const words = parse(String(command ?? ""), (key) => (Object.prototype.hasOwnProperty.call(env, key) ? env[key] : "$" + key));
+  const argv = words.map((w) => {
+    if (typeof w === "string") return w;
+    if (w && w.op === "glob") return w.pattern;
+    throw new Error(`The command '${command}' uses the shell operator '${w?.op ?? w?.comment ?? "?"}' : commands run without a shell, give the program and its arguments only`);
+  });
+  if (!argv.length || !argv[0]) throw new Error("No command given");
+  return argv;
 };
 
+/**
+ * Starts a program with its arguments, without a shell : its output is the caller's to read.
+ *
+ * Args:
+ *   file (string): the program.
+ *   args (string[]): its arguments.
+ *
+ * Returns:
+ *   ChildProcess: the running program.
+ */
+Cmd.runCommand = (file, args = []) => {
+  return spawn(file, args, { stdio: ["ignore", "pipe", "pipe"] });
+};
+
+/**
+ * Runs a command and gives its output, never through a shell (an argument can not become a
+ * second command). Its output is masked (an address's password) before it is kept.
+ *
+ * Args:
+ *   cmd (object): what to run :
+ *     command (string): the command line, split by Cmd.splitCommand ; its $NAMEs from env.
+ *     directory (string): where it runs.
+ *     description (string): for the log.
+ *     maskedCommand (string): the command as it is logged and shown, when the command itself
+ *       must not be (none : the command as written, its $NAMEs not filled in).
+ *     env (object): variables added to its environment (and its $NAMEs).
+ *     stdinFile (string): a file its input is read from (the shell's < file).
+ *     stdoutFile (string): a file its output is written to instead of being kept (the shell's
+ *       > file).
+ *   silent (boolean): not logged as a notice.
+ *   singleLine (boolean): only its first line, and no "Running command" line.
+ *   timeoutSeconds (number): stopped after this long.
+ *
+ * Returns:
+ *   Promise<string>: its output.
+ *
+ * Raises:
+ *   Error: it could not start, ended with another code than 0, or ran out of time ; the message
+ *     is its output.
+ */
 Cmd.executeSilentCommand = async (cmd,silent=false,singleLine=false,timeoutSeconds=60) => {
   return new Promise((resolve,reject)=>{
     try{
-      var command = cmd.command
       var directory = cmd.directory
       var description = cmd.description
+      var env = cmd.env || {}
       var maskedCommand = cmd.maskedCommand || cmd.command
-      // execute the procces
       logger.debug(`${description}, ${directory} > ${maskedCommand}`)
-  
-      var cmdlist = command.split(' ')
-      var basecmd = cmdlist[0]
-      var parameters = cmdlist.slice(1)
-      // cmd.env : variables the command reads (a password the shell puts in place of its name),
-      // so the secret is never in the command text that is logged and shown
-      var child = spawn(basecmd,parameters,{shell:true,stdio:["ignore","pipe","pipe"],cwd:directory,detached:true,env:{...process.env,...(cmd.env||{})}});
-        var timeout = setTimeout(()=>{
-          Cmd.killChildren(child.pid)
-        },timeoutSeconds*1000)
-        var out=[]
-        if(!singleLine){
-          out.push(`Running command: ${maskedCommand}`)
-        }
-        if(!silent){
-          logger.notice(`Running command: ${maskedCommand}`)          
-        }
-        
-        // add output eventlistener to the process to save output
+      var [basecmd, ...parameters] = Cmd.splitCommand(cmd.command, env)
+      var out=[]
+      if(!singleLine){
+        out.push(`Running command: ${maskedCommand}`)
+      }
+      if(!silent){
+        logger.notice(`Running command: ${maskedCommand}`)
+      }
+      // detached : in a process group of its own, so a timeout stops it and what it started
+      var child = spawn(basecmd,parameters,{stdio:[cmd.stdinFile ? "pipe" : "ignore","pipe","pipe"],cwd:directory,detached:true,env:{...process.env,...env}});
+      var timeout = setTimeout(()=>{
+        Cmd.killChildren(child.pid)
+      },timeoutSeconds*1000)
+      if (cmd.stdinFile) {
+        const input = fs.createReadStream(cmd.stdinFile)
+        input.on("error", (e) => { out.push(e.message); child.stdin.destroy() })
+        child.stdin.on("error", () => {})
+        input.pipe(child.stdin)
+      }
+      var written = null
+      if (cmd.stdoutFile) {
+        written = fs.createWriteStream(cmd.stdoutFile)
+        child.stdout.pipe(written)
+      } else {
         child.stdout.on('data',function(data){
           out.push(Cmd.maskUrlCredentials(data.toString()))
         })
-        // add error eventlistener to the process to save output
-        child.stderr.on('data',function(data){
-          out.push(Cmd.maskUrlCredentials(data.toString()))
+      }
+      child.stderr.on('data',function(data){
+        out.push(Cmd.maskUrlCredentials(data.toString()))
+      })
+      var started = true
+      // 'close', not 'exit' : 'exit' can fire before the output is read, and a quick command
+      // (git status) then resolves with no output at all
+      child.on('close',async function(code){
+        clearTimeout(timeout)
+        if (!started) return
+        // the file it wrote is complete before anyone reads it
+        if (written) await new Promise((r) => written.end(r))
+        logger.info(description + " finished: " + code)
+        out = out.map((line)=>{
+          return line.replace(/\n+$/g,'').replace(/\r\n/g,'')
         })
-        // add close eventlistener to the process to handle status update : 'close', not 'exit',
-        // because 'exit' can fire before the output is read, and a quick command (git status)
-        // then resolves with no output at all
-        child.on('close',function(data){
-          clearTimeout(timeout)
-          logger.info(description + " finished: " + data)
-          // always push something to
-          // remove all \n from the end of the output and \r\n
-          out = out.map((line)=>{
-            return line.replace(/\n+$/g,'').replace(/\r\n/g,'')
-          })
-          out.push("")
-          if(data!=0){
-            if(child.signalCode=='SIGTERM'){
-              out.push("The command timed out")
-            }
-
-            if(singleLine){
-              reject(new Error(out[0]))
-              return
-            }else{
-              reject(new Error(out.join("\n")))
-              return
-            }
+        out.push("")
+        if(code!==0){
+          if(child.signalCode=='SIGTERM'){
+            out.push("The command timed out")
           }
-          if(singleLine){
-            resolve(out[0])
-            return
-          }else{
-            resolve(out.join('\n'))
-            return 
-          }
-
-        })
-        // add error eventlistener to the process; set failed
-        child.on('error',function(data){
-          out.push(Cmd.maskUrlCredentials(data.toString()))
-          reject(new Error(out.join('\n')))
+          reject(new Error(singleLine ? out[0] : out.join("\n")))
           return
-        })
-
+        }
+        resolve(singleLine ? out[0] : out.join('\n'))
+      })
+      // it could not start (the program is not installed, the folder does not exist)
+      child.on('error',function(data){
+        started = false
+        clearTimeout(timeout)
+        if (data?.code === "ENOENT") out.push(`'${basecmd}' was not found, or the folder '${directory}' does not exist`)
+        else out.push(Cmd.maskUrlCredentials(data.toString()))
+        reject(new Error(out.join('\n')))
+      })
     }catch(e){
-      reject(e.message)
-    }   
+      reject(e instanceof Error ? e : new Error(String(e)))
+    }
   })
 
 }
+
+/**
+ * Whether a program is on the PATH (what `command -v` answers in a shell).
+ *
+ * Args:
+ *   binary (string): the program, by name or by path.
+ *
+ * Returns:
+ *   boolean: true when it exists and can be run.
+ */
+Cmd.isAvailable = (binary) => {
+  const name = String(binary || "");
+  if (!name) return false;
+  const runnable = (file) => {
+    try {
+      fs.accessSync(file, fs.constants.X_OK);
+      return fs.statSync(file).isFile();
+    } catch {
+      return false;
+    }
+  };
+  if (name.includes("/")) return runnable(name);
+  return String(process.env.PATH || "").split(path.delimiter).filter(Boolean).some((dir) => runnable(path.join(dir, name)));
+};
 
 export default Cmd

@@ -1,5 +1,5 @@
 'use strict';
-import { exec as execCb } from 'child_process';
+import { execFile as execFileCb } from 'child_process';
 import logger from '../lib/logger.js';
 import fs from 'fs';
 import { inspect, promisify } from 'node:util';
@@ -8,7 +8,10 @@ import Errors from '../lib/errors.js';
 import path from 'path';
 
 const KnownHosts = {};
-const exec = promisify(execCb);
+const execFile = promisify(execFileCb);
+// a host name, an IPv4 or an IPv6 address : what ssh-keyscan takes, and nothing it could read as
+// an option or anything more
+const HOST = /^[A-Za-z0-9_.:-]+$/;
 
 function hostsFile() {
   return path.join(os.homedir(), '.ssh', 'known_hosts');
@@ -61,9 +64,13 @@ KnownHosts.add = async function (host) {
   if (!host || host === 'undefined' || host === 'null') {
     throw new Errors.BadRequestError('Invalid or missing host');
   }
+  if (!HOST.test(host) || host.startsWith('-')) {
+    throw new Errors.BadRequestError('Invalid host: a host name or an IP address only');
+  }
   logger.notice(`Adding keys for host ${host}`);
   try {
-    const { stdout, stderr } = await exec(`ssh-keyscan -- ${host}`);
+    // no shell : the host is ssh-keyscan's one argument, never a second command
+    const { stdout, stderr } = await execFile('ssh-keyscan', ['--', host]);
     if (stderr) logger.debug(stderr);
     if (!stdout) throw new Errors.InternalServerError('No keyscan output');
     const lines = stdout.split(/\r?\n/).filter(Boolean);

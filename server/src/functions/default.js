@@ -5,7 +5,7 @@ import path from 'path';
 import dns from 'dns';
 import https from 'https';
 import { fileURLToPath } from 'url';
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
 import { inspect } from 'node:util';
 
 // Third-party modules
@@ -393,14 +393,16 @@ const fnRestJwtSecure = async function(action,url,body,tokenname,jqe=null,sort=n
 const fnSsh = async function(user,host,cmd,jqe=null){
 
   var result= await new Promise((resolve,reject)=>{
-    // Form-controlled values — must be properly shell-escaped before going
-    // through `exec` (which uses /bin/sh -c). The previous .replace/.replaceAll
-    // calls were not real escaping (single replace, not all occurrences, and
-    // no protection against $(), backticks, ;, &&, ||).
-    const command=`ssh ${shellQuote(`${user}@${host}`)} ${shellQuote(cmd)}`
-    logger.debug(`invoking ssh: ${command}`)
+    // Form-controlled values : ssh is run without a shell, so none of them can become a second
+    // command here, and the destination comes after `--`, so a user or a host starting with '-'
+    // (-oProxyCommand=...) is never read as an option. The command runs on the remote host, as
+    // that host's shell reads it : that is what fnSsh is for.
+    const destination = `${user}@${host}`
+    logger.debug(`invoking ssh: ssh -- ${shellQuote(destination)} ${shellQuote(cmd)}`)
     // without AnsibleForms' own variables, as a playbook : ssh reads its own configuration
-    var child = exec(command,{encoding: "UTF-8", env: playbookEnv()});
+    var child = spawn("ssh", ["--", destination, String(cmd ?? "")], { env: playbookEnv(), stdio: ["ignore", "pipe", "pipe"] });
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
     var output=[]
     
     // add output eventlistener to the process to save output

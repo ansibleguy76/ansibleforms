@@ -10,7 +10,7 @@ import fse from "fs-extra";
 import moment from "moment";
 import _ from "lodash";
 import Errors from '../lib/errors.js';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import yaml from "yaml";
 import Ajv from 'ajv';
 import quote from 'shell-quote/quote.js';
@@ -130,51 +130,54 @@ var Form=function(data){
 };
 
 /**
- * Compute ytt cli options for library data values based on provided env vars
+ * The ytt options for the library data values the environment names (YTT_LIB_DATA_*).
+ *
+ * Returns:
+ *   string[]: the options and their values, one argument each.
  */
 function getYttLibDataOpts() {
-  var yttLibDataOpts = '';
+  const opts = [];
   for (const [libName, value] of Object.entries(appConfig.yttLibData)) {
-    yttLibDataOpts += ` --data-values-file @${quote([libName])}:data=${quote([value])}`;
+    opts.push('--data-values-file', `@${libName}:data=${value}`);
   }
-  return yttLibDataOpts;
+  return opts;
 }
 
 /**
- * Compute extra ytt cli options based on provided env vars
+ * The other ytt options the environment sets (YTT_VARS_PREFIX, the symlink destinations).
+ *
+ * Returns:
+ *   string[]: the options and their values, one argument each.
  */
 function getYttEnvDataOpts() {
-  var yttEnvDataOpts = '';
+  const opts = [];
   if (appConfig.yttVarsPrefix || false) {
-    yttEnvDataOpts += ` --data-values-env ${quote([appConfig.yttVarsPrefix])}`;
+    opts.push('--data-values-env', appConfig.yttVarsPrefix);
   }
   if (appConfig.yttAllowSymlinkDestinations || false) {
     // path.delimiter separated list of paths (delimiter can be escaped with '\')
     for (const allowedPath of appConfig.yttAllowSymlinkDestinations.split(pathDelimiterRegex)) {
-      yttEnvDataOpts += ` --allow-symlink-destination ${quote([allowedPath.replace(/\\(.)/g, '$1')])}`;
+      opts.push('--allow-symlink-destination', allowedPath.replace(/\\(.)/g, '$1'));
     }
   }
   if (appConfig.yttDangerousAllowAllSymlinkDestinations) {
-    yttEnvDataOpts += " --dangerous-allow-all-symlink-destinations";
+    opts.push('--dangerous-allow-all-symlink-destinations');
   }
-  return yttEnvDataOpts;
+  return opts;
 }
 
-
+// ytt run on a config file : its program and arguments, no shell (a path or a value is one
+// argument, never more)
 function execYtt(file,libdir) {
 
   // database didn't deliver any forms, so let's load from file
-  var libDataOpts = getYttLibDataOpts();
-  var envDataOpts = getYttEnvDataOpts();  
+  const args = ['-f', file, '-f', libdir, ...getYttEnvDataOpts(), ...getYttLibDataOpts()];
   logger.info(`interpreting ${file} with ytt.`);
-  logger.debug(`executing 'ytt -f ${quote([file])} -f ${quote([libdir])}${envDataOpts}${libDataOpts}'`);
-  var data = execSync(
-      `ytt -f ${quote([file])} -f ${quote([libdir])}${envDataOpts}${libDataOpts}`,
-      {
-        env: process.env,
-        encoding: 'utf-8'
-      } 
-  );
+  logger.debug(`executing 'ytt ${quote(args)}'`);
+  var data = execFileSync('ytt', args, {
+    env: process.env,
+    encoding: 'utf-8'
+  });
   if (!data) {
     throw new Error(`ytt did not return any data for file ${file}`);
   }

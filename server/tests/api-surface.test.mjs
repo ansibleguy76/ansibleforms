@@ -140,6 +140,8 @@ describe("every environment variable the server reads is documented", () => {
     // the bootstrap knobs, deliberately not operator-facing
     "MANAGED_ENV_PATH",   // points at the store itself - chicken and egg
     "FORCE_DOTENV",       // development/test switch
+    // the system's own, not a setting : where Cmd.isAvailable looks for a program
+    "PATH",
   ]);
 
   test("nothing is read that help.yaml does not describe", async () => {
