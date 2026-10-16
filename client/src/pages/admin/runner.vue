@@ -78,6 +78,10 @@ const appStore = useAppStore();
 const readOnly = computed(() => managed.value || !appStore.isAdmin);
 // a Semaphore or a Rundeck : a project on its server, signed in with a token
 const hasProject = computed(() => PROJECT_RUNNER_KINDS.includes(edit.value?.kind));
+// the kinds in the order of their names, in the language shown, as the dialog's
+const sortedKinds = computed(() =>
+  [...RUNNER_KINDS].sort((a, b) => t(`settings.runners.type_${a}`).localeCompare(t(`settings.runners.type_${b}`))),
+);
 /**
  * Whether its Type tab can switch to a kind : its type stays what it was made as (the forms that
  * run on it expect it), an AWX one may change product (AWX, AAP, Ascender : one type).
@@ -478,7 +482,7 @@ onMounted(async () => {
             </template>
             <!-- Type : RTE, AWX, AAP, Ascender, Semaphore or Rundeck, each its label and a few grey words -->
             <template v-else-if="activeTab === 'type'">
-              <div v-for="kind in RUNNER_KINDS" :key="kind" class="form-check af-short-check af-type-option">
+              <div v-for="kind in sortedKinds" :key="kind" class="form-check af-short-check af-type-option">
                 <input
                   :id="'af-kind-' + kind"
                   v-model="edit.kind"
