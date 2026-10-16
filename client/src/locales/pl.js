@@ -2718,6 +2718,8 @@ export default {
     hideOutput: 'Ukryj wynik',
     reloadForm: 'Przeładuj ten formularz',
     loadFromStore: 'Wczytaj z zapisanych',
+    findField: 'Znajdź pole',
+    findFieldHint: 'Wyróżnia pola, których nazwa zawiera ten tekst; Enter przechodzi do następnego',
     back: 'Wstecz',
     submit: 'Wyślij',
     save: 'Zapisz',

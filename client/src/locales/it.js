@@ -2731,6 +2731,8 @@ export default {
     hideOutput: 'Nascondi output',
     reloadForm: 'Ricarica questo modulo',
     loadFromStore: 'Carica da archivio',
+    findField: 'Trova un campo',
+    findFieldHint: 'Evidenzia i campi il cui nome contiene questo testo; Invio va al successivo',
     back: 'Indietro',
     submit: 'Invia',
     save: 'Salva',

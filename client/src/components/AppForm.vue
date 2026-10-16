@@ -2358,7 +2358,7 @@ defineExpose({
                 <!-- FIELD LABEL (only if label is explicitly set and different from field name) -->
                 <label
                   v-if="field.label && field.label !== field.name"
-                  class="flex-grow-1 fw-bold mb-2"
+                  class="flex-grow-1 fw-bold mb-2 af-field-label"
                   :class="{ 'text-body': !field.hide, 'text-grey': field.hide }"
                   >{{
                     typeof fieldLabels[field.name] === 'object'
@@ -2385,7 +2385,9 @@ defineExpose({
               <div v-else class="mt-3">
                 <div class="d-flex">
                   <!-- FIELD LABEL -->
-                  <label class="flex-grow-1 fw-bold mb-2" :class="{ 'text-body': !field.hide, 'text-grey': field.hide }"
+                  <label
+                    class="flex-grow-1 fw-bold mb-2 af-field-label"
+                    :class="{ 'text-body': !field.hide, 'text-grey': field.hide }"
                     >{{
                       typeof fieldLabels[field.name] === 'object'
                         ? fieldLabels[field.name].value

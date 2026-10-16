@@ -2745,6 +2745,8 @@ export default {
     hideOutput: 'Amaga la sortida',
     reloadForm: 'Torna a carregar aquest formulari',
     loadFromStore: 'Carrega des de les desades',
+    findField: 'Cerca un camp',
+    findFieldHint: 'Ressalta els camps amb aquest text al nom; Retorn va al següent',
     back: 'Enrere',
     submit: 'Envia',
     save: 'Desa',

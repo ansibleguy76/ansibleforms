@@ -920,6 +920,66 @@ function openCategory(category) {
   router.push(formsPath(category));
 }
 
+// ─── finding a field (the search box of the title line) ─────────────────────────────────────
+// The fields whose name has the text typed are highlighted, and the page brought to the first ;
+// Enter goes to the next. Only the fields shown are searched (a wizard's step, a subform being
+// edited) : the others can not be scrolled to.
+const formArea = ref(null);
+const fieldSearch = ref('');
+const fieldMatches = ref([]);
+const fieldMatchIndex = ref(-1);
+// the field names AppForm draws (af-field-label) ; the match ignores case
+const FIELD_LABELS = '.af-field-label';
+let fieldSearchTimer = null;
+
+/**
+ * Highlights the field names that have the text searched, and brings the page to one of them.
+ *
+ * Args:
+ *   index (number): which match to bring into view (0 : the first).
+ */
+function findFields(index = 0) {
+  const area = formArea.value;
+  for (const el of area?.querySelectorAll('.af-field-hit') || [])
+    el.classList.remove('af-field-hit', 'af-field-hit-current');
+  const q = fieldSearch.value.trim().toLowerCase();
+  fieldMatches.value = [];
+  fieldMatchIndex.value = -1;
+  if (!q || !area) return;
+  const hits = [...area.querySelectorAll(FIELD_LABELS)].filter(
+    (el) => el.offsetParent !== null && el.textContent.toLowerCase().includes(q),
+  );
+  for (const el of hits) el.classList.add('af-field-hit');
+  fieldMatches.value = hits;
+  if (hits.length) showFieldMatch(index % hits.length);
+}
+
+/**
+ * Brings one match into view, marked as the current one.
+ *
+ * Args:
+ *   index (number): the match.
+ */
+function showFieldMatch(index) {
+  const hits = fieldMatches.value;
+  hits[fieldMatchIndex.value]?.classList.remove('af-field-hit-current');
+  fieldMatchIndex.value = index;
+  hits[index].classList.add('af-field-hit-current');
+  hits[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Enter : the next match, the first again after the last
+function nextFieldMatch() {
+  if (!fieldMatches.value.length) return findFields(0);
+  showFieldMatch((fieldMatchIndex.value + 1) % fieldMatches.value.length);
+}
+
+// searched as it is typed, once the typing pauses
+watch(fieldSearch, () => {
+  clearTimeout(fieldSearchTimer);
+  fieldSearchTimer = setTimeout(() => findFields(0), 200);
+});
+
 function toggleShowExtraVars() {
   showExtraVars.value = !showExtraVars.value;
   // Generate JSON immediately when opening extravars panel to avoid delay
@@ -1799,7 +1859,7 @@ onBeforeUnmount(() => {
         @select="openCategory"
       />
       <div v-if="authenticated && currentForm" class="section container-fluid w-100 mt-3">
-        <div v-show="!hideForm">
+        <div v-show="!hideForm" ref="formArea">
           <!-- BREADCRUMBS (only when editing a subform) -->
           <nav v-if="activeEntry" aria-label="breadcrumb">
             <ol class="breadcrumb mb-2">
@@ -1827,61 +1887,71 @@ onBeforeUnmount(() => {
                 :label="t('form.showHelp')"
               />
             </h3>
-            <div class="d-flex flex-wrap align-items-center justify-content-end ms-auto af-form-buttons">
-              <!-- a subform being edited : back to the form, load its values, its output -->
-              <template v-if="activeEntry">
-                <BsButton cssClass="text-nowrap" icon="arrow-left" @click="popEdit(activeEntry.id)">
-                  {{ t('form.back') }}
-                </BsButton>
-                <BsButton
-                  v-if="store.profile.options?.allowStoredJobs"
-                  cssClass="text-nowrap"
-                  icon="file-import"
-                  @click="handleSubformAction(activeEntry, { action: 'load', value: activeEntry.draft })"
-                >
-                  {{ t('form.loadFromStore') }}
-                </BsButton>
-                <BsButton
-                  v-if="store.profile.options?.showExtraVars"
-                  cssClass="text-nowrap"
-                  cssClassToggle="text-nowrap"
-                  icon="eye"
-                  iconToggle="eye-slash"
-                  :toggle="showExtraVars"
-                  @click="toggleShowExtraVars()"
-                >
-                  {{ t('form.showOutput') }}<template #toggle>{{ t('form.hideOutput') }}</template>
-                </BsButton>
-              </template>
-              <!-- the form (or its wizard) : its extravars, reload, load its values (verbose : on the
+            <!-- its controls under it, as every page's : the search at the left (it finds a field
+                 and highlights its name), the buttons at the right -->
+            <div class="af-title-controls af-form-controls">
+              <BsSearch
+                v-model="fieldSearch"
+                :placeholder="t('form.findField')"
+                :title="t('form.findFieldHint')"
+                @keydown.enter.prevent="nextFieldMatch()"
+              />
+              <div class="af-header-buttons">
+                <!-- a subform being edited : back to the form, load its values, its output -->
+                <template v-if="activeEntry">
+                  <BsButton cssClass="text-nowrap" icon="arrow-left" @click="popEdit(activeEntry.id)">
+                    {{ t('form.back') }}
+                  </BsButton>
+                  <BsButton
+                    v-if="store.profile.options?.allowStoredJobs"
+                    cssClass="text-nowrap"
+                    icon="file-import"
+                    @click="handleSubformAction(activeEntry, { action: 'load', value: activeEntry.draft })"
+                  >
+                    {{ t('form.loadFromStore') }}
+                  </BsButton>
+                  <BsButton
+                    v-if="store.profile.options?.showExtraVars"
+                    cssClass="text-nowrap"
+                    cssClassToggle="text-nowrap"
+                    icon="eye"
+                    iconToggle="eye-slash"
+                    :toggle="showExtraVars"
+                    @click="toggleShowExtraVars()"
+                  >
+                    {{ t('form.showOutput') }}<template #toggle>{{ t('form.hideOutput') }}</template>
+                  </BsButton>
+                </template>
+                <!-- the form (or its wizard) : its extravars, reload, load its values (verbose : on the
                    form's toolbar row, under the divider) -->
-              <template v-else>
-                <BsButton
-                  v-if="store.profile.options?.showExtraVars"
-                  cssClass="text-nowrap"
-                  cssClassToggle="text-nowrap"
-                  icon="eye"
-                  iconToggle="eye-slash"
-                  :toggle="showExtraVars"
-                  @click="toggleShowExtraVars()"
-                  >{{ t(saysPayload ? 'form.showPayload' : 'form.showExtravars')
-                  }}<template #toggle>{{ t(saysPayload ? 'form.hidePayload' : 'form.hideExtravars') }}</template>
-                </BsButton>
-                <BsButton v-if="!isEmbedded" cssClass="text-nowrap" icon="redo" @click="reloadForm">
-                  {{ t('form.reloadForm') }}
-                </BsButton>
-                <BsButton
-                  v-if="store.profile.options?.allowStoredJobs"
-                  cssClass="text-nowrap"
-                  icon="file-import"
-                  @click="
-                    storeCtx = buildMainStoreCtx();
-                    openLoadOffcanvas();
-                  "
-                >
-                  {{ t('form.loadFromStore') }}
-                </BsButton>
-              </template>
+                <template v-else>
+                  <BsButton
+                    v-if="store.profile.options?.showExtraVars"
+                    cssClass="text-nowrap"
+                    cssClassToggle="text-nowrap"
+                    icon="eye"
+                    iconToggle="eye-slash"
+                    :toggle="showExtraVars"
+                    @click="toggleShowExtraVars()"
+                    >{{ t(saysPayload ? 'form.showPayload' : 'form.showExtravars')
+                    }}<template #toggle>{{ t(saysPayload ? 'form.hidePayload' : 'form.hideExtravars') }}</template>
+                  </BsButton>
+                  <BsButton v-if="!isEmbedded" cssClass="text-nowrap" icon="redo" @click="reloadForm">
+                    {{ t('form.reloadForm') }}
+                  </BsButton>
+                  <BsButton
+                    v-if="store.profile.options?.allowStoredJobs"
+                    cssClass="text-nowrap"
+                    icon="file-import"
+                    @click="
+                      storeCtx = buildMainStoreCtx();
+                      openLoadOffcanvas();
+                    "
+                  >
+                    {{ t('form.loadFromStore') }}
+                  </BsButton>
+                </template>
+              </div>
             </div>
           </div>
           <!-- the extravars the form makes (a subform's or a wizard step's while on one) : a card
@@ -2477,9 +2547,23 @@ onBeforeUnmount(() => {
   padding: 1rem 0 1.5rem;
   background: var(--bs-body-bg);
 }
-/* the form's buttons on its title line : the gap of the other pages' buttons */
-.af-form-buttons {
-  gap: 0.5rem;
+/* the form's controls under its title, 16px under it as the other pages' */
+.af-form-controls {
+  margin-top: 1rem;
+}
+/* a field whose name has the text searched : marked as the browser marks a found text, the one
+   in view outlined */
+:deep(.af-field-hit) {
+  background-color: rgba(255, 193, 7, 0.4);
+  border-radius: 0.2rem;
+  padding: 0 0.25rem;
+  /* the name only, not the row : the field's own buttons stay at the right */
+  flex-grow: 0 !important;
+  margin-right: auto;
+}
+:deep(.af-field-hit-current) {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: 1px;
 }
 .badge.status {
   font-size: 0.75rem;

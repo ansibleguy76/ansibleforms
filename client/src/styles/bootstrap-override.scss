@@ -607,12 +607,6 @@ textarea:focus::placeholder {
 .af-title-controls > :has(> .form-select) {
   margin-right: auto;
 }
-// the form's page builds its own title line (pages/form.vue) : its buttons a row of their own
-// under the title too, 16px under it as the other pages'
-.af-page-head > .af-form-buttons {
-  flex: 0 0 100%;
-  margin-top: 1rem;
-}
 
 // the Required badge of an item the config must keep (the admin and default roles) : a border and
 // darker text, so it reads on a white row as on a hovered one

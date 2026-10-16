@@ -2693,6 +2693,8 @@ export default {
     hideOutput: '出力を非表示',
     reloadForm: 'このフォームを再読み込み',
     loadFromStore: '保存済みデータから読み込む',
+    findField: 'フィールドを検索',
+    findFieldHint: '名前にこのテキストを含むフィールドを強調表示します。Enter で次へ移動します',
     back: '戻る',
     submit: '送信',
     save: '保存',

@@ -2729,6 +2729,8 @@ export default {
     hideOutput: 'Verberg output',
     reloadForm: 'Formulier herladen',
     loadFromStore: 'Laden uit opslag',
+    findField: 'Veld zoeken',
+    findFieldHint: 'Markeert de velden waarvan de naam deze tekst bevat; Enter gaat naar de volgende',
     back: 'Terug',
     submit: 'Verzenden',
     save: 'Opslaan',

@@ -2619,6 +2619,8 @@ export default {
     hideOutput: '隐藏输出',
     reloadForm: '重新加载此表单',
     loadFromStore: '从已保存项加载',
+    findField: '查找字段',
+    findFieldHint: '突出显示名称包含此文本的字段；按 Enter 转到下一个',
     back: '返回',
     submit: '提交',
     save: '保存',
