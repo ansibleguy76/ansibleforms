@@ -558,9 +558,9 @@ const inline = computed(() => ['inline', 'badge'].includes(props.shape));
 }
 /* a table's search box on the title line : as .af-table-search (styles/tables.scss) */
 .af-sk-search {
-  width: 20rem;
-  flex: 0 1 20rem;
-  min-width: 10rem;
+  flex: 1 1 8rem;
+  max-width: 20rem;
+  min-width: 8rem;
 }
 /* ------------------------------------------------------------------ */
 /* a tab and a word of a title                                        */
