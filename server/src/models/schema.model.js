@@ -607,7 +607,8 @@ const SCHEMA_MANIFEST = {
                                'ldap.id', 'ldap.name', 'ldap.position', 'ldap.domains', 'ldap.credential',
                                'oauth2_providers.credential', 'credentials.tenant_id', 'credentials.issuer', 'credentials.redirect_uri',
                                'credentials.ignore_certs', 'credentials.ca_bundle', 'oauth2_providers.auto_login',
-                               'runners.credential', 'ldap.description', 'settings.disclaimer_version', 'announcements.enabled'] },
+                               'runners.credential', 'ldap.description', 'settings.disclaimer_version', 'announcements.enabled',
+                               'credentials.url'] },
   },
 };
 
@@ -1080,6 +1081,13 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addColumn("repositories", "pushed_at", "datetime", true, "NULL"), messages, success, failed);
   // how the last push ended : it wrote the pull's status (a failed push read as a failed pull)
   await checkPromise(addColumn("repositories", "push_status", "varchar(50)", true, "NULL"), messages, success, failed);
+  // an api, userpass or cyberark credential carries the address of the one server it logs in to,
+  // with its TLS : a secret store's and a runner's (other than an RTE) move into it
+  await checkPromise(addColumn("credentials", "url", "varchar(1000)", true, "NULL"), messages, success, failed);
+  await checkPromise(moveConnectionsToCredentials(), messages, success, failed);
+  // and those credentials are of the runner's or the store's kind : rte, awx, aap, ascender,
+  // semaphore, rundeck, jenkins, vault (a CyberArk's already cyberark)
+  await checkPromise(retypeConnectionCredentials(), messages, success, failed);
   // the API tokens issued, listed and revoked on the profile and the user's page (models/apiToken.model.js)
   const apiTokens = fs.readFileSync(`${__dirname}/../db/create_api_tokens_table.sql`);
   await checkPromise(addTable("api_tokens", apiTokens.toString()), messages, success, failed);
@@ -1408,6 +1416,196 @@ export async function moveRunnerSecretsToCredentials() {
     done.push(`${r.name} into ${name}`);
   }
   const message = `Moved the token or login of ${runners.length} runner(s) to credentials (${done.join(", ")})`;
+  logger.notice(message);
+  return message;
+}
+
+// the credential types a secret store's or a runner's address moved into, before they got a type
+// of their own (retypeConnectionCredentials)
+const URL_TYPES = ["api", "userpass", "cyberark"];
+
+/**
+ * The address and TLS of each secret store, and of each runner (an RTE too), moved to its
+ * credential : a login that works on one server carries that server, as a mail channel's or an
+ * LDAP directory's credential does.
+ *   - its credential has no address yet : the record's goes into it
+ *   - it has the same one : nothing to copy
+ *   - it has another (two records shared one login, each its server), or it is of a type without
+ *     an address : a copy of the credential with the record's address, the record then names the
+ *     copy
+ *   - no credential : a new one, <record>-token (a Vault's token, a runner's), or
+ *     <record>-appid (a CyberArk's AppID and client certificate and key), its secrets copied as
+ *     stored (the same key encrypts all tables)
+ * The record's own address and TLS then emptied (the columns are NOT NULL : ''). Not a seeded
+ * record : the seed owns it, and its own address is still used while its credential has none.
+ * Not an RTE that registered itself : it writes its own address and token. Idempotent : only a
+ * record with an address left.
+ *
+ * Returns:
+ *   Promise<string|null>: what was done, or null when there was nothing to do.
+ */
+export async function moveConnectionsToCredentials() {
+  const kinds = [
+    {
+      label: "secret store",
+      table: "secret_stores",
+      column: "url",
+      rows: await mysql.do(
+        "SELECT id, name, type, url AS address, token, app_id, client_cert, client_key, ignore_certs, ca_bundle, credential FROM AnsibleForms.`secret_stores` " +
+          "WHERE COALESCE(managed, 0) = 0 AND COALESCE(url, '') <> ''",
+      ),
+    },
+    {
+      label: "runner",
+      table: "runners",
+      column: "uri",
+      rows: await mysql.do(
+        "SELECT id, name, type, uri AS address, token, ignore_certs, ca_bundle, credential FROM AnsibleForms.`runners` " +
+          "WHERE COALESCE(managed, 0) = 0 AND node_id IS NULL AND COALESCE(uri, '') <> ''",
+      ),
+    },
+  ];
+  if (!kinds.some((k) => k.rows.length)) return null;
+  const done = [];
+  for (const kind of kinds) {
+    for (const r of kind.rows) {
+      const c = {
+        url: String(r.address).trim().replace(/\/+$/, ""),
+        ignore_certs: r.ignore_certs ? 1 : 0,
+        ca_bundle: r.ca_bundle || null,
+      };
+      const creds = r.credential ? await mysql.do("SELECT * FROM AnsibleForms.`credentials` WHERE name = ?", [r.credential]) : [];
+      const cred = creds[0];
+      let name = cred?.name || null;
+      // its own secrets moved with it : emptied on the record too
+      let ownSecrets = false;
+      if (cred && URL_TYPES.includes(cred.credential_type) && !String(cred.url || "").trim()) {
+        await mysql.do("UPDATE AnsibleForms.`credentials` SET ? WHERE id = ?", [c, cred.id]);
+        done.push(`${r.name} into ${name}`);
+      } else if (cred && (!URL_TYPES.includes(cred.credential_type) || String(cred.url).trim() !== c.url)) {
+        // a copy : its login (stored encrypted, the same key for both rows) and the record's address
+        name = await freeCredentialName(`${cred.name}-${r.name}`);
+        const type = URL_TYPES.includes(cred.credential_type) ? cred.credential_type : "api";
+        await mysql.do(
+          "INSERT INTO AnsibleForms.`credentials` (name, user, password, description, is_database, credential_type, secret_store, secret_ref, client_cert, client_key, url, ignore_certs, ca_bundle) " +
+            "SELECT ?, user, password, ?, 0, ?, secret_store, secret_ref, client_cert, client_key, ?, ?, ? FROM AnsibleForms.`credentials` WHERE id = ?",
+          [name, `The login of ${cred.name}, with the address of the ${kind.label} ${r.name}`, type, c.url, c.ignore_certs, c.ca_bundle, cred.id],
+        );
+        done.push(`${r.name} into a copy of ${cred.name}, ${name}`);
+      } else if (!cred) {
+        const cyberark = r.type === "cyberark_ccp";
+        name = await freeCredentialName(`${r.name}-${cyberark ? "appid" : "token"}`);
+        await mysql.do("INSERT INTO AnsibleForms.`credentials` SET ?", [
+          {
+            name,
+            user: cyberark ? r.app_id || null : null,
+            password: cyberark ? null : r.token || null,
+            client_cert: cyberark ? r.client_cert || null : null,
+            client_key: cyberark ? r.client_key || null : null,
+            description: `The ${cyberark ? "AppID" : "token"} and address of the ${kind.label} ${r.name}`,
+            is_database: 0,
+            credential_type: cyberark ? "cyberark" : "api",
+            ...c,
+          },
+        ]);
+        ownSecrets = true;
+        done.push(`${r.name} into ${name}`);
+      }
+      const cleared = { [kind.column]: "", ignore_certs: 0, ca_bundle: null, credential: name };
+      if (ownSecrets) {
+        Object.assign(cleared, kind.table === "secret_stores" ? { token: null, app_id: null, client_cert: null, client_key: null } : { token: null });
+      }
+      await mysql.do(`UPDATE AnsibleForms.\`${kind.table}\` SET ? WHERE id = ?`, [cleared, r.id]);
+    }
+  }
+  const count = kinds.reduce((n, k) => n + k.rows.length, 0);
+  const message = `Moved the address of ${count} secret store(s) and runner(s) to their credential${done.length ? ` (${done.join(", ")})` : ""}`;
+  logger.notice(message);
+  return message;
+}
+
+/**
+ * The type a runner's or a secret store's credential is of : the runner's kind (an awx runner's its
+ * flavour, AWX when none), a Vault's vault, a CyberArk's cyberark.
+ *
+ * Args:
+ *   record (object): { table, type, flavour }.
+ *
+ * Returns:
+ *   string: the credential type.
+ */
+function connectionCredentialType(record) {
+  if (record.table === "secret_stores") return record.type === "cyberark_ccp" ? "cyberark" : "vault";
+  return record.type === "awx" ? record.flavour || "awx" : record.type;
+}
+
+/**
+ * The credentials of the secret stores and runners given the type of their kind : rte, awx, aap,
+ * ascender, semaphore, rundeck, jenkins or vault (a CyberArk's is cyberark already), as a mail
+ * channel's is smtp. Where it says what to fill in (a token, a user and its API token) and its
+ * server is required.
+ *   - used by records of one kind only : its type becomes that kind
+ *   - used by records of several kinds, or by something else that checks its type (a notification
+ *     channel, a repository, an LDAP directory, an SSO provider, the chat assistant) : a copy of it
+ *     for each kind but the one it keeps, <credential>-<kind>, which those records then name
+ * A credential of the config seed is left as it is : the seed declares its type. Forms and workflows
+ * name credentials without a type : not concerned. Idempotent : only a credential of another type
+ * than its records' kind.
+ *
+ * Returns:
+ *   Promise<string|null>: what was done, or null when there was nothing to do.
+ */
+export async function retypeConnectionCredentials() {
+  const stores = await mysql.do("SELECT id, type, NULL AS flavour, credential FROM AnsibleForms.`secret_stores` WHERE COALESCE(credential, '') <> ''");
+  const runners = await mysql.do("SELECT id, type, flavour, credential FROM AnsibleForms.`runners` WHERE COALESCE(credential, '') <> ''");
+  const records = [...stores.map((r) => ({ ...r, table: "secret_stores" })), ...runners.map((r) => ({ ...r, table: "runners" }))];
+  if (!records.length) return null;
+  const others = new Set(
+    (
+      await mysql.do(
+        "SELECT credential AS name FROM AnsibleForms.`notification_channels` UNION SELECT token_credential FROM AnsibleForms.`notification_channels` " +
+          "UNION SELECT credential FROM AnsibleForms.`repositories` UNION SELECT credential FROM AnsibleForms.`ldap` " +
+          "UNION SELECT credential FROM AnsibleForms.`oauth2_providers` UNION SELECT credential FROM AnsibleForms.`chat_settings`",
+      )
+    ).map((r) => r.name),
+  );
+  const byCredential = new Map();
+  for (const r of records) {
+    if (!byCredential.has(r.credential)) byCredential.set(r.credential, []);
+    byCredential.get(r.credential).push(r);
+  }
+  const done = [];
+  for (const [credName, users] of byCredential) {
+    const cred = (await mysql.do("SELECT * FROM AnsibleForms.`credentials` WHERE name = ?", [credName]))[0];
+    if (!cred || cred.managed) continue;
+    const kinds = [...new Set(users.map(connectionCredentialType))];
+    if (kinds.length === 1 && kinds[0] === cred.credential_type) continue;
+    // the type it keeps : its records' kind when they are all of one and nothing else checks it
+    const keeps = kinds.length === 1 && !others.has(credName) ? kinds[0] : cred.credential_type;
+    if (keeps !== cred.credential_type) {
+      await mysql.do("UPDATE AnsibleForms.`credentials` SET credential_type = ?, is_database = 0 WHERE id = ?", [keeps, cred.id]);
+      done.push(`${credName} is ${keeps}`);
+    }
+    for (const kind of kinds.filter((k) => k !== keeps)) {
+      // a copy : its login (stored encrypted, the same key for both rows), its server and TLS
+      const copy = await freeCredentialName(`${credName}-${kind}`);
+      await mysql.do(
+        "INSERT INTO AnsibleForms.`credentials` (name, user, password, description, is_database, credential_type, secret_store, secret_ref, client_cert, client_key, url, ignore_certs, ca_bundle) " +
+          "SELECT ?, user, password, ?, 0, ?, secret_store, secret_ref, client_cert, client_key, url, ignore_certs, ca_bundle FROM AnsibleForms.`credentials` WHERE id = ?",
+        [copy, `The ${kind} login of ${credName}`, kind, cred.id],
+      );
+      for (const r of users.filter((u) => connectionCredentialType(u) === kind)) {
+        await mysql.do(`UPDATE AnsibleForms.\`${r.table}\` SET credential = ? WHERE id = ?`, [copy, r.id]);
+      }
+      done.push(`a copy of ${credName} for ${kind}, ${copy}`);
+    }
+    // kept of a type without a server : the address it was given went with its copies
+    if (!["rte", "awx", "aap", "ascender", "semaphore", "rundeck", "jenkins", "vault", "cyberark"].includes(keeps) && cred.url) {
+      await mysql.do("UPDATE AnsibleForms.`credentials` SET url = NULL WHERE id = ?", [cred.id]);
+    }
+  }
+  if (!done.length) return null;
+  const message = `Gave the credentials of the secret stores and runners the type of their kind (${done.join(", ")})`;
   logger.notice(message);
   return message;
 }

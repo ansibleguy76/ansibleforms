@@ -387,9 +387,12 @@ describe("a store's token from a credential", () => {
 
   test("saving : a store's credential must match its type", async () => {
     storeRows["ccp-login"] = { name: "ccp-login", credential_type: "cyberark", secret_store: null };
-    storeRows["vault-token"] = { name: "vault-token", credential_type: "api", secret_store: null };
+    storeRows["vault-token"] = { name: "vault-token", credential_type: "vault", secret_store: null };
+    storeRows["api-token"] = { name: "api-token", credential_type: "api", secret_store: null };
     await assert.rejects(SecretStore.create({ name: "c", type: "cyberark_ccp", url: "u", credential: "vault-token" }), /needs a cyberark credential/);
-    await assert.rejects(SecretStore.create({ name: "v", type: "vault", url: "u", credential: "ccp-login" }), /cannot give a token/);
+    await assert.rejects(SecretStore.create({ name: "v", type: "vault", url: "u", credential: "ccp-login" }), /needs a vault credential/);
+    await assert.rejects(SecretStore.create({ name: "v", type: "vault", url: "u", credential: "api-token" }), /needs a vault credential/);
+    assert.equal((await SecretStore.create({ name: "v", type: "vault", url: "u", credential: "vault-token" })).credential, "vault-token");
     assert.equal((await SecretStore.create({ name: "c", type: "cyberark_ccp", url: "u", credential: "ccp-login" })).credential, "ccp-login");
   });
 
@@ -398,3 +401,34 @@ describe("a store's token from a credential", () => {
     assert.equal((await SecretStore.create({ name: "s", type: "vault", url: "u", credential: "later" }, { fromSeed: true })).credential, "later");
   });
 });
+
+describe("a store's address from its credential", () => {
+  test("a credential with an address : the store connects there, with its TLS", async () => {
+    storeRows.vault = vaultRow({ url: "", token: null, credential: "vault-token" });
+    storeRows["vault-token"] = { name: "vault-token", credential_type: "api", password: "hvs.from-credential", url, ignore_certs: 1, ca_bundle: "CA", secret_store: null };
+    const store = await SecretStore.findByName("vault");
+    assert.equal(store.url, url);
+    assert.equal(store.ignore_certs, 1);
+    assert.equal(store.ca_bundle, "CA");
+    secrets["secret/data/app"] = { data: { data: { password: "p" } } };
+    await Registry.readSecret("vault", "secret/app");
+    assert.equal(requests[0].token, "hvs.from-credential");
+  });
+
+  test("a credential without one : the store's own", async () => {
+    storeRows.vault = vaultRow({ credential: "vault-token" });
+    storeRows["vault-token"] = { name: "vault-token", credential_type: "api", password: "t", secret_store: null };
+    assert.equal((await SecretStore.findByName("vault")).url, url);
+  });
+
+  test("saving : the credential's address empties the store's own, and one of them is needed", async () => {
+    storeRows["vault-token"] = { name: "vault-token", credential_type: "vault", password: "t", url: "https://vault:8200", secret_store: null };
+    const saved = await SecretStore.create({ name: "v", type: "vault", url: "https://old:8200", ignore_certs: 1, credential: "vault-token" });
+    assert.equal(saved.url, "");
+    assert.equal(saved.ignore_certs, 0);
+    storeRows["no-address"] = { name: "no-address", credential_type: "vault", password: "t", secret_store: null };
+    await assert.rejects(SecretStore.create({ name: "w", type: "vault", credential: "no-address" }), /needs its address/);
+    assert.equal((await SecretStore.create({ name: "w", type: "vault", url: "https://own:8200", credential: "no-address" })).url, "https://own:8200");
+  });
+});
+

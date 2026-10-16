@@ -5,6 +5,7 @@ import mysql from './db.model.js';
 import crypto from '../lib/crypto.js';
 import { readSecret, mapPayloadToCredential, parseInlineSecret, VAULT_STORE_NAME } from '../secrets/providers/index.js';
 import dbConfig from '../../config/db.config.js';
+import { stripTrailingSlashes } from '../lib/url.js';
 import { currentScope, assertCredentialAllowed, assertSecretStoreAllowed } from "../lib/resourceScope.js";
 
 class CredentialModel extends CrudModel {
@@ -34,7 +35,11 @@ class CredentialModel extends CrudModel {
   // provider's client (its user the client id, its password the client secret ; an entraid one its
   // tenant too, an oidc one its issuer) ; smtp : a mail server (its host, port and TLS) and its
   // login (none for a relay)
-  static TYPES = ['userpass', 'ssh', 'git', 'api', 'database', 'cyberark', 'smtp', 'ldap', 'entraid', 'oidc'];
+  // rte, awx, aap, ascender, semaphore, rundeck and jenkins : how a runner of that kind signs in,
+  // and where (its url) ; vault : how a HashiCorp Vault secret store logs in (its password the
+  // token), and where
+  static TYPES = ['userpass', 'ssh', 'git', 'api', 'database', 'cyberark', 'smtp', 'ldap', 'entraid', 'oidc',
+    'rte', 'awx', 'aap', 'ascender', 'semaphore', 'rundeck', 'jenkins', 'vault'];
 
   /**
    * Keeps a credential's type and its is_database flag in step : the type sets the flag, and
@@ -105,15 +110,16 @@ class CredentialModel extends CrudModel {
    * Args:
    *   data (object): the record written.
    *   creating (boolean): a create (the type and its fields are all there).
+   *   opts (object): { fromSeed:true } for the config seed, which may leave a server out.
    *
    * Returns:
    *   object: the record.
    *
    * Raises:
    *   BadRequestError: an Entra ID credential without a tenant, an Open ID one without an
-   *     issuer, an smtp one without a host.
+   *     issuer, an smtp one without a host, a runner's or a secret store's without its server.
    */
-  static requireTypeFields(data, creating = false) {
+  static requireTypeFields(data, creating = false, opts = {}) {
     const empty = (key) => (data[key] === undefined ? creating : !String(data[key] ?? '').trim());
     if (data.credential_type !== undefined && data.credential_type !== 'entraid') {
       if (creating || data.tenant_id !== undefined) data.tenant_id = null;
@@ -139,12 +145,46 @@ class CredentialModel extends CrudModel {
       throw new Errors.BadRequestError('An ldap credential needs its directory servers (host)');
     }
     if (data.tenant_id !== undefined && data.tenant_id !== null) data.tenant_id = String(data.tenant_id).trim();
+    // a server address : a runner's or a secret store's only (the one server it logs in to), and
+    // one it needs
+    if (data.credential_type !== undefined && !this.URL_TYPES.includes(data.credential_type)) {
+      if (creating || data.url !== undefined) data.url = null;
+    } else if (data.url !== undefined && data.url !== null) {
+      data.url = stripTrailingSlashes(String(data.url).trim()) || null;
+    }
+    if (!opts.fromSeed && this.URL_TYPES.includes(data.credential_type) && empty('url')) {
+      throw new Errors.BadRequestError(`A ${data.credential_type} credential needs its server (url)`);
+    }
     return data;
+  }
+
+  // the types that carry the address of the one server they log in to (Credential.url) : a
+  // runner's and a secret store's
+  static URL_TYPES = ['rte', 'awx', 'aap', 'ascender', 'semaphore', 'rundeck', 'jenkins', 'vault', 'cyberark'];
+
+  /**
+   * Where a credential connects : its server address and TLS, when it carries an address. A
+   * secret store or a runner that names it then connects there (models/secretStore.model.js,
+   * models/runner.model.js), whatever its own address.
+   *
+   * Args:
+   *   name (string): the credential's name.
+   *
+   * Returns:
+   *   Promise<object|null>: { url, ignore_certs, ca_bundle }, or null when it does not exist or
+   *     carries no address.
+   */
+  static async connectionOf(name) {
+    if (!name) return null;
+    const cred = await CrudModel.findByName(this.modelName, name);
+    const url = String(cred?.url || '').trim();
+    if (!url) return null;
+    return { url, ignore_certs: cred.ignore_certs ? 1 : 0, ca_bundle: cred.ca_bundle || null };
   }
 
   // opts carries { fromSeed:true } for the declarative config seed only
   static async create(data, opts = {}) {
-    return super.create(this.modelName, this.requireTypeFields(this.mirrorType(this.mirrorVaultPath(this.normalizePort(data)), true), true), opts);
+    return super.create(this.modelName, this.requireTypeFields(this.mirrorType(this.mirrorVaultPath(this.normalizePort(data)), true), true, opts), opts);
   }
 
   static async update(data, id, opts = {}) {
@@ -159,7 +199,7 @@ class CredentialModel extends CrudModel {
         throw new Errors.BadRequestError(`A credential keeps the type it was made as : '${current.name}' is ${current.credential_type}. Make a new credential for another type`);
       }
     }
-    return super.update(this.modelName, this.requireTypeFields(this.mirrorType(this.mirrorVaultPath(this.normalizePort(data)))), id, opts);
+    return super.update(this.modelName, this.requireTypeFields(this.mirrorType(this.mirrorVaultPath(this.normalizePort(data))), false, opts), id, opts);
   }
 
   static async delete(id, opts = {}) {

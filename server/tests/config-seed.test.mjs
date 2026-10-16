@@ -438,8 +438,9 @@ describe("runners are seedable", () => {
     assert.throws(() => validateSeed({ runners: { items: [{ name: "x", type: "gitlab", uri: "u" }] } }), /validation failed/);
   });
 
-  test("a runner needs name, type and uri ; an unknown field is rejected", () => {
-    assert.throws(() => validateSeed({ runners: { items: [{ name: "x", type: "rte" }] } }), /validation failed/);
+  test("a runner needs name and type (its uri may be its credential's) ; an unknown field is rejected", () => {
+    assert.throws(() => validateSeed({ runners: { items: [{ name: "x", uri: "u" }] } }), /validation failed/);
+    assert.doesNotThrow(() => validateSeed({ runners: { items: [{ name: "x", type: "awx", credential: "awx-login" }] } }));
     assert.throws(() => validateSeed({ runners: { items: [{ name: "x", type: "rte", uri: "u", url: "u" }] } }), /validation failed/);
   });
 });

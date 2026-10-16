@@ -39,18 +39,18 @@ describe('a runner kind and what is stored', () => {
     expect(save({ kind: 'rte', project: 'leftover' })).toMatchObject({ type: 'rte', project: null });
   });
 
-  it('it signs in with a credential of its kind : an api one, a userpass one for a Jenkins, either for an AWX', () => {
+  it('it signs in with a credential of its kind : an rte one for an RTE, an aap one for an AAP...', () => {
     const credential = runners.fields.find((f) => f.key === 'credential');
     const offered = (kind) =>
-      ['api', 'userpass', 'ssh'].filter((type) =>
+      ['api', 'userpass', 'rte', 'awx', 'aap', 'jenkins', 'semaphore'].filter((type) =>
         credential.choicesWhen({ name: 'c', credential_type: type }, { kind }),
       );
-    expect(offered('rte')).toEqual(['api']);
-    expect(offered('semaphore')).toEqual(['api']);
-    expect(offered('jenkins')).toEqual(['userpass']);
-    expect(offered('aap')).toEqual(['api', 'userpass']);
-    expect(credential.createDefaults({ kind: 'jenkins' })).toEqual({ credential_type: 'userpass' });
-    expect(credential.createDefaults({ kind: 'rte' })).toEqual({ credential_type: 'api' });
+    expect(offered('rte')).toEqual(['rte']);
+    expect(offered('semaphore')).toEqual(['semaphore']);
+    expect(offered('jenkins')).toEqual(['jenkins']);
+    expect(offered('aap')).toEqual(['aap']);
+    expect(credential.createDefaults({ kind: 'jenkins' })).toEqual({ credential_type: 'jenkins' });
+    expect(credential.createDefaults({ kind: 'ascender' })).toEqual({ credential_type: 'ascender' });
   });
 
   it('the defaults dialog has a group per runner type', () => {

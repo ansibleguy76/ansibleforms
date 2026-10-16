@@ -73,8 +73,10 @@ CREATE TABLE `credentials` (
   -- an Entra ID or Open ID credential's redirect URL, as registered with its client (empty : the
   -- app's address and the type's callback path)
   `redirect_uri` varchar(1000) DEFAULT NULL,
+  -- the address of the one server a runner's or a secret store's credential logs in to
+  `url` varchar(1000) DEFAULT NULL,
   -- an ldap credential's TLS : certificates not checked, the CA bundle (its servers are host, its
-  -- client certificate client_cert)
+  -- client certificate client_cert) ; a runner's or a secret store's for its url
   `ignore_certs` tinyint(4) DEFAULT NULL,
   `ca_bundle` text DEFAULT NULL,
   `vault_path` varchar(500) DEFAULT NULL,
