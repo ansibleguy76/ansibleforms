@@ -525,10 +525,12 @@ textarea:focus::placeholder {
   color: inherit;
   text-decoration: none;
 }
+// the › between a title's parts : an icon, not the character, which every font draws at its own
+// height (lower than the words in Segoe UI) ; centred on the title's line by its flex row
 .af-crumb-separator {
-  font-size: 1.5em;
-  line-height: 0;
-  vertical-align: -0.05em;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.7em;
 }
 // a page's title (and a form's) : its parts - the crumbs' icons and words, the separators, the
 // (i) - in a row centred on one line, so the (i) is in the middle of the line whatever the font

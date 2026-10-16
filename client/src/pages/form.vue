@@ -1876,7 +1876,7 @@ onBeforeUnmount(() => {
               <!-- the section first, as every page's title (lib/sections.js) : Forms › the form -->
               <router-link :to="formsPath('')" class="af-crumb-link"
                 ><span class="me-2"><FaIcon icon="rectangle-list" /></span>{{ t('nav.forms') }}</router-link
-              ><span class="mx-2 text-body-secondary af-crumb-separator">›</span>
+              ><span class="mx-2 text-body-secondary af-crumb-separator"><FaIcon icon="chevron-right" /></span>
               {{ activeEntry ? activeEntry.subtitle || activeEntry.title : currentForm.name }}
               <AppInfoPopover
                 v-if="activeEntry ? activeEntry.subform?.help : currentForm.help"
@@ -2365,7 +2365,7 @@ onBeforeUnmount(() => {
           <h3 class="mb-0 me-3">
             <router-link :to="formsPath('')" class="af-crumb-link"
               ><span class="me-2"><FaIcon icon="rectangle-list" /></span>{{ t('nav.forms') }}</router-link
-            ><span class="mx-2 text-body-secondary af-crumb-separator">›</span>
+            ><span class="mx-2 text-body-secondary af-crumb-separator"><FaIcon icon="chevron-right" /></span>
             {{ t('form.formNotFound') }}
           </h3>
         </div>
