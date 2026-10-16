@@ -892,21 +892,6 @@ async function reloadForm(reset = true) {
 // ─── the forms menu (the Forms page's categories, in the left column) ─────────────────────
 
 /**
- * Whether a form is in a category : one of its categories is it, or below it.
- *
- * Args:
- *   form (object): the form (its categories).
- *   category (string): a category, as Infra/Linux.
- *
- * Returns:
- *   boolean: true when the form is listed in that category.
- */
-function formInCategory(form, category) {
-  const own = form?.categories?.length ? form.categories : ['Default'];
-  return own.some((c) => c === category || String(c).startsWith(category + '/'));
-}
-
-/**
  * The category browsed on the Forms page this session ('' for All Forms), or null when none was.
  *
  * Returns:
@@ -920,18 +905,10 @@ function browsedCategory() {
   }
 }
 
-// the category highlighted : the one browsed on the Forms page before opening the form (All
-// Forms included), when the form is in it ; else the form's own first category
-const menuCategory = computed(() => {
-  let browsed = null;
-  try {
-    browsed = sessionStorage.getItem('af_forms_category');
-  } catch (e) {
-    // no storage : the form's own category
-  }
-  if (browsed === '' || (browsed && formInCategory(currentForm.value, browsed))) return browsed;
-  return currentForm.value?.categories?.[0] || '';
-});
+// the categories highlighted : every one the form is in (Default when it names none)
+const menuCategories = computed(() =>
+  currentForm.value?.categories?.length ? currentForm.value.categories : ['Default'],
+);
 
 /**
  * Opens the Forms page on a category of the menu.
@@ -1812,12 +1789,13 @@ onBeforeUnmount(() => {
   <AppNav v-if="!isEmbedded" />
   <div class="flex-shrink-0">
     <main class="d-flex flex-nowrap af-settings-layout">
-      <!-- the forms menu of the Forms page : the category browsed before opening the form
-           highlighted ; a category goes back to the Forms page on it -->
+      <!-- the forms menu of the Forms page : the form's categories highlighted (the category
+           browsed while the form loads) ; a category goes back to the Forms page on it -->
       <AppFormsMenu
         v-if="!isEmbedded"
         class="d-none d-md-block"
-        :currentCategory="currentForm ? menuCategory : browsedCategory()"
+        :currentCategory="browsedCategory()"
+        :formCategories="currentForm ? menuCategories : null"
         @select="openCategory"
       />
       <div v-if="authenticated && currentForm" class="section container-fluid w-100 mt-3">
