@@ -706,3 +706,13 @@ textarea:focus::placeholder {
 .af-type-option .form-check-input[type='radio']:disabled:not(:checked) ~ .form-check-label {
   color: var(--bs-secondary-color);
 }
+
+// a text found in a page (lib/findInText.js : a job's output) : marked as the browser marks a found
+// text, the one in view stronger
+::highlight(af-find) {
+  background-color: rgba(255, 193, 7, 0.4);
+}
+::highlight(af-find-current) {
+  background-color: rgba(255, 152, 0, 0.85);
+  color: #000;
+}

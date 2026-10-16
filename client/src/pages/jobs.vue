@@ -1,5 +1,6 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue';
+import { findRanges, showRanges, clearRanges } from '@/lib/findInText';
 import { toast } from 'vue-sonner';
 import { useRoute, useRouter } from 'vue-router';
 import { useAppStore } from '@/stores/app';
@@ -484,6 +485,65 @@ const subOutput = ref(null);
 
 // a running job's output followed down as it comes in, while the reader is at its end
 const outputPanel = ref(null);
+
+// ─── finding a text in the output (the search box of a job's title line) ─────────────────────
+// Every place the text is, whatever its case, highlighted (lib/findInText.js), the page brought to
+// the first ; Enter goes to the next. Searching unfolds the output and its sections first : a
+// folded line is not on the page to be found.
+const outputSearch = ref('');
+const outputFound = ref({ count: 0, current: -1 });
+let outputRanges = [];
+let outputSearchTimer = null;
+
+/**
+ * Finds the text searched in the output, highlights every place, and shows one of them.
+ *
+ * Args:
+ *   keep (boolean): keep the one shown (the output grew while it runs) instead of the first.
+ */
+async function findInOutput(keep = false) {
+  const q = outputSearch.value.trim();
+  if (!q) {
+    outputRanges = [];
+    outputFound.value = { count: 0, current: -1 };
+    clearRanges();
+    return;
+  }
+  if (!keep) {
+    foldedOutputs.value = {};
+    mainOutput.value?.expandAll?.();
+    await nextTick();
+  }
+  const lines = [...(outputPanel.value?.querySelectorAll('.af-ansible-text') || [])];
+  outputRanges = findRanges(lines, q);
+  const current = outputRanges.length
+    ? keep
+      ? Math.min(Math.max(outputFound.value.current, 0), outputRanges.length - 1)
+      : 0
+    : -1;
+  outputFound.value = { count: outputRanges.length, current };
+  // the output grew : the highlights follow it, the page stays where it is
+  showRanges(outputRanges, current, !keep);
+}
+
+// Enter : the next place, the first again after the last
+function nextInOutput() {
+  if (!outputRanges.length) return findInOutput();
+  const current = (outputFound.value.current + 1) % outputRanges.length;
+  outputFound.value = { count: outputRanges.length, current };
+  showRanges(outputRanges, current);
+}
+
+// searched as it is typed, once the typing pauses
+watch(outputSearch, () => {
+  clearTimeout(outputSearchTimer);
+  outputSearchTimer = setTimeout(() => findInOutput(), 200);
+});
+// a running job's output grows : searched again, the place shown kept
+watch(filteredJobOutput, () => {
+  if (outputSearch.value.trim()) nextTick(() => findInOutput(true));
+});
+onBeforeUnmount(clearRanges);
 const {
   paused: outputPaused,
   newLines: outputNewLines,
@@ -1289,6 +1349,14 @@ onMounted(async () => {
         <template #headerActions>
           <!-- a job's page : the actions the list offers on its row (same rules) ; back to the list
                through the title's Jobs, or the menu's -->
+          <!-- a job's page : a text found in its output, at the left as every page's search -->
+          <BsSearch
+            v-if="isJobPage && job"
+            v-model="outputSearch"
+            :placeholder="t('jobs.findInOutput')"
+            :title="t('jobs.findInOutputHint')"
+            @keydown.enter.prevent="nextInOutput()"
+          />
           <div v-if="isJobPage" class="d-flex justify-content-end align-items-center gap-2">
             <template v-if="job">
               <BsButton
@@ -1707,6 +1775,12 @@ onMounted(async () => {
                   <FaIcon icon="terminal" />
                   <span>{{ t('jobs.output') }}</span>
                   <span class="af-output-count">{{ t('jobs.lines', { count: outputLines }) }}</span>
+                  <!-- the places the search found, and which one is shown -->
+                  <span v-if="outputSearch.trim()" class="af-output-count">{{
+                    outputFound.count
+                      ? t('jobs.foundInOutput', { current: outputFound.current + 1, count: outputFound.count })
+                      : t('jobs.notFoundInOutput')
+                  }}</span>
                 </div>
                 <div class="af-output-actions">
                   <button type="button" class="af-tool-btn" :class="{ active: hide }" @click="hide = !hide">
