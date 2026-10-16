@@ -612,6 +612,8 @@ export default {
     allUsers: '所有用户',
     allActions: '所有操作',
     allOutcomes: '所有结果',
+    reset: '重置',
+    resetHint: '恢复为所有用户、所有操作和所有结果',
     empty: '暂无审计条目',
     emptyHint: '审计记录从安装此版本时开始，因此不包含之前的任何内容。',
     refresh: '刷新',

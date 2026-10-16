@@ -626,6 +626,8 @@ export default {
     allUsers: 'Todos os utilizadores',
     allActions: 'Todas as ações',
     allOutcomes: 'Todos os resultados',
+    reset: 'Repor',
+    resetHint: 'De novo todos os utilizadores, todas as ações e todos os resultados',
     empty: 'Ainda não há entradas de auditoria',
     emptyHint: 'O registo começa quando esta versão é instalada, por isso não contém nada anterior a isso.',
     refresh: 'Atualizar',

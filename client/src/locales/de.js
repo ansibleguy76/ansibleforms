@@ -626,6 +626,8 @@ export default {
     allUsers: 'Alle Benutzer',
     allActions: 'Alle Aktionen',
     allOutcomes: 'Alle Ergebnisse',
+    reset: 'Zurücksetzen',
+    resetHint: 'Wieder alle Benutzer, alle Aktionen und alle Ergebnisse',
     empty: 'Noch keine Audit-Einträge',
     emptyHint: 'Das Protokoll beginnt mit der Installation dieser Version und enthält nichts von davor.',
     refresh: 'Aktualisieren',

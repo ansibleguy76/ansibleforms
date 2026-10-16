@@ -626,6 +626,8 @@ export default {
     allUsers: 'Tutti gli utenti',
     allActions: 'Tutte le azioni',
     allOutcomes: 'Tutti gli esiti',
+    reset: 'Reimposta',
+    resetHint: 'Di nuovo tutti gli utenti, tutte le azioni e tutti gli esiti',
     empty: 'Nessuna voce di audit',
     emptyHint: 'Il registro inizia con l’installazione di questa versione, quindi non contiene nulla di precedente.',
     refresh: 'Aggiorna',
