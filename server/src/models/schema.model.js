@@ -608,7 +608,7 @@ const SCHEMA_MANIFEST = {
                                'oauth2_providers.credential', 'credentials.tenant_id', 'credentials.issuer', 'credentials.redirect_uri',
                                'credentials.ignore_certs', 'credentials.ca_bundle', 'oauth2_providers.auto_login',
                                'runners.credential', 'ldap.description', 'settings.disclaimer_version', 'announcements.enabled',
-                               'credentials.url'] },
+                               'credentials.url', 'settings.encryption_check'] },
   },
 };
 
@@ -1084,6 +1084,9 @@ async function patchVersion7(messages, success, failed) {
   // an api, userpass or cyberark credential carries the address of the one server it logs in to,
   // with its TLS : a secret store's and a runner's (other than an RTE) move into it
   await checkPromise(addColumn("credentials", "url", "varchar(1000)", true, "NULL"), messages, success, failed);
+  // a known text encrypted with the key the stored secrets are encrypted with : which key that
+  // is, when ENCRYPTION_SECRET changes (lib/keyRotation.js)
+  await checkPromise(addColumn("settings", "encryption_check", "text", true, "NULL"), messages, success, failed);
   await checkPromise(moveConnectionsToCredentials(), messages, success, failed);
   // and those credentials are of the runner's or the store's kind : rte, awx, aap, ascender,
   // semaphore, rundeck, jenkins, vault (a CyberArk's already cyberark)

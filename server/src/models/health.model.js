@@ -789,7 +789,7 @@ async function secretsCheck() {
   if (problems.length) {
     return check('secrets', WARNING, problems.length === 2 ? 'both unsafe' : 'one unsafe', {
       problems,
-      note: 'Set them in the environment (docker-compose, kubernetes): changing ENCRYPTION_SECRET later makes the stored passwords unreadable, so set it before storing any',
+      note: 'Set them in the environment (docker-compose, kubernetes): the stored passwords are re-encrypted with ENCRYPTION_SECRET on the next start',
     });
   }
   return check('secrets', OK, 'set');

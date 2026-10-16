@@ -24,6 +24,41 @@ const encrypt_to_file = (path,text) => {
     fs.writeFileSync(path, result);
 };
 
+/**
+ * A value encrypted with a given key (as encrypt does with ENCRYPTION_SECRET's).
+ *
+ * Args:
+ *   key (string): the 32-byte key.
+ *   text (string): the value.
+ *
+ * Returns:
+ *   string: the ciphertext and its iv, hex, joined by a dot ; empty for an empty value.
+ */
+const encryptWith = (key, text) => {
+    if (!text) return ""
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv(algorithm, key, iv);
+    const encrypted = Buffer.concat([cipher.update(text), cipher.final()]);
+    return encrypted.toString('hex') + "." + iv.toString('hex')
+};
+
+/**
+ * A value decrypted with a given key, as bytes : AES-CTR never fails on a wrong key, it gives
+ * other bytes, so the caller judges them (lib/keyRotation.js).
+ *
+ * Args:
+ *   key (string): the 32-byte key.
+ *   hash (string): the ciphertext and its iv, hex, joined by a dot.
+ *
+ * Returns:
+ *   Buffer: the bytes.
+ */
+const decryptWith = (key, hash) => {
+    const [content, iv] = String(hash || "").split(".")
+    const decipher = crypto.createDecipheriv(algorithm, key, Buffer.from(iv, 'hex'));
+    return Buffer.concat([decipher.update(Buffer.from(content, 'hex')), decipher.final()]);
+};
+
 const decrypt = (hash) => {
     if(hash){
       const tmp = hash.split(".")
@@ -67,6 +102,8 @@ const checkPassword = (pw,hash,user) =>{
 export default {
     encrypt,
     decrypt,
+    encryptWith,
+    decryptWith,
     encrypt_to_file,
     hashPassword,
     checkPassword,

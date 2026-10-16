@@ -96,6 +96,7 @@ const envGroupOrder = [
     prefix: ['REST_'],
     exact: [
       'ENCRYPTION_SECRET',
+      'ENCRYPTION_SECRET_PREVIOUS',
       'CONTENT_SECURITY_POLICY',
       'METRICS_TOKEN',
       'MASK_EXTRAVARS_REGEX',

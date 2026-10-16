@@ -15,6 +15,7 @@ import User from "../models/user.model.js";
 import Group from "../models/group.model.js";
 import Token from "../models/token.model.js";
 import { applyConfigSeed } from "../lib/seed.js";
+import { rotateEncryptionKey } from "../lib/keyRotation.js";
 import { importVaultFromEnvOnce } from "../secrets/importVaultEnv.js";
 import { importSyslogFromEnvOnce } from "../lib/syslogServers.js";
 import { nodeId } from "../lib/role.js";
@@ -301,6 +302,16 @@ const initOnce = async function({ boot = false } = {}){
   // the VAULT_* variables of before 7 become the secret store `vault`, once. Before the
   // seed, so a seed that declares `vault` takes the imported row over.
   if(schemaIsReady){
+    // the stored secrets on ENCRYPTION_SECRET : re-encrypted when it changed. First : the
+    // imports and the seed below write secrets with it
+    try{
+      // secrets encrypted with a key that is not given : running would read every one of them
+      // as garbage, so it does not start, and says what to set
+      const rotated = await rotateEncryptionKey()
+      if(rotated.unknownKey) await refuseToStart("The stored secrets were encrypted with another key than ENCRYPTION_SECRET: set ENCRYPTION_SECRET_PREVIOUS to it, nothing was changed")
+    }catch(err){
+      await refuseToStart("Could not re-encrypt the stored secrets with ENCRYPTION_SECRET, nothing was changed: " + (err.message || err))
+    }
     try{
       await importVaultFromEnvOnce()
     }catch(err){
