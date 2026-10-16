@@ -57,7 +57,7 @@ describe("a pull whose repository cannot be read withholds the git output", () =
   const fn = slice("static async pull(", "static async claimForWrite(");
 
   test("the slice really is the function, so these assertions are not vacuous", () => {
-    assert.match(fn, /Repo\.pull\(name\)/);
+    assert.match(fn, /Repo\.pull\(name, /);
   });
 
   test("it notices that the record could not be read", () => {

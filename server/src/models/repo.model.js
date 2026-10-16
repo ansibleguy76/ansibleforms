@@ -3,6 +3,7 @@ import Cmd from "../lib/cmd.js";
 import logger from "../lib/logger.js";
 import path from "path";
 import fs from "fs";
+import os from "os";
 import config from '../../config/app.config.js';
 import quote from 'shell-quote/quote.js'; // shell-escape values interpolated into commands (Cmd runs with shell:true)
 
@@ -41,6 +42,76 @@ function validateHostname(host) {
 const Repo={
 
 }
+
+// ─── signing in to git ──────────────────────────────────────────────────────────
+// A repository's address is cloned as it is : no user and no token in it, so none in its
+// .git/config, in the command, or in git's errors. git asks GIT_ASKPASS for them when the server
+// wants them : a small script, written once per process, that prints what the app put in the
+// environment of that one command (AF_GIT_USERNAME, AF_GIT_PASSWORD, from the repository's
+// credential). GIT_TERMINAL_PROMPT=0 : git never waits for someone to type them.
+const ASKPASS_SCRIPT = `#!/bin/sh
+case "$1" in
+  Username*) printf '%s\\n' "$AF_GIT_USERNAME" ;;
+  *) printf '%s\\n' "$AF_GIT_PASSWORD" ;;
+esac
+`;
+let askpassPath = null;
+
+/**
+ * The askpass script's path : written the first time, in a folder of its own only this process
+ * can read (a fixed name in the shared temp folder could be someone else's file).
+ *
+ * Returns:
+ *   string: the script's path.
+ */
+Repo.askpass = () => {
+  if (askpassPath && fs.existsSync(askpassPath)) return askpassPath;
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "af-git-"));
+  const file = path.join(dir, "askpass.sh");
+  fs.writeFileSync(file, ASKPASS_SCRIPT, { mode: 0o700 });
+  askpassPath = file;
+  return file;
+};
+
+/**
+ * The environment a git command that talks to the server runs with : the askpass script and the
+ * user and token it answers with, when the repository signs in with them over http(s).
+ *
+ * Args:
+ *   auth (object|null): { user, password } of the repository's credential, or none.
+ *
+ * Returns:
+ *   object: the variables to add to the command's environment.
+ */
+Repo.authEnv = (auth) => {
+  const env = { GIT_TERMINAL_PROMPT: "0" };
+  if (!auth?.user || !auth?.password) return env;
+  return { ...env, GIT_ASKPASS: Repo.askpass(), AF_GIT_USERNAME: String(auth.user), AF_GIT_PASSWORD: String(auth.password) };
+};
+
+/**
+ * A clone made before the askpass sign-in carries the user and token in its remote's address
+ * (.git/config) : that address is set back to the repository's own, without them. Once : a
+ * remote without them is left as it is.
+ *
+ * Args:
+ *   name (string): the repository.
+ *   uri (string): its address, as stored (none : nothing to set back to).
+ */
+Repo.cleanRemote = async (name, uri) => {
+  if (!uri) return;
+  const directory = path.join(config.repoPath, name);
+  let current;
+  try {
+    current = String(await Cmd.executeSilentCommand({ command: "git remote get-url origin", directory, description: "Reading the remote" }, true, true) || "");
+  } catch (e) {
+    return; // no remote (yet) : nothing to clean
+  }
+  if (!/^[a-z][a-z0-9+.-]*:\/\/[^/@\s]+:[^@\s]+@/i.test(current.trim())) return;
+  validateUri(uri);
+  await Cmd.executeSilentCommand({ command: `git remote set-url origin ${quote([uri])}`, directory, description: "Removing the credentials from the remote's address", maskedCommand: "git remote set-url origin <address>" }, true);
+  logger.notice(`Repository '${name}': the user and token are no longer kept in its remote's address`);
+};
 
 Repo.maskGitToken =(data)=>{
   if(data){
@@ -128,7 +199,7 @@ Repo.info = async function (name) {
 };
 
 // run git clone
-Repo.clone = async function (uri,name,branch=undefined) {
+Repo.clone = async function (uri,name,branch=undefined,auth=null) {
 
     validateRepoName(name);
     validateUri(uri);
@@ -145,7 +216,7 @@ Repo.clone = async function (uri,name,branch=undefined) {
     }
     if(exists){
       logger.notice("Repository already exists, pulling instead")
-      return await Repo.pull(name)
+      return await Repo.pull(name, auth, uri)
     }else{
       logger.notice(`Cloning repository: ${Repo.maskGitToken(uri)}`)
       try{
@@ -185,7 +256,7 @@ Repo.clone = async function (uri,name,branch=undefined) {
         logger.warning(`No host found in command`)
       }
       var maskedCommand = Repo.maskGitToken(cmd)
-      return await Cmd.executeSilentCommand({command:cmd,directory:directory,description:"Cloning repository",maskedCommand:maskedCommand})
+      return await Cmd.executeSilentCommand({command:cmd,directory:directory,description:"Cloning repository",maskedCommand:maskedCommand,env:Repo.authEnv(auth)})
 
     }
 };
@@ -248,11 +319,14 @@ Repo.addKnownHosts = async function (hosts) {
 
 
 // run a playbook
-Repo.pull = async function (name) {
+// auth : the repository's user and token (Repo.authEnv) ; uri : its address, to take a user and
+// token out of the remote of a clone made before (Repo.cleanRemote)
+Repo.pull = async function (name, auth = null, uri = null) {
       validateRepoName(name);
+      await Repo.cleanRemote(name, uri)
       var command = `${config.gitPullCommand} --verbose`
       var directory = path.join(config.repoPath,name)
-      return await Cmd.executeSilentCommand({directory:directory,command:command,description:"Pulling from git"},true)
+      return await Cmd.executeSilentCommand({directory:directory,command:command,description:"Pulling from git",env:Repo.authEnv(auth)},true)
 };
 
 // does the working tree have uncommitted changes, or local commits not yet
@@ -283,9 +357,12 @@ Repo.hasChanges = async function (name) {
 // commit local changes and push them, with a fetch/rebase/push retry loop
 // (issue #414) ; on a persistent conflict the rebase is aborted and the
 // conflicted files are reported in the error
-Repo.sync = async function (name, message) {
+Repo.sync = async function (name, message, auth = null, uri = null) {
     const directory = path.join(config.repoPath, name)
     const out = []
+    // the fetch, the rebase and the push sign in as the repository (Repo.authEnv)
+    const env = Repo.authEnv(auth)
+    await Repo.cleanRemote(name, uri)
     const attempts = 5
 
     // commits are made as the application, the triggering user is part of the
@@ -309,10 +386,10 @@ Repo.sync = async function (name, message) {
 
     for (let attempt = 1; attempt <= attempts; attempt++) {
       try {
-        out.push(await Cmd.executeSilentCommand({ command: "git fetch origin", directory, description: "Fetching from git" }, true))
+        out.push(await Cmd.executeSilentCommand({ command: "git fetch origin", directory, description: "Fetching from git", env }, true))
         try {
           // the identity is needed here too : a rebase rewrites the local commits
-          out.push(await Cmd.executeSilentCommand({ command: `git -c user.name="AnsibleForms" -c user.email="ansibleforms@localhost" pull --rebase`, directory, description: "Rebasing on remote" }, true))
+          out.push(await Cmd.executeSilentCommand({ command: `git -c user.name="AnsibleForms" -c user.email="ansibleforms@localhost" pull --rebase`, directory, description: "Rebasing on remote", env }, true))
         } catch (e) {
           // a clone of an empty repository has no upstream yet ; nothing to rebase on
           if (/couldn't find remote ref|no such ref was fetched|no tracking information|unknown revision/i.test(e.message)) {
@@ -321,7 +398,7 @@ Repo.sync = async function (name, message) {
             throw e
           }
         }
-        out.push(await Cmd.executeSilentCommand({ command: `${config.gitPushCommand} -u origin HEAD`, directory, description: "Pushing to git" }, true))
+        out.push(await Cmd.executeSilentCommand({ command: `${config.gitPushCommand} -u origin HEAD`, directory, description: "Pushing to git", env }, true))
         return out.join("\n")
       } catch (e) {
         // a rebase conflict can not be solved by retrying ; abort and report

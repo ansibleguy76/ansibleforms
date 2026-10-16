@@ -255,29 +255,22 @@ class Repository extends CrudModel {
     return { ...repo, user: cred.user, password: cred.password }
   }
 
-  static getPrivateUri(repo) {
-  if(repo.uri){
-    if(repo.user && repo.password){
-      var httpRegex = new RegExp("^http[s]{0,1}://[^@]+$", "g");
-
-      var match = httpRegex.exec(repo.uri);
-      if(match){
-        var privateUri = repo.uri.replace(/(http[s]{0,1}):\/\/(.*)/gm,`$1://${repo.user}:${repo.password}@$2`)
-        return privateUri
-      }else{
-        logger.debug("Not an http uri")
-        return repo.uri
-      }
-  
-    } else {
-      return repo.uri
-    }
-
-  } else {
-    logger.warning("No uri defined")
-    return ""
+  /**
+   * What git signs in with for a repository : its user and token (its own, or its credential's)
+   * over http(s), answered by the askpass script (Repo.authEnv) ; none over ssh, or without them.
+   * The address itself never carries them.
+   *
+   * Args:
+   *   repo (object): the repository, with its credential applied (withCredential).
+   *
+   * Returns:
+   *   object|null: { user, password }, or null.
+   */
+  static gitAuth(repo) {
+    if (!repo?.uri || !/^https?:\/\//i.test(repo.uri)) return null
+    if (!repo.user || !repo.password) return null
+    return { user: repo.user, password: repo.password }
   }
-}
 
   // mask credentials in git output before it is stored / returned : the embedded
   // password can appear as plain text (git stderr) or escaped (the command
@@ -531,9 +524,8 @@ class Repository extends CrudModel {
     }
     try {
       repo = await Repository.withCredential(await Repository.findByName(name))
-      var uri = Repository.getPrivateUri(repo)
       var branch = repo.branch || undefined
-      output = await Repo.clone(uri, name, branch)
+      output = await Repo.clone(repo.uri, name, branch, Repository.gitAuth(repo))
       if (repo.use_for_forms) {
         output += await Repository.seedFormsRepo(name)
       }
@@ -574,9 +566,9 @@ class Repository extends CrudModel {
       // the row is guaranteed to exist - the claim above matched it - so a failure here
       // is a real database or decrypt fault, which is exactly when NOT to degrade
       pullRepo = await Repository.findByName(name).catch(() => { repoUnknown = true; return null })
-      // its credential's password is masked in the output too ; a pull itself does not need it
+      // its credential : what the pull signs in with, and the password masked in the output
       if (pullRepo) pullRepo = await Repository.withCredential(pullRepo).catch(() => pullRepo)
-      output = await Repo.pull(name)
+      output = await Repo.pull(name, Repository.gitAuth(pullRepo), pullRepo?.uri)
       status = "success"
     } catch (e) {
       output = e.message
@@ -823,12 +815,12 @@ class Repository extends CrudModel {
       const repoDir = path.join(appConfig.repoPath, name)
       if (!fs.existsSync(repoDir)) {
         // first sync : clone it (an empty remote repository is fine)
-        await Repo.clone(Repository.getPrivateUri(syncRepo), name, syncRepo.branch || undefined)
+        await Repo.clone(syncRepo.uri, name, syncRepo.branch || undefined, Repository.gitAuth(syncRepo))
       }
       // bind the new staged forms to this repository before committing (only a
       // forms repo receives staged forms ; a config-only repo just pushes config)
       if (syncRepo.use_for_forms) Repository.flushStagingInto(name)
-      output = await Repo.sync(name, message || `Forms sync by ${triggeredBy || "AnsibleForms"}`)
+      output = await Repo.sync(name, message || `Forms sync by ${triggeredBy || "AnsibleForms"}`, Repository.gitAuth(syncRepo), syncRepo.uri)
       status = "success"
     } catch (e) {
       output = e.message

@@ -71,8 +71,14 @@ describe("Repository.withCredential", () => {
     await assert.rejects(Repository.withCredential({ name: "infra", credential: "half" }), /not found/);
   });
 
-  test("the URL git clones carries the credential", async () => {
+  test("git signs in with the credential, never through the address", async () => {
     const out = await Repository.withCredential({ name: "infra", uri: "https://git.example.com/infra.git", credential: "git.bot" });
-    assert.equal(Repository.getPrivateUri(out), "https://git-bot:s3cret-token@git.example.com/infra.git");
+    assert.deepEqual(Repository.gitAuth(out), { user: "git-bot", password: "s3cret-token" });
+    assert.equal(out.uri, "https://git.example.com/infra.git", "the address git is given carries no user or token");
+  });
+
+  test("over ssh, or without a user and token, git is given none", () => {
+    assert.equal(Repository.gitAuth({ uri: "git@github.com:org/infra.git", user: "u", password: "p" }), null);
+    assert.equal(Repository.gitAuth({ uri: "https://git.example.com/infra.git" }), null);
   });
 });
