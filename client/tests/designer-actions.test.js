@@ -20,7 +20,7 @@ describe('the designer toolbar', () => {
     expect(buttons.map((b) => b.key)).toEqual(['newFile', 'save', 'push', 'revert']);
     expect(buttons[0]).toMatchObject({ icon: 'file-circle-plus', title: 'New inventory' });
     expect(buttons[1]).toMatchObject({ icon: 'save', title: 't:designer.save', disabled: true });
-    expect(buttons[2]).toMatchObject({ icon: 'code-branch', color: 'orange' });
+    expect(buttons[2]).toMatchObject({ icon: 'fab,git', color: 'orange' });
   });
 
   it('leaves out what does not show, and refuses an action of its own', () => {
