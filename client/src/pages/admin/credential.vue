@@ -26,7 +26,13 @@ import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import TokenStorage from '@/lib/TokenStorage';
 import Helpers from '@/lib/Helpers';
-import { CREDENTIAL_TYPES } from '@/config/settings';
+import {
+  CREDENTIAL_TYPES,
+  SERVER_CREDENTIAL_TYPES,
+  TOKEN_CREDENTIAL_TYPES,
+  CREDENTIAL_SERVER_EXAMPLE,
+  credentialLabels,
+} from '@/config/settings';
 import { slugOf } from '@/lib/formsPath';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
@@ -62,6 +68,7 @@ const EDITED = [
   'host',
   'port',
   'secure',
+  'url',
   'ignore_certs',
   'ca_bundle',
   'db_type',
@@ -106,6 +113,7 @@ function editable(record) {
     host: record.host ?? '',
     port: record.port ?? '',
     secure: !!record.secure,
+    url: record.url ?? '',
     ignore_certs: !!record.ignore_certs,
     ca_bundle: record.ca_bundle ?? '',
     db_type: record.db_type || 'mysql',
@@ -117,8 +125,14 @@ const managed = computed(() => !!credential.value?.managed);
 const type = computed(() => edit.value?.credential_type);
 const isCyberark = computed(() => type.value === 'cyberark');
 const isDatabase = computed(() => type.value === 'database');
-// read from a secret store : the user and password typed here are not kept (a CyberArk's never is)
-const fromStore = computed(() => !isCyberark.value && edit.value?.secret_source === 'store');
+// a secret store's login never comes from a secret store (it would read a store to find it)
+const noStore = computed(() => ['cyberark', 'vault'].includes(type.value));
+// read from a secret store : the user and password typed here are not kept
+const fromStore = computed(() => !noStore.value && edit.value?.secret_source === 'store');
+// a Vault, an RTE, a Semaphore and a Rundeck log in with a token only : no user
+const hasUser = computed(() => !TOKEN_CREDENTIAL_TYPES.includes(type.value));
+// what its fields are called for its type
+const labels = computed(() => credentialLabels(t, type.value));
 const dirty = computed(
   () =>
     !!credential.value &&
@@ -289,7 +303,7 @@ const tabs = computed(() =>
     { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
     { key: 'type', label: t('settings.credentials.stepType'), icon: 'shapes' },
     { key: 'login', label: t('settings.credentials.stepLogin'), icon: 'user' },
-    !isCyberark.value && { key: 'store', label: t('settings.credentials.stepStore'), icon: 'vault' },
+    !noStore.value && { key: 'store', label: t('settings.credentials.stepStore'), icon: 'vault' },
     { key: 'used-by', label: t('settings.linked.usedBy'), icon: 'link', count: usedBy.value.length },
   ].filter(Boolean),
 );
@@ -317,6 +331,10 @@ function onTlsSwitch() {
   const port = Number(edit.value.port);
   if (!edit.value.port || port === 389 || port === 636) edit.value.port = edit.value.secure ? 636 : 389;
 }
+// an api, userpass or cyberark one : the one server it logs in to (a Vault, a CyberArk, a runner),
+// optional, and its TLS once it has one
+const hasServer = computed(() => SERVER_CREDENTIAL_TYPES.includes(type.value));
+const serverTls = computed(() => hasServer.value && !!String(edit.value?.url || '').trim());
 // an ldap one's servers' certificates : checked against these unless told not to
 const ldapCerts = computed(() => isLdap.value && edit.value?.secure && !edit.value?.ignore_certs);
 // an Entra ID or Open ID one : the app registration of an SSO provider, its redirect URL too
@@ -359,9 +377,12 @@ async function save() {
     credential_type: e.credential_type,
     host: hasConnection.value ? e.host.trim() : '',
     port: hasConnection.value && String(e.port ?? '').trim() !== '' ? e.port : null,
-    // an ldap one's : certificates not checked, the CA bundle (its client certificate below)
-    ignore_certs: isLdap.value && e.ignore_certs ? 1 : 0,
-    ca_bundle: isLdap.value ? e.ca_bundle : '',
+    // an api, userpass or cyberark one's server
+    url: hasServer.value ? e.url.trim() : '',
+    // an ldap one's, or a server's : certificates not checked, the CA bundle (an ldap one's client
+    // certificate below)
+    ignore_certs: (isLdap.value || serverTls.value) && e.ignore_certs ? 1 : 0,
+    ca_bundle: isLdap.value || (serverTls.value && !e.ignore_certs) ? e.ca_bundle : '',
     // an smtp or an ldap one's TLS
     secure: ['smtp', 'ldap'].includes(e.credential_type) && e.secure ? 1 : 0,
     db_type: isDatabase.value ? e.db_type : '',
@@ -370,7 +391,7 @@ async function save() {
   if (fromStore.value) {
     Object.assign(data, { secret_store: e.secret_store, secret_ref: e.secret_ref.trim() });
   } else {
-    Object.assign(data, { secret_store: '', secret_ref: '', user: e.user.trim() });
+    Object.assign(data, { secret_store: '', secret_ref: '', user: hasUser.value ? e.user.trim() : '' });
     // an Entra ID one's tenant
     data.tenant_id = e.credential_type === 'entraid' ? e.tenant_id.trim() : '';
     // an Open ID one's issuer
@@ -416,23 +437,8 @@ async function testConnection() {
 const newPassword = ref('');
 // the user and the password as its type names them : an LDAP one's bind DN and password, an SSO
 // one's (Entra ID, Open ID) client id and secret, a CyberArk one's AppID
-const userLabel = computed(
-  () =>
-    ({
-      cyberark: t('settings.secretStores.appId'),
-      ldap: t('settings.ldap.bindUserDn'),
-      entraid: t('settings.oauth2.clientId'),
-      oidc: t('settings.oauth2.clientId'),
-    })[edit.value?.credential_type] || t('settings.fields.user'),
-);
-const passwordLabel = computed(
-  () =>
-    ({
-      ldap: t('settings.ldap.bindUserPassword'),
-      entraid: t('settings.oauth2.clientSecret'),
-      oidc: t('settings.oauth2.clientSecret'),
-    })[edit.value?.credential_type] || t('settings.fields.password'),
-);
+const userLabel = computed(() => labels.value.user || t('settings.fields.user'));
+const passwordLabel = computed(() => labels.value.password || t('settings.fields.password'));
 
 // Delete asks first
 const confirmDelete = ref(false);
@@ -676,6 +682,45 @@ onMounted(async () => {
                   :label="t('settings.credentials.database')"
                 />
               </template>
+              <!-- a secret store's or a runner's : the one server it logs in to, and how its
+                   certificate is checked -->
+              <template v-if="hasServer">
+                <BsInput
+                  class="af-credential-field"
+                  v-model="edit.url"
+                  icon="globe"
+                  :placeholder="CREDENTIAL_SERVER_EXAMPLE[type]"
+                  :isFloating="false"
+                  :required="true"
+                  :help="labels.serverHelp"
+                  :label="t('settings.credentials.server')"
+                />
+                <template v-if="serverTls">
+                  <div class="form-check form-switch mb-3">
+                    <input
+                      id="af-credential-skip-verify"
+                      v-model="edit.ignore_certs"
+                      class="form-check-input"
+                      type="checkbox"
+                      role="switch"
+                    />
+                    <label class="form-check-label" for="af-credential-skip-verify">{{
+                      t('settings.runners.skipVerify')
+                    }}</label>
+                  </div>
+                  <BsInput
+                    v-if="!edit.ignore_certs"
+                    class="af-credential-field"
+                    v-model="edit.ca_bundle"
+                    type="textarea"
+                    icon="certificate"
+                    placeholder="-----BEGIN CERTIFICATE-----"
+                    :isFloating="false"
+                    :help="t('settings.secretStores.caBundleHelp')"
+                    :label="t('settings.fields.caBundle')"
+                  />
+                </template>
+              </template>
               <p v-if="fromStore" class="form-text mb-0">{{ t('settings.credentials.loginFromStore') }}</p>
               <template v-else>
                 <!-- an Entra ID one's tenant : the tenant id the app is in, first as in
@@ -701,6 +746,7 @@ onMounted(async () => {
                   :label="t('settings.oauth2.issuer')"
                 />
                 <BsInput
+                  v-if="hasUser"
                   class="af-credential-field"
                   v-model="edit.user"
                   icon="user"
@@ -740,7 +786,11 @@ onMounted(async () => {
                   placeholder="**********"
                   :isFloating="false"
                   :disabled="managed"
-                  :help="t('settings.common.passwordKeep')"
+                  :help="
+                    labels.passwordHelp
+                      ? `${labels.passwordHelp} ${t('settings.common.passwordKeep')}`
+                      : t('settings.common.passwordKeep')
+                  "
                   :label="passwordLabel"
                 />
                 <!-- an Entra ID or Open ID one's redirect URL, as registered with its client -->

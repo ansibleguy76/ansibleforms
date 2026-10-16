@@ -39,7 +39,7 @@ const Job = (await import("../src/models/job.model.js")).default;
 const { default: Settings } = await import("../src/models/settings.model.js");
 const { channelsOfForm } = await import("../src/models/form.model.js");
 const { default: NotificationChannel } = await import("../src/models/notificationChannel.model.js");
-const { moveMailServersToChannels, copyMailSettingsToServers, moveMailServersToCredentials, moveSsoClientsToCredentials, moveLdapServersToCredentials, moveRunnerSecretsToCredentials, moveBannerSwitchToAnnouncements } = await import("../src/models/schema.model.js");
+const { moveMailServersToChannels, copyMailSettingsToServers, moveMailServersToCredentials, moveSsoClientsToCredentials, moveLdapServersToCredentials, moveRunnerSecretsToCredentials, moveConnectionsToCredentials, retypeConnectionCredentials, moveBannerSwitchToAnnouncements } = await import("../src/models/schema.model.js");
 
 beforeEach(() => {
   queries.length = 0;
@@ -315,5 +315,124 @@ describe("the announcements' switch of before moves to each announcement", () =>
     ];
     expect(await moveBannerSwitchToAnnouncements()).toMatch(/disabled 2 announcement/);
     expect(queries.some((q) => /SET banner_show = 1/.test(q.sql))).toBe(true);
+  });
+});
+
+describe("a secret store's and a runner's address move to their credential", () => {
+  const store = (over) => ({ id: 1, name: "vault", type: "vault", address: "https://vault.example.com:8200/", ignore_certs: 0, ca_bundle: "CA", credential: "vault-token", ...over });
+  const runner = (over) => ({ id: 2, name: "jenkins", type: "jenkins", address: "http://jenkins:8080", ignore_certs: 1, ca_bundle: null, credential: "jenkins-login", ...over });
+
+  test("no record with an address left : nothing to do", async () => {
+    expect(await moveConnectionsToCredentials()).toBe(null);
+  });
+
+  test("a credential without an address : the record's goes into it, the record's emptied", async () => {
+    answers = [
+      { match: /FROM AnsibleForms\.`secret_stores`/, rows: [store()] },
+      { match: /SELECT \* FROM AnsibleForms\.`credentials` WHERE name/, rows: [{ id: 9, name: "vault-token", credential_type: "api", url: null }] },
+    ];
+    expect(await moveConnectionsToCredentials()).toMatch(/vault into vault-token/);
+    const into = queries.find((q) => /^UPDATE AnsibleForms\.`credentials` SET \?/.test(q.sql));
+    expect(into.args).toEqual([{ url: "https://vault.example.com:8200", ignore_certs: 0, ca_bundle: "CA" }, 9]);
+    const emptied = queries.find((q) => /^UPDATE AnsibleForms\.`secret_stores`/.test(q.sql));
+    expect(emptied.args).toEqual([{ url: "", ignore_certs: 0, ca_bundle: null, credential: "vault-token" }, 1]);
+  });
+
+  test("a credential with another address : a copy with the record's, which the record then names", async () => {
+    answers = [
+      { match: /FROM AnsibleForms\.`runners`/, rows: [runner()] },
+      { match: /SELECT \* FROM AnsibleForms\.`credentials` WHERE name/, rows: [{ id: 9, name: "jenkins-login", credential_type: "userpass", url: "http://other:8080" }] },
+    ];
+    expect(await moveConnectionsToCredentials()).toMatch(/a copy of jenkins-login, jenkins-login-jenkins/);
+    const insert = queries.find((q) => /^INSERT INTO AnsibleForms\.`credentials`/.test(q.sql));
+    expect(insert.args.slice(2)).toEqual(["userpass", "http://jenkins:8080", 1, null, 9]);
+    expect(queries.find((q) => /^UPDATE AnsibleForms\.`runners`/.test(q.sql)).args).toEqual([{ uri: "", ignore_certs: 0, ca_bundle: null, credential: "jenkins-login-jenkins" }, 2]);
+  });
+
+  test("the same address : nothing copied, the record's emptied", async () => {
+    answers = [
+      { match: /FROM AnsibleForms\.`runners`/, rows: [runner()] },
+      { match: /SELECT \* FROM AnsibleForms\.`credentials` WHERE name/, rows: [{ id: 9, name: "jenkins-login", credential_type: "userpass", url: "http://jenkins:8080" }] },
+    ];
+    await moveConnectionsToCredentials();
+    expect(queries.some((q) => /^INSERT INTO AnsibleForms\.`credentials`/.test(q.sql))).toBe(false);
+    expect(queries.find((q) => /^UPDATE AnsibleForms\.`runners`/.test(q.sql)).args[0].credential).toBe("jenkins-login");
+  });
+
+  test("no credential : a new one with the store's token or AppID, the store's own emptied", async () => {
+    answers = [
+      {
+        match: /FROM AnsibleForms\.`secret_stores`/,
+        rows: [store({ name: "legacy", credential: null, token: "enc" }), store({ id: 3, name: "ccp", type: "cyberark_ccp", credential: null, app_id: "AF", client_cert: "CERT", client_key: "enckey" })],
+      },
+    ];
+    expect(await moveConnectionsToCredentials()).toMatch(/legacy into legacy-token, ccp into ccp-appid/);
+    const inserts = queries.filter((q) => /^INSERT INTO AnsibleForms\.`credentials` SET/.test(q.sql)).map((q) => q.args[0]);
+    expect(inserts[0]).toMatchObject({ name: "legacy-token", credential_type: "api", password: "enc", url: "https://vault.example.com:8200" });
+    expect(inserts[1]).toMatchObject({ name: "ccp-appid", credential_type: "cyberark", user: "AF", client_cert: "CERT", client_key: "enckey" });
+    const emptied = queries.find((q) => /^UPDATE AnsibleForms\.`secret_stores`/.test(q.sql));
+    expect(emptied.args[0]).toMatchObject({ url: "", token: null, credential: "legacy-token" });
+  });
+
+  test("an RTE that registered itself and a seeded record are left as they are", async () => {
+    await moveConnectionsToCredentials();
+    const select = queries.find((q) => /FROM AnsibleForms\.`runners`/.test(q.sql));
+    expect(select.sql).toMatch(/node_id IS NULL/);
+    expect(select.sql).toMatch(/COALESCE\(managed, 0\) = 0/);
+  });
+});
+
+describe("an RTE added by hand moves its address and token to a credential", () => {
+  test("no credential : a new one with its token, the runner's own emptied", async () => {
+    answers = [{ match: /FROM AnsibleForms\.`runners`/, rows: [{ id: 5, name: "rte-dc2", type: "rte", address: "https://rte-dc2:8000", token: "enc", ignore_certs: 0, ca_bundle: null, credential: null }] }];
+    expect(await moveConnectionsToCredentials()).toMatch(/rte-dc2 into rte-dc2-token/);
+    const insert = queries.find((q) => /^INSERT INTO AnsibleForms\.`credentials` SET/.test(q.sql)).args[0];
+    expect(insert).toMatchObject({ name: "rte-dc2-token", credential_type: "api", password: "enc", url: "https://rte-dc2:8000" });
+    expect(queries.find((q) => /^UPDATE AnsibleForms\.`runners`/.test(q.sql)).args[0]).toMatchObject({ uri: "", token: null, credential: "rte-dc2-token" });
+  });
+});
+
+describe("the credentials of the secret stores and runners get the type of their kind", () => {
+  const cred = (over) => ({ id: 9, name: "login", credential_type: "userpass", url: "http://jenkins", managed: 0, ...over });
+
+  test("used by one kind only : its type becomes that kind", async () => {
+    answers = [
+      { match: /FROM AnsibleForms\.`runners`/, rows: [{ id: 2, type: "jenkins", flavour: null, credential: "login" }] },
+      { match: /SELECT \* FROM AnsibleForms\.`credentials`/, rows: [cred()] },
+    ];
+    expect(await retypeConnectionCredentials()).toMatch(/login is jenkins/);
+    expect(queries.find((q) => /SET credential_type = \?/.test(q.sql)).args).toEqual(["jenkins", 9]);
+  });
+
+  test("an awx runner's : its flavour ; a Vault's : vault", async () => {
+    answers = [
+      { match: /FROM AnsibleForms\.`secret_stores`/, rows: [{ id: 1, type: "vault", flavour: null, credential: "vt" }] },
+      { match: /FROM AnsibleForms\.`runners`/, rows: [{ id: 3, type: "awx", flavour: "aap", credential: "aap-login" }] },
+      { match: /SELECT \* FROM AnsibleForms\.`credentials`/, rows: (sql, args) => [cred({ name: args[0], credential_type: "api" })] },
+    ];
+    expect(await retypeConnectionCredentials()).toMatch(/vt is vault, aap-login is aap/);
+  });
+
+  test("used by several kinds, or by something else that checks its type : a copy per other kind", async () => {
+    answers = [
+      { match: /FROM AnsibleForms\.`secret_stores`/, rows: [{ id: 1, type: "vault", flavour: null, credential: "shared" }] },
+      { match: /FROM AnsibleForms\.`runners`/, rows: [{ id: 2, type: "rte", flavour: null, credential: "shared" }] },
+      { match: /UNION SELECT/, rows: [{ name: "shared" }] },
+      { match: /SELECT \* FROM AnsibleForms\.`credentials`/, rows: [cred({ name: "shared", credential_type: "api", url: "https://vault" })] },
+    ];
+    expect(await retypeConnectionCredentials()).toMatch(/a copy of shared for vault, shared-vault, a copy of shared for rte, shared-rte/);
+    expect(queries.some((q) => /SET credential_type = \?/.test(q.sql))).toBe(false);
+    expect(queries.find((q) => /^UPDATE AnsibleForms\.`runners` SET credential/.test(q.sql)).args).toEqual(["shared-rte", 2]);
+    expect(queries.find((q) => /SET url = NULL/.test(q.sql)).args).toEqual([9]);
+  });
+
+  test("of its kind already, or of the config seed : left as it is", async () => {
+    answers = [
+      { match: /FROM AnsibleForms\.`runners`/, rows: [{ id: 2, type: "jenkins", flavour: null, credential: "login" }] },
+      { match: /SELECT \* FROM AnsibleForms\.`credentials`/, rows: [cred({ credential_type: "jenkins" })] },
+    ];
+    expect(await retypeConnectionCredentials()).toBe(null);
+    answers[1] = { match: /SELECT \* FROM AnsibleForms\.`credentials`/, rows: [cred({ managed: 1 })] };
+    expect(await retypeConnectionCredentials()).toBe(null);
   });
 });

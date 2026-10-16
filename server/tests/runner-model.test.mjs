@@ -37,6 +37,7 @@ vi.mock("../src/models/db.model.js", () => ({
         for (const r of rows) if (r.id != params[0] && r.type === params[1]) r.is_default = 0;
         return { changedRows: 1 };
       }
+      if (/SELECT credential_type FROM AnsibleForms.`credentials`/.test(sql)) return rows.filter((r) => r.name === params[0] && r.credential_type);
       if (/FROM AnsibleForms.`nodes` WHERE id IN/.test(sql)) return params[0].filter((id) => aliveNodes.has(id)).map((id) => ({ id }));
       if (/^DELETE FROM AnsibleForms.`runners`/.test(sql)) {
         deletes.push({ sql, params });
@@ -224,5 +225,54 @@ describe("runners an RTE registered itself", () => {
     // no alias to resolve : the connection has no default database
     assert.doesNotMatch(sql, /DELETE \w+ FROM/);
     assert.deepEqual(params, [600]);
+  });
+});
+
+describe("a runner's address from its credential", () => {
+  const login = (over) => ({ id: 50, name: "jenkins-login", credential_type: "jenkins", url: "https://jenkins.example.com", ignore_certs: 1, ca_bundle: "CA", ...over });
+
+  test("a credential with an address : no uri of its own is needed, and one sent is emptied", async () => {
+    rows.push(login());
+    await Runner.create({ name: "j", type: "jenkins", credential: "jenkins-login" });
+    assert.equal(rows.at(-1).uri, "");
+    await Runner.create({ name: "k", type: "jenkins", uri: "http://old", ignore_certs: 1, credential: "jenkins-login" });
+    assert.equal(rows.at(-1).uri, "");
+    assert.equal(rows.at(-1).ignore_certs, 0);
+  });
+
+  test("a credential without one : its own uri is needed", async () => {
+    rows.push(login({ url: null }));
+    await assert.rejects(Runner.create({ name: "j", type: "jenkins", credential: "jenkins-login" }), /needs an address/);
+    await Runner.create({ name: "j", type: "jenkins", uri: "http://own", credential: "jenkins-login" });
+    assert.equal(rows.at(-1).uri, "http://own");
+  });
+
+  test("an rte takes its credential's address too ; one that registered itself keeps its own", async () => {
+    rows.push(login({ name: "rte-token", credential_type: "rte" }));
+    await Runner.create({ name: "r", type: "rte", credential: "rte-token" });
+    assert.equal(rows.at(-1).uri, "");
+    assert.equal(await Runner.connectionFor({ type: "rte", credential: "rte-token", node_id: "n1" }), null);
+  });
+
+  test("the address and TLS a runner connects with are its credential's", async () => {
+    rows.push(login());
+    const conn = await Runner.connectionFor({ type: "jenkins", credential: "jenkins-login" });
+    assert.deepEqual(conn, { uri: "https://jenkins.example.com", ignore_certs: 1, ca_bundle: "CA" });
+  });
+});
+
+describe("a runner's credential is of its kind", () => {
+  test("a jenkins needs a jenkins one, an awx runner an awx, aap or ascender one", async () => {
+    rows.push({ id: 60, name: "j", credential_type: "jenkins", url: "http://j" }, { id: 61, name: "a", credential_type: "aap", url: "https://a/api/controller/v2" }, { id: 62, name: "p", credential_type: "userpass" });
+    await Runner.create({ name: "jk", type: "jenkins", credential: "j" });
+    await assert.rejects(Runner.create({ name: "jk2", type: "jenkins", credential: "a" }), /A jenkins runner signs in with a jenkins credential : 'a' is aap/);
+    await Runner.create({ name: "aap", type: "awx", flavour: "aap", credential: "a" });
+    await assert.rejects(Runner.create({ name: "jk3", type: "jenkins", uri: "http://own", credential: "p" }), /is userpass/);
+  });
+
+  test("the config seed may still name an api or userpass one (deprecated)", async () => {
+    rows.push({ id: 63, name: "p", credential_type: "userpass" });
+    await Runner.create({ name: "jk", type: "jenkins", uri: "http://own", credential: "p" }, { fromSeed: true });
+    assert.equal(rows.at(-1).credential, "p");
   });
 });

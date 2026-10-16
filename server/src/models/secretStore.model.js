@@ -5,6 +5,7 @@ import Errors from '../lib/errors.js';
 import { SECRET_STORE_TYPES } from '../secrets/providers/index.js';
 import { clearSecretCache } from '../secrets/cache.js';
 import { stripTrailingSlashes } from '../lib/url.js';
+import Credential from './credential.model.v2.js';
 
 // what secretStore.controller.js shows instead of a stored secret
 export const SECRET_MASK = '********';
@@ -75,14 +76,15 @@ class SecretStore extends CrudModel {
     }
     const cred = await CrudModel.findByName('credential', data.credential);
     if (!cred) throw new Errors.BadRequestError(`No credential named '${data.credential}'`);
-    // a CyberArk logs in with a cyberark credential (its AppID), a Vault with any other (its
+    // a CyberArk logs in with a cyberark credential (its AppID), a Vault with a vault one (its
     // password the token) ; the store's type is the one sent, else the one saved
     const type = data.type || (id !== undefined ? (await this.findById(id))?.type : undefined);
-    if (type && (type === 'cyberark_ccp') !== (cred.credential_type === 'cyberark')) {
+    const wanted = type === 'cyberark_ccp' ? 'cyberark' : 'vault';
+    if (type && cred.credential_type !== wanted) {
       throw new Errors.BadRequestError(
         type === 'cyberark_ccp'
           ? `A CyberArk secret store needs a cyberark credential : '${data.credential}' is not one`
-          : `A cyberark credential is for a CyberArk secret store : '${data.credential}' cannot give a token`,
+          : `A HashiCorp Vault secret store needs a vault credential : '${data.credential}' is not one`,
       );
     }
     if (cred.secret_store) {
@@ -120,17 +122,66 @@ class SecretStore extends CrudModel {
     return { ...store, token: cred.password };
   }
 
+  /**
+   * The store with where it connects : its credential's address and TLS when that carries an
+   * address, else its own (a store from before 7.3, or one the config seed declares with its own).
+   *
+   * Args:
+   *   store (object): the store record.
+   *
+   * Returns:
+   *   Promise<object>: a copy with its url, ignore_certs and ca_bundle its credential's, or the
+   *     record.
+   */
+  static async withConnection(store) {
+    if (!store?.credential) return store;
+    const conn = await Credential.connectionOf(store.credential).catch(() => null);
+    return conn ? { ...store, ...conn } : store;
+  }
+
+  /**
+   * Where a store written through the API connects : its credential's address empties its own
+   * (one place for it), and a store needs one of the two.
+   *
+   * Args:
+   *   data (object): the fields being saved.
+   *   current (object): the store as stored ; none on a create.
+   *   creating (boolean): a create (an update of a store not found is refused elsewhere).
+   *
+   * Raises:
+   *   BadRequestError: neither its credential nor itself has an address.
+   */
+  static async takeConnection(data, current, creating = false) {
+    const credential = data.credential !== undefined ? data.credential : current?.credential;
+    if (await Credential.connectionOf(credential).catch(() => null)) {
+      data.url = '';
+      data.ignore_certs = 0;
+      data.ca_bundle = null;
+      return;
+    }
+    const url = data.url !== undefined ? data.url : current?.url;
+    if ((creating || current) && !String(url || '').trim()) {
+      throw new Errors.BadRequestError('A secret store needs its address : a credential with a server address, or its own url');
+    }
+  }
+
   // opts carries { fromSeed:true } for the declarative config seed only
   static async create(data, opts = {}) {
     // the config seed may create its stores before the credentials they name : checked on use
-    if (!opts.fromSeed) await this.assertCredentialUsable(data);
+    if (!opts.fromSeed) {
+      await this.assertCredentialUsable(data);
+      await this.takeConnection(data, undefined, true);
+    }
     const res = await super.create(this.modelName, this.normalize(data, { creating: true }), opts);
     clearSecretCache();
     return res;
   }
 
   static async update(data, id, opts = {}) {
-    if (!opts.fromSeed) await this.assertCredentialUsable(data, id);
+    if (!opts.fromSeed) {
+      await this.assertCredentialUsable(data, id);
+      await this.takeConnection(data, await super.findById(this.modelName, id));
+    }
     // its type stays what it was made as (the credentials that read from it expect it) ; the
     // config seed may change it
     if (!opts.fromSeed && data.type !== undefined) {
@@ -164,16 +215,18 @@ class SecretStore extends CrudModel {
     return res;
   }
 
+  // read as they connect : a store naming a credential with an address has its address and TLS
   static async findAll() {
-    return super.findAll(this.modelName);
+    const rows = await super.findAll(this.modelName);
+    return Promise.all((rows || []).map((r) => this.withConnection(r)));
   }
 
   static async findById(id) {
-    return super.findById(this.modelName, id);
+    return this.withConnection(await super.findById(this.modelName, id));
   }
 
   static async findByName(name) {
-    return super.findByName(this.modelName, name);
+    return this.withConnection(await super.findByName(this.modelName, name));
   }
 
   /** `extra` as an object ; {} when empty or unreadable */

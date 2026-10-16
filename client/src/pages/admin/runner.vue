@@ -8,10 +8,11 @@
 /*                    whether it is the default of its kind       */
 /*    Type            RTE, AWX, AAP, Ascender, Semaphore, Rundeck,*/
 /*                    Jenkins                                     */
-/*    Connection      its address (and project), how its          */
-/*                    certificate is checked                      */
-/*    Credentials  a token, or a user and password (AWX), a       */
-/*                    user and its token (Jenkins)                */
+/*    Credentials     its credential : a token, or a user and     */
+/*                    password (AWX), a user and its token        */
+/*                    (Jenkins), and the server it connects to ;  */
+/*                    a Semaphore's, a Rundeck's or a Jenkins'    */
+/*                    project under it                            */
 /*    Forms           the forms that run on it, by name or as the */
 /*                    default of its type                         */
 /*    Jobs            the jobs that ran on it, the latest first   */
@@ -48,21 +49,11 @@ const runnerId = computed(() => String(route.params.id || ''));
 const runner = ref(null); // as saved
 const edit = ref(null); // as edited
 // what this page edits : the token and the password have their own dialog
-const EDITED = ['name', 'description', 'kind', 'uri', 'project', 'credential', 'skip_verify', 'custom_ca', 'ca_bundle'];
-// an example address of each kind, as the dialog's
-const URI_EXAMPLE = {
-  rte: 'https://rte-vmware:8000',
-  awx: 'https://awx.example.com/api/v2',
-  aap: 'https://aap.example.com/api/controller/v2',
-  ascender: 'https://ascender.example.com/api/v2',
-  semaphore: 'https://semaphore.example.com',
-  rundeck: 'https://rundeck.example.com',
-  jenkins: 'https://jenkins.example.com',
-};
+// (where it connects is its credential's)
+const EDITED = ['name', 'description', 'kind', 'project', 'credential'];
 
 /**
- * The fields of a runner as this page edits them : its kind from its type and flavour, the
- * certificate checks from ignore_certs and its CA bundle.
+ * The fields of a runner as this page edits them : its kind from its type and flavour.
  *
  * Args:
  *   record (object): the runner.
@@ -75,12 +66,8 @@ function editable(record) {
     name: record.name ?? '',
     description: record.description ?? '',
     kind: runnerKind(record),
-    uri: record.uri ?? '',
     project: record.project ?? '',
     credential: record.credential ?? '',
-    skip_verify: !!record.ignore_certs,
-    custom_ca: !!String(record.ca_bundle || '').trim(),
-    ca_bundle: record.ca_bundle ?? '',
   };
 }
 
@@ -91,8 +78,6 @@ const appStore = useAppStore();
 const readOnly = computed(() => managed.value || !appStore.isAdmin);
 // a Semaphore or a Rundeck : a project on its server, signed in with a token
 const hasProject = computed(() => PROJECT_RUNNER_KINDS.includes(edit.value?.kind));
-// an AWX, an AAP or an Ascender take a token or a user and password ; the others a token
-const isAwxKind = computed(() => AWX_RUNNER_KINDS.includes(edit.value?.kind));
 /**
  * Whether its Type tab can switch to a kind : its type stays what it was made as (the forms that
  * run on it expect it), an AWX one may change product (AWX, AAP, Ascender : one type).
@@ -109,18 +94,18 @@ function kindAllowed(kind) {
 }
 // a Jenkins signs in with a user and that user's API token ; its folder (project) is optional
 const isJenkins = computed(() => edit.value?.kind === 'jenkins');
-// the credentials it can sign in with : an api one (its password the token), or a userpass one
-// (a user and a password : an AWX's login, a Jenkins user and its API token)
-const credentialTypes = computed(() =>
-  isJenkins.value ? ['userpass'] : isAwxKind.value ? ['api', 'userpass'] : ['api'],
-);
+// the credentials it can sign in with : those of its kind (rte, awx, aap, ascender, semaphore,
+// rundeck, jenkins), each with its server
 const allCredentials = ref([]);
 const credentials = computed(() => [
   { name: '' },
   ...allCredentials.value
-    .filter((c) => credentialTypes.value.includes(c.credential_type))
+    // of its kind ; the one it names stays listed (an AWX may change product, its credential not)
+    .filter((c) => c.credential_type === edit.value?.kind || c.name === runner.value?.credential)
     .map((c) => ({ name: c.name })),
 ]);
+// where it connects, but an RTE : the server of the credential chosen ; none, it needs one
+const chosenServer = computed(() => allCredentials.value.find((c) => c.name === edit.value?.credential)?.url || '');
 /**
  * Reads the credentials its dropdown offers.
  */
@@ -194,12 +179,11 @@ async function update(data) {
 }
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
-// the dialog's steps : Runner, Type, Credentials, Connection ; then what runs on it
+// the dialog's steps : Runner, Type, Credentials ; then what runs on it
 const tabs = computed(() => [
   { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
   { key: 'type', label: t('settings.runners.stepType'), icon: 'shapes' },
   { key: 'credentials', label: t('settings.runners.stepAuth'), icon: 'key' },
-  { key: 'connection', label: t('settings.runners.stepConnection'), icon: 'globe' },
   { key: 'forms', label: t('settings.linked.forms'), icon: 'rectangle-list', count: runnerForms.value.length },
   { key: 'jobs', label: t('settings.linked.jobs'), icon: 'history', count: runnerJobs.value.length },
 ]);
@@ -278,21 +262,18 @@ const defaultFor = computed(() => t(`settings.runners.default_${runner.value?.ty
  */
 async function save() {
   const e = edit.value;
-  if (!e.name.trim() || !e.uri.trim()) {
+  if (!e.name.trim()) {
     toast.warning(t('settings.runners.fieldsRequired'));
     return;
   }
   const data = {
     name: e.name.trim(),
     description: e.description.trim(),
-    uri: e.uri.trim(),
     type: e.kind === 'rte' || PROJECT_RUNNER_KINDS.includes(e.kind) ? e.kind : 'awx',
     project: PROJECT_RUNNER_KINDS.includes(e.kind) ? String(e.project || '').trim() : null,
     flavour: ['aap', 'ascender'].includes(e.kind) ? e.kind : null,
     // as whom : a credential of Connections > Credentials
     credential: e.credential || null,
-    ignore_certs: e.skip_verify ? 1 : 0,
-    ca_bundle: !e.skip_verify && e.custom_ca ? e.ca_bundle : '',
   };
   if (await update(data)) {
     toast.success(`${data.name} ${t('settings.common.isUpdated')}`);
@@ -513,61 +494,6 @@ onMounted(async () => {
                 </label>
               </div>
             </template>
-            <!-- Connection : where it is, and how its certificate is checked -->
-            <template v-else-if="activeTab === 'connection'">
-              <BsInput
-                class="af-runner-field"
-                v-model="edit.uri"
-                icon="globe"
-                :placeholder="URI_EXAMPLE[edit.kind]"
-                :isFloating="false"
-                :required="true"
-                :help="t(`settings.runners.uriHelp_${edit.kind}`)"
-                :label="t('settings.fields.uri')"
-              />
-              <BsInput
-                v-if="hasProject"
-                class="af-runner-field"
-                v-model="edit.project"
-                icon="folder"
-                :isFloating="false"
-                :required="!isJenkins"
-                :help="t(`settings.runners.projectHelp_${edit.kind}`)"
-                :label="t('settings.runners.project')"
-              />
-              <div class="form-check form-switch mb-3">
-                <input
-                  id="af-runner-skip"
-                  v-model="edit.skip_verify"
-                  class="form-check-input"
-                  type="checkbox"
-                  role="switch"
-                  @change="edit.skip_verify && (edit.custom_ca = false)"
-                />
-                <label class="form-check-label" for="af-runner-skip">{{ t('settings.runners.skipVerify') }}</label>
-              </div>
-              <div v-if="!edit.skip_verify" class="form-check form-switch mb-3">
-                <input
-                  id="af-runner-ca"
-                  v-model="edit.custom_ca"
-                  class="form-check-input"
-                  type="checkbox"
-                  role="switch"
-                />
-                <label class="form-check-label" for="af-runner-ca">{{ t('settings.runners.customCa') }}</label>
-              </div>
-              <BsInput
-                v-if="!edit.skip_verify && edit.custom_ca"
-                class="af-runner-field"
-                v-model="edit.ca_bundle"
-                type="textarea"
-                icon="certificate"
-                placeholder="-----BEGIN CERTIFICATE-----"
-                :isFloating="false"
-                :help="t('settings.runners.caBundleHelp')"
-                :label="t('settings.fields.caBundle')"
-              />
-            </template>
             <!-- Authentication : an RTE's, a Semaphore's or a Rundeck's token, a Jenkins' user and
                  its token ; an AWX's token, or a user and password -->
             <template v-else>
@@ -580,13 +506,29 @@ onMounted(async () => {
                 :values="credentials"
                 valueKey="name"
                 labelKey="name"
-                :help="t(`settings.runners.credentialHelp_${isJenkins ? 'jenkins' : isAwxKind ? 'awx' : 'api'}`)"
+                :help="t(`settings.runners.credentialHelp_${edit.kind || 'rte'}`)"
                 :label="t('settings.runners.credential')"
               />
+              <!-- a credential without a server : said (it connects to its credential's) -->
+              <p v-if="edit.credential && !chosenServer" class="form-text text-warning-emphasis mb-0">
+                {{ t('settings.credentials.noServer') }}
+              </p>
               <!-- one from before credentials : its own token, until a credential is chosen -->
               <p v-if="ownSecret && !edit.credential" class="form-text mb-0">
                 {{ t(runner.node_id ? 'settings.runners.ownTokenRte' : 'settings.runners.ownToken') }}
               </p>
+              <!-- a Semaphore's project id, a Rundeck's project name, a Jenkins' folder : where on
+                   the credential's server it launches -->
+              <BsInput
+                v-if="hasProject"
+                class="af-runner-field mt-3"
+                v-model="edit.project"
+                icon="folder"
+                :isFloating="false"
+                :required="!isJenkins"
+                :help="t(`settings.runners.projectHelp_${edit.kind}`)"
+                :label="t('settings.runners.project')"
+              />
             </template>
           </fieldset>
         </div>
@@ -595,7 +537,7 @@ onMounted(async () => {
         <!-- Credentials : a new credential of the type it signs in with, chosen once made -->
         <AppNewCredentialButton
           v-if="activeTab === 'credentials'"
-          :type="isJenkins ? 'userpass' : 'api'"
+          :type="edit?.kind || 'rte'"
           :disabled="readOnly"
           @created="onCredentialCreated"
         />

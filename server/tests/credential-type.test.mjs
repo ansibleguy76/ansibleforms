@@ -91,3 +91,31 @@ describe("an ldap credential's servers", () => {
     assert.equal(Credential.requireTypeFields({ credential_type: "ldap", host: "ldap1, ldap2" }, true).host, "ldap1, ldap2");
   });
 });
+
+describe("a credential's server address", () => {
+  test("a runner's or a secret store's keeps it, trimmed and without a trailing slash", () => {
+    assert.equal(Credential.requireTypeFields({ credential_type: "vault", url: " https://vault:8200/ " }, true).url, "https://vault:8200");
+    assert.equal(Credential.requireTypeFields({ credential_type: "jenkins", url: "http://jenkins" }, true).url, "http://jenkins");
+    assert.equal(Credential.requireTypeFields({ credential_type: "cyberark", url: "https://ccp" }, true).url, "https://ccp");
+  });
+
+  test("they need it ; the config seed may leave it out", () => {
+    for (const type of ["rte", "awx", "aap", "ascender", "semaphore", "rundeck", "jenkins", "vault", "cyberark"]) {
+      assert.throws(() => Credential.requireTypeFields({ credential_type: type }, true), /needs its server/);
+    }
+    assert.throws(() => Credential.requireTypeFields({ credential_type: "awx", url: " " }), /needs its server/);
+    assert.equal(Credential.requireTypeFields({ credential_type: "rte" }, true, { fromSeed: true }).url, undefined);
+  });
+
+  test("another type has none", () => {
+    assert.equal(Credential.requireTypeFields({ credential_type: "api", url: "https://x" }, true).url, null);
+    assert.equal(Credential.requireTypeFields({ credential_type: "userpass", url: "https://x" }, true).url, null);
+    assert.equal(Credential.requireTypeFields({ credential_type: "database" }, true).url, null);
+  });
+
+  test("the runner and secret store types are known", () => {
+    for (const type of ["rte", "awx", "aap", "ascender", "semaphore", "rundeck", "jenkins", "vault"]) {
+      assert.equal(Credential.mirrorType({ credential_type: type }).is_database, 0);
+    }
+  });
+});

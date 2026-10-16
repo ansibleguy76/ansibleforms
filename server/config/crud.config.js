@@ -51,8 +51,11 @@ const crudConfigs = {
       // an oidc credential's issuer ; an entraid or oidc one's redirect URL
       { name: 'issuer' },
       { name: 'redirect_uri' },
+      // the address of the one server a runner's or a secret store's credential logs in to : that
+      // record's address and TLS are the credential's
+      { name: 'url' },
       // an ldap credential's TLS : certificates not checked, the CA bundle (its client certificate
-      // is client_cert)
+      // is client_cert) ; a runner's or a secret store's for its url
       { name: 'ignore_certs', isBoolean: true },
       { name: 'ca_bundle' },
       { name: 'description' },
@@ -74,7 +77,9 @@ const crudConfigs = {
       { name: 'name', isNaturalKey: true, required: true },
       { name: 'type', required: true },
       { name: 'description' },
-      { name: 'uri', required: true },
+      // its own address : an RTE's, or an other type's until its credential carries one
+      // (setDefault : the column is NOT NULL)
+      { name: 'uri', setDefault: true },
       { name: 'token', isEncrypted: true },
       { name: 'username' },
       { name: 'password', isEncrypted: true },
@@ -157,7 +162,8 @@ const crudConfigs = {
       { name: 'name', isNaturalKey: true, required: true },
       { name: 'type', required: true },
       { name: 'description' },
-      { name: 'url', required: true },
+      // its own address : empty once its credential carries one (setDefault : the column is NOT NULL)
+      { name: 'url', setDefault: true },
       { name: 'token', isEncrypted: true },
       // a credential of Connections > Credentials whose password is a Vault's token, instead
       // of its own token

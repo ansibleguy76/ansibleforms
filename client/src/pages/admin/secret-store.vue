@@ -8,10 +8,10 @@
 /*    Type        HashiCorp Vault or CyberArk CCP, and whether a  */
 /*                Vault is a Vault Enterprise (both set when it   */
 /*                was made, read only)                            */
-/*    Connection  its address and how its certificate is checked  */
 /*    Credentials its credential, or a new one : a Vault's        */
 /*                password is its token, a CyberArk's is a        */
-/*                cyberark one (AppID, client certificate, key)   */
+/*                cyberark one (AppID, client certificate, key) ; */
+/*                its address and TLS are the credential's        */
 /*    Options     namespace, KV version, mount, cache, extra      */
 /*  Test connection and Delete top right, beside Save. A store of */
 /*  the config seed is read only.                                 */
@@ -39,17 +39,13 @@ const loaded = ref(false);
 const storeId = computed(() => String(route.params.id || ''));
 const store = ref(null); // as saved
 const edit = ref(null); // as edited
-// what this page edits : how it logs in is its credential's
+// what this page edits : how it logs in, and where, is its credential's
 const EDITED = [
   'credential',
   'name',
   'description',
   'type',
   'vault_enterprise',
-  'url',
-  'skip_verify',
-  'custom_ca',
-  'ca_bundle',
   'namespace',
   'kv_version',
   'default_mount',
@@ -75,10 +71,6 @@ function editable(record) {
     credential: record.credential ?? '',
     type: record.type || 'vault',
     vault_enterprise: !!String(record.namespace || '').trim(),
-    url: record.url ?? '',
-    skip_verify: !!record.ignore_certs,
-    custom_ca: !!String(record.ca_bundle || '').trim(),
-    ca_bundle: record.ca_bundle ?? '',
     namespace: record.namespace ?? '',
     kv_version: Number(record.kv_version) || 2,
     default_mount: record.default_mount ?? '',
@@ -115,16 +107,17 @@ async function load() {
   loaded.value = true;
 }
 
-// the credentials it can log in with : a CyberArk's cyberark ones, a Vault's the others that
-// keep their own password (one read from a secret store would make the store read a store to
-// find its token)
+// the credentials it can log in with : a CyberArk's cyberark ones, a Vault's vault ones
 const allCredentials = ref([]);
 const credentials = computed(() => [
   { name: '' },
   ...allCredentials.value
-    .filter((c) => !c.secret_store && (c.credential_type === 'cyberark') === !isVault.value)
+    .filter((c) => c.credential_type === (isVault.value ? 'vault' : 'cyberark'))
     .map((c) => ({ name: c.name })),
 ]);
+
+// where it connects : the server of the credential chosen ; none, it needs one
+const chosenServer = computed(() => allCredentials.value.find((c) => c.name === edit.value?.credential)?.url || '');
 
 /**
  * Loads the credentials the Credential dropdown chooses from.
@@ -169,12 +162,11 @@ async function update(data) {
 }
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
-// the dialog's steps : Store, Type, Credentials, Connection, Options
+// the dialog's steps : Store, Type, Credentials, Options
 const tabs = computed(() => [
   { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
   { key: 'type', label: t('settings.secretStores.stepType'), icon: 'shapes' },
   { key: 'credentials', label: t('settings.secretStores.stepAuth'), icon: 'key' },
-  { key: 'connection', label: t('settings.secretStores.stepConnection'), icon: 'globe' },
   { key: 'options', label: t('settings.secretStores.stepOptions'), icon: 'sliders' },
 ]);
 const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
@@ -201,7 +193,7 @@ const crumbs = computed(() => {
  */
 async function save() {
   const e = edit.value;
-  if (!e.name.trim() || !e.url.trim()) {
+  if (!e.name.trim()) {
     toast.warning(t('settings.secretStores.fieldsRequired'));
     return;
   }
@@ -214,9 +206,6 @@ async function save() {
     name: e.name.trim(),
     description: e.description.trim(),
     type: e.type,
-    url: e.url.trim(),
-    ignore_certs: e.skip_verify ? 1 : 0,
-    ca_bundle: !e.skip_verify && e.custom_ca ? e.ca_bundle : '',
     namespace: isVault.value && e.vault_enterprise ? e.namespace.trim() : '',
     cache_ttl_seconds: e.cache_ttl_seconds,
     extra: typeof e.extra === 'string' ? e.extra.trim() : e.extra,
@@ -385,50 +374,6 @@ onMounted(async () => {
                 <div class="form-text mt-1">{{ t('settings.secretStores.enterpriseHelp') }}</div>
               </div>
             </template>
-            <!-- Connection : where it is, and how its certificate is checked -->
-            <template v-else-if="activeTab === 'connection'">
-              <BsInput
-                class="af-store-field"
-                v-model="edit.url"
-                icon="globe"
-                :placeholder="isVault ? 'https://vault.example.com:8200' : 'https://ccp.example.com'"
-                :isFloating="false"
-                :required="true"
-                :label="t('settings.fields.uri')"
-              />
-              <div class="form-check form-switch mb-3">
-                <input
-                  id="af-store-skip"
-                  v-model="edit.skip_verify"
-                  class="form-check-input"
-                  type="checkbox"
-                  role="switch"
-                  @change="edit.skip_verify && (edit.custom_ca = false)"
-                />
-                <label class="form-check-label" for="af-store-skip">{{ t('settings.runners.skipVerify') }}</label>
-              </div>
-              <div v-if="!edit.skip_verify" class="form-check form-switch mb-3">
-                <input
-                  id="af-store-ca"
-                  v-model="edit.custom_ca"
-                  class="form-check-input"
-                  type="checkbox"
-                  role="switch"
-                />
-                <label class="form-check-label" for="af-store-ca">{{ t('settings.runners.customCa') }}</label>
-              </div>
-              <BsInput
-                v-if="!edit.skip_verify && edit.custom_ca"
-                class="af-store-field"
-                v-model="edit.ca_bundle"
-                type="textarea"
-                icon="certificate"
-                placeholder="-----BEGIN CERTIFICATE-----"
-                :isFloating="false"
-                :help="t('settings.runners.caBundleHelp')"
-                :label="t('settings.fields.caBundle')"
-              />
-            </template>
             <!-- Credentials : its credential, or a new one of its kind -->
             <template v-else-if="activeTab === 'credentials'">
               <BsInput
@@ -445,6 +390,10 @@ onMounted(async () => {
                 "
                 :label="t('settings.secretStores.credential')"
               />
+              <!-- a credential without a server : said (the store connects to its credential's) -->
+              <p v-if="edit.credential && !chosenServer" class="form-text text-warning-emphasis mt-3 mb-0">
+                {{ t('settings.credentials.noServer') }}
+              </p>
               <!-- a store from before credentials : its own token or AppID, until one is chosen -->
               <p v-if="(isVault ? store.token : store.app_id) && !edit.credential" class="form-text mt-3 mb-0">
                 {{ t(isVault ? 'settings.secretStores.ownToken' : 'settings.secretStores.ownLogin') }}
@@ -526,7 +475,7 @@ onMounted(async () => {
           v-if="activeTab === 'credentials'"
           icon="plus"
           :disabled="managed"
-          @click="creator?.newItem({ credential_type: isVault ? 'api' : 'cyberark' })"
+          @click="creator?.newItem({ credential_type: isVault ? 'vault' : 'cyberark' })"
           >{{ t('settings.repositories.newCredential') }}</BsButton
         >
         <BsButton icon="plug" cssClass="text-nowrap" :disabled="testing" @click="testConnection()">{{

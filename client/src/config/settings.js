@@ -24,6 +24,9 @@ import { ssoCallbackUrl, SSO_EXAMPLE_BASE } from '@/lib/ssoCallback';
 // this is the early, explanatory answer rather than the only line of defence.
 const cronValidator = (t) => (value) => cronValidationMessage(t, value);
 
+// a runner's or a secret store's credential with its server : its TLS is asked for
+const credentialServer = (r) => SERVER_CREDENTIAL_TYPES.includes(r?.credential_type) && !!String(r?.url || '').trim();
+
 // The chat assistant's providers (server/src/chat/vendors.js has the same list and defaults) :
 // choosing one fills in its base url, auth type and api version, which stay editable
 export const CHAT_PROVIDERS = [
@@ -312,20 +315,102 @@ export function announcementLevelPill(t, level) {
 // how a user signed in, as the disclaimer's acceptances name it
 export const SIGN_IN_TYPES = { local: 'Local', ldap: 'LDAP', azuread: 'Microsoft Entra ID', oidc: 'OpenID Connect' };
 
-// what a credential is for (its type), in the order the dialog offers them
-// userpass : a user and a password for any login, the default ; ssh : one for SSH to a server
+// what a credential is for (its type) ; the dialog and its page list them by name
+// userpass : a user and a password for any login, the default ; ssh : one for SSH to a server ;
+// then a secret store's and a runner's, each with its server
 export const CREDENTIAL_TYPES = [
   'userpass',
   'ssh',
   'git',
   'api',
   'database',
-  'cyberark',
   'smtp',
   'ldap',
   'entraid',
   'oidc',
+  'vault',
+  'cyberark',
+  'rte',
+  'awx',
+  'aap',
+  'ascender',
+  'semaphore',
+  'rundeck',
+  'jenkins',
 ];
+// the types that carry the server they log in to (server : models/credential.model.v2.js URL_TYPES)
+export const SERVER_CREDENTIAL_TYPES = [
+  'vault',
+  'cyberark',
+  'rte',
+  'awx',
+  'aap',
+  'ascender',
+  'semaphore',
+  'rundeck',
+  'jenkins',
+];
+// the types that log in with a token only : no user
+export const TOKEN_CREDENTIAL_TYPES = ['vault', 'rte', 'semaphore', 'rundeck'];
+// an example server of each : an awx one's with its API path (AAP 2.5+ behind its gateway)
+export const CREDENTIAL_SERVER_EXAMPLE = {
+  vault: 'https://vault.example.com:8200',
+  cyberark: 'https://ccp.example.com',
+  rte: 'https://rte-vmware:8000',
+  awx: 'https://awx.example.com/api/v2',
+  aap: 'https://aap.example.com/api/controller/v2',
+  ascender: 'https://ascender.example.com/api/v2',
+  semaphore: 'https://semaphore.example.com',
+  rundeck: 'https://rundeck.example.com',
+  jenkins: 'https://jenkins.example.com',
+};
+
+/**
+ * What a credential's fields are called for its type, and what they say : a CyberArk's user is its
+ * AppID, an RTE's password its RTE_TOKEN, an AWX's a token or a password, a runner's server its
+ * address with what it ends with.
+ *
+ * Args:
+ *   t (function): the translation.
+ *   type (string): the credential type.
+ *
+ * Returns:
+ *   object: { user, password, passwordHelp, serverHelp } ; null where the default fits.
+ */
+export function credentialLabels(t, type) {
+  const awx = ['awx', 'aap', 'ascender'].includes(type);
+  return {
+    user:
+      {
+        cyberark: t('settings.secretStores.appId'),
+        ldap: t('settings.ldap.bindUserDn'),
+        entraid: t('settings.oauth2.clientId'),
+        oidc: t('settings.oauth2.clientId'),
+      }[type] || (awx ? t('settings.credentials.userOptional') : null),
+    password:
+      {
+        ldap: t('settings.ldap.bindUserPassword'),
+        entraid: t('settings.oauth2.clientSecret'),
+        oidc: t('settings.oauth2.clientSecret'),
+        vault: t('settings.fields.token'),
+        rte: t('settings.credentials.rteToken'),
+        semaphore: t('settings.credentials.apiToken'),
+        rundeck: t('settings.credentials.apiToken'),
+        jenkins: t('settings.credentials.apiToken'),
+      }[type] || (awx ? t('settings.credentials.tokenOrPassword') : null),
+    passwordHelp:
+      type === 'rte'
+        ? t('settings.credentials.rteTokenHelp')
+        : awx
+          ? t('settings.credentials.tokenOrPasswordHelp')
+          : null,
+    serverHelp: SERVER_CREDENTIAL_TYPES.includes(type)
+      ? ['vault', 'cyberark'].includes(type)
+        ? t('settings.credentials.serverHelp')
+        : t(`settings.runners.uriHelp_${type}`)
+      : null,
+  };
+}
 
 // The flavours of an awx runner (server/src/models/runner.model.js has the same list) : which
 // product it is (its uri carries its API path)
@@ -344,17 +429,6 @@ export const RUNNER_KINDS = ['rte', 'aap', 'ascender', 'awx', 'jenkins', 'rundec
 export const PROJECT_RUNNER_KINDS = ['semaphore', 'rundeck', 'jenkins'];
 // the kinds of an awx runner : a token, or a user and password
 export const AWX_RUNNER_KINDS = ['awx', 'aap', 'ascender'];
-// an example address of each kind : an awx runner's with its API path (AAP 2.5+ behind its
-// gateway)
-const RUNNER_URI_EXAMPLE = {
-  rte: 'https://rte-vmware:8000',
-  awx: 'https://awx.example.com/api/v2',
-  aap: 'https://aap.example.com/api/controller/v2',
-  ascender: 'https://ascender.example.com/api/v2',
-  semaphore: 'https://semaphore.example.com',
-  rundeck: 'https://rundeck.example.com',
-  jenkins: 'https://jenkins.example.com',
-};
 
 /**
  * A runner's kind, from its type and flavour.
@@ -1509,13 +1583,14 @@ export default function getSettings(t) {
           // a cyberark credential is how a CyberArk store logs in : never read from a store
           key: 'store',
           label: t('settings.credentials.stepStore'),
-          when: (item) => item.credential_type !== 'cyberark',
+          // a secret store's never is (it would read a store to find its own login)
+          when: (item) => !['cyberark', 'vault'].includes(item.credential_type),
         },
       ],
       // where the user and password are kept is not stored : a secret store (then the user and
       // password typed are not kept) or MySQL, the app's database (then no secret store)
       beforeSave: ({ secret_source, ...item }) => {
-        if (secret_source === 'store' && item.credential_type !== 'cyberark') {
+        if (secret_source === 'store' && !['cyberark', 'vault'].includes(item.credential_type)) {
           delete item.user;
           delete item.password;
           return item;
@@ -1748,19 +1823,31 @@ export default function getSettings(t) {
           dependencyValues: ['entraid'],
         },
         {
+          // a secret store's or a runner's : the one server it logs in to ; that record then
+          // connects there
+          key: 'url',
+          step: 'login',
+          icon: 'globe',
+          label: t('settings.credentials.server'),
+          help: (r) => credentialLabels(t, r.credential_type).serverHelp,
+          placeholder: (r) => CREDENTIAL_SERVER_EXAMPLE[r.credential_type] || '',
+          hidden: true,
+          noTable: true,
+          required: false,
+          requiredWhen: (r) => SERVER_CREDENTIAL_TYPES.includes(r.credential_type),
+          dependency: 'credential_type',
+          dependencyValues: SERVER_CREDENTIAL_TYPES,
+        },
+        {
           key: 'user',
           step: 'login',
           label: t('settings.fields.user'),
           // a cyberark credential's user is its AppID, an ldap one's the bind DN, an entraid or oidc
-          // one's the client id
-          dialogLabel: (r) =>
-            ({
-              cyberark: t('settings.secretStores.appId'),
-              ldap: t('settings.ldap.bindUserDn'),
-              entraid: t('settings.oauth2.clientId'),
-              oidc: t('settings.oauth2.clientId'),
-            })[r.credential_type] || null,
+          // one's the client id, an AWX's optional (a token without one)
+          dialogLabel: (r) => credentialLabels(t, r.credential_type).user,
           help: (r) => (r.credential_type === 'cyberark' ? t('settings.secretStores.appIdHelp') : null),
+          // a Vault, an RTE, a Semaphore and a Rundeck log in with a token only
+          showWhen: (r) => !TOKEN_CREDENTIAL_TYPES.includes(r.credential_type),
           // no column : what it is depends on the type (a user, a bind DN, a client id), its page
           // shows it
           noTable: true,
@@ -1781,16 +1868,13 @@ export default function getSettings(t) {
           filterable: false,
           icon: 'lock',
           hidden: true,
-          // an ldap credential's password is the bind password, an entraid or oidc one's the client secret
-          dialogLabel: (r) =>
-            ({
-              ldap: t('settings.ldap.bindUserPassword'),
-              entraid: t('settings.oauth2.clientSecret'),
-              oidc: t('settings.oauth2.clientSecret'),
-            })[r.credential_type] || null,
+          // an ldap credential's password is the bind password, an entraid or oidc one's the client
+          // secret, a runner's and a Vault's a token (an AWX's a token or its user's password)
+          dialogLabel: (r) => credentialLabels(t, r.credential_type).password,
+          help: (r) => credentialLabels(t, r.credential_type).passwordHelp,
           // a cyberark credential has a client key instead
           dependency: 'credential_type',
-          dependencyValues: ['userpass', 'ssh', 'git', 'api', 'database', 'smtp', 'ldap', 'entraid', 'oidc'],
+          dependencyValues: CREDENTIAL_TYPES.filter((type) => type !== 'cyberark'),
         },
         {
           // an entraid or oidc credential's redirect URL, as registered with the client : empty,
@@ -1808,17 +1892,19 @@ export default function getSettings(t) {
           dependencyValues: ['entraid', 'oidc'],
         },
         {
-          // an ldap one with TLS : its servers' certificates not checked
+          // an ldap one with TLS : its servers' certificates not checked ; a server's (an api,
+          // userpass or cyberark one with an address) : its certificate not checked
           key: 'ignore_certs',
           step: 'login',
           label: t('settings.ldap.ignoreCerts'),
-          help: t('settings.ldap.ignoreCertsDesc'),
+          dialogLabel: (r) => (credentialServer(r) ? t('settings.runners.skipVerify') : null),
+          help: (r) => (credentialServer(r) ? null : t('settings.ldap.ignoreCertsDesc')),
           type: 'checkbox',
           noTable: true,
           hidden: true,
           required: false,
           filterable: false,
-          showWhen: (r) => r.credential_type === 'ldap' && !!r.secure,
+          showWhen: (r) => (r.credential_type === 'ldap' && !!r.secure) || credentialServer(r),
         },
         {
           // a cyberark credential : the client certificate and key its AppID may be restricted to ;
@@ -1837,16 +1923,18 @@ export default function getSettings(t) {
             r.credential_type === 'cyberark' || (r.credential_type === 'ldap' && !!r.secure && !r.ignore_certs),
         },
         {
-          // an ldap one with its certificates checked : the CA bundle they are checked against
+          // an ldap one with its certificates checked, or a server's : the CA bundle they are
+          // checked against
           key: 'ca_bundle',
           step: 'login',
           icon: 'certificate',
           type: 'textarea',
           label: t('settings.fields.caBundle'),
+          help: (r) => (credentialServer(r) ? t('settings.secretStores.caBundleHelp') : null),
           placeholder: '-----BEGIN CERTIFICATE-----',
           hidden: true,
           noTable: true,
-          showWhen: (r) => r.credential_type === 'ldap' && !!r.secure && !r.ignore_certs,
+          showWhen: (r) => ((r.credential_type === 'ldap' && !!r.secure) || credentialServer(r)) && !r.ignore_certs,
         },
         {
           key: 'client_key',
@@ -2300,22 +2388,27 @@ export default function getSettings(t) {
           describe: (r) => t(`settings.runners.kind_${runnerKind(r)}`),
         })),
       },
-      // the dialog in steps : what the runner is, its kind, where it is, how the app logs in
+      // the dialog in steps : what the runner is, its kind, how the app logs in and where (its
+      // credential's server), a project under it
       steps: [
         { key: 'runner', label: t('settings.runners.stepRunner') },
         { key: 'type', label: t('settings.runners.stepType') },
         { key: 'credentials', label: t('settings.runners.stepAuth') },
-        { key: 'connection', label: t('settings.runners.stepConnection') },
       ],
       // the kind chosen is stored as a type and a flavour : an RTE, or an awx runner that is an
       // AWX, an AAP or an Ascender. What the api adds or the RTE writes (state, node_id) is
       // never sent.
-      beforeSave: ({ kind, skip_verify, custom_ca, state: _state, node_id: _nodeId, ...item }) => ({
+      // Where it connects is its credential's : the address and TLS the API shows are never sent.
+      beforeSave: ({
+        kind,
+        uri: _uri,
+        ignore_certs: _ignoreCerts,
+        ca_bundle: _caBundle,
+        state: _state,
+        node_id: _nodeId,
+        ...item
+      }) => ({
         ...item,
-        // what is stored : the certificate checked or not, and a private authority's certificates
-        // only when checked against one
-        ignore_certs: !!skip_verify,
-        ca_bundle: !skip_verify && custom_ca ? item.ca_bundle || '' : '',
         type: kind === 'rte' || PROJECT_RUNNER_KINDS.includes(kind) ? kind : 'awx',
         flavour: ['aap', 'ascender'].includes(kind) ? kind : null,
         // the project : a Semaphore's, a Rundeck's or a Jenkins' (its folder) only
@@ -2423,22 +2516,42 @@ export default function getSettings(t) {
           render: (v) => registrationPill(t, v),
         },
         {
+          // a column only : its credential's server (an RTE that registered itself : its own)
           key: 'uri',
-          step: 'connection',
           icon: 'globe',
-          line: 1,
           label: t('settings.fields.uri'),
+          noInput: true,
           // in Columns : the description shows instead
           hidden: true,
-          required: true,
-          // the address of the kind chosen
-          help: (r) => t(`settings.runners.uriHelp_${r.kind || 'rte'}`),
-          placeholder: (r) => RUNNER_URI_EXAMPLE[r.kind] || RUNNER_URI_EXAMPLE.rte,
         },
         {
-          // a Semaphore's project id, a Rundeck's project name, a Jenkins' folder
+          // as whom and where : a credential of Connections > Credentials of its kind (an RTE's
+          // RTE_TOKEN, a Semaphore's or a Rundeck's API token, an AWX's token or user and password,
+          // a Jenkins user and its API token), with its server
+          key: 'credential',
+          step: 'credentials',
+          icon: 'key',
+          label: t('settings.runners.credential'),
+          help: (r) => t(`settings.runners.credentialHelp_${r.kind || 'rte'}`),
+          type: 'select',
+          parent: 'credentials',
+          values: 'credential',
+          valueKey: 'name',
+          labelKey: 'name',
+          required: true,
+          // the credentials of its kind
+          choicesWhen: (c, item) => !c?.name || c.credential_type === (item.kind || 'rte'),
+          createWith: 'credentials',
+          createLabel: t('settings.repositories.newCredential'),
+          createDefaults: (item) => ({ credential_type: item.kind || 'rte' }),
+          hidden: true,
+          noTable: true,
+        },
+        {
+          // a Semaphore's project id, a Rundeck's project name, a Jenkins' folder : under its
+          // credential, where on that server it launches
           key: 'project',
-          step: 'connection',
+          step: 'credentials',
           icon: 'folder',
           line: 1,
           label: t('settings.runners.project'),
@@ -2450,83 +2563,11 @@ export default function getSettings(t) {
           dependencyValues: PROJECT_RUNNER_KINDS,
         },
         {
-          // as whom : a credential of Connections > Credentials - an api one (its password the
-          // token : an RTE's RTE_TOKEN, a Semaphore's, a Rundeck's, an AWX's API token) or a
-          // userpass one (an AWX's user and password, a Jenkins user and its API token)
-          key: 'credential',
-          step: 'credentials',
-          icon: 'key',
-          label: t('settings.runners.credential'),
-          help: (r) =>
-            t(
-              `settings.runners.credentialHelp_${r.kind === 'jenkins' ? 'jenkins' : AWX_RUNNER_KINDS.includes(r.kind) ? 'awx' : 'api'}`,
-            ),
-          type: 'select',
-          parent: 'credentials',
-          values: 'credential',
-          valueKey: 'name',
-          labelKey: 'name',
-          required: true,
-          // the credentials of the kinds it signs in with
-          choicesWhen: (c, item) =>
-            !c?.name ||
-            (item.kind === 'jenkins'
-              ? ['userpass']
-              : AWX_RUNNER_KINDS.includes(item.kind)
-                ? ['api', 'userpass']
-                : ['api']
-            ).includes(c.credential_type),
-          createWith: 'credentials',
-          createLabel: t('settings.repositories.newCredential'),
-          createDefaults: (item) => ({ credential_type: item.kind === 'jenkins' ? 'userpass' : 'api' }),
-          hidden: true,
-          noTable: true,
-        },
-        {
-          // the certificate not checked at all : off by default (not stored : ignore_certs is)
-          key: 'skip_verify',
-          step: 'connection',
-          line: 2,
-          type: 'checkbox',
-          label: t('settings.runners.skipVerify'),
-          initial: (r) => !!r?.ignore_certs,
-          noTable: true,
-        },
-        {
-          // checked against a private authority : its certificates below (not stored : a CA
-          // bundle is, see beforeSave) ; nothing to check against when not checking
-          key: 'custom_ca',
-          step: 'connection',
-          line: 2,
-          type: 'checkbox',
-          label: t('settings.runners.customCa'),
-          initial: (r) => !!String(r?.ca_bundle || '').trim(),
-          noTable: true,
-          dependency: 'skip_verify',
-          negateDependency: true,
-          // skipping the verification turns it off : its CA bundle goes with it
-          defaultMap: { true: false },
-        },
-        {
-          // a column only : the dialog asks skip_verify
+          // a column only : its credential's TLS
           key: 'ignore_certs',
           label: t('settings.ldap.ignoreCerts'),
           type: 'checkbox',
           noInput: true,
-          hidden: true,
-        },
-        {
-          key: 'ca_bundle',
-          step: 'connection',
-          icon: 'certificate',
-          type: 'textarea',
-          line: 3,
-          label: t('settings.fields.caBundle'),
-          required: false,
-          // a private authority : the certificates the runner's is checked against
-          help: t('settings.runners.caBundleHelp'),
-          dependency: 'custom_ca',
-          placeholder: '-----BEGIN CERTIFICATE-----',
           hidden: true,
         },
       ],
@@ -3235,22 +3276,20 @@ export default function getSettings(t) {
       description: t('settings.secretStores.description'),
       icon: 'vault',
       selectable: false,
-      // the dialog in steps : what the store is, its type, where it is, how the app logs in, the
-      // type's options
+      // the dialog in steps : what the store is, its type, how the app logs in and where (its
+      // credential carries the address), the type's options
       steps: [
         { key: 'store', label: t('settings.secretStores.stepStore') },
         { key: 'type', label: t('settings.secretStores.stepType') },
         { key: 'credentials', label: t('settings.secretStores.stepAuth') },
-        { key: 'connection', label: t('settings.secretStores.stepConnection') },
         { key: 'options', label: t('settings.secretStores.stepOptions') },
       ],
-      // the switches are not stored : ignore_certs, a CA bundle and a namespace are
-      beforeSave: ({ skip_verify, custom_ca, vault_enterprise, ...item }) => ({
+      // the Enterprise switch is not stored : a namespace is ; the address and TLS are the
+      // credential's (the API shows them on the store, never written back)
+      beforeSave: ({ vault_enterprise, url: _url, ignore_certs: _ignoreCerts, ca_bundle: _caBundle, ...item }) => ({
         ...item,
         // no namespace but in a Vault Enterprise
         namespace: item.type === 'vault' && vault_enterprise ? item.namespace || '' : '',
-        ignore_certs: !!skip_verify,
-        ca_bundle: !skip_verify && custom_ca ? item.ca_bundle || '' : '',
       }),
       // a store has its own page (pages/admin/secret-store.vue) : its row and Edit open it, New the
       // wizard
@@ -3338,18 +3377,13 @@ export default function getSettings(t) {
           required: false,
         },
         {
+          // a column only : its credential's server (Connections > Credentials)
           key: 'url',
-          step: 'connection',
           icon: 'globe',
-          line: 1,
           label: t('settings.fields.uri'),
-          required: true,
-          // an example of the type chosen
-          placeholder: (r) =>
-            r.type === 'cyberark_ccp' ? 'https://ccp.example.com' : 'https://vault.example.com:8200',
+          noInput: true,
           // in Columns : the description shows instead
           hidden: true,
-          dependency: 'type',
         },
         {
           // how it logs in : a credential of Connections > Credentials, or a New one - a Vault's
@@ -3366,16 +3400,20 @@ export default function getSettings(t) {
                 : 'settings.secretStores.helpCredential',
             ),
           hidden: true,
+          // its address is the credential's : one is needed
+          required: true,
           type: 'select',
           parent: 'credentials',
           values: 'credential',
           valueKey: 'name',
           labelKey: 'name',
-          clearable: true,
+          // a CyberArk's cyberark ones, a Vault's vault ones, as its page
+          choicesWhen: (c, item) =>
+            !c?.name || c.credential_type === (item.type === 'cyberark_ccp' ? 'cyberark' : 'vault'),
           createWith: 'credentials',
           createLabel: t('settings.repositories.newCredential'),
-          // a credential for an api (its password the token), or a cyberark one
-          createDefaults: (r) => ({ credential_type: r.type === 'cyberark_ccp' ? 'cyberark' : 'api' }),
+          // a vault credential (its password the token), or a cyberark one
+          createDefaults: (r) => ({ credential_type: r.type === 'cyberark_ccp' ? 'cyberark' : 'vault' }),
           dependency: 'type',
         },
         {
@@ -3487,46 +3525,11 @@ export default function getSettings(t) {
           dependency: 'type',
         },
         {
-          // the certificate not checked at all : off by default (not stored : ignore_certs is)
-          key: 'skip_verify',
-          step: 'connection',
-          type: 'checkbox',
-          label: t('settings.runners.skipVerify'),
-          initial: (r) => !!r?.ignore_certs,
-          noTable: true,
-        },
-        {
-          // checked against a private authority : its certificates below
-          key: 'custom_ca',
-          step: 'connection',
-          type: 'checkbox',
-          label: t('settings.runners.customCa'),
-          initial: (r) => !!String(r?.ca_bundle || '').trim(),
-          noTable: true,
-          dependency: 'skip_verify',
-          negateDependency: true,
-          // skipping the verification turns it off : its CA bundle goes with it
-          defaultMap: { true: false },
-        },
-        {
-          // a column only : the dialog asks skip_verify
+          // a column only : its credential's TLS
           key: 'ignore_certs',
           label: t('settings.ldap.ignoreCerts'),
           type: 'checkbox',
           noInput: true,
-          hidden: true,
-        },
-        {
-          key: 'ca_bundle',
-          step: 'connection',
-          icon: 'certificate',
-          type: 'textarea',
-          line: 5,
-          label: t('settings.fields.caBundle'),
-          help: t('settings.runners.caBundleHelp'),
-          required: false,
-          dependency: 'custom_ca',
-          placeholder: '-----BEGIN CERTIFICATE-----',
           hidden: true,
         },
         {

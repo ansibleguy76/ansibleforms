@@ -56,14 +56,18 @@ const credentialItem = {
     secure: bool,
     is_database: bool,
     // what it is for (is_database follows it) ; without it, is_database decides
-    credential_type: { type: "string", enum: ["userpass", "ssh", "git", "api", "database", "cyberark", "smtp", "ldap", "entraid", "oidc"] },
+    credential_type: { type: "string", enum: ["userpass", "ssh", "git", "api", "database", "cyberark", "smtp", "ldap", "entraid", "oidc",
+      "rte", "awx", "aap", "ascender", "semaphore", "rundeck", "jenkins", "vault"] },
     client_cert: str,
     client_key: str,
     // an entraid credential's tenant, an oidc one's issuer ; an entraid or oidc one's redirect URL
     tenant_id: str,
     issuer: str,
     redirect_uri: str,
-    // an ldap credential's TLS : certificates not checked, the CA bundle
+    // the address of the one server a runner's or a secret store's credential logs in to
+    url: str,
+    // an ldap credential's TLS, or a runner's or a secret store's for its url : certificates not
+    // checked, the CA bundle
     ignore_certs: bool,
     ca_bundle: str,
     // a credential can take its user and password from a secret store instead of
@@ -80,7 +84,8 @@ const credentialItem = {
 const secretStoreItem = {
   type: "object",
   additionalProperties: false,
-  required: ["name", "type", "url"],
+  // its url : its own, or its credential's
+  required: ["name", "type"],
   properties: {
     name: str,
     type: str,
@@ -109,7 +114,8 @@ const secretStoreItem = {
 const runnerItem = {
   type: "object",
   additionalProperties: false,
-  required: ["name", "type", "uri"],
+  // its uri : its own (an RTE always), or its credential's
+  required: ["name", "type"],
   properties: {
     name: str,
     type: { type: "string", enum: ["rte", "awx", "semaphore", "rundeck", "jenkins"] },

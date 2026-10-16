@@ -52,24 +52,32 @@ class Runner extends CrudModel {
   }
 
   /**
-   * Checks the credential a runner names : it exists and is an api one (its password the token)
-   * or a userpass one (a user and a password : an AWX's login, a Jenkins user and its API token).
+   * Checks the credential a runner names : it exists and is of the runner's kind - an rte, a
+   * semaphore, a rundeck or a jenkins one, an awx runner's an awx, an aap or an ascender one (one
+   * product, the flavour may change). The config seed may still name an api or a userpass one, as
+   * before 7.3 (deprecated).
    *
    * Args:
    *   row (object): the runner as it will be stored.
+   *   opts (object): { fromSeed:true } for the config seed.
    *
    * Raises:
    *   BadRequestError: no such credential, or one of another type.
    */
-  static async assertCredential(row) {
+  static async assertCredential(row, opts = {}) {
     if (!row.credential) return;
     const rows = await mysql.do('SELECT credential_type FROM AnsibleForms.`credentials` WHERE name = ?', [row.credential]);
     if (!rows.length) throw new Errors.BadRequestError(`No credential named '${row.credential}'`);
     const type = rows[0].credential_type;
-    const wanted = row.type === 'jenkins' ? ['userpass'] : row.type === 'awx' ? ['api', 'userpass'] : ['api'];
-    if (!wanted.includes(type)) {
-      throw new Errors.BadRequestError(`A ${row.type} runner signs in with ${wanted.join(' or ')} credentials : '${row.credential}' is ${type}`);
+    const kind = row.type === 'awx' ? row.flavour || 'awx' : row.type;
+    const wanted = row.type === 'awx' ? ['awx', 'aap', 'ascender'] : [row.type];
+    if (wanted.includes(type)) return;
+    const legacy = row.type === 'jenkins' ? ['userpass'] : row.type === 'awx' ? ['api', 'userpass'] : ['api'];
+    if (opts.fromSeed && legacy.includes(type)) {
+      logger.warning(`Runner '${row.name}' : its credential '${row.credential}' is ${type}, deprecated for a runner since 7.3 - declare it as credential_type: ${kind}`);
+      return;
     }
+    throw new Errors.BadRequestError(`A ${kind} runner signs in with a ${kind} credential : '${row.credential}' is ${type}`);
   }
 
   /**
@@ -87,6 +95,9 @@ class Runner extends CrudModel {
    */
   static async withCredential(row) {
     if (!row?.credential) return row;
+    // where it connects : its credential's address and TLS when that carries an address
+    const conn = await this.connectionFor(row);
+    if (conn) row = { ...row, ...conn };
     const exact = "^" + String(row.credential).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$";
     const cred = await Credential.resolveCredential(exact).catch((e) => {
       logger.error(`Couldn't read the credential '${row.credential}' of the runner '${row.name}' : ${e.message || e}`);
@@ -100,11 +111,29 @@ class Runner extends CrudModel {
     return { ...row, use_credentials: 0, token: cred.password || '' };
   }
 
+  /**
+   * Where a runner connects when its credential carries an address : that address and its TLS.
+   * An RTE that registered itself keeps its own (it writes its address and token itself).
+   *
+   * Args:
+   *   row (object): the runner.
+   *
+   * Returns:
+   *   Promise<object|null>: { uri, ignore_certs, ca_bundle }, or null : its own address.
+   */
+  static async connectionFor(row) {
+    if (!row?.credential || row.node_id) return null;
+    const conn = await Credential.connectionOf(row.credential).catch(() => null);
+    return conn ? { uri: conn.url, ignore_certs: conn.ignore_certs, ca_bundle: conn.ca_bundle } : null;
+  }
+
   // What each type needs to work, checked on the row as it will be stored ; a credential gives
-  // its secrets (Runner.assertCredential checks it)
-  static assertComplete(row) {
+  // its secrets (Runner.assertCredential checks it), and its address when it carries one
+  static assertComplete(row, credentialAddress = false) {
     const missing = (field) => { throw new Errors.BadRequestError(`A runner of type ${row.type} needs ${field}`); };
-    if (!row.uri) missing('a uri');
+    if (!row.uri && !credentialAddress) {
+      missing('an address : a credential with a server address, or its own uri');
+    }
     if (row.credential) {
       if (TOKEN_AND_PROJECT.includes(row.type) && !row.project) {
         missing(row.type === 'semaphore' ? 'a project (the project id)' : 'a project (the project name)');
@@ -154,8 +183,11 @@ class Runner extends CrudModel {
   static async create(data, opts = {}) {
     CrudModel.assertRequired(this.modelName, data);
     data = this.normalize(data, opts);
-    this.assertComplete(data);
-    await this.assertCredential(data);
+    const conn = await this.connectionFor(data);
+    // its credential's address empties its own : one place for it (the seed keeps what it declares)
+    if (conn && !opts.fromSeed) Object.assign(data, { uri: '', ignore_certs: 0, ca_bundle: null });
+    this.assertComplete(data, !!conn);
+    await this.assertCredential(data, opts);
     // The first runner of a type is its default : forms of that type that name no runner need
     // one, and nobody should have to remember the tick. Not for the seed, which declares the
     // flag itself - setting it here would flip it back on every start.
@@ -180,8 +212,13 @@ class Runner extends CrudModel {
       throw new Errors.BadRequestError(`A runner keeps the type it was made as : '${current.name}' is ${current.type}. Make a new runner for another type`);
     }
     const merged = { ...current, ...data };
-    this.assertComplete(merged);
-    if ('credential' in data) await this.assertCredential(merged);
+    const conn = await this.connectionFor(merged);
+    if (conn && !opts.fromSeed) {
+      Object.assign(data, { uri: '', ignore_certs: 0, ca_bundle: null });
+      Object.assign(merged, data);
+    }
+    this.assertComplete(merged, !!conn);
+    if ('credential' in data) await this.assertCredential(merged, opts);
     await this.assertDefaultAllowed(data, merged.type, opts);
     const res = await super.update(this.modelName, data, id, opts);
     if (data.is_default) await this.clearOtherDefaults(id, merged.type, opts);
