@@ -192,7 +192,9 @@ export function foldRunnerSecretsIntoCredentials(doc) {
     if (r.ca_bundle !== undefined) credential.ca_bundle = r.ca_bundle;
     credentials.items.push(credential);
     folded.push(r.name);
-    const { token, username, password, use_credentials, ...rest } = r;
+    // its own secrets leave it : the credential carries them now
+    const rest = { ...r };
+    for (const key of ["token", "username", "password", "use_credentials"]) delete rest[key];
     return { ...rest, credential: name };
   });
   return { doc: { ...doc, runners: { ...doc.runners, items: runnerItems }, credentials }, folded };
