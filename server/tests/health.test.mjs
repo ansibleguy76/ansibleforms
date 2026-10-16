@@ -198,7 +198,7 @@ describe("health reports problems, not just ok", () => {
     assert.equal(r.status, "warning", "overall status takes the worst check");
   });
 
-  test("a lock with no timestamp is a warning : it cannot be shown to be active", async () => {
+  test("a lock with no timestamp is a warning: it cannot be shown to be active", async () => {
     lockRow = { data: JSON.stringify({ username: "alice", type: "local" }) };
     const r = await Health.check();
     assert.equal(statusOf(r, "designerLock"), "warning");
@@ -345,7 +345,7 @@ describe("health reports problems, not just ok", () => {
     assert.equal(r.checks.length, 19);
   });
 
-  test("secrets : the public encryption key or no token key is a warning that names it", async () => {
+  test("secrets: the public encryption key or no token key is a warning that names it", async () => {
     const saved = { def: appConfig.encryptionSecretIsDefault, tok: process.env.ACCESS_TOKEN_SECRET };
     try {
       appConfig.encryptionSecretIsDefault = true;
@@ -367,30 +367,30 @@ describe("health reports problems, not just ok", () => {
   });
 
   // Since 7 jobs run on runners : none at all means no form can run a job
-  test("runners : none is a warning that says what to add", async () => {
+  test("runners: none is a warning that says what to add", async () => {
     runnerState = { runners: [], error: null };
     const r = await Health.check();
     assert.equal(statusOf(r, "runners"), "warning");
     assert.match(checkOf(r, "runners").detail.reason, /Connections > Runners/);
   });
 
-  test("runners : no default RTE is a warning, playbook forms without runner: would fail", async () => {
+  test("runners: no default RTE is a warning, playbook forms without runner: would fail", async () => {
     runnerState = { runners: [{ name: "rte-1", type: "rte" }, { name: "aap", type: "awx", is_default: 1 }], error: null };
     const r = await Health.check();
     assert.equal(statusOf(r, "runners"), "warning");
     assert.equal(checkOf(r, "runners").value, "no default RTE");
   });
 
-  test("runners : an unreachable one is an error naming it", async () => {
-    runnerState = { runners: [{ name: "rte-1", type: "rte" }, { name: "aap", type: "awx" }], error: "the RTE at http://rte:8000 is unreachable : ECONNREFUSED" };
+  test("runners: an unreachable one is an error naming it", async () => {
+    runnerState = { runners: [{ name: "rte-1", type: "rte" }, { name: "aap", type: "awx" }], error: "the RTE at http://rte:8000 is unreachable: ECONNREFUSED" };
     const r = await Health.check();
     assert.equal(statusOf(r, "runners"), "error");
-    assert.match(checkOf(r, "runners").value, /2 of 2 runner\(s\) need attention : rte-1, aap/);
+    assert.match(checkOf(r, "runners").value, /2 of 2 runner\(s\) need attention: rte-1, aap/);
   });
 
   // Since 7 the app runs no playbook itself (an RTE does), so it never asks for an ansible
   // version - even where one happens to be installed.
-  test("there is no ansible row : the app does not run ansible-playbook", async () => {
+  test("there is no ansible row: the app does not run ansible-playbook", async () => {
     const saved = Cmd.executeSilentCommand;
     const asked = [];
     Cmd.executeSilentCommand = async (cmd) => {
@@ -479,7 +479,7 @@ describe("health reports problems, not just ok", () => {
     assert.deepEqual(checkOf(r, "schema").detail.failedPatches, ["patchVersion5"]);
   });
 
-  test("a missing index is only a warning : slow, not broken", async () => {
+  test("a missing index is only a warning: slow, not broken", async () => {
     schemaState.indexes = [];
     const r = await Health.check();
     assert.equal(statusOf(r, "schema"), "warning");
@@ -548,7 +548,7 @@ describe("health reports problems, not just ok", () => {
     assert.match(checkOf(r, "scheduler").value, /7 system, 2 schedules/);
   });
 
-  test("an app node without a live worker reports it : nothing runs in the background", async () => {
+  test("an app node without a live worker reports it: nothing runs in the background", async () => {
     holdsLock = false;
     nodesState = [{ id: "app-1", role: "app", version: "7.3.0", isWorker: false, alive: true, ageSeconds: 2, self: true }];
     const r = await Health.check();

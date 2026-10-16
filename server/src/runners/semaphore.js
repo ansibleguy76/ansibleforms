@@ -31,10 +31,10 @@ function client(runner) {
 function describe(err, runner) {
   const status = err?.response?.status;
   const at = `Semaphore at ${runner.uri}`;
-  if (status === 401) return `${at} refused the token : check the API token stored here`;
+  if (status === 401) return `${at} refused the token: check the API token stored here`;
   if (status === 404) return err.what === "project" ? `${at} has no project ${runner.project}` : `${at} has no such ${err.what || "object"} in project ${runner.project}`;
-  if (status) return `${at} answered ${status} : ${err.response.data?.error || err.response.data?.message || err.message}`;
-  return `${at} is unreachable : ${err.code || err.message}`;
+  if (status) return `${at} answered ${status}: ${err.response.data?.error || err.response.data?.message || err.message}`;
+  return `${at} is unreachable: ${err.code || err.message}`;
 }
 
 const projectPath = (runner) => `/api/project/${encodeURIComponent(runner.project)}`;
@@ -120,7 +120,7 @@ async function launchTemplate(runner, extravars, credentials, jobid, counter) {
     // another inventory, or a limit, the template does not allow would be ignored : the job
     // would run on other hosts than the form asked for, so it does not run
     const refuse = (what, setting) => {
-      throw new Errors.BadRequestError(`template ${template.name} does not allow ${what} : switch on "${setting}" on the template in Semaphore`);
+      throw new Errors.BadRequestError(`template ${template.name} does not allow ${what}: switch on "${setting}" on the template in Semaphore`);
     };
     // a form's inventory : one name or id (an RTE form may list several ; Semaphore takes one)
     const inventory = Array.isArray(extravars.__inventory__) ? extravars.__inventory__[0] : extravars.__inventory__;
@@ -138,7 +138,7 @@ async function launchTemplate(runner, extravars, credentials, jobid, counter) {
     // verbose output is a nicety : without the template's leave the job runs, and says so
     if (extravars.__verbose__) {
       if (allows(template, "allow_debug")) params.debug = true;
-      else await Job.printJobOutput(`[WARNING]: template ${template.name} does not allow debug in Semaphore : the output is not verbose`, "stderr", jobid, ++counter);
+      else await Job.printJobOutput(`[WARNING]: template ${template.name} does not allow debug in Semaphore: the output is not verbose`, "stderr", jobid, ++counter);
     }
     if (extravars.__check__) params.dry_run = true;
     if (extravars.__diff__) params.diff = true;
@@ -151,12 +151,12 @@ async function launchTemplate(runner, extravars, credentials, jobid, counter) {
   } catch (err) {
     const name = template?.name || extravars.__template__;
     const why = err instanceof Errors.NotFoundError || err instanceof Errors.BadRequestError ? err.message : describe(err, runner);
-    logger.error(`Job ${jobid} : could not launch template ${name} on Semaphore : ${why}`);
+    logger.error(`Job ${jobid}: could not launch template ${name} on Semaphore: ${why}`);
     // "failed" : endJobStatus also mails the status
-    await Job.endJobStatus(jobid, counter + 1, "stderr", "failed", `[ERROR]: Failed to launch template ${name} : ${why}`);
+    await Job.endJobStatus(jobid, counter + 1, "stderr", "failed", `[ERROR]: Failed to launch template ${name}: ${why}`);
     throw jobEnded(new Errors.ApiError(why));
   }
-  logger.info(`Job ${jobid} : Semaphore task ${task.id} of template ${template.name}`);
+  logger.info(`Job ${jobid}: Semaphore task ${task.id} of template ${template.name}`);
   await Job.update({ awx_id: task.id }, jobid);
   await Job.printJobOutput(`ok: [Launched template ${template.name} with taskid ${task.id}]`, "stdout", jobid, ++counter);
   return trackTask(runner, template, task.id, jobid, counter);
@@ -185,9 +185,9 @@ async function trackTask(runner, template, taskId, jobid, counter) {
       const message = describe(err, runner);
       const r = contact.failed();
       if (r.giveUp) {
-        return lostContact(jobid, counter + 1, `[ERROR]: lost contact with Semaphore while following task ${taskId} (${message}) : it may still be running, check it in Semaphore`);
+        return lostContact(jobid, counter + 1, `[ERROR]: lost contact with Semaphore while following task ${taskId} (${message}): it may still be running, check it in Semaphore`);
       }
-      logger.warning(`Job ${jobid} : Semaphore did not answer [${r.failures}], retrying in ${r.waitMs / 1000}s : ${message}`);
+      logger.warning(`Job ${jobid}: Semaphore did not answer [${r.failures}], retrying in ${r.waitMs / 1000}s: ${message}`);
       await delay(r.waitMs);
       continue;
     }
@@ -262,7 +262,7 @@ export default {
     try {
       await client(ctx.runner).post(`${projectPath(ctx.runner)}/tasks/${taskId}/stop`, { force: false });
     } catch (err) {
-      logger.debug(`Job ${ctx.jobId} : Semaphore did not take the stop (${err.message}) ; the tracker will`);
+      logger.debug(`Job ${ctx.jobId}: Semaphore did not take the stop (${err.message}) ; the tracker will`);
     }
   },
 };

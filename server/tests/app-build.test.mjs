@@ -18,16 +18,16 @@ describe("readBuildInfo", () => {
   });
   afterAll(() => fs.rmSync(dir, { recursive: true, force: true }));
 
-  test("a development server : package.json's version and no sha", () => {
+  test("a development server: package.json's version and no sha", () => {
     assert.deepEqual(readBuildInfo(dir), { version: "7.2.0", gitSha: "" });
   });
 
-  test("a docker build : build-info.json's version and sha", () => {
+  test("a docker build: build-info.json's version and sha", () => {
     fs.writeFileSync(path.join(dir, "build-info.json"), JSON.stringify({ version: "7.3.0-rc.1", gitSha: "a1b2c3d" }));
     assert.deepEqual(readBuildInfo(dir), { version: "7.3.0-rc.1", gitSha: "a1b2c3d" });
   });
 
-  test("a folder without either : empty, never an exception", () => {
+  test("a folder without either: empty, never an exception", () => {
     assert.deepEqual(readBuildInfo(path.join(dir, "missing")), { version: "", gitSha: "" });
   });
 });

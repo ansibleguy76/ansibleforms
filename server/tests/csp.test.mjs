@@ -23,7 +23,7 @@ describe("the Content-Security-Policy", () => {
     expect(d.formAction).toEqual(["'self'"]);
   });
 
-  test("what the app needs : local expressions (eval), inline styles, images from any url", () => {
+  test("what the app needs: local expressions (eval), inline styles, images from any url", () => {
     expect(d.scriptSrc).toContain("'unsafe-eval'");
     expect(d.styleSrc).toContain("'unsafe-inline'");
     expect(d.imgSrc).toEqual(expect.arrayContaining(["https:", "data:"]));

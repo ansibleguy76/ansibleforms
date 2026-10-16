@@ -33,7 +33,7 @@ export function bump(name) {
         "ON DUPLICATE KEY UPDATE version = GREATEST(version + 1, ROUND(UNIX_TIMESTAMP(NOW(3)) * 1000))",
       [name],
     ))
-    .catch((e) => logger.debug(`Could not bump the '${name}' epoch : ${e.message || e}`));
+    .catch((e) => logger.debug(`Could not bump the '${name}' epoch: ${e.message || e}`));
 }
 
 async function fire(name) {
@@ -41,7 +41,7 @@ async function fire(name) {
     try {
       await fn(name);
     } catch (e) {
-      logger.error(`Reacting to a change of '${name}' failed : ${e.message || e}`);
+      logger.error(`Reacting to a change of '${name}' failed: ${e.message || e}`);
     }
   }
 }
@@ -52,7 +52,7 @@ export async function pollEpochs() {
   try {
     rows = await mysql.tryDo("SELECT name, version FROM AnsibleForms.`cache_epochs`");
   } catch (e) {
-    logger.debug(`Could not read the cache epochs : ${e.message || e}`);
+    logger.debug(`Could not read the cache epochs: ${e.message || e}`);
     return [];
   }
   const now = new Map(rows.map((r) => [r.name, Number(r.version)]));

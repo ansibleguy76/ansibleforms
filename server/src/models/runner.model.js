@@ -74,10 +74,10 @@ class Runner extends CrudModel {
     if (wanted.includes(type)) return;
     const legacy = row.type === 'jenkins' ? ['userpass'] : row.type === 'awx' ? ['api', 'userpass'] : ['api'];
     if (opts.fromSeed && legacy.includes(type)) {
-      logger.warning(`Runner '${row.name}' : its credential '${row.credential}' is ${type}, deprecated for a runner since 7.3 - declare it as credential_type: ${kind}`);
+      logger.warning(`Runner '${row.name}': its credential '${row.credential}' is ${type}, deprecated for a runner since 7.3 - declare it as credential_type: ${kind}`);
       return;
     }
-    throw new Errors.BadRequestError(`A ${kind} runner signs in with a ${kind} credential : '${row.credential}' is ${type}`);
+    throw new Errors.BadRequestError(`A ${kind} runner signs in with a ${kind} credential: '${row.credential}' is ${type}`);
   }
 
   /**
@@ -100,7 +100,7 @@ class Runner extends CrudModel {
     if (conn) row = { ...row, ...conn };
     const exact = "^" + String(row.credential).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$";
     const cred = await Credential.resolveCredential(exact).catch((e) => {
-      logger.error(`Couldn't read the credential '${row.credential}' of the runner '${row.name}' : ${e.message || e}`);
+      logger.error(`Couldn't read the credential '${row.credential}' of the runner '${row.name}': ${e.message || e}`);
       return null;
     });
     if (!cred) return row;
@@ -132,7 +132,7 @@ class Runner extends CrudModel {
   static assertComplete(row, credentialAddress = false) {
     const missing = (field) => { throw new Errors.BadRequestError(`A runner of type ${row.type} needs ${field}`); };
     if (!row.uri && !credentialAddress) {
-      missing('an address : a credential with a server address, or its own uri');
+      missing('an address: a credential with a server address, or its own uri');
     }
     if (row.credential) {
       if (TOKEN_AND_PROJECT.includes(row.type) && !row.project) {
@@ -209,7 +209,7 @@ class Runner extends CrudModel {
     // its type stays what it was made as (the forms that run on it expect it) ; an AWX one may
     // change flavour (AWX, AAP, Ascender), the same type. The config seed may change it.
     if (!opts.fromSeed && data.type !== undefined && current?.type && data.type !== current.type) {
-      throw new Errors.BadRequestError(`A runner keeps the type it was made as : '${current.name}' is ${current.type}. Make a new runner for another type`);
+      throw new Errors.BadRequestError(`A runner keeps the type it was made as: '${current.name}' is ${current.type}. Make a new runner for another type`);
     }
     const merged = { ...current, ...data };
     const conn = await this.connectionFor(merged);

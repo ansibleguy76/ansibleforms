@@ -40,7 +40,7 @@ describe("the oidc group filter is applied by the server", () => {
     expect(user.groups).toBeUndefined();
   });
 
-  test("the list the browser posts is never read : no groups claim is no groups, whatever the body says", async () => {
+  test("the list the browser posts is never read: no groups claim is no groups, whatever the body says", async () => {
     // a caller with the handoff of any account could otherwise name af-admins and get its roles
     const user = await login({ preferred_username: "bob" }, ["af-admins", "af-ops"]);
     expect(user.roles).toEqual([]);

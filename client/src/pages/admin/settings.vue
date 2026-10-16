@@ -634,6 +634,26 @@ onMounted(async () => {
                     :disabled="envOff(e)"
                     v-model="envEdits[e.name]"
                   />
+                  <!-- one that cannot be written is the same field, greyed out : a yes / no or an
+                     enum stays a dropdown on its value, a text or a number an input. The lock
+                     says why it cannot change. -->
+                  <template v-else-if="!e.secret && !e.secretState">
+                    <BsInput
+                      :isFloating="false"
+                      :icon="e.editable === 'refused' ? 'lock' : 'shield-halved'"
+                      :type="envOptions(e) ? 'select' : e.type === 'number' ? 'number' : 'text'"
+                      :values="envOptions(e) || []"
+                      valueKey="value"
+                      labelKey="label"
+                      :label="e.short || e.name"
+                      :help="envHelp(e)"
+                      :disabled="true"
+                      :modelValue="e.value === null || e.value === undefined ? '' : String(e.value)"
+                    />
+                    <div class="form-text env-locked">
+                      {{ e.overridden ? t('settings.settingsPage.envOverridden') : e.refusedReason || '' }}
+                    </div>
+                  </template>
                   <template v-else>
                     <label class="form-label fw-bold">{{ e.short || e.name }}</label>
                     <div>
@@ -783,7 +803,12 @@ onMounted(async () => {
   margin-bottom: 0 !important;
 }
 /* The value is a div, not an input : .form-control gives it the same box as the fields
-   on the Settings tab, and the tertiary background is what says 'read only'. */
+   on the Settings tab, and the grey of a disabled field is what says 'read only'. */
+/* a variable that cannot be written : its BsInput's own mb-3 taken away, so the line saying why
+   sits under the help text as under a secret's box */
+.af-env-field > .mb-3:has(+ .env-locked) {
+  margin-bottom: 0 !important;
+}
 .env-locked {
   color: var(--bs-secondary-color);
   font-style: italic;
@@ -795,7 +820,7 @@ onMounted(async () => {
   color: var(--af-warning-text, var(--bs-warning-text-emphasis));
 }
 .env-value {
-  background-color: var(--bs-tertiary-bg);
+  background-color: var(--bs-secondary-bg);
   /* one line, as a field : a long value (a path) ends in an ellipsis, all of it in the
      tooltip */
   white-space: nowrap;

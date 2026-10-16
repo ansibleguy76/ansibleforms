@@ -101,7 +101,7 @@ ApiToken.touch = function (sid) {
   touched.set(sid, now);
   db()
     .then((mysql) => mysql.do("UPDATE AnsibleForms.`api_tokens` SET last_used_at = UTC_TIMESTAMP() WHERE sid = ?", [sid]))
-    .catch((err) => logger.debug(`Could not note the use of an api token : ${err.message || err}`));
+    .catch((err) => logger.debug(`Could not note the use of an api token: ${err.message || err}`));
 };
 
 /**
@@ -112,7 +112,7 @@ ApiToken.touch = function (sid) {
  */
 ApiToken.purge = async function () {
   await (await db()).do("DELETE FROM AnsibleForms.`api_tokens` WHERE expires_at < UTC_TIMESTAMP()").catch((err) =>
-    logger.debug(`Could not purge the expired api tokens : ${err.message || err}`)
+    logger.debug(`Could not purge the expired api tokens: ${err.message || err}`)
   );
   touched.clear();
 };

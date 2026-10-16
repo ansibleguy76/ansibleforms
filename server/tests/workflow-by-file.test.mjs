@@ -64,12 +64,12 @@ describe("a form's workflow", () => {
   test("says why when it cannot be told", async () => {
     await expect(findWorkflow("missing.yml")).rejects.toThrow(/No workflow file 'missing.yml'/);
     await expect(findWorkflow("missing")).rejects.toThrow(/No workflow 'missing'/);
-    await expect(findWorkflow("twice.yml")).rejects.toThrow(/is in other\/twice.yml and team\/twice.yml : name it with its folder/);
-    await expect(findWorkflow("team/both.yml")).rejects.toThrow(/holds 2 workflows \(first, second\) : name the one to run/);
+    await expect(findWorkflow("twice.yml")).rejects.toThrow(/is in other\/twice.yml and team\/twice.yml: name it with its folder/);
+    await expect(findWorkflow("team/both.yml")).rejects.toThrow(/holds 2 workflows \(first, second\): name the one to run/);
     expect(await nameOf("second")).toBe("second");
   });
 
-  test("a name two files have : said on saving, and named by its file it still runs", async () => {
+  test("a name two files have: said on saving, and named by its file it still runs", async () => {
     expect(await sharedWorkflowNames(wf("dup", "wf1"))).toEqual(["dup"]);
     expect(await sharedWorkflowNames("not: [yaml")).toEqual([]);
     await expect(findWorkflow("dup")).rejects.toThrow(/rename one of them, or name its file/);

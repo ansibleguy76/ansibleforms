@@ -168,7 +168,7 @@ function importVaultSoon() {
   vaultImport = setTimeout(() => {
     import('../secrets/importVaultEnv.js')
       .then(({ importVaultFromEnvOnce }) => importVaultFromEnvOnce())
-      .catch((err) => logger.error(`Could not import the VAULT_* variables : ${err.message || err}`));
+      .catch((err) => logger.error(`Could not import the VAULT_* variables: ${err.message || err}`));
   }, 500);
   // a pending import never keeps the process alive
   vaultImport.unref?.();
@@ -183,7 +183,7 @@ function importSyslogSoon() {
   syslogImport = setTimeout(() => {
     import('./syslogServers.js')
       .then(({ importSyslogFromEnvOnce }) => importSyslogFromEnvOnce())
-      .catch((err) => logger.error(`Could not import the LOG_SYSLOG_* variables : ${err.message || err}`));
+      .catch((err) => logger.error(`Could not import the LOG_SYSLOG_* variables: ${err.message || err}`));
   }, 500);
   // a pending import never keeps the process alive
   syslogImport.unref?.();
@@ -198,7 +198,7 @@ function rebuildLoginSoon() {
   loginRebuild = setTimeout(() => {
     import('../auth/loginStrategies.js')
       .then(({ rebuildLoginStrategies }) => rebuildLoginStrategies())
-      .catch((err) => logger.error(`Could not rebuild the SSO login : ${err.message || err}`));
+      .catch((err) => logger.error(`Could not rebuild the SSO login: ${err.message || err}`));
   }, 500);
   // a pending rebuild never keeps the process alive
   loginRebuild.unref?.();
@@ -263,7 +263,7 @@ const LIVE_CUSTOM = {
     appConfig.configSeedReloadSeconds = Number.isNaN(seconds) ? 60 : seconds;
     import('../services/cron.service.js')
       .then(({ default: cronService }) => cronService.scheduleConfigSeedReload(appConfig))
-      .catch((err) => logger.error(`Could not reschedule the config seed reload : ${err.message || err}`));
+      .catch((err) => logger.error(`Could not reschedule the config seed reload: ${err.message || err}`));
   },
   // mysql2 fixes connectionLimit at creation, so a new size means a new pool. Safe because a
   // transaction holds its own connection - see MySql.resizePool.
@@ -417,7 +417,7 @@ export function validate(name, value, doc) {
     try {
       compileTrustProxy(v);
     } catch (e) {
-      return `TRUST_PROXY must be a number of proxies, true, false or a comma-separated list of addresses and CIDR ranges : ${e.message}`;
+      return `TRUST_PROXY must be a number of proxies, true, false or a comma-separated list of addresses and CIDR ranges: ${e.message}`;
     }
   }
   // refused here rather than at the next start, where it would only be logged and Node's own
@@ -436,7 +436,7 @@ export function validate(name, value, doc) {
     try {
       new RegExp(v);
     } catch (e) {
-      return `${name} is not a valid regular expression : ${e.message}`;
+      return `${name} is not a valid regular expression: ${e.message}`;
     }
   }
   return null;
@@ -505,7 +505,7 @@ export async function writeManaged(map) {
     await fs.writeFile(`${MANAGED_ENV_PATH}.bak`, previous, { mode: 0o600 });
     await fs.chmod(`${MANAGED_ENV_PATH}.bak`, 0o600);
   } catch (e) {
-    if (e.code !== 'ENOENT') logger.warning(`Could not back up ${MANAGED_ENV_PATH} : ${e.message}`);
+    if (e.code !== 'ENOENT') logger.warning(`Could not back up ${MANAGED_ENV_PATH}: ${e.message}`);
   }
   // Write to a temp file in the SAME directory and rename over the target, so the file is
   // never half written. DB_HOST/DB_USER/DB_PASSWORD can live only here, and db.config.js

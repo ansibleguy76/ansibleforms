@@ -412,7 +412,7 @@ export default {
     confirmPassword: 'Neues Passwort bestätigen',
     mismatch: 'Die neuen Passwörter stimmen nicht überein.',
     changed: 'Ihr Passwort wurde geändert.',
-    changedSignIn: 'Ihr Passwort wurde geändert : melden Sie sich mit dem neuen erneut an',
+    changedSignIn: 'Ihr Passwort wurde geändert: melden Sie sich mit dem neuen erneut an',
     changeFailed: 'Das Passwort konnte nicht geändert werden',
     change: 'Passwort ändern',
     elsewhere:
@@ -2196,7 +2196,7 @@ export default {
       workflowPathHelp:
         'Die Datei des Workflows im Workflow-Ordner, mit Unterordnern (deploy.yml, team/deploy.yml). Ein Formular startet ihn mit dieser Datei, wie es ein Playbook nennt.',
       sharedWorkflowNames:
-        'Ein Workflow namens {names} steht auch in einer anderen Datei : ein Formular, das ihn über seinen Namen startet, bricht ab. Benennen Sie ihn um, oder nennen Sie im Formular seine Datei.',
+        'Ein Workflow namens {names} steht auch in einer anderen Datei: ein Formular, das ihn über seinen Namen startet, bricht ab. Benennen Sie ihn um, oder nennen Sie im Formular seine Datei.',
       folderHelp: 'Der Pfad des Ordners; er bleibt, sobald eine Datei darin gespeichert ist.',
       create: 'Anlegen',
       deleteConfirm: 'Möchtest du wirklich löschen',
@@ -2229,7 +2229,7 @@ export default {
     previewForm: 'Formularvorschau',
     previewHint: 'Das Formular, wie es jetzt ist, ungespeicherte Änderungen inklusive. Sein Absenden startet nichts.',
     previewRefresh: 'Vorschau aktualisieren',
-    previewNotRun: 'Dies ist eine Vorschau : das Formular wurde nicht ausgeführt',
+    previewNotRun: 'Dies ist eine Vorschau: das Formular wurde nicht ausgeführt',
     visual: 'Visuell',
     runnerDefault: 'Standard-Runner seines Typs',
     helpIcon: 'Auf seiner Kachel und in der Formularliste angezeigt.',
@@ -2375,7 +2375,7 @@ export default {
     visualValuesHelp: 'Eine YAML-Liste: ein Wert pro Zeile (- dev) oder Objekte (- name: Rome).',
     visualNotANumber: 'keine Zahl',
     visualDeleteField: 'Feld löschen',
-    visualYamlError: 'Das YAML kann hier nicht angezeigt werden : im Tab YAML korrigieren',
+    visualYamlError: 'Das YAML kann hier nicht angezeigt werden: im Tab YAML korrigieren',
     visualNotAList: 'keine Liste',
     visualNotAMap: 'keine Zuordnung',
     menuPreviewHint:

@@ -139,7 +139,7 @@ test("the test AWX does insert lines late, so the snapshots are not append-only"
   assert.ok(!snapshot(6).startsWith(snapshot(5)), "a late line changes the middle of the text");
 });
 
-test("after the job, the stored log is exactly AWX's final stdout : every line once, in order", { timeout: 30000 }, async () => {
+test("after the job, the stored log is exactly AWX's final stdout: every line once, in order", { timeout: 30000 }, async () => {
   await Awx.trackJob(runner, job(), 1, 0);
   assert.equal(storedLog(), finalLog());
   assert.equal(jobRow.status, "success");

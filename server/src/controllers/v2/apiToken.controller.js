@@ -70,7 +70,7 @@ const create = async function (req, res) {
     logger.notice(`Api token made from a session by ${user.username} (${user.type}), ${days === NEVER_DAYS ? 'never expires' : `${days} days at most`}`);
     res.json(RestResult.single({ token: issued.token, expires_at: issued.expires_at }));
   } catch (err) {
-    logger.error(`Could not make an api token for ${user?.username} : ${err}`);
+    logger.error(`Could not make an api token for ${user?.username}: ${err}`);
     res.status(500).json(RestResult.error(i18n.t(req, 'errors.apiTokenFailed'), err.toString()));
   }
 };

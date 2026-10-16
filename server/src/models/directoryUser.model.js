@@ -82,7 +82,7 @@ const DirectoryUser = {
         ],
       );
     } catch (err) {
-      logger.error(`The sign-in of ${user.type}/${user.username} was not recorded : ${err}`);
+      logger.error(`The sign-in of ${user.type}/${user.username} was not recorded: ${err}`);
     }
   },
 

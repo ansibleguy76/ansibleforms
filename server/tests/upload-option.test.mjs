@@ -17,7 +17,7 @@ function res() {
 }
 
 describe("allowFileUploads", () => {
-  test("off : refused with 403, the file never read", () => {
+  test("off: refused with 403, the file never read", () => {
     const r = res();
     uploadController.upload({ user: { user: { username: "u", options: { allowFileUploads: false } } }, headers: {} }, r, () => {});
     expect(r.statusCode).toBe(403);

@@ -22,7 +22,7 @@ describe("the fatal handlers", () => {
       await vi.advanceTimersByTimeAsync(1500);
       expect(exits).toEqual([1]);
       expect(lines.map((l) => l[0])).toEqual(["error", "crit", "crit"]);
-      expect(lines[1][1]).toMatch(/uncaught exception, exiting to restart clean : Error: boom/);
+      expect(lines[1][1]).toMatch(/uncaught exception, exiting to restart clean: Error: boom/);
     } finally {
       on.mockRestore();
       vi.useRealTimers();

@@ -166,7 +166,7 @@ describe("the tokens leave the groups out", () => {
 });
 
 describe("the server puts the groups back", () => {
-  test("on req.user.user : a directory user's from its record, a local user's from its groups", async () => {
+  test("on req.user.user: a directory user's from its record, a local user's from its groups", async () => {
     const { token } = await azureLogin(manyGroups);
     const req = await authenticate(token);
     expect(req.user.groups).toHaveLength(1000);

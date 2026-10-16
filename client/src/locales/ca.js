@@ -413,7 +413,7 @@ export default {
     confirmPassword: 'Confirma la contrasenya nova',
     mismatch: 'Les contrasenyes noves no coincideixen.',
     changed: "S'ha canviat la teva contrasenya.",
-    changedSignIn: "La contrasenya s'ha canviat : torneu a iniciar la sessió amb la nova",
+    changedSignIn: "La contrasenya s'ha canviat: torneu a iniciar la sessió amb la nova",
     changeFailed: "No s'ha pogut canviar la contrasenya",
     change: 'Canvia la contrasenya',
     elsewhere: 'Inicies la sessió amb {type}, així que la teva contrasenya es gestiona allà i no es pot canviar aquí.',
@@ -2192,7 +2192,7 @@ export default {
       workflowPathHelp:
         "El fitxer del workflow a la carpeta de workflows, amb les subcarpetes (deploy.yml, team/deploy.yml). Un formulari l'executa per aquest fitxer, com anomena un playbook.",
       sharedWorkflowNames:
-        "Un workflow anomenat {names} també és en un altre fitxer : un formulari que l'executa pel seu nom s'atura. Canvieu-li el nom, o indiqueu el seu fitxer al formulari.",
+        "Un workflow anomenat {names} també és en un altre fitxer: un formulari que l'executa pel seu nom s'atura. Canvieu-li el nom, o indiqueu el seu fitxer al formulari.",
       folderHelp: "La ruta de la carpeta; es conserva quan s'hi desa un fitxer.",
       create: 'Crea',
       deleteConfirm: 'Segur que vols esborrar',
@@ -2225,7 +2225,7 @@ export default {
     previewForm: 'Previsualitza el formulari',
     previewHint: 'El formulari tal com és ara, amb els canvis no desats. El seu envia no executa res.',
     previewRefresh: 'Actualitza la previsualització',
-    previewNotRun: "Això és una previsualització : el formulari no s'ha executat",
+    previewNotRun: "Això és una previsualització: el formulari no s'ha executat",
     visual: 'Visual',
     runnerDefault: 'Runner predeterminat del seu tipus',
     helpIcon: 'Es mostra al seu mosaic i a la llista de formularis.',
@@ -2370,7 +2370,7 @@ export default {
     visualValuesHelp: 'Una llista YAML: un valor per línia (- dev), o objectes (- name: Rome).',
     visualNotANumber: 'no és un número',
     visualDeleteField: 'Elimina el camp',
-    visualYamlError: 'El YAML no es pot mostrar aquí : corregiu-lo a la pestanya YAML',
+    visualYamlError: 'El YAML no es pot mostrar aquí: corregiu-lo a la pestanya YAML',
     visualNotAList: 'no és una llista',
     visualNotAMap: 'no és un mapa',
     menuPreviewHint:

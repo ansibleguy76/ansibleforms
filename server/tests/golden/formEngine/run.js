@@ -49,7 +49,7 @@ export async function runFixture(fx, { resolveForm, buildFormOutput, evalSandbox
     services,
   });
   // an engine error is swallowed into a field status ; a missing stub must fail the fixture
-  if (unstubbed.length) throw new Error(`fixture '${fx.name}' has no stub for : ${unstubbed.join(', ')}`);
+  if (unstubbed.length) throw new Error(`fixture '${fx.name}' has no stub for: ${unstubbed.join(', ')}`);
 
   const validation = {};
   for (const f of res.fields) if (f.validationErrors?.length) validation[f.name] = f.validationErrors;

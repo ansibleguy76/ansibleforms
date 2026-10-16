@@ -158,7 +158,7 @@ describe('formatOutput XSS prevention', () => {
   });
 
   it('escapes XSS in summary lines (ok=...failed=...)', () => {
-    const summary = 'hostname : ok=2 changed=0 unreachable=0 failed=0 <script>alert(1)</script>';
+    const summary = 'hostname: ok=2 changed=0 unreachable=0 failed=0 <script>alert(1)</script>';
     const result = Helpers.formatOutput(makeRecord(summary));
     expect(result).not.toContain('<script>alert');
     expect(result).toContain('&lt;script&gt;');
@@ -219,7 +219,7 @@ describe('formatOutput preserves correct HTML structure', () => {
   });
 
   it('escapes XSS in a recap line host', () => {
-    const result = Helpers.formatOutput(makeRecord('<img/src=x/onerror=alert(1)> : ok=1 changed=0 unreachable=0 failed=0'));
+    const result = Helpers.formatOutput(makeRecord('<img/src=x/onerror=alert(1)>: ok=1 changed=0 unreachable=0 failed=0'));
     expect(result).not.toContain('<img');
     expect(result).toContain("class='has-text-success'");
   });
@@ -249,14 +249,14 @@ describe('formatOutput preserves correct HTML structure', () => {
     expect(result).toContain("<span class='has-text-weight-bold'>");
   });
 
-  it('adds no timestamp : the output as ansible printed it', () => {
+  it('adds no timestamp: the output as ansible printed it', () => {
     const result = Helpers.formatOutput(makeRecord('hello'));
     expect(result).not.toContain("2024-01-01 12:00:00");
     expect(result).not.toContain("is-light");
   });
 
   it('renders summary line with tag spans for ok/changed/failed counts', () => {
-    const summary = 'myhost : ok=3 changed=1 unreachable=0 failed=0 skipped=2 rescued=0';
+    const summary = 'myhost: ok=3 changed=1 unreachable=0 failed=0 skipped=2 rescued=0';
     const result = Helpers.formatOutput(makeRecord(summary));
     expect(result).toContain("<span class='tag is-success'>ok=3</span>");
     expect(result).toContain("<span class='tag is-warning'>changed=1</span>");

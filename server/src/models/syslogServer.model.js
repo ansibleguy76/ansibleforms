@@ -36,13 +36,13 @@ class SyslogServer extends CrudModel {
         continue;
       }
       if (!allowed.includes(String(data[key]))) {
-        throw new Errors.BadRequestError(`A syslog server's ${key} is one of ${allowed.join(', ')} : '${data[key]}' is not`);
+        throw new Errors.BadRequestError(`A syslog server's ${key} is one of ${allowed.join(', ')}: '${data[key]}' is not`);
       }
     }
     if (data.port !== undefined && data.port !== '' && data.port !== null) {
       const port = Number(data.port);
       if (!Number.isInteger(port) || port < 1 || port > 65535) {
-        throw new Errors.BadRequestError(`A syslog server's port is a number from 1 to 65535 : '${data.port}' is not`);
+        throw new Errors.BadRequestError(`A syslog server's port is a number from 1 to 65535: '${data.port}' is not`);
       }
       data.port = port;
     } else if (data.port === '') {

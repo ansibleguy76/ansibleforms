@@ -19,7 +19,7 @@ MySql.clean=function(config){
 MySql.query = async function (connection_name, query) {
   // get credentials
   var config = await Credential.resolveCredential(connection_name)
-  logger.debug(`[${connection_name}] query : ${query}`)
+  logger.debug(`[${connection_name}] query: ${query}`)
   var conn
   try{
 
@@ -49,11 +49,11 @@ MySql.query = async function (connection_name, query) {
       [result] = await conn.query(query)
       return result
     }catch(err){
-      logger.error(`[${connection_name}] query error : ${err.toString()}`)
+      logger.error(`[${connection_name}] query error: ${err.toString()}`)
       throw err
     }
   }catch(err){
-    logger.error(`[${connection_name}] connection error : ${err.toString()}`)
+    logger.error(`[${connection_name}] connection error: ${err.toString()}`)
     throw err
   }finally{
     try{

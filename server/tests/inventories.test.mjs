@@ -33,7 +33,7 @@ describe("an inventory by its name", () => {
     assert.equal(resolveInventory("inventories/production/hosts.yml", roots, isDir), "inventories/production/hosts.yml");
     assert.equal(resolveInventory("nope", roots, isDir), "nope", "no such inventory");
     assert.equal(resolveInventory("..", roots, isDir), "..");
-    assert.equal(resolveInventory(["x"], roots, isDir).length, 1, "not a string : as it is");
+    assert.equal(resolveInventory(["x"], roots, isDir).length, 1, "not a string: as it is");
   });
 
   test("a name both a repository and a local folder must be renamed", () => {
@@ -42,7 +42,7 @@ describe("an inventory by its name", () => {
   });
 });
 
-describe("the inventories : the local folder and the repositories that are inventories", () => {
+describe("the inventories: the local folder and the repositories that are inventories", () => {
   let base;
   let ProjectFiles;
   beforeAll(async () => {
@@ -87,6 +87,6 @@ describe("the inventories : the local folder and the repositories that are inven
     await ProjectFiles.remove("inventories", "production/host_vars/web1.yaml");
     assert.equal(fs.existsSync(path.join(base, "repos/production/host_vars")), false, "the folder it leaves empty goes too");
     await ProjectFiles.write("inventories", "lab/inventory.yaml", "all: {}\n", true);
-    assert.equal(fs.existsSync(path.join(base, "local/lab/inventory.yaml")), true, "a new inventory : in the local folder");
+    assert.equal(fs.existsSync(path.join(base, "local/lab/inventory.yaml")), true, "a new inventory: in the local folder");
   });
 });

@@ -70,11 +70,11 @@ class Repository extends CrudModel {
     // repositories page showed a repository stuck blank with the reason nowhere the user
     // could reach. Record it where they are already looking.
     Repository.clone(data.name).catch(async (e) => {
-      logger.error(`Background clone of '${data.name}' failed : ${helpers.getError(e)}`)
+      logger.error(`Background clone of '${data.name}' failed: ${helpers.getError(e)}`)
       try {
         await Repository.writeState("update AnsibleForms.`repositories` set pull_output = ?, pulled_at = NOW(), status = 'failed' where name = ?", [helpers.getError(e), data.name], { name: data.name })
       } catch (e2) {
-        logger.error(`...and the failure could not be recorded on the repository either : ${helpers.getError(e2)}`)
+        logger.error(`...and the failure could not be recorded on the repository either: ${helpers.getError(e2)}`)
       }
     });
     return insertId;
@@ -135,7 +135,7 @@ class Repository extends CrudModel {
           try {
             Repo.rename(newName, name);
           } catch (e2) {
-            logger.error(`Repository '${name}' could not be renamed and its working tree could not be moved back : it is now at '${newName}' while the record still says '${name}'. Move it back by hand. (${helpers.getError(e2)})`)
+            logger.error(`Repository '${name}' could not be renamed and its working tree could not be moved back: it is now at '${newName}' while the record still says '${name}'. Move it back by hand. (${helpers.getError(e2)})`)
           }
         }
         await Repository.writeState("update AnsibleForms.`repositories` set status = ? where id = ?", [repo.status ?? null, repo.id])
@@ -297,7 +297,7 @@ class Repository extends CrudModel {
       var repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_forms")
       return (repositories.length > 0)
     } catch (e) {
-      logger.error("Failed to check repositories : ", e)
+      logger.error("Failed to check repositories: ", e)
       return false
     }
   }
@@ -434,7 +434,7 @@ class Repository extends CrudModel {
       return repoPath
     }
   }catch(e){
-      logger.error("Failed to get ansible path : ", e)
+      logger.error("Failed to get ansible path: ", e)
       return ""
     }
   }
@@ -455,7 +455,7 @@ class Repository extends CrudModel {
       }
       return appConfig.varsFilesPath
     } catch (e) {
-      logger.error("Failed to get vars files path : ", e)
+      logger.error("Failed to get vars files path: ", e)
       return appConfig.varsFilesPath
     }
   }
@@ -470,7 +470,7 @@ class Repository extends CrudModel {
       const repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_inventories ORDER BY name")
       return [local, ...repositories.map((repo) => ({ repository: repo.name, root: path.join(appConfig.repoPath, repo.name) }))]
     } catch (e) {
-      logger.error("Failed to get the inventories repositories : ", e)
+      logger.error("Failed to get the inventories repositories: ", e)
       return [local]
     }
   }
@@ -484,7 +484,7 @@ class Repository extends CrudModel {
       const repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_workflows ORDER BY name")
       return [local, ...repositories.map((repo) => ({ repository: repo.name, root: path.join(appConfig.repoPath, repo.name) }))]
     } catch (e) {
-      logger.error("Failed to get the workflows repositories : ", e)
+      logger.error("Failed to get the workflows repositories: ", e)
       return [local]
     }
   }
@@ -513,7 +513,7 @@ class Repository extends CrudModel {
       fse.copySync(appConfig.formsFolderPath, path.join(repoDir, "forms"))
     }
     logger.notice(`Seeded forms repository '${name}' with the local designer forms`)
-    return "\nThe repository was empty : the working tree was seeded with the local designer forms, use 'Push to repo' to publish them"
+    return "\nThe repository was empty: the working tree was seeded with the local designer forms, use 'Push to repo' to publish them"
   }
 
   // when claimed=true the caller already holds the atomic status='running' lock
@@ -555,7 +555,7 @@ class Repository extends CrudModel {
         head = await Repo.info(name)
         await Repository.writeState("update AnsibleForms.`repositories` set head = ? where name = ?", [head, name], { name })
       } catch (e) {
-        logger.warning(`'${name}' succeeded but its HEAD could not be read (an empty repository has none) : ${helpers.getError(e)}`)
+        logger.warning(`'${name}' succeeded but its HEAD could not be read (an empty repository has none): ${helpers.getError(e)}`)
       }
     }
   }
@@ -604,7 +604,7 @@ class Repository extends CrudModel {
         head = await Repo.info(name)
         await Repository.writeState("update AnsibleForms.`repositories` set head = ? where name = ?", [head, name], { name })
       } catch (e) {
-        logger.warning(`'${name}' succeeded but its HEAD could not be read (an empty repository has none) : ${helpers.getError(e)}`)
+        logger.warning(`'${name}' succeeded but its HEAD could not be read (an empty repository has none): ${helpers.getError(e)}`)
       }
     } else {
       // a pull failure used to be swallowed (status only) ; surface it so the
@@ -618,7 +618,7 @@ class Repository extends CrudModel {
     try {
       return await mysql.do("SELECT name,status,head FROM AnsibleForms.`repositories` WHERE use_for_forms")
     } catch (e) {
-      logger.error("Failed to get forms repositories : ", e)
+      logger.error("Failed to get forms repositories: ", e)
       return []
     }
   }
@@ -641,7 +641,7 @@ class Repository extends CrudModel {
         const cfg = await mysql.do("SELECT name,status,head FROM AnsibleForms.`repositories` WHERE name = ?", [configRepo])
         if (cfg.length) repos.push(cfg[0])
       } catch (e) {
-        logger.error("Failed to add config repository to the pushable set : ", e)
+        logger.error("Failed to add config repository to the pushable set: ", e)
       }
     }
     return repos
@@ -677,7 +677,7 @@ class Repository extends CrudModel {
       try {
         return { ...repo, unpushed: await Repo.hasChanges(repo.name) }
       } catch (e) {
-        logger.debug(`Cannot tell whether '${repo.name}' has changes to push : ${e.message}`)
+        logger.debug(`Cannot tell whether '${repo.name}' has changes to push: ${e.message}`)
         return { ...repo, unpushed: false }
       }
     }))
@@ -754,7 +754,7 @@ class Repository extends CrudModel {
       try {
         await Repository.pull(repo.name)
       } catch (e) {
-        logger.warning(`Failed to refresh forms repository '${repo.name}' : ${e.message}`)
+        logger.warning(`Failed to refresh forms repository '${repo.name}': ${e.message}`)
       }
     }
   }
@@ -790,7 +790,7 @@ class Repository extends CrudModel {
       moved.push(entry)
     }
     if (moved.length) {
-      logger.notice(`Assigned ${moved.length} new form(s) to repository '${name}' : ${moved.join(", ")}`)
+      logger.notice(`Assigned ${moved.length} new form(s) to repository '${name}': ${moved.join(", ")}`)
     }
     return moved
   }
@@ -849,7 +849,7 @@ class Repository extends CrudModel {
         head = await Repo.info(name)
         await Repository.writeState("update AnsibleForms.`repositories` set head = ? where name = ?", [head, name], { name })
       } catch (e) {
-        logger.warning(`'${name}' succeeded but its HEAD could not be read (an empty repository has none) : ${helpers.getError(e)}`)
+        logger.warning(`'${name}' succeeded but its HEAD could not be read (an empty repository has none): ${helpers.getError(e)}`)
       }
     } else {
       throw new Error(output)

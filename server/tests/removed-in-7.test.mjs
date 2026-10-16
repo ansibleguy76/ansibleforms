@@ -21,15 +21,15 @@ describe("what 7.0.0 removed is named, one line each", () => {
       { name: "ok", type: "text" },
     ]);
     expect(removedIn7(f)).toEqual([
-      "Form 'Upgrade firmware' : disableRelaunch was removed in 7.0.0, see https://ansibleforms.com/upgrade-7 - use allowRelaunch: false",
-      "Field 'packages' : the table field was removed in 7.0.0, see https://ansibleforms.com/upgrade-7 - use a list field with a subform",
-      "Field 'secret' : noOutput was removed in 7.0.0, see https://ansibleforms.com/upgrade-7 - use output: false",
+      "Form 'Upgrade firmware': disableRelaunch was removed in 7.0.0, see https://ansibleforms.com/upgrade-7 - use allowRelaunch: false",
+      "Field 'packages': the table field was removed in 7.0.0, see https://ansibleforms.com/upgrade-7 - use a list field with a subform",
+      "Field 'secret': noOutput was removed in 7.0.0, see https://ansibleforms.com/upgrade-7 - use output: false",
     ]);
   });
 
   test("validateForm throws just those lines, before the schema", () => {
     const f = form({}, [{ name: "packages", type: "table", tableFields: [] }]);
-    expect(() => Form.validateForm(f)).toThrow(/^Field 'packages' : the table field was removed in 7\.0\.0/);
+    expect(() => Form.validateForm(f)).toThrow(/^Field 'packages': the table field was removed in 7\.0\.0/);
     try { Form.validateForm(f); } catch (e) { expect(e.message).not.toMatch(/must match exactly one schema/); }
   });
 

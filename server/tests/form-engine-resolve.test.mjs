@@ -53,7 +53,7 @@ describe("resolveForm", () => {
     expect(res.missing).toEqual(["svm"]);
   });
 
-  test("a complete form : defaults, computed fields, queries and hidden fields", async () => {
+  test("a complete form: defaults, computed fields, queries and hidden fields", async () => {
     const svc = services();
     const res = await resolveForm({ form, values: { cluster: "c1", svm: "s1" }, services: svc });
     const f = byName(res);
@@ -255,7 +255,7 @@ describe("list rows", () => {
     expect(res.warnings.join("\n")).toMatch(/circular reference/);
   });
 
-  describe("verifyUntouched : an untouched row must be one the list's own source produces", () => {
+  describe("verifyUntouched: an untouched row must be one the list's own source produces", () => {
     const aclForm = {
       name: "t",
       subforms: [{ name: "acl", type: "subform", fields: [

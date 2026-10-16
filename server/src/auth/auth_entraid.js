@@ -77,11 +77,11 @@ const initialize = async () => {
   }
   if (!entra?.enable) return true;
   if (!entraConfig?.client_id || !entraConfig?.redirect_uri) {
-    logger.error('Could not enable Microsoft Entra ID : the client id and the redirect uri are required');
+    logger.error('Could not enable Microsoft Entra ID: the client id and the redirect uri are required');
     return false;
   }
   if (!isSingleTenant(entraConfig.tenant_id)) {
-    logger.error(`Could not enable Microsoft Entra ID : set the tenant id to your tenant ('${entraConfig.tenant_id || ''}' would let any Microsoft tenant log in)`);
+    logger.error(`Could not enable Microsoft Entra ID: set the tenant id to your tenant ('${entraConfig.tenant_id || ''}' would let any Microsoft tenant log in)`);
     return false;
   }
   try {
@@ -92,7 +92,7 @@ const initialize = async () => {
     const issuer = new URL(`${authority}/${tenant}/v2.0`);
     const plainHttp = issuer.protocol === 'http:';
     if (plainHttp && process.env.NODE_ENV !== 'development') {
-      logger.error(`Could not enable Microsoft Entra ID : the authority ${authority} is not https`);
+      logger.error(`Could not enable Microsoft Entra ID: the authority ${authority} is not https`);
       return false;
     }
     const config = await openidClient.discovery(issuer, entraConfig.client_id, { client_secret: entraConfig.client_secret }, undefined,
@@ -105,7 +105,7 @@ const initialize = async () => {
         // the claims and the Graph access token, for the handoff (lib/ssoHandoff.js)
         return done(null, { claims, accessToken: tokens.access_token });
       } catch (err) {
-        logger.warning(`Microsoft Entra ID login refused : ${err.message}`);
+        logger.warning(`Microsoft Entra ID login refused: ${err.message}`);
         return done(err);
       }
     };

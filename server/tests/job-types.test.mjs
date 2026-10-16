@@ -28,7 +28,7 @@ describe("a form's type and its job's", () => {
 });
 
 describe("where a job ran", () => {
-  test("a runner's kind : its type, an awx runner's flavour", () => {
+  test("a runner's kind: its type, an awx runner's flavour", () => {
     assert.equal(runnerKind({ type: "jenkins" }), "jenkins");
     assert.equal(runnerKind({ type: "semaphore" }), "semaphore");
     assert.equal(runnerKind({ type: "awx", flavour: "aap" }), "aap");

@@ -34,7 +34,7 @@ export const MAX_MESSAGE = 500;
 export function toDbMoment(value) {
   if (value === null || value === undefined || value === '') return null;
   const d = value instanceof Date ? value : new Date(value);
-  if (isNaN(d.getTime())) throw new Errors.BadRequestError(`Not a date : ${value}`);
+  if (isNaN(d.getTime())) throw new Errors.BadRequestError(`Not a date: ${value}`);
   return d.toISOString().slice(0, 19).replace('T', ' ');
 }
 
@@ -64,7 +64,7 @@ export function announcementFields(data, partial = false) {
   // step 2 : its type, info when none is given
   if (!partial || data.level !== undefined) {
     const level = data.level || 'info';
-    if (!ANNOUNCEMENT_LEVELS.includes(level)) throw new Errors.BadRequestError(`Unknown type : ${level}`);
+    if (!ANNOUNCEMENT_LEVELS.includes(level)) throw new Errors.BadRequestError(`Unknown type: ${level}`);
     out.level = level;
   }
   // step 3 : enabled, unless switched off

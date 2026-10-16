@@ -113,7 +113,7 @@ describe("validateLaunch", () => {
     const line = describeLaunchErrors({ missing: ["a"], invalid: ["host", "cluster"], waiting: [],
       validationErrors: { host: [{ type: "regex", description: "contains s3cr3t" }] },
       uploads: [{ field: "upload", reason: "the uploaded file does not exist" }] });
-    expect(line).toBe("missing : a ; failing rules : host (regex) ; invalid : cluster ; uploads : upload (the uploaded file does not exist)");
+    expect(line).toBe("missing: a ; failing rules: host (regex) ; invalid: cluster ; uploads: upload (the uploaded file does not exist)");
     expect(line).not.toContain("s3cr3t");
   });
 });
@@ -126,12 +126,12 @@ describe("list row errors", () => {
     });
     expect(line).toEqual(["disks[1].name (regex)", "vms[0].disks[2].size (missing)"]);
     expect(describeLaunchErrors({ invalid: ["disks"], rowErrors: { disks: [{ index: 0, missing: ["x"] }] } }))
-      .toBe("failing rows : disks[0].x (missing)");
+      .toBe("failing rows: disks[0].x (missing)");
   });
 });
 
 describe("uploads", () => {
-  test("a file is checked on the upload : name and the size on disk, not the size claimed", async () => {
+  test("a file is checked on the upload: name and the size on disk, not the size claimed", async () => {
     const r = await validateLaunch({ formConfig, formObj, user, services, uploadPath: uploadDir,
       rawFormData: { host: "prod-1", upload: {} }, extravars: {}, files: { upload: upload("a.exe", 2048) } });
     expect(r.ok).toBe(false);
@@ -247,7 +247,7 @@ describe("wizard forms", () => {
 });
 
 describe("the raw form data a wizard job keeps", () => {
-  test("its step drafts, each filtered by its subform : no passwords, no unknown keys", () => {
+  test("its step drafts, each filtered by its subform: no passwords, no unknown keys", () => {
     const kept = filterRawFormDataOf(wizardForm, wizardRaw({
       basics: { name: "prod-web", large: true, secret: "s3cr3t", injected: 1 },
       disk: { size: 50 },
@@ -266,26 +266,26 @@ describe("the raw form data a wizard job keeps", () => {
 });
 
 describe("guardLaunch", () => {
-  test("off : nothing is checked, nothing is logged", async () => {
+  test("off: nothing is checked, nothing is logged", async () => {
     appConfig.launchValidation = "off";
     await expect(guardLaunch(args({ host: "test-1" }))).resolves.toBeUndefined();
     await expect(guardLaunch(args({}, { host: "anything" }))).resolves.toBeUndefined();
     expect(warned).toEqual([]);
   });
 
-  test("log : an invalid launch is logged and goes ahead", async () => {
+  test("log: an invalid launch is logged and goes ahead", async () => {
     await expect(guardLaunch(args({ host: "test-1" }))).resolves.toBeUndefined();
-    expect(warned.join("\n")).toMatch(/would refuse form 'Create host' for bob .* failing rules : host \(regex\)/);
+    expect(warned.join("\n")).toMatch(/would refuse form 'Create host' for bob .* failing rules: host \(regex\)/);
   });
 
-  test("log : a verified upload is not reported as differing, however the browser wrote its path", async () => {
+  test("log: a verified upload is not reported as differing, however the browser wrote its path", async () => {
     const u = upload("notes.txt", 100);
     const browserCopy = { ...u, destination: "./persistent/uploads/", path: path.relative(process.cwd(), u.path), size: 100 };
     await guardLaunch(args({ host: "prod-1" }, { vm: { name: "prod-1" }, size: 10, secrets: {}, cred: "cred_prod-1", upload: browserCopy }, { upload: browserCopy }));
     expect(warned).toEqual([]);
   });
 
-  test("log : forged extravars are named, the client's are still used", async () => {
+  test("log: forged extravars are named, the client's are still used", async () => {
     const forged = { vm: { name: "rm -rf" }, size: 10, secrets: {}, extra: "x" };
     await expect(guardLaunch(args({ host: "prod-1" }, forged))).resolves.toBeUndefined();
     expect(warned).toHaveLength(1);
@@ -293,7 +293,7 @@ describe("guardLaunch", () => {
     expect(warned[0]).not.toContain("rm -rf");
   });
 
-  test("enforce : an invalid launch is refused with the failing fields", async () => {
+  test("enforce: an invalid launch is refused with the failing fields", async () => {
     appConfig.launchValidation = "enforce";
     const err = await guardLaunch(args({ host: "test-1" })).catch((e) => e);
     expect(err.name).toBe("ValidationError");
@@ -301,14 +301,14 @@ describe("guardLaunch", () => {
     expect(err.details.validationErrors).toEqual({ host: [{ type: "regex", description: "Must start with prod-" }] });
   });
 
-  test("enforce : valid rawFormData next to forged extravars runs the server's extravars", async () => {
+  test("enforce: valid rawFormData next to forged extravars runs the server's extravars", async () => {
     appConfig.launchValidation = "enforce";
     const built = await guardLaunch(args({ host: "prod-1" }, { vm: { name: "rm -rf" }, size: 999, cred: "stolen", __verbose__: true }));
     expect(built.extravars).toEqual({ vm: { name: "prod-1" }, size: 10, secrets: {}, cred: "cred_prod-1", __verbose__: true });
     expect(built.credentials).toEqual({ cred: "cred_prod-1" });
   });
 
-  test("enforce : a file value in rawFormData without a verified upload never reaches the extravars", async () => {
+  test("enforce: a file value in rawFormData without a verified upload never reaches the extravars", async () => {
     appConfig.launchValidation = "enforce";
     const built = await guardLaunch(args({ host: "prod-1", upload: { path: "/etc/shadow", originalname: "x.txt" } }, { upload: { path: "/etc/shadow" } }));
     expect(built.extravars.upload).toBeUndefined();
@@ -319,7 +319,7 @@ describe("guardLaunch", () => {
     expect(err.details.missing).toEqual(["upload"]);
   });
 
-  test("enforce : a plain list row the list's source does not produce is validated", async () => {
+  test("enforce: a plain list row the list's source does not produce is validated", async () => {
     appConfig.launchValidation = "enforce";
     const listForm = {
       name: "L", fields: [{ name: "users", type: "list", subform: "u", default: [{ name: "alice" }] }],
@@ -332,27 +332,27 @@ describe("guardLaunch", () => {
     expect(err.details.rowErrors.users[0]).toMatchObject({ index: 1, invalid: ["name"] });
   });
 
-  test("enforce : a forged upload path is refused", async () => {
+  test("enforce: a forged upload path is refused", async () => {
     appConfig.launchValidation = "enforce";
     const err = await guardLaunch(args({ host: "prod-1" }, {}, { upload: { originalname: "x.txt", path: outside } })).catch((e) => e);
     expect(err.name).toBe("ValidationError");
     expect(err.details.uploads).toEqual([{ field: "upload", reason: "the upload is not in the upload folder" }]);
   });
 
-  test("enforce : a wizard form runs the extravars the server built from its steps", async () => {
+  test("enforce: a wizard form runs the extravars the server built from its steps", async () => {
     appConfig.launchValidation = "enforce";
     const built = await guardLaunch({ ...args(wizardRaw({ basics: { name: "prod-web" }, disk: { size: 50 } }), { forged: true }), formObj: wizardForm });
     expect(built.extravars).toEqual({ vm: { name: "prod-web", large: true, size: 50 } });
   });
 
-  test("enforce : a wizard step that breaks its rules is refused", async () => {
+  test("enforce: a wizard step that breaks its rules is refused", async () => {
     appConfig.launchValidation = "enforce";
     const err = await guardLaunch({ ...args(wizardRaw({ basics: { name: "test-web" }, disk: { size: 50 } })), formObj: wizardForm }).catch((e) => e);
     expect(err.name).toBe("ValidationError");
     expect(err.message).toMatch(/basics\.name \(regex\)/);
   });
 
-  test("enforce : leaving rawFormData out is not a way around the check", async () => {
+  test("enforce: leaving rawFormData out is not a way around the check", async () => {
     appConfig.launchValidation = "enforce";
     const err = await guardLaunch(args({}, { host: "anything" })).catch((e) => e);
     expect(err.name).toBe("ValidationError");

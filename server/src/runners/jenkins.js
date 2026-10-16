@@ -36,11 +36,11 @@ function client(runner) {
 function describe(err, runner) {
   const status = err?.response?.status;
   const at = `Jenkins at ${runner.uri}`;
-  if (status === 401) return `${at} refused the user and API token : check the user and the API token stored here`;
-  if (status === 403) return `${at} : user ${runner.username} may not do this (its permissions in Jenkins)`;
-  if (status === 404) return err.what === "folder" ? `${at} has no folder ${runner.project}` : `${at} : not found`;
-  if (status) return `${at} answered ${status} : ${err.message}`;
-  return `${at} is unreachable : ${err.code || err.message}`;
+  if (status === 401) return `${at} refused the user and API token: check the user and the API token stored here`;
+  if (status === 403) return `${at}: user ${runner.username} may not do this (its permissions in Jenkins)`;
+  if (status === 404) return err.what === "folder" ? `${at} has no folder ${runner.project}` : `${at}: not found`;
+  if (status) return `${at} answered ${status}: ${err.message}`;
+  return `${at} is unreachable: ${err.code || err.message}`;
 }
 
 /**
@@ -107,7 +107,7 @@ async function findJob(http, runner, template) {
     throw err;
   }
   if (!data?.buildable) {
-    throw new Errors.BadRequestError(`Jenkins job '${name}' cannot be built : it is disabled, or a folder (name the job inside it)`);
+    throw new Errors.BadRequestError(`Jenkins job '${name}' cannot be built: it is disabled, or a folder (name the job inside it)`);
   }
   const parameters = (data.property || []).flatMap((p) => p?.parameterDefinitions || []).map((p) => p?.name).filter(Boolean);
   return { name: data.fullName || name, path: jobPath(data.fullName || name), parameters };
@@ -144,16 +144,16 @@ async function launchJob(runner, extravars, credentials, jobid, counter) {
   } catch (err) {
     const name = job ? job.name : fullName(runner, extravars.__template__);
     const why = err instanceof Errors.NotFoundError || err instanceof Errors.BadRequestError ? err.message : describe(err, runner);
-    logger.error(`Job ${jobid} : could not build job ${name} on Jenkins : ${why}`);
+    logger.error(`Job ${jobid}: could not build job ${name} on Jenkins: ${why}`);
     // "failed" : endJobStatus also mails the status
-    await Job.endJobStatus(jobid, counter + 1, "stderr", "failed", `[ERROR]: Failed to launch job ${name} : ${why}`);
+    await Job.endJobStatus(jobid, counter + 1, "stderr", "failed", `[ERROR]: Failed to launch job ${name}: ${why}`);
     throw jobEnded(new Errors.ApiError(why));
   }
   const withParameters = sent.length ? `, parameters ${sent.join(", ")}` : "";
   await Job.printJobOutput(`ok: [Queued job ${job.name}${withParameters}]`, "stdout", jobid, ++counter);
   const started = await waitForBuild(runner, job, queueId, jobid, counter);
   if (typeof started !== "object") return started;
-  logger.info(`Job ${jobid} : Jenkins build #${started.number} of job ${job.name}`);
+  logger.info(`Job ${jobid}: Jenkins build #${started.number} of job ${job.name}`);
   await Job.update({ awx_id: started.number }, jobid);
   await Job.printJobOutput(`ok: [Launched job ${job.name} with build #${started.number}]`, "stdout", jobid, started.counter + 1);
   return trackBuild(runner, job, started.number, jobid, started.counter + 1);
@@ -179,9 +179,9 @@ async function waitForBuild(runner, job, queueId, jobid, counter) {
       const message = describe(err, runner);
       const r = contact.failed();
       if (r.giveUp) {
-        return lostContact(jobid, counter + 1, `[ERROR]: lost contact with Jenkins while job ${job.name} waited in its queue (${message}) : check it in Jenkins`);
+        return lostContact(jobid, counter + 1, `[ERROR]: lost contact with Jenkins while job ${job.name} waited in its queue (${message}): check it in Jenkins`);
       }
-      logger.warning(`Job ${jobid} : Jenkins did not answer [${r.failures}], retrying in ${r.waitMs / 1000}s : ${message}`);
+      logger.warning(`Job ${jobid}: Jenkins did not answer [${r.failures}], retrying in ${r.waitMs / 1000}s: ${message}`);
       await delay(r.waitMs);
       continue;
     }
@@ -193,7 +193,7 @@ async function waitForBuild(runner, job, queueId, jobid, counter) {
     }
     if (item?.why && item.why !== said) {
       said = item.why;
-      await Job.printJobOutput(`Waiting in the Jenkins queue : ${item.why}`, "stdout", jobid, ++counter);
+      await Job.printJobOutput(`Waiting in the Jenkins queue: ${item.why}`, "stdout", jobid, ++counter);
     }
     if (await Job.isAbortRequested(jobid)) {
       try {
@@ -201,7 +201,7 @@ async function waitForBuild(runner, job, queueId, jobid, counter) {
         // the item says cancelled at the next poll, which ends the job
       } catch (err) {
         // gone from the queue meanwhile : the build started, the next poll follows it
-        logger.debug(`Job ${jobid} : Jenkins did not cancel queue item ${queueId} (${err.message})`);
+        logger.debug(`Job ${jobid}: Jenkins did not cancel queue item ${queueId} (${err.message})`);
       }
     }
     await delay(POLL_MS);
@@ -230,9 +230,9 @@ async function trackBuild(runner, job, number, jobid, counter) {
       const message = describe(err, runner);
       const r = contact.failed();
       if (r.giveUp) {
-        return lostContact(jobid, counter + 1, `[ERROR]: lost contact with Jenkins while following build #${number} of ${job.name} (${message}) : it may still be running, check it in Jenkins`);
+        return lostContact(jobid, counter + 1, `[ERROR]: lost contact with Jenkins while following build #${number} of ${job.name} (${message}): it may still be running, check it in Jenkins`);
       }
-      logger.warning(`Job ${jobid} : Jenkins did not answer [${r.failures}], retrying in ${r.waitMs / 1000}s : ${message}`);
+      logger.warning(`Job ${jobid}: Jenkins did not answer [${r.failures}], retrying in ${r.waitMs / 1000}s: ${message}`);
       await delay(r.waitMs);
       continue;
     }
@@ -259,7 +259,7 @@ async function trackBuild(runner, job, number, jobid, counter) {
         }
         result = data.result;
       } catch (err) {
-        logger.warning(`Job ${jobid} : could not read the result of build #${number}, retrying : ${err.message}`);
+        logger.warning(`Job ${jobid}: could not read the result of build #${number}, retrying: ${err.message}`);
         await delay(POLL_MS);
         continue;
       }
@@ -326,7 +326,7 @@ export default {
     try {
       await client(ctx.runner).post(`${jobPath(fullName(ctx.runner, template))}/${number}/stop`, null, { maxRedirects: 0, validateStatus: (s) => s < 400 });
     } catch (err) {
-      logger.debug(`Job ${ctx.jobId} : Jenkins did not take the stop (${err.message}) ; the tracker will`);
+      logger.debug(`Job ${ctx.jobId}: Jenkins did not take the stop (${err.message}) ; the tracker will`);
     }
   },
 };

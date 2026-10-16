@@ -49,7 +49,7 @@ beforeEach(() => {
 });
 
 describe("the scope of a user", () => {
-  test("nothing listed : no limit, as before", () => {
+  test("nothing listed: no limit, as before", () => {
     expect(scopeFromRoles({ roles: ["default"] }, configRoles)).toBe(null);
   });
 

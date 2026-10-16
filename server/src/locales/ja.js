@@ -26,7 +26,7 @@ export default {
     refreshTokenReplaced: "リフレッシュトークンは同時に行われた更新で既に使用されています",
     apiTokenFromApiToken: "API トークンから別の API トークンは作成できません",
     apiTokenNotAllowed: "あなたのロールでは API トークンを使用できません",
-    apiTokenSignInAgain: "API トークンを作成するには再度サインインしてください : 最後のサインインから時間が経ちすぎています",
+    apiTokenSignInAgain: "API トークンを作成するには再度サインインしてください：最後のサインインから時間が経ちすぎています",
     apiTokenLifetime: "有効期間は日数で、最大 {max} 日です",
     apiTokenFailed: "API トークンを作成できませんでした",
     apiTokensFailed: "API トークンを読み取りまたは変更できませんでした",
@@ -38,9 +38,9 @@ export default {
     authFailed: "認証に失敗しました",
     invalidCredentials: "認証情報が無効です",
     tooManyFailures:
-      "ログインの失敗が多すぎます : {minutes} 分後にもう一度お試しください",
+      "ログインの失敗が多すぎます：{minutes} 分後にもう一度お試しください",
     passwordChangeRequired:
-      "先にパスワードを変更してください : 公開されている既定のパスワードです",
+      "先にパスワードを変更してください：公開されている既定のパスワードです",
     disclaimerRequired: "先に免責事項に同意してください",
     disclaimerAccepted: "免責事項に同意しました",
     loginDisabled:
@@ -102,7 +102,7 @@ export default {
     runnerAdded: "ランナーを追加しました",
     runnerNotFound: "ランナーが見つかりません",
     runnerAdminOnly:
-      "ランナーを追加、変更、削除できるのは admin だけです : ランナーは実行するジョブの認証情報を受け取ります",
+      "ランナーを追加、変更、削除できるのは admin だけです：ランナーは実行するジョブの認証情報を受け取ります",
     defaultPasswordRefused:
       "公開されている既定のパスワード以外を選んでください",
     passwordTooShort: "パスワードは {min} 文字以上必要です",
@@ -155,7 +155,7 @@ export default {
     failedFindLdap: "LDAP の検索に失敗しました",
     ldapCheckFailed: "LDAP の確認に失敗しました",
     storedPasswordOtherServer:
-      "保存されたパスワードは保存されたサーバーにのみ使用されます : 別のサーバーを確認するにはパスワードを入力してください",
+      "保存されたパスワードは保存されたサーバーにのみ使用されます：別のサーバーを確認するにはパスワードを入力してください",
     ldapUpdated: "LDAP を更新しました",
     failedUpdateLdap: "LDAP の更新に失敗しました",
     ldapCreated: "LDAP ディレクトリを追加しました",
@@ -275,10 +275,10 @@ export default {
   },
   // what a notification channel (Connections > Notifications) says : a test, a job's end
   notifications: {
-    testText: "{who} からのテスト通知 : チャネル '{name}' が受信します。",
+    testText: "{who} からのテスト通知：チャネル '{name}' が受信します。",
     testSent: "テスト通知を {name} に送信しました",
     testFailed: "テスト通知に失敗しました",
-    statusText: "フォーム '{form}' のジョブ {jobid} が終了しました : {status}。",
+    statusText: "フォーム '{form}' のジョブ {jobid} が終了しました：{status}。",
     openJob: "ジョブを開く",
   },
 };

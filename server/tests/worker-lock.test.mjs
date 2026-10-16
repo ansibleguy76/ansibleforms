@@ -91,7 +91,7 @@ describe("taking the lock", () => {
 });
 
 describe("keeping it", () => {
-  test("lost to another process : onLost, so two never work at once", async () => {
+  test("lost to another process: onLost, so two never work at once", async () => {
     const lost = vi.fn();
     lock.keepWorkerLock({ onAcquired: async () => {}, onLost: lost });
     await tick(0);
@@ -101,7 +101,7 @@ describe("keeping it", () => {
     assert.equal(lock.holdsWorkerLock(), false);
   });
 
-  test("the database gone for a while : no onLost, and the lock is taken again when it is back", async () => {
+  test("the database gone for a while: no onLost, and the lock is taken again when it is back", async () => {
     const lost = vi.fn();
     lock.keepWorkerLock({ onAcquired: async () => {}, onLost: lost });
     await tick(0);

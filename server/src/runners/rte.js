@@ -46,10 +46,10 @@ function client(runner) {
 // what the job output (or the connection test) says when the RTE does not take the call
 function describe(err, url) {
   const status = err?.response?.status;
-  if (status === 401) return `the RTE at ${url} refused the token : check its RTE_TOKEN and the token stored here`;
-  if (status === 409) return `the RTE at ${url} did not take the job : ${err.response.data?.error || "conflict"}`;
-  if (status) return `the RTE at ${url} answered ${status} : ${err.response.data?.error || err.message}`;
-  return `the RTE at ${url} is unreachable : ${err.code || err.message}`;
+  if (status === 401) return `the RTE at ${url} refused the token: check its RTE_TOKEN and the token stored here`;
+  if (status === 409) return `the RTE at ${url} did not take the job: ${err.response.data?.error || "conflict"}`;
+  if (status) return `the RTE at ${url} answered ${status}: ${err.response.data?.error || err.message}`;
+  return `the RTE at ${url} is unreachable: ${err.code || err.message}`;
 }
 
 async function failJob(jobId, message) {
@@ -121,7 +121,7 @@ async function track(jobId, rte) {
     } catch (err) {
       // unreachable for a while : keep waiting, the RTE writes the end itself, and an RTE
       // that restarts abandons its own jobs, which ends this wait too
-      logger.debug(`Job ${jobId} : RTE status check failed : ${err.message}`);
+      logger.debug(`Job ${jobId}: RTE status check failed: ${err.message}`);
     }
   }
 }
@@ -147,7 +147,7 @@ async function check(runner) {
   if (data?.contract !== RTE_CONTRACT) {
     const theirs = data?.contract === undefined ? "no contract (a preview build)" : `contract ${data.contract}`;
     const what = (data?.contract || 0) < RTE_CONTRACT ? "update the RTE" : "update this app";
-    throw new Errors.BadRequestError(`the RTE at ${rte.url} (${data?.version}) speaks ${theirs}, this app (${appVersion}) needs contract ${RTE_CONTRACT} : ${what}`);
+    throw new Errors.BadRequestError(`the RTE at ${rte.url} (${data?.version}) speaks ${theirs}, this app (${appVersion}) needs contract ${RTE_CONTRACT}: ${what}`);
   }
   return details;
 }
@@ -186,7 +186,7 @@ async function handOver(rte, jobId, sealed) {
       }
       if (!said) {
         said = true;
-        await Job.printJobOutput(`ok: [Waiting for a free slot on RTE ${rte.name} : ${err.response.data?.error || "busy"}]`, "stdout", jobId, (await Job.lastOrder(jobId)) + 1);
+        await Job.printJobOutput(`ok: [Waiting for a free slot on RTE ${rte.name}: ${err.response.data?.error || "busy"}]`, "stdout", jobId, (await Job.lastOrder(jobId)) + 1);
       }
       if (await Job.isAbortRequested(jobId).catch(() => false)) {
         await Job.endJobStatus(jobId, (await Job.lastOrder(jobId)) + 1, "stderr", "aborted", "Playbook was aborted by the operator while it waited for the RTE");
@@ -216,7 +216,7 @@ export default {
       const creds = safeParse(rows?.[0]?.credentials, {}, `job.credentials id=${jobId}`);
       sealed = sealJobSecrets(await resolveJobSecrets(extravars, creds), runner.token, jobId);
     } catch (err) {
-      return failJob(jobId, `could not prepare the job's credentials for the RTE : ${err.message}`);
+      return failJob(jobId, `could not prepare the job's credentials for the RTE: ${err.message}`);
     }
     try {
       await handOver(rte, jobId, sealed);
@@ -231,7 +231,7 @@ export default {
       if (err?.response || !(await claimedBy(jobId).catch(() => null))) {
         return failJob(jobId, err?.response?.status === 503 ? err.message : describe(err, rte.url));
       }
-      logger.warning(`Job ${jobId} : no answer from the RTE at ${rte.url}, but it claimed the job : following it`);
+      logger.warning(`Job ${jobId}: no answer from the RTE at ${rte.url}, but it claimed the job: following it`);
     }
     return track(jobId, rte);
   },
@@ -241,7 +241,7 @@ export default {
     try {
       await rte.http.post(`/jobs/${ctx.jobId}/cancel`);
     } catch (err) {
-      logger.warning(`Job ${ctx.jobId} : the RTE did not take the cancel (${err.message}) ; the abort flag will stop it`);
+      logger.warning(`Job ${ctx.jobId}: the RTE did not take the cancel (${err.message}) ; the abort flag will stop it`);
     }
   },
 };

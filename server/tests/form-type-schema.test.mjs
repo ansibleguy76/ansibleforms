@@ -25,7 +25,7 @@ describe("a form's type", () => {
     refused(form({ type: "template", template: "x" }));
   });
 
-  test("template and job say the same : one of them, not both, not none", () => {
+  test("template and job say the same: one of them, not both, not none", () => {
     ok(form({ type: "rundeck", template: "tests/af-demo" }));
     ok(form({ type: "awx", job: "deploy" }));
     refused(form({ type: "rundeck", template: "a", job: "b" }));

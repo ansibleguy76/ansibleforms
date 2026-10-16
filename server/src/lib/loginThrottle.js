@@ -57,7 +57,7 @@ export async function loginBlocked(username, ip) {
     );
   } catch (err) {
     // no table yet (a database being upgraded) : never lock everybody out over it
-    logger.debug(`Could not read the failed logins : ${err.message || err}`);
+    logger.debug(`Could not read the failed logins: ${err.message || err}`);
     return { blocked: false };
   }
   for (const r of rows || []) {
@@ -104,11 +104,11 @@ export async function loginFailed(username, ip) {
         if (res?.affectedRows) locked = true;
       }
     } catch (err) {
-      logger.debug(`Could not count a failed login : ${err.message || err}`);
+      logger.debug(`Could not count a failed login: ${err.message || err}`);
     }
   }
   if (locked) loginLockouts.inc();
-  if (locked) logger.warning(`Login : account '${String(username)}' locked for ${window} minutes after ${max} failed logins`);
+  if (locked) logger.warning(`Login: account '${String(username)}' locked for ${window} minutes after ${max} failed logins`);
   return locked;
 }
 

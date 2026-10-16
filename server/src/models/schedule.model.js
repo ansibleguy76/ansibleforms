@@ -116,7 +116,7 @@ class Schedule extends CrudModel {
     try {
       extravars = yaml.parse(data.extra_vars || '{}');
     } catch (e) {
-      throw new Errors.BadRequestError(`Extra vars is not valid yaml : ${e.message}`);
+      throw new Errors.BadRequestError(`Extra vars is not valid yaml: ${e.message}`);
     }
     if (extravars === null || extravars === undefined) extravars = {};
     if (typeof extravars !== 'object' || Array.isArray(extravars)) {
@@ -134,7 +134,7 @@ class Schedule extends CrudModel {
       try {
         rawFormData = rawFormData.trim() ? JSON.parse(rawFormData) : {};
       } catch (e) {
-        throw new Errors.BadRequestError(`Raw form data is not valid json : ${e.message}`);
+        throw new Errors.BadRequestError(`Raw form data is not valid json: ${e.message}`);
       }
     }
     if (rawFormData === null || typeof rawFormData !== 'object' || Array.isArray(rawFormData)) {
@@ -303,7 +303,7 @@ class Schedule extends CrudModel {
         try {
           rawFormData = JSON.parse(schedule.raw_form_data) || {};
         } catch (e) {
-          throw new Error(`The raw form data of this planned job cannot be read : ${e.message}`, { cause: e });
+          throw new Error(`The raw form data of this planned job cannot be read: ${e.message}`, { cause: e });
         }
       }
       // Job.launch is fire-and-forget and returns { id } - always truthy - so the else
@@ -324,7 +324,7 @@ class Schedule extends CrudModel {
       }
     } catch (err) {
       logger.error("Errors in schedule launch: ", err);
-      output = "Failed to launch : " + err.message;
+      output = "Failed to launch: " + err.message;
       status = "failed";
     }
     await super.update(this.modelName, { output, status, state: 'idle', last_run: currentDate }, id);

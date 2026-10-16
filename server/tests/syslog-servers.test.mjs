@@ -60,7 +60,7 @@ const live = (logger) => [...logger.piped].filter((t) => t instanceof FakeSyslog
 describe("a transport per server", () => {
   beforeEach(() => applySyslogServers([], {}));
 
-  test("the server log, the audit entries, or both : on the logger they belong to", () => {
+  test("the server log, the audit entries, or both: on the logger they belong to", () => {
     const result = applySyslogServers([server({ name: "a", receives: "log" }), server({ name: "b", receives: "audit" }), server({ name: "c" })]);
     expect(result).toEqual({ log: 2, audit: 2, failed: [] });
     const appHosts = live(appLogger).filter((t) => t.opts.host === "siem.example.com");
@@ -70,7 +70,7 @@ describe("a transport per server", () => {
     expect(live(auditLogger).every((t) => t.level === "debug")).toBe(true);
   });
 
-  test("a transport is closed once, however often it is asked : twice, a udp socket throws from a timer", () => {
+  test("a transport is closed once, however often it is asked: twice, a udp socket throws from a timer", () => {
     applySyslogServers([server()]);
     const [t] = live(auditLogger);
     applySyslogServers([]);
@@ -143,7 +143,7 @@ describe("the LOG_SYSLOG_* variables, imported once", () => {
 });
 
 describe("what a save may hold", () => {
-  test("a new server : the defaults written", () => {
+  test("a new server: the defaults written", () => {
     const d = { name: "a", host: "h" };
     SyslogServer.normalise(d);
     expect(d).toMatchObject({ protocol: "udp4", level: "info", type: "BSD", receives: "both", enabled: 1 });

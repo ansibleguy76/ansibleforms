@@ -108,7 +108,7 @@ describe("MCP tools", () => {
     const client = await connect();
     const r = await call(client, "launch_job", { form: "Create volume", values: { cluster: "c1" } });
     expect(r.isError).toBe(true);
-    expect(r.text).toContain("missing input for : name");
+    expect(r.text).toContain("missing input for: name");
     expect(deps.Job.launch).not.toHaveBeenCalled();
   });
 
@@ -228,7 +228,7 @@ describe("MCP tools", () => {
 
     test("a refusal of the model keeps its code and details", async () => {
       deps.Job.relaunchWithValues = vi.fn(async () => {
-        const e = new Error("Job 42 cannot be relaunched with these values - missing : name");
+        const e = new Error("Job 42 cannot be relaunched with these values - missing: name");
         e.name = "ValidationError";
         e.code = "form_incomplete";
         e.details = { missing: ["name"] };
@@ -237,7 +237,7 @@ describe("MCP tools", () => {
       const client = await connect();
       const r = await client.callTool({ name: "relaunch_job", arguments: { id: 42, values: { name: "" } } });
       expect(r.isError).toBe(true);
-      expect(r.structuredContent).toEqual({ code: "form_incomplete", message: "Job 42 cannot be relaunched with these values - missing : name", missing: ["name"] });
+      expect(r.structuredContent).toEqual({ code: "form_incomplete", message: "Job 42 cannot be relaunched with these values - missing: name", missing: ["name"] });
     });
 
     test("verbose needs the permission", async () => {
@@ -283,7 +283,7 @@ describe("MCP tools", () => {
         { index: 0, invalid: ["host"], validationErrors: { host: [{ type: "regex", description: "web hosts only" }] } },
         { index: 1, invalid: ["disks"], rowErrors: { disks: [{ index: 0, missing: ["size"] }] } },
       ] });
-      expect(r.structuredContent.message).toContain("list rows failing : vms[0].host (regex), vms[1].disks[0].size (missing)");
+      expect(r.structuredContent.message).toContain("list rows failing: vms[0].host (regex), vms[1].disks[0].size (missing)");
       expect(deps.Job.launch).not.toHaveBeenCalled();
     });
 
@@ -298,7 +298,7 @@ describe("MCP tools", () => {
       }] }));
       const client = await connect();
       const bad = await client.callTool({ name: "launch_job", arguments: { form: "Web", values: { config: { port: 99999 } } } });
-      expect(bad.structuredContent.message).toContain("list rows failing : config.host (missing), config.port (maxValue)");
+      expect(bad.structuredContent.message).toContain("list rows failing: config.host (missing), config.port (maxValue)");
       const ok = await call(client, "launch_job", { form: "Web", values: { config: { port: 443, host: "web1" } } });
       expect(ok.isError).toBeFalsy();
       expect(deps.Job.launch.mock.calls[0][0].extravars).toEqual({ config: { listen: { port: 443 }, host: "web1" } });
@@ -350,7 +350,7 @@ describe("MCP tools", () => {
       expect(r.isError).toBe(true);
       expect(r.structuredContent.code).toBe("form_incomplete");
       expect(r.structuredContent.validationErrors).toEqual({ host: [{ type: "regex", description: "Must start with prod-" }] });
-      expect(r.structuredContent.message).toContain("validation failed : host (regex: Must start with prod-)");
+      expect(r.structuredContent.message).toContain("validation failed: host (regex: Must start with prod-)");
       expect(deps.Job.launch).not.toHaveBeenCalled();
     });
 
@@ -364,26 +364,26 @@ describe("MCP tools", () => {
 
   // the MCP settings (MCP_READ_ONLY, MCP_CHAT_FORMS_ONLY), handed in by the MCP router
   describe("the MCP policy", () => {
-    test("read only : no launch_job or relaunch_job tool", async () => {
+    test("read only: no launch_job or relaunch_job tool", async () => {
       const client = await connect(user, { readOnly: true });
       const { tools } = await client.listTools();
       expect(tools.map((t) => t.name).sort()).toEqual(["get_form", "get_job", "list_forms", "resolve_field"]);
     });
 
-    test("read only : the handlers refuse a launch too", async () => {
+    test("read only: the handlers refuse a launch too", async () => {
       const handlers = createHandlers({ user, deps, policy: { readOnly: true } });
       await expect(handlers.launchJob({ form: "Create volume", values: {} })).rejects.toMatchObject({ code: "access_denied" });
       await expect(handlers.relaunchJob({ id: 42 })).rejects.toMatchObject({ code: "access_denied" });
       expect(deps.Job.launch).not.toHaveBeenCalled();
     });
 
-    test("chat forms only : a form not offered in the chat is left out of the list", async () => {
+    test("chat forms only: a form not offered in the chat is left out of the list", async () => {
       const client = await connect(user, { chatFormsOnly: true });
       const r = await call(client, "list_forms");
       expect(r.data.forms).toEqual([]);
     });
 
-    test("chat forms only : a form not offered in the chat is not found, nor its jobs", async () => {
+    test("chat forms only: a form not offered in the chat is not found, nor its jobs", async () => {
       const client = await connect(user, { chatFormsOnly: true });
       const form = await client.callTool({ name: "get_form", arguments: { name: "Create volume" } });
       expect(form.structuredContent.code).toBe("not_found");
@@ -391,7 +391,7 @@ describe("MCP tools", () => {
       expect(job.structuredContent.code).toBe("not_found");
     });
 
-    test("chat forms only : a form offered in the chat is there", async () => {
+    test("chat forms only: a form offered in the chat is there", async () => {
       deps.Form.load.mockImplementation(async (roles, name) => {
         if (!name) return { forms: [{ name: "Create volume", enableForChat: true }] };
         return { constants: {}, forms: [{ ...structuredClone(volumeForm), enableForChat: true }], errors: [], warnings: [] };
@@ -430,7 +430,7 @@ describe("MCP schedules", () => {
     deps.Job.maskExtravars = vi.fn(async (_form, text) => text.replace(/"password":"[^"]*"/, '"password":"**NOLOG**"'));
   });
 
-  test("the tools come with the role options : none without them, list and plan for a planner, all for a manager", async () => {
+  test("the tools come with the role options: none without them, list and plan for a planner, all for a manager", async () => {
     const names = async (u, policy) => (await (await connect(u, policy)).listTools()).tools.map((t) => t.name);
     expect(await names(user)).not.toContain("list_schedules");
     const p = await names(planner);
@@ -482,7 +482,7 @@ describe("MCP schedules", () => {
     await expect(createHandlers({ user: planner, deps, policy: { readOnly: true } }).planJob({ form: "Create volume", values: {}, run_at: later.toISOString(), name: "x" })).rejects.toMatchObject({ code: "access_denied" });
   });
 
-  test("create_schedule : recurring or once, through Schedule.create ; a bad cron or both is refused ; only for allowScheduledJobs", async () => {
+  test("create_schedule: recurring or once, through Schedule.create ; a bad cron or both is refused ; only for allowScheduledJobs", async () => {
     const client = await connect(manager);
     const r = await call(client, "create_schedule", { form: "Create volume", name: "weekdays", cron: "0 22 * * 1-5", extraVars: { size: 5 } });
     expect(r.isError).toBe(false);
@@ -520,7 +520,7 @@ describe("MCP schedules", () => {
     expect(deps.cron.removeSchedule).toHaveBeenCalledWith(1);
   });
 
-  test("chat forms only : the schedules of a form MCP does not offer are left out", async () => {
+  test("chat forms only: the schedules of a form MCP does not offer are left out", async () => {
     const r = await call(await connect(manager, { chatFormsOnly: true }), "list_schedules");
     expect(r.data.schedules).toEqual([]);
   });
@@ -549,7 +549,7 @@ describe("MCP schedules", () => {
     await expect(h.deleteSchedule({ id: 4 })).rejects.toMatchObject({ code: "not_found" });
   });
 
-  test("the handlers refuse too : read only, no option, a form MCP does not offer", async () => {
+  test("the handlers refuse too: read only, no option, a form MCP does not offer", async () => {
     const ro = createHandlers({ user: manager, deps, policy: { readOnly: true } });
     await expect(ro.createSchedule({ form: "Create volume", name: "x", cron: "0 1 * * *" })).rejects.toMatchObject({ code: "access_denied" });
     await expect(ro.deleteSchedule({ id: 1 })).rejects.toMatchObject({ code: "access_denied" });
@@ -628,18 +628,18 @@ describe("MCP stored jobs", () => {
     expect(noZone.structuredContent.code).toBe("invalid_request");
   });
 
-  test("launch_job from a stored job : its values with the given ones over them, a gone field left out and said", async () => {
+  test("launch_job from a stored job: its values with the given ones over them, a gone field left out and said", async () => {
     const client = await connect(storer);
     const resolved = await call(client, "resolve_field", { form: "Create volume", storedJob: { id: 1 }, values: { name: "v1-override" } });
     expect(resolved.data.complete).toBe(true);
-    expect(resolved.data.warnings.join(" ")).toContain("left out : gone");
+    expect(resolved.data.warnings.join(" ")).toContain("left out: gone");
     const r = await call(client, "launch_job", { form: "Create volume", storedJob: { name: "monthly" }, values: { name: "v1-override" }, expectedPayloadHash: resolved.data.payloadHash });
     expect(r.isError).toBe(false);
     const arg = deps.Job.launch.mock.calls[0][0];
     expect(arg.extravars.volume.name).toBe("v1-override");
     expect(arg.rawFormData).toMatchObject({ cluster: "c1", name: "v1-override" });
     expect(arg.rawFormData.gone).toBeUndefined();
-    expect(r.data.warnings.join(" ")).toContain("left out : gone");
+    expect(r.data.warnings.join(" ")).toContain("left out: gone");
   });
 
   test("a stored job of another user, or of another form, is not a start", async () => {
@@ -650,7 +650,7 @@ describe("MCP stored jobs", () => {
     expect(deps.Job.launch).not.toHaveBeenCalled();
   });
 
-  test("delete : only one the user may see ; the handlers refuse in read only and without the option", async () => {
+  test("delete: only one the user may see ; the handlers refuse in read only and without the option", async () => {
     const client = await connect(storer);
     expect((await client.callTool({ name: "delete_stored_job", arguments: { id: 2 } })).structuredContent.code).toBe("not_found");
     expect((await call(client, "delete_stored_job", { id: 1 })).data).toMatchObject({ id: 1, deleted: true });
@@ -660,7 +660,7 @@ describe("MCP stored jobs", () => {
     await expect(createHandlers({ user, deps }).launchJob({ form: "Create volume", storedJob: { id: 1 } })).rejects.toMatchObject({ code: "access_denied" });
   });
 
-  test("chat forms only : the stored jobs of a form MCP does not offer are left out", async () => {
+  test("chat forms only: the stored jobs of a form MCP does not offer are left out", async () => {
     expect((await call(await connect(storer, { chatFormsOnly: true }), "list_stored_jobs")).data.storedJobs).toEqual([]);
     await expect(createHandlers({ user: storer, deps, policy: { chatFormsOnly: true } }).getStoredJob({ id: 1 })).rejects.toMatchObject({ code: "not_found" });
   });

@@ -24,14 +24,14 @@ test("a reference splits into a directory type and a name ; a local one or none 
   expect(splitRef("ldap/")).toBeNull();
 });
 
-test("a directory user's roles : by name, through a group seen, and default", () => {
+test("a directory user's roles: by name, through a group seen, and default", () => {
   expect(rolesOfDirectoryUser(roles, "ldap", "bob", ["ldap/ops"]).sort()).toEqual(["default", "ops"]);
   expect(rolesOfDirectoryUser(roles, "ldap", "carol", []).sort()).toEqual(["default", "ops"]);
   // azuread/Ops is Entra ID's group, not LDAP's
   expect(rolesOfDirectoryUser(roles, "ldap", "eve", ["ldap/Ops"])).toEqual(["default"]);
 });
 
-test("the users list : those seen, then those the roles name who never signed in, once", () => {
+test("the users list: those seen, then those the roles name who never signed in, once", () => {
   const rows = directoryUserRows(
     [
       { type: "ldap", username: "bob", display_name: "Bob", groups: ["ldap/ops"], last_login: "2026-10-11", blocked: 0 },
@@ -47,7 +47,7 @@ test("the users list : those seen, then those the roles name who never signed in
   expect(dave).toMatchObject({ source: "oidc", seen: false, role_count: 2, group_ids: [] });
 });
 
-test("the groups list : the groups seen and those a role names, their members and roles", () => {
+test("the groups list: the groups seen and those a role names, their members and roles", () => {
   const rows = directoryGroupRows(
     [
       { type: "ldap", username: "bob", groups: ["ldap/ops", "ldap/dev"] },

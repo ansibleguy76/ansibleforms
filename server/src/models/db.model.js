@@ -70,7 +70,7 @@ MySql.resizePool = function (connectionLimit) {
     // settings page reported DB_POOL_SIZE as applied while the old pool was still in use.
     next = attachPoolLogging(client.createPool({ ...poolConfig, connectionLimit: size }));
   } catch (e) {
-    logger.error(`[ansibleforms] could not resize the pool, keeping the current one : ${e.message}`);
+    logger.error(`[ansibleforms] could not resize the pool, keeping the current one: ${e.message}`);
     return false;
   }
   poolConfig.connectionLimit = size;
@@ -78,7 +78,7 @@ MySql.resizePool = function (connectionLimit) {
   // not awaited : draining waits on whatever is still running, and the caller must not
   logger.notice(`[ansibleforms] connection pool resized to ${size}, draining the previous one`);
   Promise.resolve(previous.end()).catch((e) => {
-    logger.warning(`[ansibleforms] the previous pool did not close cleanly : ${e.message}`);
+    logger.warning(`[ansibleforms] the previous pool did not close cleanly: ${e.message}`);
   });
   return true;
 };
@@ -88,16 +88,16 @@ MySql.resizePool = function (connectionLimit) {
  */
 MySql.do = async function (query, vars, silent = false) {
   if (!silent && appConfig.enableDbQueryLogging) {
-    logger.info('[ansibleforms] running query : ' + query);
+    logger.info('[ansibleforms] running query: ' + query);
   }
   try {
     const [result] = await pool.query(query, vars);
     if (!silent && appConfig.enableDbQueryLogging) {
-      logger.debug('[ansibleforms] query result : ' + JSON.stringify(result));
+      logger.debug('[ansibleforms] query result: ' + JSON.stringify(result));
     }
     return result;
   } catch (err) {
-    logger.error('[ansibleforms] Query error : ' + err);
+    logger.error('[ansibleforms] Query error: ' + err);
     throw err;
   }
 };
@@ -151,7 +151,7 @@ MySql.transaction = async function (fn) {
     await conn.beginTransaction();
     const result = await fn(async (query, vars) => {
       if (appConfig.enableDbQueryLogging) {
-        logger.info('[ansibleforms] running query (tx) : ' + query);
+        logger.info('[ansibleforms] running query (tx): ' + query);
       }
       const [res] = await conn.query(query, vars);
       return res;
@@ -159,7 +159,7 @@ MySql.transaction = async function (fn) {
     await conn.commit();
     return result;
   } catch (err) {
-    logger.error('[ansibleforms] Transaction error, rolling back : ' + err);
+    logger.error('[ansibleforms] Transaction error, rolling back: ' + err);
     try {
       await conn.rollback();
     } catch (e) {
@@ -198,7 +198,7 @@ MySql.runIsolated = async function (query, vars) {
     try {
       conn.destroy();
     } catch (e) {
-      logger.warning('[ansibleforms] Could not destroy the isolated connection : ' + e.message);
+      logger.warning('[ansibleforms] Could not destroy the isolated connection: ' + e.message);
     }
   }
 };
@@ -210,7 +210,7 @@ MySql.end = async function () {
   try {
     await pool.end();
   } catch (err) {
-    logger.error('[ansibleforms] Pool end error : ' + err);
+    logger.error('[ansibleforms] Pool end error: ' + err);
   }
 };
 

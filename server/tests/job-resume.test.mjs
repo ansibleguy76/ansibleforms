@@ -152,7 +152,7 @@ const outputOf = (id) => rows.filter((r) => r.job_id == id).sort((a, b) => a.ord
 // the tests
 // --------------------------------------------------------------------------------------
 describe("Awx.resume", () => {
-  test("follows the job again to its end : AWX's full stdout once, the lines around it kept", { timeout: 30000 }, async () => {
+  test("follows the job again to its end: AWX's full stdout once, the lines around it kept", { timeout: 30000 }, async () => {
     restartedJob(5);
     const result = await Awx.resume(runner, { id: 5, awx_id: 88, awx_workflow: null });
     assert.equal(result, true);
@@ -246,6 +246,6 @@ describe("resumeAbandoned", () => {
     await resumeAbandoned("app:new-pod");
     await until(() => jobs[3].status === "failed");
     assert.equal(jobs[3].status, "failed");
-    assert.match(outputOf(3).at(-1), /step 'deploy' ran \(job 9\) : that step ended with success, the steps after it were not run/);
+    assert.match(outputOf(3).at(-1), /step 'deploy' ran \(job 9\): that step ended with success, the steps after it were not run/);
   });
 });

@@ -149,7 +149,7 @@ describe("the ansible-playbook arguments", () => {
     ]);
   });
 
-  test("each inventory once : a list is never joined into a host list", () => {
+  test("each inventory once: a list is never joined into a host list", () => {
     const one = core.buildAnsibleArgs({ __playbook__: "p.yml", __inventory__: "hosts" }, files).args;
     assert.deepEqual(one.filter((a, i) => one[i - 1] === "-i"), ["hosts"]);
     const adhoc = core.buildAnsibleArgs({ __playbook__: "p.yml", __inventory__: "web1,web2," }, files).args;
@@ -305,7 +305,7 @@ describe("the form decides allowJinjaInExtravars, never the request", () => {
 describe("every way out removes the files holding the credentials, and ends the job once", () => {
   const endLines = () => outputs.filter((o) => /failed|finished/.test(o.output || ""));
 
-  test("ansible-playbook missing (a spawn error : error and close, never exit)", async () => {
+  test("ansible-playbook missing (a spawn error: error and close, never exit)", async () => {
     row({ __playbook__: "site.yml", __credentials__: { dbcred: "db" } });
     const done = runJob();
     await new Promise((r) => setTimeout(r, 20));
@@ -413,14 +413,14 @@ describe("the approval gate", () => {
 });
 
 describe("which runner runs a playbook job", () => {
-  test("no runner named and no default : the job fails with a line that says what to do", async () => {
+  test("no runner named and no default: the job fails with a line that says what to do", async () => {
     row({ __playbook__: "site.yml" });
     await assert.rejects(resolveRunner({ jobType: "ansible", extravars: {} }), /No runner to run this playbook/);
     const ok = await dispatch({ jobId: 11, jobType: "ansible", extravars: {}, approval: null });
     assert.equal(ok, false);
     assert.equal(spawned.length, 0, "the app runs no playbook itself");
     assert.equal(jobRow.status, "failed");
-    assert.ok(outputs.some((o) => /No runner to run this playbook : add one of type rte/.test(o.output)));
+    assert.ok(outputs.some((o) => /No runner to run this playbook: add one of type rte/.test(o.output)));
   });
 
   test("a default of another type is not a playbook runner's default", async () => {
@@ -437,7 +437,7 @@ describe("which runner runs a playbook job", () => {
     assert.equal(byDefault.row.name, "rte-default");
   });
 
-  test("a form's type names the runner type : its runner must be one, its default is that type's", async () => {
+  test("a form's type names the runner type: its runner must be one, its default is that type's", async () => {
     runnerRows = [
       { name: "sem", type: "semaphore", is_default: 1 }, { name: "rd", type: "rundeck", is_default: 1 }, { name: "ci", type: "jenkins" },
       { name: "aap-prod", type: "awx", flavour: "aap", is_default: 1 },
@@ -449,11 +449,11 @@ describe("which runner runs a playbook job", () => {
     assert.equal((await resolveRunner({ jobType: "awx", formType: "aap", extravars: {} })).row.name, "aap-prod", "an aap form runs on the awx default");
     assert.equal((await resolveRunner({ jobType: "awx", formType: "ascender", extravars: { __runner__: "aap-prod" } })).row.name, "aap-prod", "no flavour check");
     // a runner of another type : refused, with the type to name
-    await assert.rejects(resolveRunner({ jobType: "awx", formType: "semaphore", extravars: { __runner__: "rd" } }), /Runner 'rd' is a rundeck runner, this form is of type semaphore : name a semaphore runner/);
-    await assert.rejects(resolveRunner({ jobType: "awx", formType: "awx", extravars: { __runner__: "sem" } }), /Runner 'sem' is a semaphore runner, this form is of type awx : name an awx runner/);
-    await assert.rejects(resolveRunner({ jobType: "ansible", formType: "ansible", extravars: { __runner__: "ci" } }), /Runner 'ci' is a jenkins runner, this form is of type ansible : name an RTE runner/);
+    await assert.rejects(resolveRunner({ jobType: "awx", formType: "semaphore", extravars: { __runner__: "rd" } }), /Runner 'rd' is a rundeck runner, this form is of type semaphore: name a semaphore runner/);
+    await assert.rejects(resolveRunner({ jobType: "awx", formType: "awx", extravars: { __runner__: "sem" } }), /Runner 'sem' is a semaphore runner, this form is of type awx: name an awx runner/);
+    await assert.rejects(resolveRunner({ jobType: "ansible", formType: "ansible", extravars: { __runner__: "ci" } }), /Runner 'ci' is a jenkins runner, this form is of type ansible: name an RTE runner/);
     // no default of its type : what to add
-    await assert.rejects(resolveRunner({ jobType: "awx", formType: "jenkins", extravars: {} }), /No runner for a form of type jenkins : add one of type jenkins/);
+    await assert.rejects(resolveRunner({ jobType: "awx", formType: "jenkins", extravars: {} }), /No runner for a form of type jenkins: add one of type jenkins/);
   });
 
   test("a job whose form type is not given is matched by capability, as before", async () => {
@@ -491,7 +491,7 @@ describe("which runner runs a playbook job", () => {
     assert.equal(picked.impl.type, "awx");
     assert.equal(picked.row.name, "aap");
     runnerRows = [{ name: "rte-default", type: "rte", is_default: 1 }];
-    await assert.rejects(resolveRunner({ jobType: "awx", extravars: {} }), /No runner to run this template : add one of type awx/);
+    await assert.rejects(resolveRunner({ jobType: "awx", extravars: {} }), /No runner to run this template: add one of type awx/);
   });
 
   test("runner: on a template form names the awx runner ; an rte cannot run a template", async () => {

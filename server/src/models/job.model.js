@@ -166,7 +166,7 @@ function stripReservedExtravars(extravars, formObj = null) {
     }
   }
   if (removed.length) {
-    logger.warning(`Ignoring reserved extravars supplied by the client : ${removed.join(", ")}`);
+    logger.warning(`Ignoring reserved extravars supplied by the client: ${removed.join(", ")}`);
   }
   return extravars;
 }
@@ -214,7 +214,7 @@ function stripUndeclaredCredentials(credentials, formObj = null) {
     else removed.push(key);
   }
   if (removed.length) {
-    logger.warning(`Ignoring credentials supplied by the client that the form does not declare : ${removed.join(", ")}`);
+    logger.warning(`Ignoring credentials supplied by the client that the form does not declare: ${removed.join(", ")}`);
   }
   return kept;
 }
@@ -471,7 +471,7 @@ Job.endJobStatus = async (
       awx_artifacts: JSON.stringify(awx_artifacts),
     });
     if (!moved) {
-      logger.debug(`Job ${jobid} has ended already : not ending it again as ${status}`);
+      logger.debug(`Job ${jobid} has ended already: not ending it again as ${status}`);
       return;
     }
     await Job.createOutput({
@@ -652,7 +652,7 @@ Job.requestAbort = async function (id) {
   if (res.changedRows == 1) {
     // The runner running the job sees the flag within seconds and stops it ; a direct
     // cancel on the runner (an RTE, AWX) stops it at once.
-    cancelOnRunner(id).catch((e) => logger.debug(`[Job ${id}] cancel on the runner failed : ${e.message}`));
+    cancelOnRunner(id).catch((e) => logger.debug(`[Job ${id}] cancel on the runner failed: ${e.message}`));
   }
   return res;
 };
@@ -916,7 +916,7 @@ async function maskPasswordFields(formName, extravarsText) {
     const data = JSON.parse(extravarsText);
     return JSON.stringify(maskPasswords(data, fields, subforms));
   } catch (err) {
-    logger.debug(`Could not mask the password fields of form '${formName}' : ${err.message}`);
+    logger.debug(`Could not mask the password fields of form '${formName}': ${err.message}`);
     return extravarsText;
   }
 }
@@ -981,7 +981,7 @@ Job.registerOutputSecrets = async function (jobId, { form = "", extravars = {}, 
       const data = JSON.parse(JSON.stringify(extravars || {}));
       secrets.push(...maskedValues(data, maskPasswords(JSON.parse(JSON.stringify(data)), fields, subforms)));
     } catch (err) {
-      logger.debug(`[Job ${jobId}] Could not read the password fields of form '${form}' : ${err.message}`);
+      logger.debug(`[Job ${jobId}] Could not read the password fields of form '${form}': ${err.message}`);
     }
   }
   registerJobSecrets(jobId, secrets);
@@ -1049,7 +1049,7 @@ Job.findById = async function (user, id, asText, logSafe = false) {
     //
     // The controllers already map AccessDeniedError to 403 and NotFoundError to 404, and
     // a genuine database fault deserves a 500 rather than a plausible empty job.
-    logger.error("Error : ", err);
+    logger.error("Error: ", err);
     throw err;
   }
 };
@@ -1158,25 +1158,25 @@ async function guardLaunch({ form, formConfig, formObj, user, rawFormData, extra
         verifyUntouched: true,
       });
     } catch (err) {
-      if (enforce) throw new Errors.ValidationError(`Launch validation of form '${form}' failed : ${err.message}`);
-      logger.error(`Launch validation of form '${form}' failed, launching anyway (launch validation 'log') : ${err.message}`);
+      if (enforce) throw new Errors.ValidationError(`Launch validation of form '${form}' failed: ${err.message}`);
+      logger.error(`Launch validation of form '${form}' failed, launching anyway (launch validation 'log'): ${err.message}`);
       return;
     }
   }
   if (result.skipped) {
     if (enforce) {
-      const err = new Errors.ValidationError(`Form '${form}' cannot be launched with launch validation 'enforce' yet : ${result.skipped}`);
+      const err = new Errors.ValidationError(`Form '${form}' cannot be launched with launch validation 'enforce' yet: ${result.skipped}`);
       err.details = { reason: result.skipped };
       throw err;
     }
-    logger.debug(`Launch validation of form '${form}' skipped : ${result.skipped}`);
+    logger.debug(`Launch validation of form '${form}' skipped: ${result.skipped}`);
     return;
   }
   if (result.ok) {
     if (enforce) return result.payload;
     const differ = compareExtravars(extravars, result.payload.extravars, result.uploadKeys || []);
     if (differ.length) {
-      logger.warning(`Launch of form '${form}' : the extravars differ from the ones the server builds for ${differ.join(', ')} (launch validation 'log' ; 'enforce' would run the server's)`);
+      logger.warning(`Launch of form '${form}': the extravars differ from the ones the server builds for ${differ.join(', ')} (launch validation 'log' ; 'enforce' would run the server's)`);
     }
     return;
   }
@@ -1186,7 +1186,7 @@ async function guardLaunch({ form, formConfig, formObj, user, rawFormData, extra
     err.details = result.errors || { reason: result.reason };
     throw err;
   }
-  logger.warning(`Launch validation would refuse form '${form}' for ${user?.username || 'unknown'} (launch validation 'log') : ${why}`);
+  logger.warning(`Launch validation would refuse form '${form}' for ${user?.username || 'unknown'} (launch validation 'log'): ${why}`);
 }
 
 Job.launch = async function ({
@@ -1298,7 +1298,7 @@ Job.launch = async function ({
   } catch (err) {
     logger.error("Failed to create job", err);
     throw new Errors.ApiError(
-      `Failed to create job for form ${form} : ${err.message}`
+      `Failed to create job for form ${form}: ${err.message}`
     );
   }
 
@@ -1594,7 +1594,7 @@ Job.relaunchWithValues = async function ({ user, id, values = {}, verbose = fals
     const why = launchedBySchedule(job)
       ? 'it was launched by a schedule, which runs with its own extra vars and no form values'
       : 'it was launched before form values were stored with a job';
-    throw codedError(Errors.BadRequestError, `Job ${id} cannot be relaunched with changes : ${why}. Relaunch it without changes instead.`, 'no_form_data');
+    throw codedError(Errors.BadRequestError, `Job ${id} cannot be relaunched with changes: ${why}. Relaunch it without changes instead.`, 'no_form_data');
   }
   if (stored.__form__ && stored.__form__ !== job.form) {
     throw new Errors.BadRequestError(`Cannot relaunch: saved data is from form '${stored.__form__}', not '${job.form}'.`);
@@ -1621,7 +1621,7 @@ Job.relaunchWithValues = async function ({ user, id, values = {}, verbose = fals
   // dependencies hide is not needed, and does not stand in the way.
   if (result.passwordsVisible?.length) {
     throw codedError(Errors.BadRequestError,
-      `Job ${id} cannot be relaunched ${changed ? 'with changes' : 'under launch validation \'enforce\''} : its password field(s) ${result.passwordsVisible.join(', ')} are shown and passwords are never stored ; launch the form again and enter them`,
+      `Job ${id} cannot be relaunched ${changed ? 'with changes' : 'under launch validation \'enforce\''}: its password field(s) ${result.passwordsVisible.join(', ')} are shown and passwords are never stored ; launch the form again and enter them`,
       'unsupported', { passwordFields: result.passwordsVisible });
   }
   if (!result.ok) {
@@ -1769,7 +1769,7 @@ Job.approve = async function (user, id) {
       await Job.sendEventNotification(id, 'approve', user);
       return result;
     } catch (err) {
-      logger.error("Failed to continue the job : ", err);
+      logger.error("Failed to continue the job: ", err);
       throw err;
     }
   } else {
@@ -1868,7 +1868,7 @@ Job._splitChannels = async function (names) {
     const channel = await NotificationChannel.findByName(name).catch(() => null);
     if (channel?.type === "mail") {
       if (channel.enabled) mail.push(channel);
-      else logger.notice(`The mail channel '${name}' is turned off : the mail goes through the active one`);
+      else logger.notice(`The mail channel '${name}' is turned off: the mail goes through the active one`);
     } else {
       others.push(name);
     }
@@ -1929,7 +1929,7 @@ Job._notifyChannels = async function ({ channels, recipients = [], title, text, 
     );
     return results.some((r) => r.ok);
   } catch (err) {
-    logger.error(`${context} could not be sent to its channels : `, err);
+    logger.error(`${context} could not be sent to its channels: `, err);
     return false;
   }
 };
@@ -2424,7 +2424,7 @@ Multistep.launch = async function ({
                 const childStatus = Array.isArray(childJob) ? undefined : childJob?.status;
                 if (!childStatus) {
                   throw new Errors.ApiError(
-                    `Step ${step.name} (jobid ${jobSuccess.id}) : could not read the step status, treating it as failed`
+                    `Step ${step.name} (jobid ${jobSuccess.id}): could not read the step status, treating it as failed`
                   );
                 }
                 // only success or warning passes : abandoned (a runner restarted mid-step),
@@ -2470,9 +2470,9 @@ Multistep.launch = async function ({
       } catch (error) {
         // step failed - something was wrong
         failed++;
-        logger.error("Failed step " + step.name + " : ", error);
+        logger.error("Failed step " + step.name + ": ", error);
         await Job.printJobOutput(
-          "[ERROR]: Failed step " + step.name + " : " + error.message,
+          "[ERROR]: Failed step " + step.name + ": " + error.message,
           "stderr",
           jobid,
           ++counter
@@ -2568,7 +2568,7 @@ Multistep.launch = async function ({
     }
     return true
   } catch (err) {
-    logger.error("Error in multistep, this should not happen : ", err);
+    logger.error("Error in multistep, this should not happen: ", err);
   }
 };
 // ─── live events ──────────────────────────────────────────────────────────────

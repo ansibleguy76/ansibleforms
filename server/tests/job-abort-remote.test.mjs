@@ -120,7 +120,7 @@ describe("a playbook stops when its abort flag is set", () => {
   test("runs ansible-playbook without a shell, in its own process group", async () => {
     const result = run().then(() => "resolved", () => "rejected");
     const last = spawned[spawned.length - 1];
-    assert.equal(last.file, "ansible-playbook", "no shell : form values never pass through one");
+    assert.equal(last.file, "ansible-playbook", "no shell: form values never pass through one");
     assert.deepEqual(last.args, ["-e", "@extravars_7.json", "site.yml"]);
     assert.equal(last.options.shell, undefined);
     assert.equal(last.options.detached, true, "its own process group, so one signal stops all its workers");

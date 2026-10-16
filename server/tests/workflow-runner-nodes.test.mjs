@@ -83,7 +83,7 @@ describe("a node's condition and its values", () => {
     expect(nodeRuns({ configure: true }, node("configure"))).toBe(true);
     expect(nodeRuns({ configure: "true" }, node("configure"))).toBe(false);
     expect(nodeRuns({}, node("configure"))).toBe(false);
-    expect(nodeRuns({}, node("provision"))).toBe(true, "no condition : always");
+    expect(nodeRuns({}, node("provision"))).toBe(true, "no condition: always");
   });
 
   test("extra_vars_key gives it that key's value, the user copied in ; the __x__ keys never", () => {

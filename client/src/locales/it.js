@@ -413,7 +413,7 @@ export default {
     confirmPassword: 'Conferma la nuova password',
     mismatch: 'Le nuove password non coincidono.',
     changed: 'La tua password è stata cambiata.',
-    changedSignIn: 'La password è stata cambiata : accedi di nuovo con quella nuova',
+    changedSignIn: 'La password è stata cambiata: accedi di nuovo con quella nuova',
     changeFailed: 'Impossibile cambiare la password',
     change: 'Cambia password',
     elsewhere: 'Accedi con {type}, quindi la tua password è gestita lì e non può essere cambiata qui.',
@@ -2178,7 +2178,7 @@ export default {
       workflowPathHelp:
         'Il file del workflow nella cartella dei workflow, con le sottocartelle (deploy.yml, team/deploy.yml). Un modulo lo avvia con questo file, come nomina un playbook.',
       sharedWorkflowNames:
-        'Un workflow chiamato {names} è anche in un altro file : un modulo che lo avvia per nome si ferma. Rinominalo, o indica il suo file nel modulo.',
+        'Un workflow chiamato {names} è anche in un altro file: un modulo che lo avvia per nome si ferma. Rinominalo, o indica il suo file nel modulo.',
       folderHelp: 'Il percorso della cartella; resta quando vi si salva un file.',
       create: 'Crea',
       deleteConfirm: 'Vuoi davvero eliminare',
@@ -2211,7 +2211,7 @@ export default {
     previewForm: 'Anteprima modulo',
     previewHint: "Il modulo com'è ora, modifiche non salvate comprese. L'invio non avvia nulla.",
     previewRefresh: "Aggiorna l'anteprima",
-    previewNotRun: "Questa è un'anteprima : il modulo non è stato eseguito",
+    previewNotRun: "Questa è un'anteprima: il modulo non è stato eseguito",
     visual: 'Visuale',
     runnerDefault: 'Runner predefinito del suo tipo',
     helpIcon: 'Mostrata sul suo riquadro e nella lista dei moduli.',
@@ -2355,7 +2355,7 @@ export default {
     visualValuesHelp: 'Una lista YAML: un valore per riga (- dev), o oggetti (- name: Rome).',
     visualNotANumber: 'non è un numero',
     visualDeleteField: 'Elimina campo',
-    visualYamlError: 'Lo YAML non può essere mostrato qui : correggilo nella scheda YAML',
+    visualYamlError: 'Lo YAML non può essere mostrato qui: correggilo nella scheda YAML',
     visualNotAList: 'non è una lista',
     visualNotAMap: 'non è una mappa',
     menuPreviewHint:

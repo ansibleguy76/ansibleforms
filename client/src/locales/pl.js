@@ -408,7 +408,7 @@ export default {
     confirmPassword: 'Potwierdź nowe hasło',
     mismatch: 'Nowe hasła nie są zgodne.',
     changed: 'Hasło zostało zmienione.',
-    changedSignIn: 'Hasło zostało zmienione : zaloguj się ponownie nowym hasłem',
+    changedSignIn: 'Hasło zostało zmienione: zaloguj się ponownie nowym hasłem',
     changeFailed: 'Nie udało się zmienić hasła',
     change: 'Zmień hasło',
     elsewhere: 'Logujesz się przez {type}, więc Twoje hasło jest zarządzane tam i nie można go tutaj zmienić.',
@@ -2165,7 +2165,7 @@ export default {
       workflowPathHelp:
         'Plik workflow w folderze workflow, z podfolderami (deploy.yml, team/deploy.yml). Formularz uruchamia go przez ten plik, tak jak nazywa playbook.',
       sharedWorkflowNames:
-        'Workflow o nazwie {names} jest też w innym pliku : formularz, który uruchamia go po nazwie, zatrzymuje się. Zmień jego nazwę lub podaj w formularzu jego plik.',
+        'Workflow o nazwie {names} jest też w innym pliku: formularz, który uruchamia go po nazwie, zatrzymuje się. Zmień jego nazwę lub podaj w formularzu jego plik.',
       folderHelp: 'Ścieżka folderu; zostaje, gdy zapiszesz w nim plik.',
       create: 'Utwórz',
       deleteConfirm: 'Czy na pewno chcesz usunąć',
@@ -2198,7 +2198,7 @@ export default {
     previewForm: 'Podgląd formularza',
     previewHint: 'Formularz w obecnej postaci, z niezapisanymi zmianami. Wysłanie niczego nie uruchamia.',
     previewRefresh: 'Odśwież podgląd',
-    previewNotRun: 'To jest podgląd : formularz nie został uruchomiony',
+    previewNotRun: 'To jest podgląd: formularz nie został uruchomiony',
     visual: 'Wizualny',
     runnerDefault: 'Domyślny runner jego typu',
     helpIcon: 'Pokazywana na jego kafelku i na liście formularzy.',
@@ -2341,7 +2341,7 @@ export default {
     visualValuesHelp: 'Lista YAML: jedna wartość w wierszu (- dev) lub obiekty (- name: Rome).',
     visualNotANumber: 'to nie liczba',
     visualDeleteField: 'Usuń pole',
-    visualYamlError: 'Nie można tu pokazać YAML : popraw go w karcie YAML',
+    visualYamlError: 'Nie można tu pokazać YAML: popraw go w karcie YAML',
     visualNotAList: 'to nie lista',
     visualNotAMap: 'to nie mapa',
     menuPreviewHint:

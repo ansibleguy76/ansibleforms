@@ -19,7 +19,7 @@ async function rowsOf(table) {
     const rows = await CrudModel.findAll(table);
     return Array.isArray(rows) ? rows : [];
   } catch (err) {
-    logger.warning(`The ${table} rows not counted, they could not be read : ${err}`);
+    logger.warning(`The ${table} rows not counted, they could not be read: ${err}`);
     return [];
   }
 }

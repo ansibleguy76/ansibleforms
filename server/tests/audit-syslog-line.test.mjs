@@ -38,7 +38,7 @@ test("who, what, on what, how it went, from where and which request ; no secret"
   expect(Date.parse(line.time)).not.toBeNaN();
 });
 
-test("a system action, and a database that refuses the row : the line still goes", async () => {
+test("a system action, and a database that refuses the row: the line still goes", async () => {
   dbThrows = true;
   await Audit.log({ action: "backup.create", outcome: "failure" });
   expect(sent.at(-1)).toMatchObject({ actor: null, actor_type: "system", action: "backup.create", outcome: "failure" });

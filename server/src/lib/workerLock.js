@@ -68,14 +68,14 @@ export async function tryWorkerLock() {
       });
       // a lost connection is noticed by the next check ; this only keeps it from
       // becoming an uncaught error
-      conn.on("error", (e) => logger.debug(`The worker lock connection : ${e.message || e}`));
+      conn.on("error", (e) => logger.debug(`The worker lock connection: ${e.message || e}`));
     }
     const [rows] = await query("SELECT GET_LOCK(?, 0) AS got", [WORKER_LOCK]);
     held = rows?.[0]?.got === 1;
     lastMiss = held ? null : "busy";
     return held;
   } catch (e) {
-    logger.warning(`Could not ask the database for the worker lock : ${e.message || e}`);
+    logger.warning(`Could not ask the database for the worker lock: ${e.message || e}`);
     lastMiss = "unreachable";
     await dropConnection();
     return false;
@@ -95,7 +95,7 @@ async function stillMine() {
     const [rows] = await query("SELECT IS_USED_LOCK(?) = CONNECTION_ID() AS mine", [WORKER_LOCK]);
     if (rows?.[0]?.mine === 1) return true;
   } catch (e) {
-    logger.warning(`The worker lock connection does not answer : ${e.message || e}`);
+    logger.warning(`The worker lock connection does not answer: ${e.message || e}`);
   }
   await dropConnection();
   return false;
@@ -118,7 +118,7 @@ async function takeFromDeadHolder() {
       "SELECT COUNT(*) AS n FROM AnsibleForms.`nodes` WHERE is_worker=1 AND last_seen > (NOW() - INTERVAL ? SECOND)",
       [NODE_DEAD_SECONDS]);
     if (Number(alive?.[0]?.n) > 0) return;
-    logger.warning(`The worker lock is held by database connection ${holder}, and no worker has answered for ${NODE_DEAD_SECONDS} seconds : ending that connection to take over`);
+    logger.warning(`The worker lock is held by database connection ${holder}, and no worker has answered for ${NODE_DEAD_SECONDS} seconds: ending that connection to take over`);
     await query(`KILL ${Number(holder)}`);
     suspect = { id: null, since: 0 };
   } catch (e) {
@@ -128,9 +128,9 @@ async function takeFromDeadHolder() {
     const overdue = suspect.id != null && Date.now() - suspect.since >= NODE_DEAD_SECONDS * 1000;
     if (overdue && Date.now() - lastTakeoverWarning > 10 * 60 * 1000) {
       lastTakeoverWarning = Date.now();
-      logger.warning(`The worker lock holder (connection ${suspect.id}) may be dead, but it cannot be taken over : ${e.message || e}`);
+      logger.warning(`The worker lock holder (connection ${suspect.id}) may be dead, but it cannot be taken over: ${e.message || e}`);
     } else {
-      logger.debug(`Could not check the worker lock holder : ${e.message || e}`);
+      logger.debug(`Could not check the worker lock holder: ${e.message || e}`);
     }
   }
 }
@@ -168,9 +168,9 @@ export function keepWorkerLock({ onAcquired, onWaiting, onLost }) {
       if (!acquired) {
         if (await tryWorkerLock()) {
           acquired = true;
-          logger.notice("This process holds the worker lock : it runs the schedules, backups, syncs and cleanups");
+          logger.notice("This process holds the worker lock: it runs the schedules, backups, syncs and cleanups");
           // not awaited : a worker waiting for a schema keeps checking its lock meanwhile
-          Promise.resolve().then(onAcquired).catch((e) => die(`The worker failed to start, stopping so another can take over : ${e.message || e}`));
+          Promise.resolve().then(onAcquired).catch((e) => die(`The worker failed to start, stopping so another can take over: ${e.message || e}`));
           return;
         }
         if (lastMiss === "busy") {
@@ -191,7 +191,7 @@ export function keepWorkerLock({ onAcquired, onWaiting, onLost }) {
       // else can take the lock either
       if (lastMiss === "busy") onLost();
     } catch (e) {
-      logger.error(`Worker lock check failed : ${e.message || e}`);
+      logger.error(`Worker lock check failed: ${e.message || e}`);
     } finally {
       setTimeout(tick, LOCK_RETRY_MS).unref?.();
     }

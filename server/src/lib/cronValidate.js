@@ -40,7 +40,7 @@ export function cronError(expression) {
 
 export function assertValidCron(expression) {
   const problem = cronError(expression);
-  if (problem) throw new Errors.BadRequestError(`Invalid cron expression : ${problem}`);
+  if (problem) throw new Errors.BadRequestError(`Invalid cron expression: ${problem}`);
 }
 
 export default { cronError, assertValidCron };

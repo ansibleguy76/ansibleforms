@@ -413,7 +413,7 @@ export default {
     confirmPassword: 'Confirmar nova palavra-passe',
     mismatch: 'As novas palavras-passe não coincidem.',
     changed: 'A sua palavra-passe foi alterada.',
-    changedSignIn: 'A sua palavra-passe foi alterada : inicie sessão de novo com a nova',
+    changedSignIn: 'A sua palavra-passe foi alterada: inicie sessão de novo com a nova',
     changeFailed: 'Não foi possível alterar a palavra-passe',
     change: 'Alterar palavra-passe',
     elsewhere: 'Inicia sessão com {type}, por isso a sua palavra-passe é gerida aí e não pode ser alterada aqui.',
@@ -2187,7 +2187,7 @@ export default {
       workflowPathHelp:
         'O arquivo do workflow na pasta de workflows, com as subpastas (deploy.yml, team/deploy.yml). Um formulário o executa por este arquivo, como nomeia um playbook.',
       sharedWorkflowNames:
-        'Um workflow chamado {names} está também em outro arquivo : um formulário que o executa pelo nome para. Renomeie-o, ou indique o seu arquivo no formulário.',
+        'Um workflow chamado {names} está também em outro arquivo: um formulário que o executa pelo nome para. Renomeie-o, ou indique o seu arquivo no formulário.',
       folderHelp: 'O caminho da pasta; mantém-se quando um ficheiro é guardado nela.',
       create: 'Criar',
       deleteConfirm: 'Tem a certeza de que quer eliminar',
@@ -2220,7 +2220,7 @@ export default {
     previewForm: 'Pré-visualizar formulário',
     previewHint: 'O formulário tal como está, alterações não guardadas incluídas. O envio não executa nada.',
     previewRefresh: 'Atualizar a pré-visualização',
-    previewNotRun: 'Isto é uma pré-visualização : o formulário não foi executado',
+    previewNotRun: 'Isto é uma pré-visualização: o formulário não foi executado',
     visual: 'Visual',
     runnerDefault: 'Runner predefinido do seu tipo',
     helpIcon: 'Mostrado no seu mosaico e na lista de formulários.',
@@ -2364,7 +2364,7 @@ export default {
     visualValuesHelp: 'Uma lista YAML: um valor por linha (- dev), ou objetos (- name: Rome).',
     visualNotANumber: 'não é um número',
     visualDeleteField: 'Eliminar campo',
-    visualYamlError: 'O YAML não pode ser mostrado aqui : corrija-o no separador YAML',
+    visualYamlError: 'O YAML não pode ser mostrado aqui: corrija-o no separador YAML',
     visualNotAList: 'não é uma lista',
     visualNotAMap: 'não é um mapa',
     menuPreviewHint:

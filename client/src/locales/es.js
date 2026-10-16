@@ -411,7 +411,7 @@ export default {
     confirmPassword: 'Confirma la nueva contraseña',
     mismatch: 'Las nuevas contraseñas no coinciden.',
     changed: 'Tu contraseña se ha cambiado.',
-    changedSignIn: 'Su contraseña ha cambiado : inicie sesión de nuevo con la nueva',
+    changedSignIn: 'Su contraseña ha cambiado: inicie sesión de nuevo con la nueva',
     changeFailed: 'No se pudo cambiar la contraseña',
     change: 'Cambiar contraseña',
     elsewhere: 'Inicias sesión con {type}, así que tu contraseña se gestiona allí y no se puede cambiar aquí.',
@@ -2186,7 +2186,7 @@ export default {
       workflowPathHelp:
         'El archivo del workflow en la carpeta de workflows, con sus subcarpetas (deploy.yml, team/deploy.yml). Un formulario lo ejecuta por este archivo, como nombra un playbook.',
       sharedWorkflowNames:
-        'Un workflow llamado {names} está también en otro archivo : un formulario que lo ejecuta por su nombre se detiene. Renómbrelo, o indique su archivo en el formulario.',
+        'Un workflow llamado {names} está también en otro archivo: un formulario que lo ejecuta por su nombre se detiene. Renómbrelo, o indique su archivo en el formulario.',
       folderHelp: 'La ruta de la carpeta; se conserva cuando se guarda un archivo en ella.',
       create: 'Crear',
       deleteConfirm: '¿Seguro que quieres borrar',
@@ -2219,7 +2219,7 @@ export default {
     previewForm: 'Vista previa del formulario',
     previewHint: 'El formulario tal como está, cambios sin guardar incluidos. Su envío no ejecuta nada.',
     previewRefresh: 'Actualizar la vista previa',
-    previewNotRun: 'Esto es una vista previa : el formulario no se ha ejecutado',
+    previewNotRun: 'Esto es una vista previa: el formulario no se ha ejecutado',
     visual: 'Visual',
     runnerDefault: 'Runner predeterminado de su tipo',
     helpIcon: 'Se muestra en su mosaico y en la lista de formularios.',
@@ -2364,7 +2364,7 @@ export default {
     visualValuesHelp: 'Una lista YAML: un valor por línea (- dev), u objetos (- name: Rome).',
     visualNotANumber: 'no es un número',
     visualDeleteField: 'Eliminar campo',
-    visualYamlError: 'El YAML no se puede mostrar aquí : corríjalo en la pestaña YAML',
+    visualYamlError: 'El YAML no se puede mostrar aquí: corríjalo en la pestaña YAML',
     visualNotAList: 'no es una lista',
     visualNotAMap: 'no es un mapa',
     menuPreviewHint:

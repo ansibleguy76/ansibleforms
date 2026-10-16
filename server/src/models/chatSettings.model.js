@@ -101,7 +101,7 @@ ChatSettings.assertCredentialUsable = async function (name) {
   const { default: CrudModel } = await import('./crud.model.js');
   const cred = await CrudModel.findByName('credential', name);
   if (!cred) throw new Error(`No credential named '${name}'`);
-  if (cred.credential_type !== 'api') throw new Error(`The chat needs an api credential : '${name}' is not one`);
+  if (cred.credential_type !== 'api') throw new Error(`The chat needs an api credential: '${name}' is not one`);
 };
 
 /**
@@ -152,7 +152,7 @@ ChatSettings.configuredCached = async function () {
   try {
     value = ChatSettings.isConfigured(await ChatSettings.findResolved());
   } catch (e) {
-    logger.debug(`Could not read the chat settings : ${e.message}`);
+    logger.debug(`Could not read the chat settings: ${e.message}`);
   }
   configuredCache.value = value;
   configuredCache.fetchedAt = Date.now();

@@ -234,7 +234,7 @@ async function copyEnvWithoutMasterSecrets(src, dest) {
   // Verified against the real reader, not against the filter's own idea of the grammar.
   const survivors = ENV_BACKUP_EXCLUDE.filter((name) => dotenv.parse(body)[name] !== undefined);
   if (survivors.length) {
-    logger.error(`Refusing to put the environment file in the backup : ${survivors.join(', ')} survived the filter. Rewrite that entry in ${src} as a plain NAME=value line.`);
+    logger.error(`Refusing to put the environment file in the backup: ${survivors.join(', ')} survived the filter. Rewrite that entry in ${src} as a plain NAME=value line.`);
     return;
   }
 
@@ -316,7 +316,7 @@ class BackupModel {
       await fs.writeFile(`${MANAGED_ENV_PATH}.bak`, previous, { mode: 0o600 });
       await fs.chmod(`${MANAGED_ENV_PATH}.bak`, 0o600);
     } catch (e) {
-      if (e.code !== 'ENOENT') logger.warning(`Could not back up ${MANAGED_ENV_PATH} : ${e.message}`);
+      if (e.code !== 'ENOENT') logger.warning(`Could not back up ${MANAGED_ENV_PATH}: ${e.message}`);
     }
     await copyFileIfExists(src, MANAGED_ENV_PATH, 0o600);
     logger.warning(`Restored the environment file from backup ${folder} - a restart is needed for it to take effect. ENCRYPTION_SECRET and ACCESS_TOKEN_SECRET are never in a backup and must already be set on this host.`);
@@ -409,7 +409,7 @@ class BackupModel {
       await fs.writeFile(path.join(backupFolder, 'meta.yaml'), yaml.stringify(meta), 'utf8');
       return { backupFolder, backupFile, timestamp, description: meta.description };
     } catch (err) {
-      logger.error(`Backup failed, removing the incomplete folder '${backupFolder}' : ${err.message || err}`);
+      logger.error(`Backup failed, removing the incomplete folder '${backupFolder}': ${err.message || err}`);
       await fs.rm(backupFolder, { recursive: true, force: true }).catch(() => {});
       throw err;
     }
@@ -463,7 +463,7 @@ class BackupModel {
     } catch (err) {
       // say what state the database is in - there is no rollback, and "the command timed
       // out" on its own does not tell the operator their database is half replayed
-      logger.error(`Restore from '${folder}' failed : ${err.message || err}`);
+      logger.error(`Restore from '${folder}' failed: ${err.message || err}`);
       throw new Error(
         `Restore from '${folder}' failed part way through: ${err.message || err}. ` +
         `The database may be partially restored - some tables replayed, others not. ` +

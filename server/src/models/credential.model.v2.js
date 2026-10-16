@@ -17,7 +17,7 @@ class CredentialModel extends CrudModel {
   static mirrorVaultPath(data) {
     if (data.secret_store === '') data.secret_store = null;
     if (data.vault_path && !data.secret_store) {
-      logger.warning(`Credential '${data.name || ''}' : vault_path is deprecated since 7 and removed in 8 - use secret_store and secret_ref`);
+      logger.warning(`Credential '${data.name || ''}': vault_path is deprecated since 7 and removed in 8 - use secret_store and secret_ref`);
       data.secret_store = VAULT_STORE_NAME;
       data.secret_ref = data.vault_path;
     } else if (data.secret_store !== undefined) {
@@ -59,7 +59,7 @@ class CredentialModel extends CrudModel {
   static mirrorType(data, creating = false) {
     if (data.credential_type !== undefined && data.credential_type !== null && data.credential_type !== '') {
       if (!this.TYPES.includes(data.credential_type)) {
-        throw new Errors.BadRequestError(`Unknown credential type '${data.credential_type}' : one of ${this.TYPES.join(', ')}`);
+        throw new Errors.BadRequestError(`Unknown credential type '${data.credential_type}': one of ${this.TYPES.join(', ')}`);
       }
       data.is_database = data.credential_type === 'database' ? 1 : 0;
     } else if (data.is_database !== undefined) {
@@ -94,7 +94,7 @@ class CredentialModel extends CrudModel {
     }
     const port = Number(String(data.port).trim());
     if (!Number.isInteger(port) || port < 1 || port > 65535) {
-      throw new Errors.BadRequestError(`A credential's port is a whole number from 1 to 65535 : '${data.port}' is not`);
+      throw new Errors.BadRequestError(`A credential's port is a whole number from 1 to 65535: '${data.port}' is not`);
     }
     data.port = port;
     return data;
@@ -196,7 +196,7 @@ class CredentialModel extends CrudModel {
     if (!opts.fromSeed && data.credential_type !== undefined && data.credential_type !== null && data.credential_type !== '') {
       const current = await this.findById(id);
       if (current?.credential_type && data.credential_type !== current.credential_type) {
-        throw new Errors.BadRequestError(`A credential keeps the type it was made as : '${current.name}' is ${current.credential_type}. Make a new credential for another type`);
+        throw new Errors.BadRequestError(`A credential keeps the type it was made as: '${current.name}' is ${current.credential_type}. Make a new credential for another type`);
       }
     }
     return super.update(this.modelName, this.requireTypeFields(this.mirrorType(this.mirrorVaultPath(this.normalizePort(data))), false, opts), id, opts);
@@ -353,7 +353,7 @@ class CredentialModel extends CrudModel {
         try {
           assertCredentialAllowed("__self__");
         } catch (err) {
-          logger.error(`Cannot resolve credential '${key}' : ${err.message}`);
+          logger.error(`Cannot resolve credential '${key}': ${err.message}`);
           continue;
         }
         credentials[key] = {
@@ -368,7 +368,7 @@ class CredentialModel extends CrudModel {
         const [name, fallback = ""] = String(value).split(",").map((v) => v.trim());
         credentials[key] = await this.resolveCredential(name, fallback);
       } catch (err) {
-        logger.error(`Cannot resolve credential '${key}' : ${err.message || err}`);
+        logger.error(`Cannot resolve credential '${key}': ${err.message || err}`);
       }
     }
     return credentials;

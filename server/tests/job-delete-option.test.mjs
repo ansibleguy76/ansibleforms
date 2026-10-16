@@ -12,12 +12,12 @@ vi.mock("../src/models/db.model.js", () => ({ default: { do: vi.fn(async () => {
 const { default: Job } = await import("../src/models/job.model.js");
 
 describe("allowJobDeletion", () => {
-  test("off : refused, the database never asked", async () => {
+  test("off: refused, the database never asked", async () => {
     const user = { username: "u", type: "local", roles: ["admin"], options: { allowJobDeletion: false } };
     await expect(Job.delete(user, 1)).rejects.toMatchObject({ name: "AccessDeniedError" });
   });
 
-  test("on (or unset) : it goes on to the job itself", async () => {
+  test("on (or unset): it goes on to the job itself", async () => {
     const user = { username: "u", type: "local", roles: [], options: { allowJobDeletion: true } };
     await expect(Job.delete(user, 1)).rejects.not.toMatchObject({ name: "AccessDeniedError" });
   });

@@ -33,12 +33,12 @@ export function buildQuery(store, ref) {
     for (const pair of raw.split(";")) {
       if (!pair.trim()) continue;
       const eq = pair.indexOf("=");
-      if (eq < 1) throw new Error(`CyberArk reference : '${pair.trim()}' is not key=value`);
+      if (eq < 1) throw new Error(`CyberArk reference: '${pair.trim()}' is not key=value`);
       const key = pair.slice(0, eq).trim();
       const value = pair.slice(eq + 1).trim();
       if (key.toLowerCase() === "appid") continue;
       const canonical = CANONICAL[key.toLowerCase()];
-      if (!canonical) throw new Error(`CyberArk reference : '${key}' is not supported - use ${ALLOWED.join(", ")}`);
+      if (!canonical) throw new Error(`CyberArk reference: '${key}' is not supported - use ${ALLOWED.join(", ")}`);
       params[canonical] = value;
     }
   }
@@ -64,7 +64,7 @@ function describeError(e) {
   const status = e?.response?.status;
   const data = e?.response?.data;
   if (data && typeof data === "object" && (data.ErrorCode || data.ErrorMsg)) {
-    return { status, code: data.ErrorCode || "", text: `${data.ErrorCode || "error"} : ${data.ErrorMsg || ""}`.trim() };
+    return { status, code: data.ErrorCode || "", text: `${data.ErrorCode || "error"}: ${data.ErrorMsg || ""}`.trim() };
   }
   return { status, code: "", text: e?.message || String(e) };
 }
@@ -126,7 +126,7 @@ async function check(store, { timeoutMs } = {}) {
     if (err.status && /^APPAP/i.test(err.code)) {
       return { ...base, note: `CCP reachable and AppID accepted (${err.text}) - set extra.check_ref to test a real account` };
     }
-    throw new Error(`Could not reach CyberArk CCP at ${store.url} : ${err.text}`, { cause: e });
+    throw new Error(`Could not reach CyberArk CCP at ${store.url}: ${err.text}`, { cause: e });
   }
 }
 

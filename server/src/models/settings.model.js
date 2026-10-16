@@ -343,7 +343,7 @@ Settings.importConfig = async function(){
     try{
       parsed = yaml.parse(configFile)
     }catch(err){
-      throw new Error(`${configPath} is not valid YAML : ${err.message}`, { cause: err })
+      throw new Error(`${configPath} is not valid YAML: ${err.message}`, { cause: err })
     }
     // imported lazily : form.model.js imports THIS module, so a static import would be a
     // cycle and Form would still be in its temporal dead zone at module-init time
@@ -403,7 +403,7 @@ Settings.exportConfig = async function(){
     fs.writeFileSync(configPath, settings.forms_yaml, 'utf8')
   } finally {
     if (repoName && token !== undefined) {
-      await Repository.releaseWrite(repoName, token).catch(e => logger.error(`Failed to release write-lock on '${repoName}' : ${e.message}`))
+      await Repository.releaseWrite(repoName, token).catch(e => logger.error(`Failed to release write-lock on '${repoName}': ${e.message}`))
     }
   }
   return "config.yaml exported successfully"
@@ -455,7 +455,7 @@ Settings.saveActiveConfig = async function(yamlStr, options = {}) {
     fs.writeFileSync(configPath, yamlStr, 'utf8')
   } finally {
     if (repoName && token !== undefined) {
-      await Repository.releaseWrite(repoName, token).catch(e => logger.error(`Failed to release write-lock on '${repoName}' : ${e.message}`))
+      await Repository.releaseWrite(repoName, token).catch(e => logger.error(`Failed to release write-lock on '${repoName}': ${e.message}`))
     }
   }
 }

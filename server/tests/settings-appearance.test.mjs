@@ -55,7 +55,7 @@ test("a header link goes to an http or https site or a page of the app, nothing 
   }
 });
 
-test("the header's links : a valid one kept, an invalid one left out, at most a few", () => {
+test("the header's links: a valid one kept, an invalid one left out, at most a few", () => {
   const links = validHeaderLinks([
     { id: "w", label: "  Wiki ", url: "https://wiki.example.com", icon: "book", newTab: 1 },
     { id: "e", label: "Evil", url: "javascript:alert(1)", icon: "bug" },
@@ -77,7 +77,7 @@ test("the header's links : a valid one kept, an invalid one left out, at most a 
   expect(new Settings({ header_links: [] }).header_links).toBe(null);
 });
 
-test("a link inside another : one level, the menu with something to open, grouped under it", () => {
+test("a link inside another: one level, the menu with something to open, grouped under it", () => {
   const links = validHeaderLinks([
     { id: "a", label: "Child of help", url: "/a", parent: "help" },
     // a menu needs no address of its own

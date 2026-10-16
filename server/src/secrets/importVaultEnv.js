@@ -66,7 +66,7 @@ async function writeMarker() {
 export async function importVaultFromEnvOnce({ env = process.env, marker = { read: readMarker, write: writeMarker } } = {}) {
   if (!vaultEnvIsSet(env)) return "none";
   if (await marker.read()) {
-    logger.warning("The VAULT_* environment variables are ignored : they were imported as the secret store 'vault' before - manage it under Connections > Secret stores and remove them from the environment");
+    logger.warning("The VAULT_* environment variables are ignored: they were imported as the secret store 'vault' before - manage it under Connections > Secret stores and remove them from the environment");
     return "ignored";
   }
   let outcome;

@@ -491,7 +491,7 @@ test("a deviating stdout takes the increment-issue path, once", { timeout: 60000
   assert.equal(seen.slice(4).some(Boolean), false, "later polls must subtract cleanly");
 });
 
-test("two deviations in a row : the SECOND-last output is the re-base, not the last", { timeout: 60000 }, async () => {
+test("two deviations in a row: the SECOND-last output is the re-base, not the last", { timeout: 60000 }, async () => {
   // The subtle half of the loop rewrite. On an increment issue the tracker re-bases on
   // previousoutput2, so the next iteration must carry the OLD previousoutput2 forward -
   // not the output it just rejected. With a single deviation the difference is invisible
@@ -525,5 +525,5 @@ test("two deviations in a row : the SECOND-last output is the re-base, not the l
   const poll5 = longStdoutFor([4, 5], 5);
   assert.equal(emitted[3].output, poll4.substring(poll2.length), "poll 4 re-bases on poll 2");
   assert.equal(emitted[4].output, poll5.substring(poll2.length),
-    "poll 5 must re-base on poll 2 too : previousoutput2 is carried through, not replaced");
+    "poll 5 must re-base on poll 2 too: previousoutput2 is carried through, not replaced");
 });

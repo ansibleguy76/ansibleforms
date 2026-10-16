@@ -28,7 +28,7 @@ export async function redirectUrl(type, ...urls) {
   const base = await Settings.findUrl()
     .then((s) => String(s?.url || "").trim().replace(/\/+$/, ""))
     .catch((e) => {
-      logger.debug(`No app address for the ${type} redirect URL : ${e?.message || e}`);
+      logger.debug(`No app address for the ${type} redirect URL: ${e?.message || e}`);
       return "";
     });
   return base && CALLBACK_PATHS[type] ? `${base}${CALLBACK_PATHS[type]}` : "";

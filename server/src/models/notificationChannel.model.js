@@ -102,7 +102,7 @@ class NotificationChannel extends CrudModel {
     const cred = await CrudModel.findByName('credential', data[key]);
     if (!cred) throw new Errors.BadRequestError(`No credential named '${data[key]}'`);
     if (cred.credential_type !== type) {
-      throw new Errors.BadRequestError(`A ${what} channel needs an ${type} credential : '${data[key]}' is not one`);
+      throw new Errors.BadRequestError(`A ${what} channel needs an ${type} credential: '${data[key]}' is not one`);
     }
   }
 
@@ -119,11 +119,11 @@ class NotificationChannel extends CrudModel {
    */
   static async normalise(data, existing = null) {
     if (existing && data.type !== undefined && data.type !== existing.type) {
-      throw new Errors.BadRequestError(`A channel's type stays what it was made as : '${existing.name}' is ${existing.type}`);
+      throw new Errors.BadRequestError(`A channel's type stays what it was made as: '${existing.name}' is ${existing.type}`);
     }
     const type = existing ? existing.type : data.type || 'mail';
     if (!CHANNEL_TYPES.includes(type)) {
-      throw new Errors.BadRequestError(`A channel's type is one of ${CHANNEL_TYPES.join(', ')} : '${type}' is not`);
+      throw new Errors.BadRequestError(`A channel's type is one of ${CHANNEL_TYPES.join(', ')}: '${type}' is not`);
     }
     if (!existing) data.type = type;
     // the secret shown masked and sent back : unchanged (crud.model skips it)
@@ -137,7 +137,7 @@ class NotificationChannel extends CrudModel {
     if (data.port !== undefined && data.port !== '' && data.port !== null) {
       const port = Number(data.port);
       if (!Number.isInteger(port) || port < 1 || port > 65535) {
-        throw new Errors.BadRequestError(`A channel's port is a number from 1 to 65535 : '${data.port}' is not`);
+        throw new Errors.BadRequestError(`A channel's port is a number from 1 to 65535: '${data.port}' is not`);
       }
       data.port = port;
     } else if (data.port === '') {
@@ -173,7 +173,7 @@ class NotificationChannel extends CrudModel {
       if (data.method !== undefined && data.method !== null && data.method !== '') {
         data.method = String(data.method).toUpperCase();
         if (!WEBHOOK_METHODS.includes(data.method)) {
-          throw new Errors.BadRequestError(`A webhook channel's method is one of ${WEBHOOK_METHODS.join(', ')} : '${data.method}' is not`);
+          throw new Errors.BadRequestError(`A webhook channel's method is one of ${WEBHOOK_METHODS.join(', ')}: '${data.method}' is not`);
         }
       }
       if (data.headers !== undefined && String(data.headers ?? '').trim()) {
@@ -181,7 +181,7 @@ class NotificationChannel extends CrudModel {
         try {
           headers = JSON.parse(data.headers);
         } catch {
-          throw new Errors.BadRequestError("A webhook channel's headers are a JSON object : they do not read as JSON");
+          throw new Errors.BadRequestError("A webhook channel's headers are a JSON object: they do not read as JSON");
         }
         if (!headers || typeof headers !== 'object' || Array.isArray(headers)) {
           throw new Errors.BadRequestError("A webhook channel's headers are a JSON object, of names and values");
@@ -193,7 +193,7 @@ class NotificationChannel extends CrudModel {
         try {
           JSON.parse(renderPayload(data.payload, sample));
         } catch (e) {
-          throw new Errors.BadRequestError(`A webhook channel's payload is a JSON template : ${e.message}`);
+          throw new Errors.BadRequestError(`A webhook channel's payload is a JSON template: ${e.message}`);
         }
       }
     }

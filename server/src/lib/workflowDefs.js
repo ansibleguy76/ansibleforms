@@ -199,20 +199,20 @@ export function workflowErrors(wf) {
     if (!IDENTIFIER.test(n.identifier)) errors.push(`'${n.identifier}' is not a node identifier`);
     else if (ids.has(n.identifier)) errors.push(`two nodes are '${n.identifier}'`);
     ids.add(n.identifier);
-    if (!NODE_TYPES.includes(n.type)) errors.push(`node '${n.identifier}' runs '${n.type || "-"}' : a job_template, a workflow_job_template, a workflow_approval_template or a project`);
+    if (!NODE_TYPES.includes(n.type)) errors.push(`node '${n.identifier}' runs '${n.type || "-"}': a job_template, a workflow_job_template, a workflow_approval_template or a project`);
     else if (!n.name) errors.push(`node '${n.identifier}' runs nothing`);
     else if (n.type === "workflow_job_template" && n.name === wf.name) errors.push(`node '${n.identifier}' runs its own workflow`);
     try {
       varsOf(n.extra_data);
     } catch {
-      errors.push(`node '${n.identifier}' : its extra_data is not a map`);
+      errors.push(`node '${n.identifier}': its extra_data is not a map`);
     }
   }
   for (const n of wf.nodes) {
     for (const kind of LINK_KINDS) for (const to of n[kind]) if (!ids.has(to)) errors.push(`node '${n.identifier}' links to '${to}', which is not a node`);
   }
   const loop = loopIn(wf.nodes);
-  if (loop) errors.push(`the links loop through '${loop}' : a workflow runs forward only`);
+  if (loop) errors.push(`the links loop through '${loop}': a workflow runs forward only`);
   try {
     varsOf(wf.extra_vars);
   } catch {

@@ -48,7 +48,7 @@ function broadcast(name) {
     try {
       fn();
     } catch (e) {
-      logger.debug(`Live events : a hook of '${name}' failed : ${e.message || e}`);
+      logger.debug(`Live events: a hook of '${name}' failed: ${e.message || e}`);
     }
   }
   const frame = `event: changed\ndata: ${JSON.stringify({ name })}\n\n`;
@@ -56,7 +56,7 @@ function broadcast(name) {
     try {
       client.res.write(frame);
     } catch (e) {
-      logger.debug(`Live events : a stream could not be written : ${e.message || e}`);
+      logger.debug(`Live events: a stream could not be written: ${e.message || e}`);
     }
   }
 }
@@ -117,7 +117,7 @@ export async function pollLive() {
   try {
     rows = await mysql.tryDo("SELECT name, version FROM AnsibleForms.`cache_epochs` WHERE name LIKE 'live:%'");
   } catch (e) {
-    logger.debug(`Live events : the counters could not be read : ${e.message || e}`);
+    logger.debug(`Live events: the counters could not be read: ${e.message || e}`);
     return [];
   }
   const now = new Map((rows || []).map((r) => [r.name, Number(r.version)]));

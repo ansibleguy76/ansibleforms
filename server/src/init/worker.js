@@ -22,7 +22,7 @@ export async function runWorker() {
       try {
         ready = await init({ boot: false });
       } catch (err) {
-        logger.error("Worker bootstrap failed, retrying : " + (err.message || err));
+        logger.error("Worker bootstrap failed, retrying: " + (err.message || err));
       }
     }
   })();
@@ -31,5 +31,5 @@ export async function runWorker() {
 // Another process holds the worker lock now : stop, rather than run every background task
 // twice. A container restarts, and comes back as the process waiting for the lock.
 export async function stopLostWorker() {
-  await die("Another process took the worker lock : stopping, so the background work never runs twice");
+  await die("Another process took the worker lock: stopping, so the background work never runs twice");
 }

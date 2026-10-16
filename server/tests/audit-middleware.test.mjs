@@ -61,7 +61,7 @@ describe("what gets recorded", () => {
     assert.equal(rows[0].outcome, "success");
   });
 
-  test("a GET is not recorded : reads would bury the mutations", async () => {
+  test("a GET is not recorded: reads would bury the mutations", async () => {
     await fetch(`${base}/api/v2/ok`);
     await settle();
     assert.equal(rows.length, 0);

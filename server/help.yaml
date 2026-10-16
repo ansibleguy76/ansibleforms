@@ -43,12 +43,12 @@
     description: |
       Ansible Forms requires a MySQL database connection to store the configuration of the application.
 
-      Give it a user of its own with rights on its schema only - not root :
+      Give it a user of its own with rights on its schema only - not root:
 
           CREATE USER 'ansibleforms'@'%' IDENTIFIED BY '<password>';
           GRANT ALL PRIVILEGES ON `AnsibleForms`.* TO 'ansibleforms'@'%';
 
-      That is all the application needs : it creates and patches its schema, makes its backups,
+      That is all the application needs: it creates and patches its schema, makes its backups,
       and ends a dead worker's session (its own sessions, which needs no further right). A user
       with rights on every database turns any hole in the application into a hole in the whole
       database server ; the Status page and the log say so when the user has them.
@@ -152,7 +152,7 @@
     description: |
       Host the whole application (GUI, REST API and Swagger interface) under a URL subpath, typically behind a reverse proxy.
       For example with `BASE_URL=/ansibleforms`, the application is served under `https://host/ansibleforms/`.
-      Note : when using an SSO identity provider (Microsoft Entra ID / OIDC), make sure the instance url in the provider settings includes the subpath, so the generated redirect uri matches.
+      Note: when using an SSO identity provider (Microsoft Entra ID / OIDC), make sure the instance url in the provider settings includes the subpath, so the generated redirect uri matches.
   - name: TRUST_PROXY
     version: 7.0.0
     type: string
@@ -165,10 +165,10 @@
       Behind a reverse proxy (nginx, traefik, a kubernetes ingress, a load balancer) every connection comes from the proxy, so without this setting the audit trail records the proxy's address for every action.
       Set it to tell the application which proxies it may believe when they report the real client address in the `X-Forwarded-For` header. It is passed to the Express `trust proxy` setting:
 
-      - `0` (default) : trust no proxy, the address of the connection is recorded
-      - a number, for example `1` : trust that many proxies in front of the application (1 = a single reverse proxy). Use the exact count : a higher number lets a client choose the recorded address
+      - `0` (default): trust no proxy, the address of the connection is recorded
+      - a number, for example `1`: trust that many proxies in front of the application (1 = a single reverse proxy). Use the exact count: a higher number lets a client choose the recorded address
       - a comma-separated list of proxy addresses and CIDR ranges, for example `10.0.0.5,172.16.0.0/12`, or the presets `loopback`, `linklocal` and `uniquelocal`
-      - `true` : trust every hop, the left-most `X-Forwarded-For` address is recorded
+      - `true`: trust every hop, the left-most `X-Forwarded-For` address is recorded
 
       **Security:** `X-Forwarded-For` is an ordinary request header that any client can send. Only trust proxies that are really in front of the application and that set or overwrite the header themselves, otherwise a client chooses the address the audit trail records. Never use `true` unless the application is reachable only through the proxy; prefer the number of proxies or their addresses.
   - name: DEFAULT_LANGUAGE
@@ -239,7 +239,7 @@
     default: "%PERSISTENT_FOLDER%/config.yaml"
     description: | 
       The config.yaml file contains application configuration (categories, roles, constants).  
-      Forms are not in this file : they are stored in the forms folder (FORMS_FOLDER_PATH).
+      Forms are not in this file: they are stored in the forms folder (FORMS_FOLDER_PATH).
   - name: CONFIG_SEED_PATH
     version: 6.3.0
     type: string
@@ -356,15 +356,15 @@
     short: What this process runs
     default: all
     description: |
-      `all` (the default, or unset) is AnsibleForms as it always ran : the web app and the
-      worker in one process. To run several app nodes behind a load balancer, split them :
+      `all` (the default, or unset) is AnsibleForms as it always ran: the web app and the
+      worker in one process. To run several app nodes behind a load balancer, split them:
       `app` serves the web interface and the API only (as many as you like, each with the same
       `ACCESS_TOKEN_SECRET`), and `worker` runs the background work only - the database
       bootstrap and seed, the schedules, the nightly backup, the repository syncs and the
       cleanups. One worker works at a time ; a second one waits and takes over when the first
       stops. App nodes and the worker share the database and the persistent volume.
 
-      `rte` starts the same image as a runtime environment : a small API that runs playbooks
+      `rte` starts the same image as a runtime environment: a small API that runs playbooks
       for an app, with no web interface, scheduler or seed. An RTE needs the app's database
       settings (`DB_*`), the same `ENCRYPTION_SECRET`, and `RTE_TOKEN`. It adds itself under
       Connections > Runners (`RTE_REGISTER`, `RTE_URL`).
@@ -374,7 +374,7 @@
     allowed: at least 16 characters
     short: The token between an app and its RTE
     description: |
-      On an RTE (`AF_ROLE=rte`) : the bearer token every call must carry ; the RTE refuses to
+      On an RTE (`AF_ROLE=rte`): the bearer token every call must carry ; the RTE refuses to
       start without one. The app stores the same token on the runner (Connections > Runners) ;
       an RTE that registers itself (`RTE_REGISTER`) puts it there, and keeps it in step when it
       changes.
@@ -385,7 +385,7 @@
     short: An RTE adds itself as a runner
     default: "1"
     description: |
-      On an RTE (`AF_ROLE=rte`) : 1 (the default) and the RTE adds itself under Connections >
+      On an RTE (`AF_ROLE=rte`): 1 (the default) and the RTE adds itself under Connections >
       Runners when it starts, and checks every 30 seconds that it is still there - no click and
       no config seed needed. The first RTE becomes the default runner, so playbook forms run on
       it at once. Its address is `RTE_URL`, or this container's IP address and `PORT` when that
@@ -397,7 +397,7 @@
       default from the one that stopped. A runner added by hand at the same address stays
       yours (its token follows `RTE_TOKEN`) ; one from the config seed is never touched.
 
-      0 : the RTE does not register itself ; add it under Connections > Runners or in the seed.
+      0: the RTE does not register itself ; add it under Connections > Runners or in the seed.
   - name: RTE_MAX_JOBS
     version: 7.0.0
     type: number
@@ -406,9 +406,9 @@
     short: How many playbooks an RTE runs at once
     hint: Read by an RTE ; 0 sets no limit
     description: |
-      Read by an RTE (`AF_ROLE=rte`). A full RTE does not take another job : the job waits, says
+      Read by an RTE (`AF_ROLE=rte`). A full RTE does not take another job: the job waits, says
       so in its output, and is handed over as soon as a playbook ends (see RTE_QUEUE_MINUTES).
-      Size it to the RTE's cpu and memory : every playbook is an ansible-playbook process with its
+      Size it to the RTE's cpu and memory: every playbook is an ansible-playbook process with its
       forks. Run more RTE replicas to run more at once.
   - name: RTE_DRAIN_SECONDS
     version: 7.0.0
@@ -418,9 +418,9 @@
     short: How long a stopping RTE waits for its running playbooks
     hint: Read by an RTE ; keep it below the container's stop timeout
     description: |
-      Read by an RTE. On a stop (SIGTERM : a rolling update, a scale down) it takes no new job and
+      Read by an RTE. On a stop (SIGTERM: a rolling update, a scale down) it takes no new job and
       waits this long for the running playbooks to end ; those still running then end as
-      abandoned. Keep it below what the platform waits before it kills the container :
+      abandoned. Keep it below what the platform waits before it kills the container:
       Kubernetes' terminationGracePeriodSeconds (30 by default), docker stop's --time (10).
   - name: RTE_QUEUE_MINUTES
     version: 7.0.0
@@ -439,12 +439,12 @@
     allowed: an http:// or https:// address, without a slash on the end
     short: The address the app reaches an RTE on
     description: |
-      On an RTE (`AF_ROLE=rte`) that registers itself (`RTE_REGISTER`) : the address the app
+      On an RTE (`AF_ROLE=rte`) that registers itself (`RTE_REGISTER`): the address the app
       calls it on, usually the service name - `http://rte:8000` in docker compose, the service
       in kubernetes. The runner is named after its host (`rte`), so forms can name it with
       `runner: rte`, and every replica behind that address is the same runner.
 
-      Not set : the RTE registers this container's IP address and `PORT`, named after the node
+      Not set: the RTE registers this container's IP address and `PORT`, named after the node
       (`rte-<hostname>-<port>`, as on the Status page). That works without any setting, but the
       address and the name change when the container is recreated - set `RTE_URL` in production.
   - name: JOB_RETENTION_DAYS
@@ -634,7 +634,7 @@
     version: 6.0.0
   - name: EXPRESSION_SANITIZER
     type: string
-    # legacy is left out on purpose : the settings page builds its dropdown from this list,
+    # legacy is left out on purpose: the settings page builds its dropdown from this list,
     # and legacy can only be set in the real environment
     allowed: off, paranoid, strict
     choices:
@@ -654,10 +654,10 @@
       the server by any authenticated user. The sanitizer refuses anything that is not a
       call to an `fn.` or `fnc.` function.
 
-      - `off` : every server expression is refused, use `runLocal` instead.
-      - `paranoid` : only direct `fn.`/`fnc.` calls. `fn.fnTime().format('YYYY')` is refused.
-      - `strict` (default) : `fn.`/`fnc.` calls, and methods on their result.
-      - `legacy` : the rules of 6.2.1 and earlier, where anything is allowed once the
+      - `off`: every server expression is refused, use `runLocal` instead.
+      - `paranoid`: only direct `fn.`/`fnc.` calls. `fn.fnTime().format('YYYY')` is refused.
+      - `strict` (default): `fn.`/`fnc.` calls, and methods on their result.
+      - `legacy`: the rules of 6.2.1 and earlier, where anything is allowed once the
         expression starts with `fn.`. **This allows remote code execution for every
         authenticated user.** It exists only as a temporary escape hatch after an upgrade,
         can only be set in the real environment (docker-compose, kubernetes), shows as a
@@ -681,12 +681,12 @@
       effect at once, without a restart. See the MCP page of the documentation.
 
       Scheduling follows the role options too. With `allowPlannedJobs` a client gets
-      `plan_job` (Run later : one run of a form as the user, its `run_at` an ISO 8601 time with
+      `plan_job` (Run later: one run of a form as the user, its `run_at` an ISO 8601 time with
       its offset or Z) and `list_schedules`, `get_schedule` and `delete_schedule` for the runs
       the user planned. With `allowScheduledJobs` it also gets `create_schedule` (a cron or
       one-time schedule that runs as the Schedule Service) and sees every schedule.
 
-      With `allowStoredJobs` a client gets the stored jobs : `list_stored_jobs`,
+      With `allowStoredJobs` a client gets the stored jobs: `list_stored_jobs`,
       `get_stored_job`, `store_job` (values saved under a name, as the Store dialog does,
       password fields left out) and `delete_stored_job`, for the user's own (everyone's for a
       settings user). `resolve_field`, `launch_job` and `plan_job` take a `storedJob` to start
@@ -743,7 +743,7 @@
     hint: A login with ?expiryDays= longer than this is cut to it
     description: |
       A role with the `allowApiTokens` option may log in with `?expiryDays=<n>` and get an access
-      token that lives n days, for scripts and integrations. It lives this many days at most : a
+      token that lives n days, for scripts and integrations. It lives this many days at most: a
       longer request is cut to it. A role with `extendedTokenExpiration` may also ask
       `?expiryDays=never` for a token that never expires. Like every token, it ends sooner when its
       user changes their password (or an admin sets it), when it is revoked, or when its session
@@ -755,7 +755,7 @@
       again otherwise). An API token cannot make another. Each token is listed on the profile and
       on the user's page in Settings > Users (made, expires, last used), where the user or an admin
       revokes it. Blocking a user ends their tokens too. An SSO user's token carries the roles of
-      their last sign-in : a group change in the identity provider reaches it only when they sign
+      their last sign-in: a group change in the identity provider reaches it only when they sign
       in again and make a new one.
   - name: PASSWORD_MIN_LENGTH
     version: 7.0.0
@@ -767,7 +767,7 @@
     description: |
       A local password set through the application - a new user, an admin setting it, a user
       changing their own - needs at least this many characters, and is neither the username nor
-      the public default password. Length rather than composition rules : a long passphrase is
+      the public default password. Length rather than composition rules: a long passphrase is
       strong and easy to remember. ADMIN_PASSWORD at the first start is not checked. Applied
       without a restart.
   - name: CONTENT_SECURITY_POLICY
@@ -778,11 +778,11 @@
     short: Enforce the Content-Security-Policy
     hint: 0 sends it report only ; applied without a restart
     description: |
-      The web app is served with a Content-Security-Policy : scripts from the app itself only, so
+      The web app is served with a Content-Security-Policy: scripts from the app itself only, so
       a script injected into a page does not run, and no other site may frame it. It allows what
-      the app needs : local form expressions (evaluated in the browser), inline styles, images
+      the app needs: local form expressions (evaluated in the browser), inline styles, images
       from any url (form and category images), and the code editor's workers. With 0 it is sent
-      as Content-Security-Policy-Report-Only : the browser's console says what it would block, and
+      as Content-Security-Policy-Report-Only: the browser's console says what it would block, and
       nothing is blocked - for a setup that cannot work with it yet, a reverse proxy that injects
       its own script for example.
   - name: AUTH_RATE_LIMIT
@@ -794,7 +794,7 @@
     hint: 0 turns it off
     description: |
       A ceiling on the authentication endpoints - the login, the logout, the token refresh and the
-      single sign-on callbacks - per client address and per app node : above it they answer 429
+      single sign-on callbacks - per client address and per app node: above it they answer 429
       before any password or token is looked at. Generous, so that a person or a script never
       reaches it ; LOGIN_MAX_FAILURES is what stops a password from being guessed. Behind a
       reverse proxy, set TRUST_PROXY so the address is the client's. Applied without a restart.
@@ -807,7 +807,7 @@
     hint: 0 turns the account lockout off
     description: |
       After this many failed logins in a row, an account (local or LDAP) is locked for
-      LOGIN_LOCKOUT_MINUTES : every attempt is refused with status 429 before any password is
+      LOGIN_LOCKOUT_MINUTES: every attempt is refused with status 429 before any password is
       checked, whether the account exists or not. A successful login clears the count, and so
       does an admin setting the user's password. Counted in the database, so every app node
       sees the same attempts. 0 turns the lockout off. Applied without a restart.
@@ -819,7 +819,7 @@
     short: Failed sign-ins from one address before it is held back
     hint: 0 turns the per-address limit off
     description: |
-      One address trying many accounts : after this many failed logins within
+      One address trying many accounts: after this many failed logins within
       LOGIN_LOCKOUT_MINUTES, every login from it is refused with status 429 until that window
       ends. Behind a reverse proxy, set TRUST_PROXY so the address is the client's and not the
       proxy's. 0 turns it off. Applied without a restart.
@@ -856,45 +856,45 @@
       server use. The check runs the form's expressions and queries again, as the user who
       launches, so it costs one extra evaluation of the form per launch.
 
-      - `enforce` (default) : a launch whose field values break the form's rules is refused
+      - `enforce` (default): a launch whose field values break the form's rules is refused
         with status 422 and the failing fields. A launch that sends no `rawFormData` (a REST
         call that leaves it out) is refused as well, because its values cannot be checked.
         A valid launch runs the extravars and credentials the SERVER builds from the checked
-        values, not the ones the client sent : computed fields (expressions, queries) are
+        values, not the ones the client sent: computed fields (expressions, queries) are
         the server's evaluation, and a file field must point at a real upload in
         `UPLOAD_PATH`. A wizard form is checked step by step, and a planned run ("Run
         later") when it is planned and again when it fires.
-      - `log` : a launch that would be refused is logged as a warning and still runs. It
+      - `log`: a launch that would be refused is logged as a warning and still runs. It
         also names the extravars keys where what the client sent differs from what the
         server builds (never their values). Use it to see what enforcing refuses, for
         instance before an upgrade.
-      - `off` : no check. The job runs the extravars and credentials the client sent, which
-        a REST caller chooses freely : only for an instance whose every launcher is trusted.
+      - `off`: no check. The job runs the extravars and credentials the client sent, which
+        a REST caller chooses freely: only for an instance whose every launcher is trusted.
         An unset or unknown value is `enforce`.
 
         **What the user saw is not always what runs.** The server evaluates every computed
         field again at launch, a moment after the browser did, as the launching user. A value
         that depends on WHEN or WHERE it is evaluated can differ, and then the server's value
-        runs :
-          - time : `fn.fnTime()`, `new Date()`, a timestamp or a name built from it ;
-          - outside data : a query, `fnRestAdvanced` / `fnSsh` / `fnDnsResolve`, a file read
+        runs:
+          - time: `fn.fnTime()`, `new Date()`, a timestamp or a name built from it ;
+          - outside data: a query, `fnRestAdvanced` / `fnSsh` / `fnDnsResolve`, a file read
             - if the data changed in between ;
-          - the browser's own settings : a `runLocal` expression using the user's timezone or
+          - the browser's own settings: a `runLocal` expression using the user's timezone or
             locale (`toLocaleString`) runs with the server's.
-        The same goes for validation : a rule that reads such a field (`notIn` against a
+        The same goes for validation: a rule that reads such a field (`notIn` against a
         query's result, `validIf` on a computed flag) is checked against the server's value.
-        Run `log` for a while if you are unsure : it names every extravars key where the
+        Run `log` for a while if you are unsure: it names every extravars key where the
         client and the server differ, so you see which forms this affects.
 
       The rows of a `list` field that were added or edited go through their subform on the
-      server as well, with the form's values as `__parent__` : its rules are checked and
+      server as well, with the form's values as `__parent__`: its rules are checked and
       its computed fields evaluated. Rows the list's own expression produced, and rows
       marked deleted, are sent as they are - as in the browser. At most 500 rows are
       resolved per launch. Applied without a restart.
 
       A form can be made stricter with its own `launchValidation` property ; the stricter of
       the two wins. See the **Launch validation** page of the documentation for the whole
-      picture : what is checked, list rows, uploads, passwords and how to roll it out.
+      picture: what is checked, list rows, uploads, passwords and how to roll it out.
   - name: ENABLE_DB_QUERY_LOGGING
     type: number
     allowed: 0, 1
@@ -1022,7 +1022,7 @@
     short: The playbook output an RTE stores per stream
     default: 50 * 1024 * 1024
     description: |
-      Read by an RTE (`AF_ROLE=rte`) : past this many bytes on one stream (stdout, stderr), a
+      Read by an RTE (`AF_ROLE=rte`): past this many bytes on one stream (stdout, stderr), a
       playbook's output is no longer stored - one line in the job says so - and the playbook goes
       on to its end (until 7.0.0 it was stopped there, at 1 MiB by default). Since 7 the app runs
       no playbook itself, so set this in the RTE container's environment ; it is not editable on
@@ -1038,14 +1038,14 @@
     description: |
       Set, an app node (`AF_ROLE` `all` or `app`) serves Prometheus metrics at `/api/v2/metrics`
       and an RTE at `/metrics`, to a scraper that sends `Authorization: Bearer <METRICS_TOKEN>`.
-      Unset, they answer 404. A worker (`AF_ROLE=worker`) serves no metrics : it answers only
+      Unset, they answer 404. A worker (`AF_ROLE=worker`) serves no metrics: it answers only
       `/api/v2/version` and `/health`, for its container healthcheck.
 
-      - the process : cpu, memory, event loop lag, garbage collection (`af_process_*`, `af_nodejs_*`) ;
+      - the process: cpu, memory, event loop lag, garbage collection (`af_process_*`, `af_nodejs_*`) ;
       - `af_http_requests_total{route,method,status}`, `af_http_request_duration_seconds{route}` ;
       - `af_jobs{status}` running and awaiting approval now, `af_jobs_ended_24h{status}` ;
       - `af_nodes{role,alive}` ; `af_login_failures_total`, `af_login_lockouts_total` ;
-      - an RTE : `af_rte_running_jobs`, `af_rte_max_jobs`.
+      - an RTE: `af_rte_running_jobs`, `af_rte_max_jobs`.
   - name: LOG_FORMAT
     version: 7.0.0
     type: string
@@ -1054,11 +1054,11 @@
     short: Log format
     hint: json writes one JSON object a line ; applied without a restart
     description: |
-      `text` (default) : `<time> <level>: <message>`, colored in the console and the log file.
-      `json` : one JSON object a line - `time` (ISO), `level`, `message`, `requestId`, `role` and
+      `text` (default): `<time> <level>: <message>`, colored in the console and the log file.
+      `json`: one JSON object a line - `time` (ISO), `level`, `message`, `requestId`, `role` and
       `host` - for a log collector (Loki, ELK, Splunk...). Syslog keeps its own format.
 
-      Every request gets an id : the X-Request-Id a reverse proxy sent, or a new one. It is
+      Every request gets an id: the X-Request-Id a reverse proxy sent, or a new one. It is
       returned in the response's X-Request-Id header and carried by every line written while the
       request is served (`[req <id>]` in text), so a request can be followed through the log and
       matched with the proxy's.
@@ -1344,23 +1344,25 @@
     type: string
     allowed: a valid directory path
     short: Inventories folder
+    hint: The local inventories, one folder each, edited in the designer.
     default: "%PERSISTENT_FOLDER%/inventories"
     version: 7.0.0
     description: |
-      The local inventories folder : one folder per inventory (staging/inventory.yaml, with its
+      The local inventories folder: one folder per inventory (staging/inventory.yaml, with its
       group_vars and host_vars), edited in the designer's Inventories section, next to the
       repositories used for inventories (each of them an inventory). A playbook form names one
       with `inventory: <name>`.
-      Read by the RTE as well, where the playbook runs : set it there too (or mount the same
+      Read by the RTE as well, where the playbook runs: set it there too (or mount the same
       folder) when the RTE runs elsewhere.
   - name: WORKFLOWS_PATH
     type: string
     allowed: a valid directory path
     short: Workflows folder
+    hint: The local workflow files (AWX export syntax), edited in the designer.
     default: "%PERSISTENT_FOLDER%/workflows"
     version: 7.0.0
     description: |
-      The local workflows folder : workflow files in the AWX export syntax
+      The local workflows folder: workflow files in the AWX export syntax
       (workflow_job_templates, a job template node running one of the designer's playbooks),
       edited in the designer's Workflows section, next to the repositories used for workflows.
       A workflow form runs one with `workflow: <name>`.
@@ -1379,7 +1381,7 @@
     short: Where an RTE finds the playbooks
     default: "%PERSISTENT_FOLDER%/playbooks"
     description: |
-      Read by an RTE (`AF_ROLE=rte`) : the folder its playbooks run from when no repository is
+      Read by an RTE (`AF_ROLE=rte`): the folder its playbooks run from when no repository is
       marked for playbooks. Since 7 the app runs no playbook itself, so set this in the RTE
       container's environment ; it is not editable on the Settings page.
   - name: REGEX_FILTER_JOB_OUTPUT
@@ -1400,7 +1402,7 @@
     default: "1000"
     description: |
       The jobs list loads this many of the newest jobs (every job for an admin, a user's own
-      and those waiting for approval for the others) : its pages, its search and its status
+      and those waiting for approval for the others): its pages, its search and its status
       menu cover these, an older job is not listed. A larger number reaches further back, at
       the cost of a larger list to read each time the jobs change. Applied without a restart.
   - name: MASK_EXTRAVARS_REGEX
@@ -1429,7 +1431,7 @@
 
       A single form can override this with its `userExtravars` property.  The frontend `__user__` object comes from the login token and is not affected, and neither are role checks or the form's own `roles` list.
 
-      **Note** : the [FAQ](https://ansibleforms.com/faq) suggests asserting on `ansibleforms_user.groups` inside a playbook as a defence in depth check.  If you do that, keep `groups` in the list.
+      **Note**: the [FAQ](https://ansibleforms.com/faq) suggests asserting on `ansibleforms_user.groups` inside a playbook as a defence in depth check.  If you do that, keep `groups` in the list.
   - name: UPLOAD_PATH
     type: string
     version: 4.0.16
@@ -1458,7 +1460,7 @@
     default: /api/v2
     description: |
       The prefix of the AWX / AAP API on the runners of type awx, typically `/api/v2`.
-      It is added only to a runner whose uri has no API path of its own : a runner's uri may
+      It is added only to a runner whose uri has no API path of its own: a runner's uri may
       carry it, as `https://aap.example.com/api/controller/v2` for AAP 2.5 and later.
   - name: MYSQLDUMP_COMMAND
     short: Database dump command
@@ -1496,7 +1498,7 @@
   itemName: attribute
   description: |
     Ansible Forms reads the forms configuration from the main `config.yaml` file.   
-    The config.yaml file contains the `categories`, `roles` and `constants`.  The forms themselves are not in it : each form lives in a file of its own in the `forms` folder (`FORMS_FOLDER_PATH`), or in a forms repository.  Below are the 3 main attributes of the config.yaml file.
+    The config.yaml file contains the `categories`, `roles` and `constants`.  The forms themselves are not in it: each form lives in a file of its own in the `forms` folder (`FORMS_FOLDER_PATH`), or in a forms repository.  Below are the 3 main attributes of the config.yaml file.
   items:
   - name: categories
     type: array
@@ -1537,7 +1539,7 @@
       Since version 5.0.8 options are introduced to add specific role-options.  
 
       - showDesigner: The user can see the designer
-      - allowFormDesign: The user can edit the forms config in the designer (categories, constants, forms : save, restore, pull and push the forms repositories). Without it the designer shows them read-only. Default true. (Added in 7.3.0)
+      - allowFormDesign: The user can edit the forms config in the designer (categories, constants, forms: save, restore, pull and push the forms repositories). Without it the designer shows them read-only. Default true. (Added in 7.3.0)
       - allowPlaybookDesign: The user can edit the playbooks in the designer (save, new, remove, push). Without it the designer shows them read-only. Default true. (Added in 7.0.0)
       - allowWorkflowDesign: The user can edit the workflows in the designer (save, new, remove, push). Without it the designer shows them read-only. Default true. (Added in 7.1.0)
       - allowInventoryDesign: The user can edit the inventories in the designer (save, new, remove, push). Without it the designer shows them read-only. Default true. (Added in 7.1.0)
@@ -1546,7 +1548,7 @@
       - showDebugButtons: The user can see the debug buttons on a form
       - showExtravars: The user can see the extravars on a form
       - showLogs: The user can see the server log (Settings > Server log)
-      - showAuditLog: The user can see the audit log (Settings > Audit log) without the other settings. Default : admins. (Added in 7.3.0)
+      - showAuditLog: The user can see the audit log (Settings > Audit log) without the other settings. Default: admins. (Added in 7.3.0)
       - showAppearanceSettings: The user can change Settings > Appearance (defaults, name, logo, icon, links, environment label, announcements) without the other settings. Default false. (Added in 7.3.0)
       - showConnectionsSettings: The user can manage Settings > Connections (repositories, credentials, secret stores, runners, SSH, notifications, chat assistant, MCP, syslog) without the other settings. Default false. (Added in 7.3.0)
       - showJobs: The user can see the jobs page. Default true.
@@ -1560,7 +1562,7 @@
       - allowVerboseMode: The user can enable verbose mode on ansible forms.
       - allowJobRelaunch: The user can relaunch jobs with pre-filled form data from previous submissions.
       - allowJobDeletion: The user can delete jobs (their own ; an admin every job). Without it the job history stays whole. Default true. (Added in 7.3.0)
-      - manageAllJobs: The user can abort, delete and relaunch the jobs of every user, not only their own, without the admin role (delete and relaunch also need allowJobDeletion and allowJobRelaunch). Default : admins. (Added in 7.3.0)
+      - manageAllJobs: The user can abort, delete and relaunch the jobs of every user, not only their own, without the admin role (delete and relaunch also need allowJobDeletion and allowJobRelaunch). Default: admins. (Added in 7.3.0)
       - allowScheduledJobs: The user can create and manage scheduled jobs (recurring cron or one-time). Default for admins only. Grant it only to roles you would trust as admins: every user with this option sees and can change all schedules, not only their own, and a schedule they create runs with admin rights, for any form. (Added in 6.1.5)
       - allowStoredJobs: The user can store and load job data for later use. (Added in 6.1.5)
       - allowPlannedJobs: The user can plan a one-time run of a form they may run ("Run later"). The job runs as that user, not as admin, and they cannot see or change other schedules. (Added in 6.1.5)
@@ -1568,7 +1570,7 @@
       - allowMcp: The user can use the MCP server from an AI agent (when it is enabled). Defaults to the role's allowChat. (Added in 7.0.0)
         
       When options are not set, the admin role will have all options.  
-      When options are set on the default role, they are everyone's defaults : they have the lowest precedence and only fill the options none of the user's own roles set.  
+      When options are set on the default role, they are everyone's defaults: they have the lowest precedence and only fill the options none of the user's own roles set.  
       You can add options on role level, which override the default role's options. Between a user's own roles the most restrictive wins (an option false on one of them is false).  
       The `default` role is every signed-in user's ; there is no anonymous access. `public` is its name before 7 and keeps working (forms listing `public` still match), but new configs say `default`.  
 
@@ -1690,7 +1692,7 @@
         description: |
           A list of groups.  They must be in the format of `local/groupname` or `ldap/groupname` or `entraid/groupname`
 
-          A Microsoft Entra ID group can be named by its object id, `entraid/<object id>` : unique, where
+          A Microsoft Entra ID group can be named by its object id, `entraid/<object id>`: unique, where
           two groups can share a display name. Both work ; the object id is the one to prefer.
 
           `azuread/`, the Microsoft Entra ID prefix of before 7.3, still works the same as `entraid/`
@@ -1709,7 +1711,7 @@
         short: The credentials this role may use
         version: 7.0.0
         description: |
-          Limits the credentials a user of this role may use : those a job passes to a playbook or
+          Limits the credentials a user of this role may use: those a job passes to a playbook or
           a template (the form's `credentials`, `ansibleCredentials`, `vaultCredentials`, a
           credential field), and those a form query or `fnCredentials` reads while the user fills
           in a form. Each entry is a regular expression that must match the whole name ;
@@ -1738,7 +1740,7 @@
           Limits the secret stores a user of this role may read through an inline reference
           (`vault:<path>`, `secret:<store>:<ref>`) in a credential map or a query. When a role
           limits the credentials and none limits the stores, an inline reference must match a
-          credential pattern itself : it is no way around them. Combined across roles as
+          credential pattern itself: it is no way around them. Combined across roles as
           `credentials`.
       - name: runners
         type: array
@@ -1746,7 +1748,7 @@
         short: The runners this role may run jobs on
         version: 7.0.0
         description: |
-          Limits the runners a job of a user of this role may run on : the form's `runner`, or the
+          Limits the runners a job of a user of this role may run on: the form's `runner`, or the
           default runner when it names none. Combined across roles as `credentials`.
       - name: options
         type: object
@@ -1758,7 +1760,7 @@
           The options are:
 
           - showDesigner: The user can see the designer
-          - allowFormDesign: The user can edit the forms config in the designer (categories, constants, forms : save, restore, pull and push the forms repositories). Without it the designer shows them read-only. Default true. (Added in 7.3.0)
+          - allowFormDesign: The user can edit the forms config in the designer (categories, constants, forms: save, restore, pull and push the forms repositories). Without it the designer shows them read-only. Default true. (Added in 7.3.0)
           - allowPlaybookDesign: The user can edit the playbooks in the designer (save, new, remove, push). Without it the designer shows them read-only. Default true. (Added in 7.0.0)
           - allowWorkflowDesign: The user can edit the workflows in the designer (save, new, remove, push). Without it the designer shows them read-only. Default true. (Added in 7.1.0)
           - allowInventoryDesign: The user can edit the inventories in the designer (save, new, remove, push). Without it the designer shows them read-only. Default true. (Added in 7.1.0)
@@ -1767,7 +1769,7 @@
           - showDebugButtons: The user can see the debug buttons on a form
           - showExtravars: The user can see the extravars on a form
           - showLogs: The user can see the server log (Settings > Server log)
-          - showAuditLog: The user can see the audit log (Settings > Audit log) without the other settings. Default : admins. (Added in 7.3.0)
+          - showAuditLog: The user can see the audit log (Settings > Audit log) without the other settings. Default: admins. (Added in 7.3.0)
           - showAppearanceSettings: The user can change Settings > Appearance (defaults, name, logo, icon, links, environment label, announcements) without the other settings. Default false. (Added in 7.3.0)
           - showConnectionsSettings: The user can manage Settings > Connections (repositories, credentials, secret stores, runners, SSH, notifications, chat assistant, MCP, syslog) without the other settings. Default false. (Added in 7.3.0)
           - showJobs: The user can see the jobs page. Default true.
@@ -1781,7 +1783,7 @@
           - allowVerboseMode: The user can enable verbose mode on ansible forms.
           - allowJobRelaunch: The user can relaunch jobs with pre-filled form data from previous submissions.
           - allowJobDeletion: The user can delete jobs (their own ; an admin every job). Without it the job history stays whole. Default true. (Added in 7.3.0)
-          - manageAllJobs: The user can abort, delete and relaunch the jobs of every user, not only their own, without the admin role (delete and relaunch also need allowJobDeletion and allowJobRelaunch). Default : admins. (Added in 7.3.0)
+          - manageAllJobs: The user can abort, delete and relaunch the jobs of every user, not only their own, without the admin role (delete and relaunch also need allowJobDeletion and allowJobRelaunch). Default: admins. (Added in 7.3.0)
           - allowScheduledJobs: The user can create and manage scheduled jobs (recurring cron or one-time). Default for admins only. Grant it only to roles you would trust as admins: every user with this option sees and can change all schedules, not only their own, and a schedule they create runs with admin rights, for any form. (Added in 6.1.5)
           - allowStoredJobs: The user can store and load job data for later use. (Added in 6.1.5)
           - allowPlannedJobs: The user can plan a one-time run of a form they may run ("Run later"). The job runs as that user, not as admin, and they cannot see or change other schedules. (Added in 6.1.5)
@@ -1845,7 +1847,7 @@
         short: Who has access
         description: | 
           You can have RBAC by adding roles to a form.  If you want everyone to see the form, add the `default` role (`public`, its old name, works too).  
-          **Note** : An admin has always access.
+          **Note**: An admin has always access.
         examples:
         - name: Give access to vmware team
           language: YAML
@@ -1908,7 +1910,7 @@
         description: |
           You can add a nice icon to your forms.  The icon name is a free fontawesome 6 icon.
           You can find more information at [www.fontawesome.com](https://www.fontawesome.com).  
-          **Note** : You can either have an icon or an image, not both.
+          **Note**: You can either have an icon or an image, not both.
         examples: 
         - name: Trash icon
           code: |
@@ -2067,7 +2069,7 @@
         description: |
           You can add a nice image to your form.  You can provide a local or remote url.  But if you are in a secured location, you might want to go for a base64 encode image.  This allows you to embed the image in the yaml file.  
           To do this, find a not-to-large PNG image or better, an SVG image and convert to a base64 image url.  You can do this [here](https://base64.guru/converter/encode/image).  
-          **Note** : You can either have an icon or an image, not both.
+          **Note**: You can either have an icon or an image, not both.
         examples: 
         - name: Microsoft image
           code: |
@@ -2173,7 +2175,7 @@
                     type: text
         - name: aap
           description: |
-            Runs a job or workflow template on Ansible Automation Platform : the same as `awx`
+            Runs a job or workflow template on Ansible Automation Platform: the same as `awx`
             (an AAP is a runner of type awx), the word for teams that say AAP. `template` names
             the template ; the runner is the one named with `runner:`, or the default awx runner.
           examples:
@@ -2186,7 +2188,7 @@
                 - admin
         - name: ascender
           description: |
-            Runs a job or workflow template on Ascender : the same as `awx` (an Ascender is a
+            Runs a job or workflow template on Ascender: the same as `awx` (an Ascender is a
             runner of type awx), the word for teams that say Ascender.
           examples:
           - name: Deploy on Ascender
@@ -2198,7 +2200,7 @@
                 - admin
         - name: semaphore
           description: |
-            Runs a template on Semaphore UI : the one `template` names (its name or id), in the
+            Runs a template on Semaphore UI: the one `template` names (its name or id), in the
             project of the runner named with `runner:`, or of the default semaphore runner. See
             the `runner` property for what reaches Semaphore.
           examples:
@@ -2212,7 +2214,7 @@
                 - admin
         - name: rundeck
           description: |
-            Runs a job on Rundeck : the one `job` names (`group/name`, a name, or the job's uuid ;
+            Runs a job on Rundeck: the one `job` names (`group/name`, a name, or the job's uuid ;
             `template` says the same), in the project of the runner named with `runner:`, or of
             the default rundeck runner. Only the options the job declares are sent, from the form
             values of the same name. See the `runner` property.
@@ -2227,7 +2229,7 @@
                 - admin
         - name: jenkins
           description: |
-            Builds a job on Jenkins : the one `job` names (its name, or its path in a folder ;
+            Builds a job on Jenkins: the one `job` names (its name, or its path in a folder ;
             `template` says the same), under the folder of the runner named with `runner:`, or
             of the default jenkins runner. Only the parameters the job declares are sent, from
             the form values of the same name. See the `runner` property.
@@ -2243,25 +2245,25 @@
         - name: workflow
           description: |
             Runs one of the designer's workflows (Designer > Workflows), named with `workflow:`,
-            as AWX runs a workflow job : its nodes run by AWX's rules (on success, on failure,
+            as AWX runs a workflow job: its nodes run by AWX's rules (on success, on failure,
             always, all parents must converge), side by side when they can. A playbook node runs
             on the RTE as a job of its own, with the node's inventory, credentials, limit and
             tags ; an approval node holds the job for approval. The form's fields reach every
             node as extra vars. The jobs page draws the workflow, live.
 
             What a node's playbook gathers with `set_stats` goes to the nodes after it as extra
-            vars, AWX's way : from the parents whose link fired, over the node's `extra_data`,
+            vars, AWX's way: from the parents whose link fired, over the node's `extra_data`,
             under the workflow's `extra_vars` and the form's values. It is the node job's
             artifacts (Show artifacts, on its page) ; the workflow job keeps all of them.
 
             Three keys of a node are AnsibleForms' own (AWX ignores them), so a workflow does what
-            a multistep does :
+            a multistep does:
             - `runner: <name>` on a job template node runs that runner's template or job instead
               of a designer playbook - AWX, Semaphore, Rundeck, Jenkins - so one workflow mixes
               them ; an RTE runner runs the node's playbook there.
-            - `if_extra_var: <key>` : the node runs only when that extravar is true (as a step's
+            - `if_extra_var: <key>`: the node runs only when that extravar is true (as a step's
               `ifExtraVar`) ; not met, it is skipped, and what follows it runs as after a success.
-            - `extra_vars_key: <key>` : the node gets only that key of the extravars, the user
+            - `extra_vars_key: <key>`: the node gets only that key of the extravars, the user
               copied in (as a step's `key`).
           examples:
           - name: Deploy through a workflow
@@ -2276,7 +2278,7 @@
                   type: text
         - name: awx
           description: |
-            Runs a job or workflow template on AWX, Ansible Automation Platform or Ascender :
+            Runs a job or workflow template on AWX, Ansible Automation Platform or Ascender:
             the one `template` names, on the runner named with `runner:` (`awx:` is its old
             name), or on the default awx runner. `aap` and `ascender` are the same type under
             their own name. The jobs list says where each job ran.
@@ -2318,7 +2320,7 @@
                     type: text
         - name: multistep
           description: |
-            **Deprecated since 7, removed in 8 : use `workflow`.** A workflow does all a multistep
+            **Deprecated since 7, removed in 8: use `workflow`.** A workflow does all a multistep
             does - its nodes run on any runner (`runner:`), with a condition (`if_extra_var`, as
             `ifExtraVar`) and their own values (`extra_vars_key`, as `key`), with approval nodes -
             and runs branches side by side. Until 8 a multistep runs as it did, and the log says
@@ -2432,13 +2434,13 @@
         allowed: the name of a template or job on the runner
         short: Template (or job)
         description: |
-          What the runner runs : an AWX job or workflow template (type awx, aap, ascender), a
+          What the runner runs: an AWX job or workflow template (type awx, aap, ascender), a
           Semaphore template (its name or id), a Rundeck or Jenkins job. `job:` says the same
           and reads better for a Rundeck or Jenkins form ; a form has one of the two. A playbook
           form (type ansible) uses `playbook` instead.
             
-          **Note** : You can also dynamically set the template by using a field called `__template__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static template name.  
-          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.                    
+          **Note**: You can also dynamically set the template by using a field called `__template__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static template name.  
+          **Note**: If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.                    
         examples:
         - name: Run AWX Template Helloworld
           code: |
@@ -2467,7 +2469,7 @@
         short: Workflow
         version: 7.0.0
         description: |
-          The workflow a form of type `workflow` runs : a workflow_job_templates entry of a file in
+          The workflow a form of type `workflow` runs: a workflow_job_templates entry of a file in
           the designer's Workflows section (the local workflows folder, WORKFLOWS_PATH, or a
           repository used for workflows), in the AWX export syntax.
 
@@ -2475,7 +2477,7 @@
           (`team/deploy-app.yml`) - a file name alone is found in a subfolder too, when only one
           file has it - or by the workflow's **name** inside the file (`deploy-app`). A file that
           holds several workflows is named by the workflow's name. Two workflows that match stop
-          the job, with the reason in its output : rename one, or name its file.
+          the job, with the reason in its output: rename one, or name its file.
         examples:
         - name: Run the deploy-app workflow
           code: |
@@ -2494,10 +2496,10 @@
         description: | 
           This attribute is only used when the form type is `ansible`.  When using awx, use the property `template`.  
 
-          Name it by its **file** with its subfolders in the playbook folder (`team/deploy.yml`), or by its **name** without the extension (`deploy`) : the RTE then runs `deploy.yml`, else `deploy.yaml` - as a workflow form names its workflow.
+          Name it by its **file** with its subfolders in the playbook folder (`team/deploy.yml`), or by its **name** without the extension (`deploy`): the RTE then runs `deploy.yml`, else `deploy.yaml` - as a workflow form names its workflow.
             
-          **Note** : You can also dynamically set the playbook by using a field called `__playbook__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static playbook name.  
-          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.        
+          **Note**: You can also dynamically set the playbook by using a field called `__playbook__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static playbook name.  
+          **Note**: If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.        
         examples:
         - name: Run foobar playbook
           code: |
@@ -2529,13 +2531,13 @@
           From the earlier versions, you could send credentials, stored in Ansible Forms, by using the field-property `asCredentials`.  
           From now on, you can also define them statically in the form.  
           Additionally, you can also set these dynamically by using the a field name __credentials__.  
-          **Note** : that this also works in steps, so each step can have its own set of credentials.  
-          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
-          **Note** : The credential can be a regex
-          **Note** : A second, fallback, credential kan be passed using a comma  
-          **Note** : The value `__self__` sends the connection of Ansible Forms' own database (host, port, user and password).  
-          **Note** : A value can also read a secret store directly, without a stored credential : `vault:<path>` reads the store named `vault`, `secret:<store>:<ref>` any store. The role property `secretStores` limits the stores a user may read this way.  
-          **Note** : On a `workflow` form, these credentials reach every playbook node of the workflow (a nested workflow's too), under the names given here, as a multistep form's reach its steps. A node's own credentials reach its playbook under their own name, and win a name both use.
+          **Note**: that this also works in steps, so each step can have its own set of credentials.  
+          **Note**: If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+          **Note**: The credential can be a regex
+          **Note**: A second, fallback, credential kan be passed using a comma  
+          **Note**: The value `__self__` sends the connection of Ansible Forms' own database (host, port, user and password).  
+          **Note**: A value can also read a secret store directly, without a stored credential: `vault:<path>` reads the store named `vault`, `secret:<store>:<ref>` any store. The role property `secretStores` limits the stores a user may read this way.  
+          **Note**: On a `workflow` form, these credentials reach every playbook node of the workflow (a nested workflow's too), under the names given here, as a multistep form's reach its steps. A node's own credentials reach its playbook under their own name, and win a name both use.
         examples:
         - name: Send vmware and microsoft credentials
           code: |
@@ -2562,7 +2564,7 @@
                 hide: true
                 expression: "{vcenter:'$(my_vcenter_cred)'}"
 
-            # NOTE : this can also be done using `asCredential`
+            # NOTE: this can also be done using `asCredential`
 
               - name: vcenter
                 type: enum
@@ -2607,7 +2609,7 @@
         docsObjectLink: "multistep"
         short: Multistep steps
         description: |
-          **Deprecated since 7, removed in 8**, with the multistep type : a workflow's nodes do what steps do.  
+          **Deprecated since 7, removed in 8**, with the multistep type: a workflow's nodes do what steps do.  
           A multistep form is basically an array of multiple form type destinations, defined here as steps.
       - name: wizard
         type: array
@@ -2671,15 +2673,15 @@
         description: |
           In both awx and ansible core you can pass an inventory.  In the case of ansible core, it will be a yaml file.  In case of awx it will be the inventory name.  
 
-          **Ansible** : the name of an inventory of the designer's Inventories section (`inventory: production`)
-          runs the playbook against that inventory - its inventory.yaml with the group_vars and host_vars beside it :
+          **Ansible**: the name of an inventory of the designer's Inventories section (`inventory: production`)
+          runs the playbook against that inventory - its inventory.yaml with the group_vars and host_vars beside it:
           the repository of that name used for inventories (`use_for_inventories`, the inventory at its root), or
           the folder of that name in `INVENTORY_PATH`. Anything else (a path, a file) is passed to ansible as it is,
           relative to the playbooks folder.
             
-          **Note** : You can also dynamically set the inventory by using a field called `__inventory__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static inventory.  
-          **Note** : Ansible core allows multiple inventories (so you can use an array), however awx does not support multiple inventories.
-          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+          **Note**: You can also dynamically set the inventory by using a field called `__inventory__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static inventory.  
+          **Note**: Ansible core allows multiple inventories (so you can use an array), however awx does not support multiple inventories.
+          **Note**: If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
         examples:
         - name: Run against an inventory of the designer
           code: |
@@ -2698,8 +2700,8 @@
         description: |
           In newer versions of AWX you can choose an execution environment.  Use this property to pass it to your template.
             
-          **Note** : You can also dynamically set the executionEnvironment by using a field called `__executionEnvironment__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static executionEnvironment.  
-          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.   
+          **Note**: You can also dynamically set the executionEnvironment by using a field called `__executionEnvironment__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static executionEnvironment.  
+          **Note**: If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.   
       - name: instanceGroups
         type: array or string
         with_types: awx, aap, ascender
@@ -2710,8 +2712,8 @@
           In newer versions of AWX you can choose instance groups.  Use this property to pass it to your template.  
           It can be a single string (name of instancegroup) or an array (list of names).
             
-          **Note** : You can also dynamically set the instanceGroups by using a field called `__instanceGroups__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static instanceGroups.  
-          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.                       
+          **Note**: You can also dynamically set the instanceGroups by using a field called `__instanceGroups__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static instanceGroups.  
+          **Note**: If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.                       
       - name: scm_branch
         type: string
         with_types: awx, aap, ascender
@@ -2721,8 +2723,8 @@
         description: |
           Awx allows to pass the scm branch.  Use this property to pass it to your template.
             
-          **Note** : You can also dynamically set the scm branch by using a field called `__scmBranch__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static `scm_branch`.  
-          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.
+          **Note**: You can also dynamically set the scm branch by using a field called `__scmBranch__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static `scm_branch`.  
+          **Note**: If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.
       - name: runner
         type: string
         with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins
@@ -2731,28 +2733,28 @@
         allowed: the name of a runner (Connections > Runners)
         short: Where the job runs
         description: |
-          The runner that runs this form's job, of the type the form's type asks for : rte (a
+          The runner that runs this form's job, of the type the form's type asks for: rte (a
           runtime environment container) for `ansible`, awx (AWX / Ansible Automation Platform /
           Ascender) for `awx`, `aap` and `ascender`, and semaphore, rundeck, jenkins for the forms
           of that type. Runners are added under Connections > Runners. A runner of another type
           fails the job and says which type to name.
           Without this property the default runner of the form's type is used (every type has
-          one : the first runner of a type, or the one chosen under Edit defaults) ; without a
+          one: the first runner of a type, or the one chosen under Edit defaults) ; without a
           default the job fails and says how to add one. Since 7 AnsibleForms runs no
           playbook itself.
 
-          **Semaphore** : a form of type semaphore runs
+          **Semaphore**: a form of type semaphore runs
           the Semaphore template named by `template` (its name, or its id) in the runner's
           project. The form's values and its resolved `credentials` are its extra vars ; `check`
           and `diff` are passed on. `inventory` (a name or an id) runs it on another of the
-          project's inventories - with that inventory's key - and `limit` on fewer hosts : both
+          project's inventories - with that inventory's key - and `limit` on fewer hosts: both
           need "Allow override inventory" / "Allow override limit" on the template in
           Semaphore, and without it the job fails rather than run on other hosts than the form
           asked for. `verbose` needs "Allow debug" ; without it the output is not verbose.
           `awxCredentials`, `executionEnvironment`, `instanceGroups` and `scm_branch` are AWX's
           and are not used.
 
-          **Rundeck** : a form of type rundeck runs the
+          **Rundeck**: a form of type rundeck runs the
           Rundeck job named by `job` (or `template`) - `group/name`, a bare `name`, or the job's uuid - in
           the runner's project. Only the job's own options are sent, each from the form value or
           credential of the same name (a list or an object as its json) ; other values stay in
@@ -2762,7 +2764,7 @@
           What the form sends is shown as the job's **payload** (Rundeck's word ; the other
           types call it extravars) ; the API takes and answers both names.
 
-          **Jenkins** : a form of type jenkins builds the
+          **Jenkins**: a form of type jenkins builds the
           Jenkins job named by `job` (or `template`) - its name, or its path when it is in a folder
           (`ops/deploy`), under the runner's folder when the runner has one. Only the job's own
           parameters are sent, each from the form value or credential of the same name (a list
@@ -2814,9 +2816,9 @@
           there. `awx: <name>` still names that runner, with a warning in the log.
        
           
-          **Note** : you can also set these dynamically by using a field called `__awx__`.   It must be sent as extravar.  If this extravar is found it will overwrite the static awx.  
-          **Note** : this also works in steps, so each step can have its own set of awx instances.  
-          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+          **Note**: you can also set these dynamically by using a field called `__awx__`.   It must be sent as extravar.  If this extravar is found it will overwrite the static awx.  
+          **Note**: this also works in steps, so each step can have its own set of awx instances.  
+          **Note**: If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
         examples:
         - name: Add awx instance to your template
           code: |
@@ -2832,10 +2834,10 @@
           In AWX you can set credentials on your template.   
           From now on, you can also add credentials from Ansible Forms.
           
-          **Note** : you can also set these dynamically by using the a field name __awxCredentials__.   It must be sent as extravar.  If this extravar is found it will overwrite the static awxCredentials.  
-          **Note** : this also works in steps, so each step can have its own set of awxCredentials.  
-          **Note** : the credentials will be added on top of the ones already selected in the template, they will be merged.  
-          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+          **Note**: you can also set these dynamically by using the a field name __awxCredentials__.   It must be sent as extravar.  If this extravar is found it will overwrite the static awxCredentials.  
+          **Note**: this also works in steps, so each step can have its own set of awxCredentials.  
+          **Note**: the credentials will be added on top of the ones already selected in the template, they will be merged.  
+          **Note**: If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
         examples:
         - name: Add awx credentials to your template
           code: |
@@ -2863,8 +2865,8 @@
         description: |
           In both awx and ansible core you run a playbook in check mode.  Enable this attribute to do so.  
 
-          **Note** : You can also dynamically set the check mode by using a field called `__check__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static check field.  The field must result in a boolean (expression or checkbox)
-          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+          **Note**: You can also dynamically set the check mode by using a field called `__check__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static check field.  The field must result in a boolean (expression or checkbox)
+          **Note**: If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: limit
         type: text
         with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins
@@ -2874,8 +2876,8 @@
         description: |
           In awx and ansible core you run a playbook against limited hosts by supplying a host pattern.  Use this attribute to do so.  
 
-          **Note** : You can also dynamically set the limit by using a field called `__limit__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static check field.  The field must result in number (number field or expression)
-          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+          **Note**: You can also dynamically set the limit by using a field called `__limit__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static check field.  The field must result in number (number field or expression)
+          **Note**: If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: diff
         type: boolean
         with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins
@@ -2884,8 +2886,8 @@
         description: |
           In both awx and ansible core you run a playbook in diff mode.  Enable this attribute to do so.
 
-          **Note** : You can also dynamically set the check mode by using a field called `__diff__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static diff field.  The field must result in a boolean (expression or checkbox)          
-          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+          **Note**: You can also dynamically set the check mode by using a field called `__diff__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static diff field.  The field must result in a boolean (expression or checkbox)          
+          **Note**: If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: verbose
         type: boolean
         with_types: ansible, workflow
@@ -2895,8 +2897,8 @@
         description: |
           In ansible core you run a playbook in verbose mode.  Enable this attribute to do so.
 
-          **Note** : You can also dynamically set the verbose mode by using a field called `__verbose__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static diff field.  The field must result in a boolean (expression or checkbox)          
-          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+          **Note**: You can also dynamically set the verbose mode by using a field called `__verbose__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static diff field.  The field must result in a boolean (expression or checkbox)          
+          **Note**: If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: keepExtravars
         type: boolean
         with_types: ansible, workflow
@@ -2906,8 +2908,8 @@
         description: |
           In ansible core we temporarily store the extravars in a json file.  After run, this file is removed.  Use this property to disable this behaviour.
 
-          **Note** : You can also dynamically set this property by using a field called `__keepExtravars__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static diff field.  The field must result in a boolean (expression or checkbox)          
-          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+          **Note**: You can also dynamically set this property by using a field called `__keepExtravars__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static diff field.  The field must result in a boolean (expression or checkbox)          
+          **Note**: If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: allowJinjaInExtravars
         type: boolean
         with_types: ansible, workflow
@@ -2919,7 +2921,7 @@
 
           Set this to `true` only when the form deliberately passes Jinja for the playbook to evaluate. Values without Jinja are never affected.
 
-          **Note** : You can also dynamically set this property by using a field called `__allowJinjaInExtravars__`. The field must result in a boolean `true`.
+          **Note**: You can also dynamically set this property by using a field called `__allowJinjaInExtravars__`. The field must result in a boolean `true`.
       - name: userExtravars
         type: string
         with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
@@ -2930,7 +2932,7 @@
 
           Leave it out and the form follows the global setting.  `all` sends the whole `ansibleforms_user` object, `none` sends no `ansibleforms_user` at all, and a comma separated list such as `username,email,type` sends only those top level keys.
 
-          **Note** : a multistep applies the form's value to every step, including the partial extravars a step receives through `key`.
+          **Note**: a multistep applies the form's value to every step, including the partial extravars a step receives through `key`.
       - name: abortable
         type: boolean
         with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
@@ -2968,20 +2970,20 @@
           the same engine the browser and the MCP server use - see the `LAUNCH_VALIDATION`
           environment variable for what `log` and `enforce` do.
 
-          Set it on a form that is launched over the REST API : with `enforce`, a launch that
+          Set it on a form that is launched over the REST API: with `enforce`, a launch that
           breaks the form's rules is refused, and the job runs the extravars the **server**
           builds from the checked values - whatever the caller sent as extravars.
 
-          Mind the fields the server computes again : a timestamp (`fn.fnTime()`), a query or
+          Mind the fields the server computes again: a timestamp (`fn.fnTime()`), a query or
           REST result that changed, or a `runLocal` expression using the browser's timezone or
           locale can come out different from what the user saw, and the server's value runs.
           See `LAUNCH_VALIDATION` ; try `log` first, it names the keys that differ.
 
-          The stricter of this property and `LAUNCH_VALIDATION` wins : a form can be made
+          The stricter of this property and `LAUNCH_VALIDATION` wins: a form can be made
           stricter than the instance, never looser. The MCP server always validates and builds
           the extravars itself, whatever this says.
 
-          A wizard form is checked step by step : every step the browser submits is resolved
+          A wizard form is checked step by step: every step the browser submits is resolved
           against its subform. See the **Launch validation** page of the documentation.
         examples:
           - name: A form that is launched over REST
@@ -3003,11 +3005,11 @@
         description: |
           The chat assistant (`ENABLE_CHAT`) only offers the forms that set `enableForChat:
           true` - and of those, only the ones the user's roles may open. It is the only
-          allowlist : a form without it is never discussed, resolved or launched by the chat,
+          allowlist: a form without it is never discussed, resolved or launched by the chat,
           even for a user who may open it in the browser.
 
           The assistant fills the form in with the user, through the same form engine as the
-          browser, and never launches it : the user clicks Launch on the exact payload
+          browser, and never launches it: the user clicks Launch on the exact payload
           the chat showed. Not for wizard forms.
         examples:
           - name: A form the chat may offer
@@ -3027,7 +3029,7 @@
         short: Order of the form in the list
         description: |
           The order of the form in the list of forms.  Forms are sorted by this order, so you can have a specific order in the list.
-          **Note** : If you do not set this property, it will be ordered alphabetically by name.
+          **Note**: If you do not set this property, it will be ordered alphabetically by name.
       - name: tags
         type: string
         with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins
@@ -3037,8 +3039,8 @@
         description: |
           In both awx and ansible core you can pass tags.  Use this attribute to pass a comma separted list of tags.
             
-          **Note** : You can also dynamically set the tags by using a field called `__tags__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static tags.  
-          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.            
+          **Note**: You can also dynamically set the tags by using a field called `__tags__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static tags.  
+          **Note**: If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.            
       - name: approval
         type: object
         with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins, multistep, workflow
@@ -3059,7 +3061,7 @@
         docsObjectLink: "notifications"
         short: Add Notification
         description: |
-          Add notifications on job status events : by email (`recipients`), and to notification channels (`channels` : Slack, Microsoft Teams, Telegram, a webhook, or a mail server of Connections > Notifications).
+          Add notifications on job status events: by email (`recipients`), and to notification channels (`channels`: Slack, Microsoft Teams, Telegram, a webhook, or a mail server of Connections > Notifications).
         examples:
         - name: Send on success
           code: |
@@ -3088,11 +3090,11 @@
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
-          * **onSubmit** : Triggered the moment the submit button is pressed  
-          * **onSuccess** : Triggered when the job is finished succesfully  
-          * **onFailure** : Triggered when the job was not succesful  
-          * **onAbort** : Triggered when the job was aborted  
-          * **onFinish** : Triggered when the job is finished, regardless the status  
+          * **onSubmit**: Triggered the moment the submit button is pressed  
+          * **onSuccess**: Triggered when the job is finished succesfully  
+          * **onFailure**: Triggered when the job was not succesful  
+          * **onAbort**: Triggered when the job was aborted  
+          * **onFinish**: Triggered when the job is finished, regardless the status  
             
           Follow the link above to learn about the possible job status actions
         examples:
@@ -3113,11 +3115,11 @@
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
-          * **onSubmit** : Triggered the moment the submit button is pressed  
-          * **onSuccess** : Triggered when the job is finished succesfully  
-          * **onFailure** : Triggered when the job was not succesful  
-          * **onAbort** : Triggered when the job was aborted  
-          * **onFinish** : Triggered when the job is finished, regardless the status  
+          * **onSubmit**: Triggered the moment the submit button is pressed  
+          * **onSuccess**: Triggered when the job is finished succesfully  
+          * **onFailure**: Triggered when the job was not succesful  
+          * **onAbort**: Triggered when the job was aborted  
+          * **onFinish**: Triggered when the job is finished, regardless the status  
             
           Follow the link above to learn about the possible job status actions
         examples:
@@ -3137,11 +3139,11 @@
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
-          * **onSubmit** : Triggered the moment the submit button is pressed  
-          * **onSuccess** : Triggered when the job is finished succesfully  
-          * **onFailure** : Triggered when the job was not succesful  
-          * **onAbort** : Triggered when the job was aborted  
-          * **onFinish** : Triggered when the job is finished, regardless the status  
+          * **onSubmit**: Triggered the moment the submit button is pressed  
+          * **onSuccess**: Triggered when the job is finished succesfully  
+          * **onFailure**: Triggered when the job was not succesful  
+          * **onAbort**: Triggered when the job was aborted  
+          * **onFinish**: Triggered when the job is finished, regardless the status  
             
           Follow the link above to learn about the possible job status actions
         examples:
@@ -3161,11 +3163,11 @@
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
-          * **onSubmit** : Triggered the moment the submit button is pressed  
-          * **onSuccess** : Triggered when the job is finished succesfully  
-          * **onFailure** : Triggered when the job was not succesful  
-          * **onAbort** : Triggered when the job was aborted  
-          * **onFinish** : Triggered when the job is finished, regardless the status  
+          * **onSubmit**: Triggered the moment the submit button is pressed  
+          * **onSuccess**: Triggered when the job is finished succesfully  
+          * **onFailure**: Triggered when the job was not succesful  
+          * **onAbort**: Triggered when the job was aborted  
+          * **onFinish**: Triggered when the job is finished, regardless the status  
             
           Follow the link above to learn about the possible job status actions
         examples:
@@ -3185,11 +3187,11 @@
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
-          * **onSubmit** : Triggered the moment the submit button is pressed  
-          * **onSuccess** : Triggered when the job is finished succesfully  
-          * **onFailure** : Triggered when the job was not succesful  
-          * **onAbort** : Triggered when the job was aborted  
-          * **onFinish** : Triggered when the job is finished, regardless the status  
+          * **onSubmit**: Triggered the moment the submit button is pressed  
+          * **onSuccess**: Triggered when the job is finished succesfully  
+          * **onFailure**: Triggered when the job was not succesful  
+          * **onAbort**: Triggered when the job was aborted  
+          * **onFinish**: Triggered when the job is finished, regardless the status  
             
           Follow the link above to learn about the possible job status actions
         examples:
@@ -3251,11 +3253,11 @@
         - name: Examples
           code: |
             fields:
-              - name : name
+              - name: name
                 label: Your name
                 type: text
                 required: true
-              - name : email
+              - name: email
                 label: Your email
                 type: text
                 regex:
@@ -3273,7 +3275,7 @@
             Use specific properties like `continue`, `always` and `ifExtraVar` to control the flow of a multistep form.  
             
             When a step has `type: ansible`, all [ansible-specific form properties](/forms/ansible.html) apply to that step (e.g. `playbook`, `playbookSubPath`, `ansibleCredentials`, `vaultCredentials`, `inventory`, `check`, `diff`, `tags`, `varsFiles`, `approval`, `notifications`, ...).  
-            When a step has `type: awx`, the [awx-specific form properties](/forms/awx.html) apply to that step (e.g. `template`, `job`, `awx`, `awxCredentials`, `inventory`, `check`, `diff`, `tags`, `approval`, `notifications`, ...), except `executionEnvironment`, `instanceGroups` and `scm_branch` : a step does not accept them.
+            When a step has `type: awx`, the [awx-specific form properties](/forms/awx.html) apply to that step (e.g. `template`, `job`, `awx`, `awxCredentials`, `inventory`, `check`, `diff`, `tags`, `approval`, `notifications`, ...), except `executionEnvironment`, `instanceGroups` and `scm_branch`: a step does not accept them.
           items:
           - name: name
             type: string
@@ -3359,7 +3361,7 @@
                     type: number
                     model: vm.size
 
-                # the extravars of the above example will be somewhat like this :
+                # the extravars of the above example will be somewhat like this:
                 # datastore: 
                 #     name: ds1
                 #     size: 123
@@ -3370,7 +3372,7 @@
                 # Step 1 will not receive the full set of extravars, due to the 'key: datastore'  
                 #        it will receive only 'name' (ds1) and 'size' (123) (the contents of key 'datastore')
                 # Step 2 has no key set, and will receive the full extravars
-                # Extra : Every step can reference its own key and thus send a piece of the extravars
+                # Extra: Every step can reference its own key and thus send a piece of the extravars
           - name: ifExtraVar
             type: extravar reference
             group: workflow
@@ -3713,7 +3715,7 @@
               - name: html
                 description: |
                   An HTML field.
-                  The html is sanitized before it is rendered : `<script>`, event handlers (`onclick`, `onerror`, ...) and `javascript:` links are always removed.
+                  The html is sanitized before it is rendered: `<script>`, event handlers (`onclick`, `onerror`, ...) and `javascript:` links are always removed.
                   A link may carry `target="_blank"` to open in a new tab ; `rel="noopener noreferrer"` is added automatically.
                 version: 4.0.9
                 examples:
@@ -3781,7 +3783,7 @@
                       name: mypassword_verify
                       label: Verify Password
                       default: ''
-                      sameAs: mypassword       # sameas-validation : value must be the same as the field 'mypassword'
+                      sameAs: mypassword       # sameas-validation: value must be the same as the field 'mypassword'
                       icon: lock     
               - name: checkbox
                 description: A checkbox field
@@ -3831,19 +3833,19 @@
                 extra: |
                   The enum field will create a powerfull dropdown box with multi-column, multiselect and filter capabilities. The enum field can be used in 3 ways.
 
-                  * **fixed list** : simply use the `values` property to set a fixed list
-                  * **database query** : you can use the query and dbConfig property to query a mysql, mssql, postgres, oracle or mongodb.
-                  * **expression** : you can use the expression property to create data. in this case the output of the expression can be :
-                    * **single item** : a single item like a string, integer, ...
-                    * **array of items** : an array of strings, integers, ...
-                    * **object** : a single 1-dimensional javascript object like `{"name":"ansibleforms","description":"is awesome"}`
-                    * **array of objects** : an array of objects like `[{"name":"ansibleforms","description":"is awesome"},{"name":"ansibleguy","description":"is the best"}]`  
+                  * **fixed list**: simply use the `values` property to set a fixed list
+                  * **database query**: you can use the query and dbConfig property to query a mysql, mssql, postgres, oracle or mongodb.
+                  * **expression**: you can use the expression property to create data. in this case the output of the expression can be:
+                    * **single item**: a single item like a string, integer, ...
+                    * **array of items**: an array of strings, integers, ...
+                    * **object**: a single 1-dimensional javascript object like `{"name":"ansibleforms","description":"is awesome"}`
+                    * **array of objects**: an array of objects like `[{"name":"ansibleforms","description":"is awesome"},{"name":"ansibleguy","description":"is the best"}]`  
                     
-                  **Filtering** : 
+                  **Filtering**: 
                   You can just start typing when on an enum field, filtering will happen automatically.  
                   You can tune with `filterColumns`. Otherwise filtering falls back to the `previewColumn` or the first visible column.  
                   
-                  **Multiselect** :
+                  **Multiselect**:
                   Use `multiple` to allow multiselect
                 examples:    
                 - name: Queries
@@ -3854,8 +3856,8 @@
                 help: |
                   The expression field is the most powerfull field. It can calculate, manipulate, get, post, ... The expression can hold any type of information, array, objects, ... And the extravars-output will takeover the information. The expression field can be used in 2 ways.  
                     
-                  * **database query** : you can use the query and dbConfig property to query a mysql, mssql server, postgres, oracle or mongodb.
-                  * **expression** : you can use the expression property to create or retrieve data. in this case the output of the expression can be any type.  
+                  * **database query**: you can use the query and dbConfig property to query a mysql, mssql server, postgres, oracle or mongodb.
+                  * **expression**: you can use the expression property to create or retrieve data. in this case the output of the expression can be any type.  
                   The expression itself is pure javascript. You can do inline javascript or you can use a function. Read more on security concerns about expressions You can extend the functions with your own in the custom.js file. You can have synchronous and asynchronous functions. This allows you to retrieve any kind of data, whether it's reading a file or accessing a rest-api, or querying a foreign database. You can run the expression locally (`runLocal`) in the browser for simple expressions. This is faster and there is no limitation on the expression.  
                   Use the alias type `local` to quickly make an expression type with runLocal, hide and output false.  
                   Use the alias type `local_out` to quickly make an expression type with runLocal, hide.  
@@ -3864,9 +3866,9 @@
                   Advanced helper functions (local and remote) are available, to query from rest for example.  
                   Explore the separate section on Expressions for multiple demo's.  
                     
-                  Alias : `local` (type='expression', runLocal=true, hide=true, output=false) // since version 4.0.10
-                  Alias : `local_out` (type='expression', runLocal=true, hide=true) // since version 4.0.12
-                  Alias : `credential` (type='expression', runLocal=true, hide=true, asCredential=true) // since version 4.0.10
+                  Alias: `local` (type='expression', runLocal=true, hide=true, output=false) // since version 4.0.10
+                  Alias: `local_out` (type='expression', runLocal=true, hide=true) // since version 4.0.12
+                  Alias: `credential` (type='expression', runLocal=true, hide=true, asCredential=true) // since version 4.0.10
                 examples:    
                 - name: Expressions
                   code: |
@@ -4000,11 +4002,11 @@
                   It provides a dedicated editor with syntax highlighting and always-on validation.  
                   You can load data from multiple sources:  
 
-                  * **database query** : you can use the query and dbConfig property to query a mysql, mssql server, postgres, oracle or mongodb.
-                  * **expression** : you can use the expression property to create or retrieve data (local or remote). The output must be an object or array.
-                  * **manual editing** : users can directly edit YAML in an AceEditor (monokai theme) or view read-only syntax-highlighted display
-                  * **file import** : load YAML from .yml or .yaml files using the optional showLoadButton
-                  * **file export** : download field content as YAML using the optional showDownloadButton
+                  * **database query**: you can use the query and dbConfig property to query a mysql, mssql server, postgres, oracle or mongodb.
+                  * **expression**: you can use the expression property to create or retrieve data (local or remote). The output must be an object or array.
+                  * **manual editing**: users can directly edit YAML in an AceEditor (monokai theme) or view read-only syntax-highlighted display
+                  * **file import**: load YAML from .yml or .yaml files using the optional showLoadButton
+                  * **file export**: download field content as YAML using the optional showDownloadButton
 
                   The field performs continuous YAML syntax validation and supports custom error messages via the yamlError property.
                   In readonly mode, the field displays prettified syntax-highlighted YAML without editing capabilities.
@@ -4227,12 +4229,12 @@
             short: Show/hide this field based on the values or other fields
             description: |
               Each dependency element is either an object with the following 2 attributes:
-              * `name` : holds the fieldname.
-              * `values` : a list of valid values for the referenced field.
+              * `name`: holds the fieldname.
+              * `values`: a list of valid values for the referenced field.
 
               Or with the following 2 attributes:  
-              * `name` : holds the fieldname.
-              * `isValid` : a boolean to check if the referenced is validated or not.
+              * `name`: holds the fieldname.
+              * `isValid`: a boolean to check if the referenced is validated or not.
                 
               Use in combination with attribute `dependencyFn`.
             changelog:
@@ -4396,10 +4398,10 @@
               The type of the value depends on the field type.  
               Can be `string`,`boolean`, `number`, `array` or `object`.
               When using `multiple`, the default must be an `array`.  
-              When using an `enum` field, you can use the following special values :
-              * `__auto__` : select the first
-              * `__none__` : select none
-              * `__all__` : select all (if multiple is true)
+              When using an `enum` field, you can use the following special values:
+              * `__auto__`: select the first
+              * `__none__`: select none
+              * `__all__`: select all (if multiple is true)
               
               For `yaml` fields, the default can be any valid YAML structure (object or array).
               For `list` fields, the default must be an array of objects matching the referenced subform's fields. Use it to pre-populate the list with existing rows on form load.
@@ -4505,7 +4507,7 @@
             short: File types the picker offers
             description: |
               The file types the file picker offers, as extensions (`.pdf`) or MIME types (`image/*`).  
-              It only filters the picker : a user can still choose another file. To refuse it, add a `regex` on the file name.
+              It only filters the picker: a user can still choose another file. To refuse it, add a `regex` on the file name.
             examples:
             - name: Only pdf files
               code: |
@@ -4523,8 +4525,8 @@
             description: |
               Enforces a validation where the current field must match a regular expression.
               This field requires an object with 2 attributes:
-              * `expression` : The regular expression
-              * `description` : A validation message to show when the regex is not matched. (**Since 6.0.3:** Supports placeholders for dynamic messages)
+              * `expression`: The regular expression
+              * `description`: A validation message to show when the regex is not matched. (**Since 6.0.3:** Supports placeholders for dynamic messages)
             with_types: text, expression, password, datetime, file
             examples:
             - name: Validate email address
@@ -4551,8 +4553,8 @@
             description: |
               Enforces a validation where the current field can not be one of the values in a list (referencing another field).
               This field requires an object with 2 attributes:
-              * `field` : The name of the field that holds the list
-              * `description` : A validation message to show when the validation is not met. (**Since 5.0.1:** Supports placeholders for dynamic messages)
+              * `field`: The name of the field that holds the list
+              * `description`: A validation message to show when the validation is not met. (**Since 5.0.1:** Supports placeholders for dynamic messages)
             with_types: text, expression, password, datetime
             examples:
             - name: Check if ip exists
@@ -4568,8 +4570,8 @@
             description: |
               Enforces a validation where the current field must be one of the values in a list (referencing another field).
               This field requires an object with 2 attributes:
-              * `field` : The name of the field that holds the list
-              * `description` : A validation message to show when the validation is not met. (**Since 5.0.1:** Supports placeholders for dynamic messages)
+              * `field`: The name of the field that holds the list
+              * `description`: A validation message to show when the validation is not met. (**Since 5.0.1:** Supports placeholders for dynamic messages)
             with_types: text, expression, password, datetime
             examples:
             - name: Check if ip is in range
@@ -4585,8 +4587,8 @@
             description: |
               Enforces a validation where a referencing (expression) field must be true.
               This field requires an object with 2 attributes:
-              * `field` : The name of the referencing field
-              * `description` : A validation message to show when the validation is not met. (**Since 5.0.1:** Supports placeholders for dynamic messages)
+              * `field`: The name of the referencing field
+              * `description`: A validation message to show when the validation is not met. (**Since 5.0.1:** Supports placeholders for dynamic messages)
             examples:
             - name: Ip must be pingable
               code: |
@@ -4601,8 +4603,8 @@
             description: |
               Enforces a validation where a referencing (expression) field must be false.
               This field requires an object with 2 attributes:
-              * `field` : The name of the referencing field
-              * `description` : A validation message to show when the validation is not met. (**Since 5.0.1:** Supports placeholders for dynamic messages)
+              * `field`: The name of the referencing field
+              * `description`: A validation message to show when the validation is not met. (**Since 5.0.1:** Supports placeholders for dynamic messages)
             examples:
             - name: Check if powered off
               code: |
@@ -4674,7 +4676,7 @@
                   - name: diskSize
                     type: number
                     model: disk[0].size
-                  # the extravars of this example will be like this :
+                  # the extravars of this example will be like this:
                   # disk:
                   # - name: mydisk
                   #   size: 123
@@ -4700,11 +4702,11 @@
                     type: credential    # alias for cleaner code
                     expression: "'vcenter'"
 
-                  # in the backend following will happen :
+                  # in the backend following will happen:
                   # - lookup credential call 'vcenter'
                   # - inject credential details in extravars as 'vcenter_creds'
 
-                  # the extravars will now contain something like this :
+                  # the extravars will now contain something like this:
                   # vcenter_creds:
                   #   user: admin
                   #   password: T0pS3cr#t!
@@ -4720,7 +4722,7 @@
               the column defined in `valueColumn` is sent as an extravar.  
               If you want the full selected record, use the property.  
   
-              **New in v4.0.20** : valueColumn: "*" has the same behavior, and will output all columns
+              **New in v4.0.20**: valueColumn: "*" has the same behavior, and will output all columns
             with_types: enum
           - name: expression
             type: string
@@ -4734,9 +4736,9 @@
                 An expression supports placeholders.  Read more about placeholders here. [TODO]
                 Click here to find out more about the predefined functions. [TODO]  
                   
-                **tip** : use the alias `local` (type='expression',runLocal=true,hide=true,output=false)  
-                **tip** : use the alias `local_out` (type='expression',runLocal=true,hide=true)  
-                **tip** : use the alias `credential` (type='expression',runLocal=true,hide=true,asCredential=true)  
+                **tip**: use the alias `local` (type='expression',runLocal=true,hide=true,output=false)  
+                **tip**: use the alias `local_out` (type='expression',runLocal=true,hide=true)  
+                **tip**: use the alias `credential` (type='expression',runLocal=true,hide=true,asCredential=true)  
             with_types: enum, expression, html, yaml, list
             examples:
               - name: Get a list of users from a rest api
@@ -4765,7 +4767,7 @@
                   - name: uppercase
                     type: local
                     expression: "'test'.toUpperCase()"
-                    # with type local, these are the defaults :
+                    # with type local, these are the defaults:
                     # runLocal: true
                     # hide: true
                     # output: false
@@ -4774,7 +4776,7 @@
                   - name: uppercase
                     type: local_out
                     expression: "'test'.toUpperCase()"
-                    # with type local_out, these are the defaults :
+                    # with type local_out, these are the defaults:
                     # runLocal: true
                     # hide: true
           - name: runLocal
@@ -4806,7 +4808,7 @@
             short: Renders text as html
             description: |
               If an expression value has html tags (for example <b></b>), it will render the value as such.
-              The html is sanitized before it is rendered : `<script>`, event handlers (`onclick`, `onerror`, ...) and `javascript:` links are always removed.
+              The html is sanitized before it is rendered: `<script>`, event handlers (`onclick`, `onerror`, ...) and `javascript:` links are always removed.
               A link may carry `target="_blank"` to open in a new tab ; `rel="noopener noreferrer"` is added automatically.
             examples:
             - name: Show bold in an expression
@@ -4892,8 +4894,8 @@
               However, in the case of mongodb, the query is slightly different.  See the examples.  
               An expression supports placeholders.  Read more about placeholders here. [TODO]
 
-              Every `$(...)` value is escaped for the database engine before it is pasted into the query : single quotes are doubled, backslashes are doubled too on mysql (postgres, mssql and oracle keep them as they are), and on mongodb the value is escaped as the body of a JSON string. An object or array value is pasted as json, escaped the same way.  
-              This protects a quoted placeholder (`where name='$(name)'`) only : an unquoted one (`limit $(n)`) is pasted as plain text, so quote your placeholders.
+              Every `$(...)` value is escaped for the database engine before it is pasted into the query: single quotes are doubled, backslashes are doubled too on mysql (postgres, mssql and oracle keep them as they are), and on mongodb the value is escaped as the body of a JSON string. An object or array value is pasted as json, escaped the same way.  
+              This protects a quoted placeholder (`where name='$(name)'`) only: an unquoted one (`limit $(n)`) is pasted as plain text, so quote your placeholders.
             examples:
             - name: get information from a mysql database
               code: |
@@ -4919,7 +4921,7 @@
             description: |
               Apply a jq expression to transform the result of a `query`+`dbConfig` or a remote `expression`.  
               jq is a post-processor applied server-side, after that remote call returns, to filter, map or reshape the result.  
-              It only runs for remote calls : a local expression (`runLocal: true`) is evaluated in the browser and never reaches the server, so `jq` is ignored there.
+              It only runs for remote calls: a local expression (`runLocal: true`) is evaluated in the browser and never reaches the server, so `jq` is ignored there.
             examples:
             - name: extract specific fields from query result
               code: |
@@ -5054,7 +5056,7 @@
               By setting this property, you can change it to another field.  
               This setting is ignored when `outputObject` is true.  
 
-              **new in v4.0.20** : setting valueColumn to "*" will export all columns
+              **new in v4.0.20**: setting valueColumn to "*" will export all columns
             examples:
             - name: Export name
               code: |
@@ -5075,10 +5077,10 @@
               When you select an item in an `enum` field and later on you use this field as a placeholder, 
               by default the first column is used as a value.  
               By setting this property you change the column to be used.  
-              **NOTE** : this property is somewhat out-of-date since the introduction of the dot-notation.  
+              **NOTE**: this property is somewhat out-of-date since the introduction of the dot-notation.  
               See examples below.  
                 
-              **New in v4.0.20** : setting placeholderColumn to "*" will output the entire record, instead of a single column.
+              **New in v4.0.20**: setting placeholderColumn to "*" will output the entire record, instead of a single column.
             examples:
             - name: Export name
               code: |
@@ -5144,7 +5146,7 @@
               So you can add a custom property to the deleted record, 
               marking the record as deleted and sending it to the playbook for removal.   
 
-              **Since 6.4.1** the markers of a `list` field reach the playbook as well : a
+              **Since 6.4.1** the markers of a `list` field reach the playbook as well: a
               removed row is sent with its delete marker instead of looking like a live row.
               Before, a list row only carried a marker when its subform declared it as a
               (hidden) field. When rows can be deleted or updated but no
@@ -5312,7 +5314,7 @@
             allowed: the name of a notification channel
             short: The approval channels
             description: | 
-              The notification channels of Connections > Notifications that receive the approval message, with a link to the job, where it is approved or rejected : Slack, Microsoft Teams, Telegram, a webhook.  
+              The notification channels of Connections > Notifications that receive the approval message, with a link to the job, where it is approved or rejected: Slack, Microsoft Teams, Telegram, a webhook.  
               A mail channel in this list sends the approval mail to the `notifications` addresses through that server instead of the active one.  
               A name that is not there is said in the log and skipped. (Added in 7.0.0)
           examples: 
@@ -5323,9 +5325,9 @@
                 title: Remove host $(vm.name) ?
                 message: |
                   You are about to remove vm $(vm.name).<br>
-                  Esx server : $(cluster.esxhost.name)<br>
-                  Status : $(vm.status)<br>
-                  Change request : $(cr.id)
+                  Esx server: $(cluster.esxhost.name)<br>
+                  Status: $(vm.status)<br>
+                  Change request: $(cr.id)
                 roles:
                 - approvers
                 - vmwareadmin
@@ -5347,7 +5349,7 @@
           link: forms/form/notifications
           icon: fas,envelope
           description: |
-            When you want to send a notification on job-event : an email, and a message to notification channels (Connections > Notifications : Slack, Microsoft Teams, Telegram, a webhook)<br>
+            When you want to send a notification on job-event: an email, and a message to notification channels (Connections > Notifications: Slack, Microsoft Teams, Telegram, a webhook)<br>
             <br>
             **Email Templates**<br>
             Notification emails use HTML templates located in `server/templates/email/`:<br>
@@ -5374,7 +5376,7 @@
             allowed: the name of a notification channel
             short: Channels
             description: | 
-              The notification channels of Connections > Notifications the notification goes to : Slack, Microsoft Teams, Telegram, a webhook. They get a short message (the form, the job, what happened) with a link to the job.  
+              The notification channels of Connections > Notifications the notification goes to: Slack, Microsoft Teams, Telegram, a webhook. They get a short message (the form, the job, what happened) with a link to the job.  
               A mail channel in this list sends the notification mail to the `recipients` through that server instead of the active one.  
               A name that is not there is said in the log and skipped. (Added in 7.0.0)
           - name: onStatus
@@ -5495,7 +5497,7 @@
             description: | 
               This action allows you to load another form.  
 
-              **new in v4.0.20** : the previous jobid is sent as \_\_previous\_\_jobid\_\_.  
+              **new in v4.0.20**: the previous jobid is sent as \_\_previous\_\_jobid\_\_.  
               You must make sure you have this field in your form, it will be populated with the previous jobid.  
 
               This is particularly interesting to grab information from the previous job (for example, load output, ...)                                          
@@ -5530,7 +5532,7 @@
   link: expressions
   description: |
     The `expression` formfield-attribute is so powerfull, more examples are important. 
-    The expression attribute can be used on an :  
+    The expression attribute can be used on an:  
     - `enum` field, to fill the dropdown
     - `expression` field, to grab or maka any for of data
     - `list` field, to fill the rows
@@ -5540,7 +5542,7 @@
     [**On the server side**](/#/reference-guide/expressions/remote), the code is limited to pre-defined functions, mainly to get external data.  
     [**On the client side**](/#/reference-guide/expressions/local), the code is unlimited, yet some pre-defined filter and sorting functions are available to make life easier.
       
-    **Security Concerns** : Since expressions are evaluated using javascripts eval function, there can be a concern for code injection.  Therefor, server side expressions are limited to predefined functions, no code injection is possible.  On the client side, the code is evaluated in the sandbox of the browser and can be considered safe.  
+    **Security Concerns**: Since expressions are evaluated using javascripts eval function, there can be a concern for code injection.  Therefor, server side expressions are limited to predefined functions, no code injection is possible.  On the client side, the code is evaluated in the sandbox of the browser and can be considered safe.  
   help:
   - name: Local Expressions
     icon: far,circle-down
@@ -5549,9 +5551,9 @@
       The following example are assumed to run with the field property `runLocal` true.  
       They are ran in the sandbox of the browser and can leverage the full javascript engine.  
         
-      **Tip** : use the type `local` as an alias for 'type=expression, runLocal=true, hide=true, output=false'  
-      **Tip** : use the type `local_out` as an alias for 'type=expression, runLocal=true, hide=true'  
-      **Tip** : use the type `credential` as an alias for 'type=expression, runLocal=true, hide=true, asCredential: true'  
+      **Tip**: use the type `local` as an alias for 'type=expression, runLocal=true, hide=true, output=false'  
+      **Tip**: use the type `local_out` as an alias for 'type=expression, runLocal=true, hide=true'  
+      **Tip**: use the type `credential` as an alias for 'type=expression, runLocal=true, hide=true, asCredential: true'  
     examples:
     - name: naming convention
       description: Use string manipulations to apply naming conventions
@@ -5574,18 +5576,18 @@
           includeHeader = true
         })
 
-        // output : an html-table representation of the array of objects taken from another field called "my_array_field"
-        // tip : add tableClass = 'table table-striped table-bordered' for bootstrap styling        
+        // output: an html-table representation of the array of objects taken from another field called "my_array_field"
+        // tip: add tableClass = 'table table-striped table-bordered' for bootstrap styling        
     - name: Get a name with incremental numbering
       description: |
         When working with auto numbering, you might want to find the next name in an array of stings that some numbering.   
         Also available as server side expression (prefixed with `fn.`)
       code: |
         fnGetNumberedName(['server001','server002','server005'],'server###','server001',false)
-        // result : "server006"
+        // result: "server006"
 
         fnGetNumberedName(['server001','server002','server005'],'server###','server001',true)
-        // result : "server003"
+        // result: "server003"
 
         fnGetNumberedName($(fieldlist),'server###','server001',true)
         // use another expression field as input for the array
@@ -5593,10 +5595,10 @@
         // fnGetNumberedName(array,pattern,default,fillgaps)
         // This function searches for a numbered pattern in a list of string, 
         // increases the highest number and returns a name like the pattern
-        // - array : an array object, you can use a placeholder to an expression where you know it's an array
-        // - pattern : a string that hold the # as a digit
-        // - default : if no value is found, return this default
-        // - fillgaps : a boolean to indicate it can fill gaps in the numbers, 1,2,3,6 => 4           
+        // - array: an array object, you can use a placeholder to an expression where you know it's an array
+        // - pattern: a string that hold the # as a digit
+        // - default: if no value is found, return this default
+        // - fillgaps: a boolean to indicate it can fill gaps in the numbers, 1,2,3,6 => 4           
     - name: object-array manipulation
       description: |
         When working with object-arrays, you will want to control and manipulate that data.  
@@ -5641,7 +5643,7 @@
           .sortBy('-name')                // sort by name descending
 
           /*
-            result : 
+            result: 
             [
               {name:'Superman',ability:'Superstrong,Flying,Laserbeams'},
               {name:'Spiderman',ability:'Can do whatever a spider can'}
@@ -5652,7 +5654,7 @@
         You can still use all the vanilla javascript goodies to filter and alter you data.  
         Such as map, forEach, find, filter and reduce.
       code: |
-          // source : https://medium.com/@jeff_long/understanding-foreach-map-filter-and-find-in-javascript-f91da93b9f2c
+          // source: https://medium.com/@jeff_long/understanding-foreach-map-filter-and-find-in-javascript-f91da93b9f2c
 
           mylist=
             [
@@ -5735,8 +5737,8 @@
         fn.fnCidr('172.16.0.1','255.255.0.0')
 
         // fn.fnCidr(ip,netmask)
-        // - ip : an ip address
-        // - netmask : a netmask
+        // - ip: an ip address
+        // - netmask: a netmask
         //  
         // it will return the Cidr subnet information as well as expose a `contains` method to check whether an ip is part of this subnet.
         // {
@@ -5755,10 +5757,10 @@
         fn.fnSsh('root','172.16.0.1','ls -la')
 
         // fn.fnSsh(user,host,command,jq-expression)
-        // - user : the ssh user
-        // - host : the host
-        // - command : the command to trigger by ssh
-        // - jq-expression : an optional jq-expression (https://jqplay.org)  
+        // - user: the ssh user
+        // - host: the host
+        // - command: the command to trigger by ssh
+        // - jq-expression: an optional jq-expression (https://jqplay.org)  
         //  
         // You must use 'known_hosts' and 'public-key' to setup non-interactive password-less authentication.
         // In the settings you can find the public-key and add your target-host to known_hosts
@@ -5767,19 +5769,19 @@
         fn.fnLs('/tmp',{ recursive: true, regex: '.*\.log$', metadata: true })
 
         // fn.fnLs(path,options)
-        // - path : path to directory
-        // - options : recursive:boolean, regex:string ,metadata:boolean
-        //   - recursive : whether to list files recursively
-        //   - regex : a regular expression to filter files
-        //   - metadata : whether to include file metadata (size,mtime,... directories will be shown too)
+        // - path: path to directory
+        // - options: recursive:boolean, regex:string ,metadata:boolean
+        //   - recursive: whether to list files recursively
+        //   - regex: a regular expression to filter files
+        //   - metadata: whether to include file metadata (size,mtime,... directories will be shown too)
     - name: parse html page
       code: |
         fn.fnParseHtmlWithRegex('https://ansibleguy.com','<h2.*?>(.*?)</h2>','g')
 
         // fn.fnParseHtmlWithRegex(url,regex,flags)
-        // - url : url to html page
-        // - regex : a regular expression with at least one group ( )
-        // - flags : regex flags (such as g,i,m)
+        // - url: url to html page
+        // - regex: a regular expression with at least one group ( )
+        // - flags: regex flags (such as g,i,m)
         //
         // it will grab the html source and return an array with all the group matches
     - name: get DNS info
@@ -5787,22 +5789,22 @@
         fn.fnDnsResolve('ansibleguy.com','A')
 
         // fn.fnDnsResolve(fqdn,type)
-        // - fqdn : a fully qualified domain name
-        // - type : the type of dns record (A,AAAA,MX,NS,CNAME,TXT,SRV,PTR)
+        // - fqdn: a fully qualified domain name
+        // - type: the type of dns record (A,AAAA,MX,NS,CNAME,TXT,SRV,PTR)
     - name: read json file
       code: |
         fn.fnReadJsonFile('/tmp/file.json','.[].name')
 
         // fn.fnReadJsonFile(path,jq-expression)
-        // - path : path to json file
-        // - jq-expression : an optional jq-expression (https://jqplay.org)
+        // - path: path to json file
+        // - jq-expression: an optional jq-expression (https://jqplay.org)
     - name: read yaml file
       code: |
         fn.fnReadYamlFile('/tmp/file.yaml','.[].name')
 
         // fn.fnReadJsonFile(path,jq-expression)
-        // - path : path to json file
-        // - jq-expression : an optional jq-expression (https://jqplay.org)
+        // - path: path to json file
+        // - jq-expression: an optional jq-expression (https://jqplay.org)
     - name: rest api with basic authentication
       code: |
         fn.fnRestBasic(
@@ -5815,16 +5817,16 @@
           false
         )
 
-        // output : a full json object coming from rest, json transformed with jq, result sorted and transformed by javascript.
+        // output: a full json object coming from rest, json transformed with jq, result sorted and transformed by javascript.
 
         // fn.fnRestBasic(method,url,body,credentialname,jq-expression,sort-object)
-        // - method : get,post,put,delete
-        // - url : url to restapi (can for example contain a placeholder like 'https://$(serverfield.fqdn)/api/'
-        // - body : in case of post and put
-        // - credential-name : it will lookup the credentials as you have saved in the gui
-        // - jq-expression : an optional jq-expression (https://jqplay.org)
-        // - sort object : a sort object to order the result
-        // - hasBigInt : a boolean indicating if it should convert Int64 to string
+        // - method: get,post,put,delete
+        // - url: url to restapi (can for example contain a placeholder like 'https://$(serverfield.fqdn)/api/'
+        // - body: in case of post and put
+        // - credential-name: it will lookup the credentials as you have saved in the gui
+        // - jq-expression: an optional jq-expression (https://jqplay.org)
+        // - sort object: a sort object to order the result
+        // - hasBigInt: a boolean indicating if it should convert Int64 to string
     - name: rest api with token authentication
       code: |
         fn.fnRestJwt(
@@ -5837,17 +5839,17 @@
           false
         )
 
-        // output : a full json object coming from rest, json transformed with jq, result sorted, first by age, then by name
+        // output: a full json object coming from rest, json transformed with jq, result sorted, first by age, then by name
 
         // fn.fnRestJwt(method,url,body,token,jq-expression,sort-object)
-        // - method : get,post,put,delete
-        // - url : url to restapi (can for example contain a placeholder like 'https://$(serverfield.fqdn)/api/'
-        // - body : in case of post and put
-        // - token : it will be add as a Bearer Authorization header
-        // - jq-expression : an optional jq-expression (https://jqplay.org)
-        // - sort-object : a sort object to sort the result
-        // - hasBigInt : a boolean indicating if it should convert Int64 to string
-        // - tokenPrefix : a prefix, defaults to 'Bearer' (v5.0.0)
+        // - method: get,post,put,delete
+        // - url: url to restapi (can for example contain a placeholder like 'https://$(serverfield.fqdn)/api/'
+        // - body: in case of post and put
+        // - token: it will be add as a Bearer Authorization header
+        // - jq-expression: an optional jq-expression (https://jqplay.org)
+        // - sort-object: a sort object to sort the result
+        // - hasBigInt: a boolean indicating if it should convert Int64 to string
+        // - tokenPrefix: a prefix, defaults to 'Bearer' (v5.0.0)
     - name: rest api with secured token authentication
       code: |
         fn.fnRestJwtSecure(
@@ -5860,17 +5862,17 @@
           false
         )
 
-        // output : a full json object coming from rest, json transformed with jq, result sorted, first by age, then by name
+        // output: a full json object coming from rest, json transformed with jq, result sorted, first by age, then by name
 
         // fn.fnRestJwtSecure(method,url,body,token,jq-expression,sort-object)
-        // - method : get,post,put,delete
-        // - url : url to restapi (can for example contain a placeholder like 'https://$(serverfield.fqdn)/api/'
-        // - body : in case of post and put
-        // - credential_name : Encrypted credential will be looked up.  The password will be the token.
-        // - jq-expression : an optional jq-expression (https://jqplay.org)
-        // - sort-object : a sort object to sort the result   
-        // - hasBigInt : a boolean indicating if it should convert Int64 to string 
-        // - tokenPrefix : a prefix, defaults to 'Bearer' (v5.0.0)
+        // - method: get,post,put,delete
+        // - url: url to restapi (can for example contain a placeholder like 'https://$(serverfield.fqdn)/api/'
+        // - body: in case of post and put
+        // - credential_name: Encrypted credential will be looked up.  The password will be the token.
+        // - jq-expression: an optional jq-expression (https://jqplay.org)
+        // - sort-object: a sort object to sort the result   
+        // - hasBigInt: a boolean indicating if it should convert Int64 to string 
+        // - tokenPrefix: a prefix, defaults to 'Bearer' (v5.0.0)
     - name: rest api with custom headers
       code: |
         fn.fnRestAdvanced(
@@ -5884,55 +5886,55 @@
           false
         )
 
-        // output : a full json object coming from rest, json transformed with jq, result sorted descending by name
+        // output: a full json object coming from rest, json transformed with jq, result sorted descending by name
 
         // fn.fnRestAdvanced(method,url,body,{myheader:'value'},jq-expression,sort-object)
-        // - method : get,post,put,delete
-        // - url : url to restapi (can for example contain a placeholder like 'https://$(serverfield.fqdn)/api/'
-        // - body : in case of post and put
+        // - method: get,post,put,delete
+        // - url: url to restapi (can for example contain a placeholder like 'https://$(serverfield.fqdn)/api/'
+        // - body: in case of post and put
         // - headers: an object of headers
-        // - jq-expression : an optional jq-expression (https://jqplay.org)
-        // - sort-object : a sorting object to order the results
-        // - hasBigInt : a boolean indicating if it should convert Int64 to string
-        // - raw : return data and response_headers  
+        // - jq-expression: an optional jq-expression (https://jqplay.org)
+        // - sort-object: a sorting object to order the results
+        // - hasBigInt: a boolean indicating if it should convert Int64 to string
+        // - raw: return data and response_headers  
           
         // 3 function-placeholders are allowed in the headers:
-        // - base64(credential_name) : will create a base64 encoded "username:password".  prefix with "basic" if required
-        // - username(credential_name) : will add the username of the credential
-        // - password(credential_name) : will add the password of the credential
+        // - base64(credential_name): will create a base64 encoded "username:password".  prefix with "basic" if required
+        // - username(credential_name): will add the username of the credential
+        // - password(credential_name): will add the password of the credential
     - name: get credentials
       code: |
         fn.fnCredentials('credentialname_or_regex','fallback_credentialname_or_regex')
 
         // Try to use `fnRestBasic` and `fnRestJwtSecure` if possible, this avoids passwords and tokens going over the network.
 
-        // output : a credential object with all properties (username, password, host, port)
+        // output: a credential object with all properties (username, password, host, port)
         // the exact name is tried first, then the name as a regex, then the fallback
-        // server expressions are evaluated from the form definition : a user reaches only
+        // server expressions are evaluated from the form definition: a user reaches only
         // the credentials the form's expressions ask for (a raw expression over the api
         // needs settings or designer access)
     - name: copy a value
       code: |
         fn.fnCopy($(other_field))
 
-        // output : the value, unchanged
+        // output: the value, unchanged
 
         // fn.fnCopy(input)
-        // - input : any value, for example the value of another field
+        // - input: any value, for example the value of another field
     - name: sort an array
       code: |
         fn.fnSort(['a','b','z','q','c'],{'':{direction:'asc'}})
 
-        // output : sorts the flat array
+        // output: sorts the flat array
 
         // fn.fnSort(arrayinput,sort-object)
         // - array, coming from expression or rest or database
-        // - sort-object : a sorting object to order the results    
+        // - sort-object: a sorting object to order the results    
     - name: the sorting object
       description: |
         In all the data-fetching functions you have the option to sort your data, using this sorting object.  
       code: |
-        The sorting object can have multiple forms, for example :
+        The sorting object can have multiple forms, for example:
 
         'name' // will sort ascending on property name
         ['name','email'] // will first sort on name, then on email
@@ -5945,11 +5947,11 @@
       code: |
         fn.fnJq($(settings),'.mapping | keys')
 
-        // output : a full json object taken from another field called "settings", converted by jq
+        // output: a full json object taken from another field called "settings", converted by jq
 
         // fn.fnJq(object, jq)
         // - object, for example read from rest or yaml file
-        // - jq-expression : a jq-expression (https://jqplay.org)
+        // - jq-expression: a jq-expression (https://jqplay.org)
         // to sort the result, pass it to fn.fnSort
     - name: builtin jq functions
       description: |
@@ -5973,10 +5975,10 @@
         Also available as local expression (without the `fn.` prefix)
       code: |
         fn.fnGetNumberedName(['server001','server002','server005'],'server###','server001',false)
-        // result : "server006"
+        // result: "server006"
 
         fn.fnGetNumberedName(['server001','server002','server005'],'server###','server001',true)
-        // result : "server003"
+        // result: "server003"
 
         fn.fnGetNumberedName($(fieldlist),'server###','server001',true)
         // use another expression field as input for the array
@@ -5984,10 +5986,10 @@
         // fn.fnGetNumberedName(array,pattern,default,fillgaps)
         // This function searches for a numbered pattern in a list of string, 
         // increases the highest number and returns a name like the pattern
-        // - array : an array object, you can use a placeholder to an expression where you know it's an array
-        // - pattern : a string that hold the # as a digit
-        // - default : if no value is found, return this default
-        // - fillgaps : a boolean to indicate it can fill gaps in the numbers, 1,2,3,6 => 4      
+        // - array: an array object, you can use a placeholder to an expression where you know it's an array
+        // - pattern: a string that hold the # as a digit
+        // - default: if no value is found, return this default
+        // - fillgaps: a boolean to indicate it can fill gaps in the numbers, 1,2,3,6 => 4      
 - name: FAQ
   icon: fas,circle-question
   link: faq
@@ -6081,7 +6083,7 @@
       **How it works:**
       - During a job run, the RTE watches for a log file at a well-known path inside the playbook folder
       - Every 2 seconds, when the file changed, and once more when the playbook ends, the RTE stores its contents on the job ; the file is then removed (since 7)
-      - The log file is displayed in a **Log file** section of the job's output, numbered as the output's lines : a log line's timestamp and level (ERROR, WARNING, INFO, DEBUG) are read and coloured as the output's, and ANSI colours are supported
+      - The log file is displayed in a **Log file** section of the job's output, numbered as the output's lines: a log line's timestamp and level (ERROR, WARNING, INFO, DEBUG) are read and coloured as the output's, and ANSI colours are supported
 
       **Log file path convention:**
       ```
@@ -6097,7 +6099,7 @@
       **Responsibilities of the playbook / module developer:**
       - **Create** the log file (and its `.joblogs/` directory) at the start of the operation
       - **Write** meaningful progress messages as the operation proceeds
-      - Deleting it is not needed : the RTE removes it once the playbook ended (it is kept on the job)
+      - Deleting it is not needed: the RTE removes it once the playbook ended (it is kept on the job)
 
       **ANSI colour coding is supported.**  
       You can use standard ANSI escape codes (e.g. `\033[92m` for green, `\033[91m` for red) in your log messages and they will be rendered as colours in the UI. This is ideal for distinguishing success, warning, and error states at a glance.
@@ -6112,7 +6114,7 @@
       The power of this concept lies in the client web-application that is re-evaluating fields every 100ms.  With current processors and the chromium engine, this should be a very seamless experience.  
         
       **Note**: When you reference another enum field, you reference the selected values, NOT the full dropdown list.  Use the `placeholderColumn`-property or a dot-notation like `$(city.name)` 
-      **New in v4.0.20** : setting placeholderColumn to "*" will output the entire record, instead of a single column.
+      **New in v4.0.20**: setting placeholderColumn to "*" will output the entire record, instead of a single column.
     language: yaml
     code: |
       - type: enum
@@ -6188,7 +6190,7 @@
       If the placeholder is pointing to an expression field, then either the full object is returned or you can have an advanced placeholder reference like `$(myarray[0].name)` where you can create javascript-like references.  
         
       **Note**: Important to know is that the placeholder is replaced BEFORE the evaluation of the expression.  If you expect the result to be a string, then you must wrap it with quotes!.
-      **New in v4.0.20** : setting placeholderColumn to "*" will output the entire record, instead of a single column.
+      **New in v4.0.20**: setting placeholderColumn to "*" will output the entire record, instead of a single column.
     language: yaml
     code: |
       - name: field1
@@ -6197,24 +6199,24 @@
         runLocal: true
       - name: field2
         type: expression
-        expression: "'$(field1[0].name)'"  # result : 'foo' (note the wrapping quotes)
+        expression: "'$(field1[0].name)'"  # result: 'foo' (note the wrapping quotes)
         runLocal: true
       - name: field3
         type: expression
-        expression: "$(field1)[0].name"  # result : {name: 'foo'}.name => 'foo'  
+        expression: "$(field1)[0].name"  # result: {name: 'foo'}.name => 'foo'  
         runLocal: true    
       - name: field4
         type: expression
-        expression: "$(field1).slice(-1)[0].name"  # result : {name: 'ansible'}.name => 'ansible' 
+        expression: "$(field1).slice(-1)[0].name"  # result: {name: 'ansible'}.name => 'ansible' 
         runLocal: true
       - name: field5
         type: enum
-        expression: $(field1).filter(x => x.name.includes('a'))   # result : [{name: 'bar'},{name: 'ansible'}]
+        expression: $(field1).filter(x => x.name.includes('a'))   # result: [{name: 'bar'},{name: 'ansible'}]
         runLocal: true
         default: __auto__                                         # result: bar
       - name: field6
         type: expression
-        expression: "'$(field5)'"   # result : the selected item from field5 (default=bar)
+        expression: "'$(field5)'"   # result: the selected item from field5 (default=bar)
         runLocal: true        
   - name: Hide a field
     short: Hide a field
@@ -6246,7 +6248,7 @@
       # 1: vc_cred
       # 2: ad_cred
 
-      # Method 1 : using asCredential field-property
+      # Method 1: using asCredential field-property
       fields:
       - name: vc_cred
         type: expression
@@ -6259,7 +6261,7 @@
         asCredential: true
         expression: "'ad'"
 
-      # Method 2 : using credentials form-property   
+      # Method 2: using credentials form-property   
       name: myplaybook
       type: ansible
       playbook: myplaybook.yaml
@@ -6268,15 +6270,15 @@
       credentials:
         vc_cred: vcenter
         ad_cred: ad
-        veeam_cred : veeam_prod,veeam_dev # will first try veeam_prod, then as fallback veeam_dev
+        veeam_cred: veeam_prod,veeam_dev # will first try veeam_prod, then as fallback veeam_dev
 
-      # Method 3 : using __credentials__ extravar
+      # Method 3: using __credentials__ extravar
       fields:
       - name: __credentials__
         type: expression
         runLocal: true
         expression: "{vc_cred: 'vcenter',ad_cred: 'ad',veeam_cred:'$(veeam_server)'}"
-        # note : in the expression you can use placeholders to make them dynamic
+        # note: in the expression you can use placeholders to make them dynamic
   - name: Jobid
     short: Pass the current jobid
     description: |
@@ -6349,7 +6351,7 @@
         runLocal: true
         default: __auto__     
 
-      # explained : 
+      # explained: 
       # we take our default and merge it with the source where we filter out the default (to avoid doubles)    
       # the default is thus shifted to the first element, which we can now select with the default `__auto__`
   - name: Expression default value
@@ -6375,8 +6377,8 @@
         name: field1
         default: "'$(some_other_field)'.toLowerCase()"
         evalDefault: true # it will treat the default as if it was an expression.
-        # note : when `some_other_field` changes, the default will be re-evaluated
-        # note2 : works for other fields too.
+        # note: when `some_other_field` changes, the default will be re-evaluated
+        # note2: works for other fields too.
 
       # more complex evalDefault example
       - name: checkbox
@@ -6532,9 +6534,9 @@
       In the case you want to use ytt, it can be enabled by setting `USE_YTT=1`.  
       Read more info about ytt (https://carvel.dev/ytt/).  
         
-      **NOTE** : This feature has not been heavily tested and was added as an enhancement with no feedback after it was added.
+      **NOTE**: This feature has not been heavily tested and was added as an enhancement with no feedback after it was added.
       
-      **NOTE** : when using ytt, you must disable the designer, the designer will convert the yaml files to intermediate json and will drop the ytt syntax (which is yaml comments).
+      **NOTE**: when using ytt, you must disable the designer, the designer will convert the yaml files to intermediate json and will drop the ytt syntax (which is yaml comments).
 
         
       A `lib` directory needs to exist within the root directory and is automatically included for the ytt call.

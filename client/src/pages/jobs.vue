@@ -639,7 +639,7 @@ async function clip(v, doNotStringify = false, asYaml = false) {
       await copyToClipboard(v);
       toast.success('Copied to clipboard');
     } catch (err) {
-      toast.error('Error copying to clipboard : \n' + err.toString());
+      toast.error('Error copying to clipboard: \n' + err.toString());
     }
   } else {
     try {
@@ -650,7 +650,7 @@ async function clip(v, doNotStringify = false, asYaml = false) {
       }
       toast.success('Copied to clipboard');
     } catch (err) {
-      toast.error('Error copying to clipboard : \n' + err.toString());
+      toast.error('Error copying to clipboard: \n' + err.toString());
     }
   }
 }

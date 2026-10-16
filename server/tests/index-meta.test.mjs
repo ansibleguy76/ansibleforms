@@ -17,13 +17,13 @@ describe("the instance's name and label in index.html", () => {
     assert.match(out, /<meta name="af-env-label-color" content="red" \/>\n<\/head>/);
   });
 
-  test("none set : the tags say so, empty", () => {
+  test("none set: the tags say so, empty", () => {
     const out = injectAppIdentity(html, { appName: null, envLabel: null, envLabelColor: null });
     assert.equal(meta(out, "af-app-name"), "");
     assert.equal(meta(out, "af-env-label"), "");
   });
 
-  test("not readable (null) : the page is left without the tags", () => {
+  test("not readable (null): the page is left without the tags", () => {
     assert.equal(injectAppIdentity(html, null), html);
   });
 

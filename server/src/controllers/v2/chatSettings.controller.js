@@ -62,7 +62,7 @@ const check = async function (req, res) {
     res.status(200).json(RestResultv2.single(result));
   } catch (err) {
     // the provider's status and message, never the key
-    logger.warning(`Chat provider check failed : ${err.message}`);
+    logger.warning(`Chat provider check failed: ${err.message}`);
     res.status(502).json(RestResultv2.error(i18n.t(req, 'resources.chatCheckFailed'), err.message));
   }
 };

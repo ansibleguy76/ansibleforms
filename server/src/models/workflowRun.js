@@ -91,7 +91,7 @@ async function allWorkflows() {
       try {
         workflows = workflowsOf(text);
       } catch (e) {
-        logger.warning(`Workflow file '${file}' is not valid YAML : ${e.message}`);
+        logger.warning(`Workflow file '${file}' is not valid YAML: ${e.message}`);
         continue;
       }
       // its path in its folder, as a form names it (workflows/deploy.yml), with forward slashes
@@ -208,23 +208,23 @@ export async function findWorkflow(ref) {
     // a file name alone : in a subfolder, when only one file has it
     if (!inFile.length && !file.includes("/")) {
       const files = [...new Set(all.filter((f) => path.basename(f.rel) === file).map((f) => f.rel))].sort();
-      if (files.length > 1) throw new Errors.ConflictError(`Workflow file '${file}' is in ${files.join(" and ")} : name it with its folder`);
+      if (files.length > 1) throw new Errors.ConflictError(`Workflow file '${file}' is in ${files.join(" and ")}: name it with its folder`);
       inFile = all.filter((f) => f.rel === files[0]);
     }
     if (!inFile.length) throw new Errors.NotFoundError(`No workflow file '${file}' in the designer's workflows`);
     // a file from two places (the workflows folder and a repository) : as two names would be
     if (new Set(inFile.map((f) => f.file)).size > 1) {
-      throw new Errors.ConflictError(`Workflow file '${file}' is in ${[...new Set(inFile.map((f) => f.file))].join(" and ")} : rename one of them`);
+      throw new Errors.ConflictError(`Workflow file '${file}' is in ${[...new Set(inFile.map((f) => f.file))].join(" and ")}: rename one of them`);
     }
     if (inFile.length > 1) {
-      throw new Errors.ConflictError(`Workflow file '${file}' holds ${inFile.length} workflows (${inFile.map((f) => f.workflow.name).join(", ")}) : name the one to run`);
+      throw new Errors.ConflictError(`Workflow file '${file}' holds ${inFile.length} workflows (${inFile.map((f) => f.workflow.name).join(", ")}): name the one to run`);
     }
     return inFile[0];
   }
   const found = all.filter((f) => f.workflow.name === name);
   if (!found.length) throw new Errors.NotFoundError(`No workflow '${name}' in the designer's workflows`);
   if (found.length > 1) {
-    throw new Errors.ConflictError(`Workflow '${name}' is in ${found.map((f) => f.file).join(" and ")} : rename one of them, or name its file`);
+    throw new Errors.ConflictError(`Workflow '${name}' is in ${found.map((f) => f.file).join(" and ")}: rename one of them, or name its file`);
   }
   return found[0];
 }
@@ -422,10 +422,10 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
   let found;
   try {
     const depth = Number(formObj.__workflowDepth) || 0;
-    if (depth >= MAX_DEPTH) throw new Error(`workflows nested ${MAX_DEPTH} deep : a workflow that runs itself, through another ?`);
+    if (depth >= MAX_DEPTH) throw new Error(`workflows nested ${MAX_DEPTH} deep: a workflow that runs itself, through another ?`);
     found = await findWorkflow(formObj.workflow);
     const errors = workflowErrors(found.workflow);
-    if (errors.length) throw new Error(`workflow '${formObj.workflow}' cannot run : ${errors.join(" ; ")}`);
+    if (errors.length) throw new Error(`workflow '${formObj.workflow}' cannot run: ${errors.join(" ; ")}`);
   } catch (e) {
     await end("failed", `[ERROR]: ${e.message}`);
     return;
@@ -477,7 +477,7 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
     waiting = { identifier: node.identifier, since: Date.now(), timeout: node.timeout };
     const approval = {
       title: node.name,
-      message: node.description || `Workflow ${workflow.name} : ${node.name}`,
+      message: node.description || `Workflow ${workflow.name}: ${node.name}`,
       roles: formObj.approval?.roles || [],
       notifications: formObj.approval?.notifications || [],
       // and its channels (Connections > Notifications : Slack, Teams, Telegram, a webhook)
@@ -488,7 +488,7 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
     try {
       await Job.sendApprovalNotification(approval, extravars, jobid);
     } catch (e) {
-      logger.warning(`Workflow job ${jobid} : the approval notification failed : ${e.message}`);
+      logger.warning(`Workflow job ${jobid}: the approval notification failed: ${e.message}`);
     }
   };
   /**
@@ -559,7 +559,7 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
     const own = await artifactsOf(launched.id);
     Object.assign(s.artifacts, own);
     const lines = await outputOf(launched.id);
-    if (Object.keys(own).length) lines.push({ output: `ok: [set_stats passed on : ${Object.keys(own).join(", ")}]`, output_type: "stdout" });
+    if (Object.keys(own).length) lines.push({ output: `ok: [set_stats passed on: ${Object.keys(own).join(", ")}]`, output_type: "stdout" });
     await finish(node, status, lines);
   };
 
@@ -610,7 +610,7 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
         return;
       }
     } catch (e) {
-      logger.error(`Workflow job ${jobid}, node ${node.identifier} : ${e.message}`);
+      logger.error(`Workflow job ${jobid}, node ${node.identifier}: ${e.message}`);
       await finish(node, "failed", [{ output: `[ERROR]: ${e.message}`, output_type: "stderr" }]);
     }
   };
@@ -624,7 +624,7 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
       wfStatus = "canceled";
       // waiting on an approval : it runs again, to end as aborted
       await Job.transitionStatus(jobid, ["approve"], { status: "running", end: null });
-      await print("changed: [aborting the workflow : nothing more starts]", "stderr");
+      await print("changed: [aborting the workflow: nothing more starts]", "stderr");
       // the running jobs : Job.abort aborts a running child ; asked again for one created since
       for (const [identifier] of running) {
         const job = state.get(identifier).job;
@@ -692,11 +692,11 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
   const recap = nodes
     .map((n) => {
       const s = state.get(n.identifier);
-      return `${n.identifier} : ${s.doNotRun ? "do not run" : s.status}`;
+      return `${n.identifier}: ${s.doNotRun ? "do not run" : s.status}`;
     })
     .join(", ");
   await print(`WORKFLOW RECAP ${"*".repeat(64)}`);
   await print(recap);
-  if (failed) await end("failed", `[ERROR]: workflow ${workflow.name} failed : a node failed and nothing handled it`);
+  if (failed) await end("failed", `[ERROR]: workflow ${workflow.name} failed: a node failed and nothing handled it`);
   else await end("success", `ok: [workflow ${workflow.name} successful]`);
 }

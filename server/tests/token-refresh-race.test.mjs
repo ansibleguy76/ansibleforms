@@ -119,14 +119,14 @@ describe("refreshes with the same token at once", () => {
 });
 
 describe("a token used again", () => {
-  test("inside the grace : 409", async () => {
+  test("inside the grace: 409", async () => {
     const token = loginToken();
     await refresh(token);
     db.now += (Token.REPLACED_GRACE_SECONDS - 5) * 1000;
     expect((await refresh(token)).statusCode).toBe(409);
   });
 
-  test("after the grace : 401 as unknown, logged as a warning, not an error", async () => {
+  test("after the grace: 401 as unknown, logged as a warning, not an error", async () => {
     const token = loginToken();
     await refresh(token);
     db.now += (Token.REPLACED_GRACE_SECONDS + 5) * 1000;
@@ -145,7 +145,7 @@ describe("a token used again", () => {
     expect(db.tokens.has(old)).toBe(false);
   });
 
-  test("a token never stored : 401, a warning", async () => {
+  test("a token never stored: 401, a warning", async () => {
     const token = jwt.sign({ user: { username: "bob", type: "local" }, refresh: true, sid: "s1" }, authConfig.secret, { issuer: authConfig.jwtIssuer });
     const r = await refresh(token);
     expect(r.statusCode).toBe(401);

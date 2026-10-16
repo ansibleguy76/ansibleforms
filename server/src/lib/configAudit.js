@@ -213,7 +213,7 @@ async function auditConfigChangeNow({ user, ip, oldYaml, newYaml, source, action
     }
   } catch (e) {
     // auditing must never be the reason a config save fails
-    logger.error(`Failed to audit the config change : ${e.message || e}`);
+    logger.error(`Failed to audit the config change: ${e.message || e}`);
   }
 }
 

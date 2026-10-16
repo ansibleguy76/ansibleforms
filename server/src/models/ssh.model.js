@@ -28,8 +28,8 @@ Ssh.generate = function(force){
   })
   .then((keys)=>{
     logger.warning('SSH Keys created!');
-    logger.debug('private key : '+keys.key);
-    logger.notice('public key : '+keys.pubKey);
+    logger.debug('private key: '+keys.key);
+    logger.notice('public key: '+keys.pubKey);
   })
 }
 
@@ -53,7 +53,7 @@ Ssh.update = function (record) {
       })
       .then((keys)=>{
         logger.notice('Public SSH Key created!');
-        logger.debug('public key : '+keys.pubKey);
+        logger.debug('public key: '+keys.pubKey);
       })
       .catch((err)=>{
         logger.error("Error creating public key "+err)

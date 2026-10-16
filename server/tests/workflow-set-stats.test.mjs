@@ -48,7 +48,7 @@ describe("the artifacts a node gets", () => {
     expect(ancestorArtifacts(nodes, state, "deploy")).toEqual({ version: "1.2", coverage: 91, from: "test" });
   });
 
-  test("not from a parent whose link did not fire : a failure link after a success", () => {
+  test("not from a parent whose link did not fire: a failure link after a success", () => {
     const state = stateOf({ build: { status: "successful", artifacts: { version: "1.2" } } });
     expect(ancestorArtifacts(nodes, state, "notify")).toEqual({});
     state.get("build").status = "failed";
@@ -70,7 +70,7 @@ describe("where they sit in a node's extravars", () => {
     expect(nodeExtravars({}, wf, node, artifacts)).toEqual({ version: "from-workflow", region: "us", note: "node", build_id: 7, env: "prod" });
   });
 
-  test("none : as before", () => {
+  test("none: as before", () => {
     expect(nodeExtravars({ a: 1 }, { extra_vars: {} }, { extra_data: { b: 2 } })).toEqual({ a: 1, b: 2 });
   });
 });
@@ -94,7 +94,7 @@ describe("the RTE's artifacts plugin", () => {
     fs.unlinkSync(path.join(tmp, "ansible.cfg"));
   });
 
-  test("an ansible.cfg that names none : ansible's own folders after the plugin's", () => {
+  test("an ansible.cfg that names none: ansible's own folders after the plugin's", () => {
     fs.writeFileSync(path.join(tmp, "ansible.cfg"), "[defaults]\ncallback_result_format = yaml\n");
     const env = artifactsEnv({ HOME: tmp }, tmp, "/tmp/a.json");
     expect(env.ANSIBLE_CALLBACK_PLUGINS.split(":").slice(1)).toEqual(["~/.ansible/plugins/callback", "/usr/share/ansible/plugins/callback"]);

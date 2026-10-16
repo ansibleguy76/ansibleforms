@@ -13,7 +13,7 @@ describe("the single sign-on providers in index.html", () => {
     assert.match(out, /<meta name="af-sso" content="azuread,oidc" \/>\n<\/head>/);
   });
 
-  test("none on : the tag says so, empty", () => {
+  test("none on: the tag says so, empty", () => {
     assert.match(injectSsoProviders(html, []), /<meta name="af-sso" content="" \/>/);
   });
 
@@ -30,7 +30,7 @@ describe("the single sign-on providers in index.html", () => {
     assert.doesNotMatch(out, /script/);
   });
 
-  test("not readable (null) : the page is left without the tag", () => {
+  test("not readable (null): the page is left without the tag", () => {
     assert.equal(injectSsoProviders(html, null), html);
   });
 
@@ -45,7 +45,7 @@ describe("the single sign-on providers in index.html", () => {
     assert.deepEqual(await enabledSsoProviders(models(0, 0)), []);
   });
 
-  test("a model that fails : the read fails, and the caller leaves the tag out", async () => {
+  test("a model that fails: the read fails, and the caller leaves the tag out", async () => {
     const models = { EntraId: { isEnabled: async () => { throw new Error("db down"); } }, OIDC: { isEnabled: async () => ({ enable: 1 }) } };
     const providers = await enabledSsoProviders(models).catch(() => null);
     assert.equal(injectSsoProviders(html, providers), html);

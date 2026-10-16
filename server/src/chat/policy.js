@@ -55,7 +55,7 @@ export function checkOperatorSlots(operatorSlots, answers, text, selections) {
     if (value === undefined || value === null || value === '') continue;
     for (const item of [].concat(value)) {
       const s = typeof item === 'object' && item !== null ? (item.name ?? item.value ?? JSON.stringify(item)) : String(item);
-      if (s === '__auto__') return { code: 'auto_rejected', message: `'${slot}' cannot be __auto__ : offer the choices`, slot };
+      if (s === '__auto__') return { code: 'auto_rejected', message: `'${slot}' cannot be __auto__: offer the choices`, slot };
       if (s === '__all__' && /\ball\b/.test(text)) continue;
       if (selections?.has(`${slot}\u0000${s.toLowerCase()}`) || typedByOperator(s, text)) continue;
       return { code: 'operator_choice_required', message: `Choose ${slot} from the options, or type the value yourself`, slot };

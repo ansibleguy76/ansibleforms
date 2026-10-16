@@ -42,7 +42,7 @@ describe("the output batcher", () => {
     expect(rows.length).toBe(1);
   });
 
-  test("past the limit : what fits, one warning, nothing more - per stream", async () => {
+  test("past the limit: what fits, one warning, nothing more - per stream", async () => {
     const { b, rows } = batcher(10);
     b.add("stdout", "0123456789ABC");
     b.add("stdout", "never");

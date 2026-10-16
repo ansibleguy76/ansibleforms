@@ -28,7 +28,7 @@ export default {
     refreshTokenReplaced: "Refresh token został już użyty przez równoczesne odświeżenie",
     apiTokenFromApiToken: "Token API nie może utworzyć innego tokenu API",
     apiTokenNotAllowed: "Twoja rola nie pozwala na tokeny API",
-    apiTokenSignInAgain: "Zaloguj się ponownie, aby utworzyć token API : ostatnie logowanie było zbyt dawno",
+    apiTokenSignInAgain: "Zaloguj się ponownie, aby utworzyć token API: ostatnie logowanie było zbyt dawno",
     apiTokenLifetime: "Czas ważności musi być liczbą dni, najwyżej {max}",
     apiTokenFailed: "Nie udało się utworzyć tokenu API",
     apiTokensFailed: "Nie udało się odczytać ani zmienić tokenów API",
@@ -41,9 +41,9 @@ export default {
     authFailed: "Uwierzytelnianie nie powiodło się",
     invalidCredentials: "Nieprawidłowe dane logowania",
     tooManyFailures:
-      "Zbyt wiele nieudanych logowań : spróbuj ponownie za {minutes} min",
+      "Zbyt wiele nieudanych logowań: spróbuj ponownie za {minutes} min",
     passwordChangeRequired:
-      "Najpierw zmień hasło : to publicznie znane hasło domyślne",
+      "Najpierw zmień hasło: to publicznie znane hasło domyślne",
     disclaimerRequired: "Najpierw zaakceptuj zastrzeżenie",
     disclaimerAccepted: "Zastrzeżenie zostało zaakceptowane",
     loginDisabled:
@@ -108,7 +108,7 @@ export default {
     runnerAdded: "Dodano runner",
     runnerNotFound: "Nie znaleziono runnera",
     runnerAdminOnly:
-      "Tylko admin może dodać, zmienić lub usunąć runner : runner otrzymuje poświadczenia zadań, które uruchamia",
+      "Tylko admin może dodać, zmienić lub usunąć runner: runner otrzymuje poświadczenia zadań, które uruchamia",
     defaultPasswordRefused: "Wybierz inne hasło niż publiczne hasło domyślne",
     passwordTooShort: "Hasło musi mieć co najmniej {min} znaków",
     passwordIsUsername: "Hasło nie może być nazwą użytkownika",
@@ -158,7 +158,7 @@ export default {
     failedFindLdap: "Nie udało się znaleźć LDAP",
     ldapCheckFailed: "Sprawdzenie LDAP nie powiodło się",
     storedPasswordOtherServer:
-      "Zapisane hasło jest używane tylko dla zapisanego serwera : wpisz hasło, aby sprawdzić inny",
+      "Zapisane hasło jest używane tylko dla zapisanego serwera: wpisz hasło, aby sprawdzić inny",
     ldapUpdated: "Zaktualizowano LDAP",
     failedUpdateLdap: "Nie udało się zaktualizować LDAP",
     ldapCreated: "Dodano katalog LDAP",
@@ -280,10 +280,10 @@ export default {
   },
   // what a notification channel (Connections > Notifications) says : a test, a job's end
   notifications: {
-    testText: "Powiadomienie testowe od {who} : kanał '{name}' je otrzymuje.",
+    testText: "Powiadomienie testowe od {who}: kanał '{name}' je otrzymuje.",
     testSent: "Powiadomienie testowe wysłane do {name}",
     testFailed: "Powiadomienie testowe nie powiodło się",
-    statusText: "Zadanie {jobid} formularza '{form}' zakończyło się : {status}.",
+    statusText: "Zadanie {jobid} formularza '{form}' zakończyło się: {status}.",
     openJob: "Otwórz zadanie",
   },
 };

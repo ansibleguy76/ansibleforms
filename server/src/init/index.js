@@ -93,7 +93,7 @@ const initOnce = async function({ boot = false } = {}){
   if(appConfig.allowSchemaCreation){
     try{
       if(await Schema.isEmpty()){
-        logger.notice("The database holds no AnsibleForms tables : creating the schema")
+        logger.notice("The database holds no AnsibleForms tables: creating the schema")
         // asked again under the schema lock : POST /api/v2/schema on an app node may be
         // creating it at this very moment
         await Schema.createTables({ onlyIf: () => Schema.isEmpty() })
@@ -101,7 +101,7 @@ const initOnce = async function({ boot = false } = {}){
     }catch(err){
       // not fatal : hasSchema() below reports what is missing, and the /schema
       // endpoint is still there as the manual route
-      logger.error("Failed to create the schema automatically : " + (err.message || err))
+      logger.error("Failed to create the schema automatically: " + (err.message || err))
     }
   }
 
@@ -136,7 +136,7 @@ const initOnce = async function({ boot = false } = {}){
         }
       }
     }else{
-      logger.error("Fatal error : " + err)
+      logger.error("Fatal error: " + err)
       throw err
     }
     // Schema is missing - stop initialization here
@@ -163,7 +163,7 @@ const initOnce = async function({ boot = false } = {}){
         logger.info(`Found admins group with id ${adminGroupId}`)
       }
     }catch(err){
-      logger.error("Failed to check/create admins group : " + err)
+      logger.error("Failed to check/create admins group: " + err)
     }
 
     // check admin user
@@ -191,7 +191,7 @@ const initOnce = async function({ boot = false } = {}){
         logger.info(`Admin user ${adminUsername} already exists`)
       }
     }catch(err){
-      logger.error("Failed to check/create admin user : " + err)
+      logger.error("Failed to check/create admin user: " + err)
     }
   }
 
@@ -215,7 +215,7 @@ const initOnce = async function({ boot = false } = {}){
         await mysql.do(sql,values)
       }
     }catch(err){
-      logger.error(`Failed to check/create ${record} : ` + err)
+      logger.error(`Failed to check/create ${record}: ` + err)
     }
   }
 
@@ -228,7 +228,7 @@ const initOnce = async function({ boot = false } = {}){
       await Settings.setLogo(DEFAULT_LOGO)
     }
   }catch(err){
-    logger.error("Failed to check/seed the default logo : " + err)
+    logger.error("Failed to check/seed the default logo: " + err)
   }
 
   logger.info("All database records are checked")
@@ -246,7 +246,7 @@ const initOnce = async function({ boot = false } = {}){
   logger.info("Checking ssh keys")
   Ssh.generate(false)
     .catch((err)=>{
-      logger.warning("Failed to generate ssh keys : " + err)
+      logger.warning("Failed to generate ssh keys: " + err)
     })
 
   const startBackground = !backgroundStarted
@@ -267,7 +267,7 @@ const initOnce = async function({ boot = false } = {}){
     // the ones still running on their runner (an AWX template) are followed again (#1084)
     .then(()=>resumeAbandoned(nodeId))
     .catch((err)=>{
-      logger.error("Failed to abandon jobs : " + err)
+      logger.error("Failed to abandon jobs: " + err)
     })
 
     logger.info("Checking stale repository claims")
@@ -279,7 +279,7 @@ const initOnce = async function({ boot = false } = {}){
       const reset = await Repository.releaseStaleClaims({ atStart: true })
       if(reset) logger.warning(`Released ${reset} stale repository claim(s)`)
     } catch(err) {
-      logger.error("Failed to release stale repository claims : " + err)
+      logger.error("Failed to release stale repository claims: " + err)
     }
   }
 
@@ -304,20 +304,20 @@ const initOnce = async function({ boot = false } = {}){
     try{
       await importVaultFromEnvOnce()
     }catch(err){
-      logger.error("Could not import the VAULT_* environment variables : " + (err.message || err))
+      logger.error("Could not import the VAULT_* environment variables: " + (err.message || err))
     }
     // the LOG_SYSLOG_* variables of before 7 become the syslog server `syslog`, once
     try{
       await importSyslogFromEnvOnce()
     }catch(err){
-      logger.error("Could not import the LOG_SYSLOG_* environment variables : " + (err.message || err))
+      logger.error("Could not import the LOG_SYSLOG_* environment variables: " + (err.message || err))
     }
   }
 
   try {
     await applyConfigSeed({ schemaIsReady })
   } catch (err) {
-    await refuseToStart("Config seed failed, refusing to start : " + (err.message || err))
+    await refuseToStart("Config seed failed, refusing to start: " + (err.message || err))
   }
 
   if(!startBackground){
@@ -369,7 +369,7 @@ const initOnce = async function({ boot = false } = {}){
         try{
           await Schedule.launch(schedule.id)
         }catch(e){
-          logger.error(`Failed to launch schedule '${schedule.name}' : ` + e)
+          logger.error(`Failed to launch schedule '${schedule.name}': ` + e)
         }
       }
     }catch(e){
@@ -385,7 +385,7 @@ const initOnce = async function({ boot = false } = {}){
   // scheduled run (the expired stored jobs are swept by the system task at 4:00, cron.service.js)
   Schedule.releaseStale({ atStart: true })
     .then((released) => { if (released) logger.warning(`Released ${released} schedule(s) left at 'running' by a previous run`) })
-    .catch((e) => logger.error("Failed to release stale running schedules : " + e))
+    .catch((e) => logger.error("Failed to release stale running schedules: " + e))
     .finally(() => setTimeout(checkSchedules,10000))
 
   return schemaIsReady

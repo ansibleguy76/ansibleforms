@@ -37,7 +37,7 @@ describe("the role every user has", () => {
     expect(isEveryoneRole("ops")).toBe(false);
   });
 
-  test("its options are the defaults : they fill what the user's roles leave open", async () => {
+  test("its options are the defaults: they fill what the user's roles leave open", async () => {
     const nobody = await User.getRolesAndOptions([], user);
     expect(nobody.options.allowLogin).toBe(false);
     expect(nobody.options.allowChat).toBe(false);
@@ -73,11 +73,11 @@ describe("the config", () => {
     expect(() => Form.assertRequiredRoles({ roles: [admin] })).toThrow(/default cannot be deleted/);
   });
 
-  test("not both : they are one role", () => {
+  test("not both: they are one role", () => {
     expect(() => Form.assertRequiredRoles({ roles: [admin, { name: "default", groups: [] }, { name: "public", groups: [] }] })).toThrow(/keep one, 'default'/);
   });
 
-  test("a role named default may not have groups or users : it would apply to everyone", () => {
+  test("a role named default may not have groups or users: it would apply to everyone", () => {
     expect(() => Form.validateConfig(base([admin, { name: "default", groups: [] }]))).not.toThrow();
     expect(() => Form.validateConfig(base([admin, { name: "default", groups: ["local/ops"] }]))).toThrow();
     expect(() => Form.validateConfig(base([admin, { name: "default", groups: [], users: ["local/bob"] }]))).toThrow();
@@ -88,13 +88,13 @@ describe("the config", () => {
 // A config from before 7 has its `public` role renamed `default` in the file when it loads : only
 // the name changes, its comments and options stay as written.
 describe("an old config's public role is renamed default", () => {
-  test("only the name changes : comments, options and the other roles stay", () => {
+  test("only the name changes: comments, options and the other roles stay", () => {
     const text = "# the roles\nroles:\n  - name: admin\n    groups: [local/admins]\n  # everyone's\n  - name: public # was public\n    groups: []\n    options:\n      allowChat: false\n";
     const out = renameLegacyRole(text);
     expect(out).toBe("# the roles\nroles:\n  - name: admin\n    groups: [local/admins]\n  # everyone's\n  - name: default # was public\n    groups: []\n    options:\n      allowChat: false\n");
   });
 
-  test("nothing to rename : no public role, a default one already, no roles, or no YAML", () => {
+  test("nothing to rename: no public role, a default one already, no roles, or no YAML", () => {
     expect(renameLegacyRole("roles:\n  - name: admin\n  - name: default\n")).toBe(null);
     expect(renameLegacyRole("roles:\n  - name: default\n  - name: public\n")).toBe(null);
     expect(renameLegacyRole("forms:\n  - name: public\n")).toBe(null);

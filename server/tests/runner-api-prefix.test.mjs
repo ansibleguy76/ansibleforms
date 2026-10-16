@@ -40,13 +40,13 @@ describe("apiPrefix", () => {
 const { serverOf } = await import("../src/runners/awx/api.js");
 
 describe("serverOf", () => {
-  test("a uri with its API path : the server only, what AWX's links are added to", () => {
+  test("a uri with its API path: the server only, what AWX's links are added to", () => {
     assert.equal(serverOf({ uri: "https://aap.example.com/api/controller/v2" }), "https://aap.example.com");
     assert.equal(serverOf({ uri: "https://ci.example.com/tower/api/v2" }), "https://ci.example.com");
     assert.equal(serverOf({ uri: "https://awx.example.com:8043/api/v2" }), "https://awx.example.com:8043");
   });
 
-  test("a uri without one : as it is, as before", () => {
+  test("a uri without one: as it is, as before", () => {
     assert.equal(serverOf({ uri: "https://awx.example.com" }), "https://awx.example.com");
     assert.equal(serverOf({ uri: "https://awx.example.com/tower" }), "https://awx.example.com/tower");
   });

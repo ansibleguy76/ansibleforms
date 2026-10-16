@@ -189,15 +189,15 @@ describe("a template on Semaphore", () => {
 
   test("an inventory or a limit the template does not allow is refused, not silently ignored", { timeout: 20000 }, async () => {
     await assert.rejects(run({ __template__: "strict", __inventory__: "prod" }), (e) => e.jobEnded === true);
-    assert.match(text(), /template strict does not allow another inventory : switch on "Allow override inventory"/);
+    assert.match(text(), /template strict does not allow another inventory: switch on "Allow override inventory"/);
     jobRow = { id: 5, status: "running" };
     outputs = [];
     await assert.rejects(run({ __template__: "strict", __limit__: "web1" }), (e) => e.jobEnded === true);
-    assert.match(text(), /template strict does not allow a limit : switch on "Allow override limit"/);
+    assert.match(text(), /template strict does not allow a limit: switch on "Allow override limit"/);
     assert.equal(launched(), undefined, "the playbook never ran on hosts the form did not ask for");
   });
 
-  test("verbose the template does not allow : a warning, and the job runs", { timeout: 20000 }, async () => {
+  test("verbose the template does not allow: a warning, and the job runs", { timeout: 20000 }, async () => {
     await run({ __template__: "strict", __verbose__: true });
     assert.equal(launched().body.debug, undefined);
     assert.match(text(), /\[WARNING\]: template strict does not allow debug/);
@@ -252,14 +252,14 @@ describe("a template on Semaphore", () => {
     await assert.rejects(run({ __template__: "nope" }), (e) => e.jobEnded === true);
     assert.equal(jobRow.status, "failed");
     assert.equal(launched(), undefined);
-    assert.match(text(), /\[ERROR\]: Failed to launch template nope : No template 'nope' in Semaphore project 7/);
+    assert.match(text(), /\[ERROR\]: Failed to launch template nope: No template 'nope' in Semaphore project 7/);
   });
 
   test("a launch Semaphore refuses fails the job with its reason", { timeout: 20000 }, async () => {
     refuseLaunch = true;
     await assert.rejects(run({}), (e) => e.jobEnded === true);
     assert.equal(jobRow.status, "failed");
-    assert.match(text(), /answered 400 : Template has no inventory/);
+    assert.match(text(), /answered 400: Template has no inventory/);
   });
 
   test("a status read that fails is retried, not the end of the job", { timeout: 20000 }, async () => {

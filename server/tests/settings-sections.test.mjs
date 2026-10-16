@@ -8,7 +8,7 @@ import {
 const req = (options) => ({ user: { user: { username: "u", type: "local", options } } });
 
 describe("settings sections", () => {
-  test("showSettings : every part, every field, every variable", () => {
+  test("showSettings: every part, every field, every variable", () => {
     const r = req({ showSettings: true });
     expect(hasAllSettings(r)).toBe(true);
     expect(maySection(r, "appearance")).toBe(true);
@@ -18,7 +18,7 @@ describe("settings sections", () => {
     expect(mayEnvVar(r, "ENTRA_AUTHORITY_URI")).toBe(true);
   });
 
-  test("appearance on its own : its fields and variables, never the mail, the url or sign-in", () => {
+  test("appearance on its own: its fields and variables, never the mail, the url or sign-in", () => {
     const r = req({ showAppearanceSettings: true });
     expect(maySection(r, "appearance")).toBe(true);
     expect(maySection(r, "connections")).toBe(false);
@@ -29,7 +29,7 @@ describe("settings sections", () => {
     expect(mayEnvVar(r, "ENABLE_CHAT")).toBe(false);
   });
 
-  test("connections on its own : reads the url, changes no row field, its variables only", () => {
+  test("connections on its own: reads the url, changes no row field, its variables only", () => {
     const r = req({ showConnectionsSettings: true });
     expect(maySection(r, "connections")).toBe(true);
     expect(maySection(r, "appearance")).toBe(false);
@@ -40,7 +40,7 @@ describe("settings sections", () => {
     expect(mayEnvVar(r, "SHOW_DESIGNER")).toBe(false);
   });
 
-  test("no part : nothing", () => {
+  test("no part: nothing", () => {
     const r = req({ showLogs: true });
     expect(anySection(r)).toBe(false);
     expect(maySection(r, "appearance")).toBe(false);

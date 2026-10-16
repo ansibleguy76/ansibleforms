@@ -64,7 +64,7 @@ const test = async (req, res) => {
     const server = await SyslogServer.findById(req.params.id);
     if (!server) throw new Errors.NotFoundError(`No syslog server with id ${req.params.id}`);
     const who = req.user?.user?.username || "someone";
-    await sendTestLine(server, `AnsibleForms test message from ${who} : the syslog server '${server.name}' receives it`);
+    await sendTestLine(server, `AnsibleForms test message from ${who}: the syslog server '${server.name}' receives it`);
     const where = server.protocol?.startsWith("unix") ? server.path : `${server.host}:${server.port || 514}`;
     return res.json(RestResult.single({ message: i18n.t(req, "resources.syslogSent", { where }) }));
   } catch (err) {

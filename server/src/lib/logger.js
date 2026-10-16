@@ -229,7 +229,7 @@ export function rebuildFileTransports() {
     errorsT = make('/ansibleforms.errors.%DATE%.log', 'error', formatNoColor);
     mainT = make('/ansibleforms.%DATE%.log', loggerConfig.level, formatColor);
   } catch (e) {
-    Logger.warning(`Could not apply the new log path, keeping the previous one : ${e.message}`);
+    Logger.warning(`Could not apply the new log path, keeping the previous one: ${e.message}`);
     return false;
   }
   for (const t of [errorsT, mainT]) {
@@ -280,7 +280,7 @@ export function rebuildSyslogTransport() {
       level: loggerConfig.sysloglevel,
     }));
   } catch (e) {
-    Logger.warning(`Could not apply the new syslog settings, keeping the previous ones : ${e.message}`);
+    Logger.warning(`Could not apply the new syslog settings, keeping the previous ones: ${e.message}`);
     return false;
   }
   if (existing) {
@@ -339,7 +339,7 @@ export function syslogTransportFor(server, level, format = formatNoColor) {
   }));
   // a server that cannot be reached must never take the process down : said on the console
   // (not through the logger, which would send it to the same server again)
-  transport.on?.('error', (error) => console.error(`Syslog server '${server.name}' : ${error?.message || error}`));
+  transport.on?.('error', (error) => console.error(`Syslog server '${server.name}': ${error?.message || error}`));
   return transport;
 }
 
@@ -412,7 +412,7 @@ export function sendAuditLine(entry) {
   try {
     auditLogger.log('notice', `audit ${JSON.stringify(entry)}`);
   } catch (e) {
-    console.error(`Could not send an audit entry to syslog : ${e.message || e}`);
+    console.error(`Could not send an audit entry to syslog: ${e.message || e}`);
   }
 }
 

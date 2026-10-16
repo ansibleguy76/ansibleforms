@@ -410,7 +410,7 @@ export default {
     confirmPassword: 'Bevestig nieuw wachtwoord',
     mismatch: 'De nieuwe wachtwoorden komen niet overeen.',
     changed: 'Je wachtwoord is gewijzigd.',
-    changedSignIn: 'Uw wachtwoord is gewijzigd : meld u opnieuw aan met het nieuwe',
+    changedSignIn: 'Uw wachtwoord is gewijzigd: meld u opnieuw aan met het nieuwe',
     changeFailed: 'Het wachtwoord kon niet worden gewijzigd',
     change: 'Wachtwoord wijzigen',
     elsewhere: 'Je meldt je aan via {type}, dus je wachtwoord wordt daar beheerd en kan hier niet worden gewijzigd.',
@@ -2177,7 +2177,7 @@ export default {
       workflowPathHelp:
         'Het bestand van de workflow in de workflows-map, met submappen (deploy.yml, team/deploy.yml). Een formulier start hem met dit bestand, zoals het een playbook noemt.',
       sharedWorkflowNames:
-        'Een workflow met de naam {names} staat ook in een ander bestand : een formulier dat hem bij zijn naam start, stopt. Hernoem hem, of noem zijn bestand in het formulier.',
+        'Een workflow met de naam {names} staat ook in een ander bestand: een formulier dat hem bij zijn naam start, stopt. Hernoem hem, of noem zijn bestand in het formulier.',
       folderHelp: 'Het pad van de map; hij blijft zodra er een bestand in is opgeslagen.',
       create: 'Aanmaken',
       deleteConfirm: 'Weet je zeker dat je wilt verwijderen',
@@ -2210,7 +2210,7 @@ export default {
     previewForm: 'Formulier bekijken',
     previewHint: 'Het formulier zoals het nu is, niet-opgeslagen wijzigingen inbegrepen. Verzenden start niets.',
     previewRefresh: 'Voorbeeld vernieuwen',
-    previewNotRun: 'Dit is een voorbeeld : het formulier is niet uitgevoerd',
+    previewNotRun: 'Dit is een voorbeeld: het formulier is niet uitgevoerd',
     visual: 'Visueel',
     runnerDefault: 'Standaard runner van zijn type',
     helpIcon: 'Getoond op zijn tegel en in de formulierenlijst.',
@@ -2354,7 +2354,7 @@ export default {
     visualValuesHelp: 'Een YAML-lijst: één waarde per regel (- dev), of objecten (- name: Rome).',
     visualNotANumber: 'geen getal',
     visualDeleteField: 'Veld verwijderen',
-    visualYamlError: 'De YAML kan hier niet worden getoond : corrigeer hem in het tabblad YAML',
+    visualYamlError: 'De YAML kan hier niet worden getoond: corrigeer hem in het tabblad YAML',
     visualNotAList: 'geen lijst',
     visualNotAMap: 'geen map',
     menuPreviewHint:

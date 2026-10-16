@@ -62,7 +62,7 @@ export async function addRunnerJobLinks(job, deps = {}) {
   try {
     runner = await runners.findByName(job.runner);
   } catch (e) {
-    logger.warning(`Job ${job.id} : runner '${job.runner}' could not be read for its links : ${e.message || e}`);
+    logger.warning(`Job ${job.id}: runner '${job.runner}' could not be read for its links: ${e.message || e}`);
     return job;
   }
   if (runner?.type !== "awx") return job;

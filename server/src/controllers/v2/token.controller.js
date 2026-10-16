@@ -38,7 +38,7 @@ const refresh = async function(req, res) {
         try {
             jwtPayload = jwt.verify(refreshtoken, authConfig.secret, { issuer: authConfig.jwtIssuer });
         } catch (e) {
-            logger.error(`Refresh token rejected : ${e.message}`);
+            logger.error(`Refresh token rejected: ${e.message}`);
             return res.status(401).json(RestResult.error(i18n.t(req, 'errors.invalidRefreshToken')));
         }
 
@@ -52,7 +52,7 @@ const refresh = async function(req, res) {
 
         // its session logged out, or its user changed the password since : no new tokens
         if (await isRevoked(jwtPayload)) {
-            logger.warning(`Refresh refused for ${username} : the session was ended`);
+            logger.warning(`Refresh refused for ${username}: the session was ended`);
             await Token.delete(username, username_type, refreshtoken).catch(() => {});
             return res.status(401).json(RestResult.error(i18n.t(req, 'errors.invalidRefreshToken')));
         }
@@ -61,7 +61,7 @@ const refresh = async function(req, res) {
         if (state === 'replaced') return alreadyRefreshed(req, res, username, username_type);
         if (state !== 'valid') {
             // a reuse after the grace, or a token logged out : a fault of the client, not of the server
-            logger.warning(`Refresh refused for ${username} (${username_type}) : the refresh token is unknown, or was already used more than ${Token.REPLACED_GRACE_SECONDS}s ago`);
+            logger.warning(`Refresh refused for ${username} (${username_type}): the refresh token is unknown, or was already used more than ${Token.REPLACED_GRACE_SECONDS}s ago`);
             return res.status(401).json(RestResult.error(i18n.t(req, 'errors.refreshTokenUnknown')));
         }
         
@@ -94,7 +94,7 @@ const refresh = async function(req, res) {
             // the requests of the new access token read them again
             forgetGroups(body.type, body.username);
         } catch (e) {
-            logger.error(`Could not re-resolve roles on refresh for ${username} : ${e.message}`);
+            logger.error(`Could not re-resolve roles on refresh for ${username}: ${e.message}`);
             return res.status(401).json(RestResult.error(i18n.t(req, 'errors.refreshTokenUnknown')));
         }
 
@@ -119,7 +119,7 @@ const refresh = async function(req, res) {
         res.json(RestResult.single({ token, refreshtoken: newRefreshtoken }));
         
     } catch(err) {
-        logger.error(`Error : ${err.toString()}`);
+        logger.error(`Error: ${err.toString()}`);
         res.status(401).json(RestResult.error(i18n.t(req, 'errors.refreshTokenUnknown')));
     }
 };

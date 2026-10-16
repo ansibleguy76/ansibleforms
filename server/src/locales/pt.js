@@ -26,7 +26,7 @@ export default {
     refreshTokenReplaced: "O refresh token já foi usado por uma renovação simultânea",
     apiTokenFromApiToken: "Um token de API não pode criar outro token de API",
     apiTokenNotAllowed: "A sua função não permite tokens de API",
-    apiTokenSignInAgain: "Inicie sessão novamente para criar um token de API : o seu último início de sessão é demasiado antigo",
+    apiTokenSignInAgain: "Inicie sessão novamente para criar um token de API: o seu último início de sessão é demasiado antigo",
     apiTokenLifetime: "A duração deve ser um número de dias, no máximo {max}",
     apiTokenFailed: "Não foi possível criar o token de API",
     apiTokensFailed: "Não foi possível ler ou alterar os tokens de API",
@@ -38,9 +38,9 @@ export default {
     authFailed: "A autenticação falhou",
     invalidCredentials: "Credenciais inválidas",
     tooManyFailures:
-      "Demasiados inícios de sessão falhados : tente novamente dentro de {minutes} minuto(s)",
+      "Demasiados inícios de sessão falhados: tente novamente dentro de {minutes} minuto(s)",
     passwordChangeRequired:
-      "Altere primeiro a sua palavra-passe : é a palavra-passe predefinida pública",
+      "Altere primeiro a sua palavra-passe: é a palavra-passe predefinida pública",
     disclaimerRequired: "Aceite primeiro o aviso legal",
     disclaimerAccepted: "O aviso legal foi aceite",
     loginDisabled:
@@ -102,7 +102,7 @@ export default {
     runnerAdded: "Runner adicionado",
     runnerNotFound: "Runner não encontrado",
     runnerAdminOnly:
-      "Só um admin pode adicionar, alterar ou eliminar um runner : um runner recebe as credenciais dos trabalhos que executa",
+      "Só um admin pode adicionar, alterar ou eliminar um runner: um runner recebe as credenciais dos trabalhos que executa",
     defaultPasswordRefused:
       "Escolha outra palavra-passe que não a predefinida pública",
     passwordTooShort: "A palavra-passe precisa de pelo menos {min} caracteres",
@@ -155,7 +155,7 @@ export default {
     failedFindLdap: "Falha ao encontrar o LDAP",
     ldapCheckFailed: "A verificação LDAP falhou",
     storedPasswordOtherServer:
-      "A palavra-passe guardada só é usada com o servidor guardado : escreva a palavra-passe para verificar outro",
+      "A palavra-passe guardada só é usada com o servidor guardado: escreva a palavra-passe para verificar outro",
     ldapUpdated: "LDAP atualizado",
     failedUpdateLdap: "Falha ao atualizar o LDAP",
     ldapCreated: "Diretório LDAP adicionado",
@@ -275,10 +275,10 @@ export default {
   },
   // what a notification channel (Connections > Notifications) says : a test, a job's end
   notifications: {
-    testText: "Uma notificação de teste de {who} : o canal '{name}' recebe-a.",
+    testText: "Uma notificação de teste de {who}: o canal '{name}' recebe-a.",
     testSent: "Notificação de teste enviada para {name}",
     testFailed: "A notificação de teste falhou",
-    statusText: "O job {jobid} do formulário '{form}' terminou : {status}.",
+    statusText: "O job {jobid} do formulário '{form}' terminou: {status}.",
     openJob: "Abrir o job",
   },
 };

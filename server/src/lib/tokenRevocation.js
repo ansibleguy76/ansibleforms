@@ -71,7 +71,7 @@ async function load() {
     sessions = s;
     users = u;
   } catch (err) {
-    logger.debug(`Could not read the token revocations : ${err.message || err}`);
+    logger.debug(`Could not read the token revocations: ${err.message || err}`);
   }
 }
 
@@ -86,7 +86,7 @@ async function subscribe() {
       return loaded;
     });
   } catch (err) {
-    logger.debug(`Could not follow the token revocations : ${err.message || err}`);
+    logger.debug(`Could not follow the token revocations: ${err.message || err}`);
   }
 }
 

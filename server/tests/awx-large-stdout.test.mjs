@@ -136,8 +136,8 @@ test("recognizes AWX's placeholder, and only it", () => {
 
 test("the stdout is read as a download, never in the display format", { timeout: 30000 }, async () => {
   await Awx.trackJob(runner, job(), 1, 0);
-  assert.ok(awx.requests.length >= awx.polls, `requests : ${awx.requests}`);
-  assert.ok(awx.requests.every((f) => f == "txt_download"), `requests : ${awx.requests}`);
+  assert.ok(awx.requests.length >= awx.polls, `requests: ${awx.requests}`);
+  assert.ok(awx.requests.every((f) => f == "txt_download"), `requests: ${awx.requests}`);
   assert.equal(jobRow.status, "success");
 });
 

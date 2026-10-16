@@ -58,7 +58,7 @@ export async function workflowNodeData(job, nodeId, deps = {}) {
   }
   // an AWX workflow : asked to the runner the job ran on
   const runner = job.runner ? await runners.findByName(job.runner) : null;
-  if (!runner) throw new Errors.NotFoundError(`The runner '${job.runner || ""}' this job ran on is gone : its nodes cannot be read`);
+  if (!runner) throw new Errors.NotFoundError(`The runner '${job.runner || ""}' this job ran on is gone: its nodes cannot be read`);
   const data = await awx.getNodeJobData(runner, node);
   return { ...out, ...data, extravars: await masked(data.extravars) };
 }

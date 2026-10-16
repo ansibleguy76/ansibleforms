@@ -42,7 +42,7 @@ test("a blocked directory user is refused, and not recorded", async () => {
   expect(state.recorded).toEqual([]);
 });
 
-test("a local user is checked on its own row : a directory block of its name is not its", async () => {
+test("a local user is checked on its own row: a directory block of its name is not its", async () => {
   state.directoryBlocked = true;
   expect(await admitSignIn({ type: "local", username: "jsmith" })).toBe(true);
   state.localBlocked = true;

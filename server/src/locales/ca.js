@@ -26,7 +26,7 @@ export default {
     refreshTokenReplaced: "El token de refresc ja l'ha fet servir una altra renovació simultània",
     apiTokenFromApiToken: "Un token d'API no pot crear un altre token d'API",
     apiTokenNotAllowed: "El teu rol no permet tokens d'API",
-    apiTokenSignInAgain: "Torna a iniciar sessió per crear un token d'API : el teu últim inici de sessió és massa antic",
+    apiTokenSignInAgain: "Torna a iniciar sessió per crear un token d'API: el teu últim inici de sessió és massa antic",
     apiTokenLifetime: "La durada ha de ser un nombre de dies, com a màxim {max}",
     apiTokenFailed: "No s'ha pogut crear el token d'API",
     apiTokensFailed: "No s'han pogut llegir o canviar els tokens d'API",
@@ -38,9 +38,9 @@ export default {
     authFailed: "L'autenticació ha fallat",
     invalidCredentials: "Les credencials no són vàlides",
     tooManyFailures:
-      "Massa inicis de sessió fallits : torneu-ho a provar d'aquí a {minutes} minut(s)",
+      "Massa inicis de sessió fallits: torneu-ho a provar d'aquí a {minutes} minut(s)",
     passwordChangeRequired:
-      "Canvieu primer la contrasenya : és la contrasenya per defecte, pública",
+      "Canvieu primer la contrasenya: és la contrasenya per defecte, pública",
     disclaimerRequired: "Primer accepta l'avís legal",
     disclaimerAccepted: "L'avís legal s'ha acceptat",
     loginDisabled:
@@ -105,7 +105,7 @@ export default {
     runnerAdded: "Runner afegit",
     runnerNotFound: "No s'ha trobat el runner",
     runnerAdminOnly:
-      "Només un admin pot afegir, canviar o eliminar un runner : un runner rep les credencials dels treballs que executa",
+      "Només un admin pot afegir, canviar o eliminar un runner: un runner rep les credencials dels treballs que executa",
     defaultPasswordRefused:
       "Trieu una altra contrasenya que no sigui la pública per defecte",
     passwordTooShort: "La contrasenya necessita almenys {min} caràcters",
@@ -158,7 +158,7 @@ export default {
     failedFindLdap: "No s'ha pogut trobar l'LDAP",
     ldapCheckFailed: "La comprovació de l'LDAP ha fallat",
     storedPasswordOtherServer:
-      "La contrasenya desada només s'utilitza amb el servidor desat : escriviu la contrasenya per comprovar-ne un altre",
+      "La contrasenya desada només s'utilitza amb el servidor desat: escriviu la contrasenya per comprovar-ne un altre",
     ldapUpdated: "LDAP actualitzat",
     failedUpdateLdap: "No s'ha pogut actualitzar l'LDAP",
     ldapCreated: "Directori LDAP afegit",
@@ -280,10 +280,10 @@ export default {
   },
   // what a notification channel (Connections > Notifications) says : a test, a job's end
   notifications: {
-    testText: "Una notificació de prova de {who} : el canal '{name}' la rep.",
+    testText: "Una notificació de prova de {who}: el canal '{name}' la rep.",
     testSent: "Notificació de prova enviada a {name}",
     testFailed: "La notificació de prova ha fallat",
-    statusText: "La tasca {jobid} del formulari '{form}' ha acabat : {status}.",
+    statusText: "La tasca {jobid} del formulari '{form}' ha acabat: {status}.",
     openJob: "Obre la tasca",
   },
 };

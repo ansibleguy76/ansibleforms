@@ -101,12 +101,12 @@ async function checkCredential(name) {
   if (!name) return;
   const rows = await mysql.do("SELECT credential_type FROM AnsibleForms.`credentials` WHERE name = ?", [name]);
   if (!rows.length) throw new Error(`No credential named '${name}'`);
-  if (rows[0].credential_type !== "ldap") throw new Error(`An LDAP directory needs an ldap credential : '${name}' is not one`);
+  if (rows[0].credential_type !== "ldap") throw new Error(`An LDAP directory needs an ldap credential: '${name}' is not one`);
 }
 
 async function checkName(name, current) {
   if (current && current.name === Ldap.DEFAULT_NAME && name !== Ldap.DEFAULT_NAME) {
-    throw new Error(`The directory '${Ldap.DEFAULT_NAME}' keeps its name : its members' names depend on it`);
+    throw new Error(`The directory '${Ldap.DEFAULT_NAME}' keeps its name: its members' names depend on it`);
   }
   if (!NAME_RULE.test(name || "")) {
     throw new Error("A directory's name has letters, digits, - and _ only (at most 50)");
@@ -267,7 +267,7 @@ Ldap.move = async function (id, direction) {
 Ldap.deleteById = async function (id) {
   const current = await Ldap.findById(id);
   if (!current) throw new Error(`No ldap directory ${id}`);
-  if (current.name === Ldap.DEFAULT_NAME) throw new Error(`The directory '${Ldap.DEFAULT_NAME}' cannot be deleted : turn it off instead`);
+  if (current.name === Ldap.DEFAULT_NAME) throw new Error(`The directory '${Ldap.DEFAULT_NAME}' cannot be deleted: turn it off instead`);
   if (current.managed) throw new Error("This directory comes from the config seed");
   logger.info(`Deleting ldap directory '${current.name}'`);
   return mysql.do("DELETE FROM AnsibleForms.`ldap` WHERE id = ?", [id]);
@@ -441,7 +441,7 @@ Ldap.authenticateOn = async function (directory, bindPassword, username, passwor
       }
     } catch (err) {
       if (!Ldap.isUnreachable(err)) throw err;
-      logger.warning(`Ldap server ${url} of '${cfg.name}' cannot be reached : ${err?.message || err?.admin?.code || err}`);
+      logger.warning(`Ldap server ${url} of '${cfg.name}' cannot be reached: ${err?.message || err?.admin?.code || err}`);
       last = err;
     }
   }
@@ -523,7 +523,7 @@ Ldap.check = async function (ldapConfig) {
       logger.notice("Checking ldap connection ok");
       return;
     }
-    logger.notice("Checking ldap connection result : " + em);
+    logger.notice("Checking ldap connection result: " + em);
     throw new Error(em, { cause: err });
   }
 };

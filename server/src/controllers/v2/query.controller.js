@@ -34,7 +34,7 @@ const findAll = async function(req, res) {
   } catch (err) {
     if (err instanceof QueryPolicyError) {
       if (err.statusCode === 403) {
-        logger.warning(`Refused a raw query from ${user.username || 'unknown'} : send formName and fieldName instead`);
+        logger.warning(`Refused a raw query from ${user.username || 'unknown'}: send formName and fieldName instead`);
         return res.status(403).json(RestResult.error(i18n.t(req, 'errors.noAccess'), err.detail));
       }
       if (err.statusCode === 400) {

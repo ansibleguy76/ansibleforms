@@ -40,7 +40,7 @@ describe("a node's credentials", () => {
     });
   });
 
-  test("a vault one opens the vaults only : its password is not handed to the playbook", () => {
+  test("a vault one opens the vaults only: its password is not handed to the playbook", () => {
     expect(credentialRoles([cred("vault_pw", "vault"), cred("vcenter")], types)).toEqual({
       ansibleCredentials: "",
       vaultCredentials: "vault_pw",
@@ -63,13 +63,13 @@ describe("the workflow form's credentials", () => {
     expect(form.credentials).toEqual({ ontap: "ontap_automation", vcenter: "vcenter" });
   });
 
-  test("none, and none from the node : the form has no credentials", () => {
+  test("none, and none from the node: the form has no credentials", () => {
     expect(nodeForm(wf, { ...node, credentials: [] }, types, "", undefined).credentials).toBeUndefined();
   });
 });
 
 describe("a credential's port", () => {
-  test("empty is none : a credential without a host saves", () => {
+  test("empty is none: a credential without a host saves", () => {
     expect(Credential.normalizePort({ port: "" }).port).toBeNull();
     expect(Credential.normalizePort({ port: "  " }).port).toBeNull();
     expect(Credential.normalizePort({ port: null }).port).toBeNull();

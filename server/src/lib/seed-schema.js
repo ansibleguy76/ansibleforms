@@ -398,7 +398,7 @@ function assertUniqueNames(doc) {
       seen.add(item.name);
     }
     if (duplicates.size) {
-      throw new Error(`Seed file declares duplicate ${key} names : ${[...duplicates].sort().join(", ")}`);
+      throw new Error(`Seed file declares duplicate ${key} names: ${[...duplicates].sort().join(", ")}`);
     }
   }
 }
@@ -419,7 +419,7 @@ function assertSingletonFlags(doc) {
   }
   for (const [type, names] of Object.entries(defaultsByType)) {
     if (names.length > 1) {
-      throw new Error(`Seed file declares is_default on more than one runner of type ${type} : ${names.sort().join(", ")}`);
+      throw new Error(`Seed file declares is_default on more than one runner of type ${type}: ${names.sort().join(", ")}`);
     }
   }
   const byProvider = {};
@@ -429,7 +429,7 @@ function assertSingletonFlags(doc) {
   }
   for (const [provider, names] of Object.entries(byProvider)) {
     if (names.length > 1) {
-      throw new Error(`Seed file enables more than one '${provider}' oauth2 provider : ${names.sort().join(", ")}`);
+      throw new Error(`Seed file enables more than one '${provider}' oauth2 provider: ${names.sort().join(", ")}`);
     }
   }
 }
@@ -447,7 +447,7 @@ export function validateSeed(doc) {
         return `${e.instancePath || "/"} ${e.message}${extra}`;
       })
       .join(" ; ");
-    throw new Error(`Seed file validation failed : ${details}`);
+    throw new Error(`Seed file validation failed: ${details}`);
   }
   // the deprecated awx: items count as runners for the cross-item rules
   const folded = foldAwxIntoRunners(doc);
@@ -482,7 +482,7 @@ export function interpolateEnv(value, env = process.env) {
   };
   const result = walk(value);
   if (missing.size > 0) {
-    throw new Error(`Seed file references undefined environment variables : ${[...missing].sort().join(", ")}`);
+    throw new Error(`Seed file references undefined environment variables: ${[...missing].sort().join(", ")}`);
   }
   return result;
 }

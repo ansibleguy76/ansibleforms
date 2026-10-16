@@ -140,7 +140,7 @@ ProjectFiles.list = async function (kind) {
     try {
       entries = await fs.promises.readdir(dir, { withFileTypes: true });
     } catch (e) {
-      logger.warning(`Cannot list ${dir} : ${e.message}`);
+      logger.warning(`Cannot list ${dir}: ${e.message}`);
       return;
     }
     entries.sort((a, b) => a.name.localeCompare(b.name));
@@ -176,7 +176,7 @@ ProjectFiles.list = async function (kind) {
         try {
           dirty = await Repo.hasChanges(r.repository);
         } catch (e) {
-          logger.warning(`Cannot tell whether '${r.repository}' has changes : ${e.message}`);
+          logger.warning(`Cannot tell whether '${r.repository}' has changes: ${e.message}`);
         }
       }
       repositories.push({ name: r.repository, prefix: r.prefix, dirty });
@@ -312,7 +312,7 @@ ProjectFiles.remove = async function (kind, rel) {
  */
 ProjectFiles.push = async function (kind, username) {
   const names = [...new Set((await ProjectFiles.roots(kind)).map((r) => r.repository).filter(Boolean))];
-  if (!names.length) throw new Errors.BadRequestError("These files are in a local folder : there is no repository to push to");
+  if (!names.length) throw new Errors.BadRequestError("These files are in a local folder: there is no repository to push to");
   const outputs = [];
   for (const name of names) {
     outputs.push(await Repository.sync(name, username, `${PUSH_LABEL[kind]} sync by ${username || "AnsibleForms"}`));

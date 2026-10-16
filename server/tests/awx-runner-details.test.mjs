@@ -32,7 +32,7 @@ describe("the AWX runner", () => {
     expect(hits).toEqual(["POST /api/v2/jobs/9/cancel/", "POST /api/v2/workflow_jobs/9/cancel/"]);
   });
 
-  test("an AAP 2.5 gateway without its controller path : Test connection says which uri to set", async () => {
-    await expect(check({ uri, token: "t" })).rejects.toThrow(/Ansible Automation Platform 2.5\+ gateway : set the uri to .*\/api\/controller\/v2/);
+  test("an AAP 2.5 gateway without its controller path: Test connection says which uri to set", async () => {
+    await expect(check({ uri, token: "t" })).rejects.toThrow(/Ansible Automation Platform 2.5\+ gateway: set the uri to .*\/api\/controller\/v2/);
   });
 });

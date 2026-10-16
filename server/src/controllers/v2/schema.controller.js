@@ -8,7 +8,7 @@ const schemaController = {
     try {
       const result = await Schema.hasSchema();
       if(!result?.data){
-        errors.ReturnError(res, new Error(`FATAL ERROR : ${result.message}`));
+        errors.ReturnError(res, new Error(`FATAL ERROR: ${result.message}`));
         return;
       }
       res.json(RestResult.single(result.data))

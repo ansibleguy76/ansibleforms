@@ -104,7 +104,7 @@ describe("the jobs it takes", () => {
     assert.deepEqual(runs[0].secrets, secrets, "the run gets the secrets the app sealed");
   });
 
-  test("never an AWX job or a multistep : their own tracker drives them", async () => {
+  test("never an AWX job or a multistep: their own tracker drives them", async () => {
     const r = await call(acceptJob, { body: job(12) });
     assert.equal(r.status, 409);
     assert.equal(jobs[12].host, null, "not claimed");
@@ -170,7 +170,7 @@ describe("what it says about a job", () => {
     assert.equal((await call(jobStatus, { params: { id: "14" } })).data.status, "unknown", "running, but not here");
   });
 
-  test("cancel : only what it runs itself, and the flag is set", async () => {
+  test("cancel: only what it runs itself, and the flag is set", async () => {
     assert.equal((await call(cancelJob, { params: { id: "14" } })).status, 409);
     await call(acceptJob, { body: job(11) });
     assert.equal((await call(cancelJob, { params: { id: "11" } })).status, 202);

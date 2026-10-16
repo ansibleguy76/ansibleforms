@@ -96,7 +96,7 @@ test('an invalid token is refused, and a failing check never opens the endpoint'
   expect(create).not.toHaveBeenCalled();
 });
 
-test('GET stays public : the SPA polls it on every page load', async () => {
+test('GET stays public: the SPA polls it on every page load', async () => {
   isProvisioned.mockResolvedValue(true);
   const res = await fetch(baseUrl);
   expect(res.status).toBe(200);

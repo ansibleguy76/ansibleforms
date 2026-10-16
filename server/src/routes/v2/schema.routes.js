@@ -23,7 +23,7 @@ const guardSchemaCreation = async function (req, res, next) {
     provisioned = await Schema.isProvisioned()
   } catch (err) {
     // a database we can not question is not proof of a fresh install : refuse
-    logger.error(`Failed to determine whether the database is provisioned : ${err.message || err}`)
+    logger.error(`Failed to determine whether the database is provisioned: ${err.message || err}`)
     return res.status(500).json(RestResult.error("Failed to check the database state", `${err.message || err}`))
   }
   if (!provisioned) {

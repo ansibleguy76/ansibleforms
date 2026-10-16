@@ -504,7 +504,7 @@ function clearStaleLdapAdvancedGroupFields() {
           // only recovery trail for exactly what was cleared.
           dirty.forEach((row) => {
             var nonEmpty = advancedFields.filter((f) => row[f] !== null && row[f] !== "");
-            logger.warning(`clearing stale ldap advanced group fields : ` + nonEmpty.map((f) => `${f}='${row[f]}'`).join(", "));
+            logger.warning(`clearing stale ldap advanced group fields: ` + nonEmpty.map((f) => `${f}='${row[f]}'`).join(", "));
           });
           if (stale.length == total) {
             await query(updateallsql, [db, table]);
@@ -1145,7 +1145,7 @@ export async function copyAwxToRunners() {
   );
   if (blocked.length) {
     const names = blocked.map((b) => b.name || "(no name)").join(", ");
-    const message = `AWX connection(s) ${names} could not move to runners : a runner of another type has that name, or the connection has none. Rename it ; the awx table is kept until then`;
+    const message = `AWX connection(s) ${names} could not move to runners: a runner of another type has that name, or the connection has none. Rename it ; the awx table is kept until then`;
     logger.error(message);
     return message;
   }
@@ -1179,7 +1179,7 @@ export async function moveMailServersToChannels() {
       "(SELECT 1 FROM AnsibleForms.`notification_channels` c WHERE c.name = m.name AND c.type = 'mail')",
   );
   if (left.length) {
-    const message = `Mail server(s) ${left.map((r) => r.name).join(", ")} could not move to notification channels : a channel of another type has that name. Rename it ; the mail_servers table is kept until then`;
+    const message = `Mail server(s) ${left.map((r) => r.name).join(", ")} could not move to notification channels: a channel of another type has that name. Rename it ; the mail_servers table is kept until then`;
     logger.error(message);
     return message;
   }
@@ -1307,7 +1307,7 @@ export async function moveBannerSwitchToAnnouncements() {
   if (!rows.length || rows[0].banner_show !== 0) return null;
   const res = await mysql.do("UPDATE AnsibleForms.`announcements` SET enabled = 0");
   await mysql.do("UPDATE AnsibleForms.`settings` SET banner_show = 1");
-  const message = `Announcements were hidden : disabled ${res.affectedRows || 0} announcement(s), each now enabled on its own`;
+  const message = `Announcements were hidden: disabled ${res.affectedRows || 0} announcement(s), each now enabled on its own`;
   logger.notice(message);
   return message;
 }
@@ -1721,7 +1721,7 @@ async function backupBeforeUpgrade() {
   if (!pending.length) return null;
   logger.notice(`The database needs upgrading (${pending.slice(0, 8).join(", ")}${pending.length > 8 ? ", ..." : ""})`);
   if (String(process.env.UPGRADE_BACKUP ?? "1").trim() === "0") {
-    logger.warning("UPGRADE_BACKUP=0 : upgrading the database without a backup first");
+    logger.warning("UPGRADE_BACKUP=0: upgrading the database without a backup first");
     return "Upgrading without a backup (UPGRADE_BACKUP=0)";
   }
   if (Date.now() - backupFailedAt < BACKUP_RETRY_MS) {
@@ -1730,7 +1730,7 @@ async function backupBeforeUpgrade() {
   const { default: Backup } = await import("./backup.model.js");
   try {
     const { backupFolder } = await Backup.doBackup(`Before the upgrade to ${appVersion}`);
-    logger.notice(`Backed up the database before the upgrade : ${backupFolder}`);
+    logger.notice(`Backed up the database before the upgrade: ${backupFolder}`);
     return `Backed up the database before the upgrade (${backupFolder})`;
   } catch (err) {
     backupFailedAt = Date.now();

@@ -88,7 +88,7 @@ beforeEach(() => {
 
 const message = {
   title: "AnsibleForms 'Deploy' (12) - Success",
-  text: "Job 12 of the form 'Deploy' ended : Success.",
+  text: "Job 12 of the form 'Deploy' ended: Success.",
   status: "success",
   event: "status",
   job: { id: 12, form: "Deploy", user: "bob" },
@@ -103,11 +103,11 @@ describe("a webhook's payload template", () => {
   });
 
   test("a placeholder inside a longer string is escaped in place ; an unknown one stays", () => {
-    const body = renderPayload('{ "msg": "Job {{jobId}} : {{status}} {{nope}}" }', { jobId: 3, status: 'ok"' });
-    expect(JSON.parse(body)).toEqual({ msg: 'Job 3 : ok" {{nope}}' });
+    const body = renderPayload('{ "msg": "Job {{jobId}}: {{status}} {{nope}}" }', { jobId: 3, status: 'ok"' });
+    expect(JSON.parse(body)).toEqual({ msg: 'Job 3: ok" {{nope}}' });
   });
 
-  test("empty : the default, which reads as JSON with every placeholder", () => {
+  test("empty: the default, which reads as JSON with every placeholder", () => {
     const body = JSON.parse(renderPayload("", notifiers.payloadValues(message)));
     expect(body).toEqual({
       title: message.title,
@@ -122,14 +122,14 @@ describe("a webhook's payload template", () => {
 });
 
 describe("the body each type sends", () => {
-  test("slack : the text as fallback, a section in mrkdwn (escaped), a button to the job", () => {
+  test("slack: the text as fallback, a section in mrkdwn (escaped), a button to the job", () => {
     const body = notifiers.slackBody({ ...message, text: "a <b> & c" }, "Open the job");
     expect(body.text).toContain("a <b> & c");
     expect(body.blocks[0].text.text).toBe(`*${message.title}*\na &lt;b&gt; &amp; c`);
     expect(body.blocks[1].elements[0]).toMatchObject({ type: "button", url: message.link, text: { text: "Open the job" } });
   });
 
-  test("teams : a message with one Adaptive Card, its title, text and an open-url action", () => {
+  test("teams: a message with one Adaptive Card, its title, text and an open-url action", () => {
     const body = notifiers.teamsBody(message, "Open the job");
     expect(body.type).toBe("message");
     expect(body.attachments[0].contentType).toBe("application/vnd.microsoft.card.adaptive");
@@ -140,7 +140,7 @@ describe("the body each type sends", () => {
     expect(notifiers.teamsBody({ ...message, link: "" }).attachments[0].content.actions).toEqual([]);
   });
 
-  test("telegram : HTML, escaped, the chat, a link, and cut to Telegram's length", () => {
+  test("telegram: HTML, escaped, the chat, a link, and cut to Telegram's length", () => {
     const body = notifiers.telegramBody({ ...message, text: "<script>" }, "-100", "Open");
     expect(body).toMatchObject({ chat_id: "-100", parse_mode: "HTML", disable_web_page_preview: true });
     expect(body.text).toBe(`<b>${message.title}</b>\n&lt;script&gt;\n<a href="${message.link}">Open</a>`);
@@ -163,7 +163,7 @@ describe("sending to a channel", () => {
     expect(requests.every((r) => r.timeout > 0)).toBe(true);
   });
 
-  test("telegram : the bot token from its api credential, in the Bot API's path ; its own API", async () => {
+  test("telegram: the bot token from its api credential, in the Bot API's path ; its own API", async () => {
     resolved["^tg-bot$"] = { user: "", password: "123:ABC" };
     await notifiers.send({ name: "tg", type: "telegram", token_credential: "tg-bot", chat_id: "-42" }, message);
     await notifiers.send({ name: "tg", type: "telegram", token_credential: "tg-bot", chat_id: "-42", api_url: "http://127.0.0.1:9/" }, message);
@@ -180,7 +180,7 @@ describe("sending to a channel", () => {
     expect(err.message).not.toContain("SECRET");
   });
 
-  test("webhook : its method, its headers, the bearer token, the template rendered, the TLS check off", async () => {
+  test("webhook: its method, its headers, the bearer token, the template rendered, the TLS check off", async () => {
     resolved["^hook-token$"] = { user: "", password: "t0k" };
     await notifiers.send(
       {
@@ -202,7 +202,7 @@ describe("sending to a channel", () => {
     expect(r.httpsAgent?.options?.rejectUnauthorized).toBe(false);
   });
 
-  test("mail : through its server, to the recipients ; none is an error", async () => {
+  test("mail: through its server, to the recipients ; none is an error", async () => {
     const maildo = vi.spyOn(Settings, "maildo").mockResolvedValue("<id@x>");
     const ch = { name: "m", type: "mail", server: "smtp.example.com", port: 25, from_address: "af@example.com" };
     expect(await notifiers.send(ch, message, ["a@example.com", "b@example.com"])).toBe("<id@x>");
@@ -213,7 +213,7 @@ describe("sending to a channel", () => {
     maildo.mockRestore();
   });
 
-  test("by name : an unknown or a turned-off channel is skipped, one failing never stops the others", async () => {
+  test("by name: an unknown or a turned-off channel is skipped, one failing never stops the others", async () => {
     channels = [
       { id: 1, name: "off", type: "slack", enabled: 0, webhook_url: "https://x/off" },
       { id: 2, name: "bad", type: "slack", enabled: 1, webhook_url: "https://x/bad" },
@@ -264,7 +264,7 @@ describe("a channel checked by its type", () => {
     await expect(NotificationChannel.create({ name: "t", type: "telegram", token_credential: "tg", chat_id: "1" })).resolves.toBe(7);
   });
 
-  test("webhook : an http(s) url, POST or PUT, headers a JSON object, a payload that gives JSON", async () => {
+  test("webhook: an http(s) url, POST or PUT, headers a JSON object, a payload that gives JSON", async () => {
     const base = { name: "w", type: "webhook", url: "https://hooks.example.com" };
     await expect(NotificationChannel.create({ name: "w", type: "webhook" })).rejects.toThrow(/needs its url/);
     await expect(NotificationChannel.create({ ...base, method: "GET" })).rejects.toThrow(/POST, PUT/);
@@ -284,7 +284,7 @@ describe("a channel checked by its type", () => {
     expect(NotificationChannel.masked({ name: "m", webhook_url: null }).webhook_url).toBe("");
   });
 
-  test("the active mail channel : turned off, there is none", async () => {
+  test("the active mail channel: turned off, there is none", async () => {
     channels = [{ id: 1, name: "m", type: "mail", is_active: 1, enabled: 0 }, { id: 2, name: "s", type: "slack", is_active: 1, enabled: 1 }];
     expect(await NotificationChannel.findActive()).toBe(null);
     channels[0].enabled = 1;

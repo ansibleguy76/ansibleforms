@@ -59,14 +59,14 @@ beforeEach(() => {
 });
 
 describe("what an RTE registers", () => {
-  test("without RTE_URL : its own IP and port, named after its node", () => {
+  test("without RTE_URL: its own IP and port, named after its node", () => {
     assert.deepEqual(registration({ RTE_TOKEN: TOKEN }, { ip: "172.18.0.5", port: 8000, nodeId: ME }), {
       uri: "http://172.18.0.5:8000", name: ME, token: TOKEN, nodeId: ME,
     });
     assert.equal(registration({}, { https: true, ip: "10.0.0.7", port: 8443, nodeId: ME }).uri, "https://10.0.0.7:8443");
   });
 
-  test("with RTE_URL : that address, named after its host, the port only when it is not 8000", () => {
+  test("with RTE_URL: that address, named after its host, the port only when it is not 8000", () => {
     assert.deepEqual(registration({ RTE_URL: "http://rte:8000/", RTE_TOKEN: TOKEN }, { nodeId: ME }), {
       uri: "http://rte:8000", name: "rte", token: TOKEN, nodeId: ME,
     });
@@ -74,7 +74,7 @@ describe("what an RTE registers", () => {
     assert.equal(registration({ RTE_URL: "https://rte.af.svc.cluster.local" }).name, "rte.af.svc.cluster.local");
   });
 
-  test("RTE_REGISTER=0 : nothing", () => {
+  test("RTE_REGISTER=0: nothing", () => {
     assert.equal(registration({ RTE_REGISTER: "0", RTE_URL: "http://rte:8000" }), null);
     assert.notEqual(registration({ RTE_REGISTER: "1", RTE_URL: "http://rte:8000" }), null);
   });
@@ -117,7 +117,7 @@ describe("registering", () => {
     assert.deepEqual(writes.map((w) => w.data), [{ node_id: ME }]);
   });
 
-  test("a row added by hand : found by its address, its token follows RTE_TOKEN, it stays hand-made", async () => {
+  test("a row added by hand: found by its address, its token follows RTE_TOKEN, it stays hand-made", async () => {
     rows.push({ id: 2, name: "my-rte", type: "rte", uri: "http://rte:8000/", token: "old-token-old-token", node_id: null, managed: 0, is_default: 1 });
     assert.match(await registerOnce(reg), /'my-rte' now has this RTE's RTE_TOKEN/);
     assert.deepEqual(writes.map((w) => w.data), [{ token: TOKEN }]);
@@ -145,7 +145,7 @@ describe("registering", () => {
 describe("the default", () => {
   const reg = { uri: "http://172.18.0.9:8000", name: ME, token: TOKEN, nodeId: ME };
 
-  test("taken from a registered RTE that stopped : a recreated container", async () => {
+  test("taken from a registered RTE that stopped: a recreated container", async () => {
     rows.push({ id: 2, name: "rte-old-8000", type: "rte", uri: "http://172.18.0.5:8000", token: TOKEN, node_id: "rte-old-8000", managed: 0, is_default: 1 });
     const said = await registerOnce(reg);
     assert.match(said, /is now the default, 'rte-old-8000' stopped answering/);

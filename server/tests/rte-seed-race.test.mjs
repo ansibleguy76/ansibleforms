@@ -109,7 +109,7 @@ beforeEach(() => {
 });
 
 describe("an RTE and the config seed declaring it end as one runner", () => {
-  test("the seed first : the RTE finds the seeded row by its address and leaves it alone", async () => {
+  test("the seed first: the RTE finds the seeded row by its address and leaves it alone", async () => {
     await seed();
     assert.equal(await registerOnce(REG), null);
     assert.equal(rteRows().length, 1);
@@ -117,7 +117,7 @@ describe("an RTE and the config seed declaring it end as one runner", () => {
     assert.equal(rteRows()[0].managed, 1);
   });
 
-  test("the RTE first : the seed adopts the row it registered instead of adding a second one", async () => {
+  test("the RTE first: the seed adopts the row it registered instead of adding a second one", async () => {
     await registerOnce(REG);
     assert.equal(rteRows().length, 1, "the RTE registered itself");
     jobs.push({ id: 1, runner: "127.0.0.1" });
@@ -129,7 +129,7 @@ describe("an RTE and the config seed declaring it end as one runner", () => {
     const row = rteRows()[0];
     assert.equal(row.name, "rte", "under the name the seed declares");
     assert.equal(row.managed, 1, "and managed by the seed from now on");
-    assert.equal(row.node_id, null, "no longer a registered row : the worker's sweep never removes it");
+    assert.equal(row.node_id, null, "no longer a registered row: the worker's sweep never removes it");
     assert.equal(row.description, SEEDED.description);
     assert.equal(row.is_default, 1);
     assert.deepEqual(s.adopted, ["runner:rte"], "the adoption is said, like any other");
@@ -144,7 +144,7 @@ describe("an RTE and the config seed declaring it end as one runner", () => {
     assert.equal(rteRows().length, 1);
   });
 
-  test("the RTE writing between the seed's read and its insert : its next check removes its own row", async () => {
+  test("the RTE writing between the seed's read and its insert: its next check removes its own row", async () => {
     // both rows exist : the RTE found no row, the seed created its own, the RTE then created
     await seed();
     runners.push({ id: nextId++, name: "127.0.0.1", type: "rte", uri: "http://127.0.0.1:8000/", token: "", managed: 0, is_default: 0, node_id: ME });
@@ -157,7 +157,7 @@ describe("an RTE and the config seed declaring it end as one runner", () => {
     assert.equal(jobs[0].runner, "rte");
   });
 
-  test("a row added by hand at the seeded address is somebody's work : neither adopted nor removed", async () => {
+  test("a row added by hand at the seeded address is somebody's work: neither adopted nor removed", async () => {
     runners.push({ id: nextId++, name: "mine", type: "rte", uri: "http://127.0.0.1:8000", token: "", managed: 0, is_default: 0, node_id: null });
     await seed();
     await registerOnce(REG);

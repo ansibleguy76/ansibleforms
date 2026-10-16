@@ -197,7 +197,7 @@ const saveEnv = async function(req,res){
       target: names.slice(0, 5).join(','),
       detail: { changed: names, restartRequired: restart },
     })
-    logger.notice(`Environment settings updated : ${names.join(', ')}`)
+    logger.notice(`Environment settings updated: ${names.join(', ')}`)
     // a variable the header shows (the Designer's link) : every open tab re-reads it at once
     publish('appearance')
     return res.json(RestResult.single({ message: i18n.t(req, 'config.envVarsSaved'), changed: names, restartRequired: restart }))
@@ -255,7 +255,7 @@ const vaultMounts = async function(req,res){
   try{
     return res.json(RestResult.list(await listMounts(await getStore(VAULT_STORE_NAME))))
   }catch(err){
-    logger.debug(`Could not list vault mounts : ${helpers.getError(err)}`)
+    logger.debug(`Could not list vault mounts: ${helpers.getError(err)}`)
     return res.status(400).json(RestResult.error(i18n.t(req, 'config.failedVaultMounts'), helpers.getError(err)))
   }
 }
@@ -358,8 +358,8 @@ const restore = async function(req,res){
       }
     }
   }catch(err){
-    logger.error("Failed to get lock : ",err)
-    return res.status(500).json(RestResult.error(i18n.t(req, 'config.failedRestoreForms'), helpers.getError(err,"Failed to get lock : ")))
+    logger.error("Failed to get lock: ",err)
+    return res.status(500).json(RestResult.error(i18n.t(req, 'config.failedRestoreForms'), helpers.getError(err,"Failed to get lock: ")))
   }
   if(lock.match || lock.free){
     try{
@@ -389,7 +389,7 @@ const restore = async function(req,res){
         try{
           await Lock.delete(user, { onlyMine: true })
         }catch(err){
-          logger.error(`Failed to release the designer lock after the restore : ${helpers.getError(err)}`)
+          logger.error(`Failed to release the designer lock after the restore: ${helpers.getError(err)}`)
         }
       }
     }
@@ -421,7 +421,7 @@ const save = async function(req,res){
       }
     }
   }catch(err){
-    logger.error("Failed to get lock : ",err)
+    logger.error("Failed to get lock: ",err)
     return res.status(500).json(RestResult.error(i18n.t(req, 'config.failedSaveForms'), helpers.getError(err,"Failed to get lock")))
   }
   if(lock.match || lock.free){
@@ -463,7 +463,7 @@ const save = async function(req,res){
         try{
           await Lock.delete(user, { onlyMine: true })
         }catch(err){
-          logger.error(`Failed to release the designer lock after the save : ${helpers.getError(err)}`)
+          logger.error(`Failed to release the designer lock after the save: ${helpers.getError(err)}`)
         }
       }
     }

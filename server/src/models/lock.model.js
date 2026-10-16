@@ -87,7 +87,7 @@ Lock.isHeld = async function(){
   try {
     return (await Lock.read()) !== null;
   } catch (e) {
-    logger.warning(`Could not read the designer lock : ${e.message || e}`);
+    logger.warning(`Could not read the designer lock: ${e.message || e}`);
     return false;
   }
 };
@@ -127,7 +127,7 @@ Lock.set = async function (user) {
     try {
       await Repository.pullFormsRepositories();
     } catch (e) {
-      logger.warning(`Failed to refresh the forms repositories : ${e.message}`);
+      logger.warning(`Failed to refresh the forms repositories: ${e.message}`);
     }
     // every open designer and header learns who holds it, at once (lib/liveEvents.js)
     publish("designer");
@@ -167,7 +167,7 @@ Lock.markSeen = async function (user, lock) {
   try {
     await mysql.do("UPDATE AnsibleForms.`designer_lock` SET data=? WHERE id=? AND " + HOLDER_IS, [data, LOCK_ID, user.username, user.type]);
   } catch (e) {
-    logger.warning(`Could not mark the designer lock seen : ${e.message || e}`);
+    logger.warning(`Could not mark the designer lock seen: ${e.message || e}`);
   }
 };
 

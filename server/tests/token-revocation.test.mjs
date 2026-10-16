@@ -29,17 +29,17 @@ beforeEach(() => {
 });
 
 describe("a token", () => {
-  test("nothing revoked : valid", async () => {
+  test("nothing revoked: valid", async () => {
     expect(await isRevoked(token())).toBe(false);
   });
 
-  test("its session logged out : revoked, another session is not", async () => {
+  test("its session logged out: revoked, another session is not", async () => {
     await revokeSession("s1", Date.now() + 3600 * 1000);
     expect(await isRevoked(token())).toBe(true);
     expect(await isRevoked(token({ sid: "s2" }))).toBe(false);
   });
 
-  test("its user changed the password after it was issued, or in the same second : revoked ; a token issued after is not", async () => {
+  test("its user changed the password after it was issued, or in the same second: revoked ; a token issued after is not", async () => {
     await revokeUser("bob", "local", 86400);
     expect(await isRevoked(token())).toBe(true);
     expect(await isRevoked(token({ iat: now() }))).toBe(true);

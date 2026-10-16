@@ -26,7 +26,7 @@ export default {
     refreshTokenReplaced: "refresh token 已被同时进行的刷新使用",
     apiTokenFromApiToken: "API 令牌不能创建另一个 API 令牌",
     apiTokenNotAllowed: "您的角色不允许使用 API 令牌",
-    apiTokenSignInAgain: "请重新登录以创建 API 令牌 : 上次登录时间太久",
+    apiTokenSignInAgain: "请重新登录以创建 API 令牌：上次登录时间太久",
     apiTokenLifetime: "有效期必须是天数，最多 {max} 天",
     apiTokenFailed: "无法创建 API 令牌",
     apiTokensFailed: "无法读取或更改 API 令牌",
@@ -37,8 +37,8 @@ export default {
   auth: {
     authFailed: "身份验证失败",
     invalidCredentials: "凭据无效",
-    tooManyFailures: "登录失败次数过多 : 请在 {minutes} 分钟后重试",
-    passwordChangeRequired: "请先更改密码 : 这是公开的默认密码",
+    tooManyFailures: "登录失败次数过多：请在 {minutes} 分钟后重试",
+    passwordChangeRequired: "请先更改密码：这是公开的默认密码",
     disclaimerRequired: "请先接受免责声明",
     disclaimerAccepted: "已接受免责声明",
     loginDisabled: "未通过身份验证，此用户未启用登录。",
@@ -96,7 +96,7 @@ export default {
     runnerAdded: "运行器已添加",
     runnerNotFound: "未找到运行器",
     runnerAdminOnly:
-      "只有 admin 可以添加、更改或删除运行器 : 运行器会收到它运行的作业的凭据",
+      "只有 admin 可以添加、更改或删除运行器：运行器会收到它运行的作业的凭据",
     defaultPasswordRefused: "请选择公开默认密码以外的密码",
     passwordTooShort: "密码至少需要 {min} 个字符",
     passwordIsUsername: "密码不能是用户名",
@@ -141,7 +141,7 @@ export default {
     failedFindLdap: "查找 LDAP 失败",
     ldapCheckFailed: "LDAP 检查失败",
     storedPasswordOtherServer:
-      "已保存的密码只用于已保存的服务器 : 要检查其他服务器，请输入密码",
+      "已保存的密码只用于已保存的服务器：要检查其他服务器，请输入密码",
     ldapUpdated: "LDAP 已更新",
     failedUpdateLdap: "更新 LDAP 失败",
     ldapCreated: "已添加 LDAP 目录",
@@ -256,10 +256,10 @@ export default {
   },
   // what a notification channel (Connections > Notifications) says : a test, a job's end
   notifications: {
-    testText: "来自 {who} 的测试通知 : 通道 '{name}' 收到了它。",
+    testText: "来自 {who} 的测试通知：通道 '{name}' 收到了它。",
     testSent: "测试通知已发送到 {name}",
     testFailed: "测试通知失败",
-    statusText: "表单 '{form}' 的作业 {jobid} 已结束 : {status}。",
+    statusText: "表单 '{form}' 的作业 {jobid} 已结束：{status}。",
     openJob: "打开作业",
   },
 };

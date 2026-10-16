@@ -218,6 +218,6 @@ describe("fnCredentials", () => {
 
   test("returns nothing, not an error, when nothing matches", async () => {
     const { default: fn } = await import("../src/functions/default.js");
-    assert.equal(await fn.fnCredentials("nothing", "neither"), null, "as before 7.x : no throw, nothing returned");
+    assert.equal(await fn.fnCredentials("nothing", "neither"), null, "as before 7.x: no throw, nothing returned");
   });
 });

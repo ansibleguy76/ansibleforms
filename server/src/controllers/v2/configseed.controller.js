@@ -36,7 +36,7 @@ const configSeedController = {
     } catch (err) {
       // reloadConfigSeed catches everything the apply can throw, so reaching here means a
       // fault in this handler rather than in the seed. Answer, and say which it was.
-      logger.error('Config seed apply endpoint failed : ' + (err.message || err));
+      logger.error('Config seed apply endpoint failed: ' + (err.message || err));
       return res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedApplyConfigSeed'), err.message || String(err)));
     }
   },

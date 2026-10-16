@@ -63,39 +63,39 @@ Query.findAll = async function (query,jqExpression="",cfg,noLog,values=null) {
     // on this function. Done before the logging so the log shows what actually ran.
     const finalQuery = values ? substitute(query,values,c.type) : query
     if(noLog){
-      logger.info(`[${c.type}][${c.name}] Running query : noLog is applied`)
+      logger.info(`[${c.type}][${c.name}] Running query: noLog is applied`)
     }else{
       logger.info(`[${c.type}][${c.name}] Running query ${finalQuery}`)
     }
     if(c.type=="mssql"){  // use mssql connection lib
       res = await mssql.query(c.name,finalQuery)
       if(!noLog){
-        logger.debug(`[${c.name}] query result : ${JSON.stringify(res)}`)
+        logger.debug(`[${c.name}] query result: ${JSON.stringify(res)}`)
       }
       result = result.concat(res)
 
     }else if(c.type=="mysql"){  // use mysql connection lib
       res = await mysql.query(c.name,finalQuery)
       if(!noLog){
-        logger.debug(`[${c.name}] query result : ${JSON.stringify(res)}`)
+        logger.debug(`[${c.name}] query result: ${JSON.stringify(res)}`)
       }
       result = result.concat(res)
     }else if(c.type=="postgres"){  // use postgres connection lib
       res = await postgres.query(c.name,finalQuery)
       if(!noLog){
-        logger.debug(`[${c.name}] query result : ${JSON.stringify(res)}`)
+        logger.debug(`[${c.name}] query result: ${JSON.stringify(res)}`)
       }
       result = result.concat(res)
     }else if(c.type=="oracle"){  // use postgres connection lib
       res = await oracle.query(c.name,finalQuery)
       if(!noLog){
-        logger.debug(`[${c.name}] query result : ${JSON.stringify(res)}`)
+        logger.debug(`[${c.name}] query result: ${JSON.stringify(res)}`)
       }
       result = result.concat(res)
     }else if(c.type=="mongodb"){  // use postgres connection lib
       res = await mongodb.query(c.name,finalQuery)
       if(!noLog){
-        logger.debug(`[${c.name}] query result : ${JSON.stringify(res)}`)
+        logger.debug(`[${c.name}] query result: ${JSON.stringify(res)}`)
       }
       result = result.concat(res)
     }else{
@@ -108,7 +108,7 @@ Query.findAll = async function (query,jqExpression="",cfg,noLog,values=null) {
     logger.debug(`Applying jq expression: ${jqExpression}`)
     result = await jq.run(jqExpression, result, { input:"json", output:"json" })
     if(!noLog){
-      logger.debug(`jq result : ${JSON.stringify(result)}`)
+      logger.debug(`jq result: ${JSON.stringify(result)}`)
     }
   }
   

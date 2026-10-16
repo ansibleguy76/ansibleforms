@@ -106,7 +106,7 @@ describe("provider requests", () => {
   beforeEach(() => { calls = []; });
   afterEach(() => { vi.unstubAllGlobals(); });
 
-  test("anthropic : x-api-key header, tools as input_schema, tool results grouped, no sampling parameters", async () => {
+  test("anthropic: x-api-key header, tools as input_schema, tool results grouped, no sampling parameters", async () => {
     vi.stubGlobal("fetch", reply({ content: [{ type: "thinking", thinking: "hidden" }, { type: "text", text: "Which cluster?" }, { type: "tool_use", id: "t3", name: "resolve", input: { form: "F" } }] }));
     const out = await complete({ settings: { provider: "anthropic", api_key: "sk-a", model: "m", timeout_seconds: 5 }, system: "S", history, tools });
     const c = calls[0];
@@ -125,7 +125,7 @@ describe("provider requests", () => {
     expect(out.raw[0].type).toBe("thinking");
   });
 
-  test("openai : bearer, function tools, the settings' user, assistant content a string, broken arguments flagged", async () => {
+  test("openai: bearer, function tools, the settings' user, assistant content a string, broken arguments flagged", async () => {
     vi.stubGlobal("fetch", reply({ choices: [{ message: { content: null, tool_calls: [{ id: "c1", type: "function", function: { name: "resolve", arguments: "{bad" } }] } }] }));
     const out = await complete({ settings: { provider: "openai", api_key: "sk-o", model: "gpt", timeout_seconds: 5, request_user: "mirko" }, system: "S", history, tools });
     const c = calls[0];
@@ -140,7 +140,7 @@ describe("provider requests", () => {
     expect(out.toolCalls[0].arguments).toEqual({ __invalid_json__: true });
   });
 
-  test("azure openai : api-key header, the path goes in front of the api-version query", async () => {
+  test("azure openai: api-key header, the path goes in front of the api-version query", async () => {
     vi.stubGlobal("fetch", reply({ choices: [{ message: { content: "OK" } }] }));
     await complete({ settings: { provider: "openai", api_key: "az", model: "gpt", base_url: "https://x.openai.azure.com/openai/deployments/gpt?api-version=2024-10-21", timeout_seconds: 5 }, system: "S", history: [{ role: "user", text: "hi" }], tools: [] });
     expect(calls[0].url).toBe("https://x.openai.azure.com/openai/deployments/gpt/chat/completions?api-version=2024-10-21");
@@ -172,7 +172,7 @@ describe("provider requests", () => {
     expect(err.message).not.toContain("sk-secret");
   });
 
-  test("no key (Ollama, an internal proxy) : no auth header at all", async () => {
+  test("no key (Ollama, an internal proxy): no auth header at all", async () => {
     vi.stubGlobal("fetch", reply({ choices: [{ message: { content: "OK" } }] }));
     await complete({ settings: { provider: "openai", api_key: "", model: "llama3", base_url: "http://ollama:11434/v1", timeout_seconds: 5 }, system: "S", history: [{ role: "user", text: "hi" }], tools: [] });
     expect(calls[0].url).toBe("http://ollama:11434/v1/chat/completions");
@@ -207,14 +207,14 @@ describe("provider requests", () => {
     expect(calls[3].headers["api-key"]).toBe("k1");
   });
 
-  test("anthropic : the api version is its header", async () => {
+  test("anthropic: the api version is its header", async () => {
     vi.stubGlobal("fetch", reply({ content: [{ type: "text", text: "OK" }] }));
     await complete({ settings: { provider: "anthropic", api_key: "k", model: "m", timeout_seconds: 5, api_version: "2025-01-01" }, system: "S", history: [{ role: "user", text: "hi" }], tools: [] });
     expect(calls[0].headers["anthropic-version"]).toBe("2025-01-01");
     expect(calls[0].url).toBe("https://api.anthropic.com/v1/messages");
   });
 
-  test("extra headers : a JSON object of one-line strings, never a header the adapter owns", () => {
+  test("extra headers: a JSON object of one-line strings, never a header the adapter owns", () => {
     expect(new ChatSettings({ extra_headers: '{"X-Org":"ops"}' }).extra_headers).toBe('{"X-Org":"ops"}');
     expect(new ChatSettings({ extra_headers: "" }).extra_headers).toBe("");
     expect(() => new ChatSettings({ extra_headers: "not json" })).toThrow(/JSON object/);
@@ -231,7 +231,7 @@ describe("provider requests", () => {
     vi.stubGlobal("fetch", failing("SELF_SIGNED_CERT_IN_CHAIN"));
     let err = await complete({ settings, system: "S", history: hi, tools: [] }).catch((e) => e);
     expect(err).toMatchObject({ code: "provider_unreachable", status: 502 });
-    expect(err.message).toMatch(/at https:\/\/llm\.corp\.local : .*NODE_EXTRA_CA_CERTS.*\(SELF_SIGNED_CERT_IN_CHAIN\)/);
+    expect(err.message).toMatch(/at https:\/\/llm\.corp\.local: .*NODE_EXTRA_CA_CERTS.*\(SELF_SIGNED_CERT_IN_CHAIN\)/);
     expect(err.message).not.toMatch(/sk-secret|token=abc|\/v1/);
     vi.stubGlobal("fetch", failing("ENOTFOUND"));
     err = await complete({ settings, system: "S", history: hi, tools: [] }).catch((e) => e);
@@ -241,7 +241,7 @@ describe("provider requests", () => {
     expect(err.message).toMatch(/boom ESOMETHING \(ESOMETHING\)/);
   });
 
-  test("ignore certificate errors : only then the lax agent, and only for this call", async () => {
+  test("ignore certificate errors: only then the lax agent, and only for this call", async () => {
     vi.stubGlobal("fetch", reply({ choices: [{ message: { content: "OK" } }] }));
     const settings = { provider: "custom", api_key: "k", model: "m", base_url: "https://llm.corp.local/v1", timeout_seconds: 5 };
     const hi = [{ role: "user", text: "hi" }];

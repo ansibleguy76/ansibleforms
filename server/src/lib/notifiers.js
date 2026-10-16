@@ -66,7 +66,7 @@ export function escapeSlack(value) {
 function reasonOf(err) {
   if (err?.response) {
     const body = typeof err.response.data === "string" ? err.response.data : JSON.stringify(err.response.data ?? "");
-    return `answered ${err.response.status}${body ? ` : ${body.slice(0, 200)}` : ""}`;
+    return `answered ${err.response.status}${body ? `: ${body.slice(0, 200)}` : ""}`;
   }
   if (err?.code === "ECONNABORTED") return `no answer within ${TIMEOUT_MS / 1000}s`;
   return err?.code || err?.message || String(err);
@@ -196,7 +196,7 @@ export async function send(channel, message, recipients = []) {
   switch (channel.type) {
     case "mail": {
       const to = (recipients || []).filter(Boolean);
-      if (!to.length) throw new Error(`mail channel '${channel.name}' : no address to send to`);
+      if (!to.length) throw new Error(`mail channel '${channel.name}': no address to send to`);
       const config = await NotificationChannel.toMailConfig(channel);
       const html = message.html || `<p><b>${escapeHtml(message.title)}</b></p><p>${escapeHtml(message.text).replace(/\n/g, "<br>")}</p>${message.link ? `<p><a href="${escapeHtml(message.link)}">${escapeHtml(label)}</a></p>` : ""}`;
       const id = await Settings.maildo(config, to.join(","), message.title, html);
@@ -209,7 +209,7 @@ export async function send(channel, message, recipients = []) {
       return post(channel.webhook_url, teamsBody(message, label));
     case "telegram": {
       const cred = await NotificationChannel.resolveCredential(channel.token_credential);
-      if (!cred?.password) throw new Error(`telegram channel '${channel.name}' : its bot token credential '${channel.token_credential}' is not found`);
+      if (!cred?.password) throw new Error(`telegram channel '${channel.name}': its bot token credential '${channel.token_credential}' is not found`);
       const base = String(channel.api_url || "https://api.telegram.org").replace(/\/+$/, "");
       return post(`${base}/bot${cred.password}/sendMessage`, telegramBody(message, channel.chat_id, label));
     }
@@ -218,7 +218,7 @@ export async function send(channel, message, recipients = []) {
       if (String(channel.headers || "").trim()) headers = JSON.parse(channel.headers);
       if (channel.token_credential) {
         const cred = await NotificationChannel.resolveCredential(channel.token_credential);
-        if (!cred?.password) throw new Error(`webhook channel '${channel.name}' : its token credential '${channel.token_credential}' is not found`);
+        if (!cred?.password) throw new Error(`webhook channel '${channel.name}': its token credential '${channel.token_credential}' is not found`);
         headers.Authorization = `Bearer ${cred.password}`;
       }
       const body = renderPayload(channel.payload, payloadValues(message));
@@ -253,12 +253,12 @@ export async function sendToChannels(names, message, recipients = [], context = 
     try {
       const channel = await NotificationChannel.findByName(name);
       if (!channel) {
-        logger.warning(`${context} : there is no notification channel named '${name}' (Connections > Notifications), skipped`);
+        logger.warning(`${context}: there is no notification channel named '${name}' (Connections > Notifications), skipped`);
         results.push({ name, ok: false, error: "no such channel" });
         continue;
       }
       if (!channel.enabled) {
-        logger.notice(`${context} : the notification channel '${name}' is turned off, skipped`);
+        logger.notice(`${context}: the notification channel '${name}' is turned off, skipped`);
         results.push({ name, ok: false, error: "turned off" });
         continue;
       }
@@ -266,7 +266,7 @@ export async function sendToChannels(names, message, recipients = [], context = 
       logger.notice(`${context} sent to the ${channel.type} channel '${name}'${channel.type === "mail" ? ` (${id})` : ""}`);
       results.push({ name, ok: true });
     } catch (err) {
-      logger.error(`${context} could not be sent to the channel '${name}' : ${err.message}`);
+      logger.error(`${context} could not be sent to the channel '${name}': ${err.message}`);
       results.push({ name, ok: false, error: err.message });
     }
   }
