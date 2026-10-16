@@ -804,9 +804,10 @@ onMounted(async () => {
 }
 /* The value is a div, not an input : .form-control gives it the same box as the fields
    on the Settings tab, and the grey of a disabled field is what says 'read only'. */
-/* a variable that cannot be written : its BsInput's own mb-3 taken away, so the line saying why
-   sits under the help text as under a secret's box */
-.af-env-field > .mb-3:has(+ .env-locked) {
+/* the note under a field (why it cannot be written, a restart it needs, an RTE that reads it) :
+   its BsInput's own mb-3 taken away, so the note sits under the help text as under a secret's box */
+.af-env-field > .mb-3:has(+ .env-locked),
+.af-env-field > .mb-3:has(+ .env-restart) {
   margin-bottom: 0 !important;
 }
 .env-locked {
