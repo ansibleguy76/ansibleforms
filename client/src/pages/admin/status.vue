@@ -54,6 +54,22 @@ const summary = computed(() => result.value?.summary || null);
 const attention = computed(() => (summary.value?.warning || 0) + (summary.value?.error || 0));
 const info = computed(() => result.value?.info || []);
 
+// ─── the filter (the search box of the title line) ───────────────────────────────────────────
+// A row stays when its name, its value or its detail has the text typed, whatever its case ; on
+// both tabs, so moving between them keeps it.
+const filter = ref('');
+function rowMatches(label, row) {
+  const q = filter.value.trim().toLowerCase();
+  if (!q) return true;
+  return [label, displayValue(row.value), detailText(row.detail)].some((x) =>
+    String(x ?? '')
+      .toLowerCase()
+      .includes(q),
+  );
+}
+const shownChecks = computed(() => (result.value?.checks || []).filter((c) => rowMatches(checkLabel(c.key), c)));
+const shownInfo = computed(() => info.value.filter((i) => rowMatches(infoLabel(i.key), i)));
+
 // info labels are built by concatenation the same way check labels are, so
 // 'health.infoDatabase' and friends look unreferenced to a plain grep
 function infoLabel(key) {
@@ -155,7 +171,7 @@ onMounted(async () => {
         <AppSkeleton v-if="loading && !result" shape="detail" :count="10" />
         <table v-if="result && activeTab === 'checks'" class="table table-sm align-middle mb-0 health-table">
           <tbody>
-            <template v-for="c in result.checks" :key="c.key">
+            <template v-for="c in shownChecks" :key="c.key">
               <tr>
                 <td style="width: 2.5rem">
                   <span class="badge rounded-pill" :class="indicatorClass(c.status)">&nbsp;</span>
@@ -198,13 +214,20 @@ onMounted(async () => {
           </tbody>
         </table>
 
+        <!-- nothing on this tab has the text filtered on -->
+        <div
+          v-if="result && filter.trim() && !(activeTab === 'checks' ? shownChecks : shownInfo).length"
+          class="text-body-secondary fst-italic py-2"
+        >
+          {{ t('search.noResults', { query: filter.trim() }) }}
+        </div>
         <!-- Facts, not verdicts. Deliberately WITHOUT a status dot : a green dot beside
            'MySQL 8.4.9' or 'file/repository' claims something was tested when nothing
            was. These are things you look up. -->
         <template v-if="result && activeTab === 'information' && info.length">
           <table class="table table-sm align-middle mb-0 health-table">
             <tbody>
-              <template v-for="i in info" :key="i.key">
+              <template v-for="i in shownInfo" :key="i.key">
                 <tr>
                   <!-- a fact with a detail unfolds it : its caret before the name -->
                   <td
@@ -230,6 +253,10 @@ onMounted(async () => {
             </tbody>
           </table>
         </template>
+      </template>
+      <!-- narrows both tabs' rows ; the search box of the other pages -->
+      <template #headerActions>
+        <BsSearch v-model="filter" />
       </template>
       <template #actions>
         <BsButton :icon="loading ? 'spinner' : 'refresh'" @click="load()">{{ t('health.refresh') }}</BsButton>
