@@ -2752,6 +2752,8 @@ export default {
     hideOutput: 'Ausgabe ausblenden',
     reloadForm: 'Dieses Formular neu laden',
     loadFromStore: 'Aus Speicher laden',
+    findField: 'Feld suchen',
+    findFieldHint: 'Hebt die Felder hervor, deren Name diesen Text enthält; Enter springt zum nächsten',
     back: 'Zurueck',
     submit: 'Senden',
     save: 'Speichern',

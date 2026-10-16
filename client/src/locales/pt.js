@@ -2740,6 +2740,8 @@ export default {
     hideOutput: 'Ocultar resultado',
     reloadForm: 'Recarregar este formulário',
     loadFromStore: 'Carregar dos guardados',
+    findField: 'Procurar um campo',
+    findFieldHint: 'Destaca os campos cujo nome tem este texto; Enter vai para o seguinte',
     back: 'Voltar',
     submit: 'Submeter',
     save: 'Guardar',

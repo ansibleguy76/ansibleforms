@@ -2739,6 +2739,8 @@ export default {
     hideOutput: 'Ocultar salida',
     reloadForm: 'Recargar este formulario',
     loadFromStore: 'Cargar desde almacén',
+    findField: 'Buscar un campo',
+    findFieldHint: 'Resalta los campos cuyo nombre contiene este texto; Intro va al siguiente',
     back: 'Atrás',
     submit: 'Enviar',
     save: 'Guardar',

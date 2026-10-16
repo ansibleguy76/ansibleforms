@@ -2702,6 +2702,8 @@ export default {
     hideOutput: 'Hide output',
     reloadForm: 'Reload this form',
     loadFromStore: 'Load from store',
+    findField: 'Find a field',
+    findFieldHint: 'Highlights the fields whose name has this text; Enter goes to the next',
     back: 'Back',
     submit: 'Submit',
     save: 'Save',

@@ -2749,6 +2749,8 @@ export default {
     hideOutput: 'Masquer la sortie',
     reloadForm: 'Recharger ce formulaire',
     loadFromStore: 'Charger depuis le stockage',
+    findField: 'Trouver un champ',
+    findFieldHint: 'Met en évidence les champs dont le nom contient ce texte ; Entrée passe au suivant',
     back: 'Retour',
     submit: 'Soumettre',
     save: 'Enregistrer',
