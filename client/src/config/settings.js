@@ -1664,11 +1664,12 @@ export default function getSettings(t) {
           step: 'type',
           label: t('settings.credentials.type'),
           type: 'radio',
+          // in the order of their names, in the language shown
           options: CREDENTIAL_TYPES.map((value) => ({
             value,
             label: t(`settings.credentials.type_${value}`),
             hint: t(`settings.credentials.type_${value}Hint`),
-          })),
+          })).sort((a, b) => a.label.localeCompare(b.label)),
           // a type the record does not have (none yet, an unknown one) : from its is_database flag
           initial: (r) =>
             CREDENTIAL_TYPES.includes(r?.credential_type)
@@ -2473,11 +2474,12 @@ export default function getSettings(t) {
           step: 'type',
           label: t('settings.runners.type'),
           type: 'radio',
+          // in the order of their names, in the language shown
           options: RUNNER_KINDS.map((value) => ({
             value,
             label: t(`settings.runners.type_${value}`),
             hint: t(`settings.runners.type_${value}Hint`),
-          })),
+          })).sort((a, b) => a.label.localeCompare(b.label)),
           initial: runnerKind,
           noTable: true,
         },

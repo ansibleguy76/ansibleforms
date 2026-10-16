@@ -131,6 +131,12 @@ const noStore = computed(() => ['cyberark', 'vault'].includes(type.value));
 const fromStore = computed(() => !noStore.value && edit.value?.secret_source === 'store');
 // a Vault, an RTE, a Semaphore and a Rundeck log in with a token only : no user
 const hasUser = computed(() => !TOKEN_CREDENTIAL_TYPES.includes(type.value));
+// the types in the order of their names, in the language shown, as the dialog's
+const sortedTypes = computed(() =>
+  [...CREDENTIAL_TYPES].sort((a, b) =>
+    t(`settings.credentials.type_${a}`).localeCompare(t(`settings.credentials.type_${b}`)),
+  ),
+);
 // what its fields are called for its type
 const labels = computed(() => credentialLabels(t, type.value));
 const dirty = computed(
@@ -552,7 +558,7 @@ onMounted(async () => {
             <!-- Type : what it is for, each its label and a few grey words ; set when it was made (what
                  uses it expects it) -->
             <template v-else-if="shownTab === 'type'">
-              <div v-for="kind in CREDENTIAL_TYPES" :key="kind" class="form-check af-short-check af-type-option">
+              <div v-for="kind in sortedTypes" :key="kind" class="form-check af-short-check af-type-option">
                 <input
                   :id="'af-ctype-' + kind"
                   v-model="edit.credential_type"
