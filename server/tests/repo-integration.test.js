@@ -236,3 +236,16 @@ describe('Repo — non-security functions still work', () => {
     expect(Repo.maskGitToken(undefined)).toBeUndefined();
   });
 });
+
+describe('a repository folder is always inside the repositories folder', () => {
+  it('a valid name is its folder there', () => {
+    expect(Repo.folderOf('production')).toBe('/tmp/test-repos/production');
+  });
+
+  it('a name that would leave it is refused', () => {
+    for (const name of ['../etc', '..', '.', 'a/../../b', '/etc', 'a/b', '', null]) {
+      expect(() => Repo.folderOf(name), String(name)).toThrow(/Invalid repository name/);
+      expect(Repo.isValidName(name)).toBe(false);
+    }
+  });
+});

@@ -22,7 +22,6 @@
 // instance is the opposite : see reloadConfigSeed.
 import fs from "fs";
 import { createHash } from "node:crypto";
-import path from "path";
 import yaml from "yaml";
 import logger from "./logger.js";
 import crypto from "./crypto.js";
@@ -41,6 +40,7 @@ import Settings from "../models/settings.model.js";
 import ChatSettings, { normaliseExtraHeaders } from "../models/chatSettings.model.js";
 import Audit from "../models/audit.model.js";
 import mysql from "../models/db.model.js";
+import { repoFolder } from "../models/repo.model.js";
 
 // The one thing that distinguishes the seed from an API caller. Everything the seed
 // writes goes through the normal models, so encryption, the is_default handling and
@@ -282,7 +282,7 @@ async function applyListSection(section, cfg, summary) {
  */
 async function ensureRepositoryClones(doc, summary) {
   for (const item of doc.repositories?.items || []) {
-    const dir = path.join(appConfig.repoPath, item.name);
+    const dir = repoFolder(item.name);
     if (fs.existsSync(dir)) continue;
     logger.warning(`Seeded repository '${item.name}' has no working tree: cloning it again`);
     summary.recloned.push(`repository:${item.name}`);

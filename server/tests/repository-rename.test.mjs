@@ -27,6 +27,8 @@ vi.mock("../src/models/repo.model.js", () => ({
       return true;              // a tree was actually moved
     },
     delete: async () => {},
+    // the real name check (Repo.isValidName) : the names these tests use are valid
+    isValidName: (name) => /^[a-zA-Z0-9_][a-zA-Z0-9._-]*$/.test(String(name || "")) && !String(name).includes(".."),
   },
 }));
 
@@ -95,6 +97,8 @@ describe("renaming a repository the seed owns", () => {
 
   test("an allowed rename does move the tree", async () => {
     await Repository.update({ name: "after" }, "before");
+    // renamed to a folder outside the repositories folder : refused, nothing moved
+    await assert.rejects(Repository.update({ name: "../outside" }, "after"), /Invalid repository name/);
     assert.deepEqual(moves, ["before->after"]);
   });
 });
@@ -134,6 +138,8 @@ describe("an ordinary update that is not a rename", () => {
 describe("a new repository names its branch", () => {
   test("refused without one, as without a name", async () => {
     await assert.rejects(Repository.create({ name: "r", uri: "https://x/r.git", branch: "  " }), /branch/);
+    // a name that would be a folder outside the repositories folder, refused before anything
+    await assert.rejects(Repository.create({ name: "../../etc", uri: "https://x/r.git", branch: "main" }), /Invalid repository name/);
     await assert.rejects(Repository.create({ name: "r", uri: "https://x/r.git" }), /branch/);
   });
   test("the seed's own may leave it out (the remote's default)", async () => {

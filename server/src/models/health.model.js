@@ -28,6 +28,7 @@ import { readFileSync } from 'fs';
 import * as fsSync from 'fs';
 import { fileURLToPath } from 'url';
 import { databaseUserPrivileges } from "../lib/dbPrivileges.js";
+import { repoFolder } from "./repo.model.js";
 
 // System health.
 //
@@ -437,7 +438,7 @@ async function repositoriesCheck() {
   // seeing one here means the re-clone is still running or keeps failing.
   const missing = rows.filter(r => {
     try {
-      return !fsSync.existsSync(path.join(appConfig.repoPath, r.name));
+      return !fsSync.existsSync(repoFolder(r.name));
     } catch {
       return false;
     }
