@@ -1556,6 +1556,7 @@ export default {
       server: 'サーバー',
       serverHelp: 'このログインが使われるシークレットストアのアドレス。',
       noServer: '資格情報にサーバーがありません。資格情報のページで追加してください。',
+      noneOfType: '種類 {type} の認証情報はまだありません',
       type_rte: 'RTE',
       type_rteHint: 'RTE (プレイブックとワークフローのランナー) のトークンとアドレス',
       type_awx: 'AWX',

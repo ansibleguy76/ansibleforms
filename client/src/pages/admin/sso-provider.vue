@@ -22,7 +22,7 @@ import axios from 'axios';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
-import getSettings, { SSO_TYPES } from '@/config/settings';
+import getSettings, { SSO_TYPES, noCredentialsText } from '@/config/settings';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { recordButtons } from '@/lib/recordButtons';
@@ -335,6 +335,7 @@ onMounted(async () => {
               icon="key"
               :isFloating="false"
               :values="credentials"
+              :emptyText="noCredentialsText(t, provider?.provider === 'azuread' ? 'entraid' : 'oidc')"
               valueKey="name"
               labelKey="name"
               :help="t('settings.oauth2.credentialHelp')"

@@ -1581,6 +1581,7 @@ export default {
       server: 'Servidor',
       serverHelp: "L'adreça del magatzem de secrets per al qual serveix aquest accés.",
       noServer: 'La seva credencial no té servidor: afegiu-ne un a la pàgina de la credencial.',
+      noneOfType: 'Encara no hi ha credencials de tipus {type}',
       type_rte: 'RTE',
       type_rteHint: "El token i l'adreça d'un RTE, un runner per a playbooks i workflows",
       type_awx: 'AWX',

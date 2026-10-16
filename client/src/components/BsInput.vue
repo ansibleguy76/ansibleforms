@@ -60,6 +60,7 @@ defineProps({
   values: { type: Array, default: () => [] }, // values for select and select_advanced
   valueKey: { type: String, default: 'value' }, // Value key for select
   labelKey: { type: String, default: 'label' }, // Label key for select
+  emptyText: { type: String, default: '' }, // a select with nothing to choose : disabled, saying this
   rows: { type: Number, default: 3 }, // Rows for textarea
   lang: { type: String, default: 'yaml' }, // Language for editor
   theme: { type: String, default: null }, // Theme for editor (null = auto-detect light/dark)
@@ -98,6 +99,7 @@ defineProps({
             :placeholder="placeholder"
             v-model="model"
             :values="values"
+            :empty="emptyText"
           />
           <BsInputTextAreaRaw
             v-else-if="type === 'textarea'"
@@ -141,6 +143,7 @@ defineProps({
           :placeholder="placeholder"
           v-model="model"
           :values="values"
+          :empty="emptyText"
         />
         <BsInputTextAreaRaw
           v-else-if="type === 'textarea'"
@@ -237,6 +240,7 @@ defineProps({
             :placeholder="placeholder"
             v-model="model"
             :values="values"
+            :empty="emptyText"
           />
           <BsInputTextAreaRaw
             v-else-if="type === 'textarea'"
@@ -325,6 +329,7 @@ defineProps({
           :placeholder="placeholder"
           v-model="model"
           :values="values"
+          :empty="emptyText"
         />
         <BsInputTextAreaRaw
           v-else-if="type === 'textarea'"
@@ -411,6 +416,7 @@ defineProps({
             :placeholder="placeholder"
             v-model="model"
             :values="values"
+            :empty="emptyText"
           />
           <BsInputTextAreaRaw
             v-else-if="type === 'textarea'"
@@ -454,6 +460,7 @@ defineProps({
           :placeholder="placeholder"
           v-model="model"
           :values="values"
+          :empty="emptyText"
         />
         <BsInputSelectAdvanced
           v-else-if="type === 'select_advanced'"

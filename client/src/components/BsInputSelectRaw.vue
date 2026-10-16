@@ -13,6 +13,9 @@
 /*      values: Array                                             */
 /*      valueKey: String - values are objects                     */
 /*      labelKey: String - values are object                      */
+/*      disabled: Boolean                                         */
+/*      empty: String - with nothing to choose (no value but an   */
+/*         empty one), the dropdown disabled, saying this         */
 /*                                                                */
 /******************************************************************/
 
@@ -61,7 +64,18 @@ const props = defineProps({
     type: String,
     default: 'label',
   },
+  disabled: {
+    type: Boolean,
+    default: false,
+  },
+  empty: {
+    type: String,
+    default: '',
+  },
 });
+
+// nothing to choose : no value but an empty one (the "none" a dropdown starts with)
+const isEmpty = computed(() => !!props.empty && !props.values.some((v) => v?.[props.valueKey]));
 
 // COMPUTED
 
@@ -77,7 +91,20 @@ const classes = computed(() => {
 });
 </script>
 <template>
-  <select :readonly="readonly" :id="uid" :style="style" :class="classes" :placeholder="placeholder" v-model="model">
+  <!-- nothing to choose : disabled, the one option saying so -->
+  <select v-if="isEmpty" :id="uid" :style="style" :class="classes" class="af-select-empty" disabled>
+    <option value="" selected>{{ empty }}</option>
+  </select>
+  <select
+    v-else
+    :readonly="readonly"
+    :disabled="disabled"
+    :id="uid"
+    :style="style"
+    :class="classes"
+    :placeholder="placeholder"
+    v-model="model"
+  >
     <option v-for="value in values" :key="value[valueKey]" :value="value[valueKey]">{{ value[labelKey] }}</option>
   </select>
 </template>

@@ -1510,6 +1510,7 @@ export default {
       server: '服务器',
       serverHelp: '此登录所用的密钥存储的地址。',
       noServer: '其凭据没有服务器：请在凭据页面添加一个。',
+      noneOfType: '尚无类型为 {type} 的凭据',
       type_rte: 'RTE',
       type_rteHint: 'RTE（用于 playbook 和工作流的运行器）的令牌和地址',
       type_awx: 'AWX',

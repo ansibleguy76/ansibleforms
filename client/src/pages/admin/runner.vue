@@ -29,7 +29,14 @@ import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import Helpers from '@/lib/Helpers';
 import { useAppStore } from '@/stores/app';
-import { RUNNER_KINDS, PROJECT_RUNNER_KINDS, AWX_RUNNER_KINDS, runnerKind, registrationPill } from '@/config/settings';
+import {
+  RUNNER_KINDS,
+  PROJECT_RUNNER_KINDS,
+  AWX_RUNNER_KINDS,
+  runnerKind,
+  registrationPill,
+  noCredentialsText,
+} from '@/config/settings';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { useFormLinks } from '@/composables/useFormLinks';
@@ -504,6 +511,7 @@ onMounted(async () => {
                 icon="key"
                 :isFloating="false"
                 :values="credentials"
+                :emptyText="noCredentialsText(t, edit.kind || 'rte')"
                 valueKey="name"
                 labelKey="name"
                 :help="t(`settings.runners.credentialHelp_${edit.kind || 'rte'}`)"

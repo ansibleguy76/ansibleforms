@@ -1675,6 +1675,7 @@ export default {
       server: 'Server',
       serverHelp: 'Het adres van de secret store waarvoor deze login geldt.',
       noServer: 'Zijn referentie heeft geen server: voeg er een toe op de pagina van de referentie.',
+      noneOfType: 'Nog geen referenties van type {type}',
       type_rte: 'RTE',
       type_rteHint: 'Het token en adres van een RTE, een runner voor playbooks en workflows',
       type_awx: 'AWX',

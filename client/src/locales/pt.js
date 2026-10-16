@@ -1578,6 +1578,7 @@ export default {
       server: 'Servidor',
       serverHelp: 'O endereço do cofre de segredos para o qual vale este acesso.',
       noServer: 'A sua credencial não tem servidor: adicione um na página da credencial.',
+      noneOfType: 'Ainda não há credenciais do tipo {type}',
       type_rte: 'RTE',
       type_rteHint: 'O token e o endereço de um RTE, um runner para playbooks e workflows',
       type_awx: 'AWX',

@@ -107,7 +107,7 @@ import yaml from 'yaml';
 import { required, requiredIf, helpers, email, sameAs } from '@vuelidate/validators';
 import { useI18n } from 'vue-i18n';
 import BsDataTable from './BsDataTable.vue';
-import getSettings from '@/config/settings';
+import getSettings, { noCredentialsText } from '@/config/settings';
 import { inSentence } from '@/lib/inSentence';
 import { rememberRows } from '@/lib/recordButtons';
 import { tableControls } from '@/lib/listControls';
@@ -832,7 +832,24 @@ const creators = {};
  */
 function noChoices(field) {
   if (!createsChoices.value || !field.createWith || !allSettings.value[field.createWith] || !field.parent) return false;
-  return !getParentValues(field.parent).some((v) => v?.[field.valueKey]);
+  // what it offers : its choicesWhen applied (a runner's credentials of its kind only)
+  return !choicesOf(field).some((v) => v?.[field.valueKey]);
+}
+
+/**
+ * What a credential dropdown with nothing to choose says, disabled : no credential of the type its
+ * New button makes yet. Another dropdown with nothing to choose shows its New button only.
+ *
+ * Args:
+ *   field (object): the select field.
+ *
+ * Returns:
+ *   string: the message, or '' when it is not a credential dropdown of one type.
+ */
+function emptyTextOf(field) {
+  if (field.createWith !== 'credentials') return '';
+  const type = textOf(field.createDefaults)?.credential_type;
+  return type ? noCredentialsText(t, type) : '';
 }
 
 /**
@@ -1869,7 +1886,10 @@ defineExpose({
 
         <!-- A DROPDOWN WITH NOTHING TO CHOOSE YET (createWith, an empty list) : only its New
              button, where the dropdown would be -->
-        <div v-else-if="showField(field) && noChoices(field) && action !== 'select'" class="row mb-3">
+        <div
+          v-else-if="showField(field) && noChoices(field) && !emptyTextOf(field) && action !== 'select'"
+          class="row mb-3"
+        >
           <label class="col-sm-2 col-form-label fw-bold">{{ field.label }}</label>
           <div class="col-sm-10 d-flex align-items-center">
             <BsButton icon="plus" @click="creators[field.key]?.newItem(textOf(field.createDefaults))">{{
@@ -1920,6 +1940,7 @@ defineExpose({
           :style="field.style"
           :lang="field.lang"
           :values="choicesOf(field)"
+          :emptyText="field.type === 'select' ? emptyTextOf(field) : ''"
         />
         <!-- a dropdown that can create its choice : the dialog of that list, over this one -->
         <div
@@ -1929,7 +1950,7 @@ defineExpose({
             field.createWith &&
             allSettings[field.createWith] &&
             action !== 'select' &&
-            !noChoices(field)
+            (!noChoices(field) || emptyTextOf(field))
           "
           class="row mb-3 mt-n2"
         >
