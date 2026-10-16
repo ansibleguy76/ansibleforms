@@ -1722,9 +1722,10 @@ defineExpose({
         t('settings.common.changePassword')
       }}</BsButton>
     </template>
-    <template #default>
-      <!-- the steps of a wizard : where you are, and the way back (editing : to any step) -->
-      <ol v-if="wizardActive" class="af-wizard-steps mb-4">
+    <template v-if="wizardActive" #top>
+      <!-- the steps of a wizard : where you are, and the way back (editing : to any step) ; above
+           the fields, out of their scroll -->
+      <ol v-if="wizardActive" class="af-wizard-steps mb-0">
         <li
           v-for="(step, i) in steps"
           :key="step.key"
@@ -1741,6 +1742,8 @@ defineExpose({
           <span class="af-wizard-label">{{ step.label }}</span>
         </li>
       </ol>
+    </template>
+    <template #default>
       <!-- the help of the step shown -->
       <div v-for="(note, n) in stepNotes" :key="'note-' + n" class="alert alert-info af-wizard-note">
         <div v-if="note.title" class="fw-bold">{{ note.title }}</div>

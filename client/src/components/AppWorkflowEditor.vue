@@ -701,8 +701,9 @@ function startAt(i) {
       <!-- a new node : the wizard - what it runs, how it runs (a playbook), where it goes -->
       <BsModal v-if="wizard" size="lg" icon="plus" :footerClose="false" @close="wizard = null">
         <template #title>{{ t('workflowEditor.newNode') }}</template>
-        <template #default>
-          <ol class="af-wizard-steps mb-4">
+        <!-- its steps, above the fields and out of their scroll -->
+        <template #top>
+          <ol class="af-wizard-steps mb-0">
             <li
               v-for="(step, i) in wizardSteps"
               :key="step"
@@ -715,6 +716,8 @@ function startAt(i) {
               <span class="af-wizard-label">{{ t(`workflowEditor.steps.${step}`) }}</span>
             </li>
           </ol>
+        </template>
+        <template #default>
           <AppWorkflowNodeFields
             v-if="wizardStep !== 'where'"
             :node="wizard.draft"

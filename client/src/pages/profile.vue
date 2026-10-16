@@ -737,13 +737,16 @@ async function changePassword() {
                sign-in again for an SSO account), then the token itself, shown once -->
           <BsModal v-if="tokenDialog" size="lg" icon="code" :footerClose="false" @close="closeTokenWizard">
             <template #title>{{ t('profilePage.token.new') }}</template>
-            <template #default>
+            <!-- its steps, above the fields and out of their scroll -->
+            <template #top>
               <AppWizardSteps
                 :steps="tokenSteps"
                 :current="tokenStep"
                 :reached="tokenReached"
                 @go="(i) => (tokenStep = i)"
               />
+            </template>
+            <template #default>
               <div v-if="tokenStep === 2 && tokenResult">
                 <label class="form-label fw-semibold" for="af-token">{{
                   tokenResult.never

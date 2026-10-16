@@ -16,6 +16,8 @@
 /*         would not reach it)                                    */
 /*                                                                */
 /*  @slots:                                                       */
+/*      top: what stays above the content while it scrolls (a     */
+/*         wizard's steps)                                        */
 /*      default: the content                                      */
 /*      actions: its buttons, in the footer before Close          */
 /*                                                                */
@@ -98,6 +100,10 @@ function backdropClick(e) {
           </h5>
           <button type="button" class="btn-close" aria-label="Close" @click="close"></button>
         </div>
+        <!-- above the content, out of its scroll : the scrollbar starts under it -->
+        <div v-if="$slots.top" class="af-modal-top">
+          <slot name="top"></slot>
+        </div>
         <div class="modal-body">
           <slot></slot>
         </div>
@@ -110,4 +116,10 @@ function backdropClick(e) {
   </div>
   <div v-show="show" class="modal-backdrop fade show"></div>
 </template>
-<style scoped></style>
+<style scoped>
+/* as the body's padding, its bottom half : the content's own top padding parts the two */
+.af-modal-top {
+  flex-shrink: 0;
+  padding: var(--bs-modal-padding) var(--bs-modal-padding) calc(var(--bs-modal-padding) / 2);
+}
+</style>

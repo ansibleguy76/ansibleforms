@@ -34,7 +34,7 @@ function go(i) {
 }
 </script>
 <template>
-  <ol class="af-wizard-steps mb-4">
+  <ol class="af-wizard-steps mb-0">
     <li
       v-for="(step, i) in steps"
       :key="step.key"
