@@ -29,6 +29,8 @@
 /*                                        */
 /*  @slots:                               */
 /*      title: String                     */
+/*      top: above the content, out of    */
+/*         its scroll (a wizard's steps)  */
 /*      default: String                   */
 /*      footer: String                    */
 /*                                        */
@@ -101,6 +103,10 @@ function backdropClick(e) {
             @click="emit('close')"
           ></button>
         </div>
+        <!-- above the content, out of its scroll : the scrollbar starts under it -->
+        <div v-if="$slots.top" class="af-modal-top">
+          <slot name="top"></slot>
+        </div>
         <div class="modal-body">
           <slot></slot>
         </div>
@@ -114,6 +120,11 @@ function backdropClick(e) {
   <div class="modal-backdrop fade show" :class="{ 'af-backdrop-blur': blur }"></div>
 </template>
 <style scoped>
+/* as the body's padding, its bottom half : the content's own top padding parts the two */
+.af-modal-top {
+  flex-shrink: 0;
+  padding: var(--bs-modal-padding) var(--bs-modal-padding) calc(var(--bs-modal-padding) / 2);
+}
 /* the page behind blurred : nothing of it can be read until the dialog is answered */
 .af-backdrop-blur {
   backdrop-filter: blur(8px);
