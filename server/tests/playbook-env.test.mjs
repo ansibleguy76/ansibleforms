@@ -33,7 +33,9 @@ describe("the playbook environment", () => {
       const text = fs.readFileSync(file, "utf8");
       for (const m of text.matchAll(/process\.env\.([A-Z_][A-Z0-9_]*)|process\.env\[['"]([A-Z_][A-Z0-9_]*)['"]\]/g)) read.add(m[1] || m[2]);
     }
-    expect([...read].filter((n) => !APP_ENV.has(n) && !n.startsWith("MYSQL_"))).toEqual([]);
+    // PATH is the system's : read to find a program (Cmd.isAvailable), and a playbook keeps it
+    const SYSTEM = new Set(["PATH"]);
+    expect([...read].filter((n) => !APP_ENV.has(n) && !n.startsWith("MYSQL_") && !SYSTEM.has(n))).toEqual([]);
   });
 
   test("every documented environment variable is left out", () => {

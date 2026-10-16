@@ -239,11 +239,13 @@ describe("health reports problems, not just ok", () => {
   });
 
   test("a missing dump binary is an error naming the env var", async () => {
-    Cmd.executeSilentCommand = async (cmd) => {
-      if (cmd.command.startsWith("command -v")) throw new Error("not found");
-      return "";
-    };
-    const r = await Health.check();
+    Cmd.isAvailable = () => false;
+    let r;
+    try {
+      r = await Health.check();
+    } finally {
+      Cmd.isAvailable = () => true;
+    }
     assert.equal(statusOf(r, "backupTooling"), "error");
     assert.match(checkOf(r, "backupTooling").detail, /MYSQLDUMP_COMMAND/);
   });

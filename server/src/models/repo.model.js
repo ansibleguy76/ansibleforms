@@ -5,7 +5,7 @@ import path from "path";
 import fs from "fs";
 import os from "os";
 import config from '../../config/app.config.js';
-import quote from 'shell-quote/quote.js'; // shell-escape values interpolated into commands (Cmd runs with shell:true)
+import quote from 'shell-quote/quote.js'; // quote values put in a command line : Cmd splits it as a shell would (Cmd.splitCommand), never running one
 
 const SAFE_NAME_REGEX = /^[a-zA-Z0-9_][a-zA-Z0-9._-]*$/;
 const SAFE_BRANCH_REGEX = /^[a-zA-Z0-9_][a-zA-Z0-9._\-/]*$/;
@@ -251,11 +251,13 @@ Repo.clone = async function (uri,name,branch=undefined,auth=null) {
         var host = match[1]
         validateHostname(host);
         logger.notice(`Found host in command: ${host}; adding it to known_hosts`)
-        cmd = `ssh-keyscan ${quote([host])} >> ~/.ssh/known_hosts ; ${cmd}`
+        // before the clone, as `ssh-keyscan ... ; git clone` did : a scan that fails does not stop it
+        await Repo.addKnownHosts(host).catch((e) => logger.warning(`Could not add the keys of ${host}: ${e.message}`))
       }else{
         logger.warning(`No host found in command`)
       }
-      var maskedCommand = Repo.maskGitToken(cmd)
+      // shown as typed, not as quoted for splitting (http\://host\:3003 read badly)
+      var maskedCommand = Repo.maskGitToken(`${config.gitCloneCommand}${branch ? ` -b ${branch}` : ""} --verbose ${uri} ${name}`)
       return await Cmd.executeSilentCommand({command:cmd,directory:directory,description:"Cloning repository",maskedCommand:maskedCommand,env:Repo.authEnv(auth)})
 
     }
@@ -278,6 +280,9 @@ Repo.clone = async function (uri,name,branch=undefined,auth=null) {
  */
 // Stays `async` on purpose: validateHostname below throws SYNCHRONOUSLY, and callers
 // (and tests/repo-integration.test.js) expect a rejected promise, not a thrown error.
+// where ssh reads the known host keys : the user's own (a test points it elsewhere)
+Repo.knownHostsFile = () => path.join(os.homedir(), ".ssh", "known_hosts");
+
 Repo.addKnownHosts = async function (hosts) {
     if(!hosts){
       throw new Error("No hosts given")
@@ -287,29 +292,37 @@ Repo.addKnownHosts = async function (hosts) {
       validateHostname(h);
     });
     logger.notice(`Adding keys for hosts ${hosts}`)
-    var safeHosts = hostList.map(h => quote([h])).join(' ')
-    var cmd = `ssh-keyscan ${safeHosts} >> ~/.ssh/known_hosts`
-    logger.notice(`Running cmd: ${cmd}`)
+    // ssh-keyscan's own output is the keys, appended to known_hosts here (no shell, no >>)
+    const knownHosts = Repo.knownHostsFile()
+    logger.notice(`Running: ssh-keyscan ${hostList.join(" ")} >> ${knownHosts}`)
     return new Promise((resolve, reject) => {
-      var known_hosts = Cmd.runCommand(cmd)
+      var known_hosts = Cmd.runCommand("ssh-keyscan", ["--", ...hostList])
+      var keys = []
       var output = []
       known_hosts.stdout.on('data', function(a){
         logger.info(a)
-        output.push(a)
+        keys.push(String(a))
       });
       known_hosts.stderr.on('data', function(a){
         output.push(a)
         logger.error('stderr:'+a);
       });
-      // spawn/exec can fail before the process exists (ENOENT); without this the promise
+      // spawn can fail before the process exists (ENOENT); without this the promise
       // would never settle and the caller would hang for ever
       known_hosts.on('error', function(e){
         reject(new Error(`Adding keys failed to start: ${e.message}`))
       });
-      known_hosts.on('exit', function(code){
+      known_hosts.on('close', function(code){
         logger.debug('exit')
         if(code==0){
-          resolve(`Adding keys ran succesfully\n${output.join("\n")}`)
+          try {
+            fs.mkdirSync(path.dirname(knownHosts), { recursive: true, mode: 0o700 })
+            fs.appendFileSync(knownHosts, keys.join(""))
+          } catch (e) {
+            reject(new Error(`Adding keys failed: ${e.message}`))
+            return
+          }
+          resolve(`Adding keys ran succesfully\n${keys.concat(output).join("\n")}`)
         }else{
           reject(new Error(`\nAdding keys failed with code ${code}\n${output.join("\n")}`))
         }

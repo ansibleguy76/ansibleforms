@@ -1,12 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import Repo from '../src/models/repo.model.js';
 import Cmd from './__mocks__/cmd.js';
+import os from 'os';
+import path from 'path';
+import fs from 'fs';
+
+// the keys a test scans land here, never in the user's own known_hosts
+Repo.knownHostsFile = () => path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'af-known-')), 'known_hosts');
 
 // The cmd module is aliased to tests/__mocks__/cmd.js on the specifier repo.model.js uses,
 // so this IS the object the model calls. Swap the executor to capture the command string.
-// addKnownHosts uses Cmd.runCommand(commandString) - NOT executeSilentCommand, and it
-// takes a bare string rather than an options object. Worth stating, because the tests
-// this replaced never established what the function called at all.
+// addKnownHosts uses Cmd.runCommand(program, args) - NOT executeSilentCommand, and no shell :
+// the hosts are its arguments. Worth stating, because the tests this replaced never established
+// what the function called at all.
 async function captureCommand(fn) {
   const originalRun = Cmd.runCommand;
   const originalExec = Cmd.executeSilentCommand;
@@ -19,9 +25,9 @@ async function captureCommand(fn) {
   const fakeProcess = {
     stdout: { on: () => {} },
     stderr: { on: () => {} },
-    on: (event, cb) => { if (event === 'exit') setImmediate(() => cb(0)); },
+    on: (event, cb) => { if (event === 'close') setImmediate(() => cb(0)); },
   };
-  Cmd.runCommand = (command) => { captured += String(command ?? ''); return fakeProcess; };
+  Cmd.runCommand = (file, args = []) => { captured += [file, ...args].join(' '); return fakeProcess; };
   Cmd.executeSilentCommand = async (opts) => { captured += String(opts?.command ?? opts ?? ''); return 'mock-output'; };
   try {
     await fn();
@@ -146,7 +152,7 @@ describe('Repo method integration — injection blocked before shell execution',
       Cmd.runCommand = () => ({
         stdout: { on: (e, cb) => { if (e === 'data') cb('key-material'); } },
         stderr: { on: () => {} },
-        on: (e, cb) => { if (e === 'exit') setImmediate(() => cb(0)); },
+        on: (e, cb) => { if (e === 'close') setImmediate(() => cb(0)); },
       });
       try {
         await expect(Repo.addKnownHosts('good.host')).resolves.toMatch(/succesfully/);
@@ -158,7 +164,7 @@ describe('Repo method integration — injection blocked before shell execution',
       Cmd.runCommand = () => ({
         stdout: { on: () => {} },
         stderr: { on: (e, cb) => { if (e === 'data') cb('no such file'); } },
-        on: (e, cb) => { if (e === 'exit') setImmediate(() => cb(1)); },
+        on: (e, cb) => { if (e === 'close') setImmediate(() => cb(1)); },
       });
       try {
         await expect(Repo.addKnownHosts('good.host')).rejects.toThrow(/failed with code 1/);

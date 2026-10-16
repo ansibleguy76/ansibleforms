@@ -345,16 +345,11 @@ class BackupModel {
   static async assertToolAvailable(commandString, envVar) {
     const binary = String(commandString || '').trim().split(/\s+/)[0];
     if (!binary) throw new Error(`No command configured, set ${envVar}`);
-    try {
-      await Cmd.executeSilentCommand({
-        command: `command -v ${binary}`,
-        directory: process.cwd(),
-        description: `Checking for ${binary}`
-      }, true);
-    } catch {
+    if (!Cmd.isAvailable(binary)) {
       throw new Error(`'${binary}' was not found on this system. Install the mysql/mariadb client tools, or set ${envVar} to a command that works here.`);
     }
   }
+
 
   // A failed backup must not leave a folder behind. The dump is written through a
   // shell redirect, so the .sql is created BEFORE the command runs : when the dump
@@ -391,15 +386,17 @@ class BackupModel {
     }
     await fs.mkdir(backupFolder, { recursive: true });
     try {
-      // the password reaches the command through the environment : the shell puts it in place
-      // of "$AF_DB_PASSWORD" when it runs it, so the command text (logged, shown in the job
-      // output, in an error) never holds it, and a wrapper (docker exec ...) still gets it
-      const dumpCmd = `${appConfig.mysqldumpCommand} -h ${shQuote(dbHost)} -u${shQuote(dbUser)} -p"$AF_DB_PASSWORD" -P ${shQuote(dbPort)} ${RUNTIME_TABLES} ${shQuote(dbName)} > "${backupFile}"`;
+      // the password reaches the command through its environment : Cmd puts it in place of
+      // "$AF_DB_PASSWORD" when it splits the command, so the command text (logged, shown, in an
+      // error) never holds it, and a wrapper (docker exec ...) still gets it as an argument
+      const dumpCmd = `${appConfig.mysqldumpCommand} -h ${shQuote(dbHost)} -u${shQuote(dbUser)} -p"$AF_DB_PASSWORD" -P ${shQuote(dbPort)} ${RUNTIME_TABLES} ${shQuote(dbName)}`;
       const cmdObj = {
         command: dumpCmd,
         directory: process.cwd(),
         description: `Database backup to ${backupFile}`,
-        env: { AF_DB_PASSWORD: dbPassword ?? '' }
+        env: { AF_DB_PASSWORD: dbPassword ?? '' },
+        // the dump goes to the file (no shell : no > redirect)
+        stdoutFile: backupFile
       };
       // explicit timeout : the default is 60s, which no real database can dump in
       await Cmd.executeSilentCommand(cmdObj, true, false, appConfig.backupCommandTimeoutSeconds);
@@ -451,12 +448,14 @@ class BackupModel {
       throw new Errors.BadRequestError(`Backup '${folder}' has no usable database dump (ansibleforms.sql is missing or empty), so there is nothing to restore. The backup that created it most likely failed.`);
     }
     // the password through the environment, as for the backup (doBackup)
-    const restoreCmd = `${appConfig.mysqlCommand} -h ${shQuote(dbHost)} -u${shQuote(dbUser)} -p"$AF_DB_PASSWORD" -P ${shQuote(dbPort)} ${shQuote(dbName)} < "${backupFile}"`;
+    const restoreCmd = `${appConfig.mysqlCommand} -h ${shQuote(dbHost)} -u${shQuote(dbUser)} -p"$AF_DB_PASSWORD" -P ${shQuote(dbPort)} ${shQuote(dbName)}`;
     const cmdObj = {
       command: restoreCmd,
       directory: process.cwd(),
       description: `Database restore from ${backupFile}`,
-      env: { AF_DB_PASSWORD: dbPassword ?? '' }
+      env: { AF_DB_PASSWORD: dbPassword ?? '' },
+      // the dump is read from the file (no shell : no < redirect)
+      stdinFile: backupFile
     };
     // The one place a timeout is destructive rather than merely annoying: this replays a
     // dump that DROPs and CREATEs each table in turn, so being killed part way leaves some
