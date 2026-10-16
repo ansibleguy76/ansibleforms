@@ -578,7 +578,9 @@ textarea:focus::placeholder {
 }
 // every filter box of the title line one width, a table's (af-table-search) as a page's own
 // (BsSearch, af-search) : 20rem, narrower only when the row is ; at the row's left, the buttons
-// pushed right. !important : the pages gave theirs a width inline (320px, 16rem)
+// pushed right. !important : the pages gave theirs a width inline (320px, 16rem). It grows from
+// 8rem up to 20rem : the row breaks on its smallest width, so the box narrows before a button
+// goes to a second row
 // (the box a page put its search in, with its buttons or not, is laid out as its own controls
 // below, so the buttons beside the search go right too)
 .af-title-controls > :has(.af-search) {
@@ -590,8 +592,9 @@ textarea:focus::placeholder {
 }
 .af-title-controls .bs-dt-toolbar-moved .af-table-search,
 .af-title-controls .af-search {
-  flex: 0 1 20rem;
-  width: 20rem !important;
+  flex: 1 1 8rem;
+  width: auto !important;
+  max-width: 20rem;
   min-width: 8rem;
   margin-right: auto !important;
 }
