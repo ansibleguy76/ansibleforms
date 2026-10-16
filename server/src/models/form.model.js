@@ -19,6 +19,7 @@ import { resolveTargetDir, configRepoFromPath, claimAllOrRollback } from "../lib
 import Helpers from "../lib/common.js";
 import Settings from './settings.model.js';
 import AJVErrorParser from './ajvErrorParser.model.js';
+import { repoFolder } from "./repo.model.js";
 
 
 const ajv = new Ajv({allErrors: true, allowUnionTypes: true});
@@ -209,7 +210,7 @@ async function getSaveTargets() {
   const repoFolders = await Repository.getFormsFolders()
   const repoMode = repoFolders.length > 0
   for (const folder of repoFolders) {
-    const repoDir = path.join(appConfig.repoPath, folder.name)
+    const repoDir = repoFolder(folder.name)
     if (!fs.existsSync(path.join(repoDir, ".git"))) {
       throw new Error(`The forms repository '${folder.name}' is not cloned yet ; clone it from the repositories settings first`)
     }
@@ -226,7 +227,7 @@ async function getSaveTargets() {
     targetConfigPath = repoConfigPath
   } else if (repoMode && repoFolders.length === 1) {
     // no config in any repository yet : adopt the single forms repository root
-    targetConfigPath = path.join(appConfig.repoPath, repoFolders[0].name, "config.yaml")
+    targetConfigPath = path.join(repoFolder(repoFolders[0].name), "config.yaml")
   }
   // staging is the default target for new files in repository mode ; it is
   // listed last so an existing repository file is always matched first

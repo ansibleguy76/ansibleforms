@@ -57,6 +57,11 @@ class Repository extends CrudModel {
   // opts carries { fromSeed:true } for the declarative config seed only
   static async create(data, opts = {}) {
     logger.info(`Creating repository ${data.name}`);
+    // the name is its folder's (Repo.folderOf) : checked here, so no record can name a folder
+    // outside the repositories folder
+    if (!Repo.isValidName(data.name)) {
+      throw new Errors.BadRequestError(`Invalid repository name: ${data.name}. Only letters, digits, dots, dashes and underscores, not starting with a dot.`);
+    }
     // the branch it pulls and pushes is required, as its name ; the seed's own may leave it out
     // (the remote's default)
     if (!opts.fromSeed && !String(data.branch ?? "").trim()) {
@@ -89,6 +94,10 @@ class Repository extends CrudModel {
     // Get current record to find id
     const repo = await this.findByName(name);
     if (!repo) throw new Error(`No repository found with name ${name}`);
+    // a new name is a new folder name (Repo.rename) : checked as on create
+    if (data.name !== undefined && data.name !== name && !Repo.isValidName(data.name)) {
+      throw new Errors.BadRequestError(`Invalid repository name: ${data.name}. Only letters, digits, dots, dashes and underscores, not starting with a dot.`);
+    }
 
     // Remove empty fields - but a field the dialog can clear, sent empty, is cleared : its
     // schedule (Scheduled pull off) or its credential. Removed with the others, an empty
@@ -311,7 +320,7 @@ class Repository extends CrudModel {
         logger.warning(`Multiple repositories are marked as 'use_for_config': ${repoNames}. Only one should be enabled. Using first one: ${configRepositories[0].name}`)
       }
       
-      const repoPath = path.join(appConfig.repoPath, configRepositories[0].name)
+      const repoPath = Repo.folderOf(configRepositories[0].name)
       
       const configPath = path.join(repoPath, "config.yaml")
       if(fs.existsSync(configPath)){
@@ -336,7 +345,7 @@ class Repository extends CrudModel {
   
   // Loop through all form repositories to find config files
   for(const repo of repositories){
-    var repoPath = path.join(appConfig.repoPath, repo.name)
+    var repoPath = Repo.folderOf(repo.name)
     
     const configPath = path.join(repoPath, "config.yaml")
     if(fs.existsSync(configPath)){
@@ -376,7 +385,7 @@ class Repository extends CrudModel {
     const repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_forms")
 
     return repositories.map(repo => {
-      const repoPath = path.join(appConfig.repoPath, repo.name)
+      const repoPath = Repo.folderOf(repo.name)
       const formsSubPath = path.join(repoPath, "forms")
       if(fs.existsSync(formsSubPath)){
         logger.debug(`Using forms subfolder for repository '${repo.name}': ${formsSubPath}`)
@@ -415,7 +424,7 @@ class Repository extends CrudModel {
       logger.warning(`Multiple repositories are marked as 'use_for_playbooks': ${repoNames}. Only one should be enabled. Playbooks cannot be merged. Using first one: ${repositories[0].name}`)
     }
     
-    const repoPath = path.join(appConfig.repoPath, repositories[0].name)
+    const repoPath = Repo.folderOf(repositories[0].name)
     const playbooksSubPath = path.join(repoPath, "playbooks")
     
     // Check if playbooks subfolder exists
@@ -440,7 +449,7 @@ class Repository extends CrudModel {
     try {
       const repositories = await Repository.findFormsRepositories()
       for (const repo of repositories) {
-        const varsPath = path.join(appConfig.repoPath, repo.name, "vars")
+        const varsPath = path.join(Repo.folderOf(repo.name), "vars")
         if (fs.existsSync(varsPath)) {
           logger.debug(`Using the vars folder of forms repository '${repo.name}': ${varsPath}`)
           return varsPath
@@ -461,7 +470,7 @@ class Repository extends CrudModel {
     const local = { repository: null, root: appConfig.inventoryPath }
     try {
       const repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_inventories ORDER BY name")
-      return [local, ...repositories.map((repo) => ({ repository: repo.name, root: path.join(appConfig.repoPath, repo.name) }))]
+      return [local, ...repositories.filter((repo) => Repo.isValidName(repo.name)).map((repo) => ({ repository: repo.name, root: Repo.folderOf(repo.name) }))]
     } catch (e) {
       logger.error("Failed to get the inventories repositories: ", e)
       return [local]
@@ -475,7 +484,7 @@ class Repository extends CrudModel {
     const local = { repository: null, root: appConfig.workflowsPath }
     try {
       const repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_workflows ORDER BY name")
-      return [local, ...repositories.map((repo) => ({ repository: repo.name, root: path.join(appConfig.repoPath, repo.name) }))]
+      return [local, ...repositories.filter((repo) => Repo.isValidName(repo.name)).map((repo) => ({ repository: repo.name, root: Repo.folderOf(repo.name) }))]
     } catch (e) {
       logger.error("Failed to get the workflows repositories: ", e)
       return [local]
@@ -491,7 +500,7 @@ class Repository extends CrudModel {
     if (formsRepos.length !== 1 || formsRepos[0].name !== name) {
       return ""
     }
-    const repoDir = path.join(appConfig.repoPath, name)
+    const repoDir = Repo.folderOf(name)
     // also treat loose *.yaml at the repo root as content (root-served forms),
     // so seeding never overwrites a repo that already holds forms
     const rootYaml = fs.existsSync(repoDir) && fs.readdirSync(repoDir).some(f => /\.(yaml|yml)$/i.test(f))
@@ -665,7 +674,7 @@ class Repository extends CrudModel {
   // not cloned, or whose git does not answer, has none to say.
   static async withUnpushed(repositories) {
     return Promise.all((repositories || []).map(async (repo) => {
-      if (!repo?.name || !fs.existsSync(path.join(appConfig.repoPath, repo.name))) return { ...repo, unpushed: false }
+      if (!repo?.name || !Repo.isValidName(repo.name) || !fs.existsSync(Repo.folderOf(repo.name))) return { ...repo, unpushed: false }
       try {
         return { ...repo, unpushed: await Repo.hasChanges(repo.name) }
       } catch (e) {
@@ -754,7 +763,7 @@ class Repository extends CrudModel {
   // resolve the forms folder of a single repository (the 'forms' subfolder if
   // it exists, otherwise the repository root)
   static formsFolderOf(name) {
-    const repoDir = path.join(appConfig.repoPath, name)
+    const repoDir = Repo.folderOf(name)
     const formsSub = path.join(repoDir, "forms")
     return fs.existsSync(formsSub) ? formsSub : repoDir
   }
@@ -812,7 +821,7 @@ class Repository extends CrudModel {
       if (!syncRepo.use_for_forms && !syncRepo.use_for_config && !syncRepo.use_for_playbooks && !syncRepo.use_for_workflows && !syncRepo.use_for_inventories) {
         throw new Error(`Repository '${name}' is not a forms, config, playbooks, workflows or inventories repository`)
       }
-      const repoDir = path.join(appConfig.repoPath, name)
+      const repoDir = Repo.folderOf(name)
       if (!fs.existsSync(repoDir)) {
         // first sync : clone it (an empty remote repository is fine)
         await Repo.clone(syncRepo.uri, name, syncRepo.branch || undefined, Repository.gitAuth(syncRepo))

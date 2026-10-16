@@ -18,6 +18,44 @@ function validateRepoName(name) {
   }
 }
 
+/**
+ * Whether a repository name is one its folder can carry : letters, digits, dots, dashes and
+ * underscores, not starting with a dot, never `..`.
+ *
+ * Args:
+ *   name (string): the name.
+ *
+ * Returns:
+ *   boolean: true when it is.
+ */
+function isValidRepoName(name) {
+  return !!name && typeof name === 'string' && SAFE_NAME_REGEX.test(name) && !name.includes('..');
+}
+
+/**
+ * A repository's folder : its name checked, and the folder resolved inside the repositories
+ * folder (REPO_PATH). Every place that reads or writes a repository's files gets it from here,
+ * so a name can never reach a folder outside it.
+ *
+ * Args:
+ *   name (string): the repository's name.
+ *
+ * Returns:
+ *   string: the folder.
+ *
+ * Raises:
+ *   Error: an invalid name, or a folder outside the repositories folder.
+ */
+function repoFolder(name) {
+  validateRepoName(name);
+  const root = path.resolve(config.repoPath);
+  const folder = path.resolve(root, name);
+  if (!folder.startsWith(root + path.sep)) {
+    throw new Error(`Invalid repository name: ${name}. Its folder would be outside the repositories folder.`);
+  }
+  return folder;
+}
+
 function validateBranch(branch) {
   if (!branch || typeof branch !== 'string' || !SAFE_BRANCH_REGEX.test(branch) || branch.includes('..')) {
     throw new Error(`Invalid branch name: ${branch}. Only alphanumeric characters, hyphens, underscores, dots, and slashes are allowed.`);
@@ -42,6 +80,9 @@ function validateHostname(host) {
 const Repo={
 
 }
+
+Repo.folderOf = repoFolder;
+Repo.isValidName = isValidRepoName;
 
 // ─── signing in to git ──────────────────────────────────────────────────────────
 // A repository's address is cloned as it is : no user and no token in it, so none in its
@@ -100,7 +141,7 @@ Repo.authEnv = (auth) => {
  */
 Repo.cleanRemote = async (name, uri) => {
   if (!uri) return;
-  const directory = path.join(config.repoPath, name);
+  const directory = repoFolder(name);
   let current;
   try {
     current = String(await Cmd.executeSilentCommand({ command: "git remote get-url origin", directory, description: "Reading the remote" }, true, true) || "");
@@ -186,7 +227,7 @@ Repo.info = async function (name) {
 
     validateRepoName(name);
     // logger.notice(`Git repository info : ${name}`)
-    var directory = path.join(config.repoPath,name)
+    var directory = repoFolder(name)
 
     var cmd
     if(name){
@@ -338,14 +379,14 @@ Repo.pull = async function (name, auth = null, uri = null) {
       validateRepoName(name);
       await Repo.cleanRemote(name, uri)
       var command = `${config.gitPullCommand} --verbose`
-      var directory = path.join(config.repoPath,name)
+      var directory = repoFolder(name)
       return await Cmd.executeSilentCommand({directory:directory,command:command,description:"Pulling from git",env:Repo.authEnv(auth)},true)
 };
 
 // does the working tree have uncommitted changes, or local commits not yet
 // pushed to the remote ? (issue #414, used to flag unpushed designer work)
 Repo.hasChanges = async function (name) {
-    const directory = path.join(config.repoPath, name)
+    const directory = repoFolder(name)
     const clean = (out) => String(out).split("\n").filter(l => l.trim() && !l.startsWith("Running command"))
     // `git status` is the FACT this function exists to establish, so it is not in the
     // catch. It used to be: any failure - the tree not cloned, the 60s command timeout,
@@ -371,7 +412,7 @@ Repo.hasChanges = async function (name) {
 // (issue #414) ; on a persistent conflict the rebase is aborted and the
 // conflicted files are reported in the error
 Repo.sync = async function (name, message, auth = null, uri = null) {
-    const directory = path.join(config.repoPath, name)
+    const directory = repoFolder(name)
     const out = []
     // the fetch, the rebase and the push sign in as the repository (Repo.authEnv)
     const env = Repo.authEnv(auth)
@@ -436,4 +477,4 @@ Repo.sync = async function (name, message, auth = null, uri = null) {
     }
 };
 export default  Repo;
-export { validateRepoName, validateBranch, validateUri, validateHostname };
+export { validateRepoName, isValidRepoName, repoFolder, validateBranch, validateUri, validateHostname };
