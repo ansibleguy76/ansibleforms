@@ -2335,9 +2335,9 @@ export default function getSettings(t) {
           dividerBefore: true,
         },
         {
-          // its token, or its user and password : its page's Authentication tab
+          // the credential it signs in with : its page's Credentials tab
           name: 'change_credentials',
-          title: t('settings.runners.changeAuth'),
+          title: t('settings.repositories.changeCredentials'),
           icon: 'key',
           color: 'change',
           dividerBefore: true,
