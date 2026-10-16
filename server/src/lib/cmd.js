@@ -2,6 +2,7 @@ import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { parse } from 'shell-quote';
+import config from '../../config/app.config.js';
 import logger from './logger.js';
 var Cmd = function(){
 
@@ -113,10 +114,30 @@ Cmd.runCommand = (file, args = []) => {
  *   Error: it could not start, ended with another code than 0, or ran out of time ; the message
  *     is its output.
  */
+/**
+ * The folder a command runs in, when it is one a command may run in : the server's own folder, or
+ * one in the repositories folder (a clone). Anything else is refused, whatever a caller passes.
+ *
+ * Args:
+ *   directory (string): the folder asked for.
+ *
+ * Returns:
+ *   string: the folder, resolved.
+ *
+ * Raises:
+ *   Error: a folder outside those.
+ */
+Cmd.workingFolder = (directory) => {
+  const resolved = path.resolve(String(directory || process.cwd()));
+  const roots = [process.cwd(), config.repoPath].filter(Boolean).map((r) => path.resolve(r));
+  if (roots.some((root) => resolved === root || resolved.startsWith(root + path.sep))) return resolved;
+  throw new Error(`A command can not run in '${resolved}': only in the server's folder or a repository's`);
+};
+
 Cmd.executeSilentCommand = async (cmd,silent=false,singleLine=false,timeoutSeconds=60) => {
   return new Promise((resolve,reject)=>{
     try{
-      var directory = cmd.directory
+      var directory = Cmd.workingFolder(cmd.directory)
       var description = cmd.description
       var env = cmd.env || {}
       var maskedCommand = cmd.maskedCommand || cmd.command
