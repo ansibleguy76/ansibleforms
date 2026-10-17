@@ -297,6 +297,7 @@ export default {
     tab: 'Tokeny API',
   },
   profilePage: {
+    preferencesSaved: 'Preferencje zapisane',
     languageHint: 'Język menu, stron i komunikatów. Można go też zmienić flagą w nagłówku.',
     themeHint:
       'Zgodnie z przeglądarką, jasny, ciemny lub nagłówek w wybranym kolorze. Można go też zmienić ikoną słońca w nagłówku.',

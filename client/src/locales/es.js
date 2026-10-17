@@ -297,6 +297,7 @@ export default {
     tab: 'Tokens de API',
   },
   profilePage: {
+    preferencesSaved: 'Preferencias guardadas',
     languageHint: 'El idioma de los menús, las páginas y los mensajes. La bandera de la cabecera también lo cambia.',
     themeHint:
       'Seguir el navegador, claro, oscuro, o una cabecera del color que elijas. El icono del sol de la cabecera también lo cambia.',

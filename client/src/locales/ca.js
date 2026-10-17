@@ -297,6 +297,7 @@ export default {
     tab: "Tokens d'API",
   },
   profilePage: {
+    preferencesSaved: 'Preferències desades',
     languageHint: "L'idioma dels menús, les pàgines i els missatges. La bandera de la capçalera també el canvia.",
     themeHint:
       'Seguir el navegador, clar, fosc, o una capçalera del color que triïs. La icona del sol de la capçalera també el canvia.',

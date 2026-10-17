@@ -298,6 +298,7 @@ export default {
     tab: 'Token API',
   },
   profilePage: {
+    preferencesSaved: 'Preferenze salvate',
     languageHint: "La lingua di menu, pagine e messaggi. Anche la bandiera nell'intestazione la cambia.",
     themeHint:
       "Segui il browser, chiaro, scuro, o un'intestazione nel colore che preferisci. Anche l'icona del sole nell'intestazione lo cambia.",

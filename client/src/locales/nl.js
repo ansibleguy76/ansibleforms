@@ -298,6 +298,7 @@ export default {
     tab: 'API-tokens',
   },
   profilePage: {
+    preferencesSaved: 'Voorkeuren opgeslagen',
     languageHint: "De taal van de menu's, pagina's en berichten. De vlag in de kopbalk wisselt die ook.",
     themeHint:
       'De browser volgen, licht, donker, of een kopbalk in een kleur naar keuze. Het zonicoon in de kopbalk wisselt het ook.',

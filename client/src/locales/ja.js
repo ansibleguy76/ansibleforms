@@ -296,6 +296,7 @@ export default {
     tab: 'API トークン',
   },
   profilePage: {
+    preferencesSaved: '設定を保存しました',
     languageHint: 'メニュー、ページ、メッセージの言語です。ヘッダーの国旗からも切り替えられます。',
     themeHint:
       'ブラウザーに合わせる、ライト、ダーク、または好きな色のヘッダーを選べます。ヘッダーの太陽アイコンからも切り替えられます。',

@@ -33,6 +33,7 @@ import { neverExpires } from '@/lib/apiTokens';
 import { rememberSsoOrigin, ssoSettled, ssoReturning } from '@/lib/ssoReturn';
 import { hasPermission } from '@/lib/permission';
 import { useRouteTab } from '@/composables/useRouteTab';
+import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import {
   notificationsSupported,
   notificationPermission,
@@ -131,7 +132,6 @@ const permissionGroups = computed(() => {
     return { name: g.name, title: g.title(), options, allowed: options.filter((o) => o.value).length };
   }).filter((g) => g.options.length);
 });
-const currentLanguage = computed(() => languages.find((l) => l.code === locale.value) || fallbackLanguage);
 
 const view = computed(() => VIEWS.find((v) => v.name === currentView.value));
 // desktop notifications are offered only to a user who sees its jobs
@@ -446,18 +446,6 @@ const timezone = computed({
 const canNotify = notificationsSupported();
 const notifyOn = ref(notificationsActive());
 const notifyBlocked = ref(notificationPermission() === 'denied');
-async function onNotifySwitch(e) {
-  if (!e.target.checked) {
-    turnNotificationsOff();
-    notifyOn.value = false;
-    return;
-  }
-  const answer = await turnNotificationsOn();
-  notifyOn.value = answer === 'granted';
-  notifyBlocked.value = answer === 'denied';
-  // the switch follows the answer : refused or dismissed, it is off again
-  e.target.checked = notifyOn.value;
-}
 const dateFormat = computed({
   get: () => Time.datePattern(),
   set: (value) => Time.setDateFormat(value),
@@ -478,10 +466,103 @@ function setFormsView(mode) {
   Helpers.setCookie('forms_view_mode', mode, 365);
 }
 
-function pickColor(hex) {
-  themeColor.value = hex;
-  setTheme('color');
+// ─── preferences : searched ───────────────────────────────────────────────────
+// a word typed in the title line's search : the tabs set aside, each setting whose label or help
+// has it shown under its tab's name, as on Settings > Appearance > Defaults
+const prefSearch = ref('');
+const prefSearching = computed(() => !!prefSearch.value.trim());
+const PREF_GROUPS = {
+  appearance: ['language', 'theme', 'forms'],
+  datetime: ['timezone', 'date', 'preview'],
+  notifications: ['notify'],
+};
+const prefTexts = computed(() => ({
+  language: [t('profilePage.language'), t('profilePage.languageHint')],
+  theme: [t('profilePage.theme'), t('profilePage.themeHint')],
+  forms: [t('profilePage.formsView'), t('profilePage.formsViewHint')],
+  timezone: [t('profilePage.timezone'), t('profilePage.timezoneHint')],
+  date: [t('profilePage.dateFormat'), t('profilePage.dateFormatHint')],
+  preview: [t('profilePage.preview')],
+  notify: [t('profilePage.notifications'), t('profilePage.notificationsHint')],
+}));
+function prefMatches(key) {
+  const q = prefSearch.value.trim().toLowerCase();
+  return !q || prefTexts.value[key].some((x) => String(x).toLowerCase().includes(q));
 }
+// a tab's settings shown now : searching, those that match ; else its own, when it is open
+const prefGroupShown = (group) =>
+  prefSearching.value
+    ? PREF_GROUPS[group].filter((k) => prefMatches(k))
+    : prefTab.value === group
+      ? PREF_GROUPS[group]
+      : [];
+const prefShown = (key) => Object.keys(PREF_GROUPS).some((g) => prefGroupShown(g).includes(key));
+// the room above a setting : none above the first one shown in its tab
+const prefSpaced = (key) => {
+  const group = Object.keys(PREF_GROUPS).find((g) => PREF_GROUPS[g].includes(key));
+  return prefGroupShown(group)[0] !== key;
+};
+// searching : the tabs with a match (Notifications only for a user who sees its jobs)
+const prefHeads = computed(() =>
+  Object.keys(PREF_GROUPS).filter((g) => (g !== 'notifications' || mayNotify.value) && prefGroupShown(g).length),
+);
+
+// ─── preferences : a draft, saved by Save ─────────────────────────────────────
+// What the user picks is a draft until Save, as on every settings page : then each is applied
+// and kept in this browser (the language and forms view in cookies, the theme, zone, date format
+// and notifications in its storage). Leaving with a change unsaved asks first.
+function currentPreferences() {
+  return {
+    language: locale.value,
+    theme: themeChoice.value,
+    color: themeColor.value,
+    formsView: formsView.value,
+    timezone: store.timezone || 'UTC',
+    dateFormat: Time.datePattern(),
+    notify: notifyOn.value,
+  };
+}
+const draft = ref(currentPreferences());
+const savedPrefs = ref(currentPreferences());
+const prefsDirty = computed(() => JSON.stringify(draft.value) !== JSON.stringify(savedPrefs.value));
+const draftLanguage = computed(() => languages.find((l) => l.code === draft.value.language) || fallbackLanguage);
+// changed elsewhere meanwhile (the header's theme or language) : read again, when nothing is unsaved
+watch([() => store.theme, locale], () => {
+  if (prefsDirty.value) return;
+  draft.value = currentPreferences();
+  savedPrefs.value = currentPreferences();
+});
+
+/**
+ * Applies the draft : each preference changed is set and kept in this browser ; the
+ * notifications ask the browser first, the first time (refused, they stay off).
+ */
+async function savePreferences() {
+  const d = draft.value;
+  const was = savedPrefs.value;
+  if (d.language !== was.language) setLanguage(d.language);
+  if (d.theme !== was.theme || (d.theme === 'color' && d.color !== was.color)) {
+    themeColor.value = d.color;
+    setTheme(d.theme);
+  }
+  if (d.formsView !== was.formsView) setFormsView(d.formsView);
+  if (d.timezone !== was.timezone) timezone.value = d.timezone;
+  if (d.dateFormat !== was.dateFormat) dateFormat.value = d.dateFormat;
+  if (d.notify !== was.notify) {
+    if (d.notify) {
+      const answer = await turnNotificationsOn();
+      notifyOn.value = answer === 'granted';
+      notifyBlocked.value = answer === 'denied';
+    } else {
+      turnNotificationsOff();
+      notifyOn.value = false;
+    }
+  }
+  draft.value = currentPreferences();
+  savedPrefs.value = currentPreferences();
+  toast.success(t('profilePage.preferencesSaved'));
+}
+useUnsavedGuard(prefsDirty, () => t('settings.common.unsavedChanges'), savePreferences);
 
 async function changePassword() {
   if (!canSavePassword.value) return;
@@ -517,7 +598,7 @@ async function changePassword() {
         :bare="['account', 'permissions'].includes(currentView)"
       >
         <!-- Preferences' tabs, Password's one, above the page's card -->
-        <template v-if="viewTabs.length" #tabs>
+        <template v-if="viewTabs.length && !(currentView === 'preferences' && prefSearching)" #tabs>
           <ul class="nav nav-tabs mb-0">
             <li v-for="tab in viewTabs" :key="tab.key" class="nav-item">
               <a class="nav-link" :class="{ active: prefTab === tab.key }" href="#" @click.prevent="prefTab = tab.key">
@@ -584,134 +665,183 @@ async function changePassword() {
 
         <!-- ===================== preferences ===================== -->
         <template v-else-if="currentView === 'preferences'">
-          <!-- Appearance : the language, the theme and the forms view -->
-          <div v-if="prefTab === 'appearance'">
-            <label class="form-label fw-bold">{{ t('profilePage.language') }}</label>
-            <div class="input-group af-field">
-              <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="language" /></span>
-              <button
-                class="form-select d-flex align-items-center gap-2 text-start"
-                type="button"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-                :aria-label="t('profilePage.language')"
+          <!-- Appearance (the language, the theme, the forms view), Date and time (the zone, the date
+               format, the time now in them), Notifications : the open tab ; searching, the matches
+               of all, each under its tab's name, as on Settings > General -->
+          <div v-if="prefGroupShown('appearance').length">
+            <template v-if="prefSearching">
+              <hr v-if="prefHeads[0] !== 'appearance'" class="mt-4 mb-0 af-search-line" />
+              <h6
+                class="fw-bold text-body-secondary af-search-tab"
+                :class="{ 'af-search-first': prefHeads[0] === 'appearance' }"
               >
-                <AppFlag :code="currentLanguage.code" />{{ currentLanguage.label }}
-              </button>
-              <ul class="dropdown-menu w-100">
-                <li v-for="lang in languages" :key="lang.code">
-                  <button
-                    type="button"
-                    class="dropdown-item d-flex align-items-center gap-2"
-                    :class="{ active: locale === lang.code }"
-                    @click="setLanguage(lang.code)"
-                  >
-                    <AppFlag :code="lang.code" />{{ lang.label }}
-                  </button>
-                </li>
-              </ul>
+                <FaIcon :icon="viewTabs.find((x) => x.key === 'appearance').icon" class="me-1" />{{
+                  viewTabs.find((x) => x.key === 'appearance').label
+                }}
+              </h6>
+            </template>
+            <div v-show="prefShown('language')" :class="{ 'mt-4': prefSpaced('language') }">
+              <label class="form-label fw-bold">{{ t('profilePage.language') }}</label>
+              <div class="input-group af-field">
+                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="language" /></span>
+                <button
+                  class="form-select d-flex align-items-center gap-2 text-start"
+                  type="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                  :aria-label="t('profilePage.language')"
+                >
+                  <AppFlag :code="draftLanguage.code" />{{ draftLanguage.label }}
+                </button>
+                <ul class="dropdown-menu w-100">
+                  <li v-for="lang in languages" :key="lang.code">
+                    <button
+                      type="button"
+                      class="dropdown-item d-flex align-items-center gap-2"
+                      :class="{ active: draft.language === lang.code }"
+                      @click="draft.language = lang.code"
+                    >
+                      <AppFlag :code="lang.code" />{{ lang.label }}
+                    </button>
+                  </li>
+                </ul>
+              </div>
+              <div class="form-text">{{ t('profilePage.languageHint') }}</div>
             </div>
-            <div class="form-text">{{ t('profilePage.languageHint') }}</div>
-            <label class="form-label fw-bold mt-4">{{ t('profilePage.theme') }}</label>
-            <div class="input-group af-field">
-              <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="palette" /></span>
-              <select
-                class="form-select"
-                :value="themeChoice"
-                :aria-label="t('profilePage.theme')"
-                @change="setTheme($event.target.value)"
-              >
-                <option value="system">{{ t('settings.settingsPage.themeSystem') }}</option>
-                <option v-for="th in Theme.themes()" :key="th.value" :value="th.value">{{ th.title }}</option>
-              </select>
+            <div v-show="prefShown('theme')" :class="{ 'mt-4': prefSpaced('theme') }">
+              <label class="form-label fw-bold">{{ t('profilePage.theme') }}</label>
+              <div class="input-group af-field">
+                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="palette" /></span>
+                <select
+                  class="form-select"
+                  :value="draft.theme"
+                  :aria-label="t('profilePage.theme')"
+                  @change="draft.theme = $event.target.value"
+                >
+                  <option value="system">{{ t('settings.settingsPage.themeSystem') }}</option>
+                  <option v-for="th in Theme.themes()" :key="th.value" :value="th.value">{{ th.title }}</option>
+                </select>
+              </div>
+              <div v-if="draft.theme === 'color'" class="af-palette mt-3">
+                <button
+                  v-for="c in palette"
+                  :key="c"
+                  type="button"
+                  class="af-swatch"
+                  :class="{ active: draft.color === c }"
+                  :style="{ backgroundColor: c }"
+                  :aria-label="c"
+                  @click="draft.color = c"
+                  @mouseenter="Theme.previewColor(c)"
+                  @mouseleave="Theme.endPreview()"
+                  @focus="Theme.previewColor(c)"
+                  @blur="Theme.endPreview()"
+                >
+                  <FaIcon v-if="draft.color === c" icon="check" />
+                </button>
+              </div>
+              <div class="form-text">{{ t('profilePage.themeHint') }}</div>
             </div>
-            <div v-if="store.theme === 'color'" class="af-palette mt-3">
-              <button
-                v-for="c in palette"
-                :key="c"
-                type="button"
-                class="af-swatch"
-                :class="{ active: themeColor === c }"
-                :style="{ backgroundColor: c }"
-                :aria-label="c"
-                @click="pickColor(c)"
-                @mouseenter="Theme.previewColor(c)"
-                @mouseleave="Theme.endPreview()"
-                @focus="Theme.previewColor(c)"
-                @blur="Theme.endPreview()"
-              >
-                <FaIcon v-if="themeColor === c" icon="check" />
-              </button>
+            <div v-show="prefShown('forms')" :class="{ 'mt-4': prefSpaced('forms') }">
+              <label class="form-label fw-bold">{{ t('profilePage.formsView') }}</label>
+              <div class="input-group af-field">
+                <span class="input-group-text text-gray-500"
+                  ><FaIcon :fixedwidth="true" icon="table-cells-large"
+                /></span>
+                <select
+                  class="form-select"
+                  :value="draft.formsView"
+                  :aria-label="t('profilePage.formsView')"
+                  @change="draft.formsView = $event.target.value"
+                >
+                  <option value="tiles">{{ t('forms.tiles') }}</option>
+                  <option value="list">{{ t('forms.list') }}</option>
+                </select>
+              </div>
+              <div class="form-text">{{ t('profilePage.formsViewHint') }}</div>
             </div>
-            <div class="form-text">{{ t('profilePage.themeHint') }}</div>
-            <!-- how the forms page lists the forms -->
-            <label class="form-label fw-bold mt-4">{{ t('profilePage.formsView') }}</label>
-            <div class="input-group af-field">
-              <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="table-cells-large" /></span>
-              <select
-                class="form-select"
-                :value="formsView"
-                :aria-label="t('profilePage.formsView')"
-                @change="setFormsView($event.target.value)"
-              >
-                <option value="tiles">{{ t('forms.tiles') }}</option>
-                <option value="list">{{ t('forms.list') }}</option>
-              </select>
-            </div>
-            <div class="form-text">{{ t('profilePage.formsViewHint') }}</div>
           </div>
-          <!-- Date and time : the time zone and the date format, and the time now in them -->
-          <div v-else-if="prefTab === 'datetime'">
-            <label class="form-label fw-bold">{{ t('profilePage.timezone') }}</label>
-            <div class="input-group af-field">
-              <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="clock" /></span>
-              <select v-model="timezone" class="form-select" :aria-label="t('profilePage.timezone')">
-                <option value="UTC">UTC</option>
-                <option value="browser">{{ t('profilePage.timezoneBrowser', { zone: browserZone }) }}</option>
-                <optgroup :label="t('profilePage.timezoneAll')">
-                  <option v-for="z in allZones" :key="z" :value="z">{{ z }}</option>
-                </optgroup>
-              </select>
+          <div v-if="prefGroupShown('datetime').length">
+            <template v-if="prefSearching">
+              <hr v-if="prefHeads[0] !== 'datetime'" class="mt-4 mb-0 af-search-line" />
+              <h6
+                class="fw-bold text-body-secondary af-search-tab"
+                :class="{ 'af-search-first': prefHeads[0] === 'datetime' }"
+              >
+                <FaIcon :icon="viewTabs.find((x) => x.key === 'datetime').icon" class="me-1" />{{
+                  viewTabs.find((x) => x.key === 'datetime').label
+                }}
+              </h6>
+            </template>
+            <div v-show="prefShown('timezone')" :class="{ 'mt-4': prefSpaced('timezone') }">
+              <label class="form-label fw-bold">{{ t('profilePage.timezone') }}</label>
+              <div class="input-group af-field">
+                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="clock" /></span>
+                <select v-model="draft.timezone" class="form-select" :aria-label="t('profilePage.timezone')">
+                  <option value="UTC">UTC</option>
+                  <option value="browser">{{ t('profilePage.timezoneBrowser', { zone: browserZone }) }}</option>
+                  <optgroup :label="t('profilePage.timezoneAll')">
+                    <option v-for="z in allZones" :key="z" :value="z">{{ z }}</option>
+                  </optgroup>
+                </select>
+              </div>
+              <div class="form-text">{{ t('profilePage.timezoneHint') }}</div>
             </div>
-            <div class="form-text">{{ t('profilePage.timezoneHint') }}</div>
-            <!-- the date format : how the date part of every date reads -->
-            <label class="form-label fw-bold mt-4">{{ t('profilePage.dateFormat') }}</label>
-            <div class="input-group af-field">
-              <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="calendar" /></span>
-              <select v-model="dateFormat" class="form-select" :aria-label="t('profilePage.dateFormat')">
-                <option v-for="f in dateFormats" :key="f" :value="f">{{ dayjs(now).format(f) }} ({{ f }})</option>
-              </select>
+            <div v-show="prefShown('date')" :class="{ 'mt-4': prefSpaced('date') }">
+              <label class="form-label fw-bold">{{ t('profilePage.dateFormat') }}</label>
+              <div class="input-group af-field">
+                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="calendar" /></span>
+                <select v-model="draft.dateFormat" class="form-select" :aria-label="t('profilePage.dateFormat')">
+                  <option v-for="f in dateFormats" :key="f" :value="f">{{ dayjs(now).format(f) }} ({{ f }})</option>
+                </select>
+              </div>
+              <div class="form-text">{{ t('profilePage.dateFormatHint') }}</div>
             </div>
-            <div class="form-text">{{ t('profilePage.dateFormatHint') }}</div>
-            <!-- the time now in the picked zone and format : how dates read across the app -->
-            <label class="form-label fw-bold d-block mt-4">{{ t('profilePage.preview') }}</label>
-            <AppTimePreview :zone="Time.zone()" :format="Time.datePattern()" />
+            <div v-show="prefShown('preview')" :class="{ 'mt-4': prefSpaced('preview') }">
+              <label class="form-label fw-bold d-block">{{ t('profilePage.preview') }}</label>
+              <AppTimePreview :zone="draft.timezone" :format="draft.dateFormat" />
+            </div>
           </div>
-          <!-- Notifications : on this computer, when the user's jobs end or one waits for its approval -->
-          <div v-else-if="prefTab === 'notifications'">
-            <label class="form-label fw-bold d-block" for="af-job-notifications">{{
-              t('profilePage.notifications')
-            }}</label>
-            <div class="form-check form-switch mb-0">
-              <input
-                id="af-job-notifications"
-                class="form-check-input"
-                type="checkbox"
-                role="switch"
-                :checked="notifyOn"
-                :disabled="!canNotify"
-                @change="onNotifySwitch"
-              />
+          <div v-if="mayNotify && prefGroupShown('notifications').length">
+            <template v-if="prefSearching">
+              <hr v-if="prefHeads[0] !== 'notifications'" class="mt-4 mb-0 af-search-line" />
+              <h6
+                class="fw-bold text-body-secondary af-search-tab"
+                :class="{ 'af-search-first': prefHeads[0] === 'notifications' }"
+              >
+                <FaIcon :icon="viewTabs.find((x) => x.key === 'notifications').icon" class="me-1" />{{
+                  viewTabs.find((x) => x.key === 'notifications').label
+                }}
+              </h6>
+            </template>
+            <div v-show="prefShown('notify')" :class="{ 'mt-4': prefSpaced('notify') }">
+              <label class="form-label fw-bold d-block" for="af-job-notifications">{{
+                t('profilePage.notifications')
+              }}</label>
+              <div class="form-check form-switch mb-0">
+                <input
+                  id="af-job-notifications"
+                  class="form-check-input"
+                  type="checkbox"
+                  role="switch"
+                  :checked="draft.notify"
+                  :disabled="!canNotify"
+                  @change="draft.notify = $event.target.checked"
+                />
+              </div>
+              <div class="form-text">
+                {{
+                  !canNotify
+                    ? t('profilePage.notificationsUnsupported')
+                    : notifyBlocked
+                      ? t('profilePage.notificationsBlocked')
+                      : t('profilePage.notificationsHint')
+                }}
+              </div>
             </div>
-            <div class="form-text">
-              {{
-                !canNotify
-                  ? t('profilePage.notificationsUnsupported')
-                  : notifyBlocked
-                    ? t('profilePage.notificationsBlocked')
-                    : t('profilePage.notificationsHint')
-              }}
-            </div>
+          </div>
+          <div v-if="prefSearching && !prefHeads.length" class="text-body-secondary fst-italic">
+            {{ t('settings.settingsPage.searchNone') }}
           </div>
         </template>
 
@@ -947,10 +1077,18 @@ async function changePassword() {
           <div :id="tokenPagerId"></div>
         </template>
         <!-- the token list's search and buttons, on the title line as on the other lists -->
-        <template v-if="currentView === 'token'" #headerActions>
+        <template v-if="currentView === 'preferences'" #headerActions>
+          <BsSearch v-model="prefSearch" />
+        </template>
+        <template v-else-if="currentView === 'token'" #headerActions>
           <div :id="tokenToolsId" class="af-title-flow"></div>
         </template>
-        <template v-if="(currentView === 'password' && isLocal) || currentView === 'token'" #actions>
+        <template v-if="currentView === 'preferences'" #actions>
+          <BsButton icon="save" :disabled="!prefsDirty" @click="savePreferences">{{
+            t('settings.common.save')
+          }}</BsButton>
+        </template>
+        <template v-else-if="(currentView === 'password' && isLocal) || currentView === 'token'" #actions>
           <BsButton
             v-if="currentView === 'password'"
             icon="key"

@@ -296,6 +296,7 @@ export default {
     tab: 'Tokens de API',
   },
   profilePage: {
+    preferencesSaved: 'Preferências guardadas',
     languageHint: 'O idioma dos menus, páginas e mensagens. A bandeira no cabeçalho também o altera.',
     themeHint:
       'Seguir o navegador, claro, escuro, ou um cabeçalho numa cor à sua escolha. O ícone do sol no cabeçalho também o altera.',

@@ -297,6 +297,7 @@ export default {
     tab: "Jetons d'API",
   },
   profilePage: {
+    preferencesSaved: 'Préférences enregistrées',
     languageHint: "La langue des menus, des pages et des messages. Le drapeau dans l'en-tête la change aussi.",
     themeHint:
       "Suivre le navigateur, clair, sombre, ou un en-tête dans la couleur de votre choix. L'icône du soleil dans l'en-tête le change aussi.",

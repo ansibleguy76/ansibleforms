@@ -293,6 +293,7 @@ export default {
     tab: 'API 令牌',
   },
   profilePage: {
+    preferencesSaved: '偏好已保存',
     languageHint: '菜单、页面和消息所用的语言。也可以通过页眉中的旗帜切换。',
     themeHint: '跟随浏览器、浅色、深色，或使用您选择的颜色作为页眉。也可以通过页眉中的太阳图标切换。',
     formsViewHint: '表单页面列出表单的方式：卡片或列表。也可以通过该页面上的按钮切换。',

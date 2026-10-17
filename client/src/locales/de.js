@@ -298,6 +298,7 @@ export default {
     tab: 'API-Tokens',
   },
   profilePage: {
+    preferencesSaved: 'Einstellungen gespeichert',
     languageHint: 'Die Sprache der Menüs, Seiten und Meldungen. Die Flagge in der Kopfzeile wechselt sie ebenfalls.',
     themeHint:
       'Dem Browser folgen, hell, dunkel oder eine Kopfzeile in einer Farbe Ihrer Wahl. Das Sonnensymbol in der Kopfzeile wechselt es auch.',

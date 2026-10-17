@@ -295,6 +295,7 @@ export default {
     tab: 'API tokens',
   },
   profilePage: {
+    preferencesSaved: 'Preferences saved',
     languageHint: 'The language of the menus, pages and messages. The flag in the header switches it too.',
     themeHint:
       'Follow the browser, light, dark, or a header in a color of your choice. The sun icon in the header switches it too.',
