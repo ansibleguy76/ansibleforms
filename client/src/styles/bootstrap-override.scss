@@ -746,3 +746,11 @@ textarea:focus::placeholder {
 .af-search-tab.af-search-first {
   padding-top: 0;
 }
+
+// a chosen colour swatch (a label's colour, on its page and in the New label dialog) : the pills'
+// colours take the border away (!important), so it is ringed with a shadow
+.af-swatch-active {
+  box-shadow:
+    0 0 0 2px var(--bs-body-bg),
+    0 0 0 4px var(--bs-body-color);
+}

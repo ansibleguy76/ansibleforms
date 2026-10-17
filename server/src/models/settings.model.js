@@ -535,9 +535,9 @@ Settings.findAppDefaults = function () {
         color: r.default_theme_color || null,
         // Settings > Appearance
         appName: r.app_name || null,
-        // hidden (the switch off) : none
-        envLabel: r.env_label_show === 0 ? null : r.env_label || null,
-        envLabelColor: r.env_label_color || null,
+        // the labels beside the logo (Settings > Appearance > Labels), those shown, in their order ;
+        // a table not there yet (a database before its patch) : none
+        labels: await import('./label.model.js').then((m) => m.default.findShown()).catch(() => []),
         announcements,
         formsView: r.forms_view || null,
         timezone: r.default_timezone || null,
