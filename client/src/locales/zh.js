@@ -717,8 +717,6 @@ export default {
     tooLarge: '图像过大，最大 256 KB',
   },
   version: {
-    name: '名称',
-    version: '版本',
     title: 'Ansible Forms',
     license:
       '本程序是自由软件：您可以根据自由软件基金会发布的 GNU 通用公共许可证（第 3 版或您选择的任何更高版本）的条款重新分发和/或修改它。',

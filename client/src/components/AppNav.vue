@@ -307,12 +307,10 @@ const buildMismatch = computed(() => {
     <!-- named as its menu link, About ; the product and its version its first lines -->
     <template v-slot:title>{{ t('nav.about') }}</template>
     <template v-slot>
-      <dl class="af-about-facts">
-        <dt>{{ t('version.name') }}</dt>
-        <dd>{{ t('version.title') }}</dd>
-        <dt>{{ t('version.version') }}</dt>
-        <dd>v{{ store.version }}</dd>
-      </dl>
+      <div class="af-about-product">
+        <div class="af-about-name">{{ t('version.title') }}</div>
+        <div class="af-about-version">v{{ store.version }}</div>
+      </div>
       <!-- Cache Mismatch Warning -->
       <div v-if="buildMismatch" class="alert alert-warning d-flex align-items-center" role="alert">
         <font-awesome-icon icon="triangle-exclamation" class="me-2" />
@@ -573,20 +571,16 @@ const buildMismatch = computed(() => {
 </template>
 
 <style lang="scss">
-/* the About dialog's first lines : the product and its version, a label column and the values */
-.af-about-facts {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 0.25rem 1.5rem;
+/* the About dialog's first lines : the product, large, and its version under it */
+.af-about-product {
   margin-bottom: 1rem;
-  dt {
-    font-weight: 400;
-    color: var(--bs-secondary-color);
-  }
-  dd {
-    margin: 0;
-    font-weight: 600;
-  }
+}
+.af-about-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.af-about-version {
+  color: var(--bs-secondary-color);
 }
 /* the About dialog : between Bootstrap's default (500px) and large (800px) */
 .modal-dialog.af-about-dialog {

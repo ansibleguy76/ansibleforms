@@ -736,8 +736,6 @@ export default {
     tooLarge: 'Imagem demasiado grande, o tamanho máximo é 256 KB',
   },
   version: {
-    name: 'Nome',
-    version: 'Versão',
     title: 'Ansible Forms',
     license:
       'Este programa é software livre: pode redistribuí-lo e/ou modificá-lo nos termos da Licença Pública Geral GNU, tal como publicada pela Free Software Foundation, seja a versão 3 da Licença ou (à sua escolha) qualquer versão posterior.',

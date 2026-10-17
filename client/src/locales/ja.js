@@ -728,8 +728,6 @@ export default {
     tooLarge: '画像が大きすぎます。最大 256 KB です',
   },
   version: {
-    name: '名前',
-    version: 'バージョン',
     title: 'Ansible Forms',
     license:
       'このプログラムはフリーソフトウェアです。Free Software Foundation が公表した GNU 一般公衆利用許諾書のバージョン 3、または (任意で) それ以降のバージョンの定める条件の下で、再頒布または改変することができます。',
