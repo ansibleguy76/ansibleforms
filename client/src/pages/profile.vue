@@ -908,6 +908,7 @@ async function changePassword() {
                   :isFloating="false"
                   type="password"
                   icon="lock"
+                  :required="true"
                   :label="t('profilePage.token.password')"
                   :help="t('profilePage.token.passwordHint')"
                   @keyup_enter="createToken"

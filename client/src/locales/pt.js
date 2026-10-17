@@ -1135,8 +1135,7 @@ export default {
       banner_danger: 'Perigo',
       bannerClose: 'Fechar',
       appName: 'Nome da aplicação',
-      appNameHelp:
-        'Mostrado no separador do navegador e na página de início de sessão. Deixe vazio para AnsibleForms.',
+      appNameHelp: 'Mostrado no separador do navegador e na página de início de sessão. Deixe vazio para AnsibleForms.',
       bannerStart: 'Data de início',
       bannerStartHelp: 'Visível a partir deste momento. Deixe vazio para mostrar já.',
       bannerEnd: 'Data de fim',
