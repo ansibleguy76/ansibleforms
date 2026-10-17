@@ -13,12 +13,17 @@
 /*  is sent.                                                      */
 /*                                                                */
 /*  Every open tab hears the same change : a notification carries */
-/*  a tag per job and status, so the browser shows it once.       */
+/*  a tag per job and status, so the browser shows it once. A job */
+/*  waiting for an approval gets Approve and Reject buttons,      */
+/*  through public/notifications-sw.js.                           */
 /*                                                                */
 /******************************************************************/
 import axios from 'axios';
 import { listen } from '@/lib/liveEvents';
 import { durationSeconds, formatDuration } from '@/lib/jobTime';
+import { toast } from 'vue-sonner';
+import Helpers from '@/lib/Helpers';
+import BaseUrl from '@/lib/BaseUrl';
 
 // ─── the browser's choice ────────────────────────────────────────────────────
 
@@ -106,6 +111,7 @@ export async function turnNotificationsOn() {
   let answer = window.Notification.permission;
   if (answer === 'default') answer = await window.Notification.requestPermission();
   saveChoice(answer === 'granted');
+  if (answer === 'granted') registration();
   return answer;
 }
 
@@ -212,26 +218,106 @@ function siteIcon() {
   return document.querySelector('link[rel~="icon"]')?.href || undefined;
 }
 
+// ─── the service worker : notifications with buttons ─────────────────────────
+// Shown through public/notifications-sw.js, a notification can carry buttons (Approve, Reject)
+// where the browser shows them ; a click comes back here as a message, to the one tab the
+// worker picked, which holds the sign-in and acts. Without a worker (a browser that has none, a
+// refused registration) the notifications are plain ones, a click opening the job.
+
+let ctxNow = null; // the translations, router and store of the header that follows the jobs
+let worker = null; // the registration, once asked for (a promise)
+let hearing = false; // the worker's messages heard once per page
+
 /**
- * Shows one notification ; a click brings the tab to the front, on the job.
+ * The worker's registration, registered once : null when there can be none.
+ *
+ * Returns:
+ *   Promise<ServiceWorkerRegistration|null>: the registration, active.
+ */
+function registration() {
+  if (worker) return worker;
+  if (typeof navigator === 'undefined' || !navigator.serviceWorker) return Promise.resolve(null);
+  worker = navigator.serviceWorker
+    .register(`${BaseUrl}/notifications-sw.js`, { scope: `${BaseUrl}/` })
+    .then(() => navigator.serviceWorker.ready)
+    .catch(() => null);
+  return worker;
+}
+
+/**
+ * Approves or rejects a job from its notification's button, as the jobs page does, and says
+ * how it went : a toast for the tab, a notification for the user who is elsewhere.
  *
  * Args:
- *   title (string): the first line.
- *   body (string): the line under it.
- *   tag (string): one per job and status, so several tabs show it once.
- *   open (function): what a click does in the app.
+ *   decision (string): 'approve' or 'reject'.
+ *   id (number): the job.
+ *   form (string): its form, to name it.
  */
-function show(title, body, tag, open) {
+async function decide(decision, id, form) {
+  const { t } = ctxNow;
+  const name = form || t('profilePage.notificationsJob', { id });
+  let message;
+  let ok = false;
   try {
-    const n = new window.Notification(title, { body, tag, icon: siteIcon() });
+    const result = await axios.post(`/api/v2/job/${id}/${decision}`, {});
+    ok = result.status === 200;
+    message = result.data?.message || `${name}: ${t(decision === 'approve' ? 'jobs.approve' : 'jobs.reject')}`;
+  } catch (err) {
+    message = Helpers.parseAxiosResponseError(err) || t('jobs.alreadyDecided');
+  }
+  if (ok) toast.success(message);
+  else toast.error(message);
+  show({ title: name, body: message, tag: `af-job-${id}-decided` });
+}
+
+/**
+ * Hears the worker's messages once : a click on a notification, its button or itself.
+ */
+function hearWorker() {
+  if (hearing || typeof navigator === 'undefined' || !navigator.serviceWorker) return;
+  hearing = true;
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    const msg = event.data || {};
+    if (msg.type !== 'af-job-notification' || !ctxNow) return;
+    if (msg.decision === 'approve' || msg.decision === 'reject') decide(msg.decision, msg.id, msg.form);
+    else if (msg.open) ctxNow.router.push(msg.open).catch(() => {});
+  });
+}
+
+/**
+ * Shows one notification : through the worker when there is one (with its buttons), else a
+ * plain one ; a click brings the tab to the front, on the job.
+ *
+ * Args:
+ *   n (object): { title, body, tag (one per job and status, so several tabs show it once),
+ *     id, form (the job), open (its place in the app), actions (the buttons, [{ action, title }]) }.
+ */
+async function show({ title, body, tag, id, form, open, actions = [] }) {
+  const icon = siteIcon();
+  const reg = await registration();
+  if (reg?.showNotification) {
+    try {
+      await reg.showNotification(title, {
+        body,
+        tag,
+        icon,
+        actions,
+        data: { id, form, open, url: open ? `${window.location.origin}${BaseUrl}${open}` : undefined },
+      });
+      return;
+    } catch {
+      // the worker refused (no permission any more) : a plain one
+    }
+  }
+  try {
+    const n = new window.Notification(title, { body, tag, icon });
     n.onclick = () => {
       window.focus();
-      open();
+      if (open) ctxNow?.router.push(open).catch(() => {});
       n.close();
     };
   } catch {
-    // a browser that shows notifications only from a service worker (Chrome on Android) :
-    // nothing to tell with
+    // a browser that shows notifications only from a service worker, and none here
   }
 }
 
@@ -269,24 +355,37 @@ async function look({ t, router, store }) {
   }
   const { ended, approve } = whatIsNew(mine, waiting, profile);
   const current = router.currentRoute.value.path;
+  const name = (j) => j.form || j.target || t('profilePage.notificationsJob', { id: j.id });
   for (const j of ended) {
     // the user looks at that job : it sees it end
     if (document.visibilityState === 'visible' && current === `/jobs/${j.id}`) continue;
     const duration = formatDuration(durationSeconds(j));
-    show(
-      `${j.form || j.target || t('profilePage.notificationsJob', { id: j.id })}: ${t(`jobs.menu.${j.status}`)}`,
-      t('profilePage.notificationsBody', { id: j.id, duration }),
-      `af-job-${j.id}-${j.status}`,
-      () => router.push(`/jobs/${j.id}`).catch(() => {}),
-    );
+    show({
+      title: `${name(j)}: ${t(`jobs.menu.${j.status}`)}`,
+      body: t('profilePage.notificationsBody', { id: j.id, duration }),
+      tag: `af-job-${j.id}-${j.status}`,
+      id: j.id,
+      form: j.form,
+      open: `/jobs/${j.id}`,
+    });
   }
+  // a job waiting for its approval : Approve and Reject on the notification (where the browser
+  // shows buttons ; Chrome and Edge show two), Open job when there is room, the notification
+  // itself opening the approvals
   for (const j of approve) {
-    show(
-      `${j.form || j.target || t('profilePage.notificationsJob', { id: j.id })}: ${t('jobs.menu.approve')}`,
-      t('profilePage.notificationsApprovalBody', { id: j.id, user: j.user }),
-      `af-job-${j.id}-approve`,
-      () => router.push('/jobs/approval').catch(() => {}),
-    );
+    show({
+      title: `${name(j)}: ${t('jobs.menu.approve')}`,
+      body: t('profilePage.notificationsApprovalBody', { id: j.id, user: j.user }),
+      tag: `af-job-${j.id}-approve`,
+      id: j.id,
+      form: j.form,
+      open: '/jobs/approval',
+      actions: [
+        { action: 'approve', title: t('jobs.approve') },
+        { action: 'reject', title: t('jobs.reject') },
+        { action: 'open', title: t('jobs.openJob') },
+      ],
+    });
   }
 }
 
@@ -301,6 +400,10 @@ async function look({ t, router, store }) {
  *   function: stops following.
  */
 export function followJobNotifications(ctx) {
+  ctxNow = ctx;
+  hearWorker();
+  // the worker registered as soon as the notifications are on, so the first one has it
+  if (notificationsActive()) registration();
   const run = () => look(ctx);
   run();
   return listen('jobs', run);
