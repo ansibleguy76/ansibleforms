@@ -165,6 +165,38 @@ async function save() {
   await State.loadAppConfig();
 }
 
+// ─── search ──────────────────────────────────────────────────────────────────
+// A word typed in the title line's search narrows the page, as Settings > General's : the
+// settings whose label or help has it, under the tab's name, the tab set aside meanwhile.
+const search = ref('');
+const searching = computed(() => !!search.value.trim());
+const matches = (...texts) => {
+  const q = search.value.trim().toLowerCase();
+  return (
+    !q ||
+    texts.some((x) =>
+      String(x ?? '')
+        .toLowerCase()
+        .includes(q),
+    )
+  );
+};
+// each setting by what it can be found by, in the page's order
+const shownFields = computed(() =>
+  [
+    ['theme', t('settings.settingsPage.defaultTheme'), t('settings.settingsPage.defaultThemeHelp')],
+    ['language', ...languageEnv.value.flatMap((e) => [e.short, e.name, e.hint, e.description])],
+    ['forms', t('settings.interface.formsView'), t('settings.interface.formsViewHelp')],
+    ['timezone', t('settings.interface.timezone'), t('settings.interface.timezoneHelp')],
+    ['date', t('settings.interface.dateFormat'), t('settings.interface.dateFormatHelp')],
+  ]
+    .filter(([, ...texts]) => matches(...texts))
+    .map(([key]) => key),
+);
+const shown = (key) => shownFields.value.includes(key);
+// the room above a setting : none above the first one shown
+const spaced = (key) => shownFields.value[0] !== key;
+
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
@@ -181,7 +213,11 @@ onMounted(async () => {
       :description="t('settings.interface.description')"
       :crumbs="crumbs"
     >
-      <template #tabs>
+      <!-- narrows the page ; the search box of the other pages -->
+      <template #headerActions>
+        <BsSearch v-model="search" />
+      </template>
+      <template v-if="!searching" #tabs>
         <ul class="nav nav-tabs mb-0">
           <li v-for="tab in tabs" :key="tab.key" class="nav-item">
             <a
@@ -207,10 +243,18 @@ onMounted(async () => {
             <FaIcon icon="triangle-exclamation" class="me-2" />
             {{ t('settings.settingsPage.envRestartPending', { names: envRestartPending.join(', ') }) }}
           </div>
+          <div v-if="searching && !shownFields.length" class="text-body-secondary fst-italic">
+            {{ t('settings.settingsPage.searchNone') }}
+          </div>
+          <!-- searching : the matches under the tab's name, as Settings > General -->
+          <h6 v-if="searching && shownFields.length" class="fw-bold text-body-secondary af-search-tab af-search-first">
+            <FaIcon :icon="tabs[0].icon" class="me-1" />{{ tabs[0].label }}
+          </h6>
           <!-- the theme, the language, the forms view and the time zone for everyone -->
           <div>
             <!-- the theme : no environment variable, kept in the database -->
             <BsInput
+              v-show="shown('theme')"
               class="af-interface-field"
               :isFloating="false"
               type="select"
@@ -222,7 +266,7 @@ onMounted(async () => {
               :label="t('settings.settingsPage.defaultTheme')"
               :help="t('settings.settingsPage.defaultThemeHelp')"
             />
-            <div v-if="theme.default_theme === 'color'" class="mt-2 ms-1">
+            <div v-if="theme.default_theme === 'color'" v-show="shown('theme')" class="mt-2 ms-1">
               <div class="d-flex flex-wrap gap-2">
                 <button
                   v-for="c in colorPalette"
@@ -240,12 +284,15 @@ onMounted(async () => {
             </div>
             <!-- the language : an environment variable -->
             <template v-for="e in languageEnv" :key="e.name">
-              <div class="mt-4"></div>
-              <AppEnvField v-model="envEdits[e.name]" :e="e" class="af-defaults-wide" />
+              <div v-show="shown('language')" :class="{ 'mt-4': spaced('language') }">
+                <AppEnvField v-model="envEdits[e.name]" :e="e" class="af-defaults-wide" />
+              </div>
             </template>
             <!-- the forms list's view and the time zone : in the database -->
             <BsInput
-              class="af-interface-field mt-4"
+              v-show="shown('forms')"
+              class="af-interface-field"
+              :class="{ 'mt-4': spaced('forms') }"
               :isFloating="false"
               type="select"
               icon="table-cells-large"
@@ -257,7 +304,9 @@ onMounted(async () => {
               :help="t('settings.interface.formsViewHelp')"
             />
             <BsInput
-              class="af-interface-field mt-4"
+              v-show="shown('timezone')"
+              class="af-interface-field"
+              :class="{ 'mt-4': spaced('timezone') }"
               :isFloating="false"
               type="select"
               icon="clock"
@@ -269,7 +318,9 @@ onMounted(async () => {
               :help="t('settings.interface.timezoneHelp')"
             />
             <BsInput
-              class="af-interface-field mt-4"
+              v-show="shown('date')"
+              class="af-interface-field"
+              :class="{ 'mt-4': spaced('date') }"
               :isFloating="false"
               type="select"
               icon="calendar"
