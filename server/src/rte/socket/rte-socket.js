@@ -513,7 +513,7 @@ export async function startSocketRte(rteMode) {
     process.exit(1);
   }
   if (mode === "inbound" && !process.env.APP_URL) {
-    logger.notice("RTE: inbound without APP_URL: add its runner under Connections > Runners (type RTE, mode inbound, its address and RTE_TOKEN)");
+    logger.notice("RTE: inbound without APP_URL: its runner is added under Connections > Runners or in the config seed (type RTE, mode inbound, a credential with its address and RTE_TOKEN)");
   }
   installFatalHandlers("RTE");
   useJobIO(socketJobIO);
