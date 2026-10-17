@@ -799,9 +799,9 @@ const buildMismatch = computed(() => {
     transition: filter 0.15s;
   }
   .af-avatar-lg {
-    width: 64px;
-    height: 64px;
-    font-size: 1.875rem;
+    width: 56px;
+    height: 56px;
+    font-size: 1.625rem;
   }
 
   // dropdown menus: rounded, hairline border, soft shadow
@@ -859,7 +859,7 @@ const buildMismatch = computed(() => {
     display: flex;
     align-items: center;
     gap: 1.25rem;
-    padding: 0.5rem 0.6rem 0.4rem;
+    padding: 0.75rem 0.6rem;
     > span:last-child {
       min-width: 0;
     }
