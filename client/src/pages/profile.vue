@@ -456,6 +456,8 @@ const allZones = Time.zones().filter((z) => z !== 'UTC');
 const now = ref(new Date());
 const nowTimer = setInterval(() => (now.value = new Date()), 30000);
 onBeforeUnmount(() => clearInterval(nowTimer));
+// a color still hovered when the page goes : the user's theme again
+onBeforeUnmount(() => Theme.endPreview());
 const timezoneNow = computed(() => Time.format(now.value, 'YYYY-MM-DD HH:mm'));
 // the zone's offset from UTC now (summer time included), as UTC+02:00 ; UTC itself needs none
 const timezoneOffset = computed(() => {
@@ -634,6 +636,10 @@ async function changePassword() {
                 :style="{ backgroundColor: c }"
                 :aria-label="c"
                 @click="pickColor(c)"
+                @mouseenter="Theme.previewColor(c)"
+                @mouseleave="Theme.endPreview()"
+                @focus="Theme.previewColor(c)"
+                @blur="Theme.endPreview()"
               >
                 <FaIcon v-if="themeColor === c" icon="check" />
               </button>
