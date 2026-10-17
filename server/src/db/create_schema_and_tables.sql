@@ -310,6 +310,9 @@ CREATE TABLE `jobs` (
   `runner` varchar(250) DEFAULT NULL,
   -- what that runner was when the job ran (awx, aap, ascender, semaphore, rundeck, jenkins, rte)
   `runner_kind` varchar(20) DEFAULT NULL,
+  -- its address in that product's web UI (an AWX job's page, a Jenkins build's console ...),
+  -- kept so a runner removed or renamed later leaves the link (lib/runnerJobLinks.js)
+  `runner_job_url` varchar(1000) DEFAULT NULL,
   `job_log` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `tracker` varchar(250) DEFAULT NULL,
   PRIMARY KEY (`id`),

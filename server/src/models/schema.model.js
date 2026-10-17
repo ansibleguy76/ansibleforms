@@ -590,7 +590,7 @@ const SCHEMA_MANIFEST = {
     // between them, the designer lock, and the node that follows a job
     patchVersion7: { tables: ['secret_stores', 'runners', 'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'notification_channels', 'syslog_servers', 'login_failures', 'token_revocations', 'schema_migrations',
                               'directory_users', 'announcements', 'disclaimer_versions', 'disclaimer_acceptances', 'api_tokens', 'labels'],
-                     columns: ['schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'settings.syslog_env_imported_at', 'jobs.runner', 'jobs.runner_kind',
+                     columns: ['schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'settings.syslog_env_imported_at', 'jobs.runner', 'jobs.runner_kind', 'jobs.runner_job_url',
                                'runners.username', 'runners.password', 'runners.use_credentials', 'runners.node_id', 'jobs.job_log',
                                'jobs.tracker', 'repositories.claim_node', 'repositories.claim_since',
                                'repositories.use_for_workflows', 'repositories.use_for_inventories',
@@ -919,6 +919,9 @@ async function patchVersion7(messages, success, failed) {
   // so a runner removed or renamed later does not change it ; the jobs before it, once, from their
   // runner as it is now
   await checkPromise(addColumn("jobs", "runner_kind", "varchar(20)", true, "NULL"), messages, success, failed);
+  // its address in that product's web UI : kept on the job, so a runner removed or renamed later
+  // leaves its link (lib/runnerJobLinks.js) ; the jobs before it, when their page is first read
+  await checkPromise(addColumn("jobs", "runner_job_url", "varchar(1000)", true, "NULL"), messages, success, failed);
   // AWX/AAP/Ascender connections are runners of type awx : the awx table is copied into
   // runners once, then dropped ; the job log a playbook writes is stored on the job
   await checkPromise(addColumn("runners", "username", "varchar(250)", true, "NULL"), messages, success, failed);

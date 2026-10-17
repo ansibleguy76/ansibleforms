@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue';
+import { ref, onMounted, onBeforeUnmount, onUpdated, computed, watch, nextTick } from 'vue';
 import { findRanges, showRanges, clearRanges } from '@/lib/findInText';
 import { toast } from 'vue-sonner';
 import { useRoute, useRouter } from 'vue-router';
@@ -18,6 +18,8 @@ import BsColumnPicker from '@/components/BsColumnPicker.vue';
 import { headerWidth, pillWidth, pxOf } from '@/lib/tableCells';
 import { jobsPath, statusFromSlug } from '@/lib/jobsPath';
 import { formPath } from '@/lib/formsPath';
+import { jobTypeLabel, jobTypeName, hasArtifacts } from '@/lib/jobTypes';
+import { useNodeOutput } from '@/composables/useNodeOutput';
 
 // INIT
 
@@ -36,6 +38,8 @@ const jobsLoaded = ref(false);
 const job = ref(null);
 // the job of the page could not be read (gone, not visible) : no placeholders for it
 const jobMissing = ref(false);
+// the summary's facts hidden under its header (the collapse at the header's left)
+const summaryCollapsed = ref(false);
 // a multistep job's steps, by id, as read with the job : each step's output under the main job's
 const stepJobs = ref({});
 // the outputs of a multistep job folded away by their title : 'main', or a step's id
@@ -60,7 +64,6 @@ const fitKey = computed(
 );
 const showExtraVars = ref(false);
 const showArtifacts = ref(false);
-const viewAsYaml = ref(false);
 const hide = ref(false);
 const collapsed = ref({});
 const showDelete = ref(false);
@@ -126,46 +129,6 @@ const durationSeconds = (j) => runSeconds(j, now.value);
  * Returns:
  *   string: a CSS width in px.
  */
-/**
- * A job's type as the list and its page say it : a template job by where it ran (awx, aap,
- * ascender, semaphore, rundeck, jenkins - its runner's kind), the others by their type.
- *
- * Args:
- *   j (object): the job (job_type, runner_kind).
- *
- * Returns:
- *   string: the type shown.
- */
-function jobTypeLabel(j) {
-  if (j?.job_type === 'awx') return j.runner_kind || 'awx';
-  return j?.job_type || 'ansible';
-}
-// a job type as its badge says it : the product's own spelling, as the other badges capitalized
-const JOB_TYPE_NAMES = {
-  ansible: 'Ansible',
-  workflow: 'Workflow',
-  multistep: 'Multistep',
-  awx: 'AWX',
-  aap: 'AAP',
-  ascender: 'Ascender',
-  semaphore: 'Semaphore',
-  rundeck: 'Rundeck',
-  jenkins: 'Jenkins',
-};
-function jobTypeName(j) {
-  const type = jobTypeLabel(j);
-  return JOB_TYPE_NAMES[type] || type.charAt(0).toUpperCase() + type.slice(1);
-}
-/**
- * Whether a job has artifacts to show : a template job that ran on an AWX, AAP or Ascender (or a
- * runner since removed) - Semaphore, Rundeck and Jenkins have none ; any other job whose
- * playbook gathered some with set_stats (a playbook on the RTE, a workflow : all its nodes').
- */
-function hasArtifacts(j) {
-  if (j?.job_type === 'awx') return !['semaphore', 'rundeck', 'jenkins'].includes(j.runner_kind);
-  const artifacts = j?.awx_artifacts;
-  return !!artifacts && typeof artifacts === 'object' && Object.keys(artifacts).length > 0;
-}
 function statusWidth() {
   const labels = ['running', 'approve', 'success', 'failed', 'aborted'].map((s) => t(`jobs.menu.${s}`));
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize || '16');
@@ -481,6 +444,13 @@ const dataShown = computed(() => {
 });
 // the outputs (the job's, and the current step's) : the toolbar folds or unfolds them all
 const mainOutput = ref(null);
+// the output's body : a multistep job's title height set on it, for the headers pinned under the titles
+const outputBody = ref(null);
+function measureStepTitle() {
+  const title = outputBody.value?.querySelector('.af-job-step > .af-job-title');
+  outputBody.value?.style.setProperty('--af-step-title', title ? `${title.offsetHeight}px` : '0px');
+}
+onUpdated(measureStepTitle);
 const subOutput = ref(null);
 
 // a running job's output followed down as it comes in, while the reader is at its end
@@ -564,37 +534,21 @@ function toggleFoldAll() {
   }
 }
 
-// ─── a workflow node's output, from its graph ─────────────────────────────────
-// the node clicked and its output's HTML (its section of the job's output)
-const nodeShown = ref(null);
-
-/**
- * Opens a node's output in a dialog : its section of the job's output.
- *
- * Args:
- *   node (object): the node clicked on the graph.
- */
-function openNodeOutput(node) {
-  const html = mainOutput.value?.nodeOutput(node);
-  if (!html) {
-    toast.info(t('jobs.noNodeOutput', { node: node.name }));
-    return;
-  }
-  nodeShown.value = { node, html };
-}
-
-// Esc closes the dialog first : before the full screen under it hears it
-function onNodeKey(e) {
-  if (e.key !== 'Escape' || !nodeShown.value) return;
-  e.preventDefault();
-  nodeShown.value = null;
-}
-onMounted(() => window.addEventListener('keydown', onNodeKey, true));
-onBeforeUnmount(() => window.removeEventListener('keydown', onNodeKey, true));
+// ─── a workflow node's output, from its graph (composables/useNodeOutput.js) ──
+const { nodeShown, openNodeOutput } = useNodeOutput(mainOutput);
 
 // the playbook it ran, when it ran one
 // a Rundeck job calls what the form sent its payload ; the others, Ansible's word, extravars
-const saysPayload = computed(() => job.value?.runner_kind === 'rundeck');
+// what the form's values went as : a Rundeck job's payload (its options), a Jenkins build's
+// parameters, else extravars - the toolbar's button and the data's title say it
+const sentAs = computed(() =>
+  job.value?.runner_kind === 'rundeck' ? 'payload' : job.value?.runner_kind === 'jenkins' ? 'parameters' : 'extravars',
+);
+const SENT_LABELS = {
+  payload: { show: 'jobs.showPayload', hide: 'jobs.hidePayload', title: 'jobs.payload' },
+  parameters: { show: 'jobs.showParameters', hide: 'jobs.hideParameters', title: 'jobs.parameters' },
+  extravars: { show: 'jobs.showExtravars', hide: 'jobs.hideExtravars', title: 'jobs.extravars' },
+};
 const jobPlaybook = computed(() => job.value?.extravars?.__playbook__ || '');
 
 // the hosts an ansible job ran on : its limit (--limit), else all of its inventories, else the
@@ -747,6 +701,11 @@ async function loadJobs() {
     } finally {
       isLoading.value = false;
       State.refreshApprovals();
+      // a change came meanwhile : read now, so the last one (a job ending) is never lost
+      if (livePending) {
+        livePending = false;
+        refreshLive();
+      }
     }
   }
 }
@@ -778,6 +737,8 @@ function childJobs(id) {
   return visible.sort((a, b) => (a.id > b.id ? 1 : -1));
 }
 
+// the newest read of the job's own output (loadOutput)
+let outputSeq = 0;
 // load job output
 async function loadOutput(id, sub = false) {
   if (!id) {
@@ -789,12 +750,17 @@ async function loadOutput(id, sub = false) {
     jobMissing.value = false;
   }
   let result;
+  // the job's own read : numbered, so an older one that answers late (a big output, the live
+  // changes coming faster) never puts back what a newer one already showed - a job ended would
+  // read as running again until the next reload
+  const seq = sub ? 0 : ++outputSeq;
   try {
     result = await axios.get(`/api/v2/job/${id}`);
   } catch (err) {
-    if (!sub) jobMissing.value = true;
+    if (!sub && seq === outputSeq) jobMissing.value = true;
     throw err;
   }
+  if (!sub && seq !== outputSeq) return;
   if (result.status === 200) {
     const data = result.data;
     if (!sub) {
@@ -815,8 +781,13 @@ async function loadOutput(id, sub = false) {
 // output, one deleted - or the stream (re)opened. A job's page re-reads its output, the list
 // re-reads the list : quietly, without the loading state, which would empty a multistep job's
 // steps and send the pager back to page 1 a few times a second while a playbook runs.
+// a change heard while the jobs load : read once they have
+let livePending = false;
 async function refreshLive() {
-  if (isLoading.value) return;
+  if (isLoading.value) {
+    livePending = true;
+    return;
+  }
   if (isJobPage.value) {
     if (jobId.value) await loadOutput(jobId.value);
     return;
@@ -1314,38 +1285,25 @@ onMounted(async () => {
       </template>
     </BsModal>
     <!-- a workflow node's output, opened from the graph : over the full screen too -->
-    <Teleport to="body">
-      <div v-if="nodeShown" class="af-node-modal">
-        <BsModal size="xl" @close="nodeShown = null" icon="diagram-project">
-          <template #title>
-            {{ nodeShown.node.name }}
-            <!-- the node's job in the product it ran on -->
-            <a
-              v-if="nodeShown.node.ui_url"
-              :href="nodeShown.node.ui_url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="ms-2 small"
-              :title="t('jobs.openInRunner', { id: nodeShown.node.job, product: jobTypeName(job) })"
-              >#{{ nodeShown.node.job }}<FaIcon icon="arrow-up-right-from-square" class="ms-1"
-            /></a>
-          </template>
-          <template #default>
-            <AppAnsibleOutput
-              :output="nodeShown.html"
-              :workflow="job?.awx_workflow"
-              :jobId="jobId"
-              :copyLabel="t('jobs.copy')"
-              numbered
-              @copy="(text) => clip(text, true)"
-            />
-          </template>
-        </BsModal>
-      </div>
-    </Teleport>
+    <AppNodeOutputDialog
+      :shown="nodeShown"
+      :workflow="job?.awx_workflow"
+      :jobId="jobId"
+      :product="jobTypeName(job)"
+      @close="nodeShown = null"
+      @copy="(text) => clip(text, true)"
+    />
     <main class="d-flex flex-nowrap af-settings-layout">
       <AppJobsSidebar :jobs="jobs || []" :loaded="jobsLoaded" :status="menuStatus" @select="selectStatus" />
-      <AppSettings :title="pageTitle.title" :crumbs="pageCrumbs" :description="pageDescription" :icon="pageTitle.icon">
+      <!-- a job's page : no card around it all - its summary, its workflow graph and its output
+           each a card of their own -->
+      <AppSettings
+        :title="pageTitle.title"
+        :crumbs="pageCrumbs"
+        :description="pageDescription"
+        :icon="pageTitle.icon"
+        :bare="isJobPage"
+      >
         <template #headerActions>
           <!-- a job's page : the actions the list offers on its row (same rules) ; back to the list
                through the title's Jobs, or the menu's -->
@@ -1672,19 +1630,34 @@ onMounted(async () => {
           <div class="col">
             <!-- the job at a glance : its number and state, then what ran, who launched it, when
                  and for how long -->
-            <div class="af-job-summary">
+            <!-- a card as the graph's and the output's : the job's name and pills its header, the
+                 facts its body -->
+            <div class="af-job-summary" :class="{ 'af-job-summary-collapsed': summaryCollapsed }">
               <div class="af-job-heading">
+                <!-- hide or show the facts, as the graph's and the output's collapse : the header stays -->
+                <button
+                  type="button"
+                  class="af-tool-btn af-tool-icon af-job-collapse"
+                  :title="summaryCollapsed ? t('jobs.showDetails') : t('jobs.hideDetails')"
+                  :aria-label="summaryCollapsed ? t('jobs.showDetails') : t('jobs.hideDetails')"
+                  :aria-expanded="!summaryCollapsed"
+                  @click="summaryCollapsed = !summaryCollapsed"
+                >
+                  <FaIcon :icon="summaryCollapsed ? 'angles-down' : 'angles-up'" />
+                </button>
                 <h3 class="af-job-number">{{ job.form || t('jobs.jobTitle', { id: '#' + jobId }) }}</h3>
                 <AppStatusPill :status="job.status" />
                 <AppStatusPill :label="jobTypeName(job)" tone="grey" />
               </div>
-              <dl class="af-job-facts">
+              <dl v-show="!summaryCollapsed" class="af-job-facts">
                 <!-- an ansible job : the hosts it ran on (its limit, else its inventories, else the
                      implicit localhost) ; any other job : its form -->
                 <div v-if="jobHosts" class="af-job-fact">
                   <dt><FaIcon icon="server" />{{ t('jobs.hosts') }}</dt>
-                  <dd :title="jobHosts.value">
-                    {{ jobHosts.value }}<span v-if="jobHosts.note" class="af-job-fact-note">{{ jobHosts.note }}</span>
+                  <!-- one line : the hosts cut short when long, their note always seen -->
+                  <dd :title="jobHosts.value" class="af-job-fact-split">
+                    <span class="af-job-fact-text">{{ jobHosts.value }}</span
+                    ><span v-if="jobHosts.note" class="af-job-fact-note">{{ jobHosts.note }}</span>
                   </dd>
                 </div>
                 <div v-else class="af-job-fact">
@@ -1713,9 +1686,10 @@ onMounted(async () => {
                 <!-- a workflow job : the workflow it ran, and how many nodes (where a playbook job's playbook is) -->
                 <div v-else-if="job.job_type == 'workflow' && job.awx_workflow" class="af-job-fact">
                   <dt><FaIcon icon="diagram-project" />{{ t('workflow.title') }}</dt>
-                  <dd>
-                    {{ job.awx_workflow.name
-                    }}<span class="af-job-fact-note">{{
+                  <!-- one line : the workflow cut short when long, its node count always seen -->
+                  <dd :title="job.awx_workflow.name" class="af-job-fact-split">
+                    <span class="af-job-fact-text">{{ job.awx_workflow.name }}</span
+                    ><span class="af-job-fact-note">{{
                       t('workflow.nodes', { count: job.awx_workflow.nodes?.length || 0 })
                     }}</span>
                   </dd>
@@ -1726,8 +1700,10 @@ onMounted(async () => {
                 </div>
                 <div class="af-job-fact">
                   <dt><FaIcon icon="user" />{{ t('jobs.launchedBy') }}</dt>
-                  <dd :title="job.user">
-                    {{ job.user || '–' }}<span v-if="job.user_type" class="af-job-fact-note">{{ job.user_type }}</span>
+                  <!-- one line : the user cut short when long, how it signs in always seen -->
+                  <dd :title="job.user" class="af-job-fact-split">
+                    <span class="af-job-fact-text">{{ job.user || '–' }}</span
+                    ><span v-if="job.user_type" class="af-job-fact-note">{{ job.user_type }}</span>
                   </dd>
                 </div>
                 <div class="af-job-fact">
@@ -1783,6 +1759,8 @@ onMounted(async () => {
                   }}</span>
                 </div>
                 <div class="af-output-actions">
+                  <!-- the failed tasks (else the error lines) : each click the next one -->
+                  <AppOutputFailures :output="mainOutput" :jobId="jobId" />
                   <button type="button" class="af-tool-btn" :class="{ active: hide }" @click="hide = !hide">
                     <FaIcon :icon="hide ? 'filter-circle-xmark' : 'filter'" />
                     {{ hide ? t('jobs.removeFilter') : t('jobs.applyFilter') }}
@@ -1798,11 +1776,7 @@ onMounted(async () => {
                     "
                   >
                     <FaIcon :icon="showExtraVars ? 'eye-slash' : 'eye'" />
-                    {{
-                      showExtraVars
-                        ? t(saysPayload ? 'jobs.hidePayload' : 'jobs.hideExtravars')
-                        : t(saysPayload ? 'jobs.showPayload' : 'jobs.showExtravars')
-                    }}
+                    {{ showExtraVars ? t(SENT_LABELS[sentAs].hide) : t(SENT_LABELS[sentAs].show) }}
                   </button>
                   <button
                     v-if="store.profile.options?.showArtifacts && hasArtifacts(job)"
@@ -1830,87 +1804,54 @@ onMounted(async () => {
                 </div>
               </div>
               <!-- the extravars or the artifacts, when shown : under the toolbar, above the output -->
-              <div v-if="dataShown" class="af-output-data">
-                <div class="af-data-head">
-                  <span class="af-data-title">
-                    <FaIcon :icon="showExtraVars ? 'eye' : 'square-poll-vertical'" />
-                    {{ showExtraVars ? t(saysPayload ? 'jobs.payload' : 'jobs.extravars') : t('jobs.artifacts') }}
-                  </span>
-                  <div class="af-data-tools">
-                    <div class="af-segmented" role="group">
-                      <button
-                        type="button"
-                        class="af-tool-btn"
-                        :class="{ active: !viewAsYaml }"
-                        @click="viewAsYaml = false"
-                      >
-                        JSON
-                      </button>
-                      <button
-                        type="button"
-                        class="af-tool-btn"
-                        :class="{ active: viewAsYaml }"
-                        @click="viewAsYaml = true"
-                      >
-                        YAML
-                      </button>
-                    </div>
-                    <button type="button" class="af-tool-btn" @click="clip(dataShown.value, false, viewAsYaml)">
-                      <FaIcon icon="copy" />{{ t('jobs.copy') }}
-                    </button>
-                    <button
-                      type="button"
-                      class="af-tool-btn af-tool-icon"
-                      :aria-label="t('common.close')"
-                      @click="
-                        showExtraVars = false;
-                        showArtifacts = false;
-                      "
-                    >
-                      <FaIcon icon="xmark" />
-                    </button>
-                  </div>
-                </div>
-                <div class="af-data-body">
-                  <VueJsonPretty v-if="!viewAsYaml" :data="dataShown.value" />
-                  <pre
-                    v-else
-                    v-highlightjs
-                  ><code language="yaml" style="border:none;padding:0;background:none">{{ YAML.stringify(dataShown.value) }}</code></pre>
-                </div>
-              </div>
-              <div class="row g-0 af-output-body">
+              <AppOutputData
+                v-if="dataShown"
+                :title="showExtraVars ? t(SENT_LABELS[sentAs].title) : t('jobs.artifacts')"
+                :icon="showExtraVars ? 'eye' : 'square-poll-vertical'"
+                :value="dataShown.value"
+                @copy="(value, asYaml) => clip(value, false, asYaml)"
+                @close="
+                  showExtraVars = false;
+                  showArtifacts = false;
+                "
+              />
+              <div ref="outputBody" class="row g-0 af-output-body">
                 <div class="col">
                   <!-- a multistep job's titles fold their output (click, Enter, Space), as the
                        output's own section heads do -->
-                  <h3
-                    v-if="steps.length"
-                    class="af-job-title"
-                    role="button"
-                    tabindex="0"
-                    :aria-expanded="!foldedOutputs.main"
-                    :class="{ 'is-folded': foldedOutputs.main }"
-                    @click="toggleOutput('main')"
-                    @keydown.enter.self.prevent="toggleOutput('main')"
-                    @keydown.space.self.prevent="toggleOutput('main')"
-                  >
-                    <FaIcon :icon="foldedOutputs.main ? 'chevron-right' : 'chevron-down'" class="af-job-chevron" />
-                    {{ t('jobs.mainJob') }} (jobid {{ jobId }})
-                    <AppStatusPill :status="job.status" />
-                  </h3>
-                  <!-- a wrapper to fold : the output has more than one root, v-show cannot reach it -->
-                  <div v-show="!foldedOutputs.main">
-                    <AppAnsibleOutput
-                      ref="mainOutput"
-                      :copyLabel="t('jobs.copy')"
-                      @copy="(text) => clip(text, true)"
-                      :output="filteredJobOutput"
-                      :jobLog="job?.job_log"
-                      :workflow="job?.awx_workflow"
-                      :title="job.job_type == 'awx' ? job.target : jobPlaybook || job.form"
-                      :jobId="jobId"
-                      numbered
-                    />
+                  <!-- the main job : its title and its output together, so its title sticks over its own
+                       output only, as each step's -->
+                  <div class="af-job-step">
+                    <h3
+                      v-if="steps.length"
+                      class="af-job-title"
+                      role="button"
+                      tabindex="0"
+                      :aria-expanded="!foldedOutputs.main"
+                      :class="{ 'is-folded': foldedOutputs.main }"
+                      @click="toggleOutput('main')"
+                      @keydown.enter.self.prevent="toggleOutput('main')"
+                      @keydown.space.self.prevent="toggleOutput('main')"
+                    >
+                      <FaIcon :icon="foldedOutputs.main ? 'chevron-right' : 'chevron-down'" class="af-job-chevron" />
+                      {{ t('jobs.mainJob') }} (jobid {{ jobId }})
+                      <AppStatusPill :status="job.status" />
+                    </h3>
+                    <!-- a wrapper to fold : the output has more than one root, v-show cannot reach it -->
+                    <div v-show="!foldedOutputs.main">
+                      <AppAnsibleOutput
+                        ref="mainOutput"
+                        :copyLabel="t('jobs.copy')"
+                        @copy="(text) => clip(text, true)"
+                        :output="filteredJobOutput"
+                        :jobLog="job?.job_log"
+                        :workflow="job?.awx_workflow"
+                        :title="job.job_type == 'awx' ? job.target : jobPlaybook || job.form"
+                        :jobId="jobId"
+                        numbered
+                        lineLinks
+                      />
+                    </div>
                   </div>
                   <!-- a multistep job's steps under it, in their order : the whole run reads down -->
                   <div v-for="(step, i) in steps" :key="step.id" class="af-job-step">
@@ -1937,9 +1878,30 @@ onMounted(async () => {
                     </div>
                   </div>
                   <!-- scrolled up while it runs : back to its end, following again -->
-                  <AppFollowButton :show="outputPaused" :new-lines="outputNewLines" @click="jumpToOutputEnd" />
+                  <AppFollowButton
+                    :show="outputPaused"
+                    :new-lines="outputNewLines"
+                    :bottom="job.status === 'running' ? '5.75rem' : '0.75rem'"
+                    @click="jumpToOutputEnd"
+                  />
                 </div>
               </div>
+            </div>
+            <!-- a running job : its status and Abort under the output, held at the window's bottom while
+                 the output scrolls under it, as the form's page does (Abort at once, as there ; the
+                 header's Abort asks first) -->
+            <div v-if="job.status === 'running'" class="af-job-run-actions">
+              <button type="button" class="btn btn-primary text-white flex-fill" disabled>
+                <FaIcon icon="spinner" /><span class="ms-3">{{ t('form.running') }}</span>
+              </button>
+              <button
+                v-if="!job.abort_requested && canManage(job)"
+                type="button"
+                class="btn btn-danger text-white flex-fill"
+                @click="abortJob(job.id)"
+              >
+                <FaIcon icon="stop" /><span class="ms-3">{{ t('form.abort') }}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -1959,6 +1921,8 @@ onMounted(async () => {
           </div>
         </template>
       </AppSettings>
+      <!-- a long job's page : up to its top, down to its end (over the Running bar while it runs) -->
+      <AppScrollButtons v-if="isJobPage" :overBar="job?.status === 'running'" />
     </main>
   </div>
 </template>
@@ -1970,6 +1934,13 @@ onMounted(async () => {
 }
 /* "Main job (jobid 97)", "Step 1 · ... (jobid 98)" : a header bar over its output, the grey
    and the divider of the output's own section heads (AppAnsibleOutput's .af-node-head) */
+/* a multistep job's titles stick at the top over their own output, its section's header pinned
+   under them : both seen while it scrolls by (the height for the header : measureStepTitle) */
+.af-job-step > .af-job-title {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+}
 .af-job-title {
   display: flex;
   flex-wrap: wrap;
@@ -1985,35 +1956,59 @@ onMounted(async () => {
     font-size: 0.5em;
   }
 }
+/* a running job's status and Abort, as the form's page's : held at the window's bottom */
+.af-job-run-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 0 1.5rem;
+  background: var(--bs-body-bg);
+}
 /* ─── a job's page : the summary on top ─────────────────────────────────────── */
 .af-job-summary {
   margin-bottom: 1.25rem;
   container-type: inline-size;
+  border: 1px solid var(--af-field-border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: var(--bs-body-bg);
 }
-/* Job #73, its status and its type on one line, the pills on the middle of the number */
+/* its header, as the graph's and the output's toolbars : the job's name, its status and its type
+   on one line, the pills on the middle of the name */
 .af-job-heading {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  padding: 0.625rem 1.125rem;
+  border-bottom: 1px solid var(--af-field-border);
+  background: var(--bs-tertiary-bg);
+}
+/* the collapse : as far in as the output's, as wide ; no line under a collapsed header */
+.af-job-collapse {
+  margin-left: calc(-0.5rem - 1px);
+  svg {
+    width: 0.75rem;
+  }
+}
+.af-job-summary-collapsed .af-job-heading {
+  border-bottom: 0;
 }
 .af-job-number {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
-/* the facts in a grid of three : what ran and who launched it on the first row, when and how
-   long on the second ; two columns, then one, as the page narrows. A hairline between them */
+/* the facts in a grid of three, the card's body : what ran and who launched it on the first row,
+   when and how long on the second ; two columns, then one, as the page narrows. A hairline
+   between them */
 .af-job-facts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   margin: 0;
-  border: 1px solid var(--af-field-border);
-  border-radius: 0.5rem;
-  background: var(--bs-tertiary-bg);
-  overflow: hidden;
 }
 @container (max-width: 44rem) {
   .af-job-facts {
@@ -2037,7 +2032,7 @@ onMounted(async () => {
     align-items: center;
     gap: 0.375rem;
     margin-bottom: 0.25rem;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -2114,10 +2109,15 @@ onMounted(async () => {
   margin-left: 0.375rem;
   padding: 0.05rem 0.4rem;
   border-radius: 0.25rem;
-  font-size: 0.75rem;
+  /* a note (local, 20 nodes, implicit) a little smaller than its value ; one that is a link (the
+     job's #number in the product it ran on) at the value's size, to tell them apart */
+  font-size: 0.8125rem;
   font-weight: 400;
   background: var(--bs-secondary-bg);
   color: var(--bs-secondary-color);
+}
+.af-job-fact-note:has(a) {
+  font-size: 1rem;
 }
 .af-job-duration {
   font-variant-numeric: tabular-nums;
@@ -2156,7 +2156,8 @@ onMounted(async () => {
   width: 0.75rem;
   color: var(--bs-secondary-color);
 }
-.af-job-step {
+/* a hairline between the steps : not over the first (the main job), right under the toolbar's own */
+.af-job-step + .af-job-step {
   border-top: 1px solid var(--af-field-border);
 }
 .custom-table {
@@ -2217,45 +2218,6 @@ tr.table-selected {
   td {
     border-left: none;
     border-right: none;
-  }
-}
-</style>
-<style lang="scss">
-/* a workflow node's output : over the graph's full screen (z-index 1056), and framed as the
-   job's output panel */
-.af-node-modal {
-  .modal {
-    z-index: 1062;
-  }
-  + .modal-backdrop,
-  .modal-backdrop {
-    z-index: 1061;
-  }
-  /* its header (the name, extravars, artifacts, run time) stays in place : only the part
-     under it scrolls, its scrollbar starting under the header */
-  .modal-body {
-    padding: 0;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-  .af-ansible-groups,
-  .af-node-card {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0;
-  }
-  .af-ansible-groups {
-    border-radius: 0;
-  }
-  .af-node-head {
-    flex: none;
-  }
-  .af-node-body {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
   }
 }
 </style>

@@ -321,7 +321,9 @@ test("successful workflow job: node outputs, summary and graph json", { timeout:
   assert.match(out, /ok: \[localhost102\]/);
   // the summary with all the nodes
   assert.match(out, /WORKFLOW \[my workflow\] \(successful\) \*+/);
-  assert.match(out, /WORKFLOW NODE \[node three\] \(skipped\)/);
+  // a line per node, the statuses in one column (lib/workflowSummary.js)
+  assert.match(out, /WORKFLOW NODE #\d+ +\[node three\] *: skipped/);
+  assert.match(out, /WORKFLOW NODE #\d+ +\[node one\] *: successful/);
   assert.match(out, /Successfully completed workflow my workflow/);
   // the graph json is stored and holds the final node statuses
   const graph = JSON.parse(jobRow.awx_workflow);

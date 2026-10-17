@@ -39,7 +39,9 @@ var Navigate = {
       }
     }
 
-    const fullPath = url.pathname + url.search;
+    // its #part kept : a link to a line of a job's output (#L45) opens on that line after the
+    // sign-in, or after the app's start that comes back to it
+    const fullPath = url.pathname + url.search + url.hash;
 
     // If we're navigating to the same path and forceReload is true,
     // first navigate away then back to trigger a reload
@@ -51,7 +53,7 @@ var Navigate = {
         })
         .catch((_err) => {});
     } else {
-      // Use the pathname + search (which will have proper %20 encoding)
+      // Use the pathname + search + hash (which will have proper %20 encoding)
       router.push(fullPath).catch((_err) => {});
     }
   },

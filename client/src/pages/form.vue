@@ -1,5 +1,7 @@
 <script setup>
 import { ref, reactive, computed, provide, watch, onMounted, onBeforeUnmount } from 'vue';
+import { jobTypeName, hasArtifacts } from '@/lib/jobTypes';
+import { useNodeOutput } from '@/composables/useNodeOutput';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner';
@@ -517,6 +519,8 @@ const isEmbedded = computed(() => !!route.query.embed);
 const hideForm = ref(false); // possible action to hide form onsubmit for example
 const formdata = ref({}); // the eventual object sent to the api in the correct hierarchy
 const showExtraVars = ref(false); // flag to show/hide extravars
+// the run's artifacts shown over its output (its toolbar's Show artifacts)
+const showRunArtifacts = ref(false);
 const job = ref({}); // holds the job data
 const message = ref(''); // holds the message of the job
 const error = ref(''); // holds the error of the job
@@ -681,14 +685,17 @@ const displayedOutputYaml = computed(() => {
 });
 // a Rundeck form calls what it sends its payload ; the others, Ansible's word, extravars
 const saysPayload = computed(() => currentForm.value?.type === 'rundeck');
+// a Jenkins job's values go as its build's parameters
+const saysParameters = computed(() => currentForm.value?.type === 'jenkins');
 const displayedOutputTitle = computed(() => {
   if (activeEntry.value) return `${t('form.subformOutput')} - ${activeEntry.value.title}`;
   if (wizardActive.value) {
     const step = activeWizardStep.value;
-    if (step?.isSummary) return t(saysPayload.value ? 'form.payload' : 'form.extraVars');
+    if (step?.isSummary)
+      return t(saysPayload.value ? 'form.payload' : saysParameters.value ? 'form.parameters' : 'form.extraVars');
     return `${t('form.subformOutput')} - ${step?.title || ''}`;
   }
-  return t(saysPayload.value ? 'form.payload' : 'form.extraVars');
+  return t(saysPayload.value ? 'form.payload' : saysParameters.value ? 'form.parameters' : 'form.extraVars');
 });
 
 // filter job output
@@ -705,6 +712,8 @@ const filteredJobOutput = computed(() => {
 // ─── the output panel (as the job's page) ─────────────────────────────────────
 // the outputs (the job's, and a multistep's current step) : the toolbar folds them all
 const mainOutput = ref(null);
+// a workflow node's output, opened from the graph (composables/useNodeOutput.js), as on the job's page
+const { nodeShown, openNodeOutput } = useNodeOutput(mainOutput);
 const subOutput = ref(null);
 
 /**
@@ -1933,8 +1942,23 @@ onBeforeUnmount(() => {
                     iconToggle="eye-slash"
                     :toggle="showExtraVars"
                     @click="toggleShowExtraVars()"
-                    >{{ t(saysPayload ? 'form.showPayload' : 'form.showExtravars')
-                    }}<template #toggle>{{ t(saysPayload ? 'form.hidePayload' : 'form.hideExtravars') }}</template>
+                    >{{
+                      t(
+                        saysPayload
+                          ? 'form.showPayload'
+                          : saysParameters
+                            ? 'form.showParameters'
+                            : 'form.showExtravars',
+                      )
+                    }}<template #toggle>{{
+                      t(
+                        saysPayload
+                          ? 'form.hidePayload'
+                          : saysParameters
+                            ? 'form.hideParameters'
+                            : 'form.hideExtravars',
+                      )
+                    }}</template>
                   </BsButton>
                   <BsButton v-if="!isEmbedded" cssClass="text-nowrap" icon="redo" @click="reloadForm">
                     {{ t('form.reloadForm') }}
@@ -2238,7 +2262,7 @@ onBeforeUnmount(() => {
           <!-- awx workflow graph (only for awx workflow jobs) -->
           <div class="row" v-if="job.awx_workflow?.nodes?.length">
             <div class="col">
-              <AppAwxWorkflow :workflow="job.awx_workflow" />
+              <AppAwxWorkflow :workflow="job.awx_workflow" :product="jobTypeName(job)" @node="openNodeOutput" />
             </div>
           </div>
           <!-- the job's output, as its page shows it : a panel, its toolbar on top - fold all and the
@@ -2261,6 +2285,19 @@ onBeforeUnmount(() => {
                 <span class="af-output-count">{{ t('jobs.lines', { count: outputLines }) }}</span>
               </div>
               <div class="af-output-actions">
+                <!-- the failed tasks (else the error lines) : each click the next one -->
+                <AppOutputFailures :output="mainOutput" :jobId="jobId" />
+                <!-- what the run gave back (set_stats), as on the job's page -->
+                <button
+                  v-if="store.profile.options?.showArtifacts && hasArtifacts(job)"
+                  type="button"
+                  class="af-tool-btn"
+                  :class="{ active: showRunArtifacts }"
+                  @click="showRunArtifacts = !showRunArtifacts"
+                >
+                  <FaIcon :icon="showRunArtifacts ? 'square-poll-horizontal' : 'square-poll-vertical'" />
+                  {{ showRunArtifacts ? t('jobs.hideArtifacts') : t('jobs.showArtifacts') }}
+                </button>
                 <button
                   type="button"
                   class="af-tool-btn"
@@ -2282,6 +2319,15 @@ onBeforeUnmount(() => {
                 </router-link>
               </div>
             </div>
+            <!-- the run's artifacts, over its output -->
+            <AppOutputData
+              v-if="showRunArtifacts"
+              :title="t('jobs.artifacts')"
+              icon="square-poll-vertical"
+              :value="job.awx_artifacts ?? {}"
+              @copy="(value, asYaml) => clip(value, false, asYaml)"
+              @close="showRunArtifacts = false"
+            />
             <div class="row g-0 af-output-body">
               <div class="col">
                 <AppAnsibleOutput
@@ -2374,6 +2420,18 @@ onBeforeUnmount(() => {
           <span>{{ loadError || t('form.formNotFoundMsg') }}</span>
         </div>
       </div>
+      <!-- the output of a run, long : up to the page's top, down to its end, over the bar held at the
+           window's bottom (Running, Abort, Close output) -->
+      <AppScrollButtons v-if="status != ''" overBar />
+      <!-- a workflow node's output, opened from the graph : over the full screen too -->
+      <AppNodeOutputDialog
+        :shown="nodeShown"
+        :workflow="job.awx_workflow"
+        :jobId="jobId"
+        :product="jobTypeName(job)"
+        @close="nodeShown = null"
+        @copy="(text) => clip(text, true)"
+      />
     </main>
   </div>
 
