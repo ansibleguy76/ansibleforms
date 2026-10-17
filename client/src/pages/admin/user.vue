@@ -26,6 +26,7 @@ import { toast } from 'vue-sonner';
 import { deleteRecords } from '@/lib/bulkDelete';
 import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
+import Helpers from '@/lib/Helpers';
 import { formPath } from '@/lib/formsPath';
 import { useFormLinks } from '@/composables/useFormLinks';
 import { useUserLinks } from '@/composables/useUserLinks';
@@ -249,6 +250,8 @@ const crumbs = computed(() => {
 });
 
 // ─── Details ──────────────────────────────────────────────────────────────────
+// its latest sign-in (written at each sign-in, lib/signInGate.js), in the user's zone ; none, an en dash
+const lastSignIn = computed(() => (user.value?.last_login ? Helpers.formatServerDate(user.value.last_login) : '–'));
 const emailValid = computed(() => !edit.value?.email || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(edit.value.email));
 
 /**
@@ -507,7 +510,8 @@ onMounted(async () => {
         </div>
         <!-- the record loading : its fields as grey placeholders, where they come -->
         <AppSkeleton v-else-if="!loaded && !user" shape="form" :count="3" />
-        <!-- Details : the username, its description and email, then whether it may sign in -->
+        <!-- Details : the username, its description and email, its latest sign-in (read only), then
+             whether it may sign in -->
         <div v-else-if="user && activeTab === 'details'" class="af-user-details">
           <BsInput
             class="af-user-field"
@@ -532,6 +536,15 @@ onMounted(async () => {
             :isFloating="false"
             :hasError="!emailValid"
             :label="t('settings.fields.email')"
+          />
+          <!-- its latest sign-in, in the user's zone ; none recorded yet, an en dash -->
+          <BsInput
+            class="af-user-field"
+            :modelValue="lastSignIn"
+            icon="clock"
+            :isFloating="false"
+            :disabled="true"
+            :label="t('settings.directory.lastLogin')"
           />
           <!-- Allow sign-in : saved at once, as a runner's Default ; never off for the admin user -->
           <div class="mb-0">

@@ -1,11 +1,11 @@
 // lib/signInGate.js : the last check of a sign-in - refused when an admin blocked the user (a
 // local one on its row, an LDAP or SSO one on its record), else an LDAP or SSO user recorded ; a
-// block that cannot be read lets it go on.
+// block that cannot be read lets it go on. A local user's sign-in going on is written on its row.
 import { test, expect, vi, beforeEach } from "vitest";
 
 process.env.LOG_PATH = process.env.LOG_PATH || "/tmp/ansibleforms-test-logs";
 
-const state = { directoryBlocked: false, localBlocked: false, failRead: false, recorded: [] };
+const state = { directoryBlocked: false, localBlocked: false, failRead: false, failWrite: false, recorded: [], localSignIns: [] };
 vi.mock("../src/models/directoryUser.model.js", () => ({
   DIRECTORY_TYPES: ["ldap", "azuread", "oidc"],
   default: {
@@ -22,12 +22,16 @@ vi.mock("../src/models/user.model.js", () => ({
       if (state.failRead) throw new Error("no column");
       return state.localBlocked;
     },
+    recordSignIn: async (username) => {
+      if (state.failWrite) throw new Error("no column");
+      state.localSignIns.push(username);
+    },
   },
 }));
 const { admitSignIn } = await import("../src/lib/signInGate.js");
 
 beforeEach(() => {
-  Object.assign(state, { directoryBlocked: false, localBlocked: false, failRead: false, recorded: [] });
+  Object.assign(state, { directoryBlocked: false, localBlocked: false, failRead: false, failWrite: false, recorded: [], localSignIns: [] });
 });
 
 test("an allowed directory user goes on, recorded with what the token does not carry", async () => {
@@ -47,8 +51,15 @@ test("a local user is checked on its own row: a directory block of its name is n
   expect(await admitSignIn({ type: "local", username: "jsmith" })).toBe(true);
   state.localBlocked = true;
   expect(await admitSignIn({ type: "local", username: "jsmith" })).toBe(false);
-  // a local user has no record to keep
+  // a local user has no record to keep : its sign-in is written on its own row, once (not the refused one)
   expect(state.recorded).toEqual([]);
+  expect(state.localSignIns).toEqual(["jsmith"]);
+});
+
+test("a local sign-in that cannot be written still goes on", async () => {
+  state.failWrite = true;
+  expect(await admitSignIn({ type: "local", username: "jdoe" })).toBe(true);
+  expect(state.localSignIns).toEqual([]);
 });
 
 test("a block that cannot be read lets the sign-in go on", async () => {

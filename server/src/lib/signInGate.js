@@ -2,7 +2,8 @@
 // OIDC : refused when an admin blocked the user (Settings > Users : its Sign-in switch, or the
 // list's row menu). A local user's block is on its row of the users table ; an LDAP or SSO user's
 // on its record, which a sign-in that goes on brings up to date - who it is, its groups and roles
-// now - for its page (models/directoryUser.model.js).
+// now - for its page (models/directoryUser.model.js). A local user's sign-in going on is written
+// on its row too (its latest sign-in, for its page and the users list).
 //
 // A block that cannot be read lets the sign-in go on, logged : a database that cannot answer fails
 // the sign-in anyway (its tokens are stored there), and an upgrade whose table or column is missing
@@ -13,7 +14,7 @@ import logger from './logger.js';
 import helpers from './common.js';
 
 /**
- * Decides a sign-in, and records an LDAP or SSO user's when it goes on.
+ * Decides a sign-in, and records it when it goes on.
  *
  * Args:
  *   user (object): the signed-in user, { type, username, groups, roles, ... }.
@@ -35,6 +36,16 @@ export async function admitSignIn(user, extra = {}) {
     logger.error(`The sign-in block of ${user.type}/${user.username} could not be read: ${helpers.getError(err)}`);
   }
   if (blocked) return false;
-  if (directory) await DirectoryUser.recordSignIn({ ...user, ...extra });
+  if (directory) {
+    await DirectoryUser.recordSignIn({ ...user, ...extra });
+    return true;
+  }
+  // a local user's latest sign-in : one that cannot be written (an upgrade whose column is
+  // missing) lets the sign-in go on, logged, as a block that cannot be read
+  try {
+    await User.recordSignIn(user.username);
+  } catch (err) {
+    logger.error(`The sign-in of local/${user.username} could not be recorded: ${helpers.getError(err)}`);
+  }
   return true;
 }

@@ -625,6 +625,17 @@ export default function getSettings(t) {
           valueKey: 'id',
           labelKey: 'name',
         },
+        // its latest sign-in, local or LDAP or SSO, in the user's zone : an account no one uses
+        // stands out ; none recorded yet, an en dash
+        {
+          key: 'last_login',
+          label: t('settings.directory.lastLogin'),
+          noInput: true,
+          sortable: true,
+          filterable: false,
+          type: 'datetime',
+          render: (v) => (v ? Helpers.formatServerDate(v) : '–'),
+        },
         // how many groups the user is in : a column, last, to the right ; not in the dialog
         {
           key: 'group_ids',
