@@ -95,7 +95,10 @@ const crudConfigs = {
       // a semaphore runner : the project id ; a rundeck runner : the project name
       { name: 'project' },
       { name: 'managed', isBoolean: true },
-      { name: 'node_id' }
+      { name: 'node_id' },
+      // an RTE : how it talks to the app - database (deprecated), outbound (it dials the app) or
+      // inbound (the app dials it) ; none : database
+      { name: 'rte_mode' }
     ],
     allowCache: true,
     cacheTTL: 3600

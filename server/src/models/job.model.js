@@ -714,6 +714,26 @@ Job.createOutput = async function (record) {
   }
   return await Job.isAbortRequested(record.job_id);
 };
+/**
+ * Stores an output row of a socket-mode RTE once : a row the app stored already (the same job
+ * and order, resent after a reconnect) is skipped, so each line is stored exactly once. Masked as
+ * every output.
+ *
+ * Args:
+ *   record (object): { output, output_type, job_id, order }.
+ *
+ * Returns:
+ *   Promise<boolean>: true when stored, false when it was there already (or empty).
+ */
+Job.createOutputOnce = async function (record) {
+  if (!record?.output) return false;
+  const res = await mysql.do(
+    "INSERT INTO AnsibleForms.`job_output` (output, output_type, job_id, `order`) " +
+      "SELECT ?, ?, ?, ? FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM AnsibleForms.`job_output` WHERE job_id=? AND `order`=?)",
+    [maskOutput(record.job_id, record.output), record.output_type, record.job_id, record.order, record.job_id, record.order]
+  );
+  return (res?.affectedRows || 0) > 0;
+};
 Job.delete = async function (user, id) {
   logger.notice(`Deleting job ${id}`);
   // a role option : on unless a role turns it off (allowJobDeletion), then no job is deleted by

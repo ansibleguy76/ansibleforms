@@ -19,6 +19,7 @@ import { fileURLToPath } from "url";
 import { execFile } from "child_process";
 import WebSocket, { WebSocketServer } from "ws";
 import { HttpsProxyAgent } from "https-proxy-agent";
+import axios from "axios";
 import logger from "../../lib/logger.js";
 import httpsConfig from "../../../config/https.config.js";
 import appConfig from "../../../config/app.config.js";
@@ -433,6 +434,49 @@ function noProxy(host) {
   return list.some((p) => p === "*" || host === p || host.endsWith(p.startsWith(".") ? p : `.${p}`));
 }
 
+// ─── inbound : one registration call ──────────────────────────────────────────
+
+/**
+ * Registers an inbound RTE with the app once (APP_URL set) : its runner is added or updated with
+ * its mode and its address (RTE_URL), with a join token the first time, so the app dials it from
+ * then on. Tried again with a backoff until the app answers ; refused (a wrong token) it stops.
+ *
+ * Args:
+ *   token (string): RTE_TOKEN.
+ *
+ * Returns:
+ *   Promise<void>: settles once registered, or refused.
+ */
+async function registerInbound(token) {
+  const base = new URL(process.env.APP_URL);
+  const url = `${base.origin}${base.pathname.replace(/\/+$/, "")}/api/v2/rte/register`;
+  const headers = { Authorization: `Bearer ${token}`, "X-AF-RTE-Id": nodeId, "X-AF-RTE-Name": rteName() };
+  if (process.env.RTE_JOIN_TOKEN) headers["X-AF-RTE-Join"] = process.env.RTE_JOIN_TOKEN;
+  const proxy = process.env.HTTPS_PROXY || process.env.https_proxy || "";
+  const httpsAgent = proxy && !noProxy(base.hostname)
+    ? new HttpsProxyAgent(proxy)
+    : new https.Agent({ rejectUnauthorized: String(process.env.APP_TLS_VERIFY ?? "1") !== "0" });
+  let delay = 2000;
+  for (;;) {
+    if (isStopping()) return;
+    try {
+      const { data } = await axios.post(url, { mode: "inbound", url: process.env.RTE_URL }, { headers, httpsAgent, proxy: false, timeout: 15000 });
+      logger.notice(`RTE '${rteName()}': registered with the app as inbound runner '${data.runner}' at ${data.uri}: the app dials it from now on`);
+      return;
+    } catch (err) {
+      const status = err?.response?.status;
+      const why = err?.response?.data?.error || err.message;
+      if (status && status < 500 && status !== 429) {
+        logger.error(`RTE '${rteName()}': the app refused the registration (${status}): ${why}`);
+        return;
+      }
+      logger.warning(`RTE '${rteName()}': could not register with the app yet (${why}), trying again in ${delay / 1000} seconds`);
+      await new Promise((r) => setTimeout(r, delay));
+      delay = Math.min(delay * 2, 60000);
+    }
+  }
+}
+
 // ─── start ────────────────────────────────────────────────────────────────────
 
 /**
@@ -464,8 +508,12 @@ export async function startSocketRte(rteMode) {
       process.exit(1);
     }
   }
-  if (mode === "inbound" && !process.env.RTE_URL) {
-    logger.warning("RTE: RTE_MODE=inbound without RTE_URL: the app dials the address its runner names (Connections > Runners)");
+  if (mode === "inbound" && process.env.APP_URL && !process.env.RTE_URL) {
+    console.error("RTE: RTE_MODE=inbound with APP_URL registers with the app, which then dials RTE_URL : set RTE_URL (http://this-host:8000) ; refusing to start");
+    process.exit(1);
+  }
+  if (mode === "inbound" && !process.env.APP_URL) {
+    logger.notice("RTE: inbound without APP_URL: add its runner under Connections > Runners (type RTE, mode inbound, its address and RTE_TOKEN)");
   }
   installFatalHandlers("RTE");
   useJobIO(socketJobIO);
@@ -537,6 +585,8 @@ export async function startSocketRte(rteMode) {
   await new Promise((resolve) => server.listen(port, resolve));
   logger.notice(`RTE '${rteName()}' ${version} (${mode}, files ${filesMode()}) listening on ${httpsConfig.https ? "https" : "http"} port ${port}`);
   if (mode === "outbound") dialOut(token);
+  // inbound with the app's address : one call so the app knows this RTE and dials it
+  else if (process.env.APP_URL) registerInbound(token).catch((e) => logger.error(`RTE: registration: ${e.message}`));
 
   // its health to the app every 20 s : what it runs and its free slots
   setInterval(() => {

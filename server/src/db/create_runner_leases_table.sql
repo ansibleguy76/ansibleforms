@@ -8,5 +8,9 @@ CREATE TABLE `runner_leases` (
   `expires_at` datetime NOT NULL,
   -- outbound (the RTE dialed in) or inbound (this node dialed the RTE)
   `direction` varchar(10) NOT NULL,
+  -- the RTE on the other end (its node id) and what it said : version, contract, ansible,
+  -- capacity, files mode (JSON) - any app node reads it for the Runners and Status pages
+  `rte_id` varchar(250) DEFAULT NULL,
+  `info` text DEFAULT NULL,
   PRIMARY KEY (`runner`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -17,6 +17,12 @@ import { NODE_DEAD_SECONDS } from '../lib/role.js';
 // the secret the api shows instead of a stored token ; sent back it means "unchanged"
 export const SECRET_MASK = '********';
 
+// how an RTE talks to the app (RTE_MODE) : database (deprecated, the default), outbound (it
+// dials the app) or inbound (the app dials it) - the socket modes hold no database credentials
+export const RTE_MODES = ['database', 'outbound', 'inbound'];
+// the modes that talk over a WebSocket (runners/rteHub.js)
+export const SOCKET_MODES = ['outbound', 'inbound'];
+
 // a runner its RTE registered (rte/register.js) whose RTE has not answered for this long is
 // removed by the worker ; until then the Runners page shows it as unresponsive
 export const UNRESPONSIVE_REMOVE_SECONDS = 600;
@@ -41,6 +47,13 @@ class Runner extends CrudModel {
     // (jenkins signs in with a user and its API token : username and token, no password)
     if (TOKEN_AND_PROJECT.includes(data.type) || data.type === 'jenkins') data.use_credentials = 0;
     if (typeof data.project === 'string') data.project = data.project.trim() || null;
+    // an RTE's mode : database, outbound or inbound ; empty is database (as before 7.3)
+    if (data.rte_mode !== undefined) {
+      if (data.rte_mode === '' || data.rte_mode === null) data.rte_mode = null;
+      else if (!RTE_MODES.includes(data.rte_mode)) {
+        throw new Errors.BadRequestError(`Unknown RTE mode '${data.rte_mode}' - use one of ${RTE_MODES.join(', ')}`);
+      }
+    }
     // the flavour of an awx runner : 'aap', 'ascender', or none (AWX) - which product it is
     if (data.flavour !== undefined) {
       if (data.flavour === '' || data.flavour === null) data.flavour = null;
@@ -131,7 +144,9 @@ class Runner extends CrudModel {
   // its secrets (Runner.assertCredential checks it), and its address when it carries one
   static assertComplete(row, credentialAddress = false) {
     const missing = (field) => { throw new Errors.BadRequestError(`A runner of type ${row.type} needs ${field}`); };
-    if (!row.uri && !credentialAddress) {
+    // an outbound RTE dials the app : the app needs no address of it
+    const outbound = row.type === 'rte' && row.rte_mode === 'outbound';
+    if (!row.uri && !credentialAddress && !outbound) {
       missing('an address: a credential with a server address, or its own uri');
     }
     if (row.credential) {
