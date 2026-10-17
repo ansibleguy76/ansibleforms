@@ -885,8 +885,8 @@ const buildMismatch = computed(() => {
   // its icon under the name, apart from who the user is without a line
   .af-menu-type {
     align-self: flex-start;
-    margin-top: 0.4rem;
-    padding: 0.25rem 0.55rem 0.15rem;
+    margin-top: 0.6rem;
+    padding: 0.15rem 0.55rem;
     border-radius: 50rem;
     background: var(--bs-tertiary-bg);
     // the fields' darker grey, as the cards' and the pagers' borders
