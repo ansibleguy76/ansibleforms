@@ -60,9 +60,10 @@ const palette = [
 // METHODS
 
 function setTheme(theme) {
+  // Color opens the palette : the theme (and the logo) change once a colour is picked, a colour
+  // hovered showing itself for that moment (Theme.previewColor)
   if (theme === 'color') {
     showPalette.value = true;
-    currentTheme.value = 'color';
     return;
   }
   showPalette.value = false;
@@ -78,6 +79,7 @@ function pickColor(hex) {
   selectedColor.value = hex;
   Theme.choose('color');
   Theme.applyColor(hex);
+  currentTheme.value = 'color';
 }
 
 function onDropdownHidden() {

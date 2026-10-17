@@ -86,11 +86,13 @@ var Theme = {
   // saved ; the next color hovered shows its own, and leaving the palette shows the user's theme
   // again (endPreview).
   previewColor(hex) {
+    useAppStore().themePreview = 'color';
     document.documentElement.setAttribute('data-bs-theme', 'color');
     Theme.paintColor(hex);
   },
   endPreview() {
     const store = useAppStore();
+    store.themePreview = null;
     const theme = store.theme || localStorage.getItem('theme') || Theme.getMediaPreference();
     document.documentElement.setAttribute('data-bs-theme', theme);
     if (theme === 'color') Theme.paintColor(Theme.getColor());

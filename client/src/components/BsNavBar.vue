@@ -15,7 +15,7 @@
 import { computed } from 'vue';
 import { useAppStore } from '@/stores/app';
 
-defineProps({
+const props = defineProps({
   currentTheme: {
     type: String,
     required: true,
@@ -28,6 +28,8 @@ defineProps({
 // color theme's has white lettering for its colored header)
 const store = useAppStore();
 const customLogo = computed(() => (store.logoIsDefault ? null : store.customLogo));
+// the theme the logo is for : a colour hovered shows the colour theme's for that moment
+const logoTheme = computed(() => store.themePreview || props.currentTheme);
 </script>
 
 <template>
@@ -35,8 +37,8 @@ const customLogo = computed(() => (store.logoIsDefault ? null : store.customLogo
     <div class="container-fluid af-header-inner">
       <router-link class="navbar-brand af-brand" to="/">
         <img class="logo my-auto" v-if="customLogo" :src="customLogo" />
-        <img class="logo my-auto" v-else-if="currentTheme === 'dark'" :src="'img/logo_dark.svg'" />
-        <img class="logo my-auto" v-else-if="currentTheme === 'light'" :src="'img/logo_light.svg'" />
+        <img class="logo my-auto" v-else-if="logoTheme === 'dark'" :src="'img/logo_dark.svg'" />
+        <img class="logo my-auto" v-else-if="logoTheme === 'light'" :src="'img/logo_light.svg'" />
         <img class="logo my-auto" v-else :src="'img/logo_color.svg'" />
       </router-link>
       <!-- the labels beside the logo (PRODUCTION, EU) -->
