@@ -320,7 +320,7 @@ export default {
       passwordHint: '您的登录密码，用于确认您的身份。它不会存储在 token 中。',
       lifetime: '有效期',
       days: '{n} 天',
-      password: '您的密码',
+      password: '密码',
       new: '新令牌',
       stepToken: '详细信息',
       stepConfirm: '确认',

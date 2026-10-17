@@ -330,7 +330,7 @@ export default {
       passwordHint: 'A sua palavra-passe de início de sessão, para confirmar que é você. Não é guardada no token.',
       lifetime: 'Válido durante',
       days: '{n} dias',
-      password: 'A sua palavra-passe',
+      password: 'Palavra-passe',
       new: 'Novo token',
       stepToken: 'Detalhes',
       stepConfirm: 'Confirmar',

@@ -330,7 +330,7 @@ export default {
       passwordHint: 'Twoje hasło logowania, aby potwierdzić, że to Ty. Nie jest zapisywane w tokenie.',
       lifetime: 'Ważny przez',
       days: 'Liczba dni: {n}',
-      password: 'Twoje hasło',
+      password: 'Hasło',
       new: 'Nowy token',
       stepToken: 'Szczegóły',
       stepConfirm: 'Potwierdź',

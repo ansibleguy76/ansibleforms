@@ -332,7 +332,7 @@ export default {
         "Votre mot de passe de connexion, pour confirmer que c'est bien vous. Il n'est pas stocké dans le token.",
       lifetime: 'Valable',
       days: '{n} jours',
-      password: 'Votre mot de passe',
+      password: 'Mot de passe',
       new: 'Nouveau jeton',
       stepToken: 'Détails',
       stepConfirm: 'Confirmer',

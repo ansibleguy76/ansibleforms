@@ -330,7 +330,7 @@ export default {
       passwordHint: "La teva contrasenya d'inici de sessió, per confirmar que ets tu. No es desa al token.",
       lifetime: 'Vàlid durant',
       days: '{n} dies',
-      password: 'La teva contrasenya',
+      password: 'Contrasenya',
       new: 'Nou token',
       stepToken: 'Detalls',
       stepConfirm: 'Confirma',

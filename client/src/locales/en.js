@@ -327,7 +327,7 @@ export default {
       passwordHint: 'Your sign-in password, to confirm it is you. It is not stored in the token.',
       lifetime: 'Valid for',
       days: '{n} days',
-      password: 'Your password',
+      password: 'Password',
       new: 'New token',
       stepToken: 'Details',
       stepConfirm: 'Confirm',

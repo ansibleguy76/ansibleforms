@@ -331,7 +331,7 @@ export default {
       passwordHint: 'Je aanmeldwachtwoord, om te bevestigen dat jij het bent. Het wordt niet in het token opgeslagen.',
       lifetime: 'Geldig voor',
       days: '{n} dagen',
-      password: 'Je wachtwoord',
+      password: 'Wachtwoord',
       new: 'Nieuw token',
       stepToken: 'Details',
       stepConfirm: 'Bevestigen',

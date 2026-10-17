@@ -330,7 +330,7 @@ export default {
       passwordHint: 'Tu contraseña de inicio de sesión, para confirmar que eres tú. No se guarda en el token.',
       lifetime: 'Válido durante',
       days: '{n} días',
-      password: 'Tu contraseña',
+      password: 'Contraseña',
       new: 'Nuevo token',
       stepToken: 'Detalles',
       stepConfirm: 'Confirmar',

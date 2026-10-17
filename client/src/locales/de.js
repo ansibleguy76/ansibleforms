@@ -332,7 +332,7 @@ export default {
       passwordHint: 'Ihr Anmeldepasswort, um zu bestätigen, dass Sie es sind. Es wird nicht im Token gespeichert.',
       lifetime: 'Gültig für',
       days: '{n} Tage',
-      password: 'Ihr Passwort',
+      password: 'Passwort',
       new: 'Neues Token',
       stepToken: 'Details',
       stepConfirm: 'Bestätigen',
