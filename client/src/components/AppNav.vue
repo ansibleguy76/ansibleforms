@@ -880,7 +880,7 @@ const buildMismatch = computed(() => {
   }
   // how the account signs in (Local account, LDAP, Microsoft Entra ID) : under its name, in the
   // grey of the other meta lines and of the tables' notes (text-body-secondary), a light line over
-  // it, short of the name's column at both ends and faded there, so it reads apart from who the
+  // it, as wide as the name's column and faded at both ends, so it reads apart from who the
   // user is
   .af-menu-type {
     position: relative;
@@ -890,15 +890,15 @@ const buildMismatch = computed(() => {
       content: '';
       position: absolute;
       top: 0;
-      left: 0.25rem;
-      right: 0.25rem;
+      left: 0;
+      right: 0;
       // faded at both ends rather than cut
       height: 1px;
       background: linear-gradient(
         to right,
         transparent,
-        var(--bs-border-color) 30%,
-        var(--bs-border-color) 70%,
+        var(--bs-border-color) 20%,
+        var(--bs-border-color) 80%,
         transparent
       );
     }
