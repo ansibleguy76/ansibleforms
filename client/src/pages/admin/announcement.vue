@@ -153,6 +153,35 @@ const pageCrumbs = computed(() => [
   },
 ]);
 
+// ─── search ───────────────────────────────────────────────────────────────────
+// A word typed in the title line's search narrows the page, as Settings > General's : the fields
+// whose label or help has it, under the tab's name, the tab set aside meanwhile.
+const search = ref('');
+const searching = computed(() => !!search.value.trim());
+const matches = (...texts) => {
+  const q = search.value.trim().toLowerCase();
+  return (
+    !q ||
+    texts.some((x) =>
+      String(x ?? '')
+        .toLowerCase()
+        .includes(q),
+    )
+  );
+};
+const shownFields = computed(() =>
+  [
+    ['message', t('settings.interface.banner'), t('settings.interface.bannerHelp')],
+    ['level', t('settings.interface.bannerLevel'), t('settings.interface.bannerLevelHelp')],
+    ['start', t('settings.interface.bannerStart'), t('settings.interface.bannerStartHelp')],
+    ['end', t('settings.interface.bannerEnd'), t('settings.interface.bannerEndHelp')],
+    ['enabled', t('settings.interface.announcementEnabled'), t('settings.interface.announcementEnabledHelp')],
+  ]
+    .filter(([, ...texts]) => matches(...texts))
+    .map(([key]) => key),
+);
+const fieldShown = (key) => shownFields.value.includes(key);
+
 // one tab, Details, as every record's page ; named last in the title
 const { tabs, activeTab, crumbs } = useSingleTab({
   key: 'details',
@@ -188,7 +217,11 @@ onMounted(async () => {
       :crumbs="crumbs"
       :description="t('settings.interface.announcementDescription')"
     >
-      <template v-if="record" #tabs>
+      <!-- narrows the page ; the search box of the other pages -->
+      <template v-if="record" #headerActions>
+        <BsSearch v-model="search" />
+      </template>
+      <template v-if="record && !searching" #tabs>
         <ul class="nav nav-tabs mb-0">
           <li v-for="tab in tabs" :key="tab.key" class="nav-item">
             <a
@@ -214,7 +247,15 @@ onMounted(async () => {
         </div>
         <AppSkeleton v-else-if="!loaded" shape="form" :count="5" />
         <div v-else class="af-announcement-tab">
+          <div v-if="searching && !shownFields.length" class="text-body-secondary fst-italic">
+            {{ t('settings.settingsPage.searchNone') }}
+          </div>
+          <!-- searching : the matches under the tab's name, as Settings > General -->
+          <h6 v-if="searching && shownFields.length" class="fw-bold text-body-secondary af-search-tab af-search-first">
+            <FaIcon :icon="tabs[0].icon" class="me-1" />{{ tabs[0].label }}
+          </h6>
           <BsInput
+            v-show="fieldShown('message')"
             class="af-announcement-field"
             v-model="edit.message"
             icon="bullhorn"
@@ -224,6 +265,7 @@ onMounted(async () => {
             :label="t('settings.interface.banner')"
           />
           <BsInput
+            v-show="fieldShown('level')"
             class="af-announcement-field"
             v-model="edit.level"
             type="select"
@@ -236,18 +278,18 @@ onMounted(async () => {
             :label="t('settings.interface.bannerLevel')"
           />
           <!-- its start and its end : moments, picked in the app's time zone -->
-          <div class="mb-3 af-announcement-field">
+          <div v-show="fieldShown('start')" class="mb-3 af-announcement-field">
             <label class="form-label fw-bold">{{ t('settings.interface.bannerStart') }}</label>
             <BsDateTime v-model="edit.start_at" icon="calendar" dateType="datetime" convertToUtc />
             <div class="form-text">{{ t('settings.interface.bannerStartHelp') }}</div>
           </div>
-          <div class="mb-3 af-announcement-field">
+          <div v-show="fieldShown('end')" class="mb-3 af-announcement-field">
             <label class="form-label fw-bold">{{ t('settings.interface.bannerEnd') }}</label>
             <BsDateTime v-model="edit.end_at" icon="calendar" dateType="datetime" convertToUtc />
             <div class="form-text">{{ t('settings.interface.bannerEndHelp') }}</div>
           </div>
           <!-- whether it shows : a switch, as a disclaimer's, saved at once -->
-          <div class="mb-0">
+          <div v-show="fieldShown('enabled')" class="mb-0">
             <label class="form-label fw-bold d-block" for="af-announcement-enabled">{{
               t('settings.interface.announcementEnabled')
             }}</label>
