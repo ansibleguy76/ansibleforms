@@ -527,7 +527,8 @@ const buildMismatch = computed(() => {
             <span class="d-flex flex-column lh-sm">
               <strong>{{ displayName }}</strong>
               <small v-if="userSubname" class="af-menu-meta">{{ userSubname }}</small>
-              <small class="af-menu-meta af-menu-type">{{ loginType.label }}</small>
+              <!-- how it signs in : a soft pill with its icon, under who the user is -->
+              <span class="af-menu-type"><FaIcon :icon="loginType.icon" class="me-1" />{{ loginType.label }}</span>
             </span>
           </li>
           <li><hr class="dropdown-divider" /></li>
@@ -880,30 +881,18 @@ const buildMismatch = computed(() => {
     color: var(--bs-secondary-color);
     font-size: 0.85rem;
   }
-  // how the account signs in (Local account, LDAP, Microsoft Entra ID) : under its name, in the
-  // grey of the other meta lines and of the tables' notes (text-body-secondary), a light line over
-  // it across the name's column (the rest of the card), faded at both ends, so it reads apart
-  // from who the user is
+  // how the account signs in (Local account, LDAP, Microsoft Entra ID) : a soft grey pill with
+  // its icon under the name, apart from who the user is without a line
   .af-menu-type {
-    position: relative;
-    margin-top: 0.75rem;
-    padding-top: 0.75rem;
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      // faded at both ends rather than cut
-      height: 1px;
-      background: linear-gradient(
-        to right,
-        transparent,
-        var(--bs-border-color) 20%,
-        var(--bs-border-color) 80%,
-        transparent
-      );
-    }
+    align-self: flex-start;
+    margin-top: 0.4rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 50rem;
+    background: var(--bs-tertiary-bg);
+    border: 1px solid var(--bs-border-color);
+    color: var(--bs-secondary-color);
+    font-size: 0.75rem;
+    white-space: nowrap;
   }
 
   // collapsed (mobile) menu: plain stacked list
