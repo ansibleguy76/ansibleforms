@@ -107,6 +107,10 @@ export default {
     secretStoreConnectionOk:
       "La conexión con el almacén de secretos es correcta",
     runnerAdded: "Runner añadido",
+    joinTokenMade: "Token de unión creado: cópialo ahora, no se volverá a mostrar",
+    joinTokenRevoked: "Token de unión revocado",
+    joinTokenDeleted: "Token de unión eliminado",
+    joinTokenNotFound: "No se encontró el token de unión",
     runnerNotFound: "Runner no encontrado",
     runnerAdminOnly:
       "Solo un admin puede añadir, cambiar o eliminar un runner: un runner recibe las credenciales de los trabajos que ejecuta",

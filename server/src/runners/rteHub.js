@@ -20,6 +20,7 @@ import Job from "../models/job.model.js";
 import JobEvent from "../models/jobEvent.model.js";
 import Runner, { SOCKET_MODES } from "../models/runner.model.js";
 import RunnerJoinToken from "../models/runnerJoinToken.model.js";
+import Credential from "../models/credential.model.v2.js";
 import appConfig from "../../config/app.config.js";
 import { nodeId, NODE_DEAD_SECONDS } from "../lib/role.js";
 import { appVersion } from "../lib/version.js";
@@ -324,7 +325,6 @@ export async function authenticate(headers, opts = {}) {
   const mode = opts.mode === "inbound" ? "inbound" : "outbound";
   const token = String(headers.authorization || "").replace(/^Bearer\s+/i, "");
   const name = String(headers["x-af-rte-name"] || "").trim();
-  const rteId = String(headers["x-af-rte-id"] || "").trim() || null;
   const join = String(headers["x-af-rte-join"] || "").trim();
   const url = String(opts.url || headers["x-af-rte-url"] || "").trim();
   if (token.length < 16) return { status: 401, error: "the RTE's token (RTE_TOKEN) is missing or shorter than 16 characters" };
@@ -337,7 +337,13 @@ export async function authenticate(headers, opts = {}) {
   if (runner && sameToken(token, runner.token)) {
     if (runner.rte_mode !== fields.rte_mode || (mode === "inbound" && runner.uri !== url)) {
       if (runner.managed) return { status: 409, error: `runner '${name}' is managed by the config seed: its mode and address are set there` };
-      await Runner.update(fields, runner.id, { fromRte: true });
+      // an inbound one's address : its credential's when it names one
+      if (mode === "inbound" && runner.credential) {
+        await storeToken(name, token, url, runner.credential);
+        await Runner.update({ rte_mode: "inbound", uri: "" }, runner.id, { fromRte: true });
+      } else {
+        await Runner.update(fields, runner.id, { fromRte: true });
+      }
       logger.notice(`Runner '${name}' is ${mode} now${mode === "inbound" ? ` at ${url}` : ""}`);
     }
     return { runner: { ...runner, ...fields } };
@@ -349,15 +355,55 @@ export async function authenticate(headers, opts = {}) {
   }
   const used = await RunnerJoinToken.use(join);
   if (!used) return { status: 401, error: "the join token (RTE_JOIN_TOKEN) is unknown, revoked, expired or used up" };
+  if (runner?.managed) return { status: 409, error: `runner '${name}' is managed by the config seed: its token is set there` };
+  // the token goes in a credential of type rte, as every runner signs in (Connections >
+  // Credentials) : the runner names it, and an inbound one's address is the credential's
+  const credential = await storeToken(name, token, mode === "inbound" ? url : "", runner?.credential);
   if (runner) {
-    if (runner.managed) return { status: 409, error: `runner '${name}' is managed by the config seed: its token is set there` };
-    await Runner.update({ token, node_id: rteId, ...fields }, runner.id, { fromRte: true });
-    logger.notice(`Runner '${name}' got a new token through the join token '${used.name}'`);
-    return { runner: await Runner.findByName(name) };
+    await Runner.update({ credential, token: null, rte_mode: fields.rte_mode, ...(mode === "inbound" ? { uri: "" } : {}) }, runner.id, { fromRte: true });
+    logger.notice(`Runner '${name}' got a new token (credential '${credential}') through the join token '${used.name}'`);
+  } else {
+    await Runner.create({ name, type: "rte", uri: "", credential, rte_mode: fields.rte_mode, description: `Joined with the join token '${used.name}'` }, { fromRte: true });
+    logger.notice(`Runner '${name}' (${mode}) added through the join token '${used.name}', signing in with the credential '${credential}'`);
   }
-  await Runner.create({ name, type: "rte", uri: "", token, node_id: rteId, description: `Joined with the token '${used.name}'`, ...fields }, { fromRte: true });
-  logger.notice(`Runner '${name}' (${mode}) added through the join token '${used.name}'`);
   return { runner: await Runner.findByName(name) };
+}
+
+/**
+ * Keeps an RTE's token in a credential of type rte : the one its runner names already, else a
+ * new one named after the runner (<runner>-rte, a number added when that name is taken).
+ *
+ * Args:
+ *   runnerName (string): the runner.
+ *   token (string): its RTE_TOKEN.
+ *   url (string): the address the app dials it on (inbound), "" for none (outbound).
+ *   current (string|null): the credential the runner names already.
+ *
+ * Returns:
+ *   Promise<string>: the credential's name.
+ *
+ * Raises:
+ *   Error: the runner's credential is managed by the config seed.
+ */
+async function storeToken(runnerName, token, url, current) {
+  if (current) {
+    const cred = await Credential.findByName(current).catch(() => null);
+    if (cred && cred.credential_type === "rte") {
+      if (cred.managed) throw new Error(`the credential '${current}' of runner '${runnerName}' is managed by the config seed`);
+      await Credential.update({ password: token, url: url || null }, cred.id, { fromRte: true });
+      return current;
+    }
+  }
+  let name = `${runnerName}-rte`.slice(0, 240);
+  for (let i = 2; await Credential.findByName(name).catch(() => null); i++) name = `${runnerName}-rte-${i}`.slice(0, 250);
+  await Credential.create({
+    name,
+    credential_type: "rte",
+    password: token,
+    url: url || null,
+    description: `The token of the RTE '${runnerName}' (its RTE_TOKEN), stored when it joined`,
+  }, { fromRte: true });
+  return name;
 }
 
 /**

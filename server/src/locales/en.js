@@ -101,6 +101,10 @@ export default {
     secretStoreNotFound: "Secret store not found",
     secretStoreConnectionOk: "Secret store connection is OK",
     runnerAdded: "Runner added",
+    joinTokenMade: "Join token made: copy it now, it is not shown again",
+    joinTokenRevoked: "Join token revoked",
+    joinTokenDeleted: "Join token deleted",
+    joinTokenNotFound: "Join token not found",
     runnerNotFound: "Runner not found",
     runnerAdminOnly:
       "Only an admin can add, change or delete a runner: a runner receives the credentials of the jobs it runs",

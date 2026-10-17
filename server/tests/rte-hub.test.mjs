@@ -44,6 +44,27 @@ vi.mock("../src/models/runnerJoinToken.model.js", () => ({
   },
 }));
 
+// the credentials : by name, what was created and updated
+let credentials;
+const credCreated = [];
+const credUpdated = [];
+vi.mock("../src/models/credential.model.v2.js", () => ({
+  default: {
+    findByName: async (name) => (credentials[name] ? { ...credentials[name] } : undefined),
+    create: async (data) => {
+      credCreated.push(data);
+      credentials[data.name] = { id: credCreated.length, ...data };
+      return credCreated.length;
+    },
+    update: async (data, id) => {
+      credUpdated.push({ id, ...data });
+      const name = Object.keys(credentials).find((n) => credentials[n].id === id);
+      Object.assign(credentials[name], data);
+      return true;
+    },
+  },
+}));
+
 const outputs = [];
 const ends = [];
 vi.mock("../src/models/job.model.js", () => ({
@@ -80,6 +101,9 @@ const { authenticate, storeItem } = await import("../src/runners/rteHub.js");
 
 beforeEach(() => {
   runners = {};
+  credentials = {};
+  credCreated.length = 0;
+  credUpdated.length = 0;
   created.length = 0;
   updated.length = 0;
   joinUses = 0;
@@ -106,28 +130,39 @@ describe("an RTE calling in", () => {
     assert.match(res.error, /RTE_JOIN_TOKEN/);
   });
 
-  test("a join token adds it, with its own token", async () => {
+  test("a join token adds it, its token in a credential of type rte the runner names", async () => {
     const res = await authenticate(headers({ "x-af-rte-join": "afj_good" }));
     assert.equal(res.runner.name, "dmz-1");
     assert.equal(created.length, 1);
-    assert.equal(created[0].token, "rte-token-0123456789");
+    assert.equal(created[0].token, undefined, "no token of its own on the runner");
+    assert.equal(created[0].credential, "dmz-1-rte");
     assert.equal(created[0].rte_mode, "outbound");
+    assert.equal(created[0].node_id, undefined, "not a registered row the worker would sweep away");
+    assert.deepEqual([credCreated[0].name, credCreated[0].credential_type, credCreated[0].password], ["dmz-1-rte", "rte", "rte-token-0123456789"]);
     assert.equal(joinUses, 1);
   });
 
-  test("a wrong token is refused, a join token replaces it", async () => {
-    runners["dmz-1"] = { id: 1, name: "dmz-1", type: "rte", token: "the-old-token-0123456789", rte_mode: "outbound" };
+  test("a credential name taken : the next free one", async () => {
+    credentials["dmz-1-rte"] = { id: 99, name: "dmz-1-rte", credential_type: "ssh" };
+    await authenticate(headers({ "x-af-rte-join": "afj_good" }));
+    assert.equal(created[0].credential, "dmz-1-rte-2");
+  });
+
+  test("a wrong token is refused, a join token replaces it in the runner's credential", async () => {
+    credentials["dmz-1-rte"] = { id: 5, name: "dmz-1-rte", credential_type: "rte", password: "the-old-token-0123456789" };
+    runners["dmz-1"] = { id: 1, name: "dmz-1", type: "rte", credential: "dmz-1-rte", token: "the-old-token-0123456789", rte_mode: "outbound" };
     assert.equal((await authenticate(headers())).status, 401);
     assert.equal((await authenticate(headers({ "x-af-rte-join": "afj_bad" }))).status, 401);
     const res = await authenticate(headers({ "x-af-rte-join": "afj_good" }));
     assert.ok(res.runner);
-    assert.equal(runners["dmz-1"].token, "rte-token-0123456789");
+    assert.equal(credentials["dmz-1-rte"].password, "rte-token-0123456789");
+    assert.equal(credCreated.length, 0, "the runner's own credential, not a new one");
   });
 
-  test("an inbound registration stores the address the app dials", async () => {
+  test("an inbound registration stores the address the app dials, in the credential", async () => {
     const res = await authenticate(headers({ "x-af-rte-join": "afj_good" }), { mode: "inbound", url: "http://rte.dmz:8000" });
     assert.equal(res.runner.rte_mode, "inbound");
-    assert.equal(created[0].uri, "http://rte.dmz:8000");
+    assert.equal(credCreated[0].url, "http://rte.dmz:8000");
     // inbound needs an address
     runners = {};
     assert.equal((await authenticate(headers({ "x-af-rte-join": "afj_good" }), { mode: "inbound" })).status, 400);

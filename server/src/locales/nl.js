@@ -104,6 +104,10 @@ export default {
     secretStoreNotFound: "Secret store niet gevonden",
     secretStoreConnectionOk: "Secret store verbinding is OK",
     runnerAdded: "Runner toegevoegd",
+    joinTokenMade: "Deelnametoken gemaakt: kopieer het nu, het wordt niet opnieuw getoond",
+    joinTokenRevoked: "Deelnametoken ingetrokken",
+    joinTokenDeleted: "Deelnametoken verwijderd",
+    joinTokenNotFound: "Deelnametoken niet gevonden",
     runnerNotFound: "Runner niet gevonden",
     runnerAdminOnly:
       "Alleen een admin kan een runner toevoegen, wijzigen of verwijderen: een runner ontvangt de credentials van de jobs die hij uitvoert",

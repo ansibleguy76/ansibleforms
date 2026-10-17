@@ -4,6 +4,8 @@ import RestResult from "../../models/restResult.model.v2.js";
 import Errors from "../../lib/errors.js";
 import i18n from "../../lib/i18n.js";
 import { RUNNER_TYPES, getRunner } from "../../runners/index.js";
+import RunnerJoinToken from "../../models/runnerJoinToken.model.js";
+import { socketState, isSocketRunner } from "../../runners/rteHub.js";
 
 // the token and password are stored encrypted and decrypted on read, so they never leave
 // here unmasked
@@ -20,12 +22,33 @@ const find = async (req, res) => {
     if (req.query.name) {
       return res.json(RestResult.single(maskSecrets(await Runner.findByName(req.query.name))));
     }
-    const list = await Runner.withState(await Runner.findAll());
+    const list = await withSocket(await Runner.withState(await Runner.findAll()));
     return res.json(RestResult.list(list.map(maskSecrets)));
   } catch (err) {
     Errors.ReturnError(res, err);
   }
 };
+
+/**
+ * Adds to each socket-mode RTE its socket : whether an app node holds it, which one, and what
+ * the RTE last said (version, capacity, files mode) - the Runners page shows it.
+ *
+ * Args:
+ *   list (object[]): the runners.
+ *
+ * Returns:
+ *   Promise<object[]>: the runners, a socket-mode one with `socket` ({ connected, node, direction,
+ *     version, capacity, files } or { connected: false }).
+ */
+async function withSocket(list) {
+  return Promise.all((list || []).map(async (r) => {
+    if (!isSocketRunner(r)) return r;
+    const st = await socketState(r.name).catch(() => null);
+    if (!st?.alive) return { ...r, socket: { connected: false } };
+    const info = st.info || {};
+    return { ...r, socket: { connected: true, node: st.node_id, direction: st.direction, rteId: st.rte_id, version: info.version, ansible: info.ansible, capacity: info.capacity, files: info.files } };
+  }));
+}
 
 // the types a runner can have, with what each can run
 const types = async (req, res) => {
@@ -115,4 +138,48 @@ const check = async (req, res) => {
   }
 };
 
-export default { find, types, create, findById, update, delete: deleteRunner, check };
+// ─── join tokens (Connections > Runners > Add runner) ─────────────────────────
+
+// the join tokens : every user with connections access sees them (never the tokens themselves)
+const findJoinTokens = async (req, res) => {
+  try {
+    return res.json(RestResult.list(await RunnerJoinToken.findAll()));
+  } catch (err) {
+    Errors.ReturnError(res, err);
+  }
+};
+
+// a new join token, shown once : an admin's, as adding a runner is
+const createJoinToken = async (req, res) => {
+  try {
+    assertAdmin(req);
+    const made = await RunnerJoinToken.create(req.body || {}, req?.user?.user);
+    return res.status(201).json(RestResult.single(i18n.t(req, "resources.joinTokenMade"), made));
+  } catch (err) {
+    Errors.ReturnError(res, err);
+  }
+};
+
+// a join token revoked : it adds no runner any more, the runners it added stay
+const revokeJoinToken = async (req, res) => {
+  try {
+    assertAdmin(req);
+    if (!(await RunnerJoinToken.revoke(req.params.id))) throw new Errors.NotFoundError(i18n.t(req, "resources.joinTokenNotFound"));
+    return res.json(RestResult.single(i18n.t(req, "resources.joinTokenRevoked")));
+  } catch (err) {
+    Errors.ReturnError(res, err);
+  }
+};
+
+// a join token deleted
+const deleteJoinToken = async (req, res) => {
+  try {
+    assertAdmin(req);
+    if (!(await RunnerJoinToken.remove(req.params.id))) throw new Errors.NotFoundError(i18n.t(req, "resources.joinTokenNotFound"));
+    return res.json(RestResult.single(i18n.t(req, "resources.joinTokenDeleted")));
+  } catch (err) {
+    Errors.ReturnError(res, err);
+  }
+};
+
+export default { find, types, create, findById, update, delete: deleteRunner, check, findJoinTokens, createJoinToken, revokeJoinToken, deleteJoinToken };

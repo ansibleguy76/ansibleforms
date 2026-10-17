@@ -106,6 +106,10 @@ export default {
     storedJobNoAccess: "Nie masz dostępu do tego zapisanego zadania",
     oauth2Added: "Dodano dostawcę OAuth2",
     runnerAdded: "Dodano runner",
+    joinTokenMade: "Utworzono token dołączenia: skopiuj go teraz, nie zostanie pokazany ponownie",
+    joinTokenRevoked: "Token dołączenia unieważniony",
+    joinTokenDeleted: "Token dołączenia usunięty",
+    joinTokenNotFound: "Nie znaleziono tokenu dołączenia",
     runnerNotFound: "Nie znaleziono runnera",
     runnerAdminOnly:
       "Tylko admin może dodać, zmienić lub usunąć runner: runner otrzymuje poświadczenia zadań, które uruchamia",

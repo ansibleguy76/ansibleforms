@@ -102,6 +102,10 @@ export default {
     secretStoreNotFound: "Archivio segreti non trovato",
     secretStoreConnectionOk: "Connessione all'archivio segreti OK",
     runnerAdded: "Runner aggiunto",
+    joinTokenMade: "Token di adesione creato: copialo ora, non verrà più mostrato",
+    joinTokenRevoked: "Token di adesione revocato",
+    joinTokenDeleted: "Token di adesione eliminato",
+    joinTokenNotFound: "Token di adesione non trovato",
     runnerNotFound: "Runner non trovato",
     runnerAdminOnly:
       "Solo un admin può aggiungere, modificare o eliminare un runner: un runner riceve le credenziali dei job che esegue",

@@ -100,6 +100,10 @@ export default {
     storedJobNoAccess: "Não tem acesso a esta tarefa guardada",
     oauth2Added: "Fornecedor OAuth2 adicionado",
     runnerAdded: "Runner adicionado",
+    joinTokenMade: "Token de adesão criado: copie-o agora, não voltará a ser mostrado",
+    joinTokenRevoked: "Token de adesão revogado",
+    joinTokenDeleted: "Token de adesão eliminado",
+    joinTokenNotFound: "Token de adesão não encontrado",
     runnerNotFound: "Runner não encontrado",
     runnerAdminOnly:
       "Só um admin pode adicionar, alterar ou eliminar um runner: um runner recebe as credenciais dos trabalhos que executa",
