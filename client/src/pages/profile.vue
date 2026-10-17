@@ -17,7 +17,8 @@ import { ref, computed, watch, onBeforeUnmount } from 'vue';
 import axios from 'axios';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter, onBeforeRouteUpdate } from 'vue-router';
+import { askToLeave } from '@/lib/unsavedPrompt';
 import { useAppStore } from '@/stores/app';
 import Theme from '@/lib/Theme';
 import Helpers from '@/lib/Helpers';
@@ -563,6 +564,64 @@ async function savePreferences() {
   toast.success(t('profilePage.preferencesSaved'));
 }
 useUnsavedGuard(prefsDirty, () => t('settings.common.unsavedChanges'), savePreferences);
+// another view of the profile (its menu) is the same page to the router : asked there too
+onBeforeRouteUpdate((to, from) => {
+  if (from.params.view !== 'preferences' || to.params.view === 'preferences' || !prefsDirty.value) return true;
+  return askToLeave(t('settings.common.unsavedChanges'), savePreferences, () => prefsDirty.value);
+});
+
+// ─── account and permissions : searched ───────────────────────────────────────
+// a word typed in the title line's search narrows the view : the account's rows by their label or
+// a value (a group, a role, an LDAP or SSO group's whole name), the permissions by their option,
+// description or note ; another view starts with none
+const viewSearch = ref('');
+const viewSearching = computed(() => !!viewSearch.value.trim());
+watch(currentView, () => {
+  viewSearch.value = '';
+  prefSearch.value = '';
+});
+const hit = (...texts) => {
+  const q = viewSearch.value.trim().toLowerCase();
+  return (
+    !q ||
+    texts.some((x) =>
+      String(x ?? '')
+        .toLowerCase()
+        .includes(q),
+    )
+  );
+};
+// the account's rows : each shown when its label or one of its values has the word ; a row of
+// several values (groups, roles) keeps only those that have it, unless its label does
+const accountRows = computed(() => {
+  const groups = groupsKnown.value ? profile.value.groups : [];
+  const many = (label, values) => (hit(label) ? values : values.filter((v) => hit(v)));
+  return {
+    username: hit(t('profilePage.username'), profile.value.username),
+    loginType: hit(t('profilePage.loginType'), loginType.value.label),
+    groups: hit(t('profilePage.groups')) || groups.some((g) => hit(g)),
+    shownGroups: many(t('profilePage.groups'), groups),
+    roles: hit(t('profilePage.roles')) || shownRoles.value.some((r) => hit(r)),
+    shownRolesFiltered: many(t('profilePage.roles'), shownRoles.value),
+  };
+});
+const accountNone = computed(
+  () =>
+    viewSearching.value &&
+    !accountRows.value.username &&
+    !accountRows.value.loginType &&
+    !accountRows.value.groups &&
+    !accountRows.value.roles,
+);
+// the permission groups with what matches : a group whose title has the word keeps all its options
+const shownPermissionGroups = computed(() =>
+  permissionGroups.value
+    .map((g) => ({
+      ...g,
+      options: hit(g.title) ? g.options : g.options.filter((o) => hit(o.key, o.description, o.note)),
+    }))
+    .filter((g) => g.options.length),
+);
 
 async function changePassword() {
   if (!canSavePassword.value) return;
@@ -621,11 +680,11 @@ async function changePassword() {
             </div>
             <!-- the details : a label column and its values, one row each -->
             <ul class="list-group list-group-flush">
-              <li class="list-group-item af-detail">
+              <li v-show="accountRows.username" class="list-group-item af-detail">
                 <span class="af-detail-label">{{ t('profilePage.username') }}</span>
                 <span class="af-detail-value">{{ profile.username }}</span>
               </li>
-              <li class="list-group-item af-detail">
+              <li v-show="accountRows.loginType" class="list-group-item af-detail">
                 <span class="af-detail-label">{{ t('profilePage.loginType') }}</span>
                 <span class="af-detail-value"
                   ><FaIcon :icon="loginType.icon" class="text-body-secondary" style="margin-right: 0.2rem" />{{
@@ -633,7 +692,7 @@ async function changePassword() {
                   }}</span
                 >
               </li>
-              <li class="list-group-item af-detail">
+              <li v-show="accountRows.groups" class="list-group-item af-detail">
                 <span class="af-detail-label"
                   >{{ t('profilePage.groups') }}
                   <span v-if="groupsKnown" class="af-count">{{ profile.groups.length }}</span></span
@@ -642,22 +701,25 @@ async function changePassword() {
                      until then, rather than "none yet" -->
                 <span v-if="!groupsKnown" class="af-detail-value"><AppSkeleton shape="inline" width="7rem" /></span>
                 <span v-else class="af-detail-value">
-                  <span v-for="g in profile.groups" :key="g" class="badge af-chip"
+                  <span v-for="g in accountRows.shownGroups" :key="g" class="badge af-chip"
                     ><FaIcon icon="users" class="me-1" />{{ g }}</span
                   >
                   <span v-if="!profile.groups.length" class="text-body-secondary">{{ t('profilePage.noneYet') }}</span>
                 </span>
               </li>
-              <li class="list-group-item af-detail">
+              <li v-show="accountRows.roles" class="list-group-item af-detail">
                 <span class="af-detail-label"
                   >{{ t('profilePage.roles') }} <span class="af-count">{{ shownRoles.length }}</span></span
                 >
                 <span class="af-detail-value">
-                  <span v-for="r in shownRoles" :key="r" class="badge af-chip"
+                  <span v-for="r in accountRows.shownRolesFiltered" :key="r" class="badge af-chip"
                     ><FaIcon icon="user-shield" class="me-1" />{{ r }}</span
                   >
                   <span v-if="!shownRoles.length" class="text-body-secondary">{{ t('profilePage.noneYet') }}</span>
                 </span>
+              </li>
+              <li v-if="accountNone" class="list-group-item text-body-secondary fst-italic">
+                {{ t('settings.settingsPage.searchNone') }}
               </li>
             </ul>
           </div>
@@ -905,7 +967,7 @@ async function changePassword() {
           <!-- a card per group : its name and how many of its options are allowed, then a row
                per option with its readable name, its key, and whether it is allowed -->
           <div
-            v-for="(group, gi) in permissionGroups"
+            v-for="(group, gi) in shownPermissionGroups"
             :key="group.name"
             class="card af-table-card"
             :class="{ 'mt-3': gi > 0 }"
@@ -946,6 +1008,9 @@ async function changePassword() {
                 </tbody>
               </table>
             </div>
+          </div>
+          <div v-if="viewSearching && !shownPermissionGroups.length" class="text-body-secondary fst-italic">
+            {{ t('settings.settingsPage.searchNone') }}
           </div>
         </template>
 
@@ -1079,6 +1144,9 @@ async function changePassword() {
         <!-- the token list's search and buttons, on the title line as on the other lists -->
         <template v-if="currentView === 'preferences'" #headerActions>
           <BsSearch v-model="prefSearch" />
+        </template>
+        <template v-else-if="currentView === 'account' || currentView === 'permissions'" #headerActions>
+          <BsSearch v-model="viewSearch" />
         </template>
         <template v-else-if="currentView === 'token'" #headerActions>
           <div :id="tokenToolsId" class="af-title-flow"></div>
