@@ -592,6 +592,11 @@ textarea:focus::placeholder {
   margin-left: 0 !important;
   margin-right: 0 !important;
 }
+// the search first in the row, also before a table's own controls (Select all, Columns, Export)
+// when the page searches the table itself (AppLinkedTable's search)
+.af-title-controls .af-search {
+  order: -1;
+}
 .af-title-controls .bs-dt-toolbar-moved .af-table-search,
 .af-title-controls .af-search {
   flex: 1 1 8rem;

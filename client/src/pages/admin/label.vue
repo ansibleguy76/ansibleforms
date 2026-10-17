@@ -137,6 +137,35 @@ const previewLabels = computed(() => {
 const tabs = computed(() => [{ key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' }]);
 const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
+// ─── search ───────────────────────────────────────────────────────────────────
+// A word typed in the title line's search narrows the page, as Settings > General's : the fields
+// whose label or help has it, under the tab's name, the tab set aside meanwhile.
+const search = ref('');
+const searching = computed(() => !!search.value.trim());
+const matches = (...texts) => {
+  const q = search.value.trim().toLowerCase();
+  return (
+    !q ||
+    texts.some((x) =>
+      String(x ?? '')
+        .toLowerCase()
+        .includes(q),
+    )
+  );
+};
+const shownFields = computed(() =>
+  [
+    ['name', t('settings.labels.label'), t('settings.labels.nameHelp')],
+    ['color', t('settings.labels.color'), t('settings.labels.colorHelp')],
+    ['position', t('settings.labels.position'), t('settings.labels.positionHelp')],
+    ['enabled', t('settings.labels.enabled'), t('settings.labels.enabledHelp')],
+    ['preview', t('settings.labels.preview')],
+  ]
+    .filter(([, ...texts]) => matches(...texts))
+    .map(([key]) => key),
+);
+const fieldShown = (key) => shownFields.value.includes(key);
+
 // ─── title ────────────────────────────────────────────────────────────────────
 const pageCrumbs = computed(() => [
   { title: t('sidebar.labels'), icon: 'tag', to: '/settings/labels' },
@@ -179,7 +208,11 @@ onMounted(async () => {
       :crumbs="crumbs"
       :description="t('settings.labels.description')"
     >
-      <template v-if="record" #tabs>
+      <!-- narrows the page ; the search box of the other pages -->
+      <template v-if="record" #headerActions>
+        <BsSearch v-model="search" />
+      </template>
+      <template v-if="record && !searching" #tabs>
         <ul class="nav nav-tabs mb-0">
           <li v-for="tab in tabs" :key="tab.key" class="nav-item">
             <a
@@ -205,7 +238,15 @@ onMounted(async () => {
         </div>
         <AppSkeleton v-else-if="!loaded" shape="form" :count="4" />
         <div v-else class="af-label-tab">
+          <div v-if="searching && !shownFields.length" class="text-body-secondary fst-italic">
+            {{ t('settings.settingsPage.searchNone') }}
+          </div>
+          <!-- searching : the matches under the tab's name, as Settings > General -->
+          <h6 v-if="searching && shownFields.length" class="fw-bold text-body-secondary af-search-tab af-search-first">
+            <FaIcon :icon="tabs[0].icon" class="me-1" />{{ tabs[0].label }}
+          </h6>
           <BsInput
+            v-show="fieldShown('name')"
             class="af-label-field"
             v-model="edit.name"
             icon="tag"
@@ -216,26 +257,29 @@ onMounted(async () => {
             :label="t('settings.labels.label')"
           />
           <!-- its colour : round swatches in the pills' colours -->
-          <label class="form-label fw-bold d-block"
-            >{{ t('settings.labels.color') }}<span class="text-danger ms-1">*</span></label
-          >
-          <div class="d-flex flex-wrap gap-2 ms-1" role="radiogroup" :aria-label="t('settings.labels.color')">
-            <button
-              v-for="c in LABEL_COLORS"
-              :key="c"
-              type="button"
-              class="settings-color-swatch"
-              :class="[PILL[c], { 'af-swatch-active': edit.color === c }]"
-              :title="t(`settings.labels.color_${c}`)"
-              role="radio"
-              :aria-checked="edit.color === c"
-              @click="edit.color = c"
+          <div v-show="fieldShown('color')">
+            <label class="form-label fw-bold d-block"
+              >{{ t('settings.labels.color') }}<span class="text-danger ms-1">*</span></label
             >
-              <FaIcon v-if="edit.color === c" icon="check" class="settings-swatch-check" />
-            </button>
+            <div class="d-flex flex-wrap gap-2 ms-1" role="radiogroup" :aria-label="t('settings.labels.color')">
+              <button
+                v-for="c in LABEL_COLORS"
+                :key="c"
+                type="button"
+                class="settings-color-swatch"
+                :class="[PILL[c], { 'af-swatch-active': edit.color === c }]"
+                :title="t(`settings.labels.color_${c}`)"
+                role="radio"
+                :aria-checked="edit.color === c"
+                @click="edit.color = c"
+              >
+                <FaIcon v-if="edit.color === c" icon="check" class="settings-swatch-check" />
+              </button>
+            </div>
+            <div class="form-text mb-3">{{ t('settings.labels.colorHelp') }}</div>
           </div>
-          <div class="form-text mb-3">{{ t('settings.labels.colorHelp') }}</div>
           <BsInput
+            v-show="fieldShown('position')"
             class="af-label-field af-label-short"
             v-model="edit.position"
             type="number"
@@ -245,7 +289,7 @@ onMounted(async () => {
             :label="t('settings.labels.position')"
           />
           <!-- enabled or not : a switch, after the fields as on the other records' pages, saved at once -->
-          <div class="mb-3">
+          <div v-show="fieldShown('enabled')" class="mb-3">
             <label class="form-label fw-bold d-block" for="af-label-enabled">{{ t('settings.labels.enabled') }}</label>
             <div class="form-check form-switch mb-0">
               <input
@@ -260,9 +304,11 @@ onMounted(async () => {
             <div class="form-text">{{ t('settings.labels.enabledHelp') }}</div>
           </div>
           <!-- the preview : the header's logo and every label shown, as the header shows them -->
-          <label class="form-label fw-bold d-block">{{ t('settings.labels.preview') }}</label>
-          <AppLabelsPreview :labels="previewLabels" />
-          <div v-if="!record.enabled" class="form-text">{{ t('settings.labels.previewHidden') }}</div>
+          <div v-show="fieldShown('preview')">
+            <label class="form-label fw-bold d-block">{{ t('settings.labels.preview') }}</label>
+            <AppLabelsPreview :labels="previewLabels" />
+            <div v-if="!record.enabled" class="form-text">{{ t('settings.labels.previewHidden') }}</div>
+          </div>
         </div>
       </template>
       <template v-if="record" #actions>

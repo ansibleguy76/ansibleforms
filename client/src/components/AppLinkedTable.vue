@@ -32,6 +32,9 @@
 /*  rows ticked ; a slot #bulk-actions="{ selected, count }" adds */
 /*  what the page does with them (Remove, Delete). None on a      */
 /*  table nothing is done with : its filter decides the export.   */
+/*  search: the page's own search (a page that searches all its   */
+/*    tabs at once) : the rows filtered on it, and no filter box  */
+/*    of the table's ; none (null) : the table's own box          */
 /*  rowActions: [{ title, icon, danger?, enabledWhen?(row),       */
 /*    run(row) }] - each row's menu (⋮), the same actions one row */
 /*    at a time (Remove from role, Delete)                        */
@@ -57,6 +60,7 @@ const props = defineProps({
   exportName: { type: String, default: '' },
   selectable: { type: Boolean, default: false },
   rowActions: { type: Array, default: () => [] },
+  search: { type: String, default: null },
 });
 const { t } = useI18n();
 
@@ -99,7 +103,7 @@ function toggleSort(col) {
   }
 }
 const filteredRows = computed(() => {
-  const q = filter.value.trim().toLowerCase();
+  const q = (props.search ?? filter.value).trim().toLowerCase();
   const rows = q
     ? props.rows.filter((row) => props.columns.some((col) => plain(col, row).toLowerCase().includes(q)))
     : props.rows;
@@ -281,7 +285,7 @@ function text(col, row) {
   <!-- the controls, on the title line : the filter at its left, the columns and the export -->
   <Teleport v-if="toolbarTo" defer :to="toolbarTo">
     <div class="d-flex align-items-center gap-2 bs-dt-toolbar-moved flex-wrap">
-      <BsSearch v-model="filter" class="af-table-search" />
+      <BsSearch v-if="search === null" v-model="filter" class="af-table-search" />
       <!-- the selection : how many, Clear selection, Select all, and what the page does with them -->
       <span v-if="selectable && selected.size" class="text-muted small"
         >{{ selected.size }} {{ t('dataTable.selected') }}</span
