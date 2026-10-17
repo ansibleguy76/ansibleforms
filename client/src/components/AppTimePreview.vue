@@ -68,7 +68,10 @@ const offset = computed(() => {
 
 <style scoped>
 .af-tz-now {
-  display: inline-flex;
+  /* a box of its own (not on a text line : no line's room under it), as wide as its text */
+  display: flex;
+  width: max-content;
+  max-width: 100%;
   align-items: center;
   gap: 0.875rem;
   padding: 0.625rem 1rem;

@@ -407,6 +407,11 @@ onMounted(async () => {
 .af-defaults-wide :deep(.input-group.input-group) {
   max-width: 26rem;
 }
+/* the space between the settings is theirs above (mt-4) : none of their own below, so the last one
+   ends the card as on Profile > Preferences */
+.af-interface-field {
+  margin-bottom: 0 !important;
+}
 </style>
 <route lang="yaml">
 meta:
