@@ -20,8 +20,17 @@ import dayjs from 'dayjs';
 import State from '@/lib/State';
 import { useEnvVars } from '@/composables/useEnvVars';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
+import { useSingleTab } from '@/composables/useSingleTab';
 
 const { t } = useI18n();
+
+// one tab, General, as every settings page is a table or in tabs ; named last in the title
+const { tabs, activeTab, crumbs } = useSingleTab({
+  key: 'general',
+  label: () => t('settings.common.tabGeneral'),
+  icon: 'sliders',
+  pageCrumbs: () => [{ title: t('sidebar.defaults'), icon: 'display', to: '/settings/defaults' }],
+});
 const authenticated = ref(false);
 // the page's values read once : until then its fields as grey placeholders
 const loaded = ref(false);
@@ -170,7 +179,23 @@ onMounted(async () => {
       icon="display"
       :title="t('sidebar.defaults')"
       :description="t('settings.interface.description')"
+      :crumbs="crumbs"
     >
+      <template #tabs>
+        <ul class="nav nav-tabs mb-0">
+          <li v-for="tab in tabs" :key="tab.key" class="nav-item">
+            <a
+              class="nav-link"
+              :class="{ active: activeTab === tab.key }"
+              href="#"
+              @click.prevent="activeTab = tab.key"
+            >
+              <FaIcon :icon="tab.icon" class="me-1" />
+              {{ tab.label }}
+            </a>
+          </li>
+        </ul>
+      </template>
       <template #actions>
         <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
       </template>

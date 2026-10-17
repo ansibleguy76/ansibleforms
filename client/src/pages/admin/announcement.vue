@@ -16,6 +16,7 @@ import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import Helpers from '@/lib/Helpers';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
+import { useSingleTab } from '@/composables/useSingleTab';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -143,7 +144,7 @@ const name = computed(() => {
   const text = String(record.value?.message || '');
   return text.length > 60 ? `${text.slice(0, 60)}…` : text;
 });
-const crumbs = computed(() => [
+const pageCrumbs = computed(() => [
   { title: t('sidebar.announcement'), icon: 'bullhorn', to: '/settings/announcements' },
   {
     title: record.value ? name.value : loaded.value ? announcementId.value : null,
@@ -151,6 +152,14 @@ const crumbs = computed(() => [
     to: `/settings/announcements/${announcementId.value}`,
   },
 ]);
+
+// one tab, Details, as every record's page ; named last in the title
+const { tabs, activeTab, crumbs } = useSingleTab({
+  key: 'details',
+  label: () => t('settings.common.tabDetails'),
+  icon: 'sliders',
+  pageCrumbs: () => pageCrumbs.value,
+});
 
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
@@ -179,6 +188,25 @@ onMounted(async () => {
       :crumbs="crumbs"
       :description="t('settings.interface.announcementDescription')"
     >
+      <template v-if="record" #tabs>
+        <ul class="nav nav-tabs mb-0">
+          <li v-for="tab in tabs" :key="tab.key" class="nav-item">
+            <a
+              class="nav-link"
+              :class="{ active: activeTab === tab.key }"
+              href="#"
+              @click.prevent="activeTab = tab.key"
+            >
+              <FaIcon :icon="tab.icon" class="me-1" />
+              {{ tab.label }}
+            </a>
+          </li>
+        </ul>
+      </template>
+      <!-- the record loading : its tab as a grey placeholder -->
+      <template v-else-if="!loaded" #tabs>
+        <AppSkeleton shape="tabs" :count="1" />
+      </template>
       <template #default>
         <div v-if="loaded && !record" class="empty-state">
           <FaIcon icon="bullhorn" class="empty-state-icon" />

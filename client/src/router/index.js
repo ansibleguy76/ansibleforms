@@ -258,13 +258,13 @@ const routes = [
   },
   // Settings > Appearance : the website icon, and the theme and language by default
   {
-    path: '/settings/icon',
+    path: '/settings/icon/:tab?',
     name: '/settings/icon',
     component: favicon,
     meta: { permission: ['showSettings', 'showAppearanceSettings'] },
   },
   {
-    path: '/settings/defaults',
+    path: '/settings/defaults/:tab?',
     name: '/settings/defaults',
     component: defaultsPage,
     meta: { permission: ['showSettings', 'showAppearanceSettings'] },
@@ -272,7 +272,7 @@ const routes = [
   // Settings > Appearance : the app's name, the header's links, the label beside the logo, the
   // announcements
   {
-    path: '/settings/name',
+    path: '/settings/name/:tab?',
     name: '/settings/name',
     component: namePage,
     meta: { permission: ['showSettings', 'showAppearanceSettings'] },
@@ -306,7 +306,7 @@ const routes = [
   },
   // an announcement's page : its message, type, start, end and switch
   {
-    path: '/settings/announcements/:id(\\d+)',
+    path: '/settings/announcements/:id(\\d+)/:tab?',
     name: '/settings/announcements/:id',
     component: announcementPage,
     meta: { permission: ['showSettings', 'showAppearanceSettings'] },

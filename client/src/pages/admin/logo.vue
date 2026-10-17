@@ -6,8 +6,17 @@ import State from '@/lib/State';
 import Profile from '@/lib/Profile';
 import { useAppStore } from '@/stores/app';
 import { useI18n } from 'vue-i18n';
+import { useSingleTab } from '@/composables/useSingleTab';
 
 const { t } = useI18n();
+
+// one tab, General, as every settings page is a table or in tabs ; named last in the title
+const { tabs, activeTab, crumbs } = useSingleTab({
+  key: 'general',
+  label: () => t('settings.common.tabGeneral'),
+  icon: 'sliders',
+  pageCrumbs: () => [{ title: t('sidebar.logo'), icon: 'image', to: '/settings/logo' }],
+});
 const store = useAppStore();
 const authenticated = ref(false);
 const fileInput = ref(null);
@@ -112,7 +121,28 @@ onMounted(async () => {
 </script>
 <template>
   <AppSettingsPage>
-    <AppSettings v-if="authenticated" icon="image" :title="t('sidebar.logo')" :description="t('logo.description')">
+    <AppSettings
+      v-if="authenticated"
+      icon="image"
+      :title="t('sidebar.logo')"
+      :description="t('logo.description')"
+      :crumbs="crumbs"
+    >
+      <template #tabs>
+        <ul class="nav nav-tabs mb-0">
+          <li v-for="tab in tabs" :key="tab.key" class="nav-item">
+            <a
+              class="nav-link"
+              :class="{ active: activeTab === tab.key }"
+              href="#"
+              @click.prevent="activeTab = tab.key"
+            >
+              <FaIcon :icon="tab.icon" class="me-1" />
+              {{ tab.label }}
+            </a>
+          </li>
+        </ul>
+      </template>
       <template #actions>
         <BsButton
           icon="upload"
