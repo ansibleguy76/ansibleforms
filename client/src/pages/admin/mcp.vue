@@ -47,6 +47,47 @@ const { envItems, envEdits, envDirty, envRestartPending, loadEnvironmentVariable
 // the MCP server switched on, as the page shows it (before Save too) : its options follow
 const mcpOn = computed(() => String(envEdits.value.ENABLE_MCP ?? '0') === '1');
 
+// ─── search ──────────────────────────────────────────────────────────────────────────────────
+// A word typed in the title line's search narrows both tabs at once, as Settings > General's :
+// the switches that match (label, name, help), the client configuration when it matches (the
+// endpoint, a client's name), each under its tab's name, the tabs set aside meanwhile.
+const search = ref('');
+const searching = computed(() => !!search.value.trim());
+const matches = (...texts) => {
+  const q = search.value.trim().toLowerCase();
+  return (
+    !q ||
+    texts.some((x) =>
+      String(x ?? '')
+        .toLowerCase()
+        .includes(q),
+    )
+  );
+};
+const envMatch = (e) => matches(e.short, e.name, e.hint, e.description);
+const shownEnvItems = computed(() => envItems.value.filter(envMatch));
+const clientsMatch = computed(() =>
+  matches(
+    t('settings.settingsPage.mcpEndpoint'),
+    t('settings.settingsPage.mcpConnectHelp'),
+    t('settings.settingsPage.mcpClientConfig'),
+    t('settings.settingsPage.mcpTokenHint'),
+    ...mcpClients.value.map((c) => c.label),
+  ),
+);
+// the tabs shown : the active one, or while searching each one with a match
+const shownTabs = computed(() =>
+  searching.value
+    ? pageTabs.value.filter((tab) => (tab.key === 'general' ? shownEnvItems.value.length : clientsMatch.value))
+    : pageTabs.value.filter((tab) => tab.key === activeTab.value),
+);
+const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
+// while searching, a tab's name over its matches (the first without the line above)
+const searchHead = (key) => {
+  const i = shownTabs.value.findIndex((tab) => tab.key === key);
+  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
+};
+
 // how an MCP client connects : the endpoint under the public root url (Settings > Mail &
 // URL), or this page's own address when none is set
 const publicUrl = ref('');
@@ -141,7 +182,11 @@ onMounted(async () => {
       :crumbs="titleCrumbs"
       :description="t('settings.settingsPage.mcpDescription')"
     >
-      <template #tabs>
+      <!-- narrows both tabs at once ; the search box of the other pages -->
+      <template #headerActions>
+        <BsSearch v-model="search" />
+      </template>
+      <template v-if="!searching" #tabs>
         <ul class="nav nav-tabs mb-0">
           <li v-for="tab in pageTabs" :key="tab.key" class="nav-item">
             <a
@@ -156,8 +201,8 @@ onMounted(async () => {
           </li>
         </ul>
       </template>
-      <!-- Save : the switches of the General tab only -->
-      <template v-if="activeTab === 'general'" #actions>
+      <!-- Save : the switches of the General tab only (shown while a search shows them) -->
+      <template v-if="tabShown('general')" #actions>
         <BsButton icon="save" :disabled="!envDirty" @click="saveEnvironmentVariables()">{{
           t('settings.common.save')
         }}</BsButton>
@@ -166,13 +211,23 @@ onMounted(async () => {
         <!-- the first load : the fields as grey placeholders, in their place -->
         <AppSkeleton v-if="!loaded" shape="form" :count="4" />
         <template v-else>
+          <div v-if="searching && !shownTabs.length" class="text-body-secondary fst-italic">
+            {{ t('settings.settingsPage.searchNone') }}
+          </div>
           <!-- GENERAL : the switch, and the options waiting for it while the server is off -->
-          <div v-show="activeTab === 'general'">
+          <div v-show="tabShown('general')">
+            <h6
+              v-if="searching && searchHead('general')"
+              class="fw-bold text-body-secondary af-search-tab"
+              :class="{ 'af-search-first': searchHead('general').first }"
+            >
+              <FaIcon :icon="searchHead('general').tab.icon" class="me-1" />{{ searchHead('general').tab.label }}
+            </h6>
             <div v-if="envRestartPending.length" class="alert alert-warning py-2">
               <FaIcon icon="triangle-exclamation" class="me-2" />
               {{ t('settings.settingsPage.envRestartPending', { names: envRestartPending.join(', ') }) }}
             </div>
-            <template v-for="(e, i) in envItems" :key="e.name">
+            <template v-for="(e, i) in shownEnvItems" :key="e.name">
               <div v-if="i > 0" class="mt-4"></div>
               <AppEnvField
                 v-model="envEdits[e.name]"
@@ -184,7 +239,18 @@ onMounted(async () => {
           </div>
 
           <!-- CLIENT CONFIGURATION : the endpoint, and each client's configuration -->
-          <div v-show="activeTab === 'client-configuration'">
+          <div v-show="tabShown('client-configuration')">
+            <template v-if="searching && searchHead('client-configuration')">
+              <hr v-if="!searchHead('client-configuration').first" class="mt-4 mb-0 af-search-line" />
+              <h6
+                class="fw-bold text-body-secondary af-search-tab"
+                :class="{ 'af-search-first': searchHead('client-configuration').first }"
+              >
+                <FaIcon :icon="searchHead('client-configuration').tab.icon" class="me-1" />{{
+                  searchHead('client-configuration').tab.label
+                }}
+              </h6>
+            </template>
             <!-- as wide as the endpoint and the configuration under it -->
             <div v-if="!mcpOn" class="alert alert-warning py-2 af-mcp-config">
               <FaIcon icon="triangle-exclamation" class="me-2" />{{ t('settings.settingsPage.mcpOffNote') }}

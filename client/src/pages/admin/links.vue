@@ -67,6 +67,54 @@ const builtin = computed(() =>
   })),
 );
 
+// ─── search ──────────────────────────────────────────────────────────────────
+// A word typed in the title line's search narrows both tabs at once, as Settings > General's :
+// the Designer's switch when it matches (its name, its help), the own links whose label or
+// address match (and a link holding one that does, so a link inside keeps its place), each
+// under its tab's name, the tabs set aside meanwhile.
+const search = ref('');
+const searching = computed(() => !!search.value.trim());
+const matches = (...texts) => {
+  const q = search.value.trim().toLowerCase();
+  return (
+    !q ||
+    texts.some((x) =>
+      String(x ?? '')
+        .toLowerCase()
+        .includes(q),
+    )
+  );
+};
+const shownBuiltin = computed(() => builtin.value.filter((e) => matches(e.short, e.name, e.hint)));
+/**
+ * Whether an own link shows while searching : its label or its address matches, or one of the
+ * links inside it does.
+ *
+ * Args:
+ *   l (object): the link.
+ *
+ * Returns:
+ *   boolean: true when it shows (always when nothing is searched).
+ */
+function linkShown(l) {
+  if (matches(l.label, l.url)) return true;
+  return !l.parent && own.value.header_links.some((c) => c.parent === l.id && matches(c.label, c.url));
+}
+// the tabs shown : the active one, or while searching each one with a match
+const shownTabs = computed(() =>
+  searching.value
+    ? tabs.value.filter((tab) =>
+        tab.key === 'builtin' ? shownBuiltin.value.length : own.value.header_links.some(linkShown),
+      )
+    : tabs.value.filter((tab) => tab.key === activeTab.value),
+);
+const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
+// while searching, a tab's name over its matches (the first without the line above)
+const searchHead = (key) => {
+  const i = shownTabs.value.findIndex((tab) => tab.key === key);
+  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
+};
+
 // ─── Custom : the instance's own links, in the settings row ──────────────────
 
 /**
@@ -344,7 +392,11 @@ onMounted(async () => {
       :crumbs="crumbs"
       :description="description"
     >
-      <template #tabs>
+      <!-- narrows both tabs at once ; the search box of the other pages -->
+      <template #headerActions>
+        <BsSearch v-model="search" />
+      </template>
+      <template v-if="!searching" #tabs>
         <ul class="nav nav-tabs mb-0">
           <li v-for="tab in tabs" :key="tab.key" class="nav-item">
             <a
@@ -361,7 +413,7 @@ onMounted(async () => {
       </template>
       <template #actions>
         <BsButton
-          v-if="activeTab === 'custom'"
+          v-if="activeTab === 'custom' && !searching"
           icon="plus"
           :disabled="own.header_links.length >= MAX_LINKS * (1 + MAX_INSIDE)"
           @click="addLink()"
@@ -379,13 +431,32 @@ onMounted(async () => {
             <FaIcon icon="triangle-exclamation" class="me-2" />
             {{ t('settings.settingsPage.envRestartPending', { names: envRestartPending.join(', ') }) }}
           </div>
+          <div v-if="searching && !shownTabs.length" class="text-body-secondary fst-italic">
+            {{ t('settings.settingsPage.searchNone') }}
+          </div>
           <!-- Built-in : the Designer's link -->
-          <div v-show="activeTab === 'builtin'">
-            <AppEnvField v-for="e in builtin" :key="e.name" v-model="envEdits[e.name]" :e="e" :asSwitch="true" />
+          <div v-show="tabShown('builtin')">
+            <h6
+              v-if="searching && searchHead('builtin')"
+              class="fw-bold text-body-secondary af-search-tab"
+              :class="{ 'af-search-first': searchHead('builtin').first }"
+            >
+              <FaIcon :icon="searchHead('builtin').tab.icon" class="me-1" />{{ searchHead('builtin').tab.label }}
+            </h6>
+            <AppEnvField v-for="e in shownBuiltin" :key="e.name" v-model="envEdits[e.name]" :e="e" :asSwitch="true" />
           </div>
           <!-- Custom : the instance's own links, in the header's order -->
-          <div v-show="activeTab === 'custom'">
-            <div v-if="!own.header_links.length" class="empty-state">
+          <div v-show="tabShown('custom')">
+            <template v-if="searching && searchHead('custom')">
+              <hr v-if="!searchHead('custom').first" class="mt-4 mb-0 af-search-line" />
+              <h6
+                class="fw-bold text-body-secondary af-search-tab"
+                :class="{ 'af-search-first': searchHead('custom').first }"
+              >
+                <FaIcon :icon="searchHead('custom').tab.icon" class="me-1" />{{ searchHead('custom').tab.label }}
+              </h6>
+            </template>
+            <div v-if="!own.header_links.length && !searching" class="empty-state">
               <FaIcon icon="link" class="empty-state-icon" />
               <span>{{ t('settings.interface.noLinks') }}</span>
             </div>
@@ -403,6 +474,7 @@ onMounted(async () => {
               </div>
               <div
                 v-for="(l, i) in own.header_links"
+                v-show="!searching || linkShown(l)"
                 :key="l.id"
                 class="af-links-row"
                 :class="{ 'af-link-nested': l.parent }"

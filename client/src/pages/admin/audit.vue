@@ -216,11 +216,11 @@ onMounted(async () => {
             <option value="denied">{{ t('audit.outcomeDenied') }}</option>
           </select>
         </div>
-        <!-- the filters at the left of the controls' row, Reset and Refresh at its right, as the
-             server log's Clear and Refresh -->
+        <!-- the filters at the left of the controls' row, Reset (the funnel crossed out, as the job
+             output's Remove filter) and Refresh at its right -->
         <BsButton
           cssClass="text-nowrap"
-          icon="eraser"
+          icon="filter-circle-xmark"
           :title="t('audit.resetHint')"
           :disabled="!filtered"
           @click="resetFilters()"

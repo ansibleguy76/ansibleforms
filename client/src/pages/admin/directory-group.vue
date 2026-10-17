@@ -126,6 +126,52 @@ const crumbs = computed(() => {
   return tab ? [...base, { title: tab.label, icon: tab.icon, to: tabLink(tab.key) }] : base;
 });
 
+// ─── search ───────────────────────────────────────────────────────────────────
+// A word typed in the title line's search narrows every tab at once, as Settings > General's :
+// the facts of Details whose label or value has it, the users, roles and forms with it in one
+// of their cells (AppLinkedTable's search), each under its tab's name, the tabs set aside
+// meanwhile.
+const search = ref('');
+const searching = computed(() => !!search.value.trim());
+const matches = (...texts) => {
+  const q = search.value.trim().toLowerCase();
+  return (
+    !q ||
+    texts.some((x) =>
+      String(x ?? '')
+        .toLowerCase()
+        .includes(q),
+    )
+  );
+};
+// read only, so a fact's value counts as its label does
+const shownFields = computed(() =>
+  [
+    ['note', t('settings.directory.groupReadOnlyNote', { source: sourceName.value })],
+    ['name', t('settings.fields.name'), group.value?.name],
+    ['source', t('settings.directory.source'), sourceName.value],
+  ]
+    .filter(([, ...texts]) => matches(...texts))
+    .map(([key]) => key),
+);
+const fieldShown = (key) => shownFields.value.includes(key);
+// a user, a role or a form with the text in one of its values (the tables filter their cells
+// the same way)
+const tabRows = { users: members, roles: groupRoles, forms: groupForms };
+const rowsMatch = (key) => tabRows[key].value.some((r) => matches(...Object.values(r || {})));
+// the tabs shown : the active one, or while searching each one with a match
+const shownTabs = computed(() =>
+  searching.value
+    ? tabs.value.filter((tab) => (tab.key === 'details' ? shownFields.value.length : rowsMatch(tab.key)))
+    : tabs.value.filter((tab) => tab.key === activeTab.value),
+);
+const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
+// while searching, a tab's name over its matches (the first without the line above)
+const searchHead = (key) => {
+  const i = shownTabs.value.findIndex((tab) => tab.key === key);
+  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
+};
+
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
@@ -142,7 +188,11 @@ onMounted(async () => {
       :crumbs="crumbs"
       :description="t('settings.groups.description')"
     >
-      <template v-if="group" #tabs>
+      <!-- narrows every tab at once ; the search box of the other pages -->
+      <template v-if="group" #headerActions>
+        <BsSearch v-model="search" />
+      </template>
+      <template v-if="group && !searching" #tabs>
         <ul class="nav nav-tabs mb-0">
           <li v-for="tab in tabs" :key="tab.key" class="nav-item">
             <a
@@ -159,7 +209,7 @@ onMounted(async () => {
         </ul>
       </template>
       <!-- the record loading : its tabs as grey placeholders -->
-      <template v-else-if="!loaded" #tabs>
+      <template v-else-if="!loaded && !searching" #tabs>
         <AppSkeleton shape="tabs" :count="tabs.length" />
       </template>
       <template #default>
@@ -171,14 +221,22 @@ onMounted(async () => {
         <AppSkeleton v-else-if="!loaded && !group" shape="form" :count="3" />
         <template v-else-if="group">
           <!-- Details : where it comes from (its users are those seen in it), read only -->
-          <div v-if="activeTab === 'details'" class="af-group-details">
-            <div class="alert alert-secondary py-2">
+          <div v-if="tabShown('details')" class="af-group-details">
+            <h6
+              v-if="searching && searchHead('details')"
+              class="fw-bold text-body-secondary af-search-tab"
+              :class="{ 'af-search-first': searchHead('details').first }"
+            >
+              <FaIcon :icon="searchHead('details').tab.icon" class="me-1" />{{ searchHead('details').tab.label }}
+            </h6>
+            <div v-show="fieldShown('note')" class="alert alert-secondary py-2">
               <FaIcon icon="circle-info" class="me-2" />{{
                 t('settings.directory.groupReadOnlyNote', { source: sourceName })
               }}
             </div>
             <BsInput
               class="af-group-field"
+              v-show="fieldShown('name')"
               :modelValue="group.name"
               icon="users"
               :isFloating="false"
@@ -187,6 +245,7 @@ onMounted(async () => {
             />
             <BsInput
               class="af-group-field"
+              v-show="fieldShown('source')"
               :modelValue="sourceName"
               icon="right-to-bracket"
               :isFloating="false"
@@ -194,55 +253,94 @@ onMounted(async () => {
               :label="t('settings.directory.source')"
             />
           </div>
-          <AppLinkedTable
-            v-else-if="activeTab === 'users'"
-            :exportName="`${groupName}-users`"
-            :columns="memberColumns"
-            :rows="members"
-            rowKey="username"
-            :to="(m) => `/settings/users/${encodeURIComponent(source)}/${encodeURIComponent(m.username)}`"
-            :empty="t('settings.directory.noMember')"
-          />
-          <AppLinkedTable
-            selectable
-            :rowActions="[
-              {
-                title: t('settings.settingsPage.removeFromRole'),
-                icon: 'trash',
-                danger: true,
-                run: (r) => removeRoles([r]),
-              },
-            ]"
-            v-else-if="activeTab === 'roles'"
-            :exportName="`${groupName}-roles`"
-            :columns="roleColumns"
-            :rows="groupRoles"
-            rowKey="name"
-            :to="(r) => `/settings/roles/${encodeURIComponent(r.name)}`"
-            :empty="t('settings.groups.noRole')"
-          >
-            <!-- the roles ticked that name it : taken out of them -->
-            <template #bulk-actions="{ selected, count }">
-              <BsButton v-if="count" icon="trash" :disabled="rolesReadOnly" @click="removeRoles(selected)"
-                >{{ t('settings.settingsPage.removeFromRole') }} ({{ count }})</BsButton
+          <!-- Users : the users seen in it ; a row opens the user -->
+          <template v-if="tabShown('users')">
+            <template v-if="searching && searchHead('users')">
+              <hr v-if="!searchHead('users').first" class="mt-4 mb-0 af-search-line" />
+              <h6
+                class="fw-bold text-body-secondary af-search-tab"
+                :class="{ 'af-search-first': searchHead('users').first }"
               >
+                <FaIcon :icon="searchHead('users').tab.icon" class="me-1" />{{ searchHead('users').tab.label }}
+              </h6>
             </template>
-          </AppLinkedTable>
-          <AppLinkedTable
-            v-else
-            :exportName="`${groupName}-forms`"
-            :columns="formColumns"
-            :rows="groupForms"
-            rowKey="name"
-            :to="(f) => formPath(f.name)"
-            :empty="t('settings.linked.noFormGroup')"
-          />
+            <AppLinkedTable
+              :search="search"
+              :exportName="`${groupName}-users`"
+              :columns="memberColumns"
+              :rows="members"
+              rowKey="username"
+              :to="(m) => `/settings/users/${encodeURIComponent(source)}/${encodeURIComponent(m.username)}`"
+              :empty="t('settings.directory.noMember')"
+            />
+          </template>
+          <!-- Roles : the roles that name it ; a row opens the role -->
+          <template v-if="tabShown('roles')">
+            <template v-if="searching && searchHead('roles')">
+              <hr v-if="!searchHead('roles').first" class="mt-4 mb-0 af-search-line" />
+              <h6
+                class="fw-bold text-body-secondary af-search-tab"
+                :class="{ 'af-search-first': searchHead('roles').first }"
+              >
+                <FaIcon :icon="searchHead('roles').tab.icon" class="me-1" />{{ searchHead('roles').tab.label }}
+              </h6>
+            </template>
+            <AppLinkedTable
+              :search="search"
+              selectable
+              :rowActions="[
+                {
+                  title: t('settings.settingsPage.removeFromRole'),
+                  icon: 'trash',
+                  danger: true,
+                  run: (r) => removeRoles([r]),
+                },
+              ]"
+              :exportName="`${groupName}-roles`"
+              :columns="roleColumns"
+              :rows="groupRoles"
+              rowKey="name"
+              :to="(r) => `/settings/roles/${encodeURIComponent(r.name)}`"
+              :empty="t('settings.groups.noRole')"
+            >
+              <!-- the roles ticked that name it : taken out of them -->
+              <template #bulk-actions="{ selected, count }">
+                <BsButton v-if="count" icon="trash" :disabled="rolesReadOnly" @click="removeRoles(selected)"
+                  >{{ t('settings.settingsPage.removeFromRole') }} ({{ count }})</BsButton
+                >
+              </template>
+            </AppLinkedTable>
+          </template>
+          <!-- Forms : the forms those roles open ; a row opens the form -->
+          <template v-if="tabShown('forms')">
+            <template v-if="searching && searchHead('forms')">
+              <hr v-if="!searchHead('forms').first" class="mt-4 mb-0 af-search-line" />
+              <h6
+                class="fw-bold text-body-secondary af-search-tab"
+                :class="{ 'af-search-first': searchHead('forms').first }"
+              >
+                <FaIcon :icon="searchHead('forms').tab.icon" class="me-1" />{{ searchHead('forms').tab.label }}
+              </h6>
+            </template>
+            <AppLinkedTable
+              :search="search"
+              :exportName="`${groupName}-forms`"
+              :columns="formColumns"
+              :rows="groupForms"
+              rowKey="name"
+              :to="(f) => formPath(f.name)"
+              :empty="t('settings.linked.noFormGroup')"
+            />
+          </template>
+          <div v-if="searching && !shownTabs.length" class="text-body-secondary fst-italic">
+            {{ t('settings.settingsPage.searchNone') }}
+          </div>
         </template>
       </template>
       <!-- always there once the group is : the tab tables put their controls in this toolbar, so a
            slot that comes and goes with the tab tore it down under them and froze the tabs -->
       <template v-if="group" #actions>
-        <BsButton v-if="activeTab === 'roles'" icon="plus" :disabled="rolesReadOnly" @click="addingRole = true">{{
+        <BsButton v-if="tabShown('roles')" icon="plus" :disabled="rolesReadOnly" @click="addingRole = true">{{
           t('settings.settingsPage.addRole')
         }}</BsButton>
       </template>

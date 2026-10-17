@@ -191,6 +191,48 @@ const pageCrumbs = computed(() => [
     to: `/settings/disclaimer/${versionId.value}`,
   },
 ]);
+// ─── search ───────────────────────────────────────────────────────────────────
+// A word typed in the title line's search narrows both tabs at once, as Settings > General's :
+// the fields of Details whose label or help has it, the acceptances with it in one of their
+// cells (AppLinkedTable's search), each under its tab's name, the tabs set aside meanwhile.
+const search = ref('');
+const searching = computed(() => !!search.value.trim());
+const matches = (...texts) => {
+  const q = search.value.trim().toLowerCase();
+  return (
+    !q ||
+    texts.some((x) =>
+      String(x ?? '')
+        .toLowerCase()
+        .includes(q),
+    )
+  );
+};
+const shownFields = computed(() =>
+  [
+    ['title', t('settings.disclaimer.title'), t('settings.disclaimer.titleHelp')],
+    ['text', t('settings.disclaimer.text'), t('settings.disclaimer.textHelp')],
+    ['checkbox', t('settings.disclaimer.checkbox'), t('settings.disclaimer.checkboxHelp')],
+    ['enabled', t('settings.disclaimer.versionEnabled'), t('settings.disclaimer.enabledHelpVersion')],
+  ]
+    .filter(([, ...texts]) => matches(...texts))
+    .map(([key]) => key),
+);
+const fieldShown = (key) => shownFields.value.includes(key);
+// an acceptance with the text in one of its values (the table filters its cells the same way)
+const acceptancesMatch = computed(() => acceptances.value.some((r) => matches(...Object.values(r || {}))));
+// the tabs shown : the active one, or while searching each one with a match
+const shownTabs = computed(() =>
+  searching.value
+    ? tabs.value.filter((tab) => (tab.key === 'details' ? shownFields.value.length : acceptancesMatch.value))
+    : tabs.value.filter((tab) => tab.key === activeTab.value),
+);
+const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
+const searchHead = (key) => {
+  const i = shownTabs.value.findIndex((tab) => tab.key === key);
+  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
+};
+
 const crumbs = computed(() => {
   const tab = tabs.value.find((x) => x.key === activeTab.value);
   return tab ? [...pageCrumbs.value, { title: tab.label, icon: tab.icon, to: tabLink(tab.key) }] : pageCrumbs.value;
@@ -237,7 +279,11 @@ onMounted(async () => {
       :crumbs="crumbs"
       :description="t('settings.disclaimer.description')"
     >
-      <template v-if="record" #tabs>
+      <!-- narrows both tabs at once ; the search box of the other pages -->
+      <template v-if="record" #headerActions>
+        <BsSearch v-model="search" />
+      </template>
+      <template v-if="record && !searching" #tabs>
         <ul class="nav nav-tabs mb-0">
           <li v-for="tab in tabs" :key="tab.key" class="nav-item">
             <a
@@ -253,7 +299,7 @@ onMounted(async () => {
           </li>
         </ul>
       </template>
-      <template v-else-if="!loaded" #tabs>
+      <template v-else-if="!loaded && !searching" #tabs>
         <AppSkeleton shape="tabs" :count="2" />
       </template>
       <template #default>
@@ -262,26 +308,18 @@ onMounted(async () => {
           <span>{{ t('settings.disclaimer.notFound', { id: versionId }) }}</span>
         </div>
         <AppSkeleton v-else-if="!loaded" shape="form" :count="3" />
-        <!-- Acceptances : who accepted it ; Ask again on a row or the rows ticked -->
-        <AppLinkedTable
-          v-else-if="activeTab === 'acceptances'"
-          selectable
-          :rowActions="[{ title: t('settings.disclaimer.askAgain'), icon: 'rotate', run: (r) => askAgain([r]) }]"
-          :columns="acceptanceColumns"
-          :rows="acceptances"
-          :exportName="`disclaimer-${record.version}-acceptances`"
-        >
-          <template #bulk-actions="{ selected, count }">
-            <BsButton v-if="count" icon="rotate" @click="askAgain(selected)"
-              >{{ t('settings.disclaimer.askAgain') }} ({{ count }})</BsButton
-            >
-          </template>
-        </AppLinkedTable>
-        <!-- Details : its words, then whether it is enabled -->
-        <div v-else class="af-disclaimer-tab">
+        <div v-if="record && tabShown('details')" class="af-disclaimer-tab">
+          <h6
+            v-if="searching && searchHead('details')"
+            class="fw-bold text-body-secondary af-search-tab"
+            :class="{ 'af-search-first': searchHead('details').first }"
+          >
+            <FaIcon :icon="searchHead('details').tab.icon" class="me-1" />{{ searchHead('details').tab.label }}
+          </h6>
           <BsInput
             class="af-disclaimer-field"
             v-model="edit.title"
+            v-show="fieldShown('title')"
             icon="heading"
             :isFloating="false"
             :required="true"
@@ -291,6 +329,7 @@ onMounted(async () => {
           <BsInput
             class="af-disclaimer-field"
             v-model="edit.text"
+            v-show="fieldShown('text')"
             type="textarea"
             :rows="10"
             icon="file-lines"
@@ -302,6 +341,7 @@ onMounted(async () => {
           <BsInput
             class="af-disclaimer-field"
             v-model="edit.checkbox_label"
+            v-show="fieldShown('checkbox')"
             icon="square-check"
             :isFloating="false"
             :required="true"
@@ -309,7 +349,7 @@ onMounted(async () => {
             :label="t('settings.disclaimer.checkbox')"
           />
           <!-- whether users accept it : a switch, as an SSO provider's, saved at once -->
-          <div class="mb-0">
+          <div v-show="fieldShown('enabled')" class="mb-0">
             <label class="form-label fw-bold d-block" for="af-disclaimer-enabled">{{
               t('settings.disclaimer.versionEnabled')
             }}</label>
@@ -325,6 +365,37 @@ onMounted(async () => {
             </div>
             <div class="form-text">{{ t('settings.disclaimer.enabledHelpVersion') }}</div>
           </div>
+        </div>
+        <!-- Acceptances : who accepted it ; Ask again on a row or the rows ticked -->
+        <template v-if="record && tabShown('acceptances')">
+          <template v-if="searching && searchHead('acceptances')">
+            <hr v-if="!searchHead('acceptances').first" class="mt-4 mb-0 af-search-line" />
+            <h6
+              class="fw-bold text-body-secondary af-search-tab"
+              :class="{ 'af-search-first': searchHead('acceptances').first }"
+            >
+              <FaIcon :icon="searchHead('acceptances').tab.icon" class="me-1" />{{
+                searchHead('acceptances').tab.label
+              }}
+            </h6>
+          </template>
+          <AppLinkedTable
+            :search="search"
+            selectable
+            :rowActions="[{ title: t('settings.disclaimer.askAgain'), icon: 'rotate', run: (r) => askAgain([r]) }]"
+            :columns="acceptanceColumns"
+            :rows="acceptances"
+            :exportName="`disclaimer-${record.version}-acceptances`"
+          >
+            <template #bulk-actions="{ selected, count }">
+              <BsButton v-if="count" icon="rotate" @click="askAgain(selected)"
+                >{{ t('settings.disclaimer.askAgain') }} ({{ count }})</BsButton
+              >
+            </template>
+          </AppLinkedTable>
+        </template>
+        <div v-if="searching && !shownTabs.length" class="text-body-secondary fst-italic">
+          {{ t('settings.settingsPage.searchNone') }}
         </div>
       </template>
       <template v-if="record" #actions>

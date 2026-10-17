@@ -627,7 +627,7 @@ export default {
     allUsers: 'Alle gebruikers',
     allActions: 'Alle acties',
     allOutcomes: 'Alle resultaten',
-    reset: 'Herstellen',
+    reset: 'Selectie herstellen',
     resetHint: 'Weer alle gebruikers, alle acties en alle uitkomsten',
     empty: 'Nog geen auditvermeldingen',
     emptyHint: 'Het logboek begint bij de installatie van deze versie en bevat dus niets van daarvoor.',

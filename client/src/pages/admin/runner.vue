@@ -267,6 +267,80 @@ const crumbs = computed(() => {
 // the forms it is the default for : those of its type (an awx runner : awx, aap and ascender forms)
 const defaultFor = computed(() => t(`settings.runners.default_${runner.value?.type || 'rte'}`));
 
+// ─── search ───────────────────────────────────────────────────────────────────
+// A word typed in the title line's search narrows every tab at once, as Settings > General's :
+// the fields of Details, Type and Credentials whose label or help has it (a kind by its name and
+// grey words), the forms and the jobs with it in one of their cells (AppLinkedTable's search),
+// each under its tab's name, the tabs set aside meanwhile.
+const search = ref('');
+const searching = computed(() => !!search.value.trim());
+const matches = (...texts) => {
+  const q = search.value.trim().toLowerCase();
+  return (
+    !q ||
+    texts.some((x) =>
+      String(x ?? '')
+        .toLowerCase()
+        .includes(q),
+    )
+  );
+};
+// each tab's fields : [key, label, help], only those its kind shows (as the template's v-if)
+const tabFields = computed(() => {
+  const e = edit.value || {};
+  return {
+    details: [
+      ['state', t('settings.runners.state')],
+      ['name', t('settings.fields.name'), t('settings.runners.nameHelp')],
+      ['description', t('settings.fields.description')],
+      ['is_default', t('settings.runners.isDefault'), t('settings.runners.defaultHelp', { forms: defaultFor.value })],
+    ],
+    type: sortedKinds.value.map((kind) => [
+      `kind-${kind}`,
+      t(`settings.runners.type_${kind}`),
+      t(`settings.runners.type_${kind}Hint`),
+    ]),
+    credentials: [
+      ['credential', t('settings.runners.credential'), t(`settings.runners.credentialHelp_${e.kind || 'rte'}`)],
+      e.credential && !chosenServer.value && ['no_server', t('settings.credentials.noServer')],
+      ownSecret.value &&
+        !e.credential && [
+          'own_token',
+          t(runner.value?.node_id ? 'settings.runners.ownTokenRte' : 'settings.runners.ownToken'),
+        ],
+      hasProject.value && ['project', t('settings.runners.project'), t(`settings.runners.projectHelp_${e.kind}`)],
+    ].filter(Boolean),
+  };
+});
+// the fields shown : those whose label or help has the text
+const shownFields = computed(() =>
+  Object.values(tabFields.value)
+    .flat()
+    .filter(([, ...texts]) => matches(...texts))
+    .map(([key]) => key),
+);
+const fieldShown = (key) => shownFields.value.includes(key);
+// a form or a job with the text in one of its values (the table filters its cells the same way)
+const rowsMatch = (rows) => rows.some((r) => matches(...Object.values(r || {})));
+const tabMatch = (key) =>
+  key === 'forms'
+    ? rowsMatch(runnerForms.value)
+    : key === 'jobs'
+      ? rowsMatch(runnerJobs.value)
+      : (tabFields.value[key] || []).some(([k]) => fieldShown(k));
+// the tabs shown : the active one, or while searching each one with a match
+const shownTabs = computed(() =>
+  searching.value
+    ? tabs.value.filter((tab) => tabMatch(tab.key))
+    : tabs.value.filter((tab) => tab.key === activeTab.value),
+);
+const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
+// while searching, a tab's name over its matches (the first without the line above)
+const searchHead = (key) => {
+  const i = shownTabs.value.findIndex((tab) => tab.key === key);
+  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
+};
+
 // ─── actions ──────────────────────────────────────────────────────────────────
 /**
  * Saves the fields of every tab, its kind stored as a type and a flavour, as the dialog does.
@@ -383,7 +457,11 @@ onMounted(async () => {
       :crumbs="crumbs"
       :description="t('settings.runners.description')"
     >
-      <template v-if="runner" #tabs>
+      <!-- narrows every tab at once ; the search box of the other pages -->
+      <template v-if="runner" #headerActions>
+        <BsSearch v-model="search" />
+      </template>
+      <template v-if="runner && !searching" #tabs>
         <ul class="nav nav-tabs mb-0">
           <li v-for="tab in tabs" :key="tab.key" class="nav-item">
             <a
@@ -400,7 +478,7 @@ onMounted(async () => {
         </ul>
       </template>
       <!-- the record loading : its tabs as grey placeholders -->
-      <template v-else-if="!loaded" #tabs>
+      <template v-else-if="!loaded && !searching" #tabs>
         <AppSkeleton shape="tabs" :count="tabs.length" />
       </template>
       <template #default>
@@ -410,51 +488,31 @@ onMounted(async () => {
         </div>
         <!-- the record loading : its fields as grey placeholders, where they come -->
         <AppSkeleton v-else-if="!loaded && !runner" shape="form" :count="3" />
-        <!-- Forms : the forms that run on it ; a row opens the form -->
-        <AppLinkedTable
-          v-else-if="runner && activeTab === 'forms'"
-          :exportName="`${runner.name}-forms`"
-          :columns="formColumns"
-          :rows="runnerForms"
-          rowKey="name"
-          :to="(f) => formPath(f.name)"
-          :empty="t('settings.linked.noFormRunner')"
-        />
-        <!-- Jobs : the jobs that ran on it, the latest first ; a row opens the job -->
-        <AppLinkedTable
-          selectable
-          :rowActions="[
-            { title: t('common.delete'), icon: 'trash', danger: true, run: (r) => deleteTicked([r], 'job') },
-          ]"
-          v-else-if="runner && activeTab === 'jobs'"
-          :exportName="`${runner.name}-jobs`"
-          :columns="jobColumns"
-          :rows="runnerJobs"
-          :to="(j) => `/jobs/${j.id}`"
-          :empty="t('settings.linked.noJob')"
-        >
-          <template #cell-status="{ row }"><AppStatusPill :status="row.status" /></template>
-          <template #bulk-actions="{ selected, count }">
-            <BsButton v-if="count" icon="trash" @click="deleteTicked(selected, 'job')"
-              >{{ t('common.delete') }} ({{ count }})</BsButton
-            >
-          </template>
-        </AppLinkedTable>
-        <div v-else-if="runner && edit" class="af-runner-tab">
+        <div v-if="runner && edit && ['details', 'type', 'credentials'].some(tabShown)" class="af-runner-tab">
           <!-- a runner of the config seed : read only here -->
           <div v-if="managed" class="alert alert-secondary py-2">
             <FaIcon icon="lock" class="me-2" />{{ t('settings.common.seedManagedNotice') }}
           </div>
           <fieldset :disabled="readOnly">
             <!-- Details : its registration, what it is called, whether it is the default -->
-            <template v-if="activeTab === 'details'">
-              <div class="mb-3">
+            <template v-if="tabShown('details')">
+              <template v-if="searching && searchHead('details')">
+                <hr v-if="!searchHead('details').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('details').first }"
+                >
+                  <FaIcon :icon="searchHead('details').tab.icon" class="me-1" />{{ searchHead('details').tab.label }}
+                </h6>
+              </template>
+              <div v-show="fieldShown('state')" class="mb-3">
                 <div class="form-label fw-bold">{{ t('settings.runners.state') }}</div>
                 <span v-html="registrationPill(t, runner.state)"></span>
               </div>
               <BsInput
                 class="af-runner-field"
                 v-model="edit.name"
+                v-show="fieldShown('name')"
                 icon="heading"
                 :isFloating="false"
                 :required="true"
@@ -464,11 +522,12 @@ onMounted(async () => {
               <BsInput
                 class="af-runner-field"
                 v-model="edit.description"
+                v-show="fieldShown('description')"
                 icon="info-circle"
                 :isFloating="false"
                 :label="t('settings.fields.description')"
               />
-              <div class="mb-3">
+              <div v-show="fieldShown('is_default')" class="mb-3">
                 <label class="form-label fw-bold d-block" for="af-runner-default">{{
                   t('settings.runners.isDefault')
                 }}</label>
@@ -488,8 +547,22 @@ onMounted(async () => {
               </div>
             </template>
             <!-- Type : RTE, AWX, AAP, Ascender, Semaphore or Rundeck, each its label and a few grey words -->
-            <template v-else-if="activeTab === 'type'">
-              <div v-for="kind in sortedKinds" :key="kind" class="form-check af-short-check af-type-option">
+            <template v-if="tabShown('type')">
+              <template v-if="searching && searchHead('type')">
+                <hr v-if="!searchHead('type').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('type').first }"
+                >
+                  <FaIcon :icon="searchHead('type').tab.icon" class="me-1" />{{ searchHead('type').tab.label }}
+                </h6>
+              </template>
+              <div
+                v-for="kind in sortedKinds"
+                v-show="fieldShown(`kind-${kind}`)"
+                :key="kind"
+                class="form-check af-short-check af-type-option"
+              >
                 <input
                   :id="'af-kind-' + kind"
                   v-model="edit.kind"
@@ -507,10 +580,22 @@ onMounted(async () => {
             </template>
             <!-- Authentication : an RTE's, a Semaphore's or a Rundeck's token, a Jenkins' user and
                  its token ; an AWX's token, or a user and password -->
-            <template v-else>
+            <template v-if="tabShown('credentials')">
+              <template v-if="searching && searchHead('credentials')">
+                <hr v-if="!searchHead('credentials').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('credentials').first }"
+                >
+                  <FaIcon :icon="searchHead('credentials').tab.icon" class="me-1" />{{
+                    searchHead('credentials').tab.label
+                  }}
+                </h6>
+              </template>
               <BsInput
                 class="af-runner-field"
                 v-model="edit.credential"
+                v-show="fieldShown('credential')"
                 type="select"
                 icon="key"
                 :isFloating="false"
@@ -522,11 +607,15 @@ onMounted(async () => {
                 :label="t('settings.runners.credential')"
               />
               <!-- a credential without a server : said (it connects to its credential's) -->
-              <p v-if="edit.credential && !chosenServer" class="form-text text-warning-emphasis mb-0">
+              <p
+                v-if="edit.credential && !chosenServer"
+                v-show="fieldShown('no_server')"
+                class="form-text text-warning-emphasis mb-0"
+              >
                 {{ t('settings.credentials.noServer') }}
               </p>
               <!-- one from before credentials : its own token, until a credential is chosen -->
-              <p v-if="ownSecret && !edit.credential" class="form-text mb-0">
+              <p v-if="ownSecret && !edit.credential" v-show="fieldShown('own_token')" class="form-text mb-0">
                 {{ t(runner.node_id ? 'settings.runners.ownTokenRte' : 'settings.runners.ownToken') }}
               </p>
               <!-- a Semaphore's project id, a Rundeck's project name, a Jenkins' folder : where on
@@ -535,6 +624,7 @@ onMounted(async () => {
                 v-if="hasProject"
                 class="af-runner-field mt-3"
                 v-model="edit.project"
+                v-show="fieldShown('project')"
                 icon="folder"
                 :isFloating="false"
                 :required="!isJenkins"
@@ -543,6 +633,61 @@ onMounted(async () => {
               />
             </template>
           </fieldset>
+        </div>
+        <!-- Forms : the forms that run on it ; a row opens the form -->
+        <template v-if="runner && tabShown('forms')">
+          <template v-if="searching && searchHead('forms')">
+            <hr v-if="!searchHead('forms').first" class="mt-4 mb-0 af-search-line" />
+            <h6
+              class="fw-bold text-body-secondary af-search-tab"
+              :class="{ 'af-search-first': searchHead('forms').first }"
+            >
+              <FaIcon :icon="searchHead('forms').tab.icon" class="me-1" />{{ searchHead('forms').tab.label }}
+            </h6>
+          </template>
+          <AppLinkedTable
+            :search="search"
+            :exportName="`${runner.name}-forms`"
+            :columns="formColumns"
+            :rows="runnerForms"
+            rowKey="name"
+            :to="(f) => formPath(f.name)"
+            :empty="t('settings.linked.noFormRunner')"
+          />
+        </template>
+        <!-- Jobs : the jobs that ran on it, the latest first ; a row opens the job -->
+        <template v-if="runner && tabShown('jobs')">
+          <template v-if="searching && searchHead('jobs')">
+            <hr v-if="!searchHead('jobs').first" class="mt-4 mb-0 af-search-line" />
+            <h6
+              class="fw-bold text-body-secondary af-search-tab"
+              :class="{ 'af-search-first': searchHead('jobs').first }"
+            >
+              <FaIcon :icon="searchHead('jobs').tab.icon" class="me-1" />{{ searchHead('jobs').tab.label }}
+            </h6>
+          </template>
+          <AppLinkedTable
+            :search="search"
+            selectable
+            :rowActions="[
+              { title: t('common.delete'), icon: 'trash', danger: true, run: (r) => deleteTicked([r], 'job') },
+            ]"
+            :exportName="`${runner.name}-jobs`"
+            :columns="jobColumns"
+            :rows="runnerJobs"
+            :to="(j) => `/jobs/${j.id}`"
+            :empty="t('settings.linked.noJob')"
+          >
+            <template #cell-status="{ row }"><AppStatusPill :status="row.status" /></template>
+            <template #bulk-actions="{ selected, count }">
+              <BsButton v-if="count" icon="trash" @click="deleteTicked(selected, 'job')"
+                >{{ t('common.delete') }} ({{ count }})</BsButton
+              >
+            </template>
+          </AppLinkedTable>
+        </template>
+        <div v-if="searching && !shownTabs.length" class="text-body-secondary fst-italic">
+          {{ t('settings.settingsPage.searchNone') }}
         </div>
       </template>
       <template v-if="runner" #actions>

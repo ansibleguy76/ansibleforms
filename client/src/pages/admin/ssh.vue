@@ -80,8 +80,8 @@ onMounted(async () => {
         </ul>
       </template>
     </AppAdminMulti>
-    <!-- KEY : the key pair ; the form draws the same tabs -->
-    <AppAdminSingle v-else-if="authenticated" :apiVersion="2" :settings="settings.ssh" :tabs="tabs" />
+    <!-- KEY : the key pair ; the form draws the same tabs, and the search box of the settings pages -->
+    <AppAdminSingle v-else-if="authenticated" :apiVersion="2" :settings="settings.ssh" :tabs="tabs" searchable />
   </AppSettingsPage>
 </template>
 <route lang="yaml">

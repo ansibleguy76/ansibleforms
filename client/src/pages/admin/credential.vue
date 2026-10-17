@@ -446,6 +446,132 @@ const newPassword = ref('');
 const userLabel = computed(() => labels.value.user || t('settings.fields.user'));
 const passwordLabel = computed(() => labels.value.password || t('settings.fields.password'));
 
+// ─── search ───────────────────────────────────────────────────────────────────
+// A word typed in the title line's search narrows every tab at once, as Settings > General's :
+// the fields of Details, Type, Login and Store whose label or help has it (a type or a store
+// option by its name and grey words), what uses it with it in one of its cells (AppLinkedTable's
+// search), each under its tab's name, the tabs set aside meanwhile.
+const search = ref('');
+const searching = computed(() => !!search.value.trim());
+const matches = (...texts) => {
+  const q = search.value.trim().toLowerCase();
+  return (
+    !q ||
+    texts.some((x) =>
+      String(x ?? '')
+        .toLowerCase()
+        .includes(q),
+    )
+  );
+};
+// each tab's fields : [key, label, help], only those its type shows (as the template's v-if)
+const tabFields = computed(() => {
+  const e = edit.value || {};
+  const conn = hasConnection.value;
+  const typed = !fromStore.value;
+  return {
+    details: [
+      ['name', t('settings.fields.name')],
+      ['description', t('settings.fields.description')],
+    ],
+    type: sortedTypes.value.map((kind) => [
+      `type-${kind}`,
+      t(`settings.credentials.type_${kind}`),
+      t(`settings.credentials.type_${kind}Hint`),
+    ]),
+    login: [
+      conn && isDatabase.value && ['db_type', t('settings.credentials.databaseType')],
+      conn && isLdap.value && ['servers', t('settings.ldap.servers'), t('settings.ldap.serversHelp')],
+      conn &&
+        !isLdap.value && [
+          'host',
+          isSmtp.value ? t('settings.mail.mailServer') : t('settings.fields.host'),
+          isSmtp.value ? t('settings.mail.mailServerHelp') : '',
+        ],
+      conn && [
+        'port',
+        isSmtp.value ? t('settings.mail.mailPort') : t('settings.fields.port'),
+        isSmtp.value ? t('settings.mail.mailPortHelp') : '',
+      ],
+      conn &&
+        (isSmtp.value || isLdap.value) && [
+          'tls',
+          isLdap.value ? t('settings.ldap.enableTls') : t('settings.mail.useTls'),
+          isLdap.value ? t('settings.ldap.enableTlsDesc') : t('settings.mail.useTlsHelp'),
+        ],
+      conn &&
+        isLdap.value &&
+        e.secure && ['ldap_ignore_certs', t('settings.ldap.ignoreCerts'), t('settings.ldap.ignoreCertsDesc')],
+      conn && ldapCerts.value && ['ldap_client_cert', t('settings.fields.certificate')],
+      conn && ldapCerts.value && ['ldap_ca_bundle', t('settings.fields.caBundle')],
+      conn && isDatabase.value && ['db_name', t('settings.credentials.database')],
+      hasServer.value && ['url', t('settings.credentials.server'), labels.value.serverHelp],
+      serverTls.value && ['skip_verify', t('settings.runners.skipVerify')],
+      serverTls.value &&
+        !e.ignore_certs && ['ca_bundle', t('settings.fields.caBundle'), t('settings.secretStores.caBundleHelp')],
+      !typed && ['from_store', t('settings.credentials.loginFromStore')],
+      typed && e.credential_type === 'entraid' && ['tenant_id', t('settings.oauth2.tenantId')],
+      typed && e.credential_type === 'oidc' && ['issuer', t('settings.oauth2.issuer')],
+      typed && hasUser.value && ['user', userLabel.value, isCyberark.value ? t('settings.secretStores.appIdHelp') : ''],
+      typed &&
+        isCyberark.value && [
+          'client_cert',
+          t('settings.secretStores.clientCert'),
+          t('settings.secretStores.clientCertHelp'),
+        ],
+      typed &&
+        isCyberark.value && [
+          'client_key',
+          t('settings.secretStores.clientKey'),
+          t('settings.credentials.clientKeyKeep'),
+        ],
+      typed &&
+        !isCyberark.value && [
+          'password',
+          passwordLabel.value,
+          labels.value.passwordHelp
+            ? `${labels.value.passwordHelp} ${t('settings.common.passwordKeep')}`
+            : t('settings.common.passwordKeep'),
+        ],
+      typed && isSso.value && ['redirect_uri', t('settings.oauth2.redirectUrl'), t('settings.oauth2.redirectHelp')],
+    ].filter(Boolean),
+    store: [
+      ['source-local', t('settings.credentials.secretLocal'), t('settings.credentials.secretLocalHint')],
+      ['source-store', t('settings.credentials.secretFromStore'), t('settings.credentials.secretFromStoreHint')],
+      fromStore.value && [
+        'secret_store',
+        t('settings.credentials.secretStore'),
+        t('settings.credentials.secretStoreHelp'),
+      ],
+      fromStore.value && ['secret_ref', t('settings.credentials.secretRef'), t('settings.credentials.secretRefHelp')],
+    ].filter(Boolean),
+  };
+});
+// the fields shown : those of a tab shown whose label or help has the text
+const shownFields = computed(() =>
+  Object.values(tabFields.value)
+    .flat()
+    .filter(([, ...texts]) => matches(...texts))
+    .map(([key]) => key),
+);
+const fieldShown = (key) => shownFields.value.includes(key);
+// a tab of fields with one of them shown
+const fieldsMatch = (key) => (tabFields.value[key] || []).some(([k]) => fieldShown(k));
+// a row of Used by with the text in one of its values (the table filters its cells the same way)
+const usedByMatch = computed(() => usedBy.value.some((r) => matches(...Object.values(r || {}))));
+// the tabs shown : the active one, or while searching each one with a match
+const shownTabs = computed(() =>
+  searching.value
+    ? tabs.value.filter((tab) => (tab.key === 'used-by' ? usedByMatch.value : fieldsMatch(tab.key)))
+    : tabs.value.filter((tab) => tab.key === shownTab.value),
+);
+const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
+// while searching, a tab's name over its matches (the first without the line above)
+const searchHead = (key) => {
+  const i = shownTabs.value.findIndex((tab) => tab.key === key);
+  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
+};
+
 // Delete asks first
 const confirmDelete = ref(false);
 
@@ -495,7 +621,11 @@ onMounted(async () => {
       :crumbs="crumbs"
       :description="t('settings.credentials.description')"
     >
-      <template v-if="credential" #tabs>
+      <!-- narrows every tab at once ; the search box of the other pages -->
+      <template v-if="credential" #headerActions>
+        <BsSearch v-model="search" />
+      </template>
+      <template v-if="credential && !searching" #tabs>
         <ul class="nav nav-tabs mb-0">
           <li v-for="tab in tabs" :key="tab.key" class="nav-item">
             <a class="nav-link" :class="{ active: shownTab === tab.key }" href="#" @click.prevent="activeTab = tab.key">
@@ -507,7 +637,7 @@ onMounted(async () => {
         </ul>
       </template>
       <!-- the record loading : its tabs as grey placeholders -->
-      <template v-else-if="!loaded" #tabs>
+      <template v-else-if="!loaded && !searching" #tabs>
         <AppSkeleton shape="tabs" :count="tabs.length" />
       </template>
       <template #default>
@@ -517,30 +647,30 @@ onMounted(async () => {
         </div>
         <!-- the record loading : its fields as grey placeholders, where they come -->
         <AppSkeleton v-else-if="!loaded && !credential" shape="form" :count="3" />
-        <!-- Used by : what names the credential ; a row opens it. Under it, the forms that build a
-             credential's name when they run and may use this one -->
-        <div v-else-if="credential && shownTab === 'used-by'">
-          <AppLinkedTable
-            :exportName="`${credential.name}-used-by`"
-            :columns="usedByColumns"
-            :rows="usedBy"
-            rowKey="to"
-            :to="(u) => u.to"
-            :empty="t('settings.linked.noUse')"
-          />
-          <p v-if="dynamicNote" class="form-text mt-3 mb-0">{{ dynamicNote }}</p>
-        </div>
-        <div v-else-if="credential && edit" class="af-credential-tab">
+        <div
+          v-if="credential && edit && ['details', 'type', 'login', 'store'].some(tabShown)"
+          class="af-credential-tab"
+        >
           <!-- a credential of the config seed : read only here -->
           <div v-if="managed" class="alert alert-secondary py-2">
             <FaIcon icon="lock" class="me-2" />{{ t('settings.common.seedManagedNotice') }}
           </div>
           <fieldset :disabled="managed">
             <!-- Details : what it is called -->
-            <template v-if="shownTab === 'details'">
+            <template v-if="tabShown('details')">
+              <template v-if="searching && searchHead('details')">
+                <hr v-if="!searchHead('details').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('details').first }"
+                >
+                  <FaIcon :icon="searchHead('details').tab.icon" class="me-1" />{{ searchHead('details').tab.label }}
+                </h6>
+              </template>
               <BsInput
                 class="af-credential-field"
                 v-model="edit.name"
+                v-show="fieldShown('name')"
                 icon="lock"
                 :isFloating="false"
                 :required="true"
@@ -549,6 +679,7 @@ onMounted(async () => {
               <BsInput
                 class="af-credential-field"
                 v-model="edit.description"
+                v-show="fieldShown('description')"
                 icon="info-circle"
                 :isFloating="false"
                 :required="true"
@@ -557,8 +688,22 @@ onMounted(async () => {
             </template>
             <!-- Type : what it is for, each its label and a few grey words ; set when it was made (what
                  uses it expects it) -->
-            <template v-else-if="shownTab === 'type'">
-              <div v-for="kind in sortedTypes" :key="kind" class="form-check af-short-check af-type-option">
+            <template v-if="tabShown('type')">
+              <template v-if="searching && searchHead('type')">
+                <hr v-if="!searchHead('type').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('type').first }"
+                >
+                  <FaIcon :icon="searchHead('type').tab.icon" class="me-1" />{{ searchHead('type').tab.label }}
+                </h6>
+              </template>
+              <div
+                v-for="kind in sortedTypes"
+                v-show="fieldShown(`type-${kind}`)"
+                :key="kind"
+                class="form-check af-short-check af-type-option"
+              >
                 <input
                   :id="'af-ctype-' + kind"
                   v-model="edit.credential_type"
@@ -576,7 +721,16 @@ onMounted(async () => {
             </template>
             <!-- Login : its user (read from a store : nothing here) ; a CyberArk's AppID,
                client certificate and key -->
-            <template v-else-if="shownTab === 'login'">
+            <template v-if="tabShown('login')">
+              <template v-if="searching && searchHead('login')">
+                <hr v-if="!searchHead('login').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('login').first }"
+                >
+                  <FaIcon :icon="searchHead('login').tab.icon" class="me-1" />{{ searchHead('login').tab.label }}
+                </h6>
+              </template>
               <!-- where it connects (SSH, a database, a mail server) : a database's type, the host
                    and port, a database's name, a mail server's TLS ; then the user and password -->
               <template v-if="hasConnection">
@@ -584,6 +738,7 @@ onMounted(async () => {
                   v-if="isDatabase"
                   class="af-credential-field"
                   v-model="edit.db_type"
+                  v-show="fieldShown('db_type')"
                   type="select"
                   icon="database"
                   :isFloating="false"
@@ -598,6 +753,7 @@ onMounted(async () => {
                   v-if="isLdap"
                   class="af-credential-field"
                   v-model="edit.host"
+                  v-show="fieldShown('servers')"
                   icon="server"
                   placeholder="dc1.corp.example"
                   :required="true"
@@ -609,6 +765,7 @@ onMounted(async () => {
                   v-else
                   class="af-credential-field"
                   v-model="edit.host"
+                  v-show="fieldShown('host')"
                   icon="server"
                   :placeholder="isSmtp ? 'smtp.example.com' : ''"
                   :isFloating="false"
@@ -619,6 +776,7 @@ onMounted(async () => {
                 <BsInput
                   class="af-credential-field"
                   v-model="edit.port"
+                  v-show="fieldShown('port')"
                   type="number"
                   icon="arrows-alt-v"
                   :isFloating="false"
@@ -626,7 +784,7 @@ onMounted(async () => {
                   :label="isSmtp ? t('settings.mail.mailPort') : t('settings.fields.port')"
                 />
                 <!-- an smtp or an ldap one : TLS -->
-                <div v-if="isSmtp || isLdap" class="form-check form-switch mb-3">
+                <div v-if="isSmtp || isLdap" v-show="fieldShown('tls')" class="form-check form-switch mb-3">
                   <input
                     id="af-credential-tls"
                     v-model="edit.secure"
@@ -645,7 +803,7 @@ onMounted(async () => {
                 <!-- an ldap one with TLS : whether its servers' certificates are checked, and against
                      which -->
                 <template v-if="isLdap && edit.secure">
-                  <div class="form-check form-switch mb-3">
+                  <div v-show="fieldShown('ldap_ignore_certs')" class="form-check form-switch mb-3">
                     <input
                       id="af-credential-ignore-certs"
                       v-model="edit.ignore_certs"
@@ -662,6 +820,7 @@ onMounted(async () => {
                     <BsInput
                       class="af-credential-field"
                       v-model="edit.client_cert"
+                      v-show="fieldShown('ldap_client_cert')"
                       type="textarea"
                       icon="certificate"
                       placeholder="-----BEGIN CERTIFICATE-----"
@@ -671,6 +830,7 @@ onMounted(async () => {
                     <BsInput
                       class="af-credential-field"
                       v-model="edit.ca_bundle"
+                      v-show="fieldShown('ldap_ca_bundle')"
                       type="textarea"
                       icon="certificate"
                       placeholder="-----BEGIN CERTIFICATE-----"
@@ -683,6 +843,7 @@ onMounted(async () => {
                   v-if="isDatabase"
                   class="af-credential-field"
                   v-model="edit.db_name"
+                  v-show="fieldShown('db_name')"
                   icon="database"
                   :isFloating="false"
                   :label="t('settings.credentials.database')"
@@ -694,6 +855,7 @@ onMounted(async () => {
                 <BsInput
                   class="af-credential-field"
                   v-model="edit.url"
+                  v-show="fieldShown('url')"
                   icon="globe"
                   :placeholder="CREDENTIAL_SERVER_EXAMPLE[type]"
                   :isFloating="false"
@@ -702,7 +864,7 @@ onMounted(async () => {
                   :label="t('settings.credentials.server')"
                 />
                 <template v-if="serverTls">
-                  <div class="form-check form-switch mb-3">
+                  <div v-show="fieldShown('skip_verify')" class="form-check form-switch mb-3">
                     <input
                       id="af-credential-skip-verify"
                       v-model="edit.ignore_certs"
@@ -718,6 +880,7 @@ onMounted(async () => {
                     v-if="!edit.ignore_certs"
                     class="af-credential-field"
                     v-model="edit.ca_bundle"
+                    v-show="fieldShown('ca_bundle')"
                     type="textarea"
                     icon="certificate"
                     placeholder="-----BEGIN CERTIFICATE-----"
@@ -727,7 +890,9 @@ onMounted(async () => {
                   />
                 </template>
               </template>
-              <p v-if="fromStore" class="form-text mb-0">{{ t('settings.credentials.loginFromStore') }}</p>
+              <p v-if="fromStore" v-show="fieldShown('from_store')" class="form-text mb-0">
+                {{ t('settings.credentials.loginFromStore') }}
+              </p>
               <template v-else>
                 <!-- an Entra ID one's tenant : the tenant id the app is in, first as in
                      the Entra admin center (tenant, client id, secret) -->
@@ -735,6 +900,7 @@ onMounted(async () => {
                   v-if="edit.credential_type === 'entraid'"
                   class="af-credential-field"
                   v-model="edit.tenant_id"
+                  v-show="fieldShown('tenant_id')"
                   icon="building"
                   :isFloating="false"
                   :required="true"
@@ -745,6 +911,7 @@ onMounted(async () => {
                   v-if="edit.credential_type === 'oidc'"
                   class="af-credential-field"
                   v-model="edit.issuer"
+                  v-show="fieldShown('issuer')"
                   icon="globe"
                   placeholder="https://id.example.com/realms/main"
                   :isFloating="false"
@@ -755,6 +922,7 @@ onMounted(async () => {
                   v-if="hasUser"
                   class="af-credential-field"
                   v-model="edit.user"
+                  v-show="fieldShown('user')"
                   icon="user"
                   :isFloating="false"
                   :help="isCyberark ? t('settings.secretStores.appIdHelp') : ''"
@@ -764,6 +932,7 @@ onMounted(async () => {
                   <BsInput
                     class="af-credential-field"
                     v-model="edit.client_cert"
+                    v-show="fieldShown('client_cert')"
                     type="textarea"
                     icon="certificate"
                     placeholder="-----BEGIN CERTIFICATE-----"
@@ -774,6 +943,7 @@ onMounted(async () => {
                   <BsInput
                     class="af-credential-field"
                     v-model="edit.client_key"
+                    v-show="fieldShown('client_key')"
                     type="textarea"
                     icon="key"
                     placeholder="-----BEGIN PRIVATE KEY-----"
@@ -787,6 +957,7 @@ onMounted(async () => {
                   v-else
                   class="af-credential-field"
                   v-model="newPassword"
+                  v-show="fieldShown('password')"
                   type="password"
                   icon="lock"
                   placeholder="**********"
@@ -804,6 +975,7 @@ onMounted(async () => {
                   v-if="isSso"
                   class="af-credential-field"
                   v-model="edit.redirect_uri"
+                  v-show="fieldShown('redirect_uri')"
                   icon="link"
                   :placeholder="defaultRedirect"
                   :isFloating="false"
@@ -813,7 +985,16 @@ onMounted(async () => {
               </template>
             </template>
             <!-- Store : the app's database, or a secret store and the place in it -->
-            <template v-else>
+            <template v-if="tabShown('store')">
+              <template v-if="searching && searchHead('store')">
+                <hr v-if="!searchHead('store').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('store').first }"
+                >
+                  <FaIcon :icon="searchHead('store').tab.icon" class="me-1" />{{ searchHead('store').tab.label }}
+                </h6>
+              </template>
               <div
                 v-for="opt in [
                   {
@@ -827,6 +1008,7 @@ onMounted(async () => {
                     hint: t('settings.credentials.secretFromStoreHint'),
                   },
                 ]"
+                v-show="fieldShown(`source-${opt.value}`)"
                 :key="opt.value"
                 class="form-check af-short-check"
               >
@@ -847,6 +1029,7 @@ onMounted(async () => {
                 <BsInput
                   class="af-credential-field mt-3"
                   v-model="edit.secret_store"
+                  v-show="fieldShown('secret_store')"
                   type="select"
                   icon="vault"
                   :isFloating="false"
@@ -859,6 +1042,7 @@ onMounted(async () => {
                 <BsInput
                   class="af-credential-field"
                   v-model="edit.secret_ref"
+                  v-show="fieldShown('secret_ref')"
                   icon="shield-alt"
                   :placeholder="t('settings.credentials.secretRefPlaceholder')"
                   :isFloating="false"
@@ -868,6 +1052,32 @@ onMounted(async () => {
               </template>
             </template>
           </fieldset>
+        </div>
+        <!-- Used by : what names the credential ; a row opens it. Under it, the forms that build a
+             credential's name when they run and may use this one -->
+        <div v-if="credential && tabShown('used-by')">
+          <template v-if="searching && searchHead('used-by')">
+            <hr v-if="!searchHead('used-by').first" class="mt-4 mb-0 af-search-line" />
+            <h6
+              class="fw-bold text-body-secondary af-search-tab"
+              :class="{ 'af-search-first': searchHead('used-by').first }"
+            >
+              <FaIcon :icon="searchHead('used-by').tab.icon" class="me-1" />{{ searchHead('used-by').tab.label }}
+            </h6>
+          </template>
+          <AppLinkedTable
+            :search="search"
+            :exportName="`${credential.name}-used-by`"
+            :columns="usedByColumns"
+            :rows="usedBy"
+            rowKey="to"
+            :to="(u) => u.to"
+            :empty="t('settings.linked.noUse')"
+          />
+          <p v-if="dynamicNote" class="form-text mt-3 mb-0">{{ dynamicNote }}</p>
+        </div>
+        <div v-if="searching && !shownTabs.length" class="text-body-secondary fst-italic">
+          {{ t('settings.settingsPage.searchNone') }}
         </div>
       </template>
       <template v-if="credential" #actions>
