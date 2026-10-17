@@ -717,7 +717,7 @@ export default {
     tooLarge: '图像过大，最大 256 KB',
   },
   version: {
-    title: 'Ansible Forms',
+    title: 'AnsibleForms',
     license:
       '本程序是自由软件：您可以根据自由软件基金会发布的 GNU 通用公共许可证（第 3 版或您选择的任何更高版本）的条款重新分发和/或修改它。',
     warranty:
@@ -1099,7 +1099,7 @@ export default {
       banner_danger: '危险',
       bannerClose: '关闭',
       appName: '应用名称',
-      appNameHelp: '显示在浏览器标签页和登录页面；留空则为 Ansible Forms。',
+      appNameHelp: '显示在浏览器标签页和登录页面；留空则为 AnsibleForms。',
       bannerStart: '开始日期',
       bannerStartHelp: '从此刻起显示。留空则立即显示。',
       bannerEnd: '结束日期',
@@ -1844,7 +1844,7 @@ export default {
       duplicateRoleName: "角色名称 '{name}' 重复，角色名称必须唯一",
       reservedRoleName: "'{name}' 是保留的角色名称，不能用于其他角色",
       publicRootUrl: '公共根 URL',
-      publicRootUrlHelp: '此 URL 用于公开访问 Ansible Forms，用于反向链接和邮件中。',
+      publicRootUrlHelp: '此 URL 用于公开访问 AnsibleForms，用于反向链接和邮件中。',
       defaultLanguage: '默认语言',
       defaultLanguageHelp: '尚未选择语言的新用户使用的默认语言。',
       defaultTheme: '默认主题',

@@ -735,7 +735,7 @@ export default {
     tooLarge: 'Imatge massa gran, la mida màxima és 256 KB',
   },
   version: {
-    title: 'Ansible Forms',
+    title: 'AnsibleForms',
     license:
       'Aquest programa és programari lliure: el podeu redistribuir i/o modificar segons els termes de la Llicència Pública General de GNU tal com la publica la Free Software Foundation, ja sigui la versió 3 de la Llicència o (a la vostra elecció) qualsevol versió posterior.',
     warranty:
@@ -1136,7 +1136,7 @@ export default {
       bannerClose: 'Tancar',
       appName: "Nom de l'aplicació",
       appNameHelp:
-        "Es mostra a la pestanya del navegador i a la pàgina d'inici de sessió. Deixa-ho buit per a Ansible Forms.",
+        "Es mostra a la pestanya del navegador i a la pàgina d'inici de sessió. Deixa-ho buit per a AnsibleForms.",
       bannerStart: "Data d'inici",
       bannerStartHelp: "Es mostra des d'aquest moment. Deixa-ho buit per mostrar-lo ara.",
       bannerEnd: 'Data de final',
@@ -1947,7 +1947,7 @@ export default {
       reservedRoleName: "'{name}' és un nom de rol reservat i no es pot utilitzar per a un altre rol",
       publicRootUrl: 'URL arrel pública',
       publicRootUrlHelp:
-        "Aquesta URL s'utilitza per a l'accés públic a Ansible Forms, als enllaços de retorn i als correus.",
+        "Aquesta URL s'utilitza per a l'accés públic a AnsibleForms, als enllaços de retorn i als correus.",
       defaultLanguage: 'Idioma predeterminat',
       defaultLanguageHelp: "L'idioma predeterminat per als usuaris nous que encara no n'han triat cap.",
       defaultTheme: 'Tema predeterminat',

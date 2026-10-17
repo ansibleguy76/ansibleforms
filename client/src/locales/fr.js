@@ -738,7 +738,7 @@ export default {
     tooLarge: 'Image trop grande, 256 Ko au maximum',
   },
   version: {
-    title: 'Ansible Forms',
+    title: 'AnsibleForms',
     license:
       'Ce programme est un logiciel libre: vous pouvez le redistribuer et/ou le modifier selon les termes de la GNU General Public License telle que publiee par la Free Software Foundation, soit la version 3 de la licence, soit (a votre choix) toute version ulterieure.',
     warranty:
@@ -1138,7 +1138,7 @@ export default {
       banner_danger: 'Danger',
       bannerClose: 'Fermer',
       appName: "Nom de l'application",
-      appNameHelp: "Affiché dans l'onglet du navigateur et sur la page de connexion. Laissez vide pour Ansible Forms.",
+      appNameHelp: "Affiché dans l'onglet du navigateur et sur la page de connexion. Laissez vide pour AnsibleForms.",
       bannerStart: 'Date de début',
       bannerStartHelp: "Affichée à partir de ce moment. Laissez vide pour l'afficher tout de suite.",
       bannerEnd: 'Date de fin',
@@ -1950,7 +1950,7 @@ export default {
       reservedRoleName: "'{name}' est un nom de role reserve et ne peut pas etre utilise pour une autre role",
       publicRootUrl: 'URL racine publique',
       publicRootUrlHelp:
-        "Cette URL est utilisee pour l'acces public a Ansible Forms, notamment dans les liens retour et les e-mails.",
+        "Cette URL est utilisee pour l'acces public a AnsibleForms, notamment dans les liens retour et les e-mails.",
       defaultLanguage: 'Langue par defaut',
       defaultLanguageHelp: "La langue par defaut pour les nouveaux utilisateurs qui n'ont pas encore choisi de langue.",
       defaultTheme: 'Theme par defaut',

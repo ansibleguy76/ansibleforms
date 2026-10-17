@@ -2,7 +2,7 @@
 /******************************************************************/
 /*                                                                */
 /*  Settings > Appearance > Name : the application's name, in the */
-/*  browser tab and on the sign-in page ; Ansible Forms without   */
+/*  browser tab and on the sign-in page ; AnsibleForms without   */
 /*  one. Kept in the settings row.                                */
 /*                                                                */
 /******************************************************************/
@@ -91,7 +91,7 @@ onMounted(async () => {
             :isFloating="false"
             icon="font"
             v-model="look.app_name"
-            placeholder="Ansible Forms"
+            placeholder="AnsibleForms"
             :label="t('settings.interface.appName')"
             :help="t('settings.interface.appNameHelp')"
           />

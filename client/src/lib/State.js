@@ -104,7 +104,7 @@ var State = {
     // the date format for everyone : only while this browser has not chosen its own
     if (!Time.hasOwnDateFormat()) store.dateFormat = data.dateFormat || 'YYYY-MM-DD';
     store.appConfigLoaded = true;
-    document.title = data.appName || 'Ansible Forms';
+    document.title = data.appName || 'AnsibleForms';
   },
   // the header's own links (Settings > Appearance > Links > Custom) : signed in only, so not
   // in the public /api/v2/app/config

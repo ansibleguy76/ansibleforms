@@ -733,7 +733,7 @@ export default {
     tooLarge: 'Afbeelding te groot, maximaal 256 KB',
   },
   version: {
-    title: 'Ansible Forms',
+    title: 'AnsibleForms',
     license:
       'Dit programma is vrije software: u mag het herdistribueren en/of wijzigen onder de voorwaarden van de GNU General Public License zoals gepubliceerd door de Free Software Foundation, versie 3 van de licentie, of (naar uw keuze) een latere versie.',
     warranty:
@@ -1130,7 +1130,7 @@ export default {
       banner_danger: 'Gevaar',
       bannerClose: 'Sluiten',
       appName: 'Applicatienaam',
-      appNameHelp: 'Getoond in het browsertabblad en op de aanmeldpagina. Laat leeg voor Ansible Forms.',
+      appNameHelp: 'Getoond in het browsertabblad en op de aanmeldpagina. Laat leeg voor AnsibleForms.',
       bannerStart: 'Startdatum',
       bannerStartHelp: 'Getoond vanaf dit moment. Laat leeg om meteen te tonen.',
       bannerEnd: 'Einddatum',
@@ -1933,7 +1933,7 @@ export default {
       reservedRoleName: "'{name}' is een gereserveerde rolnaam en kan niet voor een andere rol worden gebruikt",
       publicRootUrl: 'Publieke root URL',
       publicRootUrlHelp:
-        'Deze URL wordt gebruikt voor publieke toegang tot Ansible Forms, gebruikt in terugkoppelingen en e-mails.',
+        'Deze URL wordt gebruikt voor publieke toegang tot AnsibleForms, gebruikt in terugkoppelingen en e-mails.',
       defaultLanguage: 'Standaardtaal',
       defaultLanguageHelp: 'De standaardtaal voor nieuwe gebruikers die nog geen taal hebben gekozen.',
       defaultTheme: 'Standaardthema',
