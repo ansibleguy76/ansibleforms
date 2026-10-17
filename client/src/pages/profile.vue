@@ -17,7 +17,8 @@ import { ref, computed, watch, onBeforeUnmount } from 'vue';
 import axios from 'axios';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter, onBeforeRouteUpdate } from 'vue-router';
+import { askToLeave } from '@/lib/unsavedPrompt';
 import { useAppStore } from '@/stores/app';
 import Theme from '@/lib/Theme';
 import Helpers from '@/lib/Helpers';
@@ -33,6 +34,7 @@ import { neverExpires } from '@/lib/apiTokens';
 import { rememberSsoOrigin, ssoSettled, ssoReturning } from '@/lib/ssoReturn';
 import { hasPermission } from '@/lib/permission';
 import { useRouteTab } from '@/composables/useRouteTab';
+import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import {
   notificationsSupported,
   notificationPermission,
@@ -114,24 +116,34 @@ const permissionGroups = computed(() => {
   // showExtraVars (capital V) is the server's legacy spelling of showExtravars, listed under
   // jobs : not shown twice
   const grouped = new Set([...PERMISSION_GROUPS.flatMap((g) => g.keys), 'showExtraVars']);
-  return PERMISSION_GROUPS.map((g) => {
-    const keys = g.keys.filter((k) => k in opts);
-    if (g.name === 'other') keys.push(...Object.keys(opts).filter((k) => !grouped.has(k)));
-    // what applies (config/roles.js effectiveRoleOption) : an option included in another that is on
-    // is allowed, one missing the option it needs is not - and the row says why
-    const options = keys.map((k) => {
-      const eff = effectiveRoleOption(opts, k);
-      const note = eff.includedBy
-        ? t('settings.settingsPage.roleOptionIncluded', { option: roleOptionLabel(t, eff.includedBy) })
-        : eff.needs
-          ? t('settings.settingsPage.roleOptionNeeds', { option: roleOptionLabel(t, eff.needs) })
-          : '';
-      return { key: k, description: roleOptionDescription(t, te, k), value: eff.value, note };
-    });
-    return { name: g.name, title: g.title(), options, allowed: options.filter((o) => o.value).length };
-  }).filter((g) => g.options.length);
+  return (
+    PERMISSION_GROUPS.map((g) => {
+      const keys = g.keys.filter((k) => k in opts);
+      if (g.name === 'other') keys.push(...Object.keys(opts).filter((k) => !grouped.has(k)));
+      // what applies (config/roles.js effectiveRoleOption) : an option included in another that is on
+      // is allowed, one missing the option it needs is not - and the row says why
+      const options = keys.map((k) => {
+        const eff = effectiveRoleOption(opts, k);
+        const note = eff.includedBy
+          ? t('settings.settingsPage.roleOptionIncluded', { option: roleOptionLabel(t, eff.includedBy) })
+          : eff.needs
+            ? t('settings.settingsPage.roleOptionNeeds', { option: roleOptionLabel(t, eff.needs) })
+            : '';
+        return {
+          key: k,
+          description: roleOptionDescription(t, te, k),
+          value: eff.value,
+          note,
+          access: eff.value ? t('profilePage.allowed') : t('profilePage.notAllowed'),
+        };
+      });
+      return { name: g.name, title: g.title(), options, allowed: options.filter((o) => o.value).length };
+    })
+      .filter((g) => g.options.length)
+      // the tabs in alphabetical order of their title, in the user's language ; Other last
+      .sort((a, b) => (a.name === 'other') - (b.name === 'other') || a.title.localeCompare(b.title, locale.value))
+  );
 });
-const currentLanguage = computed(() => languages.find((l) => l.code === locale.value) || fallbackLanguage);
 
 const view = computed(() => VIEWS.find((v) => v.name === currentView.value));
 // desktop notifications are offered only to a user who sees its jobs
@@ -143,15 +155,41 @@ const prefTabs = computed(() => [
   { key: 'datetime', label: t('profilePage.tabDateTime'), icon: 'clock' },
   ...(mayNotify.value ? [{ key: 'notifications', label: t('profilePage.tabNotifications'), icon: 'bell' }] : []),
 ]);
-const { activeTab: prefTab, tabLink: prefTabLink } = useRouteTab('appearance', (key) =>
-  prefTabs.value.some((x) => x.key === key),
+// a permission group's table : the option, what it allows (and why it applies or not), whether the
+// user has it ; the description searched with its note
+const permissionColumns = computed(() => [
+  { key: 'key', label: t('profilePage.columnSetting'), keep: true },
+  { key: 'description', label: t('profilePage.columnDescription'), value: (o) => `${o.description} ${o.note}` },
+  { key: 'access', label: t('profilePage.columnAccess'), keep: true, end: true, class: 'text-end' },
+]);
+// a permission group's icon : as its place in the app
+const PERMISSION_ICONS = { settings: 'gear', designer: 'pen-to-square', jobs: 'history', access: 'user-shield' };
+const permissionIcon = (name) => PERMISSION_ICONS[name] || 'ellipsis';
+// the open view's tabs : Preferences' ; Password one tab of its own (every settings page a table or
+// a page in tabs) ; the others none (cards of their own, or the API token's table)
+const viewTabs = computed(() => {
+  if (currentView.value === 'preferences') return prefTabs.value;
+  if (currentView.value === 'password') return [{ key: 'change', label: t('nav.changePassword'), icon: 'key' }];
+  // a tab per group of options, how many of them are allowed beside its name
+  if (currentView.value === 'permissions')
+    return permissionGroups.value.map((g) => ({
+      key: g.name,
+      label: g.title,
+      icon: permissionIcon(g.name),
+      count: `${g.allowed}/${g.options.length}`,
+    }));
+  return [];
+});
+const { activeTab: prefTab, tabLink: prefTabLink } = useRouteTab(
+  () => viewTabs.value[0]?.key || 'appearance',
+  (key) => viewTabs.value.some((x) => x.key === key),
 );
-// the title's steps on Preferences : the view, then its tab
+// the title's steps on a view in tabs : the view, then its tab
 const crumbs = computed(() => {
-  if (currentView.value !== 'preferences') return undefined;
-  const tab = prefTabs.value.find((x) => x.key === prefTab.value) || prefTabs.value[0];
+  if (!viewTabs.value.length) return undefined;
+  const tab = viewTabs.value.find((x) => x.key === prefTab.value) || viewTabs.value[0];
   return [
-    { title: view.value.label(), icon: view.value.icon, to: prefTabLink('appearance') },
+    { title: view.value.label(), icon: view.value.icon, to: prefTabLink(viewTabs.value[0].key) },
     { title: tab.label, icon: tab.icon, to: prefTabLink(tab.key) },
   ];
 });
@@ -205,6 +243,13 @@ const TOKEN_LIFETIMES = computed(() => {
   if (canNeverExpire.value) list.push('never');
   return list;
 });
+// the lifetimes as the select shows them : 90 days ... , Never expires
+const lifetimeOptions = computed(() =>
+  TOKEN_LIFETIMES.value.map((d) => ({
+    value: d,
+    label: d === 'never' ? t('apiTokens.neverExpires') : t('profilePage.token.days', { n: d }),
+  })),
+);
 const tokenForm = ref({ days: 90, password: '', name: '' });
 axios
   .get('/api/v2/auth/settings')
@@ -431,18 +476,6 @@ const timezone = computed({
 const canNotify = notificationsSupported();
 const notifyOn = ref(notificationsActive());
 const notifyBlocked = ref(notificationPermission() === 'denied');
-async function onNotifySwitch(e) {
-  if (!e.target.checked) {
-    turnNotificationsOff();
-    notifyOn.value = false;
-    return;
-  }
-  const answer = await turnNotificationsOn();
-  notifyOn.value = answer === 'granted';
-  notifyBlocked.value = answer === 'denied';
-  // the switch follows the answer : refused or dismissed, it is off again
-  e.target.checked = notifyOn.value;
-}
 const dateFormat = computed({
   get: () => Time.datePattern(),
   set: (value) => Time.setDateFormat(value),
@@ -457,31 +490,163 @@ const nowTimer = setInterval(() => (now.value = new Date()), 30000);
 onBeforeUnmount(() => clearInterval(nowTimer));
 // a color still hovered when the page goes : the user's theme again
 onBeforeUnmount(() => Theme.endPreview());
-const timezoneNow = computed(() => Time.format(now.value, 'YYYY-MM-DD HH:mm'));
-// the zone's offset from UTC now (summer time included), as UTC+02:00 ; UTC itself needs none
-const timezoneOffset = computed(() => {
-  const zone = Time.zone();
-  if (zone === 'UTC') return '';
-  try {
-    const part = new Intl.DateTimeFormat('en-US', { timeZone: zone, timeZoneName: 'longOffset' })
-      .formatToParts(now.value)
-      .find((p) => p.type === 'timeZoneName')?.value;
-    // 'GMT+02:00', or plain 'GMT' for a zone on UTC time
-    return part ? part.replace('GMT', 'UTC').replace(/^UTC$/, 'UTC+00:00') : '';
-  } catch {
-    return '';
-  }
-});
 
 function setFormsView(mode) {
   formsView.value = mode;
   Helpers.setCookie('forms_view_mode', mode, 365);
 }
 
-function pickColor(hex) {
-  themeColor.value = hex;
-  setTheme('color');
+// ─── preferences : searched ───────────────────────────────────────────────────
+// a word typed in the title line's search : the tabs set aside, each setting whose label or help
+// has it shown under its tab's name, as on Settings > Appearance > Defaults
+const prefSearch = ref('');
+const prefSearching = computed(() => !!prefSearch.value.trim());
+const PREF_GROUPS = {
+  appearance: ['language', 'theme', 'forms'],
+  datetime: ['timezone', 'date', 'preview'],
+  notifications: ['notify'],
+};
+const prefTexts = computed(() => ({
+  language: [t('profilePage.language'), t('profilePage.languageHint')],
+  theme: [t('profilePage.theme'), t('profilePage.themeHint')],
+  forms: [t('profilePage.formsView'), t('profilePage.formsViewHint')],
+  timezone: [t('profilePage.timezone'), t('profilePage.timezoneHint')],
+  date: [t('profilePage.dateFormat'), t('profilePage.dateFormatHint')],
+  preview: [t('profilePage.preview')],
+  notify: [t('profilePage.notifications'), t('profilePage.notificationsHint')],
+}));
+function prefMatches(key) {
+  const q = prefSearch.value.trim().toLowerCase();
+  return !q || prefTexts.value[key].some((x) => String(x).toLowerCase().includes(q));
 }
+// a tab's settings shown now : searching, those that match ; else its own, when it is open
+const prefGroupShown = (group) =>
+  prefSearching.value
+    ? PREF_GROUPS[group].filter((k) => prefMatches(k))
+    : prefTab.value === group
+      ? PREF_GROUPS[group]
+      : [];
+const prefShown = (key) => Object.keys(PREF_GROUPS).some((g) => prefGroupShown(g).includes(key));
+// the room above a setting : none above the first one shown in its tab
+const prefSpaced = (key) => {
+  const group = Object.keys(PREF_GROUPS).find((g) => PREF_GROUPS[g].includes(key));
+  return prefGroupShown(group)[0] !== key;
+};
+// searching : the tabs with a match (Notifications only for a user who sees its jobs)
+const prefHeads = computed(() =>
+  Object.keys(PREF_GROUPS).filter((g) => (g !== 'notifications' || mayNotify.value) && prefGroupShown(g).length),
+);
+
+// ─── preferences : a draft, saved by Save ─────────────────────────────────────
+// What the user picks is a draft until Save, as on every settings page : then each is applied
+// and kept in this browser (the language and forms view in cookies, the theme, zone, date format
+// and notifications in its storage). Leaving with a change unsaved asks first.
+function currentPreferences() {
+  return {
+    language: locale.value,
+    theme: themeChoice.value,
+    color: themeColor.value,
+    formsView: formsView.value,
+    timezone: store.timezone || 'UTC',
+    dateFormat: Time.datePattern(),
+    notify: notifyOn.value,
+  };
+}
+const draft = ref(currentPreferences());
+const savedPrefs = ref(currentPreferences());
+const prefsDirty = computed(() => JSON.stringify(draft.value) !== JSON.stringify(savedPrefs.value));
+const draftLanguage = computed(() => languages.find((l) => l.code === draft.value.language) || fallbackLanguage);
+// changed elsewhere meanwhile (the header's theme or language) : read again, when nothing is unsaved
+watch([() => store.theme, locale], () => {
+  if (prefsDirty.value) return;
+  draft.value = currentPreferences();
+  savedPrefs.value = currentPreferences();
+});
+
+/**
+ * Applies the draft : each preference changed is set and kept in this browser ; the
+ * notifications ask the browser first, the first time (refused, they stay off).
+ */
+async function savePreferences() {
+  const d = draft.value;
+  const was = savedPrefs.value;
+  if (d.language !== was.language) setLanguage(d.language);
+  if (d.theme !== was.theme || (d.theme === 'color' && d.color !== was.color)) {
+    themeColor.value = d.color;
+    setTheme(d.theme);
+  }
+  if (d.formsView !== was.formsView) setFormsView(d.formsView);
+  if (d.timezone !== was.timezone) timezone.value = d.timezone;
+  if (d.dateFormat !== was.dateFormat) dateFormat.value = d.dateFormat;
+  if (d.notify !== was.notify) {
+    if (d.notify) {
+      const answer = await turnNotificationsOn();
+      notifyOn.value = answer === 'granted';
+      notifyBlocked.value = answer === 'denied';
+    } else {
+      turnNotificationsOff();
+      notifyOn.value = false;
+    }
+  }
+  draft.value = currentPreferences();
+  savedPrefs.value = currentPreferences();
+  toast.success(t('profilePage.preferencesSaved'));
+}
+useUnsavedGuard(prefsDirty, () => t('settings.common.unsavedChanges'), savePreferences);
+// another view of the profile (its menu) is the same page to the router : asked there too
+onBeforeRouteUpdate((to, from) => {
+  if (from.params.view !== 'preferences' || to.params.view === 'preferences' || !prefsDirty.value) return true;
+  return askToLeave(t('settings.common.unsavedChanges'), savePreferences, () => prefsDirty.value);
+});
+
+// ─── account and permissions : searched ───────────────────────────────────────
+// a word typed in the title line's search narrows the view : the account's rows by their label or
+// a value (a group, a role, an LDAP or SSO group's whole name), the permissions by their option,
+// description or note ; another view starts with none
+const viewSearch = ref('');
+const viewSearching = computed(() => !!viewSearch.value.trim());
+watch(currentView, () => {
+  viewSearch.value = '';
+  prefSearch.value = '';
+});
+const hit = (...texts) => {
+  const q = viewSearch.value.trim().toLowerCase();
+  return (
+    !q ||
+    texts.some((x) =>
+      String(x ?? '')
+        .toLowerCase()
+        .includes(q),
+    )
+  );
+};
+// the account's rows : each shown when its label or one of its values has the word ; a row of
+// several values (groups, roles) keeps only those that have it, unless its label does
+const accountRows = computed(() => {
+  const groups = groupsKnown.value ? profile.value.groups : [];
+  const many = (label, values) => (hit(label) ? values : values.filter((v) => hit(v)));
+  return {
+    username: hit(t('profilePage.username'), profile.value.username),
+    loginType: hit(t('profilePage.loginType'), loginType.value.label),
+    groups: hit(t('profilePage.groups')) || groups.some((g) => hit(g)),
+    shownGroups: many(t('profilePage.groups'), groups),
+    roles: hit(t('profilePage.roles')) || shownRoles.value.some((r) => hit(r)),
+    shownRolesFiltered: many(t('profilePage.roles'), shownRoles.value),
+  };
+});
+const accountNone = computed(
+  () =>
+    viewSearching.value &&
+    !accountRows.value.username &&
+    !accountRows.value.loginType &&
+    !accountRows.value.groups &&
+    !accountRows.value.roles,
+);
+// the permission groups with a row that matches, as their tables filter them (AppLinkedTable : a
+// row by its cells)
+const shownPermissionGroups = computed(() =>
+  permissionGroups.value.filter((g) => g.options.some((o) => hit(o.key, o.description, o.note, o.access))),
+);
 
 async function changePassword() {
   if (!canSavePassword.value) return;
@@ -514,15 +679,23 @@ async function changePassword() {
         :icon="view.icon"
         :description="pageDescription"
         :crumbs="crumbs"
-        :bare="['account', 'permissions'].includes(currentView)"
+        :bare="currentView === 'account'"
       >
-        <!-- Preferences' tabs, above the page's card -->
-        <template v-if="currentView === 'preferences'" #tabs>
+        <!-- Preferences' tabs, Password's one, above the page's card -->
+        <template
+          v-if="
+            viewTabs.length &&
+            !(currentView === 'preferences' && prefSearching) &&
+            !(currentView === 'permissions' && viewSearching)
+          "
+          #tabs
+        >
           <ul class="nav nav-tabs mb-0">
-            <li v-for="tab in prefTabs" :key="tab.key" class="nav-item">
+            <li v-for="tab in viewTabs" :key="tab.key" class="nav-item">
               <a class="nav-link" :class="{ active: prefTab === tab.key }" href="#" @click.prevent="prefTab = tab.key">
                 <FaIcon :icon="tab.icon" class="me-1" />
                 {{ tab.label }}
+                <span v-if="tab.count !== undefined" class="badge af-tab-count ms-1">{{ tab.count }}</span>
               </a>
             </li>
           </ul>
@@ -535,16 +708,16 @@ async function changePassword() {
                  the permissions tables' headers, without a border-bottom of its own : the list
                  group under it draws that line (a list group in a card takes the card's border
                  on top), so both would double it -->
-            <div class="card-body d-flex align-items-center af-identity py-3">
+            <div class="card-body d-flex align-items-center af-identity py-2">
               <span class="fw-semibold text-truncate">{{ profile.displayName || profile.username }}</span>
             </div>
             <!-- the details : a label column and its values, one row each -->
             <ul class="list-group list-group-flush">
-              <li class="list-group-item af-detail">
+              <li v-show="accountRows.username" class="list-group-item af-detail">
                 <span class="af-detail-label">{{ t('profilePage.username') }}</span>
                 <span class="af-detail-value">{{ profile.username }}</span>
               </li>
-              <li class="list-group-item af-detail">
+              <li v-show="accountRows.loginType" class="list-group-item af-detail">
                 <span class="af-detail-label">{{ t('profilePage.loginType') }}</span>
                 <span class="af-detail-value"
                   ><FaIcon :icon="loginType.icon" class="text-body-secondary" style="margin-right: 0.2rem" />{{
@@ -552,7 +725,7 @@ async function changePassword() {
                   }}</span
                 >
               </li>
-              <li class="list-group-item af-detail">
+              <li v-show="accountRows.groups" class="list-group-item af-detail">
                 <span class="af-detail-label"
                   >{{ t('profilePage.groups') }}
                   <span v-if="groupsKnown" class="af-count">{{ profile.groups.length }}</span></span
@@ -561,22 +734,25 @@ async function changePassword() {
                      until then, rather than "none yet" -->
                 <span v-if="!groupsKnown" class="af-detail-value"><AppSkeleton shape="inline" width="7rem" /></span>
                 <span v-else class="af-detail-value">
-                  <span v-for="g in profile.groups" :key="g" class="badge af-chip"
+                  <span v-for="g in accountRows.shownGroups" :key="g" class="badge af-chip"
                     ><FaIcon icon="users" class="me-1" />{{ g }}</span
                   >
                   <span v-if="!profile.groups.length" class="text-body-secondary">{{ t('profilePage.noneYet') }}</span>
                 </span>
               </li>
-              <li class="list-group-item af-detail">
+              <li v-show="accountRows.roles" class="list-group-item af-detail">
                 <span class="af-detail-label"
                   >{{ t('profilePage.roles') }} <span class="af-count">{{ shownRoles.length }}</span></span
                 >
                 <span class="af-detail-value">
-                  <span v-for="r in shownRoles" :key="r" class="badge af-chip"
+                  <span v-for="r in accountRows.shownRolesFiltered" :key="r" class="badge af-chip"
                     ><FaIcon icon="user-shield" class="me-1" />{{ r }}</span
                   >
                   <span v-if="!shownRoles.length" class="text-body-secondary">{{ t('profilePage.noneYet') }}</span>
                 </span>
+              </li>
+              <li v-if="accountNone" class="list-group-item text-body-secondary fst-italic">
+                {{ t('settings.settingsPage.searchNone') }}
               </li>
             </ul>
           </div>
@@ -584,142 +760,183 @@ async function changePassword() {
 
         <!-- ===================== preferences ===================== -->
         <template v-else-if="currentView === 'preferences'">
-          <!-- Appearance : the language, the theme and the forms view -->
-          <div v-if="prefTab === 'appearance'">
-            <label class="form-label fw-bold">{{ t('profilePage.language') }}</label>
-            <div class="input-group af-field">
-              <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="language" /></span>
-              <button
-                class="form-select d-flex align-items-center gap-2 text-start"
-                type="button"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-                :aria-label="t('profilePage.language')"
+          <!-- Appearance (the language, the theme, the forms view), Date and time (the zone, the date
+               format, the time now in them), Notifications : the open tab ; searching, the matches
+               of all, each under its tab's name, as on Settings > General -->
+          <div v-if="prefGroupShown('appearance').length">
+            <template v-if="prefSearching">
+              <hr v-if="prefHeads[0] !== 'appearance'" class="mt-4 mb-0 af-search-line" />
+              <h6
+                class="fw-bold text-body-secondary af-search-tab"
+                :class="{ 'af-search-first': prefHeads[0] === 'appearance' }"
               >
-                <AppFlag :code="currentLanguage.code" />{{ currentLanguage.label }}
-              </button>
-              <ul class="dropdown-menu w-100">
-                <li v-for="lang in languages" :key="lang.code">
-                  <button
-                    type="button"
-                    class="dropdown-item d-flex align-items-center gap-2"
-                    :class="{ active: locale === lang.code }"
-                    @click="setLanguage(lang.code)"
-                  >
-                    <AppFlag :code="lang.code" />{{ lang.label }}
-                  </button>
-                </li>
-              </ul>
-            </div>
-            <div class="form-text">{{ t('profilePage.languageHint') }}</div>
-            <label class="form-label fw-bold mt-4">{{ t('profilePage.theme') }}</label>
-            <div class="input-group af-field">
-              <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="palette" /></span>
-              <select
-                class="form-select"
-                :value="themeChoice"
-                :aria-label="t('profilePage.theme')"
-                @change="setTheme($event.target.value)"
-              >
-                <option value="system">{{ t('settings.settingsPage.themeSystem') }}</option>
-                <option v-for="th in Theme.themes()" :key="th.value" :value="th.value">{{ th.title }}</option>
-              </select>
-            </div>
-            <div v-if="store.theme === 'color'" class="af-palette mt-3">
-              <button
-                v-for="c in palette"
-                :key="c"
-                type="button"
-                class="af-swatch"
-                :class="{ active: themeColor === c }"
-                :style="{ backgroundColor: c }"
-                :aria-label="c"
-                @click="pickColor(c)"
-                @mouseenter="Theme.previewColor(c)"
-                @mouseleave="Theme.endPreview()"
-                @focus="Theme.previewColor(c)"
-                @blur="Theme.endPreview()"
-              >
-                <FaIcon v-if="themeColor === c" icon="check" />
-              </button>
-            </div>
-            <div class="form-text">{{ t('profilePage.themeHint') }}</div>
-            <!-- how the forms page lists the forms -->
-            <label class="form-label fw-bold mt-4">{{ t('profilePage.formsView') }}</label>
-            <div class="input-group af-field">
-              <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="table-cells-large" /></span>
-              <select
-                class="form-select"
-                :value="formsView"
-                :aria-label="t('profilePage.formsView')"
-                @change="setFormsView($event.target.value)"
-              >
-                <option value="tiles">{{ t('forms.tiles') }}</option>
-                <option value="list">{{ t('forms.list') }}</option>
-              </select>
-            </div>
-            <div class="form-text">{{ t('profilePage.formsViewHint') }}</div>
-          </div>
-          <!-- Date and time : the time zone and the date format, and the time now in them -->
-          <div v-else-if="prefTab === 'datetime'">
-            <label class="form-label fw-bold">{{ t('profilePage.timezone') }}</label>
-            <div class="input-group af-field">
-              <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="clock" /></span>
-              <select v-model="timezone" class="form-select" :aria-label="t('profilePage.timezone')">
-                <option value="UTC">UTC</option>
-                <option value="browser">{{ t('profilePage.timezoneBrowser', { zone: browserZone }) }}</option>
-                <optgroup :label="t('profilePage.timezoneAll')">
-                  <option v-for="z in allZones" :key="z" :value="z">{{ z }}</option>
-                </optgroup>
-              </select>
-            </div>
-            <div class="form-text">{{ t('profilePage.timezoneHint') }}</div>
-            <!-- the date format : how the date part of every date reads -->
-            <label class="form-label fw-bold mt-4">{{ t('profilePage.dateFormat') }}</label>
-            <div class="input-group af-field">
-              <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="calendar" /></span>
-              <select v-model="dateFormat" class="form-select" :aria-label="t('profilePage.dateFormat')">
-                <option v-for="f in dateFormats" :key="f" :value="f">{{ dayjs(now).format(f) }} ({{ f }})</option>
-              </select>
-            </div>
-            <div class="form-text">{{ t('profilePage.dateFormatHint') }}</div>
-            <!-- the time now in the picked zone and format : how dates read across the app -->
-            <label class="form-label fw-bold d-block mt-4">{{ t('profilePage.preview') }}</label>
-            <div class="af-tz-now">
-              <span class="af-tz-now-icon"><FaIcon icon="clock" /></span>
-              <span class="d-flex flex-column">
-                <span class="af-tz-now-time">{{ timezoneNow }}</span>
-                <small class="text-body-secondary"
-                  >{{ Time.zone() }}<template v-if="timezoneOffset"> · {{ timezoneOffset }}</template></small
+                <FaIcon :icon="viewTabs.find((x) => x.key === 'appearance').icon" class="me-1" />{{
+                  viewTabs.find((x) => x.key === 'appearance').label
+                }}
+              </h6>
+            </template>
+            <div v-show="prefShown('language')" :class="{ 'mt-4': prefSpaced('language') }">
+              <label class="form-label fw-bold">{{ t('profilePage.language') }}</label>
+              <div class="input-group af-field">
+                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="language" /></span>
+                <button
+                  class="form-select d-flex align-items-center gap-2 text-start"
+                  type="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                  :aria-label="t('profilePage.language')"
                 >
-              </span>
+                  <AppFlag :code="draftLanguage.code" />{{ draftLanguage.label }}
+                </button>
+                <ul class="dropdown-menu w-100">
+                  <li v-for="lang in languages" :key="lang.code">
+                    <button
+                      type="button"
+                      class="dropdown-item d-flex align-items-center gap-2"
+                      :class="{ active: draft.language === lang.code }"
+                      @click="draft.language = lang.code"
+                    >
+                      <AppFlag :code="lang.code" />{{ lang.label }}
+                    </button>
+                  </li>
+                </ul>
+              </div>
+              <div class="form-text">{{ t('profilePage.languageHint') }}</div>
+            </div>
+            <div v-show="prefShown('theme')" :class="{ 'mt-4': prefSpaced('theme') }">
+              <label class="form-label fw-bold">{{ t('profilePage.theme') }}</label>
+              <div class="input-group af-field">
+                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="palette" /></span>
+                <select
+                  class="form-select"
+                  :value="draft.theme"
+                  :aria-label="t('profilePage.theme')"
+                  @change="draft.theme = $event.target.value"
+                >
+                  <option value="system">{{ t('settings.settingsPage.themeSystem') }}</option>
+                  <option v-for="th in Theme.themes()" :key="th.value" :value="th.value">{{ th.title }}</option>
+                </select>
+              </div>
+              <div v-if="draft.theme === 'color'" class="af-palette mt-3">
+                <button
+                  v-for="c in palette"
+                  :key="c"
+                  type="button"
+                  class="af-swatch"
+                  :class="{ active: draft.color === c }"
+                  :style="{ backgroundColor: c }"
+                  :aria-label="c"
+                  @click="draft.color = c"
+                  @mouseenter="Theme.previewColor(c)"
+                  @mouseleave="Theme.endPreview()"
+                  @focus="Theme.previewColor(c)"
+                  @blur="Theme.endPreview()"
+                >
+                  <FaIcon v-if="draft.color === c" icon="check" />
+                </button>
+              </div>
+              <div class="form-text">{{ t('profilePage.themeHint') }}</div>
+            </div>
+            <div v-show="prefShown('forms')" :class="{ 'mt-4': prefSpaced('forms') }">
+              <label class="form-label fw-bold">{{ t('profilePage.formsView') }}</label>
+              <div class="input-group af-field">
+                <span class="input-group-text text-gray-500"
+                  ><FaIcon :fixedwidth="true" icon="table-cells-large"
+                /></span>
+                <select
+                  class="form-select"
+                  :value="draft.formsView"
+                  :aria-label="t('profilePage.formsView')"
+                  @change="draft.formsView = $event.target.value"
+                >
+                  <option value="tiles">{{ t('forms.tiles') }}</option>
+                  <option value="list">{{ t('forms.list') }}</option>
+                </select>
+              </div>
+              <div class="form-text">{{ t('profilePage.formsViewHint') }}</div>
             </div>
           </div>
-          <!-- Notifications : on this computer, when the user's jobs end or one waits for its approval -->
-          <div v-else-if="prefTab === 'notifications'">
-            <label class="form-label fw-bold d-block" for="af-job-notifications">{{
-              t('profilePage.notifications')
-            }}</label>
-            <div class="form-check form-switch mb-0">
-              <input
-                id="af-job-notifications"
-                class="form-check-input"
-                type="checkbox"
-                role="switch"
-                :checked="notifyOn"
-                :disabled="!canNotify"
-                @change="onNotifySwitch"
-              />
+          <div v-if="prefGroupShown('datetime').length">
+            <template v-if="prefSearching">
+              <hr v-if="prefHeads[0] !== 'datetime'" class="mt-4 mb-0 af-search-line" />
+              <h6
+                class="fw-bold text-body-secondary af-search-tab"
+                :class="{ 'af-search-first': prefHeads[0] === 'datetime' }"
+              >
+                <FaIcon :icon="viewTabs.find((x) => x.key === 'datetime').icon" class="me-1" />{{
+                  viewTabs.find((x) => x.key === 'datetime').label
+                }}
+              </h6>
+            </template>
+            <div v-show="prefShown('timezone')" :class="{ 'mt-4': prefSpaced('timezone') }">
+              <label class="form-label fw-bold">{{ t('profilePage.timezone') }}</label>
+              <div class="input-group af-field">
+                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="clock" /></span>
+                <select v-model="draft.timezone" class="form-select" :aria-label="t('profilePage.timezone')">
+                  <option value="UTC">UTC</option>
+                  <option value="browser">{{ t('profilePage.timezoneBrowser', { zone: browserZone }) }}</option>
+                  <optgroup :label="t('profilePage.timezoneAll')">
+                    <option v-for="z in allZones" :key="z" :value="z">{{ z }}</option>
+                  </optgroup>
+                </select>
+              </div>
+              <div class="form-text">{{ t('profilePage.timezoneHint') }}</div>
             </div>
-            <div class="form-text">
-              {{
-                !canNotify
-                  ? t('profilePage.notificationsUnsupported')
-                  : notifyBlocked
-                    ? t('profilePage.notificationsBlocked')
-                    : t('profilePage.notificationsHint')
-              }}
+            <div v-show="prefShown('date')" :class="{ 'mt-4': prefSpaced('date') }">
+              <label class="form-label fw-bold">{{ t('profilePage.dateFormat') }}</label>
+              <div class="input-group af-field">
+                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="calendar" /></span>
+                <select v-model="draft.dateFormat" class="form-select" :aria-label="t('profilePage.dateFormat')">
+                  <option v-for="f in dateFormats" :key="f" :value="f">{{ dayjs(now).format(f) }} ({{ f }})</option>
+                </select>
+              </div>
+              <div class="form-text">{{ t('profilePage.dateFormatHint') }}</div>
             </div>
+            <div v-show="prefShown('preview')" :class="{ 'mt-4': prefSpaced('preview') }">
+              <label class="form-label fw-bold d-block">{{ t('profilePage.preview') }}</label>
+              <AppTimePreview :zone="draft.timezone" :format="draft.dateFormat" />
+            </div>
+          </div>
+          <div v-if="mayNotify && prefGroupShown('notifications').length">
+            <template v-if="prefSearching">
+              <hr v-if="prefHeads[0] !== 'notifications'" class="mt-4 mb-0 af-search-line" />
+              <h6
+                class="fw-bold text-body-secondary af-search-tab"
+                :class="{ 'af-search-first': prefHeads[0] === 'notifications' }"
+              >
+                <FaIcon :icon="viewTabs.find((x) => x.key === 'notifications').icon" class="me-1" />{{
+                  viewTabs.find((x) => x.key === 'notifications').label
+                }}
+              </h6>
+            </template>
+            <div v-show="prefShown('notify')" :class="{ 'mt-4': prefSpaced('notify') }">
+              <label class="form-label fw-bold d-block" for="af-job-notifications">{{
+                t('profilePage.notifications')
+              }}</label>
+              <div class="form-check form-switch mb-0">
+                <input
+                  id="af-job-notifications"
+                  class="form-check-input"
+                  type="checkbox"
+                  role="switch"
+                  :checked="draft.notify"
+                  :disabled="!canNotify"
+                  @change="draft.notify = $event.target.checked"
+                />
+              </div>
+              <div class="form-text">
+                {{
+                  !canNotify
+                    ? t('profilePage.notificationsUnsupported')
+                    : notifyBlocked
+                      ? t('profilePage.notificationsBlocked')
+                      : t('profilePage.notificationsHint')
+                }}
+              </div>
+            </div>
+          </div>
+          <div v-if="prefSearching && !prefHeads.length" class="text-body-secondary fst-italic">
+            {{ t('settings.settingsPage.searchNone') }}
           </div>
         </template>
 
@@ -779,51 +996,43 @@ async function changePassword() {
         </template>
 
         <!-- ===================== permissions ===================== -->
+        <!-- a tab per group, its options' table : each option's key, what it allows, whether the
+             user has it ; searching, the matching options of every group, each under its name -->
         <template v-else-if="currentView === 'permissions'">
-          <!-- a card per group : its name and how many of its options are allowed, then a row
-               per option with its readable name, its key, and whether it is allowed -->
-          <div
-            v-for="(group, gi) in permissionGroups"
-            :key="group.name"
-            class="card af-table-card"
-            :class="{ 'mt-3': gi > 0 }"
-          >
-            <div class="card-body d-flex align-items-center justify-content-between af-identity py-3 border-bottom">
-              <span class="fw-semibold">{{ group.title }}</span>
-              <small class="text-body-secondary">{{
-                t('profilePage.allowedCount', { n: group.allowed, total: group.options.length })
-              }}</small>
+          <template v-for="(group, gi) in shownPermissionGroups" :key="group.name">
+            <div v-if="viewSearching || group.name === prefTab">
+              <template v-if="viewSearching">
+                <hr v-if="gi > 0" class="mt-4 mb-0 af-search-line" />
+                <h6 class="fw-bold text-body-secondary af-search-tab" :class="{ 'af-search-first': gi === 0 }">
+                  <FaIcon :icon="permissionIcon(group.name)" class="me-1" />{{ group.title }}
+                </h6>
+              </template>
+              <!-- the app's read-only table (AppLinkedTable) : its frame, header and columns ; the
+                   page's search narrows it -->
+              <AppLinkedTable
+                :search="viewSearch"
+                :columns="permissionColumns"
+                :rows="group.options"
+                rowKey="key"
+                :exportName="`permissions-${group.name}`"
+              >
+                <template #cell-key="{ row }">
+                  <code class="af-option-key">{{ row.key }}</code>
+                </template>
+                <template #cell-description="{ row }">
+                  <span :class="row.value ? '' : 'text-body-secondary'">{{ row.description }}</span>
+                  <div v-if="row.note" class="small text-body-secondary">{{ row.note }}</div>
+                </template>
+                <template #cell-access="{ row }">
+                  <span class="badge rounded-pill af-pill" :class="row.value ? 'af-pill-green' : 'af-pill-grey'">
+                    <FaIcon :icon="row.value ? 'check' : 'xmark'" class="me-1" />{{ row.access }}
+                  </span>
+                </template>
+              </AppLinkedTable>
             </div>
-            <div class="table-responsive">
-              <!-- fixed columns (the styles below), the same in every card : the access at the right edge -->
-              <table class="table mb-0 af-perm-table">
-                <thead>
-                  <tr>
-                    <th>{{ t('profilePage.columnSetting') }}</th>
-                    <th>{{ t('profilePage.columnDescription') }}</th>
-                    <th class="text-end">{{ t('profilePage.columnAccess') }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="o in group.options" :key="o.key">
-                    <td>
-                      <code class="af-option-key">{{ o.key }}</code>
-                    </td>
-                    <td :class="o.value ? '' : 'text-body-secondary'">
-                      {{ o.description }}
-                      <div v-if="o.note" class="small text-body-secondary">{{ o.note }}</div>
-                    </td>
-                    <td class="text-end">
-                      <span class="badge rounded-pill af-pill" :class="o.value ? 'af-pill-green' : 'af-pill-grey'">
-                        <FaIcon :icon="o.value ? 'check' : 'xmark'" class="me-1" />{{
-                          o.value ? t('profilePage.allowed') : t('profilePage.notAllowed')
-                        }}
-                      </span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+          </template>
+          <div v-if="viewSearching && !shownPermissionGroups.length" class="text-body-secondary fst-italic">
+            {{ t('settings.settingsPage.searchNone') }}
           </div>
         </template>
 
@@ -876,39 +1085,32 @@ async function changePassword() {
                 <pre class="af-token-example mb-4"><code>{{ tokenExample }}</code></pre>
               </div>
               <!-- the request : a lifetime and the password -->
-              <div v-else-if="tokenStep === 0" class="af-field af-field-help-wide">
-                <div class="mb-3">
-                  <label class="form-label fw-bold" for="af-token-name"
-                    >{{ t('profilePage.token.name') }}<span class="text-danger ms-1">*</span></label
-                  >
-                  <div class="input-group">
-                    <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="tag" /></span>
-                    <input
-                      id="af-token-name"
-                      v-model="tokenForm.name"
-                      type="text"
-                      maxlength="100"
-                      required
-                      class="form-control"
-                      @keydown.enter.prevent="nextTokenStep"
-                    />
-                  </div>
-                  <div class="form-text">{{ t('profilePage.token.nameHint') }}</div>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label fw-bold" for="af-token-days">{{ t('profilePage.token.lifetime') }}</label>
-                  <div class="input-group">
-                    <span class="input-group-text text-gray-500"
-                      ><FaIcon :fixedwidth="true" icon="hourglass-half"
-                    /></span>
-                    <select id="af-token-days" v-model.number="tokenForm.days" class="form-select">
-                      <option v-for="d in TOKEN_LIFETIMES" :key="d" :value="d">
-                        {{ d === 'never' ? t('apiTokens.neverExpires') : t('profilePage.token.days', { n: d }) }}
-                      </option>
-                    </select>
-                  </div>
-                  <div class="form-text">{{ t('profilePage.token.lifetimeHint') }}</div>
-                </div>
+              <!-- its fields as every dialog's : the name at the left, the field and its help at the right -->
+              <div v-else-if="tokenStep === 0">
+                <BsInput
+                  v-model="tokenForm.name"
+                  :isHorizontal="true"
+                  :isFloating="false"
+                  type="text"
+                  icon="tag"
+                  :required="true"
+                  :label="t('profilePage.token.name')"
+                  :help="t('profilePage.token.nameHint')"
+                  @keyup_enter="nextTokenStep"
+                />
+                <BsInput
+                  v-model="tokenForm.days"
+                  :isHorizontal="true"
+                  :isFloating="false"
+                  type="select"
+                  icon="hourglass-half"
+                  :required="true"
+                  :values="lifetimeOptions"
+                  valueKey="value"
+                  labelKey="label"
+                  :label="t('profilePage.token.lifetime')"
+                  :help="t('profilePage.token.lifetimeHint')"
+                />
               </div>
               <form v-else class="af-field" @submit.prevent="createToken" @keydown.enter.prevent="createToken">
                 <p v-if="!usesPassword" class="text-body-secondary mb-0">
@@ -916,22 +1118,18 @@ async function changePassword() {
                     t('profilePage.token.signInAgainHint', { type: loginType.label })
                   }}
                 </p>
-                <div v-else>
-                  <label class="form-label fw-bold" for="af-token-password">{{
-                    t('profilePage.token.password')
-                  }}</label>
-                  <div class="input-group">
-                    <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="lock" /></span>
-                    <input
-                      id="af-token-password"
-                      v-model="tokenForm.password"
-                      type="password"
-                      class="form-control"
-                      autocomplete="current-password"
-                    />
-                  </div>
-                  <div class="form-text">{{ t('profilePage.token.passwordHint') }}</div>
-                </div>
+                <BsInput
+                  v-else
+                  v-model="tokenForm.password"
+                  :isHorizontal="true"
+                  :isFloating="false"
+                  type="password"
+                  icon="lock"
+                  :required="true"
+                  :label="t('profilePage.token.password')"
+                  :help="t('profilePage.token.passwordHint')"
+                  @keyup_enter="createToken"
+                />
               </form>
             </template>
             <template #footer>
@@ -966,10 +1164,21 @@ async function changePassword() {
           <div :id="tokenPagerId"></div>
         </template>
         <!-- the token list's search and buttons, on the title line as on the other lists -->
-        <template v-if="currentView === 'token'" #headerActions>
+        <template v-if="currentView === 'preferences'" #headerActions>
+          <BsSearch v-model="prefSearch" />
+        </template>
+        <template v-else-if="currentView === 'account' || currentView === 'permissions'" #headerActions>
+          <BsSearch v-model="viewSearch" />
+        </template>
+        <template v-else-if="currentView === 'token'" #headerActions>
           <div :id="tokenToolsId" class="af-title-flow"></div>
         </template>
-        <template v-if="(currentView === 'password' && isLocal) || currentView === 'token'" #actions>
+        <template v-if="currentView === 'preferences'" #actions>
+          <BsButton icon="save" :disabled="!prefsDirty" @click="savePreferences">{{
+            t('settings.common.save')
+          }}</BsButton>
+        </template>
+        <template v-else-if="(currentView === 'password' && isLocal) || currentView === 'token'" #actions>
           <BsButton
             v-if="currentView === 'password'"
             icon="key"
@@ -986,7 +1195,20 @@ async function changePassword() {
 </template>
 
 <style scoped lang="scss">
+/* a tab's count (a permission group's allowed of all), as a user's page's tabs */
+.af-tab-count {
+  background: var(--bs-secondary-bg);
+  color: var(--bs-secondary-color);
+  font-weight: 600;
+}
 // the identity band at the top of the account card
+/* the line under the account's header : a table's light line (the list under it takes the card's
+   darker border on top otherwise) */
+.af-identity + .list-group {
+  border-top-color: var(--bs-border-color);
+}
+/* a card's header (the account's name, a permission group's name and count) : as tall as a table's
+   header (py-2 on it), its grey */
 .af-identity {
   padding: 1.25rem;
   background-color: var(--bs-tertiary-bg);
@@ -1025,24 +1247,6 @@ $af-detail-line: 1.8rem;
   .af-chip {
     margin: 0;
   }
-}
-.af-tz-now {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.875rem;
-  padding: 0.625rem 1rem;
-  border: 1px solid var(--bs-border-color);
-  border-radius: var(--bs-border-radius);
-  background-color: var(--bs-tertiary-bg);
-}
-.af-tz-now-icon {
-  font-size: 1.5rem;
-  color: var(--af-primary);
-}
-.af-tz-now-time {
-  font-size: 1.125rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
 }
 .af-count {
   display: inline-block;
@@ -1117,42 +1321,6 @@ form.af-field,
 // own background would otherwise cover (the side borders then stopped short of the bottom)
 .af-table-card {
   overflow: hidden;
-}
-// permissions : a table per group ; the setting and the access in fixed columns, the
-// description takes the rest
-.af-perm-table {
-  th,
-  td {
-    padding: 0.7rem 1.25rem;
-    vertical-align: middle;
-  }
-  th {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--bs-secondary-color);
-    white-space: nowrap;
-  }
-  // the same fixed column widths in every card, so the columns line up from card to card ;
-  // the description takes what is left
-  table-layout: fixed;
-  th:nth-child(1) {
-    width: 13rem; // the longest key, extendedTokenExpiration, fits
-  }
-  th:nth-child(3) {
-    width: 9.5rem;
-  }
-  td {
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  td:not(:nth-child(2)) {
-    white-space: nowrap;
-  }
-  tbody tr:last-child td {
-    border-bottom: 0;
-  }
 }
 // permissions : the option key under its readable name, and the allowed / not allowed pill
 .af-option-key {

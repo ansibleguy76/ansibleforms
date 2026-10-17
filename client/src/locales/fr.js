@@ -297,6 +297,7 @@ export default {
     tab: "Jetons d'API",
   },
   profilePage: {
+    preferencesSaved: 'Préférences enregistrées',
     languageHint: "La langue des menus, des pages et des messages. Le drapeau dans l'en-tête la change aussi.",
     themeHint:
       "Suivre le navigateur, clair, sombre, ou un en-tête dans la couleur de votre choix. L'icône du soleil dans l'en-tête le change aussi.",
@@ -332,7 +333,7 @@ export default {
         "Votre mot de passe de connexion, pour confirmer que c'est bien vous. Il n'est pas stocké dans le token.",
       lifetime: 'Valable',
       days: '{n} jours',
-      password: 'Votre mot de passe',
+      password: 'Mot de passe',
       new: 'Nouveau jeton',
       stepToken: 'Détails',
       stepConfirm: 'Confirmer',
@@ -408,12 +409,12 @@ export default {
       preferences: 'Préférences',
       password: 'Mot de passe',
       permissions: 'Autorisations',
-      token: 'Token API',
+      token: "Jetons d'API",
     },
     description: {
       account:
         'Avec quel compte vous êtes connecté, et les groupes et rôles qui décident de ce que vous pouvez voir et lancer.',
-      token: "Un token de longue durée pour les scripts et l'API, créé avec votre mot de passe.",
+      token: "Des jetons de longue durée pour les scripts et l'API, chacun créé avec votre mot de passe.",
       preferences: "L'apparence d'AnsibleForms pour vous. Ces choix sont gardés dans ce navigateur.",
       password: 'Changez le mot de passe de votre compte local.',
       passwordElsewhere: 'Votre mot de passe est géré par votre fournisseur de connexion.',
@@ -738,7 +739,7 @@ export default {
     tooLarge: 'Image trop grande, 256 Ko au maximum',
   },
   version: {
-    title: 'Ansible Forms',
+    title: 'AnsibleForms',
     license:
       'Ce programme est un logiciel libre: vous pouvez le redistribuer et/ou le modifier selon les termes de la GNU General Public License telle que publiee par la Free Software Foundation, soit la version 3 de la licence, soit (a votre choix) toute version ulterieure.',
     warranty:
@@ -1138,7 +1139,7 @@ export default {
       banner_danger: 'Danger',
       bannerClose: 'Fermer',
       appName: "Nom de l'application",
-      appNameHelp: "Affiché dans l'onglet du navigateur et sur la page de connexion. Laissez vide pour Ansible Forms.",
+      appNameHelp: "Affiché dans l'onglet du navigateur et sur la page de connexion. Laissez vide pour AnsibleForms.",
       bannerStart: 'Date de début',
       bannerStartHelp: "Affichée à partir de ce moment. Laissez vide pour l'afficher tout de suite.",
       bannerEnd: 'Date de fin',
@@ -1950,7 +1951,7 @@ export default {
       reservedRoleName: "'{name}' est un nom de role reserve et ne peut pas etre utilise pour une autre role",
       publicRootUrl: 'URL racine publique',
       publicRootUrlHelp:
-        "Cette URL est utilisee pour l'acces public a Ansible Forms, notamment dans les liens retour et les e-mails.",
+        "Cette URL est utilisee pour l'acces public a AnsibleForms, notamment dans les liens retour et les e-mails.",
       defaultLanguage: 'Langue par defaut',
       defaultLanguageHelp: "La langue par defaut pour les nouveaux utilisateurs qui n'ont pas encore choisi de langue.",
       defaultTheme: 'Theme par defaut',

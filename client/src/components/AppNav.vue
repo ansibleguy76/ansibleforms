@@ -302,11 +302,15 @@ const buildMismatch = computed(() => {
 </script>
 
 <template>
-  <BsModal v-if="showVersion" @close="showVersion = false" icon="circle-info">
-    <template v-slot:title>
-      {{ t('version.title') }} <badge class="badge rounded-pill text-bg-info">v{{ store.version }}</badge>
-    </template>
+  <!-- About : two build cards and a few lines, in a narrow dialog (af-about-dialog) -->
+  <BsModal v-if="showVersion" size="md" dialogClass="af-about-dialog" @close="showVersion = false" icon="circle-info">
+    <!-- named as its menu link, About ; the product and its version its first lines -->
+    <template v-slot:title>{{ t('nav.about') }}</template>
     <template v-slot>
+      <div class="af-about-product">
+        <span class="af-about-name">{{ t('version.title') }}</span>
+        <span class="af-about-version">v{{ store.version }}</span>
+      </div>
       <!-- Cache Mismatch Warning -->
       <div v-if="buildMismatch" class="alert alert-warning d-flex align-items-center" role="alert">
         <font-awesome-icon icon="triangle-exclamation" class="me-2" />
@@ -523,7 +527,8 @@ const buildMismatch = computed(() => {
             <span class="d-flex flex-column lh-sm">
               <strong>{{ displayName }}</strong>
               <small v-if="userSubname" class="af-menu-meta">{{ userSubname }}</small>
-              <small class="af-menu-meta af-menu-type">{{ loginType.label }}</small>
+              <!-- how it signs in : a soft pill with its icon, under who the user is -->
+              <span class="af-menu-type"><FaIcon :icon="loginType.icon" class="me-1" />{{ loginType.label }}</span>
             </span>
           </li>
           <li><hr class="dropdown-divider" /></li>
@@ -567,6 +572,24 @@ const buildMismatch = computed(() => {
 </template>
 
 <style lang="scss">
+/* the About dialog's first line : the product, large and bold, its version beside it in grey */
+.af-about-product {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.af-about-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.af-about-version {
+  color: var(--bs-secondary-color);
+}
+/* the About dialog : between Bootstrap's default (500px) and large (800px) */
+.modal-dialog.af-about-dialog {
+  max-width: 640px;
+}
 // ===============================================================
 // Header navigation (not scoped: it styles the links and menus that
 // BsNavLink, BsNavMenu and BsThemeSwitcher render inside the header)
@@ -777,9 +800,9 @@ const buildMismatch = computed(() => {
     transition: filter 0.15s;
   }
   .af-avatar-lg {
-    width: 40px;
-    height: 40px;
-    font-size: 1.1rem;
+    width: 56px;
+    height: 56px;
+    font-size: 1.625rem;
   }
 
   // dropdown menus: rounded, hairline border, soft shadow
@@ -836,9 +859,11 @@ const buildMismatch = computed(() => {
   .af-user-card {
     display: flex;
     align-items: center;
-    gap: 0.65rem;
-    padding: 0.5rem 0.6rem 0.4rem;
+    gap: 1.25rem;
+    padding: 0.75rem 0.6rem;
+    // the name's column : the rest of the card, so the account type's line runs to its right edge
     > span:last-child {
+      flex: 1;
       min-width: 0;
     }
     strong,
@@ -856,10 +881,19 @@ const buildMismatch = computed(() => {
     color: var(--bs-secondary-color);
     font-size: 0.85rem;
   }
-  // how the account signs in (Local account, LDAP, Microsoft Entra ID) : lighter, under its name
+  // how the account signs in (Local account, LDAP, Microsoft Entra ID) : a soft grey pill with
+  // its icon under the name, apart from who the user is without a line
   .af-menu-type {
-    color: var(--bs-tertiary-color);
-    padding-top: 0.4rem;
+    align-self: flex-start;
+    margin-top: 0.8rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 50rem;
+    background: var(--bs-tertiary-bg);
+    // the fields' darker grey, as the cards' and the pagers' borders
+    border: 1px solid var(--af-field-border);
+    color: var(--bs-secondary-color);
+    font-size: 0.75rem;
+    white-space: nowrap;
   }
 
   // collapsed (mobile) menu: plain stacked list

@@ -23,7 +23,7 @@
     hint: Host name or IP address of the MySQL or MariaDB server.
     required: true
     description: |
-      Ansible Forms requires a MySQL database connection to store the configuration of the application.  
+      AnsibleForms requires a MySQL database connection to store the configuration of the application.  
   - name: DB_PORT
     version: 6.3.0
     type: number
@@ -39,10 +39,10 @@
     type: string
     allowed: a valid mysql user
     short: Database user
-    hint: User name Ansible Forms connects to the database with.
+    hint: User name AnsibleForms connects to the database with.
     required: true
     description: |
-      Ansible Forms requires a MySQL database connection to store the configuration of the application.
+      AnsibleForms requires a MySQL database connection to store the configuration of the application.
 
       Give it a user of its own with rights on its schema only - not root:
 
@@ -60,7 +60,7 @@
     hint: Password for that database user.
     required: true
     description: |
-      Ansible Forms requires a MySQL database connection to store the configuration of the application.    
+      AnsibleForms requires a MySQL database connection to store the configuration of the application.    
   - name: DB_POOL_SIZE
     type: number
     allowed: a positive integer
@@ -231,7 +231,7 @@
     short: Backups folder
     default: "%PERSISTENT_FOLDER%/backups"
     description: |
-      Ansible Forms can backup the database and forms.  This is the path where the backups are stored.
+      AnsibleForms can backup the database and forms.  This is the path where the backups are stored.
       The backup folder is created at first start if not present and a timestamp folder is created for each backup.
   - name: CONFIG_PATH
     version: 6.1.0
@@ -336,7 +336,7 @@
     default: "7"
     description: | 
       Number of automated nightly backups to retain.
-      Ansible Forms automatically creates a full backup (database + config + forms) every night at midnight.
+      AnsibleForms automatically creates a full backup (database + config + forms) every night at midnight.
       Older nightly backups beyond this count are automatically deleted.
       Set to 0 to disable automatic cleanup (not recommended).
       Only backups that actually contain a usable database dump count towards this number,
@@ -524,7 +524,7 @@
     short: Allow schema creation
     hint: Allows the database schema to be created on a fresh install.
     description: | 
-      When you start Ansible Forms for the first time and there is no database, Ansible Forms will present you the option to create the schema. 
+      When you start AnsibleForms for the first time and there is no database, AnsibleForms will present you the option to create the schema. 
       Although this is fairly handy, you might want to disable this option to prevent accidental schema re-creation.  
       Also note that if you use the docker-compose solution, the database is created as part of the Mysql initialization.  
       If you use a different database, you might want to enable this option, to at the very least create the schema the very first time.  
@@ -968,7 +968,7 @@
     short: Enable the internal designer
     hint: Shows the built-in config.yaml designer in the menu.
     description: | 
-      Although we encourage you to use an editor such as **Visual Studio Code** to edit the config.yaml file, preferably with some form of source control.  Ansible Forms comes with an internal yaml designer.  
+      Although we encourage you to use an editor such as **Visual Studio Code** to edit the config.yaml file, preferably with some form of source control.  AnsibleForms comes with an internal yaml designer.  
       And although only admins can see the designer, you might want to disable it completely by setting this variable to 0.
     version: 4.0.0
   - name: USE_YTT
@@ -1087,7 +1087,7 @@
     default: notice    
     short: Log level
     description: | 
-      Ansible Forms logs to logfile called Ansible Forms.log.  
+      AnsibleForms logs to a log file called ansibleforms.log.  
       It does so in multiple levels.  
   - name: LOG_RETENTION_DAYS
     version: 7.0.0
@@ -1107,7 +1107,7 @@
     short: Logs folder
     hint: The folder of the log files, ansibleforms.log and ansibleforms.errors.log.
     description: | 
-      Ansible Forms maintains 2 logfiles.  `ansibleforms.log` and `ansibleforms.errors.log`   
+      AnsibleForms maintains 2 logfiles.  `ansibleforms.log` and `ansibleforms.errors.log`   
     changelog:
       - version: 4.0.0
         type: added
@@ -1327,7 +1327,7 @@
     default: OS Homedir path
     version: 3.0.0
     description: |
-      Ansible Forms generates an sshkey at first start, is one is not present, so you can have a git connection or other password-less connection.  
+      AnsibleForms generates an sshkey at first start, is one is not present, so you can have a git connection or other password-less connection.  
       Typically this key is stored in the users home-directory under `/.ssh/id_rsa`.  You can set this homedirectory path manually with this property.
   - name: REPO_PATH
     type: string
@@ -1382,7 +1382,7 @@
     default: "*** NOT REVEALED ***"
     hint: The key the stored passwords and tokens are encrypted with.
     description: |
-      Ansible Forms encrypts the passwords and tokens it stores in the database with this secret.
+      AnsibleForms encrypts the passwords and tokens it stores in the database with this secret.
       Set your own : without it they are encrypted with a default key that is public in the source code.
       The secret must be 32 characters long ; a shorter one is extended and a longer one cut.
       Setting it, or changing it, re-encrypts every stored secret with it on the next start, in one
@@ -1524,7 +1524,7 @@
   link: forms
   itemName: attribute
   description: |
-    Ansible Forms reads the forms configuration from the main `config.yaml` file.   
+    AnsibleForms reads the forms configuration from the main `config.yaml` file.   
     The config.yaml file contains the `categories`, `roles` and `constants`.  The forms themselves are not in it: each form lives in a file of its own in the `forms` folder (`FORMS_FOLDER_PATH`), or in a forms repository.  Below are the 3 main attributes of the config.yaml file.
   items:
   - name: categories
@@ -2124,7 +2124,7 @@
         group: visualization
         short: Form tile background colour
         description: |
-          Ansible Forms uses the Bootstrap css framework to style the webapplication.  
+          AnsibleForms uses the Bootstrap css framework to style the webapplication.  
           Bootstrap has a few color helper classes you can use to give your formtile a background color.  
           You can find them here [background color](https://getbootstrap.com/docs/5.0/utilities/colors/#background-color) and [foreground color](https://getbootstrap.com/docs/5.0/utilities/colors/#text-color).  
           **Hint**: Try to add a matching foreground color.
@@ -2147,7 +2147,7 @@
         group: visualization
         short: Fieldgroup background color
         description:
-          Ansible Forms uses the Bootstrap css framework to style the webapplication.  
+          AnsibleForms uses the Bootstrap css framework to style the webapplication.  
           Bootstrap has a few color helper classes you can use to give your fieldgroups a background color.  
           You can find them here [background color](https://getbootstrap.com/docs/5.0/utilities/colors/#background-color) and [foreground color](https://getbootstrap.com/docs/5.0/utilities/colors/#text-color).         
         examples:
@@ -2555,14 +2555,14 @@
         allowed: key-value pairs
         short: Send credentials to your playbook/template
         description: |
-          From the earlier versions, you could send credentials, stored in Ansible Forms, by using the field-property `asCredentials`.  
+          From the earlier versions, you could send credentials, stored in AnsibleForms, by using the field-property `asCredentials`.  
           From now on, you can also define them statically in the form.  
           Additionally, you can also set these dynamically by using the a field name __credentials__.  
           **Note**: that this also works in steps, so each step can have its own set of credentials.  
           **Note**: If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
           **Note**: The credential can be a regex
           **Note**: A second, fallback, credential kan be passed using a comma  
-          **Note**: The value `__self__` sends the connection of Ansible Forms' own database (host, port, user and password).  
+          **Note**: The value `__self__` sends the connection of AnsibleForms' own database (host, port, user and password).  
           **Note**: A value can also read a secret store directly, without a stored credential: `vault:<path>` reads the store named `vault`, `secret:<store>:<ref>` any store. The role property `secretStores` limits the stores a user may read this way.  
           **Note**: On a `workflow` form, these credentials reach every playbook node of the workflow (a nested workflow's too), under the names given here, as a multistep form's reach its steps. A node's own credentials reach its playbook under their own name, and win a name both use.
         examples:
@@ -2573,7 +2573,7 @@
               cred_ms: ad_creds # will take the credentials called ad_creds and send them in the object `cred_ms`
               cred_netapp: cluster1,clusters2 # will first search for cluster1 and as fallback to cluster2
               cred_veeam: veeam_server[0-9],veeam # will first search for a credential matching the regex, and as fallback search for veeam
-              cred_af: __self__ # the connection of the Ansible Forms database
+              cred_af: __self__ # the connection of the AnsibleForms database
               cred_dns: vault:infra/dns # read straight from the secret store `vault`
               cred_ipam: secret:cyberark:ipam-admin # read straight from the secret store `cyberark`
         - name: Dynamically send credentials
@@ -2626,7 +2626,7 @@
         allowed: a local credentialname
         short: Pass vault password to ansible playbook using stored credentials
         description: |
-          Ansible can encrypt variables in a vault, to unlock the vault a password is needed.  This password can be stored in Ansible Forms (as credential) and passed to the playbook..           
+          Ansible can encrypt variables in a vault, to unlock the vault a password is needed.  This password can be stored in AnsibleForms (as credential) and passed to the playbook..           
       - name: steps
         type: array
         with_types: multistep
@@ -2859,7 +2859,7 @@
         short: Add awx credentials to your template
         description: |
           In AWX you can set credentials on your template.   
-          From now on, you can also add credentials from Ansible Forms.
+          From now on, you can also add credentials from AnsibleForms.
           
           **Note**: you can also set these dynamically by using the a field name __awxCredentials__.   It must be sent as extravar.  If this extravar is found it will overwrite the static awxCredentials.  
           **Note**: this also works in steps, so each step can have its own set of awxCredentials.  
@@ -3077,7 +3077,7 @@
         docsObjectLink: "approval"
         short: Add approval point
         description: |
-          Ansible Forms allows to add an approval point before a job is ran.  
+          AnsibleForms allows to add an approval point before a job is ran.  
           An approval link is sent by email to a specific approver who can then approve or reject the job, and to the notification channels it names (`channels`: Slack, Microsoft Teams, Telegram, a webhook - Connections > Notifications).
       - name: notifications
         type: object
@@ -3116,7 +3116,7 @@
         docsObjectLink: "job-status-action"
         version: 3.1.0
         description: |
-          Once a job is launched, Ansible Forms has a few status events you can act on.  
+          Once a job is launched, AnsibleForms has a few status events you can act on.  
           * **onSubmit**: Triggered the moment the submit button is pressed  
           * **onSuccess**: Triggered when the job is finished succesfully  
           * **onFailure**: Triggered when the job was not succesful  
@@ -3141,7 +3141,7 @@
         docsObjectLink: "job-status-action"
         version: 3.1.0
         description: |
-          Once a job is launched, Ansible Forms has a few status events you can act on.  
+          Once a job is launched, AnsibleForms has a few status events you can act on.  
           * **onSubmit**: Triggered the moment the submit button is pressed  
           * **onSuccess**: Triggered when the job is finished succesfully  
           * **onFailure**: Triggered when the job was not succesful  
@@ -3165,7 +3165,7 @@
         docsObjectLink: "job-status-action"
         version: 3.1.0
         description: |
-          Once a job is launched, Ansible Forms has a few status events you can act on.  
+          Once a job is launched, AnsibleForms has a few status events you can act on.  
           * **onSubmit**: Triggered the moment the submit button is pressed  
           * **onSuccess**: Triggered when the job is finished succesfully  
           * **onFailure**: Triggered when the job was not succesful  
@@ -3189,7 +3189,7 @@
         docsObjectLink: "job-status-action"
         version: 3.1.0
         description: |
-          Once a job is launched, Ansible Forms has a few status events you can act on.  
+          Once a job is launched, AnsibleForms has a few status events you can act on.  
           * **onSubmit**: Triggered the moment the submit button is pressed  
           * **onSuccess**: Triggered when the job is finished succesfully  
           * **onFailure**: Triggered when the job was not succesful  
@@ -3213,7 +3213,7 @@
         docsObjectLink: "job-status-action"
         version: 3.1.0
         description: |
-          Once a job is launched, Ansible Forms has a few status events you can act on.  
+          Once a job is launched, AnsibleForms has a few status events you can act on.  
           * **onSubmit**: Triggered the moment the submit button is pressed  
           * **onSuccess**: Triggered when the job is finished succesfully  
           * **onFailure**: Triggered when the job was not succesful  
@@ -3357,7 +3357,7 @@
             group: workflow
             short: Extravar key
             description: |
-              Ansible Forms can model the extravars into objects using the formfield `model` attribute.  In a multistep form, by default, every step gets the full extravars payload.  However, using this `key` attribute you can choose which step receives which part of the extravars.  
+              AnsibleForms can model the extravars into objects using the formfield `model` attribute.  In a multistep form, by default, every step gets the full extravars payload.  However, using this `key` attribute you can choose which step receives which part of the extravars.  
               Study the example below to understand how the `key` property works.
             examples:
             - name: Resize volume
@@ -3405,7 +3405,7 @@
             group: workflow
             short: Run step if ...
             description: |
-              In a mulitstep form, by default, Ansible Forms will try to run every step sequentially one after the other.  
+              In a mulitstep form, by default, AnsibleForms will try to run every step sequentially one after the other.  
               Using this property you choose if a step should be run or not by setting the property to a part of the extravars that resolves into a boolean (expression or checkbox).  This way you can dynamically skip steps.
             examples: 
             - name: Run step based on checkbox
@@ -5629,7 +5629,7 @@
     - name: object-array manipulation
       description: |
         When working with object-arrays, you will want to control and manipulate that data.  
-        Filtering, altering, sorting.  To make your life easy, Ansible Forms comes with a custom helper, to keep your code clean.
+        Filtering, altering, sorting.  To make your life easy, AnsibleForms comes with a custom helper, to keep your code clean.
       code: |
           /* 
             fnArray.from($(your_array_field))                               // custom helper library
@@ -5751,7 +5751,7 @@
     description: |
       The following examples are assumed to run with the field property `runLocal` false (=default).  
       They are evaluated on the server side.  
-      Due to the danger of evaluating code server side, the expression is sanitized and limited to predefined functions that come with Ansible Forms.  
+      Due to the danger of evaluating code server side, the expression is sanitized and limited to predefined functions that come with AnsibleForms.  
       Server side expressions are meant to grab information from various datasources, such as files and rest-api's.  
     examples:   
     - name: manipulate date and time
@@ -5984,7 +5984,7 @@
       description: |
         In all the data-fetching functions you have the option to add a json-query.  A powerfull language to manipulate a data object or array.  
         Whilst manipulating data, you might bump into the need to convert bytes to KB, MB, ...  as well as the need to round numbers.  
-        That's why Ansible Forms comes with a few custom handy JQ-functions.  
+        That's why AnsibleForms comes with a few custom handy JQ-functions.  
         * **fn2KB**: Bytes to KB
         * **fn2MB**: Bytes to MB
         * **fn2GB**: Bytes to GB
@@ -6267,7 +6267,7 @@
       * using an extravar called `__credentials__`
     language: yaml
     code: |
-      # assume you have 2 credentials created in Ansible Forms
+      # assume you have 2 credentials created in AnsibleForms
       # 1: vcenter
       # 2: ad
 
@@ -6309,13 +6309,13 @@
   - name: Jobid
     short: Pass the current jobid
     description: |
-      Ansible Forms automatically sends the current jobid in the extravars.  
+      AnsibleForms automatically sends the current jobid in the extravars.  
       You don't need to do anything.  
       It is sent as `__jobid__`.
   - name: Userinfo
     short: Pass the current user
     description: |
-      Ansible Forms automatically sends the userinformation in the extravars.  
+      AnsibleForms automatically sends the userinformation in the extravars.  
       You don't need to do anything.  
       It is sent as `ansibleforms_user`.
   - name: Userinfo Form
@@ -6330,9 +6330,9 @@
       expression: $(__user__.groups)
       expression: $(__user__.roles)
   - name: Customization
-    short: Customize Ansible Forms
+    short: Customize AnsibleForms
     description: |
-      Ansible Forms is a web-app.  If you run it natively in nodejs, you could replace files or change them.  
+      AnsibleForms is a web-app.  If you run it natively in nodejs, you could replace files or change them.  
       But more recommended is to run it as a docker-image and add volume or file mappings.  Our docker-compose projects already maps directories to make the database, playbooks, logs, certificates and ssh-keys persistent.  Nothing is keeping you from adding more mappings to, for example, override the logo.  
       There is also a `custom.js` file where you can add your own javascript functions to use in expressions.  Just like you can address our functions with the prefix `fn.` (fn.fnRestBasic for example) you can access the custom functions with prefix `fnc.`.  
       And you can add your own jq definitions as well in the same way with the `jq.custom.definitions.js`

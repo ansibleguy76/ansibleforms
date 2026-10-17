@@ -297,6 +297,7 @@ export default {
     tab: 'Tokens de API',
   },
   profilePage: {
+    preferencesSaved: 'Preferencias guardadas',
     languageHint: 'El idioma de los menús, las páginas y los mensajes. La bandera de la cabecera también lo cambia.',
     themeHint:
       'Seguir el navegador, claro, oscuro, o una cabecera del color que elijas. El icono del sol de la cabecera también lo cambia.',
@@ -330,7 +331,7 @@ export default {
       passwordHint: 'Tu contraseña de inicio de sesión, para confirmar que eres tú. No se guarda en el token.',
       lifetime: 'Válido durante',
       days: '{n} días',
-      password: 'Tu contraseña',
+      password: 'Contraseña',
       new: 'Nuevo token',
       stepToken: 'Detalles',
       stepConfirm: 'Confirmar',
@@ -405,11 +406,11 @@ export default {
       preferences: 'Preferencias',
       password: 'Contraseña',
       permissions: 'Permisos',
-      token: 'Token de API',
+      token: 'Tokens de API',
     },
     description: {
       account: 'Con qué usuario has iniciado sesión, y los grupos y roles que deciden qué puedes ver y ejecutar.',
-      token: 'Un token de larga duración para scripts y la API, creado con tu contraseña.',
+      token: 'Tokens de larga duración para scripts y la API, cada uno creado con tu contraseña.',
       preferences: 'Cómo se ve AnsibleForms para ti. Estas opciones se guardan en este navegador.',
       password: 'Cambia la contraseña de tu cuenta local.',
       passwordElsewhere: 'Tu contraseña la gestiona tu proveedor de inicio de sesión.',
@@ -734,7 +735,7 @@ export default {
     tooLarge: 'Imagen demasiado grande, el tamaño máximo es 256 KB',
   },
   version: {
-    title: 'Ansible Forms',
+    title: 'AnsibleForms',
     license:
       'Este programa es software libre: puede redistribuirlo y/o modificarlo bajo los términos de la Licencia Pública General de GNU publicada por la Free Software Foundation, ya sea la versión 3 de la Licencia o (a su opción) cualquier versión posterior.',
     warranty:
@@ -1134,7 +1135,7 @@ export default {
       bannerClose: 'Cerrar',
       appName: 'Nombre de la aplicación',
       appNameHelp:
-        'Se muestra en la pestaña del navegador y en la página de inicio de sesión. Déjalo vacío para Ansible Forms.',
+        'Se muestra en la pestaña del navegador y en la página de inicio de sesión. Déjalo vacío para AnsibleForms.',
       bannerStart: 'Fecha de inicio',
       bannerStartHelp: 'Se muestra desde este momento. Déjalo vacío para mostrarlo ya.',
       bannerEnd: 'Fecha de fin',
@@ -1942,7 +1943,7 @@ export default {
       reservedRoleName: "'{name}' es un nombre de rol reservado y no puede usarse para otro rol",
       publicRootUrl: 'URL raíz pública',
       publicRootUrlHelp:
-        'Esta URL se utiliza para acceso público a Ansible Forms, utilizada en enlaces de retorno y correos electrónicos.',
+        'Esta URL se utiliza para acceso público a AnsibleForms, utilizada en enlaces de retorno y correos electrónicos.',
       defaultLanguage: 'Idioma predeterminado',
       defaultLanguageHelp: 'El idioma predeterminado para nuevos usuarios que aún no han elegido un idioma.',
       defaultTheme: 'Tema predeterminado',

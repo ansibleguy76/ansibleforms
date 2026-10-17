@@ -295,6 +295,7 @@ export default {
     tab: 'API tokens',
   },
   profilePage: {
+    preferencesSaved: 'Preferences saved',
     languageHint: 'The language of the menus, pages and messages. The flag in the header switches it too.',
     themeHint:
       'Follow the browser, light, dark, or a header in a color of your choice. The sun icon in the header switches it too.',
@@ -327,7 +328,7 @@ export default {
       passwordHint: 'Your sign-in password, to confirm it is you. It is not stored in the token.',
       lifetime: 'Valid for',
       days: '{n} days',
-      password: 'Your password',
+      password: 'Password',
       new: 'New token',
       stepToken: 'Details',
       stepConfirm: 'Confirm',
@@ -398,11 +399,11 @@ export default {
       preferences: 'Preferences',
       password: 'Password',
       permissions: 'Permissions',
-      token: 'API token',
+      token: 'API tokens',
     },
     description: {
       account: 'Who you are signed in as, and the groups and roles that decide what you can see and run.',
-      token: 'A long-lived token for scripts and the API, created with your password.',
+      token: 'Long-lived tokens for scripts and the API, each created with your password.',
       preferences: 'How AnsibleForms looks for you. These choices are kept in this browser.',
       password: 'Change the password of your local account.',
       passwordElsewhere: 'Your password is managed by your login provider.',
@@ -727,7 +728,7 @@ export default {
     tooLarge: 'Image too large, maximum size is 256 KB',
   },
   version: {
-    title: 'Ansible Forms',
+    title: 'AnsibleForms',
     license:
       'This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.',
     warranty:
@@ -1123,7 +1124,7 @@ export default {
       banner_danger: 'Danger',
       bannerClose: 'Close',
       appName: 'Application name',
-      appNameHelp: 'Shown in the browser tab and on the sign-in page. Leave empty for Ansible Forms.',
+      appNameHelp: 'Shown in the browser tab and on the sign-in page. Leave empty for AnsibleForms.',
       bannerStart: 'Start date',
       bannerStartHelp: 'It shows from this moment. Leave empty to show it at once.',
       bannerEnd: 'End date',
@@ -1911,7 +1912,7 @@ export default {
       duplicateRoleName: "Duplicate role name '{name}', role names must be unique",
       reservedRoleName: "'{name}' is a reserved role name and cannot be used for another role",
       publicRootUrl: 'Public root URL',
-      publicRootUrlHelp: 'This url is used for public access to Ansible Forms, used in backlinks and emails.',
+      publicRootUrlHelp: 'This url is used for public access to AnsibleForms, used in backlinks and emails.',
       defaultLanguage: 'Default language',
       defaultLanguageHelp: "The default language for new users who haven't chosen a language yet.",
       defaultTheme: 'Default theme',

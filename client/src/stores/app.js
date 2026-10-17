@@ -53,6 +53,9 @@ function loadDateFormat() {
 
 export const useAppStore = defineStore('app', () => {
   const theme = ref('light'); // default theme
+  // a colour theme shown while a colour is hovered (Theme.previewColor) : 'color', else null - the
+  // header's logo follows it, then comes back to the theme's own
+  const themePreview = ref(null);
   const profile = ref(null);
   const authenticated = ref(false);
   const isAdmin = ref(false);
@@ -102,6 +105,7 @@ export const useAppStore = defineStore('app', () => {
 
   return {
     theme,
+    themePreview,
     profile,
     authenticated,
     isAdmin,

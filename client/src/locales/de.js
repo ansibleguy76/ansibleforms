@@ -298,6 +298,7 @@ export default {
     tab: 'API-Tokens',
   },
   profilePage: {
+    preferencesSaved: 'Einstellungen gespeichert',
     languageHint: 'Die Sprache der Menüs, Seiten und Meldungen. Die Flagge in der Kopfzeile wechselt sie ebenfalls.',
     themeHint:
       'Dem Browser folgen, hell, dunkel oder eine Kopfzeile in einer Farbe Ihrer Wahl. Das Sonnensymbol in der Kopfzeile wechselt es auch.',
@@ -332,7 +333,7 @@ export default {
       passwordHint: 'Ihr Anmeldepasswort, um zu bestätigen, dass Sie es sind. Es wird nicht im Token gespeichert.',
       lifetime: 'Gültig für',
       days: '{n} Tage',
-      password: 'Ihr Passwort',
+      password: 'Passwort',
       new: 'Neues Token',
       stepToken: 'Details',
       stepConfirm: 'Bestätigen',
@@ -404,12 +405,12 @@ export default {
       preferences: 'Einstellungen',
       password: 'Passwort',
       permissions: 'Berechtigungen',
-      token: 'API-Token',
+      token: 'API-Tokens',
     },
     description: {
       account:
         'Als wer Sie angemeldet sind, und die Gruppen und Rollen, die bestimmen, was Sie sehen und ausführen können.',
-      token: 'Ein lange gültiges Token für Skripte und die API, erstellt mit Ihrem Passwort.',
+      token: 'Langlebige Tokens für Skripte und die API, jeder mit Ihrem Passwort erstellt.',
       preferences: 'Wie AnsibleForms für Sie aussieht. Diese Einstellungen werden in diesem Browser gespeichert.',
       password: 'Ändern Sie das Passwort Ihres lokalen Kontos.',
       passwordElsewhere: 'Ihr Passwort wird von Ihrem Anmeldeanbieter verwaltet.',
@@ -735,7 +736,7 @@ export default {
     tooLarge: 'Bild zu groß, höchstens 256 KB',
   },
   version: {
-    title: 'Ansible Forms',
+    title: 'AnsibleForms',
     license:
       'Dieses Programm ist freie Software: Sie koennen es unter den Bedingungen der GNU General Public License, wie von der Free Software Foundation veroeffentlicht, weitergeben und/oder modifizieren, entweder gemaess Version 3 der Lizenz oder, nach Ihrer Wahl, jeder spaeteren Version.',
     warranty:
@@ -1135,7 +1136,7 @@ export default {
       banner_danger: 'Gefahr',
       bannerClose: 'Schließen',
       appName: 'Anwendungsname',
-      appNameHelp: 'Wird im Browser-Tab und auf der Anmeldeseite angezeigt. Leer lassen für Ansible Forms.',
+      appNameHelp: 'Wird im Browser-Tab und auf der Anmeldeseite angezeigt. Leer lassen für AnsibleForms.',
       bannerStart: 'Startdatum',
       bannerStartHelp: 'Ab diesem Moment angezeigt. Leer lassen, um sie sofort anzuzeigen.',
       bannerEnd: 'Enddatum',
@@ -1949,7 +1950,7 @@ export default {
         "'{name}' ist ein reservierter Rollenname und kann nicht für eine andere Rolle verwendet werden",
       publicRootUrl: 'Oeffentliche Root-URL',
       publicRootUrlHelp:
-        'Diese URL wird fuer den oeffentlichen Zugriff auf Ansible Forms verwendet, z. B. in Ruecklinks und E-Mails.',
+        'Diese URL wird fuer den oeffentlichen Zugriff auf AnsibleForms verwendet, z. B. in Ruecklinks und E-Mails.',
       defaultLanguage: 'Standardsprache',
       defaultLanguageHelp: 'Die Standardsprache fuer neue Benutzer, die noch keine Sprache gewaehlt haben.',
       defaultTheme: 'Standarddesign',

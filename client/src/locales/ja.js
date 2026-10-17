@@ -296,6 +296,7 @@ export default {
     tab: 'API トークン',
   },
   profilePage: {
+    preferencesSaved: '設定を保存しました',
     languageHint: 'メニュー、ページ、メッセージの言語です。ヘッダーの国旗からも切り替えられます。',
     themeHint:
       'ブラウザーに合わせる、ライト、ダーク、または好きな色のヘッダーを選べます。ヘッダーの太陽アイコンからも切り替えられます。',
@@ -403,7 +404,7 @@ export default {
     },
     description: {
       account: 'サインインしているユーザーと、表示や実行できる内容を決めるグループとロールです。',
-      token: 'スクリプトや API 用の有効期間の長いトークンです。パスワードを使って作成します。',
+      token: 'スクリプトと API 用の長期間有効なトークン。それぞれパスワードで作成します。',
       preferences: 'AnsibleForms の表示方法です。これらの選択はこのブラウザーに保存されます。',
       password: 'ローカルアカウントのパスワードを変更します。',
       passwordElsewhere: 'パスワードはログインプロバイダーで管理されています。',
@@ -728,7 +729,7 @@ export default {
     tooLarge: '画像が大きすぎます。最大 256 KB です',
   },
   version: {
-    title: 'Ansible Forms',
+    title: 'AnsibleForms',
     license:
       'このプログラムはフリーソフトウェアです。Free Software Foundation が公表した GNU 一般公衆利用許諾書のバージョン 3、または (任意で) それ以降のバージョンの定める条件の下で、再頒布または改変することができます。',
     warranty:
@@ -1126,7 +1127,7 @@ export default {
       banner_danger: '危険',
       bannerClose: '閉じる',
       appName: 'アプリケーション名',
-      appNameHelp: 'ブラウザーのタブとサインインページに表示。空の場合は Ansible Forms。',
+      appNameHelp: 'ブラウザーのタブとサインインページに表示。空の場合は AnsibleForms。',
       bannerStart: '開始日',
       bannerStartHelp: 'この時点から表示します。空欄ならすぐに表示します。',
       bannerEnd: '終了日',
@@ -1903,7 +1904,7 @@ export default {
       duplicateRoleName: "ロール名 '{name}' が重複しています。ロール名は一意である必要があります",
       reservedRoleName: "'{name}' は予約済みのロール名のため、別のロールには使用できません",
       publicRootUrl: '公開ルート URL',
-      publicRootUrlHelp: 'この URL は Ansible Forms への公開アクセスに使用され、バックリンクやメールで使われます。',
+      publicRootUrlHelp: 'この URL は AnsibleForms への公開アクセスに使用され、バックリンクやメールで使われます。',
       defaultLanguage: '既定の言語',
       defaultLanguageHelp: 'まだ言語を選択していない新しいユーザーの既定の言語です。',
       defaultTheme: '既定のテーマ',

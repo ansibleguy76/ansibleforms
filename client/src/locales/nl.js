@@ -298,6 +298,7 @@ export default {
     tab: 'API-tokens',
   },
   profilePage: {
+    preferencesSaved: 'Voorkeuren opgeslagen',
     languageHint: "De taal van de menu's, pagina's en berichten. De vlag in de kopbalk wisselt die ook.",
     themeHint:
       'De browser volgen, licht, donker, of een kopbalk in een kleur naar keuze. Het zonicoon in de kopbalk wisselt het ook.',
@@ -331,7 +332,7 @@ export default {
       passwordHint: 'Je aanmeldwachtwoord, om te bevestigen dat jij het bent. Het wordt niet in het token opgeslagen.',
       lifetime: 'Geldig voor',
       days: '{n} dagen',
-      password: 'Je wachtwoord',
+      password: 'Wachtwoord',
       new: 'Nieuw token',
       stepToken: 'Details',
       stepConfirm: 'Bevestigen',
@@ -404,11 +405,11 @@ export default {
       preferences: 'Voorkeuren',
       password: 'Wachtwoord',
       permissions: 'Rechten',
-      token: 'API-token',
+      token: 'API-tokens',
     },
     description: {
       account: 'Als wie je bent aangemeld, en de groepen en rollen die bepalen wat je kunt zien en uitvoeren.',
-      token: 'Een token met een lange geldigheid voor scripts en de API, aangemaakt met je wachtwoord.',
+      token: 'Langlevende tokens voor scripts en de API, elk aangemaakt met uw wachtwoord.',
       preferences: 'Hoe AnsibleForms er voor jou uitziet. Deze keuzes worden in deze browser bewaard.',
       password: 'Wijzig het wachtwoord van je lokale account.',
       passwordElsewhere: 'Je wachtwoord wordt beheerd door je aanmeldprovider.',
@@ -733,7 +734,7 @@ export default {
     tooLarge: 'Afbeelding te groot, maximaal 256 KB',
   },
   version: {
-    title: 'Ansible Forms',
+    title: 'AnsibleForms',
     license:
       'Dit programma is vrije software: u mag het herdistribueren en/of wijzigen onder de voorwaarden van de GNU General Public License zoals gepubliceerd door de Free Software Foundation, versie 3 van de licentie, of (naar uw keuze) een latere versie.',
     warranty:
@@ -1130,7 +1131,7 @@ export default {
       banner_danger: 'Gevaar',
       bannerClose: 'Sluiten',
       appName: 'Applicatienaam',
-      appNameHelp: 'Getoond in het browsertabblad en op de aanmeldpagina. Laat leeg voor Ansible Forms.',
+      appNameHelp: 'Getoond in het browsertabblad en op de aanmeldpagina. Laat leeg voor AnsibleForms.',
       bannerStart: 'Startdatum',
       bannerStartHelp: 'Getoond vanaf dit moment. Laat leeg om meteen te tonen.',
       bannerEnd: 'Einddatum',
@@ -1933,7 +1934,7 @@ export default {
       reservedRoleName: "'{name}' is een gereserveerde rolnaam en kan niet voor een andere rol worden gebruikt",
       publicRootUrl: 'Publieke root URL',
       publicRootUrlHelp:
-        'Deze URL wordt gebruikt voor publieke toegang tot Ansible Forms, gebruikt in terugkoppelingen en e-mails.',
+        'Deze URL wordt gebruikt voor publieke toegang tot AnsibleForms, gebruikt in terugkoppelingen en e-mails.',
       defaultLanguage: 'Standaardtaal',
       defaultLanguageHelp: 'De standaardtaal voor nieuwe gebruikers die nog geen taal hebben gekozen.',
       defaultTheme: 'Standaardthema',

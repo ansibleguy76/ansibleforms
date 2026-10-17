@@ -293,6 +293,7 @@ export default {
     tab: 'API 令牌',
   },
   profilePage: {
+    preferencesSaved: '偏好已保存',
     languageHint: '菜单、页面和消息所用的语言。也可以通过页眉中的旗帜切换。',
     themeHint: '跟随浏览器、浅色、深色，或使用您选择的颜色作为页眉。也可以通过页眉中的太阳图标切换。',
     formsViewHint: '表单页面列出表单的方式：卡片或列表。也可以通过该页面上的按钮切换。',
@@ -320,7 +321,7 @@ export default {
       passwordHint: '您的登录密码，用于确认您的身份。它不会存储在 token 中。',
       lifetime: '有效期',
       days: '{n} 天',
-      password: '您的密码',
+      password: '密码',
       new: '新令牌',
       stepToken: '详细信息',
       stepConfirm: '确认',
@@ -390,11 +391,11 @@ export default {
       preferences: '偏好设置',
       password: '密码',
       permissions: '权限',
-      token: 'API token',
+      token: 'API 令牌',
     },
     description: {
       account: '您当前登录的身份，以及决定您能查看和运行哪些内容的组和角色。',
-      token: '用于脚本和 API 的长期 token，使用您的密码创建。',
+      token: '用于脚本和 API 的长期令牌，每个都用你的密码创建。',
       preferences: 'AnsibleForms 在您这里的外观。这些选择保存在此浏览器中。',
       password: '修改您本地账户的密码。',
       passwordElsewhere: '您的密码由您的登录提供商管理。',
@@ -717,7 +718,7 @@ export default {
     tooLarge: '图像过大，最大 256 KB',
   },
   version: {
-    title: 'Ansible Forms',
+    title: 'AnsibleForms',
     license:
       '本程序是自由软件：您可以根据自由软件基金会发布的 GNU 通用公共许可证（第 3 版或您选择的任何更高版本）的条款重新分发和/或修改它。',
     warranty:
@@ -1099,7 +1100,7 @@ export default {
       banner_danger: '危险',
       bannerClose: '关闭',
       appName: '应用名称',
-      appNameHelp: '显示在浏览器标签页和登录页面；留空则为 Ansible Forms。',
+      appNameHelp: '显示在浏览器标签页和登录页面；留空则为 AnsibleForms。',
       bannerStart: '开始日期',
       bannerStartHelp: '从此刻起显示。留空则立即显示。',
       bannerEnd: '结束日期',
@@ -1844,7 +1845,7 @@ export default {
       duplicateRoleName: "角色名称 '{name}' 重复，角色名称必须唯一",
       reservedRoleName: "'{name}' 是保留的角色名称，不能用于其他角色",
       publicRootUrl: '公共根 URL',
-      publicRootUrlHelp: '此 URL 用于公开访问 Ansible Forms，用于反向链接和邮件中。',
+      publicRootUrlHelp: '此 URL 用于公开访问 AnsibleForms，用于反向链接和邮件中。',
       defaultLanguage: '默认语言',
       defaultLanguageHelp: '尚未选择语言的新用户使用的默认语言。',
       defaultTheme: '默认主题',

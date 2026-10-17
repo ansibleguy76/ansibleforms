@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { fitRowCount, fitSize, nearestSize, FIT_MIN, FIT_MAX } from '../src/lib/tableFit.js';
+import { fitRowCount, fitSize, nearestSize, typicalHeight, FIT_MIN, FIT_MAX } from '../src/lib/tableFit.js';
 
 // the rows a table shows by default : as many as fit the room under its header
 describe('fitRowCount', () => {
@@ -26,12 +26,12 @@ describe('fitSize', () => {
   const sizes = [10, 20, 50, 100];
 
   it('takes the largest size the screen nearly holds', () => {
-    expect(fitSize(16, sizes)).toBe(10);
-    expect(fitSize(17, sizes)).toBe(20);
+    expect(fitSize(15, sizes)).toBe(10);
+    expect(fitSize(16, sizes)).toBe(20);
     expect(fitSize(18, sizes)).toBe(20);
-    expect(fitSize(42, sizes)).toBe(20);
-    expect(fitSize(43, sizes)).toBe(50);
-    expect(fitSize(85, sizes)).toBe(100);
+    expect(fitSize(39, sizes)).toBe(20);
+    expect(fitSize(40, sizes)).toBe(50);
+    expect(fitSize(80, sizes)).toBe(100);
   });
 
   it('takes the smallest when none fits', () => {
@@ -51,5 +51,17 @@ describe('nearestSize', () => {
     expect(nearestSize(25, sizes)).toBe(20);
     expect(nearestSize(75, sizes)).toBe(50);
     expect(nearestSize(500, sizes)).toBe(100);
+  });
+});
+
+describe('typicalHeight', () => {
+  it('takes the median, so one wrapped row does not count as every row', () => {
+    expect(typicalHeight([37, 59, 37, 37, 37])).toBe(37);
+  });
+  it('takes the upper middle one of an even count', () => {
+    expect(typicalHeight([30, 40])).toBe(40);
+  });
+  it('is 0 for no rows', () => {
+    expect(typicalHeight([])).toBe(0);
   });
 });

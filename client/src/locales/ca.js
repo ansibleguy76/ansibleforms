@@ -297,6 +297,7 @@ export default {
     tab: "Tokens d'API",
   },
   profilePage: {
+    preferencesSaved: 'Preferències desades',
     languageHint: "L'idioma dels menús, les pàgines i els missatges. La bandera de la capçalera també el canvia.",
     themeHint:
       'Seguir el navegador, clar, fosc, o una capçalera del color que triïs. La icona del sol de la capçalera també el canvia.',
@@ -330,7 +331,7 @@ export default {
       passwordHint: "La teva contrasenya d'inici de sessió, per confirmar que ets tu. No es desa al token.",
       lifetime: 'Vàlid durant',
       days: '{n} dies',
-      password: 'La teva contrasenya',
+      password: 'Contrasenya',
       new: 'Nou token',
       stepToken: 'Detalls',
       stepConfirm: 'Confirma',
@@ -406,11 +407,11 @@ export default {
       preferences: 'Preferències',
       password: 'Contrasenya',
       permissions: 'Permisos',
-      token: "Token de l'API",
+      token: "Tokens d'API",
     },
     description: {
       account: 'Amb quin usuari has iniciat la sessió, i els grups i rols que decideixen què pots veure i executar.',
-      token: "Un token de llarga durada per a scripts i l'API, creat amb la teva contrasenya.",
+      token: "Tokens de llarga durada per a scripts i l'API, cadascun creat amb la teva contrasenya.",
       preferences: 'Com veus AnsibleForms. Aquestes opcions es desen en aquest navegador.',
       password: 'Canvia la contrasenya del teu compte local.',
       passwordElsewhere: "La teva contrasenya la gestiona el teu proveïdor d'inici de sessió.",
@@ -735,7 +736,7 @@ export default {
     tooLarge: 'Imatge massa gran, la mida màxima és 256 KB',
   },
   version: {
-    title: 'Ansible Forms',
+    title: 'AnsibleForms',
     license:
       'Aquest programa és programari lliure: el podeu redistribuir i/o modificar segons els termes de la Llicència Pública General de GNU tal com la publica la Free Software Foundation, ja sigui la versió 3 de la Llicència o (a la vostra elecció) qualsevol versió posterior.',
     warranty:
@@ -1136,7 +1137,7 @@ export default {
       bannerClose: 'Tancar',
       appName: "Nom de l'aplicació",
       appNameHelp:
-        "Es mostra a la pestanya del navegador i a la pàgina d'inici de sessió. Deixa-ho buit per a Ansible Forms.",
+        "Es mostra a la pestanya del navegador i a la pàgina d'inici de sessió. Deixa-ho buit per a AnsibleForms.",
       bannerStart: "Data d'inici",
       bannerStartHelp: "Es mostra des d'aquest moment. Deixa-ho buit per mostrar-lo ara.",
       bannerEnd: 'Data de final',
@@ -1947,7 +1948,7 @@ export default {
       reservedRoleName: "'{name}' és un nom de rol reservat i no es pot utilitzar per a un altre rol",
       publicRootUrl: 'URL arrel pública',
       publicRootUrlHelp:
-        "Aquesta URL s'utilitza per a l'accés públic a Ansible Forms, als enllaços de retorn i als correus.",
+        "Aquesta URL s'utilitza per a l'accés públic a AnsibleForms, als enllaços de retorn i als correus.",
       defaultLanguage: 'Idioma predeterminat',
       defaultLanguageHelp: "L'idioma predeterminat per als usuaris nous que encara no n'han triat cap.",
       defaultTheme: 'Tema predeterminat',
