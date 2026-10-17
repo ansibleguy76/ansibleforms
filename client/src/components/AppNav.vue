@@ -302,8 +302,8 @@ const buildMismatch = computed(() => {
 </script>
 
 <template>
-  <!-- About : two build cards and a few lines, large enough (not the default extra large) -->
-  <BsModal v-if="showVersion" size="lg" @close="showVersion = false" icon="circle-info">
+  <!-- About : two build cards and a few lines, in a narrow dialog (af-about-dialog) -->
+  <BsModal v-if="showVersion" size="md" dialogClass="af-about-dialog" @close="showVersion = false" icon="circle-info">
     <template v-slot:title>
       {{ t('version.title') }} <badge class="badge rounded-pill text-bg-info">v{{ store.version }}</badge>
     </template>
@@ -568,6 +568,10 @@ const buildMismatch = computed(() => {
 </template>
 
 <style lang="scss">
+/* the About dialog : between Bootstrap's default (500px) and large (800px) */
+.modal-dialog.af-about-dialog {
+  max-width: 640px;
+}
 // ===============================================================
 // Header navigation (not scoped: it styles the links and menus that
 // BsNavLink, BsNavMenu and BsThemeSwitcher render inside the header)
