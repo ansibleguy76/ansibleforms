@@ -105,7 +105,7 @@ test("a workflow summary's lines : black, the status alone in its colour, the st
   ]);
   assert.equal(long[0].indexOf(" : "), long[1].indexOf(" : "));
   const out = Helpers.formatOutput(lines.map((l) => record(l)));
-  assert.match(out, /<span class=''>WORKFLOW NODE #1  \[validate-request\]   : <\/span><span class='has-text-success'>successful<\/span>/);
+  assert.match(out, /<span class=''>WORKFLOW NODE #1 {2}\[validate-request\] {3}: <\/span><span class='has-text-success'>successful<\/span>/);
   assert.match(out, /<span class='has-text-danger'>failed<\/span>/);
   assert.match(out, /<span class='has-text-info'>skipped<\/span>/);
 });

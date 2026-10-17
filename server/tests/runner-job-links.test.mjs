@@ -192,7 +192,7 @@ describe("the address kept on the job", () => {
     const row = { id: 30, job_type: "awx", runner: "jen", awx_id: 3, extravars: '{"__template__":"build"}', runner_job_url: null };
     const db = {
       calls: [],
-      do: async function (sql, params) {
+      do: async function (sql, _params) {
         this.calls.push(sql.split(" ")[0]);
         return sql.startsWith("SELECT") ? [row] : [];
       },
