@@ -889,7 +889,8 @@ const buildMismatch = computed(() => {
     padding: 0.15rem 0.55rem;
     border-radius: 50rem;
     background: var(--bs-tertiary-bg);
-    border: 1px solid var(--bs-border-color);
+    // the fields' darker grey, as the cards' and the pagers' borders
+    border: 1px solid var(--af-field-border);
     color: var(--bs-secondary-color);
     font-size: 0.75rem;
     white-space: nowrap;
