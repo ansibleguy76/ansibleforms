@@ -253,7 +253,7 @@ const crumbs = computed(() => {
 // A word typed in the title line's search narrows every tab at once, as Settings > General's :
 // the fields of Details whose label or help has it, the rows of the other tabs with it in one of
 // their cells (AppLinkedTable's search), each under its tab's name, the tabs set aside meanwhile.
-// API tokens stays out : its table reads its tokens itself and keeps its own search.
+// API tokens too : its tokens are read once when a search starts (tokenRows), its table given the word.
 const search = ref('');
 const searching = computed(() => !!search.value.trim());
 const matches = (...texts) => {
