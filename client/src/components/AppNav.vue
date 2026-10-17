@@ -886,7 +886,7 @@ const buildMismatch = computed(() => {
   .af-menu-type {
     align-self: flex-start;
     margin-top: 0.4rem;
-    padding: 0.15rem 0.55rem;
+    padding: 0.25rem 0.55rem 0.15rem;
     border-radius: 50rem;
     background: var(--bs-tertiary-bg);
     // the fields' darker grey, as the cards' and the pagers' borders
