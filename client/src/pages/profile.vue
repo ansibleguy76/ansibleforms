@@ -465,21 +465,6 @@ const nowTimer = setInterval(() => (now.value = new Date()), 30000);
 onBeforeUnmount(() => clearInterval(nowTimer));
 // a color still hovered when the page goes : the user's theme again
 onBeforeUnmount(() => Theme.endPreview());
-const timezoneNow = computed(() => Time.format(now.value, 'YYYY-MM-DD HH:mm'));
-// the zone's offset from UTC now (summer time included), as UTC+02:00 ; UTC itself needs none
-const timezoneOffset = computed(() => {
-  const zone = Time.zone();
-  if (zone === 'UTC') return '';
-  try {
-    const part = new Intl.DateTimeFormat('en-US', { timeZone: zone, timeZoneName: 'longOffset' })
-      .formatToParts(now.value)
-      .find((p) => p.type === 'timeZoneName')?.value;
-    // 'GMT+02:00', or plain 'GMT' for a zone on UTC time
-    return part ? part.replace('GMT', 'UTC').replace(/^UTC$/, 'UTC+00:00') : '';
-  } catch {
-    return '';
-  }
-});
 
 function setFormsView(mode) {
   formsView.value = mode;
@@ -693,15 +678,7 @@ async function changePassword() {
             <div class="form-text">{{ t('profilePage.dateFormatHint') }}</div>
             <!-- the time now in the picked zone and format : how dates read across the app -->
             <label class="form-label fw-bold d-block mt-4">{{ t('profilePage.preview') }}</label>
-            <div class="af-tz-now">
-              <span class="af-tz-now-icon"><FaIcon icon="clock" /></span>
-              <span class="d-flex flex-column">
-                <span class="af-tz-now-time">{{ timezoneNow }}</span>
-                <small class="text-body-secondary"
-                  >{{ Time.zone() }}<template v-if="timezoneOffset"> · {{ timezoneOffset }}</template></small
-                >
-              </span>
-            </div>
+            <AppTimePreview :zone="Time.zone()" :format="Time.datePattern()" />
           </div>
           <!-- Notifications : on this computer, when the user's jobs end or one waits for its approval -->
           <div v-else-if="prefTab === 'notifications'">
@@ -1040,24 +1017,6 @@ $af-detail-line: 1.8rem;
   .af-chip {
     margin: 0;
   }
-}
-.af-tz-now {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.875rem;
-  padding: 0.625rem 1rem;
-  border: 1px solid var(--bs-border-color);
-  border-radius: var(--bs-border-radius);
-  background-color: var(--bs-tertiary-bg);
-}
-.af-tz-now-icon {
-  font-size: 1.5rem;
-  color: var(--af-primary);
-}
-.af-tz-now-time {
-  font-size: 1.125rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
 }
 .af-count {
   display: inline-block;

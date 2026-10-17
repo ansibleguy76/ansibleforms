@@ -380,6 +380,15 @@ onMounted(async () => {
               :label="t('settings.interface.dateFormat')"
               :help="t('settings.interface.dateFormatHelp')"
             />
+            <!-- the time now in the default zone and format : how dates read for whoever has not
+                 picked their own, as Profile > Preferences shows it -->
+            <template v-if="!searching && activeTab === 'datetime'">
+              <label class="form-label fw-bold d-block mt-4">{{ t('profilePage.preview') }}</label>
+              <AppTimePreview
+                :zone="theme.default_timezone || 'UTC'"
+                :format="theme.default_date_format || 'YYYY-MM-DD'"
+              />
+            </template>
           </div>
         </template>
       </template>
