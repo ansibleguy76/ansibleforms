@@ -987,6 +987,11 @@ async function changePassword() {
 
 <style scoped lang="scss">
 // the identity band at the top of the account card
+/* the line under the account's header : a table's light line (the list under it takes the card's
+   darker border on top otherwise) */
+.af-identity + .list-group {
+  border-top-color: var(--bs-border-color);
+}
 /* a card's header (the account's name, a permission group's name and count) : as tall as a table's
    header (py-2 on it), its grey */
 .af-identity {
