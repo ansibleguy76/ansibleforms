@@ -240,9 +240,13 @@ onMounted(() => {
       :hasError="$v.user.password.$invalid && $v.user.password.$dirty"
       :errors="$v.user.password.$errors"
     />
-    <!-- on the way to the single sign-on provider, or back from it with its token : Signing in… -->
+    <!-- on the way to the single sign-on provider, or back from it with its token : a spinner and
+         Signing in… -->
     <button class="btn btn-primary w-100 py-2 login-submit" @click="login()">
-      {{ ssoPending || loading ? 'Signing in…' : 'Sign in' }}
+      <template v-if="ssoPending || loading">
+        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Signing in…
+      </template>
+      <template v-else>Sign in</template>
     </button>
     <!-- single sign-on : under a divider, its providers in a centred row of equal buttons -->
     <template v-if="entraIdEnabled || oidcEnabled">
