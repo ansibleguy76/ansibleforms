@@ -308,8 +308,8 @@ const buildMismatch = computed(() => {
     <template v-slot:title>{{ t('nav.about') }}</template>
     <template v-slot>
       <div class="af-about-product">
-        <div class="af-about-name">{{ t('version.title') }}</div>
-        <div class="af-about-version">v{{ store.version }}</div>
+        <span class="af-about-name">{{ t('version.title') }}</span>
+        <span class="af-about-version">v{{ store.version }}</span>
       </div>
       <!-- Cache Mismatch Warning -->
       <div v-if="buildMismatch" class="alert alert-warning d-flex align-items-center" role="alert">
@@ -571,8 +571,11 @@ const buildMismatch = computed(() => {
 </template>
 
 <style lang="scss">
-/* the About dialog's first lines : the product, large, and its version under it */
+/* the About dialog's first line : the product, large and bold, its version beside it in grey */
 .af-about-product {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
   margin-bottom: 1rem;
 }
 .af-about-name {
