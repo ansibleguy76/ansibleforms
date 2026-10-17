@@ -21,6 +21,15 @@
 /*      extraDirty: Boolean - more to save with the form (the     */
 /*            page's own fields, in a tab-top slot) : Save emits  */
 /*            saveExtra as well                                   */
+/*      searchable: Boolean - a search box on the title line : it */
+/*            narrows every tab at once, as Settings > General's  */
+/*            (the fields that match by label, help or name, each */
+/*            tab under its name, the tabs set aside meanwhile)   */
+/*      searchTopMatches: Object - { <tab key>: true } : the page */
+/*            has a match in that tab's tab-top slot (the slot    */
+/*            gets `searching` and `matches(...texts)`)           */
+/*                                                                */
+/*  @model search: String - the text searched (v-model:search)    */
 /*                                                                */
 /*  @emits:                                                       */
 /*      test: Function                                            */
@@ -66,6 +75,14 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  searchable: {
+    type: Boolean,
+    default: false,
+  },
+  searchTopMatches: {
+    type: Object,
+    default: () => ({}),
+  },
 });
 
 const emit = defineEmits(['test', 'import', 'saved', 'saveExtra', 'delete']);
@@ -97,6 +114,42 @@ const crumbs = computed(() => {
 });
 // the tab a field is in : the one it names, or the first
 const tabOf = (field) => field.tab || firstTab.value;
+
+// ─── search (searchable) ─────────────────────────────────────────────────────────────────────
+// A word typed in the title line's search narrows every tab at once : the fields that match it,
+// by label, help or name, each tab under its name, the tabs set aside meanwhile.
+const search = defineModel('search', { type: String, default: '' });
+const searching = computed(() => props.searchable && !!search.value.trim());
+/**
+ * Whether some texts have the text searched, whatever its case (true when nothing is searched).
+ *
+ * Args:
+ *   texts (...string): a field's label, help, name.
+ *
+ * Returns:
+ *   boolean: true when one of them has it.
+ */
+function matches(...texts) {
+  const q = search.value.trim().toLowerCase();
+  if (!q) return true;
+  return texts.some((x) =>
+    String(x ?? '')
+      .toLowerCase()
+      .includes(q),
+  );
+}
+const fieldMatches = (field) => matches(field.label, field.help, field.description, field.key);
+// a tab has something to show while searching : a field of it that matches, or its top slot's
+function tabMatches(tabKey) {
+  if (props.searchTopMatches[tabKey]) return true;
+  return fields.value.some((f) => tabOf(f) === tabKey && isVisible(f) && fieldMatches(f));
+}
+// the tabs shown : the active one, or while searching every one with a match
+const shownTabs = computed(() =>
+  searching.value
+    ? props.tabs.filter((tab) => tabMatches(tab.key))
+    : props.tabs.filter((tab) => tab.key === activeTab.value),
+);
 
 const objectLabel = computed(() => props.settings?.label || '');
 const objectIcon = computed(() => props.settings?.icon || '');
@@ -360,7 +413,11 @@ defineExpose({
     :crumbs="crumbs"
     :description="objectDescription"
   >
-    <template v-if="tabs.length" #tabs>
+    <!-- narrows every tab at once ; the search box of the other pages -->
+    <template v-if="searchable" #headerActions>
+      <BsSearch v-model="search" />
+    </template>
+    <template v-if="tabs.length && !searching" #tabs>
       <ul class="nav nav-tabs mb-0">
         <li v-for="tab in tabs" :key="tab.key" class="nav-item">
           <a class="nav-link" :class="{ active: activeTab === tab.key }" href="#" @click.prevent="activeTab = tab.key">
@@ -399,22 +456,39 @@ defineExpose({
     <template v-if="tabs.length" #default>
       <!-- the first load : the fields as grey placeholders, in their place -->
       <AppSkeleton v-if="!loaded" shape="form" :count="4" />
+      <div v-if="loaded && searching && !shownTabs.length" class="text-body-secondary fst-italic">
+        {{ t('settings.settingsPage.searchNone') }}
+      </div>
       <div
         v-for="tab in tabs"
-        v-show="loaded && activeTab === tab.key"
+        v-show="loaded && shownTabs.includes(tab)"
         :key="tab.key"
         :class="{ 'af-wide-tab': (settings.wideTabs || []).includes(tab.key) }"
       >
-        <div v-if="isManaged" class="alert alert-secondary py-2">
+        <!-- searching : the matches of every tab, each under its tab's name (as Settings > General) -->
+        <template v-if="searching">
+          <hr v-if="shownTabs.indexOf(tab) > 0" class="mt-4 mb-0 af-search-line" />
+          <h6
+            class="fw-bold text-body-secondary af-search-tab"
+            :class="{ 'af-search-first': shownTabs.indexOf(tab) === 0 }"
+          >
+            <FaIcon :icon="tab.icon" class="me-1" />{{ tab.label }}
+          </h6>
+        </template>
+        <div v-if="isManaged && (!searching || shownTabs.indexOf(tab) === 0)" class="alert alert-secondary py-2">
           <FaIcon icon="lock" class="me-2" />
           {{ t('settings.common.seedManagedNotice') }}
         </div>
-        <slot :name="'tab-top-' + tab.key"></slot>
+        <slot :name="'tab-top-' + tab.key" :searching="searching" :matches="matches"></slot>
         <!-- a toggle as the switches of the MCP and chat pages : its title, the switch, its help ; above
              the tab's fields, or under them (settings.togglesLast : a record's Enabled under its name,
              as an SSO provider's Active) -->
         <template v-if="!settings.togglesLast">
-          <div v-for="field in toggleFields.filter((f) => tabOf(f) === tab.key)" :key="field.key" class="mb-3">
+          <div
+            v-for="field in toggleFields.filter((f) => tabOf(f) === tab.key && (!searching || fieldMatches(f)))"
+            :key="field.key"
+            class="mb-3"
+          >
             <label class="form-label fw-bold af-toggle-title" :for="'tg-' + field.key">{{ field.label }}</label>
             <div class="form-check form-switch mb-0">
               <input
@@ -430,12 +504,12 @@ defineExpose({
           </div>
         </template>
         <template v-for="(cols, rIdx) in rowsOf(tab.key)" :key="rIdx">
-          <div v-if="cols && cols.some((f) => isVisible(f))" class="row">
+          <div v-if="cols && cols.some((f) => isVisible(f) && (!searching || fieldMatches(f)))" class="row">
             <div
               :class="field.type === 'checkbox' ? 'col-auto' : 'col'"
               v-for="field in cols"
               :key="field.key"
-              v-show="isVisible(field)"
+              v-show="isVisible(field) && (!searching || fieldMatches(field))"
             >
               <!-- several values, one per input (an LDAP directory's servers) -->
               <BsInputList
@@ -473,7 +547,11 @@ defineExpose({
           </div>
         </template>
         <template v-if="settings.togglesLast">
-          <div v-for="field in toggleFields.filter((f) => tabOf(f) === tab.key)" :key="field.key" class="mb-3">
+          <div
+            v-for="field in toggleFields.filter((f) => tabOf(f) === tab.key && (!searching || fieldMatches(f)))"
+            :key="field.key"
+            class="mb-3"
+          >
             <label class="form-label fw-bold af-toggle-title" :for="'tg-' + field.key">{{ field.label }}</label>
             <div class="form-check form-switch mb-0">
               <input
