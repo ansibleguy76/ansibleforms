@@ -55,12 +55,19 @@ export default defineConfig(({ mode }) => {
 // read .env / .env.local etc, so VITE_DEV_HOST can be set once per machine instead of
 // exported in the shell every time
 const env = loadEnv(mode, process.cwd(), '')
+// a trusted certificate for the dev server when one is given (VITE_DEV_CERT and VITE_DEV_KEY,
+// paths to PEM files, in client/.env.local) : browsers refuse a service worker - the desktop
+// notifications' Approve and Reject buttons - on a self-signed one. None given : the plugin's
+// own self-signed certificate, as before
+const devCert = env.VITE_DEV_CERT && env.VITE_DEV_KEY
+  ? { cert: readFileSync(env.VITE_DEV_CERT), key: readFileSync(env.VITE_DEV_KEY) }
+  : null
 return {
   // relative base, so a single build works under any subpath (issue #106)
   // the server rewrites the <base href="/"> tag in index.html at runtime (BASE_URL)
   base: './',
   plugins: [
-    basicSsl(),
+    ...(devCert ? [] : [basicSsl()]),
     devSsoMeta(env.API_PROXY_TARGET || 'http://localhost:3001'),
     svgLoader(
       {defaultImport: 'url'}
@@ -148,6 +155,7 @@ return {
     // passed through as-is it makes Vite resolve a literal hostname called "true"
     host: env.VITE_DEV_HOST === 'true' ? true : (env.VITE_DEV_HOST || '127.0.0.1'),
     port: 8443,
+    ...(devCert ? { https: devCert } : {}),
     // @engine lives outside client/ : let the dev server serve it
     fs: {
       allow: [fileURLToPath(new URL('..', import.meta.url))]
