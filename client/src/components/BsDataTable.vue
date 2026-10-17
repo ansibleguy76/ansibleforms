@@ -61,6 +61,9 @@ const { t } = useI18n();
 const props = defineProps({
   items: { type: Array, required: true },
   columns: { type: Array, required: true },
+  // the page's own search (a page that searches all its tabs at once) : the rows filtered on it,
+  // and no search box of the table's ; none (null) : the table's own box
+  search: { type: String, default: null },
   pageSize: { type: Number, default: 10 },
   name: { type: String, default: null },
   selectedIds: { type: Object, default: () => new Set() }, // Set
@@ -269,8 +272,9 @@ function toggleSort(key) {
 const filteredItems = computed(() => {
   let list = props.items;
 
-  if (globalFilter.value.trim()) {
-    const q = globalFilter.value.trim().toLowerCase();
+  const filterText = props.search ?? globalFilter.value;
+  if (filterText.trim()) {
+    const q = filterText.trim().toLowerCase();
     list = list.filter((item) =>
       props.columns.some((col) => {
         const v = cellText(item, col);
@@ -340,7 +344,7 @@ function onPageChange(slice, state) {
 // something, and BsPagination's own watcher clamps it if the list shrank.
 const filterVersion = ref(0);
 watch(
-  [globalFilter, columnFilters],
+  [globalFilter, columnFilters, () => props.search],
   () => {
     filterVersion.value++;
     anchorIndex = null;
@@ -591,9 +595,9 @@ function exportCsv() {
       >
         <!-- Global search -->
         <!-- framed : the search of the Forms page (grey icon box, clear button) -->
-        <BsSearch v-if="framed" v-model="globalFilter" class="af-table-search" />
+        <BsSearch v-if="framed && search === null" v-model="globalFilter" class="af-table-search" />
         <input
-          v-else
+          v-else-if="search === null"
           v-model="globalFilter"
           type="search"
           class="form-control form-control-sm"

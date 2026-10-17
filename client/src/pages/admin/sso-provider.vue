@@ -13,7 +13,8 @@
 /*                client id, secret, redirect URL)                */
 /*    Groups      the group filter, and its help                  */
 /*  Details' Enabled switch makes it the one its type signs in    */
-/*  with ; Delete and Save top right.                             */
+/*  with ; Delete and Save top right ; the search of the title    */
+/*  line narrows every tab at once.                               */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted } from 'vue';
@@ -140,10 +141,10 @@ const tabs = computed(() => [
 const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
 // the help of a tab, as the dialog's step shows it (the permissions of an Entra ID app...)
-const notes = computed(() => {
-  const step = (settings.value.steps || []).find((s) => s.key === activeTab.value);
+const tabNotes = (key) => {
+  const step = (settings.value.steps || []).find((s) => s.key === key);
   return step && typeof step.notes === 'function' && provider.value ? step.notes(provider.value).filter(Boolean) : [];
-});
+};
 
 // the title : SSO › <name>, each step a link : SSO back to the providers, the name to this page
 const pageCrumbs = computed(() => [
@@ -159,6 +160,68 @@ const crumbs = computed(() => {
   const tab = tabs.value.find((x) => x.key === activeTab.value);
   return tab ? [...pageCrumbs.value, { title: tab.label, icon: tab.icon, to: tabLink(tab.key) }] : pageCrumbs.value;
 });
+
+// ─── search ───────────────────────────────────────────────────────────────────
+// A word typed in the title line's search narrows every tab at once, as Settings > General's :
+// the fields, switches and types whose label or help has it, a tab's help when it has it, each
+// under its tab's name, the tabs set aside meanwhile.
+const search = ref('');
+const searching = computed(() => !!search.value.trim());
+const matches = (...texts) => {
+  const q = search.value.trim().toLowerCase();
+  return (
+    !q ||
+    texts.some((x) =>
+      String(x ?? '')
+        .toLowerCase()
+        .includes(q),
+    )
+  );
+};
+// each tab's fields : [key, label, help], only the ones the page draws
+const tabFields = computed(() => ({
+  details: [
+    ['name', t('settings.fields.name')],
+    ['description', t('settings.fields.description')],
+    ...switches.value.map((sw) => [sw.key, sw.label, sw.help]),
+  ],
+  type: SSO_TYPES.map((kind) => [
+    'type_' + kind,
+    t(`settings.oauth2.type_${kind}`),
+    t(`settings.oauth2.typeHint_${kind}`),
+  ]),
+  credentials: [
+    ['credential', t('settings.oauth2.credential'), t('settings.oauth2.credentialHelp')],
+    ...(provider.value?.client_id && !edit.value?.credential
+      ? [['ownClient', t('settings.oauth2.ownClient', { client: provider.value.client_id })]]
+      : []),
+  ],
+  groups: [['groupfilter', t('settings.oauth2.groupFilter')]],
+}));
+// the fields that match, per tab
+const shownFields = computed(() =>
+  Object.fromEntries(
+    Object.entries(tabFields.value).map(([tab, fields]) => [
+      tab,
+      fields.filter(([, ...texts]) => matches(...texts)).map(([key]) => key),
+    ]),
+  ),
+);
+const fieldShown = (key) => Object.values(shownFields.value).some((keys) => keys.includes(key));
+// a tab's help : shown while it has the text searched (whole), or always when not searching
+const shownNotes = (key) => tabNotes(key).filter((note) => matches(note.title, note.text, ...(note.items || [])));
+// the tabs shown : the active one, or while searching each one with a match
+const shownTabs = computed(() =>
+  searching.value
+    ? tabs.value.filter((tab) => shownFields.value[tab.key]?.length || shownNotes(tab.key).length)
+    : tabs.value.filter((tab) => tab.key === activeTab.value),
+);
+const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
+// while searching, a tab's name over its matches (the first without the line above)
+const searchHead = (key) => {
+  const i = shownTabs.value.findIndex((tab) => tab.key === key);
+  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
+};
 
 // ─── actions ──────────────────────────────────────────────────────────────────
 /**
@@ -236,7 +299,11 @@ onMounted(async () => {
       :crumbs="crumbs"
       :description="t('settings.oauth2.description')"
     >
-      <template v-if="provider" #tabs>
+      <!-- narrows every tab at once ; the search box of the other pages -->
+      <template v-if="provider" #headerActions>
+        <BsSearch v-model="search" />
+      </template>
+      <template v-if="provider && !searching" #tabs>
         <ul class="nav nav-tabs mb-0">
           <li v-for="tab in tabs" :key="tab.key" class="nav-item">
             <a
@@ -252,7 +319,7 @@ onMounted(async () => {
         </ul>
       </template>
       <!-- the record loading : its tabs as grey placeholders -->
-      <template v-else-if="!loaded" #tabs>
+      <template v-else-if="!loaded && !searching" #tabs>
         <AppSkeleton shape="tabs" :count="tabs.length" />
       </template>
       <template #default>
@@ -263,19 +330,33 @@ onMounted(async () => {
         <!-- the record loading : its fields as grey placeholders, where they come -->
         <AppSkeleton v-else-if="!loaded && !provider" shape="form" :count="3" />
         <div v-else-if="provider" class="af-provider-tab">
-          <!-- the help of the tab, as in the dialog's step -->
-          <div v-for="(note, n) in notes" :key="'note-' + n" class="alert alert-info af-provider-note">
-            <div v-if="note.title" class="fw-bold">{{ note.title }}</div>
-            <div v-if="note.text">{{ note.text }}</div>
-            <ul v-if="note.items && note.items.length" class="mb-0">
-              <li v-for="(line, l) in note.items" :key="l">{{ line }}</li>
-            </ul>
-          </div>
           <!-- Details : its name, description, whether users sign in with it -->
-          <template v-if="activeTab === 'details'">
+          <template v-if="tabShown('details')">
+            <template v-if="searching && searchHead('details')">
+              <hr v-if="!searchHead('details').first" class="mt-4 mb-0 af-search-line" />
+              <h6
+                class="fw-bold text-body-secondary af-search-tab"
+                :class="{ 'af-search-first': searchHead('details').first }"
+              >
+                <FaIcon :icon="searchHead('details').tab.icon" class="me-1" />{{ searchHead('details').tab.label }}
+              </h6>
+            </template>
+            <!-- the help of the tab, as in the dialog's step -->
+            <div
+              v-for="(note, n) in shownNotes('details')"
+              :key="'note-' + n"
+              class="alert alert-info af-provider-note"
+            >
+              <div v-if="note.title" class="fw-bold">{{ note.title }}</div>
+              <div v-if="note.text">{{ note.text }}</div>
+              <ul v-if="note.items && note.items.length" class="mb-0">
+                <li v-for="(line, l) in note.items" :key="l">{{ line }}</li>
+              </ul>
+            </div>
             <BsInput
               class="af-provider-field"
               v-model="edit.name"
+              v-show="fieldShown('name')"
               icon="heading"
               :isFloating="false"
               :required="true"
@@ -284,13 +365,14 @@ onMounted(async () => {
             <BsInput
               class="af-provider-field"
               v-model="edit.description"
+              v-show="fieldShown('description')"
               icon="info-circle"
               :isFloating="false"
               :label="t('settings.fields.description')"
             />
             <!-- its switches, as LDAP's, each saved at once : whether its type's login button signs in
                  with it, whether the login page is skipped for it -->
-            <div v-for="sw in switches" :key="sw.key" class="mb-3 af-provider-switch">
+            <div v-for="sw in switches" v-show="fieldShown(sw.key)" :key="sw.key" class="mb-3 af-provider-switch">
               <label class="form-label fw-bold d-block" :for="'af-provider-' + sw.key">{{ sw.label }}</label>
               <div class="form-check form-switch mb-0">
                 <input
@@ -307,8 +389,30 @@ onMounted(async () => {
             </div>
           </template>
           <!-- Type : Entra ID or Open ID, set when it was made -->
-          <template v-else-if="activeTab === 'type'">
-            <div v-for="kind in SSO_TYPES" :key="kind" class="form-check af-short-check af-type-option">
+          <template v-if="tabShown('type')">
+            <template v-if="searching && searchHead('type')">
+              <hr v-if="!searchHead('type').first" class="mt-4 mb-0 af-search-line" />
+              <h6
+                class="fw-bold text-body-secondary af-search-tab"
+                :class="{ 'af-search-first': searchHead('type').first }"
+              >
+                <FaIcon :icon="searchHead('type').tab.icon" class="me-1" />{{ searchHead('type').tab.label }}
+              </h6>
+            </template>
+            <!-- the help of the tab, as in the dialog's step -->
+            <div v-for="(note, n) in shownNotes('type')" :key="'note-' + n" class="alert alert-info af-provider-note">
+              <div v-if="note.title" class="fw-bold">{{ note.title }}</div>
+              <div v-if="note.text">{{ note.text }}</div>
+              <ul v-if="note.items && note.items.length" class="mb-0">
+                <li v-for="(line, l) in note.items" :key="l">{{ line }}</li>
+              </ul>
+            </div>
+            <div
+              v-for="kind in SSO_TYPES"
+              v-show="fieldShown('type_' + kind)"
+              :key="kind"
+              class="form-check af-short-check af-type-option"
+            >
               <input
                 :id="'af-ssotype-' + kind"
                 :checked="kind === provider.provider"
@@ -327,10 +431,34 @@ onMounted(async () => {
           <!-- Credentials : where and as whom - a credential of its type of Connections >
                Credentials (its user the client id, its password the secret, its tenant or issuer) ;
                one from before credentials says its own -->
-          <template v-else-if="activeTab === 'credentials'">
+          <template v-if="tabShown('credentials')">
+            <template v-if="searching && searchHead('credentials')">
+              <hr v-if="!searchHead('credentials').first" class="mt-4 mb-0 af-search-line" />
+              <h6
+                class="fw-bold text-body-secondary af-search-tab"
+                :class="{ 'af-search-first': searchHead('credentials').first }"
+              >
+                <FaIcon :icon="searchHead('credentials').tab.icon" class="me-1" />{{
+                  searchHead('credentials').tab.label
+                }}
+              </h6>
+            </template>
+            <!-- the help of the tab, as in the dialog's step -->
+            <div
+              v-for="(note, n) in shownNotes('credentials')"
+              :key="'note-' + n"
+              class="alert alert-info af-provider-note"
+            >
+              <div v-if="note.title" class="fw-bold">{{ note.title }}</div>
+              <div v-if="note.text">{{ note.text }}</div>
+              <ul v-if="note.items && note.items.length" class="mb-0">
+                <li v-for="(line, l) in note.items" :key="l">{{ line }}</li>
+              </ul>
+            </div>
             <BsInput
               class="af-provider-field"
               v-model="edit.credential"
+              v-show="fieldShown('credential')"
               type="select"
               icon="key"
               :isFloating="false"
@@ -341,26 +469,47 @@ onMounted(async () => {
               :help="t('settings.oauth2.credentialHelp')"
               :label="t('settings.oauth2.credential')"
             />
-            <p v-if="provider.client_id && !edit.credential" class="form-text">
+            <p v-if="provider.client_id && !edit.credential" v-show="fieldShown('ownClient')" class="form-text">
               {{ t('settings.oauth2.ownClient', { client: provider.client_id }) }}
             </p>
           </template>
           <!-- Groups : which of the user's groups the app keeps -->
-          <template v-else>
+          <template v-if="tabShown('groups')">
+            <template v-if="searching && searchHead('groups')">
+              <hr v-if="!searchHead('groups').first" class="mt-4 mb-0 af-search-line" />
+              <h6
+                class="fw-bold text-body-secondary af-search-tab"
+                :class="{ 'af-search-first': searchHead('groups').first }"
+              >
+                <FaIcon :icon="searchHead('groups').tab.icon" class="me-1" />{{ searchHead('groups').tab.label }}
+              </h6>
+            </template>
+            <!-- the help of the tab, as in the dialog's step -->
+            <div v-for="(note, n) in shownNotes('groups')" :key="'note-' + n" class="alert alert-info af-provider-note">
+              <div v-if="note.title" class="fw-bold">{{ note.title }}</div>
+              <div v-if="note.text">{{ note.text }}</div>
+              <ul v-if="note.items && note.items.length" class="mb-0">
+                <li v-for="(line, l) in note.items" :key="l">{{ line }}</li>
+              </ul>
+            </div>
             <BsInput
               class="af-provider-field"
               v-model="edit.groupfilter"
+              v-show="fieldShown('groupfilter')"
               icon="filter"
               :isFloating="false"
               :label="t('settings.oauth2.groupFilter')"
             />
           </template>
+          <div v-if="searching && !shownTabs.length" class="text-body-secondary fst-italic">
+            {{ t('settings.settingsPage.searchNone') }}
+          </div>
         </div>
       </template>
       <template v-if="provider" #actions>
         <!-- Credentials : a new credential of its type, chosen once made -->
         <AppNewCredentialButton
-          v-if="activeTab === 'credentials'"
+          v-if="tabShown('credentials')"
           :type="provider.provider === 'azuread' ? 'entraid' : 'oidc'"
           @created="onCredentialCreated"
         />

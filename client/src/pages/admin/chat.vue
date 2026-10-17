@@ -29,6 +29,22 @@ const { envItems, envEdits, envDirty, envRestartPending, loadEnvironmentVariable
 // switched on, as the page shows it (before Save too) : the settings below wait for it
 const chatOn = computed(() => String(envEdits.value.ENABLE_CHAT ?? '0') === '1');
 
+// the search of the title line (AppAdminSingle searchable) : the switch matches as a field does,
+// by its label, its name or its help
+const search = ref('');
+const envMatch = (e) => {
+  const q = search.value.trim().toLowerCase();
+  return (
+    !q ||
+    [e.short, e.name, e.hint, e.description].some((x) =>
+      String(x ?? '')
+        .toLowerCase()
+        .includes(q),
+    )
+  );
+};
+const topMatches = computed(() => ({ general: envItems.value.some(envMatch) }));
+
 // Save : the switch, then the chat button of the header follows without a reload
 async function saveSwitch() {
   await saveEnvironmentVariables();
@@ -62,6 +78,9 @@ onMounted(async () => {
       :tabs="tabs"
       :locked="!chatOn"
       :extraDirty="envDirty"
+      searchable
+      v-model:search="search"
+      :searchTopMatches="topMatches"
       @test="testProvider"
       @saved="State.loadAppConfig()"
       @saveExtra="saveSwitch()"
@@ -72,7 +91,13 @@ onMounted(async () => {
           <FaIcon icon="triangle-exclamation" class="me-2" />
           {{ t('settings.settingsPage.envRestartPending', { names: envRestartPending.join(', ') }) }}
         </div>
-        <AppEnvField v-for="e in envItems" :key="e.name" v-model="envEdits[e.name]" :e="e" :asSwitch="true" />
+        <AppEnvField
+          v-for="e in envItems.filter(envMatch)"
+          :key="e.name"
+          v-model="envEdits[e.name]"
+          :e="e"
+          :asSwitch="true"
+        />
       </template>
     </AppAdminSingle>
   </AppSettingsPage>

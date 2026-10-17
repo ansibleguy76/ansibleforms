@@ -12,7 +12,8 @@
 /*  Under Last launch : the job it started (a link), or why it    */
 /*  could not start one.                                          */
 /*  Run now and Delete top right, beside Save. While it runs, its */
-/*  state and output are re-read every 2 seconds.                 */
+/*  state and output are re-read every 2 seconds. The search of   */
+/*  the title line narrows every tab at once.                     */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
@@ -150,6 +151,87 @@ const crumbs = computed(() => {
   return tab ? [...pageCrumbs.value, { title: tab.label, icon: tab.icon, to: tabLink(tab.key) }] : pageCrumbs.value;
 });
 
+// ─── search ───────────────────────────────────────────────────────────────────
+// A word typed in the title line's search narrows every tab at once, as Settings > General's :
+// the facts and fields whose label or help has it, the extra vars when their text has it (shown
+// whole), each under its tab's name, the tabs set aside meanwhile.
+const search = ref('');
+const searching = computed(() => !!search.value.trim());
+const matches = (...texts) => {
+  const q = search.value.trim().toLowerCase();
+  return (
+    !q ||
+    texts.some((x) =>
+      String(x ?? '')
+        .toLowerCase()
+        .includes(q),
+    )
+  );
+};
+// each tab's fields : [key, label, help...], only the ones the page draws
+const tabFields = computed(() => {
+  const s = schedule.value || {};
+  return {
+    details: [
+      ['lastLaunch', t('settings.schedules.lastLaunch'), t('settings.schedules.lastLaunchHelp'), launchError.value],
+      ...(startedJob.value
+        ? [
+            [
+              'startedJob',
+              t('settings.schedules.startedJobTitle'),
+              t('settings.schedules.startedJobHelp'),
+              t('settings.schedules.startedJob', { id: startedJob.value }),
+            ],
+          ]
+        : []),
+      ['state', t('settings.schedules.scheduleState'), t('settings.schedules.scheduleStateHelp')],
+      ['lastRun', t('settings.fields.lastRun'), s.last_run ? Helpers.formatServerDate(s.last_run) : ''],
+      ['nextRun', t('settings.schedules.nextRun'), s.next_run ? Helpers.formatServerDate(s.next_run) : ''],
+      ['name', t('settings.fields.name'), t('settings.repositories.helpName')],
+      ['form', t('settings.fields.form'), edit.value?.form],
+    ],
+    schedule: [
+      ['one_time_run', t('settings.schedules.oneTimeRun')],
+      edit.value?.one_time_run
+        ? ['run_at', t('settings.schedules.runAt'), t('settings.schedules.runAtHelp')]
+        : [
+            'cron',
+            t('settings.cron.minute'),
+            t('settings.cron.hour'),
+            t('settings.cron.dayOfMonth'),
+            t('settings.cron.month'),
+            t('settings.cron.dayOfWeek'),
+            edit.value?.cron,
+          ],
+    ],
+    'extra-vars': [
+      ['extra_vars', t('settings.fields.extraVars'), t('settings.schedules.extraVarsHelp'), edit.value?.extra_vars],
+    ],
+  };
+});
+// the fields that match, per tab
+const shownFields = computed(() =>
+  Object.fromEntries(
+    Object.entries(tabFields.value).map(([tab, fields]) => [
+      tab,
+      fields.filter(([, ...texts]) => matches(...texts)).map(([key]) => key),
+    ]),
+  ),
+);
+const fieldShown = (key) => Object.values(shownFields.value).some((keys) => keys.includes(key));
+// the tabs shown : the active one, or while searching each one with a match
+const shownTabs = computed(() =>
+  searching.value
+    ? tabs.value.filter((tab) => shownFields.value[tab.key]?.length)
+    : tabs.value.filter((tab) => tab.key === activeTab.value),
+);
+const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
+// while searching, a tab's name over its matches (the first without the line above)
+const searchHead = (key) => {
+  const i = shownTabs.value.findIndex((tab) => tab.key === key);
+  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
+};
+
 // ─── actions ──────────────────────────────────────────────────────────────────
 /**
  * Saves the fields of every tab : a one time run keeps its time and no cron, a recurring one
@@ -243,7 +325,11 @@ onMounted(async () => {
         :crumbs="crumbs"
         :description="t('settings.schedules.description')"
       >
-        <template v-if="schedule" #tabs>
+        <!-- narrows every tab at once ; the search box of the other pages -->
+        <template v-if="schedule" #headerActions>
+          <BsSearch v-model="search" />
+        </template>
+        <template v-if="schedule && !searching" #tabs>
           <ul class="nav nav-tabs mb-0">
             <li v-for="tab in tabs" :key="tab.key" class="nav-item">
               <a
@@ -259,7 +345,7 @@ onMounted(async () => {
           </ul>
         </template>
         <!-- the record loading : its tabs as grey placeholders -->
-        <template v-else-if="!loaded" #tabs>
+        <template v-else-if="!loaded && !searching" #tabs>
           <AppSkeleton shape="tabs" :count="tabs.length" />
         </template>
         <template #default>
@@ -271,9 +357,18 @@ onMounted(async () => {
           <AppSkeleton v-else-if="!loaded && !schedule" shape="form" :count="3" />
           <div v-else-if="schedule && edit" class="af-schedule-tab">
             <!-- Details : where it stands, its name and the form it runs -->
-            <template v-if="activeTab === 'details'">
+            <template v-if="tabShown('details')">
+              <template v-if="searching && searchHead('details')">
+                <hr v-if="!searchHead('details').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('details').first }"
+                >
+                  <FaIcon :icon="searchHead('details').tab.icon" class="me-1" />{{ searchHead('details').tab.label }}
+                </h6>
+              </template>
               <!-- where it stands : each a field of the column, read only, as a repository's status -->
-              <div class="mb-3">
+              <div v-show="fieldShown('lastLaunch')" class="mb-3">
                 <div class="form-label fw-bold">{{ t('settings.schedules.lastLaunch') }}</div>
                 <span v-html="statusPill(t, schedule.status)"></span>
                 <!-- why it started no job -->
@@ -281,7 +376,7 @@ onMounted(async () => {
                 <div class="form-text">{{ t('settings.schedules.lastLaunchHelp') }}</div>
               </div>
               <!-- the job it started : opened to see how it ended -->
-              <div v-if="startedJob" class="mb-3">
+              <div v-if="startedJob" v-show="fieldShown('startedJob')" class="mb-3">
                 <div class="form-label fw-bold">{{ t('settings.schedules.startedJobTitle') }}</div>
                 <router-link :to="`/jobs/${startedJob}`" class="af-started-job"
                   ><FaIcon icon="file-lines" class="me-1" />{{
@@ -290,22 +385,23 @@ onMounted(async () => {
                 >
                 <div class="form-text">{{ t('settings.schedules.startedJobHelp') }}</div>
               </div>
-              <div class="mb-3">
+              <div v-show="fieldShown('state')" class="mb-3">
                 <div class="form-label fw-bold">{{ t('settings.schedules.scheduleState') }}</div>
                 <span v-html="schedulePill(t, schedule.state)"></span>
                 <div class="form-text">{{ t('settings.schedules.scheduleStateHelp') }}</div>
               </div>
-              <div class="mb-3">
+              <div v-show="fieldShown('lastRun')" class="mb-3">
                 <div class="form-label fw-bold">{{ t('settings.fields.lastRun') }}</div>
                 <span>{{ schedule.last_run ? Helpers.formatServerDate(schedule.last_run) : '–' }}</span>
               </div>
-              <div class="mb-3">
+              <div v-show="fieldShown('nextRun')" class="mb-3">
                 <div class="form-label fw-bold">{{ t('settings.schedules.nextRun') }}</div>
                 <span>{{ schedule.next_run ? Helpers.formatServerDate(schedule.next_run) : '–' }}</span>
               </div>
               <BsInput
                 class="af-schedule-field"
                 v-model="edit.name"
+                v-show="fieldShown('name')"
                 icon="heading"
                 :isFloating="false"
                 :required="true"
@@ -315,6 +411,7 @@ onMounted(async () => {
               <BsInput
                 class="af-schedule-field"
                 v-model="edit.form"
+                v-show="fieldShown('form')"
                 type="select"
                 icon="pen-to-square"
                 :isFloating="false"
@@ -326,8 +423,17 @@ onMounted(async () => {
               />
             </template>
             <!-- Schedule : once at a time, or on a cron schedule -->
-            <template v-else-if="activeTab === 'schedule'">
-              <div class="form-check form-switch mb-3">
+            <template v-if="tabShown('schedule')">
+              <template v-if="searching && searchHead('schedule')">
+                <hr v-if="!searchHead('schedule').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('schedule').first }"
+                >
+                  <FaIcon :icon="searchHead('schedule').tab.icon" class="me-1" />{{ searchHead('schedule').tab.label }}
+                </h6>
+              </template>
+              <div v-show="fieldShown('one_time_run')" class="form-check form-switch mb-3">
                 <input
                   id="af-schedule-once"
                   v-model="edit.one_time_run"
@@ -337,20 +443,32 @@ onMounted(async () => {
                 />
                 <label class="form-check-label" for="af-schedule-once">{{ t('settings.schedules.oneTimeRun') }}</label>
               </div>
-              <div v-if="edit.one_time_run" class="af-schedule-field mb-0">
+              <div v-if="edit.one_time_run" v-show="fieldShown('run_at')" class="af-schedule-field mb-0">
                 <label class="form-label">{{ t('settings.schedules.runAt') }}</label>
                 <BsDateTime v-model="edit.run_at" icon="calendar" dateType="datetime" :convertToUtc="true" teleport />
                 <div class="form-text">{{ t('settings.schedules.runAtHelp') }}</div>
               </div>
-              <div v-else class="af-schedule-cron mb-0">
+              <div v-else v-show="fieldShown('cron')" class="af-schedule-cron mb-0">
                 <BsCron v-model="edit.cron" icon="stopwatch" :hasError="!!cronError" />
                 <div v-if="cronError" class="invalid-feedback d-block">{{ cronError }}</div>
               </div>
             </template>
             <!-- Extra vars : what it sends the form -->
-            <template v-else>
+            <template v-if="tabShown('extra-vars')">
+              <template v-if="searching && searchHead('extra-vars')">
+                <hr v-if="!searchHead('extra-vars').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('extra-vars').first }"
+                >
+                  <FaIcon :icon="searchHead('extra-vars').tab.icon" class="me-1" />{{
+                    searchHead('extra-vars').tab.label
+                  }}
+                </h6>
+              </template>
               <BsInput
                 v-model="edit.extra_vars"
+                v-show="fieldShown('extra_vars')"
                 type="editor"
                 lang="yaml"
                 :style="editorStyle('40vh')"
@@ -359,6 +477,9 @@ onMounted(async () => {
                 :label="t('settings.fields.extraVars')"
               />
             </template>
+            <div v-if="searching && !shownTabs.length" class="text-body-secondary fst-italic">
+              {{ t('settings.settingsPage.searchNone') }}
+            </div>
           </div>
         </template>
         <template v-if="schedule" #actions>

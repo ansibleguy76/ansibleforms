@@ -625,7 +625,7 @@ export default {
     allUsers: 'Wszyscy użytkownicy',
     allActions: 'Wszystkie akcje',
     allOutcomes: 'Wszystkie wyniki',
-    reset: 'Resetuj',
+    reset: 'Resetuj wybór',
     resetHint: 'Znowu wszyscy użytkownicy, wszystkie akcje i wszystkie wyniki',
     empty: 'Brak wpisów audytu',
     emptyHint: 'Dziennik zaczyna się od instalacji tej wersji, więc nie zawiera niczego sprzed tego momentu.',

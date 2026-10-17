@@ -748,32 +748,6 @@ onMounted(async () => {
   </AppSettingsPage>
 </template>
 <style scoped>
-/* the search's results : a line from side to side of the card under each tab's name and between
-   the tabs (the card body's padding taken back), the space between fields under it */
-.af-search-line,
-.af-search-tab {
-  margin-left: calc(-1 * var(--bs-card-spacer-x));
-  margin-right: calc(-1 * var(--bs-card-spacer-x));
-}
-.af-search-line {
-  opacity: 1;
-  border-color: var(--bs-border-color);
-}
-.af-search-tab {
-  /* as much space above the name as under it, between the two lines : its icon and its text one
-     centred line */
-  display: flex;
-  align-items: center;
-  line-height: 1.2;
-  /* the pixel of the line above given back, so both sides measure the same */
-  padding: calc(0.75rem + 3px) var(--bs-card-spacer-x) calc(0.75rem + 2px);
-  margin-bottom: 1.5rem;
-  border-bottom: 1px solid var(--bs-border-color);
-}
-/* the first : the card's own padding above it */
-.af-search-tab.af-search-first {
-  padding-top: 0;
-}
 /* the variables' fields one width, as on the other settings pages (AppEnvField) : across the
    whole card, a number or a yes / no sat far from its label. A tab holding a long value (a
    path, a command, an address) has all its fields wider, wide enough to read it : the fields
