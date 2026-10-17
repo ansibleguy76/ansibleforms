@@ -718,3 +718,11 @@ textarea:focus::placeholder {
   background-color: rgba(255, 152, 0, 0.85);
   color: #000;
 }
+
+// a chosen colour swatch (a label's colour, on its page and in the New label dialog) : the pills'
+// colours take the border away (!important), so it is ringed with a shadow
+.af-swatch-active {
+  box-shadow:
+    0 0 0 2px var(--bs-body-bg),
+    0 0 0 4px var(--bs-body-color);
+}

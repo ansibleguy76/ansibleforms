@@ -576,3 +576,19 @@ describe("the chat assistant's provider is seedable (a single-row section)", () 
     assert.deepEqual(writes, []);
   });
 });
+
+describe("labels are seedable", () => {
+  test("a label validates : its text, a colour of the pills, shown or not, its place", () => {
+    assert.doesNotThrow(() => validateSeed({ labels: { items: [
+      { name: "PRODUCTION", color: "red", enabled: true, position: 1 },
+      { name: "EU", color: "blue" },
+    ] } }));
+    assert.ok(listSections.some((s) => s.key === "labels"));
+  });
+
+  test("a colour the header has no pill for, or a text too long, is refused", () => {
+    assert.throws(() => validateSeed({ labels: { items: [{ name: "X", color: "pink" }] } }), /validation failed/);
+    assert.throws(() => validateSeed({ labels: { items: [{ name: "x".repeat(41) }] } }), /validation failed/);
+    assert.throws(() => validateSeed({ labels: { items: [{ name: "A" }, { name: "A" }] } }), /duplicate labels names/);
+  });
+});

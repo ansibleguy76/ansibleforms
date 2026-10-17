@@ -551,7 +551,7 @@ const SCHEMA_MANIFEST = {
     tables: ['groups', 'users', 'tokens', 'credentials', 'ldap', 'jobs', 'job_output',
              'settings', 'repositories', 'schedule', 'audit', 'chat_settings', 'secret_stores', 'runners',
              'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'notification_channels', 'syslog_servers', 'login_failures', 'token_revocations', 'schema_migrations',
-             'directory_users', 'announcements', 'disclaimer_versions', 'disclaimer_acceptances', 'api_tokens'],
+             'directory_users', 'announcements', 'disclaimer_versions', 'disclaimer_acceptances', 'api_tokens', 'labels'],
   },
   patches: {
     patchVersion4: { columns: ['ldap.groups_search_base', 'ldap.groups_attribute', 'ldap.group_class',
@@ -589,7 +589,7 @@ const SCHEMA_MANIFEST = {
     // and the worker and several app nodes : the processes on the database, what changed
     // between them, the designer lock, and the node that follows a job
     patchVersion7: { tables: ['secret_stores', 'runners', 'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'notification_channels', 'syslog_servers', 'login_failures', 'token_revocations', 'schema_migrations',
-                              'directory_users', 'announcements', 'disclaimer_versions', 'disclaimer_acceptances', 'api_tokens'],
+                              'directory_users', 'announcements', 'disclaimer_versions', 'disclaimer_acceptances', 'api_tokens', 'labels'],
                      columns: ['schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'settings.syslog_env_imported_at', 'jobs.runner', 'jobs.runner_kind',
                                'runners.username', 'runners.password', 'runners.use_credentials', 'runners.node_id', 'jobs.job_log',
                                'jobs.tracker', 'repositories.claim_node', 'repositories.claim_since',
@@ -996,6 +996,10 @@ async function patchVersion7(messages, success, failed) {
   }
   // the environment label shown or not (Settings > Appearance > Environment) : shown
   await checkPromise(addColumn("settings", "env_label_show", "tinyint(4)", false, "1"), messages, success, failed);
+  // the labels beside the logo (Settings > Appearance > Labels), several where there was one
+  // environment label : that label (its text, its colour, shown or not) is their first, once,
+  // on the start that makes the table
+  await checkPromise(addLabelsTable(), messages, success, failed);
   // the announcements shown or not (Settings > Appearance > Announcements) : shown ; and the
   // announcements themselves, each with its start and its end
   await checkPromise(addColumn("settings", "banner_show", "tinyint(4)", false, "1"), messages, success, failed);
@@ -1094,6 +1098,31 @@ async function patchVersion7(messages, success, failed) {
   // the API tokens issued, listed and revoked on the profile and the user's page (models/apiToken.model.js)
   const apiTokens = fs.readFileSync(`${__dirname}/../db/create_api_tokens_table.sql`);
   await checkPromise(addTable("api_tokens", apiTokens.toString()), messages, success, failed);
+}
+
+/**
+ * Makes the labels table, and on that start only (the table was not there) carries the
+ * environment label of the settings row into it as its first label : deleting every label
+ * later never brings it back.
+ *
+ * Returns:
+ *   Promise<string>: what was done, for the patch's messages.
+ */
+async function addLabelsTable() {
+  const existed = await mysql.do("SHOW TABLES FROM ?? WHERE ?? = ?", ["AnsibleForms", "Tables_in_AnsibleForms", "labels"]);
+  const sql = fs.readFileSync(`${__dirname}/../db/create_labels_table.sql`).toString();
+  const message = await addTable("labels", sql);
+  if (existed.length) return message;
+  const rows = await mysql.do("SELECT env_label, env_label_color, env_label_show FROM AnsibleForms.`settings` LIMIT 1");
+  const old = rows?.[0];
+  const name = String(old?.env_label || "").trim();
+  if (!name) return message;
+  await mysql.do("INSERT INTO AnsibleForms.`labels` (name, color, enabled, position) VALUES (?, ?, ?, 1)", [
+    name.slice(0, 40),
+    old.env_label_color || "red",
+    old.env_label_show === 0 ? 0 : 1,
+  ]);
+  return `${message}, with the environment label '${name}' as its first`;
 }
 
 // Idempotent by its WHERE clause : only a job with a runner and no kind yet gets one, from its

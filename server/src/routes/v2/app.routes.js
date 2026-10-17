@@ -19,7 +19,7 @@ let defaultsCache = { value: undefined, fetchedAt: 0 };
  * and index.html's instance name and label (app-start.js, lib/indexMeta.js).
  *
  * Returns:
- *   Promise<Object>: { language, theme, color, appName, envLabel, envLabelColor, ... }.
+ *   Promise<Object>: { language, theme, color, appName, labels, ... }.
  */
 export async function resolveDefaults() {
   if (defaultsCache.value !== undefined && (Date.now() - defaultsCache.fetchedAt) < CACHE_TTL_MS) {
@@ -30,7 +30,7 @@ export async function resolveDefaults() {
   // default_language column, and the settings page greys that field out to say so.
   // (Before 6.3.0 the database value won and the variable was only a fallback.)
   const languageFromEnv = process.env.DEFAULT_LANGUAGE || null;
-  let result = { language: languageFromEnv || "en", theme: null, color: null, appName: null, envLabel: null, envLabelColor: null, announcements: [], formsView: null, timezone: null, dateFormat: null, headerLinks: [] };
+  let result = { language: languageFromEnv || "en", theme: null, color: null, appName: null, labels: [], announcements: [], formsView: null, timezone: null, dateFormat: null, headerLinks: [] };
   try {
     // language, theme and theme color all live on the same single settings row, so
     // they are read in ONE query : this endpoint blocks the SPA from rendering even
@@ -44,8 +44,7 @@ export async function resolveDefaults() {
     result.theme = defaults.theme;
     result.color = defaults.color;
     result.appName = defaults.appName;
-    result.envLabel = defaults.envLabel;
-    result.envLabelColor = defaults.envLabelColor;
+    result.labels = defaults.labels || [];
     result.announcements = defaults.announcements || [];
     result.formsView = defaults.formsView;
     result.timezone = defaults.timezone;
@@ -109,8 +108,7 @@ router.get("/config", async (req, res) => {
     // the label beside the logo, the announcements under the header while they run, the forms
     // list's view for whoever has not chosen one
     appName: defaults.appName,
-    envLabel: defaults.envLabel,
-    envLabelColor: defaults.envLabelColor,
+    labels: defaults.labels,
     announcements: runningAnnouncements(defaults.announcements),
     formsView: defaults.formsView,
     timezone: defaults.timezone,

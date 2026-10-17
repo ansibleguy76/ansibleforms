@@ -34,6 +34,7 @@ import SecretStore from "../models/secretStore.model.js";
 import Runner from "../models/runner.model.js";
 import Repository from "../models/repository.model.js";
 import SyslogServer from "../models/syslogServer.model.js";
+import Label from "../models/label.model.js";
 import NotificationChannel from "../models/notificationChannel.model.js";
 import Ldap from "../models/ldap.model.js";
 import Settings from "../models/settings.model.js";
@@ -105,6 +106,15 @@ const listSections = [
     // URL. Going through CrudModel writes the empty value, which is what was declared.
     update: (d, row) => CrudModel.update("repositories", d, row.id, seedOpts),
     remove: (row) => Repository.delete(row.name, seedOpts),
+  },
+  {
+    // the labels beside the header's logo (Settings > Appearance > Labels)
+    key: "labels",
+    modelName: "label",
+    label: "label",
+    create: (d) => Label.create(d, seedOpts),
+    update: (d, row) => Label.update(d, row.id, seedOpts),
+    remove: (row) => Label.delete(row.id, seedOpts),
   },
   {
     // where the server log and the audit entries go (Connections > Syslog)

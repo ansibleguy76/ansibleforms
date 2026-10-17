@@ -39,8 +39,8 @@ const customLogo = computed(() => (store.logoIsDefault ? null : store.customLogo
         <img class="logo my-auto" v-else-if="currentTheme === 'light'" :src="'img/logo_light.svg'" />
         <img class="logo my-auto" v-else :src="'img/logo_color.svg'" />
       </router-link>
-      <!-- the environment label beside the logo (PRODUCTION, TEST) -->
-      <AppEnvLabel />
+      <!-- the labels beside the logo (PRODUCTION, EU) -->
+      <AppLabels />
       <button
         class="navbar-toggler af-toggler"
         type="button"

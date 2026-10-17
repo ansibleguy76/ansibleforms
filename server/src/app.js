@@ -60,6 +60,7 @@ import runnerRoutesv2 from "./routes/v2/runner.routes.js";
 import notificationChannelRoutesv2 from "./routes/v2/notificationChannel.routes.js";
 import syslogServerRoutesv2 from "./routes/v2/syslogServer.routes.js";
 import announcementRoutesv2 from "./routes/v2/announcement.routes.js";
+import labelRoutesv2 from "./routes/v2/label.routes.js";
 import disclaimerRoutesv2, { disclaimerSettingsRouter, disclaimerVersionRouter, disclaimerAcceptanceRouter } from "./routes/v2/disclaimer.routes.js";
 import eventsRoutesv2 from "./routes/v2/events.routes.js";
 import knownhostsRoutes from "./routes/v2/knownhosts.routes.js";
@@ -273,6 +274,8 @@ const load = async (app) => {
   app.use(`/api/v2/syslogserver`, cors(), authobj, Middleware.checkConnectionsMiddleware, syslogServerRoutesv2);
   // Settings > Appearance > Announcements
   app.use(`/api/v2/announcement`, cors(), authobj, Middleware.checkAppearanceMiddleware, announcementRoutesv2);
+  // the labels beside the header's logo (Appearance > Labels)
+  app.use(`/api/v2/label`, cors(), authobj, Middleware.checkAppearanceMiddleware, labelRoutesv2);
   // the disclaimer : read and accepted by every signed-in user, edited and its acceptances read
   // in Settings > Access > Disclaimer
   app.use(`/api/v2/disclaimer`, cors(), authobj, disclaimerRoutesv2);

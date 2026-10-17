@@ -58,7 +58,7 @@ export function searchPages(t, options) {
     { title: t('sidebar.icon'), section: settings, icon: 'bookmark', link: '/settings/icon' },
     { title: t('sidebar.name'), section: settings, icon: 'font', link: '/settings/name' },
     { title: t('sidebar.links'), section: settings, icon: 'link', link: '/settings/links' },
-    { title: t('sidebar.environment'), section: settings, icon: 'tag', link: '/settings/environment' },
+    { title: t('sidebar.labels'), section: settings, icon: 'tag', link: '/settings/labels' },
     { title: t('sidebar.announcement'), section: settings, icon: 'bullhorn', link: '/settings/announcements' },
     {
       title: t('sidebar.status'),

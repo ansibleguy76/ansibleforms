@@ -7,6 +7,7 @@ import Helpers from '@/lib/Helpers';
 import { cronCell } from '@/lib/cronCell';
 import { cronValidationMessage } from './cron';
 import { PILL, pill, esc } from '@/lib/tableCells';
+import AppLabelsPreview from '@/components/AppLabelsPreview.vue';
 import { formPath } from '@/lib/formsPath';
 import { ssoCallbackUrl, SSO_EXAMPLE_BASE } from '@/lib/ssoCallback';
 
@@ -45,6 +46,10 @@ export const CHAT_PROVIDERS = [
 
 // The secret store types (server/src/secrets/providers/index.js has the same list)
 // for render() output, which goes to v-html : nothing reaches it unescaped, a locale string included
+// the colours of a label beside the logo : the app's pill tones, as the server keeps them
+// (models/settings.model.js LABEL_COLORS)
+export const LABEL_COLORS = ['blue', 'green', 'amber', 'orange', 'red', 'grey'];
+
 const escapeHtml = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -3190,6 +3195,130 @@ export default function getSettings(t) {
           noInput: true,
           hideBelow: 1200,
           render: (v) => (v ? escapeHtml(v) : '–'),
+        },
+      ],
+    },
+    labels: {
+      // the page title is the menu entry's label (AppSidebar), so the two always match
+      pageTitle: t('sidebar.labels'),
+      type: 'label',
+      label: t('settings.labels.label'),
+      labelPlural: t('settings.labels.labelPlural'),
+      description: t('settings.labels.description'),
+      icon: 'tag',
+      selectable: false,
+      // a label has its own page (pages/admin/label.vue) : its row and Edit open it, Add label the
+      // wizard (a new one, shown, after the others)
+      openPage: (item) => `/settings/labels/${item.id}`,
+      // in the header's order, as the server lists them (lowest position first)
+      actions: [
+        { name: 'edit', title: t('settings.labels.edit'), icon: 'pencil', color: 'edit' },
+        {
+          // Enable : beside the logo again
+          name: 'enable',
+          title: t('settings.labels.enable'),
+          icon: 'check',
+          color: 'change',
+          dividerBefore: true,
+          // the one that applies : Enable on a disabled label, Disable on an enabled one
+          shownWhen: (r) => !r.enabled,
+          done: () => t('settings.labels.enabledDone'),
+          run: async (ids) => {
+            await axios.put(`/api/v2/label/${ids[0]}`, { enabled: true });
+            return 1;
+          },
+        },
+        {
+          // Disable : hidden, kept to enable again
+          name: 'disable',
+          title: t('settings.labels.disable'),
+          icon: 'ban',
+          color: 'change',
+          dividerBefore: true,
+          shownWhen: (r) => !!r.enabled,
+          done: () => t('settings.labels.disabledDone'),
+          run: async (ids) => {
+            await axios.put(`/api/v2/label/${ids[0]}`, { enabled: false });
+            return 1;
+          },
+        },
+        {
+          // its place in the header : one up, one down (the page moves it, labels.vue)
+          name: 'move_up',
+          title: t('settings.labels.moveUp'),
+          icon: 'arrow-up',
+          color: 'change',
+          dividerBefore: true,
+          enabledWhen: (r) => !r.isFirst,
+        },
+        {
+          name: 'move_down',
+          title: t('settings.labels.moveDown'),
+          icon: 'arrow-down',
+          color: 'change',
+          enabledWhen: (r) => !r.isLast,
+        },
+        { name: 'delete', title: t('settings.labels.delete'), icon: 'trash', color: 'delete', dividerBefore: true },
+      ],
+      fields: [
+        { key: 'id', hidden: true, noInput: true, noTable: true },
+        {
+          // shown beside the logo or not, first as every list's Enabled ; a new one is
+          key: 'enabled',
+          label: t('settings.labels.enabled'),
+          type: 'checkbox',
+          noInput: true,
+        },
+        {
+          // its text, in the table as the header shows it : a pill in its colour
+          key: 'name',
+          label: t('settings.labels.label'),
+          help: t('settings.labels.nameHelp'),
+          required: true,
+          icon: 'tag',
+          placeholder: 'PRODUCTION',
+          render: (v, r) => pill(PILL[r?.color] || PILL.grey, v),
+        },
+        {
+          key: 'color',
+          label: t('settings.labels.color'),
+          help: t('settings.labels.colorHelp'),
+          icon: 'palette',
+          // round swatches in the pills' colours, as the label's page
+          type: 'swatches',
+          required: true,
+          options: LABEL_COLORS.map((value) => ({
+            value,
+            label: t(`settings.labels.color_${value}`),
+            cls: PILL[value],
+          })),
+          initial: (r) => r?.color || 'red',
+          // not in the table : the Label column shows it, the pill in its colour
+          noTable: true,
+        },
+        {
+          // the header with every label enabled, this one as typed : the dialog's preview (the
+          // label's page draws its own)
+          key: 'preview',
+          label: t('settings.labels.preview'),
+          type: 'component',
+          component: AppLabelsPreview,
+          props: (item, items) => ({
+            labels: [...(items || []).filter((l) => l.enabled), { name: item?.name, color: item?.color }],
+          }),
+          // not stored : the server keeps a label's own fields only
+          noTable: true,
+        },
+        {
+          // its place in the header, lowest first ; a new one after the others
+          key: 'position',
+          label: t('settings.labels.position'),
+          help: t('settings.labels.positionHelp'),
+          icon: 'arrow-down-1-9',
+          type: 'number',
+          noInput: true,
+          // not in the table : its rows are in this order, Move up and Move down change it
+          noTable: true,
         },
       ],
     },

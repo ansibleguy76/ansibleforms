@@ -8,7 +8,7 @@ import { ref } from 'vue';
 
 /**
  * A value the server put in index.html for the first frame (server/src/lib/indexMeta.js) : the
- * instance's name, its environment's label and colour.
+ * instance's name, its labels and their colours.
  *
  * Args:
  *   name (string): the meta tag's name.
@@ -19,6 +19,17 @@ import { ref } from 'vue';
  */
 function servedMeta(name) {
   return (typeof document !== 'undefined' && document.querySelector(`meta[name="${name}"]`)?.content) || null;
+}
+
+// the labels beside the logo as index.html carries them (af-labels, JSON) : none when absent or
+// unreadable
+function servedLabels() {
+  try {
+    const list = JSON.parse(servedMeta('af-labels') || '[]');
+    return Array.isArray(list) ? list.filter((l) => l && l.name) : [];
+  } catch {
+    return [];
+  }
 }
 
 // the user's time zone preference, kept in this browser like the theme ; storage can be
@@ -65,8 +76,8 @@ export const useAppStore = defineStore('app', () => {
   // header ({ id, message, level, end_at } of each running now), the forms list's view for
   // everyone. The name and the label from the first frame, as index.html carries them
   const appName = ref(servedMeta('af-app-name'));
-  const envLabel = ref(servedMeta('af-env-label'));
-  const envLabelColor = ref(servedMeta('af-env-label-color'));
+  // the labels beside the logo (Settings > Appearance > Labels) : { name, color } of each shown
+  const labels = ref(servedLabels());
   const announcements = ref([]);
   const formsView = ref(null);
   // the header's own links (Settings > Appearance > Links > Custom), for who is signed in
@@ -108,8 +119,7 @@ export const useAppStore = defineStore('app', () => {
     designerEnabled,
     appConfigLoaded,
     appName,
-    envLabel,
-    envLabelColor,
+    labels,
     announcements,
     formsView,
     headerLinks,
