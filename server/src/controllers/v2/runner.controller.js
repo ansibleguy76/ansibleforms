@@ -154,7 +154,8 @@ const createJoinToken = async (req, res) => {
   try {
     assertAdmin(req);
     const made = await RunnerJoinToken.create(req.body || {}, req?.user?.user);
-    return res.status(201).json(RestResult.single(i18n.t(req, "resources.joinTokenMade"), made));
+    // the token itself, this once ; the message for a client that shows one
+    return res.status(201).json(RestResult.single({ ...made, message: i18n.t(req, "resources.joinTokenMade") }));
   } catch (err) {
     Errors.ReturnError(res, err);
   }
