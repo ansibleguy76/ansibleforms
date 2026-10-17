@@ -301,6 +301,13 @@ export default {
     dateFormatHint: '每个日期中日期部分的显示方式。',
     timezoneHint: 'AnsibleForms 中的日期和时间均按此时区显示。服务器日志和作业输出保留服务器写入的时间。',
     formsView: '表单视图',
+    notifications: '桌面通知',
+    notificationsHint: '当你的作业结束或有作业等待你审批时，即使此标签页在后台，也会在这台电脑上通知你。',
+    notificationsBlocked: '浏览器阻止了此站点的通知。请在站点设置中允许通知，然后再次打开此项。',
+    notificationsUnsupported: '此浏览器无法在这里显示通知：需要安全地址 (https)。',
+    notificationsBody: '作业 {id} · {duration}',
+    notificationsApprovalBody: '作业 {id} · 由 {user} 启动',
+    notificationsJob: '作业 {id}',
     // the api token view
     token: {
       lifetimeHint: '超过此时间后 token 将失效。请选择您的脚本所需的最短时间。',

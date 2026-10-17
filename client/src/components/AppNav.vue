@@ -34,6 +34,8 @@ import Time from '@/lib/Time';
 import { useLiveEvent } from '@/composables/useLiveEvent';
 import { jobsPath } from '@/lib/jobsPath';
 import { iconOrDefault } from '@/lib/iconName';
+import { useRouter } from 'vue-router';
+import { followJobNotifications } from '@/lib/jobNotifications';
 
 onMounted(async () => {
   try {
@@ -76,6 +78,14 @@ function refreshApprovals() {
   });
 }
 useLiveEvent('jobs', refreshApprovals);
+// desktop notifications, when turned on in Profile > Preferences : the user's jobs that end, the
+// jobs that wait for its approval (lib/jobNotifications.js), on every page with the header
+const router = useRouter();
+let stopJobNotifications = null;
+onMounted(() => {
+  stopJobNotifications = followJobNotifications({ t, router, store });
+});
+onBeforeUnmount(() => stopJobNotifications?.());
 // the designer lock taken or released : the lock on the Designer link follows at once
 useLiveEvent('designer', () => State.refreshDesignerLock());
 // Settings > Appearance saved (here, in another tab, by another admin) : the announcement, the

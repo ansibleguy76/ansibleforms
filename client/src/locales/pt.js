@@ -306,6 +306,16 @@ export default {
     timezoneHint:
       'As datas e horas em todo o AnsibleForms são apresentadas neste fuso horário. O registo do servidor e o resultado das tarefas mantêm as horas que o servidor neles escreveu.',
     formsView: 'Vista de formulários',
+    notifications: 'Notificações no ambiente de trabalho',
+    notificationsHint:
+      'Uma notificação neste computador quando os seus jobs terminam ou um job aguarda a sua aprovação, mesmo com este separador em segundo plano.',
+    notificationsBlocked:
+      'O navegador bloqueia as notificações deste site. Permita-as nas definições do site e volte a ativar isto.',
+    notificationsUnsupported:
+      'Este navegador não pode mostrar notificações aqui: precisam de um endereço seguro (https).',
+    notificationsBody: 'Job {id} · {duration}',
+    notificationsApprovalBody: 'Job {id} · iniciado por {user}',
+    notificationsJob: 'Job {id}',
     // the api token view
     token: {
       lifetimeHint:

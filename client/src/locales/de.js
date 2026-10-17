@@ -309,6 +309,16 @@ export default {
     timezoneHint:
       'Datum und Uhrzeit werden in ganz AnsibleForms in dieser Zeitzone angezeigt. Das Serverprotokoll und die Jobausgabe behalten die Zeiten, die der Server hineingeschrieben hat.',
     formsView: 'Formularansicht',
+    notifications: 'Desktop-Benachrichtigungen',
+    notificationsHint:
+      'Eine Benachrichtigung auf diesem Computer, wenn Ihre Jobs enden oder ein Job auf Ihre Genehmigung wartet, auch wenn dieser Tab im Hintergrund ist.',
+    notificationsBlocked:
+      'Der Browser blockiert Benachrichtigungen für diese Seite. Erlauben Sie sie in den Website-Einstellungen und schalten Sie dies erneut ein.',
+    notificationsUnsupported:
+      'Dieser Browser kann hier keine Benachrichtigungen anzeigen: Sie benötigen eine sichere Adresse (https).',
+    notificationsBody: 'Job {id} · {duration}',
+    notificationsApprovalBody: 'Job {id} · gestartet von {user}',
+    notificationsJob: 'Job {id}',
     // the api token view
     token: {
       lifetimeHint:

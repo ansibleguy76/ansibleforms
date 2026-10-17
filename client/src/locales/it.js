@@ -309,6 +309,15 @@ export default {
     timezoneHint:
       "Date e orari in tutto AnsibleForms sono mostrati in questo fuso orario. Il log del server e l'output dei job mantengono gli orari scritti dal server.",
     formsView: 'Vista dei form',
+    notifications: 'Notifiche desktop',
+    notificationsHint:
+      'Una notifica su questo computer quando i tuoi job terminano o un job attende la tua approvazione, anche con questa scheda in background.',
+    notificationsBlocked:
+      'Il browser blocca le notifiche di questo sito. Consentile nelle impostazioni del sito, poi riattiva questa opzione.',
+    notificationsUnsupported: 'Questo browser non può mostrare notifiche qui: serve un indirizzo sicuro (https).',
+    notificationsBody: 'Job {id} · {duration}',
+    notificationsApprovalBody: 'Job {id} · avviato da {user}',
+    notificationsJob: 'Job {id}',
     // the api token view
     token: {
       lifetimeHint:

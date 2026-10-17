@@ -307,6 +307,15 @@ export default {
     timezoneHint:
       "Les dates i hores d'AnsibleForms es mostren en aquesta zona horària. El registre del servidor i la sortida de les tasques mantenen les hores que hi va escriure el servidor.",
     formsView: 'Vista dels formularis',
+    notifications: "Notificacions d'escriptori",
+    notificationsHint:
+      'Una notificació en aquest ordinador quan acaben les teves tasques o una tasca espera la teva aprovació, fins i tot amb aquesta pestanya en segon pla.',
+    notificationsBlocked:
+      "El navegador bloqueja les notificacions d'aquest lloc. Permet-les a la seva configuració del lloc i torna a activar això.",
+    notificationsUnsupported: 'Aquest navegador no pot mostrar notificacions aquí: cal una adreça segura (https).',
+    notificationsBody: 'Tasca {id} · {duration}',
+    notificationsApprovalBody: 'Tasca {id} · llançada per {user}',
+    notificationsJob: 'Tasca {id}',
     // the api token view
     token: {
       lifetimeHint:

@@ -308,6 +308,16 @@ export default {
     timezoneHint:
       'Datums en tijden in heel AnsibleForms worden in deze tijdzone getoond. Het serverlog en de joboutput houden de tijden die de server erin schreef.',
     formsView: 'Weergave formulieren',
+    notifications: 'Bureaubladmeldingen',
+    notificationsHint:
+      'Een melding op deze computer wanneer uw jobs eindigen of een job op uw goedkeuring wacht, ook als dit tabblad op de achtergrond staat.',
+    notificationsBlocked:
+      'De browser blokkeert meldingen voor deze site. Sta ze toe in de site-instellingen en zet dit daarna opnieuw aan.',
+    notificationsUnsupported:
+      'Deze browser kan hier geen meldingen tonen: daarvoor is een beveiligd adres (https) nodig.',
+    notificationsBody: 'Job {id} · {duration}',
+    notificationsApprovalBody: 'Job {id} · gestart door {user}',
+    notificationsJob: 'Job {id}',
     // the api token view
     token: {
       lifetimeHint: 'Het token werkt na deze tijd niet meer. Kies de kortste tijd die je script nodig heeft.',

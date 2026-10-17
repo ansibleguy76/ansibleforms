@@ -305,6 +305,15 @@ export default {
     timezoneHint:
       'Dates and times across AnsibleForms are shown in this time zone. The server log and job output keep the times the server wrote in them.',
     formsView: 'Forms view',
+    notifications: 'Desktop notifications',
+    notificationsHint:
+      'A notification on this computer when your jobs end or a job waits for your approval, even when this tab is in the background.',
+    notificationsBlocked:
+      'The browser blocks notifications for this site. Allow them in its site settings, then turn this on again.',
+    notificationsUnsupported: 'This browser cannot show notifications here: they need a secure (https) address.',
+    notificationsBody: 'Job {id} · {duration}',
+    notificationsApprovalBody: 'Job {id} · launched by {user}',
+    notificationsJob: 'Job {id}',
     // the api token view
     token: {
       lifetimeHint: 'The token stops working after this time. Pick the shortest time your script needs.',

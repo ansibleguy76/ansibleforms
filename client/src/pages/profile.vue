@@ -31,6 +31,14 @@ import { roleOptionGroups, roleOptionDescription, roleOptionLabel, effectiveRole
 import BaseUrl from '@/lib/BaseUrl';
 import { neverExpires } from '@/lib/apiTokens';
 import { rememberSsoOrigin, ssoSettled, ssoReturning } from '@/lib/ssoReturn';
+import { hasPermission } from '@/lib/permission';
+import {
+  notificationsSupported,
+  notificationPermission,
+  notificationsActive,
+  turnNotificationsOn,
+  turnNotificationsOff,
+} from '@/lib/jobNotifications';
 
 // INIT
 
@@ -383,6 +391,24 @@ const timezone = computed({
   set: (value) => Time.setPreference(value),
 });
 // the date format dates show in : the app's default until the user picks one (lib/Time.js)
+// desktop notifications (lib/jobNotifications.js) : only for a user who sees its jobs ; on once
+// the browser allows them, off when it blocks them (the note says how to allow them again)
+const mayNotify = computed(() => hasPermission(store.profile?.options, 'showJobs'));
+const canNotify = notificationsSupported();
+const notifyOn = ref(notificationsActive());
+const notifyBlocked = ref(notificationPermission() === 'denied');
+async function onNotifySwitch(e) {
+  if (!e.target.checked) {
+    turnNotificationsOff();
+    notifyOn.value = false;
+    return;
+  }
+  const answer = await turnNotificationsOn();
+  notifyOn.value = answer === 'granted';
+  notifyBlocked.value = answer === 'denied';
+  // the switch follows the answer : refused or dismissed, it is off again
+  e.target.checked = notifyOn.value;
+}
 const dateFormat = computed({
   get: () => Time.datePattern(),
   set: (value) => Time.setDateFormat(value),
@@ -615,6 +641,32 @@ async function changePassword() {
                   >
                 </span>
               </div>
+              <!-- desktop notifications : when the user's jobs end or one waits for its approval -->
+              <template v-if="mayNotify">
+                <label class="form-label fw-bold d-block mt-4" for="af-job-notifications">{{
+                  t('profilePage.notifications')
+                }}</label>
+                <div class="form-check form-switch mb-0">
+                  <input
+                    id="af-job-notifications"
+                    class="form-check-input"
+                    type="checkbox"
+                    role="switch"
+                    :checked="notifyOn"
+                    :disabled="!canNotify"
+                    @change="onNotifySwitch"
+                  />
+                </div>
+                <div class="form-text">
+                  {{
+                    !canNotify
+                      ? t('profilePage.notificationsUnsupported')
+                      : notifyBlocked
+                        ? t('profilePage.notificationsBlocked')
+                        : t('profilePage.notificationsHint')
+                  }}
+                </div>
+              </template>
             </div>
           </div>
         </template>
