@@ -302,7 +302,8 @@ const buildMismatch = computed(() => {
 </script>
 
 <template>
-  <BsModal v-if="showVersion" @close="showVersion = false" icon="circle-info">
+  <!-- About : two build cards and a few lines, large enough (not the default extra large) -->
+  <BsModal v-if="showVersion" size="lg" @close="showVersion = false" icon="circle-info">
     <template v-slot:title>
       {{ t('version.title') }} <badge class="badge rounded-pill text-bg-info">v{{ store.version }}</badge>
     </template>
