@@ -889,8 +889,8 @@ const buildMismatch = computed(() => {
       content: '';
       position: absolute;
       top: 0;
-      left: 0.5rem;
-      right: 0.5rem;
+      left: 0.25rem;
+      right: 0.25rem;
       border-top: 1px solid var(--bs-border-color);
     }
   }
