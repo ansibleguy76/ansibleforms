@@ -144,10 +144,15 @@ const name = computed(() => {
   const text = String(record.value?.message || '');
   return text.length > 60 ? `${text.slice(0, 60)}…` : text;
 });
+// the title's step : the first 12 characters of its message, then ... (a whole message is long)
+const shortName = computed(() => {
+  const text = String(record.value?.message || '');
+  return text.length > 12 ? `${text.slice(0, 12)}...` : text;
+});
 const pageCrumbs = computed(() => [
   { title: t('sidebar.announcement'), icon: 'bullhorn', to: '/settings/announcements' },
   {
-    title: record.value ? name.value : loaded.value ? announcementId.value : null,
+    title: record.value ? shortName.value : loaded.value ? announcementId.value : null,
     icon: 'bullhorn',
     to: `/settings/announcements/${announcementId.value}`,
   },
@@ -213,7 +218,7 @@ onMounted(async () => {
     <AppSettings
       v-if="authenticated"
       icon="bullhorn"
-      :title="name || announcementId"
+      :title="shortName || announcementId"
       :crumbs="crumbs"
       :description="t('settings.interface.announcementDescription')"
     >
