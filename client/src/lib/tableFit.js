@@ -15,9 +15,9 @@ export const FIT_MIN = 5;
 export const FIT_MAX = 100;
 // the room kept under the pager, as the page's own bottom padding
 const BOTTOM_GAP = 16;
-// a size is taken when the screen holds this share of its rows : room for 18 rows shows 20 (the
+// a size is taken when the screen holds this share of its rows : room for 16 rows shows 20 (the
 // pager a little under the fold) rather than 10 and half the screen empty
-export const FIT_SHARE = 0.85;
+export const FIT_SHARE = 0.8;
 
 /**
  * The rows that fit a height.
@@ -36,7 +36,7 @@ export function fitRowCount(available, rowHeight) {
 
 /**
  * The page size for the rows that fit : the largest size offered whose rows the screen nearly
- * holds (FIT_SHARE of them : 17 rows of room for 20), else the smallest. A size of its own (18)
+ * holds (FIT_SHARE of them : 16 rows of room for 20), else the smallest. A size of its own (18)
  * would be one the pager does not offer.
  *
  * Args:
@@ -63,6 +63,21 @@ export function fitSize(count, sizes) {
  */
 export function nearestSize(size, sizes) {
   return sizes.reduce((best, s) => (Math.abs(s - size) < Math.abs(best - size) ? s : best), sizes[0]);
+}
+
+/**
+ * The usual height of some rows : their median, the upper one of the middle two for an even count.
+ *
+ * Args:
+ *   heights (number[]): the rows' heights, in px.
+ *
+ * Returns:
+ *   number: the median height, 0 for none.
+ */
+export function typicalHeight(heights) {
+  if (!heights.length) return 0;
+  const sorted = [...heights].sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)];
 }
 
 /**
@@ -116,8 +131,9 @@ export function measureFit(pager) {
   const body = table?.tBodies?.[0];
   const rows = body ? [...body.rows].slice(0, 5) : [];
   if (!rows.length) return null;
-  // the tallest of the first rows : a row whose text wraps would push the pager off otherwise
-  const rowHeight = Math.max(...rows.map((r) => r.getBoundingClientRect().height));
+  // the usual height of the first rows (their median) : one row whose text wraps (a note under it)
+  // does not halve the page, as the others' height is what most of the page holds
+  const rowHeight = typicalHeight(rows.map((r) => r.getBoundingClientRect().height));
   const scroller = scrollParent(table);
   const box = scroller ? scroller.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
   const scrolled = scroller ? scroller.scrollTop : window.scrollY;

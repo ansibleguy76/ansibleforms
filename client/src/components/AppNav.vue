@@ -878,9 +878,9 @@ const buildMismatch = computed(() => {
     color: var(--bs-secondary-color);
     font-size: 0.85rem;
   }
-  // how the account signs in (Local account, LDAP, Microsoft Entra ID) : lighter, under its name
+  // how the account signs in (Local account, LDAP, Microsoft Entra ID) : under its name, in the
+  // grey of the other meta lines and of the tables' notes (text-body-secondary)
   .af-menu-type {
-    color: var(--bs-tertiary-color);
     padding-top: 0.4rem;
   }
 
