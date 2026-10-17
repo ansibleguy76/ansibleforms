@@ -34,7 +34,12 @@ const props = defineProps({
   toolbarTo: { type: String, default: null },
   // a selector the pager moves to (under the page's card, as the other lists) ; else in the table
   pagerTo: { type: String, default: null },
+  // the page's search (a user's page searches all its tabs at once) : the tokens filtered on it,
+  // no box of the table's ; while a word is searched the table keeps its controls and pager in
+  // its own frame (other tables may be on the page then)
+  search: { type: String, default: null },
 });
+const searchingWord = computed(() => !!(props.search && props.search.trim()));
 
 const emit = defineEmits(['count']);
 const { t } = useI18n();
@@ -128,8 +133,10 @@ watch(loaded, (done) => done && emit('count', tokens.value.length));
   <BsDataTable
     v-else
     framed
-    :toolbarTo="toolbarTo"
-    :pagerTo="pagerTo"
+    :key="searchingWord ? 'search' : 'list'"
+    :toolbarTo="searchingWord ? null : toolbarTo"
+    :pagerTo="searchingWord ? null : pagerTo"
+    :search="search"
     :items="tokens"
     :columns="columns"
     idKey="sid"

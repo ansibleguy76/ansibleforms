@@ -20,7 +20,8 @@
 /*  Send test (a dialog : to whom for mail, then how it went),    */
 /*  Delete and Save top right. ?test=1 opens the test dialog (the */
 /*  list's Send test). A channel of the config seed is read only, */
-/*  and can be tested.                                            */
+/*  and can be tested. The search of the title line narrows every */
+/*  tab at once.                                                  */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted } from 'vue';
@@ -243,6 +244,82 @@ const crumbs = computed(() => {
   return tab ? [...pageCrumbs.value, { title: tab.label, icon: tab.icon, to: tabLink(tab.key) }] : pageCrumbs.value;
 });
 
+// ─── search ───────────────────────────────────────────────────────────────────
+// A word typed in the title line's search narrows every tab at once, as Settings > General's :
+// the fields, switches and types whose label or help has it, each under its tab's name, the tabs
+// set aside meanwhile ; only the fields its type draws.
+const search = ref('');
+const searching = computed(() => !!search.value.trim());
+const matches = (...texts) => {
+  const q = search.value.trim().toLowerCase();
+  return (
+    !q ||
+    texts.some((x) =>
+      String(x ?? '')
+        .toLowerCase()
+        .includes(q),
+    )
+  );
+};
+// each tab's fields : [key, label, help], by its type, as the template draws them
+const tabFields = computed(() => {
+  const nc = (key, params) => t(`settings.notificationChannels.${key}`, params);
+  const fields = {
+    details: [
+      ['name', t('settings.fields.name')],
+      ['description', t('settings.fields.description')],
+      ...(type.value === 'mail' ? [['is_active', nc('active'), nc('activeHelp')]] : []),
+    ],
+    type: CHANNEL_TYPES.map((kind) => ['type_' + kind, nc(`type_${kind}`), nc(`typeHint_${kind}`)]),
+  };
+  if (type.value === 'mail') {
+    fields.credentials = [['credential', nc('credential'), nc('helpCredential')]];
+    fields.sender = [['from_address', t('settings.mail.mailFrom'), t('settings.mail.mailFromHelp')]];
+  } else if (type.value === 'slack' || type.value === 'teams') {
+    fields.connection = [['webhook_url', nc('webhookUrl'), nc(`webhookUrlHelp_${type.value}`)]];
+  } else if (type.value === 'telegram') {
+    fields.credentials = [['token_credential', nc('tokenCredential_telegram'), nc('tokenCredentialHelp_telegram')]];
+    fields.connection = [
+      ['chat_id', nc('chatId'), nc('chatIdHelp')],
+      ['api_url', nc('apiUrl'), nc('apiUrlHelp')],
+    ];
+  } else if (type.value === 'webhook') {
+    fields.credentials = [['token_credential', nc('tokenCredential_webhook'), nc('tokenCredentialHelp_webhook')]];
+    fields.connection = [
+      ['url', nc('url'), nc('urlHelp')],
+      ['method', nc('method')],
+      ['verify_tls', nc('verifyTls'), nc('verifyTlsHelp')],
+    ];
+    fields.payload = [
+      ['headers', nc('headers'), nc('headersHelp')],
+      ['payload', nc('payload'), nc('payloadHelp', { placeholders: PAYLOAD_PLACEHOLDERS })],
+    ];
+  }
+  return fields;
+});
+// the fields that match, per tab
+const shownFields = computed(() =>
+  Object.fromEntries(
+    Object.entries(tabFields.value).map(([tab, fields]) => [
+      tab,
+      fields.filter(([, ...texts]) => matches(...texts)).map(([key]) => key),
+    ]),
+  ),
+);
+const fieldShown = (key) => Object.values(shownFields.value).some((keys) => keys.includes(key));
+// the tabs shown : the active one, or while searching each one with a match
+const shownTabs = computed(() =>
+  searching.value
+    ? tabs.value.filter((tab) => shownFields.value[tab.key]?.length)
+    : tabs.value.filter((tab) => tab.key === activeTab.value),
+);
+const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
+// while searching, a tab's name over its matches (the first without the line above)
+const searchHead = (key) => {
+  const i = shownTabs.value.findIndex((tab) => tab.key === key);
+  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
+};
+
 // ─── actions ──────────────────────────────────────────────────────────────────
 /**
  * Saves the fields of every tab : its name and description, and its type's.
@@ -415,7 +492,11 @@ onMounted(async () => {
       :crumbs="crumbs"
       :description="t('settings.notificationChannels.description')"
     >
-      <template v-if="channel" #tabs>
+      <!-- narrows every tab at once ; the search box of the other pages -->
+      <template v-if="channel" #headerActions>
+        <BsSearch v-model="search" />
+      </template>
+      <template v-if="channel && !searching" #tabs>
         <ul class="nav nav-tabs mb-0">
           <li v-for="tab in tabs" :key="tab.key" class="nav-item">
             <a
@@ -431,7 +512,7 @@ onMounted(async () => {
         </ul>
       </template>
       <!-- the record loading : its tabs as grey placeholders -->
-      <template v-else-if="!loaded" #tabs>
+      <template v-else-if="!loaded && !searching" #tabs>
         <AppSkeleton shape="tabs" :count="tabs.length" />
       </template>
       <template #default>
@@ -448,10 +529,20 @@ onMounted(async () => {
           </div>
           <fieldset :disabled="managed">
             <!-- Details : what it is called, whether it is sent to (and for mail, used) -->
-            <template v-if="activeTab === 'details'">
+            <template v-if="tabShown('details')">
+              <template v-if="searching && searchHead('details')">
+                <hr v-if="!searchHead('details').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('details').first }"
+                >
+                  <FaIcon :icon="searchHead('details').tab.icon" class="me-1" />{{ searchHead('details').tab.label }}
+                </h6>
+              </template>
               <BsInput
                 class="af-channel-field"
                 v-model="edit.name"
+                v-show="fieldShown('name')"
                 icon="heading"
                 :isFloating="false"
                 :required="true"
@@ -460,11 +551,12 @@ onMounted(async () => {
               <BsInput
                 class="af-channel-field"
                 v-model="edit.description"
+                v-show="fieldShown('description')"
                 icon="info-circle"
                 :isFloating="false"
                 :label="t('settings.fields.description')"
               />
-              <div v-if="type === 'mail'" class="mb-3">
+              <div v-if="type === 'mail'" v-show="fieldShown('is_active')" class="mb-3">
                 <label class="form-label fw-bold d-block" for="af-channel-active">{{
                   t('settings.notificationChannels.active')
                 }}</label>
@@ -484,8 +576,22 @@ onMounted(async () => {
             </template>
 
             <!-- Type : what it is, set when it was made -->
-            <template v-else-if="activeTab === 'type'">
-              <div v-for="kind in CHANNEL_TYPES" :key="kind" class="form-check af-short-check af-type-option">
+            <template v-if="tabShown('type')">
+              <template v-if="searching && searchHead('type')">
+                <hr v-if="!searchHead('type').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('type').first }"
+                >
+                  <FaIcon :icon="searchHead('type').tab.icon" class="me-1" />{{ searchHead('type').tab.label }}
+                </h6>
+              </template>
+              <div
+                v-for="kind in CHANNEL_TYPES"
+                v-show="fieldShown('type_' + kind)"
+                :key="kind"
+                class="form-check af-short-check af-type-option"
+              >
                 <input
                   :id="'af-chtype-' + kind"
                   :checked="kind === type"
@@ -503,25 +609,23 @@ onMounted(async () => {
                 </label>
               </div>
             </template>
-            <!-- mail : Sender, the from address -->
-            <template v-else-if="type === 'mail' && activeTab === 'sender'">
-              <BsInput
-                class="af-channel-field"
-                v-model="edit.from_address"
-                type="email"
-                icon="envelope"
-                placeholder="noreply@example.com"
-                :isFloating="false"
-                :required="true"
-                :help="t('settings.mail.mailFromHelp')"
-                :label="t('settings.mail.mailFrom')"
-              />
-            </template>
             <!-- mail : Credentials, its smtp credential (the mail server, its port and TLS, the login) -->
-            <template v-else-if="type === 'mail' && activeTab === 'credentials'">
+            <template v-if="type === 'mail' && tabShown('credentials')">
+              <template v-if="searching && searchHead('credentials')">
+                <hr v-if="!searchHead('credentials').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('credentials').first }"
+                >
+                  <FaIcon :icon="searchHead('credentials').tab.icon" class="me-1" />{{
+                    searchHead('credentials').tab.label
+                  }}
+                </h6>
+              </template>
               <BsInput
                 class="af-channel-field"
                 v-model="edit.credential"
+                v-show="fieldShown('credential')"
                 type="select"
                 icon="key"
                 :isFloating="false"
@@ -535,11 +639,47 @@ onMounted(async () => {
               />
             </template>
 
+            <!-- mail : Sender, the from address -->
+            <template v-if="type === 'mail' && tabShown('sender')">
+              <template v-if="searching && searchHead('sender')">
+                <hr v-if="!searchHead('sender').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('sender').first }"
+                >
+                  <FaIcon :icon="searchHead('sender').tab.icon" class="me-1" />{{ searchHead('sender').tab.label }}
+                </h6>
+              </template>
+              <BsInput
+                class="af-channel-field"
+                v-model="edit.from_address"
+                v-show="fieldShown('from_address')"
+                type="email"
+                icon="envelope"
+                placeholder="noreply@example.com"
+                :isFloating="false"
+                :required="true"
+                :help="t('settings.mail.mailFromHelp')"
+                :label="t('settings.mail.mailFrom')"
+              />
+            </template>
             <!-- slack, teams : Webhook, its address (a secret : shown masked, kept unless retyped) -->
-            <template v-else-if="(type === 'slack' || type === 'teams') && activeTab === 'connection'">
+            <template v-if="(type === 'slack' || type === 'teams') && tabShown('connection')">
+              <template v-if="searching && searchHead('connection')">
+                <hr v-if="!searchHead('connection').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('connection').first }"
+                >
+                  <FaIcon :icon="searchHead('connection').tab.icon" class="me-1" />{{
+                    searchHead('connection').tab.label
+                  }}
+                </h6>
+              </template>
               <BsInput
                 class="af-channel-field"
                 v-model="edit.webhook_url"
+                v-show="fieldShown('webhook_url')"
                 type="password"
                 icon="link"
                 placeholder="https://"
@@ -551,10 +691,22 @@ onMounted(async () => {
             </template>
 
             <!-- telegram : Credentials, its bot token's api credential -->
-            <template v-else-if="type === 'telegram' && activeTab === 'credentials'">
+            <template v-if="type === 'telegram' && tabShown('credentials')">
+              <template v-if="searching && searchHead('credentials')">
+                <hr v-if="!searchHead('credentials').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('credentials').first }"
+                >
+                  <FaIcon :icon="searchHead('credentials').tab.icon" class="me-1" />{{
+                    searchHead('credentials').tab.label
+                  }}
+                </h6>
+              </template>
               <BsInput
                 class="af-channel-field"
                 v-model="edit.token_credential"
+                v-show="fieldShown('token_credential')"
                 type="select"
                 icon="key"
                 :isFloating="false"
@@ -568,10 +720,22 @@ onMounted(async () => {
               />
             </template>
             <!-- webhook : Credentials, the api credential of its bearer token (none : no token) -->
-            <template v-else-if="type === 'webhook' && activeTab === 'credentials'">
+            <template v-if="type === 'webhook' && tabShown('credentials')">
+              <template v-if="searching && searchHead('credentials')">
+                <hr v-if="!searchHead('credentials').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('credentials').first }"
+                >
+                  <FaIcon :icon="searchHead('credentials').tab.icon" class="me-1" />{{
+                    searchHead('credentials').tab.label
+                  }}
+                </h6>
+              </template>
               <BsInput
                 class="af-channel-field"
                 v-model="edit.token_credential"
+                v-show="fieldShown('token_credential')"
                 type="select"
                 icon="key"
                 :isFloating="false"
@@ -584,10 +748,22 @@ onMounted(async () => {
               />
             </template>
             <!-- telegram : Bot, the chat and the Bot API -->
-            <template v-else-if="type === 'telegram' && activeTab === 'connection'">
+            <template v-if="type === 'telegram' && tabShown('connection')">
+              <template v-if="searching && searchHead('connection')">
+                <hr v-if="!searchHead('connection').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('connection').first }"
+                >
+                  <FaIcon :icon="searchHead('connection').tab.icon" class="me-1" />{{
+                    searchHead('connection').tab.label
+                  }}
+                </h6>
+              </template>
               <BsInput
                 class="af-channel-field"
                 v-model="edit.chat_id"
+                v-show="fieldShown('chat_id')"
                 icon="comments"
                 placeholder="-1001234567890"
                 :isFloating="false"
@@ -598,6 +774,7 @@ onMounted(async () => {
               <BsInput
                 class="af-channel-field"
                 v-model="edit.api_url"
+                v-show="fieldShown('api_url')"
                 icon="globe"
                 placeholder="https://api.telegram.org"
                 :isFloating="false"
@@ -607,10 +784,22 @@ onMounted(async () => {
             </template>
 
             <!-- webhook : Endpoint, where and how it is sent -->
-            <template v-else-if="type === 'webhook' && activeTab === 'connection'">
+            <template v-if="type === 'webhook' && tabShown('connection')">
+              <template v-if="searching && searchHead('connection')">
+                <hr v-if="!searchHead('connection').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('connection').first }"
+                >
+                  <FaIcon :icon="searchHead('connection').tab.icon" class="me-1" />{{
+                    searchHead('connection').tab.label
+                  }}
+                </h6>
+              </template>
               <BsInput
                 class="af-channel-field"
                 v-model="edit.url"
+                v-show="fieldShown('url')"
                 icon="globe"
                 placeholder="https://hooks.example.com/ansibleforms"
                 :isFloating="false"
@@ -621,6 +810,7 @@ onMounted(async () => {
               <BsInput
                 class="af-channel-field"
                 v-model="edit.method"
+                v-show="fieldShown('method')"
                 type="select"
                 icon="arrow-right"
                 :isFloating="false"
@@ -629,7 +819,7 @@ onMounted(async () => {
                 labelKey="label"
                 :label="t('settings.notificationChannels.method')"
               />
-              <div class="form-check form-switch mb-3">
+              <div v-show="fieldShown('verify_tls')" class="form-check form-switch mb-3">
                 <input
                   id="af-channel-verify"
                   v-model="edit.verify_tls"
@@ -644,10 +834,20 @@ onMounted(async () => {
               </div>
             </template>
             <!-- webhook : Payload, its headers and the JSON it sends -->
-            <template v-else-if="type === 'webhook' && activeTab === 'payload'">
+            <template v-if="type === 'webhook' && tabShown('payload')">
+              <template v-if="searching && searchHead('payload')">
+                <hr v-if="!searchHead('payload').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('payload').first }"
+                >
+                  <FaIcon :icon="searchHead('payload').tab.icon" class="me-1" />{{ searchHead('payload').tab.label }}
+                </h6>
+              </template>
               <BsInput
                 class="af-channel-field af-channel-code"
                 v-model="edit.headers"
+                v-show="fieldShown('headers')"
                 type="textarea"
                 :rows="3"
                 placeholder='{ "X-Source": "ansibleforms" }'
@@ -658,6 +858,7 @@ onMounted(async () => {
               <BsInput
                 class="af-channel-field af-channel-code"
                 v-model="edit.payload"
+                v-show="fieldShown('payload')"
                 type="textarea"
                 :rows="10"
                 :placeholder="DEFAULT_PAYLOAD"
@@ -667,13 +868,16 @@ onMounted(async () => {
               />
             </template>
           </fieldset>
+          <div v-if="searching && !shownTabs.length" class="text-body-secondary fst-italic">
+            {{ t('settings.settingsPage.searchNone') }}
+          </div>
         </div>
       </template>
       <template v-if="channel" #actions>
         <!-- Credentials : a new credential of the type its field takes (mail : smtp, a token : api),
              chosen once made -->
         <BsButton
-          v-if="activeTab === 'credentials'"
+          v-if="tabShown('credentials')"
           icon="plus"
           :disabled="managed"
           @click="type === 'mail' ? newCredential('credential', 'smtp') : newCredential('token_credential', 'api')"

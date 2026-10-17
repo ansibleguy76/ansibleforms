@@ -145,23 +145,57 @@ useUnsavedGuard(
 );
 
 const running = computed(() => repo.value?.status === 'running');
-// git's output on the tab open (the last pull's, else the last push's), a line each (the trailing
-// newline adds none)
-const shownOutput = computed(
-  () => (activeTab.value === 'push-output' ? repo.value?.push_output : repo.value?.pull_output) || '',
-);
+/**
+ * Git's output on an output tab : the last pull's, or the last push's.
+ *
+ * Args:
+ *   key (string): the tab, pull-output or push-output.
+ *
+ * Returns:
+ *   string: the output, empty when there is none yet.
+ */
+const outputOf = (key) => (key === 'push-output' ? repo.value?.push_output : repo.value?.pull_output) || '';
 // the box shows OUTPUT_ROWS numbered lines at least, as a textarea's rows : nothing yet, its first
 // line says why ; more output, more lines
 const OUTPUT_ROWS = 4;
-const outputLines = computed(() => {
-  const lines = shownOutput.value ? shownOutput.value.replace(/\n$/, '').split('\n') : [emptyOutput.value];
-  return [...lines, ...Array(Math.max(0, OUTPUT_ROWS - lines.length)).fill('')];
-});
-// why there is no output yet : never pulled, never pushed, or a repository the app does not write to
-const emptyOutput = computed(() => {
-  if (activeTab.value !== 'push-output') return t('settings.repositories.noOutput');
+/**
+ * The numbered lines of an output tab, a line each (the trailing newline adds none) ; while
+ * searching, only the lines with the text, each keeping its number.
+ *
+ * Args:
+ *   key (string): the tab, pull-output or push-output.
+ *
+ * Returns:
+ *   object[]: the lines, each { no, text, empty } (empty : the reason there is no output yet).
+ */
+function outputLines(key) {
+  const output = outputOf(key);
+  const lines = (output ? output.replace(/\n$/, '').split('\n') : [emptyOutput(key)]).map((text, i) => ({
+    no: i + 1,
+    text,
+    empty: !output && i === 0,
+  }));
+  if (searching.value) return lines.filter((line) => matches(line.text));
+  const pad = Array.from({ length: Math.max(0, OUTPUT_ROWS - lines.length) }, (_, i) => ({
+    no: lines.length + i + 1,
+    text: '',
+    empty: false,
+  }));
+  return [...lines, ...pad];
+}
+/**
+ * Why there is no output yet : never pulled, never pushed, or a repository the app does not write to.
+ *
+ * Args:
+ *   key (string): the tab, pull-output or push-output.
+ *
+ * Returns:
+ *   string: the reason.
+ */
+function emptyOutput(key) {
+  if (key !== 'push-output') return t('settings.repositories.noOutput');
   return t(canPush.value ? 'settings.repositories.noPushOutput' : 'settings.repositories.noPushTarget');
-});
+}
 // pushed back : only what the designer writes to it, its forms, settings, playbooks, workflows or inventories
 // (and, on the button, only when it has changes not pushed yet)
 const canPush = computed(
@@ -283,6 +317,70 @@ const crumbs = computed(() => {
   return tab ? [...pageCrumbs.value, { title: tab.label, icon: tab.icon, to: tabLink(tab.key) }] : pageCrumbs.value;
 });
 
+// ─── search ───────────────────────────────────────────────────────────────────
+// A word typed in the title line's search narrows every tab at once, as Settings > General's :
+// the fields of Details, Credentials, Usage and Schedule whose label or help has it (a usage by
+// its name and grey words), the lines of git's outputs with it, each under its tab's name, the
+// tabs set aside meanwhile.
+const search = ref('');
+const searching = computed(() => !!search.value.trim());
+const matches = (...texts) => {
+  const q = search.value.trim().toLowerCase();
+  return (
+    !q ||
+    texts.some((x) =>
+      String(x ?? '')
+        .toLowerCase()
+        .includes(q),
+    )
+  );
+};
+// each tab's fields : [key, label, help], only those it shows (as the template's v-if)
+const tabFields = computed(() => ({
+  details: [
+    ['pull', t('settings.fields.pull')],
+    ['push', t('settings.fields.push')],
+    ['head', t('settings.fields.head'), repo.value?.head],
+    ['name', t('settings.fields.name'), t('settings.repositories.helpName')],
+    ['branch', t('settings.fields.branch')],
+    ['uri', t('settings.fields.uri'), t('settings.repositories.helpUri')],
+    ['description', t('settings.fields.description')],
+  ],
+  credentials: [
+    ['credential', t('settings.repositories.credential'), t('settings.repositories.helpCredential')],
+    repo.value?.user &&
+      !edit.value?.credential && ['own_user', t('settings.repositories.ownUser', { user: repo.value.user })],
+  ].filter(Boolean),
+  usage: USAGES.value.map((usage) => [usage.key, usage.label, usage.hint]),
+  schedule: [
+    ['pull_scheduled', t('settings.repositories.scheduledPull'), t('settings.repositories.helpScheduledPull')],
+    ['rebase_on_start', t('settings.repositories.cloneOnStart'), t('settings.repositories.helpCloneOnStart')],
+  ],
+}));
+// the fields shown : those whose label or help has the text
+const shownFields = computed(() =>
+  Object.values(tabFields.value)
+    .flat()
+    .filter(([, ...texts]) => matches(...texts))
+    .map(([key]) => key),
+);
+const fieldShown = (key) => shownFields.value.includes(key);
+// an output tab with a line that has the text, a tab of fields with one of them shown
+const tabMatch = (key) =>
+  key.endsWith('-output') ? outputLines(key).length > 0 : (tabFields.value[key] || []).some(([k]) => fieldShown(k));
+// the tabs shown : the active one, or while searching each one with a match
+const shownTabs = computed(() =>
+  searching.value
+    ? tabs.value.filter((tab) => tabMatch(tab.key))
+    : tabs.value.filter((tab) => tab.key === activeTab.value),
+);
+const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
+// while searching, a tab's name over its matches (the first without the line above)
+const searchHead = (key) => {
+  const i = shownTabs.value.findIndex((tab) => tab.key === key);
+  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
+};
+
 // ─── actions ──────────────────────────────────────────────────────────────────
 /**
  * Says what went wrong in a toast.
@@ -384,7 +482,11 @@ onMounted(async () => {
       :crumbs="crumbs"
       :description="t('settings.repositories.description')"
     >
-      <template v-if="repo" #tabs>
+      <!-- narrows every tab at once ; the search box of the other pages -->
+      <template v-if="repo" #headerActions>
+        <BsSearch v-model="search" />
+      </template>
+      <template v-if="repo && !searching" #tabs>
         <ul class="nav nav-tabs mb-0">
           <li v-for="tab in tabs" :key="tab.key" class="nav-item">
             <a
@@ -400,7 +502,7 @@ onMounted(async () => {
         </ul>
       </template>
       <!-- the record loading : its tabs as grey placeholders -->
-      <template v-else-if="!loaded" #tabs>
+      <template v-else-if="!loaded && !searching" #tabs>
         <AppSkeleton shape="tabs" :count="tabs.length" />
       </template>
       <template #default>
@@ -410,21 +512,30 @@ onMounted(async () => {
         </div>
         <!-- the record loading : its fields as grey placeholders, where they come -->
         <AppSkeleton v-else-if="!loaded && !repo" shape="form" :count="3" />
-        <div v-else-if="repo && edit" class="af-repo-tab">
+        <div v-else-if="repo && edit && shownTabs.length" class="af-repo-tab">
           <!-- Details : what it is, and where it stands -->
-          <template v-if="activeTab === 'details'">
+          <template v-if="tabShown('details')">
+            <template v-if="searching && searchHead('details')">
+              <hr v-if="!searchHead('details').first" class="mt-4 mb-0 af-search-line" />
+              <h6
+                class="fw-bold text-body-secondary af-search-tab"
+                :class="{ 'af-search-first': searchHead('details').first }"
+              >
+                <FaIcon :icon="searchHead('details').tab.icon" class="me-1" />{{ searchHead('details').tab.label }}
+              </h6>
+            </template>
             <!-- where it stands : its pull, push and head, each a field of the column, read only -->
-            <div class="mb-3">
+            <div v-show="fieldShown('pull')" class="mb-3">
               <div class="form-label fw-bold">{{ t('settings.fields.pull') }}</div>
               <!-- the last pull (clone, sync or reset) : running, success or failed -->
               <span v-html="repositoryPullPill(t, repo)"></span>
             </div>
-            <div class="mb-3">
+            <div v-show="fieldShown('push')" class="mb-3">
               <div class="form-label fw-bold">{{ t('settings.fields.push') }}</div>
               <!-- changes saved here and not pushed yet, or none -->
               <span v-html="repositoryPushPill(t, repo)"></span>
             </div>
-            <div class="mb-3">
+            <div v-show="fieldShown('head')" class="mb-3">
               <div class="form-label fw-bold">{{ t('settings.fields.head') }}</div>
               <span v-if="repo.head" class="font-monospace af-repo-head">{{ repo.head }}</span>
               <span v-else>–</span>
@@ -432,6 +543,7 @@ onMounted(async () => {
             <BsInput
               class="af-repo-field"
               v-model="edit.name"
+              v-show="fieldShown('name')"
               icon="heading"
               :isFloating="false"
               :required="true"
@@ -441,6 +553,7 @@ onMounted(async () => {
             <BsInput
               class="af-repo-field"
               v-model="edit.branch"
+              v-show="fieldShown('branch')"
               icon="code-branch"
               placeholder="main"
               :isFloating="false"
@@ -450,6 +563,7 @@ onMounted(async () => {
             <BsInput
               class="af-repo-field"
               v-model="edit.uri"
+              v-show="fieldShown('uri')"
               icon="fab,git"
               placeholder="https://github.com/account/repo.git"
               :isFloating="false"
@@ -460,6 +574,7 @@ onMounted(async () => {
             <BsInput
               class="af-repo-field"
               v-model="edit.description"
+              v-show="fieldShown('description')"
               icon="info-circle"
               :isFloating="false"
               :required="true"
@@ -467,10 +582,22 @@ onMounted(async () => {
             />
           </template>
           <!-- Credentials : the user and password git uses -->
-          <template v-else-if="activeTab === 'credentials'">
+          <template v-if="tabShown('credentials')">
+            <template v-if="searching && searchHead('credentials')">
+              <hr v-if="!searchHead('credentials').first" class="mt-4 mb-0 af-search-line" />
+              <h6
+                class="fw-bold text-body-secondary af-search-tab"
+                :class="{ 'af-search-first': searchHead('credentials').first }"
+              >
+                <FaIcon :icon="searchHead('credentials').tab.icon" class="me-1" />{{
+                  searchHead('credentials').tab.label
+                }}
+              </h6>
+            </template>
             <BsInput
               class="af-repo-field"
               v-model="edit.credential"
+              v-show="fieldShown('credential')"
               type="select"
               icon="key"
               :isFloating="false"
@@ -481,15 +608,25 @@ onMounted(async () => {
               :label="t('settings.repositories.credential')"
             />
             <!-- a repository from before credentials : its own user, until a credential is chosen -->
-            <p v-if="repo.user && !edit.credential" class="form-text">
+            <p v-if="repo.user && !edit.credential" v-show="fieldShown('own_user')" class="form-text">
               {{ t('settings.repositories.ownUser', { user: repo.user }) }}
             </p>
           </template>
           <!-- Usage : what the app reads from it ; a one-only usage another repository has is
              greyed, who has it in the tooltip -->
-          <template v-else-if="activeTab === 'usage'">
+          <template v-if="tabShown('usage')">
+            <template v-if="searching && searchHead('usage')">
+              <hr v-if="!searchHead('usage').first" class="mt-4 mb-0 af-search-line" />
+              <h6
+                class="fw-bold text-body-secondary af-search-tab"
+                :class="{ 'af-search-first': searchHead('usage').first }"
+              >
+                <FaIcon :icon="searchHead('usage').tab.icon" class="me-1" />{{ searchHead('usage').tab.label }}
+              </h6>
+            </template>
             <div
               v-for="usage in USAGES"
+              v-show="fieldShown(usage.key)"
               :key="usage.key"
               class="form-check af-short-check"
               :class="{ 'af-taken': takenBy(usage) }"
@@ -509,8 +646,17 @@ onMounted(async () => {
             </div>
           </template>
           <!-- Schedule : the scheduled pull and its schedule, the clone on app start -->
-          <template v-else-if="activeTab === 'schedule'">
-            <div class="form-check form-switch mb-3">
+          <template v-if="tabShown('schedule')">
+            <template v-if="searching && searchHead('schedule')">
+              <hr v-if="!searchHead('schedule').first" class="mt-4 mb-0 af-search-line" />
+              <h6
+                class="fw-bold text-body-secondary af-search-tab"
+                :class="{ 'af-search-first': searchHead('schedule').first }"
+              >
+                <FaIcon :icon="searchHead('schedule').tab.icon" class="me-1" />{{ searchHead('schedule').tab.label }}
+              </h6>
+            </template>
+            <div v-show="fieldShown('pull_scheduled')" class="form-check form-switch mb-3">
               <input
                 id="af-repo-scheduled"
                 v-model="edit.pull_scheduled"
@@ -523,11 +669,12 @@ onMounted(async () => {
               }}</label>
               <div class="form-text mt-1">{{ t('settings.repositories.helpScheduledPull') }}</div>
             </div>
-            <div v-if="edit.pull_scheduled" class="mb-3 af-repo-cron">
+            <!-- its schedule goes with the switch -->
+            <div v-if="edit.pull_scheduled" v-show="fieldShown('pull_scheduled')" class="mb-3 af-repo-cron">
               <BsCron v-model="edit.cron" icon="stopwatch" :hasError="!!cronError" />
               <div v-if="cronError" class="invalid-feedback d-block">{{ cronError }}</div>
             </div>
-            <div class="form-check form-switch mb-0">
+            <div v-show="fieldShown('rebase_on_start')" class="form-check form-switch mb-0">
               <input
                 id="af-repo-rebase"
                 v-model="edit.rebase_on_start"
@@ -541,18 +688,30 @@ onMounted(async () => {
               <div class="form-text mt-1">{{ t('settings.repositories.helpCloneOnStart') }}</div>
             </div>
           </template>
-          <!-- Output : what git said on the last pull, or the last push -->
-          <template v-else>
-            <!-- as the server log shows its lines : each with its number in a grey column -->
-            <div class="af-repo-output font-monospace" tabindex="0" role="region">
-              <div v-for="(line, i) in outputLines" :key="i" class="af-repo-output-line">
-                <span class="af-line-no af-repo-line-no">{{ i + 1 }}</span
-                ><span class="af-repo-line" :class="{ 'af-repo-output-empty': !shownOutput && i === 0 }">{{
-                  line
-                }}</span>
+          <!-- Output : what git said on the last pull, and on the last push -->
+          <template v-for="key in ['pull-output', 'push-output']" :key="key">
+            <template v-if="tabShown(key)">
+              <template v-if="searching && searchHead(key)">
+                <hr v-if="!searchHead(key).first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead(key).first }"
+                >
+                  <FaIcon :icon="searchHead(key).tab.icon" class="me-1" />{{ searchHead(key).tab.label }}
+                </h6>
+              </template>
+              <!-- as the server log shows its lines : each with its number in a grey column -->
+              <div class="af-repo-output font-monospace" tabindex="0" role="region">
+                <div v-for="line in outputLines(key)" :key="line.no" class="af-repo-output-line">
+                  <span class="af-line-no af-repo-line-no">{{ line.no }}</span
+                  ><span class="af-repo-line" :class="{ 'af-repo-output-empty': line.empty }">{{ line.text }}</span>
+                </div>
               </div>
-            </div>
+            </template>
           </template>
+        </div>
+        <div v-if="searching && !shownTabs.length" class="text-body-secondary fst-italic">
+          {{ t('settings.settingsPage.searchNone') }}
         </div>
       </template>
       <template v-if="repo" #actions>

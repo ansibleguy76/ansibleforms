@@ -186,6 +186,92 @@ const crumbs = computed(() => {
   return tab ? [...pageCrumbs.value, { title: tab.label, icon: tab.icon, to: tabLink(tab.key) }] : pageCrumbs.value;
 });
 
+// ─── search ───────────────────────────────────────────────────────────────────
+// A word typed in the title line's search narrows every tab at once, as Settings > General's :
+// the fields of each tab whose label or help has it (a type by its name and grey words), each
+// under its tab's name, the tabs set aside meanwhile.
+const search = ref('');
+const searching = computed(() => !!search.value.trim());
+const matches = (...texts) => {
+  const q = search.value.trim().toLowerCase();
+  return (
+    !q ||
+    texts.some((x) =>
+      String(x ?? '')
+        .toLowerCase()
+        .includes(q),
+    )
+  );
+};
+// each tab's fields : [key, label, help], only those its type shows (as the template's v-if)
+const tabFields = computed(() => {
+  const e = edit.value || {};
+  const vault = isVault.value;
+  return {
+    details: [
+      ['name', t('settings.fields.name'), t('settings.secretStores.nameHelp')],
+      ['description', t('settings.fields.description')],
+    ],
+    type: [
+      ...TYPES.map((type) => [
+        `type-${type.value}`,
+        type.short || type.label,
+        t(`settings.secretStores.type_${type.value}Hint`),
+      ]),
+      vault && ['enterprise', t('settings.secretStores.enterprise'), t('settings.secretStores.enterpriseHelp')],
+    ].filter(Boolean),
+    credentials: [
+      [
+        'credential',
+        t('settings.secretStores.credential'),
+        t(vault ? 'settings.secretStores.helpCredential' : 'settings.secretStores.helpCredentialCyberark'),
+      ],
+      e.credential && !chosenServer.value && ['no_server', t('settings.credentials.noServer')],
+      (vault ? store.value?.token : store.value?.app_id) &&
+        !e.credential && ['own_login', t(vault ? 'settings.secretStores.ownToken' : 'settings.secretStores.ownLogin')],
+    ].filter(Boolean),
+    options: [
+      vault &&
+        e.vault_enterprise && [
+          'namespace',
+          t('settings.secretStores.namespace'),
+          t('settings.secretStores.namespaceHelp'),
+        ],
+      vault && [
+        'kv_version',
+        t('settings.secretStores.kvVersion'),
+        'KV v2',
+        t('settings.secretStores.kv2Hint'),
+        'KV v1',
+        t('settings.secretStores.kv1Hint'),
+      ],
+      vault && ['default_mount', t('settings.secretStores.defaultMount'), t('settings.secretStores.defaultMountHelp')],
+      ['cache_ttl_seconds', t('settings.secretStores.cacheTtl'), t('settings.secretStores.cacheTtlHelp')],
+      ['extra', t('settings.secretStores.extra'), t('settings.secretStores.extraHelp')],
+    ].filter(Boolean),
+  };
+});
+// the fields shown : those whose label or help has the text
+const shownFields = computed(() =>
+  Object.values(tabFields.value)
+    .flat()
+    .filter(([, ...texts]) => matches(...texts))
+    .map(([key]) => key),
+);
+const fieldShown = (key) => shownFields.value.includes(key);
+// the tabs shown : the active one, or while searching each one with a field shown
+const shownTabs = computed(() =>
+  searching.value
+    ? tabs.value.filter((tab) => (tabFields.value[tab.key] || []).some(([k]) => fieldShown(k)))
+    : tabs.value.filter((tab) => tab.key === activeTab.value),
+);
+const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
+// while searching, a tab's name over its matches (the first without the line above)
+const searchHead = (key) => {
+  const i = shownTabs.value.findIndex((tab) => tab.key === key);
+  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
+};
+
 // ─── actions ──────────────────────────────────────────────────────────────────
 /**
  * Saves the fields of every tab, the switches stored as the dialog stores them : no namespace
@@ -290,7 +376,11 @@ onMounted(async () => {
       :crumbs="crumbs"
       :description="t('settings.secretStores.description')"
     >
-      <template v-if="store" #tabs>
+      <!-- narrows every tab at once ; the search box of the other pages -->
+      <template v-if="store" #headerActions>
+        <BsSearch v-model="search" />
+      </template>
+      <template v-if="store && !searching" #tabs>
         <ul class="nav nav-tabs mb-0">
           <li v-for="tab in tabs" :key="tab.key" class="nav-item">
             <a
@@ -306,7 +396,7 @@ onMounted(async () => {
         </ul>
       </template>
       <!-- the record loading : its tabs as grey placeholders -->
-      <template v-else-if="!loaded" #tabs>
+      <template v-else-if="!loaded && !searching" #tabs>
         <AppSkeleton shape="tabs" :count="tabs.length" />
       </template>
       <template #default>
@@ -316,17 +406,27 @@ onMounted(async () => {
         </div>
         <!-- the record loading : its fields as grey placeholders, where they come -->
         <AppSkeleton v-else-if="!loaded && !store" shape="form" :count="3" />
-        <div v-else-if="store && edit" class="af-store-tab">
+        <div v-else-if="store && edit && shownTabs.length" class="af-store-tab">
           <!-- a store of the config seed : read only here -->
           <div v-if="managed" class="alert alert-secondary py-2">
             <FaIcon icon="lock" class="me-2" />{{ t('settings.common.seedManagedNotice') }}
           </div>
           <fieldset :disabled="managed">
             <!-- Details : what it is called -->
-            <template v-if="activeTab === 'details'">
+            <template v-if="tabShown('details')">
+              <template v-if="searching && searchHead('details')">
+                <hr v-if="!searchHead('details').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('details').first }"
+                >
+                  <FaIcon :icon="searchHead('details').tab.icon" class="me-1" />{{ searchHead('details').tab.label }}
+                </h6>
+              </template>
               <BsInput
                 class="af-store-field"
                 v-model="edit.name"
+                v-show="fieldShown('name')"
                 icon="heading"
                 :isFloating="false"
                 :required="true"
@@ -336,6 +436,7 @@ onMounted(async () => {
               <BsInput
                 class="af-store-field"
                 v-model="edit.description"
+                v-show="fieldShown('description')"
                 icon="info-circle"
                 :isFloating="false"
                 :label="t('settings.fields.description')"
@@ -343,8 +444,22 @@ onMounted(async () => {
             </template>
             <!-- Type : CyberArk CCP or HashiCorp Vault, set when it was made (the credentials that read
                  from it expect it) ; a Vault's Enterprise switch under it -->
-            <template v-else-if="activeTab === 'type'">
-              <div v-for="type in TYPES" :key="type.value" class="form-check af-short-check af-type-option">
+            <template v-if="tabShown('type')">
+              <template v-if="searching && searchHead('type')">
+                <hr v-if="!searchHead('type').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('type').first }"
+                >
+                  <FaIcon :icon="searchHead('type').tab.icon" class="me-1" />{{ searchHead('type').tab.label }}
+                </h6>
+              </template>
+              <div
+                v-for="type in TYPES"
+                v-show="fieldShown(`type-${type.value}`)"
+                :key="type.value"
+                class="form-check af-short-check af-type-option"
+              >
                 <input
                   :id="'af-type-' + type.value"
                   v-model="edit.type"
@@ -359,7 +474,7 @@ onMounted(async () => {
                   <span class="text-body-secondary small">{{ t(`settings.secretStores.type_${type.value}Hint`) }}</span>
                 </label>
               </div>
-              <div v-if="isVault" class="form-check form-switch mt-3 af-type-option">
+              <div v-if="isVault" v-show="fieldShown('enterprise')" class="form-check form-switch mt-3 af-type-option">
                 <input
                   id="af-store-enterprise"
                   v-model="edit.vault_enterprise"
@@ -375,10 +490,22 @@ onMounted(async () => {
               </div>
             </template>
             <!-- Credentials : its credential, or a new one of its kind -->
-            <template v-else-if="activeTab === 'credentials'">
+            <template v-if="tabShown('credentials')">
+              <template v-if="searching && searchHead('credentials')">
+                <hr v-if="!searchHead('credentials').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('credentials').first }"
+                >
+                  <FaIcon :icon="searchHead('credentials').tab.icon" class="me-1" />{{
+                    searchHead('credentials').tab.label
+                  }}
+                </h6>
+              </template>
               <BsInput
                 class="af-store-field"
                 v-model="edit.credential"
+                v-show="fieldShown('credential')"
                 type="select"
                 icon="key"
                 :isFloating="false"
@@ -392,28 +519,46 @@ onMounted(async () => {
                 :label="t('settings.secretStores.credential')"
               />
               <!-- a credential without a server : said (the store connects to its credential's) -->
-              <p v-if="edit.credential && !chosenServer" class="form-text text-warning-emphasis mt-3 mb-0">
+              <p
+                v-if="edit.credential && !chosenServer"
+                v-show="fieldShown('no_server')"
+                class="form-text text-warning-emphasis mt-3 mb-0"
+              >
                 {{ t('settings.credentials.noServer') }}
               </p>
               <!-- a store from before credentials : its own token or AppID, until one is chosen -->
-              <p v-if="(isVault ? store.token : store.app_id) && !edit.credential" class="form-text mt-3 mb-0">
+              <p
+                v-if="(isVault ? store.token : store.app_id) && !edit.credential"
+                v-show="fieldShown('own_login')"
+                class="form-text mt-3 mb-0"
+              >
                 {{ t(isVault ? 'settings.secretStores.ownToken' : 'settings.secretStores.ownLogin') }}
               </p>
             </template>
             <!-- Options : a Vault's namespace, KV version and mount ; the cache and extra of both -->
-            <template v-else>
+            <template v-if="tabShown('options')">
+              <template v-if="searching && searchHead('options')">
+                <hr v-if="!searchHead('options').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('options').first }"
+                >
+                  <FaIcon :icon="searchHead('options').tab.icon" class="me-1" />{{ searchHead('options').tab.label }}
+                </h6>
+              </template>
               <template v-if="isVault">
                 <BsInput
                   v-if="edit.vault_enterprise"
                   class="af-store-field"
                   v-model="edit.namespace"
+                  v-show="fieldShown('namespace')"
                   icon="folder"
                   :isFloating="false"
                   :required="true"
                   :help="t('settings.secretStores.namespaceHelp')"
                   :label="t('settings.secretStores.namespace')"
                 />
-                <div class="mb-3">
+                <div v-show="fieldShown('kv_version')" class="mb-3">
                   <div class="form-label">{{ t('settings.secretStores.kvVersion') }}</div>
                   <div
                     v-for="opt in [
@@ -440,6 +585,7 @@ onMounted(async () => {
                 <BsInput
                   class="af-store-field"
                   v-model="edit.default_mount"
+                  v-show="fieldShown('default_mount')"
                   icon="folder-open"
                   placeholder="secret"
                   :isFloating="false"
@@ -450,6 +596,7 @@ onMounted(async () => {
               <BsInput
                 class="af-store-field"
                 v-model="edit.cache_ttl_seconds"
+                v-show="fieldShown('cache_ttl_seconds')"
                 type="number"
                 icon="clock"
                 :isFloating="false"
@@ -459,6 +606,7 @@ onMounted(async () => {
               <BsInput
                 class="af-store-field"
                 v-model="edit.extra"
+                v-show="fieldShown('extra')"
                 type="textarea"
                 icon="code"
                 placeholder="{}"
@@ -468,6 +616,9 @@ onMounted(async () => {
               />
             </template>
           </fieldset>
+        </div>
+        <div v-if="searching && !shownTabs.length" class="text-body-secondary fst-italic">
+          {{ t('settings.settingsPage.searchNone') }}
         </div>
       </template>
       <template v-if="store" #actions>

@@ -8,7 +8,8 @@
 /*             owner, when it was stored and when it expires      */
 /*    Values   the form's values, as YAML, editable               */
 /*  Open in form (the form, these values filled in) and Delete    */
-/*  top right, beside Save.                                       */
+/*  top right, beside Save. The search of the title line narrows  */
+/*  both tabs at once.                                            */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted } from 'vue';
@@ -134,6 +135,62 @@ const crumbs = computed(() => {
   return tab ? [...pageCrumbs.value, { title: tab.label, icon: tab.icon, to: tabLink(tab.key) }] : pageCrumbs.value;
 });
 
+// ─── search ───────────────────────────────────────────────────────────────────
+// A word typed in the title line's search narrows both tabs at once, as Settings > General's :
+// the fields whose label or help has it, the values when their YAML has it (shown whole), each
+// under its tab's name, the tabs set aside meanwhile.
+const search = ref('');
+const searching = computed(() => !!search.value.trim());
+const matches = (...texts) => {
+  const q = search.value.trim().toLowerCase();
+  return (
+    !q ||
+    texts.some((x) =>
+      String(x ?? '')
+        .toLowerCase()
+        .includes(q),
+    )
+  );
+};
+// each tab's fields : [key, label, help...]
+const tabFields = computed(() => ({
+  details: [
+    ['name', t('settings.fields.name')],
+    ['description', t('settings.fields.description')],
+    ['form', t('settings.fields.form'), t('settings.storedJobs.formHelp'), stored.value?.form_name],
+    ['owner', t('settings.storedJobs.owner'), stored.value?.username],
+    [
+      'createdAt',
+      t('settings.fields.createdAt'),
+      stored.value?.created_at ? Helpers.formatServerDate(stored.value.created_at) : '',
+    ],
+    ['expiresAt', t('settings.fields.expiresAt'), t('settings.storedJobs.neverExpires')],
+  ],
+  values: [['values', t('settings.storedJobs.tabValues'), t('settings.storedJobs.valuesHelp'), edit.value?.values]],
+}));
+// the fields that match, per tab
+const shownFields = computed(() =>
+  Object.fromEntries(
+    Object.entries(tabFields.value).map(([tab, fields]) => [
+      tab,
+      fields.filter(([, ...texts]) => matches(...texts)).map(([key]) => key),
+    ]),
+  ),
+);
+const fieldShown = (key) => Object.values(shownFields.value).some((keys) => keys.includes(key));
+// the tabs shown : the active one, or while searching each one with a match
+const shownTabs = computed(() =>
+  searching.value
+    ? tabs.value.filter((tab) => shownFields.value[tab.key]?.length)
+    : tabs.value.filter((tab) => tab.key === activeTab.value),
+);
+const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
+// while searching, a tab's name over its matches (the first without the line above)
+const searchHead = (key) => {
+  const i = shownTabs.value.findIndex((tab) => tab.key === key);
+  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
+};
+
 // ─── actions ──────────────────────────────────────────────────────────────────
 /**
  * Saves the fields of every tab : the values back to the JSON the form's Load reads.
@@ -217,7 +274,11 @@ onMounted(async () => {
         :crumbs="crumbs"
         :description="t('settings.storedJobs.description')"
       >
-        <template v-if="stored" #tabs>
+        <!-- narrows both tabs at once ; the search box of the other pages -->
+        <template v-if="stored" #headerActions>
+          <BsSearch v-model="search" />
+        </template>
+        <template v-if="stored && !searching" #tabs>
           <ul class="nav nav-tabs mb-0">
             <li v-for="tab in tabs" :key="tab.key" class="nav-item">
               <a
@@ -233,7 +294,7 @@ onMounted(async () => {
           </ul>
         </template>
         <!-- the record loading : its tabs as grey placeholders -->
-        <template v-else-if="!loaded" #tabs>
+        <template v-else-if="!loaded && !searching" #tabs>
           <AppSkeleton shape="tabs" :count="tabs.length" />
         </template>
         <template #default>
@@ -245,10 +306,20 @@ onMounted(async () => {
           <AppSkeleton v-else-if="!loaded && !stored" shape="form" :count="3" />
           <div v-else-if="stored && edit" class="af-stored-tab">
             <!-- Details : what it is, whose, and for how long -->
-            <template v-if="activeTab === 'details'">
+            <template v-if="tabShown('details')">
+              <template v-if="searching && searchHead('details')">
+                <hr v-if="!searchHead('details').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('details').first }"
+                >
+                  <FaIcon :icon="searchHead('details').tab.icon" class="me-1" />{{ searchHead('details').tab.label }}
+                </h6>
+              </template>
               <BsInput
                 class="af-stored-field"
                 v-model="edit.name"
+                v-show="fieldShown('name')"
                 icon="heading"
                 :isFloating="false"
                 :required="true"
@@ -257,6 +328,7 @@ onMounted(async () => {
               <BsInput
                 class="af-stored-field"
                 v-model="edit.description"
+                v-show="fieldShown('description')"
                 icon="info-circle"
                 :isFloating="false"
                 :label="t('settings.fields.description')"
@@ -267,6 +339,7 @@ onMounted(async () => {
               <BsInput
                 class="af-stored-field"
                 :modelValue="stored.form_name"
+                v-show="fieldShown('form')"
                 type="select"
                 icon="pen-to-square"
                 :isFloating="false"
@@ -281,19 +354,20 @@ onMounted(async () => {
               <BsInput
                 class="af-stored-field"
                 :modelValue="stored.username"
+                v-show="fieldShown('owner')"
                 icon="user"
                 :isFloating="false"
                 :disabled="true"
                 :label="t('settings.storedJobs.owner')"
               />
-              <div class="mb-3">
+              <div v-show="fieldShown('createdAt')" class="mb-3">
                 <div class="form-label fw-bold">{{ t('settings.fields.createdAt') }}</div>
                 <span>{{ stored.created_at ? Helpers.formatServerDate(stored.created_at) : '–' }}</span>
               </div>
               <!-- when it expires : never, or a date -->
               <!-- the tab's last field : no margin under it (the tab's own padding ends it), and
                    the switch's only above the date it opens -->
-              <div class="mb-0">
+              <div v-show="fieldShown('expiresAt')" class="mb-0">
                 <div class="form-label fw-bold">{{ t('settings.fields.expiresAt') }}</div>
                 <div class="form-check form-switch" :class="edit.never_expires ? 'mb-0' : 'mb-2'">
                   <input
@@ -319,7 +393,16 @@ onMounted(async () => {
               </div>
             </template>
             <!-- Values : the form's values, as YAML -->
-            <template v-else>
+            <template v-if="tabShown('values')">
+              <template v-if="searching && searchHead('values')">
+                <hr v-if="!searchHead('values').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('values').first }"
+                >
+                  <FaIcon :icon="searchHead('values').tab.icon" class="me-1" />{{ searchHead('values').tab.label }}
+                </h6>
+              </template>
               <BsInput
                 v-model="edit.values"
                 type="editor"
@@ -331,6 +414,9 @@ onMounted(async () => {
               />
               <div v-if="valuesError" class="invalid-feedback d-block mt-n2">{{ valuesError }}</div>
             </template>
+            <div v-if="searching && !shownTabs.length" class="text-body-secondary fst-italic">
+              {{ t('settings.settingsPage.searchNone') }}
+            </div>
           </div>
         </template>
         <template v-if="stored" #actions>

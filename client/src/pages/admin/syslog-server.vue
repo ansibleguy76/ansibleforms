@@ -13,7 +13,8 @@
 /*                written                                         */
 /*  Send test message (through it, as saved), Delete and Save top */
 /*  right, as a secret store's page. A server of the config seed  */
-/*  is read only, and can still be tested.                        */
+/*  is read only, and can still be tested. The search of the      */
+/*  title line narrows every tab at once.                         */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted } from 'vue';
@@ -163,6 +164,70 @@ const crumbs = computed(() => {
   return tab ? [...pageCrumbs.value, { title: tab.label, icon: tab.icon, to: tabLink(tab.key) }] : pageCrumbs.value;
 });
 
+// ─── search ───────────────────────────────────────────────────────────────────
+// A word typed in the title line's search narrows every tab at once, as Settings > General's :
+// the fields whose label or help has it, each under its tab's name, the tabs set aside meanwhile
+// (a field the protocol hides stays hidden : the socket's path, or the host and port).
+const search = ref('');
+const searching = computed(() => !!search.value.trim());
+const matches = (...texts) => {
+  const q = search.value.trim().toLowerCase();
+  return (
+    !q ||
+    texts.some((x) =>
+      String(x ?? '')
+        .toLowerCase()
+        .includes(q),
+    )
+  );
+};
+// each tab's fields : [key, label, help], only the ones the page draws
+const tabFields = computed(() => ({
+  details: [
+    ['name', t('settings.fields.name')],
+    ['description', t('settings.fields.description')],
+    ['enabled', t('settings.syslogServers.enabled'), t('settings.syslogServers.enabledHelp')],
+  ],
+  connection: [
+    ['protocol', t('settings.syslogServers.protocol'), t('settings.syslogServers.protocolHelp')],
+    ...(onSocket.value
+      ? [['path', t('settings.syslogServers.path'), t('settings.syslogServers.pathHelp')]]
+      : [
+          ['host', t('settings.syslogServers.host'), t('settings.syslogServers.hostHelp')],
+          ['port', t('settings.syslogServers.port'), t('settings.syslogServers.portHelp')],
+        ]),
+  ],
+  messages: [
+    ['receives', t('settings.syslogServers.receives'), t('settings.syslogServers.receivesHelp')],
+    ['level', t('settings.syslogServers.level'), t('settings.syslogServers.levelHelp')],
+    ['type', t('settings.syslogServers.type'), t('settings.syslogServers.typeHelp')],
+    ['app_name', t('settings.syslogServers.appName'), t('settings.syslogServers.appNameHelp')],
+    ['source', t('settings.syslogServers.source'), t('settings.syslogServers.sourceHelp')],
+  ],
+}));
+// the fields that match, per tab
+const shownFields = computed(() =>
+  Object.fromEntries(
+    Object.entries(tabFields.value).map(([tab, fields]) => [
+      tab,
+      fields.filter(([, ...texts]) => matches(...texts)).map(([key]) => key),
+    ]),
+  ),
+);
+const fieldShown = (key) => Object.values(shownFields.value).some((keys) => keys.includes(key));
+// the tabs shown : the active one, or while searching each one with a match
+const shownTabs = computed(() =>
+  searching.value
+    ? tabs.value.filter((tab) => shownFields.value[tab.key]?.length)
+    : tabs.value.filter((tab) => tab.key === activeTab.value),
+);
+const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
+// while searching, a tab's name over its matches (the first without the line above)
+const searchHead = (key) => {
+  const i = shownTabs.value.findIndex((tab) => tab.key === key);
+  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
+};
+
 // ─── actions ──────────────────────────────────────────────────────────────────
 /**
  * Saves the fields of every tab.
@@ -262,7 +327,11 @@ onMounted(async () => {
       :crumbs="crumbs"
       :description="t('settings.syslogServers.description')"
     >
-      <template v-if="server" #tabs>
+      <!-- narrows every tab at once ; the search box of the other pages -->
+      <template v-if="server" #headerActions>
+        <BsSearch v-model="search" />
+      </template>
+      <template v-if="server && !searching" #tabs>
         <ul class="nav nav-tabs mb-0">
           <li v-for="tab in tabs" :key="tab.key" class="nav-item">
             <a
@@ -278,7 +347,7 @@ onMounted(async () => {
         </ul>
       </template>
       <!-- the record loading : its tabs as grey placeholders -->
-      <template v-else-if="!loaded" #tabs>
+      <template v-else-if="!loaded && !searching" #tabs>
         <AppSkeleton shape="tabs" :count="tabs.length" />
       </template>
       <template #default>
@@ -295,10 +364,20 @@ onMounted(async () => {
           </div>
           <fieldset :disabled="managed">
             <!-- Details : what it is called, and whether it is sent to -->
-            <template v-if="activeTab === 'details'">
+            <template v-if="tabShown('details')">
+              <template v-if="searching && searchHead('details')">
+                <hr v-if="!searchHead('details').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('details').first }"
+                >
+                  <FaIcon :icon="searchHead('details').tab.icon" class="me-1" />{{ searchHead('details').tab.label }}
+                </h6>
+              </template>
               <BsInput
                 class="af-syslog-field"
                 v-model="edit.name"
+                v-show="fieldShown('name')"
                 icon="heading"
                 :isFloating="false"
                 :required="true"
@@ -307,11 +386,12 @@ onMounted(async () => {
               <BsInput
                 class="af-syslog-field"
                 v-model="edit.description"
+                v-show="fieldShown('description')"
                 icon="info-circle"
                 :isFloating="false"
                 :label="t('settings.fields.description')"
               />
-              <div class="mb-3">
+              <div v-show="fieldShown('enabled')" class="mb-3">
                 <label class="form-label fw-bold d-block" for="af-syslog-enabled">{{
                   t('settings.syslogServers.enabled')
                 }}</label>
@@ -329,10 +409,22 @@ onMounted(async () => {
               </div>
             </template>
             <!-- Connection : its protocol, and its host and port, or its socket -->
-            <template v-else-if="activeTab === 'connection'">
+            <template v-if="tabShown('connection')">
+              <template v-if="searching && searchHead('connection')">
+                <hr v-if="!searchHead('connection').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('connection').first }"
+                >
+                  <FaIcon :icon="searchHead('connection').tab.icon" class="me-1" />{{
+                    searchHead('connection').tab.label
+                  }}
+                </h6>
+              </template>
               <BsInput
                 class="af-syslog-field"
                 v-model="edit.protocol"
+                v-show="fieldShown('protocol')"
                 type="select"
                 icon="network-wired"
                 :isFloating="false"
@@ -346,6 +438,7 @@ onMounted(async () => {
                 <BsInput
                   class="af-syslog-field"
                   v-model="edit.path"
+                  v-show="fieldShown('path')"
                   icon="folder"
                   placeholder="/dev/log"
                   :isFloating="false"
@@ -358,6 +451,7 @@ onMounted(async () => {
                 <BsInput
                   class="af-syslog-field"
                   v-model="edit.host"
+                  v-show="fieldShown('host')"
                   icon="server"
                   placeholder="syslog.example.com"
                   :isFloating="false"
@@ -368,6 +462,7 @@ onMounted(async () => {
                 <BsInput
                   class="af-syslog-field"
                   v-model="edit.port"
+                  v-show="fieldShown('port')"
                   type="number"
                   icon="arrows-alt-v"
                   placeholder="514"
@@ -378,10 +473,20 @@ onMounted(async () => {
               </template>
             </template>
             <!-- Messages : what it gets, from which level, and how a line is written -->
-            <template v-else>
+            <template v-if="tabShown('messages')">
+              <template v-if="searching && searchHead('messages')">
+                <hr v-if="!searchHead('messages').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('messages').first }"
+                >
+                  <FaIcon :icon="searchHead('messages').tab.icon" class="me-1" />{{ searchHead('messages').tab.label }}
+                </h6>
+              </template>
               <BsInput
                 class="af-syslog-field"
                 v-model="edit.receives"
+                v-show="fieldShown('receives')"
                 type="select"
                 icon="inbox"
                 :isFloating="false"
@@ -394,6 +499,7 @@ onMounted(async () => {
               <BsInput
                 class="af-syslog-field"
                 v-model="edit.level"
+                v-show="fieldShown('level')"
                 type="select"
                 icon="signal"
                 :isFloating="false"
@@ -406,6 +512,7 @@ onMounted(async () => {
               <BsInput
                 class="af-syslog-field"
                 v-model="edit.type"
+                v-show="fieldShown('type')"
                 type="select"
                 icon="file-lines"
                 :isFloating="false"
@@ -418,6 +525,7 @@ onMounted(async () => {
               <BsInput
                 class="af-syslog-field"
                 v-model="edit.app_name"
+                v-show="fieldShown('app_name')"
                 icon="tag"
                 placeholder="AnsibleForms"
                 :isFloating="false"
@@ -427,6 +535,7 @@ onMounted(async () => {
               <BsInput
                 class="af-syslog-field"
                 v-model="edit.source"
+                v-show="fieldShown('source')"
                 icon="desktop"
                 placeholder="localhost"
                 :isFloating="false"
@@ -435,6 +544,9 @@ onMounted(async () => {
               />
             </template>
           </fieldset>
+          <div v-if="searching && !shownTabs.length" class="text-body-secondary fst-italic">
+            {{ t('settings.settingsPage.searchNone') }}
+          </div>
         </div>
       </template>
       <template v-if="server" #actions>

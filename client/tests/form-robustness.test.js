@@ -206,7 +206,7 @@ describe('the data table paginator', () => {
     // AppAdminMulti reloads every 60s in two steps (itemList=[], then the new array), so
     // the paginator was remounted twice a minute and threw the reader back to page 1.
     const block = src.slice(src.indexOf('const filterVersion'), src.indexOf('// ─── Cell rendering'));
-    expect(block).toMatch(/watch\(\s*\[globalFilter, columnFilters\]/);
+    expect(block).toMatch(/watch\(\s*\[globalFilter, columnFilters(, \(\) => props\.search)?\]/);
     expect(block).not.toMatch(/watch\(filteredItems, \(\) => \{\s*filterVersion/);
   });
 

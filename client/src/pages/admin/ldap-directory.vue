@@ -14,7 +14,8 @@
 /*             sign-in domains that go straight to it             */
 /*    Groups   how their groups are found                         */
 /*  Test connection, Delete (but the default directory's) and     */
-/*  Save top right.                                               */
+/*  Save top right ; the search of the title line narrows every   */
+/*  tab at once.                                                  */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted } from 'vue';
@@ -96,6 +97,7 @@ onMounted(async () => {
       apiVersion="2"
       :settings="settings"
       :tabs="tabs"
+      searchable
       @test="openTest"
       @delete="(item) => (deleting = item)"
     />

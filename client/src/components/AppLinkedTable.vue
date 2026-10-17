@@ -197,7 +197,13 @@ function exportCsv() {
 const router = useRouter();
 // the rows of the page shown (AppTablePager) ; the first page's until it says
 const pageRows = ref(null);
-const shownRows = computed(() => pageRows.value ?? filteredRows.value.slice(0, 25));
+// the page searching (a word in its search) : several tables may be on it at once, each with its
+// controls in its own frame and every row it keeps, no pager (they would share the title line and
+// the page in the address)
+const inline = computed(() => !!(props.search && props.search.trim()));
+const shownRows = computed(() =>
+  inline.value ? filteredRows.value : (pageRows.value ?? filteredRows.value.slice(0, 25)),
+);
 // the rows unfolded (their key) ; the rows drawn : each row of the page, its children under it
 // when unfolded
 const unfolded = ref(new Set());
@@ -282,9 +288,13 @@ function text(col, row) {
 }
 </script>
 <template>
-  <!-- the controls, on the title line : the filter at its left, the columns and the export -->
-  <Teleport v-if="toolbarTo" defer :to="toolbarTo">
-    <div class="d-flex align-items-center gap-2 bs-dt-toolbar-moved flex-wrap">
+  <!-- the controls, on the title line : the filter at its left, the columns and the export ; while
+       the page searches, over the table in its own frame (inline) -->
+  <Teleport v-if="toolbarTo" defer :to="toolbarTo" :disabled="inline">
+    <div
+      class="d-flex align-items-center gap-2 flex-wrap"
+      :class="inline ? 'af-linked-inline mb-2' : 'bs-dt-toolbar-moved'"
+    >
       <BsSearch v-if="search === null" v-model="filter" class="af-table-search" />
       <!-- the selection : how many, Clear selection, Select all, and what the page does with them -->
       <span v-if="selectable && selected.size" class="text-muted small"
@@ -444,7 +454,7 @@ function text(col, row) {
     </table>
   </div>
   <!-- the rows shown, the page size and the pages, under the table as a list's -->
-  <AppTablePager :items="filteredRows" @change="(r) => (pageRows = r)" />
+  <AppTablePager v-if="!inline" :items="filteredRows" @change="(r) => (pageRows = r)" />
 </template>
 <style scoped>
 /* a header that sorts : the pointer, and its arrows small as every list's */
