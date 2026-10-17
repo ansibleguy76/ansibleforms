@@ -409,7 +409,7 @@ export default {
     description: {
       account:
         "Con quale utente hai effettuato l'accesso, e i gruppi e i ruoli che decidono cosa puoi vedere ed eseguire.",
-      token: "Un token di lunga durata per script e per l'API, creato con la tua password.",
+      token: 'Token di lunga durata per script e API, ciascuno creato con la tua password.',
       preferences: 'Come appare AnsibleForms per te. Queste scelte sono salvate in questo browser.',
       password: 'Cambia la password del tuo account locale.',
       passwordElsewhere: 'La tua password è gestita dal tuo provider di accesso.',

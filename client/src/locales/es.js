@@ -405,11 +405,11 @@ export default {
       preferences: 'Preferencias',
       password: 'Contraseña',
       permissions: 'Permisos',
-      token: 'Token de API',
+      token: 'Tokens de API',
     },
     description: {
       account: 'Con qué usuario has iniciado sesión, y los grupos y roles que deciden qué puedes ver y ejecutar.',
-      token: 'Un token de larga duración para scripts y la API, creado con tu contraseña.',
+      token: 'Tokens de larga duración para scripts y la API, cada uno creado con tu contraseña.',
       preferences: 'Cómo se ve AnsibleForms para ti. Estas opciones se guardan en este navegador.',
       password: 'Cambia la contraseña de tu cuenta local.',
       passwordElsewhere: 'Tu contraseña la gestiona tu proveedor de inicio de sesión.',

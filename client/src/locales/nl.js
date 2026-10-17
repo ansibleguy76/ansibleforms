@@ -404,11 +404,11 @@ export default {
       preferences: 'Voorkeuren',
       password: 'Wachtwoord',
       permissions: 'Rechten',
-      token: 'API-token',
+      token: 'API-tokens',
     },
     description: {
       account: 'Als wie je bent aangemeld, en de groepen en rollen die bepalen wat je kunt zien en uitvoeren.',
-      token: 'Een token met een lange geldigheid voor scripts en de API, aangemaakt met je wachtwoord.',
+      token: 'Langlevende tokens voor scripts en de API, elk aangemaakt met uw wachtwoord.',
       preferences: 'Hoe AnsibleForms er voor jou uitziet. Deze keuzes worden in deze browser bewaard.',
       password: 'Wijzig het wachtwoord van je lokale account.',
       passwordElsewhere: 'Je wachtwoord wordt beheerd door je aanmeldprovider.',

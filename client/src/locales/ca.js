@@ -406,11 +406,11 @@ export default {
       preferences: 'Preferències',
       password: 'Contrasenya',
       permissions: 'Permisos',
-      token: "Token de l'API",
+      token: "Tokens d'API",
     },
     description: {
       account: 'Amb quin usuari has iniciat la sessió, i els grups i rols que decideixen què pots veure i executar.',
-      token: "Un token de llarga durada per a scripts i l'API, creat amb la teva contrasenya.",
+      token: "Tokens de llarga durada per a scripts i l'API, cadascun creat amb la teva contrasenya.",
       preferences: 'Com veus AnsibleForms. Aquestes opcions es desen en aquest navegador.',
       password: 'Canvia la contrasenya del teu compte local.',
       passwordElsewhere: "La teva contrasenya la gestiona el teu proveïdor d'inici de sessió.",

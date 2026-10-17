@@ -404,12 +404,12 @@ export default {
       preferences: 'Einstellungen',
       password: 'Passwort',
       permissions: 'Berechtigungen',
-      token: 'API-Token',
+      token: 'API-Tokens',
     },
     description: {
       account:
         'Als wer Sie angemeldet sind, und die Gruppen und Rollen, die bestimmen, was Sie sehen und ausführen können.',
-      token: 'Ein lange gültiges Token für Skripte und die API, erstellt mit Ihrem Passwort.',
+      token: 'Langlebige Tokens für Skripte und die API, jeder mit Ihrem Passwort erstellt.',
       preferences: 'Wie AnsibleForms für Sie aussieht. Diese Einstellungen werden in diesem Browser gespeichert.',
       password: 'Ändern Sie das Passwort Ihres lokalen Kontos.',
       passwordElsewhere: 'Ihr Passwort wird von Ihrem Anmeldeanbieter verwaltet.',

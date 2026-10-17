@@ -408,12 +408,12 @@ export default {
       preferences: 'Préférences',
       password: 'Mot de passe',
       permissions: 'Autorisations',
-      token: 'Token API',
+      token: "Jetons d'API",
     },
     description: {
       account:
         'Avec quel compte vous êtes connecté, et les groupes et rôles qui décident de ce que vous pouvez voir et lancer.',
-      token: "Un token de longue durée pour les scripts et l'API, créé avec votre mot de passe.",
+      token: "Des jetons de longue durée pour les scripts et l'API, chacun créé avec votre mot de passe.",
       preferences: "L'apparence d'AnsibleForms pour vous. Ces choix sont gardés dans ce navigateur.",
       password: 'Changez le mot de passe de votre compte local.',
       passwordElsewhere: 'Votre mot de passe est géré par votre fournisseur de connexion.',

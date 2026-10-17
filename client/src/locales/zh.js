@@ -390,11 +390,11 @@ export default {
       preferences: '偏好设置',
       password: '密码',
       permissions: '权限',
-      token: 'API token',
+      token: 'API 令牌',
     },
     description: {
       account: '您当前登录的身份，以及决定您能查看和运行哪些内容的组和角色。',
-      token: '用于脚本和 API 的长期 token，使用您的密码创建。',
+      token: '用于脚本和 API 的长期令牌，每个都用你的密码创建。',
       preferences: 'AnsibleForms 在您这里的外观。这些选择保存在此浏览器中。',
       password: '修改您本地账户的密码。',
       passwordElsewhere: '您的密码由您的登录提供商管理。',

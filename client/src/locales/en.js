@@ -398,11 +398,11 @@ export default {
       preferences: 'Preferences',
       password: 'Password',
       permissions: 'Permissions',
-      token: 'API token',
+      token: 'API tokens',
     },
     description: {
       account: 'Who you are signed in as, and the groups and roles that decide what you can see and run.',
-      token: 'A long-lived token for scripts and the API, created with your password.',
+      token: 'Long-lived tokens for scripts and the API, each created with your password.',
       preferences: 'How AnsibleForms looks for you. These choices are kept in this browser.',
       password: 'Change the password of your local account.',
       passwordElsewhere: 'Your password is managed by your login provider.',

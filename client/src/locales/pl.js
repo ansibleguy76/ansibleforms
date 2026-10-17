@@ -402,11 +402,11 @@ export default {
       preferences: 'Preferencje',
       password: 'Hasło',
       permissions: 'Uprawnienia',
-      token: 'Token API',
+      token: 'Tokeny API',
     },
     description: {
       account: 'Jako kto jesteś zalogowany oraz grupy i role, które decydują o tym, co możesz widzieć i uruchamiać.',
-      token: 'Długotrwały token dla skryptów i API, tworzony przy użyciu Twojego hasła.',
+      token: 'Długotrwałe tokeny dla skryptów i API, każdy utworzony Twoim hasłem.',
       preferences: 'Jak AnsibleForms wygląda dla Ciebie. Te ustawienia są zapisywane w tej przeglądarce.',
       password: 'Zmień hasło swojego konta lokalnego.',
       passwordElsewhere: 'Twoim hasłem zarządza dostawca logowania.',
