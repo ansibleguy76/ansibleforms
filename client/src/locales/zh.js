@@ -303,7 +303,6 @@ export default {
     formsView: '表单视图',
     preview: '预览',
     tabAppearance: '外观',
-    tabForms: '表单',
     tabDateTime: '日期和时间',
     tabNotifications: '通知',
     notifications: '桌面通知',

@@ -310,7 +310,6 @@ export default {
     formsView: 'Affichage des formulaires',
     preview: 'Aperçu',
     tabAppearance: 'Apparence',
-    tabForms: 'Formulaires',
     tabDateTime: 'Date et heure',
     tabNotifications: 'Notifications',
     notifications: 'Notifications de bureau',

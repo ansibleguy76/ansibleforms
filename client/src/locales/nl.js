@@ -311,7 +311,6 @@ export default {
     formsView: 'Weergave formulieren',
     preview: 'Voorbeeld',
     tabAppearance: 'Weergave',
-    tabForms: 'Formulieren',
     tabDateTime: 'Datum en tijd',
     tabNotifications: 'Meldingen',
     notifications: 'Bureaubladmeldingen',

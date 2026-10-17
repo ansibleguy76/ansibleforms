@@ -311,7 +311,6 @@ export default {
     formsView: 'Vista dei form',
     preview: 'Anteprima',
     tabAppearance: 'Aspetto',
-    tabForms: 'Moduli',
     tabDateTime: 'Data e ora',
     tabNotifications: 'Notifiche',
     notifications: 'Notifiche desktop',

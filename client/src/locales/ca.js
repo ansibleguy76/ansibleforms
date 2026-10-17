@@ -310,7 +310,6 @@ export default {
     formsView: 'Vista dels formularis',
     preview: 'Previsualització',
     tabAppearance: 'Aparença',
-    tabForms: 'Formularis',
     tabDateTime: 'Data i hora',
     tabNotifications: 'Notificacions',
     notifications: "Notificacions d'escriptori",

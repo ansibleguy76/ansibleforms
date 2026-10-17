@@ -311,7 +311,6 @@ export default {
     formsView: 'Formularansicht',
     preview: 'Vorschau',
     tabAppearance: 'Darstellung',
-    tabForms: 'Formulare',
     tabDateTime: 'Datum und Uhrzeit',
     tabNotifications: 'Benachrichtigungen',
     notifications: 'Desktop-Benachrichtigungen',

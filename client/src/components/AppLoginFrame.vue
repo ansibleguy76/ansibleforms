@@ -108,7 +108,8 @@ const currentTheme = ref(Theme.load());
   font-size: 1.1rem;
   font-weight: 600;
 }
-.login-instance :deep(.af-env-label) {
+/* the labels centred under the logo : without the header's pull towards its logo */
+.login-instance :deep(.af-labels) {
   margin: 0;
 }
 .login-title {
