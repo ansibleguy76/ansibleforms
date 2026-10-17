@@ -9,12 +9,15 @@
 /*  columns: [{ key, label, value?(row), html?(row), class?,      */
 /*    keep? }] - keep : never cut (a date, a status), the others  */
 /*    give way                                                    */
+/*    end : at the table's right edge (an access, a state), the   */
+/*    room left before it rather than after the last column       */
 /*    value - the cell's text (default row[key]) ; html - its     */
 /*    html instead, escaped by the caller (a cron and its hover)  */
 /*    a cell slot #cell-<key>="{ row }" draws a cell itself (a    */
 /*    status pill)                                                */
 /*  rows: the items ; rowKey: the field that keys a row (id)      */
 /*  to: (row) => an address, or null for a row that opens nothing */
+/*    (such a row has no hover, unless it ticks or unfolds)       */
 /*  empty: the note shown with no rows                            */
 /*  children: (row) => its rows, or null - a row that has some    */
 /*    unfolds them under it with a caret (a multistep job's       */
@@ -71,6 +74,8 @@ const filter = ref('');
 // the columns the picker hid
 const hidden = ref(new Set());
 const shownColumns = computed(() => props.columns.filter((c) => !hidden.value.has(c.key)));
+// the first column held at the right edge (end) : the room left goes before it ; none, after the last
+const endFrom = computed(() => shownColumns.value.find((c) => c.end)?.key || null);
 /**
  * A cell's plain text : its column's value(), its html() without the tags, or its field.
  *
@@ -343,6 +348,8 @@ function text(col, row) {
           <template v-for="col in shownColumns" :key="col.key">
             <!-- the caret's own column, before its column (a job's form) -->
             <th v-if="children && col.key === childrenBefore" class="af-expand-col"></th>
+            <!-- the room left, before the columns held at the right edge (end) -->
+            <th v-if="col.key === endFrom" class="af-fit-spacer"></th>
             <th
               :class="[col.class, { 'bs-dt-sortable': isSortable(col) }]"
               :data-fit-keep="col.keep ? '' : null"
@@ -360,8 +367,8 @@ function text(col, row) {
               </span>
             </th>
           </template>
-          <!-- the room left, after the last column (v-fit-columns) -->
-          <th class="af-fit-spacer"></th>
+          <!-- the room left, after the last column (v-fit-columns) ; before the end ones, if any -->
+          <th v-if="!endFrom" class="af-fit-spacer"></th>
           <th v-if="rowActions.length" class="af-row-menu-col"></th>
         </tr>
       </thead>
@@ -372,7 +379,10 @@ function text(col, row) {
           v-for="{ row, child } in drawnRows"
           :key="(child ? 'c/' : '') + row[rowKey]"
           :role="target(row) ? 'button' : null"
-          :class="{ 'bs-dt-selected': !child && selected.has(row[rowKey]) }"
+          :class="{
+            'bs-dt-selected': !child && selected.has(row[rowKey]),
+            'af-row-static': !target(row) && !selectable && !foldable(row),
+          }"
           @click="open(row)"
         >
           <!-- its box (a step under a job has none : the job is ticked) -->
@@ -386,6 +396,7 @@ function text(col, row) {
             />
           </td>
           <template v-for="(col, i) in shownColumns" :key="col.key">
+            <td v-if="col.key === endFrom" class="af-fit-spacer"></td>
             <!-- the caret : its cell unfolds the row (the rest of the row opens it) -->
             <td
               v-if="children && col.key === childrenBefore"
@@ -408,7 +419,7 @@ function text(col, row) {
               </slot>
             </td>
           </template>
-          <td class="af-fit-spacer"></td>
+          <td v-if="!endFrom" class="af-fit-spacer"></td>
           <!-- its menu : the actions of the rows ticked, for this one (none under a job's step) -->
           <td v-if="rowActions.length" class="bs-dt-row-actions" @click.stop>
             <div v-if="!child" class="dropdown">
@@ -457,6 +468,11 @@ function text(col, row) {
   <AppTablePager v-if="!inline" :items="filteredRows" @change="(r) => (pageRows = r)" />
 </template>
 <style scoped>
+/* a row that opens nothing (no address, no box, no steps) : no hover, a grey hover says a click
+   does something */
+.af-table tbody tr.af-row-static:hover > td {
+  background: none;
+}
 /* a header that sorts : the pointer, and its arrows small as every list's */
 .bs-dt-sortable {
   cursor: pointer;

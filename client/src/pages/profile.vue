@@ -116,22 +116,33 @@ const permissionGroups = computed(() => {
   // showExtraVars (capital V) is the server's legacy spelling of showExtravars, listed under
   // jobs : not shown twice
   const grouped = new Set([...PERMISSION_GROUPS.flatMap((g) => g.keys), 'showExtraVars']);
-  return PERMISSION_GROUPS.map((g) => {
-    const keys = g.keys.filter((k) => k in opts);
-    if (g.name === 'other') keys.push(...Object.keys(opts).filter((k) => !grouped.has(k)));
-    // what applies (config/roles.js effectiveRoleOption) : an option included in another that is on
-    // is allowed, one missing the option it needs is not - and the row says why
-    const options = keys.map((k) => {
-      const eff = effectiveRoleOption(opts, k);
-      const note = eff.includedBy
-        ? t('settings.settingsPage.roleOptionIncluded', { option: roleOptionLabel(t, eff.includedBy) })
-        : eff.needs
-          ? t('settings.settingsPage.roleOptionNeeds', { option: roleOptionLabel(t, eff.needs) })
-          : '';
-      return { key: k, description: roleOptionDescription(t, te, k), value: eff.value, note };
-    });
-    return { name: g.name, title: g.title(), options, allowed: options.filter((o) => o.value).length };
-  }).filter((g) => g.options.length);
+  return (
+    PERMISSION_GROUPS.map((g) => {
+      const keys = g.keys.filter((k) => k in opts);
+      if (g.name === 'other') keys.push(...Object.keys(opts).filter((k) => !grouped.has(k)));
+      // what applies (config/roles.js effectiveRoleOption) : an option included in another that is on
+      // is allowed, one missing the option it needs is not - and the row says why
+      const options = keys.map((k) => {
+        const eff = effectiveRoleOption(opts, k);
+        const note = eff.includedBy
+          ? t('settings.settingsPage.roleOptionIncluded', { option: roleOptionLabel(t, eff.includedBy) })
+          : eff.needs
+            ? t('settings.settingsPage.roleOptionNeeds', { option: roleOptionLabel(t, eff.needs) })
+            : '';
+        return {
+          key: k,
+          description: roleOptionDescription(t, te, k),
+          value: eff.value,
+          note,
+          access: eff.value ? t('profilePage.allowed') : t('profilePage.notAllowed'),
+        };
+      });
+      return { name: g.name, title: g.title(), options, allowed: options.filter((o) => o.value).length };
+    })
+      .filter((g) => g.options.length)
+      // the tabs in alphabetical order of their title, in the user's language ; Other last
+      .sort((a, b) => (a.name === 'other') - (b.name === 'other') || a.title.localeCompare(b.title, locale.value))
+  );
 });
 
 const view = computed(() => VIEWS.find((v) => v.name === currentView.value));
@@ -143,6 +154,13 @@ const prefTabs = computed(() => [
   { key: 'appearance', label: t('profilePage.tabAppearance'), icon: 'palette' },
   { key: 'datetime', label: t('profilePage.tabDateTime'), icon: 'clock' },
   ...(mayNotify.value ? [{ key: 'notifications', label: t('profilePage.tabNotifications'), icon: 'bell' }] : []),
+]);
+// a permission group's table : the option, what it allows (and why it applies or not), whether the
+// user has it ; the description searched with its note
+const permissionColumns = computed(() => [
+  { key: 'key', label: t('profilePage.columnSetting'), keep: true },
+  { key: 'description', label: t('profilePage.columnDescription'), value: (o) => `${o.description} ${o.note}` },
+  { key: 'access', label: t('profilePage.columnAccess'), keep: true, end: true, class: 'text-end' },
 ]);
 // a permission group's icon : as its place in the app
 const PERMISSION_ICONS = { settings: 'gear', designer: 'pen-to-square', jobs: 'history', access: 'user-shield' };
@@ -624,14 +642,10 @@ const accountNone = computed(
     !accountRows.value.groups &&
     !accountRows.value.roles,
 );
-// the permission groups with what matches : a group whose title has the word keeps all its options
+// the permission groups with a row that matches, as their tables filter them (AppLinkedTable : a
+// row by its cells)
 const shownPermissionGroups = computed(() =>
-  permissionGroups.value
-    .map((g) => ({
-      ...g,
-      options: hit(g.title) ? g.options : g.options.filter((o) => hit(o.key, o.description, o.note)),
-    }))
-    .filter((g) => g.options.length),
+  permissionGroups.value.filter((g) => g.options.some((o) => hit(o.key, o.description, o.note, o.access))),
 );
 
 async function changePassword() {
@@ -993,36 +1007,28 @@ async function changePassword() {
                   <FaIcon :icon="permissionIcon(group.name)" class="me-1" />{{ group.title }}
                 </h6>
               </template>
-              <div class="af-table-frame">
-                <!-- fixed columns (the styles below), the same in every tab : the access at the right edge -->
-                <table class="table af-table af-perm-table">
-                  <thead>
-                    <tr>
-                      <th>{{ t('profilePage.columnSetting') }}</th>
-                      <th>{{ t('profilePage.columnDescription') }}</th>
-                      <th class="text-end">{{ t('profilePage.columnAccess') }}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="o in group.options" :key="o.key">
-                      <td>
-                        <code class="af-option-key">{{ o.key }}</code>
-                      </td>
-                      <td :class="o.value ? '' : 'text-body-secondary'">
-                        {{ o.description }}
-                        <div v-if="o.note" class="small text-body-secondary">{{ o.note }}</div>
-                      </td>
-                      <td class="text-end">
-                        <span class="badge rounded-pill af-pill" :class="o.value ? 'af-pill-green' : 'af-pill-grey'">
-                          <FaIcon :icon="o.value ? 'check' : 'xmark'" class="me-1" />{{
-                            o.value ? t('profilePage.allowed') : t('profilePage.notAllowed')
-                          }}
-                        </span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+              <!-- the app's read-only table (AppLinkedTable) : its frame, header and columns ; the
+                   page's search narrows it -->
+              <AppLinkedTable
+                :search="viewSearch"
+                :columns="permissionColumns"
+                :rows="group.options"
+                rowKey="key"
+                :exportName="`permissions-${group.name}`"
+              >
+                <template #cell-key="{ row }">
+                  <code class="af-option-key">{{ row.key }}</code>
+                </template>
+                <template #cell-description="{ row }">
+                  <span :class="row.value ? '' : 'text-body-secondary'">{{ row.description }}</span>
+                  <div v-if="row.note" class="small text-body-secondary">{{ row.note }}</div>
+                </template>
+                <template #cell-access="{ row }">
+                  <span class="badge rounded-pill af-pill" :class="row.value ? 'af-pill-green' : 'af-pill-grey'">
+                    <FaIcon :icon="row.value ? 'check' : 'xmark'" class="me-1" />{{ row.access }}
+                  </span>
+                </template>
+              </AppLinkedTable>
             </div>
           </template>
           <div v-if="viewSearching && !shownPermissionGroups.length" class="text-body-secondary fst-italic">
@@ -1315,30 +1321,6 @@ form.af-field,
 // own background would otherwise cover (the side borders then stopped short of the bottom)
 .af-table-card {
   overflow: hidden;
-}
-// permissions : a table per group ; the setting and the access in fixed columns, the
-// description takes the rest
-.af-perm-table {
-  // the app's table (styles/tables.scss : its grey header, its rows), the same fixed column widths
-  // in every tab - the description takes what is left
-  table-layout: fixed;
-  th:nth-child(1) {
-    width: 14.5rem; // the longest key, extendedTokenExpiration, fits
-  }
-  th:nth-child(3) {
-    width: 9.5rem;
-  }
-  td {
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  td:not(:nth-child(2)) {
-    white-space: nowrap;
-  }
-  // nothing to open on a row : no hover (a grey hover means a click does something)
-  tbody tr:hover > td {
-    background: none;
-  }
 }
 // permissions : the option key under its readable name, and the allowed / not allowed pill
 .af-option-key {
