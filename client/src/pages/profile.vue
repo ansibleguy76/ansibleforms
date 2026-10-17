@@ -213,6 +213,13 @@ const TOKEN_LIFETIMES = computed(() => {
   if (canNeverExpire.value) list.push('never');
   return list;
 });
+// the lifetimes as the select shows them : 90 days ... , Never expires
+const lifetimeOptions = computed(() =>
+  TOKEN_LIFETIMES.value.map((d) => ({
+    value: d,
+    label: d === 'never' ? t('apiTokens.neverExpires') : t('profilePage.token.days', { n: d }),
+  })),
+);
 const tokenForm = ref({ days: 90, password: '', name: '' });
 axios
   .get('/api/v2/auth/settings')
@@ -861,39 +868,32 @@ async function changePassword() {
                 <pre class="af-token-example mb-4"><code>{{ tokenExample }}</code></pre>
               </div>
               <!-- the request : a lifetime and the password -->
-              <div v-else-if="tokenStep === 0" class="af-field af-field-help-wide">
-                <div class="mb-3">
-                  <label class="form-label fw-bold" for="af-token-name"
-                    >{{ t('profilePage.token.name') }}<span class="text-danger ms-1">*</span></label
-                  >
-                  <div class="input-group">
-                    <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="tag" /></span>
-                    <input
-                      id="af-token-name"
-                      v-model="tokenForm.name"
-                      type="text"
-                      maxlength="100"
-                      required
-                      class="form-control"
-                      @keydown.enter.prevent="nextTokenStep"
-                    />
-                  </div>
-                  <div class="form-text">{{ t('profilePage.token.nameHint') }}</div>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label fw-bold" for="af-token-days">{{ t('profilePage.token.lifetime') }}</label>
-                  <div class="input-group">
-                    <span class="input-group-text text-gray-500"
-                      ><FaIcon :fixedwidth="true" icon="hourglass-half"
-                    /></span>
-                    <select id="af-token-days" v-model.number="tokenForm.days" class="form-select">
-                      <option v-for="d in TOKEN_LIFETIMES" :key="d" :value="d">
-                        {{ d === 'never' ? t('apiTokens.neverExpires') : t('profilePage.token.days', { n: d }) }}
-                      </option>
-                    </select>
-                  </div>
-                  <div class="form-text">{{ t('profilePage.token.lifetimeHint') }}</div>
-                </div>
+              <!-- its fields as every dialog's : the name at the left, the field and its help at the right -->
+              <div v-else-if="tokenStep === 0">
+                <BsInput
+                  v-model="tokenForm.name"
+                  :isHorizontal="true"
+                  :isFloating="false"
+                  type="text"
+                  icon="tag"
+                  :required="true"
+                  :label="t('profilePage.token.name')"
+                  :help="t('profilePage.token.nameHint')"
+                  @keyup_enter="nextTokenStep"
+                />
+                <BsInput
+                  v-model="tokenForm.days"
+                  :isHorizontal="true"
+                  :isFloating="false"
+                  type="select"
+                  icon="hourglass-half"
+                  :required="true"
+                  :values="lifetimeOptions"
+                  valueKey="value"
+                  labelKey="label"
+                  :label="t('profilePage.token.lifetime')"
+                  :help="t('profilePage.token.lifetimeHint')"
+                />
               </div>
               <form v-else class="af-field" @submit.prevent="createToken" @keydown.enter.prevent="createToken">
                 <p v-if="!usesPassword" class="text-body-secondary mb-0">
@@ -901,22 +901,17 @@ async function changePassword() {
                     t('profilePage.token.signInAgainHint', { type: loginType.label })
                   }}
                 </p>
-                <div v-else>
-                  <label class="form-label fw-bold" for="af-token-password">{{
-                    t('profilePage.token.password')
-                  }}</label>
-                  <div class="input-group">
-                    <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="lock" /></span>
-                    <input
-                      id="af-token-password"
-                      v-model="tokenForm.password"
-                      type="password"
-                      class="form-control"
-                      autocomplete="current-password"
-                    />
-                  </div>
-                  <div class="form-text">{{ t('profilePage.token.passwordHint') }}</div>
-                </div>
+                <BsInput
+                  v-else
+                  v-model="tokenForm.password"
+                  :isHorizontal="true"
+                  :isFloating="false"
+                  type="password"
+                  icon="lock"
+                  :label="t('profilePage.token.password')"
+                  :help="t('profilePage.token.passwordHint')"
+                  @keyup_enter="createToken"
+                />
               </form>
             </template>
             <template #footer>
