@@ -252,7 +252,7 @@ export default {
     designerLockedBy: 'Le concepteur est verrouillé par {user}',
     forms: 'Formulaires',
     jobs: 'Jobs',
-    settings: 'Parametres',
+    settings: 'Paramètres',
     designer: 'Concepteur',
     documentation: 'Documentation',
     logs: 'Journaux',
@@ -1948,7 +1948,7 @@ export default {
         'Expression régulière : seuls les groupes dont le nom correspond sont gardés, pour les rôles, formulaires et playbooks. Vide garde tout.',
     },
     mail: {
-      label: 'Parametres mail',
+      label: 'Paramètres mail',
       description: "Configurer le serveur SMTP pour l'envoi des e-mails de notification et d'approbation.",
       testMail: 'Tester le mail',
       subject: 'Objet',
@@ -1979,7 +1979,7 @@ export default {
       folder: 'Dossier',
     },
     settingsPage: {
-      label: 'Parametres',
+      label: 'Paramètres',
       description: "Paramètres généraux comme l'URL publique, la langue par défaut et la source de configuration.",
       configParseError:
         "Échec de l'analyse de la configuration des formulaires. Veuillez corriger l'erreur de syntaxe YAML avant d'effectuer des modifications.",
