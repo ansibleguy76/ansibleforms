@@ -96,8 +96,7 @@ var State = {
     store.chatEnabled = !!data.chatEnabled;
     store.designerEnabled = data.designerEnabled !== false;
     store.appName = data.appName || null;
-    store.envLabel = data.envLabel || null;
-    store.envLabelColor = data.envLabelColor || null;
+    store.labels = Array.isArray(data.labels) ? data.labels : [];
     store.announcements = Array.isArray(data.announcements) ? data.announcements : [];
     store.formsView = data.formsView || null;
     // the time zone for everyone : only while this browser has not chosen its own (the profile)

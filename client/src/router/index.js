@@ -43,7 +43,8 @@ const favicon = () => import('@/pages/admin/favicon.vue');
 const defaultsPage = () => import('@/pages/admin/defaults.vue');
 const linksPage = () => import('@/pages/admin/links.vue');
 const namePage = () => import('@/pages/admin/name.vue');
-const environmentPage = () => import('@/pages/admin/environment.vue');
+const labelsPage = () => import('@/pages/admin/labels.vue');
+const labelPage = () => import('@/pages/admin/label.vue');
 const announcementsPage = () => import('@/pages/admin/announcements.vue');
 const announcementPage = () => import('@/pages/admin/announcement.vue');
 const disclaimerPage = () => import('@/pages/admin/disclaimer.vue');
@@ -282,12 +283,21 @@ const routes = [
     component: linksPage,
     meta: { permission: ['showSettings', 'showAppearanceSettings'] },
   },
+  // the labels beside the logo, and a label's page ; the Environment page of before 7.3 is
+  // their list now
   {
-    path: '/settings/environment',
-    name: '/settings/environment',
-    component: environmentPage,
+    path: '/settings/labels',
+    name: '/settings/labels',
+    component: labelsPage,
     meta: { permission: ['showSettings', 'showAppearanceSettings'] },
   },
+  {
+    path: '/settings/labels/:id(\\d+)/:tab?',
+    name: '/settings/labels/:id',
+    component: labelPage,
+    meta: { permission: ['showSettings', 'showAppearanceSettings'] },
+  },
+  { path: '/settings/environment', redirect: '/settings/labels' },
   {
     path: '/settings/announcements',
     name: '/settings/announcements',

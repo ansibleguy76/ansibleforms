@@ -132,6 +132,20 @@ const crudConfigs = {
   },
   // the syslog servers the server log and the audit entries are sent to (Connections > Syslog,
   // lib/syslogServers.js)
+  // the labels beside the header's logo (Settings > Appearance > Labels) : PRODUCTION, EU...
+  label: {
+    table: 'AnsibleForms.labels',
+    fields: [
+      { name: 'id', isKey: true },
+      { name: 'name', isNaturalKey: true, required: true },
+      { name: 'color' },
+      { name: 'enabled', isBoolean: true },
+      { name: 'position' },
+      { name: 'managed', isBoolean: true }
+    ],
+    allowCache: true,
+    cacheTTL: 3600
+  },
   syslogserver: {
     table: 'AnsibleForms.syslog_servers',
     fields: [

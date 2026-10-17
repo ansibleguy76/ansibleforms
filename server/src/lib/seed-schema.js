@@ -396,6 +396,20 @@ const ldapSection = {
 //
 // All seven are required, for the reason spelled out above ldapSection: this is a single-row
 // section, so declaring it means owning all of it.
+// a label beside the header's logo (Settings > Appearance > Labels) : its text, its colour (one
+// of the app's pill tones), shown or not, its place among the others (lowest first)
+const labelItem = {
+  type: "object",
+  additionalProperties: false,
+  required: ["name"],
+  properties: {
+    name: { type: "string", minLength: 1, maxLength: 40 },
+    color: { type: "string", enum: ["blue", "green", "amber", "orange", "red", "grey"] },
+    enabled: bool,
+    position: { type: "integer" },
+  },
+};
+
 const settingsSection = {
   type: "object",
   additionalProperties: false,
@@ -425,6 +439,7 @@ export const seedSchema = {
     repositories: listSection(repositoryItem),
     syslog_servers: listSection(syslogServerItem),
     notification_channels: listSection(notificationChannelItem),
+    labels: listSection(labelItem),
     ldap: ldapSection,
     settings: settingsSection,
     chat: chatSection,
@@ -438,7 +453,7 @@ const validator = ajv.compile(seedSchema);
 // typo here : the second entry silently wins the upsert while the first is counted
 // as declared, so a prune would spare a record nobody can see in the file.
 function assertUniqueNames(doc) {
-  for (const key of ["runners", "secret_stores", "credentials", "oauth2", "repositories", "syslog_servers", "notification_channels"]) {
+  for (const key of ["runners", "secret_stores", "credentials", "oauth2", "repositories", "syslog_servers", "notification_channels", "labels"]) {
     const items = doc[key]?.items;
     if (!Array.isArray(items)) continue;
     const seen = new Set();

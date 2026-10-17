@@ -140,11 +140,11 @@ function fitPrimaryNav() {
   }
 }
 const refit = () => nextTick(fitPrimaryNav);
-// what changes the room : the own links, the label, the Designer link, the language, the logo
+// what changes the room : the own links, the labels, the Designer link, the language, the logo
 watch(
   () => [
     JSON.stringify(store.headerLinks || []),
-    store.envLabel,
+    JSON.stringify(store.labels || []),
     store.designerEnabled,
     locale.value,
     store.customLogo,

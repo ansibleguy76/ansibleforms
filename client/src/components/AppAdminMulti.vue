@@ -1866,6 +1866,45 @@ defineExpose({
           </div>
         </div>
 
+        <!-- A COMPONENT (type component) : something to see while the record is made (the labels'
+             preview), field.component with the props field.props(item, items) gives ; its title in
+             the label column, as the other fields -->
+        <div v-else-if="showField(field) && field.type === 'component'" class="row mb-3">
+          <label class="form-label fw-bold col-form-label col-sm-2">{{ field.label }}</label>
+          <div class="col-sm-10">
+            <component :is="field.component" v-bind="field.props ? field.props($v.item.$model, itemList) : {}" />
+            <div v-if="field.help" class="form-text">{{ field.help }}</div>
+          </div>
+        </div>
+
+        <!-- COLOUR SWATCHES (type swatches) : one choice of field.options, round buttons in their
+             colour (opt.cls), the chosen one ringed and ticked, as a label's page (label.vue) -->
+        <div v-else-if="showField(field) && field.type === 'swatches'" class="row mb-3">
+          <!-- its title in the label column, the circles and the help beside it, as the other fields -->
+          <label class="form-label fw-bold col-form-label col-sm-2"
+            >{{ field.label }}<span v-if="field.required" class="text-danger ms-1">*</span></label
+          >
+          <div class="col-sm-10">
+            <div class="d-flex flex-wrap gap-2 ms-1 af-swatch-row" role="radiogroup" :aria-label="field.label">
+              <button
+                v-for="opt in field.options"
+                :key="String(opt.value)"
+                type="button"
+                class="settings-color-swatch"
+                :class="[opt.cls, { 'af-swatch-active': $v.item[field.key].$model === opt.value }]"
+                :title="opt.label"
+                role="radio"
+                :aria-checked="$v.item[field.key].$model === opt.value"
+                :disabled="field.readonly"
+                @click="$v.item[field.key].$model = opt.value"
+              >
+                <FaIcon v-if="$v.item[field.key].$model === opt.value" icon="check" class="settings-swatch-check" />
+              </button>
+            </div>
+            <div v-if="field.help" class="form-text">{{ field.help }}</div>
+          </div>
+        </div>
+
         <!-- A SWITCH AT THE LEFT EDGE (flush) : no label column before it, its help the full
              width of the dialog under it -->
         <div
@@ -1997,6 +2036,11 @@ defineExpose({
   </div>
 </template>
 <style scoped>
+/* the colour circles as tall as a field's input, so they sit on the line of their title */
+.af-swatch-row {
+  min-height: calc(1.5em + 0.75rem + 2px);
+  align-items: center;
+}
 /* a dialog opened from this one's (a New button under a dropdown) : above it, its backdrop
    dimming this dialog as this one's dims the page (Bootstrap's modal is 1055, its backdrop 1050) */
 .af-nested-dialogs :deep(.modal) {

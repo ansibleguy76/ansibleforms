@@ -41,7 +41,7 @@ export function settingsMenu(t) {
         { title: t('sidebar.logo'), icon: 'image', link: '/settings/logo' },
         { title: t('sidebar.icon'), icon: 'bookmark', link: '/settings/icon' },
         { title: t('sidebar.links'), icon: 'link', link: '/settings/links' },
-        { title: t('sidebar.environment'), icon: 'tag', link: '/settings/environment' },
+        { title: t('sidebar.labels'), icon: 'tag', link: '/settings/labels' },
         { title: t('sidebar.announcement'), icon: 'bullhorn', link: '/settings/announcements' },
       ],
     },

@@ -44,7 +44,7 @@ const currentTheme = ref(Theme.load());
 
     <div class="card form-signin w-100 m-auto" :class="{ 'login-busy': busy }" :aria-busy="busy">
       <div class="card-body">
-        <div class="login-logo" :class="{ 'login-logo-instance': store.appName || store.envLabel }">
+        <div class="login-logo" :class="{ 'login-logo-instance': store.appName || store.labels.length }">
           <!-- an uploaded logo ; not the server's built-in default, which is the light logo and
                would replace the dark theme's own -->
           <img v-if="store.customLogo && !store.logoIsDefault" :src="store.customLogo" alt="AnsibleForms" />
@@ -53,9 +53,9 @@ const currentTheme = ref(Theme.load());
           <img v-else :src="'img/logo_light.svg'" alt="AnsibleForms" />
         </div>
         <!-- which instance : its name and its environment (Settings > Appearance) -->
-        <div v-if="store.appName || store.envLabel" class="login-instance">
+        <div v-if="store.appName || store.labels.length" class="login-instance">
           <span v-if="store.appName" class="login-app-name">{{ store.appName }}</span>
-          <AppEnvLabel />
+          <AppLabels />
         </div>
         <h5 class="card-title login-title">Please sign in</h5>
         <slot></slot>

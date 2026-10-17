@@ -45,20 +45,21 @@ export function setMeta(html, name, content) {
 }
 
 /**
- * Puts the instance's name and its environment's label in index.html, as /api/v2/app/config
- * gives them : af-app-name, af-env-label, af-env-label-color (empty : none).
+ * Puts the instance's name and its labels in index.html, as /api/v2/app/config gives them :
+ * af-app-name, af-labels (the labels shown, as JSON : [{ name, color }] ; empty : none), so the
+ * header has them on its first paint.
  *
  * Args:
  *   html (string): index.html.
- *   defaults (Object|null): { appName, envLabel, envLabelColor } ; null when they could not be
- *     read : the page is left without the tags (it reads them from the api, as before).
+ *   defaults (Object|null): { appName, labels } ; null when they could not be read : the page is
+ *     left without the tags (it reads them from the api, as before).
  *
  * Returns:
  *   string: index.html with the tags.
  */
 export function injectAppIdentity(html, defaults) {
   if (!html || !defaults) return html;
-  let out = setMeta(html, "af-app-name", defaults.appName);
-  out = setMeta(out, "af-env-label", defaults.envLabel);
-  return setMeta(out, "af-env-label-color", defaults.envLabelColor);
+  const out = setMeta(html, "af-app-name", defaults.appName);
+  const labels = (defaults.labels || []).map((l) => ({ name: String(l.name), color: String(l.color || "grey") }));
+  return setMeta(out, "af-labels", labels.length ? JSON.stringify(labels) : "");
 }
