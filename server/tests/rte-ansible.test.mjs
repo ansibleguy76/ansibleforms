@@ -70,6 +70,8 @@ const { default: Job } = jobExports;
 const { default: mysql } = await import("../src/models/db.model.js");
 const { default: Repository } = await import("../src/models/repository.model.js");
 const core = await import("../src/rte/ansible-core.js");
+// the jobs read and written in the database, as a database-mode RTE does
+core.useJobIO((await import("../src/rte/jobio-db.js")).default);
 const { resolveJobSecrets } = await import("../src/lib/jobSecrets.js");
 const { dispatch, resolveRunner } = await import("../src/runners/orchestrator.js");
 const { RUNNERS } = await import("../src/runners/index.js");

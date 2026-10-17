@@ -1,0 +1,86 @@
+/******************************************************************/
+/*                                                                */
+/*  A running playbook's structured events : the af_events        */
+/*  callback plugin writes one JSON line per play, task and host  */
+/*  result to a file ; this reads the file as it grows, every     */
+/*  half second, and hands the new events on in order - to the    */
+/*  database (database mode) or the app (socket modes).           */
+/*                                                                */
+/******************************************************************/
+import fs from "fs";
+import logger from "../lib/logger.js";
+
+const POLL_MS = 500;
+// events handed on at once at most : a playbook over hundreds of hosts writes thousands
+const MAX_BATCH = 500;
+
+/**
+ * Follows an events file.
+ *
+ * Args:
+ *   file (string): the file the plugin writes (AF_EVENTS_FILE).
+ *   write (function): (events[]) => Promise : stores a batch, in order.
+ *
+ * Returns:
+ *   {stop: function}: stop() reads what is left, hands it on, removes the file, and resolves
+ *     once the last batch is stored.
+ */
+export function createEventTail({ file, write }) {
+  let offset = 0;
+  // a line the plugin is still writing : kept until its end comes
+  let partial = "";
+  let order = 0;
+  let writing = Promise.resolve();
+  let stopped = false;
+
+  const read = () => {
+    let fd;
+    try {
+      fd = fs.openSync(file, "r");
+    } catch {
+      return; // not written yet
+    }
+    try {
+      const size = fs.fstatSync(fd).size;
+      if (size <= offset) return;
+      const buf = Buffer.alloc(size - offset);
+      fs.readSync(fd, buf, 0, buf.length, offset);
+      offset = size;
+      const lines = (partial + buf.toString("utf8")).split("\n");
+      partial = lines.pop();
+      const events = [];
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          events.push({ ...JSON.parse(line), order: ++order });
+        } catch {
+          logger.debug(`An event line could not be read: ${line.slice(0, 120)}`);
+        }
+      }
+      for (let i = 0; i < events.length; i += MAX_BATCH) {
+        const batch = events.slice(i, i + MAX_BATCH);
+        writing = writing.then(() => write(batch)).catch((e) => logger.error(`The playbook's events could not be stored: ${e.message}`));
+      }
+    } finally {
+      fs.closeSync(fd);
+    }
+  };
+
+  const timer = setInterval(read, POLL_MS);
+  return {
+    async stop() {
+      if (stopped) return writing;
+      stopped = true;
+      clearInterval(timer);
+      read();
+      try {
+        fs.unlinkSync(file);
+      } catch {
+        // never written
+      }
+      return writing;
+    },
+  };
+}
+
+export default { createEventTail };

@@ -35,6 +35,7 @@ vi.mock("../src/models/db.model.js", () => ({
 vi.mock("../src/rte/ansible-core.js", () => ({
   runnerIdentity: () => "rte-test-8000",
   runAnsibleJob: () => new Promise(() => {}),
+  useJobIO: () => {},
 }));
 
 // what comes after the database work : only whether it ran, and when

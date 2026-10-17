@@ -1,8 +1,12 @@
 // The one place a playbook runs : the RTE (AF_ROLE=rte, src/rte/server.js) calls
 // runAnsibleJob with a job id and the job's secrets, which the app resolved and sealed for it
-// (lib/jobSecrets.js, lib/sealedSecrets.js). Everything else it needs is in the jobs row : the
-// RTE never reads the credentials table nor a secret store. The app never imports this
-// module : since 7 it runs no playbook itself.
+// (lib/jobSecrets.js, lib/sealedSecrets.js). The RTE never reads the credentials table nor a
+// secret store. The app never imports this module : since 7 it runs no playbook itself.
+//
+// Everything else - the job, its output, its log, its events, its end - goes through the job's
+// I/O (useJobIO) : the database in database mode (rte/jobio-db.js, deprecated), the socket to
+// the app in the socket modes (rte/socket/jobio-socket.js). This module imports no database
+// module, so a socket-mode RTE runs without DB_* at all.
 //
 // The approval gate is NOT here : a job reaches an RTE only once it may run
 // (runners/orchestrator.js, in the app).
@@ -17,14 +21,42 @@ import Helpers from "../lib/common.js";
 import { safeParse } from "../lib/safejson.js";
 import ansibleConfig from "../../config/ansible.config.js";
 import appConfig from "../../config/app.config.js";
-import Repository from "../models/repository.model.js";
-import mysql from "../models/db.model.js";
-import Job from "../models/job.model.js";
 import { nodeId } from "../lib/role.js";
-import { registerJobSecrets, forgetJobSecrets, maskOutput } from "../lib/outputMask.js";
+import { registerJobSecrets, forgetJobSecrets } from "../lib/outputMask.js";
 import { playbookEnv } from "../lib/playbookEnv.js";
 import { createOutputBatcher } from "../lib/outputBatcher.js";
 import { resolveInventory } from "../lib/inventories.js";
+import { createEventTail } from "./events.js";
+
+// ─── the job's I/O ────────────────────────────────────────────────────────────
+
+// where the job is read from and its output written to : set once at the RTE's start for its
+// mode (rte/server.js), or by a test
+let jobIO = null;
+
+/**
+ * Sets where the jobs are read from and their output written to.
+ *
+ * Args:
+ *   io (object): the database's (rte/jobio-db.js) or the socket's (rte/socket/jobio-socket.js).
+ */
+export function useJobIO(io) {
+  jobIO = io;
+}
+
+/**
+ * The job's I/O in use.
+ *
+ * Returns:
+ *   object: the I/O.
+ *
+ * Raises:
+ *   Error: none was set (a start that skipped useJobIO).
+ */
+function currentIO() {
+  if (!jobIO) throw new Error("the RTE has no job I/O: useJobIO was not called at its start");
+  return jobIO;
+}
 
 // ─── a playbook's artifacts (set_stats) ───────────────────────────────────────
 // The callback plugin that writes what set_stats gathered to a file (callback_plugins/
@@ -82,10 +114,14 @@ function configCallbackPaths(directory, env) {
  * Returns:
  *   object: the environment.
  */
-export function artifactsEnv(env, directory, artifactsFile) {
+export function artifactsEnv(env, directory, artifactsFile, eventsFile = "") {
   const named = env.ANSIBLE_CALLBACK_PLUGINS ? env.ANSIBLE_CALLBACK_PLUGINS.split(path.delimiter).filter(Boolean) : configCallbackPaths(directory, env);
   const paths = [CALLBACK_DIR, ...(named.length ? named : DEFAULT_CALLBACK_PATHS)];
-  return { ...env, ANSIBLE_CALLBACK_PLUGINS: [...new Set(paths)].join(path.delimiter), AF_ARTIFACTS_FILE: artifactsFile };
+  const out = { ...env, ANSIBLE_CALLBACK_PLUGINS: [...new Set(paths)].join(path.delimiter), AF_ARTIFACTS_FILE: artifactsFile };
+  // the structured events (callback_plugins/af_events.py, loaded without enabling, as the
+  // artifacts one) : one JSON line per play, task and host result, next to the usual text output
+  if (eventsFile) out.AF_EVENTS_FILE = eventsFile;
+  return out;
 }
 
 /**
@@ -120,14 +156,20 @@ export function runnerIdentity() {
   return nodeId;
 }
 
-/** the folder the playbook runs from : the playbooks repository, else ANSIBLE_PATH, plus the sub path */
-export async function resolvePlaybookDirectory(playbookSubPath = "") {
-  let directory = await Repository.getAnsiblePath();
-  directory = directory || ansibleConfig.path;
-  if (playbookSubPath) {
-    directory = path.join(directory, playbookSubPath);
-  }
-  return directory;
+/**
+ * The folder the playbook runs from, as the job's I/O finds it : the playbooks repository,
+ * else ANSIBLE_PATH (or the files the app sent with the job), plus the form's sub path.
+ *
+ * Args:
+ *   playbookSubPath (string): the form's playbookSubPath.
+ *   jobId (number): the job.
+ *
+ * Returns:
+ *   Promise<string>: the folder.
+ */
+export async function resolvePlaybookDirectory(playbookSubPath = "", jobId = 0) {
+  const directory = await currentIO().playbookDirectory(jobId, playbookSubPath);
+  return directory || (playbookSubPath ? path.join(ansibleConfig.path, playbookSubPath) : ansibleConfig.path);
 }
 
 /**
@@ -225,16 +267,18 @@ export function buildAnsibleArgs(extravars, { extravarsFileName, hiddenExtravars
  */
 export async function runAnsibleJob({ jobId, secrets }) {
   if (!secrets || typeof secrets !== "object") throw new Error(`Job ${jobId} came without its secrets`);
-  const rows = await mysql.do("SELECT form, extravars FROM AnsibleForms.`jobs` WHERE id=?", [jobId]);
-  if (!rows?.length) throw new Error(`Job ${jobId} does not exist`);
-  const extravars = safeParse(rows[0].extravars, {}, `job.extravars id=${jobId}`);
+  const io = currentIO();
+  const job = await io.load(jobId);
+  if (!job) throw new Error(`Job ${jobId} does not exist`);
+  const extravars = typeof job.extravars === "string" ? safeParse(job.extravars, {}, `job.extravars id=${jobId}`) : { ...(job.extravars || {}) };
   // stored before the id was known
   extravars.__jobid__ = jobId;
   const credentials = secrets.credentials || {};
   // what the output must not show : the credentials' secrets and the password fields' values
-  await Job.registerOutputSecrets(jobId, { form: rows[0].form, extravars, credentials });
+  // (in the socket modes the app masks what it writes, and this registers the RTE's own copy)
+  await io.registerOutputSecrets(jobId, { form: job.form, extravars, credentials });
   try {
-    return await launchPlaybook(extravars, secrets, jobId, await Job.lastOrder(jobId));
+    return await launchPlaybook(extravars, secrets, jobId, Number(job.lastOrder) || 0);
   } finally {
     forgetJobSecrets(jobId);
   }
@@ -289,13 +333,7 @@ async function launchPlaybook(ev, secrets, jobid, counter) {
     hiddenExtravars = JSON.stringify(markUnsafe(hiddenExtravars));
   } catch (err) {
     logger.error("Failed to get ansible credentials: ", err);
-    await Job.endJobStatus(
-      jobid,
-      counter + 1,
-      "stderr",
-      "failed",
-      "[ERROR]: Failed to get ansible credentials"
-    );
+    await currentIO().end(jobid, counter + 1, "stderr", "failed", "[ERROR]: Failed to get ansible credentials");
     return false;
   }
   // define vaultPassword
@@ -309,20 +347,14 @@ async function launchPlaybook(ev, secrets, jobid, counter) {
     }
   } catch (err) {
     logger.error("Failed to get vault credentials: ", err);
-    await Job.endJobStatus(
-      jobid,
-      counter + 1,
-      "stderr",
-      "failed",
-      "[ERROR]: Failed to get vault credentials"
-    );
+    await currentIO().end(jobid, counter + 1, "stderr", "failed", "[ERROR]: Failed to get vault credentials");
     return false;
   }
   // an inventory the form names by its name (inventory: production) : that inventory's folder,
   // here - in the inventories folder or an inventories repository, as this RTE sees them
   if (extravars.__inventory__) {
     try {
-      const roots = await Repository.getInventoryRoots();
+      const roots = await currentIO().inventoryRoots(jobid);
       const isDir = (p) => {
         try {
           return fs.statSync(p).isDirectory();
@@ -334,14 +366,14 @@ async function launchPlaybook(ev, secrets, jobid, counter) {
         ? extravars.__inventory__.map((i) => resolveInventory(i, roots, isDir))
         : resolveInventory(extravars.__inventory__, roots, isDir);
     } catch (err) {
-      await Job.endJobStatus(jobid, counter + 1, "stderr", "failed", `[ERROR]: ${err.message}`);
+      await currentIO().end(jobid, counter + 1, "stderr", "failed", `[ERROR]: ${err.message}`);
       return false;
     }
   }
   const extravarsFileName = `extravars_${jobid}.json`;
   const hiddenExtravarsFileName = `he_${extravarsFileName}`;
   logger.debug(`Extravars File: ${extravarsFileName}`);
-  const directory = await resolvePlaybookDirectory(playbookSubPath);
+  const directory = await resolvePlaybookDirectory(playbookSubPath, jobid);
   // its name (deploy) as its file (deploy.yml) : a form may name it either way
   playbook = playbookFile(directory, playbook);
   extravars.__playbook__ = playbook;
@@ -360,6 +392,8 @@ async function launchPlaybook(ev, secrets, jobid, counter) {
     keepExtravars: keepExtravars,
     // what set_stats gathers : written there by the artifacts plugin, stored on the job
     artifactsFile: path.join(os.tmpdir(), `af_artifacts_${jobid}.json`),
+    // and the structured events (af_events) : one JSON line each, sent on as they come
+    eventsFile: path.join(os.tmpdir(), `af_events_${jobid}.jsonl`),
   };
 
   logger.notice("Running from directory: " + cmdObj.directory);
@@ -376,7 +410,7 @@ async function launchPlaybook(ev, secrets, jobid, counter) {
   }
 }
 
-export function executeCommand(cmd, jobid, counter) {
+export function executeCommand(cmd, jobid, counter, io = currentIO()) {
   // a counter to order the output (as it's very fast and the database can mess up the order)
   var jobstatus = "success";
   // a program and its arguments, run without a shell : form values never pass through one
@@ -394,6 +428,9 @@ export function executeCommand(cmd, jobid, counter) {
   var keepExtravars = cmd.keepExtravars;
   var task = cmd.task;
   var artifactsFile = cmd.artifactsFile;
+  var eventsFile = cmd.eventsFile || "";
+  // the structured events, read from their file as the playbook writes them
+  let events = null;
   // the abort flag lives in the database (Job.abort sets it), so whoever runs the process
   // - this host or another - notices it here and stops the playbook itself
   let killed = false;
@@ -457,7 +494,7 @@ export function executeCommand(cmd, jobid, counter) {
         // the RTE's environment without AnsibleForms' own variables : a playbook never reads
         // ENCRYPTION_SECRET, the database password or a token through lookup('env')
         // and, for a playbook, the artifacts plugin that writes what set_stats gathered
-        env: artifactsFile ? artifactsEnv(playbookEnv(), directory, artifactsFile) : playbookEnv(),
+        env: artifactsFile ? artifactsEnv(playbookEnv(), directory, artifactsFile, eventsFile) : playbookEnv(),
       });
       child.stdout.setEncoding("utf8");
       child.stderr.setEncoding("utf8");
@@ -483,7 +520,7 @@ export function executeCommand(cmd, jobid, counter) {
       // the output, written in batches (lib/outputBatcher.js) : past PROCESS_MAX_BUFFER bytes on
       // a stream it is no longer stored, and the playbook goes on
       const output = createOutputBatcher({
-        write: (record) => Job.createOutput(record).catch((error) => logger.error("Failed to create output: ", error)),
+        write: (record) => io.writeOutput(jobid, record).catch((error) => logger.error("Failed to create output: ", error)),
         jobId: jobid,
         nextOrder: () => ++counter,
         maxBytes: Number(appConfig.processMaxBuffer) || 0,
@@ -501,7 +538,7 @@ export function executeCommand(cmd, jobid, counter) {
           if (seen !== jobLogSeen) {
             jobLogSeen = seen;
             const content = await fs.promises.readFile(jobLogPath, "utf8");
-            await mysql.do("UPDATE AnsibleForms.`jobs` SET job_log=? WHERE id=?", [maskOutput(jobid, content), jobid]);
+            await io.setJobLog(jobid, content);
           }
           if (final) await fs.promises.unlink(jobLogPath);
         } catch (e) {
@@ -510,7 +547,7 @@ export function executeCommand(cmd, jobid, counter) {
       };
       // a quiet playbook writes no output for minutes, so the flag is also polled
       abortPoll = setInterval(() => {
-        Job.isAbortRequested(jobid)
+        io.isAbortRequested(jobid)
           .then(stopIfAborted)
           .catch((e) => logger.debug(`[Job ${jobid}] Abort check failed: ${e.message}`));
         syncJobLog();
@@ -520,7 +557,7 @@ export function executeCommand(cmd, jobid, counter) {
       if (child.pid) {
         const hostname = runnerIdentity();
         logger.info(`[Job ${jobid}] Process started with PID: ${child.pid} on host: ${hostname}`);
-        mysql.do("UPDATE AnsibleForms.`jobs` SET pid=?, host=? WHERE id=?", [child.pid, hostname, jobid])
+        io.started(jobid, child.pid, hostname)
           .then(() => {
             logger.debug(`[Job ${jobid}] PID ${child.pid} and host ${hostname} stored in database`);
           })
@@ -529,6 +566,10 @@ export function executeCommand(cmd, jobid, counter) {
           });
       }
 
+      // the structured events : read from their file every half second and sent on in order
+      if (eventsFile && io.writeEvents) {
+        events = createEventTail({ file: eventsFile, write: (batch) => io.writeEvents(jobid, batch) });
+      }
       // add output eventlistener to the process to save output
       // the abort flag is polled every 2 seconds (abortPoll) : no check per chunk any more
       child.stdout.on("data", (data) => output.add("stdout", data));
@@ -539,6 +580,7 @@ export function executeCommand(cmd, jobid, counter) {
         if (!settle()) return;
         // what the playbook wrote last, before the end line
         await output.flush();
+        if (events) await events.stop();
         // first : ansible-playbook is gone, nothing reads them any more, and the database
         // calls below can stall or be cut short by a stop
         removeExtravarsFiles();
@@ -548,17 +590,17 @@ export function executeCommand(cmd, jobid, counter) {
         await syncJobLog(true);
         // Clear the PID and host from the database as the process has ended
         logger.debug(`[Job ${jobid}] Process with PID ${child.pid} has exited`);
-        await mysql.do("UPDATE AnsibleForms.`jobs` SET pid=NULL, host=NULL WHERE id=?", [jobid])
+        await io.exited(jobid)
           .catch((err) => {
             logger.error(`[Job ${jobid}] Failed to clear PID and host from database: ${err.message}`);
           });
         
         // if the exit was an actual request ; set aborted
         if (child.signalCode == "SIGTERM") {
-          const abort_requested = await Job.isAbortRequested(jobid);
+          const abort_requested = await io.isAbortRequested(jobid);
           if (abort_requested) {
-            await Job.resetAbortRequested(jobid); // reset the abort requested flag
-            await Job.endJobStatus(
+            await io.resetAbortRequested(jobid); // reset the abort requested flag
+            await io.end(
               jobid,
               ++counter,
               "stderr",
@@ -568,7 +610,7 @@ export function executeCommand(cmd, jobid, counter) {
             );
             reject(`${task} was aborted by the operator`);
           } else {
-            await Job.endJobStatus(
+            await io.end(
               jobid,
               ++counter,
               "stderr",
@@ -582,7 +624,7 @@ export function executeCommand(cmd, jobid, counter) {
           if (data != 0) {
             jobstatus = "failed";
             logger.error(`[${jobid}] Failed with code ${data}`);
-            await Job.endJobStatus(
+            await io.end(
               jobid,
               ++counter,
               "stderr",
@@ -592,7 +634,7 @@ export function executeCommand(cmd, jobid, counter) {
             );
             reject(`${task} failed with status (${data})`);
           } else {
-            await Job.endJobStatus(
+            await io.end(
               jobid,
               ++counter,
               "stdout",
@@ -608,36 +650,26 @@ export function executeCommand(cmd, jobid, counter) {
       child.on("error", async function (data) {
         if (!settle()) return;
         await output.flush();
+        if (events) await events.stop();
         removeExtravarsFiles();
         takeArtifacts(artifactsFile);
         await syncJobLog(true);
         // Clear the PID and host from the database as the process has errored
         logger.debug(`[Job ${jobid}] Process with PID ${child.pid} encountered an error`);
-        await mysql.do("UPDATE AnsibleForms.`jobs` SET pid=NULL, host=NULL WHERE id=?", [jobid])
+        await io.exited(jobid)
           .catch((err) => {
             logger.error(`[Job ${jobid}] Failed to clear PID and host from database: ${err.message}`);
           });
         
-        await Job.endJobStatus(
-          jobid,
-          ++counter,
-          "stderr",
-          "failed",
-          `${task} failed: ` + data
-        );
+        await io.end(jobid, ++counter, "stderr", "failed", `${task} failed: ` + data);
         reject(data);
       });
     } catch (e) {
       if (!settle()) return;
       removeExtravarsFiles();
       takeArtifacts(artifactsFile);
-      Job.endJobStatus(
-        jobid,
-        ++counter,
-        "stderr",
-        "failed",
-        `[ERROR]: ${task} failed: ${e.message || e}`
-      )
+      if (events) events.stop();
+      io.end(jobid, ++counter, "stderr", "failed", `[ERROR]: ${task} failed: ${e.message || e}`)
         .catch((err) => logger.error(`[Job ${jobid}] Failed to end the job: ${err.message}`))
         // rejected once the end is written : whoever waits on the run sees the job ended
         .finally(() => reject(e));

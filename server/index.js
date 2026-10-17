@@ -3,7 +3,7 @@
 //   app              : the web app and the API only, next to a worker (src/app-start.js)
 //   worker           : the background work only - schema, seed, schedules, backups, syncs
 //                      and cleanups (src/worker/server.js)
-//   rte              : a runtime environment that runs playbooks for an app (src/rte/server.js)
+//   rte              : a runtime environment that runs playbooks for an app (src/rte/start.js)
 // Each role loads only its own modules, so an RTE never loads the web app and the app never
 // loads the code that runs ansible-playbook.
 //
@@ -21,8 +21,9 @@ if (!ROLES.includes(role)) {
 // SIGTERM / SIGINT : each role registers what it closes (src/lib/shutdown.js)
 installShutdown();
 if (role === 'rte') {
-  const { startRte } = await import('./src/rte/server.js');
-  await startRte();
+  // RTE_MODE : outbound or inbound (a WebSocket to the app), or database (deprecated)
+  const { startRteInMode } = await import('./src/rte/start.js');
+  await startRteInMode();
 } else if (role === 'worker') {
   const { startWorker } = await import('./src/worker/server.js');
   await startWorker();

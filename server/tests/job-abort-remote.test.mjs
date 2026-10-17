@@ -37,6 +37,8 @@ vi.mock("child_process", async (importOriginal) => {
 
 const { default: Job } = await import("../src/models/job.model.js");
 const Exec = await import("../src/rte/ansible-core.js");
+// the jobs read and written in the database, as a database-mode RTE does
+Exec.useJobIO((await import("../src/rte/jobio-db.js")).default);
 const { default: mysql } = await import("../src/models/db.model.js");
 
 // the jobs row and its output, in memory

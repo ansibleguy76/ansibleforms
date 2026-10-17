@@ -1,5 +1,6 @@
-// The RTE (runtime environment) : this server started with AF_ROLE=rte. It runs playbooks
-// for an AnsibleForms app and nothing else - no web interface, no scheduler, no seed.
+// The RTE (runtime environment) in database mode (RTE_MODE=database, or unset : deprecated in
+// 7.3, removed in 8.0 - rte/start.js picks the mode). It runs playbooks for an AnsibleForms app
+// and nothing else - no web interface, no scheduler, no seed. The socket modes are rte/socket.
 //
 // It shares the app's database, so it reads the job and writes the output and the final
 // status itself, with the only code that runs a playbook (ansible-core.js). The app says
@@ -23,7 +24,8 @@ import mysql from "../models/db.model.js";
 import { publish } from "../lib/liveEvents.js";
 import httpsConfig from "../../config/https.config.js";
 import appConfig from "../../config/app.config.js";
-import { runAnsibleJob, runnerIdentity } from "./ansible-core.js";
+import { runAnsibleJob, runnerIdentity, useJobIO } from "./ansible-core.js";
+import dbJobIO from "./jobio-db.js";
 import { RTE_CONTRACT } from "./contract.js";
 import { openJobSecrets } from "../lib/sealedSecrets.js";
 import { readinessHandlers } from "../lib/readiness.js";
@@ -233,6 +235,8 @@ export async function startRte({ firstDelayMs, maxDelayMs } = {}) {
   }
   // an uncaught exception exits to restart clean ; its running playbooks end as abandoned
   installFatalHandlers("RTE");
+  // the jobs read and their output written in the database (rte/jobio-db.js)
+  useJobIO(dbJobIO);
 
   // a job's secrets come sealed from the app : the key only stores this RTE's token when it
   // registers itself (RTE_REGISTER). Without registration it needs no ENCRYPTION_SECRET at all.

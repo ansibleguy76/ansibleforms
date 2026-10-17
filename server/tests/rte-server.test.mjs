@@ -47,6 +47,7 @@ let runs;
 vi.mock("../src/rte/ansible-core.js", () => ({
   runnerIdentity: () => "rte-test-8000",
   runAnsibleJob: ({ jobId, secrets }) => new Promise((resolve) => { runs.push({ jobId, secrets, resolve }); }),
+  useJobIO: () => {},
 }));
 
 const { acceptJob, jobStatus, cancelJob, activeJobs, bearer, drainJobs } = await import("../src/rte/server.js");

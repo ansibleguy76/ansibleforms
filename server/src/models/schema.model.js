@@ -551,7 +551,8 @@ const SCHEMA_MANIFEST = {
     tables: ['groups', 'users', 'tokens', 'credentials', 'ldap', 'jobs', 'job_output',
              'settings', 'repositories', 'schedule', 'audit', 'chat_settings', 'secret_stores', 'runners',
              'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'notification_channels', 'syslog_servers', 'login_failures', 'token_revocations', 'schema_migrations',
-             'directory_users', 'announcements', 'disclaimer_versions', 'disclaimer_acceptances', 'api_tokens', 'labels'],
+             'directory_users', 'announcements', 'disclaimer_versions', 'disclaimer_acceptances', 'api_tokens', 'labels',
+             'runner_leases', 'runner_join_tokens', 'job_events'],
   },
   patches: {
     patchVersion4: { columns: ['ldap.groups_search_base', 'ldap.groups_attribute', 'ldap.group_class',
@@ -589,8 +590,9 @@ const SCHEMA_MANIFEST = {
     // and the worker and several app nodes : the processes on the database, what changed
     // between them, the designer lock, and the node that follows a job
     patchVersion7: { tables: ['secret_stores', 'runners', 'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'notification_channels', 'syslog_servers', 'login_failures', 'token_revocations', 'schema_migrations',
-                              'directory_users', 'announcements', 'disclaimer_versions', 'disclaimer_acceptances', 'api_tokens', 'labels'],
-                     columns: ['schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'settings.syslog_env_imported_at', 'jobs.runner', 'jobs.runner_kind', 'jobs.runner_job_url',
+                              'directory_users', 'announcements', 'disclaimer_versions', 'disclaimer_acceptances', 'api_tokens', 'labels',
+                              'runner_leases', 'runner_join_tokens', 'job_events'],
+                     columns: ['runners.rte_mode', 'schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'settings.syslog_env_imported_at', 'jobs.runner', 'jobs.runner_kind', 'jobs.runner_job_url',
                                'runners.username', 'runners.password', 'runners.use_credentials', 'runners.node_id', 'jobs.job_log',
                                'jobs.tracker', 'repositories.claim_node', 'repositories.claim_since',
                                'repositories.use_for_workflows', 'repositories.use_for_inventories',
@@ -1103,6 +1105,16 @@ async function patchVersion7(messages, success, failed) {
   // the API tokens issued, listed and revoked on the profile and the user's page (models/apiToken.model.js)
   const apiTokens = fs.readFileSync(`${__dirname}/../db/create_api_tokens_table.sql`);
   await checkPromise(addTable("api_tokens", apiTokens.toString()), messages, success, failed);
+  // the RTE over a WebSocket (rte/socket) : how each RTE talks to the app (database, outbound or
+  // inbound), the app node holding each socket, and the join tokens runners add themselves with
+  await checkPromise(addColumn("runners", "rte_mode", "varchar(10)", true, "NULL"), messages, success, failed);
+  const leases = fs.readFileSync(`${__dirname}/../db/create_runner_leases_table.sql`);
+  await checkPromise(addTable("runner_leases", leases.toString()), messages, success, failed);
+  const joinTokens = fs.readFileSync(`${__dirname}/../db/create_runner_join_tokens_table.sql`);
+  await checkPromise(addTable("runner_join_tokens", joinTokens.toString()), messages, success, failed);
+  // a playbook's structured events (the af_events callback plugin) : the job page's grid and recap
+  const jobEvents = fs.readFileSync(`${__dirname}/../db/create_job_events_table.sql`);
+  await checkPromise(addTable("job_events", jobEvents.toString()), messages, success, failed);
 }
 
 /**
