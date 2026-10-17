@@ -993,9 +993,9 @@ async function changePassword() {
                   <FaIcon :icon="permissionIcon(group.name)" class="me-1" />{{ group.title }}
                 </h6>
               </template>
-              <div class="table-responsive af-perm-wrap">
+              <div class="af-table-frame">
                 <!-- fixed columns (the styles below), the same in every tab : the access at the right edge -->
-                <table class="table mb-0 af-perm-table">
+                <table class="table af-table af-perm-table">
                   <thead>
                     <tr>
                       <th>{{ t('profilePage.columnSetting') }}</th>
@@ -1319,24 +1319,11 @@ form.af-field,
 // permissions : a table per group ; the setting and the access in fixed columns, the
 // description takes the rest
 .af-perm-table {
-  th,
-  td {
-    padding: 0.7rem 1.25rem;
-    vertical-align: middle;
-  }
-  th {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--bs-secondary-color);
-    white-space: nowrap;
-  }
-  // the same fixed column widths in every card, so the columns line up from card to card ;
-  // the description takes what is left
+  // the app's table (styles/tables.scss : its grey header, its rows), the same fixed column widths
+  // in every tab - the description takes what is left
   table-layout: fixed;
   th:nth-child(1) {
-    width: 13rem; // the longest key, extendedTokenExpiration, fits
+    width: 14.5rem; // the longest key, extendedTokenExpiration, fits
   }
   th:nth-child(3) {
     width: 9.5rem;
@@ -1348,8 +1335,9 @@ form.af-field,
   td:not(:nth-child(2)) {
     white-space: nowrap;
   }
-  tbody tr:last-child td {
-    border-bottom: 0;
+  // nothing to open on a row : no hover (a grey hover means a click does something)
+  tbody tr:hover > td {
+    background: none;
   }
 }
 // permissions : the option key under its readable name, and the allowed / not allowed pill
