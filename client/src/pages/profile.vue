@@ -143,15 +143,23 @@ const prefTabs = computed(() => [
   { key: 'datetime', label: t('profilePage.tabDateTime'), icon: 'clock' },
   ...(mayNotify.value ? [{ key: 'notifications', label: t('profilePage.tabNotifications'), icon: 'bell' }] : []),
 ]);
-const { activeTab: prefTab, tabLink: prefTabLink } = useRouteTab('appearance', (key) =>
-  prefTabs.value.some((x) => x.key === key),
+// the open view's tabs : Preferences' ; Password one tab of its own (every settings page a table or
+// a page in tabs) ; the others none (cards of their own, or the API token's table)
+const viewTabs = computed(() => {
+  if (currentView.value === 'preferences') return prefTabs.value;
+  if (currentView.value === 'password') return [{ key: 'change', label: t('nav.changePassword'), icon: 'key' }];
+  return [];
+});
+const { activeTab: prefTab, tabLink: prefTabLink } = useRouteTab(
+  () => viewTabs.value[0]?.key || 'appearance',
+  (key) => viewTabs.value.some((x) => x.key === key),
 );
-// the title's steps on Preferences : the view, then its tab
+// the title's steps on a view in tabs : the view, then its tab
 const crumbs = computed(() => {
-  if (currentView.value !== 'preferences') return undefined;
-  const tab = prefTabs.value.find((x) => x.key === prefTab.value) || prefTabs.value[0];
+  if (!viewTabs.value.length) return undefined;
+  const tab = viewTabs.value.find((x) => x.key === prefTab.value) || viewTabs.value[0];
   return [
-    { title: view.value.label(), icon: view.value.icon, to: prefTabLink('appearance') },
+    { title: view.value.label(), icon: view.value.icon, to: prefTabLink(viewTabs.value[0].key) },
     { title: tab.label, icon: tab.icon, to: prefTabLink(tab.key) },
   ];
 });
@@ -516,10 +524,10 @@ async function changePassword() {
         :crumbs="crumbs"
         :bare="['account', 'permissions'].includes(currentView)"
       >
-        <!-- Preferences' tabs, above the page's card -->
-        <template v-if="currentView === 'preferences'" #tabs>
+        <!-- Preferences' tabs, Password's one, above the page's card -->
+        <template v-if="viewTabs.length" #tabs>
           <ul class="nav nav-tabs mb-0">
-            <li v-for="tab in prefTabs" :key="tab.key" class="nav-item">
+            <li v-for="tab in viewTabs" :key="tab.key" class="nav-item">
               <a class="nav-link" :class="{ active: prefTab === tab.key }" href="#" @click.prevent="prefTab = tab.key">
                 <FaIcon :icon="tab.icon" class="me-1" />
                 {{ tab.label }}
