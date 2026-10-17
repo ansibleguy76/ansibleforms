@@ -535,7 +535,7 @@ async function changePassword() {
                  the permissions tables' headers, without a border-bottom of its own : the list
                  group under it draws that line (a list group in a card takes the card's border
                  on top), so both would double it -->
-            <div class="card-body d-flex align-items-center af-identity py-3">
+            <div class="card-body d-flex align-items-center af-identity py-2">
               <span class="fw-semibold text-truncate">{{ profile.displayName || profile.username }}</span>
             </div>
             <!-- the details : a label column and its values, one row each -->
@@ -788,7 +788,7 @@ async function changePassword() {
             class="card af-table-card"
             :class="{ 'mt-3': gi > 0 }"
           >
-            <div class="card-body d-flex align-items-center justify-content-between af-identity py-3 border-bottom">
+            <div class="card-body d-flex align-items-center justify-content-between af-identity py-2 border-bottom">
               <span class="fw-semibold">{{ group.title }}</span>
               <small class="text-body-secondary">{{
                 t('profilePage.allowedCount', { n: group.allowed, total: group.options.length })
@@ -987,6 +987,8 @@ async function changePassword() {
 
 <style scoped lang="scss">
 // the identity band at the top of the account card
+/* a card's header (the account's name, a permission group's name and count) : as tall as a table's
+   header (py-2 on it), its grey */
 .af-identity {
   padding: 1.25rem;
   background-color: var(--bs-tertiary-bg);
