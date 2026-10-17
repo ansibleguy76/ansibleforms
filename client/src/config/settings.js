@@ -7,7 +7,7 @@ import Helpers from '@/lib/Helpers';
 import { cronCell } from '@/lib/cronCell';
 import { cronValidationMessage } from './cron';
 import { PILL, pill, esc } from '@/lib/tableCells';
-import AppLabelsPreview from '@/components/AppLabelsPreview.vue';
+import { defineAsyncComponent } from 'vue';
 import { formPath } from '@/lib/formsPath';
 import { ssoCallbackUrl, SSO_EXAMPLE_BASE } from '@/lib/ssoCallback';
 
@@ -3302,7 +3302,9 @@ export default function getSettings(t) {
           key: 'preview',
           label: t('settings.labels.preview'),
           type: 'component',
-          component: AppLabelsPreview,
+          // loaded when the dialog shows it : this config is read without a .vue in tests and the
+          // other pages
+          component: defineAsyncComponent(() => import('@/components/AppLabelsPreview.vue')),
           props: (item, items) => ({
             labels: [...(items || []).filter((l) => l.enabled), { name: item?.name, color: item?.color }],
           }),
