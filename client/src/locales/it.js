@@ -298,7 +298,7 @@ export default {
   profilePage: {
     languageHint: "La lingua di menu, pagine e messaggi. Anche la bandiera nell'intestazione la cambia.",
     themeHint:
-      "Chiaro, scuro, o un'intestazione nel colore che preferisci. Anche l'icona del sole nell'intestazione lo cambia.",
+      "Segui il browser, chiaro, scuro, o un'intestazione nel colore che preferisci. Anche l'icona del sole nell'intestazione lo cambia.",
     formsViewHint:
       'Come la pagina Form elenca i form: a riquadri o come elenco. Anche il pulsante su quella pagina lo cambia.',
     timezone: 'Fuso orario',
@@ -309,9 +309,14 @@ export default {
     timezoneHint:
       "Date e orari in tutto AnsibleForms sono mostrati in questo fuso orario. Il log del server e l'output dei job mantengono gli orari scritti dal server.",
     formsView: 'Vista dei form',
+    preview: 'Anteprima',
+    tabAppearance: 'Aspetto',
+    tabForms: 'Moduli',
+    tabDateTime: 'Data e ora',
+    tabNotifications: 'Notifiche',
     notifications: 'Notifiche desktop',
     notificationsHint:
-      'Una notifica su questo computer quando i tuoi job terminano o un job attende la tua approvazione, anche con questa scheda in background.',
+      'Una notifica desktop da questo browser quando i tuoi job terminano o un job attende la tua approvazione, anche con questa scheda in background.',
     notificationsBlocked:
       'Il browser blocca le notifiche di questo sito. Consentile nelle impostazioni del sito, poi riattiva questa opzione.',
     notificationsUnsupported: 'Questo browser non può mostrare notifiche qui: serve un indirizzo sicuro (https).',

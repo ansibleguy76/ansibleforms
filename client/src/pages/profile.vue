@@ -32,6 +32,7 @@ import BaseUrl from '@/lib/BaseUrl';
 import { neverExpires } from '@/lib/apiTokens';
 import { rememberSsoOrigin, ssoSettled, ssoReturning } from '@/lib/ssoReturn';
 import { hasPermission } from '@/lib/permission';
+import { useRouteTab } from '@/composables/useRouteTab';
 import {
   notificationsSupported,
   notificationPermission,
@@ -133,6 +134,28 @@ const permissionGroups = computed(() => {
 const currentLanguage = computed(() => languages.find((l) => l.code === locale.value) || fallbackLanguage);
 
 const view = computed(() => VIEWS.find((v) => v.name === currentView.value));
+// desktop notifications are offered only to a user who sees its jobs
+const mayNotify = computed(() => hasPermission(store.profile?.options, 'showJobs'));
+// Preferences in tabs, kept in the address (/profile/preferences/<tab>) : how the app looks, the
+// forms page, dates and times, and the notifications for a user who sees its jobs
+const prefTabs = computed(() => [
+  { key: 'appearance', label: t('profilePage.tabAppearance'), icon: 'palette' },
+  { key: 'forms', label: t('profilePage.tabForms'), icon: 'rectangle-list' },
+  { key: 'datetime', label: t('profilePage.tabDateTime'), icon: 'clock' },
+  ...(mayNotify.value ? [{ key: 'notifications', label: t('profilePage.tabNotifications'), icon: 'bell' }] : []),
+]);
+const { activeTab: prefTab, tabLink: prefTabLink } = useRouteTab('appearance', (key) =>
+  prefTabs.value.some((x) => x.key === key),
+);
+// the title's steps on Preferences : the view, then its tab
+const crumbs = computed(() => {
+  if (currentView.value !== 'preferences') return undefined;
+  const tab = prefTabs.value.find((x) => x.key === prefTab.value) || prefTabs.value[0];
+  return [
+    { title: view.value.label(), icon: view.value.icon, to: prefTabLink('appearance') },
+    { title: tab.label, icon: tab.icon, to: prefTabLink(tab.key) },
+  ];
+});
 // how the account signs in : a readable name and an icon per login type
 const loginType = computed(() => Profile.loginType(t, profile.value.type));
 
@@ -376,14 +399,27 @@ function setLanguage(code) {
 }
 
 function setTheme(theme) {
-  if (theme === 'color') {
+  if (theme === 'system') {
+    Theme.chooseBrowser();
+  } else if (theme === 'color') {
     Theme.choose('color');
     Theme.applyColor(themeColor.value);
   } else {
     Theme.clearColor();
     Theme.choose(theme);
   }
+  followsBrowser.value = Theme.isFollowingBrowser();
 }
+// the theme the dropdown shows : Follow the browser while it is followed, else the theme ; the
+// header's switch picks a theme of its own, so the browser is no longer followed then
+const followsBrowser = ref(Theme.isFollowingBrowser());
+watch(
+  () => store.theme,
+  () => {
+    followsBrowser.value = Theme.isFollowingBrowser();
+  },
+);
+const themeChoice = computed(() => (followsBrowser.value ? 'system' : store.theme));
 
 // the time zone the whole app shows dates in (lib/Time.js) : UTC, this browser's zone, or any
 const timezone = computed({
@@ -393,7 +429,6 @@ const timezone = computed({
 // the date format dates show in : the app's default until the user picks one (lib/Time.js)
 // desktop notifications (lib/jobNotifications.js) : only for a user who sees its jobs ; on once
 // the browser allows them, off when it blocks them (the note says how to allow them again)
-const mayNotify = computed(() => hasPermission(store.profile?.options, 'showJobs'));
 const canNotify = notificationsSupported();
 const notifyOn = ref(notificationsActive());
 const notifyBlocked = ref(notificationPermission() === 'denied');
@@ -477,8 +512,20 @@ async function changePassword() {
         :title="view.label()"
         :icon="view.icon"
         :description="pageDescription"
-        :bare="['account', 'preferences', 'permissions'].includes(currentView)"
+        :crumbs="crumbs"
+        :bare="['account', 'permissions'].includes(currentView)"
       >
+        <!-- Preferences' tabs, above the page's card -->
+        <template v-if="currentView === 'preferences'" #tabs>
+          <ul class="nav nav-tabs mb-0">
+            <li v-for="tab in prefTabs" :key="tab.key" class="nav-item">
+              <a class="nav-link" :class="{ active: prefTab === tab.key }" href="#" @click.prevent="prefTab = tab.key">
+                <FaIcon :icon="tab.icon" class="me-1" />
+                {{ tab.label }}
+              </a>
+            </li>
+          </ul>
+        </template>
         <!-- ===================== account ===================== -->
         <template v-if="currentView === 'account'">
           <div class="card">
@@ -536,137 +583,139 @@ async function changePassword() {
 
         <!-- ===================== preferences ===================== -->
         <template v-else-if="currentView === 'preferences'">
-          <!-- every preference in one card, as Settings > Appearance > Defaults -->
-          <div class="card">
-            <div class="card-body">
-              <label class="form-label fw-bold">{{ t('profilePage.language') }}</label>
-              <div class="input-group af-field">
-                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="language" /></span>
-                <button
-                  class="form-select d-flex align-items-center gap-2 text-start"
-                  type="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                  :aria-label="t('profilePage.language')"
-                >
-                  <AppFlag :code="currentLanguage.code" />{{ currentLanguage.label }}
-                </button>
-                <ul class="dropdown-menu w-100">
-                  <li v-for="lang in languages" :key="lang.code">
-                    <button
-                      type="button"
-                      class="dropdown-item d-flex align-items-center gap-2"
-                      :class="{ active: locale === lang.code }"
-                      @click="setLanguage(lang.code)"
-                    >
-                      <AppFlag :code="lang.code" />{{ lang.label }}
-                    </button>
-                  </li>
-                </ul>
-              </div>
-              <div class="form-text">{{ t('profilePage.languageHint') }}</div>
-              <label class="form-label fw-bold mt-4">{{ t('profilePage.theme') }}</label>
-              <div class="af-choice-grid af-field">
-                <button
-                  v-for="th in Theme.themes()"
-                  :key="th.value"
-                  type="button"
-                  class="af-choice"
-                  :class="{ active: store.theme === th.value }"
-                  @click="setTheme(th.value)"
-                >
-                  <FaIcon :icon="th.icon" class="me-2" />{{ th.title }}
-                </button>
-              </div>
-              <div v-if="store.theme === 'color'" class="af-palette mt-3">
-                <button
-                  v-for="c in palette"
-                  :key="c"
-                  type="button"
-                  class="af-swatch"
-                  :class="{ active: themeColor === c }"
-                  :style="{ backgroundColor: c }"
-                  :aria-label="c"
-                  @click="pickColor(c)"
-                >
-                  <FaIcon v-if="themeColor === c" icon="check" />
-                </button>
-              </div>
-              <div class="form-text">{{ t('profilePage.themeHint') }}</div>
-              <label class="form-label fw-bold mt-4">{{ t('profilePage.formsView') }}</label>
-              <div class="af-choice-grid af-field">
-                <button
-                  v-for="m in [
-                    { value: 'tiles', icon: 'th', label: t('forms.tiles') },
-                    { value: 'list', icon: 'th-list', label: t('forms.list') },
-                  ]"
-                  :key="m.value"
-                  type="button"
-                  class="af-choice"
-                  :class="{ active: formsView === m.value }"
-                  @click="setFormsView(m.value)"
-                >
-                  <FaIcon :icon="m.icon" class="me-2" />{{ m.label }}
-                </button>
-              </div>
-              <div class="form-text">{{ t('profilePage.formsViewHint') }}</div>
-              <label class="form-label fw-bold mt-4">{{ t('profilePage.timezone') }}</label>
-              <div class="input-group af-field">
-                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="clock" /></span>
-                <select v-model="timezone" class="form-select" :aria-label="t('profilePage.timezone')">
-                  <option value="UTC">UTC</option>
-                  <option value="browser">{{ t('profilePage.timezoneBrowser', { zone: browserZone }) }}</option>
-                  <optgroup :label="t('profilePage.timezoneAll')">
-                    <option v-for="z in allZones" :key="z" :value="z">{{ z }}</option>
-                  </optgroup>
-                </select>
-              </div>
-              <div class="form-text">{{ t('profilePage.timezoneHint') }}</div>
-              <!-- the date format : how the date part of every date reads -->
-              <label class="form-label fw-bold mt-4">{{ t('profilePage.dateFormat') }}</label>
-              <div class="input-group af-field">
-                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="calendar" /></span>
-                <select v-model="dateFormat" class="form-select" :aria-label="t('profilePage.dateFormat')">
-                  <option v-for="f in dateFormats" :key="f" :value="f">{{ dayjs(now).format(f) }} ({{ f }})</option>
-                </select>
-              </div>
-              <div class="form-text">{{ t('profilePage.dateFormatHint') }}</div>
-              <!-- the time now in the picked zone and format : how dates read across the app -->
-              <div class="af-tz-now mt-3">
-                <span class="af-tz-now-icon"><FaIcon icon="clock" /></span>
-                <span class="d-flex flex-column">
-                  <span class="af-tz-now-time">{{ timezoneNow }}</span>
-                  <small class="text-body-secondary"
-                    >{{ Time.zone() }}<template v-if="timezoneOffset"> · {{ timezoneOffset }}</template></small
+          <!-- Appearance : the language and the theme -->
+          <div v-if="prefTab === 'appearance'">
+            <label class="form-label fw-bold">{{ t('profilePage.language') }}</label>
+            <div class="input-group af-field">
+              <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="language" /></span>
+              <button
+                class="form-select d-flex align-items-center gap-2 text-start"
+                type="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+                :aria-label="t('profilePage.language')"
+              >
+                <AppFlag :code="currentLanguage.code" />{{ currentLanguage.label }}
+              </button>
+              <ul class="dropdown-menu w-100">
+                <li v-for="lang in languages" :key="lang.code">
+                  <button
+                    type="button"
+                    class="dropdown-item d-flex align-items-center gap-2"
+                    :class="{ active: locale === lang.code }"
+                    @click="setLanguage(lang.code)"
                   >
-                </span>
-              </div>
-              <!-- desktop notifications : when the user's jobs end or one waits for its approval -->
-              <template v-if="mayNotify">
-                <label class="form-label fw-bold d-block mt-4" for="af-job-notifications">{{
-                  t('profilePage.notifications')
-                }}</label>
-                <div class="form-check form-switch mb-0">
-                  <input
-                    id="af-job-notifications"
-                    class="form-check-input"
-                    type="checkbox"
-                    role="switch"
-                    :checked="notifyOn"
-                    :disabled="!canNotify"
-                    @change="onNotifySwitch"
-                  />
-                </div>
-                <div class="form-text">
-                  {{
-                    !canNotify
-                      ? t('profilePage.notificationsUnsupported')
-                      : notifyBlocked
-                        ? t('profilePage.notificationsBlocked')
-                        : t('profilePage.notificationsHint')
-                  }}
-                </div>
-              </template>
+                    <AppFlag :code="lang.code" />{{ lang.label }}
+                  </button>
+                </li>
+              </ul>
+            </div>
+            <div class="form-text">{{ t('profilePage.languageHint') }}</div>
+            <label class="form-label fw-bold mt-4">{{ t('profilePage.theme') }}</label>
+            <div class="input-group af-field">
+              <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="palette" /></span>
+              <select
+                class="form-select"
+                :value="themeChoice"
+                :aria-label="t('profilePage.theme')"
+                @change="setTheme($event.target.value)"
+              >
+                <option value="system">{{ t('settings.settingsPage.themeSystem') }}</option>
+                <option v-for="th in Theme.themes()" :key="th.value" :value="th.value">{{ th.title }}</option>
+              </select>
+            </div>
+            <div v-if="store.theme === 'color'" class="af-palette mt-3">
+              <button
+                v-for="c in palette"
+                :key="c"
+                type="button"
+                class="af-swatch"
+                :class="{ active: themeColor === c }"
+                :style="{ backgroundColor: c }"
+                :aria-label="c"
+                @click="pickColor(c)"
+              >
+                <FaIcon v-if="themeColor === c" icon="check" />
+              </button>
+            </div>
+            <div class="form-text">{{ t('profilePage.themeHint') }}</div>
+          </div>
+          <!-- Forms : how the forms page lists the forms -->
+          <div v-else-if="prefTab === 'forms'">
+            <label class="form-label fw-bold">{{ t('profilePage.formsView') }}</label>
+            <div class="input-group af-field">
+              <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="table-cells-large" /></span>
+              <select
+                class="form-select"
+                :value="formsView"
+                :aria-label="t('profilePage.formsView')"
+                @change="setFormsView($event.target.value)"
+              >
+                <option value="tiles">{{ t('forms.tiles') }}</option>
+                <option value="list">{{ t('forms.list') }}</option>
+              </select>
+            </div>
+            <div class="form-text">{{ t('profilePage.formsViewHint') }}</div>
+          </div>
+          <!-- Date and time : the time zone and the date format, and the time now in them -->
+          <div v-else-if="prefTab === 'datetime'">
+            <label class="form-label fw-bold">{{ t('profilePage.timezone') }}</label>
+            <div class="input-group af-field">
+              <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="clock" /></span>
+              <select v-model="timezone" class="form-select" :aria-label="t('profilePage.timezone')">
+                <option value="UTC">UTC</option>
+                <option value="browser">{{ t('profilePage.timezoneBrowser', { zone: browserZone }) }}</option>
+                <optgroup :label="t('profilePage.timezoneAll')">
+                  <option v-for="z in allZones" :key="z" :value="z">{{ z }}</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="form-text">{{ t('profilePage.timezoneHint') }}</div>
+            <!-- the date format : how the date part of every date reads -->
+            <label class="form-label fw-bold mt-4">{{ t('profilePage.dateFormat') }}</label>
+            <div class="input-group af-field">
+              <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="calendar" /></span>
+              <select v-model="dateFormat" class="form-select" :aria-label="t('profilePage.dateFormat')">
+                <option v-for="f in dateFormats" :key="f" :value="f">{{ dayjs(now).format(f) }} ({{ f }})</option>
+              </select>
+            </div>
+            <div class="form-text">{{ t('profilePage.dateFormatHint') }}</div>
+            <!-- the time now in the picked zone and format : how dates read across the app -->
+            <label class="form-label fw-bold d-block mt-4">{{ t('profilePage.preview') }}</label>
+            <div class="af-tz-now">
+              <span class="af-tz-now-icon"><FaIcon icon="clock" /></span>
+              <span class="d-flex flex-column">
+                <span class="af-tz-now-time">{{ timezoneNow }}</span>
+                <small class="text-body-secondary"
+                  >{{ Time.zone() }}<template v-if="timezoneOffset"> · {{ timezoneOffset }}</template></small
+                >
+              </span>
+            </div>
+          </div>
+          <!-- Notifications : on this computer, when the user's jobs end or one waits for its approval -->
+          <div v-else-if="prefTab === 'notifications'">
+            <label class="form-label fw-bold d-block" for="af-job-notifications">{{
+              t('profilePage.notifications')
+            }}</label>
+            <div class="form-check form-switch mb-0">
+              <input
+                id="af-job-notifications"
+                class="form-check-input"
+                type="checkbox"
+                role="switch"
+                :checked="notifyOn"
+                :disabled="!canNotify"
+                @change="onNotifySwitch"
+              />
+            </div>
+            <div class="form-text">
+              {{
+                !canNotify
+                  ? t('profilePage.notificationsUnsupported')
+                  : notifyBlocked
+                    ? t('profilePage.notificationsBlocked')
+                    : t('profilePage.notificationsHint')
+              }}
             </div>
           </div>
         </template>
@@ -1028,48 +1077,37 @@ form.af-field,
     max-width: 480px;
   }
 }
-// the theme choices : a row of selectable tiles
-.af-choice-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 160px));
-  gap: 0.5rem;
-}
-.af-choice {
-  display: flex;
-  align-items: center;
-  padding: 0.55rem 0.8rem;
-  border: 1px solid var(--bs-border-color);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--bs-body-color);
-  text-align: left;
-  transition:
-    border-color 0.15s,
-    background-color 0.15s;
-  &:hover {
-    border-color: var(--af-primary);
-  }
-  &.active {
-    border-color: var(--af-primary);
-    box-shadow: inset 0 0 0 1px var(--af-primary);
-    background-color: var(--af-primary-bg-subtle);
-    font-weight: 600;
-  }
-}
 .af-palette {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 0.4rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
   max-width: 420px;
 }
+// round, as the header's theme menu (components/BsThemeSwitcher.vue)
 .af-swatch {
-  aspect-ratio: 1;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
   border: 2px solid transparent;
-  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   color: #ffffff;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
+  transition:
+    transform 0.15s,
+    border-color 0.15s;
+  &:hover {
+    transform: scale(1.2);
+  }
   &.active {
     border-color: var(--bs-body-color);
+    box-shadow: 0 0 0 2px var(--bs-body-bg);
+  }
+  svg {
+    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.5));
   }
 }
 

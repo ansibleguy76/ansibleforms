@@ -297,7 +297,7 @@ export default {
   profilePage: {
     languageHint: "La langue des menus, des pages et des messages. Le drapeau dans l'en-tête la change aussi.",
     themeHint:
-      "Clair, sombre, ou un en-tête dans la couleur de votre choix. L'icône soleil dans l'en-tête le change aussi.",
+      "Suivre le navigateur, clair, sombre, ou un en-tête dans la couleur de votre choix. L'icône du soleil dans l'en-tête le change aussi.",
     formsViewHint:
       'Comment la page Formulaires affiche les formulaires : en tuiles ou en liste. Le bouton de cette page le change aussi.',
     timezone: 'Fuseau horaire',
@@ -308,9 +308,14 @@ export default {
     timezoneHint:
       "Les dates et heures d'AnsibleForms sont affichées dans ce fuseau horaire. Le journal du serveur et la sortie des jobs gardent les heures écrites par le serveur.",
     formsView: 'Affichage des formulaires',
+    preview: 'Aperçu',
+    tabAppearance: 'Apparence',
+    tabForms: 'Formulaires',
+    tabDateTime: 'Date et heure',
+    tabNotifications: 'Notifications',
     notifications: 'Notifications de bureau',
     notificationsHint:
-      "Une notification sur cet ordinateur quand vos jobs se terminent ou qu'un job attend votre approbation, même quand cet onglet est en arrière-plan.",
+      "Une notification de bureau de ce navigateur quand vos jobs se terminent ou qu'un job attend votre approbation, même quand cet onglet est en arrière-plan.",
     notificationsBlocked:
       'Le navigateur bloque les notifications de ce site. Autorisez-les dans ses paramètres du site, puis réactivez ceci.',
     notificationsUnsupported:
