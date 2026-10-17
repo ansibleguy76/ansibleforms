@@ -296,7 +296,8 @@ export default {
   },
   profilePage: {
     languageHint: 'El idioma de los menús, las páginas y los mensajes. La bandera de la cabecera también lo cambia.',
-    themeHint: 'Claro, oscuro, o una cabecera del color que elijas. El icono del sol de la cabecera también lo cambia.',
+    themeHint:
+      'Seguir el navegador, claro, oscuro, o una cabecera del color que elijas. El icono del sol de la cabecera también lo cambia.',
     formsViewHint:
       'Cómo muestra la página Formularios los formularios: en mosaico o en lista. El botón de esa página también lo cambia.',
     timezone: 'Zona horaria',
@@ -307,6 +308,21 @@ export default {
     timezoneHint:
       'Las fechas y horas de AnsibleForms se muestran en esta zona horaria. El registro del servidor y la salida de los jobs mantienen las horas que escribió el servidor.',
     formsView: 'Vista de formularios',
+    preview: 'Vista previa',
+    tabAppearance: 'Apariencia',
+    tabForms: 'Formularios',
+    tabDateTime: 'Fecha y hora',
+    tabNotifications: 'Notificaciones',
+    notifications: 'Notificaciones de escritorio',
+    notificationsHint:
+      'Una notificación de escritorio de este navegador cuando terminan tus trabajos o un trabajo espera tu aprobación, incluso con esta pestaña en segundo plano.',
+    notificationsBlocked:
+      'El navegador bloquea las notificaciones de este sitio. Permítelas en su configuración del sitio y vuelve a activar esto.',
+    notificationsUnsupported:
+      'Este navegador no puede mostrar notificaciones aquí: necesitan una dirección segura (https).',
+    notificationsBody: 'Trabajo {id} · {duration}',
+    notificationsApprovalBody: 'Trabajo {id} · lanzado por {user}',
+    notificationsJob: 'Trabajo {id}',
     // the api token view
     token: {
       lifetimeHint: 'El token deja de funcionar pasado este tiempo. Elige el tiempo más corto que necesite tu script.',

@@ -296,7 +296,8 @@ export default {
   },
   profilePage: {
     languageHint: 'Język menu, stron i komunikatów. Można go też zmienić flagą w nagłówku.',
-    themeHint: 'Jasny, ciemny lub nagłówek w wybranym kolorze. Można go też zmienić ikoną słońca w nagłówku.',
+    themeHint:
+      'Zgodnie z przeglądarką, jasny, ciemny lub nagłówek w wybranym kolorze. Można go też zmienić ikoną słońca w nagłówku.',
     formsViewHint:
       'Sposób wyświetlania formularzy na stronie Formularze: jako kafelki lub jako lista. Można go też zmienić przyciskiem na tej stronie.',
     timezone: 'Strefa czasowa',
@@ -307,6 +308,21 @@ export default {
     timezoneHint:
       'Daty i godziny w całym AnsibleForms są wyświetlane w tej strefie czasowej. Dziennik serwera i wyniki zadań zachowują godziny zapisane przez serwer.',
     formsView: 'Widok formularzy',
+    preview: 'Podgląd',
+    tabAppearance: 'Wygląd',
+    tabForms: 'Formularze',
+    tabDateTime: 'Data i godzina',
+    tabNotifications: 'Powiadomienia',
+    notifications: 'Powiadomienia na pulpicie',
+    notificationsHint:
+      'Powiadomienie na pulpicie z tej przeglądarki, gdy Twoje zadania się kończą lub zadanie czeka na Twoją akceptację, nawet gdy ta karta jest w tle.',
+    notificationsBlocked:
+      'Przeglądarka blokuje powiadomienia z tej witryny. Zezwól na nie w ustawieniach witryny, a potem włącz to ponownie.',
+    notificationsUnsupported:
+      'Ta przeglądarka nie może tu wyświetlać powiadomień: potrzebny jest bezpieczny adres (https).',
+    notificationsBody: 'Zadanie {id} · {duration}',
+    notificationsApprovalBody: 'Zadanie {id} · uruchomione przez {user}',
+    notificationsJob: 'Zadanie {id}',
     // the api token view
     token: {
       lifetimeHint: 'Po tym czasie token przestaje działać. Wybierz najkrótszy czas, jakiego potrzebuje Twój skrypt.',

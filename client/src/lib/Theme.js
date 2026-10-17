@@ -3,6 +3,11 @@ import { useAppStore } from '@/stores/app';
 var Theme = {
   load() {
     const store = useAppStore();
+    // the user picked Follow the browser : light or dark as the browser is, and as it changes
+    if (Theme.isFollowingBrowser()) {
+      Theme.followBrowser();
+      return store.theme;
+    }
     store.theme = localStorage.getItem('theme') || Theme.getMediaPreference();
     Theme.set(store.theme);
     if (store.theme === 'color') {
@@ -37,7 +42,19 @@ var Theme = {
   // longer overrides it
   choose(theme) {
     localStorage.setItem('themeChosen', '1');
+    localStorage.removeItem('themeFollow');
+    Theme.stopFollowingBrowser();
     Theme.set(theme);
+  },
+  // the user picked Follow the browser (Profile > Preferences) : its own choice too, so the server
+  // default no longer overrides it, but light or dark as the browser is, and as it changes
+  chooseBrowser() {
+    localStorage.setItem('themeChosen', '1');
+    localStorage.setItem('themeFollow', '1');
+    Theme.followBrowser();
+  },
+  isFollowingBrowser() {
+    return localStorage.getItem('themeFollow') === '1';
   },
   set(theme) {
     const store = useAppStore();
@@ -156,14 +173,14 @@ var Theme = {
     ];
   },
   // the browser's light / dark preference followed live (a system that switches at night) while
-  // the user has not picked a theme of their own
+  // the user has not picked a theme of their own, or picked Follow the browser
   followBrowser() {
     Theme.clearColor();
     Theme.set(Theme.getMediaPreference());
     if (Theme._media || typeof window === 'undefined' || !window.matchMedia) return;
     Theme._media = window.matchMedia('(prefers-color-scheme: dark)');
     Theme._onMedia = () => {
-      if (!Theme.isUserChoice()) Theme.set(Theme.getMediaPreference());
+      if (!Theme.isUserChoice() || Theme.isFollowingBrowser()) Theme.set(Theme.getMediaPreference());
     };
     Theme._media.addEventListener?.('change', Theme._onMedia);
   },

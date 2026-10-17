@@ -297,7 +297,8 @@ export default {
   },
   profilePage: {
     languageHint: "De taal van de menu's, pagina's en berichten. De vlag in de kopbalk wisselt die ook.",
-    themeHint: 'Licht, donker, of een kopbalk in een kleur naar keuze. Het zonicoon in de kopbalk wisselt het ook.',
+    themeHint:
+      'De browser volgen, licht, donker, of een kopbalk in een kleur naar keuze. Het zonicoon in de kopbalk wisselt het ook.',
     formsViewHint:
       'Hoe de pagina Formulieren de formulieren toont: als tegels of als lijst. De knop op die pagina wisselt het ook.',
     timezone: 'Tijdzone',
@@ -308,6 +309,21 @@ export default {
     timezoneHint:
       'Datums en tijden in heel AnsibleForms worden in deze tijdzone getoond. Het serverlog en de joboutput houden de tijden die de server erin schreef.',
     formsView: 'Weergave formulieren',
+    preview: 'Voorbeeld',
+    tabAppearance: 'Weergave',
+    tabForms: 'Formulieren',
+    tabDateTime: 'Datum en tijd',
+    tabNotifications: 'Meldingen',
+    notifications: 'Bureaubladmeldingen',
+    notificationsHint:
+      'Een bureaubladmelding van deze browser wanneer uw jobs eindigen of een job op uw goedkeuring wacht, ook als dit tabblad op de achtergrond staat.',
+    notificationsBlocked:
+      'De browser blokkeert meldingen voor deze site. Sta ze toe in de site-instellingen en zet dit daarna opnieuw aan.',
+    notificationsUnsupported:
+      'Deze browser kan hier geen meldingen tonen: daarvoor is een beveiligd adres (https) nodig.',
+    notificationsBody: 'Job {id} · {duration}',
+    notificationsApprovalBody: 'Job {id} · gestart door {user}',
+    notificationsJob: 'Job {id}',
     // the api token view
     token: {
       lifetimeHint: 'Het token werkt na deze tijd niet meer. Kies de kortste tijd die je script nodig heeft.',

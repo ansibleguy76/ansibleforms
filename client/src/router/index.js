@@ -102,8 +102,9 @@ const routes = [
   { path: '/form/:slug', name: '/form', component: form },
   { path: '/login', name: '/login', component: login },
   { path: '/change-password', name: '/change-password', component: changePassword },
-  // the profile : a view at /profile/<view> ; /profile alone opens the first of its menu
-  { path: '/profile/:view?', name: '/profile', component: profile },
+  // the profile : a view at /profile/<view> ; /profile alone opens the first of its menu ; a view
+  // in tabs (Preferences) its tab after it, the first tab none
+  { path: '/profile/:view?/:tab?', name: '/profile', component: profile },
   { path: '/logout', name: '/logout', component: logout },
   // every job at /jobs/all (lib/jobsPath.js) ; /jobs leads there
   {

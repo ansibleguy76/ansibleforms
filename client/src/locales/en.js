@@ -294,7 +294,8 @@ export default {
   },
   profilePage: {
     languageHint: 'The language of the menus, pages and messages. The flag in the header switches it too.',
-    themeHint: 'Light, dark, or a header in a color of your choice. The sun icon in the header switches it too.',
+    themeHint:
+      'Follow the browser, light, dark, or a header in a color of your choice. The sun icon in the header switches it too.',
     formsViewHint:
       'How the Forms page lists the forms: as tiles or as a list. The button on that page switches it too.',
     timezone: 'Time zone',
@@ -305,6 +306,20 @@ export default {
     timezoneHint:
       'Dates and times across AnsibleForms are shown in this time zone. The server log and job output keep the times the server wrote in them.',
     formsView: 'Forms view',
+    preview: 'Preview',
+    tabAppearance: 'Appearance',
+    tabForms: 'Forms',
+    tabDateTime: 'Date and time',
+    tabNotifications: 'Notifications',
+    notifications: 'Desktop notifications',
+    notificationsHint:
+      'A desktop notification from this browser when your jobs end or a job waits for your approval, even when this tab is in the background.',
+    notificationsBlocked:
+      'The browser blocks notifications for this site. Allow them in its site settings, then turn this on again.',
+    notificationsUnsupported: 'This browser cannot show notifications here: they need a secure (https) address.',
+    notificationsBody: 'Job {id} · {duration}',
+    notificationsApprovalBody: 'Job {id} · launched by {user}',
+    notificationsJob: 'Job {id}',
     // the api token view
     token: {
       lifetimeHint: 'The token stops working after this time. Pick the shortest time your script needs.',

@@ -298,7 +298,7 @@ export default {
   profilePage: {
     languageHint: 'Die Sprache der Menüs, Seiten und Meldungen. Die Flagge in der Kopfzeile wechselt sie ebenfalls.',
     themeHint:
-      'Hell, dunkel oder eine Kopfzeile in einer Farbe Ihrer Wahl. Das Sonnensymbol in der Kopfzeile wechselt es ebenfalls.',
+      'Dem Browser folgen, hell, dunkel oder eine Kopfzeile in einer Farbe Ihrer Wahl. Das Sonnensymbol in der Kopfzeile wechselt es auch.',
     formsViewHint:
       'Wie die Seite Formulare die Formulare zeigt: als Kacheln oder als Liste. Die Schaltfläche auf dieser Seite wechselt es ebenfalls.',
     timezone: 'Zeitzone',
@@ -309,6 +309,21 @@ export default {
     timezoneHint:
       'Datum und Uhrzeit werden in ganz AnsibleForms in dieser Zeitzone angezeigt. Das Serverprotokoll und die Jobausgabe behalten die Zeiten, die der Server hineingeschrieben hat.',
     formsView: 'Formularansicht',
+    preview: 'Vorschau',
+    tabAppearance: 'Darstellung',
+    tabForms: 'Formulare',
+    tabDateTime: 'Datum und Uhrzeit',
+    tabNotifications: 'Benachrichtigungen',
+    notifications: 'Desktop-Benachrichtigungen',
+    notificationsHint:
+      'Eine Desktop-Benachrichtigung von diesem Browser, wenn Ihre Jobs enden oder ein Job auf Ihre Genehmigung wartet, auch wenn dieser Tab im Hintergrund ist.',
+    notificationsBlocked:
+      'Der Browser blockiert Benachrichtigungen für diese Seite. Erlauben Sie sie in den Website-Einstellungen und schalten Sie dies erneut ein.',
+    notificationsUnsupported:
+      'Dieser Browser kann hier keine Benachrichtigungen anzeigen: Sie benötigen eine sichere Adresse (https).',
+    notificationsBody: 'Job {id} · {duration}',
+    notificationsApprovalBody: 'Job {id} · gestartet von {user}',
+    notificationsJob: 'Job {id}',
     // the api token view
     token: {
       lifetimeHint:

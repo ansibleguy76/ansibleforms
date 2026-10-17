@@ -295,7 +295,8 @@ export default {
   },
   profilePage: {
     languageHint: 'メニュー、ページ、メッセージの言語です。ヘッダーの国旗からも切り替えられます。',
-    themeHint: 'ライト、ダーク、または好きな色のヘッダーを選べます。ヘッダーの太陽アイコンからも切り替えられます。',
+    themeHint:
+      'ブラウザーに合わせる、ライト、ダーク、または好きな色のヘッダーを選べます。ヘッダーの太陽アイコンからも切り替えられます。',
     formsViewHint:
       'フォームページでのフォームの表示方法 (タイルまたはリスト) です。そのページのボタンからも切り替えられます。',
     timezone: 'タイムゾーン',
@@ -306,6 +307,20 @@ export default {
     timezoneHint:
       'AnsibleForms 全体の日時はこのタイムゾーンで表示されます。サーバーログとジョブ出力には、サーバーが書き込んだ時刻がそのまま残ります。',
     formsView: 'フォームの表示',
+    preview: 'プレビュー',
+    tabAppearance: '外観',
+    tabForms: 'フォーム',
+    tabDateTime: '日付と時刻',
+    tabNotifications: '通知',
+    notifications: 'デスクトップ通知',
+    notificationsHint:
+      'ジョブの終了時や、ジョブがあなたの承認を待っているときに、このタブがバックグラウンドでもこのブラウザーからデスクトップ通知を表示します。',
+    notificationsBlocked:
+      'ブラウザーがこのサイトの通知をブロックしています。サイトの設定で許可してから、もう一度オンにしてください。',
+    notificationsUnsupported: 'このブラウザーではここで通知を表示できません：安全なアドレス (https) が必要です。',
+    notificationsBody: 'ジョブ {id} · {duration}',
+    notificationsApprovalBody: 'ジョブ {id} · {user} が実行',
+    notificationsJob: 'ジョブ {id}',
     // the api token view
     token: {
       lifetimeHint: 'この期間が過ぎるとトークンは使えなくなります。スクリプトに必要な最短の期間を選んでください。',
