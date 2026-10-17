@@ -220,7 +220,10 @@ const crudConfigs = {
       { name: 'group_id', required: true },
       // its sign-in blocked by an admin : read with the user, written by User.setBlocked alone
       // (POST /api/v2/user/:id/block), never by a create or an update
-      { name: 'blocked' }
+      { name: 'blocked' },
+      // its latest sign-in : read with the user, written by User.recordSignIn alone (at each
+      // sign-in, lib/signInGate.js), never by a create or an update
+      { name: 'last_login', isDatetime: true }
     ],
     allowCache: false
   },

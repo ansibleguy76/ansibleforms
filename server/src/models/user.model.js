@@ -99,6 +99,8 @@ class User extends CrudModel {
   static async create(data) {
     // a new user signs in : its sign-in is blocked by setBlocked alone
     delete data.blocked;
+    // nor has it signed in yet : its latest sign-in is written by recordSignIn alone
+    delete data.last_login;
     logger.info(`Creating user ${data.username}`);
     // Hash password before storing
     const hash = await crypto.hashPassword(data.password);
@@ -111,6 +113,8 @@ class User extends CrudModel {
     logger.info(`Updating user ${data.username ? data.username : id}`);
     // its sign-in is blocked or allowed by setBlocked alone (its own route, its own checks)
     delete data.blocked;
+    // its latest sign-in is written by recordSignIn alone, never by an edit
+    delete data.last_login;
     // the admin user keeps its name : renamed, it would no longer be the account to sign in with
     if (data.username !== undefined && data.username !== 'admin') {
       const current = await super.findById(this.modelName, id);
@@ -187,6 +191,19 @@ class User extends CrudModel {
   static async isBlocked(username) {
     const rows = await mysql.do('SELECT blocked FROM AnsibleForms.`users` WHERE username = ?', [username]);
     return !!rows?.[0]?.blocked;
+  }
+
+  /**
+   * Records a local user's sign-in : its latest sign-in is now.
+   *
+   * Args:
+   *   username (string): the username.
+   *
+   * Returns:
+   *   Promise<void>: settles once written.
+   */
+  static async recordSignIn(username) {
+    await mysql.do('UPDATE AnsibleForms.`users` SET last_login = NOW() WHERE username = ?', [username]);
   }
 
   static async findById(id) {

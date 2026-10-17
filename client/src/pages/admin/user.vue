@@ -27,6 +27,7 @@ import { toast } from 'vue-sonner';
 import { deleteRecords } from '@/lib/bulkDelete';
 import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
+import Helpers from '@/lib/Helpers';
 import { formPath } from '@/lib/formsPath';
 import { useFormLinks } from '@/composables/useFormLinks';
 import { useUserLinks } from '@/composables/useUserLinks';
@@ -272,6 +273,8 @@ const shownFields = computed(() =>
     ['username', t('settings.fields.username')],
     ['description', t('settings.fields.description')],
     ['email', t('settings.fields.email')],
+    // a read-only fact : by its value too
+    ['lastLogin', t('settings.directory.lastLogin'), lastSignIn.value],
     [
       'signIn',
       t('settings.directory.allowSignIn'),
@@ -336,6 +339,8 @@ const searchHead = (key) => {
 };
 
 // ─── Details ──────────────────────────────────────────────────────────────────
+// its latest sign-in (written at each sign-in, lib/signInGate.js), in the user's zone ; none, an en dash
+const lastSignIn = computed(() => (user.value?.last_login ? Helpers.formatServerDate(user.value.last_login) : '–'));
 const emailValid = computed(() => !edit.value?.email || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(edit.value.email));
 
 /**
@@ -610,7 +615,8 @@ onMounted(async () => {
               <FaIcon :icon="searchHead(tab.key).tab.icon" class="me-1" />{{ searchHead(tab.key).tab.label }}
             </h6>
           </template>
-          <!-- Details : the username, its description and email, then whether it may sign in -->
+          <!-- Details : the username, its description and email, its latest sign-in (read only), then
+               whether it may sign in -->
           <div v-if="tab.key === 'details'" class="af-user-details">
             <BsInput
               class="af-user-field"
@@ -638,6 +644,16 @@ onMounted(async () => {
               :isFloating="false"
               :hasError="!emailValid"
               :label="t('settings.fields.email')"
+            />
+            <!-- its latest sign-in, in the user's zone ; none recorded yet, an en dash -->
+            <BsInput
+              class="af-user-field"
+              :modelValue="lastSignIn"
+              v-show="fieldShown('lastLogin')"
+              icon="clock"
+              :isFloating="false"
+              :disabled="true"
+              :label="t('settings.directory.lastLogin')"
             />
             <!-- Allow sign-in : saved at once, as a runner's Default ; never off for the admin user -->
             <div v-show="fieldShown('signIn')" class="mb-0">

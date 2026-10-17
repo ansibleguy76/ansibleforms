@@ -598,7 +598,7 @@ const SCHEMA_MANIFEST = {
                                'credentials.credential_type', 'repositories.credential', 'groups.description',
                                'secret_stores.credential', 'credentials.client_cert', 'credentials.client_key',
                                'chat_settings.credential',
-                               'users.description', 'schedule.raw_form_data', 'users.blocked', 'settings.favicon',
+                               'users.description', 'schedule.raw_form_data', 'users.blocked', 'users.last_login', 'settings.favicon',
                                'settings.app_name', 'settings.env_label', 'settings.env_label_show', 'settings.env_label_color',
                                'settings.banner_show', 'settings.disclaimer_enabled',
                                'settings.forms_view', 'settings.default_timezone', 'settings.default_date_format', 'settings.header_links',
@@ -985,6 +985,8 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addColumn("users", "description", "varchar(250)", true, "NULL"), messages, success, failed);
   // a local user's sign-in blocked by an admin, as an LDAP or SSO user's (lib/signInGate.js)
   await checkPromise(addColumn("users", "blocked", "tinyint(4)", false, "0"), messages, success, failed);
+  // a local user's latest sign-in, as an LDAP or SSO user's (lib/signInGate.js)
+  await checkPromise(addColumn("users", "last_login", "datetime", true, "NULL"), messages, success, failed);
   // the website icon (Settings > Appearance > Icon), a data url like the logo
   await checkPromise(addColumn("settings", "favicon", "longtext", true, "NULL"), messages, success, failed);
   // Settings > Appearance : the name, the environment label, the announcement and
