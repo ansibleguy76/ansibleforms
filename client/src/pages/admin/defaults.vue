@@ -8,7 +8,7 @@
 /*  the profile) wins over them.                                  */
 /*                                                                */
 /******************************************************************/
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import axios from 'axios';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
@@ -197,6 +197,8 @@ const shown = (key) => shownFields.value.includes(key);
 // the room above a setting : none above the first one shown
 const spaced = (key) => shownFields.value[0] !== key;
 
+// a color still hovered when the page goes : the user's own theme again (Theme.previewColor)
+onBeforeUnmount(() => Theme.endPreview());
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
@@ -277,6 +279,10 @@ onMounted(async () => {
                   :class="{ 'settings-color-swatch-active': theme.default_theme_color === c.hex }"
                   :title="c.label"
                   @click="theme.default_theme_color = c.hex"
+                  @mouseenter="Theme.previewColor(c.hex)"
+                  @mouseleave="Theme.endPreview()"
+                  @focus="Theme.previewColor(c.hex)"
+                  @blur="Theme.endPreview()"
                 >
                   <FaIcon v-if="theme.default_theme_color === c.hex" icon="check" class="settings-swatch-check" />
                 </button>

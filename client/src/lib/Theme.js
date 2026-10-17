@@ -70,11 +70,31 @@ var Theme = {
   applyColor(hex) {
     hex = Theme.current(hex);
     localStorage.setItem('themeColor', hex);
+    Theme.paintColor(hex);
+  },
+  // the color's tones on the page, nothing saved (applyColor, previewColor)
+  paintColor(hex) {
+    hex = Theme.current(hex);
     const el = document.documentElement;
     el.style.setProperty('--af-bg-navbar', hex);
     el.style.setProperty('--af-navbar-link-hover-color', '#ffffff');
     el.style.setProperty('--af-navbar-link-active-color', '#ffffff');
     for (const [name, value] of Object.entries(Theme.tones(hex))) el.style.setProperty(name, value);
+  },
+  // A color hovered in a palette (the header's theme menu, Profile > Preferences, Settings >
+  // Appearance > Defaults) : the app shows that color theme while the pointer is on it, nothing
+  // saved ; the next color hovered shows its own, and leaving the palette shows the user's theme
+  // again (endPreview).
+  previewColor(hex) {
+    document.documentElement.setAttribute('data-bs-theme', 'color');
+    Theme.paintColor(hex);
+  },
+  endPreview() {
+    const store = useAppStore();
+    const theme = store.theme || localStorage.getItem('theme') || Theme.getMediaPreference();
+    document.documentElement.setAttribute('data-bs-theme', theme);
+    if (theme === 'color') Theme.paintColor(Theme.getColor());
+    else Theme.clearColor();
   },
   clearColor() {
     const el = document.documentElement;

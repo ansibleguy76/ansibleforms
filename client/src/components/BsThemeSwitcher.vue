@@ -13,6 +13,10 @@
 
 import Theme from '@/lib/Theme';
 import { useAppStore } from '@/stores/app';
+import { onBeforeUnmount } from 'vue';
+
+// a color still hovered when the menu goes : the user's theme again
+onBeforeUnmount(() => Theme.endPreview());
 
 // MODEL
 
@@ -144,6 +148,10 @@ const themeIcon = computed(() => {
               :class="{ 'color-swatch-active': selectedColor === c.hex }"
               :title="c.label"
               @click="pickColor(c.hex)"
+              @mouseenter="Theme.previewColor(c.hex)"
+              @mouseleave="Theme.endPreview()"
+              @focus="Theme.previewColor(c.hex)"
+              @blur="Theme.endPreview()"
             >
               <FaIcon v-if="selectedColor === c.hex" icon="check" class="swatch-check" />
             </button>
