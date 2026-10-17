@@ -624,7 +624,7 @@ export default {
     allUsers: 'Todos los usuarios',
     allActions: 'Todas las acciones',
     allOutcomes: 'Todos los resultados',
-    reset: 'Restablecer',
+    reset: 'Restablecer la selección',
     resetHint: 'De nuevo todos los usuarios, todas las acciones y todos los resultados',
     empty: 'Aún no hay entradas de auditoría',
     emptyHint: 'El registro empieza al instalar esta versión, por lo que no contiene nada anterior.',

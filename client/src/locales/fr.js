@@ -629,7 +629,7 @@ export default {
     allUsers: 'Tous les utilisateurs',
     allActions: 'Toutes les actions',
     allOutcomes: 'Tous les résultats',
-    reset: 'Réinitialiser',
+    reset: 'Réinitialiser la sélection',
     resetHint: 'De nouveau tous les utilisateurs, toutes les actions et tous les résultats',
     empty: "Aucune entrée d'audit",
     emptyHint: "Le journal démarre à l'installation de cette version, il ne contient rien d'antérieur.",

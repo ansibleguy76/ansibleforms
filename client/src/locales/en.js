@@ -618,7 +618,7 @@ export default {
     allUsers: 'All users',
     allActions: 'All actions',
     allOutcomes: 'All outcomes',
-    reset: 'Reset',
+    reset: 'Reset selection',
     resetHint: 'Every user, every action and every outcome again',
     empty: 'No audit entries yet',
     emptyHint: 'The trail starts when this version is installed, so it holds nothing from before that.',

@@ -626,7 +626,7 @@ export default {
     allUsers: 'Tots els usuaris',
     allActions: 'Totes les accions',
     allOutcomes: 'Tots els resultats',
-    reset: 'Restableix',
+    reset: 'Restableix la selecció',
     resetHint: 'Tots els usuaris, totes les accions i tots els resultats de nou',
     empty: "Encara no hi ha entrades d'auditoria",
     emptyHint: "El registre comença quan s'instal·la aquesta versió, així que no conté res d'abans.",
