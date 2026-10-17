@@ -858,7 +858,7 @@ const buildMismatch = computed(() => {
   .af-user-card {
     display: flex;
     align-items: center;
-    gap: 0.65rem;
+    gap: 1.25rem;
     padding: 0.5rem 0.6rem 0.4rem;
     > span:last-child {
       min-width: 0;
