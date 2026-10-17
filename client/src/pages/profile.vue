@@ -798,13 +798,13 @@ async function changePassword() {
               }}</small>
             </div>
             <div class="table-responsive">
-              <table v-fit-columns class="table mb-0 af-perm-table">
+              <!-- fixed columns (the styles below), the same in every card : the access at the right edge -->
+              <table class="table mb-0 af-perm-table">
                 <thead>
                   <tr>
                     <th>{{ t('profilePage.columnSetting') }}</th>
                     <th>{{ t('profilePage.columnDescription') }}</th>
                     <th class="text-end">{{ t('profilePage.columnAccess') }}</th>
-                    <th class="af-fit-spacer"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -823,7 +823,6 @@ async function changePassword() {
                         }}
                       </span>
                     </td>
-                    <td class="af-fit-spacer"></td>
                   </tr>
                 </tbody>
               </table>
