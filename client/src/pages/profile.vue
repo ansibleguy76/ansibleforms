@@ -144,11 +144,22 @@ const prefTabs = computed(() => [
   { key: 'datetime', label: t('profilePage.tabDateTime'), icon: 'clock' },
   ...(mayNotify.value ? [{ key: 'notifications', label: t('profilePage.tabNotifications'), icon: 'bell' }] : []),
 ]);
+// a permission group's icon : as its place in the app
+const PERMISSION_ICONS = { settings: 'gear', designer: 'pen-to-square', jobs: 'history', access: 'user-shield' };
+const permissionIcon = (name) => PERMISSION_ICONS[name] || 'ellipsis';
 // the open view's tabs : Preferences' ; Password one tab of its own (every settings page a table or
 // a page in tabs) ; the others none (cards of their own, or the API token's table)
 const viewTabs = computed(() => {
   if (currentView.value === 'preferences') return prefTabs.value;
   if (currentView.value === 'password') return [{ key: 'change', label: t('nav.changePassword'), icon: 'key' }];
+  // a tab per group of options, how many of them are allowed beside its name
+  if (currentView.value === 'permissions')
+    return permissionGroups.value.map((g) => ({
+      key: g.name,
+      label: g.title,
+      icon: permissionIcon(g.name),
+      count: `${g.allowed}/${g.options.length}`,
+    }));
   return [];
 });
 const { activeTab: prefTab, tabLink: prefTabLink } = useRouteTab(
@@ -654,15 +665,23 @@ async function changePassword() {
         :icon="view.icon"
         :description="pageDescription"
         :crumbs="crumbs"
-        :bare="['account', 'permissions'].includes(currentView)"
+        :bare="currentView === 'account'"
       >
         <!-- Preferences' tabs, Password's one, above the page's card -->
-        <template v-if="viewTabs.length && !(currentView === 'preferences' && prefSearching)" #tabs>
+        <template
+          v-if="
+            viewTabs.length &&
+            !(currentView === 'preferences' && prefSearching) &&
+            !(currentView === 'permissions' && viewSearching)
+          "
+          #tabs
+        >
           <ul class="nav nav-tabs mb-0">
             <li v-for="tab in viewTabs" :key="tab.key" class="nav-item">
               <a class="nav-link" :class="{ active: prefTab === tab.key }" href="#" @click.prevent="prefTab = tab.key">
                 <FaIcon :icon="tab.icon" class="me-1" />
                 {{ tab.label }}
+                <span v-if="tab.count !== undefined" class="badge af-tab-count ms-1">{{ tab.count }}</span>
               </a>
             </li>
           </ul>
@@ -963,52 +982,49 @@ async function changePassword() {
         </template>
 
         <!-- ===================== permissions ===================== -->
+        <!-- a tab per group, its options' table : each option's key, what it allows, whether the
+             user has it ; searching, the matching options of every group, each under its name -->
         <template v-else-if="currentView === 'permissions'">
-          <!-- a card per group : its name and how many of its options are allowed, then a row
-               per option with its readable name, its key, and whether it is allowed -->
-          <div
-            v-for="(group, gi) in shownPermissionGroups"
-            :key="group.name"
-            class="card af-table-card"
-            :class="{ 'mt-3': gi > 0 }"
-          >
-            <div class="card-body d-flex align-items-center justify-content-between af-identity py-2 border-bottom">
-              <span class="fw-semibold">{{ group.title }}</span>
-              <small class="text-body-secondary">{{
-                t('profilePage.allowedCount', { n: group.allowed, total: group.options.length })
-              }}</small>
+          <template v-for="(group, gi) in shownPermissionGroups" :key="group.name">
+            <div v-if="viewSearching || group.name === prefTab">
+              <template v-if="viewSearching">
+                <hr v-if="gi > 0" class="mt-4 mb-0 af-search-line" />
+                <h6 class="fw-bold text-body-secondary af-search-tab" :class="{ 'af-search-first': gi === 0 }">
+                  <FaIcon :icon="permissionIcon(group.name)" class="me-1" />{{ group.title }}
+                </h6>
+              </template>
+              <div class="table-responsive af-perm-wrap">
+                <!-- fixed columns (the styles below), the same in every tab : the access at the right edge -->
+                <table class="table mb-0 af-perm-table">
+                  <thead>
+                    <tr>
+                      <th>{{ t('profilePage.columnSetting') }}</th>
+                      <th>{{ t('profilePage.columnDescription') }}</th>
+                      <th class="text-end">{{ t('profilePage.columnAccess') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="o in group.options" :key="o.key">
+                      <td>
+                        <code class="af-option-key">{{ o.key }}</code>
+                      </td>
+                      <td :class="o.value ? '' : 'text-body-secondary'">
+                        {{ o.description }}
+                        <div v-if="o.note" class="small text-body-secondary">{{ o.note }}</div>
+                      </td>
+                      <td class="text-end">
+                        <span class="badge rounded-pill af-pill" :class="o.value ? 'af-pill-green' : 'af-pill-grey'">
+                          <FaIcon :icon="o.value ? 'check' : 'xmark'" class="me-1" />{{
+                            o.value ? t('profilePage.allowed') : t('profilePage.notAllowed')
+                          }}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <div class="table-responsive">
-              <!-- fixed columns (the styles below), the same in every card : the access at the right edge -->
-              <table class="table mb-0 af-perm-table">
-                <thead>
-                  <tr>
-                    <th>{{ t('profilePage.columnSetting') }}</th>
-                    <th>{{ t('profilePage.columnDescription') }}</th>
-                    <th class="text-end">{{ t('profilePage.columnAccess') }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="o in group.options" :key="o.key">
-                    <td>
-                      <code class="af-option-key">{{ o.key }}</code>
-                    </td>
-                    <td :class="o.value ? '' : 'text-body-secondary'">
-                      {{ o.description }}
-                      <div v-if="o.note" class="small text-body-secondary">{{ o.note }}</div>
-                    </td>
-                    <td class="text-end">
-                      <span class="badge rounded-pill af-pill" :class="o.value ? 'af-pill-green' : 'af-pill-grey'">
-                        <FaIcon :icon="o.value ? 'check' : 'xmark'" class="me-1" />{{
-                          o.value ? t('profilePage.allowed') : t('profilePage.notAllowed')
-                        }}
-                      </span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+          </template>
           <div v-if="viewSearching && !shownPermissionGroups.length" class="text-body-secondary fst-italic">
             {{ t('settings.settingsPage.searchNone') }}
           </div>
@@ -1173,6 +1189,12 @@ async function changePassword() {
 </template>
 
 <style scoped lang="scss">
+/* a tab's count (a permission group's allowed of all), as a user's page's tabs */
+.af-tab-count {
+  background: var(--bs-secondary-bg);
+  color: var(--bs-secondary-color);
+  font-weight: 600;
+}
 // the identity band at the top of the account card
 /* the line under the account's header : a table's light line (the list under it takes the card's
    darker border on top otherwise) */
