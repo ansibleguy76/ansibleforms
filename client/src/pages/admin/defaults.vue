@@ -20,17 +20,26 @@ import dayjs from 'dayjs';
 import State from '@/lib/State';
 import { useEnvVars } from '@/composables/useEnvVars';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
-import { useSingleTab } from '@/composables/useSingleTab';
+import { useRouteTab } from '@/composables/useRouteTab';
 
 const { t } = useI18n();
 
-// one tab, General, as every settings page is a table or in tabs ; named last in the title
-const { tabs, activeTab, crumbs } = useSingleTab({
-  key: 'general',
-  label: () => t('settings.common.tabGeneral'),
-  icon: 'sliders',
-  pageCrumbs: () => [{ title: t('sidebar.defaults'), icon: 'display', to: '/settings/defaults' }],
+// two tabs, as Profile > Preferences (the defaults of what a user picks there) : how the app looks,
+// dates and times ; kept in the address, named last in the title
+const tabs = computed(() => [
+  { key: 'appearance', label: t('profilePage.tabAppearance'), icon: 'palette' },
+  { key: 'datetime', label: t('profilePage.tabDateTime'), icon: 'clock' },
+]);
+const { activeTab, tabLink } = useRouteTab('appearance', (key) => tabs.value.some((x) => x.key === key));
+const crumbs = computed(() => {
+  const tab = tabs.value.find((x) => x.key === activeTab.value) || tabs.value[0];
+  return [
+    { title: t('sidebar.defaults'), icon: 'display', to: tabLink('appearance') },
+    { title: tab.label, icon: tab.icon, to: tabLink(tab.key) },
+  ];
 });
+// each setting's tab, in Profile > Preferences' order
+const GROUPS = { appearance: ['language', 'theme', 'forms'], datetime: ['timezone', 'date'] };
 const authenticated = ref(false);
 // the page's values read once : until then its fields as grey placeholders
 const loaded = ref(false);
@@ -193,9 +202,21 @@ const shownFields = computed(() =>
     .filter(([, ...texts]) => matches(...texts))
     .map(([key]) => key),
 );
-const shown = (key) => shownFields.value.includes(key);
-// the room above a setting : none above the first one shown
-const spaced = (key) => shownFields.value[0] !== key;
+// a tab's settings shown now : searching, those that match ; else its own, when it is open
+const groupShown = (group) =>
+  searching.value
+    ? GROUPS[group].filter((k) => shownFields.value.includes(k))
+    : activeTab.value === group
+      ? GROUPS[group]
+      : [];
+const shown = (key) => Object.keys(GROUPS).some((g) => groupShown(g).includes(key));
+// the room above a setting : none above the first one shown in its tab
+const spaced = (key) => {
+  const group = Object.keys(GROUPS).find((g) => GROUPS[g].includes(key));
+  return groupShown(group)[0] !== key;
+};
+// searching : the tabs with a match, each under its name, the first without a line above
+const searchHeads = computed(() => Object.keys(GROUPS).filter((g) => groupShown(g).length));
 
 // a color still hovered when the page goes : the user's own theme again (Theme.previewColor)
 onBeforeUnmount(() => Theme.endPreview());
@@ -248,16 +269,32 @@ onMounted(async () => {
           <div v-if="searching && !shownFields.length" class="text-body-secondary fst-italic">
             {{ t('settings.settingsPage.searchNone') }}
           </div>
-          <!-- searching : the matches under the tab's name, as Settings > General -->
-          <h6 v-if="searching && shownFields.length" class="fw-bold text-body-secondary af-search-tab af-search-first">
-            <FaIcon :icon="tabs[0].icon" class="me-1" />{{ tabs[0].label }}
-          </h6>
-          <!-- the theme, the language, the forms view and the time zone for everyone -->
+          <!-- Appearance : the language, the theme, the forms view ; Date and time : the time zone and
+               the date format - as Profile > Preferences. Searching : the matches of both, each under
+               its tab's name, as Settings > General -->
           <div>
+            <template v-if="searching && searchHeads.includes('appearance')">
+              <hr v-if="searchHeads[0] !== 'appearance'" class="mt-4 mb-0 af-search-line" />
+              <h6
+                class="fw-bold text-body-secondary af-search-tab"
+                :class="{ 'af-search-first': searchHeads[0] === 'appearance' }"
+              >
+                <FaIcon :icon="tabs.find((x) => x.key === 'appearance').icon" class="me-1" />{{
+                  tabs.find((x) => x.key === 'appearance').label
+                }}
+              </h6>
+            </template>
+            <!-- the language : an environment variable -->
+            <template v-for="e in languageEnv" :key="e.name">
+              <div v-show="shown('language')" :class="{ 'mt-4': spaced('language') }">
+                <AppEnvField v-model="envEdits[e.name]" :e="e" class="af-defaults-wide" />
+              </div>
+            </template>
             <!-- the theme : no environment variable, kept in the database -->
             <BsInput
               v-show="shown('theme')"
               class="af-interface-field"
+              :class="{ 'mt-4': spaced('theme') }"
               :isFloating="false"
               type="select"
               icon="palette"
@@ -288,13 +325,7 @@ onMounted(async () => {
                 </button>
               </div>
             </div>
-            <!-- the language : an environment variable -->
-            <template v-for="e in languageEnv" :key="e.name">
-              <div v-show="shown('language')" :class="{ 'mt-4': spaced('language') }">
-                <AppEnvField v-model="envEdits[e.name]" :e="e" class="af-defaults-wide" />
-              </div>
-            </template>
-            <!-- the forms list's view and the time zone : in the database -->
+            <!-- the forms list's view : in the database -->
             <BsInput
               v-show="shown('forms')"
               class="af-interface-field"
@@ -309,6 +340,18 @@ onMounted(async () => {
               :label="t('settings.interface.formsView')"
               :help="t('settings.interface.formsViewHelp')"
             />
+            <template v-if="searching && searchHeads.includes('datetime')">
+              <hr v-if="searchHeads[0] !== 'datetime'" class="mt-4 mb-0 af-search-line" />
+              <h6
+                class="fw-bold text-body-secondary af-search-tab"
+                :class="{ 'af-search-first': searchHeads[0] === 'datetime' }"
+              >
+                <FaIcon :icon="tabs.find((x) => x.key === 'datetime').icon" class="me-1" />{{
+                  tabs.find((x) => x.key === 'datetime').label
+                }}
+              </h6>
+            </template>
+            <!-- the time zone and the date format : in the database -->
             <BsInput
               v-show="shown('timezone')"
               class="af-interface-field"
