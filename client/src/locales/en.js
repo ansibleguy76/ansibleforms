@@ -308,7 +308,6 @@ export default {
     formsView: 'Forms view',
     preview: 'Preview',
     tabAppearance: 'Appearance',
-    tabForms: 'Forms',
     tabDateTime: 'Date and time',
     tabNotifications: 'Notifications',
     notifications: 'Desktop notifications',

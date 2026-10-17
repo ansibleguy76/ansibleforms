@@ -136,11 +136,10 @@ const currentLanguage = computed(() => languages.find((l) => l.code === locale.v
 const view = computed(() => VIEWS.find((v) => v.name === currentView.value));
 // desktop notifications are offered only to a user who sees its jobs
 const mayNotify = computed(() => hasPermission(store.profile?.options, 'showJobs'));
-// Preferences in tabs, kept in the address (/profile/preferences/<tab>) : how the app looks, the
-// forms page, dates and times, and the notifications for a user who sees its jobs
+// Preferences in tabs, kept in the address (/profile/preferences/<tab>) : how the app looks (its
+// language, theme and forms view), dates and times, and the notifications for a user who sees its jobs
 const prefTabs = computed(() => [
   { key: 'appearance', label: t('profilePage.tabAppearance'), icon: 'palette' },
-  { key: 'forms', label: t('profilePage.tabForms'), icon: 'rectangle-list' },
   { key: 'datetime', label: t('profilePage.tabDateTime'), icon: 'clock' },
   ...(mayNotify.value ? [{ key: 'notifications', label: t('profilePage.tabNotifications'), icon: 'bell' }] : []),
 ]);
@@ -585,7 +584,7 @@ async function changePassword() {
 
         <!-- ===================== preferences ===================== -->
         <template v-else-if="currentView === 'preferences'">
-          <!-- Appearance : the language and the theme -->
+          <!-- Appearance : the language, the theme and the forms view -->
           <div v-if="prefTab === 'appearance'">
             <label class="form-label fw-bold">{{ t('profilePage.language') }}</label>
             <div class="input-group af-field">
@@ -645,10 +644,8 @@ async function changePassword() {
               </button>
             </div>
             <div class="form-text">{{ t('profilePage.themeHint') }}</div>
-          </div>
-          <!-- Forms : how the forms page lists the forms -->
-          <div v-else-if="prefTab === 'forms'">
-            <label class="form-label fw-bold">{{ t('profilePage.formsView') }}</label>
+            <!-- how the forms page lists the forms -->
+            <label class="form-label fw-bold mt-4">{{ t('profilePage.formsView') }}</label>
             <div class="input-group af-field">
               <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="table-cells-large" /></span>
               <select

@@ -309,7 +309,6 @@ export default {
     formsView: 'フォームの表示',
     preview: 'プレビュー',
     tabAppearance: '外観',
-    tabForms: 'フォーム',
     tabDateTime: '日付と時刻',
     tabNotifications: '通知',
     notifications: 'デスクトップ通知',
