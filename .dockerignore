@@ -2,6 +2,9 @@
 node_modules
 Dockerfile
 .env.*
+# a machine's own dev settings (client/.env.local : the dev server's certificate), never in an image
+**/.env.local
+**/.env.*.local
 .env
 README.md
 .git
