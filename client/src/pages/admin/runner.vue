@@ -35,6 +35,7 @@ import {
   AWX_RUNNER_KINDS,
   runnerKind,
   registrationPill,
+  socketPill,
   noCredentialsText,
 } from '@/config/settings';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
@@ -57,7 +58,9 @@ const runner = ref(null); // as saved
 const edit = ref(null); // as edited
 // what this page edits : the token and the password have their own dialog
 // (where it connects is its credential's)
-const EDITED = ['name', 'description', 'kind', 'project', 'credential'];
+const EDITED = ['name', 'description', 'kind', 'project', 'credential', 'rte_mode'];
+// how an RTE talks to the app (RTE_MODE) : the socket modes first, database deprecated last
+const RTE_MODES = ['outbound', 'inbound', 'database'];
 
 /**
  * The fields of a runner as this page edits them : its kind from its type and flavour.
@@ -75,6 +78,8 @@ function editable(record) {
     kind: runnerKind(record),
     project: record.project ?? '',
     credential: record.credential ?? '',
+    // an RTE from before 7.3 : database
+    rte_mode: record.rte_mode || 'database',
   };
 }
 
@@ -117,6 +122,8 @@ const credentials = computed(() => [
 ]);
 // where it connects, but an RTE : the server of the credential chosen ; none, it needs one
 const chosenServer = computed(() => allCredentials.value.find((c) => c.name === edit.value?.credential)?.url || '');
+// an outbound RTE dials the app : its credential needs no server
+const outboundRte = computed(() => edit.value?.kind === 'rte' && edit.value?.rte_mode === 'outbound');
 /**
  * Reads the credentials its dropdown offers.
  */
@@ -161,6 +168,8 @@ async function load() {
       const list = await axios.get('/api/v2/runner/').catch(() => null);
       const listed = (list?.data?.records || []).find((r) => String(r.id) === String(record.id));
       if (listed?.state) record.state = listed.state;
+      // and a socket-mode RTE's socket
+      if (listed?.socket) record.socket = listed.socket;
     }
     runner.value = record || null;
     edit.value = record ? editable(record) : null;
@@ -295,14 +304,23 @@ const tabFields = computed(() => {
       ['description', t('settings.fields.description')],
       ['is_default', t('settings.runners.isDefault'), t('settings.runners.defaultHelp', { forms: defaultFor.value })],
     ],
-    type: sortedKinds.value.map((kind) => [
-      `kind-${kind}`,
-      t(`settings.runners.type_${kind}`),
-      t(`settings.runners.type_${kind}Hint`),
-    ]),
+    type: [
+      ...sortedKinds.value.map((kind) => [
+        `kind-${kind}`,
+        t(`settings.runners.type_${kind}`),
+        t(`settings.runners.type_${kind}Hint`),
+      ]),
+      ...(e.kind === 'rte'
+        ? RTE_MODES.map((mode) => [
+            `mode-${mode}`,
+            t(`settings.runners.rteMode_${mode}`),
+            t(`settings.runners.rteMode_${mode}Hint`),
+          ])
+        : []),
+    ],
     credentials: [
       ['credential', t('settings.runners.credential'), t(`settings.runners.credentialHelp_${e.kind || 'rte'}`)],
-      e.credential && !chosenServer.value && ['no_server', t('settings.credentials.noServer')],
+      e.credential && !chosenServer.value && !outboundRte.value && ['no_server', t('settings.credentials.noServer')],
       ownSecret.value &&
         !e.credential && [
           'own_token',
@@ -359,6 +377,8 @@ async function save() {
     flavour: ['aap', 'ascender'].includes(e.kind) ? e.kind : null,
     // as whom : a credential of Connections > Credentials
     credential: e.credential || null,
+    // an RTE's mode ; none for the other kinds
+    rte_mode: e.kind === 'rte' ? e.rte_mode || 'outbound' : null,
   };
   if (await update(data)) {
     toast.success(`${data.name} ${t('settings.common.isUpdated')}`);
@@ -508,6 +528,8 @@ onMounted(async () => {
               <div v-show="fieldShown('state')" class="mb-3">
                 <div class="form-label fw-bold">{{ t('settings.runners.state') }}</div>
                 <span v-html="registrationPill(t, runner.state)"></span>
+                <!-- a socket-mode RTE : its socket, connected or not -->
+                <span v-if="runner.socket" class="ms-2" v-html="socketPill(t, runner)"></span>
               </div>
               <BsInput
                 class="af-runner-field"
@@ -577,6 +599,35 @@ onMounted(async () => {
                   <span class="text-body-secondary small">{{ t(`settings.runners.type_${kind}Hint`) }}</span>
                 </label>
               </div>
+              <!-- an RTE's mode : how it talks to the app (RTE_MODE on the RTE) -->
+              <template v-if="edit.kind === 'rte'">
+                <div v-show="RTE_MODES.some((m) => fieldShown(`mode-${m}`))" class="form-label fw-bold mt-4">
+                  {{ t('settings.runners.rteMode') }}
+                </div>
+                <div v-show="RTE_MODES.some((m) => fieldShown(`mode-${m}`))" class="form-text mt-0 mb-2">
+                  {{ t('settings.runners.rteModeHelp') }}
+                </div>
+                <div
+                  v-for="mode in RTE_MODES"
+                  v-show="fieldShown(`mode-${mode}`)"
+                  :key="mode"
+                  class="form-check af-short-check af-type-option"
+                >
+                  <input
+                    :id="'af-mode-' + mode"
+                    v-model="edit.rte_mode"
+                    class="form-check-input"
+                    type="radio"
+                    name="af-runner-mode"
+                    :value="mode"
+                    :disabled="readOnly"
+                  />
+                  <label class="form-check-label" :for="'af-mode-' + mode">
+                    <span class="af-short-label">{{ t(`settings.runners.rteMode_${mode}`) }}</span>
+                    <span class="text-body-secondary small">{{ t(`settings.runners.rteMode_${mode}Hint`) }}</span>
+                  </label>
+                </div>
+              </template>
             </template>
             <!-- Authentication : an RTE's, a Semaphore's or a Rundeck's token, a Jenkins' user and
                  its token ; an AWX's token, or a user and password -->
@@ -608,7 +659,7 @@ onMounted(async () => {
               />
               <!-- a credential without a server : said (it connects to its credential's) -->
               <p
-                v-if="edit.credential && !chosenServer"
+                v-if="edit.credential && !chosenServer && !outboundRte"
                 v-show="fieldShown('no_server')"
                 class="form-text text-warning-emphasis mb-0"
               >

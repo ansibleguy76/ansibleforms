@@ -294,6 +294,62 @@ export function syslogAddress(server) {
   return server?.host ? `${server.host}:${server.port || 514}` : '';
 }
 
+/**
+ * An RTE's mode as a pill : outbound blue, inbound cyan, database (deprecated) amber ; nothing
+ * for another kind of runner.
+ *
+ * Args:
+ *   t (function): the translation function.
+ *   r (object): the runner.
+ *
+ * Returns:
+ *   string: the pill's HTML, escaped.
+ */
+export function rteModePill(t, r) {
+  if (r?.type !== 'rte') return '';
+  const mode = r.rte_mode || 'database';
+  const colour = { outbound: PILL.blue, inbound: PILL.cyan, database: PILL.amber }[mode] || PILL.grey;
+  // the label without what follows in brackets ("Database (deprecated)") : the pill's colour and
+  // its hint say it, the column stays narrow
+  const label = t(`settings.runners.rteMode_${mode}`).replace(/\s*[(（].*[)）]\s*$/, '');
+  return pill(colour, label, t(`settings.runners.rteMode_${mode}Hint`));
+}
+
+/**
+ * A socket-mode RTE's socket as a pill : connected (its app node, version and load in its
+ * tooltip) or not ; nothing for a runner without a socket.
+ *
+ * Args:
+ *   t (function): the translation function.
+ *   r (object): the runner, with the socket the api adds (runner.controller.js withSocket).
+ *
+ * Returns:
+ *   string: the pill's HTML, escaped.
+ */
+export function socketPill(t, r) {
+  if (!r?.socket) return '';
+  if (!r.socket.connected)
+    return pill(PILL.red, t('settings.runners.socketDisconnected'), t('settings.runners.socketDisconnectedHint'));
+  const cap = r.socket.capacity || {};
+  const title = t('settings.runners.socketHint', {
+    node: r.socket.node || '?',
+    version: r.socket.version || '?',
+    running: cap.running ?? 0,
+    max: cap.maxJobs || '∞',
+  });
+  return pill(PILL.green, t('settings.runners.socketConnected'), title);
+}
+
+/**
+ * Whether a runner is registered by its RTE, or added by hand, as a pill.
+ *
+ * Args:
+ *   t (function): the translation function.
+ *   state (string): automatic, unresponsive, or none (manual).
+ *
+ * Returns:
+ *   string: the pill's HTML, escaped.
+ */
 export function registrationPill(t, state) {
   const known = { automatic: PILL.blue, unresponsive: PILL.amber };
   const key = known[state] ? state : 'manual';
@@ -2437,9 +2493,12 @@ export default function getSettings(t) {
         ca_bundle: _caBundle,
         state: _state,
         node_id: _nodeId,
+        socket: _socket,
         ...item
       }) => ({
         ...item,
+        // an RTE's mode ; none for the other kinds
+        rte_mode: kind === 'rte' ? item.rte_mode || 'outbound' : null,
         type: kind === 'rte' || PROJECT_RUNNER_KINDS.includes(kind) ? kind : 'awx',
         flavour: ['aap', 'ascender'].includes(kind) ? kind : null,
         // the project : a Semaphore's, a Rundeck's or a Jenkins' (its folder) only
@@ -2512,6 +2571,41 @@ export default function getSettings(t) {
           })).sort((a, b) => a.label.localeCompare(b.label)),
           initial: runnerKind,
           noTable: true,
+        },
+        {
+          // an RTE's mode (RTE_MODE on the RTE) : outbound, inbound, or database (deprecated) ;
+          // a new one outbound, one from before 7.3 database
+          key: 'rte_mode',
+          step: 'type',
+          label: t('settings.runners.rteMode'),
+          help: t('settings.runners.rteModeHelp'),
+          type: 'radio',
+          options: ['outbound', 'inbound', 'database'].map((value) => ({
+            value,
+            label: t(`settings.runners.rteMode_${value}`),
+            hint: t(`settings.runners.rteMode_${value}Hint`),
+          })),
+          initial: (r) => (r?.id ? r.rte_mode || 'database' : 'outbound'),
+          dependency: 'kind',
+          dependencyValues: ['rte'],
+          noTable: true,
+        },
+        {
+          // the list's Mode column : an RTE's, as a pill
+          key: 'rte_mode_column',
+          label: t('settings.runners.rteMode'),
+          noInput: true,
+          filterable: true,
+          render: (_, r) => rteModePill(t, r),
+          sortValue: (r) => (r?.type === 'rte' ? r.rte_mode || 'database' : ''),
+        },
+        {
+          // a socket-mode RTE's socket : connected or not, as a pill
+          key: 'socket',
+          label: t('settings.runners.socket'),
+          noInput: true,
+          render: (_, r) => socketPill(t, r),
+          sortValue: (r) => (r?.socket ? (r.socket.connected ? 1 : 0) : -1),
         },
         {
           // the list's Type column : the kind's full name

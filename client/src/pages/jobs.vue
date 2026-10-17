@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, onUpdated, computed, watch, nextTick } from 'vue';
+import { useJobEvents } from '@/composables/useJobEvents';
 import { findRanges, showRanges, clearRanges } from '@/lib/findInText';
 import { toast } from 'vue-sonner';
 import { useRoute, useRouter } from 'vue-router';
@@ -64,6 +65,8 @@ const fitKey = computed(
 );
 const showExtraVars = ref(false);
 const showArtifacts = ref(false);
+// a playbook job's structured events (AppJobEvents) : read with the job, shown on demand
+const { jobEvents, showEvents, loadEvents } = useJobEvents();
 const hide = ref(false);
 const collapsed = ref({});
 const showDelete = ref(false);
@@ -765,6 +768,7 @@ async function loadOutput(id, sub = false) {
     const data = result.data;
     if (!sub) {
       job.value = data;
+      loadEvents(id, data?.job_type);
       // every step, not only the last : a multistep job reads as its steps one after the other
       await Promise.all(subjobs.value.map((stepId) => loadOutput(stepId, true)));
     } else {
@@ -1791,6 +1795,16 @@ onMounted(async () => {
                     <FaIcon :icon="showArtifacts ? 'square-poll-horizontal' : 'square-poll-vertical'" />
                     {{ showArtifacts ? t('jobs.hideArtifacts') : t('jobs.showArtifacts') }}
                   </button>
+                  <!-- a playbook's hosts and tasks, from its structured events -->
+                  <button
+                    v-if="jobEvents.length"
+                    type="button"
+                    class="af-tool-btn"
+                    :class="{ active: showEvents }"
+                    @click="showEvents = !showEvents"
+                  >
+                    <FaIcon icon="table-cells" />{{ t('jobs.events.button') }}
+                  </button>
                   <span class="af-tool-sep" />
                   <button type="button" class="af-tool-btn" :title="t('jobs.refreshOutput')" @click="loadOutput(jobId)">
                     <FaIcon icon="sync-alt" />{{ t('jobs.refreshOutput') }}
@@ -1815,6 +1829,8 @@ onMounted(async () => {
                   showArtifacts = false;
                 "
               />
+              <!-- the hosts and tasks, when shown : under the toolbar, above the output -->
+              <AppJobEvents v-if="showEvents && jobEvents.length" :events="jobEvents" @close="showEvents = false" />
               <div ref="outputBody" class="row g-0 af-output-body">
                 <div class="col">
                   <!-- a multistep job's titles fold their output (click, Enter, Space), as the

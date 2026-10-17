@@ -115,6 +115,7 @@ const envGroupOrder = [
       'FORMS_STAGING_PATH',
       'JOBS_LIST_SIZE',
       'RTE_QUEUE_MINUTES',
+      'RTE_FILES_MAX_MB',
       'REGEX_FILTER_JOB_OUTPUT',
       'UPLOAD_PATH',
       'UPLOAD_MAX_GB',
@@ -310,8 +311,9 @@ function envHelp(e) {
 // reported as a fact on the Status page instead.
 // AF_ROLE and RTE_* describe which process this is and where its RTE lives : set in
 // the environment of the container, not edited from inside the app - but RTE_QUEUE_MINUTES, how
-// long the app's job waits for a busy RTE, which the app reads (Jobs). ANSIBLE_PATH and
-// PROCESS_MAX_BUFFER are read by an RTE only : since 7 the app runs no playbook itself.
+// long the app's job waits for a busy RTE, and RTE_FILES_MAX_MB, the largest folder it sends an
+// RTE, which the app reads (Jobs). ANSIBLE_PATH, PROCESS_MAX_BUFFER, APP_URL and APP_TLS_VERIFY
+// are read by an RTE only : since 7 the app runs no playbook itself.
 // the MCP server's switch and options (Settings > Connections > MCP) and the chat assistant's
 // switch (Settings > Connections > Chat assistant) ; the default language (Settings > Appearance >
 // Defaults) and the designer's switch (Settings > Appearance > Links).
@@ -322,7 +324,7 @@ function envHelp(e) {
 // the console's ANSI colour codes : rarely changed, documented. LOG_SYSLOG_* are imported once as a
 // syslog server (Settings > Connections > Syslog), as VAULT_* as a secret store.
 const OWNED_ELSEWHERE =
-  /^(VAULT|MCP|LOG_COLOR|LOG_SYSLOG)_|^RTE_(?!QUEUE_MINUTES$)|^(ENABLE_(MCP|CHAT)|BASE_URL|AF_ROLE|ANSIBLE_PATH|PROCESS_MAX_BUFFER|DEFAULT_LANGUAGE|SHOW_DESIGNER|ADMIN_USERNAME|ADMIN_PASSWORD|REINIT_ADMIN|NODE_ENV|ALLOW_ENV_EDIT|YTT_LIB_DATA_\{dynamic\})$/;
+  /^(VAULT|MCP|LOG_COLOR|LOG_SYSLOG)_|^RTE_(?!(QUEUE_MINUTES|FILES_MAX_MB)$)|^(ENABLE_(MCP|CHAT)|BASE_URL|AF_ROLE|APP_URL|APP_TLS_VERIFY|ANSIBLE_PATH|PROCESS_MAX_BUFFER|DEFAULT_LANGUAGE|SHOW_DESIGNER|ADMIN_USERNAME|ADMIN_PASSWORD|REINIT_ADMIN|NODE_ENV|ALLOW_ENV_EDIT|YTT_LIB_DATA_\{dynamic\})$/;
 
 const envGroups = computed(() => {
   if (!env.value || !Array.isArray(env.value)) return [];

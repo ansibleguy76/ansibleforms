@@ -136,6 +136,9 @@ const runnerItem = {
     flavour: { type: "string", enum: ["aap", "ascender"] },
     // a semaphore runner's project id, a rundeck runner's project name, a jenkins runner's folder
     project: str,
+    // an RTE's mode (RTE_MODE on it) : outbound (it dials the app), inbound (the app dials it),
+    // or database (deprecated, the default before 7.3)
+    rte_mode: { type: "string", enum: ["database", "outbound", "inbound"] },
   },
 };
 
