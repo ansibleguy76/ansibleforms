@@ -79,6 +79,16 @@
     }
   }
 }
+/* the failed tasks' button : in the danger's colours, it says something went wrong */
+.af-tool-btn.af-tool-danger {
+  color: var(--bs-danger-text-emphasis);
+  svg {
+    color: var(--bs-danger);
+  }
+  &:hover {
+    background: var(--bs-danger-bg-subtle);
+  }
+}
 .af-tool-sep {
   width: 1px;
   height: 1.25rem;

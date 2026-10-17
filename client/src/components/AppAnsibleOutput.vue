@@ -1,5 +1,6 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch, nextTick, onMounted, onUpdated } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useAppStore } from '@/stores/app';
 import { jobLogLines } from '@/lib/jobLog';
 
@@ -55,6 +56,12 @@ const props = defineProps({
   jobId: {
     type: [Number, String],
     default: null,
+  },
+  // its line numbers link to their line (#L45 in the address) : the job page's own output, not a
+  // step's (each numbered from 1) nor a node's dialog
+  lineLinks: {
+    type: Boolean,
+    default: false,
   },
 });
 const store = useAppStore();
@@ -160,7 +167,9 @@ const lines = computed(() => {
     const own = /^PLAY RECAP/.test(text)
       ? /^\S.*\s:\s+ok=\d+/
       : /^WORKFLOW \[/.test(text) && line.level === 1
-        ? /^WORKFLOW NODE \[/
+        ? // a node's line : WORKFLOW NODE #1 [build] : successful (lib/workflowSummary.js), or
+          // WORKFLOW NODE [build] (successful) in a job from before it
+          /^WORKFLOW NODE (\[|#\d)/
         : null;
     if (!own) return;
     let j = i + 1;
@@ -303,8 +312,156 @@ function nodeOutput(node) {
     .join('<br>');
 }
 
-// the job page's toolbar folds and unfolds it all ; the workflow's graph shows a node's output
-defineExpose({ collapseAll, expandAll, allFolded, nodeOutput });
+// ─── sticky headers, failed tasks ─────────────────────────────────────────────
+
+// the output's element : its node headers measured, a failed task looked up by its line
+const rootEl = ref(null);
+
+// a workflow's node header sticks at the top, its PLAY and TASK under it : its height, for them
+function measureStickyTop() {
+  const head = rootEl.value?.querySelector('.af-node-head');
+  rootEl.value?.style.setProperty('--af-sticky-node', head ? `${head.offsetHeight}px` : '0px');
+}
+onMounted(measureStickyTop);
+onUpdated(measureStickyTop);
+
+// what went wrong : the tasks that failed (a fatal: or failed: line under the TASK, unless ansible
+// ignored it - ...ignoring : the run went on), each its head line and its name ; with none (a job
+// with no ansible tasks - Jenkins, a multistep's summary - or a playbook that failed outside its
+// tasks), the error lines : AnsibleForms' own [ERROR]:, a fatal: or a failed:
+const failureKind = computed(() => (failedTasks.value.length ? 'task' : 'error'));
+const failures = computed(() => (failedTasks.value.length ? failedTasks.value : errorLines.value));
+const failedTasks = computed(() => {
+  const all = lines.value;
+  const found = [];
+  all.forEach((l, index) => {
+    if (l.level !== 3) return;
+    let failed = false;
+    for (let j = index + 1; j < l.end; j++) {
+      const text = plain(all[j].html);
+      if (/^(fatal|failed):/.test(text)) failed = true;
+      else if (/^\.\.\.ignoring/.test(text)) failed = false;
+    }
+    if (failed) found.push({ index, name: (plain(l.html).match(/\[(.*)\]/) || [])[1] || '' });
+  });
+  return found;
+});
+const errorLines = computed(() => {
+  const all = lines.value;
+  // the lines of a task ansible ignored the failure of (...ignoring under it) : not errors
+  const ignored = new Set();
+  all.forEach((l, index) => {
+    if (l.level !== 3) return;
+    let hit = false;
+    for (let j = index + 1; j < l.end && !hit; j++) hit = /^\.\.\.ignoring/.test(plain(all[j].html));
+    if (hit) for (let j = index; j < l.end; j++) ignored.add(j);
+  });
+  const found = [];
+  all.forEach((l, index) => {
+    if (ignored.has(index)) return;
+    const text = plain(l.html);
+    if (/^(\[ERROR\]:|fatal:|failed:)/.test(text)) found.push({ index, name: text.replace(/^\[ERROR\]:\s*/, '') });
+  });
+  return found;
+});
+
+// the failed task just jumped to : highlighted for a moment
+const flashed = ref(-1);
+let flashTimer = 0;
+
+/**
+ * Shows a failed task : the sections around it unfolded, its TASK line at the top (under the
+ * sticky headers), highlighted for a moment.
+ *
+ * Args:
+ *   n (number): its place among the failures.
+ */
+async function goToFailure(n) {
+  const failure = failures.value[n];
+  if (!failure) return;
+  // the sections that hold it, unfolded (and itself)
+  const next = new Set(folded.value);
+  lines.value.forEach((l, i) => {
+    if (l.level && i <= failure.index && l.end > failure.index) next.delete(i);
+  });
+  if (run.value && failure.index >= run.value.start && failure.index < run.value.end) next.delete(-1);
+  folded.value = next;
+  await nextTick();
+  const el = rootEl.value?.querySelector(`[data-line="${failure.index}"]`);
+  if (!el) return;
+  el.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  flashed.value = failure.index;
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => (flashed.value = -1), 1600);
+}
+
+// ─── links to a line : #L45 in the address ───────────────────────────────────
+
+const route = useRoute();
+const router = useRouter();
+// the line the address names, highlighted ; the address already shown (not scrolled to again as
+// a running job's output grows)
+const targetLine = ref(-1);
+let shownHash = '';
+
+/**
+ * A line's address : this page with #L<its number>.
+ *
+ * Args:
+ *   index (number): the line.
+ *
+ * Returns:
+ *   string: the address.
+ */
+function lineHref(index) {
+  return router.resolve({ path: route.path, query: route.query, hash: `#L${index + 1}` }).href;
+}
+
+/**
+ * A line number clicked : the address names it, the line highlighted (it is in sight : no scroll).
+ *
+ * Args:
+ *   index (number): the line.
+ */
+function linkLine(index) {
+  shownHash = `#L${index + 1}`;
+  targetLine.value = index;
+  router.replace({ path: route.path, query: route.query, hash: shownHash }).catch(() => {});
+}
+
+// the address names a line : once it is in the output, the sections around it unfolded, scrolled to
+// the middle of the window, highlighted
+async function showHashLine() {
+  {
+    if (!props.lineLinks) return;
+    const m = /^#L(\d+)$/.exec(route.hash || '');
+    if (!m) {
+      targetLine.value = -1;
+      shownHash = '';
+      return;
+    }
+    if (route.hash === shownHash) return;
+    const index = Number(m[1]) - 1;
+    if (index < 0 || index >= lines.value.length) return;
+    shownHash = route.hash;
+    const next = new Set(folded.value);
+    lines.value.forEach((l, i) => {
+      if (l.level && i < index && l.end > index) next.delete(i);
+    });
+    if (run.value && index >= run.value.start && index < run.value.end) next.delete(-1);
+    folded.value = next;
+    targetLine.value = index;
+    await nextTick();
+    rootEl.value?.querySelector(`[data-line="${index}"]`)?.scrollIntoView({ block: 'center' });
+  }
+}
+// once mounted (all of this component set up), then each time the address or the output changes
+onMounted(showHashLine);
+watch(() => [route.hash, lines.value.length], showHashLine);
+
+// the job page's toolbar folds and unfolds it all, and goes from failure to failure ; the
+// workflow's graph shows a node's output
+defineExpose({ collapseAll, expandAll, allFolded, nodeOutput, failures, failureKind, goToFailure });
 
 // the lines shown : those inside a folded section left out
 const shown = computed(() => {
@@ -405,7 +562,12 @@ function copyLog() {
   <slot name="title"></slot>
   <!-- numbered : each line its number, each PLAY and TASK a caret that folds it ; an AWX
        workflow's nodes each a card, its header folding it -->
-  <div v-if="numbered" class="af-ansible-groups" :class="{ 'af-ansible-has-nodes': groups.some((g) => g.node) }">
+  <div
+    v-if="numbered"
+    ref="rootEl"
+    class="af-ansible-groups"
+    :class="{ 'af-ansible-has-nodes': groups.some((g) => g.node) }"
+  >
     <div
       v-for="group in groups"
       :key="group.node ? group.node.index : 'lines' + group.lines[0].index"
@@ -490,9 +652,24 @@ function copyLog() {
             v-for="line in group.lines"
             :key="line.index"
             class="af-ansible-line"
-            :class="{ 'af-ansible-head': line.level }"
+            :class="[
+              {
+                'af-ansible-head': line.level,
+                'af-ansible-flash': flashed === line.index,
+                'af-ansible-target': targetLine === line.index,
+              },
+              line.level ? `af-ansible-l${line.level}` : '',
+            ]"
+            :data-line="line.index"
           >
-            <span class="af-ansible-no">{{ line.index + 1 }}</span>
+            <a
+              v-if="lineLinks"
+              class="af-ansible-no af-ansible-anchor"
+              :href="lineHref(line.index)"
+              @click.prevent="linkLine(line.index)"
+              >{{ line.index + 1 }}</a
+            >
+            <span v-else class="af-ansible-no">{{ line.index + 1 }}</span>
             <span class="af-ansible-fold">
               <button
                 v-if="line.level && line.end > line.index + 1"
@@ -618,6 +795,55 @@ function copyLog() {
   /* a retry : ansible's grey */
   .has-text-muted {
     color: var(--bs-secondary-color) !important;
+  }
+}
+/* a section's header (a workflow's node, the job's own card) sticks at the top while its lines
+   scroll by ; the next section's header takes its place */
+.af-ansible-groups {
+  --af-sticky-node: 0px;
+}
+.af-ansible-has-nodes .af-node-head {
+  position: sticky;
+  /* under a multistep job's step title when there is one (pages/jobs.vue) */
+  top: var(--af-step-title, 0px);
+  z-index: 3;
+}
+.af-ansible-lines.ansible .af-ansible-line {
+  /* a failed task or an error line jumped to : under the pinned headers, not hidden by them */
+  scroll-margin-top: calc(var(--af-step-title, 0px) + var(--af-sticky-node));
+}
+/* a line number : a link to its line, quiet until pointed at */
+.af-ansible-lines.ansible .af-ansible-anchor {
+  color: var(--bs-tertiary-color);
+  text-decoration: none;
+  cursor: pointer;
+  &:hover {
+    color: var(--bs-link-color);
+    text-decoration: underline;
+  }
+}
+/* the line the address names (#L45) : marked until another is picked */
+.af-ansible-lines.ansible .af-ansible-target {
+  background: var(--bs-warning-bg-subtle);
+  .af-ansible-anchor {
+    color: var(--bs-body-color);
+    font-weight: 600;
+  }
+}
+/* a failed task jumped to : highlighted for a moment */
+.af-ansible-lines.ansible .af-ansible-flash {
+  animation: af-flash 1.6s ease-out;
+}
+@keyframes af-flash {
+  0%,
+  40% {
+    background: var(--bs-danger-bg-subtle);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .af-ansible-lines.ansible .af-ansible-flash {
+    animation: none;
+    background: var(--bs-danger-bg-subtle);
   }
 }
 .af-ansible-lines.ansible {

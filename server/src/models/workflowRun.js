@@ -30,6 +30,7 @@ import Repository from "./repository.model.js";
 import Errors from "../lib/errors.js";
 import Runner from "./runner.model.js";
 import { workflowsOf, workflowErrors, nextStep, workflowFailed, varsOf, ancestorArtifacts } from "../lib/workflowDefs.js";
+import { workflowSummaryLines } from "../lib/workflowSummary.js";
 
 // how often the run looks at its jobs, its approval and an abort
 const TICK_MS = 1000;
@@ -689,14 +690,20 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
   const failed = workflowFailed(nodes, state);
   wfStatus = failed ? "failed" : "successful";
   await saveGraph();
-  const recap = nodes
-    .map((n) => {
-      const s = state.get(n.identifier);
-      return `${n.identifier}: ${s.doNotRun ? "do not run" : s.status}`;
-    })
-    .join(", ");
-  await print(`WORKFLOW RECAP ${"*".repeat(64)}`);
-  await print(recap);
+  // the summary, as an AWX workflow's (runners/awx/api.js) : the workflow's banner, then a line per
+  // node, its status in one column (lib/workflowSummary.js) - the job page shows it as the
+  // workflow's own section, each status in its colour
+  const banner = `WORKFLOW [${workflow.name}] (${wfStatus})`;
+  const summary = [`${banner} ${"*".repeat(Math.max(5, 79 - banner.length))}`];
+  summary.push(
+    ...workflowSummaryLines(
+      nodes.map((n) => {
+        const s = state.get(n.identifier);
+        return { id: ids.get(n.identifier), name: n.identifier, status: s.doNotRun ? "skipped" : s.status };
+      }),
+    ),
+  );
+  await print(summary.join("\n"));
   if (failed) await end("failed", `[ERROR]: workflow ${workflow.name} failed: a node failed and nothing handled it`);
   else await end("success", `ok: [workflow ${workflow.name} successful]`);
 }

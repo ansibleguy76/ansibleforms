@@ -15,6 +15,7 @@ import Credential from "../models/credential.model.v2.js";
 import Job from "../models/job.model.js";
 import { forgetJobSecrets } from "../lib/outputMask.js";
 import { clientFor, contactTolerance, delay, jobEnded, lostContact } from "./common.js";
+import { rememberRunnerJobUrl } from "../lib/runnerJobLinks.js";
 
 const POLL_MS = 1000;
 
@@ -155,6 +156,8 @@ async function launchJob(runner, extravars, credentials, jobid, counter) {
   if (typeof started !== "object") return started;
   logger.info(`Job ${jobid}: Jenkins build #${started.number} of job ${job.name}`);
   await Job.update({ awx_id: started.number }, jobid);
+  // its address in the product's UI, kept on the job (lib/runnerJobLinks.js)
+  await rememberRunnerJobUrl(jobid);
   await Job.printJobOutput(`ok: [Launched job ${job.name} with build #${started.number}]`, "stdout", jobid, started.counter + 1);
   return trackBuild(runner, job, started.number, jobid, started.counter + 1);
 }

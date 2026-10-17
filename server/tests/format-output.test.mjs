@@ -85,3 +85,27 @@ test("workflow lines stay plain in text mode (download)", () => {
   assert.equal(out.includes("<span"), false);
   assert.match(out, /WORKFLOW NODE \[node one\] \(successful\)/);
 });
+
+test("a workflow summary's lines : black, the status alone in its colour, the statuses in one column", async () => {
+  const { workflowSummaryLines } = await import("../src/lib/workflowSummary.js");
+  const lines = workflowSummaryLines([
+    { id: 1, name: "validate-request", status: "successful" },
+    { id: 13, name: "create-dns-records", status: "failed" },
+    { id: 2, name: "rollback", status: "skipped" },
+  ]);
+  assert.deepEqual(lines, [
+    "WORKFLOW NODE #1  [validate-request]   : successful",
+    "WORKFLOW NODE #13 [create-dns-records] : failed",
+    "WORKFLOW NODE #2  [rollback]           : skipped",
+  ]);
+  // a long name : every status still starts in the same column, after it
+  const long = workflowSummaryLines([
+    { id: 1, name: "x".repeat(80), status: "successful" },
+    { id: 2, name: "short", status: "failed" },
+  ]);
+  assert.equal(long[0].indexOf(" : "), long[1].indexOf(" : "));
+  const out = Helpers.formatOutput(lines.map((l) => record(l)));
+  assert.match(out, /<span class=''>WORKFLOW NODE #1  \[validate-request\]   : <\/span><span class='has-text-success'>successful<\/span>/);
+  assert.match(out, /<span class='has-text-danger'>failed<\/span>/);
+  assert.match(out, /<span class='has-text-info'>skipped<\/span>/);
+});

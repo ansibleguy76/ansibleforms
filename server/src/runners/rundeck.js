@@ -15,6 +15,7 @@ import Credential from "../models/credential.model.v2.js";
 import Job from "../models/job.model.js";
 import { forgetJobSecrets } from "../lib/outputMask.js";
 import { clientFor, contactTolerance, delay, jobEnded, lostContact } from "./common.js";
+import { rememberRunnerJobUrl } from "../lib/runnerJobLinks.js";
 
 const API = "/api/41";
 const POLL_MS = 1000;
@@ -126,6 +127,8 @@ async function launchJob(runner, extravars, credentials, jobid, counter) {
   }
   logger.info(`Job ${jobid}: Rundeck execution ${execution.id} of job ${jobLabel(job)}`);
   await Job.update({ awx_id: execution.id }, jobid);
+  // its address in the product's UI, kept on the job (lib/runnerJobLinks.js)
+  await rememberRunnerJobUrl(jobid);
   const withOptions = sentOptions.length ? `, options ${sentOptions.join(", ")}` : "";
   await Job.printJobOutput(`ok: [Launched job ${jobLabel(job)} with execution id ${execution.id}${withOptions}]`, "stdout", jobid, ++counter);
   return trackExecution(runner, job, execution.id, jobid, counter);

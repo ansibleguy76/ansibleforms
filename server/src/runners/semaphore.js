@@ -13,6 +13,7 @@ import Credential from "../models/credential.model.v2.js";
 import Job from "../models/job.model.js";
 import { forgetJobSecrets } from "../lib/outputMask.js";
 import { clientFor, contactTolerance, delay, jobEnded, lostContact } from "./common.js";
+import { rememberRunnerJobUrl } from "../lib/runnerJobLinks.js";
 
 const POLL_MS = 1000;
 
@@ -158,6 +159,8 @@ async function launchTemplate(runner, extravars, credentials, jobid, counter) {
   }
   logger.info(`Job ${jobid}: Semaphore task ${task.id} of template ${template.name}`);
   await Job.update({ awx_id: task.id }, jobid);
+  // its address in the product's UI, kept on the job (lib/runnerJobLinks.js)
+  await rememberRunnerJobUrl(jobid);
   await Job.printJobOutput(`ok: [Launched template ${template.name} with taskid ${task.id}]`, "stdout", jobid, ++counter);
   return trackTask(runner, template, task.id, jobid, counter);
 }

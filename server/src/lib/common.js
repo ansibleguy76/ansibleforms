@@ -241,7 +241,16 @@ Helpers.formatOutput = (records,asText)=>{
           line = "<span class='has-text-danger'>"+escapedLine+"</span>"
         }
       }else{ // regular output stream
-        if(line.match(/^WORKFLOW( NODE)? \[.*\] \([a-z_ ]+\).*$/)){ // awx workflow (node) status lines
+        // a workflow summary's line (lib/workflowSummary.js) : black, its status alone in its colour
+        var summaryLine = line.match(/^(WORKFLOW NODE #\d+\s+\[.*\]\s*: )([a-z_ ]+)\s*$/)
+        if(summaryLine){
+          previousformat=""
+          matchfound=true
+          var summaryclass = /^successful$/.test(summaryLine[2]) ? "has-text-success"
+            : /^(failed|error)$/.test(summaryLine[2]) ? "has-text-danger"
+            : /^canceled$/.test(summaryLine[2]) ? "has-text-warning" : "has-text-info"
+          line = `<span class=''>${Helpers.htmlEscape(summaryLine[1])}</span><span class='${summaryclass}'>${Helpers.htmlEscape(summaryLine[2])}</span>`
+        }else if(line.match(/^WORKFLOW( NODE)? \[.*\] \([a-z_ ]+\).*$/)){ // awx workflow (node) status lines
           previousformat=""
           matchfound=true
           var statusclass=""

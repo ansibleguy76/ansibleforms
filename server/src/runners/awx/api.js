@@ -11,6 +11,8 @@ import { delay, getHttpsAgent, contactTolerance, jobEnded, lostContact as endLos
 // a cycle (job.model imports the orchestrator, which reaches this module) ; Job is only
 // used when a job runs, long after both modules have loaded
 import Job from "../../models/job.model.js";
+import { rememberRunnerJobUrl } from "../../lib/runnerJobLinks.js";
+import { workflowSummaryLines } from "../../lib/workflowSummary.js";
 
 /**
  * The API path a runner's uri lacks : none when the uri carries it
@@ -396,6 +398,8 @@ Awx.launchTemplate = async function (
         launched.awx_workflow = JSON.stringify({ id: job.id, name: job.name || template.name, status: job.status, nodes: [] });
       }
       await Job.update(launched, jobid);
+      // its address in the product's UI, kept on the job (lib/runnerJobLinks.js)
+      await rememberRunnerJobUrl(jobid);
       await Job.printJobOutput(
         // as the RTE's own lines (ok: [Running on RTE ...]) : AnsibleForms' word, not AWX's
         `ok: [Launched template ${template.name} with jobid ${job.id}]`,
@@ -858,10 +862,10 @@ Awx.trackWorkflowJob = async function (
       }
       if (j.finished) {
         // print a summary of all the nodes with their status
+        // the workflow's banner, then a line per node, its status in one column
+        // (lib/workflowSummary.js : the same as a workflow on the RTE)
         var summary = [workflowStatusLine("WORKFLOW", j.name, j.status, true)];
-        nodes.forEach((node) => {
-          summary.push(workflowStatusLine("WORKFLOW NODE", node.name, node.status, false, node.id));
-        });
+        summary.push(...workflowSummaryLines(nodes.map((node) => ({ id: node.id, name: node.name, status: node.status }))));
         await Job.printJobOutput(summary.join("\n"), "stdout", jobid, ++counter);
         if (j.status === "successful") {
           await Job.endJobStatus(

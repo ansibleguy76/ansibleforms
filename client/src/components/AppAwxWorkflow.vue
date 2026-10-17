@@ -172,6 +172,8 @@ function openNode(n) {
 // the panel over the whole window (its toolbar, the graph at full size), and back : Esc, the
 // button or a click beside it closes it ; the page under it does not scroll meanwhile
 const fullscreen = ref(false);
+// the graph hidden under its toolbar (the collapse at the toolbar's left), the page's output closer
+const collapsed = ref(false);
 /**
  * Closes the full screen on Esc.
  *
@@ -239,11 +241,26 @@ function truncate(s, len = 20) {
 // wide as the name needs (at least the node's), measured in the node's own font. It ignores
 // the pointer, so the node under it keeps its hover and its click.
 const hovered = ref(null);
+// the node in focus : the hovered one ; it and its links stand out, the rest fades
+const focused = hovered;
+// the focused node's own links ; every other node faded, the ones it links to too
+const related = computed(() => {
+  const id = focused.value?.id;
+  if (id == null) return null;
+  const links = new Set();
+  const nodes = new Set([id]);
+  graph.value.links.forEach((l, i) => {
+    if (l.from === id || l.to === id) {
+      links.add(i);
+    }
+  });
+  return { links, nodes };
+});
 // the hidden text the name is measured with, and the card's width
 const measure = ref(null);
 const cardWidth = ref(NODE_W);
 const CARD_PAD = 26 + 14; // the name's left offset (the status dot before it), and room after it
-watch(hovered, async (n) => {
+watch(focused, async (n) => {
   if (!n) return;
   await nextTick();
   const nameWidth = measure.value?.getComputedTextLength?.() || 0;
@@ -251,7 +268,7 @@ watch(hovered, async (n) => {
 });
 // the card where the node is, moved left as far as it must to stay inside the graph
 const card = computed(() => {
-  const n = hovered.value;
+  const n = focused.value;
   if (!n) return null;
   const right = graph.value.width - MARGIN;
   const x = Math.max(MARGIN, Math.min(n.x, right - cardWidth.value));
@@ -371,7 +388,7 @@ const graph = computed(() => {
     const x2 = pos[e.to].x;
     const y2 = pos[e.to].y + NODE_H / 2;
     // a conditional link : its trigger and condition, and its middle (where its diamond is)
-    const extra = { type: e.type, trigger: e.trigger, condition: e.condition };
+    const extra = { type: e.type, trigger: e.trigger, condition: e.condition, from: e.from, to: e.to };
     if (depth[e.to] - depth[e.from] <= 1)
       return { ...extra, d: linkPath(x1, y1, x2, y2), mx: (x1 + x2) / 2, my: (y1 + y2) / 2 };
     const top = arcTop(e);
@@ -387,6 +404,8 @@ const graph = computed(() => {
   roots.forEach((r) => {
     links.push({
       type: 'start',
+      from: 'start',
+      to: r.id,
       d: linkPath(start.x + START_W, start.y + START_H / 2, pos[r.id].x, pos[r.id].y + NODE_H / 2),
     });
   });
@@ -398,6 +417,74 @@ const graph = computed(() => {
     start,
   };
 });
+
+// ─── a running workflow : the graph follows its work ──────────────────────────
+// While the workflow runs, the graph slides sideways to keep the node running now in sight (the
+// rightmost one, when several run at once) : the run reads left to right on its own. Scrolled
+// away from it by the reader, it stays where it is put, a button at its right to follow again
+// (as the server log's while scrolled up) ; scrolled back to it, it follows again. An ended
+// workflow stays where the reader left it ; at its width (Fit to screen) or full screen, nothing
+// to slide.
+const scrollBox = ref(null);
+const following = ref(true);
+const isRunning = computed(() => props.workflow?.status === 'running');
+const runningRight = computed(() => {
+  if (!isRunning.value) return null;
+  const running = graph.value.nodes.filter((n) => n.status === 'running');
+  return running.length ? Math.max(...running.map((n) => n.x)) : null;
+});
+// a slide the graph makes itself : its scroll events are not the reader's
+let sliding = false;
+let slideTimer = 0;
+
+/**
+ * Whether the running node is in sight in the panel, with room around it.
+ *
+ * Returns:
+ *   boolean: true when it is (or when none runs).
+ */
+function runningInSight() {
+  const box = scrollBox.value;
+  const x = runningRight.value;
+  if (!box || x == null) return true;
+  return x >= box.scrollLeft + MARGIN && x + NODE_W <= box.scrollLeft + box.clientWidth - MARGIN;
+}
+
+/**
+ * Brings the running node to the middle of the panel.
+ */
+function slideToRunning() {
+  const box = scrollBox.value;
+  const x = runningRight.value;
+  if (!box || x == null) return;
+  sliding = true;
+  clearTimeout(slideTimer);
+  slideTimer = setTimeout(() => (sliding = false), 700);
+  box.scrollTo({ left: Math.max(0, x + NODE_W / 2 - box.clientWidth / 2), behavior: 'smooth' });
+}
+
+// the reader scrolled the graph : away from the running node, it stays put ; back to it, it follows
+function onGraphScroll() {
+  if (sliding || !isRunning.value) return;
+  following.value = runningInSight();
+}
+
+// the button : follows the running node again
+function followRunning() {
+  following.value = true;
+  slideToRunning();
+}
+
+watch(runningRight, async (x) => {
+  if (x == null || fit.value || fullscreen.value || !following.value) return;
+  await nextTick();
+  if (!runningInSight()) slideToRunning();
+});
+// a new run (relaunched) : followed again
+watch(isRunning, (now) => {
+  if (now) following.value = true;
+});
+onBeforeUnmount(() => clearTimeout(slideTimer));
 </script>
 <template>
   <!-- a panel as the job's output : its toolbar on top - what it is at the left, the legend and
@@ -406,9 +493,25 @@ const graph = computed(() => {
        backdrop under it -->
   <Teleport to="body" :disabled="!fullscreen">
     <div v-if="fullscreen" class="awx-workflow-backdrop" @click="fullscreen = false" />
-    <div class="awx-workflow" :class="{ 'awx-fullscreen': fullscreen }" :role="fullscreen ? 'dialog' : null">
+    <div
+      class="awx-workflow"
+      :class="{ 'awx-fullscreen': fullscreen, 'awx-collapsed': collapsed && !fullscreen }"
+      :role="fullscreen ? 'dialog' : null"
+    >
       <div class="awx-workflow-toolbar">
         <div class="awx-workflow-label">
+          <!-- hide or show the graph, as the output's collapse : the toolbar stays -->
+          <button
+            v-if="!fullscreen"
+            type="button"
+            class="af-tool-btn af-tool-icon awx-collapse"
+            :title="collapsed ? t('workflow.expand') : t('workflow.collapse')"
+            :aria-label="collapsed ? t('workflow.expand') : t('workflow.collapse')"
+            :aria-expanded="!collapsed"
+            @click="collapsed = !collapsed"
+          >
+            <FaIcon :icon="collapsed ? 'angles-down' : 'angles-up'" />
+          </button>
           <FaIcon icon="diagram-project" />
           <span>{{ t('workflow.title') }}</span>
           <span class="awx-workflow-count">{{ t('workflow.nodes', { count: workflow.nodes?.length || 0 }) }}</span>
@@ -465,23 +568,27 @@ const graph = computed(() => {
             :aria-pressed="fit"
             @click="fit = !fit"
           >
-            <FaIcon icon="arrows-left-right-to-line" />{{ t('workflow.fit') }}
+            <FaIcon icon="arrows-left-right-to-line" />{{ t('workflow.fitScreen') }}
           </button>
-          <button
-            type="button"
-            class="awx-tool-btn awx-tool-icon"
-            :title="fullscreen ? t('workflow.exitFullscreen') : t('workflow.fullscreen')"
-            :aria-label="fullscreen ? t('workflow.exitFullscreen') : t('workflow.fullscreen')"
-            @click="fullscreen = !fullscreen"
-          >
-            <FaIcon :icon="fullscreen ? 'compress' : 'expand'" />
+          <!-- full screen : its icon and its words, as Fit to width -->
+          <button type="button" class="awx-tool-btn" @click="fullscreen = !fullscreen">
+            <FaIcon :icon="fullscreen ? 'compress' : 'expand'" />{{
+              fullscreen ? t('workflow.exitFullscreen') : t('workflow.fullscreen')
+            }}
           </button>
         </div>
       </div>
       <!-- the room around the graph, outside its scrolling box : the scrollbar (when it shows)
          as far from the panel's edge as the graph is from its top -->
-      <div class="awx-workflow-body">
-        <div class="awx-workflow-scroll" :class="{ 'awx-fit': fit }">
+      <div v-show="!collapsed || fullscreen" class="awx-workflow-body">
+        <!-- scrolled away from the running node : a button to follow it again -->
+        <div v-if="isRunning && !following && !fit && !fullscreen" class="awx-follow">
+          <!-- its arrow after the words : it points where the running node is -->
+          <BsButton colorClass="primary" @click="followRunning"
+            >{{ t('workflow.followRunning') }}<FaIcon icon="arrow-right" class="ms-2"
+          /></BsButton>
+        </div>
+        <div ref="scrollBox" class="awx-workflow-scroll" :class="{ 'awx-fit': fit }" @scroll="onGraphScroll">
           <!-- full screen : the svg the window's size, the graph in it moved and zoomed (a
                group's transform) - the wheel zooms around the pointer, a drag moves it -->
           <svg
@@ -508,6 +615,8 @@ const graph = computed(() => {
                 :stroke-dasharray="l.type === 'condition' ? '6 4' : null"
                 stroke-width="2"
                 opacity="0.8"
+                class="awx-link"
+                :class="related ? (related.links.has(i) ? 'awx-link-focus' : 'awx-link-faded') : null"
               />
               <!-- a conditional link's diamond, in its middle : hovered, its condition -->
               <rect
@@ -527,7 +636,7 @@ const graph = computed(() => {
                 <title>{{ linkText(l) }}</title>
               </rect>
               <!-- start node -->
-              <g>
+              <g :class="{ 'awx-node-faded': related && !related.nodes.has('start') }">
                 <rect
                   :x="graph.start.x"
                   :y="graph.start.y"
@@ -550,7 +659,7 @@ const graph = computed(() => {
                 v-for="n in graph.nodes"
                 :key="n.id"
                 class="awx-node"
-                :class="{ 'awx-node-open': hasOutput(n) }"
+                :class="{ 'awx-node-open': hasOutput(n), 'awx-node-faded': related && !related.nodes.has(n.id) }"
                 @click="openNode(n)"
                 @mouseenter="hovered = n"
                 @mouseleave="hovered = null"
@@ -594,7 +703,7 @@ const graph = computed(() => {
                 </a>
               </g>
               <!-- the hovered node's card : its whole name, over it (the last drawn, so on top) -->
-              <text ref="measure" class="awx-node-name awx-measure" x="0" y="0">{{ hovered?.name }}</text>
+              <text ref="measure" class="awx-node-name awx-measure" x="0" y="0">{{ focused?.name }}</text>
               <g v-if="card" class="awx-node-card">
                 <rect
                   :x="card.cx"
@@ -656,6 +765,29 @@ const graph = computed(() => {
 .awx-node-card {
   pointer-events: none;
   filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.18));
+}
+/* a node in focus : its links drawn stronger, the other links and nodes faded */
+.awx-link,
+.awx-node,
+.awx-node-faded {
+  transition: opacity 0.15s;
+}
+.awx-link-focus {
+  opacity: 1;
+  stroke-width: 3;
+}
+.awx-link-faded {
+  opacity: 0.2;
+}
+.awx-node-faded {
+  opacity: 0.45;
+}
+@media (prefers-reduced-motion: reduce) {
+  .awx-link,
+  .awx-node,
+  .awx-node-faded {
+    transition: none;
+  }
 }
 /* a node's link to its job in the product */
 .awx-node-link {
@@ -725,8 +857,9 @@ const graph = computed(() => {
   .awx-workflow-count {
     font-size: 0.9375rem;
   }
+  /* its buttons the size of the page's toolbars (the job output's) */
   .awx-workflow-tools {
-    font-size: 0.9375rem;
+    font-size: 0.8125rem;
   }
   .awx-zoom {
     min-width: 3.5rem;
@@ -739,7 +872,8 @@ const graph = computed(() => {
   border: 1px solid var(--af-field-border);
   border-radius: 0.5rem;
   overflow: hidden;
-  background-color: var(--af-bg-light-subtle-color, var(--bs-body-bg));
+  /* the page's own background, in every theme : no grey of its own */
+  background-color: var(--bs-body-bg);
 
   /* the toolbar : as the job output's */
   .awx-workflow-toolbar {
@@ -751,6 +885,16 @@ const graph = computed(() => {
     padding: 0.375rem 0.5rem 0.375rem 1rem;
     border-bottom: 1px solid var(--af-field-border);
     background: var(--bs-tertiary-bg);
+  }
+  /* the collapse : as far in as the output's, as wide */
+  .awx-collapse {
+    margin-left: calc(-0.5rem - 1px);
+    svg {
+      width: 0.75rem;
+    }
+  }
+  &.awx-collapsed .awx-workflow-toolbar {
+    border-bottom: 0;
   }
   .awx-workflow-label {
     display: flex;
@@ -768,13 +912,19 @@ const graph = computed(() => {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.75rem;
+    /* as the output's toolbar : its buttons 0.125rem apart (their own padding does the rest), the
+       legend's colours a little room of their own */
+    gap: 0.125rem;
     font-size: 0.8125rem;
     color: var(--bs-secondary-color);
+  }
+  .awx-workflow-legend {
+    margin-right: 0.5rem;
   }
   .awx-tool-sep {
     width: 1px;
     height: 1.25rem;
+    margin: 0 0.25rem;
     background: var(--af-field-border);
   }
   .awx-tool-icon {
@@ -806,12 +956,28 @@ const graph = computed(() => {
   .awx-workflow-body {
     padding: 1rem;
   }
+  /* the button to follow the running node again : at the graph's right, over it, as the server
+     log's while it is scrolled up */
+  .awx-workflow-body {
+    position: relative;
+  }
+  .awx-follow {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 3;
+    :deep(.btn) {
+      background-color: var(--bs-body-bg);
+      box-shadow: var(--bs-box-shadow-sm);
+    }
+  }
   .awx-workflow-scroll {
     overflow-x: auto;
     padding-bottom: 1rem;
     background:
-      linear-gradient(to right, var(--af-bg-light-subtle-color), transparent) left / 2.5rem 100% no-repeat local,
-      linear-gradient(to left, var(--af-bg-light-subtle-color), transparent) right / 2.5rem 100% no-repeat local,
+      linear-gradient(to right, var(--bs-body-bg), transparent) left / 2.5rem 100% no-repeat local,
+      linear-gradient(to left, var(--bs-body-bg), transparent) right / 2.5rem 100% no-repeat local,
       radial-gradient(farthest-side at 0 50%, rgba(0, 0, 0, 0.14), transparent) left / 0.75rem 100% no-repeat scroll,
       radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, 0.14), transparent) right / 0.75rem 100% no-repeat scroll;
     svg {
