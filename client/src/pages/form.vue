@@ -2616,6 +2616,8 @@ onBeforeUnmount(() => {
   </BsOffCanvas>
 </template>
 <style scoped lang="scss">
+/* the amber of a text found in a page (styles/_find.scss) */
+@use '@/styles/find' as *;
 /* the form's extravars : a card under the divider, as far over the toolbar row as the
    divider is over it */
 .af-form-extravars {
@@ -2643,7 +2645,7 @@ onBeforeUnmount(() => {
 /* a field whose name has the text searched : marked as the browser marks a found text, the one
    in view outlined */
 :deep(.af-field-hit) {
-  background-color: rgba(255, 193, 7, 0.4);
+  background-color: $af-find-highlight;
   border-radius: 0.2rem;
   padding: 0 0.25rem;
   /* the name only, not the row : the field's own buttons stay at the right */

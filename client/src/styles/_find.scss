@@ -1,0 +1,6 @@
+// A text found in a page, marked as the browser marks a found text : a job's output searched
+// (lib/findInText.js, its ::highlight in styles/bootstrap-override.scss) and a form's fields
+// searched by name (pages/form.vue .af-field-hit). One amber for both, kept here : a sass
+// variable, not a custom property, because ::highlight() does not reliably resolve var() in
+// every browser that supports it.
+$af-find-highlight: rgba(255, 193, 7, 0.4);
