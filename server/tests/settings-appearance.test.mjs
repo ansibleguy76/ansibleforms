@@ -1,6 +1,6 @@
-// Settings > Appearance : what a settings save keeps of the name, the environment
-// label and the forms list's view (models/settings.model.js) - each to what the page offers, an
-// empty value none.
+// Settings > Appearance : what a settings save keeps of the name and the forms list's view
+// (models/settings.model.js) - each to what the page offers, an empty value none. The environment
+// label of before is the labels' first now : never written through the settings.
 import { test, expect, vi } from "vitest";
 
 process.env.LOG_PATH = process.env.LOG_PATH || "/tmp/ansibleforms-test-logs";
@@ -20,23 +20,20 @@ test("a save keeps the appearance fields to what the page offers", () => {
   });
   expect(s).toMatchObject({
     app_name: "Ops Portal",
-    env_label: "PRODUCTION",
-    env_label_color: "red",
     forms_view: "list",
   });
+  // the environment label of before : not a column a save writes any more
+  for (const f of ["env_label", "env_label_color", "env_label_show"]) expect(s).not.toHaveProperty(f);
 });
 
 test("an empty or unknown value is none, a long one cut", () => {
   const s = new Settings({
     app_name: "   ",
-    env_label: "X".repeat(60),
-    env_label_color: "purple",
     forms_view: "grid",
   });
   expect(s.app_name).toBeNull();
-  expect(s.env_label).toHaveLength(40);
-  expect(s.env_label_color).toBeNull();
   expect(s.forms_view).toBeNull();
+  expect(new Settings({ app_name: "X".repeat(150) }).app_name).toHaveLength(100);
 });
 
 test("a save of other fields leaves the appearance fields alone", () => {
