@@ -669,8 +669,10 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
     if (!aborted && (jobStatus === "aborted" || (await Job.isAbortRequested(jobid)))) {
       aborted = true;
       wfStatus = "canceled";
-      // waiting on an approval : it runs again, to end as aborted
-      await Job.transitionStatus(jobid, ["approve"], { status: "running", end: null });
+      // waiting on an approval : it runs again, to end as aborted. Rejected meanwhile (the abort
+      // flag kept) too : left rejected, the loop would read it as given up on (no approval is
+      // waited on any more) and the job would never end aborted
+      await Job.transitionStatus(jobid, ["approve", "rejected"], { status: "running", end: null });
       await print("changed: [aborting the workflow: nothing more starts]", "stderr");
       // the running jobs : Job.abort aborts a running child ; asked again for one created since
       for (const [identifier] of running) {

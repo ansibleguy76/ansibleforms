@@ -155,6 +155,52 @@ describe("a workflow loop follows its job only while it is under way", () => {
     // given up on : the loop stops without writing an end over the sweep's
     expect(ended).toEqual([]);
   }, 10000);
+
+  test("aborted while it waits, then rejected before the loop saw the abort : it still ends aborted", async () => {
+    const fs = await import("fs");
+    const os = await import("os");
+    const path = await import("path");
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "af-wf-states-"));
+    fs.writeFileSync(
+      path.join(root, "gate.yml"),
+      "workflow_job_templates:\n  - name: gate\n    related:\n      workflow_nodes:\n" +
+        "        - identifier: ok\n          unified_job_template: { name: Approve it, type: workflow_approval_template }\n",
+    );
+    const Repository = (await import("../src/models/repository.model.js")).default;
+    Repository.getWorkflowsRoots = async () => [{ repository: null, root }];
+    // the job's status as the database holds it ; an approver rejects it once it waits
+    let status = "running";
+    answer = (sql) => {
+      if (/SELECT status FROM AnsibleForms.`jobs`/.test(sql)) return [{ status }];
+      return [];
+    };
+    const ended = [];
+    const FakeJob = {
+      lastOrder: async () => 0,
+      printJobOutput: async () => false,
+      update: async () => {},
+      // the abort was asked while it waited ; the rejection came in first
+      isAbortRequested: async () => aborting,
+      transitionStatus: vi.fn(async (id, from, to) => {
+        if (!from.includes(status)) return false;
+        status = to.status;
+        // waiting on the approval now : rejected at once, the abort flag set meanwhile
+        if (status === "approve") {
+          status = "rejected";
+          aborting = true;
+        }
+        return true;
+      }),
+      requestAbort: async () => {},
+      sendApprovalNotification: vi.fn(async () => {}),
+      endJobStatus: async (...args) => ended.push(args),
+    };
+    let aborting = false;
+    await runWorkflow({ Job: FakeJob, form: "f", formObj: { workflow: "gate" }, user: admin, extravars: {}, credentials: {}, jobid: 78 });
+    expect(FakeJob.transitionStatus).toHaveBeenCalledWith(78, ["approve", "rejected"], expect.objectContaining({ status: "running" }));
+    expect(ended.length).toBe(1);
+    expect(ended[0]).toContain("aborted");
+  }, 10000);
 });
 
 describe("a multistep moves on to its next step only while it is still running", () => {
