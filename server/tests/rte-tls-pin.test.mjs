@@ -154,6 +154,23 @@ describe("an RTE's certificate", () => {
     assert.equal(certToSend({ RTE_URL: "https://rte.dmz:8443" }, { https: false, httpsCert: null }), null, "TLS ended by a proxy in front of it");
     assert.equal(certToSend({}, tls), null);
   });
+
+  test("a certificate file the app would refuse is not sent, said once, and the RTE still registers", async () => {
+    // the RTE's side writes to the real logger (the alias covers ../lib/logger.js only)
+    const { default: rteLogger } = await import("../src/lib/logger.js");
+    const warn = vi.spyOn(rteLogger, "warning").mockImplementation(() => {});
+    try {
+      const env = { RTE_URL: "https://rte.dmz:8443" };
+      assert.equal(certToSend(env, { https: true, httpsCert: Buffer.from("x".repeat(40 * 1024)) }), null, "too large");
+      assert.equal(certToSend(env, { https: true, httpsCert: Buffer.from(certA.repeat(50)) }), null, "too many");
+      const said = warn.mock.calls.map((c) => String(c[0])).filter((m) => m.includes("HTTPS_CERT is not sent"));
+      assert.equal(said.length, 1);
+      // only certificates go out : text around them stays behind
+      assert.equal(certToSend(env, { https: true, httpsCert: `junk\n${certA}` }), parseCertBundle(certA).pem);
+    } finally {
+      warn.mockRestore();
+    }
+  });
 });
 
 // ─── what the app stores ──────────────────────────────────────────────────────
