@@ -29,8 +29,13 @@ try {
 } catch {
   // no storage (a private window) : the login page may go to the provider
 }
+// The Authorization header is set here, from the token read now : the request interceptor
+// (plugins/index.js) runs only once the request leaves, after TokenStorage.clear() below has
+// already removed the token, so it would add no Bearer and the server would revoke nothing.
 if (TokenStorage.getToken()) {
-  axios.post(`/api/v2/auth/logout`, { refreshtoken: TokenStorage.getRefreshToken() }).catch(() => {});
+  axios
+    .post(`/api/v2/auth/logout`, { refreshtoken: TokenStorage.getRefreshToken() }, TokenStorage.getAuthentication())
+    .catch(() => {});
 }
 
 // For OIDC, get logout URL first before clearing tokens
