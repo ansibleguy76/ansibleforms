@@ -7,6 +7,7 @@ import Lock from '../../models/lock.model.js';
 import RestResult from '../../models/restResult.model.v2.js';
 import Helpers from '../../lib/common.js';
 import i18n from '../../lib/i18n.js';
+import { SECRET_MASK, isMasked } from '../../lib/secretMask.js';
 import yaml from 'yaml';
 import appConfig from '../../../config/app.config.js';
 import { auditConfigChange, configHash as auditConfigHash } from '../../lib/configAudit.js';
@@ -45,7 +46,7 @@ const find = async function(req, res) {
       const settings = await Settings.find();
       // Mask mail password before returning to API
       if (settings && settings.mail_password) {
-        settings.mail_password = '**********';
+        settings.mail_password = SECRET_MASK;
       }
       // Expose the env-derived config mode so the client (settings page + designer)
       // knows whether the active config lives in the database.
@@ -69,7 +70,7 @@ const mailcheck = async function(req, res) {
   try {
     // If password is masked, fetch the real one from database for testing
     let settingsConfig = req.body;
-    if (settingsConfig.mail_password === '**********') {
+    if (isMasked(settingsConfig.mail_password)) {
       const existingSettings = await Settings.find();
       // the stored password only goes to the stored server, port and security : a test
       // against another server would hand it the password
@@ -110,7 +111,7 @@ export function seedManagedSettingChanges(body, stored) {
     const wanted = body[field];
     if (wanted === undefined) return false;
     // the client sends the mask for 'password unchanged', which is never a change
-    if (field === 'mail_password' && wanted === '**********') return false;
+    if (field === 'mail_password' && isMasked(wanted)) return false;
     // mail_secure arrives as a boolean and is stored as 1/0
     if (field === 'mail_secure') return (stored[field] ? 1 : 0) !== (wanted ? 1 : 0);
     return String(stored[field] ?? '') !== String(wanted ?? '');
@@ -143,7 +144,7 @@ const update = async function(req, res) {
             }
           }
           // If password is masked, preserve the existing password
-          if (req.body.mail_password === '**********') {
+          if (isMasked(req.body.mail_password)) {
             req.body.mail_password = existingSettings.mail_password;
           }
           const record = new Settings(req.body);

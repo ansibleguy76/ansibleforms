@@ -4,6 +4,7 @@ import User from '../../models/user.model.js';
 import RestResult from '../../models/restResult.model.v2.js';
 import Errors from '../../lib/errors.js';
 import i18n from '../../lib/i18n.js';
+import { SECRET_MASK } from '../../lib/secretMask.js';
 import { assertMayTouchAdmin } from '../../lib/adminGrants.js';
 import { unlockAccount, loginBlocked, loginFailed, loginSucceeded } from '../../lib/loginThrottle.js';
 import Group from '../../models/group.model.js';
@@ -54,14 +55,14 @@ const findAllOr1 = async function(req, res) {
       const user = await User.findByUsername(req.query.username);
       // Mask password before returning to API
       if (user && user.password) {
-        user.password = '**********';
+        user.password = SECRET_MASK;
       }
       res.json(RestResult.single(user));
     }else{
       const users = await User.findAll();
       // Mask passwords before returning to API
       users.forEach(u => {
-        if (u.password) u.password = '**********';
+        if (u.password) u.password = SECRET_MASK;
       });
       // and how many roles each has, for the list's Roles column (lib/roleCounts.js), and how
       // many stored jobs and planned jobs it keeps, for its optional columns (lib/jobCounts.js)
@@ -103,7 +104,7 @@ const findById = async function(req, res) {
       const user = await User.findById(req.params.id);
       // Mask password before returning to API
       if (user && user.password) {
-        user.password = '**********';
+        user.password = SECRET_MASK;
       }
       res.json(RestResult.single(user));
     } catch(err) {

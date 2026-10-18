@@ -6,6 +6,7 @@ import crypto from '../lib/crypto.js';
 import { readSecret, mapPayloadToCredential, parseInlineSecret, VAULT_STORE_NAME } from '../secrets/providers/index.js';
 import dbConfig from '../../config/db.config.js';
 import { stripTrailingSlashes } from '../lib/url.js';
+import { isMasked } from '../lib/secretMask.js';
 import { currentScope, assertCredentialAllowed, assertSecretStoreAllowed } from "../lib/resourceScope.js";
 
 class CredentialModel extends CrudModel {
@@ -192,7 +193,7 @@ class CredentialModel extends CrudModel {
   static async update(data, id, opts = {}) {
     // the api shows the client key masked ; the mask sent back means "unchanged", and an
     // empty one too (the dialog leaves a secret empty to keep it)
-    if (data.client_key === '**********' || data.client_key === '') delete data.client_key;
+    if (isMasked(data.client_key) || data.client_key === '') delete data.client_key;
     // its type stays what it was made as (what uses it expects it : an SSO provider an entraid
     // one, a mail channel an smtp one) ; the config seed may change it
     if (!opts.fromSeed && data.credential_type !== undefined && data.credential_type !== null && data.credential_type !== '') {

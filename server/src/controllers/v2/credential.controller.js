@@ -14,6 +14,7 @@ import Form from '../../models/form.model.js';
 import { formCredentials } from '../../lib/formLinks.js';
 import { workflowCredentials } from '../../models/workflowRun.js';
 import { isAdminRequest } from '../../lib/adminGrants.js';
+import { SECRET_MASK, masked } from '../../lib/secretMask.js';
 
 // the credential types an SSO provider signs in with : a change to one of them is a change to the
 // sign-in, which reads its client, tenant or issuer and redirect URL when it starts
@@ -94,9 +95,9 @@ const credentialController = {
         const credential = await CredentialModel.findByName(req.query.name);
         // Mask password before returning to API
         if (credential && credential.password) {
-          credential.password = '**********';
+          credential.password = SECRET_MASK;
         }
-        if (credential && credential.client_key) credential.client_key = '**********';
+        if (credential && credential.client_key) credential.client_key = SECRET_MASK;
         res.json(RestResult.single(credential));
       } else {
         // how many records use each (used_by_count), as its Used by tab lists them ; a count that
@@ -122,8 +123,8 @@ const credentialController = {
         const credentials = (await CredentialModel.findAll()).map((c) => ({
           ...c,
           // Mask passwords before returning to API
-          password: c.password ? '**********' : c.password,
-          client_key: c.client_key ? '**********' : c.client_key,
+          password: masked(c.password),
+          client_key: masked(c.client_key),
           used_by_count: usage.get(c.name) || 0,
         }));
         res.json(RestResult.list(credentials));
@@ -147,8 +148,8 @@ const credentialController = {
     try {
       const credential = await CredentialModel.findById(req.params.id);
       // Mask password before returning to API
-      credential.password = '**********';
-      if (credential.client_key) credential.client_key = '**********';
+      credential.password = SECRET_MASK;
+      if (credential.client_key) credential.client_key = SECRET_MASK;
       res.json(RestResult.single(credential));
     } catch (err) {
       Errors.ReturnError(res, err);

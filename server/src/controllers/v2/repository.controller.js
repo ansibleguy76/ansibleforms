@@ -4,6 +4,7 @@ import RestResult from '../../models/restResult.model.v2.js';
 import cronService from '../../services/cron.service.js';
 import logger from '../../lib/logger.js';
 import i18n from '../../lib/i18n.js';
+import { SECRET_MASK } from '../../lib/secretMask.js';
 
 const find = async function(req, res) {
   try {
@@ -36,7 +37,7 @@ const create = async function(req, res) {
 const findByName = async function(req, res) {
   try {
     const [repository] = await Repository.withUnpushed([await Repository.findByName(req.params.name)]);
-    repository.password = "**********"; // mask the password for api
+    repository.password = SECRET_MASK; // mask the password for api
     res.json(RestResult.single(repository));
   } catch(err) {
     res.status(err.status || 500).json(RestResult.error(i18n.t(req, 'resources.failedFindRepository'), err.message || String(err)));

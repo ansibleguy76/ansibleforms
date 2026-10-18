@@ -3,9 +3,11 @@ import ChatSettings from '../../models/chatSettings.model.js';
 import RestResultv2 from '../../models/restResult.model.v2.js';
 import logger from "../../lib/logger.js";
 import i18n from '../../lib/i18n.js';
+import { SECRET_MASK, isMasked } from '../../lib/secretMask.js';
 import { checkProvider } from '../../chat/providers/index.js';
 
-const MASK = '**********';
+// the mask the key is shown as (lib/secretMask.js)
+const MASK = SECRET_MASK;
 
 const find = async function (req, res) {
   try {
@@ -30,7 +32,7 @@ const update = async function (req, res) {
       return res.status(403).json(RestResultv2.error(i18n.t(req, 'resources.failedUpdateChatSettings'), i18n.t(req, 'resources.seedManagedChatSettings')));
     }
     const body = { ...req.body };
-    if (body.api_key === MASK) body.api_key = existing.api_key;
+    if (isMasked(body.api_key)) body.api_key = existing.api_key;
     try {
       await ChatSettings.assertCredentialUsable(body.credential);
     } catch (err) {
@@ -55,7 +57,7 @@ const check = async function (req, res) {
   try {
     const existing = await ChatSettings.find();
     let body = { ...existing, ...(req.body || {}) };
-    if (!body.api_key || body.api_key === MASK) body.api_key = existing.api_key;
+    if (!body.api_key || isMasked(body.api_key)) body.api_key = existing.api_key;
     // the key of the credential it names (the one on the page, saved or not)
     body = await ChatSettings.withCredential(body);
     const result = await checkProvider(body);

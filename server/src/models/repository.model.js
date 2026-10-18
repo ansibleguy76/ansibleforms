@@ -10,6 +10,7 @@ import appConfig from "../../config/app.config.js";
 import CrudModel from './crud.model.js';
 import Credential from './credential.model.v2.js';
 import Errors from '../lib/errors.js';
+import { SECRET_MASK } from '../lib/secretMask.js';
 import { bump } from '../lib/epochs.js';
 import { nodeId, NODE_DEAD_SECONDS, uptimeSeconds } from '../lib/role.js';
 
@@ -198,7 +199,7 @@ class Repository extends CrudModel {
   static async findById(id) {
     const repo = await super.findById(this.modelName, id);
     // Mask password for API
-    if (repo && repo.password) repo.password = '**********';
+    if (repo && repo.password) repo.password = SECRET_MASK;
     return repo;
   }
 
@@ -206,7 +207,7 @@ class Repository extends CrudModel {
     const repos = await super.findAll(this.modelName);
     // Mask passwords before returning to API
     repos.forEach(r => {
-      if (r.password) r.password = '**********';
+      if (r.password) r.password = SECRET_MASK;
     });
     return repos;
   }

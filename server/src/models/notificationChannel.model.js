@@ -13,6 +13,7 @@
 // sends is lib/notifiers.js. A webhook address of Slack or Teams is a secret : stored encrypted,
 // never handed back by the API (masked, as a password is).
 import CrudModel from './crud.model.js';
+import { SECRET_MASK } from '../lib/secretMask.js';
 import Credential from './credential.model.v2.js';
 import Errors from '../lib/errors.js';
 import mysql from './db.model.js';
@@ -24,7 +25,8 @@ export const CHANNEL_TYPES = ['mail', 'slack', 'teams', 'telegram', 'webhook'];
 export const WEBHOOK_METHODS = ['POST', 'PUT'];
 // what a secret looks like when the API hands a channel back (crud.model takes it back as
 // "unchanged" on an update)
-export const SECRET_MASK = '**********';
+// the mask a secret is shown as, for whoever imported it from here (lib/secretMask.js)
+export { SECRET_MASK };
 // the body a webhook channel sends when it has no template of its own : every placeholder
 export const DEFAULT_PAYLOAD = `{
   "title": "{{title}}",

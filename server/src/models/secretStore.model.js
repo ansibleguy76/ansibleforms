@@ -2,13 +2,15 @@
 // store and the place in it (credentials.secret_store / secret_ref).
 import CrudModel from './crud.model.js';
 import Errors from '../lib/errors.js';
+import { SECRET_MASK, isMasked } from '../lib/secretMask.js';
 import { SECRET_STORE_TYPES } from '../secrets/providers/index.js';
 import { clearSecretCache } from '../secrets/cache.js';
 import { stripTrailingSlashes } from '../lib/url.js';
 import Credential from './credential.model.v2.js';
 
 // what secretStore.controller.js shows instead of a stored secret
-export const SECRET_MASK = '********';
+// the mask a secret is shown as, for whoever imported it from here (lib/secretMask.js)
+export { SECRET_MASK };
 
 class SecretStore extends CrudModel {
   static modelName = 'secretstore';
@@ -19,7 +21,7 @@ class SecretStore extends CrudModel {
   static normalize(data, { creating }) {
     // the api hands token and client_key out masked ; the mask sent back means "unchanged"
     for (const key of ['token', 'client_key']) {
-      if (data[key] === SECRET_MASK) delete data[key];
+      if (isMasked(data[key])) delete data[key];
     }
     if (data.type !== undefined && !SECRET_STORE_TYPES.includes(data.type)) {
       throw new Errors.BadRequestError(`Unknown secret store type '${data.type}' - use one of ${SECRET_STORE_TYPES.join(', ')}`);
