@@ -49,7 +49,9 @@ async function decide(what) {
   deciding.value = true;
   try {
     await axios.post(`/api/v2/runner/${encodeURIComponent(props.runner.id)}/${what}`, {});
-    toast.success(t(what === 'approve' ? 'settings.runners.approved' : 'settings.runners.rejected', { name: props.runner.name }));
+    toast.success(
+      t(what === 'approve' ? 'settings.runners.approved' : 'settings.runners.rejected', { name: props.runner.name }),
+    );
     emit('decided', what);
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err, t(`settings.runners.${what}`)));

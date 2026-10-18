@@ -1805,7 +1805,8 @@ export default {
       type: 'Typ',
       isDefault: 'Domyślne',
       enabled: 'Włączony',
-      enabledHelp: 'Wyłączony nie dostaje żadnych zadań, nawet jako domyślny dla swojego typu. Zostaje na liście ze swoimi ustawieniami.',
+      enabledHelp:
+        'Wyłączony nie dostaje żadnych zadań, nawet jako domyślny dla swojego typu. Zostaje na liście ze swoimi ustawieniami.',
       enable: 'Włącz',
       disable: 'Wyłącz',
       isDefaultHelp:
@@ -1829,8 +1830,7 @@ export default {
       skipVerify: 'Pomiń weryfikację certyfikatu',
       stepAuth: 'Poświadczenia',
       credential: 'Poświadczenie',
-      credentialHelp_rte:
-        'Token RTE oraz jego adres w trybie przychodzącym.',
+      credentialHelp_rte: 'Token RTE oraz jego adres w trybie przychodzącym.',
       credentialHelp_awx: 'Poświadczenie AWX z Połączenia > Poświadczenia: adres oraz token lub użytkownik i hasło.',
       credentialHelp_aap: 'Poświadczenie AAP z Połączenia > Poświadczenia: adres oraz token lub użytkownik i hasło.',
       credentialHelp_ascender:
@@ -1843,11 +1843,9 @@ export default {
       rteMode: 'Tryb',
       rteModeHelp: 'Jak RTE komunikuje się z aplikacją: RTE_MODE na RTE.',
       rteMode_outbound: 'Wychodzący',
-      rteMode_outboundHint:
-        'RTE łączy się z aplikacją: nic nie dociera do niego z zewnątrz',
+      rteMode_outboundHint: 'RTE łączy się z aplikacją: nic nie dociera do niego z zewnątrz',
       rteMode_inbound: 'Przychodzący',
-      rteMode_inboundHint:
-        'Aplikacja łączy się z RTE pod adresem z jego poświadczenia',
+      rteMode_inboundHint: 'Aplikacja łączy się z RTE pod adresem z jego poświadczenia',
       rteMode_database: 'Baza danych (przestarzały)',
       rteMode_databaseHint: 'RTE sam używa bazy danych aplikacji: usunięte w 8.0.0',
       socket: 'Połączenie',

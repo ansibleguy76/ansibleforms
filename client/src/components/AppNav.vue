@@ -90,7 +90,13 @@ watch(() => store.profile, refreshRunnerApprovals);
 // page ; both : a menu with each and its count
 const bellItems = computed(() =>
   [
-    store.approvals > 0 && { key: 'jobs', label: t('nav.jobsWaiting'), icon: 'list-check', count: store.approvals, to: jobsPath('approve') },
+    store.approvals > 0 && {
+      key: 'jobs',
+      label: t('nav.jobsWaiting'),
+      icon: 'list-check',
+      count: store.approvals,
+      to: jobsPath('approve'),
+    },
     store.runnerApprovals > 0 && {
       key: 'runners',
       label: t('nav.runnersWaiting'),

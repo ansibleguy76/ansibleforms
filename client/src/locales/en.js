@@ -1361,7 +1361,7 @@ export default {
       type: 'Type',
       isDefault: 'Default',
       enabled: 'Enabled',
-      enabledHelp: 'Turned off, no job goes to it, its type\'s default included. It stays listed with its settings.',
+      enabledHelp: "Turned off, no job goes to it, its type's default included. It stays listed with its settings.",
       enable: 'Enable',
       disable: 'Disable',
       isDefaultHelp:
@@ -1384,8 +1384,7 @@ export default {
       skipVerify: 'Skip certificate verification',
       stepAuth: 'Credentials',
       credential: 'Credential',
-      credentialHelp_rte:
-        "The RTE's token, and its address if inbound.",
+      credentialHelp_rte: "The RTE's token, and its address if inbound.",
       credentialHelp_awx:
         'An AWX credential of Connections > Credentials: its address, and a token or a user and password.',
       credentialHelp_aap:
@@ -1401,13 +1400,11 @@ export default {
       rteMode: 'Mode',
       rteModeHelp: 'How the RTE talks to the app: RTE_MODE on the RTE.',
       rteMode_outbound: 'Outbound',
-      rteMode_outboundHint:
-        'The RTE dials the app: nothing reaches it from outside',
+      rteMode_outboundHint: 'The RTE dials the app: nothing reaches it from outside',
       rteMode_inbound: 'Inbound',
-      rteMode_inboundHint:
-        'The app dials the RTE at its credential\'s address',
+      rteMode_inboundHint: "The app dials the RTE at its credential's address",
       rteMode_database: 'Database (deprecated)',
-      rteMode_databaseHint: 'The RTE uses the app\'s database itself: removed in 8.0.0',
+      rteMode_databaseHint: "The RTE uses the app's database itself: removed in 8.0.0",
       socket: 'Connection',
       socketConnected: 'Connected',
       socketDisconnected: 'Not connected',

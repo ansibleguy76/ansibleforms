@@ -1380,7 +1380,8 @@ export default {
       type: 'Tipo',
       isDefault: 'Predeterminado',
       enabled: 'Activado',
-      enabledHelp: 'Desactivado, no recibe ningún trabajo, aunque sea el predeterminado de su tipo. Sigue en la lista con su configuración.',
+      enabledHelp:
+        'Desactivado, no recibe ningún trabajo, aunque sea el predeterminado de su tipo. Sigue en la lista con su configuración.',
       enable: 'Activar',
       disable: 'Desactivar',
       isDefaultHelp:
@@ -1404,8 +1405,7 @@ export default {
       skipVerify: 'Omitir la verificación del certificado',
       stepAuth: 'Credenciales',
       credential: 'Credencial',
-      credentialHelp_rte:
-        'El token del RTE, y su dirección si es entrante.',
+      credentialHelp_rte: 'El token del RTE, y su dirección si es entrante.',
       credentialHelp_awx:
         'Una credencial AWX de Conexiones > Credenciales: su dirección, y un token o un usuario y contraseña.',
       credentialHelp_aap:
@@ -1421,11 +1421,9 @@ export default {
       rteMode: 'Modo',
       rteModeHelp: 'Cómo habla el RTE con la aplicación: RTE_MODE en el RTE.',
       rteMode_outbound: 'Saliente',
-      rteMode_outboundHint:
-        'El RTE llama a la aplicación: nada le llega desde fuera',
+      rteMode_outboundHint: 'El RTE llama a la aplicación: nada le llega desde fuera',
       rteMode_inbound: 'Entrante',
-      rteMode_inboundHint:
-        'La aplicación llama al RTE en la dirección de su credencial',
+      rteMode_inboundHint: 'La aplicación llama al RTE en la dirección de su credencial',
       rteMode_database: 'Base de datos (obsoleto)',
       rteMode_databaseHint: 'El RTE usa la base de datos de la aplicación: se elimina en 8.0.0',
       socket: 'Conexión',

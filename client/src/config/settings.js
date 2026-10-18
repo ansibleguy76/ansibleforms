@@ -2614,7 +2614,11 @@ export default function getSettings(t) {
           filterable: true,
           help: t('settings.runners.nameHelp'),
           // an RTE that asked to join : its name, and that it waits for approval (escaped, v-html)
-          render: (v, r) => esc(v ?? '') + (Number(r?.pending) ? ' ' + pill(PILL.orange, t('settings.runners.pending'), t('settings.runners.pendingHint')) : ''),
+          render: (v, r) =>
+            esc(v ?? '') +
+            (Number(r?.pending)
+              ? ' ' + pill(PILL.orange, t('settings.runners.pending'), t('settings.runners.pendingHint'))
+              : ''),
           sortValue: (r) => r?.name || '',
         },
         {
@@ -2877,7 +2881,8 @@ export default function getSettings(t) {
           })),
           initial: (r) => r?.type || 'mail',
           render: (v, r) =>
-            esc(t(`settings.notificationChannels.type_${CHANNEL_TYPES.includes(v) ? v : 'mail'}`)) + defaultNote(t, !!r?.is_active),
+            esc(t(`settings.notificationChannels.type_${CHANNEL_TYPES.includes(v) ? v : 'mail'}`)) +
+            defaultNote(t, !!r?.is_active),
         },
         {
           // what it is for : a column after the type

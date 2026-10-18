@@ -1353,7 +1353,7 @@ export default {
       pending: 'In attesa di approvazione',
       pendingHint: 'Questo RTE ha chiesto di unirsi. Approvalo perché riceva job, o rifiutalo.',
       pendingTitle: 'Questo RTE ha chiesto di unirsi',
-      pendingHelp: 'Verifica l\'impronta dell\'RTE prima di approvarlo',
+      pendingHelp: "Verifica l'impronta dell'RTE prima di approvarlo",
       pendingFingerprint: 'Impronta',
       pendingHost: 'Host',
       pendingIp: 'Connesso da',
@@ -1374,7 +1374,8 @@ export default {
       type: 'Tipo',
       isDefault: 'Predefinito',
       enabled: 'Abilitato',
-      enabledHelp: 'Disattivato non riceve job, anche se è il predefinito del suo tipo. Resta in elenco con le sue impostazioni.',
+      enabledHelp:
+        'Disattivato non riceve job, anche se è il predefinito del suo tipo. Resta in elenco con le sue impostazioni.',
       enable: 'Attiva',
       disable: 'Disattiva',
       isDefaultHelp:
@@ -1398,8 +1399,7 @@ export default {
       skipVerify: 'Salta la verifica del certificato',
       stepAuth: 'Credenziali',
       credential: 'Credenziale',
-      credentialHelp_rte:
-        "Il token dell'RTE, e il suo indirizzo se in entrata.",
+      credentialHelp_rte: "Il token dell'RTE, e il suo indirizzo se in entrata.",
       credentialHelp_awx:
         'Una credenziale AWX di Connessioni > Credenziali: il suo indirizzo, e un token o un utente e una password.',
       credentialHelp_aap:
@@ -1416,13 +1416,11 @@ export default {
       rteMode: 'Modalità',
       rteModeHelp: "Come l'RTE comunica con l'app: RTE_MODE sull'RTE.",
       rteMode_outbound: 'In uscita',
-      rteMode_outboundHint:
-        'L\'RTE chiama l\'applicazione: nulla lo raggiunge dall\'esterno',
+      rteMode_outboundHint: "L'RTE chiama l'applicazione: nulla lo raggiunge dall'esterno",
       rteMode_inbound: 'In entrata',
-      rteMode_inboundHint:
-        'L\'applicazione chiama l\'RTE all\'indirizzo della sua credenziale',
+      rteMode_inboundHint: "L'applicazione chiama l'RTE all'indirizzo della sua credenziale",
       rteMode_database: 'Database (deprecato)',
-      rteMode_databaseHint: 'L\'RTE usa direttamente il database dell\'applicazione: rimosso in 8.0.0',
+      rteMode_databaseHint: "L'RTE usa direttamente il database dell'applicazione: rimosso in 8.0.0",
       socket: 'Connessione',
       socketConnected: 'Connesso',
       socketDisconnected: 'Non connesso',

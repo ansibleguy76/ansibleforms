@@ -247,8 +247,8 @@ export default {
     conditionUnknown: '{trigger}, amb una condició',
   },
   nav: {
-    jobsWaiting: 'Feines pendents d\'aprovació',
-    runnersWaiting: 'Runners pendents d\'aprovació',
+    jobsWaiting: "Feines pendents d'aprovació",
+    runnersWaiting: "Runners pendents d'aprovació",
     // the lock on the Designer link while someone holds the designer, in its tooltip
     designerLockedByMe: 'Tens bloquejat el dissenyador',
     designerLockedBy: '{user} té bloquejat el dissenyador',
@@ -497,9 +497,9 @@ export default {
       runner_delete: 'Runner eliminat',
       runner_approve_create: 'Runner aprovat',
       runner_reject_create: 'Runner rebutjat',
-      runner_jointoken_create: 'Token d\'unió creat',
-      runner_jointoken_delete: 'Token d\'unió eliminat',
-      runner_jointoken_revoke_create: 'Token d\'unió revocat',
+      runner_jointoken_create: "Token d'unió creat",
+      runner_jointoken_delete: "Token d'unió eliminat",
+      runner_jointoken_revoke_create: "Token d'unió revocat",
       runner_check_create: 'Connexió del runner provada',
       announcement_create: 'Anunci creat',
       announcement_update: 'Anunci actualitzat',
@@ -1796,10 +1796,10 @@ export default {
         'Expressió regular: només es conserven els grups el nom dels quals coincideix, per a rols, formularis i playbooks. Buit els conserva tots.',
     },
     runners: {
-      pending: 'Pendent d\'aprovació',
+      pending: "Pendent d'aprovació",
       pendingHint: 'Aquest RTE ha demanat unir-se. Aproveu-lo perquè rebi feines, o rebutgeu-lo.',
       pendingTitle: 'Aquest RTE ha demanat unir-se',
-      pendingHelp: 'Comproveu l\'empremta de l\'RTE abans d\'aprovar-lo',
+      pendingHelp: "Comproveu l'empremta de l'RTE abans d'aprovar-lo",
       pendingFingerprint: 'Empremta',
       pendingHost: 'Host',
       pendingIp: 'Connectat des de',
@@ -1808,9 +1808,9 @@ export default {
       approve: 'Aprova',
       reviewApproval: "Revisar l'aprovació",
       reject: 'Rebutja',
-      approved: '{name} està aprovat: rep feines a partir d\'ara',
-      rejected: '{name} s\'ha rebutjat i eliminat',
-      rejectConfirm: 'Voleu rebutjar {name}? S\'elimina amb la seva credencial. Pot tornar a demanar unir-se.',
+      approved: "{name} està aprovat: rep feines a partir d'ara",
+      rejected: "{name} s'ha rebutjat i eliminat",
+      rejectConfirm: "Voleu rebutjar {name}? S'elimina amb la seva credencial. Pot tornar a demanar unir-se.",
       label: 'Runner',
       description:
         "On s'executen les tasques: contenidors d'entorn d'execució (RTE) per als playbooks (la imatge AnsibleForms amb AF_ROLE=rte), i AWX / Ansible Automation Platform / Ascender per a les plantilles.",
@@ -1820,7 +1820,8 @@ export default {
       type: 'Tipus',
       isDefault: 'És el predeterminat',
       enabled: 'Activat',
-      enabledHelp: 'Desactivat, no hi va cap feina, encara que sigui el predeterminat del seu tipus. Es manté a la llista amb la seva configuració.',
+      enabledHelp:
+        'Desactivat, no hi va cap feina, encara que sigui el predeterminat del seu tipus. Es manté a la llista amb la seva configuració.',
       enable: 'Activa',
       disable: 'Desactiva',
       isDefaultHelp:
@@ -1844,8 +1845,7 @@ export default {
       skipVerify: 'Omet la verificació del certificat',
       stepAuth: 'Credencials',
       credential: 'Credencial',
-      credentialHelp_rte:
-        "El token de l'RTE, i la seva adreça si és entrant.",
+      credentialHelp_rte: "El token de l'RTE, i la seva adreça si és entrant.",
       credentialHelp_awx:
         'Una credencial AWX de Connexions > Credencials: la seva adreça, i un token o un usuari i contrasenya.',
       credentialHelp_aap:
@@ -1861,14 +1861,11 @@ export default {
       rteMode: 'Mode',
       rteModeHelp: "Com parla el RTE amb l'aplicació: RTE_MODE al RTE.",
       rteMode_outbound: 'Sortint',
-      rteMode_outboundHint:
-        'L\'RTE truca a l\'aplicació: res no hi arriba des de fora',
+      rteMode_outboundHint: "L'RTE truca a l'aplicació: res no hi arriba des de fora",
       rteMode_inbound: 'Entrant',
-      rteMode_inboundHint:
-        'L\'aplicació truca a l\'RTE a l\'adreça de la seva credencial',
+      rteMode_inboundHint: "L'aplicació truca a l'RTE a l'adreça de la seva credencial",
       rteMode_database: 'Base de dades (obsolet)',
-      rteMode_databaseHint:
-        'L\'RTE fa servir la base de dades de l\'aplicació: s\'elimina a la 8.0.0',
+      rteMode_databaseHint: "L'RTE fa servir la base de dades de l'aplicació: s'elimina a la 8.0.0",
       socket: 'Connexió',
       socketConnected: 'Connectat',
       socketDisconnected: 'No connectat',
@@ -1891,7 +1888,7 @@ export default {
       tokenHelp_rte: "El RTE_TOKEN de l'RTE.",
       tokenHelp_api: "Un token d'API.",
       type_rte: 'RTE',
-      type_rteHint: 'Entorn d\'execució, per a playbooks d\'Ansible i workflows',
+      type_rteHint: "Entorn d'execució, per a playbooks d'Ansible i workflows",
       type_awx: 'AWX',
       type_awxHint: 'AWX, per a formularis de plantilla',
       type_aap: 'AAP',

@@ -1811,8 +1811,7 @@ export default {
       skipVerify: '証明書の検証をスキップ',
       stepAuth: '認証情報',
       credential: '資格情報',
-      credentialHelp_rte:
-        'RTE のトークン。インバウンドの場合はそのアドレスも。',
+      credentialHelp_rte: 'RTE のトークン。インバウンドの場合はそのアドレスも。',
       credentialHelp_awx: '接続 > 認証情報 の AWX 資格情報: アドレスと、トークンまたはユーザーとパスワード。',
       credentialHelp_aap: '接続 > 認証情報 の AAP 資格情報: アドレスと、トークンまたはユーザーとパスワード。',
       credentialHelp_ascender: '接続 > 認証情報 の Ascender 資格情報: アドレスと、トークンまたはユーザーとパスワード。',
@@ -1824,11 +1823,9 @@ export default {
       rteMode: 'モード',
       rteModeHelp: 'RTE がアプリと通信する方法: RTE 側の RTE_MODE。',
       rteMode_outbound: 'アウトバウンド',
-      rteMode_outboundHint:
-        'RTE がアプリに接続します。外部からは何も届きません',
+      rteMode_outboundHint: 'RTE がアプリに接続します。外部からは何も届きません',
       rteMode_inbound: 'インバウンド',
-      rteMode_inboundHint:
-        'アプリが資格情報のアドレスで RTE に接続します',
+      rteMode_inboundHint: 'アプリが資格情報のアドレスで RTE に接続します',
       rteMode_database: 'データベース (非推奨)',
       rteMode_databaseHint: 'RTE がアプリのデータベースを直接使用します。8.0.0 で削除',
       socket: '接続',

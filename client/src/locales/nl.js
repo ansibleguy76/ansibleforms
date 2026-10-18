@@ -1364,7 +1364,8 @@ export default {
       reject: 'Afwijzen',
       approved: '{name} is goedgekeurd: hij krijgt vanaf nu jobs',
       rejected: '{name} is afgewezen en verwijderd',
-      rejectConfirm: '{name} afwijzen? Hij wordt verwijderd met zijn referentie. Hij kan opnieuw vragen om lid te worden.',
+      rejectConfirm:
+        '{name} afwijzen? Hij wordt verwijderd met zijn referentie. Hij kan opnieuw vragen om lid te worden.',
       label: 'Runner',
       description:
         'Waar jobs draaien: runtime environment (RTE) containers voor playbooks (het AnsibleForms image met AF_ROLE=rte), en AWX / Ansible Automation Platform / Ascender voor templates.',
@@ -1374,7 +1375,8 @@ export default {
       type: 'Type',
       isDefault: 'Standaard',
       enabled: 'Ingeschakeld',
-      enabledHelp: 'Uitgeschakeld krijgt hij geen jobs, ook niet als standaard van zijn type. Hij blijft in de lijst met zijn instellingen.',
+      enabledHelp:
+        'Uitgeschakeld krijgt hij geen jobs, ook niet als standaard van zijn type. Hij blijft in de lijst met zijn instellingen.',
       enable: 'Inschakelen',
       disable: 'Uitschakelen',
       isDefaultHelp:
@@ -1398,8 +1400,7 @@ export default {
       skipVerify: 'Certificaatcontrole overslaan',
       stepAuth: 'Referenties',
       credential: 'Referentie',
-      credentialHelp_rte:
-        'Het token van de RTE, en zijn adres bij inkomend.',
+      credentialHelp_rte: 'Het token van de RTE, en zijn adres bij inkomend.',
       credentialHelp_awx:
         'Een AWX-referentie van Verbindingen > Referenties: het adres, en een token of een gebruiker en wachtwoord.',
       credentialHelp_aap:
@@ -1415,11 +1416,9 @@ export default {
       rteMode: 'Modus',
       rteModeHelp: 'Hoe de RTE met de app praat: RTE_MODE op de RTE.',
       rteMode_outbound: 'Uitgaand',
-      rteMode_outboundHint:
-        'De RTE belt de app: van buitenaf bereikt hem niets',
+      rteMode_outboundHint: 'De RTE belt de app: van buitenaf bereikt hem niets',
       rteMode_inbound: 'Inkomend',
-      rteMode_inboundHint:
-        'De app belt de RTE op het adres van zijn referentie',
+      rteMode_inboundHint: 'De app belt de RTE op het adres van zijn referentie',
       rteMode_database: 'Database (verouderd)',
       rteMode_databaseHint: 'De RTE gebruikt zelf de database van de app: verdwijnt in 8.0.0',
       socket: 'Verbinding',

@@ -1371,7 +1371,8 @@ export default {
       reject: 'Ablehnen',
       approved: '{name} ist freigegeben: sie erhält ab jetzt Jobs',
       rejected: '{name} wurde abgelehnt und entfernt',
-      rejectConfirm: '{name} ablehnen? Sie wird mit ihrer Anmeldeinformation entfernt. Sie kann erneut beitreten wollen.',
+      rejectConfirm:
+        '{name} ablehnen? Sie wird mit ihrer Anmeldeinformation entfernt. Sie kann erneut beitreten wollen.',
       label: 'Runner',
       description:
         'Wo Jobs laufen: Runtime-Environment-Container (RTE) für Playbooks (das AnsibleForms-Image mit AF_ROLE=rte) und AWX / Ansible Automation Platform / Ascender für Templates.',
@@ -1381,7 +1382,8 @@ export default {
       type: 'Typ',
       isDefault: 'Standard',
       enabled: 'Aktiviert',
-      enabledHelp: 'Ausgeschaltet bekommt er keine Jobs, auch nicht als Standard seines Typs. Er bleibt mit seinen Einstellungen in der Liste.',
+      enabledHelp:
+        'Ausgeschaltet bekommt er keine Jobs, auch nicht als Standard seines Typs. Er bleibt mit seinen Einstellungen in der Liste.',
       enable: 'Aktivieren',
       disable: 'Deaktivieren',
       isDefaultHelp:
@@ -1405,8 +1407,7 @@ export default {
       skipVerify: 'Zertifikatsprüfung überspringen',
       stepAuth: 'Anmeldedaten',
       credential: 'Zugangsdaten',
-      credentialHelp_rte:
-        'Das Token der RTE, und ihre Adresse bei Eingehend.',
+      credentialHelp_rte: 'Das Token der RTE, und ihre Adresse bei Eingehend.',
       credentialHelp_awx:
         'Eine AWX-Anmeldeinformation aus Verbindungen > Zugangsdaten: Adresse und Token oder Benutzer und Passwort.',
       credentialHelp_aap:
@@ -1423,11 +1424,9 @@ export default {
       rteMode: 'Modus',
       rteModeHelp: 'Wie die RTE mit der App spricht: RTE_MODE auf der RTE.',
       rteMode_outbound: 'Ausgehend',
-      rteMode_outboundHint:
-        'Die RTE verbindet sich mit der App: von außen erreicht sie nichts',
+      rteMode_outboundHint: 'Die RTE verbindet sich mit der App: von außen erreicht sie nichts',
       rteMode_inbound: 'Eingehend',
-      rteMode_inboundHint:
-        'Die App verbindet sich mit der RTE unter der Adresse ihrer Anmeldeinformation',
+      rteMode_inboundHint: 'Die App verbindet sich mit der RTE unter der Adresse ihrer Anmeldeinformation',
       rteMode_database: 'Datenbank (veraltet)',
       rteMode_databaseHint: 'Die RTE nutzt die Datenbank der App selbst: entfällt in 8.0.0',
       socket: 'Verbindung',

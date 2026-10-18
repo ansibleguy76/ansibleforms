@@ -247,8 +247,8 @@ export default {
     conditionUnknown: '{trigger}, sous condition',
   },
   nav: {
-    jobsWaiting: 'Jobs en attente d\'approbation',
-    runnersWaiting: 'Runners en attente d\'approbation',
+    jobsWaiting: "Jobs en attente d'approbation",
+    runnersWaiting: "Runners en attente d'approbation",
     // the lock on the Designer link while someone holds the designer, in its tooltip
     designerLockedByMe: 'Le concepteur est verrouillé par vous',
     designerLockedBy: 'Le concepteur est verrouillé par {user}',
@@ -514,9 +514,9 @@ export default {
       runner_delete: 'Runner supprimé',
       runner_approve_create: 'Runner approuvé',
       runner_reject_create: 'Runner refusé',
-      runner_jointoken_create: 'Jeton d\'adhésion créé',
-      runner_jointoken_delete: 'Jeton d\'adhésion supprimé',
-      runner_jointoken_revoke_create: 'Jeton d\'adhésion révoqué',
+      runner_jointoken_create: "Jeton d'adhésion créé",
+      runner_jointoken_delete: "Jeton d'adhésion supprimé",
+      runner_jointoken_revoke_create: "Jeton d'adhésion révoqué",
       runner_check_create: 'Connexion au runner testée',
       announcement_create: 'Annonce créée',
       announcement_update: 'Annonce mise à jour',
@@ -1360,10 +1360,10 @@ export default {
       startedJobHelp: "Le job lancé par la dernière exécution : ouvrez-le pour voir comment il s'est terminé.",
     },
     runners: {
-      pending: 'En attente d\'approbation',
-      pendingHint: 'Ce RTE demande à rejoindre. Approuvez-le pour qu\'il reçoive des jobs, ou refusez-le.',
+      pending: "En attente d'approbation",
+      pendingHint: "Ce RTE demande à rejoindre. Approuvez-le pour qu'il reçoive des jobs, ou refusez-le.",
       pendingTitle: 'Ce RTE demande à rejoindre',
-      pendingHelp: 'Vérifiez l\'empreinte du RTE avant de l\'approuver',
+      pendingHelp: "Vérifiez l'empreinte du RTE avant de l'approuver",
       pendingFingerprint: 'Empreinte',
       pendingHost: 'Hôte',
       pendingIp: 'Connecté depuis',
@@ -1384,7 +1384,8 @@ export default {
       type: 'Type',
       isDefault: 'Par défaut',
       enabled: 'Activé',
-      enabledHelp: 'Désactivé, il ne reçoit aucun job, même s\'il est le défaut de son type. Il reste listé avec ses réglages.',
+      enabledHelp:
+        "Désactivé, il ne reçoit aucun job, même s'il est le défaut de son type. Il reste listé avec ses réglages.",
       enable: 'Activer',
       disable: 'Désactiver',
       isDefaultHelp:
@@ -1408,8 +1409,7 @@ export default {
       skipVerify: 'Ignorer la vérification du certificat',
       stepAuth: 'Identifiants',
       credential: 'Identifiant',
-      credentialHelp_rte:
-        "Le jeton du RTE, et son adresse s'il est entrant.",
+      credentialHelp_rte: "Le jeton du RTE, et son adresse s'il est entrant.",
       credentialHelp_awx:
         'Un identifiant AWX de Connexions > Identifiants : son adresse, et un jeton ou un utilisateur et un mot de passe.',
       credentialHelp_aap:
@@ -1426,13 +1426,11 @@ export default {
       rteMode: 'Mode',
       rteModeHelp: "Comment le RTE parle à l'application : RTE_MODE sur le RTE.",
       rteMode_outbound: 'Sortant',
-      rteMode_outboundHint:
-        'Le RTE appelle l\'application : rien ne l\'atteint de l\'extérieur',
+      rteMode_outboundHint: "Le RTE appelle l'application : rien ne l'atteint de l'extérieur",
       rteMode_inbound: 'Entrant',
-      rteMode_inboundHint:
-        'L\'application appelle le RTE à l\'adresse de son identifiant',
+      rteMode_inboundHint: "L'application appelle le RTE à l'adresse de son identifiant",
       rteMode_database: 'Base de données (obsolète)',
-      rteMode_databaseHint: 'Le RTE utilise lui-même la base de l\'application : supprimé en 8.0.0',
+      rteMode_databaseHint: "Le RTE utilise lui-même la base de l'application : supprimé en 8.0.0",
       socket: 'Connexion',
       socketConnected: 'Connecté',
       socketDisconnected: 'Non connecté',
@@ -1455,7 +1453,7 @@ export default {
       tokenHelp_rte: 'Le RTE_TOKEN du RTE.',
       tokenHelp_api: "Un jeton d'API.",
       type_rte: 'RTE',
-      type_rteHint: 'Environnement d\'exécution, pour les playbooks Ansible et les workflows',
+      type_rteHint: "Environnement d'exécution, pour les playbooks Ansible et les workflows",
       type_awx: 'AWX',
       type_awxHint: 'AWX, pour les formulaires de modèle',
       type_aap: 'AAP',
