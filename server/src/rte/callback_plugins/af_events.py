@@ -29,6 +29,11 @@ description:
 RESULT_FIELDS = ("msg", "rc", "stderr", "changed", "skip_reason", "failed_when_result", "attempts")
 # a text field cut at this length : the full text is in the output
 MAX_TEXT = 2000
+# the whole result, as a task's details show it (the job page, a click on a host's line) : at most
+# this many characters of JSON ; past it, its long texts and lists are cut
+MAX_RESULT = 65536
+MAX_RESULT_TEXT = 8000
+MAX_RESULT_ITEMS = 200
 
 
 def _short(value):
@@ -43,6 +48,48 @@ def _short(value):
     if isinstance(value, str) and len(value) > MAX_TEXT:
         return value[:MAX_TEXT] + "..."
     return value
+
+
+def _trim(value):
+    """Cuts a result's long texts and lists, recursively, so its JSON stays readable and small.
+
+    Args:
+        value: a result or one of its values.
+
+    Returns:
+        The value, its texts at most MAX_RESULT_TEXT characters and its lists MAX_RESULT_ITEMS long.
+    """
+    if isinstance(value, str):
+        return value if len(value) <= MAX_RESULT_TEXT else value[:MAX_RESULT_TEXT] + "..."
+    if isinstance(value, list):
+        cut = [_trim(v) for v in value[:MAX_RESULT_ITEMS]]
+        if len(value) > MAX_RESULT_ITEMS:
+            cut.append(f"... {len(value) - MAX_RESULT_ITEMS} more")
+        return cut
+    if isinstance(value, dict):
+        return {k: _trim(v) for k, v in value.items()}
+    return value
+
+
+def _full(data):
+    """A host's whole result, as its details show it : Ansible's own keys (_ansible_*) left out,
+    cut when its JSON is longer than MAX_RESULT. A task with no_log has its result censored by
+    Ansible before it comes here.
+
+    Args:
+        data: the result's dictionary.
+
+    Returns:
+        The result to keep, or None when there is none.
+    """
+    kept = {k: v for k, v in (data or {}).items() if not str(k).startswith("_ansible")}
+    if not kept:
+        return None
+    if len(json.dumps(kept, default=str)) > MAX_RESULT:
+        kept = _trim(kept)
+        if len(json.dumps(kept, default=str)) > MAX_RESULT:
+            kept = {"msg": "The result is too large to keep", "keys": sorted(kept.keys())}
+    return kept
 
 
 class CallbackModule(CallbackBase):
@@ -133,15 +180,62 @@ class CallbackModule(CallbackBase):
         host = result._host.get_name()
         data = result._result or {}
         began = self._started.pop(host, None)
+        self._emit(kind, host=host, duration=round(time.time() - began, 3) if began else None, start=round(began, 3) if began else None, **self._fields(result, data))
+
+    def _fields(self, result, data):
+        """What a host's result or loop item says : its summary, its item, its module and its whole
+        result (its details).
+
+        Args:
+            result: the task's result for that host.
+            data: its dictionary.
+
+        Returns:
+            The event's fields.
+        """
         fields = {k: _short(data[k]) for k in RESULT_FIELDS if k in data}
         item = data.get("item") if "item" in data else None
-        self._emit(
-            kind,
-            host=host,
-            duration=round(time.time() - began, 3) if began else None,
-            item=_short(item if isinstance(item, (str, int, float, bool)) else json.dumps(item, default=str)) if item is not None else None,
-            data=fields or None,
-        )
+        task = getattr(result, "_task", None)
+        return {
+            "item": _short(item if isinstance(item, (str, int, float, bool)) else json.dumps(item, default=str)) if item is not None else None,
+            "data": fields or None,
+            "action": getattr(task, "action", None),
+            "result": _full(data),
+        }
+
+    def _item(self, status, result):
+        """One item of a loop : a line of the output of its own, with its details.
+
+        Args:
+            status: ok, changed, failed or skipped.
+            result: the item's result.
+        """
+        data = result._result or {}
+        self._emit("item", host=result._host.get_name(), status=status, **self._fields(result, data))
+
+    def v2_runner_item_on_ok(self, result):
+        """A loop's item was ok, or changed something.
+
+        Args:
+            result: the item's result.
+        """
+        self._item("changed" if (result._result or {}).get("changed") else "ok", result)
+
+    def v2_runner_item_on_failed(self, result):
+        """A loop's item failed.
+
+        Args:
+            result: the item's result.
+        """
+        self._item("failed", result)
+
+    def v2_runner_item_on_skipped(self, result):
+        """A loop's item was skipped.
+
+        Args:
+            result: the item's result.
+        """
+        self._item("skipped", result)
 
     def v2_runner_on_ok(self, result):
         """A host's result was ok, or changed something.

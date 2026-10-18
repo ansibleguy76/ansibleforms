@@ -2816,6 +2816,24 @@ export default {
     copyOutput: "Copia l'output",
     downloadOutput: "Scarica l'output",
     // a playbook's structured events : the hosts-and-tasks panel (AppJobEvents)
+    // a host's result of a task, its line of the output clicked (AppTaskResult)
+    taskResult: {
+      title: 'Risultato del task',
+      open: 'Mostra questo risultato',
+      failed: 'Impossibile leggere il risultato',
+      details: 'Dettagli',
+      host: 'Host',
+      play: 'Play',
+      task: 'Task',
+      module: 'Modulo',
+      item: 'Elemento',
+      started: 'Avvio',
+      duration: 'Durata',
+      rc: 'Codice di uscita',
+      message: 'Messaggio',
+      stdout: 'Output standard',
+      stderr: 'Errore standard',
+    },
     events: {
       button: 'Host e task',
       title: 'Host e task',

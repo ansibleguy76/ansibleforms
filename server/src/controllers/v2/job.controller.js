@@ -72,6 +72,24 @@ const getJobEvents = async function(req, res) {
     }
   }
 };
+// one event with its whole result : a host's line of the output clicked (its details), for who may
+// see the job
+const getJobEvent = async function(req, res) {
+  try {
+    await Job.findById(req.user.user, req.params.id, false, true)
+    const event = await JobEvent.findOne(req.params.id, Number(req.params.order));
+    if (!event) return res.status(404).json(RestResultv2.error(`No event ${req.params.order} in job ${req.params.id}`));
+    res.status(200).json(RestResultv2.single(event));
+  } catch (err) {
+    if (err.name === 'NotFoundError') {
+      res.status(404).json(RestResultv2.error(err.message));
+    } else if (err.name === 'AccessDeniedError') {
+      res.status(403).json(RestResultv2.error(err.message));
+    } else {
+      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieve'), err.toString()));
+    }
+  }
+};
 // a workflow node's variables and artifacts (the job page's node : Show variables, Show
 // artifacts) : the job read as getJob reads it, so only who may see the job sees them
 const getWorkflowNode = async function(req, res) {
@@ -334,6 +352,7 @@ const rejectJob = async function(req, res) {
 export { MAX_JOBS_LIST };
 export default {
   getJobEvents,
+  getJobEvent,
   abortJob,
   getJob,
   getWorkflowNode,

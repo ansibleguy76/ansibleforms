@@ -15,6 +15,9 @@ CREATE TABLE `job_events` (
   `time` decimal(14,3) DEFAULT NULL,
   -- the result's message and fields, or the recap's counts : JSON, masked as the output
   `data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  -- a host's or a loop item's whole result, as its details show it (a click on its output line) :
+  -- JSON, masked as the output ; read one at a time, never with the list
+  `result` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_job_events_order` (`job_id`, `order`),
   CONSTRAINT `FK_job_events_jobs` FOREIGN KEY (`job_id`) REFERENCES `jobs` (`id`) ON DELETE CASCADE ON UPDATE CASCADE

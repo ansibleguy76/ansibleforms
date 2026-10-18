@@ -13,6 +13,9 @@ import logger from "../lib/logger.js";
 const POLL_MS = 500;
 // events handed on at once at most : a playbook over hundreds of hosts writes thousands
 const MAX_BATCH = 500;
+// and at most this many characters of JSON : an event carries a host's whole result (up to 64 KB,
+// af_events.py), and a batch goes in one socket message (MAX_PAYLOAD, 8 MB)
+const MAX_BATCH_BYTES = 2 * 1024 * 1024;
 
 /**
  * Follows an events file.
@@ -57,10 +60,23 @@ export function createEventTail({ file, write }) {
           logger.debug(`An event line could not be read: ${line.slice(0, 120)}`);
         }
       }
-      for (let i = 0; i < events.length; i += MAX_BATCH) {
-        const batch = events.slice(i, i + MAX_BATCH);
-        writing = writing.then(() => write(batch)).catch((e) => logger.error(`The playbook's events could not be stored: ${e.message}`));
+      // in order, cut by count and by size
+      let batch = [];
+      let bytes = 0;
+      const send = (list) => {
+        writing = writing.then(() => write(list)).catch((e) => logger.error(`The playbook's events could not be stored: ${e.message}`));
+      };
+      for (const e of events) {
+        const size = JSON.stringify(e).length;
+        if (batch.length && (batch.length >= MAX_BATCH || bytes + size > MAX_BATCH_BYTES)) {
+          send(batch);
+          batch = [];
+          bytes = 0;
+        }
+        batch.push(e);
+        bytes += size;
       }
+      if (batch.length) send(batch);
     } finally {
       fs.closeSync(fd);
     }

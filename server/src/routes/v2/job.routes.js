@@ -13,6 +13,8 @@ router.get('/:id', jobControllerv2.getJob);
 router.get('/:id/node/:nodeId', jobControllerv2.getWorkflowNode);
 // a playbook job's structured events (its grid, timeline and recap)
 router.get('/:id/events', jobControllerv2.getJobEvents);
+// one event with its whole result : a host's line of the output clicked
+router.get('/:id/events/:order', jobControllerv2.getJobEvent);
 // get raw form data for a job
 router.get('/:id/rawformdata', jobControllerv2.getRawFormData);
 // download a job
