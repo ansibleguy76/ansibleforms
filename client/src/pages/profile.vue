@@ -271,7 +271,11 @@ const tokensReload = ref(0);
 // sign-in, by the same user, a few minutes later at most (an abandoned one is never made later)
 const PENDING_TOKEN = 'af_pending_token';
 const PENDING_MAX_MS = 5 * 60 * 1000;
-const tokenExample = computed(() => `curl -H "Authorization: Bearer $TOKEN" ${window.location.origin}/api/v2/job`);
+// the app's own address, its sub path included when it is hosted under one (BaseUrl) : the
+// origin alone pointed the example at the proxy's root, where the api is not
+const tokenExample = computed(
+  () => `curl -H "Authorization: Bearer $TOKEN" ${window.location.origin}${BaseUrl}/api/v2/job`,
+);
 
 // where the token list's toolbar goes (the title line)
 const tokenToolsId = `af-token-tools-${Math.random().toString(36).slice(2, 10)}`;
@@ -298,6 +302,23 @@ function openTokenWizard() {
 
 // a token is named : what it is for, so it is told apart in the list (and revoked as the right one)
 const tokenNamed = computed(() => !!tokenForm.value.name.trim());
+
+/**
+ * A step of the wizard picked in its stepper. Once a token is shown, going back starts a new
+ * token from the first step : the steps behind it still held the form of the token just made
+ * (its name cleared, its password gone), and confirming it again made a second token by
+ * accident while the first was no longer shown anywhere.
+ *
+ * Args:
+ *   index (number): the step picked.
+ */
+function goTokenStep(index) {
+  if (tokenResult.value && index < 2) {
+    openTokenWizard();
+    return;
+  }
+  tokenStep.value = index;
+}
 
 /** From the token (name, lifetime) to its confirmation ; only once it is named. */
 function nextTokenStep() {
@@ -1058,12 +1079,7 @@ async function changePassword() {
             <template #title>{{ t('profilePage.token.new') }}</template>
             <!-- its steps, above the fields and out of their scroll -->
             <template #top>
-              <AppWizardSteps
-                :steps="tokenSteps"
-                :current="tokenStep"
-                :reached="tokenReached"
-                @go="(i) => (tokenStep = i)"
-              />
+              <AppWizardSteps :steps="tokenSteps" :current="tokenStep" :reached="tokenReached" @go="goTokenStep" />
             </template>
             <template #default>
               <div v-if="tokenStep === 2 && tokenResult">
