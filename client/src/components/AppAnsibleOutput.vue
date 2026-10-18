@@ -230,8 +230,16 @@ const resultOf = computed(() => {
   let next = 0;
   let task = null;
   let seen = {};
+  // a result printed with its body (ok: [host] => { ... }) : its lines up to the closing brace
+  let body = null;
   lines.value.forEach((line, index) => {
     const text = plain(line.html);
+    if (body !== null && !line.level && !RESULT_LINE.test(text)) {
+      map.set(index, body);
+      if (text.trimEnd() === '}') body = null;
+      return;
+    }
+    body = null;
     if (line.level === 3) {
       // TASK [name] or RUNNING HANDLER [name] : the next task of that name
       const name = text.replace(/^(TASK|RUNNING HANDLER) \[/, '').replace(/\]\s*\**\s*$/, '');
@@ -249,7 +257,9 @@ const resultOf = computed(() => {
     const key = `${item ? 'i' : 'r'}:${host}`;
     const k = (seen[key] = (seen[key] ?? -1) + 1);
     const event = (item ? task.items : task.results)[host]?.[k];
-    if (event?.detailed) map.set(index, event.order);
+    if (!event?.detailed) return;
+    map.set(index, event.order);
+    if (text.trimEnd().endsWith('{')) body = event.order;
   });
   return map;
 });
@@ -265,6 +275,9 @@ function openResult(index) {
   const order = resultOf.value.get(index);
   if (order !== undefined) detailOrder.value = order;
 }
+
+// the result under the mouse : all its lines (its body too) highlighted as one
+const hoverOrder = ref(null);
 
 // the folded sections, by their head line's index
 const folded = ref(new Set());
@@ -770,9 +783,14 @@ function copyLog() {
             </span>
             <span
               class="af-ansible-text"
-              :class="{ 'af-ansible-result': resultOf.has(line.index) }"
+              :class="{
+                'af-ansible-result': resultOf.has(line.index),
+                'af-ansible-result-hover': hoverOrder !== null && resultOf.get(line.index) === hoverOrder,
+              }"
               :title="resultOf.has(line.index) ? t('jobs.taskResult.open') : undefined"
               @click="openResult(line.index)"
+              @mouseenter="hoverOrder = resultOf.get(line.index) ?? null"
+              @mouseleave="hoverOrder = null"
               ><span v-html="line.html"></span
               ><span v-if="folded.has(line.index)" class="af-ansible-more" @click="toggle(line.index)">{{
                 line.end - line.index - 1
@@ -819,9 +837,8 @@ function copyLog() {
 /* a host's result line with details : a click opens them (AppTaskResult), as in AWX */
 .af-ansible-result {
   cursor: pointer;
-  border-radius: 0.2rem;
 }
-.af-ansible-result:hover {
+.af-ansible-result-hover {
   background: color-mix(in srgb, var(--bs-primary) 12%, transparent);
 }
 .has-text-weight-bold {
