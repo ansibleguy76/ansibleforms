@@ -61,7 +61,8 @@ function details(r) {
     { key: t('settings.runners.pendingIp'), value: i.ip },
     { key: t('settings.runners.rteMode'), value: i.mode && t(`settings.runners.rteMode_${i.mode}`) },
     { key: t('settings.fields.uri'), value: i.url },
-    { key: t('settings.runners.pendingFingerprint'), value: i.fingerprint },
+    // compared character by character with the installer's : in a fixed-width font
+    { key: t('settings.runners.pendingFingerprint'), value: i.fingerprint, mono: true },
     // when it asked : a phrase (asked 17 minutes ago), not key: value ; its date on hover
     {
       key: 'since',
@@ -218,7 +219,12 @@ onMounted(async () => {
                 <span class="text-body-secondary small ms-2">
                   <template v-for="(d, n) in details(r)" :key="d.key"
                     ><template v-if="n"> · </template
-                    ><span :title="d.title || undefined">{{ d.text || `${d.key}: ${d.value}` }}</span></template
+                    ><span :title="d.title || undefined"
+                      ><template v-if="d.text">{{ d.text }}</template
+                      ><template v-else
+                        >{{ d.key }}: <span :class="{ 'font-monospace': d.mono }">{{ d.value }}</span></template
+                      ></span
+                    ></template
                   >
                 </span>
               </li>
