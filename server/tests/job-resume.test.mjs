@@ -64,7 +64,7 @@ mysql.do = async function (sql, params) {
     return { affectedRows: 1 };
   }
   // Job.abandonOwn : the running jobs of a tracker, and the untracked ones when asked
-  if (sql.includes("set status='abandoned',abort_requested=0 where (status='running' or abort_requested) and host IS NULL and (tracker=?")) {
+  if (sql.includes("set status='abandoned',abort_requested=0 where (status='running' or (status='approve' AND job_type='workflow')) and host IS NULL and (tracker=?")) {
     const untracked = sql.includes("or tracker IS NULL");
     let changedRows = 0;
     for (const j of Object.values(jobs)) {

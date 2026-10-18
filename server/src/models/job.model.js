@@ -378,43 +378,136 @@ Job.create = async function (record) {
   const res = await mysql.do("INSERT INTO AnsibleForms.`jobs` set ?", { tracker: nodeId, ...record });
   return res.insertId;
 };
+// ─── the sweeps : jobs nobody follows any more end as abandoned ───
+//
+// A sweep matches only a job that is still under way : status 'running' (and, where the loop
+// that drove it is known to be gone, a workflow job waiting on one of its approval nodes). It
+// never matches on abort_requested alone : that flag outlives the job when the abort came too
+// late (an aborted workflow, an RTE, AWX or Semaphore job that succeeded before the cancel
+// reached it, an approval gate aborted and then rejected), and matching on it turned those
+// finished jobs into 'abandoned' after the fact.
+
+// a workflow job waiting on an approval node : under way, but only while its loop lives
+const WAITING_WORKFLOW = "(status='approve' AND job_type='workflow')";
+
+/**
+ * The hourly sweep : running jobs that showed no sign of life for a day.
+ *
+ * The age is measured from the job's last activity, not from its start : the latest of its
+ * start and its last output line. A workflow or a job that waited more than a day for its
+ * approval and was approved just now prints its "approved by" line when it runs on, so it is
+ * not abandoned while it runs. Only jobs no runner claimed : one running on an RTE (jobs.host
+ * = its name) carries on when the app restarts, and that RTE cleans up its own jobs when it
+ * restarts.
+ *
+ * Args:
+ *   all (boolean): every running job, whatever its age (no caller today).
+ *
+ * Returns:
+ *   Promise<number>: the jobs abandoned.
+ */
 Job.abandon = async function (all = false) {
-  // abandon jobs
   logger.notice(`Abandoning jobs`);
-  // Only jobs no runner claimed : one running on an RTE (jobs.host = its name) carries
-  // on when the app restarts, and that RTE cleans up its own jobs when it restarts. The
-  // app runs no playbook itself, so it never claims one.
+  // step 1 : only running jobs, the abort flag answered with the status
   var sql =
-    "UPDATE AnsibleForms.`jobs` set status='abandoned',abort_requested=0 where (status='running' or abort_requested) and host IS NULL ";
+    "UPDATE AnsibleForms.`jobs` j set j.status='abandoned',j.abort_requested=0 where j.status='running' and j.host IS NULL ";
   if (!all) {
-    sql = sql + "and (start < (NOW() - INTERVAL 1 DAY))"; // remove jobs that are 1 day old
+    // step 2 : a day old, and quiet for a day (no output line since)
+    sql = sql +
+      "and (j.start < (NOW() - INTERVAL 1 DAY)) " +
+      "and NOT EXISTS (SELECT 1 FROM AnsibleForms.`job_output` o WHERE o.job_id=j.id AND o.`timestamp` > (NOW() - INTERVAL 1 DAY))";
   }
   const res = await mysql.do(sql);
   return res.changedRows;
 };
-// At a process start : the jobs this node followed died with its previous run. `untracked`
-// adds the jobs no node follows (started before 7) ; only the worker's start passes it, so
-// they are swept once per database, not by every app node that starts.
+
+/**
+ * At a process start : the jobs this node followed died with its previous run - the running
+ * ones, and the workflow jobs waiting on an approval node (their loop lived in this process
+ * too : approved, nothing would run them on). `untracked` adds the jobs no node follows
+ * (started before 7) ; only the worker's start passes it, so they are swept once per database,
+ * not by every app node that starts.
+ *
+ * Args:
+ *   tracker (string|null): the node whose jobs end (null : none, with untracked only).
+ *   options (object):
+ *     untracked (boolean): also the jobs no node follows.
+ *
+ * Returns:
+ *   Promise<number>: the jobs abandoned.
+ */
 Job.abandonOwn = async function (tracker, { untracked = false } = {}) {
   const res = await mysql.do(
-    "UPDATE AnsibleForms.`jobs` set status='abandoned',abort_requested=0 where (status='running' or abort_requested) and host IS NULL and (tracker=?" +
+    `UPDATE AnsibleForms.\`jobs\` set status='abandoned',abort_requested=0 where (status='running' or ${WAITING_WORKFLOW}) and host IS NULL and (tracker=?` +
       (untracked ? " or tracker IS NULL" : "") + ")",
     [tracker]);
   return res.changedRows;
 };
-// The worker, every minute : the jobs of a node that stopped answering (its row in `nodes`
-// is older than NODE_DEAD_SECONDS, or gone) - a container that was replaced and will never
-// come back under the same name to clean up after itself. A job belongs to the RTE running it
-// (jobs.host) when there is one - it carries on when the app node that started it goes - and
-// otherwise to the node following it (jobs.tracker).
+
+/**
+ * The worker, every minute : the jobs of a node that stopped answering (its row in `nodes` is
+ * older than NODE_DEAD_SECONDS, or gone) - a container that was replaced and will never come
+ * back under the same name to clean up after itself. A job belongs to the RTE running it
+ * (jobs.host) when there is one - it carries on when the app node that started it goes - and
+ * otherwise to the node following it (jobs.tracker). A workflow job waiting on an approval
+ * node goes too : its loop died with that node.
+ *
+ * Args:
+ *   self (string): this node, whose own jobs are never swept here.
+ *
+ * Returns:
+ *   Promise<number>: the jobs abandoned.
+ */
 Job.abandonDeadNodes = async function (self = nodeId) {
   const owner = "COALESCE(j.host, j.tracker)";
   const res = await mysql.do(
     "UPDATE AnsibleForms.`jobs` j set j.status='abandoned',j.abort_requested=0 " +
-    `where (j.status='running' or j.abort_requested) and ${owner} IS NOT NULL and ${owner}<>? ` +
+    `where (j.status='running' or (j.status='approve' and j.job_type='workflow')) and ${owner} IS NOT NULL and ${owner}<>? ` +
     `and NOT EXISTS (SELECT 1 FROM AnsibleForms.\`nodes\` n WHERE n.id=${owner} AND n.last_seen > (NOW() - INTERVAL ? SECOND))`,
     [self, NODE_DEAD_SECONDS], true);
   return res.changedRows;
+};
+
+/**
+ * Whether another node follows a job now : it was taken over (lib/jobResume.js claim) while
+ * this node's heartbeat had lapsed. The node that lost it stops following it - no more output
+ * lines, no end of its own - so the job is written by one follower only.
+ *
+ * A job no node names (from before 7) or one an RTE runs (jobs.host) is nobody else's.
+ *
+ * Args:
+ *   id (number): the job.
+ *   self (string): this node.
+ *
+ * Returns:
+ *   Promise<boolean>: true when jobs.tracker names another node.
+ */
+/**
+ * A multistep moves on to its next step : the step written, in one statement that matches only
+ * a multistep still running and still followed by this node. A sweep that abandoned it, an end
+ * written meanwhile, or a take-over by another node leaves it as it is.
+ *
+ * Args:
+ *   id (number): the multistep job.
+ *   step (string): the step's name.
+ *   self (string): this node.
+ *
+ * Returns:
+ *   Promise<boolean>: true when this loop may run the step.
+ */
+Job.claimNextStep = async function (id, step, self = nodeId) {
+  const res = await mysql.do(
+    "UPDATE AnsibleForms.`jobs` SET step=? WHERE id=? AND status='running' AND (tracker IS NULL OR tracker=?)",
+    [step, id, self]);
+  return (res?.affectedRows || 0) > 0;
+};
+
+Job.followedElsewhere = async function (id, self = nodeId) {
+  const rows = await mysql.do("SELECT tracker, host FROM AnsibleForms.`jobs` WHERE id=?", [id], true);
+  const row = rows?.[0];
+  if (!row) return false;
+  if (row.host) return false;
+  return row.tracker != null && row.tracker !== self;
 };
 Job.resetAbortRequested = async function (id) {
   logger.debug(`Resetting abort requested for job ${id}`);
@@ -446,9 +539,21 @@ Job.update = async function (record, id) {
  *   Promise<boolean>: true when this call moved it.
  */
 Job.transitionStatus = async function (id, from, fields) {
-  const res = await mysql.do("UPDATE AnsibleForms.`jobs` SET ? WHERE id=? AND status IN (?)", [fields, id, from]);
+  // a job that ends answers its abort in the same statement : the flag must not outlive the
+  // job (a sweep, a relaunch and a second abort all read it). A rejected workflow job is the
+  // exception : only its approval node was rejected, its loop runs on, and an abort that came
+  // in while it waited must still stop it.
+  const write = { ...fields };
+  if (TERMINAL_STATUS.includes(write.status) && !("abort_requested" in write)) {
+    write.abort_requested = write.status === "rejected" ? KEEP_WORKFLOW_ABORT : 0;
+  }
+  const res = await mysql.do("UPDATE AnsibleForms.`jobs` SET ? WHERE id=? AND status IN (?)", [write, id, from]);
   return (res?.affectedRows || 0) > 0;
 };
+
+// the abort flag of a job moved to 'rejected' : kept for a workflow job (its loop reads it),
+// cleared for any other (written as SQL, so one statement decides on the row's own job type)
+const KEEP_WORKFLOW_ABORT = { toSqlString: () => "IF(job_type='workflow', abort_requested, 0)" };
 
 // the statuses a job ends from : running, and abandoned - a job the app gave up on (its node
 // stopped answering) that its runner finished after all ends with what really happened
@@ -465,10 +570,12 @@ Job.endJobStatus = async (
   try {
     // the end is written once : a second writer (a late RTE, a sweep, the app failing it) finds
     // the job ended and leaves it - no second last line, no second mail
+    // the abort flag is answered in the same statement : an ended job never carries it
     const moved = await Job.transitionStatus(jobid, ENDS_FROM, {
       status: status,
       end: getTimestamp(),
       awx_artifacts: JSON.stringify(awx_artifacts),
+      abort_requested: 0,
     });
     if (!moved) {
       logger.debug(`Job ${jobid} has ended already: not ending it again as ${status}`);
@@ -1415,19 +1522,41 @@ Job.launch = async function ({
   // If waitForCompletion is true (multistep), return jobid immediately with a promise to await
   // Otherwise fire and forget - start execution in background and return job ID immediately
   if (waitForCompletion) {
-    const completionPromise = executeJob();
+    // the caller (a multistep's step, a workflow's node) waits on it and sees the error, but
+    // only this job's own row can say it failed : ended here too, then passed on
+    const completionPromise = executeJob().catch(async (err) => {
+      await failJobOnError(jobid, err, "Step job");
+      throw err;
+    });
     return { id: jobid, completionPromise };
   } else {
-    executeJob().catch(async (err) => {
-      logger.error(`Background job ${jobid} failed:`, err);
-      // nothing else ends it : it would stay running for ever, with nothing in its output to
-      // say why. Ended once (endJobStatus leaves a job that has ended already)
-      const order = (await Job.lastOrder(jobid).catch(() => 0)) + 1;
-      await Job.endJobStatus(jobid, order, "stderr", "failed", `[ERROR]: ${err?.message || err}`);
-    });
+    executeJob().catch((err) => failJobOnError(jobid, err, "Background job"));
     return { id: jobid };
   }
 };
+
+/**
+ * Ends a job whose run threw : nothing else ends it, so it would stay running for ever, with
+ * nothing in its output to say why. Ended once (endJobStatus leaves a job that has ended
+ * already, an RTE's own end or an abort included) ; never throws.
+ *
+ * Args:
+ *   jobid (number): the job.
+ *   err (Error): what its run threw.
+ *   what (string): how the log names it (Background job, Step job, Approved job).
+ *
+ * Returns:
+ *   Promise<void>: once the job is ended (or the attempt failed, logged).
+ */
+async function failJobOnError(jobid, err, what) {
+  logger.error(`${what} ${jobid} failed:`, err);
+  try {
+    const order = (await Job.lastOrder(jobid).catch(() => 0)) + 1;
+    await Job.endJobStatus(jobid, order, "stderr", "failed", `[ERROR]: ${err?.message || err}`);
+  } catch (e) {
+    logger.error(`Could not end job ${jobid} as failed: ${e?.message || e}`);
+  }
+}
 
 
 Job.continue = async function ({ form, user, credentials = {}, extravars = {}, jobid }) {
@@ -1522,10 +1651,9 @@ Job.continue = async function ({ form, user, credentials = {}, extravars = {}, j
     }
   };
 
-  // Fire and forget - execute in background
-  executeApprovedJob().catch(err => {
-    logger.error(`Approved job ${jobid} failed:`, err);
-  });
+  // Fire and forget - execute in background ; a run that throws ends the job as failed, or it
+  // would stay running (approved, claimed by this node) with no word in its output
+  executeApprovedJob().catch((err) => failJobOnError(jobid, err, "Approved job"));
 
   return { id: jobid };
 };
@@ -2282,14 +2410,13 @@ Multistep.launch = async function ({
         jobid,
         counter + 1
       );
-      await Job.update(
-        {
-          status: "approve",
-          approval: JSON.stringify(approval),
-          end: getTimestamp(),
-        },
-        jobid
-      );
+      // only a multistep still running waits for approval : one aborted or abandoned
+      // meanwhile keeps the status it has
+      await Job.transitionStatus(jobid, ["running"], {
+        status: "approve",
+        approval: JSON.stringify(approval),
+        end: getTimestamp(),
+      });
       return true;
     } else {
       logger.notice("Continuing multistep " + form + " it has been approved");
@@ -2345,7 +2472,13 @@ Multistep.launch = async function ({
         }
         // ------- SKIPPING HANDLED -----------------------
         logger.notice("Running step " + step.name);
-        await Job.update({ step: step.name, status: "running" }, jobid);
+        // conditional : only a multistep still running moves on to its next step. One the
+        // app gave up on (abandoned by a sweep), ended, or taken over by another node is not
+        // this loop's any more - writing 'running' over it would bring it back to life
+        if (!(await Job.claimNextStep(jobid, step.name))) {
+          logger.warning(`Multistep job ${jobid} is no longer running on this node: not starting step ${step.name}`);
+          return false;
+        }
 
         // set step in parent
         // if this step has an approval
@@ -2360,14 +2493,12 @@ Multistep.launch = async function ({
               ++counter
             );
             try {
-              await Job.update(
-                {
-                  status: "approve",
-                  approval: JSON.stringify(step.approval),
-                  end: getTimestamp(),
-                },
-                jobid
-              );
+              // conditional, as the step's own claim above
+              await Job.transitionStatus(jobid, ["running"], {
+                status: "approve",
+                approval: JSON.stringify(step.approval),
+                end: getTimestamp(),
+              });
             } catch (error) {
               logger.error("Failed to update job", error);
             }
@@ -2627,6 +2758,8 @@ const CHANGES_A_JOB = [
   "create", "update", "endJobStatus", "printJobOutput", "createOutput", "replaceTrackedOutput",
   "deleteOutput", "delete", "abort", "requestAbort", "resetAbortRequested", "abandon",
   "abandonOwn", "abandonDeadNodes", "removeOlderThan", "approve", "reject", "continue",
+  // the conditional writes : a status moved (an approval gate, a step's approval), a step begun
+  "transitionStatus", "claimNextStep",
 ];
 for (const fn of CHANGES_A_JOB) {
   const original = Job[fn];

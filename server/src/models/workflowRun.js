@@ -396,6 +396,24 @@ async function credentialTypes(workflow) {
 // ─── the run ──────────────────────────────────────────────────────────────────
 
 /**
+ * Whether a workflow job is still its loop's to drive, from its status as stored : running,
+ * waiting on an approval node, rejected on the node it waits on (the loop runs on : only the
+ * node failed) or aborted (the loop ends it as such). Anything else - abandoned by a sweep,
+ * ended by another writer, deleted - is no longer followed.
+ *
+ * Args:
+ *   status (string|undefined): the job's status (undefined : the row is gone).
+ *   waiting (boolean): the loop waits on an approval node.
+ *
+ * Returns:
+ *   boolean: true when the loop goes on.
+ */
+export function stillUnderWay(status, waiting = false) {
+  if (status === "running" || status === "approve" || status === "aborted") return true;
+  return status === "rejected" && waiting;
+}
+
+/**
  * Runs a workflow job : its nodes by AWX's rules, until none is left to run.
  *
  * Args:
@@ -474,8 +492,18 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
   // ─── the approval the workflow job waits on (one at a time ; others queue) ───
   const approvals = [];
   let waiting = null; // { identifier, since, timeout }
+  /**
+   * Holds the workflow job on an approval node : its APPROVE line, status 'approve' and the
+   * notification.
+   *
+   * Args:
+   *   node (object): the approval node.
+   *
+   * Returns:
+   *   Promise<boolean>: true when the job waits on it now ; false when the job was no longer
+   *     running (abandoned by a sweep, ended) : nothing waits, and the loop's next tick stops.
+   */
   const askApproval = async (node) => {
-    waiting = { identifier: node.identifier, since: Date.now(), timeout: node.timeout };
     const approval = {
       title: node.name,
       message: node.description || `Workflow ${workflow.name}: ${node.name}`,
@@ -485,12 +513,20 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
       channels: formObj.approval?.channels || [],
     };
     await print(`APPROVE [${node.name}] ${"*".repeat(Math.max(5, 69 - node.name.length))}`);
-    await Job.transitionStatus(jobid, ["running"], { status: "approve", approval: JSON.stringify(approval) });
+    // only a running job waits : one that is not (abandoned, ended) would read as never
+    // answered, and the loop polled its outcome for ever
+    const moved = await Job.transitionStatus(jobid, ["running"], { status: "approve", approval: JSON.stringify(approval) });
+    if (!moved) {
+      logger.warning(`Workflow job ${jobid} is no longer running: not waiting on approval node ${node.identifier}`);
+      return false;
+    }
+    waiting = { identifier: node.identifier, since: Date.now(), timeout: node.timeout };
     try {
       await Job.sendApprovalNotification(approval, extravars, jobid);
     } catch (e) {
       logger.warning(`Workflow job ${jobid}: the approval notification failed: ${e.message}`);
     }
+    return true;
   };
   /**
    * Where the approval waited on stands : approved (the job running again), rejected, timed out.
@@ -620,6 +656,14 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
   let aborted = false;
   for (;;) {
     const jobStatus = await jobStatusOf(jobid);
+    // no longer this loop's : a job that is neither running nor waiting on an approval (nor
+    // rejected on the one it waits on, nor aborted, both handled below) was given up on - a
+    // sweep abandoned it, another writer ended it, or it was deleted. Nothing more starts and
+    // nothing more is written : the loop stops following it
+    if (!stillUnderWay(jobStatus, !!waiting)) {
+      logger.warning(`Workflow job ${jobid} is ${jobStatus || "gone"}: no longer following it`);
+      return;
+    }
     if (!aborted && (jobStatus === "aborted" || (await Job.isAbortRequested(jobid)))) {
       aborted = true;
       wfStatus = "canceled";

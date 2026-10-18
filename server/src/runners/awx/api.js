@@ -425,6 +425,27 @@ Awx.launchTemplate = async function (
   }
 };
 
+// what a tracker returns when it stopped because another node follows the job now
+export const TAKEN_OVER = "Followed by another node";
+
+/**
+ * Whether the job a tracker follows was taken over by another node (lib/jobResume.js) while
+ * this node's heartbeat had lapsed : this tracker then stops, writing nothing more, so the job
+ * gets one set of output lines and one end. A database that does not answer is not a take-over :
+ * the poll goes on and finds out on its next turn.
+ *
+ * Args:
+ *   jobid (number): the job.
+ *
+ * Returns:
+ *   Promise<boolean>: true when this tracker must stop.
+ */
+async function takenOver(jobid) {
+  const elsewhere = await Promise.resolve().then(() => Job.followedElsewhere(jobid)).catch(() => false);
+  if (elsewhere) logger.warning(`Job ${jobid} is followed by another node now: this node stops following it`);
+  return elsewhere;
+}
+
 /**
  * Poll an AWX job to completion.
  *
@@ -465,6 +486,8 @@ Awx.trackJob = async function (
   // AWX failing to answer, in a row (contactTolerance)
   const contact = contactTolerance();
   for (;;) {
+  // taken over by another node (this one's heartbeat lapsed) : that node follows it now
+  if (await takenOver(jobid)) return TAKEN_OVER;
   logger.info(`searching for job with id ${job.id}`);
   try {
     // get job info
@@ -771,6 +794,8 @@ Awx.trackWorkflowJob = async function (
   // AWX failing to answer, in a row (contactTolerance)
   const contact = contactTolerance();
   for (;;) {
+    // taken over by another node (this one's heartbeat lapsed) : that node follows it now
+    if (await takenOver(jobid)) return TAKEN_OVER;
     try {
       // get workflow job info
       const axiosResult = await axios.get(serverOf(awxConfig) + job.url, axiosConfig);
