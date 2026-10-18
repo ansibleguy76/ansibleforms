@@ -178,7 +178,8 @@ describe("an inbound RTE registering with its certificate", () => {
   });
 
   test("its own token and a renewed certificate : pinned to the new one ; the same one : nothing written", async () => {
-    credentials["dmz-in-rte"] = { id: 7, name: "dmz-in-rte", credential_type: "rte", password: "rte-token-0123456789", url: "https://rte.dmz:8443", ca_bundle: parseCertBundle(certA).pem };
+    // made by an RTE before the pin line existed : its description as the hub writes it
+    credentials["dmz-in-rte"] = { id: 7, name: "dmz-in-rte", credential_type: "rte", password: "rte-token-0123456789", url: "https://rte.dmz:8443", ca_bundle: parseCertBundle(certA).pem, description: "The token of the RTE 'dmz-in' (its RTE_TOKEN), stored when it joined" };
     // findByName reads the address, the token and the bundle from the credential
     runners["dmz-in"] = { id: 1, name: "dmz-in", type: "rte", credential: "dmz-in-rte", token: "rte-token-0123456789", rte_mode: "inbound", uri: "https://rte.dmz:8443", ca_bundle: parseCertBundle(certA).pem };
     await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certA });
@@ -186,8 +187,67 @@ describe("an inbound RTE registering with its certificate", () => {
     const res = await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certB });
     assert.equal(credentials["dmz-in-rte"].ca_bundle, parseCertBundle(certB).pem);
     assert.equal(credentials["dmz-in-rte"].ignore_certs, 0);
+    assert.match(credentials["dmz-in-rte"].description, /RTE certificate sha256: [0-9a-f]{64}$/, "the pin line written");
     assert.equal(updated.length, 0, "the runner itself unchanged : its mode and address are the same");
     assert.equal(res.runner.ca_bundle, parseCertBundle(certB).pem);
+    // renewed again : the pin line names the bundle stored, so the RTE may replace it
+    runners["dmz-in"].ca_bundle = credentials["dmz-in-rte"].ca_bundle;
+    await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certA });
+    assert.equal(credentials["dmz-in-rte"].ca_bundle, parseCertBundle(certA).pem);
+    assert.equal(credentials["dmz-in-rte"].description.match(/RTE certificate sha256/g).length, 1, "one pin line, replaced");
+  });
+
+  test("a ca_bundle an admin set by hand is never replaced by the RTE's certificate", async () => {
+    // an admin's own bundle and description
+    credentials["dmz-in-rte"] = { id: 7, name: "dmz-in-rte", credential_type: "rte", password: "rte-token-0123456789", url: "https://rte.dmz:8443", ca_bundle: certA, description: "the DMZ RTE, our CA" };
+    runners["dmz-in"] = { id: 1, name: "dmz-in", type: "rte", credential: "dmz-in-rte", token: "rte-token-0123456789", rte_mode: "inbound", uri: "https://rte.dmz:8443", ca_bundle: certA };
+    const warn = vi.spyOn(logger, "warning");
+    try {
+      const res = await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certB });
+      assert.ok(res.runner);
+      assert.equal(credentials["dmz-in-rte"].ca_bundle, certA, "the admin's bundle stays");
+      assert.equal(credUpdated.length + updated.length, 0);
+      assert.equal(res.runner.ca_bundle, certA);
+      assert.ok(warn.mock.calls.some((c) => /set by hand/.test(String(c[0]))));
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test("a bundle an RTE stored, then changed by an admin, is the admin's", async () => {
+    const stored = parseCertBundle(certB).pem;
+    // the pin line names certB (an RTE stored it) ; an admin replaced the bundle with certA since
+    const { createHash } = await import("crypto");
+    const line = `RTE certificate sha256: ${createHash("sha256").update(stored).digest("hex")}`;
+    credentials["dmz-in-rte"] = { id: 7, name: "dmz-in-rte", credential_type: "rte", password: "rte-token-0123456789", url: "https://rte.dmz:8443", ca_bundle: certA, description: `joined\n${line}` };
+    runners["dmz-in"] = { id: 1, name: "dmz-in", type: "rte", credential: "dmz-in-rte", token: "rte-token-0123456789", rte_mode: "inbound", uri: "https://rte.dmz:8443", ca_bundle: certA };
+    await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certB });
+    assert.equal(credentials["dmz-in-rte"].ca_bundle, certA);
+  });
+
+  test("an empty ca_bundle takes the RTE's certificate", async () => {
+    credentials["dmz-in-rte"] = { id: 7, name: "dmz-in-rte", credential_type: "rte", password: "rte-token-0123456789", url: "https://rte.dmz:8443", ca_bundle: null, description: "hand made" };
+    runners["dmz-in"] = { id: 1, name: "dmz-in", type: "rte", credential: "dmz-in-rte", token: "rte-token-0123456789", rte_mode: "inbound", uri: "https://rte.dmz:8443", ca_bundle: null };
+    await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certB });
+    assert.equal(credentials["dmz-in-rte"].ca_bundle, parseCertBundle(certB).pem);
+    assert.match(credentials["dmz-in-rte"].description, /^hand made\nRTE certificate sha256: /);
+  });
+
+  test("a hand-made runner whose credential the seed manages : the repin is skipped, not a 500", async () => {
+    credentials["dmz-in-rte"] = { id: 7, name: "dmz-in-rte", credential_type: "rte", password: "rte-token-0123456789", url: "https://rte.dmz:8443", ca_bundle: certA, managed: 1 };
+    runners["dmz-in"] = { id: 1, name: "dmz-in", type: "rte", credential: "dmz-in-rte", token: "rte-token-0123456789", rte_mode: "inbound", uri: "https://rte.dmz:8443", ca_bundle: certA };
+    const warn = vi.spyOn(logger, "warning");
+    try {
+      const res = await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certB });
+      assert.ok(res.runner, "let in");
+      assert.equal(credUpdated.length + updated.length, 0);
+      assert.ok(warn.mock.calls.some((c) => /managed by the config seed/.test(String(c[0]))));
+    } finally {
+      warn.mockRestore();
+    }
+    // a new address there : said, not thrown
+    const moved = await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.other:8443", cert: certA });
+    assert.equal(moved.status, 409);
   });
 
   test("a runner managed by the seed keeps the bundle the seed sets", async () => {
@@ -253,6 +313,34 @@ describe("the app dialing a pinned RTE", () => {
     } finally {
       server.close();
     }
+  });
+
+  test("the pin adds to the usual authorities : a chain to them still passes, its name checked", async () => {
+    // a private authority stands in for a public one (a proxy re-encrypting in front of the RTE) :
+    // its leaf, made for 127.0.0.1, chains to it ; certA stays the pinned certificate
+    const caKey = path.join(dir, "ca.key");
+    const caPem = path.join(dir, "ca.pem");
+    execFileSync("openssl", ["req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", caKey, "-out", caPem, "-days", "2", "-subj", "/CN=test-ca"], { stdio: "ignore" });
+    const leafKey = path.join(dir, "leaf.key");
+    const leafCsr = path.join(dir, "leaf.csr");
+    const leafPem = path.join(dir, "leaf.pem");
+    const ext = path.join(dir, "leaf.ext");
+    fs.writeFileSync(ext, "subjectAltName=IP:127.0.0.1\n");
+    execFileSync("openssl", ["req", "-newkey", "rsa:2048", "-nodes", "-keyout", leafKey, "-out", leafCsr, "-subj", "/CN=proxy"], { stdio: "ignore" });
+    execFileSync("openssl", ["x509", "-req", "-in", leafCsr, "-CA", caPem, "-CAkey", caKey, "-CAcreateserial", "-out", leafPem, "-days", "2", "-extfile", ext], { stdio: "ignore" });
+    const ca = fs.readFileSync(caPem, "utf8");
+    const { server, port } = await tlsServer(fs.readFileSync(leafPem, "utf8"), fs.readFileSync(leafKey, "utf8"));
+    try {
+      assert.equal(await get(port, getHttpsAgent({ ca_bundle: `${certA}\n${ca}` }, { pin: true })), "ok", "a chain and the right name");
+      await assert.rejects(get(port, getHttpsAgent({ ca_bundle: certA }, { pin: true })), "no chain to a trusted authority, not pinned");
+    } finally {
+      server.close();
+    }
+    // the system's authorities are kept beside the bundle
+    const tls = await import("tls");
+    const agent = getHttpsAgent({ ca_bundle: certA }, { pin: true });
+    assert.ok(agent.options.ca.includes(tls.rootCertificates[0]), "the public roots stay trusted");
+    assert.ok(agent.options.ca.includes(certA), "and the bundle");
   });
 
   test("the socket to an inbound runner is dialed pinned to its credential's certificate", async () => {
