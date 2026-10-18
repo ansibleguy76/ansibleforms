@@ -8,18 +8,17 @@
 import { RTE_CONTRACT } from "../rte/contract.js";
 import { appVersion } from "../lib/version.js";
 import axios from "axios";
-import https from "https";
 import logger from "../lib/logger.js";
 import mysql from "../models/db.model.js";
 import Errors from "../lib/errors.js";
 import { stripTrailingSlashes } from "../lib/url.js";
 import Job from "../models/job.model.js";
 import { safeParse } from "../lib/safejson.js";
-import { NODE_DEAD_SECONDS } from "../lib/nodes.js";
-import { SOCKET_CONTRACT } from "./../rte/socket/protocol.js";
+import { NODE_DEAD_SECONDS } from "../lib/role.js";
+import { SOCKET_CONTRACT, SOCKET_MODES, queueMinutes, RETRY_MS } from "../rte/socket/protocol.js";
+import { getHttpsAgent, jobStatus, failRteJob, abortWhileWaiting, sayWaitingForSlot } from "./common.js";
 
-// the socket modes (rteHub.js imports the runner model, which imports this : loaded when used)
-const SOCKET_MODES = ["outbound", "inbound"];
+// the hub (rteHub.js imports the runner model, which imports this : loaded when used)
 const isSocket = (runner) => SOCKET_MODES.includes(runner?.rte_mode);
 const hub = () => import("./rteHub.js");
 import { resolveJobSecrets } from "../lib/jobSecrets.js";
@@ -46,7 +45,7 @@ function client(runner) {
       baseURL: `${url}/rte/v1`,
       headers: { Authorization: `Bearer ${runner.token || ""}` },
       timeout: 10000,
-      httpsAgent: new https.Agent({ rejectUnauthorized: !runner.ignore_certs, ca: runner.ca_bundle || undefined }),
+      httpsAgent: getHttpsAgent(runner),
     }),
   };
 }
@@ -60,16 +59,8 @@ function describe(err, url) {
   return `the RTE at ${url} is unreachable: ${err.code || err.message}`;
 }
 
-async function failJob(jobId, message) {
-  // only a job still running : the RTE may have ended it already (a short playbook that
-  // finished while the app waited for an answer), and its end - a success too - stands
-  const status = await dbStatus(jobId).catch(() => "running");
-  if (status !== "running") return status === "success";
-  await Job.endJobStatus(jobId, (await Job.lastOrder(jobId)) + 1, "stderr", "failed", `[ERROR]: ${message}`);
-  // an abort asked meanwhile is answered by this end : a later abort must not be refused
-  await Job.resetAbortRequested(jobId).catch(() => {});
-  return false;
-}
+// a job that cannot run : failed, unless it ended already (runners/common.js)
+const failJob = failRteJob;
 
 // did an RTE take the job ? its claim writes jobs.host
 async function claimedBy(jobId) {
@@ -99,10 +90,7 @@ async function heldByLiveRte(jobId) {
   return rows?.length > 0;
 }
 
-async function dbStatus(jobId) {
-  const rows = await mysql.do("SELECT status FROM AnsibleForms.`jobs` WHERE id=?", [jobId], true);
-  return rows?.[0]?.status;
-}
+const dbStatus = jobStatus;
 
 /** waits until the job is no longer running ; true when it ended in success */
 async function track(jobId, rte) {
@@ -217,10 +205,6 @@ async function trackSocket(jobId, runner) {
   }
 }
 
-// how long a job waits for a free RTE (RTE_QUEUE_MINUTES), and how often it asks again
-const queueMinutes = () => Math.max(0, parseInt(process.env.RTE_QUEUE_MINUTES ?? 60, 10) || 0);
-const RETRY_MS = 10000;
-
 /**
  * Hands a job to the RTE. A full or stopping RTE (503) does not claim it : the job waits, with
  * one line saying so, and asks again every 10 seconds - for RTE_QUEUE_MINUTES at most, until
@@ -251,11 +235,10 @@ async function handOver(rte, jobId, sealed) {
       }
       if (!said) {
         said = true;
-        await Job.printJobOutput(`ok: [Waiting for a free slot on RTE ${rte.name}: ${err.response.data?.error || "busy"}]`, "stdout", jobId, (await Job.lastOrder(jobId)) + 1);
+        await sayWaitingForSlot(jobId, rte.name, err.response.data?.error);
       }
       if (await Job.isAbortRequested(jobId).catch(() => false)) {
-        await Job.endJobStatus(jobId, (await Job.lastOrder(jobId)) + 1, "stderr", "aborted", "Playbook was aborted by the operator while it waited for the RTE");
-        await Job.resetAbortRequested(jobId).catch(() => {});
+        await abortWhileWaiting(jobId);
         throw Object.assign(new Error("aborted while waiting"), { aborted: true, response: { status: 499 } });
       }
       if ((await dbStatus(jobId).catch(() => "running")) !== "running") throw Object.assign(new Error("ended while waiting"), { aborted: true, response: { status: 499 } });

@@ -53,11 +53,29 @@ export const RTE_SOCKET_PATH = "/rte/v1/socket";
 
 // the modes an RTE runs in (RTE_MODE)
 export const MODES = ["outbound", "inbound", "database"];
+// the modes that talk over this socket (a runner's rte_mode) ; database is the deprecated one
+export const SOCKET_MODES = ["outbound", "inbound"];
+
+// ─── the app's side : how long a job waits for an RTE ─────────────────────────
+// (runners/rte.js and runners/rteHub.js both follow these ; kept here, where nothing is imported)
+
+/**
+ * How long a job waits for a free RTE (RTE_QUEUE_MINUTES, 60 by default, 0 : for ever), read
+ * each time so a change applies without a restart.
+ *
+ * Returns:
+ *   number: the minutes.
+ */
+export const queueMinutes = () => Math.max(0, parseInt(process.env.RTE_QUEUE_MINUTES ?? 60, 10) || 0);
+// how often a job an RTE refused as busy is offered again
+export const RETRY_MS = 10000;
 
 // why a socket was closed : the reason goes with it, for the log on the other side
 export const CLOSE = {
   // the token, the name or the join token was refused
   UNAUTHORIZED: 4401,
+  // the RTE's id (its hello) is another node's, or the RTE of another runner uses it
+  ID_TAKEN: 4403,
   // the other side speaks another contract
   CONTRACT: 4409,
   // a newer socket of the same RTE took over (it reconnected, to this node or another)
@@ -69,6 +87,15 @@ export const CLOSE = {
   // the process stops
   GOING_AWAY: 1001,
 };
+
+// the closes and the refusals of the handshake (HTTP status) that dialing again soon will not
+// change : the runner was rejected or removed, the token or the join token refused, another
+// contract. An outbound RTE waits REFUSED_REDIAL_MS before it dials again, not its usual 1 to
+// 30 seconds : an admin has to act first. An id taken (ID_TAKEN) is not one of them : it frees
+// itself once the node that had it stops answering
+export const REFUSED_CLOSES = [CLOSE.UNAUTHORIZED, CLOSE.CONTRACT];
+export const REFUSED_STATUSES = [401, 403, 409];
+export const REFUSED_REDIAL_MS = 10 * 60 * 1000;
 
 // a ping every 20 s keeps proxies from closing an idle socket ; nothing heard for 60 s : gone
 export const PING_MS = 20000;
@@ -154,4 +181,4 @@ export function inboundUrl(uri) {
   return url.toString();
 }
 
-export default { SOCKET_CONTRACT, APP_SOCKET_PATH, RTE_SOCKET_PATH, MODES, CLOSE, PING_MS, DEAD_MS, WINDOW, CHUNK_BYTES, MAX_PAYLOAD, encode, decode, socketUrl, inboundUrl };
+export default { SOCKET_CONTRACT, APP_SOCKET_PATH, RTE_SOCKET_PATH, MODES, SOCKET_MODES, queueMinutes, RETRY_MS, CLOSE, PING_MS, DEAD_MS, WINDOW, CHUNK_BYTES, MAX_PAYLOAD, encode, decode, socketUrl, inboundUrl };

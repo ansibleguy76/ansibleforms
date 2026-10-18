@@ -94,6 +94,8 @@ export class FileCache {
     });
     entry.file = path.join(this.dir, `${hash}.part`);
     entry.stream = fs.createWriteStream(entry.file, { mode: 0o600 });
+    // a disk full, a folder gone : the transfer fails, the job with it (never an uncaught error)
+    entry.stream.on("error", (e) => this._fail(hash, new Error(`the job's files ${hash.slice(0, 12)} could not be written: ${e.message}`)));
     entry.hasher = crypto.createHash("sha256");
     entry.timer = setTimeout(() => this._fail(hash, new Error(`the files ${hash.slice(0, 12)} did not arrive within ${FETCH_TIMEOUT_MS / 60000} minutes`)), FETCH_TIMEOUT_MS);
     entry.timer.unref?.();
@@ -123,7 +125,10 @@ export class FileCache {
   /** the last chunk came : checked, unpacked, kept */
   _finish(hash, sha256) {
     const entry = this.pending.get(hash);
-    entry.stream.end(async () => {
+    if (!entry) return;
+    entry.stream.end(async (err) => {
+      // the stream failed meanwhile : its error listener failed the transfer already
+      if (err || this.pending.get(hash) !== entry) return;
       try {
         const got = entry.hasher.digest("hex");
         if (sha256 && got !== sha256) throw new Error(`the job's files arrived damaged (sha256 ${got} instead of ${sha256})`);
@@ -154,7 +159,13 @@ export class FileCache {
     clearTimeout(entry.timer);
     this.pending.delete(hash);
     entry.stream.destroy();
-    fs.rmSync(entry.file, { force: true });
+    // what was written goes ; a file that cannot go (the error that failed it) does not stop the
+    // job from hearing why
+    try {
+      fs.rmSync(entry.file, { force: true });
+    } catch (e) {
+      logger.debug(`RTE: could not remove ${entry.file}: ${e.message}`);
+    }
     entry.reject(err);
   }
 

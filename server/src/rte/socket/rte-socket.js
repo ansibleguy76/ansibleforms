@@ -14,7 +14,6 @@ import https from "https";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { timingSafeEqual } from "crypto";
 import { fileURLToPath } from "url";
 import { execFile } from "child_process";
 import WebSocket, { WebSocketServer } from "ws";
@@ -29,6 +28,7 @@ import { appVersion as version } from "../../lib/version.js";
 import { openJobSecrets } from "../../lib/sealedSecrets.js";
 import { collectSecrets, registerJobSecrets, maskOutput } from "../../lib/outputMask.js";
 import { installFatalHandlers } from "../../lib/fatal.js";
+import { safeEqual, bearerToken } from "../../lib/safeEqual.js";
 import { requestContext } from "../../lib/requestContext.js";
 import { httpMetrics, metricsHandler, addScrapeGauge } from "../../lib/metrics.js";
 import { onShutdown, stopWithin, isStopping } from "../../lib/shutdown.js";
@@ -38,7 +38,10 @@ import { runAnsibleJob, useJobIO } from "../ansible-core.js";
 import { Session } from "./session.js";
 import { JobSpool } from "./spool.js";
 import { FileCache } from "./files.js";
-import { SOCKET_CONTRACT, RTE_SOCKET_PATH, CLOSE, WINDOW, MAX_PAYLOAD, socketUrl, fingerprint } from "./protocol.js";
+import {
+  SOCKET_CONTRACT, RTE_SOCKET_PATH, CLOSE, WINDOW, MAX_PAYLOAD, REFUSED_CLOSES, REFUSED_STATUSES, REFUSED_REDIAL_MS,
+  socketUrl, fingerprint,
+} from "./protocol.js";
 
 // ─── settings ─────────────────────────────────────────────────────────────────
 
@@ -156,6 +159,26 @@ function localPlaybookRoot(repo) {
   return fs.existsSync(sub) ? sub : folder;
 }
 
+/**
+ * A value with every text in it masked (the job's secrets replaced), its shape kept : an event
+ * carries a host's whole result, where a secret may sit at any depth.
+ *
+ * Args:
+ *   jobId (number): the job.
+ *   value (any): the value (an event, a list of them, a text, a number).
+ *
+ * Returns:
+ *   any: the value, masked.
+ */
+function maskDeep(jobId, value) {
+  if (typeof value === "string") return maskOutput(jobId, value);
+  if (Array.isArray(value)) return value.map((v) => maskDeep(jobId, v));
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, maskDeep(jobId, v)]));
+  }
+  return value;
+}
+
 const socketJobIO = {
   mode: "socket",
   async load(jobId) {
@@ -181,8 +204,9 @@ const socketJobIO = {
   async writeOutput(jobId, record) {
     emit(jobId, { kind: "output", record: { ...record, output: maskOutput(jobId, record.output) } });
   },
+  // masked before the spool, as the output and the log : no secret on this RTE's disk
   async writeEvents(jobId, events) {
-    emit(jobId, { kind: "events", events });
+    emit(jobId, { kind: "events", events: maskDeep(jobId, events) });
   },
   async setJobLog(jobId, content) {
     emit(jobId, { kind: "log", content: maskOutput(jobId, content) });
@@ -397,8 +421,31 @@ function rteHeaders(token) {
 }
 
 /**
- * Keeps a socket to the app open : dials APP_URL, and when it drops dials again, waiting a
- * little longer each time (1 s up to 30 s, with some jitter so a fleet does not dial at once).
+ * How long an outbound RTE waits before it dials the app again. A socket that dropped, or an
+ * app that did not answer : a little longer each time (1 s up to 30 s, with some jitter so a
+ * fleet does not dial at once). Refused (the runner rejected or removed, the token, the join
+ * token or the id refused, another contract) : REFUSED_REDIAL_MS, since dialing again sooner
+ * would be refused the same way until an admin acts.
+ *
+ * Args:
+ *   close (object): { code : the socket's close code, status : the HTTP status the handshake
+ *     was refused with (null when it was not), delay : the current backoff in ms, random :
+ *     a number in [0, 1), Math.random by default }.
+ *
+ * Returns:
+ *   object: { wait : ms before the next dial, delay : the backoff from then on, refused :
+ *     true when the app refused this RTE }.
+ */
+export function redialWait({ code, status, delay, random = Math.random() }) {
+  if (REFUSED_CLOSES.includes(code) || REFUSED_STATUSES.includes(status)) {
+    return { wait: REFUSED_REDIAL_MS, delay: 1000, refused: true };
+  }
+  return { wait: delay + Math.floor(random * 1000), delay: Math.min(delay * 2, 30000), refused: false };
+}
+
+/**
+ * Keeps a socket to the app open : dials APP_URL, and when it drops dials again, after
+ * redialWait().
  *
  * Args:
  *   token (string): RTE_TOKEN.
@@ -421,22 +468,32 @@ function dialOut(token) {
   const connect = () => {
     if (isStopping()) return;
     const ws = new WebSocket(url, options);
+    // the HTTP status the app refused the handshake with, if it did
+    let refusedStatus = null;
     ws.on("open", () => {
       delay = 1000;
       attach(new Session(ws, "app"));
     });
     ws.on("unexpected-response", (req, res) => {
+      refusedStatus = res.statusCode;
       let body = "";
       res.on("data", (c) => (body += c));
-      res.on("end", () => logger.warning(`RTE '${rteName()}': the app refused the socket (${res.statusCode}): ${body.slice(0, 300)}`));
+      res.on("end", () => {
+        logger.warning(`RTE '${rteName()}': the app refused the socket (${res.statusCode}): ${body.slice(0, 300)}`);
+        // listening to this event takes the abort of the handshake over from ws : without it no
+        // close comes, and this RTE never dials again
+        ws.terminate();
+      });
+      res.on("error", () => ws.terminate());
     });
     ws.on("error", (err) => logger.debug(`RTE: socket to ${url}: ${err.message}`));
-    ws.on("close", () => {
+    ws.on("close", (code) => {
       if (isStopping()) return;
-      const wait = delay + Math.floor(Math.random() * 1000);
-      delay = Math.min(delay * 2, 30000);
-      logger.info(`RTE: dialing the app again in ${Math.round(wait / 1000)} seconds`);
-      setTimeout(connect, wait).unref?.();
+      const next = redialWait({ code, status: refusedStatus, delay });
+      delay = next.delay;
+      if (next.refused) logger.warning(`RTE '${rteName()}': the app refused this RTE (${refusedStatus || code}): dialing again in ${Math.round(next.wait / 60000)} minutes, or restart it once an admin acted`);
+      else logger.info(`RTE: dialing the app again in ${Math.round(next.wait / 1000)} seconds`);
+      setTimeout(connect, next.wait).unref?.();
     });
   };
   logger.notice(`RTE '${rteName()}': dialing the app at ${url}${options.agent ? " through the proxy" : ""}`);
@@ -590,13 +647,11 @@ export async function startSocketRte(rteMode) {
   if (mode === "inbound") {
     // the app dials /rte/v1/socket with this RTE's token ; a newer socket replaces the older one
     // (the app node holding the lease changed)
-    const expected = Buffer.from(token);
     const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_PAYLOAD });
     server.on("upgrade", (req, socket, head) => {
       const url = new URL(req.url, "http://x");
       if (url.pathname !== RTE_SOCKET_PATH) return socket.destroy();
-      const given = Buffer.from(String(req.headers.authorization || "").replace(/^Bearer\s+/i, ""));
-      if (!(given.length === expected.length && timingSafeEqual(given, expected))) {
+      if (!safeEqual(bearerToken(req.headers.authorization), token)) {
         logger.warning(`RTE: refused a socket without the right token from ${req.socket.remoteAddress}`);
         socket.write("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n");
         return socket.destroy();
@@ -618,4 +673,4 @@ export async function startSocketRte(rteMode) {
 }
 
 // for the tests
-export { socketJobIO, jobs, capacity, onRun, onAck, onCancel, attach };
+export { socketJobIO, jobs, capacity, onRun, onAck, onCancel, attach, maskDeep };

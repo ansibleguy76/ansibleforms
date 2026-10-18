@@ -201,6 +201,18 @@ describe("an RTE calling in", () => {
   test("a seeded runner keeps the token the seed sets", async () => {
     runners["dmz-1"] = { id: 1, name: "dmz-1", type: "rte", token: "seeded-token-0123456789", managed: 1 };
     assert.equal((await authenticate(headers({ "x-af-rte-join": "afj_good" }))).status, 409);
+    assert.equal(joinUses, 0, "refused before the join token is used : it keeps its uses");
+  });
+
+  test("two unknown RTEs asking at once cannot both pass the count of the ones waiting", async () => {
+    // PENDING_MAX is 2 here : one waits already, two more ask at the same time
+    await authenticate(headers({ "x-af-rte-name": "dmz-0" }));
+    const both = await Promise.all([
+      authenticate(headers({ "x-af-rte-name": "dmz-2" })),
+      authenticate(headers({ "x-af-rte-name": "dmz-3" })),
+    ]);
+    assert.deepEqual(both.map((r) => r.status || 200).sort(), [200, 429]);
+    assert.equal(created.length, 2);
   });
 });
 
