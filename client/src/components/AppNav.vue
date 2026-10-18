@@ -78,6 +78,37 @@ function refreshApprovals() {
   });
 }
 useLiveEvent('jobs', refreshApprovals);
+// and the RTEs waiting for approval : again whenever the runners change (one asked to join,
+// was approved or rejected)
+function refreshRunnerApprovals() {
+  State.refreshRunnerApprovals().catch(() => {});
+}
+useLiveEvent('runners', refreshRunnerApprovals);
+onMounted(refreshRunnerApprovals);
+watch(() => store.profile, refreshRunnerApprovals);
+// the bell : jobs and runners waiting for approval. One kind waiting (or none) : the bell opens its
+// page ; both : a menu with each and its count
+const bellItems = computed(() =>
+  [
+    store.approvals > 0 && {
+      key: 'jobs',
+      label: t('nav.jobsWaiting'),
+      icon: 'list-check',
+      count: store.approvals,
+      to: jobsPath('approve'),
+    },
+    store.runnerApprovals > 0 && {
+      key: 'runners',
+      label: t('nav.runnersWaiting'),
+      icon: 'rocket',
+      count: store.runnerApprovals,
+      to: '/settings/runners',
+    },
+  ].filter(Boolean),
+);
+const bellCount = computed(() => bellItems.value.reduce((n, i) => n + i.count, 0));
+const bellLink = computed(() => (bellItems.value.length === 1 ? bellItems.value[0] : null));
+const bellTitle = computed(() => (bellLink.value ? bellLink.value.label : t('jobs.menu.approve')));
 // desktop notifications, when turned on in Profile > Preferences : the user's jobs that end, the
 // jobs that wait for its approval (lib/jobNotifications.js), on every page with the header
 const router = useRouter();
@@ -428,18 +459,39 @@ const buildMismatch = computed(() => {
         <AppSearch />
       </BsNavItem>
 
-      <!-- approvals bell : a red count when jobs wait for an approval, opens them on the jobs page -->
-      <BsNavItem>
-        <router-link
+      <!-- the approvals bell : a red count of what waits for an approval. Jobs or runners alone (or
+           nothing) : it opens their page ; both : a menu, as the help menu, with each and its count -->
+      <li v-if="bellItems.length > 1" class="nav-item dropdown">
+        <button
+          type="button"
           class="btn af-icon-btn af-bell"
-          :to="jobsPath('approve')"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
           :title="t('jobs.menu.approve')"
           :aria-label="t('jobs.menu.approve')"
         >
           <font-awesome-icon icon="bell" />
-          <span v-if="store.approvals > 0" class="af-bell-count">{{
-            store.approvals > 99 ? '99+' : store.approvals
-          }}</span>
+          <span class="af-bell-count">{{ bellCount > 99 ? '99+' : bellCount }}</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li v-for="item in bellItems" :key="item.key">
+            <router-link class="dropdown-item d-flex align-items-center" :to="item.to">
+              <span class="icon"><font-awesome-icon :icon="item.icon" fixed-width /></span>
+              <span class="ms-2">{{ item.label }}</span>
+              <span class="ms-auto ps-3 badge rounded-pill text-bg-danger">{{ item.count }}</span>
+            </router-link>
+          </li>
+        </ul>
+      </li>
+      <BsNavItem v-else>
+        <router-link
+          class="btn af-icon-btn af-bell"
+          :to="bellLink ? bellLink.to : jobsPath('approve')"
+          :title="bellTitle"
+          :aria-label="bellTitle"
+        >
+          <font-awesome-icon icon="bell" />
+          <span v-if="bellCount > 0" class="af-bell-count">{{ bellCount > 99 ? '99+' : bellCount }}</span>
         </router-link>
       </BsNavItem>
 

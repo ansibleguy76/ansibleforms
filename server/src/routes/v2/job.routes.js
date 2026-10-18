@@ -11,6 +11,8 @@ router.post('/upload',uploadController.upload)
 router.get('/:id', jobControllerv2.getJob);
 // a workflow job's node : its variables and its artifacts
 router.get('/:id/node/:nodeId', jobControllerv2.getWorkflowNode);
+// a playbook job's structured events (its grid, timeline and recap)
+router.get('/:id/events', jobControllerv2.getJobEvents);
 // get raw form data for a job
 router.get('/:id/rawformdata', jobControllerv2.getRawFormData);
 // download a job

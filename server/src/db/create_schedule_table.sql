@@ -9,6 +9,8 @@ CREATE TABLE `schedule` (
   `status` VARCHAR(50) DEFAULT NULL,
   `last_run` DATETIME DEFAULT NULL,
   `state` VARCHAR(50) DEFAULT NULL,
+  -- turned off, its cron or one time run does not fire (Run now still does) ; its settings kept
+  `enabled` TINYINT(4) DEFAULT 1,
   -- who launches it (state='running') and since when (models/schedule.model.js launch)
   `claim_node` varchar(250) DEFAULT NULL,
   `claim_since` datetime DEFAULT NULL,

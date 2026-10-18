@@ -60,6 +60,22 @@ function warnAwxAlias(name) {
 }
 
 /**
+ * Refuses a runner turned off (Connections > Runners, Disable) : no job goes to it, the default
+ * of its type included, until it is turned on again. A row from before the column is on.
+ *
+ * Args:
+ *   row (object): the runner.
+ *
+ * Raises:
+ *   BadRequestError: it is turned off.
+ */
+function assertEnabled(row) {
+  if (row.enabled !== undefined && row.enabled !== null && Number(row.enabled) === 0) {
+    throw new Errors.BadRequestError(`Runner '${row.name}' is disabled - enable it under Connections > Runners, or name another runner on the form with runner: <name>`);
+  }
+}
+
+/**
  * Where a job runs. A form's type names the product it runs on (RUNNER_TYPE_OF : ansible an
  * RTE, awx, aap and ascender an awx runner, semaphore, rundeck, jenkins their own) ; the form
  * names a runner of that type with `runner: <name>` (extravar __runner__ ; `awx: <name>` is a
@@ -86,11 +102,15 @@ export async function resolveRunner({ jobType, formType, extravars }) {
       throw new Errors.BadRequestError(`Runner '${name}' is ${RUNNER_LABEL[row.type] || row.type} runner, this form is of type ${formType}: name ${RUNNER_LABEL[runnerType] || runnerType} runner`);
     }
     if (!impl.capabilities[what]) throw new Errors.BadRequestError(`Runner '${name}' (${row.type}) cannot run a ${what}`);
+    assertEnabled(row);
     return { impl, row };
   }
   const defaultType = runnerType || needs.defaultType;
   const row = await Runner.findDefault(defaultType);
-  if (row) return { impl: getRunner(row.type), row };
+  if (row) {
+    assertEnabled(row);
+    return { impl: getRunner(row.type), row };
+  }
   const forms = runnerType ? `for a form of type ${formType}` : `to run this ${what}`;
   throw new Errors.NotFoundError(`No runner ${forms}: add one of type ${defaultType} under Connections > Runners and mark it as default, or name it on the form with runner: <name>`);
 }

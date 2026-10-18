@@ -12,14 +12,23 @@ import Credential from './credential.model.v2.js';
 export const RUNNER_FLAVOURS = ['aap', 'ascender'];
 // the runners that sign in with a token and launch in one project of their server
 const TOKEN_AND_PROJECT = ['semaphore', 'rundeck'];
-import { NODE_DEAD_SECONDS } from '../lib/role.js';
 
 // the secret the api shows instead of a stored token ; sent back it means "unchanged"
 export const SECRET_MASK = '********';
 
+// how an RTE talks to the app (RTE_MODE) : database (deprecated, the default), outbound (it
+// dials the app) or inbound (the app dials it) - the socket modes hold no database credentials
+export const RTE_MODES = ['database', 'outbound', 'inbound'];
+// the modes that talk over a WebSocket (runners/rteHub.js)
+export const SOCKET_MODES = ['outbound', 'inbound'];
+
 // a runner its RTE registered (rte/register.js) whose RTE has not answered for this long is
 // removed by the worker ; until then the Runners page shows it as unresponsive
 export const UNRESPONSIVE_REMOVE_SECONDS = 600;
+// an RTE that asked to join and nobody approved : removed after a day, its credential with it
+export const PENDING_REMOVE_HOURS = 24;
+// how many RTEs may wait for approval at once : more are refused until some are approved or rejected
+export const PENDING_MAX = 20;
 
 class Runner extends CrudModel {
   static modelName = 'runner';
@@ -27,8 +36,13 @@ class Runner extends CrudModel {
   static normalize(data, opts = {}) {
     // which RTE registered a runner is the RTE's to say (rte/register.js), never the api's
     if (!opts.fromRte) delete data.node_id;
-    // what the api adds on read (withState) is not stored
-    delete data.state;
+    // waiting for approval is the RTE's to ask (rteHub.authenticate) and an admin's to end
+    // (approve, reject), never set through the api
+    if (!opts.fromRte) {
+      delete data.pending;
+      delete data.pending_since;
+      delete data.pending_info;
+    }
     if (data.type !== undefined && !RUNNER_TYPES.includes(data.type)) {
       throw new Errors.BadRequestError(`Unknown runner type '${data.type}' - use one of ${RUNNER_TYPES.join(', ')}`);
     }
@@ -41,6 +55,17 @@ class Runner extends CrudModel {
     // (jenkins signs in with a user and its API token : username and token, no password)
     if (TOKEN_AND_PROJECT.includes(data.type) || data.type === 'jenkins') data.use_credentials = 0;
     if (typeof data.project === 'string') data.project = data.project.trim() || null;
+    // an RTE's mode : database, outbound or inbound ; empty is database (as before 7.3)
+    if (data.rte_mode !== undefined) {
+      if (data.rte_mode === '' || data.rte_mode === null) data.rte_mode = null;
+      else if (!RTE_MODES.includes(data.rte_mode)) {
+        throw new Errors.BadRequestError(`Unknown RTE mode '${data.rte_mode}' - use one of ${RTE_MODES.join(', ')}`);
+      }
+    }
+    // turned on or off (Enable / Disable) : 1 or 0, whatever the client or the seed sends
+    if (data.enabled !== undefined && data.enabled !== null) {
+      data.enabled = data.enabled === true || data.enabled === 1 || data.enabled === '1' || data.enabled === 'true' ? 1 : 0;
+    }
     // the flavour of an awx runner : 'aap', 'ascender', or none (AWX) - which product it is
     if (data.flavour !== undefined) {
       if (data.flavour === '' || data.flavour === null) data.flavour = null;
@@ -131,7 +156,9 @@ class Runner extends CrudModel {
   // its secrets (Runner.assertCredential checks it), and its address when it carries one
   static assertComplete(row, credentialAddress = false) {
     const missing = (field) => { throw new Errors.BadRequestError(`A runner of type ${row.type} needs ${field}`); };
-    if (!row.uri && !credentialAddress) {
+    // an outbound RTE dials the app : the app needs no address of it
+    const outbound = row.type === 'rte' && row.rte_mode === 'outbound';
+    if (!row.uri && !credentialAddress && !outbound) {
       missing('an address: a credential with a server address, or its own uri');
     }
     if (row.credential) {
@@ -191,7 +218,8 @@ class Runner extends CrudModel {
     // The first runner of a type is its default : forms of that type that name no runner need
     // one, and nobody should have to remember the tick. Not for the seed, which declares the
     // flag itself - setting it here would flip it back on every start.
-    if (!data.is_default && !opts.fromSeed && !(await this.findDefault(data.type))) {
+    // ... never one waiting for approval : it becomes the default when it is approved
+    if (!data.is_default && !opts.fromSeed && !data.pending && !(await this.findDefault(data.type))) {
       data.is_default = 1;
     }
     await this.assertDefaultAllowed(data, data.type, opts);
@@ -248,27 +276,100 @@ class Runner extends CrudModel {
     return super.findById(this.modelName, id);
   }
 
+  /**
+   * Approves an RTE that asked to join : it is enabled and takes jobs from now on, and becomes
+   * the default of its type when there is none.
+   *
+   * Args:
+   *   id (number): the runner.
+   *
+   * Returns:
+   *   Promise<object>: the runner.
+   *
+   * Raises:
+   *   NotFoundError: no such runner ; BadRequestError: it is not waiting for approval.
+   */
+  static async approve(id) {
+    const row = await this.findStoredById(id);
+    if (!row) throw new Errors.NotFoundError(`No runner with id ${id}`);
+    if (!Number(row.pending)) throw new Errors.BadRequestError(`Runner '${row.name}' is not waiting for approval`);
+    const data = { pending: 0, pending_since: null, pending_info: null, enabled: 1 };
+    if (!(await this.findDefault(row.type))) data.is_default = 1;
+    await CrudModel.update(this.modelName, data, id, { fromRte: true });
+    if (data.is_default) await this.clearOtherDefaults(id, row.type);
+    logger.notice(`Runner '${row.name}' approved: it takes jobs from now on`);
+    this.changed(this.modelName);
+    return this.findStoredById(id);
+  }
+
+  /**
+   * Rejects an RTE that asked to join : the runner goes, with the credential its token was kept
+   * in. The RTE may ask again ; it then waits for approval again.
+   *
+   * Args:
+   *   id (number): the runner.
+   *
+   * Returns:
+   *   Promise<object>: the runner as it was.
+   *
+   * Raises:
+   *   NotFoundError: no such runner ; BadRequestError: it is not waiting for approval.
+   */
+  static async reject(id) {
+    const row = await this.findStoredById(id);
+    if (!row) throw new Errors.NotFoundError(`No runner with id ${id}`);
+    if (!Number(row.pending)) throw new Errors.BadRequestError(`Runner '${row.name}' is not waiting for approval`);
+    await this.removeWithCredential(row);
+    logger.notice(`Runner '${row.name}' rejected: it was removed with its credential`);
+    return row;
+  }
+
+  /**
+   * Removes a runner that asked to join, and the credential made for its token then (never one
+   * the config seed manages).
+   *
+   * Args:
+   *   row (object): the runner as stored.
+   */
+  static async removeWithCredential(row) {
+    await mysql.do('DELETE FROM AnsibleForms.`runners` WHERE id = ?', [row.id]);
+    if (row.credential) {
+      await mysql.do('DELETE FROM AnsibleForms.`credentials` WHERE name = ? AND credential_type = ? AND COALESCE(managed, 0) = 0', [row.credential, 'rte']);
+    }
+    this.changed(this.modelName);
+  }
+
+  /**
+   * How many RTEs wait for approval.
+   *
+   * Returns:
+   *   Promise<number>
+   */
+  static async countPending() {
+    const rows = await mysql.do('SELECT COUNT(*) AS n FROM AnsibleForms.`runners` WHERE pending = 1');
+    return Number(rows?.[0]?.n || 0);
+  }
+
+  /**
+   * The worker's sweep : RTEs that asked to join and nobody approved within
+   * PENDING_REMOVE_HOURS, removed with their credential.
+   *
+   * Returns:
+   *   Promise<number>: how many.
+   */
+  static async removeStalePending() {
+    const rows = await mysql.do(
+      'SELECT id, name, credential FROM AnsibleForms.`runners` WHERE pending = 1 AND pending_since < (NOW() - INTERVAL ? HOUR)',
+      [PENDING_REMOVE_HOURS],
+    );
+    for (const row of rows || []) await this.removeWithCredential(row);
+    return (rows || []).length;
+  }
+
   /** the runner of this type marked default, or null */
   static async findDefault(type) {
     const all = await this.findAll();
     return (all || []).find((r) => r.is_default && r.type === type) || null;
-  }
-
-  /**
-   * Adds `state` to runners an RTE registered itself : 'automatic' while its RTE writes its
-   * heartbeat, 'unresponsive' once it stopped (no heartbeat for NODE_DEAD_SECONDS, the Status
-   * page's rule). A runner added by hand or by the seed has no state.
-   */
-  static async withState(runners) {
-    const list = runners || [];
-    const ids = [...new Set(list.map((r) => r.node_id).filter(Boolean))];
-    if (!ids.length) return list;
-    const rows = await mysql.do(
-      'SELECT id FROM AnsibleForms.`nodes` WHERE id IN (?) AND last_seen > (NOW() - INTERVAL ? SECOND)',
-      [ids, NODE_DEAD_SECONDS],
-    );
-    const alive = new Set(rows.map((r) => r.id));
-    return list.map((r) => (r.node_id ? { ...r, state: alive.has(r.node_id) ? 'automatic' : 'unresponsive' } : r));
   }
 
   /**

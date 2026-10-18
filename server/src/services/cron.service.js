@@ -174,7 +174,8 @@ class CronService {
           logger.debug(`Checking one-time schedule: ${name} (ID: ${id})`);
           try {
             const schedules = await mysql.do(
-              "SELECT id, run_at FROM AnsibleForms.`schedule` WHERE id=? AND COALESCE(state,'')<>'running' AND COALESCE(state,'')<>'queued'",
+              // turned off (enabled 0) : it waits, Run now still runs it
+              "SELECT id, run_at FROM AnsibleForms.`schedule` WHERE id=? AND COALESCE(enabled,1)=1 AND COALESCE(state,'')<>'running' AND COALESCE(state,'')<>'queued'",
               [id],
               true
             );
@@ -215,7 +216,8 @@ class CronService {
           try {
             // Check if schedule is already running or queued
             const schedules = await mysql.do(
-              "SELECT id FROM AnsibleForms.`schedule` WHERE id=? AND COALESCE(state,'')<>'running' AND COALESCE(state,'')<>'queued'",
+              // turned off (enabled 0) : this occurrence is skipped, Run now still runs it
+              "SELECT id FROM AnsibleForms.`schedule` WHERE id=? AND COALESCE(enabled,1)=1 AND COALESCE(state,'')<>'running' AND COALESCE(state,'')<>'queued'",
               [id],
               true
             );
@@ -379,6 +381,13 @@ class CronService {
         if (runners > 0) logger.warning(`Removed ${runners} runner(s) registered by an RTE that stopped answering`);
       } catch (err) {
         logger.error('Failed to remove the runners of stopped RTEs:', err);
+      }
+      // and the RTEs that asked to join and nobody approved within a day
+      try {
+        const pending = await Runner.removeStalePending();
+        if (pending > 0) logger.warning(`Removed ${pending} runner(s) that asked to join and were not approved within a day`);
+      } catch (err) {
+        logger.error('Failed to remove the runners waiting for approval too long:', err);
       }
     });
     this.jobs.system.set('deadNodes', deadNodesTask);

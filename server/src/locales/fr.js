@@ -111,6 +111,10 @@ export default {
     secretStoreNotFound: "Coffre de secrets introuvable",
     secretStoreConnectionOk: "La connexion au coffre de secrets est OK",
     runnerAdded: "Runner ajouté",
+    joinTokenMade: "Jeton d'adhésion créé : copiez-le maintenant, il ne sera plus affiché",
+    joinTokenRevoked: "Jeton d'adhésion révoqué",
+    joinTokenDeleted: "Jeton d'adhésion supprimé",
+    joinTokenNotFound: "Jeton d'adhésion introuvable",
     runnerNotFound: "Runner introuvable",
     runnerAdminOnly:
       "Seul un admin peut ajouter, modifier ou supprimer un runner : un runner recoit les identifiants des jobs qu'il execute",

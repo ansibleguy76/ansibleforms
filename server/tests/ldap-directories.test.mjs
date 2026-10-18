@@ -22,7 +22,7 @@ describe("qualify", () => {
 
 describe("route", () => {
   test("a bare username: every directory, in order", () => {
-    assert.deepEqual(asked(route("jane", dirs)), ["default:jane", "corp:jane"]);
+    assert.deepEqual(asked(route("jane", dirs)), [`${DEFAULT_NAME}:jane`, "corp:jane"]);
   });
   test("a directory named first: that one only, whatever the case or the separator", () => {
     assert.deepEqual(asked(route("corp\\jane", dirs)), ["corp:jane"]);
@@ -33,8 +33,8 @@ describe("route", () => {
     assert.deepEqual(asked(route("jane@CORP.LOCAL", dirs)), ["corp:jane@CORP.LOCAL"]);
   });
   test("an unknown directory or domain: every directory, the name as typed", () => {
-    assert.deepEqual(asked(route("other/jane", dirs)), ["default:other/jane", "corp:other/jane"]);
-    assert.deepEqual(asked(route("jane@other.com", dirs)), ["default:jane@other.com", "corp:jane@other.com"]);
+    assert.deepEqual(asked(route("other/jane", dirs)), [`${DEFAULT_NAME}:other/jane`, "corp:other/jane"]);
+    assert.deepEqual(asked(route("jane@other.com", dirs)), [`${DEFAULT_NAME}:jane@other.com`, "corp:jane@other.com"]);
   });
 });
 

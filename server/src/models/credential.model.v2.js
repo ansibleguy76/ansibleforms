@@ -152,7 +152,9 @@ class CredentialModel extends CrudModel {
     } else if (data.url !== undefined && data.url !== null) {
       data.url = stripTrailingSlashes(String(data.url).trim()) || null;
     }
-    if (!opts.fromSeed && this.URL_TYPES.includes(data.credential_type) && empty('url')) {
+    // an rte credential may have none : an outbound RTE dials the app, which needs no address of
+    // it (the runner checks its own : Runner.assertComplete)
+    if (!opts.fromSeed && this.URL_TYPES.includes(data.credential_type) && data.credential_type !== 'rte' && empty('url')) {
       throw new Errors.BadRequestError(`A ${data.credential_type} credential needs its server (url)`);
     }
     return data;

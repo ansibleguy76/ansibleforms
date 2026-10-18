@@ -25,6 +25,7 @@ function dropTable(table) {
     });
 }
 "use strict";
+import { DEFAULT_NAME as DEFAULT_LDAP, LEGACY_DEFAULT_NAME as LEGACY_DEFAULT_LDAP } from "../lib/ldapDirectories.js";
 import logger from "../lib/logger.js";
 import mysql from "./db.model.js";
 import appConfig from "../../config/app.config.js";
@@ -551,7 +552,8 @@ const SCHEMA_MANIFEST = {
     tables: ['groups', 'users', 'tokens', 'credentials', 'ldap', 'jobs', 'job_output',
              'settings', 'repositories', 'schedule', 'audit', 'chat_settings', 'secret_stores', 'runners',
              'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'notification_channels', 'syslog_servers', 'login_failures', 'token_revocations', 'schema_migrations',
-             'directory_users', 'announcements', 'disclaimer_versions', 'disclaimer_acceptances', 'api_tokens', 'labels'],
+             'directory_users', 'announcements', 'disclaimer_versions', 'disclaimer_acceptances', 'api_tokens', 'labels',
+             'runner_leases', 'runner_join_tokens', 'job_events'],
   },
   patches: {
     patchVersion4: { columns: ['ldap.groups_search_base', 'ldap.groups_attribute', 'ldap.group_class',
@@ -589,8 +591,9 @@ const SCHEMA_MANIFEST = {
     // and the worker and several app nodes : the processes on the database, what changed
     // between them, the designer lock, and the node that follows a job
     patchVersion7: { tables: ['secret_stores', 'runners', 'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'notification_channels', 'syslog_servers', 'login_failures', 'token_revocations', 'schema_migrations',
-                              'directory_users', 'announcements', 'disclaimer_versions', 'disclaimer_acceptances', 'api_tokens', 'labels'],
-                     columns: ['schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'settings.syslog_env_imported_at', 'jobs.runner', 'jobs.runner_kind', 'jobs.runner_job_url',
+                              'directory_users', 'announcements', 'disclaimer_versions', 'disclaimer_acceptances', 'api_tokens', 'labels',
+                              'runner_leases', 'runner_join_tokens', 'job_events'],
+                     columns: ['runners.rte_mode', 'runners.enabled', 'schedule.enabled', 'runners.pending', 'runners.pending_since', 'runners.pending_info', 'schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'settings.syslog_env_imported_at', 'jobs.runner', 'jobs.runner_kind', 'jobs.runner_job_url',
                                'runners.username', 'runners.password', 'runners.use_credentials', 'runners.node_id', 'jobs.job_log',
                                'jobs.tracker', 'repositories.claim_node', 'repositories.claim_since',
                                'repositories.use_for_workflows', 'repositories.use_for_inventories',
@@ -1103,6 +1106,26 @@ async function patchVersion7(messages, success, failed) {
   // the API tokens issued, listed and revoked on the profile and the user's page (models/apiToken.model.js)
   const apiTokens = fs.readFileSync(`${__dirname}/../db/create_api_tokens_table.sql`);
   await checkPromise(addTable("api_tokens", apiTokens.toString()), messages, success, failed);
+  // the RTE over a WebSocket (rte/socket) : how each RTE talks to the app (database, outbound or
+  // inbound), the app node holding each socket, and the join tokens runners add themselves with
+  await checkPromise(addColumn("runners", "rte_mode", "varchar(10)", true, "NULL"), messages, success, failed);
+  // a runner turned off takes no job (Connections > Runners, Enable / Disable)
+  await checkPromise(addColumn("runners", "enabled", "tinyint(4)", true, "1"), messages, success, failed);
+  // a schedule turned off does not fire (Settings > Schedules, Enable / Disable)
+  await checkPromise(addColumn("schedule", "enabled", "tinyint(4)", true, "1"), messages, success, failed);
+  // the LDAP directory named "default" up to 7.2 is "main" from 7.3 : its members keep their short names
+  await checkPromise(renameDefaultLdap(), messages, success, failed);
+  // an RTE that asks to join waits for an admin's approval (Connections > Runners, Approve)
+  await checkPromise(addColumn("runners", "pending", "tinyint(4)", true, "0"), messages, success, failed);
+  await checkPromise(addColumn("runners", "pending_since", "datetime", true, "NULL"), messages, success, failed);
+  await checkPromise(addColumn("runners", "pending_info", "text", true, "NULL"), messages, success, failed);
+  const leases = fs.readFileSync(`${__dirname}/../db/create_runner_leases_table.sql`);
+  await checkPromise(addTable("runner_leases", leases.toString()), messages, success, failed);
+  const joinTokens = fs.readFileSync(`${__dirname}/../db/create_runner_join_tokens_table.sql`);
+  await checkPromise(addTable("runner_join_tokens", joinTokens.toString()), messages, success, failed);
+  // a playbook's structured events (the af_events callback plugin) : the job page's grid and recap
+  const jobEvents = fs.readFileSync(`${__dirname}/../db/create_job_events_table.sql`);
+  await checkPromise(addTable("job_events", jobEvents.toString()), messages, success, failed);
 }
 
 /**
@@ -1592,6 +1615,23 @@ function connectionCredentialType(record) {
  * Returns:
  *   Promise<string|null>: what was done, or null when there was nothing to do.
  */
+/**
+ * Renames the LDAP directory named "default" (up to 7.2) to "main" (DEFAULT_NAME) : the one whose
+ * members keep their short names, so no role, group or user name changes. Only when no
+ * directory is named "main" yet ; the column's default follows.
+ *
+ * Returns:
+ *   Promise<string|null>: what was done, or null when there was nothing to do.
+ */
+export async function renameDefaultLdap() {
+  const rows = await mysql.do("SELECT name FROM AnsibleForms.`ldap` WHERE name IN (?, ?)", [LEGACY_DEFAULT_LDAP, DEFAULT_LDAP]);
+  const names = new Set(rows.map((r) => r.name));
+  await mysql.do(`ALTER TABLE AnsibleForms.\`ldap\` ALTER COLUMN \`name\` SET DEFAULT '${DEFAULT_LDAP}'`);
+  if (!names.has(LEGACY_DEFAULT_LDAP) || names.has(DEFAULT_LDAP)) return null;
+  await mysql.do("UPDATE AnsibleForms.`ldap` SET name = ? WHERE name = ?", [DEFAULT_LDAP, LEGACY_DEFAULT_LDAP]);
+  return `LDAP directory '${LEGACY_DEFAULT_LDAP}' renamed to '${DEFAULT_LDAP}'`;
+}
+
 export async function retypeConnectionCredentials() {
   const stores = await mysql.do("SELECT id, type, NULL AS flavour, credential FROM AnsibleForms.`secret_stores` WHERE COALESCE(credential, '') <> ''");
   const runners = await mysql.do("SELECT id, type, flavour, credential FROM AnsibleForms.`runners` WHERE COALESCE(credential, '') <> ''");

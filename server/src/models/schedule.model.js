@@ -27,6 +27,8 @@ import Errors from '../lib/errors.js';
  */
 function withNextRun(row) {
   let next = null;
+  // turned off : it does not run next
+  if (row.enabled !== undefined && row.enabled !== null && !Number(row.enabled)) return { ...row, next_run: null };
   try {
     if (row.one_time_run) {
       if (row.run_at && new Date(row.run_at) > new Date()) next = new Date(row.run_at);

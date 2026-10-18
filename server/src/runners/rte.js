@@ -1,8 +1,10 @@
-// An RTE (runtime environment) : the playbook runs in another container (AF_ROLE=rte),
-// which reads the job and writes the output and the final status to the database itself.
-// This side resolves the job's secrets, hands them over sealed for that RTE with the job
-// (lib/sealedSecrets.js), and waits for it to end.
-// The RTE's address and token come from its row in the runners table.
+// An RTE (runtime environment) : the playbook runs in another container (AF_ROLE=rte).
+// In database mode (deprecated) the RTE reads the job and writes the output and the final
+// status to the database itself : this side resolves the job's secrets, hands them over sealed
+// for that RTE with the job over HTTP (lib/sealedSecrets.js), and waits for it to end.
+// In the socket modes (outbound, inbound) the app node holding the RTE's socket sends it the job
+// and writes what comes back (runners/rteHub.js) : this side launches and follows it the same way.
+// The RTE's address, token and mode come from its row in the runners table.
 import { RTE_CONTRACT } from "../rte/contract.js";
 import { appVersion } from "../lib/version.js";
 import axios from "axios";
@@ -14,6 +16,12 @@ import { stripTrailingSlashes } from "../lib/url.js";
 import Job from "../models/job.model.js";
 import { safeParse } from "../lib/safejson.js";
 import { NODE_DEAD_SECONDS } from "../lib/nodes.js";
+import { SOCKET_CONTRACT } from "./../rte/socket/protocol.js";
+
+// the socket modes (rteHub.js imports the runner model, which imports this : loaded when used)
+const SOCKET_MODES = ["outbound", "inbound"];
+const isSocket = (runner) => SOCKET_MODES.includes(runner?.rte_mode);
+const hub = () => import("./rteHub.js");
 import { resolveJobSecrets } from "../lib/jobSecrets.js";
 import { sealJobSecrets } from "../lib/sealedSecrets.js";
 
@@ -131,6 +139,7 @@ async function track(jobId, rte) {
  * app's : an RTE is updated when the contract changes, not with every app release.
  */
 async function check(runner) {
+  if (isSocket(runner)) return checkSocket(runner);
   const rte = client(runner);
   let data;
   try {
@@ -150,6 +159,62 @@ async function check(runner) {
     throw new Errors.BadRequestError(`the RTE at ${rte.url} (${data?.version}) speaks ${theirs}, this app (${appVersion}) needs contract ${RTE_CONTRACT}: ${what}`);
   }
   return details;
+}
+
+/**
+ * A socket-mode RTE's state, as any app node sees it : who holds its socket and what it said.
+ *
+ * Args:
+ *   runner (object): the runner.
+ *
+ * Returns:
+ *   Promise<object>: its details, as check() returns them.
+ *
+ * Raises:
+ *   BadRequestError: no app node holds its socket.
+ */
+async function checkSocket(runner) {
+  const state = await (await hub()).socketState(runner.name);
+  if (!state?.alive) {
+    const how = runner.rte_mode === "outbound"
+      ? "it has not dialed the app: check its APP_URL, its token and the network from the RTE to the app"
+      : `no app node could dial it at ${runner.uri}: check its RTE_URL, its token and the network from the app to the RTE`;
+    throw new Errors.BadRequestError(`the RTE '${runner.name}' (${runner.rte_mode}) is not connected: ${how}`);
+  }
+  const info = state.info || {};
+  if (info.contract !== undefined && info.contract !== SOCKET_CONTRACT) {
+    throw new Errors.BadRequestError(`the RTE '${runner.name}' (${info.version}) speaks contract ${info.contract}, this app (${appVersion}) needs contract ${SOCKET_CONTRACT}`);
+  }
+  return {
+    id: state.rte_id, version: info.version, contract: info.contract, ansible: info.ansible,
+    running: (info.running || []).length, appVersion, olderRelease: older(info.version, appVersion),
+    mode: runner.rte_mode, files: info.files, capacity: info.capacity, socketNode: state.node_id,
+  };
+}
+
+/**
+ * Follows a job handed to a socket-mode RTE : it ends when the holder of the socket writes its
+ * end. A job no RTE claimed for RTE_QUEUE_MINUTES (none connected, or all busy) fails.
+ *
+ * Args:
+ *   jobId (number): the job.
+ *   runner (object): its runner.
+ *
+ * Returns:
+ *   Promise<boolean>: true when it ended in success.
+ */
+async function trackSocket(jobId, runner) {
+  const since = Date.now();
+  for (;;) {
+    await new Promise((r) => setTimeout(r, POLL_MS));
+    const status = await dbStatus(jobId).catch(() => "running");
+    if (status !== "running") return status === "success";
+    if (!queueMinutes() || Date.now() - since < queueMinutes() * 60000 + 60000) continue;
+    // never claimed : no connected RTE took it (the holder fails a busy one itself)
+    if (!(await claimedBy(jobId).catch(() => "?"))) {
+      return failJob(jobId, `no app node holds a socket to RTE '${runner.name}' and it took no job for ${queueMinutes()} minutes (RTE_QUEUE_MINUTES): is it connected?`);
+    }
+  }
 }
 
 // how long a job waits for a free RTE (RTE_QUEUE_MINUTES), and how often it asks again
@@ -205,6 +270,12 @@ export default {
   check,
   async launch(ctx) {
     const { jobId, runner } = ctx;
+    if (isSocket(runner)) {
+      await Job.printJobOutput(`ok: [Running on RTE ${runner.name} (${runner.rte_mode})]`, "stdout", jobId, (await Job.lastOrder(jobId)) + 1);
+      // the node holding its socket sends it : this one at once, another within seconds
+      (await hub()).kick(jobId, runner);
+      return trackSocket(jobId, runner);
+    }
     const rte = { ...client(runner), name: runner.name };
     // written before the hand-over, never after : from then on the RTE writes the output
     await Job.printJobOutput(`ok: [Running on RTE ${runner.name} (${rte.url})]`, "stdout", jobId, (await Job.lastOrder(jobId)) + 1);
@@ -237,6 +308,11 @@ export default {
   },
   // the fast path ; the abort flag in the database reaches the RTE too, within seconds
   async cancel(ctx) {
+    // a socket : the cancel goes from the node holding it (the abort flag reaches it otherwise)
+    if (isSocket(ctx.runner)) {
+      (await hub()).cancel(ctx.jobId, ctx.runner);
+      return;
+    }
     const rte = client(ctx.runner);
     try {
       await rte.http.post(`/jobs/${ctx.jobId}/cancel`);

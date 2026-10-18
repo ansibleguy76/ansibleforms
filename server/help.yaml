@@ -367,10 +367,131 @@
       cleanups. One worker works at a time ; a second one waits and takes over when the first
       stops. App nodes and the worker share the database and the persistent volume.
 
-      `rte` starts the same image as a runtime environment: a small API that runs playbooks
-      for an app, with no web interface, scheduler or seed. An RTE needs the app's database
-      settings (`DB_*`), the same `ENCRYPTION_SECRET`, and `RTE_TOKEN`. It adds itself under
-      Connections > Runners (`RTE_REGISTER`, `RTE_URL`).
+      `rte` starts the same image as a runtime environment that runs playbooks for an app, with
+      no web interface, scheduler or seed. How it talks to the app is `RTE_MODE`: over one
+      WebSocket (`outbound`, it dials the app at `APP_URL` ; `inbound`, the app dials it at
+      `RTE_URL`), holding no database credentials ; or, deprecated, reading and writing the app's
+      database itself (`database`, with `DB_*` and the same `ENCRYPTION_SECRET`). Either way it
+      needs `RTE_TOKEN`.
+  - name: RTE_MODE
+    version: 7.3.0
+    type: string
+    allowed: outbound, inbound or database
+    default: database
+    short: How an RTE talks to the app
+    hint: "Read by an RTE: outbound dials the app, inbound is dialed by it; database is deprecated."
+    description: |
+      Read by an RTE (`AF_ROLE=rte`).
+
+      `outbound`: the RTE dials the app (`APP_URL`) and keeps one WebSocket open, redialing when
+      it drops. Nothing reaches the RTE from outside: only its zone to the app on the app's port,
+      through a proxy if `HTTPS_PROXY` says so. The first time it joins with `RTE_JOIN_TOKEN`.
+
+      `inbound`: the RTE listens and the app dials it at its runner's address (`RTE_URL`), one
+      app node at a time. With `APP_URL` (and `RTE_JOIN_TOKEN` the first time) it registers
+      itself with one call ; without, add its runner under Connections > Runners (type RTE, mode
+      inbound, its address and `RTE_TOKEN`).
+
+      In both socket modes the RTE holds no database credentials: the app sends it each job and
+      stores what comes back - the output, the events, the end - exactly once, and sends the end
+      notifications. The job's files come with it unless `RTE_FILES=local`.
+
+      `database` (deprecated, removed in 8.0.0): the RTE reads and writes the app's database
+      itself, with `DB_*` and the same `ENCRYPTION_SECRET` - the only mode before 7.3, and the one
+      of an RTE without `RTE_MODE` throughout 7.x. It logs a deprecation warning at its start.
+  - name: APP_URL
+    version: 7.3.0
+    type: string
+    allowed: an http:// or https:// address
+    short: The app's address an RTE dials
+    hint: "On an outbound RTE (and an inbound one that registers itself): the app's address."
+    description: |
+      On an RTE in `outbound` mode: the app's address as people open it -
+      `https://forms.example.com`, with its `BASE_URL` if any. The RTE adds the socket's path
+      (`/api/v2/rte/socket`) and dials it over `wss://` (`ws://` for an http address).
+
+      On an RTE in `inbound` mode: the address of its one registration call (with `RTE_URL` and,
+      the first time, `RTE_JOIN_TOKEN`) ; the app dials it from then on.
+
+      The certificate is checked: name a private CA with `NODE_EXTRA_CA_CERTS`, or turn the check
+      off inside one trusted network with `APP_TLS_VERIFY=0`.
+  - name: APP_TLS_VERIFY
+    version: 7.3.0
+    type: number
+    allowed: 0 or 1
+    default: 1
+    short: Whether an RTE checks the app's certificate
+    hint: "On an RTE: 0 accepts the app's self-signed certificate, inside one trusted network only."
+    description: |
+      On an RTE that dials the app (`APP_URL`). 1: the app's certificate must be valid for its
+      name (a private CA through `NODE_EXTRA_CA_CERTS`). 0: any certificate is accepted - only
+      inside one trusted network, such as a compose project or a pod, where the app's certificate
+      is self-signed.
+  - name: RTE_JOIN_TOKEN
+    version: 7.3.0
+    type: string
+    allowed: a join token of Connections > Runners (afj_...)
+    short: The token an RTE joins the app with, once
+    hint: "On an RTE: a join token that approves it at once, for unattended installs."
+    description: |
+      On an RTE in a socket mode, the first time, optional. Without it an RTE the app does not
+      know asks to join and waits for an admin's approval under Connections > Runners. With it
+      the RTE is approved at once - for unattended installs - and the app adds it as a runner
+      (or gives an existing runner of that name the new token). Join tokens are made through the
+      API (`POST /api/v2/runner/jointoken`, an admin). From then on the RTE signs in with its own
+      token ; the join token can expire or be revoked without affecting it.
+  - name: RTE_NAME
+    version: 7.3.0
+    type: string
+    allowed: "letters, digits and . _ - : @"
+    short: The runner name an RTE joins as
+    hint: "On an RTE in a socket mode: its runner's name; default its node id."
+    description: |
+      On an RTE in a socket mode: the name of its runner under Connections > Runners, which forms
+      name with `runner:`. Not set: its node id (`rte-<hostname>-<port>`), which changes when the
+      container is recreated - set it in production.
+  - name: RTE_FILES
+    version: 7.3.0
+    type: string
+    allowed: transfer or local
+    default: transfer
+    short: Where a socket-mode RTE gets a job's files
+    hint: "On an RTE in a socket mode: transfer gets them from the app, local uses its own folders."
+    description: |
+      On an RTE in a socket mode. `transfer`: the app sends the playbooks folder and the
+      inventories with the job, packed and named by a hash of their content ; the RTE keeps them
+      (`RTE_CACHE_PATH`) and an unchanged folder is never sent twice. It needs no shared disk and
+      no access to the repositories. `local`: the RTE runs from its own folders, as a
+      database-mode RTE - mount the playbooks (`ANSIBLE_PATH`) and repositories (`REPO_PATH`).
+  - name: RTE_FILES_MAX_MB
+    version: 7.3.0
+    type: number
+    allowed: a positive integer
+    default: 512
+    short: The largest folder the app sends an RTE
+    hint: "Read by the app: a bigger playbooks or inventory folder must be mounted on the RTE."
+    description: |
+      Read by the app: a playbooks or inventory folder bigger than this is not sent to an RTE
+      with `RTE_FILES=transfer` ; the job fails and says to mount the folder on the RTE instead.
+  - name: RTE_SPOOL_PATH
+    version: 7.3.0
+    type: string
+    default: "%PERSISTENT_FOLDER%/rte-spool"
+    short: Where a socket-mode RTE keeps what the app has not stored yet
+    hint: "On an RTE in a socket mode: keep it on a volume so a restart resends what is left."
+    description: |
+      On an RTE in a socket mode: each job's output, events and end wait here until the app acks
+      them, and are sent again after a reconnect - to the same app node or another. On a volume,
+      an RTE that restarts sends what it had not delivered.
+  - name: RTE_CACHE_PATH
+    version: 7.3.0
+    type: string
+    default: "%PERSISTENT_FOLDER%/rte-files"
+    short: Where a socket-mode RTE keeps the job files the app sent
+    hint: "On an RTE with RTE_FILES=transfer: the folders it got, the 20 used last."
+    description: |
+      On an RTE with `RTE_FILES=transfer`: the playbooks and inventory folders the app sent,
+      each under its hash. The 20 used most recently are kept.
   - name: RTE_TOKEN
     version: 7.0.0
     type: string

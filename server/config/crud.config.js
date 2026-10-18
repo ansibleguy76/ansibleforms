@@ -95,7 +95,17 @@ const crudConfigs = {
       // a semaphore runner : the project id ; a rundeck runner : the project name
       { name: 'project' },
       { name: 'managed', isBoolean: true },
-      { name: 'node_id' }
+      { name: 'node_id' },
+      // an RTE : how it talks to the app - database (deprecated), outbound (it dials the app) or
+      // inbound (the app dials it) ; none : database
+      { name: 'rte_mode' },
+      // turned off, no job goes to it
+      { name: 'enabled', isBoolean: true },
+      // an RTE that asked to join, waiting for an admin's approval : since when, and what it said
+      // of itself (host, address, mode, version, its token's fingerprint), as JSON
+      { name: 'pending', isBoolean: true },
+      { name: 'pending_since' },
+      { name: 'pending_info' }
     ],
     allowCache: true,
     cacheTTL: 3600
@@ -307,6 +317,8 @@ const crudConfigs = {
       { name: 'output' },
       { name: 'status' },
       { name: 'state' },
+      // turned off, its cron or one time run does not fire
+      { name: 'enabled', isBoolean: true },
       { name: 'last_run', isDatetime: true },
       { name: 'queue_id' },
       // who planned it, as a JSON user object : set ONLY by Schedule.plan, never from a

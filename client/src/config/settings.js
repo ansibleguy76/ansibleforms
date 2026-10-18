@@ -145,6 +145,25 @@ function pillDate(value) {
   return text ? ` <span class="af-pill-date">${esc(text)}</span>` : '';
 }
 
+// the LDAP directory whose members keep their short names (server/src/lib/ldapDirectories.js)
+const LDAP_DEFAULT = 'main';
+
+/**
+ * The dark grey "Default" badge after the type or the name of the record that is the default : a
+ * runner the default of its type, the mail channel the app sends with, the SSO provider its type
+ * signs in with, the main LDAP directory. A badge rather than a column of one tick.
+ *
+ * Args:
+ *   t (function): the translation function.
+ *   on (boolean): whether the record is the default.
+ *
+ * Returns:
+ *   string: the badge's HTML (a pill, its label escaped), "" when not.
+ */
+export function defaultNote(t, on) {
+  return on ? ' ' + pill(`${PILL.grey} af-pill-small`, t('settings.common.defaultNote')) : '';
+}
+
 /**
  * A repository's push as a pill : its last push failed red ; else changes saved here and not
  * pushed yet, pending changes in the designer's push orange (something waits) ; else its last
@@ -294,11 +313,50 @@ export function syslogAddress(server) {
   return server?.host ? `${server.host}:${server.port || 514}` : '';
 }
 
-export function registrationPill(t, state) {
-  const known = { automatic: PILL.blue, unresponsive: PILL.amber };
-  const key = known[state] ? state : 'manual';
-  const label = t(`settings.runners.state${key[0].toUpperCase()}${key.slice(1)}`);
-  return pill(known[state], label);
+/**
+ * An RTE's mode as a pill : outbound blue, inbound cyan, database (deprecated) amber ; nothing
+ * for another kind of runner.
+ *
+ * Args:
+ *   t (function): the translation function.
+ *   r (object): the runner.
+ *
+ * Returns:
+ *   string: the pill's HTML, escaped.
+ */
+export function rteModePill(t, r) {
+  if (r?.type !== 'rte') return '';
+  const mode = r.rte_mode || 'database';
+  const colour = { outbound: PILL.blue, inbound: PILL.cyan, database: PILL.amber }[mode] || PILL.grey;
+  // the label without what follows in brackets ("Database (deprecated)") : the pill's colour and
+  // its hint say it, the column stays narrow
+  const label = t(`settings.runners.rteMode_${mode}`).replace(/\s*[(（].*[)）]\s*$/, '');
+  return pill(colour, label, t(`settings.runners.rteMode_${mode}Hint`));
+}
+
+/**
+ * A socket-mode RTE's socket as a pill : connected (its app node, version and load in its
+ * tooltip) or not ; nothing for a runner without a socket.
+ *
+ * Args:
+ *   t (function): the translation function.
+ *   r (object): the runner, with the socket the api adds (runner.controller.js withSocket).
+ *
+ * Returns:
+ *   string: the pill's HTML, escaped.
+ */
+export function socketPill(t, r) {
+  if (!r?.socket) return '';
+  if (!r.socket.connected)
+    return pill(PILL.red, t('settings.runners.socketDisconnected'), t('settings.runners.socketDisconnectedHint'));
+  const cap = r.socket.capacity || {};
+  const title = t('settings.runners.socketHint', {
+    node: r.socket.node || '?',
+    version: r.socket.version || '?',
+    running: cap.running ?? 0,
+    max: cap.maxJobs || '∞',
+  });
+  return pill(PILL.green, t('settings.runners.socketConnected'), title);
 }
 
 /**
@@ -1150,6 +1208,8 @@ export default function getSettings(t) {
         // not in the dialog ; a new one is it when its type has none, another is chosen with Use for
         // sign-in
         {
+          // on or off : one per type at most is on (turning one on turns the others of its type
+          // off), the one its login button signs in with - an Enabled column, as every list's
           key: 'enable',
           label: t('settings.oauth2.active'),
           type: 'checkbox',
@@ -1331,6 +1391,26 @@ export default function getSettings(t) {
           color: 'refresh',
           dividerBefore: true,
         },
+        {
+          // only the one that changes it : Enable on a schedule turned off (paused), Disable on one
+          // turned on ; its settings are kept, Run now still runs it
+          name: 'enable',
+          title: t('settings.schedules.enable'),
+          icon: 'toggle-on',
+          color: 'edit',
+          dividerBefore: true,
+          shownWhen: (m) => !m.enabled,
+          update: () => ({ enabled: 1 }),
+        },
+        {
+          name: 'disable',
+          title: t('settings.schedules.disable'),
+          icon: 'toggle-off',
+          color: 'edit',
+          dividerBefore: true,
+          shownWhen: (m) => !!m.enabled,
+          update: () => ({ enabled: 0 }),
+        },
         { name: 'delete', icon: 'trash', title: t('settings.schedules.deleteSchedule'), color: 'delete' },
       ],
       // the short columns as wide as their headers, a date as wide as its text, the name and
@@ -1338,6 +1418,14 @@ export default function getSettings(t) {
       fields: [
         { key: 'id', hidden: true, noInput: true },
         { key: 'output', hidden: true, noInput: true },
+        {
+          // firing or paused : a yes / no column, first as every list's Enabled ; a new schedule is
+          // on, the row menu turns it on or off
+          key: 'enabled',
+          label: t('settings.schedules.enabled'),
+          type: 'checkbox',
+          noInput: true,
+        },
         {
           key: 'name',
           icon: 'heading',
@@ -2065,7 +2153,7 @@ export default function getSettings(t) {
       // one, which is turned off instead
       actions: [
         { name: 'test', title: t('settings.common.testConnection'), icon: 'plug', dependency: 'enable' },
-        { name: 'delete', title: t('common.delete'), icon: 'trash', showWhen: (item) => item.name !== 'default' },
+        { name: 'delete', title: t('common.delete'), icon: 'trash', showWhen: (item) => item.name !== LDAP_DEFAULT },
       ],
       fields: [
         {
@@ -2087,7 +2175,7 @@ export default function getSettings(t) {
           help: t('settings.ldap.nameHelp'),
           placeholder: 'corp',
           required: true,
-          disabledWhen: (item, saved) => saved.name === 'default',
+          disabledWhen: (item, saved) => saved.name === LDAP_DEFAULT,
         },
         {
           // what it is, for the list and its page
@@ -2403,27 +2491,12 @@ export default function getSettings(t) {
       description: t('settings.runners.description'),
       icon: 'rocket',
       selectable: false,
-      // the defaults, chosen in a dialog (Edit defaults) : one per runner type, where the forms
-      // of that type (ansible on an RTE ; awx, aap and ascender on an awx runner ; semaphore,
-      // rundeck, jenkins on theirs) run when they name no runner
-      defaultPicker: {
-        key: 'is_default',
-        groupBy: (r) => r?.type || null,
-        title: t('settings.runners.defaultsTitle'),
-        editLabel: t('settings.runners.editDefaults'),
-        groups: ['rte', 'awx', 'semaphore', 'rundeck', 'jenkins'].map((type) => ({
-          key: type,
-          label: t(`settings.runners.default_${type}`),
-          help: t(`settings.runners.default_${type}Help`),
-          icon: type === 'rte' ? 'fac,ansible' : 'rocket',
-          describe: (r) => t(`settings.runners.kind_${runnerKind(r)}`),
-        })),
-      },
-      // the dialog in steps : what the runner is, its kind, how the app logs in and where (its
-      // credential's server), a project under it
+      // the dialog in steps : what the runner is, its kind, an RTE's mode (a step of its own, for
+      // an RTE only), how the app logs in and where (its credential's server), a project under it
       steps: [
         { key: 'runner', label: t('settings.runners.stepRunner') },
         { key: 'type', label: t('settings.runners.stepType') },
+        { key: 'mode', label: t('settings.runners.stepMode'), when: (i) => (i.kind || runnerKind(i)) === 'rte' },
         { key: 'credentials', label: t('settings.runners.stepAuth') },
       ],
       // the kind chosen is stored as a type and a flavour : an RTE, or an awx runner that is an
@@ -2437,9 +2510,12 @@ export default function getSettings(t) {
         ca_bundle: _caBundle,
         state: _state,
         node_id: _nodeId,
+        socket: _socket,
         ...item
       }) => ({
         ...item,
+        // an RTE's mode ; none for the other kinds
+        rte_mode: kind === 'rte' ? item.rte_mode || 'outbound' : null,
         type: kind === 'rte' || PROJECT_RUNNER_KINDS.includes(kind) ? kind : 'awx',
         flavour: ['aap', 'ascender'].includes(kind) ? kind : null,
         // the project : a Semaphore's, a Rundeck's or a Jenkins' (its folder) only
@@ -2447,8 +2523,10 @@ export default function getSettings(t) {
       }),
       // a runner has its own page (pages/admin/runner.vue) : its row and Edit open it, New the wizard
       openPage: (item) => `/settings/runners/${item.id}`,
-      // in the row menu : editing, the test, its token or password (on its page), then Delete
-      // last, each apart
+      // a runner waiting for approval : its row opens the review (runners.vue), not its page
+      rowClickAction: (item) => (Number(item?.pending) ? 'review' : null),
+      // in the row menu : editing, the test, turning it on or off, its token or password (on its
+      // page), then Delete last, each apart
       actions: [
         { name: 'edit', title: t('settings.runners.editRunner'), icon: 'pencil', color: 'edit' },
         {
@@ -2457,6 +2535,35 @@ export default function getSettings(t) {
           icon: 'plug',
           color: 'test',
           dividerBefore: true,
+        },
+        {
+          // an RTE that asked to join : its review (who it says it is, Approve or Reject), as a
+          // job waiting for approval ; the row opens it too (rowClickAction)
+          name: 'review',
+          title: t('settings.runners.reviewApproval'),
+          icon: 'hourglass-half',
+          color: 'change',
+          dividerBefore: true,
+          shownWhen: (m) => !!Number(m.pending),
+        },
+        {
+          // only the one that changes it : Enable on a runner turned off, Disable on one turned on
+          name: 'enable',
+          title: t('settings.runners.enable'),
+          icon: 'toggle-on',
+          color: 'edit',
+          dividerBefore: true,
+          shownWhen: (m) => !m.enabled && !Number(m.pending),
+          update: () => ({ enabled: 1 }),
+        },
+        {
+          name: 'disable',
+          title: t('settings.runners.disable'),
+          icon: 'toggle-off',
+          color: 'edit',
+          dividerBefore: true,
+          shownWhen: (m) => !!m.enabled && !Number(m.pending),
+          update: () => ({ enabled: 0 }),
         },
         {
           // the credential it signs in with : its page's Credentials tab
@@ -2485,7 +2592,17 @@ export default function getSettings(t) {
           label: t('settings.runners.isDefault'),
           help: t('settings.runners.isDefaultHelp'),
           type: 'checkbox',
-          // chosen in the Edit defaults dialog (defaultPicker), not in the runner's : a column only
+          // turned on on its page (the one before stops being it) ; shown as "(default)" after its
+          // type in the list (defaultNote), not a column
+          noInput: true,
+          noTable: true,
+        },
+        {
+          // taking jobs or not : a yes / no column ; a new runner is on, the row menu and its page
+          // turn it on or off
+          key: 'enabled',
+          label: t('settings.runners.enabled'),
+          type: 'checkbox',
           noInput: true,
         },
         {
@@ -2496,6 +2613,13 @@ export default function getSettings(t) {
           required: true,
           filterable: true,
           help: t('settings.runners.nameHelp'),
+          // an RTE that asked to join : its name, and that it waits for approval (escaped, v-html)
+          render: (v, r) =>
+            esc(v ?? '') +
+            (Number(r?.pending)
+              ? ' ' + pill(PILL.orange, t('settings.runners.pending'), t('settings.runners.pendingHint'))
+              : ''),
+          sortValue: (r) => r?.name || '',
         },
         {
           // RTE, AWX, AAP or Ascender : one choice, radio buttons (not stored : the type and the
@@ -2514,19 +2638,58 @@ export default function getSettings(t) {
           noTable: true,
         },
         {
+          // an RTE's mode (RTE_MODE on the RTE) : outbound, inbound, or database (deprecated) ;
+          // a new one outbound, one from before 7.3 database
+          key: 'rte_mode',
+          step: 'mode',
+          label: t('settings.runners.rteMode'),
+          help: t('settings.runners.rteModeHelp'),
+          type: 'radio',
+          options: ['outbound', 'inbound', 'database'].map((value) => ({
+            value,
+            label: t(`settings.runners.rteMode_${value}`),
+            hint: t(`settings.runners.rteMode_${value}Hint`),
+          })),
+          // a new one outbound ; one from before 7.3, without a mode, database
+          initial: (r) => (r && r.id ? r.rte_mode || 'database' : 'outbound'),
+          dependency: 'kind',
+          dependencyValues: ['rte'],
+          noTable: true,
+        },
+        {
+          // the list's Mode column : an RTE's, as a pill
+          key: 'rte_mode_column',
+          label: t('settings.runners.rteMode'),
+          noInput: true,
+          // in Columns, off at first : the list shows default, enabled, name, type and description
+          hidden: true,
+          filterable: true,
+          render: (_, r) => rteModePill(t, r),
+          sortValue: (r) => (r?.type === 'rte' ? r.rte_mode || 'database' : ''),
+        },
+        {
+          // a socket-mode RTE's socket : connected or not, as a pill
+          key: 'socket',
+          label: t('settings.runners.socket'),
+          noInput: true,
+          hidden: true,
+          render: (_, r) => socketPill(t, r),
+          sortValue: (r) => (r?.socket ? (r.socket.connected ? 1 : 0) : -1),
+        },
+        {
           // the list's Type column : the kind's full name
           key: 'type',
           label: t('settings.runners.type'),
           noInput: true,
           filterable: true,
-          render: (_, r) => escapeHtml(t(`settings.runners.kind_${runnerKind(r)}`)),
+          render: (_, r) => escapeHtml(t(`settings.runners.kind_${runnerKind(r)}`)) + defaultNote(t, !!r?.is_default),
           sortValue: (r) => runnerKind(r),
         },
         {
           key: 'flavour',
           label: t('settings.runners.flavour'),
           noInput: true,
-          hidden: true,
+          noTable: true,
           render: (v) => escapeHtml(RUNNER_FLAVOURS.find((x) => x.value === (v || null))?.label || ''),
         },
         {
@@ -2536,25 +2699,13 @@ export default function getSettings(t) {
           label: t('settings.fields.description'),
           required: false,
         },
-        // set by the api for a runner its RTE registered itself (rte/register.js) : automatic
-        // while the RTE writes its heartbeat, unresponsive once it stopped - the worker removes
-        // it after 10 minutes. Any other runner is manual. A column only, never sent (beforeSave). render() output goes to
-        // v-html : static markup and a locale string only, as a pill (registrationPill)
-        {
-          key: 'state',
-          label: t('settings.runners.state'),
-          noInput: true,
-          sortable: true,
-          render: (v) => registrationPill(t, v),
-        },
         {
           // a column only : its credential's server (an RTE that registered itself : its own)
           key: 'uri',
           icon: 'globe',
           label: t('settings.fields.uri'),
           noInput: true,
-          // in Columns : the description shows instead
-          hidden: true,
+          noTable: true,
         },
         {
           // as whom and where : a credential of Connections > Credentials of its kind (an RTE's
@@ -2588,7 +2739,7 @@ export default function getSettings(t) {
           line: 1,
           label: t('settings.runners.project'),
           required: false,
-          hidden: true,
+          noTable: true,
           help: (r) =>
             t(`settings.runners.projectHelp_${PROJECT_RUNNER_KINDS.includes(r.kind) ? r.kind : 'semaphore'}`),
           dependency: 'kind',
@@ -2600,7 +2751,7 @@ export default function getSettings(t) {
           label: t('settings.ldap.ignoreCerts'),
           type: 'checkbox',
           noInput: true,
-          hidden: true,
+          noTable: true,
         },
       ],
     },
@@ -2701,12 +2852,12 @@ export default function getSettings(t) {
       fields: [
         { key: 'id', hidden: true, noInput: true, noTable: true },
         {
-          // a mail channel the app sends its mail with : a yes / no column ; the first column, before Enabled
+          // a mail channel the app sends its mail with : "(default)" after its type (defaultNote)
           key: 'is_active',
           label: t('settings.notificationChannels.active'),
           type: 'checkbox',
           noInput: true,
-          hideBelow: 900,
+          noTable: true,
         },
         {
           // sending or not : a yes / no column ; a new channel is on, the row menu turns it on or off
@@ -2729,7 +2880,9 @@ export default function getSettings(t) {
             hint: t(`settings.notificationChannels.typeHint_${value}`),
           })),
           initial: (r) => r?.type || 'mail',
-          render: (v) => esc(t(`settings.notificationChannels.type_${CHANNEL_TYPES.includes(v) ? v : 'mail'}`)),
+          render: (v, r) =>
+            esc(t(`settings.notificationChannels.type_${CHANNEL_TYPES.includes(v) ? v : 'mail'}`)) +
+            defaultNote(t, !!r?.is_active),
         },
         {
           // what it is for : a column after the type
@@ -3759,7 +3912,8 @@ function ldapDirectories(t, ldap) {
   // the columns : on or off (first, as every list's Enabled), the name, the description ; never sorted,
   // so the list is always in the lookup order
   const column = {
-    name: { sortable: false, filterable: true },
+    // the default directory (named default) : "(default)" after its name (defaultNote)
+    name: { sortable: false, filterable: true, render: (v) => esc(v ?? '') + defaultNote(t, v === LDAP_DEFAULT) },
     description: { sortable: false, filterable: true },
     // a ✓ as every list's Enabled, first as theirs
     enable: { sortable: false, label: t('settings.ldap.enabled'), type: 'checkbox' },
@@ -3806,7 +3960,7 @@ function ldapDirectories(t, ldap) {
         title: t('settings.ldap.deleteDirectory'),
         icon: 'trash',
         color: 'delete',
-        enabledWhen: (r) => r.name !== 'default',
+        enabledWhen: (r) => r.name !== LDAP_DEFAULT,
       },
     ],
     fields: [

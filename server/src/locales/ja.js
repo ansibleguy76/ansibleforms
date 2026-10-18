@@ -100,6 +100,10 @@ export default {
     storedJobNoAccess: "この保存済みジョブへのアクセス権がありません",
     oauth2Added: "OAuth2 プロバイダーを追加しました",
     runnerAdded: "ランナーを追加しました",
+    joinTokenMade: "参加トークンを作成しました。今すぐコピーしてください。再表示されません",
+    joinTokenRevoked: "参加トークンを失効しました",
+    joinTokenDeleted: "参加トークンを削除しました",
+    joinTokenNotFound: "参加トークンが見つかりません",
     runnerNotFound: "ランナーが見つかりません",
     runnerAdminOnly:
       "ランナーを追加、変更、削除できるのは admin だけです：ランナーは実行するジョブの認証情報を受け取ります",

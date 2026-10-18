@@ -131,6 +131,7 @@ const emit = defineEmits([
   'allow_sign_in',
   'move_up',
   'move_down',
+  'review',
 ]);
 
 // PROPS
@@ -1104,30 +1105,6 @@ const dataTableColumns = computed(() => {
     });
 });
 
-// Only when something is actually seeded : an always-present column would be an
-// empty stripe on every instance that does not use a config seed.
-const anyManaged = computed(() => (itemList.value || []).some(isManaged));
-const columnsWithManaged = computed(() => {
-  if (!anyManaged.value) return dataTableColumns.value;
-  return [
-    ...dataTableColumns.value,
-    {
-      key: 'managed',
-      label: t('settings.common.seedManaged'),
-      sortable: true,
-      filterable: false,
-      // static markup only - nothing from the row is interpolated, because
-      // render() output goes through v-html
-      // Text only. This app loads the FontAwesome SVG core and renders icons via
-      // the FaIcon component - there is no webfont CSS - so an <i class="fas ...">
-      // here produced an empty element and a stray gap, not a lock.
-      // a row the seed does not manage : an en dash, as the other empty cells
-      render: (val) =>
-        val ? '<span class="badge text-bg-secondary">' + escapeHtml(t('settings.common.seedManaged')) + '</span>' : '–',
-    },
-  ];
-});
-
 // Records the declarative config seed owns (https://ansibleforms.com/seed). The API answers 403 on
 // them, so offering Edit and Delete would only produce an error - and the seed
 // re-applies on every start, so even a successful change would be reverted.
@@ -1137,7 +1114,8 @@ const columnsWithManaged = computed(() => {
 // leaving it out offered a form whose Save answered 403. test/preview/trigger/
 // reset/sync are deliberately absent : they are read-only or write only runtime
 // status, which the seed does not own.
-const MANAGED_BLOCKS = new Set(['edit', 'delete', 'change_password']);
+// turning a record on or off is a write too : the seed declares it (a runner's enabled)
+const MANAGED_BLOCKS = new Set(['edit', 'delete', 'change_password', 'enable', 'disable']);
 const isManaged = (item) => !!(item && item.managed);
 // The badge below is built as markup because BsDataTable passes render() output to
 // v-html. Only a locale string goes in, but it is escaped anyway : the rule in this
@@ -1396,6 +1374,10 @@ function openRecordPage(item) {
 }
 
 function onDataTableRowClick(item) {
+  // a row the page handles itself (settings.rowClickAction : the name of an event) : a runner
+  // waiting for approval opens its review, not its page
+  const own = props.settings.rowClickAction?.(item);
+  if (own) return emit(own, item);
   if (openRecordPage(item)) return;
   if (!rowClickSelects.value) {
     activeRowId.value = item[idKey];
@@ -1564,7 +1546,7 @@ defineExpose({
         :toolbarTo="'#' + toolsId"
         :pagerTo="'#' + pagerId"
         :items="itemList"
-        :columns="columnsWithManaged"
+        :columns="dataTableColumns"
         :idKey="idKey"
         :selectedIds="selectedIds"
         :selectable="dataTableSelectable"

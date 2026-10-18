@@ -16,6 +16,8 @@ Removed in 8.0.0. Each logs a warning when it is used.
 | `LOCK_PATH` (no longer read) | nothing: the designer lock is kept in the database | 7.0.0 |
 | an `api` or `userpass` credential on a runner of the config seed (it logs a warning ; through the API and the GUI a runner takes a credential of its kind only) | a credential of the runner's kind : `credential_type: rte`, `awx`, `aap`, `ascender`, `semaphore`, `rundeck` or `jenkins`, with its server in `url` | 7.3.0 |
 | a runner of the config seed with its own `token`, or `username` and `password` (it logs a warning, and the seed makes a credential of its kind named after the runner, that the runner names) | a credential of the runner's kind in the `credentials` section, with its server in `url`, named by the runner with `credential:` | 7.3.0 |
+| an RTE in database mode : `RTE_MODE=database`, or no `RTE_MODE` (it logs a warning at its start) - the RTE holds the database's credentials (`DB_*`, `ENCRYPTION_SECRET`) and reads and writes it itself, and the app calls it over HTTP | `RTE_MODE=outbound` (the RTE dials the app at `APP_URL` over one WebSocket) or `RTE_MODE=inbound` (the app dials the RTE at its runner's address), without `DB_*` : the RTE joins once with a join token (Connections > Runners > Join tokens, `RTE_JOIN_TOKEN`), or its runner is set to that mode under Connections > Runners or in the config seed (`rte_mode`) | 7.3.0 |
+| `RTE_REGISTER` (database mode only) | a join token (`RTE_JOIN_TOKEN`) : the RTE adds itself as a runner signing in with an RTE credential | 7.3.0 |
 
 ## Upgrading from 6.5 to 7.0.0 - read first
 

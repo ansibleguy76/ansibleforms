@@ -219,6 +219,15 @@ CREATE TABLE `runners` (
   `project` varchar(255) DEFAULT NULL,
   `managed` tinyint(4) DEFAULT 0,
   `node_id` varchar(250) DEFAULT NULL,
+  -- an RTE : database (deprecated), outbound (it dials the app) or inbound (the app dials it)
+  `rte_mode` varchar(10) DEFAULT NULL,
+  -- turned off, no job goes to it (it stays listed, its settings kept)
+  `enabled` tinyint(4) DEFAULT 1,
+  -- an RTE that asked to join and waits for an admin's approval : since when, and what it said
+  -- of itself (host, address, mode, version, the fingerprint of its token)
+  `pending` tinyint(4) DEFAULT 0,
+  `pending_since` datetime DEFAULT NULL,
+  `pending_info` text DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_AnsibleForms_runners_natural_key` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -226,9 +235,9 @@ CREATE TABLE `runners` (
 DROP TABLE IF EXISTS `ldap`;
 CREATE TABLE `ldap` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  -- a directory's name : 'default' keeps the short names (ldap/<group>, the bare username) ; any
+  -- a directory's name : 'main' keeps the short names (ldap/<group>, the bare username) ; any
   -- other's members are named ldap/<name>/<group> and <name>/<user>
-  `name` varchar(100) NOT NULL DEFAULT 'default',
+  `name` varchar(100) NOT NULL DEFAULT 'main',
   -- what it is, for the list and its page
   `description` varchar(250) DEFAULT NULL,
   -- the order a bare username is looked up in, the lowest first
@@ -446,6 +455,8 @@ CREATE TABLE `schedule` (
   `status` VARCHAR(50) DEFAULT NULL,
   `last_run` DATETIME DEFAULT NULL,
   `state` VARCHAR(50) DEFAULT NULL,
+  -- turned off, its cron or one time run does not fire (Run now still does) ; its settings kept
+  `enabled` TINYINT(4) DEFAULT 1,
   -- who launches it (state='running') and since when (models/schedule.model.js launch)
   `claim_node` varchar(250) DEFAULT NULL,
   `claim_since` datetime DEFAULT NULL,

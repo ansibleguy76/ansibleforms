@@ -108,6 +108,10 @@ export default {
     secretStoreNotFound: "Secret Store nicht gefunden",
     secretStoreConnectionOk: "Verbindung zum Secret Store ist OK",
     runnerAdded: "Runner hinzugefügt",
+    joinTokenMade: "Beitrittstoken erstellt: jetzt kopieren, es wird nicht noch einmal angezeigt",
+    joinTokenRevoked: "Beitrittstoken widerrufen",
+    joinTokenDeleted: "Beitrittstoken gelöscht",
+    joinTokenNotFound: "Beitrittstoken nicht gefunden",
     runnerNotFound: "Runner nicht gefunden",
     runnerAdminOnly:
       "Nur ein Admin kann einen Runner hinzufuegen, aendern oder loeschen: ein Runner erhaelt die Zugangsdaten der Jobs, die er ausfuehrt",

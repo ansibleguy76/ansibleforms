@@ -29,14 +29,7 @@ import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import Helpers from '@/lib/Helpers';
 import { useAppStore } from '@/stores/app';
-import {
-  RUNNER_KINDS,
-  PROJECT_RUNNER_KINDS,
-  AWX_RUNNER_KINDS,
-  runnerKind,
-  registrationPill,
-  noCredentialsText,
-} from '@/config/settings';
+import { RUNNER_KINDS, PROJECT_RUNNER_KINDS, runnerKind, socketPill, noCredentialsText } from '@/config/settings';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { useFormLinks } from '@/composables/useFormLinks';
@@ -57,7 +50,9 @@ const runner = ref(null); // as saved
 const edit = ref(null); // as edited
 // what this page edits : the token and the password have their own dialog
 // (where it connects is its credential's)
-const EDITED = ['name', 'description', 'kind', 'project', 'credential'];
+const EDITED = ['name', 'description', 'kind', 'project', 'credential', 'rte_mode'];
+// how an RTE talks to the app (RTE_MODE) : the socket modes first, database deprecated last
+const RTE_MODES = ['outbound', 'inbound', 'database'];
 
 /**
  * The fields of a runner as this page edits them : its kind from its type and flavour.
@@ -75,6 +70,8 @@ function editable(record) {
     kind: runnerKind(record),
     project: record.project ?? '',
     credential: record.credential ?? '',
+    // an RTE from before 7.3 : database
+    rte_mode: record.rte_mode || 'database',
   };
 }
 
@@ -85,24 +82,11 @@ const appStore = useAppStore();
 const readOnly = computed(() => managed.value || !appStore.isAdmin);
 // a Semaphore or a Rundeck : a project on its server, signed in with a token
 const hasProject = computed(() => PROJECT_RUNNER_KINDS.includes(edit.value?.kind));
-// the kinds in the order of their names, in the language shown, as the dialog's
+// the kinds in the order of their names, in the language shown, as the dialog's ; read only here :
+// a runner keeps the type and the mode it was made with (an RTE says its mode itself when it connects)
 const sortedKinds = computed(() =>
   [...RUNNER_KINDS].sort((a, b) => t(`settings.runners.type_${a}`).localeCompare(t(`settings.runners.type_${b}`))),
 );
-/**
- * Whether its Type tab can switch to a kind : its type stays what it was made as (the forms that
- * run on it expect it), an AWX one may change product (AWX, AAP, Ascender : one type).
- *
- * Args:
- *   kind (string): a kind of RUNNER_KINDS.
- *
- * Returns:
- *   boolean: whether it can be chosen.
- */
-function kindAllowed(kind) {
-  const saved = runner.value ? runnerKind(runner.value) : edit.value?.kind;
-  return kind === saved || (AWX_RUNNER_KINDS.includes(kind) && AWX_RUNNER_KINDS.includes(saved));
-}
 // a Jenkins signs in with a user and that user's API token ; its folder (project) is optional
 const isJenkins = computed(() => edit.value?.kind === 'jenkins');
 // the credentials it can sign in with : those of its kind (rte, awx, aap, ascender, semaphore,
@@ -117,6 +101,8 @@ const credentials = computed(() => [
 ]);
 // where it connects, but an RTE : the server of the credential chosen ; none, it needs one
 const chosenServer = computed(() => allCredentials.value.find((c) => c.name === edit.value?.credential)?.url || '');
+// an outbound RTE dials the app : its credential needs no server
+const outboundRte = computed(() => edit.value?.kind === 'rte' && edit.value?.rte_mode === 'outbound');
 /**
  * Reads the credentials its dropdown offers.
  */
@@ -156,11 +142,11 @@ async function load() {
   try {
     const res = await axios.get(`/api/v2/runner/${encodeURIComponent(runnerId.value)}`);
     const record = res.data.records ? res.data.records[0] : res.data;
-    // its registration (state) is added to the list only : read from there
+    // a socket-mode RTE's socket is added to the list only : read from there
     if (record) {
       const list = await axios.get('/api/v2/runner/').catch(() => null);
       const listed = (list?.data?.records || []).find((r) => String(r.id) === String(record.id));
-      if (listed?.state) record.state = listed.state;
+      if (listed?.socket) record.socket = listed.socket;
     }
     runner.value = record || null;
     edit.value = record ? editable(record) : null;
@@ -290,19 +276,30 @@ const tabFields = computed(() => {
   const e = edit.value || {};
   return {
     details: [
-      ['state', t('settings.runners.state')],
+      runner.value?.type === 'rte' && ['rte_mode_text', t('settings.runners.rteMode')],
+      runner.value?.socket && ['socket', t('settings.runners.socket')],
       ['name', t('settings.fields.name'), t('settings.runners.nameHelp')],
       ['description', t('settings.fields.description')],
       ['is_default', t('settings.runners.isDefault'), t('settings.runners.defaultHelp', { forms: defaultFor.value })],
+      ['enabled', t('settings.runners.enabled'), t('settings.runners.enabledHelp')],
+    ].filter(Boolean),
+    type: [
+      ...sortedKinds.value.map((kind) => [
+        `kind-${kind}`,
+        t(`settings.runners.type_${kind}`),
+        t(`settings.runners.type_${kind}Hint`),
+      ]),
+      ...(e.kind === 'rte'
+        ? RTE_MODES.map((mode) => [
+            `mode-${mode}`,
+            t(`settings.runners.rteMode_${mode}`),
+            t(`settings.runners.rteMode_${mode}Hint`),
+          ])
+        : []),
     ],
-    type: sortedKinds.value.map((kind) => [
-      `kind-${kind}`,
-      t(`settings.runners.type_${kind}`),
-      t(`settings.runners.type_${kind}Hint`),
-    ]),
     credentials: [
       ['credential', t('settings.runners.credential'), t(`settings.runners.credentialHelp_${e.kind || 'rte'}`)],
-      e.credential && !chosenServer.value && ['no_server', t('settings.credentials.noServer')],
+      e.credential && !chosenServer.value && !outboundRte.value && ['no_server', t('settings.credentials.noServer')],
       ownSecret.value &&
         !e.credential && [
           'own_token',
@@ -359,6 +356,8 @@ async function save() {
     flavour: ['aap', 'ascender'].includes(e.kind) ? e.kind : null,
     // as whom : a credential of Connections > Credentials
     credential: e.credential || null,
+    // an RTE's mode ; none for the other kinds
+    rte_mode: e.kind === 'rte' ? e.rte_mode || 'outbound' : null,
   };
   if (await update(data)) {
     toast.success(`${data.name} ${t('settings.common.isUpdated')}`);
@@ -371,6 +370,72 @@ async function save() {
  */
 async function makeDefault() {
   if (await update({ is_default: 1 })) {
+    toast.success(`${runner.value.name} ${t('settings.common.isUpdated')}`);
+  }
+  await load();
+}
+
+// an RTE's mode as plain words : Outbound, Inbound, or Database (deprecated) for one from before 7.3
+const rteModeText = computed(() => t(`settings.runners.rteMode_${runner.value?.rte_mode || 'database'}`));
+
+// an RTE that asked to join : what it said of itself, for the admin to recognise it
+const pending = computed(() => !!Number(runner.value?.pending));
+const pendingRows = computed(() => {
+  if (!pending.value) return [];
+  let info;
+  try {
+    info = JSON.parse(runner.value.pending_info || '{}') || {};
+  } catch {
+    info = {};
+  }
+  return [
+    [t('settings.runners.pendingFingerprint'), info.fingerprint || '–', true],
+    [t('settings.runners.pendingHost'), info.host || '–'],
+    [t('settings.runners.pendingIp'), info.ip || '–'],
+    [t('settings.runners.rteMode'), info.mode ? t(`settings.runners.rteMode_${info.mode}`) : '–'],
+    info.url && [t('settings.fields.uri'), info.url],
+    [t('settings.runners.pendingVersion'), info.version || '–'],
+    [
+      t('settings.runners.pendingSince'),
+      runner.value.pending_since ? Helpers.formatServerDate(runner.value.pending_since) : '–',
+    ],
+  ].filter(Boolean);
+});
+
+// Approve or Reject : one at a time
+const deciding = ref(false);
+
+/**
+ * Approves the RTE that asked to join (it takes jobs from now on), or rejects it (it is removed,
+ * and the page goes back to the list).
+ *
+ * Args:
+ *   what (string): approve or reject.
+ */
+async function decide(what) {
+  const name = runner.value?.name;
+  if (what === 'reject' && !confirm(t('settings.runners.rejectConfirm', { name }))) return;
+  deciding.value = true;
+  try {
+    await axios.post(`/api/v2/runner/${encodeURIComponent(runnerId.value)}/${what}`, {});
+    toast.success(t(what === 'approve' ? 'settings.runners.approved' : 'settings.runners.rejected', { name }));
+    if (what === 'reject') return router.push('/settings/runners');
+    await load();
+  } catch (err) {
+    toast.error(Helpers.parseAxiosResponseError(err, t(`settings.runners.${what}`)));
+  } finally {
+    deciding.value = false;
+  }
+}
+
+/**
+ * Turns it on or off, saved at once : turned off, no job goes to it.
+ *
+ * Args:
+ *   on (boolean): on or off.
+ */
+async function setEnabled(on) {
+  if (await update({ enabled: on ? 1 : 0 })) {
     toast.success(`${runner.value.name} ${t('settings.common.isUpdated')}`);
   }
   await load();
@@ -489,6 +554,27 @@ onMounted(async () => {
         <!-- the record loading : its fields as grey placeholders, where they come -->
         <AppSkeleton v-else-if="!loaded && !runner" shape="form" :count="3" />
         <div v-if="runner && edit && ['details', 'type', 'credentials'].some(tabShown)" class="af-runner-tab">
+          <!-- an RTE that asked to join : who it says it is, and Approve or Reject -->
+          <div v-if="pending" class="alert alert-warning af-runner-pending">
+            <div class="fw-bold mb-1">
+              <FaIcon icon="hourglass-half" class="me-2" />{{ t('settings.runners.pendingTitle') }}
+            </div>
+            <div class="mb-2">{{ t('settings.runners.pendingHelp') }}</div>
+            <dl class="row mb-2 small">
+              <template v-for="row in pendingRows" :key="row[0]">
+                <dt class="col-sm-3">{{ row[0] }}</dt>
+                <dd class="col-sm-9 mb-1" :class="{ 'font-monospace fw-bold': row[2] }">{{ row[1] }}</dd>
+              </template>
+            </dl>
+            <div v-if="appStore.isAdmin" class="d-flex gap-2">
+              <BsButton icon="check" cssClass="btn-success" :disabled="deciding" @click="decide('approve')">{{
+                t('settings.runners.approve')
+              }}</BsButton>
+              <BsButton icon="ban" cssClass="btn-outline-danger" :disabled="deciding" @click="decide('reject')">{{
+                t('settings.runners.reject')
+              }}</BsButton>
+            </div>
+          </div>
           <!-- a runner of the config seed : read only here -->
           <div v-if="managed" class="alert alert-secondary py-2">
             <FaIcon icon="lock" class="me-2" />{{ t('settings.common.seedManagedNotice') }}
@@ -505,9 +591,15 @@ onMounted(async () => {
                   <FaIcon :icon="searchHead('details').tab.icon" class="me-1" />{{ searchHead('details').tab.label }}
                 </h6>
               </template>
-              <div v-show="fieldShown('state')" class="mb-3">
-                <div class="form-label fw-bold">{{ t('settings.runners.state') }}</div>
-                <span v-html="registrationPill(t, runner.state)"></span>
+              <!-- an RTE : how it talks to the app, in words (it is chosen on the Type tab) -->
+              <div v-if="runner.type === 'rte'" v-show="fieldShown('rte_mode_text')" class="mb-3">
+                <div class="form-label fw-bold">{{ t('settings.runners.rteMode') }}</div>
+                <div>{{ rteModeText }}</div>
+              </div>
+              <!-- a socket-mode RTE : its socket, connected or not, as a badge -->
+              <div v-if="runner.socket" v-show="fieldShown('socket')" class="mb-3">
+                <div class="form-label fw-bold">{{ t('settings.runners.socket') }}</div>
+                <span v-html="socketPill(t, runner)"></span>
               </div>
               <BsInput
                 class="af-runner-field"
@@ -545,6 +637,24 @@ onMounted(async () => {
                 </div>
                 <div class="form-text">{{ t('settings.runners.defaultHelp', { forms: defaultFor }) }}</div>
               </div>
+              <div v-show="fieldShown('enabled')" class="mb-3">
+                <label class="form-label fw-bold d-block" for="af-runner-enabled">{{
+                  t('settings.runners.enabled')
+                }}</label>
+                <!-- saved at once, as the default -->
+                <div class="form-check form-switch mb-0">
+                  <input
+                    id="af-runner-enabled"
+                    class="form-check-input"
+                    type="checkbox"
+                    role="switch"
+                    :checked="runner.enabled === undefined || runner.enabled === null || !!Number(runner.enabled)"
+                    :disabled="readOnly"
+                    @change="setEnabled($event.target.checked)"
+                  />
+                </div>
+                <div class="form-text">{{ t('settings.runners.enabledHelp') }}</div>
+              </div>
             </template>
             <!-- Type : RTE, AWX, AAP, Ascender, Semaphore or Rundeck, each its label and a few grey words -->
             <template v-if="tabShown('type')">
@@ -557,26 +667,39 @@ onMounted(async () => {
                   <FaIcon :icon="searchHead('type').tab.icon" class="me-1" />{{ searchHead('type').tab.label }}
                 </h6>
               </template>
-              <div
-                v-for="kind in sortedKinds"
-                v-show="fieldShown(`kind-${kind}`)"
-                :key="kind"
-                class="form-check af-short-check af-type-option"
-              >
-                <input
-                  :id="'af-kind-' + kind"
-                  v-model="edit.kind"
-                  class="form-check-input"
-                  type="radio"
-                  name="af-runner-kind"
-                  :value="kind"
-                  :disabled="!kindAllowed(kind)"
+              <AppTypeOptions
+                :options="
+                  sortedKinds.map((kind) => ({
+                    value: kind,
+                    label: t(`settings.runners.type_${kind}`),
+                    hint: t(`settings.runners.type_${kind}Hint`),
+                  }))
+                "
+                :selected="edit.kind"
+                name="runner-kind"
+                :shown="(kind) => fieldShown(`kind-${kind}`)"
+              />
+              <!-- an RTE's mode : how it talks to the app (RTE_MODE on the RTE) -->
+              <template v-if="edit.kind === 'rte'">
+                <div v-show="RTE_MODES.some((m) => fieldShown(`mode-${m}`))" class="form-label fw-bold mt-4">
+                  {{ t('settings.runners.rteMode') }}
+                </div>
+                <div v-show="RTE_MODES.some((m) => fieldShown(`mode-${m}`))" class="form-text mt-0 mb-2">
+                  {{ t('settings.runners.rteModeHelp') }}
+                </div>
+                <AppTypeOptions
+                  :options="
+                    RTE_MODES.map((mode) => ({
+                      value: mode,
+                      label: t(`settings.runners.rteMode_${mode}`),
+                      hint: t(`settings.runners.rteMode_${mode}Hint`),
+                    }))
+                  "
+                  :selected="edit.rte_mode"
+                  name="runner-mode"
+                  :shown="(mode) => fieldShown(`mode-${mode}`)"
                 />
-                <label class="form-check-label" :for="'af-kind-' + kind">
-                  <span class="af-short-label">{{ t(`settings.runners.type_${kind}`) }}</span>
-                  <span class="text-body-secondary small">{{ t(`settings.runners.type_${kind}Hint`) }}</span>
-                </label>
-              </div>
+              </template>
             </template>
             <!-- Authentication : an RTE's, a Semaphore's or a Rundeck's token, a Jenkins' user and
                  its token ; an AWX's token, or a user and password -->
@@ -608,7 +731,7 @@ onMounted(async () => {
               />
               <!-- a credential without a server : said (it connects to its credential's) -->
               <p
-                v-if="edit.credential && !chosenServer"
+                v-if="edit.credential && !chosenServer && !outboundRte"
                 v-show="fieldShown('no_server')"
                 class="form-text text-warning-emphasis mb-0"
               >

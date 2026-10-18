@@ -66,6 +66,9 @@ export const useAppStore = defineStore('app', () => {
   const serverBuild = ref(null);
   const clientBuild = ref(null);
   const approvals = ref(0);
+  // the RTEs that asked to join and wait for an admin's approval (Connections > Runners), for
+  // whoever sees the runners ; 0 for the others
+  const runnerApprovals = ref(0);
   // the designer lock as /api/v2/lock answers it ({ free } or { lock, match }) : the lock icon
   // on the header's Designer link ; null while unknown or for a user without the designer
   const designerLock = ref(null);
@@ -116,6 +119,7 @@ export const useAppStore = defineStore('app', () => {
     serverBuild,
     clientBuild,
     approvals,
+    runnerApprovals,
     designerLock,
     errorMessage,
     schemaData,

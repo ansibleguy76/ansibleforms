@@ -94,6 +94,10 @@ export default {
     storedJobNoAccess: "您无权访问此保存的作业",
     oauth2Added: "OAuth2 提供商已添加",
     runnerAdded: "运行器已添加",
+    joinTokenMade: "已创建加入令牌：请立即复制，之后不再显示",
+    joinTokenRevoked: "加入令牌已撤销",
+    joinTokenDeleted: "加入令牌已删除",
+    joinTokenNotFound: "未找到加入令牌",
     runnerNotFound: "未找到运行器",
     runnerAdminOnly:
       "只有 admin 可以添加、更改或删除运行器：运行器会收到它运行的作业的凭据",

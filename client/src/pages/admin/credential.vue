@@ -698,26 +698,18 @@ onMounted(async () => {
                   <FaIcon :icon="searchHead('type').tab.icon" class="me-1" />{{ searchHead('type').tab.label }}
                 </h6>
               </template>
-              <div
-                v-for="kind in sortedTypes"
-                v-show="fieldShown(`type-${kind}`)"
-                :key="kind"
-                class="form-check af-short-check af-type-option"
-              >
-                <input
-                  :id="'af-ctype-' + kind"
-                  v-model="edit.credential_type"
-                  class="form-check-input"
-                  type="radio"
-                  name="af-credential-type"
-                  :value="kind"
-                  disabled
-                />
-                <label class="form-check-label" :for="'af-ctype-' + kind">
-                  <span class="af-short-label">{{ t(`settings.credentials.type_${kind}`) }}</span>
-                  <span class="text-body-secondary small">{{ t(`settings.credentials.type_${kind}Hint`) }}</span>
-                </label>
-              </div>
+              <AppTypeOptions
+                :options="
+                  sortedTypes.map((kind) => ({
+                    value: kind,
+                    label: t(`settings.credentials.type_${kind}`),
+                    hint: t(`settings.credentials.type_${kind}Hint`),
+                  }))
+                "
+                :selected="edit.credential_type"
+                name="credential-type"
+                :shown="(kind) => fieldShown(`type-${kind}`)"
+              />
             </template>
             <!-- Login : its user (read from a store : nothing here) ; a CyberArk's AppID,
                client certificate and key -->

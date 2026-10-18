@@ -237,6 +237,12 @@ export async function startApp(){
     httpServer = http.createServer(serverOptions, rootApp);
   }
 
+  // the RTE sockets (RTE_MODE=outbound or inbound) : upgrades of this server, and the inbound
+  // RTEs dialed from here (runners/rteHub.js)
+  const { startRteHub } = await import('./runners/rteHub.js');
+  const rteHub = startRteHub(httpServer);
+  onShutdown('rte sockets', () => rteHub.stop());
+
   // start the webserver and listen on the port we choose
   httpServer.listen(appConfig.port,  () => logger.notice(`App running on port ${appConfig.port}!`));
   // first on a stop : no new requests, and the idle keep-alive connections go

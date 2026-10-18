@@ -1,5 +1,6 @@
 'use strict';
 import Job from '../../models/job.model.js';
+import JobEvent from '../../models/jobEvent.model.js';
 import { workflowNodeData } from '../../lib/workflowNodeData.js';
 import { addRunnerJobLinks } from '../../lib/runnerJobLinks.js';
 import RestResultv2 from '../../models/restResult.model.v2.js';
@@ -45,6 +46,22 @@ const getJob = async function(req, res) {
     // on an AWX, AAP or Ascender : the job's address there, and its workflow nodes'
     await addRunnerJobLinks(restData)
     res.status(200).json(RestResultv2.single(restData));
+  } catch (err) {
+    if (err.name === 'NotFoundError') {
+      res.status(404).json(RestResultv2.error(err.message));
+    } else if (err.name === 'AccessDeniedError') {
+      res.status(403).json(RestResultv2.error(err.message));
+    } else {
+      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieve'), err.toString()));
+    }
+  }
+};
+// a playbook job's structured events (the af_events callback plugin) : the job page's host-by-task
+// grid, timeline and recap ; the job read as getJob reads it, so only who may see the job sees them
+const getJobEvents = async function(req, res) {
+  try {
+    await Job.findById(req.user.user, req.params.id, false, true)
+    res.status(200).json(RestResultv2.list(await JobEvent.findByJob(req.params.id)));
   } catch (err) {
     if (err.name === 'NotFoundError') {
       res.status(404).json(RestResultv2.error(err.message));
@@ -316,6 +333,7 @@ const rejectJob = async function(req, res) {
 
 export { MAX_JOBS_LIST };
 export default {
+  getJobEvents,
   abortJob,
   getJob,
   getWorkflowNode,

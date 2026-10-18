@@ -194,9 +194,9 @@ describe("masked secrets", () => {
 
 describe("runners an RTE registered itself", () => {
   test("the api cannot set or change which RTE registered a runner", async () => {
-    await Runner.create({ name: "x", type: "rte", uri: "http://x", token: "t", node_id: "rte-x-8000", state: "automatic" });
+    await Runner.create({ name: "x", type: "rte", uri: "http://x", token: "t", node_id: "rte-x-8000", pending: 1 });
     assert.equal(rows.at(-1).node_id, undefined);
-    assert.equal(rows.at(-1).state, undefined);
+    assert.equal(rows.at(-1).pending, undefined, "nor that it waits for approval");
     await Runner.update({ node_id: "rte-y-8000" }, 1);
     assert.equal(rows[0].node_id, undefined);
   });
@@ -204,16 +204,6 @@ describe("runners an RTE registered itself", () => {
   test("the RTE itself can", async () => {
     await Runner.create({ name: "x", type: "rte", uri: "http://x", token: "t", node_id: "rte-x-8000" }, { fromRte: true });
     assert.equal(rows.at(-1).node_id, "rte-x-8000");
-  });
-
-  test("automatic while its RTE heartbeats, unresponsive once it stopped, nothing for the others", async () => {
-    aliveNodes = new Set(["rte-a-8000"]);
-    const list = await Runner.withState([
-      { id: 1, name: "a", node_id: "rte-a-8000" },
-      { id: 2, name: "b", node_id: "rte-b-8000" },
-      { id: 3, name: "c", node_id: null },
-    ]);
-    assert.deepEqual(list.map((r) => r.state), ["automatic", "unresponsive", undefined]);
   });
 
   test("the sweep removes only registered, unmanaged runners whose RTE is long gone", async () => {

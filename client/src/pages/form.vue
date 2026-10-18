@@ -2,6 +2,7 @@
 import { ref, reactive, computed, provide, watch, onMounted, onBeforeUnmount } from 'vue';
 import { jobTypeName, hasArtifacts } from '@/lib/jobTypes';
 import { useNodeOutput } from '@/composables/useNodeOutput';
+import { useJobEvents } from '@/composables/useJobEvents';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner';
@@ -519,6 +520,8 @@ const isEmbedded = computed(() => !!route.query.embed);
 const hideForm = ref(false); // possible action to hide form onsubmit for example
 const formdata = ref({}); // the eventual object sent to the api in the correct hierarchy
 const showExtraVars = ref(false); // flag to show/hide extravars
+// a playbook job's structured events (AppJobEvents) : read with the job, shown on demand
+const { jobEvents, showEvents, loadEvents } = useJobEvents();
 // the run's artifacts shown over its output (its toolbar's Show artifacts)
 const showRunArtifacts = ref(false);
 const job = ref({}); // holds the job data
@@ -1562,6 +1565,7 @@ async function getJob(id, final) {
     // store the job result
     job.value = result.data;
     status.value = job.value.status;
+    loadEvents(id, job.value.job_type);
     // multistep and subjobs ?
     if (job.value.job_type == 'multistep' && job.value.subjobs.length > 0) {
       const lastsubjob = job.value.subjobs.slice(-1)[0];
@@ -2307,6 +2311,16 @@ onBeforeUnmount(() => {
                   <FaIcon :icon="filterOutput ? 'filter-circle-xmark' : 'filter'" />
                   {{ filterOutput ? t('jobs.removeFilter') : t('jobs.applyFilter') }}
                 </button>
+                <!-- a playbook's hosts and tasks, from its structured events, as on the job's page -->
+                <button
+                  v-if="jobEvents.length"
+                  type="button"
+                  class="af-tool-btn"
+                  :class="{ active: showEvents }"
+                  @click="showEvents = !showEvents"
+                >
+                  <FaIcon icon="table-cells" />{{ t('jobs.events.button') }}
+                </button>
                 <span class="af-tool-sep" />
                 <button type="button" class="af-tool-btn" @click="copyOutput">
                   <FaIcon icon="copy" />{{ t('jobs.copyOutput') }}
@@ -2328,6 +2342,8 @@ onBeforeUnmount(() => {
               @copy="(value, asYaml) => clip(value, false, asYaml)"
               @close="showRunArtifacts = false"
             />
+            <!-- the hosts and tasks, over its output -->
+            <AppJobEvents v-if="showEvents && jobEvents.length" :events="jobEvents" @close="showEvents = false" />
             <div class="row g-0 af-output-body">
               <div class="col">
                 <AppAnsibleOutput

@@ -103,6 +103,10 @@ export default {
     storedJobNoAccess: "No tens accés a aquesta tasca desada",
     oauth2Added: "Proveïdor OAuth2 afegit",
     runnerAdded: "Runner afegit",
+    joinTokenMade: "Token d'unió creat: copia'l ara, no es tornarà a mostrar",
+    joinTokenRevoked: "Token d'unió revocat",
+    joinTokenDeleted: "Token d'unió eliminat",
+    joinTokenNotFound: "No s'ha trobat el token d'unió",
     runnerNotFound: "No s'ha trobat el runner",
     runnerAdminOnly:
       "Només un admin pot afegir, canviar o eliminar un runner: un runner rep les credencials dels treballs que executa",

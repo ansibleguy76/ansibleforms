@@ -586,28 +586,18 @@ onMounted(async () => {
                   <FaIcon :icon="searchHead('type').tab.icon" class="me-1" />{{ searchHead('type').tab.label }}
                 </h6>
               </template>
-              <div
-                v-for="kind in CHANNEL_TYPES"
-                v-show="fieldShown('type_' + kind)"
-                :key="kind"
-                class="form-check af-short-check af-type-option"
-              >
-                <input
-                  :id="'af-chtype-' + kind"
-                  :checked="kind === type"
-                  class="form-check-input"
-                  type="radio"
-                  name="af-channel-type"
-                  :value="kind"
-                  disabled
-                />
-                <label class="form-check-label" :for="'af-chtype-' + kind">
-                  <span class="af-short-label">{{ t(`settings.notificationChannels.type_${kind}`) }}</span>
-                  <span class="text-body-secondary small">{{
-                    t(`settings.notificationChannels.typeHint_${kind}`)
-                  }}</span>
-                </label>
-              </div>
+              <AppTypeOptions
+                :options="
+                  CHANNEL_TYPES.map((kind) => ({
+                    value: kind,
+                    label: t(`settings.notificationChannels.type_${kind}`),
+                    hint: t(`settings.notificationChannels.typeHint_${kind}`),
+                  }))
+                "
+                :selected="type"
+                name="channel-type"
+                :shown="(kind) => fieldShown('type_' + kind)"
+              />
             </template>
             <!-- mail : Credentials, its smtp credential (the mail server, its port and TLS, the login) -->
             <template v-if="type === 'mail' && tabShown('credentials')">

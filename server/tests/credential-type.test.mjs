@@ -100,7 +100,9 @@ describe("a credential's server address", () => {
   });
 
   test("they need it ; the config seed may leave it out", () => {
-    for (const type of ["rte", "awx", "aap", "ascender", "semaphore", "rundeck", "jenkins", "vault", "cyberark"]) {
+    // an RTE's is optional since 7.3 : an outbound RTE dials the app, nobody dials it
+    assert.equal(Credential.requireTypeFields({ credential_type: "rte" }, true).url ?? null, null);
+    for (const type of ["awx", "aap", "ascender", "semaphore", "rundeck", "jenkins", "vault", "cyberark"]) {
       assert.throws(() => Credential.requireTypeFields({ credential_type: type }, true), /needs its server/);
     }
     assert.throws(() => Credential.requireTypeFields({ credential_type: "awx", url: " " }), /needs its server/);

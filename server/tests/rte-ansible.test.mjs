@@ -70,6 +70,8 @@ const { default: Job } = jobExports;
 const { default: mysql } = await import("../src/models/db.model.js");
 const { default: Repository } = await import("../src/models/repository.model.js");
 const core = await import("../src/rte/ansible-core.js");
+// the jobs read and written in the database, as a database-mode RTE does
+core.useJobIO((await import("../src/rte/jobio-db.js")).default);
 const { resolveJobSecrets } = await import("../src/lib/jobSecrets.js");
 const { dispatch, resolveRunner } = await import("../src/runners/orchestrator.js");
 const { RUNNERS } = await import("../src/runners/index.js");
@@ -454,6 +456,14 @@ describe("which runner runs a playbook job", () => {
     await assert.rejects(resolveRunner({ jobType: "ansible", formType: "ansible", extravars: { __runner__: "ci" } }), /Runner 'ci' is a jenkins runner, this form is of type ansible: name an RTE runner/);
     // no default of its type : what to add
     await assert.rejects(resolveRunner({ jobType: "awx", formType: "jenkins", extravars: {} }), /No runner for a form of type jenkins: add one of type jenkins/);
+  });
+
+  test("a runner turned off takes no job, named or default ; one from before the column takes them", async () => {
+    runnerRows = [{ name: "rte-off", type: "rte", is_default: 1, enabled: 0 }, { name: "rte-on", type: "rte", enabled: 1 }, { name: "rte-old", type: "rte" }];
+    await assert.rejects(resolveRunner({ jobType: "ansible", extravars: {} }), /Runner 'rte-off' is disabled - enable it under Connections > Runners/);
+    await assert.rejects(resolveRunner({ jobType: "ansible", extravars: { __runner__: "rte-off" } }), /Runner 'rte-off' is disabled/);
+    assert.equal((await resolveRunner({ jobType: "ansible", extravars: { __runner__: "rte-on" } })).row.name, "rte-on");
+    assert.equal((await resolveRunner({ jobType: "ansible", extravars: { __runner__: "rte-old" } })).row.name, "rte-old");
   });
 
   test("a job whose form type is not given is matched by capability, as before", async () => {
