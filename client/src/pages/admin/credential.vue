@@ -38,6 +38,7 @@ import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { recordButtons } from '@/lib/recordButtons';
 import { ssoCallbackUrl, SSO_EXAMPLE_BASE } from '@/lib/ssoCallback';
+import { useRecordSearch } from '@/composables/useRecordSearch';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -218,7 +219,7 @@ async function update(data) {
     await axios.put(`/api/v2/credential/${encodeURIComponent(credentialId.value)}`, data);
     return true;
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
     return false;
   }
 }
@@ -415,7 +416,7 @@ async function save() {
     if (e.client_key.trim()) data.client_key = e.client_key;
   }
   if (await update(data)) {
-    toast.success(`${data.name} ${t('settings.common.isUpdated')}`);
+    toast.success(t('settings.common.nameUpdated', { name: data.name }));
     newPassword.value = '';
     await load();
   }
@@ -451,19 +452,11 @@ const passwordLabel = computed(() => labels.value.password || t('settings.fields
 // the fields of Details, Type, Login and Store whose label or help has it (a type or a store
 // option by its name and grey words), what uses it with it in one of its cells (AppLinkedTable's
 // search), each under its tab's name, the tabs set aside meanwhile.
-const search = ref('');
-const searching = computed(() => !!search.value.trim());
-const matches = (...texts) => {
-  const q = search.value.trim().toLowerCase();
-  return (
-    !q ||
-    texts.some((x) =>
-      String(x ?? '')
-        .toLowerCase()
-        .includes(q),
-    )
-  );
-};
+const { search, searching, matchingKeys, tableMatches, shownTabs, tabShown, searchHead } = useRecordSearch({
+  tabs: () => tabs.value,
+  activeTab: () => shownTab.value,
+  tabMatch: (key) => (key === 'used-by' ? usedByMatch.value : fieldsMatch(key)),
+});
 // each tab's fields : [key, label, help], only those its type shows (as the template's v-if)
 const tabFields = computed(() => {
   const e = edit.value || {};
@@ -548,29 +541,12 @@ const tabFields = computed(() => {
   };
 });
 // the fields shown : those of a tab shown whose label or help has the text
-const shownFields = computed(() =>
-  Object.values(tabFields.value)
-    .flat()
-    .filter(([, ...texts]) => matches(...texts))
-    .map(([key]) => key),
-);
+const shownFields = computed(() => matchingKeys(Object.values(tabFields.value).flat()));
 const fieldShown = (key) => shownFields.value.includes(key);
 // a tab of fields with one of them shown
 const fieldsMatch = (key) => (tabFields.value[key] || []).some(([k]) => fieldShown(k));
-// a row of Used by with the text in one of its values (the table filters its cells the same way)
-const usedByMatch = computed(() => usedBy.value.some((r) => matches(...Object.values(r || {}))));
-// the tabs shown : the active one, or while searching each one with a match
-const shownTabs = computed(() =>
-  searching.value
-    ? tabs.value.filter((tab) => (tab.key === 'used-by' ? usedByMatch.value : fieldsMatch(tab.key)))
-    : tabs.value.filter((tab) => tab.key === shownTab.value),
-);
-const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
-// while searching, a tab's name over its matches (the first without the line above)
-const searchHead = (key) => {
-  const i = shownTabs.value.findIndex((tab) => tab.key === key);
-  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
-};
+// a row of Used by with the text in one of the cells its table shows (lib/recordSearch.js)
+const usedByMatch = computed(() => tableMatches(usedBy.value, usedByColumns.value));
 
 // Delete asks first
 const confirmDelete = ref(false);
@@ -581,11 +557,13 @@ const confirmDelete = ref(false);
 async function deleteCredential() {
   confirmDelete.value = false;
   try {
+    const name = credential.value?.name;
     await axios.delete(`/api/v2/credential/${encodeURIComponent(credentialId.value)}`);
     credential.value = null;
+    toast.success(t('settings.common.nameDeleted', { name }));
     router.push('/settings/credentials');
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 

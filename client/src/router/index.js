@@ -166,7 +166,7 @@ const routes = [
     path: '/settings/credentials/:id(\\d+)/:tab?',
     name: '/settings/credentials/:id',
     component: credential,
-    meta: { permission: 'showSettings' },
+    meta: { permission: ['showSettings', 'showConnectionsSettings'] },
   },
   { path: '/settings/sso/:tab?', name: '/settings/sso', component: sso, meta: { permission: 'showSettings' } },
   // an SSO provider's page : its Details, Sign-in and Groups tabs
@@ -235,7 +235,7 @@ const routes = [
     path: '/settings/syslog/:id(\\d+)/:tab?',
     name: '/settings/syslog/:id',
     component: syslogServer,
-    meta: { permission: 'showSettings' },
+    meta: { permission: ['showSettings', 'showConnectionsSettings'] },
   },
   // Settings > Connections > Notifications : the channels notifications go to (SMTP servers,
   // Slack, Teams, Telegram, webhooks), each its own page
@@ -331,7 +331,7 @@ const routes = [
     meta: { permission: 'showSettings' },
   },
   { path: '/settings/roles', name: '/settings/roles', component: roles, meta: { permission: 'showSettings' } },
-  // a role's page : its General, Users and Groups tabs
+  // a role's page : its Details, Users and Groups tabs
   {
     path: '/settings/roles/:name/:tab?',
     name: '/settings/roles/:name',
@@ -383,7 +383,8 @@ const routes = [
     component: secretStore,
     meta: { permission: ['showSettings', 'showConnectionsSettings'] },
   },
-  // /api/v2/runner is behind checkSettingsMiddleware, so the guard matches
+  // /api/v2/runner is behind checkConnectionsMiddleware (showSettings or showConnectionsSettings),
+  // so the list and a runner's own page both accept any of the two
   {
     path: '/settings/runners',
     name: '/settings/runners',
@@ -394,7 +395,7 @@ const routes = [
     path: '/settings/runners/:id(\\d+)/:tab?',
     name: '/settings/runners/:id',
     component: runner,
-    meta: { permission: 'showSettings' },
+    meta: { permission: ['showSettings', 'showConnectionsSettings'] },
   },
   // GET /api/v2/audit is mounted behind checkAuditMiddleware (showSettings or showAuditLog), so the
   // guard matches : any of the two

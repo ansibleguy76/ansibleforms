@@ -790,7 +790,6 @@ export default {
     // copying to the clipboard, and a record saved by its name
     copied: 'In die Zwischenablage kopiert',
     copyFailed: 'Kopieren in die Zwischenablage fehlgeschlagen: {error}',
-    nameUpdated: '{name} wurde aktualisiert',
   },
   // a YAML file loaded into a field or saved from it (AppListField, BsYamlEditor, AppForm)
   yamlFile: {
@@ -940,11 +939,8 @@ export default {
       showOutput: 'Ausgabe anzeigen',
       trigger: 'Ausloesen',
       deleteConfirm: 'Sind Sie sicher, dass Sie loeschen moechten',
-      isCreated: 'wurde erstellt',
-      isUpdated: 'wurde aktualisiert',
       // the badge after a record's type or name that is the default (defaultNote)
       defaultNote: 'Standard',
-      isDeleted: 'wurde geloescht',
       bulkDeleteConfirm: '{count} Element(e) löschen?',
       bulkDeleteConfirmSkip:
         '{count} Element(e) löschen? {skipped} ausgewählte(s) Element(e) können nicht gelöscht werden und bleiben bestehen.',
@@ -981,6 +977,16 @@ export default {
       roleDirectly: 'Direkt',
       roleThroughGroups: 'Über {groups}',
       roleEveryone: 'Alle',
+      // a record's toasts, by its name ({name}) in the word order of the language
+      nameUpdated: '{name} wurde aktualisiert',
+      nameDeleted: '{name} wurde gelöscht',
+      nameCreated: '{name} wurde erstellt',
+      countDeleted: 'Gelöscht: {n}',
+      // the admin forms' validation messages (AppAdminMulti, AppAdminSingle), by the field's label
+      fieldRequired: '{field} ist erforderlich',
+      fieldEmail: '{field} muss eine gültige E-Mail-Adresse sein',
+      fieldYaml: '{field} muss gültiges YAML sein',
+      fieldInvalid: '{field} ist ungültig',
     },
     fields: {
       id: 'ID',

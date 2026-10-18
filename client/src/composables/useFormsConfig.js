@@ -190,7 +190,7 @@ export function useFormsConfig() {
       const payload = { forms_yaml: doc.toString() };
       if (baseHash.value) payload.baseHash = baseHash.value;
       await axios.put('/api/v2/settings/config', payload);
-      toast.success((successLabel || t('settings.settingsPage.label')) + ' ' + t('settings.common.isUpdated'));
+      toast.success(t('settings.common.nameUpdated', { name: successLabel || t('settings.settingsPage.label') }));
       await load();
       return true;
     } catch (err) {

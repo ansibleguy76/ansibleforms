@@ -151,7 +151,12 @@ async function decided() {
   if (inTurn.value && pending.value.length) reviewing.value = pending.value[0];
   else inTurn.value = false;
 }
-useLiveEvent('runners', loadPending);
+// a runner changed elsewhere (one asked to join, approved, its socket up or down) : the notice
+// and the table both read again ; the table not while a dialog of it is open (loadItems(false))
+useLiveEvent('runners', async () => {
+  await loadPending();
+  list.value?.loadItems(false);
+});
 
 async function test_connection(item) {
   if (item) {
@@ -252,10 +257,10 @@ onMounted(async () => {
   /* a dark orange border all around */
   border: 1px solid #c24e05;
   border-radius: 0.375rem;
-  background: color-mix(in srgb, #ef6009 8%, transparent);
+  background: color-mix(in srgb, var(--af-approve) 8%, transparent);
 }
 .af-runner-requests:hover {
-  background: color-mix(in srgb, #ef6009 14%, transparent);
+  background: color-mix(in srgb, var(--af-approve) 14%, transparent);
 }
 [data-bs-theme='dark'] .af-runner-requests {
   border-color: #ff8a3d;

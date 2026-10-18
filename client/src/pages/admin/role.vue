@@ -2,7 +2,7 @@
 /******************************************************************/
 /*                                                                */
 /*  A role's page (/settings/roles/<name>), opened from the roles    */
-/*  list : its General tab (name and options), its Users, its     */
+/*  list : its Details tab (name and options), its Users, its     */
 /*  Groups and the Forms that name it, the tab kept in the        */
 /*  address (/users). Saving writes                               */
 /*  the forms config, as the list does ; a renamed role's page    */
@@ -22,6 +22,7 @@ import { useRouteTab } from '@/composables/useRouteTab';
 import { useFormLinks } from '@/composables/useFormLinks';
 import { formPath } from '@/lib/formsPath';
 import { recordButtons } from '@/lib/recordButtons';
+import { useRecordSearch } from '@/composables/useRecordSearch';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -81,7 +82,7 @@ const userCount = computed(() => {
 // Details (the name, its description and the options), Users, Groups, Forms ; the tab kept in
 // the url. Default has no count of users or groups : it is everyone's.
 const tabs = computed(() => [
-  { key: 'general', label: t('settings.common.tabDetails'), icon: 'sliders' },
+  { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
   {
     key: 'users',
     label: t('settings.settingsPage.users'),
@@ -156,7 +157,7 @@ const formColumns = computed(() => [
   { key: 'name', label: t('settings.fields.form'), filterable: true },
   { key: 'description', label: t('settings.fields.description'), filterable: true },
 ]);
-const { activeTab, tabLink } = useRouteTab('general', (key) => tabs.value.some((x) => x.key === key));
+const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
 // the title : Roles › <name>, each step a link : Roles back to the list, the name to this page
 const pageCrumbs = computed(() => [
@@ -268,21 +269,13 @@ async function removeMembers(kind, uids) {
 // Details when one of its labels has it (the name, the description, the options and their
 // groups), the users, groups and forms with it in one of their cells, each under its tab's
 // name, the tabs set aside meanwhile.
-const search = ref('');
-const searching = computed(() => !!search.value.trim());
-const matches = (...texts) => {
-  const q = search.value.trim().toLowerCase();
-  return (
-    !q ||
-    texts.some((x) =>
-      String(x ?? '')
-        .toLowerCase()
-        .includes(q),
-    )
-  );
-};
+const { search, searching, matches, shownTabs, tabShown, searchHead } = useRecordSearch({
+  tabs: () => tabs.value,
+  activeTab: () => activeTab.value,
+  tabMatch: (key) => (key === 'details' ? detailsMatch.value : shownRows.value[key].length),
+});
 // the editor's fields are its own (AppRoleEditor) : Details shown whole when one matches
-const generalMatch = computed(() =>
+const detailsMatch = computed(() =>
   matches(
     t('settings.settingsPage.name'),
     t('settings.fields.description'),
@@ -298,18 +291,6 @@ const shownRows = computed(() => ({
   groups: role.value?._default ? [] : groupRows.value.filter((r) => matches(r.name, r.provider, r.description)),
   forms: roleForms.value.filter((f) => matches(f.name, f.description)),
 }));
-// the tabs shown : the active one, or while searching each one with a match
-const shownTabs = computed(() =>
-  searching.value
-    ? tabs.value.filter((tab) => (tab.key === 'general' ? generalMatch.value : shownRows.value[tab.key].length))
-    : tabs.value.filter((tab) => tab.key === activeTab.value),
-);
-const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
-// while searching, a tab's name over its matches (the first without the line above)
-const searchHead = (key) => {
-  const i = shownTabs.value.findIndex((tab) => tab.key === key);
-  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
-};
 
 // Delete asks first : it saves at once
 const confirmDelete = ref(false);
@@ -319,13 +300,15 @@ const confirmDelete = ref(false);
  */
 async function deleteRole() {
   confirmDelete.value = false;
-  if (roleIndex.value < 0) return;
-  const removed = roles.value.splice(roleIndex.value, 1)[0];
+  // its place, read before the splice : afterwards the role is not found (roleIndex -1)
+  const at = roleIndex.value;
+  if (at < 0) return;
+  const removed = roles.value.splice(at, 1)[0];
   if (await saveRoles()) {
     router.push('/settings/roles');
   } else {
-    // refused (the config locked) : the role stays
-    roles.value.splice(roleIndex.value < 0 ? roles.value.length : roleIndex.value, 0, removed);
+    // refused (the config locked) : the role stays, where it was
+    roles.value.splice(at, 0, removed);
   }
 }
 
@@ -438,13 +421,13 @@ onMounted(async () => {
         <AppSkeleton v-else-if="!loaded && !role" shape="form" :count="3" />
         <template v-if="role && !loadError">
           <!-- Details : the name, its description and the options -->
-          <template v-if="tabShown('general')">
+          <template v-if="tabShown('details')">
             <h6
-              v-if="searching && searchHead('general')"
+              v-if="searching && searchHead('details')"
               class="fw-bold text-body-secondary af-search-tab"
-              :class="{ 'af-search-first': searchHead('general').first }"
+              :class="{ 'af-search-first': searchHead('details').first }"
             >
-              <FaIcon :icon="searchHead('general').tab.icon" class="me-1" />{{ searchHead('general').tab.label }}
+              <FaIcon :icon="searchHead('details').tab.icon" class="me-1" />{{ searchHead('details').tab.label }}
             </h6>
             <AppRoleEditor
               v-model:role="roles[roleIndex]"

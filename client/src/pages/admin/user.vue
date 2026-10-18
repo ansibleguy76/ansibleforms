@@ -37,7 +37,7 @@ import { useRouteTab } from '@/composables/useRouteTab';
 import { useRoleAssignments } from '@/composables/useRoleAssignments';
 import { useRoleMembership } from '@/composables/useRoleMembership';
 import { recordButtons } from '@/lib/recordButtons';
-import { htmlToText } from '@/lib/dataTable';
+import { useRecordSearch } from '@/composables/useRecordSearch';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -112,7 +112,7 @@ async function update(data) {
     await axios.put(`/api/v2/user/${encodeURIComponent(userId.value)}`, data);
     return true;
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
     return false;
   }
 }
@@ -255,21 +255,13 @@ const crumbs = computed(() => {
 // the fields of Details whose label or help has it, the rows of the other tabs with it in one of
 // their cells (AppLinkedTable's search), each under its tab's name, the tabs set aside meanwhile.
 // API tokens too : its tokens are read once when a search starts (tokenRows), its table given the word.
-const search = ref('');
-const searching = computed(() => !!search.value.trim());
-const matches = (...texts) => {
-  const q = search.value.trim().toLowerCase();
-  return (
-    !q ||
-    texts.some((x) =>
-      String(x ?? '')
-        .toLowerCase()
-        .includes(q),
-    )
-  );
-};
+const { search, searching, matches, matchingKeys, shownTabs, tabShown, searchHead, tableMatches } = useRecordSearch({
+  tabs: () => tabs.value,
+  activeTab: () => activeTab.value,
+  tabMatch: (key) => tabMatches.value[key],
+});
 const shownFields = computed(() =>
-  [
+  matchingKeys([
     ['username', t('settings.fields.username')],
     ['description', t('settings.fields.description')],
     ['email', t('settings.fields.email')],
@@ -280,27 +272,9 @@ const shownFields = computed(() =>
       t('settings.directory.allowSignIn'),
       user.value?.blocked ? t('settings.directory.blockedNote') : t('settings.users.signInHelp'),
     ],
-  ]
-    .filter(([, ...texts]) => matches(...texts))
-    .map(([key]) => key),
+  ]),
 );
 const fieldShown = (key) => shownFields.value.includes(key);
-/**
- * Whether a table keeps a row : one of its cells with the text, as AppLinkedTable filters them
- * (its columns' value(), html() without the tags, or the field).
- *
- * Args:
- *   rows (object[]): the table's rows.
- *   columns (object[]): its columns.
- *
- * Returns:
- *   boolean: whether some row matches.
- */
-function tableMatches(rows, columns) {
-  return rows.some((row) =>
-    matches(...columns.map((c) => (c.html ? htmlToText(c.html(row)) : c.value ? c.value(row) : row[c.key]))),
-  );
-}
 // the API tokens, for the search only : the tab's own table reads them when it shows, and while a
 // word is searched the page must know whether one has it before showing the tab ; read once,
 // when a search starts
@@ -325,18 +299,6 @@ const tabMatches = computed(() => ({
   activity: tableMatches(activity.value, activityColumns.value),
   tokens: (tokenRows.value || []).some((r) => matches(...Object.values(r || {}))),
 }));
-// the tabs shown : the active one, or while searching each one with a match
-const shownTabs = computed(() =>
-  searching.value
-    ? tabs.value.filter((tab) => tabMatches.value[tab.key])
-    : tabs.value.filter((tab) => tab.key === activeTab.value),
-);
-const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
-// while searching, a tab's name over its matches (the first without the line above)
-const searchHead = (key) => {
-  const i = shownTabs.value.findIndex((tab) => tab.key === key);
-  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
-};
 
 // ─── Details ──────────────────────────────────────────────────────────────────
 // its latest sign-in (written at each sign-in, lib/signInGate.js), in the user's zone ; none, an en dash
@@ -361,7 +323,7 @@ async function saveDetails() {
     email: edit.value.email.trim(),
   };
   if (await update(data)) {
-    toast.success(`${data.username} ${t('settings.common.isUpdated')}`);
+    toast.success(t('settings.common.nameUpdated', { name: data.username }));
     await load();
   }
 }
@@ -390,7 +352,7 @@ async function saveAddGroup() {
     addingGroup.value = null;
     await load();
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 
@@ -405,7 +367,7 @@ async function removeGroups(ids) {
     try {
       await axios.delete(`/api/v2/user/${encodeURIComponent(userId.value)}/groups/${gid}`);
     } catch (err) {
-      toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+      toast.error(Helpers.parseAxiosResponseError(err));
       break;
     }
   }
@@ -464,7 +426,7 @@ async function setBlocked(blocked) {
     );
     await load();
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 
@@ -477,10 +439,14 @@ const confirmDelete = ref(false);
 async function deleteUser() {
   confirmDelete.value = false;
   try {
+    const name = user.value?.username;
     await axios.delete(`/api/v2/user/${encodeURIComponent(userId.value)}`);
+    // gone : nothing left to save, so leaving does not offer to save it
+    user.value = null;
+    toast.success(t('settings.common.nameDeleted', { name }));
     router.push('/settings/users');
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 

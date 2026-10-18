@@ -210,6 +210,8 @@ const childFields = computed(() => props.settings.childFields || {});
 const noCreate = computed(() => props.settings.noCreate === true || props.readOnly);
 
 // VUELIDATE
+// the messages are translated, the field's label in them (settings.common.field*), and read
+// when shown : a change of language follows without rebuilding the rules
 
 function getRules() {
   const ruleObj = { item: {} };
@@ -218,23 +220,26 @@ function getRules() {
     if (field.required && field.dependency && Array.isArray(field.dependencyValues)) {
       // a field of some types only (an Entra ID credential's tenant) : required while it is shown
       rule.required = helpers.withMessage(
-        `${field.label} is required`,
+        () => t('settings.common.fieldRequired', { field: field.label }),
         requiredIf(() => field.dependencyValues.includes(item.value[field.dependency])),
       );
     } else if (field.requiredWhen) {
       // required by a rule of its own (an smtp credential's host : its mail server)
       rule.required = helpers.withMessage(
-        `${field.label} is required`,
+        () => t('settings.common.fieldRequired', { field: field.label }),
         requiredIf(() => !!field.requiredWhen(item.value)),
       );
     } else if (field.required) {
-      rule.required = helpers.withMessage(`${field.label} is required`, required);
+      rule.required = helpers.withMessage(() => t('settings.common.fieldRequired', { field: field.label }), required);
     }
     if (field.type == 'email') {
-      rule.email = helpers.withMessage(`${field.label} must be a valid email address`, email);
+      rule.email = helpers.withMessage(() => t('settings.common.fieldEmail', { field: field.label }), email);
     }
     if (field.type == 'checkbox' && field.required) {
-      rule.checkboxRequired = helpers.withMessage(`${field.label} is required`, sameAs(computed(() => true)));
+      rule.checkboxRequired = helpers.withMessage(
+        () => t('settings.common.fieldRequired', { field: field.label }),
+        sameAs(computed(() => true)),
+      );
     }
     // regex validation
     if (field.regex && field.regex.expression) {
@@ -264,7 +269,7 @@ function getRules() {
     if (typeof field.validator === 'function') {
       const check = field.validator;
       rule.custom = helpers.withMessage(
-        ({ $response }) => $response || `${field.label} is not valid`,
+        ({ $response }) => $response || t('settings.common.fieldInvalid', { field: field.label }),
         (value) => {
           if (!helpers.req(value)) return true;
           let message;
@@ -281,15 +286,18 @@ function getRules() {
       );
     }
     if (field.type == 'editor' && field.lang == 'yaml') {
-      rule.editorType = helpers.withMessage(`${field.label} must be valid YAML`, (value) => {
-        if (!helpers.req(value)) return true;
-        try {
-          const parsed = yaml.parse(value);
-          return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed);
-        } catch (e) {
-          return false;
-        }
-      });
+      rule.editorType = helpers.withMessage(
+        () => t('settings.common.fieldYaml', { field: field.label }),
+        (value) => {
+          if (!helpers.req(value)) return true;
+          try {
+            const parsed = yaml.parse(value);
+            return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed);
+          } catch (e) {
+            return false;
+          }
+        },
+      );
     }
     ruleObj.item[field.key] = rule;
     // if (field.type == 'password') {
@@ -608,7 +616,7 @@ async function createItem() {
   if (!invalid) {
     try {
       await axios.post(`/api/v${props.apiVersion}/${objectType}/`, savePayload());
-      toast.success(objectTitle('', t('settings.common.isCreated')));
+      toast.success(t('settings.common.nameCreated', { name: objectTitle('') }));
       // the dialog that asked for it (a dropdown's New button) selects what was created
       emit('created', item.value.name ?? item.value[idKey]);
       if (props.dialogOnly) unselectItem();
@@ -633,7 +641,7 @@ async function updateItem(passwordOnly = false) {
         `/api/v${props.apiVersion}/${objectType}/${itemId.value}`,
         passwordOnly ? item.value : savePayload(),
       );
-      toast.success(objectTitle('', t('settings.common.isUpdated')));
+      toast.success(t('settings.common.nameUpdated', { name: objectTitle('') }));
       loadItems();
     } catch (err) {
       toast.error(Helpers.parseAxiosResponseError(err, 'Failed to update item'));
@@ -649,7 +657,7 @@ async function removeItem() {
     } else {
       await axios.delete(`/api/v${props.apiVersion}/${objectType}/${itemId.value}`);
     }
-    toast.success(objectTitle('', t('settings.common.isDeleted')));
+    toast.success(t('settings.common.nameDeleted', { name: objectTitle('') }));
     unselectItem();
     loadItems();
   } catch (err) {
@@ -1360,7 +1368,7 @@ async function saveDefaults() {
 async function quickUpdate(item, data) {
   try {
     await axios.put(`/api/v${props.apiVersion}/${objectType}/${item[idKey]}`, data);
-    toast.success(objectTitle(item.name || '', t('settings.common.isUpdated')));
+    toast.success(t('settings.common.nameUpdated', { name: objectTitle(item.name || '') }));
     await loadItems();
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err, 'Failed to update item'));
@@ -1432,7 +1440,7 @@ async function bulkDelete() {
         return axios.delete(`/api/v${props.apiVersion}/${objectType}/${id}`);
       }),
     );
-    toast.success(t('settings.common.isDeleted'));
+    toast.success(t('settings.common.countDeleted', { n: ids.length }));
     selectedIds.value = new Set();
     await loadItems();
   } catch (err) {
@@ -1441,7 +1449,7 @@ async function bulkDelete() {
 }
 
 // ─── the list's own actions that run (action.run) : on a row, and on the rows ticked ────
-// each { name, title, icon, enabledWhen?(row), confirm?(count, rows), done?(n, rows),
+// each { name, title, icon, enabledWhen?(row), confirm?(count, rows), done?(n, rows) or false,
 // run(ids, rows), bulk? } : in the row menu, and - bulk - a button beside Delete while rows are
 // ticked, acting on those it is enabled for ; asking first when it says how
 const bulkActions = computed(() => actions.value.filter((a) => a.bulk && typeof a.run === 'function'));
@@ -1476,7 +1484,10 @@ async function runAction(action, rows) {
       rows.map((r) => r[idKey]),
       rows,
     );
-    toast.success(action.done ? action.done(typeof n === 'number' ? n : rows.length, rows) : action.title);
+    // done : false says nothing (a row moved shows it), else its words or its title
+    if (action.done !== false) {
+      toast.success(action.done ? action.done(typeof n === 'number' ? n : rows.length, rows) : action.title);
+    }
     selectedIds.value = new Set();
     await loadItems();
   } catch (err) {

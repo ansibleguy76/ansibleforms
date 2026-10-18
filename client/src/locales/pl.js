@@ -786,7 +786,6 @@ export default {
     // copying to the clipboard, and a record saved by its name
     copied: 'Skopiowano do schowka',
     copyFailed: 'Nie udało się skopiować do schowka: {error}',
-    nameUpdated: 'Zaktualizowano: {name}',
   },
   // a YAML file loaded into a field or saved from it (AppListField, BsYamlEditor, AppForm)
   yamlFile: {
@@ -933,11 +932,8 @@ export default {
       showOutput: 'Pokaż wynik',
       trigger: 'Wyzwalacz',
       deleteConfirm: 'Czy na pewno chcesz usunąć',
-      isCreated: '– utworzono',
-      isUpdated: '– zaktualizowano',
       // the badge after a record's type or name that is the default (defaultNote)
       defaultNote: 'Domyślny',
-      isDeleted: '– usunięto',
       bulkDeleteConfirm: 'Usunąć {count} element(y)?',
       bulkDeleteConfirmSkip:
         'Usunąć {count} element(y)? {skipped} zaznaczonych elementów nie można usunąć i pozostaną bez zmian.',
@@ -974,6 +970,16 @@ export default {
       roleDirectly: 'Bezpośrednio',
       roleThroughGroups: 'Przez {groups}',
       roleEveryone: 'Wszyscy',
+      // a record's toasts, by its name ({name}) in the word order of the language
+      nameUpdated: 'Zaktualizowano: {name}',
+      nameDeleted: 'Usunięto: {name}',
+      nameCreated: 'Utworzono: {name}',
+      countDeleted: 'Usunięto: {n}',
+      // the admin forms' validation messages (AppAdminMulti, AppAdminSingle), by the field's label
+      fieldRequired: 'Pole {field} jest wymagane',
+      fieldEmail: 'Pole {field} musi zawierać prawidłowy adres e-mail',
+      fieldYaml: 'Pole {field} musi zawierać prawidłowy YAML',
+      fieldInvalid: 'Pole {field} jest nieprawidłowe',
     },
     fields: {
       id: 'ID',

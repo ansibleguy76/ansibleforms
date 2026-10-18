@@ -43,6 +43,8 @@ import getSettings, {
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { recordButtons } from '@/lib/recordButtons';
+import { useRecordSearch } from '@/composables/useRecordSearch';
+import { reloadKeepingEdits } from '@/lib/keepEdits';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -63,11 +65,11 @@ const EDITED_BY_TYPE = {
   telegram: ['token_credential', 'chat_id', 'api_url'],
   webhook: ['url', 'method', 'token_credential', 'verify_tls', 'headers', 'payload'],
 };
-// Enabled, and Default for mail, saved with Save as the rest
+// Default for mail saved with Save as the rest ; Enabled is not one : its switch saves at once
+// (setEnabled), as every record page's
 const edited = computed(() => [
   'name',
   'description',
-  'enabled',
   ...(type.value === 'mail' ? ['is_active'] : []),
   ...EDITED_BY_TYPE[type.value],
 ]);
@@ -85,7 +87,6 @@ function editable(record) {
   return {
     name: record.name ?? '',
     description: record.description ?? '',
-    enabled: !!record.enabled,
     is_active: !!record.is_active,
     from_address: record.from_address ?? '',
     credential: record.credential ?? '',
@@ -161,7 +162,7 @@ async function update(data) {
     await axios.put(`/api/v2/notificationchannel/${encodeURIComponent(channelId.value)}`, data);
     return true;
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
     return false;
   }
 }
@@ -248,19 +249,11 @@ const crumbs = computed(() => {
 // A word typed in the title line's search narrows every tab at once, as Settings > General's :
 // the fields, switches and types whose label or help has it, each under its tab's name, the tabs
 // set aside meanwhile ; only the fields its type draws.
-const search = ref('');
-const searching = computed(() => !!search.value.trim());
-const matches = (...texts) => {
-  const q = search.value.trim().toLowerCase();
-  return (
-    !q ||
-    texts.some((x) =>
-      String(x ?? '')
-        .toLowerCase()
-        .includes(q),
-    )
-  );
-};
+const { search, searching, matchingKeys, shownTabs, tabShown, searchHead } = useRecordSearch({
+  tabs: () => tabs.value,
+  activeTab: () => activeTab.value,
+  tabMatch: (key) => shownFields.value[key]?.length,
+});
 // each tab's fields : [key, label, help], by its type, as the template draws them
 const tabFields = computed(() => {
   const nc = (key, params) => t(`settings.notificationChannels.${key}`, params);
@@ -268,6 +261,7 @@ const tabFields = computed(() => {
     details: [
       ['name', t('settings.fields.name')],
       ['description', t('settings.fields.description')],
+      ['enabled', nc('enabled'), nc('enabledHelp')],
       ...(type.value === 'mail' ? [['is_active', nc('active'), nc('activeHelp')]] : []),
     ],
     type: CHANNEL_TYPES.map((kind) => ['type_' + kind, nc(`type_${kind}`), nc(`typeHint_${kind}`)]),
@@ -299,26 +293,9 @@ const tabFields = computed(() => {
 });
 // the fields that match, per tab
 const shownFields = computed(() =>
-  Object.fromEntries(
-    Object.entries(tabFields.value).map(([tab, fields]) => [
-      tab,
-      fields.filter(([, ...texts]) => matches(...texts)).map(([key]) => key),
-    ]),
-  ),
+  Object.fromEntries(Object.entries(tabFields.value).map(([tab, fields]) => [tab, matchingKeys(fields)])),
 );
 const fieldShown = (key) => Object.values(shownFields.value).some((keys) => keys.includes(key));
-// the tabs shown : the active one, or while searching each one with a match
-const shownTabs = computed(() =>
-  searching.value
-    ? tabs.value.filter((tab) => shownFields.value[tab.key]?.length)
-    : tabs.value.filter((tab) => tab.key === activeTab.value),
-);
-const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
-// while searching, a tab's name over its matches (the first without the line above)
-const searchHead = (key) => {
-  const i = shownTabs.value.findIndex((tab) => tab.key === key);
-  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
-};
 
 // ─── actions ──────────────────────────────────────────────────────────────────
 /**
@@ -330,7 +307,7 @@ async function save() {
     toast.warning(t('settings.notificationChannels.fieldsRequired'));
     return;
   }
-  const data = { name: e.name.trim(), description: e.description.trim(), enabled: e.enabled ? 1 : 0 };
+  const data = { name: e.name.trim(), description: e.description.trim() };
   // the default mail channel : made it here, the one before stops being it (never unmade here)
   if (type.value === 'mail' && e.is_active && !channel.value.is_active) data.is_active = 1;
   for (const key of EDITED_BY_TYPE[type.value]) {
@@ -339,9 +316,25 @@ async function save() {
     else data[key] = typeof value === 'string' ? value.trim() : value;
   }
   if (await update(data)) {
-    toast.success(`${data.name} ${t('settings.common.isUpdated')}`);
+    toast.success(t('settings.common.nameUpdated', { name: data.name }));
     await load();
   }
+}
+
+// ─── its switch : notifications sent to it or not ────────────────────────────────
+/**
+ * Turns it on or off, saved at once as every record's Enabled switch ; what is being edited and
+ * not saved yet stays as it is.
+ *
+ * Args:
+ *   on (boolean): the switch's new state.
+ */
+async function setEnabled(on) {
+  if (await update({ enabled: on ? 1 : 0 })) {
+    toast.success(t('settings.common.nameUpdated', { name: channel.value.name }));
+  }
+  // read again, what is being edited and not saved yet kept as it is (lib/keepEdits.js)
+  await reloadKeepingEdits(edit, load);
 }
 
 // Send test : a dialog - for mail the address (the one typed last offered again, this browser
@@ -408,11 +401,13 @@ const confirmDelete = ref(false);
 async function deleteChannel() {
   confirmDelete.value = false;
   try {
+    const name = channel.value?.name;
     await axios.delete(`/api/v2/notificationchannel/${encodeURIComponent(channelId.value)}`);
     channel.value = null;
+    toast.success(t('settings.common.nameDeleted', { name }));
     router.push('/settings/notifications');
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 
@@ -556,6 +551,23 @@ onMounted(async () => {
                 :isFloating="false"
                 :label="t('settings.fields.description')"
               />
+              <div v-show="fieldShown('enabled')" class="mb-3">
+                <label class="form-label fw-bold d-block" for="af-channel-enabled">{{
+                  t('settings.notificationChannels.enabled')
+                }}</label>
+                <!-- saved at once, as every record's Enabled -->
+                <div class="form-check form-switch mb-0">
+                  <input
+                    id="af-channel-enabled"
+                    class="form-check-input"
+                    type="checkbox"
+                    role="switch"
+                    :checked="!!Number(channel.enabled)"
+                    @change="setEnabled($event.target.checked)"
+                  />
+                </div>
+                <div class="form-text">{{ t('settings.notificationChannels.enabledHelp') }}</div>
+              </div>
               <div v-if="type === 'mail'" v-show="fieldShown('is_active')" class="mb-3">
                 <label class="form-label fw-bold d-block" for="af-channel-active">{{
                   t('settings.notificationChannels.active')

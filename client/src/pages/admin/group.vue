@@ -17,6 +17,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import { toast } from 'vue-sonner';
+import Helpers from '@/lib/Helpers';
 import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
@@ -27,6 +28,7 @@ import BsDataTable from '@/components/BsDataTable.vue';
 import { useFormLinks } from '@/composables/useFormLinks';
 import { formPath } from '@/lib/formsPath';
 import { recordButtons } from '@/lib/recordButtons';
+import { useRecordSearch } from '@/composables/useRecordSearch';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -79,16 +81,6 @@ async function load() {
     group.value = null;
   }
   loaded.value = true;
-}
-
-/**
- * The api's error, as a toast.
- *
- * Args:
- *   err (Error): the axios error.
- */
-function toastError(err) {
-  toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
 }
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
@@ -185,10 +177,10 @@ async function saveDetails() {
       name,
       description: edit.value.description.trim(),
     });
-    toast.success(`${name} ${t('settings.common.isUpdated')}`);
+    toast.success(t('settings.common.nameUpdated', { name }));
     await load();
   } catch (err) {
-    toastError(err);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 
@@ -217,7 +209,7 @@ async function saveAddUser() {
     addingUser.value = null;
     await load();
   } catch (err) {
-    toastError(err);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 
@@ -232,7 +224,7 @@ async function removeUsers(ids) {
     try {
       await axios.delete(`/api/v2/user/${uid}/groups/${groupIdNumber.value}`);
     } catch (err) {
-      toastError(err);
+      toast.error(Helpers.parseAxiosResponseError(err));
       break;
     }
   }
@@ -244,50 +236,27 @@ async function removeUsers(ids) {
 // A word typed in the title line's search narrows every tab at once, as Settings > General's :
 // the fields of Details whose label has it, the users, roles and forms with it in one of their
 // cells, each under its tab's name, the tabs set aside meanwhile.
-const search = ref('');
-const searching = computed(() => !!search.value.trim());
-const matches = (...texts) => {
-  const q = search.value.trim().toLowerCase();
-  return (
-    !q ||
-    texts.some((x) =>
-      String(x ?? '')
-        .toLowerCase()
-        .includes(q),
-    )
-  );
-};
+const { search, searching, matches, matchingKeys, tableMatches, shownTabs, tabShown, searchHead } = useRecordSearch({
+  tabs: () => tabs.value,
+  activeTab: () => activeTab.value,
+  tabMatch: (key) =>
+    key === 'details'
+      ? shownFields.value.length
+      : key === 'users'
+        ? shownMembers.value.length
+        : key === 'roles'
+          ? tableMatches(groupRoles.value, roleColumns.value)
+          : tableMatches(groupForms.value, formColumns.value),
+});
 const shownFields = computed(() =>
-  [
+  matchingKeys([
     ['name', t('settings.fields.name')],
     ['description', t('settings.fields.description')],
-  ]
-    .filter(([, ...texts]) => matches(...texts))
-    .map(([key]) => key),
+  ]),
 );
 const fieldShown = (key) => shownFields.value.includes(key);
 // the users in it with the text in one of the Users table's cells : the rows the table gets
 const shownMembers = computed(() => members.value.filter((u) => matches(u.username, u.description, u.email)));
-// a role or a form with the text in one of its values (the tables filter their cells the same way)
-const rowsMatch = (rows) => rows.some((r) => matches(...Object.values(r || {})));
-// the tabs shown : the active one, or while searching each one with a match
-const shownTabs = computed(() =>
-  searching.value
-    ? tabs.value.filter((tab) =>
-        tab.key === 'details'
-          ? shownFields.value.length
-          : tab.key === 'users'
-            ? shownMembers.value.length
-            : rowsMatch(tab.key === 'roles' ? groupRoles.value : groupForms.value),
-      )
-    : tabs.value.filter((tab) => tab.key === activeTab.value),
-);
-const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
-// while searching, a tab's name over its matches (the first without the line above)
-const searchHead = (key) => {
-  const i = shownTabs.value.findIndex((tab) => tab.key === key);
-  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
-};
 
 // ─── Delete ───────────────────────────────────────────────────────────────────
 const confirmDelete = ref(false);
@@ -298,10 +267,14 @@ const confirmDelete = ref(false);
 async function deleteGroup() {
   confirmDelete.value = false;
   try {
+    const name = group.value?.name;
     await axios.delete(`/api/v2/group/${encodeURIComponent(groupId.value)}`);
+    // gone : nothing left to save, so leaving does not offer to save it
+    group.value = null;
+    toast.success(t('settings.common.nameDeleted', { name }));
     router.push('/settings/groups');
   } catch (err) {
-    toastError(err);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 

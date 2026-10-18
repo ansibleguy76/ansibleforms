@@ -22,6 +22,7 @@ import { useRouteTab } from '@/composables/useRouteTab';
 import { useRoleAssignments } from '@/composables/useRoleAssignments';
 import { useRoleMembership } from '@/composables/useRoleMembership';
 import { useFormLinks } from '@/composables/useFormLinks';
+import { useRecordSearch } from '@/composables/useRecordSearch';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -131,46 +132,27 @@ const crumbs = computed(() => {
 // the facts of Details whose label or value has it, the users, roles and forms with it in one
 // of their cells (AppLinkedTable's search), each under its tab's name, the tabs set aside
 // meanwhile.
-const search = ref('');
-const searching = computed(() => !!search.value.trim());
-const matches = (...texts) => {
-  const q = search.value.trim().toLowerCase();
-  return (
-    !q ||
-    texts.some((x) =>
-      String(x ?? '')
-        .toLowerCase()
-        .includes(q),
-    )
-  );
-};
+const { search, searching, matchingKeys, tableMatches, shownTabs, tabShown, searchHead } = useRecordSearch({
+  tabs: () => tabs.value,
+  activeTab: () => activeTab.value,
+  tabMatch: (key) => (key === 'details' ? shownFields.value.length : rowsMatch(key)),
+});
 // read only, so a fact's value counts as its label does
 const shownFields = computed(() =>
-  [
+  matchingKeys([
     ['note', t('settings.directory.groupReadOnlyNote', { source: sourceName.value })],
     ['name', t('settings.fields.name'), group.value?.name],
     ['source', t('settings.directory.source'), sourceName.value],
-  ]
-    .filter(([, ...texts]) => matches(...texts))
-    .map(([key]) => key),
+  ]),
 );
 const fieldShown = (key) => shownFields.value.includes(key);
-// a user, a role or a form with the text in one of its values (the tables filter their cells
-// the same way)
-const tabRows = { users: members, roles: groupRoles, forms: groupForms };
-const rowsMatch = (key) => tabRows[key].value.some((r) => matches(...Object.values(r || {})));
-// the tabs shown : the active one, or while searching each one with a match
-const shownTabs = computed(() =>
-  searching.value
-    ? tabs.value.filter((tab) => (tab.key === 'details' ? shownFields.value.length : rowsMatch(tab.key)))
-    : tabs.value.filter((tab) => tab.key === activeTab.value),
-);
-const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
-// while searching, a tab's name over its matches (the first without the line above)
-const searchHead = (key) => {
-  const i = shownTabs.value.findIndex((tab) => tab.key === key);
-  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
+// a user, a role or a form with the text in one of the cells its table shows (lib/recordSearch.js)
+const tabTables = {
+  users: [members, memberColumns],
+  roles: [groupRoles, roleColumns],
+  forms: [groupForms, formColumns],
 };
+const rowsMatch = (key) => tableMatches(tabTables[key][0].value, tabTables[key][1].value);
 
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());

@@ -791,7 +791,6 @@ export default {
     // copying to the clipboard, and a record saved by its name
     copied: 'Copié dans le presse-papiers',
     copyFailed: 'Impossible de copier dans le presse-papiers : {error}',
-    nameUpdated: '{name} est mis à jour',
   },
   // a YAML file loaded into a field or saved from it (AppListField, BsYamlEditor, AppForm)
   yamlFile: {
@@ -939,11 +938,8 @@ export default {
       showOutput: 'Afficher la sortie',
       trigger: 'Declencher',
       deleteConfirm: 'Etes-vous sur de vouloir supprimer',
-      isCreated: 'est cree',
-      isUpdated: 'est mis a jour',
       // the badge after a record's type or name that is the default (defaultNote)
       defaultNote: 'Par défaut',
-      isDeleted: 'est supprime',
       bulkDeleteConfirm: 'Supprimer {count} élément(s) ?',
       bulkDeleteConfirmSkip:
         'Supprimer {count} élément(s) ? {skipped} élément(s) sélectionné(s) ne peuvent pas être supprimés et sont laissés tels quels.',
@@ -980,6 +976,16 @@ export default {
       roleDirectly: 'Directement',
       roleThroughGroups: 'Via {groups}',
       roleEveryone: 'Tout le monde',
+      // a record's toasts, by its name ({name}) in the word order of the language
+      nameUpdated: '{name} est mis à jour',
+      nameDeleted: '{name} est supprimé',
+      nameCreated: '{name} est créé',
+      countDeleted: 'Supprimés : {n}',
+      // the admin forms' validation messages (AppAdminMulti, AppAdminSingle), by the field's label
+      fieldRequired: '{field} est obligatoire',
+      fieldEmail: '{field} doit être une adresse e-mail valide',
+      fieldYaml: '{field} doit être du YAML valide',
+      fieldInvalid: "{field} n'est pas valide",
     },
     fields: {
       id: 'ID',

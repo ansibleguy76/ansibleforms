@@ -23,6 +23,8 @@ import Helpers from '@/lib/Helpers';
 import { SIGN_IN_TYPES } from '@/config/settings';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
+import { useRecordSearch } from '@/composables/useRecordSearch';
+import { reloadKeepingEdits } from '@/lib/keepEdits';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -71,7 +73,8 @@ async function setEnabled(on) {
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err));
   }
-  await load();
+  // read again, what is being edited and not saved yet kept as it is (lib/keepEdits.js)
+  await reloadKeepingEdits(edit, load);
 }
 
 // ─── Save : a correction, or everyone again ───────────────────────────────────
@@ -101,7 +104,7 @@ async function save(askAgain = null) {
       ...edit.value,
       askAgain: !!askAgain,
     });
-    toast.success(`${edit.value.title} ${t('settings.common.isUpdated')}`);
+    toast.success(t('settings.common.nameUpdated', { name: edit.value.title }));
     await load();
     return true;
   } catch (err) {
@@ -118,7 +121,11 @@ const confirmDelete = ref(false);
 async function deleteVersion() {
   confirmDelete.value = false;
   try {
+    const name = record.value?.title;
     await axios.delete(`/api/v2/disclaimerversion/${encodeURIComponent(versionId.value)}`);
+    // gone : nothing left to save, so leaving does not offer to save it
+    record.value = null;
+    toast.success(t('settings.common.nameDeleted', { name }));
     router.push('/settings/disclaimer');
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err));
@@ -165,7 +172,8 @@ async function askAgain(rows) {
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err));
   }
-  await load();
+  // read again, what is being edited and not saved yet kept as it is (lib/keepEdits.js)
+  await reloadKeepingEdits(edit, load);
 }
 
 // ─── tabs and title ───────────────────────────────────────────────────────────
@@ -195,43 +203,22 @@ const pageCrumbs = computed(() => [
 // A word typed in the title line's search narrows both tabs at once, as Settings > General's :
 // the fields of Details whose label or help has it, the acceptances with it in one of their
 // cells (AppLinkedTable's search), each under its tab's name, the tabs set aside meanwhile.
-const search = ref('');
-const searching = computed(() => !!search.value.trim());
-const matches = (...texts) => {
-  const q = search.value.trim().toLowerCase();
-  return (
-    !q ||
-    texts.some((x) =>
-      String(x ?? '')
-        .toLowerCase()
-        .includes(q),
-    )
-  );
-};
+const { search, searching, matchingKeys, tableMatches, shownTabs, tabShown, searchHead } = useRecordSearch({
+  tabs: () => tabs.value,
+  activeTab: () => activeTab.value,
+  tabMatch: (key) => (key === 'details' ? shownFields.value.length : acceptancesMatch.value),
+});
 const shownFields = computed(() =>
-  [
+  matchingKeys([
     ['title', t('settings.disclaimer.title'), t('settings.disclaimer.titleHelp')],
     ['text', t('settings.disclaimer.text'), t('settings.disclaimer.textHelp')],
     ['checkbox', t('settings.disclaimer.checkbox'), t('settings.disclaimer.checkboxHelp')],
     ['enabled', t('settings.disclaimer.versionEnabled'), t('settings.disclaimer.enabledHelpVersion')],
-  ]
-    .filter(([, ...texts]) => matches(...texts))
-    .map(([key]) => key),
+  ]),
 );
 const fieldShown = (key) => shownFields.value.includes(key);
-// an acceptance with the text in one of its values (the table filters its cells the same way)
-const acceptancesMatch = computed(() => acceptances.value.some((r) => matches(...Object.values(r || {}))));
-// the tabs shown : the active one, or while searching each one with a match
-const shownTabs = computed(() =>
-  searching.value
-    ? tabs.value.filter((tab) => (tab.key === 'details' ? shownFields.value.length : acceptancesMatch.value))
-    : tabs.value.filter((tab) => tab.key === activeTab.value),
-);
-const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
-const searchHead = (key) => {
-  const i = shownTabs.value.findIndex((tab) => tab.key === key);
-  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
-};
+// an acceptance with the text in one of the cells its table shows (lib/recordSearch.js)
+const acceptancesMatch = computed(() => tableMatches(acceptances.value, acceptanceColumns.value));
 
 const crumbs = computed(() => {
   const tab = tabs.value.find((x) => x.key === activeTab.value);

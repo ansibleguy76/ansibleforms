@@ -28,6 +28,7 @@ import getSettings, { SECRET_STORE_TYPES, noCredentialsText } from '@/config/set
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { recordButtons } from '@/lib/recordButtons';
+import { useRecordSearch } from '@/composables/useRecordSearch';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -156,7 +157,7 @@ async function update(data) {
     await axios.put(`/api/v2/secretstore/${encodeURIComponent(storeId.value)}`, data);
     return true;
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
     return false;
   }
 }
@@ -190,19 +191,11 @@ const crumbs = computed(() => {
 // A word typed in the title line's search narrows every tab at once, as Settings > General's :
 // the fields of each tab whose label or help has it (a type by its name and grey words), each
 // under its tab's name, the tabs set aside meanwhile.
-const search = ref('');
-const searching = computed(() => !!search.value.trim());
-const matches = (...texts) => {
-  const q = search.value.trim().toLowerCase();
-  return (
-    !q ||
-    texts.some((x) =>
-      String(x ?? '')
-        .toLowerCase()
-        .includes(q),
-    )
-  );
-};
+const { search, searching, matchingKeys, shownTabs, tabShown, searchHead } = useRecordSearch({
+  tabs: () => tabs.value,
+  activeTab: () => activeTab.value,
+  tabMatch: (key) => (tabFields.value[key] || []).some(([k]) => fieldShown(k)),
+});
 // each tab's fields : [key, label, help], only those its type shows (as the template's v-if)
 const tabFields = computed(() => {
   const e = edit.value || {};
@@ -252,25 +245,8 @@ const tabFields = computed(() => {
   };
 });
 // the fields shown : those whose label or help has the text
-const shownFields = computed(() =>
-  Object.values(tabFields.value)
-    .flat()
-    .filter(([, ...texts]) => matches(...texts))
-    .map(([key]) => key),
-);
+const shownFields = computed(() => matchingKeys(Object.values(tabFields.value).flat()));
 const fieldShown = (key) => shownFields.value.includes(key);
-// the tabs shown : the active one, or while searching each one with a field shown
-const shownTabs = computed(() =>
-  searching.value
-    ? tabs.value.filter((tab) => (tabFields.value[tab.key] || []).some(([k]) => fieldShown(k)))
-    : tabs.value.filter((tab) => tab.key === activeTab.value),
-);
-const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
-// while searching, a tab's name over its matches (the first without the line above)
-const searchHead = (key) => {
-  const i = shownTabs.value.findIndex((tab) => tab.key === key);
-  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
-};
 
 // ─── actions ──────────────────────────────────────────────────────────────────
 /**
@@ -299,7 +275,7 @@ async function save() {
   data.credential = e.credential;
   if (isVault.value) Object.assign(data, { kv_version: e.kv_version, default_mount: e.default_mount.trim() });
   if (await update(data)) {
-    toast.success(`${data.name} ${t('settings.common.isUpdated')}`);
+    toast.success(t('settings.common.nameUpdated', { name: data.name }));
     await load();
   }
 }
@@ -331,11 +307,13 @@ const confirmDelete = ref(false);
 async function deleteStore() {
   confirmDelete.value = false;
   try {
+    const name = store.value?.name;
     await axios.delete(`/api/v2/secretstore/${encodeURIComponent(storeId.value)}`);
     store.value = null;
+    toast.success(t('settings.common.nameDeleted', { name }));
     router.push('/settings/secret-stores');
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 

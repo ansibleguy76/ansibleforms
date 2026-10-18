@@ -788,7 +788,6 @@ export default {
     // copying to the clipboard, and a record saved by its name
     copied: 'Copiat al porta-retalls',
     copyFailed: "No s'ha pogut copiar al porta-retalls: {error}",
-    nameUpdated: "{name} s'ha actualitzat",
   },
   // a YAML file loaded into a field or saved from it (AppListField, BsYamlEditor, AppForm)
   yamlFile: {
@@ -935,11 +934,8 @@ export default {
       showOutput: 'Mostra la sortida',
       trigger: 'Activa',
       deleteConfirm: 'Segur que vols suprimir',
-      isCreated: "s'ha creat",
-      isUpdated: "s'ha actualitzat",
       // the badge after a record's type or name that is the default (defaultNote)
       defaultNote: 'Predeterminat',
-      isDeleted: "s'ha suprimit",
       bulkDeleteConfirm: 'Voleu eliminar {count} element(s)?',
       bulkDeleteConfirmSkip:
         'Voleu eliminar {count} element(s)? {skipped} element(s) seleccionat(s) no es poden eliminar i es deixen com estan.',
@@ -976,6 +972,16 @@ export default {
       roleDirectly: 'Directament',
       roleThroughGroups: 'A través de {groups}',
       roleEveryone: 'Tothom',
+      // a record's toasts, by its name ({name}) in the word order of the language
+      nameUpdated: "S'ha actualitzat {name}",
+      nameDeleted: "S'ha suprimit {name}",
+      nameCreated: "S'ha creat {name}",
+      countDeleted: 'Suprimits: {n}',
+      // the admin forms' validation messages (AppAdminMulti, AppAdminSingle), by the field's label
+      fieldRequired: '{field} és obligatori',
+      fieldEmail: '{field} ha de ser una adreça electrònica vàlida',
+      fieldYaml: '{field} ha de ser YAML vàlid',
+      fieldInvalid: '{field} no és vàlid',
     },
     fields: {
       id: 'ID',

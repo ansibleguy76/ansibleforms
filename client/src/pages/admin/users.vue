@@ -11,6 +11,7 @@ import Profile from '@/lib/Profile';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import { setSignInBlocked } from '@/lib/signIn';
+import Helpers from '@/lib/Helpers';
 
 const { t } = useI18n();
 const settings = computed(() => getSettings(t));
@@ -37,7 +38,7 @@ async function setBlocked(user, blocked) {
     );
     adminMulti.value?.loadItems();
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 

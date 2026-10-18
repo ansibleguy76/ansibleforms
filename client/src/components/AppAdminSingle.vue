@@ -53,6 +53,7 @@ import { required, helpers, email, sameAs } from '@vuelidate/validators';
 import { useI18n } from 'vue-i18n';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
+import { textsMatch } from '@/lib/recordSearch';
 import { useRoute } from 'vue-router';
 
 const { t } = useI18n();
@@ -130,13 +131,7 @@ const searching = computed(() => props.searchable && !!search.value.trim());
  *   boolean: true when one of them has it.
  */
 function matches(...texts) {
-  const q = search.value.trim().toLowerCase();
-  if (!q) return true;
-  return texts.some((x) =>
-    String(x ?? '')
-      .toLowerCase()
-      .includes(q),
-  );
+  return textsMatch(search.value, texts);
 }
 const fieldMatches = (field) => matches(field.label, field.help, field.description, field.key);
 // a tab has something to show while searching : a field of it that matches, or its top slot's
@@ -168,18 +163,23 @@ const fieldsDict = computed(() =>
 );
 
 // validation
+// the messages are translated, the field's label in them (settings.common.field*), and read
+// when shown : a change of language follows without rebuilding the rules
 function getRules() {
   const ruleObj = { item: {} };
   fields.value.forEach((field) => {
     var rule = {};
     if (field.required) {
-      rule.required = helpers.withMessage(`${field.label} is required`, required);
+      rule.required = helpers.withMessage(() => t('settings.common.fieldRequired', { field: field.label }), required);
     }
     if (field.type == 'email') {
-      rule.email = helpers.withMessage(`${field.label} must be a valid email address`, email);
+      rule.email = helpers.withMessage(() => t('settings.common.fieldEmail', { field: field.label }), email);
     }
     if (field.type == 'checkbox' && field.required) {
-      rule.checkboxRequired = helpers.withMessage(`${field.label} is required`, sameAs(computed(() => true)));
+      rule.checkboxRequired = helpers.withMessage(
+        () => t('settings.common.fieldRequired', { field: field.label }),
+        sameAs(computed(() => true)),
+      );
     }
     ruleObj.item[field.key] = rule;
   });
@@ -227,13 +227,11 @@ async function updateItem() {
   if (!isInvalid.value) {
     try {
       await axios.put(`/api/v${props.apiVersion}/${objectType.value}/`, item.value);
-      toast.success(objectTitle('', t('settings.common.isUpdated')));
+      toast.success(t('settings.common.nameUpdated', { name: objectTitle('') }));
       emit('saved', item.value);
       loadItem();
     } catch (err) {
-      const errorMessage = err.response?.data?.error || err.message;
-      const errorDetail = err.response?.data?.details || '';
-      toast.error(errorDetail ? `${errorMessage}: ${errorDetail}` : errorMessage);
+      toast.error(Helpers.parseAxiosResponseError(err));
     }
   } else {
     $v.value.item.$touch();
@@ -402,8 +400,17 @@ onMounted(async () => {
   loaded.value = true;
 });
 
+/**
+ * Forgets the changes on the form : the record is gone (deleted by the page), so there is nothing
+ * left to save and leaving must not offer to.
+ */
+function forget() {
+  originalItem.value = null;
+}
+
 defineExpose({
   loadItem,
+  forget,
 });
 </script>
 <template>

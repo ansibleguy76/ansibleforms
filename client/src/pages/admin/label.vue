@@ -17,7 +17,9 @@ import Helpers from '@/lib/Helpers';
 import { PILL } from '@/lib/tableCells';
 import { LABEL_COLORS } from '@/config/settings';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
-import { useRouteTab } from '@/composables/useRouteTab';
+import { useSingleTab } from '@/composables/useSingleTab';
+import { useRecordSearch } from '@/composables/useRecordSearch';
+import { reloadKeepingEdits } from '@/lib/keepEdits';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -72,10 +74,8 @@ async function setEnabled(on) {
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err));
   }
-  const kept = edit.value;
-  await load();
-  // what is being edited stays as it is
-  if (kept) edit.value = kept;
+  // read again, what is being edited and not saved yet kept as it is (lib/keepEdits.js)
+  await reloadKeepingEdits(edit, load);
 }
 
 // ─── Save ─────────────────────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ async function save() {
       color: edit.value.color,
       position: edit.value.position === '' ? null : edit.value.position,
     });
-    toast.success(`${t('settings.labels.label')} ${t('settings.common.isUpdated')}`);
+    toast.success(t('settings.common.nameUpdated', { name: edit.value.name }));
     await load();
     return true;
   } catch (err) {
@@ -114,9 +114,11 @@ const confirmDelete = ref(false);
 async function deleteLabel() {
   confirmDelete.value = false;
   try {
+    const name = record.value?.name;
     await axios.delete(`/api/v2/label/${encodeURIComponent(labelId.value)}`);
     // gone : nothing left to save
     record.value = null;
+    toast.success(t('settings.common.nameDeleted', { name }));
     router.push('/settings/labels');
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err));
@@ -132,37 +134,18 @@ const previewLabels = computed(() => {
     .sort((a, b) => (Number(a.position) || 0) - (Number(b.position) || 0));
 });
 
-// ─── tabs ─────────────────────────────────────────────────────────────────────
-// one tab, Details, as every record's page : the tab kept in the address
-const tabs = computed(() => [{ key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' }]);
-const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
-
 // ─── search ───────────────────────────────────────────────────────────────────
 // A word typed in the title line's search narrows the page, as Settings > General's : the fields
 // whose label or help has it, under the tab's name, the tab set aside meanwhile.
-const search = ref('');
-const searching = computed(() => !!search.value.trim());
-const matches = (...texts) => {
-  const q = search.value.trim().toLowerCase();
-  return (
-    !q ||
-    texts.some((x) =>
-      String(x ?? '')
-        .toLowerCase()
-        .includes(q),
-    )
-  );
-};
+const { search, searching, matchingKeys } = useRecordSearch();
 const shownFields = computed(() =>
-  [
+  matchingKeys([
     ['name', t('settings.labels.label'), t('settings.labels.nameHelp')],
     ['color', t('settings.labels.color'), t('settings.labels.colorHelp')],
     ['position', t('settings.labels.position'), t('settings.labels.positionHelp')],
     ['enabled', t('settings.labels.enabled'), t('settings.labels.enabledHelp')],
     ['preview', t('settings.labels.preview')],
-  ]
-    .filter(([, ...texts]) => matches(...texts))
-    .map(([key]) => key),
+  ]),
 );
 const fieldShown = (key) => shownFields.value.includes(key);
 
@@ -175,10 +158,12 @@ const pageCrumbs = computed(() => [
     to: `/settings/labels/${labelId.value}`,
   },
 ]);
-// and the open tab last, as every page in tabs names it : Labels › PRODUCTION › Details
-const crumbs = computed(() => {
-  const tab = tabs.value.find((x) => x.key === activeTab.value);
-  return tab ? [...pageCrumbs.value, { title: tab.label, icon: tab.icon, to: tabLink(tab.key) }] : pageCrumbs.value;
+// one tab, Details, as every record's page ; named last in the title : Labels › PRODUCTION › Details
+const { tabs, activeTab, crumbs } = useSingleTab({
+  key: 'details',
+  label: () => t('settings.common.tabDetails'),
+  icon: 'sliders',
+  pageCrumbs: () => pageCrumbs.value,
 });
 
 onMounted(async () => {

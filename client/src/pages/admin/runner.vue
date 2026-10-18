@@ -37,6 +37,8 @@ import { formPath } from '@/lib/formsPath';
 import Time from '@/lib/Time';
 import { durationSeconds, formatDuration } from '@/lib/jobTime';
 import { recordButtons } from '@/lib/recordButtons';
+import { useRecordSearch } from '@/composables/useRecordSearch';
+import { reloadKeepingEdits } from '@/lib/keepEdits';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -170,7 +172,7 @@ async function update(data) {
     await axios.put(`/api/v2/runner/${encodeURIComponent(runnerId.value)}`, data);
     return true;
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
     return false;
   }
 }
@@ -258,19 +260,11 @@ const defaultFor = computed(() => t(`settings.runners.default_${runner.value?.ty
 // the fields of Details, Type and Credentials whose label or help has it (a kind by its name and
 // grey words), the forms and the jobs with it in one of their cells (AppLinkedTable's search),
 // each under its tab's name, the tabs set aside meanwhile.
-const search = ref('');
-const searching = computed(() => !!search.value.trim());
-const matches = (...texts) => {
-  const q = search.value.trim().toLowerCase();
-  return (
-    !q ||
-    texts.some((x) =>
-      String(x ?? '')
-        .toLowerCase()
-        .includes(q),
-    )
-  );
-};
+const { search, searching, matchingKeys, tableMatches, shownTabs, tabShown, searchHead } = useRecordSearch({
+  tabs: () => tabs.value,
+  activeTab: () => activeTab.value,
+  tabMatch: (key) => tabMatch(key),
+});
 // each tab's fields : [key, label, help], only those its kind shows (as the template's v-if)
 const tabFields = computed(() => {
   const e = edit.value || {};
@@ -310,33 +304,15 @@ const tabFields = computed(() => {
   };
 });
 // the fields shown : those whose label or help has the text
-const shownFields = computed(() =>
-  Object.values(tabFields.value)
-    .flat()
-    .filter(([, ...texts]) => matches(...texts))
-    .map(([key]) => key),
-);
+const shownFields = computed(() => matchingKeys(Object.values(tabFields.value).flat()));
 const fieldShown = (key) => shownFields.value.includes(key);
-// a form or a job with the text in one of its values (the table filters its cells the same way)
-const rowsMatch = (rows) => rows.some((r) => matches(...Object.values(r || {})));
+// a form or a job with the text in one of the cells its table shows (lib/recordSearch.js)
 const tabMatch = (key) =>
   key === 'forms'
-    ? rowsMatch(runnerForms.value)
+    ? tableMatches(runnerForms.value, formColumns.value)
     : key === 'jobs'
-      ? rowsMatch(runnerJobs.value)
+      ? tableMatches(runnerJobs.value, jobColumns.value)
       : (tabFields.value[key] || []).some(([k]) => fieldShown(k));
-// the tabs shown : the active one, or while searching each one with a match
-const shownTabs = computed(() =>
-  searching.value
-    ? tabs.value.filter((tab) => tabMatch(tab.key))
-    : tabs.value.filter((tab) => tab.key === activeTab.value),
-);
-const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
-// while searching, a tab's name over its matches (the first without the line above)
-const searchHead = (key) => {
-  const i = shownTabs.value.findIndex((tab) => tab.key === key);
-  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
-};
 
 // ─── actions ──────────────────────────────────────────────────────────────────
 /**
@@ -360,7 +336,7 @@ async function save() {
     rte_mode: e.kind === 'rte' ? e.rte_mode || 'outbound' : null,
   };
   if (await update(data)) {
-    toast.success(`${data.name} ${t('settings.common.isUpdated')}`);
+    toast.success(t('settings.common.nameUpdated', { name: data.name }));
     await load();
   }
 }
@@ -370,9 +346,10 @@ async function save() {
  */
 async function makeDefault() {
   if (await update({ is_default: 1 })) {
-    toast.success(`${runner.value.name} ${t('settings.common.isUpdated')}`);
+    toast.success(t('settings.common.nameUpdated', { name: runner.value.name }));
   }
-  await load();
+  // read again, what is being edited and not saved yet kept as it is (lib/keepEdits.js)
+  await reloadKeepingEdits(edit, load);
 }
 
 // an RTE's mode as plain words : Outbound, Inbound, or Database (deprecated) for one from before 7.3
@@ -420,7 +397,7 @@ async function decide(what) {
     await axios.post(`/api/v2/runner/${encodeURIComponent(runnerId.value)}/${what}`, {});
     toast.success(t(what === 'approve' ? 'settings.runners.approved' : 'settings.runners.rejected', { name }));
     if (what === 'reject') return router.push('/settings/runners');
-    await load();
+    await reloadKeepingEdits(edit, load);
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err, t(`settings.runners.${what}`)));
   } finally {
@@ -436,9 +413,10 @@ async function decide(what) {
  */
 async function setEnabled(on) {
   if (await update({ enabled: on ? 1 : 0 })) {
-    toast.success(`${runner.value.name} ${t('settings.common.isUpdated')}`);
+    toast.success(t('settings.common.nameUpdated', { name: runner.value.name }));
   }
-  await load();
+  // read again, what is being edited and not saved yet kept as it is (lib/keepEdits.js)
+  await reloadKeepingEdits(edit, load);
 }
 
 // Test connection : one at a time
@@ -468,11 +446,13 @@ const confirmDelete = ref(false);
 async function deleteRunner() {
   confirmDelete.value = false;
   try {
+    const name = runner.value?.name;
     await axios.delete(`/api/v2/runner/${encodeURIComponent(runnerId.value)}`);
     runner.value = null;
+    toast.success(t('settings.common.nameDeleted', { name }));
     router.push('/settings/runners');
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 

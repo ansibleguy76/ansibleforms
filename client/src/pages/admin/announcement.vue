@@ -17,6 +17,8 @@ import Profile from '@/lib/Profile';
 import Helpers from '@/lib/Helpers';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useSingleTab } from '@/composables/useSingleTab';
+import { useRecordSearch } from '@/composables/useRecordSearch';
+import { reloadKeepingEdits } from '@/lib/keepEdits';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -86,10 +88,8 @@ async function setEnabled(on) {
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err));
   }
-  const kept = edit.value;
-  await load();
-  // what is being edited stays as it is
-  if (kept) edit.value = kept;
+  // read again, what is being edited and not saved yet kept as it is (lib/keepEdits.js)
+  await reloadKeepingEdits(edit, load);
 }
 
 // ─── Save ─────────────────────────────────────────────────────────────────────
@@ -112,8 +112,9 @@ async function save() {
       start_at: edit.value.start_at || null,
       end_at: edit.value.end_at || null,
     });
-    toast.success(`${t('settings.interface.announcementLabel')} ${t('settings.common.isUpdated')}`);
+    // read again first : the toast names it by its message as saved
     await load();
+    toast.success(t('settings.common.nameUpdated', { name: name.value }));
     return true;
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err));
@@ -129,9 +130,11 @@ const confirmDelete = ref(false);
 async function deleteAnnouncement() {
   confirmDelete.value = false;
   try {
+    const gone = name.value;
     await axios.delete(`/api/v2/announcement/${encodeURIComponent(announcementId.value)}`);
     // gone : nothing left to save
     record.value = null;
+    toast.success(t('settings.common.nameDeleted', { name: gone }));
     router.push('/settings/announcements');
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err));
@@ -161,29 +164,15 @@ const pageCrumbs = computed(() => [
 // ─── search ───────────────────────────────────────────────────────────────────
 // A word typed in the title line's search narrows the page, as Settings > General's : the fields
 // whose label or help has it, under the tab's name, the tab set aside meanwhile.
-const search = ref('');
-const searching = computed(() => !!search.value.trim());
-const matches = (...texts) => {
-  const q = search.value.trim().toLowerCase();
-  return (
-    !q ||
-    texts.some((x) =>
-      String(x ?? '')
-        .toLowerCase()
-        .includes(q),
-    )
-  );
-};
+const { search, searching, matchingKeys } = useRecordSearch();
 const shownFields = computed(() =>
-  [
+  matchingKeys([
     ['message', t('settings.interface.banner'), t('settings.interface.bannerHelp')],
     ['level', t('settings.interface.bannerLevel'), t('settings.interface.bannerLevelHelp')],
     ['start', t('settings.interface.bannerStart'), t('settings.interface.bannerStartHelp')],
     ['end', t('settings.interface.bannerEnd'), t('settings.interface.bannerEndHelp')],
     ['enabled', t('settings.interface.announcementEnabled'), t('settings.interface.announcementEnabledHelp')],
-  ]
-    .filter(([, ...texts]) => matches(...texts))
-    .map(([key]) => key),
+  ]),
 );
 const fieldShown = (key) => shownFields.value.includes(key);
 
