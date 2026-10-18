@@ -961,12 +961,9 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addTable("notification_channels", channelsBuffer.toString()), messages, success, failed);
   await checkPromise(moveMailServersToChannels(), messages, success, failed);
   await checkPromise(copyMailSettingsToServers(), messages, success, failed);
-  // a mail channel's server, port and TLS belong to its smtp credential, with its login
+  // a mail channel's server, port and TLS belong to its smtp credential, with its login (the
+  // SSO providers and the LDAP directories move theirs further down, once their columns are there)
   await checkPromise(moveMailServersToCredentials(), messages, success, failed);
-  // an SSO provider's client (and its tenant or issuer) belongs to a credential of its type
-  await checkPromise(moveSsoClientsToCredentials(), messages, success, failed);
-  // an LDAP directory's servers and TLS belong to its ldap credential, with its bind account
-  await checkPromise(moveLdapServersToCredentials(), messages, success, failed);
   // the syslog servers the server log and the audit entries go to (Connections > Syslog) ; the
   // LOG_SYSLOG_* variables of before become the first, once (lib/syslogServers.js)
   const syslogBuffer = fs.readFileSync(`${__dirname}/../db/create_syslog_servers_table.sql`);
@@ -1075,6 +1072,13 @@ async function patchVersion7(messages, success, failed) {
   // its mail server : whether certificates are checked, the CA bundle
   await checkPromise(addColumn("credentials", "ignore_certs", "tinyint(4)", true, "NULL"), messages, success, failed);
   await checkPromise(addColumn("credentials", "ca_bundle", "text", true, "NULL"), messages, success, failed);
+  // an SSO provider's client (and its tenant or issuer) belongs to a credential of its type, and an
+  // LDAP directory's servers and TLS to its ldap credential, with its bind account : only now, after
+  // every column they read and write (oauth2_providers.credential, the ldap id, name and credential,
+  // the credentials' tenant_id, issuer, redirect_uri, ignore_certs and ca_bundle) - run before them,
+  // an upgrade from 6 failed on an unknown column and moved nothing until the next start
+  await checkPromise(moveSsoClientsToCredentials(), messages, success, failed);
+  await checkPromise(moveLdapServersToCredentials(), messages, success, failed);
   // Skip the login page, per SSO provider (it was the SSO_AUTO_LOGIN variable, until 7.3)
   await checkPromise(addColumn("oauth2_providers", "auto_login", "tinyint(4)", true, "0"), messages, success, failed);
   // a runner signs in with a credential of Connections > Credentials, as every other connection
