@@ -32,7 +32,6 @@ import { useAppStore } from '@/stores/app';
 import {
   RUNNER_KINDS,
   PROJECT_RUNNER_KINDS,
-  AWX_RUNNER_KINDS,
   runnerKind,
   socketPill,
   noCredentialsText,
@@ -89,24 +88,11 @@ const appStore = useAppStore();
 const readOnly = computed(() => managed.value || !appStore.isAdmin);
 // a Semaphore or a Rundeck : a project on its server, signed in with a token
 const hasProject = computed(() => PROJECT_RUNNER_KINDS.includes(edit.value?.kind));
-// the kinds in the order of their names, in the language shown, as the dialog's
+// the kinds in the order of their names, in the language shown, as the dialog's ; read only here :
+// a runner keeps the type and the mode it was made with (an RTE says its mode itself when it connects)
 const sortedKinds = computed(() =>
   [...RUNNER_KINDS].sort((a, b) => t(`settings.runners.type_${a}`).localeCompare(t(`settings.runners.type_${b}`))),
 );
-/**
- * Whether its Type tab can switch to a kind : its type stays what it was made as (the forms that
- * run on it expect it), an AWX one may change product (AWX, AAP, Ascender : one type).
- *
- * Args:
- *   kind (string): a kind of RUNNER_KINDS.
- *
- * Returns:
- *   boolean: whether it can be chosen.
- */
-function kindAllowed(kind) {
-  const saved = runner.value ? runnerKind(runner.value) : edit.value?.kind;
-  return kind === saved || (AWX_RUNNER_KINDS.includes(kind) && AWX_RUNNER_KINDS.includes(saved));
-}
 // a Jenkins signs in with a user and that user's API token ; its folder (project) is optional
 const isJenkins = computed(() => edit.value?.kind === 'jenkins');
 // the credentials it can sign in with : those of its kind (rte, awx, aap, ascender, semaphore,
@@ -695,7 +681,7 @@ onMounted(async () => {
                   type="radio"
                   name="af-runner-kind"
                   :value="kind"
-                  :disabled="!kindAllowed(kind)"
+                  disabled
                 />
                 <label class="form-check-label" :for="'af-kind-' + kind">
                   <span class="af-short-label">{{ t(`settings.runners.type_${kind}`) }}</span>
@@ -723,7 +709,7 @@ onMounted(async () => {
                     type="radio"
                     name="af-runner-mode"
                     :value="mode"
-                    :disabled="readOnly"
+                    disabled
                   />
                   <label class="form-check-label" :for="'af-mode-' + mode">
                     <span class="af-short-label">{{ t(`settings.runners.rteMode_${mode}`) }}</span>
