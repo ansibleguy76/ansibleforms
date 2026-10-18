@@ -1774,19 +1774,67 @@ export async function moveLdapServersToCredentials() {
 const LEGACY_TABLES = ["staging", "datasource", "datasource_schemas", "awx", "azuread", "oidc"];
 
 /**
- * Whether the patches have something to change that loses data : a table an upgrade drops.
+ * Compares two release numbers (7.2.0, 7.3.0-rc.1) on their numeric parts : major, minor,
+ * patch. A pre-release suffix is ignored, so 7.3.0-rc.1 and 7.3.0 compare equal : the schema
+ * of a release candidate is the release's.
+ *
+ * Args:
+ *   a (string): a release number.
+ *   b (string): another.
+ *
+ * Returns:
+ *   number|null: below 0 when a is older, 0 when equal, above 0 when newer ; null when either
+ *     is not a release number (a local build reporting "unknown").
+ */
+export function compareReleases(a, b) {
+  const parse = (v) => {
+    const m = /^v?(\d+)\.(\d+)\.(\d+)/.exec(String(v || "").trim());
+    return m ? m.slice(1, 4).map(Number) : null;
+  };
+  const x = parse(a);
+  const y = parse(b);
+  if (!x || !y) return null;
+  for (let i = 0; i < 3; i++) {
+    if (x[i] !== y[i]) return x[i] - y[i];
+  }
+  return 0;
+}
+
+/**
+ * Whether the patches have something to change that is worth a backup first :
+ *   - a table an upgrade drops (and copies from first) : that loses data
+ *   - a schema recorded by an older release than this one (schema_migrations, row 'schema',
+ *     written by recordMigrations after every successful patch run) : a new release moves
+ *     data around too (7.3 moves secrets into credentials, retypes them, renames the LDAP
+ *     directory), not only adds to it, and there was no way back from that
+ *   - a database from before schema_migrations existed (the table is missing) : the same
+ *     upgrade, from further back
+ * A fresh install has the table without the row : nothing to back up there, and a backup that
+ * cannot run (no mysqldump on a development machine) must not stop its first patch run. The
+ * same release starting again finds its own version recorded : no backup on every restart.
  *
  * Returns:
  *   Promise<string[]>: what is pending, for the log ; empty when nothing is.
  */
 async function pendingUpgrade() {
-  // what loses data : the tables an upgrade drops (and copies from first). An added table, column
-  // or index loses nothing, and needs no backup - every release adds some.
+  const pending = [];
+  // what loses data : the tables an upgrade drops (and copies from first)
   const legacy = await mysql.do(
     "SELECT table_name AS t FROM information_schema.tables WHERE table_schema='AnsibleForms' AND table_name IN (?)",
     [LEGACY_TABLES]
   );
-  return legacy.map((r) => `drop ${r.t}`);
+  pending.push(...legacy.map((r) => `drop ${r.t}`));
+  // what a new release moves : the schema an older release recorded
+  if (!(await tablePresent("schema_migrations"))) {
+    pending.push(`upgrade an unrecorded schema to ${appVersion}`);
+    return pending;
+  }
+  const rows = await mysql.do("SELECT version FROM AnsibleForms.`schema_migrations` WHERE name = 'schema'");
+  const recorded = rows?.[0]?.version;
+  if (recorded && (compareReleases(recorded, appVersion) ?? 0) < 0) {
+    pending.push(`upgrade the schema from ${recorded} to ${appVersion}`);
+  }
+  return pending;
 }
 
 // a backup that failed is not tried again on every request (an app node checks the schema per
@@ -1936,6 +1984,8 @@ async function checkAll({ patch = true } = {}) {
 export { SCHEMA_MANIFEST };
 // the 7 patch on its own, for the test that runs it on a database from before its columns
 export { patchVersion7 };
+// what makes a start back up the database before patching, for its test
+export { pendingUpgrade };
 export default Schema;
 
 // function addRecord(table,names,values){
