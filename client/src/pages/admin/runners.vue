@@ -139,9 +139,14 @@ onMounted(async () => {
 .af-runner-requests {
   margin-bottom: 1rem;
   padding: 0.75rem 1rem;
-  border-left: 3px solid #ef6009;
+  /* a dark orange border all around, its left side thicker as the review dialog's */
+  border: 1px solid #c24e05;
+  border-left-width: 3px;
   border-radius: 0.375rem;
   background: color-mix(in srgb, #ef6009 8%, transparent);
+}
+[data-bs-theme='dark'] .af-runner-requests {
+  border-color: #ff8a3d;
 }
 /* its title in a darker orange, readable on the light one */
 .af-runner-requests-title {
