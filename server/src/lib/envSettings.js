@@ -78,6 +78,7 @@ const LIVE = {
   // the fn REST helpers and lib/jq.js read them on every call ; the same fallbacks as app.config
   REST_TIMEOUT_SECONDS: { key: 'restTimeoutSeconds', parse: v => (parseInt(v, 10) > 0 ? parseInt(v, 10) : 60) },
   JQ_TIMEOUT_SECONDS: { key: 'jqTimeoutSeconds', parse: v => (parseInt(v, 10) > 0 ? parseInt(v, 10) : 30) },
+  REST_IGNORE_CERTS: { key: 'restIgnoreCerts', parse: v => ['1', 'true', 'yes'].includes(String(v || '').trim().toLowerCase()) },
   // backup.model passes it to every dump and restore it runs ; the same fallback as app.config
   BACKUP_COMMAND_TIMEOUT_SECONDS: { key: 'backupCommandTimeoutSeconds', parse: v => (parseInt(v, 10) > 0 ? parseInt(v, 10) : 3600) },
   GIT_CLONE_COMMAND: { key: 'gitCloneCommand', parse: v => v },
