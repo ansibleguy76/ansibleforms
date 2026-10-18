@@ -2208,7 +2208,6 @@ export default function getSettings(t) {
       // one, which is turned off instead
       actions: [
         { name: 'test', title: t('settings.common.testConnection'), icon: 'plug', dependency: 'enable' },
-        ...enableActions(t('settings.common.enable'), t('settings.common.disable'), { field: 'enable' }),
         { name: 'delete', title: t('common.delete'), icon: 'trash', showWhen: (item) => item.name !== LDAP_DEFAULT },
       ],
       fields: [
@@ -3872,6 +3871,9 @@ function ldapDirectories(t, ldap) {
     actions: [
       { name: 'edit', title: t('settings.ldap.editDirectory'), icon: 'pencil', color: 'edit' },
       { name: 'test', title: t('settings.common.testConnection'), icon: 'plug', color: 'test', dividerBefore: true },
+      // on or off, as every list with an Enabled column (the default directory too : it is turned
+      // off rather than deleted)
+      ...enableActions(t('settings.common.enable'), t('settings.common.disable'), { field: 'enable' }),
       // its place in the lookup order : one up, one down
       ...moveActions('ldapdirectory', t('settings.ldap.moveUp'), t('settings.ldap.moveDown')),
       {
