@@ -97,7 +97,7 @@ export default {
     credentialNotFound:
       "No credential named '{name}'",
     repositoryCredentialType:
-      "A repository signs in with a git or a userpass credential: '{name}' is a {type} one",
+      "A repository signs in with a user and a password: the credential '{name}' does not have both",
     credentialSignInAdminOnly:
       "Only an admin can add, change or delete a credential a sign-in uses (LDAP, Microsoft Entra ID or OIDC)",
     credentialNotAllowed:

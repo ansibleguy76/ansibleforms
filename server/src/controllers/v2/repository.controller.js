@@ -9,16 +9,29 @@ import CredentialModel from '../../models/credential.model.v2.js';
 import Errors from '../../lib/errors.js';
 import { isAdminRequest } from '../../lib/adminGrants.js';
 
-// the credential types git signs in with : a git one, or a user and a password
-const REPOSITORY_CREDENTIAL_TYPES = ['git', 'userpass'];
+/**
+ * Whether a credential carries what git signs in with : a user, and a password (stored, or read
+ * from a secret store). A token alone (an api or a runner's credential) is no git login.
+ *
+ * Args:
+ *   cred (object): the credential's row (findRowByName).
+ *
+ * Returns:
+ *   boolean: true when it has a user and a password.
+ */
+function hasLogin(cred) {
+  const filled = (v) => v !== null && v !== undefined && String(v).trim() !== '';
+  return filled(cred?.user) && (filled(cred?.password) || (filled(cred?.secret_store) && filled(cred?.secret_ref)));
+}
 
 /**
  * Checks the credential a repository is given, and what moving a repository takes along. Git signs
- * in with a git or a userpass credential only : any other (a runner's token, a sign-in's client
- * secret) would be sent to the repository's address. A user who is not an admin may not name a
- * credential only an admin may (models/credential.model.v2.js isAdminGuarded), and moving a
- * repository to another address drops the credential and the password it keeps, unless they are
- * chosen or typed again with it. An admin's move is left as it is.
+ * in with a user and a password, so the credential must carry both, whatever its type (a git, a
+ * userpass, a database login an admin chooses). A user who is not an admin may not name a
+ * credential only an admin may (models/credential.model.v2.js isAdminGuarded : a runner's, a
+ * connection's, a sign-in's), whose secret would otherwise be sent to an address of their choice,
+ * and moving a repository to another address drops the credential and the password it keeps,
+ * unless they are chosen or typed again with it. An admin's move is left as it is.
  *
  * Args:
  *   req (object): the request (its body is changed in place).
@@ -28,7 +41,7 @@ const REPOSITORY_CREDENTIAL_TYPES = ['git', 'userpass'];
  *   Promise<{dropPassword: boolean}>: whether the update clears the repository's own password.
  *
  * Raises:
- *   Errors.BadRequestError: the credential does not exist, or is not a git or userpass one.
+ *   Errors.BadRequestError: the credential does not exist, or lacks a user or a password.
  *   Errors.AccessDeniedError: the credential is an admin's.
  */
 async function guardRepositoryCredential(req, existing) {
@@ -38,11 +51,12 @@ async function guardRepositoryCredential(req, existing) {
   if (data.credential && data.credential !== existing?.credential) {
     const cred = await CredentialModel.findRowByName(data.credential);
     if (!cred) throw new Errors.BadRequestError(i18n.t(req, 'resources.credentialNotFound', { name: data.credential }));
-    if (!REPOSITORY_CREDENTIAL_TYPES.includes(cred.credential_type || 'userpass')) {
-      throw new Errors.BadRequestError(i18n.t(req, 'resources.repositoryCredentialType', { name: data.credential, type: cred.credential_type }));
-    }
+    // refused first to who may not name it : the answer then says nothing of what it holds
     if (!isAdminRequest(req) && (await CredentialModel.isAdminGuarded(cred))) {
       throw new Errors.AccessDeniedError(i18n.t(req, 'resources.credentialNotAllowed', { name: data.credential }));
+    }
+    if (!hasLogin(cred)) {
+      throw new Errors.BadRequestError(i18n.t(req, 'resources.repositoryCredentialType', { name: data.credential, type: cred.credential_type }));
     }
   }
   // moved elsewhere by a user who is not an admin : what it signs in with stays behind

@@ -107,7 +107,7 @@ export default {
     credentialNotFound:
       "Aucun identifiant nommé '{name}'",
     repositoryCredentialType:
-      "Un dépôt se connecte avec un identifiant git ou userpass : '{name}' est de type {type}",
+      "Un dépôt se connecte avec un utilisateur et un mot de passe : l'identifiant '{name}' n'a pas les deux",
     credentialSignInAdminOnly:
       "Seul un admin peut ajouter, modifier ou supprimer un identifiant utilisé par une authentification (LDAP, Microsoft Entra ID ou OIDC)",
     credentialNotAllowed:

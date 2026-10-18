@@ -3,7 +3,7 @@
 // the address it clones from. A user with only connections access could name a runner's token or
 // an SSO client there, or point a channel or a repository that names a credential at their own
 // server, and receive the secret. These pin the rules : a credential only an admin may name is
-// refused to them, a repository takes a git or a userpass credential only, and a move to another
+// refused to them, a repository takes a credential with a user and a password only, and a move to another
 // address drops the credential (and a repository's own password) unless chosen again.
 import { describe, test, expect, vi, beforeEach } from "vitest";
 
@@ -16,9 +16,12 @@ process.env.DB_PASSWORD ||= "test";
 const creds = {
   "hook-token": { name: "hook-token", credential_type: "api" },
   "rte-token": { name: "rte-token", credential_type: "rte" },
-  "sso-client": { name: "sso-client", credential_type: "oidc" },
-  "git-bot": { name: "git-bot", credential_type: "git" },
-  "runner-login": { name: "runner-login", credential_type: "userpass" },
+  "sso-client": { name: "sso-client", credential_type: "oidc", user: "client-id", password: "enc" },
+  "git-bot": { name: "git-bot", credential_type: "git", user: "bot", password: "enc" },
+  "db-login": { name: "db-login", credential_type: "database", user: "deploy", password: "enc" },
+  "git-nopass": { name: "git-nopass", credential_type: "git", user: "bot", password: "" },
+  "vaulted": { name: "vaulted", credential_type: "userpass", user: "bot", password: null, secret_store: "vault", secret_ref: "git/bot" },
+  "runner-login": { name: "runner-login", credential_type: "userpass", user: "runner", password: "enc" },
 };
 vi.mock("../src/models/credential.model.v2.js", () => ({
   default: {
@@ -126,6 +129,19 @@ describe("a repository", () => {
     expect(r.status).toBe(400);
     expect((await call(repoController.update, admin, { body: { credential: "rte-token" }, params: { name: "infra" } })).status).toBe(400);
     expect(repoWrites).toEqual([]);
+  });
+
+  test("any credential with a user and a password, whatever its type ; one without : 400", async () => {
+    // an admin's database login, a secret store's password : a login git can use
+    expect((await call(repoController.create, admin, { body: { name: "r", uri: "https://git", credential: "db-login" } })).status).toBeLessThan(300);
+    expect((await call(repoController.create, admin, { body: { name: "r", uri: "https://git", credential: "vaulted" } })).status).toBeLessThan(300);
+    expect((await call(repoController.create, ops, { body: { name: "r", uri: "https://git", credential: "db-login" } })).status).toBeLessThan(300);
+    // a git credential without its password
+    expect((await call(repoController.create, admin, { body: { name: "r", uri: "https://git", credential: "git-nopass" } })).status).toBe(400);
+  });
+
+  test("a sign-in's client, user and password though it has : refused to a connections user", async () => {
+    expect((await call(repoController.create, ops, { body: { name: "r", uri: "https://evil", credential: "sso-client" } })).status).toBe(403);
   });
 
   test("a credential that does not exist: 400", async () => {

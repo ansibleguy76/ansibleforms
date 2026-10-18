@@ -99,7 +99,7 @@ export default {
     credentialNotFound:
       "Não existe nenhuma credencial chamada '{name}'",
     repositoryCredentialType:
-      "Um repositório inicia sessão com uma credencial git ou userpass: '{name}' é do tipo {type}",
+      "Um repositório inicia sessão com um utilizador e uma palavra-passe: a credencial '{name}' não tem ambos",
     credentialSignInAdminOnly:
       "Só um admin pode adicionar, alterar ou eliminar uma credencial usada por um início de sessão (LDAP, Microsoft Entra ID ou OIDC)",
     credentialNotAllowed:
