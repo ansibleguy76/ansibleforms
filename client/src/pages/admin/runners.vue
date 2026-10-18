@@ -117,7 +117,7 @@ onMounted(async () => {
         <!-- the runners waiting for approval : an orange notice above the runners, as the review
              dialog's, each one a link that opens its review -->
         <div v-if="pending.length" class="af-runner-requests">
-          <div class="fw-bold">
+          <div class="fw-bold af-runner-requests-title">
             <FaIcon icon="hourglass-half" class="me-2" />{{
               t('settings.runners.waitingNotice', { count: pending.length }, pending.length)
             }}
@@ -142,6 +142,13 @@ onMounted(async () => {
   border-left: 3px solid #ef6009;
   border-radius: 0.375rem;
   background: color-mix(in srgb, #ef6009 8%, transparent);
+}
+/* its title in a darker orange, readable on the light one */
+.af-runner-requests-title {
+  color: #c24e05;
+}
+[data-bs-theme='dark'] .af-runner-requests-title {
+  color: #ff8a3d;
 }
 .af-runner-requests-list {
   margin: 0.375rem 0 0;
