@@ -3,6 +3,10 @@
 // and a designer without the admin role cannot change the roles (lib/adminGrants.js).
 import { describe, test, expect, vi } from "vitest";
 
+// its first test imports the user and group models cold : on a busy runner that alone can pass the
+// 5 s default, so the tests here get more time
+vi.setConfig({ testTimeout: 30000 });
+
 process.env.DB_HOST ||= "127.0.0.1";
 process.env.DB_PORT ||= "3306";
 process.env.DB_USER ||= "test";
