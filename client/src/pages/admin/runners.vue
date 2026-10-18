@@ -201,10 +201,14 @@ onMounted(async () => {
           @keydown.enter="reviewAll()"
         >
           <div>
-            <div class="fw-bold af-runner-requests-title">
-              <FaIcon icon="hourglass-half" class="me-2" />{{
-                t('settings.runners.waitingNotice', { count: pending.length }, pending.length)
-              }}
+            <div class="af-runner-requests-head">
+              <span class="fw-bold af-runner-requests-title">
+                <FaIcon icon="hourglass-half" class="me-2" />{{
+                  t('settings.runners.waitingNotice', { count: pending.length }, pending.length)
+                }}
+              </span>
+              <!-- what a click does, beside the title -->
+              <span class="text-body-tertiary small">{{ t('settings.runners.waitingHint', pending.length) }}</span>
             </div>
             <ul class="af-runner-requests-list">
               <li v-for="r in pending" :key="r.id">
@@ -217,9 +221,6 @@ onMounted(async () => {
                 </span>
               </li>
             </ul>
-            <div class="text-body-tertiary small mt-1">
-              {{ t('settings.runners.waitingHint', pending.length) }}
-            </div>
           </div>
         </div>
       </template>
@@ -250,6 +251,13 @@ onMounted(async () => {
 }
 [data-bs-theme='dark'] .af-runner-requests {
   border-color: #ff8a3d;
+}
+/* the title, then the hint beside it (under it when there is no room) */
+.af-runner-requests-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.75rem;
 }
 /* its title in a darker orange, readable on the light one */
 .af-runner-requests-title {
