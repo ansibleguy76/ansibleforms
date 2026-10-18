@@ -176,7 +176,8 @@ async function check() {
     const rte = await one("SELECT credential, token, uri FROM AnsibleForms.`runners` WHERE name = 'rte1'");
     expect("runner rte1 credential", rte?.credential, "rte1-token");
     expect("runner rte1 token", rte?.token, null);
-    expect("runner rte1 uri", rte?.uri, "");
+    // an RTE added by hand keeps its address : one still on 7.2 finds its runner by it
+    expect("runner rte1 uri", rte?.uri, "https://rte1.example.com:8443/");
     expect("runner aap1 credential", (await one("SELECT credential FROM AnsibleForms.`runners` WHERE name = 'aap1'"))?.credential, "aap1-token");
     expect("secret store vault1 credential", (await one("SELECT credential FROM AnsibleForms.`secret_stores` WHERE name = 'vault1'"))?.credential, "vault1-token");
     const ldap = await one("SELECT name, credential, server FROM AnsibleForms.`ldap`");
