@@ -960,6 +960,51 @@ function setFieldStatus(fieldname, status, reeval = true) {
 // when a dependency leaves "default" that status change already cascades a resetField
 // through the reverse map.
 
+/**
+ * Stores what the address gives a field (/form/x?env=prod) in externalData, as that field's
+ * value : it starts from it instead of its own default.
+ *
+ * Args:
+ *   item (object): the field (its name, type and multiple).
+ *   queryValue (string|null|Array): the query parameter as the router reads it ; an array when
+ *     it is repeated (?env=a&env=b), null for a bare ?name.
+ *
+ * A value the field cannot take is not stored, so the field's own default applies. This used
+ * to return from the forEach callback of the fields' setup, which skipped the rest of that
+ * field's setup too : no fieldOptions for it (the template read fieldOptions[name].x of
+ * undefined), and no value in the form.
+ */
+function externalQueryValue(item, queryValue) {
+  // A bare ?name (null) carries no value : skipped, alone or inside a repeated parameter
+  const values = (Array.isArray(queryValue) ? queryValue : [queryValue]).filter((v) => v != null).map(String);
+  if (!values.length) return;
+  // A repeated parameter on an enum that takes several values is that list of values
+  // (?env=a&env=b is ['a', 'b']) ; any other field takes one value, and the last one wins,
+  // the way a later value overrides an earlier one anywhere else in a URL.
+  if (Array.isArray(queryValue) && item.type == 'enum' && item.multiple) {
+    externalData.value[item.name] = values;
+    return;
+  }
+  let value = values.at(-1);
+  if (item.type == 'number') {
+    // parseInt RETURNS NaN, it never throws, and ?count=abc put NaN into the form: the
+    // number box rendered empty, the required rule still passed (String(NaN) is
+    // non-empty) and the job was launched with count: null - or `.nan` on the schedule
+    // path. parseInt also truncated '12abc' to 12 just as silently. A value that is not
+    // a number is ignored, so the field's own default applies.
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return;
+    value = parsed;
+  }
+  if (item.type == 'checkbox') {
+    // Only 'false' used to mean false : ?enabled=0, =no or =off all turned the box ON
+    // (any non-empty string is truthy). Every common spelling of "off" is false now, and
+    // so is an empty value.
+    value = !['', '0', 'no', 'false', 'off'].includes(value.trim().toLowerCase());
+  }
+  externalData.value[item.name] = value;
+}
+
 // first time run, load all the default values (can be dynamic)
 function initiateDefaults(fieldname = undefined) {
   props.currentForm.fields
@@ -1747,34 +1792,7 @@ function initForm() {
   props.currentForm.fields.forEach((item) => {
     // extra query parameters and store in externalData
     if (route.query[item.name] != undefined) {
-      var queryValue = route.query[item.name];
-      // A repeated parameter (?env=a&env=b) arrives as an array : the last one wins,
-      // the way a later value overrides an earlier one anywhere else in a URL. A bare
-      // ?name (null) inside such a list carries no value, so it is skipped.
-      if (Array.isArray(queryValue)) {
-        queryValue = queryValue.filter((v) => v != null).at(-1);
-        if (queryValue == undefined) return; // forEach callback : nothing usable
-      }
-      queryValue = String(queryValue);
-      if (item.type == 'number') {
-        // parseInt RETURNS NaN, it never throws, so this catch was unreachable and
-        // ?count=abc put NaN into the form: the number box rendered empty, the
-        // required rule still passed (String(NaN) is non-empty) and the job was
-        // launched with count: null - or `.nan` on the schedule path. parseInt
-        // also truncated '12abc' to 12 just as silently. Ignore a value that is
-        // not a number, so the field's own default applies.
-        const parsed = Number(queryValue);
-        // return, not continue : this is a forEach callback, not a loop
-        if (!Number.isFinite(parsed)) return;
-        queryValue = parsed;
-      }
-      if (item.type == 'checkbox') {
-        // Only 'false' used to mean false : ?enabled=0, =no or =off all turned the
-        // box ON (any non-empty string is truthy). Every common spelling of "off"
-        // is false now, and so is an empty value.
-        queryValue = !['', '0', 'no', 'false', 'off'].includes(queryValue.trim().toLowerCase());
-      }
-      externalData.value[item.name] = queryValue;
+      externalQueryValue(item, route.query[item.name]);
     }
     fieldOptions.value[item.name] = {};
     fieldOptions.value[item.name]['evalDefault'] = item.evalDefault ?? false;
