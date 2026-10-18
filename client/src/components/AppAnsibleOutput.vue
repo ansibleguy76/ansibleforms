@@ -232,6 +232,9 @@ const resultOf = computed(() => {
   let seen = {};
   // a result printed with its body (ok: [host] => { ... }) : its lines up to the closing brace
   let body = null;
+  // the error ansible prints before a failed result ([ERROR]: Task failed ..., its origin and
+  // the playbook's lines) : the lines from it to the result, the same failure
+  let preamble = null;
   lines.value.forEach((line, index) => {
     const text = plain(line.html);
     if (body !== null && !line.level && !RESULT_LINE.test(text)) {
@@ -240,6 +243,13 @@ const resultOf = computed(() => {
       return;
     }
     body = null;
+    if (!line.level && task && !RESULT_LINE.test(text)) {
+      if (text.startsWith('[ERROR]:')) preamble = [];
+      if (preamble) preamble.push(index);
+      return;
+    }
+    const before = preamble || [];
+    preamble = null;
     if (line.level === 3) {
       // TASK [name] or RUNNING HANDLER [name] : the next task of that name
       const name = text.replace(/^(TASK|RUNNING HANDLER) \[/, '').replace(/\]\s*\**\s*$/, '');
@@ -259,6 +269,7 @@ const resultOf = computed(() => {
     const event = (item ? task.items : task.results)[host]?.[k];
     if (!event?.detailed) return;
     map.set(index, event.order);
+    if (m[1] === 'failed' || m[1] === 'fatal') for (const i of before) map.set(i, event.order);
     if (text.trimEnd().endsWith('{')) body = event.order;
   });
   return map;
