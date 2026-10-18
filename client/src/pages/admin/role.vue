@@ -272,10 +272,10 @@ async function removeMembers(kind, uids) {
 const { search, searching, matches, shownTabs, tabShown, searchHead } = useRecordSearch({
   tabs: () => tabs.value,
   activeTab: () => activeTab.value,
-  tabMatch: (key) => (key === 'details' ? generalMatch.value : shownRows.value[key].length),
+  tabMatch: (key) => (key === 'details' ? detailsMatch.value : shownRows.value[key].length),
 });
 // the editor's fields are its own (AppRoleEditor) : Details shown whole when one matches
-const generalMatch = computed(() =>
+const detailsMatch = computed(() =>
   matches(
     t('settings.settingsPage.name'),
     t('settings.fields.description'),
