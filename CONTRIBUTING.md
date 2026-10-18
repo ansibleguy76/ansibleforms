@@ -77,8 +77,9 @@ The client uses a self-signed certificate, so the browser will warn on first vis
 default login is `admin` / `AnsibleForms!123`.
 
 You need a MySQL 8 (or MariaDB) instance and a `server/.env.development` telling the server
-how to reach it — `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`. Against an empty database
-the schema builds itself at startup.
+how to reach it: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`. Start from a copy of the
+[`.env.example`](.env.example) at the repository root. Against an empty database the schema
+builds itself at startup.
 
 ## Before you push
 
