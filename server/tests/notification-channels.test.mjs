@@ -154,6 +154,21 @@ describe("the body each type sends", () => {
     expect(long.text.length).toBeLessThanOrEqual(4096);
     expect(long.text).toContain("...");
   });
+
+  test("telegram: the raw text is cut before escaping, so no entity is ever split", () => {
+    // every '&' becomes '&amp;' : cutting the escaped text left a dangling '&am'
+    for (let n = 3990; n < 4005; n++) {
+      const body = notifiers.telegramBody({ ...message, text: "&".repeat(n) }, "1");
+      const text = body.text.split("\n")[1];
+      expect(text.replace(/\.\.\.$/, "")).toMatch(/^(&amp;)*$/);
+      expect(body.text.length).toBeLessThanOrEqual(4096);
+    }
+    // a huge title is limited and still leaves room for the text
+    const big = notifiers.telegramBody({ ...message, title: "<".repeat(5000), text: "hello" }, "1");
+    expect(big.text).toContain("hello");
+    expect(big.text.length).toBeLessThanOrEqual(4096);
+    expect(big.text.split("\n")[0]).toMatch(/^<b>(&lt;)*\.\.\.<\/b>$/);
+  });
 });
 
 describe("sending to a channel", () => {
