@@ -1355,7 +1355,7 @@ export default {
       pending: 'Wartet auf Freigabe',
       pendingHint: 'Diese RTE möchte beitreten. Geben Sie sie frei, damit sie Jobs erhält, oder lehnen Sie sie ab.',
       pendingTitle: 'Diese RTE möchte beitreten',
-      pendingHelp: 'Prüfen Sie vor der Freigabe den Fingerabdruck:',
+      pendingHelp: 'Prüfen Sie den Fingerabdruck der RTE vor der Freigabe',
       pendingFingerprint: 'Fingerabdruck',
       pendingHost: 'Host',
       pendingIp: 'Verbunden von',

@@ -1794,7 +1794,7 @@ export default {
       pending: 'Pendent d\'aprovació',
       pendingHint: 'Aquest RTE ha demanat unir-se. Aproveu-lo perquè rebi feines, o rebutgeu-lo.',
       pendingTitle: 'Aquest RTE ha demanat unir-se',
-      pendingHelp: 'Comproveu-ne l\'empremta abans d\'aprovar-lo:',
+      pendingHelp: 'Comproveu l\'empremta de l\'RTE abans d\'aprovar-lo',
       pendingFingerprint: 'Empremta',
       pendingHost: 'Host',
       pendingIp: 'Connectat des de',

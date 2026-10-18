@@ -1358,7 +1358,7 @@ export default {
       pending: 'En attente d\'approbation',
       pendingHint: 'Ce RTE demande à rejoindre. Approuvez-le pour qu\'il reçoive des jobs, ou refusez-le.',
       pendingTitle: 'Ce RTE demande à rejoindre',
-      pendingHelp: 'Vérifiez son empreinte avant de l\'approuver :',
+      pendingHelp: 'Vérifiez l\'empreinte du RTE avant de l\'approuver',
       pendingFingerprint: 'Empreinte',
       pendingHost: 'Hôte',
       pendingIp: 'Connecté depuis',

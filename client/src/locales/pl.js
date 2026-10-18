@@ -1779,7 +1779,7 @@ export default {
       pending: 'Czeka na zatwierdzenie',
       pendingHint: 'Ten RTE poprosił o dołączenie. Zatwierdź go, aby dostawał zadania, albo go odrzuć.',
       pendingTitle: 'Ten RTE poprosił o dołączenie',
-      pendingHelp: 'Sprawdź odcisk przed zatwierdzeniem:',
+      pendingHelp: 'Sprawdź odcisk RTE przed zatwierdzeniem',
       pendingFingerprint: 'Odcisk',
       pendingHost: 'Host',
       pendingIp: 'Połączony z',
