@@ -2058,40 +2058,8 @@ onMounted(async () => {
     }
   }
 }
-/* the approval review (openReview) : the question, then the job's facts as label and value */
-/* the question set apart : the orange of a job that needs approval, on its left edge */
-.af-review-ask {
-  margin-bottom: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-left: 3px solid #ef6009;
-  border-radius: 0.375rem;
-  background: color-mix(in srgb, #ef6009 8%, transparent);
-  overflow-wrap: anywhere;
-}
-.af-review-facts {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  align-items: baseline;
-  gap: 0.5rem 1.5rem;
-  margin: 0;
-  /* the labels of the job page's facts : small, upper case, quiet */
-  dt {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--bs-secondary-color);
-  }
-  /* the values in bold, the link under them as a link */
-  dd {
-    margin: 0;
-    font-weight: 600;
-    overflow-wrap: anywhere;
-  }
-  dd.af-review-link {
-    font-weight: 400;
-  }
-}
+/* the approval review (openReview) : its question and facts are shared with the runners' review
+   (styles/facts.scss) */
 /* the kind of user, after the name : a quiet tag */
 .af-job-fact-note {
   margin-left: 0.375rem;

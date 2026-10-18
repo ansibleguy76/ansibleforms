@@ -240,7 +240,7 @@
 }
 /* a job waiting for an approval : waiting on a person, an orange apart from amber's stopped jobs */
 .af-pill-orange {
-  background-color: #ef6009 !important;
+  background-color: var(--af-approve) !important;
 }
 .af-pill-green {
   background-color: #198754 !important;

@@ -201,38 +201,7 @@ const codeLines = computed(
   </BsModal>
 </template>
 <style scoped lang="scss">
-/* the facts : label and value, as the job page's (small, upper case, quiet labels) */
-.af-result-facts {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  /* each label on its value's line : both on the text's baseline */
-  align-items: baseline;
-  gap: 0.4rem 1.5rem;
-  margin: 0 0 1rem;
-  &:last-child {
-    margin-bottom: 0;
-  }
-  dt {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--bs-secondary-color);
-  }
-  dd {
-    margin: 0;
-    font-weight: 600;
-    overflow-wrap: anywhere;
-  }
-}
-.af-result-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--bs-secondary-color);
-  margin-bottom: 0.25rem;
-}
+/* the facts and the sections' labels : as the approval review's (styles/facts.scss) */
 /* the card the tabs open into : its top corners square, its top border one straight line under the tabs */
 .tab-card-flush-card {
   border-top-left-radius: 0;

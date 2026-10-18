@@ -48,7 +48,7 @@ defineProps({
 }
 /* the colour of a job waiting for approval (.af-pill-orange, styles/tables.scss) */
 .af-menu-badge.is-alert:not(.active) {
-  background-color: #ef6009;
+  background-color: var(--af-approve);
   color: #fff;
 }
 </style>
