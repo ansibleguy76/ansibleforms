@@ -1629,6 +1629,7 @@ export default {
       description: 'Credenciais reutilizáveis para ligar a bases de dados e serviços externos a partir de formulários.',
       editCredential: 'Editar credencial',
       deleteCredential: 'Eliminar credencial',
+      adminOnlyNotice: "Só um admin pode alterar esta credencial: um runner, uma ligação ou um início de sessão obtém dela o seu endereço e o seu segredo.",
       enableDbFields: 'Ativar campos de base de dados',
       databaseType: 'Tipo de base de dados',
       database: 'Base de dados',

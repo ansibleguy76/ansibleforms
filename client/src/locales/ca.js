@@ -1632,6 +1632,7 @@ export default {
         'Credencials reutilitzables per connectar-se a bases de dades i serveis externs des dels formularis.',
       editCredential: 'Edita la credencial',
       deleteCredential: 'Suprimeix la credencial',
+      adminOnlyNotice: "Només un admin pot canviar aquesta credencial: un runner, una connexió o un inici de sessió en pren l'adreça i el secret.",
       enableDbFields: 'Activa els camps de base de dades',
       databaseType: 'Tipus de base de dades',
       database: 'Base de dades',

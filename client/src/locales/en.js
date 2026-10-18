@@ -1744,6 +1744,7 @@ export default {
       description: 'Reusable credentials for connecting to databases and external services from forms.',
       editCredential: 'Edit credential',
       deleteCredential: 'Delete credential',
+      adminOnlyNotice: "Only an admin can change this credential: a runner, a connection or a sign-in takes its address and its secret from it.",
       enableDbFields: 'Enable database fields',
       databaseType: 'Database type',
       database: 'Database',

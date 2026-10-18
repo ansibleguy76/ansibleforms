@@ -1761,6 +1761,7 @@ export default {
       description: 'Credenziali riutilizzabili per la connessione a database e servizi esterni dai formulari.',
       editCredential: 'Modifica credenziale',
       deleteCredential: 'Elimina credenziale',
+      adminOnlyNotice: "Solo un admin può modificare questa credenziale: un runner, una connessione o un accesso ne prende l'indirizzo e il segreto.",
       enableDbFields: 'Abilita campi database',
       databaseType: 'Tipo database',
       database: 'Database',

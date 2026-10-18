@@ -1773,6 +1773,7 @@ export default {
         'Wiederverwendbare Zugangsdaten für die Verbindung zu Datenbanken und externen Diensten aus Formularen.',
       editCredential: 'Anmeldedaten bearbeiten',
       deleteCredential: 'Anmeldedaten loeschen',
+      adminOnlyNotice: "Nur ein Admin kann diese Zugangsdaten ändern: ein Runner, eine Verbindung oder eine Anmeldung nimmt daraus seine Adresse und sein Geheimnis.",
       enableDbFields: 'Datenbankfelder aktivieren',
       databaseType: 'Datenbanktyp',
       database: 'Datenbank',

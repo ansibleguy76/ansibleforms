@@ -26,6 +26,7 @@ import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import TokenStorage from '@/lib/TokenStorage';
 import Helpers from '@/lib/Helpers';
+import { useAppStore } from '@/stores/app';
 import {
   CREDENTIAL_TYPES,
   SERVER_CREDENTIAL_TYPES,
@@ -123,6 +124,33 @@ function editable(record) {
 }
 
 const managed = computed(() => !!credential.value?.managed);
+// A credential a runner, a connection or a sign-in takes its address and secret from is an
+// admin's to change, as the runner itself is (runner.vue) : the server refuses the others
+// (controllers/v2/credential.controller.js assertMayChange). The kinds that carry the address
+// of the one server they log in to, the sign-in kinds, and any credential a runner names.
+const ADMIN_ONLY_TYPES = [
+  'rte',
+  'awx',
+  'aap',
+  'ascender',
+  'semaphore',
+  'rundeck',
+  'jenkins',
+  'vault',
+  'cyberark',
+  'oidc',
+  'entraid',
+  'ldap',
+];
+const appStore = useAppStore();
+const adminOnly = computed(() => {
+  if (appStore.isAdmin || !credential.value) return false;
+  if (ADMIN_ONLY_TYPES.includes(credential.value.credential_type)) return true;
+  // a runner naming it, as its Used by tab lists (load)
+  return users.value.some((u) => u.kind === 'runner' && u.credential === credential.value.name);
+});
+// read only : one of the config seed, or one only an admin changes
+const readOnly = computed(() => managed.value || adminOnly.value);
 const type = computed(() => edit.value?.credential_type);
 const isCyberark = computed(() => type.value === 'cyberark');
 const isDatabase = computed(() => type.value === 'database');
@@ -633,7 +661,11 @@ onMounted(async () => {
           <div v-if="managed" class="alert alert-secondary py-2">
             <FaIcon icon="lock" class="me-2" />{{ t('settings.common.seedManagedNotice') }}
           </div>
-          <fieldset :disabled="managed">
+          <!-- one only an admin changes : read only for the others -->
+          <div v-else-if="adminOnly" class="alert alert-secondary py-2">
+            <FaIcon icon="lock" class="me-2" />{{ t('settings.credentials.adminOnlyNotice') }}
+          </div>
+          <fieldset :disabled="readOnly">
             <!-- Details : what it is called -->
             <template v-if="tabShown('details')">
               <template v-if="searching && searchHead('details')">
@@ -932,7 +964,7 @@ onMounted(async () => {
                   icon="lock"
                   placeholder="**********"
                   :isFloating="false"
-                  :disabled="managed"
+                  :disabled="readOnly"
                   :help="
                     labels.passwordHelp
                       ? `${labels.passwordHelp} ${t('settings.common.passwordKeep')}`
@@ -1059,7 +1091,7 @@ onMounted(async () => {
           @click="testConnection()"
           >{{ t('settings.common.testConnection') }}</BsButton
         >
-        <template v-if="!managed">
+        <template v-if="!readOnly">
           <BsButton icon="trash" @click="confirmDelete = true">{{ t('common.delete') }}</BsButton>
           <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
         </template>

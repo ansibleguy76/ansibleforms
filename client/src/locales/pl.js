@@ -1624,6 +1624,7 @@ export default {
         'Poświadczenia wielokrotnego użytku do łączenia się z bazami danych i usługami zewnętrznymi z poziomu formularzy.',
       editCredential: 'Edytuj poświadczenie',
       deleteCredential: 'Usuń poświadczenie',
+      adminOnlyNotice: "Tylko admin może zmienić to poświadczenie: runner, połączenie lub logowanie bierze z niego swój adres i sekret.",
       enableDbFields: 'Włącz pola bazy danych',
       databaseType: 'Typ bazy danych',
       database: 'Baza danych',

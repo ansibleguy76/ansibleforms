@@ -1560,6 +1560,7 @@ export default {
       description: '可在表单中重复使用、用于连接数据库和外部服务的凭据。',
       editCredential: '编辑凭据',
       deleteCredential: '删除凭据',
+      adminOnlyNotice: "只有 admin 可以更改此凭据：运行器、连接或登录从中获取其地址和密钥。",
       enableDbFields: '启用数据库字段',
       databaseType: '数据库类型',
       database: '数据库',

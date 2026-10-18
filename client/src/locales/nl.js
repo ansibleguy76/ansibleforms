@@ -1763,6 +1763,7 @@ export default {
         'Herbruikbare inloggegevens voor het verbinden met databases en externe services vanuit formulieren.',
       editCredential: 'Inloggegevens bewerken',
       deleteCredential: 'Inloggegevens verwijderen',
+      adminOnlyNotice: "Alleen een admin kan deze credential wijzigen: een runner, een verbinding of een aanmelding neemt er zijn adres en zijn geheim uit.",
       enableDbFields: 'Database velden inschakelen',
       databaseType: 'Database type',
       database: 'Database',

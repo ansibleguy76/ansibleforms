@@ -1610,6 +1610,7 @@ export default {
       description: 'フォームからデータベースや外部サービスに接続するための、再利用可能な認証情報です。',
       editCredential: '認証情報を編集',
       deleteCredential: '認証情報を削除',
+      adminOnlyNotice: "この認証情報を変更できるのは admin だけです。ランナー、接続、またはサインインがそのアドレスとシークレットをここから取得します。",
       enableDbFields: 'データベースの項目を有効にする',
       databaseType: 'データベースの種類',
       database: 'データベース',
