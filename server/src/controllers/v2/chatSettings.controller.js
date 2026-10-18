@@ -122,7 +122,10 @@ const check = async function (req, res) {
     }
     // a key typed on the page goes where the page says ; a stored one (the row's own, or the
     // credential's) only to the provider, base url and certificate check it was saved with
-    const ownKeyTyped = !!body.api_key && !isMasked(body.api_key);
+    // typed means sent in THIS request : body also holds the stored (decrypted) key from the
+    // saved row, so an omitted api_key would otherwise count as typed and skip the check
+    const given = req.body?.api_key;
+    const ownKeyTyped = typeof given === 'string' && given !== '' && !isMasked(given);
     const sendsStoredKey = !!body.credential || !ownKeyTyped;
     if (sendsStoredKey && !sameTarget(existing, body)) {
       return res.status(400).json(RestResultv2.error(i18n.t(req, 'resources.chatCheckFailed'), i18n.t(req, 'resources.storedKeyOtherProvider')));

@@ -85,6 +85,11 @@ describe("chat settings", () => {
     expect(updates[0].api_key).toBe("");
   });
 
+  test("another base url with the api key left out: the stored key stays behind", async () => {
+    await controller.update({ user: ops, body: { provider: "anthropic", base_url: "https://evil", model: "m" } }, res());
+    expect(updates[0].api_key).toBe("");
+  });
+
   test("another base url by a connections user: the saved credential stays behind too", async () => {
     row.credential = "chat-key";
     await controller.update({ user: ops, body: { provider: "anthropic", base_url: "https://evil", credential: "chat-key", model: "m" } }, res());
@@ -119,6 +124,20 @@ describe("chat settings", () => {
     test("the stored key is not sent to another base url", async () => {
       const r = res();
       await controller.check({ user: ops, body: { base_url: "https://evil", api_key: "**********" } }, r);
+      expect(r.statusCode).toBe(400);
+      expect(sent).toEqual([]);
+    });
+
+    test("nor with the api key left out of the request", async () => {
+      const r = res();
+      await controller.check({ user: ops, body: { base_url: "https://evil" } }, r);
+      expect(r.statusCode).toBe(400);
+      expect(sent).toEqual([]);
+    });
+
+    test("an empty api key is not a typed one either", async () => {
+      const r = res();
+      await controller.check({ user: ops, body: { base_url: "https://evil", api_key: "" } }, r);
       expect(r.statusCode).toBe(400);
       expect(sent).toEqual([]);
     });
