@@ -5,7 +5,7 @@
 //
 // Everything else - the job, its output, its log, its events, its end - goes through the job's
 // I/O (useJobIO) : the database in database mode (rte/jobio-db.js, deprecated), the socket to
-// the app in the socket modes (rte/socket/jobio-socket.js). This module imports no database
+// the app in the socket modes (socketJobIO in rte/socket/rte-socket.js). This module imports no database
 // module, so a socket-mode RTE runs without DB_* at all.
 //
 // The approval gate is NOT here : a job reaches an RTE only once it may run
@@ -38,7 +38,7 @@ let jobIO = null;
  * Sets where the jobs are read from and their output written to.
  *
  * Args:
- *   io (object): the database's (rte/jobio-db.js) or the socket's (rte/socket/jobio-socket.js).
+ *   io (object): the database's (rte/jobio-db.js) or the socket's (socketJobIO in rte/socket/rte-socket.js).
  */
 export function useJobIO(io) {
   jobIO = io;
