@@ -224,18 +224,19 @@ const routes = [
     component: mcpSettings,
     meta: { permission: ['showSettings', 'showConnectionsSettings'] },
   },
-  // Settings > Connections > Syslog : the syslog servers, and a server's own page
+  // Settings > Connections > Syslog : the syslog servers, and a server's own page. The admin
+  // settings only : a server receives the whole server log and every audit entry
   {
     path: '/settings/syslog',
     name: '/settings/syslog',
     component: syslogServers,
-    meta: { permission: ['showSettings', 'showConnectionsSettings'] },
+    meta: { permission: 'showSettings' },
   },
   {
     path: '/settings/syslog/:id(\\d+)/:tab?',
     name: '/settings/syslog/:id',
     component: syslogServer,
-    meta: { permission: ['showSettings', 'showConnectionsSettings'] },
+    meta: { permission: 'showSettings' },
   },
   // Settings > Connections > Notifications : the channels notifications go to (SMTP servers,
   // Slack, Teams, Telegram, webhooks), each its own page
