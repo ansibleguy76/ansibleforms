@@ -139,9 +139,8 @@ onMounted(async () => {
 .af-runner-requests {
   margin-bottom: 1rem;
   padding: 0.75rem 1rem;
-  /* a dark orange border all around, its left side thicker as the review dialog's */
+  /* a dark orange border all around */
   border: 1px solid #c24e05;
-  border-left-width: 3px;
   border-radius: 0.375rem;
   background: color-mix(in srgb, #ef6009 8%, transparent);
 }
