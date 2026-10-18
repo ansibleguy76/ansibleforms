@@ -42,6 +42,24 @@ export function workerLockMiss() {
   return lastMiss;
 }
 
+/**
+ * Whether this process holds the worker lock right now, asked of the database : what every
+ * background tick checks before it does any work (cron.service.js, the schedule queue).
+ *
+ * holdsWorkerLock() answers from memory, refreshed once every LOCK_RETRY_MS by keepWorkerLock :
+ * between two of its checks the lock may have gone (a proxy failover, the database restarted)
+ * while another worker took it. This asks on the lock connection itself, so a tick never runs
+ * next to the new worker's. A lock connection that does not answer drops it : held turns false,
+ * 'unreachable' runs nothing, and keepWorkerLock takes the lock again when it can.
+ *
+ * Returns:
+ *   Promise<boolean>: true when the lock is ours.
+ */
+export async function confirmWorkerLock() {
+  if (!held) return false;
+  return stillMine();
+}
+
 function query(sql, values) {
   return conn.query({ sql, values, timeout: QUERY_TIMEOUT_MS });
 }

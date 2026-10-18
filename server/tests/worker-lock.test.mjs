@@ -153,3 +153,29 @@ describe("a clean stop", () => {
     assert.equal(lock.holdsWorkerLock(), false);
   });
 });
+
+describe("a background tick confirms the lock first", () => {
+  test("held and still ours : the tick runs", async () => {
+    assert.equal(await lock.tryWorkerLock(), true);
+    assert.equal(await lock.confirmWorkerLock(), true);
+  });
+
+  test("taken by another process between two checks : the tick does not run", async () => {
+    assert.equal(await lock.tryWorkerLock(), true);
+    // a proxy failover : the connection lives on, the lock went with the old backend
+    db.holder = 7;
+    assert.equal(await lock.confirmWorkerLock(), false);
+    assert.equal(lock.holdsWorkerLock(), false, "held turns false at once, not at the next keep check");
+  });
+
+  test("the database unreachable : nothing runs", async () => {
+    assert.equal(await lock.tryWorkerLock(), true);
+    db.reachable = false;
+    assert.equal(await lock.confirmWorkerLock(), false);
+    assert.equal(lock.holdsWorkerLock(), false);
+  });
+
+  test("never held : the tick does not even ask", async () => {
+    assert.equal(await lock.confirmWorkerLock(), false);
+  });
+});
