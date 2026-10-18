@@ -18,7 +18,7 @@ import logger from "../lib/logger.js";
 import mysql from "../models/db.model.js";
 import Job from "../models/job.model.js";
 import JobEvent from "../models/jobEvent.model.js";
-import Runner, { SOCKET_MODES } from "../models/runner.model.js";
+import Runner, { SOCKET_MODES, PENDING_MAX } from "../models/runner.model.js";
 import RunnerJoinToken from "../models/runnerJoinToken.model.js";
 import Credential from "../models/credential.model.v2.js";
 import appConfig from "../../config/app.config.js";
@@ -31,7 +31,7 @@ import { forgetJobSecrets } from "../lib/outputMask.js";
 import { publish } from "../lib/liveEvents.js";
 import { bundleOf, bundleByHash, readChunks } from "../lib/jobFiles.js";
 import { Session } from "../rte/socket/session.js";
-import { SOCKET_CONTRACT, APP_SOCKET_PATH, CLOSE, CHUNK_BYTES, MAX_PAYLOAD, inboundUrl } from "../rte/socket/protocol.js";
+import { SOCKET_CONTRACT, APP_SOCKET_PATH, CLOSE, CHUNK_BYTES, MAX_PAYLOAD, inboundUrl, fingerprint } from "../rte/socket/protocol.js";
 
 // how long a lease lasts, renewed every 20 s while the socket is open
 const LEASE_SECONDS = 60;
@@ -93,9 +93,10 @@ async function takeLease(name, direction, rteId) {
  */
 async function tryLease(name) {
   // taken over when it expired (or renewed when it is ours) : one statement, so two nodes
-  // racing for it cannot both get it
+  // racing for it cannot both get it. Only called while this node has no socket to it, so what
+  // a socket wrote (its RTE, what it said) goes : a lease while dialing is not a connection
   const res = await mysql.do(
-    "UPDATE AnsibleForms.`runner_leases` SET node_id=?, expires_at=DATE_ADD(NOW(), INTERVAL ? SECOND), direction='inbound' " +
+    "UPDATE AnsibleForms.`runner_leases` SET node_id=?, expires_at=DATE_ADD(NOW(), INTERVAL ? SECOND), direction='inbound', rte_id=NULL, info=NULL " +
       "WHERE runner=? AND (expires_at < NOW() OR node_id=?)",
     [nodeId, LEASE_SECONDS, name, nodeId]
   );
@@ -225,7 +226,8 @@ function adopt(session, runner, direction) {
       session.close(CLOSE.LEASE_LOST, "no lease");
       return;
     }
-    session.send({ t: "welcome", node: nodeId, contract: SOCKET_CONTRACT, version: appVersion });
+    // a runner waiting for approval : connected, but it gets no job until an admin approves it
+    session.send({ t: "welcome", node: nodeId, contract: SOCKET_CONTRACT, version: appVersion, pending: !!Number(runner.pending) });
     logger.notice(`RTE '${name}' (${entry.rteId}, ${msg.version}, ${direction}) connected`);
     await renewLease(entry).catch(() => {});
     await rteHeartbeat(entry);
@@ -349,9 +351,8 @@ export async function authenticate(headers, opts = {}) {
     return { runner: { ...runner, ...fields } };
   }
   if (!join) {
-    return runner
-      ? { status: 401, error: `the token of RTE '${name}' is not the one stored for its runner: check its RTE_TOKEN, or give it a join token (RTE_JOIN_TOKEN) to replace it` }
-      : { status: 401, error: `no runner named '${name}': add it under Connections > Runners, or give the RTE a join token (RTE_JOIN_TOKEN)` };
+    if (runner) return { status: 401, error: `the token of RTE '${name}' is not the one stored for its runner: check its RTE_TOKEN` };
+    return askToJoin({ name, token, mode, url, fields, headers, ip: opts.ip });
   }
   const used = await RunnerJoinToken.use(join);
   if (!used) return { status: 401, error: "the join token (RTE_JOIN_TOKEN) is unknown, revoked, expired or used up" };
@@ -367,6 +368,44 @@ export async function authenticate(headers, opts = {}) {
     logger.notice(`Runner '${name}' (${mode}) added through the join token '${used.name}', signing in with the credential '${credential}'`);
   }
   return { runner: await Runner.findByName(name) };
+}
+
+/**
+ * An RTE nobody knows asks to join : it becomes a runner waiting for an admin's approval,
+ * turned off, its token kept in a credential of its own, with what it said of itself (its host,
+ * its address, its mode, its version, the fingerprint of its token) for the admin to recognise
+ * it. Its socket is taken (outbound) but no job goes to it, and nobody dials it (inbound),
+ * until it is approved. At most PENDING_MAX wait at once.
+ *
+ * Args:
+ *   req (object): { name, token, mode, url, fields, headers, ip }.
+ *
+ * Returns:
+ *   Promise<object>: { runner, pending: true }, or { status, error } when refused.
+ */
+async function askToJoin({ name, token, mode, url, fields, headers, ip }) {
+  if ((await Runner.countPending()) >= PENDING_MAX) {
+    return { status: 429, error: `${PENDING_MAX} RTEs already wait for approval under Connections > Runners: approve or reject them first` };
+  }
+  const info = {
+    host: String(headers["x-af-rte-host"] || "").slice(0, 250) || null,
+    id: String(headers["x-af-rte-id"] || "").slice(0, 250) || null,
+    version: String(headers["x-af-rte-version"] || "").slice(0, 50) || null,
+    // an IPv4 address as people write it, not as the IPv6 socket shows it (::ffff:10.0.0.5)
+    ip: ip ? String(ip).replace(/^::ffff:/, "").slice(0, 100) : null,
+    mode,
+    url: mode === "inbound" ? url : null,
+    fingerprint: fingerprint(token),
+  };
+  const credential = await storeToken(name, token, mode === "inbound" ? url : "", null);
+  await Runner.create({
+    name, type: "rte", uri: "", credential, rte_mode: fields.rte_mode, enabled: 0,
+    pending: 1, pending_since: new Date(), pending_info: JSON.stringify(info),
+    description: `Asked to join from ${info.host || info.ip || "an unknown host"}`,
+  }, { fromRte: true });
+  logger.notice(`RTE '${name}' (${mode}, fingerprint ${info.fingerprint}) asked to join from ${info.ip || "?"}: approve it under Connections > Runners`);
+  publish("runners");
+  return { runner: await Runner.findByName(name), pending: true };
 }
 
 /**
@@ -420,13 +459,13 @@ async function storeToken(runnerName, token, url, current) {
  */
 export async function registerHandler(req, res) {
   try {
-    const out = await authenticate(req.headers, { mode: req.body?.mode, url: req.body?.url });
+    const out = await authenticate(req.headers, { mode: req.body?.mode, url: req.body?.url, ip: req.ip });
     if (!out.runner) {
       logger.warning(`Refused an RTE registration from ${req.ip}: ${out.error}`);
       return res.status(out.status).json({ error: out.error });
     }
     publish("runners");
-    return res.json({ runner: out.runner.name, mode: out.runner.rte_mode, uri: out.runner.uri || null });
+    return res.json({ runner: out.runner.name, mode: out.runner.rte_mode, uri: out.runner.uri || null, pending: !!Number(out.runner.pending) });
   } catch (e) {
     logger.error(`RTE registration: ${e.message}`);
     return res.status(500).json({ error: e.message });
@@ -448,7 +487,7 @@ export async function registerHandler(req, res) {
 export function handleUpgrade(req, socket, head) {
   const pathname = new URL(req.url, "http://x").pathname;
   if (pathname !== `${appConfig.baseUrl || ""}${APP_SOCKET_PATH}`) return false;
-  authenticate(req.headers)
+  authenticate(req.headers, { ip: req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress })
     .then((res) => {
       if (!res.runner) {
         logger.warning(`Refused an RTE socket from ${req.socket.remoteAddress}: ${res.error}`);
@@ -479,7 +518,8 @@ const dialing = new Set();
  *   Promise<void>
  */
 async function dialInbound() {
-  const rows = await mysql.do("SELECT name FROM AnsibleForms.`runners` WHERE type='rte' AND rte_mode='inbound'", [], true);
+  // not one waiting for approval : nobody dials an RTE an admin has not approved
+  const rows = await mysql.do("SELECT name FROM AnsibleForms.`runners` WHERE type='rte' AND rte_mode='inbound' AND COALESCE(pending, 0) = 0", [], true);
   for (const { name } of rows || []) {
     if (sessions.has(name) || dialing.has(name)) continue;
     if (!(await tryLease(name).catch(() => false))) continue;
@@ -946,6 +986,19 @@ export function holdsSocket(name) {
 }
 
 // for the tests
+/**
+ * Closes a runner's socket on this node (a runner rejected or deleted) ; another node holding it
+ * closes it once the runner is gone from the database (its dispatch finds no runner).
+ *
+ * Args:
+ *   name (string): the runner.
+ *   reason (string): said to the RTE.
+ */
+export function dropSocket(name, reason) {
+  const entry = sessions.get(name);
+  if (entry) entry.session.close(CLOSE.UNAUTHORIZED, reason);
+}
+
 export { sessions, dispatch, storeItem, sendJob, onItem, adopt, NODE_DEAD_SECONDS };
 
 export default { startRteHub, handleUpgrade, authenticate, registerHandler, kick, cancel, socketState, isSocketRunner, holdsSocket };

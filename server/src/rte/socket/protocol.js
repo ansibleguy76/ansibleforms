@@ -26,8 +26,26 @@
 /*                                                                */
 /******************************************************************/
 
+import { createHash } from "crypto";
+
 // the contract of a socket-mode RTE ; a database-mode RTE speaks rte/contract.js's
 export const SOCKET_CONTRACT = 3;
+
+/**
+ * A token's fingerprint : the first 8 hexadecimal digits of its SHA-256, as abcd-ef12. The RTE
+ * logs it, the installer prints it and the Runners page shows it on a runner waiting for
+ * approval, so an admin can tell it is the RTE they started without seeing the token.
+ *
+ * Args:
+ *   token (string): the RTE's token.
+ *
+ * Returns:
+ *   string: the fingerprint.
+ */
+export function fingerprint(token) {
+  const hex = createHash("sha256").update(String(token || "")).digest("hex");
+  return `${hex.slice(0, 4)}-${hex.slice(4, 8)}`;
+}
 
 // where the app takes an RTE's socket (under BASE_URL), and where an inbound RTE takes the app's
 export const APP_SOCKET_PATH = "/api/v2/rte/socket";

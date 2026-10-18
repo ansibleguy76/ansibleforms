@@ -98,7 +98,14 @@ const crudConfigs = {
       { name: 'node_id' },
       // an RTE : how it talks to the app - database (deprecated), outbound (it dials the app) or
       // inbound (the app dials it) ; none : database
-      { name: 'rte_mode' }
+      { name: 'rte_mode' },
+      // turned off, no job goes to it
+      { name: 'enabled', isBoolean: true },
+      // an RTE that asked to join, waiting for an admin's approval : since when, and what it said
+      // of itself (host, address, mode, version, its token's fingerprint), as JSON
+      { name: 'pending', isBoolean: true },
+      { name: 'pending_since' },
+      { name: 'pending_info' }
     ],
     allowCache: true,
     cacheTTL: 3600

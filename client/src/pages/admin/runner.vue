@@ -34,7 +34,6 @@ import {
   PROJECT_RUNNER_KINDS,
   AWX_RUNNER_KINDS,
   runnerKind,
-  registrationPill,
   socketPill,
   noCredentialsText,
 } from '@/config/settings';
@@ -163,12 +162,10 @@ async function load() {
   try {
     const res = await axios.get(`/api/v2/runner/${encodeURIComponent(runnerId.value)}`);
     const record = res.data.records ? res.data.records[0] : res.data;
-    // its registration (state) is added to the list only : read from there
+    // a socket-mode RTE's socket is added to the list only : read from there
     if (record) {
       const list = await axios.get('/api/v2/runner/').catch(() => null);
       const listed = (list?.data?.records || []).find((r) => String(r.id) === String(record.id));
-      if (listed?.state) record.state = listed.state;
-      // and a socket-mode RTE's socket
       if (listed?.socket) record.socket = listed.socket;
     }
     runner.value = record || null;
@@ -299,12 +296,13 @@ const tabFields = computed(() => {
   const e = edit.value || {};
   return {
     details: [
-      ['state', t('settings.runners.state')],
+      runner.value?.type === 'rte' && ['rte_mode_text', t('settings.runners.rteMode')],
+      runner.value?.socket && ['socket', t('settings.runners.socket')],
       ['name', t('settings.fields.name'), t('settings.runners.nameHelp')],
       ['description', t('settings.fields.description')],
       ['is_default', t('settings.runners.isDefault'), t('settings.runners.defaultHelp', { forms: defaultFor.value })],
       ['enabled', t('settings.runners.enabled'), t('settings.runners.enabledHelp')],
-    ],
+    ].filter(Boolean),
     type: [
       ...sortedKinds.value.map((kind) => [
         `kind-${kind}`,
@@ -395,6 +393,56 @@ async function makeDefault() {
     toast.success(`${runner.value.name} ${t('settings.common.isUpdated')}`);
   }
   await load();
+}
+
+// an RTE's mode as plain words : Outbound, Inbound, or Database (deprecated) for one from before 7.3
+const rteModeText = computed(() => t(`settings.runners.rteMode_${runner.value?.rte_mode || 'database'}`));
+
+// an RTE that asked to join : what it said of itself, for the admin to recognise it
+const pending = computed(() => !!Number(runner.value?.pending));
+const pendingRows = computed(() => {
+  if (!pending.value) return [];
+  let info;
+  try {
+    info = JSON.parse(runner.value.pending_info || '{}') || {};
+  } catch {
+    info = {};
+  }
+  return [
+    [t('settings.runners.pendingFingerprint'), info.fingerprint || '–', true],
+    [t('settings.runners.pendingHost'), info.host || '–'],
+    [t('settings.runners.pendingIp'), info.ip || '–'],
+    [t('settings.runners.rteMode'), info.mode ? t(`settings.runners.rteMode_${info.mode}`) : '–'],
+    info.url && [t('settings.fields.uri'), info.url],
+    [t('settings.runners.pendingVersion'), info.version || '–'],
+    [t('settings.runners.pendingSince'), runner.value.pending_since ? Helpers.formatServerDate(runner.value.pending_since) : '–'],
+  ].filter(Boolean);
+});
+
+// Approve or Reject : one at a time
+const deciding = ref(false);
+
+/**
+ * Approves the RTE that asked to join (it takes jobs from now on), or rejects it (it is removed,
+ * and the page goes back to the list).
+ *
+ * Args:
+ *   what (string): approve or reject.
+ */
+async function decide(what) {
+  const name = runner.value?.name;
+  if (what === 'reject' && !confirm(t('settings.runners.rejectConfirm', { name }))) return;
+  deciding.value = true;
+  try {
+    await axios.post(`/api/v2/runner/${encodeURIComponent(runnerId.value)}/${what}`, {});
+    toast.success(t(what === 'approve' ? 'settings.runners.approved' : 'settings.runners.rejected', { name }));
+    if (what === 'reject') return router.push('/settings/runners');
+    await load();
+  } catch (err) {
+    toast.error(Helpers.parseAxiosResponseError(err, t(`settings.runners.${what}`)));
+  } finally {
+    deciding.value = false;
+  }
 }
 
 /**
@@ -523,6 +571,25 @@ onMounted(async () => {
         <!-- the record loading : its fields as grey placeholders, where they come -->
         <AppSkeleton v-else-if="!loaded && !runner" shape="form" :count="3" />
         <div v-if="runner && edit && ['details', 'type', 'credentials'].some(tabShown)" class="af-runner-tab">
+          <!-- an RTE that asked to join : who it says it is, and Approve or Reject -->
+          <div v-if="pending" class="alert alert-warning af-runner-pending">
+            <div class="fw-bold mb-1"><FaIcon icon="hourglass-half" class="me-2" />{{ t('settings.runners.pendingTitle') }}</div>
+            <div class="mb-2">{{ t('settings.runners.pendingHelp') }}</div>
+            <dl class="row mb-2 small">
+              <template v-for="row in pendingRows" :key="row[0]">
+                <dt class="col-sm-3">{{ row[0] }}</dt>
+                <dd class="col-sm-9 mb-1" :class="{ 'font-monospace fw-bold': row[2] }">{{ row[1] }}</dd>
+              </template>
+            </dl>
+            <div v-if="appStore.isAdmin" class="d-flex gap-2">
+              <BsButton icon="check" cssClass="btn-success" :disabled="deciding" @click="decide('approve')">{{
+                t('settings.runners.approve')
+              }}</BsButton>
+              <BsButton icon="ban" cssClass="btn-outline-danger" :disabled="deciding" @click="decide('reject')">{{
+                t('settings.runners.reject')
+              }}</BsButton>
+            </div>
+          </div>
           <!-- a runner of the config seed : read only here -->
           <div v-if="managed" class="alert alert-secondary py-2">
             <FaIcon icon="lock" class="me-2" />{{ t('settings.common.seedManagedNotice') }}
@@ -539,11 +606,15 @@ onMounted(async () => {
                   <FaIcon :icon="searchHead('details').tab.icon" class="me-1" />{{ searchHead('details').tab.label }}
                 </h6>
               </template>
-              <div v-show="fieldShown('state')" class="mb-3">
-                <div class="form-label fw-bold">{{ t('settings.runners.state') }}</div>
-                <span v-html="registrationPill(t, runner.state)"></span>
-                <!-- a socket-mode RTE : its socket, connected or not -->
-                <span v-if="runner.socket" class="ms-2" v-html="socketPill(t, runner)"></span>
+              <!-- an RTE : how it talks to the app, in words (it is chosen on the Type tab) -->
+              <div v-if="runner.type === 'rte'" v-show="fieldShown('rte_mode_text')" class="mb-3">
+                <div class="form-label fw-bold">{{ t('settings.runners.rteMode') }}</div>
+                <div>{{ rteModeText }}</div>
+              </div>
+              <!-- a socket-mode RTE : its socket, connected or not, as a badge -->
+              <div v-if="runner.socket" v-show="fieldShown('socket')" class="mb-3">
+                <div class="form-label fw-bold">{{ t('settings.runners.socket') }}</div>
+                <span v-html="socketPill(t, runner)"></span>
               </div>
               <BsInput
                 class="af-runner-field"

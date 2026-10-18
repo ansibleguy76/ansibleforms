@@ -5,7 +5,8 @@ import Errors from "../../lib/errors.js";
 import i18n from "../../lib/i18n.js";
 import { RUNNER_TYPES, getRunner } from "../../runners/index.js";
 import RunnerJoinToken from "../../models/runnerJoinToken.model.js";
-import { socketState, isSocketRunner } from "../../runners/rteHub.js";
+import { socketState, isSocketRunner, dropSocket } from "../../runners/rteHub.js";
+import { publish } from "../../lib/liveEvents.js";
 
 // the token and password are stored encrypted and decrypted on read, so they never leave
 // here unmasked
@@ -22,7 +23,7 @@ const find = async (req, res) => {
     if (req.query.name) {
       return res.json(RestResult.single(maskSecrets(await Runner.findByName(req.query.name))));
     }
-    const list = await withSocket(await Runner.withState(await Runner.findAll()));
+    const list = await withSocket(await Runner.findAll());
     return res.json(RestResult.list(list.map(maskSecrets)));
   } catch (err) {
     Errors.ReturnError(res, err);
@@ -44,7 +45,9 @@ async function withSocket(list) {
   return Promise.all((list || []).map(async (r) => {
     if (!isSocketRunner(r)) return r;
     const st = await socketState(r.name).catch(() => null);
-    if (!st?.alive) return { ...r, socket: { connected: false } };
+    // connected : a lease alive with the RTE that answered on it ; a lease alone is a node still
+    // dialing an inbound RTE that does not answer
+    if (!st?.alive || !st.rte_id) return { ...r, socket: { connected: false } };
     const info = st.info || {};
     return { ...r, socket: { connected: true, node: st.node_id, direction: st.direction, rteId: st.rte_id, version: info.version, ansible: info.ansible, capacity: info.capacity, files: info.files } };
   }));
@@ -126,6 +129,40 @@ const deleteRunner = async (req, res) => {
   }
 };
 
+// how many RTEs wait for approval : the header bell's count, for whoever sees the runners
+const pendingCount = async (req, res) => {
+  try {
+    return res.json(await Runner.countPending());
+  } catch (err) {
+    Errors.ReturnError(res, err);
+  }
+};
+
+// an RTE that asked to join, approved : it takes jobs from now on
+const approve = async (req, res) => {
+  try {
+    assertAdmin(req);
+    const runner = await Runner.approve(req.params.id);
+    publish("runners");
+    return res.json(RestResult.single(maskSecrets(runner)));
+  } catch (err) {
+    Errors.ReturnError(res, err);
+  }
+};
+
+// an RTE that asked to join, rejected : removed with its credential, its socket closed
+const reject = async (req, res) => {
+  try {
+    assertAdmin(req);
+    const runner = await Runner.reject(req.params.id);
+    dropSocket(runner.name, "rejected under Connections > Runners");
+    publish("runners");
+    return res.json(RestResult.single(maskSecrets(runner)));
+  } catch (err) {
+    Errors.ReturnError(res, err);
+  }
+};
+
 // read only : the runner's health, never a job
 const check = async (req, res) => {
   try {
@@ -183,4 +220,4 @@ const deleteJoinToken = async (req, res) => {
   }
 };
 
-export default { find, types, create, findById, update, delete: deleteRunner, check, findJoinTokens, createJoinToken, revokeJoinToken, deleteJoinToken };
+export default { find, types, create, findById, update, delete: deleteRunner, check, approve, reject, pendingCount, findJoinTokens, createJoinToken, revokeJoinToken, deleteJoinToken };

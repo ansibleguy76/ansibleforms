@@ -380,6 +380,13 @@ class CronService {
       } catch (err) {
         logger.error('Failed to remove the runners of stopped RTEs:', err);
       }
+      // and the RTEs that asked to join and nobody approved within a day
+      try {
+        const pending = await Runner.removeStalePending();
+        if (pending > 0) logger.warning(`Removed ${pending} runner(s) that asked to join and were not approved within a day`);
+      } catch (err) {
+        logger.error('Failed to remove the runners waiting for approval too long:', err);
+      }
     });
     this.jobs.system.set('deadNodes', deadNodesTask);
     logger.info('Initialized the stopped-node sweep (every minute)');

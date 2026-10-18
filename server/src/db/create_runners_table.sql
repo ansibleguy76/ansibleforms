@@ -21,6 +21,11 @@ CREATE TABLE `runners` (
   `rte_mode` varchar(10) DEFAULT NULL,
   -- turned off, no job goes to it (it stays listed, its settings kept)
   `enabled` tinyint(4) DEFAULT 1,
+  -- an RTE that asked to join and waits for an admin's approval : since when, and what it said
+  -- of itself (host, address, mode, version, the fingerprint of its token)
+  `pending` tinyint(4) DEFAULT 0,
+  `pending_since` datetime DEFAULT NULL,
+  `pending_info` text DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_AnsibleForms_runners_natural_key` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

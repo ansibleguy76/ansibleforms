@@ -341,23 +341,6 @@ export function socketPill(t, r) {
 }
 
 /**
- * Whether a runner is registered by its RTE, or added by hand, as a pill.
- *
- * Args:
- *   t (function): the translation function.
- *   state (string): automatic, unresponsive, or none (manual).
- *
- * Returns:
- *   string: the pill's HTML, escaped.
- */
-export function registrationPill(t, state) {
-  const known = { automatic: PILL.blue, unresponsive: PILL.amber };
-  const key = known[state] ? state : 'manual';
-  const label = t(`settings.runners.state${key[0].toUpperCase()}${key.slice(1)}`);
-  return pill(known[state], label);
-}
-
-/**
  * An announcement's type as a pill, in its colour : info blue, warning amber, danger red.
  *
  * Args:
@@ -2502,13 +2485,41 @@ export default function getSettings(t) {
           dividerBefore: true,
         },
         {
+          // an RTE that asked to join : Approve (it takes jobs) or Reject (removed), nothing else
+          // changes it until then
+          name: 'approve',
+          title: t('settings.runners.approve'),
+          icon: 'check',
+          color: 'change',
+          dividerBefore: true,
+          shownWhen: (m) => !!Number(m.pending),
+          done: (n, rows) => t('settings.runners.approved', { name: rows[0]?.name }),
+          run: async (ids) => {
+            await axios.post(`/api/v2/runner/${ids[0]}/approve`, {});
+            return 1;
+          },
+        },
+        {
+          name: 'reject',
+          title: t('settings.runners.reject'),
+          icon: 'ban',
+          color: 'delete',
+          shownWhen: (m) => !!Number(m.pending),
+          confirm: (n, rows) => t('settings.runners.rejectConfirm', { name: rows[0]?.name }),
+          done: (n, rows) => t('settings.runners.rejected', { name: rows[0]?.name }),
+          run: async (ids) => {
+            await axios.post(`/api/v2/runner/${ids[0]}/reject`, {});
+            return 1;
+          },
+        },
+        {
           // only the one that changes it : Enable on a runner turned off, Disable on one turned on
           name: 'enable',
           title: t('settings.runners.enable'),
           icon: 'toggle-on',
           color: 'edit',
           dividerBefore: true,
-          shownWhen: (m) => !m.enabled,
+          shownWhen: (m) => !m.enabled && !Number(m.pending),
           update: () => ({ enabled: 1 }),
         },
         {
@@ -2517,7 +2528,7 @@ export default function getSettings(t) {
           icon: 'toggle-off',
           color: 'edit',
           dividerBefore: true,
-          shownWhen: (m) => !!m.enabled,
+          shownWhen: (m) => !!m.enabled && !Number(m.pending),
           update: () => ({ enabled: 0 }),
         },
         {
@@ -2566,6 +2577,9 @@ export default function getSettings(t) {
           required: true,
           filterable: true,
           help: t('settings.runners.nameHelp'),
+          // an RTE that asked to join : its name, and that it waits for approval (escaped, v-html)
+          render: (v, r) => esc(v ?? '') + (Number(r?.pending) ? ' ' + pill(PILL.amber, t('settings.runners.pending'), t('settings.runners.pendingHint')) : ''),
+          sortValue: (r) => r?.name || '',
         },
         {
           // RTE, AWX, AAP or Ascender : one choice, radio buttons (not stored : the type and the
@@ -2606,7 +2620,8 @@ export default function getSettings(t) {
           key: 'rte_mode_column',
           label: t('settings.runners.rteMode'),
           noInput: true,
-          noTable: true,
+          // in Columns, off at first : the list shows default, enabled, name, type and description
+          hidden: true,
           filterable: true,
           render: (_, r) => rteModePill(t, r),
           sortValue: (r) => (r?.type === 'rte' ? r.rte_mode || 'database' : ''),
@@ -2616,7 +2631,7 @@ export default function getSettings(t) {
           key: 'socket',
           label: t('settings.runners.socket'),
           noInput: true,
-          noTable: true,
+          hidden: true,
           render: (_, r) => socketPill(t, r),
           sortValue: (r) => (r?.socket ? (r.socket.connected ? 1 : 0) : -1),
         },
@@ -2642,18 +2657,6 @@ export default function getSettings(t) {
           line: 0,
           label: t('settings.fields.description'),
           required: false,
-        },
-        // set by the api for a runner its RTE registered itself (rte/register.js) : automatic
-        // while the RTE writes its heartbeat, unresponsive once it stopped - the worker removes
-        // it after 10 minutes. Any other runner is manual. A column only, never sent (beforeSave). render() output goes to
-        // v-html : static markup and a locale string only, as a pill (registrationPill)
-        {
-          key: 'state',
-          label: t('settings.runners.state'),
-          noInput: true,
-          noTable: true,
-          sortable: true,
-          render: (v) => registrationPill(t, v),
         },
         {
           // a column only : its credential's server (an RTE that registered itself : its own)

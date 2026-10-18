@@ -16,7 +16,9 @@ const created = [];
 const updated = [];
 vi.mock("../src/models/runner.model.js", () => ({
   SOCKET_MODES: ["outbound", "inbound"],
+  PENDING_MAX: 2,
   default: {
+    countPending: async () => Object.values(runners).filter((r) => r.pending).length,
     findByName: async (name) => (runners[name] ? { ...runners[name] } : undefined),
     create: async (data) => {
       created.push(data);
@@ -124,10 +126,31 @@ describe("an RTE calling in", () => {
     assert.equal(joinUses, 0);
   });
 
-  test("an unknown RTE without a join token is refused, saying how to add it", async () => {
-    const res = await authenticate(headers());
-    assert.equal(res.status, 401);
-    assert.match(res.error, /RTE_JOIN_TOKEN/);
+  test("an unknown RTE without a join token asks to join : a runner waiting for approval, turned off", async () => {
+    const res = await authenticate(headers({ "x-af-rte-host": "dmz-host", "x-af-rte-version": "7.3.0" }), { ip: "10.0.0.9" });
+    assert.equal(res.pending, true);
+    const row = created.at(-1);
+    assert.equal(row.name, "dmz-1");
+    assert.equal(row.pending, 1);
+    assert.equal(row.enabled, 0);
+    assert.equal(row.credential, "dmz-1-rte", "its token kept in a credential of its own");
+    const info = JSON.parse(row.pending_info);
+    assert.deepEqual([info.host, info.ip, info.version, info.mode], ["dmz-host", "10.0.0.9", "7.3.0", "outbound"]);
+    assert.match(info.fingerprint, /^[0-9a-f]{4}-[0-9a-f]{4}$/);
+    // its token, again (findByName reads it from the runner's credential) : the same runner, still waiting
+    runners["dmz-1"].token = "rte-token-0123456789";
+    const again = await authenticate(headers());
+    assert.equal(again.runner.name, "dmz-1");
+    assert.equal(created.length, 1);
+  });
+
+  test("another token for a runner waiting : refused ; too many waiting : refused", async () => {
+    await authenticate(headers());
+    assert.equal((await authenticate(headers({ authorization: "Bearer another-token-0123456789" }))).status, 401);
+    await authenticate(headers({ "x-af-rte-name": "dmz-2" }));
+    const third = await authenticate(headers({ "x-af-rte-name": "dmz-3" }));
+    assert.equal(third.status, 429);
+    assert.match(third.error, /wait for approval/);
   });
 
   test("a join token adds it, its token in a credential of type rte the runner names", async () => {

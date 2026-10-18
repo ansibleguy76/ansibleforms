@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { mayOpen } from '@/lib/routePermission';
 import { useAppStore } from '@/stores/app';
 import TokenStorage from '@/lib/TokenStorage';
 import Profile from '@/lib/Profile';
@@ -121,6 +122,18 @@ var State = {
     const store = useAppStore();
     const res = await axios.get('/api/v2/job/approvals');
     store.approvals = res?.data || 0;
+  },
+
+  // the RTEs waiting for approval, for the header bell : only for a user who sees the runners
+  // (the api answers 403 to the others)
+  async refreshRunnerApprovals() {
+    const store = useAppStore();
+    if (!mayOpen('/settings/runners', store.profile?.options)) {
+      store.runnerApprovals = 0;
+      return;
+    }
+    const res = await axios.get('/api/v2/runner/pending').catch(() => null);
+    store.runnerApprovals = Number(res?.data) || 0;
   },
 
   // who holds the designer lock, for the lock icon on the header's Designer link ; only for

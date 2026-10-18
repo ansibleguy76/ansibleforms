@@ -38,7 +38,7 @@ import { runAnsibleJob, useJobIO } from "../ansible-core.js";
 import { Session } from "./session.js";
 import { JobSpool } from "./spool.js";
 import { FileCache } from "./files.js";
-import { SOCKET_CONTRACT, RTE_SOCKET_PATH, CLOSE, WINDOW, MAX_PAYLOAD, socketUrl } from "./protocol.js";
+import { SOCKET_CONTRACT, RTE_SOCKET_PATH, CLOSE, WINDOW, MAX_PAYLOAD, socketUrl, fingerprint } from "./protocol.js";
 
 // ─── settings ─────────────────────────────────────────────────────────────────
 
@@ -337,6 +337,7 @@ function attach(sess) {
     welcomed = true;
     sess.peer = msg;
     logger.notice(`RTE '${rteName()}': connected to the app (node ${msg.node || "?"})`);
+    if (msg.pending) logger.warning(`RTE '${rteName()}': waiting for an admin to approve it under Connections > Runners (fingerprint ${fingerprint(process.env.RTE_TOKEN || "")})`);
     for (const [jobId, entry] of jobs) {
       entry.spool.rewind();
       pump(jobId);
@@ -373,6 +374,29 @@ function attach(sess) {
 // ─── outbound : the RTE dials the app ─────────────────────────────────────────
 
 /**
+ * What this RTE says of itself when it calls the app : its token, its id and name, and for an
+ * RTE the app does not know yet (it then waits for approval) its host and version ; a join
+ * token, when it has one, approves it at once.
+ *
+ * Args:
+ *   token (string): RTE_TOKEN.
+ *
+ * Returns:
+ *   object: the headers.
+ */
+function rteHeaders(token) {
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    "X-AF-RTE-Id": nodeId,
+    "X-AF-RTE-Name": rteName(),
+    "X-AF-RTE-Host": os.hostname(),
+    "X-AF-RTE-Version": version,
+  };
+  if (process.env.RTE_JOIN_TOKEN) headers["X-AF-RTE-Join"] = process.env.RTE_JOIN_TOKEN;
+  return headers;
+}
+
+/**
  * Keeps a socket to the app open : dials APP_URL, and when it drops dials again, waiting a
  * little longer each time (1 s up to 30 s, with some jitter so a fleet does not dial at once).
  *
@@ -382,8 +406,7 @@ function attach(sess) {
 function dialOut(token) {
   const url = socketUrl(process.env.APP_URL);
   let delay = 1000;
-  const headers = { Authorization: `Bearer ${token}`, "X-AF-RTE-Id": nodeId, "X-AF-RTE-Name": rteName() };
-  if (process.env.RTE_JOIN_TOKEN) headers["X-AF-RTE-Join"] = process.env.RTE_JOIN_TOKEN;
+  const headers = rteHeaders(token);
   if (process.env.RTE_URL) headers["X-AF-RTE-Url"] = process.env.RTE_URL;
   const proxy = process.env.HTTPS_PROXY || process.env.https_proxy || "";
   const options = {
@@ -450,8 +473,7 @@ function noProxy(host) {
 async function registerInbound(token) {
   const base = new URL(process.env.APP_URL);
   const url = `${base.origin}${base.pathname.replace(/\/+$/, "")}/api/v2/rte/register`;
-  const headers = { Authorization: `Bearer ${token}`, "X-AF-RTE-Id": nodeId, "X-AF-RTE-Name": rteName() };
-  if (process.env.RTE_JOIN_TOKEN) headers["X-AF-RTE-Join"] = process.env.RTE_JOIN_TOKEN;
+  const headers = rteHeaders(token);
   const proxy = process.env.HTTPS_PROXY || process.env.https_proxy || "";
   const httpsAgent = proxy && !noProxy(base.hostname)
     ? new HttpsProxyAgent(proxy)
@@ -461,7 +483,8 @@ async function registerInbound(token) {
     if (isStopping()) return;
     try {
       const { data } = await axios.post(url, { mode: "inbound", url: process.env.RTE_URL }, { headers, httpsAgent, proxy: false, timeout: 15000 });
-      logger.notice(`RTE '${rteName()}': registered with the app as inbound runner '${data.runner}' at ${data.uri}: the app dials it from now on`);
+      if (data.pending) logger.warning(`RTE '${rteName()}': asked to join as inbound runner '${data.runner}': the app dials it once an admin approves it under Connections > Runners (fingerprint ${fingerprint(token)})`);
+      else logger.notice(`RTE '${rteName()}': registered with the app as inbound runner '${data.runner}' at ${data.uri}: the app dials it from now on`);
       return;
     } catch (err) {
       const status = err?.response?.status;
@@ -583,7 +606,7 @@ export async function startSocketRte(rteMode) {
   }
 
   await new Promise((resolve) => server.listen(port, resolve));
-  logger.notice(`RTE '${rteName()}' ${version} (${mode}, files ${filesMode()}) listening on ${httpsConfig.https ? "https" : "http"} port ${port}`);
+  logger.notice(`RTE '${rteName()}' ${version} (${mode}, files ${filesMode()}) listening on ${httpsConfig.https ? "https" : "http"} port ${port}, token fingerprint ${fingerprint(token)}`);
   if (mode === "outbound") dialOut(token);
   // inbound with the app's address : one call so the app knows this RTE and dials it
   else if (process.env.APP_URL) registerInbound(token).catch((e) => logger.error(`RTE: registration: ${e.message}`));
