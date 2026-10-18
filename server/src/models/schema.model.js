@@ -1987,6 +1987,92 @@ async function recordMigrations() {
   );
 }
 
+// ---------------------------------------------------------------------------------------
+// The ENABLE_SSO and SSO_AUTO_LOGIN variables, removed in 7.3
+// ---------------------------------------------------------------------------------------
+
+// the schema_migrations row that says they were imported (recordMigrations writes the others)
+const SSO_ENV_MARKER = "sso_env_import";
+
+/**
+ * Whether a removed boolean variable is set to an off value : 0, false, no or off.
+ *
+ * Args:
+ *   value (string|undefined): the variable.
+ *
+ * Returns:
+ *   boolean: true when it switches something off.
+ */
+function envOff(value) {
+  return ["0", "false", "no", "off"].includes(String(value ?? "").trim().toLowerCase());
+}
+
+/**
+ * Whether a removed boolean variable is set to an on value : 1, true, yes or on.
+ *
+ * Args:
+ *   value (string|undefined): the variable.
+ *
+ * Returns:
+ *   boolean: true when it switches something on.
+ */
+function envOn(value) {
+  return ["1", "true", "yes", "on"].includes(String(value ?? "").trim().toLowerCase());
+}
+
+/**
+ * The ENABLE_SSO and SSO_AUTO_LOGIN variables of before 7.3 carried over, once, to the SSO
+ * providers that replaced them (each has Enabled and Skip the login page since 7.3) : without
+ * this an upgrade dropped them silently, so an instance with SSO switched off as a whole came
+ * back with its providers' login buttons, and one that skipped the login page no longer did.
+ *   - ENABLE_SSO off (0, false) : every SSO provider disabled
+ *   - SSO_AUTO_LOGIN on (1, true) and exactly one provider enabled (what it acted on : the only
+ *     active provider) : that provider skips the login page
+ * Recorded in schema_migrations (row sso_env_import) in the same transaction, so it runs once :
+ * a provider enabled again later is never switched off by the variable still being there. While
+ * either variable is set, every start says it is ignored and where it is configured now.
+ * Nothing is recorded while neither is set (a fresh install, an instance that never used them).
+ *
+ * Args:
+ *   options (object): { env } - the environment, for tests.
+ *
+ * Returns:
+ *   Promise<string>: "none" (neither variable set), "imported" or "ignored" (imported before).
+ */
+export async function importSsoEnvOnce({ env = process.env } = {}) {
+  const enableSso = env.ENABLE_SSO;
+  const autoLogin = env.SSO_AUTO_LOGIN;
+  const isSet = (v) => v !== undefined && String(v).trim() !== "";
+  if (!isSet(enableSso) && !isSet(autoLogin)) return "none";
+  const notice = "ENABLE_SSO and SSO_AUTO_LOGIN are no longer read since 7.3: single sign-on is configured per provider under Settings > SSO (Enabled, Skip the login page) - remove them from the environment";
+  const marker = await mysql.do("SELECT 1 FROM AnsibleForms.`schema_migrations` WHERE name = ?", [SSO_ENV_MARKER]);
+  if (marker.length) {
+    logger.warning(notice);
+    return "ignored";
+  }
+  const done = [];
+  await mysql.transaction(async (query) => {
+    // SSO switched off as a whole : every provider's login button goes
+    if (envOff(enableSso)) {
+      const res = await query("UPDATE AnsibleForms.`oauth2_providers` SET enable = 0 WHERE enable <> 0");
+      done.push(`ENABLE_SSO=${enableSso} disabled ${res?.affectedRows ?? 0} SSO provider(s)`);
+    }
+    // the login page went straight to the only active provider : that one skips it now
+    if (envOn(autoLogin)) {
+      const enabled = await query("SELECT id, name FROM AnsibleForms.`oauth2_providers` WHERE enable = 1");
+      if (enabled.length === 1) {
+        await query("UPDATE AnsibleForms.`oauth2_providers` SET auto_login = 1 WHERE id = ?", [enabled[0].id]);
+        done.push(`SSO_AUTO_LOGIN=${autoLogin} set the provider '${enabled[0].name}' to skip the login page`);
+      } else {
+        done.push(`SSO_AUTO_LOGIN=${autoLogin} applied to no provider: ${enabled.length} are enabled, it acted on exactly one`);
+      }
+    }
+    await query("INSERT IGNORE INTO AnsibleForms.`schema_migrations` (name, version, applied_at) VALUES (?, ?, NOW())", [SSO_ENV_MARKER, appVersion]);
+  });
+  logger.warning(`Imported the SSO environment variables once${done.length ? ` (${done.join("; ")})` : ""}. ${notice}`);
+  return "imported";
+}
+
 // PATCHING : Patch All
 async function patchAll(messages, success, failed) {
   await checkPromise(patchVersion4(messages, success, failed), messages, success, failed);

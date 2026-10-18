@@ -4,7 +4,7 @@ import { DEFAULT_LOGO } from '../lib/defaultlogo.js';
 import Ssh from '../models/ssh.model.js';
 import Form from '../models/form.model.js';
 import Job from '../models/job.model.js';
-import Schema from '../models/schema.model.js';
+import Schema, { importSsoEnvOnce } from '../models/schema.model.js';
 import mysql from "../models/db.model.js";
 import Repository from '../models/repository.model.js';
 import Schedule from '../models/schedule.model.js';
@@ -323,6 +323,13 @@ const initOnce = async function({ boot = false } = {}){
       await importSyslogFromEnvOnce()
     }catch(err){
       logger.error("Could not import the LOG_SYSLOG_* environment variables: " + (err.message || err))
+    }
+    // ENABLE_SSO and SSO_AUTO_LOGIN, removed in 7.3, become the SSO providers' Enabled and
+    // Skip the login page, once ; while either is still set every start says it is ignored
+    try{
+      await importSsoEnvOnce()
+    }catch(err){
+      logger.error("Could not import the ENABLE_SSO and SSO_AUTO_LOGIN environment variables: " + (err.message || err))
     }
   }
 
