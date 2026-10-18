@@ -1492,7 +1492,7 @@ onMounted(async () => {
                       <ul class="dropdown-menu dropdown-menu-end">
                         <li>
                           <a class="dropdown-item" href="#" @click.prevent="getJob(j.id)"
-                            ><font-awesome-icon icon="file-lines" class="me-2" />{{ t('jobs.openJob') }}</a
+                            ><font-awesome-icon icon="file-lines" class="me-2" />{{ t('common.open') }}</a
                           >
                         </li>
                         <!-- what can be done with it, apart from opening it -->
@@ -1513,7 +1513,7 @@ onMounted(async () => {
                               tempJobId = j.id;
                               showRelaunch = true;
                             "
-                            ><font-awesome-icon icon="redo" class="me-2" />{{ t('jobs.relaunchJob') }}</a
+                            ><font-awesome-icon icon="redo" class="me-2" />{{ t('jobs.relaunch') }}</a
                           >
                         </li>
                         <li v-if="j.status == 'running' && !j.abort_requested && canManage(j)">
@@ -1524,7 +1524,7 @@ onMounted(async () => {
                               tempJobId = j.id;
                               showAbort = true;
                             "
-                            ><font-awesome-icon icon="ban" class="me-2" />{{ t('jobs.abortJob') }}</a
+                            ><font-awesome-icon icon="ban" class="me-2" />{{ t('common.abort') }}</a
                           >
                         </li>
                         <li v-if="j.status == 'approve' && approvalAllowed(j)">
@@ -1543,7 +1543,7 @@ onMounted(async () => {
                               tempJobId = j.id;
                               showDelete = true;
                             "
-                            ><font-awesome-icon icon="trash-alt" class="me-2" />{{ t('jobs.deleteJob') }}</a
+                            ><font-awesome-icon icon="trash-alt" class="me-2" />{{ t('common.delete') }}</a
                           >
                         </li>
                       </ul>
