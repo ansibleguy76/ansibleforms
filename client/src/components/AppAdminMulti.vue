@@ -195,7 +195,11 @@ const idKey = props.settings.idKey || 'id';
 const objectType = props.settings.type;
 const objectLabel = computed(() => props.settings.label || '');
 // in a sentence (Add repository, Edit repository) : lowered, but an acronym or a German noun
-const objectLabelInSentence = computed(() => inSentence(objectLabel.value, locale.value));
+// in a sentence (Add runner) : lower case, unless the label is a name the app always writes with
+// its capital (settings.properNoun : Runner)
+const objectLabelInSentence = computed(() =>
+  props.settings.properNoun ? objectLabel.value : inSentence(objectLabel.value, locale.value),
+);
 const objectLabelPlural = computed(() => props.settings.labelPlural || `${objectLabel.value}s`);
 const objectIcon = computed(() => props.settings.icon);
 const objectDescription = computed(() => props.settings.description || '');

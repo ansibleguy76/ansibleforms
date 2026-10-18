@@ -2488,6 +2488,8 @@ export default function getSettings(t) {
       pageTitle: t('sidebar.runners'),
       type: 'runner',
       label: t('settings.runners.label'),
+      // Runner is written with its capital, in a sentence too (Add Runner)
+      properNoun: true,
       description: t('settings.runners.description'),
       icon: 'rocket',
       selectable: false,
