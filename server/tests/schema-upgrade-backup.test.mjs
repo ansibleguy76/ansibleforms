@@ -19,11 +19,16 @@ let hasMigrations;
 let recorded;
 // the upgrade_backup row's release (none : never backed up before an upgrade), what was written
 let backedUpFor;
+// what information_schema says the database has, for the manifest check (missingFromManifest) :
+// null is a complete schema (every table and column the manifest names)
+let have;
 const writes = [];
 vi.mock("../src/models/db.model.js", () => ({
   default: {
     do: async (sql, params) => {
-      if (/information_schema\.tables/.test(sql)) return legacy.map((t) => ({ t }));
+      if (/information_schema\.tables WHERE table_schema='AnsibleForms' AND table_name IN/.test(sql)) return legacy.map((t) => ({ t }));
+      if (/information_schema\.tables/.test(sql)) return (have?.tables ?? manifestTables()).map((t) => ({ t }));
+      if (/information_schema\.columns/.test(sql)) return (have?.columns ?? manifestColumns()).map((x) => ({ t: x.split(".")[0], c: x.split(".")[1] }));
       if (/^SHOW TABLES FROM \?\? WHERE/.test(sql)) return params[2] === "schema_migrations" && hasMigrations ? [{ t: "schema_migrations" }] : [];
       if (/FROM AnsibleForms\.`schema_migrations` WHERE name = 'schema'/.test(sql)) return recorded ? [{ version: recorded }] : [];
       if (/FROM AnsibleForms\.`schema_migrations` WHERE name = \?/.test(sql) && params[0] === "upgrade_backup") return backedUpFor ? [{ version: backedUpFor }] : [];
@@ -42,13 +47,17 @@ vi.mock("../src/models/backup.model.js", () => ({
 }));
 vi.mock("../src/lib/version.js", () => ({ appVersion: "7.3.0", majorMinor: (v) => String(v).split(".").slice(0, 2).join(".") }));
 
-const { pendingUpgrade, backupBeforeUpgrade, compareReleases } = await import("../src/models/schema.model.js");
+const { pendingUpgrade, backupBeforeUpgrade, compareReleases, SCHEMA_MANIFEST } = await import("../src/models/schema.model.js");
+// every table and column the manifest names : a complete schema
+const manifestTables = () => [...new Set([...SCHEMA_MANIFEST.base.tables, ...Object.values(SCHEMA_MANIFEST.patches).flatMap((p) => p.tables || [])])];
+const manifestColumns = () => Object.values(SCHEMA_MANIFEST.patches).flatMap((p) => p.columns || []);
 
 beforeEach(() => {
   legacy = [];
   hasMigrations = true;
   recorded = "7.3.0";
   backedUpFor = null;
+  have = null;
   writes.length = 0;
   backups.length = 0;
 });
@@ -96,6 +105,26 @@ describe("an upgrade is pending, and backed up first", () => {
 
   test("a fresh install (the table without its row): not pending", async () => {
     recorded = null;
+    assert.deepEqual(await pendingUpgrade(), []);
+  });
+
+  test("a fresh install lacking nothing, or an empty database: not pending", async () => {
+    recorded = null;
+    have = { tables: [], columns: [] };
+    assert.deepEqual(await pendingUpgrade(), []);
+  });
+
+  test("no row, the core tables there and the manifest's columns missing (patches that always failed): pending", async () => {
+    recorded = null;
+    have = { tables: manifestTables(), columns: manifestColumns().filter((c) => !c.startsWith("runners.")) };
+    const pending = await pendingUpgrade();
+    assert.equal(pending.length, 1);
+    assert.match(pending[0], /unrecorded schema to 7\.3\.0 \(it lacks runners\./);
+  });
+
+  test("no row and a missing table, but no users or jobs table: not an existing install, not pending", async () => {
+    recorded = null;
+    have = { tables: manifestTables().filter((t) => t !== "users" && t !== "jobs"), columns: [] };
     assert.deepEqual(await pendingUpgrade(), []);
   });
 

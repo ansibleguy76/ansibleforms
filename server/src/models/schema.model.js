@@ -35,6 +35,7 @@ import { fileURLToPath } from "url";
 import init from "../init/index.js";
 import { holdsWorkerLock } from "../lib/workerLock.js";
 import { appVersion } from "../lib/version.js";
+import { missingFromManifest } from "../lib/schemaCompleteness.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1966,7 +1967,10 @@ export function compareReleases(a, b) {
  *     directory), not only adds to it, and there was no way back from that
  *   - a database from before schema_migrations existed (the table is missing) : the same
  *     upgrade, from further back
- * A fresh install has the table without the row : nothing to back up there, and a backup that
+ *   - a database with the table and no row, whose core tables (users, jobs) are there while the
+ *     schema manifest names tables or columns it lacks : a 7.x install whose patches always
+ *     failed, so the row was never written
+ * A fresh install has the table without the row, and lacks nothing : nothing to back up there, and a backup that
  * cannot run (no mysqldump on a development machine) must not stop its first patch run. The
  * same release starting again finds its own version recorded : no backup on every restart.
  *
@@ -1991,7 +1995,32 @@ async function pendingUpgrade() {
   if (recorded && (compareReleases(recorded, appVersion) ?? 0) < 0) {
     pending.push(`upgrade the schema from ${recorded} to ${appVersion}`);
   }
+  // a 7.x database whose patches never completed has no 'schema' row either (recordMigrations
+  // runs only after a successful patch run) : it read as a fresh install, and was patched with
+  // no backup. A fresh install lacks nothing the manifest names (create_schema_and_tables.sql
+  // builds all of it), while that database lacks what its failing patches add, beside the core
+  // tables (users, jobs) holding its data
+  if (!recorded) {
+    const missing = await missingOnExistingDatabase();
+    if (missing.length) {
+      pending.push(`upgrade an unrecorded schema to ${appVersion} (it lacks ${missing.slice(0, 5).join(", ")}${missing.length > 5 ? `, and ${missing.length - 5} more` : ""})`);
+    }
+  }
   return pending;
+}
+
+/**
+ * What the schema manifest names that the database lacks (tables and columns, not the indexes :
+ * a missing index is slow, not lost data), when it already holds the core tables (users and
+ * jobs) : an existing install, not a fresh one.
+ *
+ * Returns:
+ *   Promise<string[]>: the missing tables and columns ; empty for a complete or a fresh schema.
+ */
+async function missingOnExistingDatabase() {
+  const { missingTables, missingColumns, haveTables } = await missingFromManifest(SCHEMA_MANIFEST, mysql);
+  if (!haveTables.has("users") || !haveTables.has("jobs")) return [];
+  return [...missingTables, ...missingColumns];
 }
 
 // the schema_migrations row naming the release the database was last backed up for before an
