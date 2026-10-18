@@ -2981,6 +2981,10 @@ export default {
     warnStalled: "'{field}' ha esperat massa temps els camps dels quals depèn",
     warnStalledDetail: "S'ha avaluat igualment, així que el seu valor pot ser incomplet.",
     warnPrefill: "No s'ha pogut emplenar prèviament '{field}'",
+    warnRegexShape: "La regla regex de '{field}' s'ignora",
+    warnRegexShapeDetail: "Una regex s'ha d'indicar com una expressió amb una descripció.",
+    warnRegexInvalid: "'{field}' té una regex no vàlida",
+    warnRegexInvalidDetail: "La regex '{regex}' no es pot fer servir ({error}), així que la regla s'ignora.",
     prefillNotAnOption: 'el valor desat ja no és una de les opcions disponibles',
     prefillChurn:
       "s'ha restaurat {n} vegades sense estabilitzar-se, així que un camp del qual depèn no para de canviar",

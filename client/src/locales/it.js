@@ -2968,6 +2968,10 @@ export default {
     warnStalled: "'{field}' ha atteso troppo a lungo i campi da cui dipende",
     warnStalledDetail: 'È stato valutato comunque, quindi il suo valore potrebbe essere incompleto.',
     warnPrefill: "Impossibile precompilare '{field}'",
+    warnRegexShape: "La regola regex di '{field}' viene ignorata",
+    warnRegexShapeDetail: 'Una regex deve essere indicata come espressione con una descrizione.',
+    warnRegexInvalid: "'{field}' ha una regex non valida",
+    warnRegexInvalidDetail: "La regex '{regex}' non può essere usata ({error}), quindi la regola viene ignorata.",
     prefillNotAnOption: 'il valore salvato non è più tra le opzioni disponibili',
     prefillChurn:
       'è stato ripristinato {n} volte senza stabilizzarsi, quindi un campo da cui dipende continua a cambiare',

@@ -2969,6 +2969,10 @@ export default {
     warnStalled: "'{field}' heeft te lang gewacht op de velden waarvan het afhangt",
     warnStalledDetail: 'Het is toch geëvalueerd, dus de waarde is mogelijk onvolledig.',
     warnPrefill: "'{field}' kon niet vooraf worden ingevuld",
+    warnRegexShape: "De regex-regel van '{field}' wordt genegeerd",
+    warnRegexShapeDetail: 'Een regex moet worden opgegeven als een expressie met een beschrijving.',
+    warnRegexInvalid: "'{field}' heeft een ongeldige regex",
+    warnRegexInvalidDetail: "De regex '{regex}' kan niet worden gebruikt ({error}), dus de regel wordt genegeerd.",
     prefillNotAnOption: 'de opgeslagen waarde is niet langer een van de beschikbare opties',
     prefillChurn:
       'het is {n} keer hersteld zonder stabiel te worden, dus een veld waarvan het afhangt blijft veranderen',

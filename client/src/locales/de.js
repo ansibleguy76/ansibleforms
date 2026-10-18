@@ -2992,6 +2992,11 @@ export default {
     warnStalled: "'{field}' hat zu lange auf die Felder gewartet, von denen es abhängt",
     warnStalledDetail: 'Es wurde trotzdem ausgewertet, daher ist sein Wert möglicherweise unvollständig.',
     warnPrefill: "'{field}' konnte nicht vorausgefüllt werden",
+    warnRegexShape: "Die Regex-Regel von '{field}' wird ignoriert",
+    warnRegexShapeDetail: 'Eine Regex muss als Ausdruck mit einer Beschreibung angegeben werden.',
+    warnRegexInvalid: "'{field}' hat eine ungültige Regex",
+    warnRegexInvalidDetail:
+      "Die Regex '{regex}' kann nicht verwendet werden ({error}), daher wird die Regel ignoriert.",
     prefillNotAnOption: 'der gespeicherte Wert gehört nicht mehr zu den verfügbaren Optionen',
     prefillChurn:
       'es wurde {n}-mal wiederhergestellt, ohne sich zu stabilisieren; ein Feld, von dem es abhängt, ändert sich ständig',

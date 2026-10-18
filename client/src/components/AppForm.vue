@@ -253,7 +253,7 @@ const rules = computed(() => {
       getValue: (name) => form.value[name],
       getValues: () => form.value,
       resolve: (text) => replacePlaceholderInString(text, false),
-      warn: (w) => warnings.value.push(w),
+      warn: (w) => warnings.value.push(ruleWarningHtml(w)),
     }),
   };
 });
@@ -703,6 +703,34 @@ function escapeWarning(text) {
 }
 function warnHtml(title, detail) {
   return `<span class="text-warning">${escapeWarning(title)}</span><br><span>${escapeWarning(detail)}</span>`;
+}
+
+/**
+ * One warnings-panel entry for a validation rule the form engine could not compile.
+ *
+ * Args:
+ *   message (string): the engine's warning (@engine/validate.js), in English : "Field 'x':
+ *     regex must be given as ..." or "Field 'x': the regex '...' is not valid (...) ...".
+ *
+ * Returns:
+ *   string: the entry's html, every part escaped : the message quotes the form's own regex
+ *     text, and the panel renders its entries with v-html. The two warnings the engine raises
+ *     are translated ; any other message is shown as it is, escaped.
+ */
+function ruleWarningHtml(message) {
+  const text = String(message ?? '');
+  // the engine's regex warnings, read back into their parts (the regex may hold quotes)
+  const shape = /^Field '(.*?)': regex must be given as /s.exec(text);
+  if (shape) return warnHtml(t('form.warnRegexShape', { field: shape[1] }), t('form.warnRegexShapeDetail'));
+  const invalid = /^Field '(.*?)': the regex '(.*)' is not valid \((.*)\); the rule is ignored\.$/s.exec(text);
+  if (invalid) {
+    return warnHtml(
+      t('form.warnRegexInvalid', { field: invalid[1] }),
+      t('form.warnRegexInvalidDetail', { regex: invalid[2], error: invalid[3] }),
+    );
+  }
+  // anything else the engine may warn about : its own words, escaped
+  return `<span class="text-warning">${escapeWarning(text)}</span>`;
 }
 
 // a warning the loop can raise without pushing the same text on every tick
