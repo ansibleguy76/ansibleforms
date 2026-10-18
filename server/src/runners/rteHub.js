@@ -526,7 +526,7 @@ export async function authenticate(headers, opts = {}) {
     // a bundle an admin set by hand is theirs : the RTE's certificate never replaces it
     if (repinned && !runner.managed) {
       const stored = viaCredential && cred?.credential_type === "rte" ? cred : runner;
-      if (!rteMayPin(stored.ca_bundle, stored.description)) {
+      if (!rteMayPin(stored.ca_bundle, stored.rte_cert_sha256)) {
         logger.warning(`Runner '${name}': its ca_bundle was set by hand: the certificate its RTE sent (fingerprint ${certFingerprint(cert)}) is not stored. Empty the ca_bundle to have the RTE's certificate pinned again`);
         repinned = false;
       }
@@ -534,7 +534,7 @@ export async function authenticate(headers, opts = {}) {
     if (repinned && runner.managed) {
       logger.warning(`Runner '${name}' is managed by the config seed: the certificate its RTE sent (fingerprint ${certFingerprint(cert)}) is not stored, set its ca_bundle there`);
     } else if (moved || repinned) {
-      const pin = repinned ? { ca_bundle: cert, ignore_certs: 0, description: withPinMarker(runner.description, cert) } : {};
+      const pin = repinned ? { ca_bundle: cert, ignore_certs: 0, rte_cert_sha256: bundleDigest(cert) } : {};
       // an inbound one's address and certificate : its credential's when it names one
       if (viaCredential) {
         await storeToken(name, token, url, runner.credential, repinned ? cert : null);
@@ -692,25 +692,24 @@ async function storeToken(runnerName, token, url, current, cert = null) {
       if (cred.managed) throw new Error(`the credential '${current}' of runner '${runnerName}' is managed by the config seed`);
       // a bundle an admin set by hand stays : the RTE's certificate is not stored
       let pinned = !!cert;
-      if (cert && !rteMayPin(cred.ca_bundle, cred.description)) {
+      if (cert && !rteMayPin(cred.ca_bundle, cred.rte_cert_sha256)) {
         logger.warning(`Runner '${runnerName}': the ca_bundle of its credential '${current}' was set by hand: the certificate its RTE sent (fingerprint ${certFingerprint(cert)}) is not stored`);
         pinned = false;
       }
-      const pin = pinned ? { ca_bundle: cert, ignore_certs: 0, description: withPinMarker(cred.description, cert) } : {};
+      const pin = pinned ? { ca_bundle: cert, ignore_certs: 0, rte_cert_sha256: bundleDigest(cert) } : {};
       await Credential.update({ password: token, url: url || null, ...pin }, cred.id, { fromRte: true });
       return { name: current, pinned };
     }
   }
   let name = `${runnerName}-rte`.slice(0, 240);
   for (let i = 2; await Credential.findByName(name).catch(() => null); i++) name = `${runnerName}-rte-${i}`.slice(0, 250);
-  const description = RTE_CREDENTIAL_DESCRIPTION(runnerName);
   await Credential.create({
     name,
     credential_type: "rte",
     password: token,
     url: url || null,
-    ...(cert ? { ca_bundle: cert, ignore_certs: 0 } : {}),
-    description: cert ? withPinMarker(description, cert) : description,
+    ...(cert ? { ca_bundle: cert, ignore_certs: 0, rte_cert_sha256: bundleDigest(cert) } : {}),
+    description: `The token of the RTE '${runnerName}' (its RTE_TOKEN), stored when it joined`,
   }, { fromRte: true });
   return { name, pinned: !!cert };
 }
@@ -718,20 +717,14 @@ async function storeToken(runnerName, token, url, current, cert = null) {
 // ─── who set a ca_bundle : the RTE or an admin ────────────────────────────────
 //
 // The rule : an RTE's certificate is stored as a ca_bundle only when that ca_bundle is empty,
-// or holds exactly the certificate an RTE stored there before. Each time the hub stores one it
-// writes its SHA-256 on a line of the description of the credential (or runner) it went to
-// (PIN_MARKER) ; a stored bundle whose digest is not that line was set, or changed, by an
-// admin, and the RTE never overwrites it (an admin who wants the RTE's certificate pinned
-// again empties the ca_bundle). Without the line : the description an RTE's credential is made
-// with (RTE_CREDENTIAL_DESCRIPTION), unchanged, counts as the RTE's (credentials made before
-// the line existed). Every doubt keeps the admin's bundle : the worst case is a warning in the
-// log and a socket that fails until an admin empties the bundle, never a trust swapped behind
-// an admin's back.
-
-// the description a credential an RTE joined with is made with
-const RTE_CREDENTIAL_DESCRIPTION = (runnerName) => `The token of the RTE '${runnerName}' (its RTE_TOKEN), stored when it joined`;
-// the line naming the bundle the hub stored last : RTE certificate sha256: <64 hex>
-const PIN_MARKER = /\n?RTE certificate sha256: ([0-9a-f]{64})/;
+// or is still exactly the bundle the hub stored there before. Each time the hub stores one it
+// writes the bundle's SHA-256 in the rte_cert_sha256 column of the credential (or runner) it
+// went to ; the API and the config seed never write that column, and clear it when they change
+// the ca_bundle (Credential.guardRtePin, Runner.update). A stored bundle whose digest is not
+// that column's was set, or changed, by an admin, and the RTE never overwrites it (an admin who
+// wants the RTE's certificate pinned again empties the ca_bundle). Every doubt keeps the
+// admin's bundle : the worst case is a warning in the log and a socket that fails until an
+// admin empties the bundle, never a trust swapped behind an admin's back.
 
 /**
  * The SHA-256 of a PEM bundle as parseCertBundle writes it (so the same certificates give the
@@ -749,41 +742,20 @@ function bundleDigest(pem) {
 }
 
 /**
- * A description with the line naming the bundle the hub stores (PIN_MARKER) : the old line
- * replaced, or the line added.
- *
- * Args:
- *   description (string|null): the description as stored.
- *   cert (string): the certificate being stored (PEM, parseCertBundle).
- *
- * Returns:
- *   string
- */
-function withPinMarker(description, cert) {
-  const line = `RTE certificate sha256: ${bundleDigest(cert)}`;
-  const text = String(description || "");
-  if (PIN_MARKER.test(text)) return text.replace(/RTE certificate sha256: [0-9a-f]{64}/, line);
-  return text ? `${text}\n${line}` : line;
-}
-
-/**
  * Whether an RTE's certificate may be stored over a ca_bundle (the rule above) : the bundle is
- * empty, or it is the one the hub stored last.
+ * empty, or it is still the one the hub stored last.
  *
  * Args:
  *   bundle (string|null): the ca_bundle as stored.
- *   description (string|null): the description of the row it is stored on.
+ *   pinnedDigest (string|null): the row's rte_cert_sha256, the digest of the bundle the hub
+ *     stored ; null when it stored none, or someone else changed the bundle since.
  *
  * Returns:
  *   boolean
  */
-function rteMayPin(bundle, description) {
+function rteMayPin(bundle, pinnedDigest) {
   if (!String(bundle || "").trim()) return true;
-  const text = String(description || "");
-  const marker = PIN_MARKER.exec(text);
-  if (marker) return marker[1] === bundleDigest(bundle);
-  // made by an RTE before the line existed, its description untouched
-  return /^The token of the RTE '.*' \(its RTE_TOKEN\), stored when it joined$/.test(text.trim());
+  return !!pinnedDigest && pinnedDigest === bundleDigest(bundle);
 }
 
 /**

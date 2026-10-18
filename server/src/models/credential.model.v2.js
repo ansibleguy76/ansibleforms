@@ -265,8 +265,33 @@ class CredentialModel extends CrudModel {
     return { url, ignore_certs: cred.ignore_certs ? 1 : 0, ca_bundle: cred.ca_bundle || null };
   }
 
+  /**
+   * Guards rte_cert_sha256, the digest of the ca_bundle an inbound RTE's certificate was stored
+   * as (runners/rteHub.js) : only the RTE hub writes it (opts.fromRte), never the API nor the
+   * seed. A write by anyone else that changes the ca_bundle clears it : the bundle is then the
+   * admin's, and the RTE never replaces it.
+   *
+   * Args:
+   *   data (object): the record written (changed in place).
+   *   current (object|null): the credential as stored, null on a create.
+   *   opts (object): { fromRte:true } for the RTE hub.
+   *
+   * Returns:
+   *   object: the record.
+   */
+  static guardRtePin(data, current, opts = {}) {
+    if (opts.fromRte) return data;
+    delete data.rte_cert_sha256;
+    const text = (v) => (v === null || v === undefined ? '' : String(v).trim());
+    if (current && data.ca_bundle !== undefined && text(data.ca_bundle) !== text(current.ca_bundle)) {
+      data.rte_cert_sha256 = null;
+    }
+    return data;
+  }
+
   // opts carries { fromSeed:true } for the declarative config seed only
   static async create(data, opts = {}) {
+    this.guardRtePin(data, null, opts);
     return super.create(this.modelName, this.requireTypeFields(this.mirrorType(this.mirrorVaultPath(this.normalizePort(data)), true), true, opts), opts);
   }
 
@@ -282,6 +307,9 @@ class CredentialModel extends CrudModel {
         throw new Errors.BadRequestError(`A credential keeps the type it was made as: '${current.name}' is ${current.credential_type}. Make a new credential for another type`);
       }
     }
+    // the RTE's pin : the hub's to write ; a changed ca_bundle is the writer's from now on
+    const stored = !opts.fromRte && data.ca_bundle !== undefined ? await this.findById(id) : null;
+    this.guardRtePin(data, stored, opts);
     return super.update(this.modelName, this.requireTypeFields(this.mirrorType(this.mirrorVaultPath(this.normalizePort(data))), false, opts), id, opts);
   }
 

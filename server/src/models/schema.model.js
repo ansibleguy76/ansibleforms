@@ -593,7 +593,7 @@ const SCHEMA_MANIFEST = {
     patchVersion7: { tables: ['secret_stores', 'runners', 'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'notification_channels', 'syslog_servers', 'login_failures', 'token_revocations', 'schema_migrations',
                               'directory_users', 'announcements', 'disclaimer_versions', 'disclaimer_acceptances', 'api_tokens', 'labels',
                               'runner_leases', 'runner_join_tokens', 'job_events'],
-                     columns: ['job_events.result', 'runners.rte_mode', 'runners.enabled', 'schedule.enabled', 'runners.pending', 'runners.pending_since', 'runners.pending_info', 'schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'settings.syslog_env_imported_at', 'jobs.runner', 'jobs.runner_kind', 'jobs.runner_job_url',
+                     columns: ['job_events.result', 'runners.rte_mode', 'runners.enabled', 'schedule.enabled', 'runners.pending', 'runners.pending_since', 'runners.pending_info', 'runners.rte_cert_sha256', 'schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'settings.syslog_env_imported_at', 'jobs.runner', 'jobs.runner_kind', 'jobs.runner_job_url',
                                'runners.username', 'runners.password', 'runners.use_credentials', 'runners.node_id', 'jobs.job_log',
                                'jobs.tracker', 'repositories.claim_node', 'repositories.claim_since',
                                'repositories.use_for_workflows', 'repositories.use_for_inventories',
@@ -609,7 +609,7 @@ const SCHEMA_MANIFEST = {
                                'repositories.pulled_at', 'repositories.pushed_at', 'repositories.push_status',
                                'ldap.id', 'ldap.name', 'ldap.position', 'ldap.domains', 'ldap.credential',
                                'oauth2_providers.credential', 'credentials.tenant_id', 'credentials.issuer', 'credentials.redirect_uri',
-                               'credentials.ignore_certs', 'credentials.ca_bundle', 'oauth2_providers.auto_login',
+                               'credentials.ignore_certs', 'credentials.ca_bundle', 'credentials.rte_cert_sha256', 'oauth2_providers.auto_login',
                                'runners.credential', 'ldap.description', 'settings.disclaimer_version', 'announcements.enabled',
                                'credentials.url', 'settings.encryption_check'] },
   },
@@ -1081,6 +1081,10 @@ async function patchVersion7(messages, success, failed) {
   // its mail server : whether certificates are checked, the CA bundle
   await checkPromise(addColumn("credentials", "ignore_certs", "tinyint(4)", true, "NULL"), messages, success, failed);
   await checkPromise(addColumn("credentials", "ca_bundle", "text", true, "NULL"), messages, success, failed);
+  // the SHA-256 of the ca_bundle an inbound RTE's certificate was stored as (runners/rteHub.js) :
+  // while the bundle still has that digest the RTE may replace it (a renewed certificate) ; an
+  // admin who changes the bundle clears it, and the RTE never overwrites their bundle
+  await checkPromise(addColumn("credentials", "rte_cert_sha256", "varchar(64)", true, "NULL"), messages, success, failed);
   // an SSO provider's client (and its tenant or issuer) belongs to a credential of its type, and an
   // LDAP directory's servers and TLS to its ldap credential, with its bind account : only now, after
   // every column they read and write (oauth2_providers.credential, the ldap id, name and credential,
@@ -1130,6 +1134,9 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addColumn("runners", "pending", "tinyint(4)", true, "0"), messages, success, failed);
   await checkPromise(addColumn("runners", "pending_since", "datetime", true, "NULL"), messages, success, failed);
   await checkPromise(addColumn("runners", "pending_info", "text", true, "NULL"), messages, success, failed);
+  // the same for a runner that keeps its own ca_bundle (no credential) : the digest of the bundle
+  // its RTE's certificate was stored as
+  await checkPromise(addColumn("runners", "rte_cert_sha256", "varchar(64)", true, "NULL"), messages, success, failed);
   const leases = fs.readFileSync(`${__dirname}/../db/create_runner_leases_table.sql`);
   await checkPromise(addTable("runner_leases", leases.toString()), messages, success, failed);
   const joinTokens = fs.readFileSync(`${__dirname}/../db/create_runner_join_tokens_table.sql`);

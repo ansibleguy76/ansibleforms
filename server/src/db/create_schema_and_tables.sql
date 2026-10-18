@@ -81,6 +81,9 @@ CREATE TABLE `credentials` (
   -- client certificate client_cert) ; a runner's or a secret store's for its url
   `ignore_certs` tinyint(4) DEFAULT NULL,
   `ca_bundle` text DEFAULT NULL,
+  -- the SHA-256 of the ca_bundle an inbound RTE's certificate was stored as : the RTE may replace
+  -- the bundle only while it still has that digest (cleared when an admin changes the bundle)
+  `rte_cert_sha256` varchar(64) DEFAULT NULL,
   `vault_path` varchar(500) DEFAULT NULL,
   `managed` tinyint(4) DEFAULT 0,
   -- the secret store a credential reads its user and password from, and where in it
@@ -230,6 +233,9 @@ CREATE TABLE `runners` (
   `pending` tinyint(4) DEFAULT 0,
   `pending_since` datetime DEFAULT NULL,
   `pending_info` text DEFAULT NULL,
+  -- the SHA-256 of the ca_bundle its RTE's certificate was stored as (a runner without a
+  -- credential) : cleared when an admin changes the bundle
+  `rte_cert_sha256` varchar(64) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_AnsibleForms_runners_natural_key` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

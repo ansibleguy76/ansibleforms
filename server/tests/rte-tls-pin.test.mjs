@@ -10,6 +10,7 @@ import os from "os";
 import path from "path";
 import https from "https";
 import { execFileSync } from "child_process";
+import { createHash } from "crypto";
 
 process.env.LOG_PATH = process.env.LOG_PATH || "/tmp/ansibleforms-test-logs";
 process.env.DB_HOST ||= "127.0.0.1";
@@ -118,6 +119,10 @@ beforeEach(() => {
   credUpdated.length = 0;
 });
 
+// the digest the hub records of a bundle it stores (rte_cert_sha256) : SHA-256 of the bundle as
+// parseCertBundle writes it
+const digest = (pem) => createHash("sha256").update(parseCertBundle(pem).pem).digest("hex");
+
 const headers = (extra = {}) => ({ authorization: "Bearer rte-token-0123456789", "x-af-rte-name": "dmz-in", "x-af-rte-id": "rte-in-8443", ...extra });
 
 // ─── the certificate itself ───────────────────────────────────────────────────
@@ -195,8 +200,8 @@ describe("an inbound RTE registering with its certificate", () => {
   });
 
   test("its own token and a renewed certificate : pinned to the new one ; the same one : nothing written", async () => {
-    // made by an RTE before the pin line existed : its description as the hub writes it
-    credentials["dmz-in-rte"] = { id: 7, name: "dmz-in-rte", credential_type: "rte", password: "rte-token-0123456789", url: "https://rte.dmz:8443", ca_bundle: parseCertBundle(certA).pem, description: "The token of the RTE 'dmz-in' (its RTE_TOKEN), stored when it joined" };
+    // stored by the hub before : the column holds the digest of the bundle it stored
+    credentials["dmz-in-rte"] = { id: 7, name: "dmz-in-rte", credential_type: "rte", password: "rte-token-0123456789", url: "https://rte.dmz:8443", ca_bundle: parseCertBundle(certA).pem, rte_cert_sha256: digest(certA) };
     // findByName reads the address, the token and the bundle from the credential
     runners["dmz-in"] = { id: 1, name: "dmz-in", type: "rte", credential: "dmz-in-rte", token: "rte-token-0123456789", rte_mode: "inbound", uri: "https://rte.dmz:8443", ca_bundle: parseCertBundle(certA).pem };
     await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certA });
@@ -204,19 +209,25 @@ describe("an inbound RTE registering with its certificate", () => {
     const res = await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certB });
     assert.equal(credentials["dmz-in-rte"].ca_bundle, parseCertBundle(certB).pem);
     assert.equal(credentials["dmz-in-rte"].ignore_certs, 0);
-    assert.match(credentials["dmz-in-rte"].description, /RTE certificate sha256: [0-9a-f]{64}$/, "the pin line written");
+    assert.equal(credentials["dmz-in-rte"].rte_cert_sha256, digest(certB), "the digest of the bundle stored");
+    assert.equal(credentials["dmz-in-rte"].description, undefined, "the description left alone");
     assert.equal(updated.length, 0, "the runner itself unchanged : its mode and address are the same");
     assert.equal(res.runner.ca_bundle, parseCertBundle(certB).pem);
-    // renewed again : the pin line names the bundle stored, so the RTE may replace it
+    // renewed again : the column names the bundle stored, so the RTE may replace it
     runners["dmz-in"].ca_bundle = credentials["dmz-in-rte"].ca_bundle;
     await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certA });
     assert.equal(credentials["dmz-in-rte"].ca_bundle, parseCertBundle(certA).pem);
-    assert.equal(credentials["dmz-in-rte"].description.match(/RTE certificate sha256/g).length, 1, "one pin line, replaced");
+    assert.equal(credentials["dmz-in-rte"].rte_cert_sha256, digest(certA));
+  });
+
+  test("a new credential an RTE joins with records the digest of its certificate", async () => {
+    await hub.authenticate(headers({ "x-af-rte-join": "afj_good" }), { mode: "inbound", url: "https://rte.dmz:8443", cert: certA });
+    assert.equal(credCreated[0].rte_cert_sha256, digest(certA));
   });
 
   test("a ca_bundle an admin set by hand is never replaced by the RTE's certificate", async () => {
-    // an admin's own bundle and description
-    credentials["dmz-in-rte"] = { id: 7, name: "dmz-in-rte", credential_type: "rte", password: "rte-token-0123456789", url: "https://rte.dmz:8443", ca_bundle: certA, description: "the DMZ RTE, our CA" };
+    // an admin's own bundle : no digest recorded
+    credentials["dmz-in-rte"] = { id: 7, name: "dmz-in-rte", credential_type: "rte", password: "rte-token-0123456789", url: "https://rte.dmz:8443", ca_bundle: certA, rte_cert_sha256: null };
     runners["dmz-in"] = { id: 1, name: "dmz-in", type: "rte", credential: "dmz-in-rte", token: "rte-token-0123456789", rte_mode: "inbound", uri: "https://rte.dmz:8443", ca_bundle: certA };
     const warn = vi.spyOn(logger, "warning");
     try {
@@ -232,11 +243,8 @@ describe("an inbound RTE registering with its certificate", () => {
   });
 
   test("a bundle an RTE stored, then changed by an admin, is the admin's", async () => {
-    const stored = parseCertBundle(certB).pem;
-    // the pin line names certB (an RTE stored it) ; an admin replaced the bundle with certA since
-    const { createHash } = await import("crypto");
-    const line = `RTE certificate sha256: ${createHash("sha256").update(stored).digest("hex")}`;
-    credentials["dmz-in-rte"] = { id: 7, name: "dmz-in-rte", credential_type: "rte", password: "rte-token-0123456789", url: "https://rte.dmz:8443", ca_bundle: certA, description: `joined\n${line}` };
+    // the column names certB (an RTE stored it) ; the bundle is certA since
+    credentials["dmz-in-rte"] = { id: 7, name: "dmz-in-rte", credential_type: "rte", password: "rte-token-0123456789", url: "https://rte.dmz:8443", ca_bundle: certA, rte_cert_sha256: digest(certB) };
     runners["dmz-in"] = { id: 1, name: "dmz-in", type: "rte", credential: "dmz-in-rte", token: "rte-token-0123456789", rte_mode: "inbound", uri: "https://rte.dmz:8443", ca_bundle: certA };
     await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certB });
     assert.equal(credentials["dmz-in-rte"].ca_bundle, certA);
@@ -247,7 +255,21 @@ describe("an inbound RTE registering with its certificate", () => {
     runners["dmz-in"] = { id: 1, name: "dmz-in", type: "rte", credential: "dmz-in-rte", token: "rte-token-0123456789", rte_mode: "inbound", uri: "https://rte.dmz:8443", ca_bundle: null };
     await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certB });
     assert.equal(credentials["dmz-in-rte"].ca_bundle, parseCertBundle(certB).pem);
-    assert.match(credentials["dmz-in-rte"].description, /^hand made\nRTE certificate sha256: /);
+    assert.equal(credentials["dmz-in-rte"].rte_cert_sha256, digest(certB));
+    assert.equal(credentials["dmz-in-rte"].description, "hand made");
+  });
+
+  test("a runner keeping its own bundle (no credential) : the digest on the runner row", async () => {
+    runners["dmz-in"] = { id: 1, name: "dmz-in", type: "rte", token: "rte-token-0123456789", rte_mode: "inbound", uri: "https://rte.dmz:8443", ca_bundle: parseCertBundle(certA).pem, rte_cert_sha256: digest(certA) };
+    await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certB });
+    assert.equal(runners["dmz-in"].ca_bundle, parseCertBundle(certB).pem);
+    assert.equal(runners["dmz-in"].rte_cert_sha256, digest(certB));
+    // set by hand on the runner : kept
+    runners["dmz-in"] = { id: 1, name: "dmz-in", type: "rte", token: "rte-token-0123456789", rte_mode: "inbound", uri: "https://rte.dmz:8443", ca_bundle: certA, rte_cert_sha256: null };
+    updated.length = 0;
+    await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certB });
+    assert.equal(runners["dmz-in"].ca_bundle, certA);
+    assert.equal(updated.length, 0);
   });
 
   test("a hand-made runner whose credential the seed manages : the repin is skipped, not a 500", async () => {

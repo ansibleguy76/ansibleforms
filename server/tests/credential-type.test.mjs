@@ -121,3 +121,19 @@ describe("a credential's server address", () => {
     }
   });
 });
+
+describe("the RTE's pin (rte_cert_sha256)", () => {
+  test("never written through the API nor the seed ; the RTE hub writes it", () => {
+    assert.equal("rte_cert_sha256" in Credential.guardRtePin({ rte_cert_sha256: "x" }, null), false);
+    assert.equal("rte_cert_sha256" in Credential.guardRtePin({ rte_cert_sha256: "x" }, null, { fromSeed: true }), false);
+    assert.equal(Credential.guardRtePin({ rte_cert_sha256: "x" }, null, { fromRte: true }).rte_cert_sha256, "x");
+  });
+
+  test("a ca_bundle changed by anyone else clears it ; the same bundle sent back keeps it", () => {
+    const stored = { ca_bundle: "PEM-A", rte_cert_sha256: "abc" };
+    assert.equal(Credential.guardRtePin({ ca_bundle: "PEM-B" }, stored).rte_cert_sha256, null);
+    assert.equal(Credential.guardRtePin({ ca_bundle: "" }, stored).rte_cert_sha256, null);
+    assert.equal("rte_cert_sha256" in Credential.guardRtePin({ ca_bundle: " PEM-A " }, stored), false, "unchanged : left as it is");
+    assert.equal("rte_cert_sha256" in Credential.guardRtePin({ name: "x" }, stored), false);
+  });
+});
