@@ -42,6 +42,12 @@ vi.mock("../src/models/db.model.js", () => ({
         order.push(`add ${table}.${field}`);
         return {};
       }
+      // the LDAP directory 'default' renamed 'main' : it reads the name column
+      if (/^SELECT name FROM AnsibleForms\.`ldap` WHERE name IN/.test(sql)) {
+        if (!columns.ldap.has("name")) throw new Error("Unknown column 'ldap.name' in 'field list'");
+        order.push("rename ldap");
+        return [];
+      }
       const move = /^SELECT id, name, (?:provider|server).* FROM AnsibleForms\.`(oauth2_providers|ldap)`/.exec(sql);
       if (move) {
         const table = move[1];
@@ -72,4 +78,12 @@ test("the SSO and LDAP moves run after the columns they use, and the patch does 
   for (const column of ["add ldap.id", "add ldap.name", "add ldap.credential", "add credentials.ignore_certs", "add credentials.ca_bundle"]) {
     expect(order.indexOf("move ldap")).toBeGreaterThan(order.indexOf(column));
   }
+});
+
+// the directory 'default' (up to 7.2) is renamed 'main' BEFORE its servers move to a credential
+// named after it : after it, the credential was default-ldap, beside a directory called main
+test("the LDAP rename runs after the name column and before the LDAP move", async () => {
+  expect(order).toContain("rename ldap");
+  expect(order.indexOf("rename ldap")).toBeGreaterThan(order.indexOf("add ldap.name"));
+  expect(order.indexOf("rename ldap")).toBeLessThan(order.indexOf("move ldap"));
 });

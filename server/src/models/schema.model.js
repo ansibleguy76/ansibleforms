@@ -1054,7 +1054,16 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addColumn("ldap", "name", "varchar(100)", false, "'default'"), messages, success, failed);
   await checkPromise(addColumn("ldap", "position", "int(11)", false, "1"), messages, success, failed);
   await checkPromise(addColumn("ldap", "domains", "varchar(1000)", true, "NULL"), messages, success, failed);
+  // the name is unique : rows that share one (several rows of the single-row table of before,
+  // all named 'default' by the column's default) get distinct names first, or the key could
+  // never be added and this patch failed at every start
+  await checkPromise(dedupeLdapNames(), messages, success, failed);
   await checkPromise(addUniqueKey("ldap", "name"), messages, success, failed);
+  // the LDAP directory named "default" up to 7.2 is "main" from 7.3 : its members keep their short
+  // names. Here, after the name column and its key, and before its servers move to a credential
+  // below (moveLdapServersToCredentials) : that credential is named after the directory, so it is
+  // main-ldap, not a default-ldap left behind for the directory main
+  await checkPromise(renameDefaultLdap(), messages, success, failed);
   // a directory can bind with a credential of Connections > Credentials instead of its own user
   // and password, as a repository can
   await checkPromise(addColumn("ldap", "credential", "varchar(250)", true, "NULL"), messages, success, failed);
@@ -1117,8 +1126,6 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addColumn("runners", "enabled", "tinyint(4)", true, "1"), messages, success, failed);
   // a schedule turned off does not fire (Settings > Schedules, Enable / Disable)
   await checkPromise(addColumn("schedule", "enabled", "tinyint(4)", true, "1"), messages, success, failed);
-  // the LDAP directory named "default" up to 7.2 is "main" from 7.3 : its members keep their short names
-  await checkPromise(renameDefaultLdap(), messages, success, failed);
   // an RTE that asks to join waits for an admin's approval (Connections > Runners, Approve)
   await checkPromise(addColumn("runners", "pending", "tinyint(4)", true, "0"), messages, success, failed);
   await checkPromise(addColumn("runners", "pending_since", "datetime", true, "NULL"), messages, success, failed);
@@ -1677,6 +1684,40 @@ function connectionCredentialType(record) {
  * Returns:
  *   Promise<string|null>: what was done, or null when there was nothing to do.
  */
+/**
+ * Gives the LDAP directories that share a name distinct ones, before the unique key on the name
+ * is added : the table was single-row by design up to 7.2, without a key, so a database could
+ * hold several rows, and the name column a patch adds names every one of them 'default'. The
+ * first (lowest id) keeps its name, the others get -<id> after it (-<id>-2 ... when that is
+ * taken). Not once the key is there : a name can not be shared then.
+ *
+ * Returns:
+ *   Promise<string|null>: what was done, or null when there was nothing to do.
+ */
+export async function dedupeLdapNames() {
+  const key = await mysql.do("SHOW INDEX FROM ??.?? WHERE Key_name = ?", ["AnsibleForms", "ldap", "unique_name"]);
+  if (key.length) return null;
+  const rows = await mysql.do("SELECT id, name FROM AnsibleForms.`ldap` ORDER BY id");
+  const taken = new Set(rows.map((r) => r.name));
+  const seen = new Set();
+  const renamed = [];
+  for (const r of rows) {
+    if (!seen.has(r.name)) {
+      seen.add(r.name);
+      continue;
+    }
+    let name = `${r.name}-${r.id}`;
+    for (let n = 2; taken.has(name); n++) name = `${r.name}-${r.id}-${n}`;
+    taken.add(name);
+    await mysql.do("UPDATE AnsibleForms.`ldap` SET name = ? WHERE id = ?", [name, r.id]);
+    renamed.push(`${r.id} to '${name}'`);
+  }
+  if (!renamed.length) return null;
+  const message = `LDAP directories shared a name: renamed ${renamed.join(", ")} so the name can be unique`;
+  logger.warning(message);
+  return message;
+}
+
 export async function renameDefaultLdap() {
   const rows = await mysql.do("SELECT name FROM AnsibleForms.`ldap` WHERE name IN (?, ?)", [LEGACY_DEFAULT_LDAP, DEFAULT_LDAP]);
   const names = new Set(rows.map((r) => r.name));
