@@ -1208,12 +1208,12 @@ export default function getSettings(t) {
         // not in the dialog ; a new one is it when its type has none, another is chosen with Use for
         // sign-in
         {
-          // shown as "(default)" after its type (defaultNote), not a column
+          // on or off : one per type at most is on (turning one on turns the others of its type
+          // off), the one its login button signs in with - an Enabled column, as every list's
           key: 'enable',
           label: t('settings.oauth2.active'),
           type: 'checkbox',
           noInput: true,
-          noTable: true,
         },
         { key: 'name', label: t('settings.fields.name'), required: true, icon: 'heading' },
         {
@@ -1231,7 +1231,7 @@ export default function getSettings(t) {
             hint: t(`settings.oauth2.typeHint_${value}`),
           })),
           initial: (r) => r?.provider || 'azuread',
-          render: (v, r) => esc(t(`settings.oauth2.type_${SSO_TYPES.includes(v) ? v : 'oidc'}`)) + defaultNote(t, !!r?.enable),
+          render: (v) => esc(t(`settings.oauth2.type_${SSO_TYPES.includes(v) ? v : 'oidc'}`)),
         },
         { key: 'description', label: t('settings.fields.description'), required: false, icon: 'info-circle' },
         {
