@@ -1544,8 +1544,6 @@ defineExpose({
       <AppSkeleton v-if="loading" shape="buttons" :widths="toolbarRoom" />
     </template>
     <template #default>
-      <!-- the page's own block above the list (the runners waiting for approval) -->
-      <slot name="beforeTable"></slot>
       <BsDataTable
         v-if="!loading && itemList != undefined"
         framed
@@ -1629,6 +1627,8 @@ defineExpose({
       <div :id="pagerId"></div>
       <slot></slot>
     </template>
+    <!-- the page's own card above the list's (the runners waiting for approval) -->
+    <template v-if="$slots.aboveCard" #aboveCard><slot name="aboveCard"></slot></template>
     <!-- the page's own tabs (the SSO page : General, Providers), above the card -->
     <template v-if="$slots.tabs" #tabs><slot name="tabs"></slot></template>
     <!-- action buttons go BELOW the card, never in the header : see AppSettings -->

@@ -142,6 +142,8 @@ const steps = computed(() => {
           </div>
         </div>
       </div>
+      <!-- a card of the page's own above its card (the runners waiting for approval) -->
+      <slot name="aboveCard"></slot>
       <slot name="tabs"></slot>
       <!-- the 16px under the last card (the margin the designer also gives its card) -->
       <div v-if="!bare" class="card af-page-end" :class="{ 'tab-card-flush-card': $slots.tabs }">

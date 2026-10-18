@@ -112,25 +112,28 @@ onMounted(async () => {
       :readOnly="!store.isAdmin"
       ref="list"
     >
-      <!-- the runners waiting for approval, above the list : a click on one opens its review -->
-      <template #beforeTable>
-        <div v-if="pending.length" class="af-runner-requests">
-          <h6 class="af-runner-requests-title">
-            <FaIcon icon="hourglass-half" class="me-2" />{{
-              t('settings.runners.waitingTitle', { count: pending.length })
-            }}
-          </h6>
-          <BsDataTable
-            framed
-            bare
-            :items="pending"
-            :columns="pendingColumns"
-            :selectable="false"
-            :rowClickSelects="false"
-            :pageSize="50"
-            linkColumn="name"
-            @row-click="(r) => (reviewing = r)"
-          />
+      <!-- the runners waiting for approval : a card of its own above the runners', a click on one
+           opens its review -->
+      <template #aboveCard>
+        <div v-if="pending.length" class="card af-runner-requests">
+          <div class="card-body">
+            <h6 class="af-runner-requests-title">
+              <FaIcon icon="hourglass-half" class="me-2" />{{
+                t('settings.runners.waitingTitle', { count: pending.length })
+              }}
+            </h6>
+            <BsDataTable
+              framed
+              bare
+              :items="pending"
+              :columns="pendingColumns"
+              :selectable="false"
+              :rowClickSelects="false"
+              :pageSize="50"
+              linkColumn="name"
+              @row-click="(r) => (reviewing = r)"
+            />
+          </div>
         </div>
       </template>
     </AppAdminMulti>
@@ -141,7 +144,7 @@ onMounted(async () => {
 /* the runners waiting for approval : a titled table above the list, in the orange of a job
    waiting for approval */
 .af-runner-requests {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 .af-runner-requests-title {
   font-weight: 600;
