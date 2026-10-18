@@ -347,7 +347,11 @@ async function createToken() {
     showToken(token);
   } catch (err) {
     // the server's reason (a wrong password, a role without api tokens) when it gave one
-    toast.error(err?.response ? Helpers.parseAxiosResponseError(err, t('profilePage.token.failed')) : t('profilePage.token.failed'));
+    toast.error(
+      err?.response
+        ? Helpers.parseAxiosResponseError(err, t('profilePage.token.failed'))
+        : t('profilePage.token.failed'),
+    );
   } finally {
     tokenForm.value.password = '';
     creatingToken.value = false;
