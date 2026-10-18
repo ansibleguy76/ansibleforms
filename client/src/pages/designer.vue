@@ -56,6 +56,9 @@ const constants = ref('');
 const forms = ref({});
 const formMeta = ref({});
 const loaded = ref(false);
+// the last load of the configuration failed : a Retry is offered instead of the placeholders,
+// which otherwise stayed on screen for ever
+const loadFailed = ref(false);
 const lockLoading = ref(false);
 const currentForm = ref(null);
 // the views (config/designerViews.js) : name is the internal key (warnings and the editors switch
@@ -2180,6 +2183,7 @@ const warnings = computed(() => {
 // methods
 
 async function loadForms() {
+  loadFailed.value = false;
   try {
     const formConfig = await Form.loadAll();
     forms.value = {};
@@ -2220,7 +2224,8 @@ async function loadForms() {
     // state with no baseline, so the editor is hidden and Save stays disabled.
     loaded.value = false;
     dirtyBaseline.value = null;
-    toast.error(err.message);
+    loadFailed.value = true;
+    toast.error(Helpers.parseAxiosResponseError(err, t('designer.loadFailed')));
   }
 }
 
@@ -4909,6 +4914,17 @@ onBeforeUnmount(() => {
               {{ t('designer.inUseBy', { user: lock.lock.username }) }}
             </p>
             <p class="fs-6 mb-0">{{ t('designer.inUseByHint', { user: lock.lock.username }) }}</p>
+          </div>
+          <!-- the configuration could not be read : said, with a Retry, rather than placeholders
+               that never fill -->
+          <div
+            v-else-if="lock && !lock.free && !loaded && loadFailed"
+            class="d-flex flex-column align-items-center justify-content-center py-5 text-muted"
+          >
+            <FaIcon icon="triangle-exclamation" style="font-size: 2.5rem; opacity: 0.3" class="mb-3" />
+            <p class="mb-3 fw-semibold" style="font-size: 1.2rem">{{ t('designer.loadFailed') }}</p>
+            <p class="fs-6 mb-3">{{ t('designer.loadFailedHint') }}</p>
+            <BsButton icon="rotate-right" @click="loadForms()">{{ t('designer.retry') }}</BsButton>
           </div>
           <AppSkeleton v-else-if="lock && !lock.free && !loaded" shape="editor" :count="40" />
           <div
