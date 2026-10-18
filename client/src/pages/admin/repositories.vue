@@ -12,12 +12,30 @@ const settings = computed(() => getSettings(t));
 const adminMulti = ref(null);
 const authenticated = ref(false);
 
-async function triggerClone(repo) {
+/**
+ * Runs a git action of a repository's row (Pull, Push, Reset) : its status shown as running
+ * meanwhile, a refusal said in a toast (the server's own words), and the list read again
+ * whatever the answer, so the row never stays on running.
+ *
+ * Args:
+ *   repo (object): the repository's row.
+ *   action (string): the api action ('clone', 'sync', 'reset').
+ *   title (string): what the action is called, said when the server gives no reason.
+ */
+async function runGit(repo, action, title) {
   adminMulti.value.setItemProperty({ id: repo.name, key: 'status', value: 'running' });
-  await axios.post(`/api/v2/repository/${repo.name}/clone`, {});
-  // wait 1 second to visually see the change
-  await new Promise((r) => setTimeout(r, 1000));
-  adminMulti.value.loadItems();
+  try {
+    await axios.post(`/api/v2/repository/${encodeURIComponent(repo.name)}/${action}`, {});
+    // wait 1 second to visually see the change
+    await new Promise((r) => setTimeout(r, 1000));
+  } catch (err) {
+    toast.error(Helpers.parseAxiosResponseError(err, title));
+  } finally {
+    adminMulti.value?.loadItems();
+  }
+}
+async function triggerClone(repo) {
+  await runGit(repo, 'clone', t('settings.repositories.pull'));
 }
 // Pull all : every repository pulled (cloned when it is not there yet) at once, as its own Pull
 // does ; the ones that fail are named
@@ -35,25 +53,17 @@ async function pullAll() {
     if (failed.length) toast.error(t('settings.repositories.pullAllFailed', { names: failed.join(', ') }));
     else toast.success(t('settings.repositories.pullAllDone', repos.length));
   } catch (err) {
-    toast.error(Helpers.parseAxiosResponseError(err, 'Failed to pull the repositories'));
+    toast.error(Helpers.parseAxiosResponseError(err, t('settings.repositories.pullAll')));
   } finally {
     pullingAll.value = false;
     adminMulti.value?.loadItems();
   }
 }
 async function triggerSync(repo) {
-  adminMulti.value.setItemProperty({ id: repo.name, key: 'status', value: 'running' });
-  await axios.post(`/api/v2/repository/${repo.name}/sync`, {}).catch(() => {});
-  // wait 1 second to visually see the change
-  await new Promise((r) => setTimeout(r, 1000));
-  adminMulti.value.loadItems();
+  await runGit(repo, 'sync', t('settings.repositories.push'));
 }
 async function triggerReset(repo) {
-  adminMulti.value.setItemProperty({ id: repo.name, key: 'status', value: 'running' });
-  await axios.post(`/api/v2/repository/${repo.name}/reset`, {});
-  // wait 1 second to visually see the change
-  await new Promise((r) => setTimeout(r, 1000));
-  adminMulti.value.loadItems();
+  await runGit(repo, 'reset', t('settings.repositories.reset'));
 }
 
 onMounted(async () => {
