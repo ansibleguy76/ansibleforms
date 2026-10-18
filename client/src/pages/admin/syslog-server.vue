@@ -28,6 +28,7 @@ import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { recordButtons } from '@/lib/recordButtons';
 import { useRecordSearch } from '@/composables/useRecordSearch';
+import { reloadKeepingEdits } from '@/lib/keepEdits';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -39,9 +40,8 @@ const loaded = ref(false);
 const serverId = computed(() => String(route.params.id || ''));
 const server = ref(null); // as saved
 const edit = ref(null); // as edited
-// Enabled too : saved with Save as the rest
+// Enabled is not one : its switch saves at once (setEnabled), as every record page's
 const EDITED = [
-  'enabled',
   'name',
   'description',
   'protocol',
@@ -82,7 +82,6 @@ function editable(record) {
   return {
     name: record.name ?? '',
     description: record.description ?? '',
-    enabled: !!record.enabled,
     protocol: record.protocol || 'udp4',
     host: record.host ?? '',
     port: record.port ?? '',
@@ -219,7 +218,6 @@ async function save() {
   const data = {
     name: e.name.trim(),
     description: e.description.trim(),
-    enabled: e.enabled ? 1 : 0,
     protocol: e.protocol,
     host: onSocket.value ? '' : e.host.trim(),
     port: onSocket.value ? '' : e.port,
@@ -234,6 +232,22 @@ async function save() {
     toast.success(t('settings.common.nameUpdated', { name: data.name }));
     await load();
   }
+}
+
+// ─── its switch : the server log and the audit entries sent to it or not ─────────────
+/**
+ * Turns it on or off, saved at once as every record's Enabled switch ; what is being edited and
+ * not saved yet stays as it is.
+ *
+ * Args:
+ *   on (boolean): the switch's new state.
+ */
+async function setEnabled(on) {
+  if (await update({ enabled: on ? 1 : 0 })) {
+    toast.success(t('settings.common.nameUpdated', { name: server.value.name }));
+  }
+  // read again, what is being edited and not saved yet kept as it is (lib/keepEdits.js)
+  await reloadKeepingEdits(edit, load);
 }
 
 // Test : a message through the server as saved
@@ -373,14 +387,15 @@ onMounted(async () => {
                 <label class="form-label fw-bold d-block" for="af-syslog-enabled">{{
                   t('settings.syslogServers.enabled')
                 }}</label>
-                <!-- saved with Save -->
+                <!-- saved at once, as every record's Enabled -->
                 <div class="form-check form-switch mb-0">
                   <input
                     id="af-syslog-enabled"
-                    v-model="edit.enabled"
                     class="form-check-input"
                     type="checkbox"
                     role="switch"
+                    :checked="!!Number(server.enabled)"
+                    @change="setEnabled($event.target.checked)"
                   />
                 </div>
                 <div class="form-text">{{ t('settings.syslogServers.enabledHelp') }}</div>
