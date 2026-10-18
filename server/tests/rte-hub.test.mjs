@@ -171,15 +171,32 @@ describe("an RTE calling in", () => {
     assert.equal(created[0].credential, "dmz-1-rte-2");
   });
 
-  test("a wrong token is refused, a join token replaces it in the runner's credential", async () => {
+  test("a wrong token is refused ; a join token gives a runner waiting for approval a new token", async () => {
     credentials["dmz-1-rte"] = { id: 5, name: "dmz-1-rte", credential_type: "rte", password: "the-old-token-0123456789" };
-    runners["dmz-1"] = { id: 1, name: "dmz-1", type: "rte", credential: "dmz-1-rte", token: "the-old-token-0123456789", rte_mode: "outbound" };
+    runners["dmz-1"] = { id: 1, name: "dmz-1", type: "rte", credential: "dmz-1-rte", token: "the-old-token-0123456789", rte_mode: "outbound", pending: 1 };
     assert.equal((await authenticate(headers())).status, 401);
     assert.equal((await authenticate(headers({ "x-af-rte-join": "afj_bad" }))).status, 401);
     const res = await authenticate(headers({ "x-af-rte-join": "afj_good" }));
     assert.ok(res.runner);
     assert.equal(credentials["dmz-1-rte"].password, "rte-token-0123456789");
     assert.equal(credCreated.length, 0, "the runner's own credential, not a new one");
+    assert.equal(runners["dmz-1"].pending, 1, "still waiting for an admin");
+  });
+
+  test("a join token never takes over an approved runner : its credential, mode and address stay", async () => {
+    credentials["dmz-1-rte"] = { id: 5, name: "dmz-1-rte", credential_type: "rte", password: "the-old-token-0123456789", url: "https://rte.dmz:8443" };
+    runners["dmz-1"] = { id: 1, name: "dmz-1", type: "rte", credential: "dmz-1-rte", token: "the-old-token-0123456789", rte_mode: "inbound", pending: 0 };
+    for (const opts of [{}, { mode: "inbound", url: "https://evil.example:8443" }]) {
+      const res = await authenticate(headers({ "x-af-rte-join": "afj_good" }), opts);
+      assert.equal(res.status, 409, JSON.stringify(opts));
+      assert.match(res.error, /approved/);
+    }
+    assert.equal(joinUses, 0, "refused before the join token is used");
+    assert.deepEqual([credUpdated.length, credCreated.length, updated.length], [0, 0, 0], "nothing written");
+    assert.equal(credentials["dmz-1-rte"].password, "the-old-token-0123456789");
+    // its current token still lets it in
+    const own = await authenticate(headers({ authorization: "Bearer the-old-token-0123456789" }), { mode: "inbound", url: "https://rte.dmz:8443" });
+    assert.equal(own.runner.name, "dmz-1");
   });
 
   test("an inbound registration stores the address the app dials, in the credential", async () => {

@@ -437,7 +437,8 @@
       On an RTE in a socket mode, the first time, optional. Without it an RTE the app does not
       know asks to join and waits for an admin's approval under Connections > Runners. With it
       the RTE is approved at once - for unattended installs - and the app adds it as a runner
-      (or gives an existing runner of that name the new token). Join tokens are made through the
+      (or gives a runner of that name still waiting for approval the new token ; an approved
+      runner keeps its token, which only an admin changes). Join tokens are made through the
       API (`POST /api/v2/runner/jointoken`, an admin). From then on the RTE signs in with its own
       token ; the join token can expire or be revoked without affecting it.
   - name: RTE_NAME

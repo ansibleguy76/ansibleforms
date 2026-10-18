@@ -457,9 +457,11 @@ async function abandonLost(entry, hello) {
 /**
  * Who an RTE that calls in is (its socket, outbound, or its one registration call, either mode) :
  * its runner, signed in with its own token ; or a new runner, added with a join token of
- * Connections > Runners. A runner whose token changed (the RTE was installed again) is let in
- * with a join token too, and keeps the new token. The runner takes the mode the RTE runs in, and
- * an inbound one the address the app dials it on.
+ * Connections > Runners. A join token only adds a runner, or gives a new token to one still
+ * waiting for approval : an approved runner is never taken over with one (whoever holds a join
+ * token could otherwise point an approved runner, and its jobs and secrets, at a host of their
+ * own) ; its RTE signs in with its current token, or an admin changes the token. The runner
+ * takes the mode the RTE runs in, and an inbound one the address the app dials it on.
  *
  * Args:
  *   headers (object): the request's headers : Authorization (its RTE_TOKEN), X-AF-RTE-Name,
@@ -502,14 +504,25 @@ export async function authenticate(headers, opts = {}) {
   }
   // a seeded runner first : refused before the join token is used, which would cost it a use
   if (runner?.managed) return { status: 409, error: `runner '${name}' is managed by the config seed: its token is set there` };
+  // an approved runner : its own token only, never a join token (refused before the join token
+  // is used, too)
+  if (runner && !Number(runner.pending)) {
+    logger.warning(`RTE '${name}': a join token was offered for the approved runner of that name with another token: refused`);
+    return {
+      status: 409,
+      error: `runner '${name}' exists and is approved: a join token cannot give it a new token. Use its current RTE_TOKEN, or have an admin change the token in its credential (or remove the runner) under Connections`,
+    };
+  }
   const used = await RunnerJoinToken.use(join);
   if (!used) return { status: 401, error: "the join token (RTE_JOIN_TOKEN) is unknown, revoked, expired or used up" };
   // the token goes in a credential of type rte, as every runner signs in (Connections >
   // Credentials) : the runner names it, and an inbound one's address is the credential's
   const credential = await storeToken(name, token, mode === "inbound" ? url : "", runner?.credential);
   if (runner) {
+    // a runner still waiting for approval (an approved one was refused above) : a new token,
+    // still waiting for an admin
     await Runner.update({ credential, token: null, rte_mode: fields.rte_mode, ...(mode === "inbound" ? { uri: "" } : {}) }, runner.id, { fromRte: true });
-    logger.notice(`Runner '${name}' got a new token (credential '${credential}') through the join token '${used.name}'`);
+    logger.notice(`Runner '${name}', waiting for approval, got a new token (credential '${credential}') through the join token '${used.name}'`);
   } else {
     await Runner.create({ name, type: "rte", uri: "", credential, rte_mode: fields.rte_mode, description: `Joined with the join token '${used.name}'` }, { fromRte: true });
     logger.notice(`Runner '${name}' (${mode}) added through the join token '${used.name}', signing in with the credential '${credential}'`);
