@@ -3,7 +3,6 @@ import RestResult from '../../models/restResult.model.v2.js';
 import Lock from '../../models/lock.model.js';
 import Errors from '../../lib/errors.js';
 import i18n from '../../lib/i18n.js';
-import logger from '../../lib/logger.js';
 
 // The lock (a database row) is a copy of the user who took the lock : their roles, groups, options
 // and email as well as their name. The status goes to every designer user, who only needs
@@ -50,10 +49,9 @@ const lockController = {
       if (req.query?.force === 'true') {
         // an admin : as lib/adminGrants.js isAdminRequest (not imported : it loads the database)
         if (!(req.user.user.roles || []).includes('admin')) throw new Errors.AccessDeniedError(i18n.t(req, 'errors.notAdmin'));
-        if (!current.free) {
-          logger.notice(`${req.user.user.username} released the designer lock of ${current.lock?.username}`);
-          await Lock.delete(req.user.user);
-        }
+        // marked as released by this admin rather than deleted (Lock.forceRelease) : the
+        // holder's designer must not take it straight back as a lock left behind
+        if (!current.free) await Lock.forceRelease(req.user.user, current.lock);
         return res.json(RestResult.single({ message: i18n.t(req, 'resources.lockDeleted') }));
       }
       // only its holder turns the designer off : somebody else's lock is theirs until they do

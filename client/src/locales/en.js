@@ -2209,6 +2209,7 @@ export default {
     hasWarnings: 'This config has',
   },
   designer: {
+    lockReleasedBy: 'Your designer lock was released by {name}. Unsaved changes can no longer be saved.',
     title: 'Designer',
     offDescription:
       'Edit the categories, constants, forms and roles. Start the designer to lock the configuration while you edit it.',

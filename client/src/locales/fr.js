@@ -2253,6 +2253,8 @@ export default {
     hasWarnings: 'Cette configuration contient',
   },
   designer: {
+    lockReleasedBy:
+      'Votre verrou du concepteur a été libéré par {name}. Les modifications non enregistrées ne peuvent plus être enregistrées.',
     title: 'Concepteur',
     offDescription:
       "Modifiez les catégories, constantes, formulaires et rôles. Démarrez le designer pour verrouiller la configuration pendant l'édition.",

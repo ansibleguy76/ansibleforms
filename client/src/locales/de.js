@@ -2254,6 +2254,8 @@ export default {
     hasWarnings: 'Diese Konfiguration hat',
   },
   designer: {
+    lockReleasedBy:
+      'Ihre Designer-Sperre wurde von {name} freigegeben. Nicht gespeicherte Änderungen können nicht mehr gespeichert werden.',
     title: 'Designer',
     offDescription:
       'Bearbeiten Sie Kategorien, Konstanten, Formulare und Rollen. Starten Sie den Designer, um die Konfiguration beim Bearbeiten zu sperren.',

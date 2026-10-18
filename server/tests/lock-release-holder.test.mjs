@@ -7,8 +7,9 @@ import { describe, test, expect, vi, beforeEach } from "vitest";
 
 const status = vi.fn();
 const del = vi.fn();
+const force = vi.fn();
 vi.mock("../src/models/lock.model.js", () => ({
-  default: { status: (...a) => status(...a), delete: (...a) => del(...a) },
+  default: { status: (...a) => status(...a), delete: (...a) => del(...a), forceRelease: (...a) => force(...a) },
 }));
 
 const { default: lockController } = await import("../src/controllers/v2/lock.controller.js");
@@ -26,6 +27,7 @@ describe("releasing the designer lock", () => {
   beforeEach(() => {
     status.mockReset();
     del.mockReset();
+    force.mockReset();
   });
 
   test("refuses somebody else's lock, and leaves it", async () => {
@@ -40,16 +42,19 @@ describe("releasing the designer lock", () => {
     expect(del).toHaveBeenCalledWith({ username: "alice", type: "local", roles: [] }, { onlyMine: true });
   });
 
-  test("an admin releases somebody else's lock", async () => {
+  test("an admin releases somebody else's lock, marked as released by them", async () => {
     status.mockResolvedValue({ lock: { username: "bsmith", type: "ldap" }, match: false, free: false });
     expect(await release({ force: true, roles: ["admin"] })).toBe(200);
-    expect(del).toHaveBeenCalledWith({ username: "alice", type: "local", roles: ["admin"] });
+    // not deleted : the holder's designer must learn it was released, not take it back
+    expect(del).not.toHaveBeenCalled();
+    expect(force).toHaveBeenCalledWith({ username: "alice", type: "local", roles: ["admin"] }, { username: "bsmith", type: "ldap" });
   });
 
   test("only an admin forces it", async () => {
     status.mockResolvedValue({ lock: { username: "bsmith", type: "ldap" }, match: false, free: false });
     expect(await release({ force: true, roles: ["designers"] })).toBe(403);
     expect(del).not.toHaveBeenCalled();
+    expect(force).not.toHaveBeenCalled();
   });
 
   test("answers a free lock as released", async () => {

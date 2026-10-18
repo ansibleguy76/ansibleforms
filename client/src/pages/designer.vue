@@ -2239,7 +2239,12 @@ async function loadLock() {
     // ours a moment ago, free now : it was left behind (the computer asleep past
     // LOCK_STALE_SECONDS, server/src/models/lock.model.js) and nobody took it - taken back, so
     // the edits open here go on ; somebody else's by now shows who
-    if (before?.match && lock.value?.free && !releasing.value) {
+    //
+    // Unless an admin released it (the server says so, and by whom) : taking it back then
+    // undid their release within seconds. Say so instead, and leave it free.
+    if (before?.match && lock.value?.free && lock.value?.released) {
+      toast.warning(t('designer.lockReleasedBy', { name: lock.value.released.by || '?' }));
+    } else if (before?.match && lock.value?.free && !releasing.value) {
       try {
         await Lock.set();
         lock.value = await Lock.get();

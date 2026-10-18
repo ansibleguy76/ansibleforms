@@ -2236,6 +2236,8 @@ export default {
     hasWarnings: 'Deze configuratie heeft',
   },
   designer: {
+    lockReleasedBy:
+      'Uw designervergrendeling is vrijgegeven door {name}. Niet-opgeslagen wijzigingen kunnen niet meer worden opgeslagen.',
     title: 'Designer',
     offDescription:
       'Bewerk de categorieën, constanten, formulieren en rollen. Start de designer om de configuratie te vergrendelen tijdens het bewerken.',

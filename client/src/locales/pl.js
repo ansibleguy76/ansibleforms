@@ -2226,6 +2226,8 @@ export default {
     hasWarnings: 'Ta konfiguracja zawiera',
   },
   designer: {
+    lockReleasedBy:
+      'Twoja blokada projektanta została zwolniona przez {name}. Niezapisanych zmian nie można już zapisać.',
     title: 'Projektant',
     offDescription:
       'Edytuj kategorie, stałe, formularze i role. Uruchom projektanta, aby zablokować konfigurację na czas edycji.',

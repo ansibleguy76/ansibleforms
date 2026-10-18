@@ -2234,6 +2234,8 @@ export default {
     hasWarnings: 'Questa configurazione ha',
   },
   designer: {
+    lockReleasedBy:
+      'Il tuo blocco del designer è stato rilasciato da {name}. Le modifiche non salvate non possono più essere salvate.',
     title: 'Designer',
     offDescription:
       'Modifica categorie, costanti, form e ruoli. Avvia il designer per bloccare la configurazione mentre la modifichi.',

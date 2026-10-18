@@ -2243,6 +2243,8 @@ export default {
     hasWarnings: 'Esta configuração tem',
   },
   designer: {
+    lockReleasedBy:
+      'O seu bloqueio do designer foi libertado por {name}. As alterações não guardadas já não podem ser guardadas.',
     title: 'Designer',
     offDescription:
       'Edite as categorias, constantes, formulários e funções. Inicie o designer para bloquear a configuração enquanto a edita.',

@@ -2246,6 +2246,7 @@ export default {
     hasWarnings: 'Esta configuración tiene',
   },
   designer: {
+    lockReleasedBy: '{name} ha liberado tu bloqueo del diseñador. Los cambios sin guardar ya no se pueden guardar.',
     title: 'Diseñador',
     offDescription:
       'Edita las categorías, constantes, formularios y roles. Inicia el designer para bloquear la configuración mientras la editas.',

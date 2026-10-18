@@ -2200,6 +2200,7 @@ export default {
     hasWarnings: 'この設定の',
   },
   designer: {
+    lockReleasedBy: 'デザイナーのロックが {name} によって解除されました。未保存の変更は保存できなくなりました。',
     title: 'デザイナー',
     offDescription:
       'カテゴリ、定数、フォーム、ロールを編集します。編集中に設定をロックするには、デザイナーを開始してください。',

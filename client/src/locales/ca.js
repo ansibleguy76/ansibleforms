@@ -2250,6 +2250,7 @@ export default {
     hasWarnings: 'Aquesta configuració té',
   },
   designer: {
+    lockReleasedBy: '{name} ha alliberat el teu bloqueig del dissenyador. Els canvis no desats ja no es poden desar.',
     title: 'Dissenyador',
     offDescription:
       "Edita les categories, les constants, els formularis i els rols. Inicia el dissenyador per bloquejar la configuració mentre l'edites.",

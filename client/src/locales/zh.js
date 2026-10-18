@@ -2132,6 +2132,7 @@ export default {
     hasWarnings: '此配置有',
   },
   designer: {
+    lockReleasedBy: '您的设计器锁已被 {name} 释放。未保存的更改无法再保存。',
     title: '设计器',
     offDescription: '编辑类别、常量、表单和角色。启动设计器可在编辑期间锁定配置。',
     formsDescription: '以 YAML 形式编辑表单。右侧的文件浏览器列出表单文件以及每个文件中的表单。',
