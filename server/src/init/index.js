@@ -109,6 +109,10 @@ const initOnce = async function({ boot = false } = {}){
 
   // check Schema
   var schemaIsReady
+  // why the upgrade of an existing schema did not complete (its backup failed, or a patch did) :
+  // null when it did, or when there was nothing to upgrade. Everything below that writes with the
+  // new schema (the seed) is skipped then, and this is what the log names, not what fails next
+  let upgradeFailed = null
   try{
     var schemaresult = await Schema.hasSchema()
     if(schemaresult.data.failed.length>0){
@@ -141,12 +145,20 @@ const initOnce = async function({ boot = false } = {}){
       logger.error("Fatal error: " + err)
       throw err
     }
+    // step : the schema is there, but its upgrade did not complete - name the real cause
+    if(err.message === "Patching failed"){
+      upgradeFailed = result.data.backupFailed
+        ? "the backup before the upgrade failed, so the database was not upgraded. Fix the backup (MYSQLDUMP_COMMAND, BACKUP_PATH, the backup's error is logged above), or set UPGRADE_BACKUP=0 to upgrade without one"
+        : `a patch failed (${result.data.failed.slice(0, 3).join("; ")}${result.data.failed.length > 3 ? "; ..." : ""}). Fix what it names; the backup before the upgrade can be skipped with UPGRADE_BACKUP=0`
+    }
     // Schema is missing - stop initialization here
     schemaIsReady = false
   }
 
   // Only continue with group/user creation if schema is ready
-  if(!schemaIsReady){
+  if(upgradeFailed){
+    logger.error(`The database upgrade did not complete: ${upgradeFailed}. The worker tries it again every 30 seconds`)
+  }else if(!schemaIsReady){
     logger.warning("Schema is not ready, skipping group and user initialization")
     logger.warning("Please create the schema via the /schema endpoint")
     // Continue to start the app so the /schema endpoint is available
@@ -334,10 +346,20 @@ const initOnce = async function({ boot = false } = {}){
     }
   }
 
-  try {
-    await applyConfigSeed({ schemaIsReady })
-  } catch (err) {
-    await refuseToStart("Config seed failed, refusing to start: " + (err.message || err))
+  // the seed writes with this release's schema : on a schema whose upgrade did not complete it
+  // failed on the first missing column, and that seed error is what the process died with,
+  // hiding the cause (the backup before the upgrade, most often). Skipped instead, said why ; the
+  // worker retries this bootstrap (init/worker.js), and the seed applies once the upgrade has
+  if(upgradeFailed){
+    if(appConfig.configSeedPath){
+      logger.error(`The config seed was not applied: the database upgrade did not complete (${upgradeFailed}). It is applied once the upgrade has run`)
+    }
+  }else{
+    try {
+      await applyConfigSeed({ schemaIsReady })
+    } catch (err) {
+      await refuseToStart("Config seed failed, refusing to start: " + (err.message || err))
+    }
   }
 
   if(!startBackground){

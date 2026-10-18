@@ -35,6 +35,7 @@ import { fileURLToPath } from "url";
 import init from "../init/index.js";
 import { holdsWorkerLock } from "../lib/workerLock.js";
 import { appVersion } from "../lib/version.js";
+import { missingFromManifest } from "../lib/schemaCompleteness.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -59,9 +60,60 @@ class Schema {
   // it never runs DDL next to the worker patching the same tables.
   static async hasSchema() {
     if (Schema._cachedOk) return Schema._cachedOk;
-    const result = await checkAll({ patch: holdsWorkerLock() });
+    // one check at a time in a process : a restore re-checks the schema (upgradeAfterRestore)
+    // and its change notice asks again a few seconds later ; two runs side by side would patch
+    // the same tables at once
+    if (!Schema._running) {
+      Schema._running = checkAll({ patch: holdsWorkerLock() }).finally(() => { Schema._running = null; });
+    }
+    const result = await Schema._running;
     Schema._cachedOk = result;
     return result;
+  }
+
+  // the check in progress, shared by every caller of hasSchema meanwhile
+  static _running = null;
+
+  /**
+   * After a database restore : the schema that came back can be an older release's (the backup
+   * taken before an upgrade), and the cached "everything is present" of before would keep this
+   * release running on it. The cache goes, and the schema is checked and patched again here when
+   * this process holds the worker lock ; otherwise the worker patches it on the restore's change
+   * notice (init/cluster.js) and this waits up to waitMs for the schema manifest to be complete.
+   *
+   * Args:
+   *   options (object): { waitMs } - how long an app node waits for the worker's patching.
+   *
+   * Returns:
+   *   Promise<object>: { upgraded: true } when the schema is complete ; { upgraded: false,
+   *     failed: string[] } when the patching failed (or the worker had not finished in time).
+   */
+  static async upgradeAfterRestore({ waitMs = 60000 } = {}) {
+    Schema._cachedOk = null;
+    // step 1 : the worker : check and patch it now
+    if (holdsWorkerLock()) {
+      try {
+        await Schema.hasSchema();
+        return { upgraded: true };
+      } catch (err) {
+        return { upgraded: false, failed: err.result?.data?.failed?.length ? err.result.data.failed : [err.message || String(err)] };
+      }
+    }
+    // step 2 : an app node : the worker patches it, this waits for the manifest to be complete
+    const until = Date.now() + waitMs;
+    let missing;
+    for (;;) {
+      try {
+        const m = await missingFromManifest(SCHEMA_MANIFEST, mysql);
+        missing = [...m.missingTables, ...m.missingColumns];
+      } catch (err) {
+        missing = [`the schema could not be checked (${err.message || err})`];
+      }
+      if (!missing.length) return { upgraded: true };
+      if (Date.now() >= until) break;
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+    return { upgraded: false, failed: [`the worker has not patched the restored schema yet, it lacks ${missing.slice(0, 5).join(", ")}${missing.length > 5 ? ` and ${missing.length - 5} more` : ""}`] };
   }
 
   /**
@@ -1118,7 +1170,8 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addColumn("settings", "encryption_check", "text", true, "NULL"), messages, success, failed);
   await checkPromise(moveConnectionsToCredentials(), messages, success, failed);
   // and those credentials are of the runner's or the store's kind : rte, awx, aap, ascender,
-  // semaphore, rundeck, jenkins, vault (a CyberArk's already cyberark)
+  // semaphore, rundeck, jenkins, vault (a CyberArk's already cyberark) ; once (its marker in
+  // schema_migrations), so a type an admin chooses later is never rewritten
   await checkPromise(retypeConnectionCredentials(), messages, success, failed);
   // the API tokens issued, listed and revoked on the profile and the user's page (models/apiToken.model.js)
   const apiTokens = fs.readFileSync(`${__dirname}/../db/create_api_tokens_table.sql`);
@@ -1734,11 +1787,62 @@ export async function renameDefaultLdap() {
   return `LDAP directory '${LEGACY_DEFAULT_LDAP}' renamed to '${DEFAULT_LDAP}'`;
 }
 
+// the schema_migrations row that says the credentials of the secret stores and runners were
+// given the type of their kind (retypeConnectionCredentials) : once, never again after
+const RETYPE_MARKER = "retype_connection_credentials";
+
+// the credential types of one product line : an awx runner is an AWX, an AAP or an Ascender
+// (its flavour), and the three speak the same API with the same login. A credential of any of
+// them serves a runner of any other : never retyped, nor split, within the family
+const AWX_FAMILY = new Set(["awx", "aap", "ascender"]);
+
+/**
+ * The family a credential type belongs to, for the comparison in retypeConnectionCredentials :
+ * awx for awx, aap and ascender (AWX_FAMILY), the type itself for any other.
+ *
+ * Args:
+ *   type (string|null): a credential type, or a runner's or a secret store's kind.
+ *
+ * Returns:
+ *   string|null: the family.
+ */
+function credentialFamily(type) {
+  return AWX_FAMILY.has(type) ? "awx" : type;
+}
+
 export async function retypeConnectionCredentials() {
+  // step 1 : once only. It ran at every start, so an admin who chose another type (an aap
+  // credential for an awx runner, the same product line) had it rewritten at the next restart
+  const marker = await mysql.do("SELECT 1 FROM AnsibleForms.`schema_migrations` WHERE name = ?", [RETYPE_MARKER]);
+  if (marker.length) return null;
+  // step 2 : the records that name a credential
   const stores = await mysql.do("SELECT id, type, NULL AS flavour, credential FROM AnsibleForms.`secret_stores` WHERE COALESCE(credential, '') <> ''");
   const runners = await mysql.do("SELECT id, type, flavour, credential FROM AnsibleForms.`runners` WHERE COALESCE(credential, '') <> ''");
   const records = [...stores.map((r) => ({ ...r, table: "secret_stores" })), ...runners.map((r) => ({ ...r, table: "runners" }))];
-  if (!records.length) return null;
+  const done = [];
+  if (records.length) await retypeRecords(records, done);
+  // step 6 : recorded, also when there was nothing to retype (a fresh install) : a runner or a
+  // credential an admin adds later is theirs, never retyped. Not reached when a transaction
+  // failed : the next start tries again
+  await mysql.do("INSERT IGNORE INTO AnsibleForms.`schema_migrations` (name, version, applied_at) VALUES (?, ?, NOW())", [RETYPE_MARKER, appVersion]);
+  if (!done.length) return null;
+  const message = `Gave the credentials of the secret stores and runners the type of their kind (${done.join(", ")})`;
+  logger.notice(message);
+  return message;
+}
+
+/**
+ * The work of retypeConnectionCredentials, once its marker said it had not run : each credential
+ * the records name given their kind, or copied per family of kinds.
+ *
+ * Args:
+ *   records (object[]): the secret stores and runners that name a credential, each with its table.
+ *   done (string[]): what was done, appended to.
+ *
+ * Returns:
+ *   Promise<void>
+ */
+async function retypeRecords(records, done) {
   const others = new Set(
     (
       await mysql.do(
@@ -1753,7 +1857,6 @@ export async function retypeConnectionCredentials() {
     if (!byCredential.has(r.credential)) byCredential.set(r.credential, []);
     byCredential.get(r.credential).push(r);
   }
-  const done = [];
   for (const [credName, users] of byCredential) {
     // one transaction per credential : its new type, its copies and the records that name
     // them are written together or not at all. A crash in between used to leave a copy nothing
@@ -1761,15 +1864,25 @@ export async function retypeConnectionCredentials() {
     await mysql.transaction(async (query) => {
       const cred = (await query("SELECT * FROM AnsibleForms.`credentials` WHERE name = ?", [credName]))[0];
       if (!cred || cred.managed) return;
-      const kinds = [...new Set(users.map(connectionCredentialType))];
-      if (kinds.length === 1 && kinds[0] === cred.credential_type) return;
-      // the type it keeps : its records' kind when they are all of one and nothing else checks it
-      const keeps = kinds.length === 1 && !others.has(credName) ? kinds[0] : cred.credential_type;
+      // step 3 : the families its records are of, each with the first kind seen in it (the type
+      // a copy for that family gets) : an AWX and an AAP runner sharing one login are one
+      // family, served by one credential, and an aap credential serves an awx runner as it is
+      const families = new Map();
+      for (const u of users) {
+        const kind = connectionCredentialType(u);
+        if (!families.has(credentialFamily(kind))) families.set(credentialFamily(kind), kind);
+      }
+      if (families.size === 1 && families.has(credentialFamily(cred.credential_type))) return;
+      // step 4 : the type it keeps : its records' kind when they are all of one family and
+      // nothing else checks it
+      const keeps = families.size === 1 && !others.has(credName) ? [...families.values()][0] : cred.credential_type;
       if (keeps !== cred.credential_type) {
         await query("UPDATE AnsibleForms.`credentials` SET credential_type = ?, is_database = 0 WHERE id = ?", [keeps, cred.id]);
         done.push(`${credName} is ${keeps}`);
       }
-      for (const kind of kinds.filter((k) => k !== keeps)) {
+      // step 5 : a copy for each other family, which the records of that family then name
+      for (const [family, kind] of families) {
+        if (family === credentialFamily(keeps)) continue;
         // a copy : its login (stored encrypted, the same key for both rows), its server and TLS
         const copy = await freeCredentialName(`${credName}-${kind}`, query);
         await query(
@@ -1777,7 +1890,7 @@ export async function retypeConnectionCredentials() {
             "SELECT ?, user, password, ?, 0, ?, secret_store, secret_ref, client_cert, client_key, url, ignore_certs, ca_bundle FROM AnsibleForms.`credentials` WHERE id = ?",
           [copy, `The ${kind} login of ${credName}`, kind, cred.id],
         );
-        for (const r of users.filter((u) => connectionCredentialType(u) === kind)) {
+        for (const r of users.filter((u) => credentialFamily(connectionCredentialType(u)) === family)) {
           await query(`UPDATE AnsibleForms.\`${r.table}\` SET credential = ? WHERE id = ?`, [copy, r.id]);
         }
         done.push(`a copy of ${credName} for ${kind}, ${copy}`);
@@ -1788,10 +1901,6 @@ export async function retypeConnectionCredentials() {
       }
     });
   }
-  if (!done.length) return null;
-  const message = `Gave the credentials of the secret stores and runners the type of their kind (${done.join(", ")})`;
-  logger.notice(message);
-  return message;
 }
 
 /**
@@ -1909,7 +2018,10 @@ export function compareReleases(a, b) {
  *     directory), not only adds to it, and there was no way back from that
  *   - a database from before schema_migrations existed (the table is missing) : the same
  *     upgrade, from further back
- * A fresh install has the table without the row : nothing to back up there, and a backup that
+ *   - a database with the table and no row, whose core tables (users, jobs) are there while the
+ *     schema manifest names tables or columns it lacks : a 7.x install whose patches always
+ *     failed, so the row was never written
+ * A fresh install has the table without the row, and lacks nothing : nothing to back up there, and a backup that
  * cannot run (no mysqldump on a development machine) must not stop its first patch run. The
  * same release starting again finds its own version recorded : no backup on every restart.
  *
@@ -1934,7 +2046,33 @@ async function pendingUpgrade() {
   if (recorded && (compareReleases(recorded, appVersion) ?? 0) < 0) {
     pending.push(`upgrade the schema from ${recorded} to ${appVersion}`);
   }
+  // a 7.x database whose patches never completed has no 'schema' row either (recordMigrations
+  // runs only after a successful patch run) : it read as a fresh install, and was patched with
+  // no backup. A fresh install lacks nothing the manifest names (create_schema_and_tables.sql
+  // builds all of it), while that database lacks what its failing patches add, beside the core
+  // tables (users, jobs) holding its data. Not with a row of this release : a development build
+  // adding a column patches without a backup, as it always did (no dump tool needed there)
+  if (!recorded) {
+    const missing = await missingOnExistingDatabase();
+    if (missing.length) {
+      pending.push(`upgrade an unrecorded schema to ${appVersion} (it lacks ${missing.slice(0, 5).join(", ")}${missing.length > 5 ? `, and ${missing.length - 5} more` : ""})`);
+    }
+  }
   return pending;
+}
+
+/**
+ * What the schema manifest names that the database lacks (tables and columns, not the indexes :
+ * a missing index is slow, not lost data), when it already holds the core tables (users and
+ * jobs) : an existing install, not a fresh one.
+ *
+ * Returns:
+ *   Promise<string[]>: the missing tables and columns ; empty for a complete or a fresh schema.
+ */
+async function missingOnExistingDatabase() {
+  const { missingTables, missingColumns, haveTables } = await missingFromManifest(SCHEMA_MANIFEST, mysql);
+  if (!haveTables.has("users") || !haveTables.has("jobs")) return [];
+  return [...missingTables, ...missingColumns];
 }
 
 // the schema_migrations row naming the release the database was last backed up for before an
@@ -2186,6 +2324,9 @@ async function checkAll({ patch = true } = {}) {
 
   // patch the tables : a backup first when they have something to change, and what was applied
   // recorded after
+  // whether the backup before the upgrade failed : the patches did not run at all then, and the
+  // caller (init) names that cause, and the UPGRADE_BACKUP=0 escape, rather than what fails next
+  let backupFailed = false;
   if (patch) {
     try {
       const done = await backupBeforeUpgrade();
@@ -2195,6 +2336,7 @@ async function checkAll({ patch = true } = {}) {
       messages.push(why);
       failed.push(why);
       logger.error(why);
+      backupFailed = true;
     }
     if (failed.length === 0) await checkPromise(patchAll(messages, success, failed), messages, success, failed);
     if (failed.length === 0) await checkPromise(recordMigrations().then(() => null), messages, success, failed);
@@ -2202,7 +2344,7 @@ async function checkAll({ patch = true } = {}) {
 
   if (failed.length > 0) {
     // some of the patches failed // throw now
-    resultobj = { message: messages, data: { success: success, failed: failed } };
+    resultobj = { message: messages, data: { success: success, failed: failed, backupFailed } };
     const err = new Error("Patching failed");
     err.result = resultobj;
     throw err;

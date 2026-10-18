@@ -19,11 +19,16 @@ let hasMigrations;
 let recorded;
 // the upgrade_backup row's release (none : never backed up before an upgrade), what was written
 let backedUpFor;
+// what information_schema says the database has, for the manifest check (missingFromManifest) :
+// null is a complete schema (every table and column the manifest names)
+let have;
 const writes = [];
 vi.mock("../src/models/db.model.js", () => ({
   default: {
     do: async (sql, params) => {
-      if (/information_schema\.tables/.test(sql)) return legacy.map((t) => ({ t }));
+      if (/information_schema\.tables WHERE table_schema='AnsibleForms' AND table_name IN/.test(sql)) return legacy.map((t) => ({ t }));
+      if (/information_schema\.tables/.test(sql)) return (have?.tables ?? manifestTables()).map((t) => ({ t }));
+      if (/information_schema\.columns/.test(sql)) return (have?.columns ?? manifestColumns()).map((x) => ({ t: x.split(".")[0], c: x.split(".")[1] }));
       if (/^SHOW TABLES FROM \?\? WHERE/.test(sql)) return params[2] === "schema_migrations" && hasMigrations ? [{ t: "schema_migrations" }] : [];
       if (/FROM AnsibleForms\.`schema_migrations` WHERE name = 'schema'/.test(sql)) return recorded ? [{ version: recorded }] : [];
       if (/FROM AnsibleForms\.`schema_migrations` WHERE name = \?/.test(sql) && params[0] === "upgrade_backup") return backedUpFor ? [{ version: backedUpFor }] : [];
@@ -42,13 +47,21 @@ vi.mock("../src/models/backup.model.js", () => ({
 }));
 vi.mock("../src/lib/version.js", () => ({ appVersion: "7.3.0", majorMinor: (v) => String(v).split(".").slice(0, 2).join(".") }));
 
-const { pendingUpgrade, backupBeforeUpgrade, compareReleases } = await import("../src/models/schema.model.js");
+// whether this process is the worker (the one that patches)
+let lockHeld = false;
+vi.mock("../src/lib/workerLock.js", () => ({ holdsWorkerLock: () => lockHeld }));
+
+const { default: Schema, pendingUpgrade, backupBeforeUpgrade, compareReleases, SCHEMA_MANIFEST } = await import("../src/models/schema.model.js");
+// every table and column the manifest names : a complete schema
+const manifestTables = () => [...new Set([...SCHEMA_MANIFEST.base.tables, ...Object.values(SCHEMA_MANIFEST.patches).flatMap((p) => p.tables || [])])];
+const manifestColumns = () => Object.values(SCHEMA_MANIFEST.patches).flatMap((p) => p.columns || []);
 
 beforeEach(() => {
   legacy = [];
   hasMigrations = true;
   recorded = "7.3.0";
   backedUpFor = null;
+  have = null;
   writes.length = 0;
   backups.length = 0;
 });
@@ -99,6 +112,32 @@ describe("an upgrade is pending, and backed up first", () => {
     assert.deepEqual(await pendingUpgrade(), []);
   });
 
+  test("a fresh install lacking nothing, or an empty database: not pending", async () => {
+    recorded = null;
+    have = { tables: [], columns: [] };
+    assert.deepEqual(await pendingUpgrade(), []);
+  });
+
+  test("no row, the core tables there and the manifest's columns missing (patches that always failed): pending", async () => {
+    recorded = null;
+    have = { tables: manifestTables(), columns: manifestColumns().filter((c) => !c.startsWith("runners.")) };
+    const pending = await pendingUpgrade();
+    assert.equal(pending.length, 1);
+    assert.match(pending[0], /unrecorded schema to 7\.3\.0 \(it lacks runners\./);
+  });
+
+  test("a row of this release on a schema lacking what a development build adds: not pending", async () => {
+    // no dump tool on a development machine : a new column there patches without a backup
+    have = { tables: manifestTables().filter((t) => t !== "job_events"), columns: manifestColumns() };
+    assert.deepEqual(await pendingUpgrade(), []);
+  });
+
+  test("no row and a missing table, but no users or jobs table: not an existing install, not pending", async () => {
+    recorded = null;
+    have = { tables: manifestTables().filter((t) => t !== "users" && t !== "jobs"), columns: [] };
+    assert.deepEqual(await pendingUpgrade(), []);
+  });
+
   test("a database from before schema_migrations: pending", async () => {
     hasMigrations = false;
     assert.match((await pendingUpgrade()).join(), /unrecorded schema to 7\.3\.0/);
@@ -107,6 +146,41 @@ describe("an upgrade is pending, and backed up first", () => {
   test("the tables 7.0.0 drops: still pending", async () => {
     legacy = ["awx"];
     assert.deepEqual(await pendingUpgrade(), ["drop awx"]);
+  });
+});
+
+describe("a restore checks and patches the schema that came back", () => {
+  // the backup taken before an upgrade brings back the older release's schema, and the cached
+  // "schema is up to date" of before kept this release running on it
+  test("the worker: the cache goes, the schema is checked and patched again", async () => {
+    lockHeld = true;
+    Schema._cachedOk = { message: [], data: { success: [], failed: [] } };
+    const spy = vi.spyOn(Schema, "hasSchema").mockImplementation(async () => {
+      assert.equal(Schema._cachedOk, null, "checked again, not answered from the cache");
+      return { message: [], data: { success: [], failed: [] } };
+    });
+    assert.deepEqual(await Schema.upgradeAfterRestore(), { upgraded: true });
+    assert.equal(spy.mock.calls.length, 1);
+    spy.mockRestore();
+    lockHeld = false;
+  });
+
+  test("the worker: a patching that failed is what the restore reports", async () => {
+    lockHeld = true;
+    const err = new Error("Patching failed");
+    err.result = { data: { failed: ["the backup before it failed"] } };
+    const spy = vi.spyOn(Schema, "hasSchema").mockRejectedValue(err);
+    assert.deepEqual(await Schema.upgradeAfterRestore(), { upgraded: false, failed: ["the backup before it failed"] });
+    spy.mockRestore();
+    lockHeld = false;
+  });
+
+  test("an app node: done once the worker made the schema complete ; else said what it lacks", async () => {
+    assert.deepEqual(await Schema.upgradeAfterRestore({ waitMs: 0 }), { upgraded: true });
+    have = { tables: manifestTables(), columns: manifestColumns().filter((c) => c !== "runners.credential") };
+    const res = await Schema.upgradeAfterRestore({ waitMs: 0 });
+    assert.equal(res.upgraded, false);
+    assert.match(res.failed[0], /has not patched the restored schema yet, it lacks runners\.credential/);
   });
 });
 

@@ -204,17 +204,81 @@ jobs:
           grep -q "Backed up the database before the upgrade" /tmp/af-upgrade.log || { echo "::error::no backup before the upgrade"; exit 1; }
           test -n "$(ls /tmp/af-backups)" || { echo "::error::the backup folder is empty"; exit 1; }
           node -e "import('mysql2/promise').then(async (m) => { const c = await m.createConnection({ host: '127.0.0.1', user: 'root', password: process.env.DB_PASSWORD }); const [r] = await c.query(\"SHOW TABLES FROM AnsibleForms LIKE 'staging'\"); await c.end(); if (r.length) { console.error('staging was not dropped'); process.exit(1); } })"
+          sleep 3
+
+      # The steps below use the DEFAULT dump and restore commands (MYSQLDUMP_COMMAND and
+      # MYSQL_COMMAND unset : mariadb-dump and mariadb with --ssl-verify-server-cert=OFF), so the
+      # default is what gates the upgrade, against MySQL 8.4 too. The runner only has MySQL's
+      # client, and Ubuntu's mariadb-client is an older release than the image's : the binaries
+      # are the image's own Debian trixie package (the Dockerfile installs mariadb-client on
+      # node:26-trixie-slim), run from a small image through two shims on the PATH.
+      - name: The image's client tools - mariadb-dump and mariadb from Debian trixie
+        run: |
+          docker build -q -t af-ci-mariadb-client - <<'EOF'
+          FROM debian:trixie-slim
+          RUN apt-get update && apt-get install -y --no-install-recommends mariadb-client && rm -rf /var/lib/apt/lists/*
+          EOF
+          mkdir -p "$RUNNER_TEMP/af-bin"
+          for tool in mariadb-dump mariadb; do
+            printf '#!/bin/sh\nexec docker run --rm -i --network host af-ci-mariadb-client %s "$@"\n' "$tool" > "$RUNNER_TEMP/af-bin/$tool"
+            chmod +x "$RUNNER_TEMP/af-bin/$tool"
+          done
+          echo "$RUNNER_TEMP/af-bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/af-bin/mariadb-dump" --version
+
+      # A real upgrade : the 7.2.0 schema as that release created it (tests/fixtures), with the
+      # rows the 7.3 patches move - an LDAP directory, two SSO providers, the mail settings,
+      # runners and a Vault with their own secrets, an environment label, a schedule - then the
+      # app starts on it, backs it up, patches it, and every move is checked in SQL
+      # (scripts/ci-upgrade.mjs). The build's version is the next minor of package.json, as a
+      # release build bakes it (build-info.json, gitignored) : between two releases package.json
+      # still names the previous one, and 7.2.0 must read as older than this build.
+      - name: An upgrade from 7.2.0 - its data moved, with the default dump command
+        env:
+          BACKUP_PATH: /tmp/af-backups-72
+          FORMS_BACKUP_PATH: /tmp/af-backups-72/forms
+        run: |
+          node -e "const v = require('./package.json').version.split('.').map(Number); require('fs').writeFileSync('build-info.json', JSON.stringify({ version: v[0] + '.' + (v[1] + 1) + '.0' }))"
+          cat build-info.json
+          node scripts/ci-upgrade.mjs seed
+          node ./index.js > /tmp/af-upgrade72.log 2>&1 &
+          echo $! > /tmp/af.pid
+          node scripts/ci-database.mjs http://127.0.0.1:8000
+          node scripts/ci-upgrade.mjs check
+          kill "$(cat /tmp/af.pid)"
+          sleep 3
+          grep -q "Backed up the database before the upgrade" /tmp/af-upgrade72.log || { echo "::error::no backup before the upgrade from 7.2.0"; exit 1; }
+          test -s "$(ls -d /tmp/af-backups-72/[0-9]* | head -n 1)/ansibleforms.sql" || { echo "::error::the backup before the upgrade from 7.2.0 has no dump"; exit 1; }
+          if grep -q "Patching failed" /tmp/af-upgrade72.log; then echo "::error::the patches failed on the 7.2.0 schema"; exit 1; fi
+
+      # The backup that upgrade took, restored through the API : the 7.2.0 schema comes back, and
+      # the restore must patch it again before it says it completed (every move checked again).
+      # Its log is left out of the error check below : between the dump replayed and the patches,
+      # a background task can query a 7.3 column of the old tables (a transient Unknown column).
+      - name: Restoring the backup taken before that upgrade - upgraded again
+        env:
+          BACKUP_PATH: /tmp/af-backups-72
+          FORMS_BACKUP_PATH: /tmp/af-backups-72/forms
+        run: |
+          node ./index.js > /tmp/af-restore.log 2>&1 &
+          echo $! > /tmp/af.pid
+          node scripts/ci-database.mjs http://127.0.0.1:8000
+          node scripts/ci-upgrade.mjs restore http://127.0.0.1:8000
+          node scripts/ci-upgrade.mjs check
+          kill "$(cat /tmp/af.pid)"
+          rm -f build-info.json
+          if grep -E "Patching failed|could not be upgraded" /tmp/af-restore.log; then echo "::error::the restored 7.2.0 schema was not upgraded"; exit 1; fi
 
       - name: No error in the logs
         run: |
-          if grep -E " error:" /tmp/af-first.log /tmp/af-second.log /tmp/af-upgrade.log; then
+          if grep -E " error:" /tmp/af-first.log /tmp/af-second.log /tmp/af-upgrade.log /tmp/af-upgrade72.log; then
             echo "::error::the app logged errors against ${{ matrix.db }}"
             exit 1
           fi
 
       - name: The logs, when it failed
         if: failure()
-        run: tail -n 200 /tmp/af-first.log /tmp/af-second.log /tmp/af-upgrade.log || true
+        run: tail -n 200 /tmp/af-first.log /tmp/af-second.log /tmp/af-upgrade.log /tmp/af-upgrade72.log /tmp/af-restore.log || true
 
   # The pages in a real browser : the built client served by the server, on a fresh install on a
   # real database, driven by Playwright (client/e2e). A smoke test of what a release must not

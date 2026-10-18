@@ -11,6 +11,7 @@ import { reloadConfigSeed, getSeedState } from "../lib/seed.js";
 import { clearSecretCache } from "../secrets/cache.js";
 import { startSyslogServers, reloadSyslogServers } from "../lib/syslogServers.js";
 import CrudModel from "../models/crud.model.js";
+import Schema from "../models/schema.model.js";
 import Help from "../models/help.model.js";
 import cronService from "../services/cron.service.js";
 import { rebuildLoginStrategies } from "../auth/loginStrategies.js";
@@ -60,6 +61,15 @@ export async function startCluster() {
   onEpoch("restore", async () => {
     CrudModel.flushAllLocal();
     clearSecretCache();
+    // the schema that came back can be an older release's (the backup taken before an upgrade) :
+    // no process keeps its cached "schema is up to date", and the worker patches it again (a
+    // restore on an app node waits for that, Schema.upgradeAfterRestore)
+    Schema._cachedOk = null;
+    if (runsWorker && holdsWorkerLock()) {
+      await Schema.hasSchema().catch((err) => {
+        logger.error(`The restored database could not be upgraded to this release: ${(err.result?.data?.failed || [err.message || err]).slice(0, 3).join("; ")}`);
+      });
+    }
     await reloadSyslogServers();
     if (runsWeb) await rebuildLoginStrategies();
     await cronService.resync();
