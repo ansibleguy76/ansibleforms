@@ -753,9 +753,25 @@ class BackupModel {
       logger.error(`Restore from '${folder}': could not release the jobs and claims of the backup's time: ${err.message || err}`);
     }
     await this.restoreFormsAndFolder(restoreFolder);
+    // the schema that came back can be an older release's (the backup taken before an upgrade) :
+    // it is checked and patched again before success is reported, or this release ran on the old
+    // schema, its cached "schema is up to date" of before saying all was well. Imported here :
+    // the schema model imports the bootstrap, which imports this model
+    const { default: Schema } = await import('./schema.model.js');
+    const schema = await Schema.upgradeAfterRestore();
     // every process drops what it had cached of the replaced rows (lib/epochs.js)
     bump('restore');
-    return { message: 'Restore completed', restoreFolder };
+    if (!schema.upgraded) {
+      const why = schema.failed.slice(0, 3).join('; ');
+      logger.error(`Restore from '${folder}': the restored database could not be upgraded to this release: ${why}`);
+      return {
+        message: `Restore completed, but the restored database could not be upgraded to this release: ${why}`,
+        restoreFolder,
+        schemaUpgraded: false,
+        schemaFailed: schema.failed,
+      };
+    }
+    return { message: 'Restore completed', restoreFolder, schemaUpgraded: true };
   }
 
   static async listBackups() {

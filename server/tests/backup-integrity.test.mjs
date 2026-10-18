@@ -14,6 +14,14 @@ const statements = [];
 vi.mock("../src/models/db.model.js", () => ({
   default: { do: async (sql) => { statements.push(sql); return { changedRows: 0, affectedRows: 0 }; } },
 }));
+// the schema check a restore runs again (Schema.upgradeAfterRestore) : what it answers, per
+// test, and the order it ran in against the change notice
+let schemaAfterRestore = { upgraded: true };
+const order = [];
+vi.mock("../src/models/schema.model.js", () => ({
+  default: { upgradeAfterRestore: async () => { order.push("schema"); return schemaAfterRestore; } },
+}));
+vi.mock("../src/lib/epochs.js", () => ({ bump: async (name) => { order.push(`bump ${name}`); } }));
 import assert from "node:assert/strict";
 import { promises as fs } from "fs";
 import path from "path";
@@ -271,6 +279,32 @@ describe("a restore leaves nothing of the backup's time running", () => {
     assert.match(jobs, /SET status='abandoned', abort_requested=0, host=NULL, pid=NULL WHERE status='running' OR \(status='approve' AND job_type='workflow'\)/);
     assert.ok(statements.some((s) => /UPDATE AnsibleForms.`repositories` SET status='failed', claim_node=NULL WHERE status='running'/.test(s)));
     assert.ok(statements.some((s) => /UPDATE AnsibleForms.`schedule` SET state='idle', claim_node=NULL WHERE state='running'/.test(s)));
+  });
+
+  test("the restored schema is checked and patched again before success, then every process told", async () => {
+    // the backup taken before an upgrade brings back the older release's schema : without this
+    // the cached "schema is up to date" kept this release running on it
+    const folder = "20260109000000";
+    await fs.mkdir(path.join(tmpRoot, folder), { recursive: true });
+    await fs.writeFile(path.join(tmpRoot, folder, "ansibleforms.sql"), "-- dump\n");
+    order.length = 0;
+    schemaAfterRestore = { upgraded: true };
+    const result = await BackupModel.restore(folder, false);
+    assert.deepEqual(order, ["schema", "bump restore"]);
+    assert.equal(result.message, "Restore completed");
+    assert.equal(result.schemaUpgraded, true);
+  });
+
+  test("a restored schema whose patching failed: said in the restore's result", async () => {
+    const folder = "20260110000000";
+    await fs.mkdir(path.join(tmpRoot, folder), { recursive: true });
+    await fs.writeFile(path.join(tmpRoot, folder, "ansibleforms.sql"), "-- dump\n");
+    schemaAfterRestore = { upgraded: false, failed: ["The database needs upgrading, and the backup before it failed"] };
+    const result = await BackupModel.restore(folder, false);
+    assert.match(result.message, /^Restore completed, but the restored database could not be upgraded to this release: The database needs upgrading/);
+    assert.equal(result.schemaUpgraded, false);
+    assert.deepEqual(result.schemaFailed, schemaAfterRestore.failed);
+    schemaAfterRestore = { upgraded: true };
   });
 
   test("nothing is released when the restore was refused", async () => {

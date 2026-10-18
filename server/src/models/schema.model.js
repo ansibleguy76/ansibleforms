@@ -60,9 +60,60 @@ class Schema {
   // it never runs DDL next to the worker patching the same tables.
   static async hasSchema() {
     if (Schema._cachedOk) return Schema._cachedOk;
-    const result = await checkAll({ patch: holdsWorkerLock() });
+    // one check at a time in a process : a restore re-checks the schema (upgradeAfterRestore)
+    // and its change notice asks again a few seconds later ; two runs side by side would patch
+    // the same tables at once
+    if (!Schema._running) {
+      Schema._running = checkAll({ patch: holdsWorkerLock() }).finally(() => { Schema._running = null; });
+    }
+    const result = await Schema._running;
     Schema._cachedOk = result;
     return result;
+  }
+
+  // the check in progress, shared by every caller of hasSchema meanwhile
+  static _running = null;
+
+  /**
+   * After a database restore : the schema that came back can be an older release's (the backup
+   * taken before an upgrade), and the cached "everything is present" of before would keep this
+   * release running on it. The cache goes, and the schema is checked and patched again here when
+   * this process holds the worker lock ; otherwise the worker patches it on the restore's change
+   * notice (init/cluster.js) and this waits up to waitMs for the schema manifest to be complete.
+   *
+   * Args:
+   *   options (object): { waitMs } - how long an app node waits for the worker's patching.
+   *
+   * Returns:
+   *   Promise<object>: { upgraded: true } when the schema is complete ; { upgraded: false,
+   *     failed: string[] } when the patching failed (or the worker had not finished in time).
+   */
+  static async upgradeAfterRestore({ waitMs = 60000 } = {}) {
+    Schema._cachedOk = null;
+    // step 1 : the worker : check and patch it now
+    if (holdsWorkerLock()) {
+      try {
+        await Schema.hasSchema();
+        return { upgraded: true };
+      } catch (err) {
+        return { upgraded: false, failed: err.result?.data?.failed?.length ? err.result.data.failed : [err.message || String(err)] };
+      }
+    }
+    // step 2 : an app node : the worker patches it, this waits for the manifest to be complete
+    const until = Date.now() + waitMs;
+    let missing;
+    for (;;) {
+      try {
+        const m = await missingFromManifest(SCHEMA_MANIFEST, mysql);
+        missing = [...m.missingTables, ...m.missingColumns];
+      } catch (err) {
+        missing = [`the schema could not be checked (${err.message || err})`];
+      }
+      if (!missing.length) return { upgraded: true };
+      if (Date.now() >= until) break;
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+    return { upgraded: false, failed: [`the worker has not patched the restored schema yet, it lacks ${missing.slice(0, 5).join(", ")}${missing.length > 5 ? ` and ${missing.length - 5} more` : ""}`] };
   }
 
   /**

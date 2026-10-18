@@ -47,7 +47,11 @@ vi.mock("../src/models/backup.model.js", () => ({
 }));
 vi.mock("../src/lib/version.js", () => ({ appVersion: "7.3.0", majorMinor: (v) => String(v).split(".").slice(0, 2).join(".") }));
 
-const { pendingUpgrade, backupBeforeUpgrade, compareReleases, SCHEMA_MANIFEST } = await import("../src/models/schema.model.js");
+// whether this process is the worker (the one that patches)
+let lockHeld = false;
+vi.mock("../src/lib/workerLock.js", () => ({ holdsWorkerLock: () => lockHeld }));
+
+const { default: Schema, pendingUpgrade, backupBeforeUpgrade, compareReleases, SCHEMA_MANIFEST } = await import("../src/models/schema.model.js");
 // every table and column the manifest names : a complete schema
 const manifestTables = () => [...new Set([...SCHEMA_MANIFEST.base.tables, ...Object.values(SCHEMA_MANIFEST.patches).flatMap((p) => p.tables || [])])];
 const manifestColumns = () => Object.values(SCHEMA_MANIFEST.patches).flatMap((p) => p.columns || []);
@@ -136,6 +140,41 @@ describe("an upgrade is pending, and backed up first", () => {
   test("the tables 7.0.0 drops: still pending", async () => {
     legacy = ["awx"];
     assert.deepEqual(await pendingUpgrade(), ["drop awx"]);
+  });
+});
+
+describe("a restore checks and patches the schema that came back", () => {
+  // the backup taken before an upgrade brings back the older release's schema, and the cached
+  // "schema is up to date" of before kept this release running on it
+  test("the worker: the cache goes, the schema is checked and patched again", async () => {
+    lockHeld = true;
+    Schema._cachedOk = { message: [], data: { success: [], failed: [] } };
+    const spy = vi.spyOn(Schema, "hasSchema").mockImplementation(async () => {
+      assert.equal(Schema._cachedOk, null, "checked again, not answered from the cache");
+      return { message: [], data: { success: [], failed: [] } };
+    });
+    assert.deepEqual(await Schema.upgradeAfterRestore(), { upgraded: true });
+    assert.equal(spy.mock.calls.length, 1);
+    spy.mockRestore();
+    lockHeld = false;
+  });
+
+  test("the worker: a patching that failed is what the restore reports", async () => {
+    lockHeld = true;
+    const err = new Error("Patching failed");
+    err.result = { data: { failed: ["the backup before it failed"] } };
+    const spy = vi.spyOn(Schema, "hasSchema").mockRejectedValue(err);
+    assert.deepEqual(await Schema.upgradeAfterRestore(), { upgraded: false, failed: ["the backup before it failed"] });
+    spy.mockRestore();
+    lockHeld = false;
+  });
+
+  test("an app node: done once the worker made the schema complete ; else said what it lacks", async () => {
+    assert.deepEqual(await Schema.upgradeAfterRestore({ waitMs: 0 }), { upgraded: true });
+    have = { tables: manifestTables(), columns: manifestColumns().filter((c) => c !== "runners.credential") };
+    const res = await Schema.upgradeAfterRestore({ waitMs: 0 });
+    assert.equal(res.upgraded, false);
+    assert.match(res.failed[0], /has not patched the restored schema yet, it lacks runners\.credential/);
   });
 });
 
