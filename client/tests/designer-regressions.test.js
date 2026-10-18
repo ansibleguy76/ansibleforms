@@ -291,3 +291,31 @@ describe('the designer address names a section and a tab it has', () => {
     expect(designerAddressExists({ view: 'forms', item: 'yaml', editor: 'visual' })).toBe(false);
   });
 });
+
+describe('renaming a form keeps that form open', () => {
+  // The address follows the form shown : renaming it router.replace'd to the new name's slug,
+  // and the route watcher then opened the first form of that slug, another form when two read
+  // the same in an address ('Test 1', 'test-1'). Each guard was checked by removing it.
+  const watcher = designer.slice(designer.indexOf('() => route.path,'), designer.indexOf('watch(currentTab, () =>'));
+
+  it('the route watcher ignores an address the designer wrote itself', () => {
+    expect(watcher).toContain('designerAddress === route.path');
+    expect(watcher).toContain('!ownAddress');
+  });
+
+  it('the form shown stays when it already has the address', () => {
+    expect(watcher).toContain('slugMatches(shown, address.form)');
+  });
+
+  it('an address picks the exact name before the first of that slug', () => {
+    expect(watcher).toContain('findBySlug(address.form, idmapping.value)');
+    expect(watcher).not.toMatch(/idmapping\.value\.find\(/);
+  });
+
+  it('the address the designer writes is marked first', () => {
+    const follow = designer.slice(designer.indexOf('watch([currentTab, currentFormName, editorView, addressApplied]'));
+    expect(follow.slice(0, follow.indexOf('function deleteForm'))).toContain('markDesignerAddress(path)');
+    const select = designer.slice(designer.indexOf('function selectForm'), designer.indexOf('const addressApplied'));
+    expect(select).toContain('markDesignerAddress(path)');
+  });
+});

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue';
 import Form from '@/lib/Form';
-import { slugOf } from '@/lib/formsPath';
+import { slugOf, slugMatches, findBySlug } from '@/lib/formsPath';
 import { DESIGNER_TABS } from '@/config/designerTabs';
 import { designerViews } from '@/config/designerViews';
 import getSettings from '@/config/settings';
@@ -112,6 +112,29 @@ function designerPath(tab, formName, editor) {
   if (tab === 'Forms' && formName) path += `/${slugOf(formName)}`;
   if (EDITORS.includes(editor)) path += `/${editor}`;
   return path;
+}
+// The address the designer itself last wrote (the address following the view, form and editor
+// shown, a form picked in the explorer) until the route watcher has seen it : that address
+// changes nothing in the designer, it already shows what it names.
+let designerAddress = null;
+/**
+ * Remembers an address the designer is about to write itself, for the route watcher.
+ *
+ * Args:
+ *   path (string): the address (/designer/forms/<form>[/<editor>]).
+ */
+function markDesignerAddress(path) {
+  designerAddress = path;
+}
+/**
+ * Forgets the address the designer wrote when the router did not go there (a guard said no,
+ * another navigation came first) : the next visit of it is the user's, not the designer's.
+ *
+ * Args:
+ *   failure (object|undefined): the router's navigation failure, undefined when it went there.
+ */
+function clearFailedDesignerAddress(failure) {
+  if (failure) designerAddress = null;
 }
 const startRoute = useRoute();
 const currentTab = ref(addressOf(startRoute.params).view || sortedTabs.value[0].name);
@@ -1741,9 +1764,20 @@ watch(
     // switch of editor rewrote the address back to the form shown. Set directly, not through
     // selectForm (that pushes an address of its own) ; switching forms loses nothing, every
     // form's buffer is kept until saved.
-    if (address.form && currentTab.value === 'Forms' && loaded.value) {
-      const f = idmapping.value.find((x) => slugOf(x.name) === slugOf(address.form));
-      if (f && f.id !== currentForm.value) currentForm.value = f.id;
+    //
+    // Only for an address the designer did not write itself : renaming a form rewrote the
+    // address to the new name's slug, and this then opened the first form of that slug,
+    // another form when two read the same in an address ('Test 1', 'test-1').
+    const ownAddress = designerAddress === route.path;
+    designerAddress = null;
+    if (address.form && currentTab.value === 'Forms' && loaded.value && !ownAddress) {
+      // the form shown already has this address : it stays (another of the same slug would not)
+      const shown = currentFormName.value;
+      if (!(shown && slugMatches(shown, address.form))) {
+        // its exact name first, then the first of that slug, then its 7.2 address (a bookmark)
+        const f = findBySlug(address.form, idmapping.value);
+        if (f && f.id !== currentForm.value) currentForm.value = f.id;
+      }
     }
     nextTick(() => {
       if (loaded.value) applyEditor(address.editor);
@@ -2298,7 +2332,8 @@ function selectDefaultForm() {
   currentForm.value = idmapping.value[0]?.id || null;
   // the form the address names (/designer/forms/<form>)
   const slug = addressOf(route.params).form;
-  const f = slug ? idmapping.value.find((x) => slugOf(x.name) === slugOf(slug)) : null;
+  // its exact name first, then the first of that slug, then its 7.2 address (a bookmark)
+  const f = slug ? findBySlug(slug, idmapping.value) : null;
   if (f) {
     currentForm.value = f.id;
   }
@@ -2382,7 +2417,13 @@ function selectForm(id) {
   if (currentFormName.value) {
     // its address, the rest of it kept
     const query = { ...route.query };
-    router.push({ path: designerPath('Forms', currentFormName.value, editorView.value), query });
+    const path = designerPath('Forms', currentFormName.value, editorView.value);
+    // the form is chosen already : the route watcher must not choose another of the same slug
+    markDesignerAddress(path);
+    router
+      .push({ path, query })
+      .then(clearFailedDesignerAddress)
+      .catch(() => (designerAddress = null));
   }
 }
 
@@ -2402,7 +2443,14 @@ watch([loaded, () => !!lock.value && !lock.value.free], ([isLoaded, started]) =>
 watch([currentTab, currentFormName, editorView, addressApplied], ([tab, formName, editor, applied]) => {
   if (!applied) return;
   const path = designerPath(tab, formName, editor);
-  if (route.path !== path) router.replace({ path, query: route.query }).catch(() => {});
+  if (route.path !== path) {
+    // the address follows the designer here : the route watcher must not switch forms for it
+    markDesignerAddress(path);
+    router
+      .replace({ path, query: route.query })
+      .then(clearFailedDesignerAddress)
+      .catch(() => (designerAddress = null));
+  }
 });
 function deleteForm(id) {
   selectForm(id);
