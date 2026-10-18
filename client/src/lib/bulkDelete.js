@@ -27,6 +27,7 @@ export async function deleteRecords(t, urls) {
   const results = await Promise.allSettled(urls.map((url) => axios.delete(url)));
   const failed = results.filter((r) => r.status === 'rejected');
   if (failed.length) toast.error(Helpers.parseAxiosResponseError(failed[0].reason, t('common.delete')));
-  if (failed.length < results.length) toast.success(t('settings.common.isDeleted'));
+  if (failed.length < results.length)
+    toast.success(t('settings.common.countDeleted', { n: results.length - failed.length }));
   return true;
 }

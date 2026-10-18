@@ -771,7 +771,6 @@ export default {
     // copying to the clipboard, and a record saved by its name
     copied: '已复制到剪贴板',
     copyFailed: '无法复制到剪贴板：{error}',
-    nameUpdated: '{name} 已更新',
   },
   // a YAML file loaded into a field or saved from it (AppListField, BsYamlEditor, AppForm)
   yamlFile: {
@@ -917,11 +916,8 @@ export default {
       showOutput: '显示输出',
       trigger: '触发',
       deleteConfirm: '确定要删除',
-      isCreated: '已创建',
-      isUpdated: '已更新',
       // the badge after a record's type or name that is the default (defaultNote)
       defaultNote: '默认',
-      isDeleted: '已删除',
       bulkDeleteConfirm: '删除 {count} 项？',
       bulkDeleteConfirmSkip: '删除 {count} 项？所选的 {skipped} 项无法删除，将保持不变。',
       bulkDeleteNone: '所选项目均无法删除。',
@@ -958,6 +954,8 @@ export default {
       // a record's toasts, by its name ({name}) in the word order of the language
       nameUpdated: '{name} 已更新',
       nameDeleted: '{name} 已删除',
+      nameCreated: '{name} 已创建',
+      countDeleted: '已删除: {n}',
       // the admin forms' validation messages (AppAdminMulti, AppAdminSingle), by the field's label
       fieldRequired: '{field} 为必填项',
       fieldEmail: '{field} 必须是有效的电子邮件地址',

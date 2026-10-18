@@ -257,7 +257,7 @@ async function save() {
   };
   try {
     await axios.put(`/api/v2/schedule/${encodeURIComponent(scheduleId.value)}`, data);
-    toast.success(t('common.nameUpdated', { name: data.name }));
+    toast.success(t('settings.common.nameUpdated', { name: data.name }));
     await load();
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err));

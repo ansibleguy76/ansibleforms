@@ -257,10 +257,10 @@ onMounted(async () => {
   /* a dark orange border all around */
   border: 1px solid #c24e05;
   border-radius: 0.375rem;
-  background: color-mix(in srgb, #ef6009 8%, transparent);
+  background: color-mix(in srgb, var(--af-approve) 8%, transparent);
 }
 .af-runner-requests:hover {
-  background: color-mix(in srgb, #ef6009 14%, transparent);
+  background: color-mix(in srgb, var(--af-approve) 14%, transparent);
 }
 [data-bs-theme='dark'] .af-runner-requests {
   border-color: #ff8a3d;

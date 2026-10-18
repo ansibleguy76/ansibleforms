@@ -616,7 +616,7 @@ async function createItem() {
   if (!invalid) {
     try {
       await axios.post(`/api/v${props.apiVersion}/${objectType}/`, savePayload());
-      toast.success(objectTitle('', t('settings.common.isCreated')));
+      toast.success(t('settings.common.nameCreated', { name: objectTitle('') }));
       // the dialog that asked for it (a dropdown's New button) selects what was created
       emit('created', item.value.name ?? item.value[idKey]);
       if (props.dialogOnly) unselectItem();
@@ -1440,7 +1440,7 @@ async function bulkDelete() {
         return axios.delete(`/api/v${props.apiVersion}/${objectType}/${id}`);
       }),
     );
-    toast.success(t('settings.common.isDeleted'));
+    toast.success(t('settings.common.countDeleted', { n: ids.length }));
     selectedIds.value = new Set();
     await loadItems();
   } catch (err) {

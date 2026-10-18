@@ -788,7 +788,6 @@ export default {
     // copying to the clipboard, and a record saved by its name
     copied: 'Gekopieerd naar het klembord',
     copyFailed: 'Kopiëren naar het klembord is mislukt: {error}',
-    nameUpdated: '{name} is bijgewerkt',
   },
   // a YAML file loaded into a field or saved from it (AppListField, BsYamlEditor, AppForm)
   yamlFile: {
@@ -936,11 +935,8 @@ export default {
       showOutput: 'Uitvoer tonen',
       trigger: 'Uitvoeren',
       deleteConfirm: 'Weet u zeker dat u wilt verwijderen',
-      isCreated: 'is aangemaakt',
-      isUpdated: 'is bijgewerkt',
       // the badge after a record's type or name that is the default (defaultNote)
       defaultNote: 'Standaard',
-      isDeleted: 'is verwijderd',
       bulkDeleteConfirm: '{count} item(s) verwijderen?',
       bulkDeleteConfirmSkip:
         '{count} item(s) verwijderen? {skipped} geselecteerde item(s) kunnen niet verwijderd worden en blijven staan.',
@@ -980,6 +976,8 @@ export default {
       // a record's toasts, by its name ({name}) in the word order of the language
       nameUpdated: '{name} is bijgewerkt',
       nameDeleted: '{name} is verwijderd',
+      nameCreated: '{name} is aangemaakt',
+      countDeleted: 'Verwijderd: {n}',
       // the admin forms' validation messages (AppAdminMulti, AppAdminSingle), by the field's label
       fieldRequired: '{field} is verplicht',
       fieldEmail: '{field} moet een geldig e-mailadres zijn',

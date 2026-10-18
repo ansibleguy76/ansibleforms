@@ -783,7 +783,6 @@ export default {
     // copying to the clipboard, and a record saved by its name
     copied: 'クリップボードにコピーしました',
     copyFailed: 'クリップボードにコピーできませんでした: {error}',
-    nameUpdated: '{name} を更新しました',
   },
   // a YAML file loaded into a field or saved from it (AppListField, BsYamlEditor, AppForm)
   yamlFile: {
@@ -931,11 +930,8 @@ export default {
       showOutput: '出力を表示',
       trigger: '実行',
       deleteConfirm: '削除してもよろしいですか:',
-      isCreated: 'を作成しました',
-      isUpdated: 'を更新しました',
       // the badge after a record's type or name that is the default (defaultNote)
       defaultNote: '既定',
-      isDeleted: 'を削除しました',
       bulkDeleteConfirm: '{count} 件を削除しますか？',
       bulkDeleteConfirmSkip: '{count} 件を削除しますか？選択した {skipped} 件は削除できないため、そのまま残ります。',
       bulkDeleteNone: '選択した項目はどれも削除できません。',
@@ -974,6 +970,8 @@ export default {
       // a record's toasts, by its name ({name}) in the word order of the language
       nameUpdated: '{name} を更新しました',
       nameDeleted: '{name} を削除しました',
+      nameCreated: '{name} を作成しました',
+      countDeleted: '削除しました: {n}',
       // the admin forms' validation messages (AppAdminMulti, AppAdminSingle), by the field's label
       fieldRequired: '{field} は必須です',
       fieldEmail: '{field} には有効なメールアドレスを入力してください',

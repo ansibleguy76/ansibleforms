@@ -789,7 +789,6 @@ export default {
     // copying to the clipboard, and a record saved by its name
     copied: 'Copiato negli appunti',
     copyFailed: 'Impossibile copiare negli appunti: {error}',
-    nameUpdated: '{name} è stato aggiornato',
   },
   // a YAML file loaded into a field or saved from it (AppListField, BsYamlEditor, AppForm)
   yamlFile: {
@@ -936,11 +935,8 @@ export default {
       showOutput: 'Mostra output',
       trigger: 'Esegui',
       deleteConfirm: 'Sei sicuro di voler eliminare',
-      isCreated: 'e stato creato',
-      isUpdated: 'e stato aggiornato',
       // the badge after a record's type or name that is the default (defaultNote)
       defaultNote: 'Predefinito',
-      isDeleted: 'e stato eliminato',
       bulkDeleteConfirm: 'Eliminare {count} elemento/i?',
       bulkDeleteConfirmSkip:
         'Eliminare {count} elemento/i? {skipped} elemento/i selezionato/i non può/possono essere eliminato/i e viene/vengono lasciato/i.',
@@ -980,6 +976,8 @@ export default {
       // a record's toasts, by its name ({name}) in the word order of the language
       nameUpdated: '{name} è stato aggiornato',
       nameDeleted: '{name} è stato eliminato',
+      nameCreated: '{name} è stato creato',
+      countDeleted: 'Eliminati: {n}',
       // the admin forms' validation messages (AppAdminMulti, AppAdminSingle), by the field's label
       fieldRequired: '{field} è obbligatorio',
       fieldEmail: '{field} deve essere un indirizzo email valido',
