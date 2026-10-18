@@ -132,6 +132,49 @@ export function artifactsEnv(env, directory, artifactsFile, eventsFile = "", eve
 }
 
 /**
+ * Makes the file a job's events are written to : in a folder of its own under the temporary
+ * folder (mkdtemp, a random name, readable by this user only), the file created there before
+ * ansible-playbook starts, exclusively and readable by this user only. In the shared temporary
+ * folder under a name anyone could guess (af_events_<id>.jsonl), another local user could read a
+ * job's results, or plant the file (a link) before the playbook wrote it.
+ *
+ * Args:
+ *   jobid (number|string): the job.
+ *
+ * Returns:
+ *   {dir: string, file: string}: the folder and the file in it.
+ */
+export function makeEventsFile(jobid) {
+  const safeId = String(jobid).replace(/[^0-9A-Za-z_-]/g, "");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `af_events_${safeId}_`));
+  // mkdtemp makes it 0700 already : said again, whatever the platform
+  fs.chmodSync(dir, 0o700);
+  const file = path.join(dir, "events.jsonl");
+  // wx : created here, never one already there
+  fs.closeSync(fs.openSync(file, "wx", 0o600));
+  return { dir, file };
+}
+
+/**
+ * Removes a job's events folder and what is left in it, quietly : stop() of the tail removes the
+ * file, this the folder, on every way out (a playbook that never started too).
+ *
+ * Args:
+ *   dir (string): the folder (makeEventsFile), empty or none for nothing.
+ *
+ * Returns:
+ *   void
+ */
+export function removeEventsDir(dir) {
+  if (!dir) return;
+  try {
+    fs.rmSync(dir, { recursive: true, force: true });
+  } catch (e) {
+    logger.debug(`The events folder ${dir} could not be removed: ${e.message}`);
+  }
+}
+
+/**
  * The artifacts the plugin wrote, and the file gone : {} when there is none (the playbook did
  * not get to its end) or it cannot be read.
  *
@@ -399,11 +442,10 @@ async function launchPlaybook(ev, secrets, jobid, counter) {
     keepExtravars: keepExtravars,
     // what set_stats gathers : written there by the artifacts plugin, stored on the job
     artifactsFile: path.join(os.tmpdir(), `af_artifacts_${jobid}.json`),
-    // and the structured events (af_events) : one JSON line each, sent on as they come
-    eventsFile: path.join(os.tmpdir(), `af_events_${jobid}.jsonl`),
-    // a host's whole result only when the playbook runs verbose (a -v flag : the job's verbose, or
-    // a workflow node's verbosity)
-    eventsFull: args.some((a) => /^-v+$/.test(a)),
+    // and the structured events (af_events) : one JSON line each, sent on as they come, in a
+    // private folder made when the playbook starts (makeEventsFile) ; a host's whole result only
+    // when the playbook runs verbose (a -v flag : the job's verbose, or a workflow node's verbosity)
+    events: { full: args.some((a) => /^-v+$/.test(a)) },
   };
 
   logger.notice("Running from directory: " + cmdObj.directory);
@@ -438,8 +480,12 @@ export function executeCommand(cmd, jobid, counter, io = currentIO()) {
   var keepExtravars = cmd.keepExtravars;
   var task = cmd.task;
   var artifactsFile = cmd.artifactsFile;
-  var eventsFile = cmd.eventsFile || "";
-  var eventsFull = !!cmd.eventsFull;
+  // the structured events : asked for by a playbook (cmd.events), their file made in a private
+  // folder just before ansible-playbook starts (makeEventsFile)
+  var eventsWanted = !!cmd.events;
+  var eventsFull = !!cmd.events?.full;
+  var eventsFile = "";
+  var eventsDir = "";
   // the structured events, read from their file as the playbook writes them
   let events = null;
   // the abort flag lives in the database (Job.abort sets it), so whoever runs the process
@@ -495,6 +541,9 @@ export function executeCommand(cmd, jobid, counter, io = currentIO()) {
       } else {
         logger.warning("No filename was given");
       }
+
+      // the events file : made now, so it exists, private, before the plugin opens it
+      if (eventsWanted) ({ dir: eventsDir, file: eventsFile } = makeEventsFile(jobid));
 
       // adding abort signal
       // spawn, not exec : no shell, and exec ignores `detached`. Detached, the process runs
@@ -579,7 +628,7 @@ export function executeCommand(cmd, jobid, counter, io = currentIO()) {
 
       // the structured events : read from their file every half second and sent on in order
       if (eventsFile && io.writeEvents) {
-        events = createEventTail({ file: eventsFile, write: (batch) => io.writeEvents(jobid, batch) });
+        events = createEventTail({ file: eventsFile, dir: eventsDir, write: (batch) => io.writeEvents(jobid, batch) });
       }
       // add output eventlistener to the process to save output
       // the abort flag is polled every 2 seconds (abortPoll) : no check per chunk any more
@@ -592,6 +641,7 @@ export function executeCommand(cmd, jobid, counter, io = currentIO()) {
         // what the playbook wrote last, before the end line
         await output.flush();
         if (events) await events.stop();
+        removeEventsDir(eventsDir);
         // first : ansible-playbook is gone, nothing reads them any more, and the database
         // calls below can stall or be cut short by a stop
         removeExtravarsFiles();
@@ -662,6 +712,7 @@ export function executeCommand(cmd, jobid, counter, io = currentIO()) {
         if (!settle()) return;
         await output.flush();
         if (events) await events.stop();
+        removeEventsDir(eventsDir);
         removeExtravarsFiles();
         takeArtifacts(artifactsFile);
         await syncJobLog(true);
@@ -679,7 +730,9 @@ export function executeCommand(cmd, jobid, counter, io = currentIO()) {
       if (!settle()) return;
       removeExtravarsFiles();
       takeArtifacts(artifactsFile);
-      if (events) events.stop();
+      // the tail's last read before its folder goes
+      if (events) events.stop().finally(() => removeEventsDir(eventsDir));
+      else removeEventsDir(eventsDir);
       io.end(jobid, ++counter, "stderr", "failed", `[ERROR]: ${task} failed: ${e.message || e}`)
         .catch((err) => logger.error(`[Job ${jobid}] Failed to end the job: ${err.message}`))
         // rejected once the end is written : whoever waits on the run sees the job ended

@@ -1,10 +1,12 @@
 // A playbook's structured events (rte/callback_plugins/af_events.py) are stored on the job and read
 // back by everyone who may see it. They kept a host's whole result (its invocation, the module's
-// arguments, a response's body and headers) even when the job did not run verbose, and escaped its
-// non-ASCII texts so the app's mask missed a secret with an accent. These pin the rules : the whole
-// result only for a job that runs verbose, never its invocation, its secret keys masked (by the
-// plugin and again when stored), and non-ASCII kept.
+// arguments, a response's body and headers) even when the job did not run verbose, wrote it to a
+// file of the shared temporary folder under a name anyone could guess, and escaped its non-ASCII
+// texts so the app's mask missed a secret with an accent. These pin the rules : the whole result
+// only for a job that runs verbose, never its invocation, its secret keys masked (by the plugin
+// and again when stored), non-ASCII kept, and the file in a private folder of its own.
 import { describe, test, expect, vi } from "vitest";
+import fs from "fs";
 import os from "os";
 import path from "path";
 import { spawnSync } from "child_process";
@@ -22,10 +24,75 @@ vi.mock("../src/models/db.model.js", () => ({
   default: { do: async (sql, params) => { inserts.push(params); return { affectedRows: 1 }; } },
 }));
 
-const { artifactsEnv } = await import("../src/rte/ansible-core.js");
+const { artifactsEnv, makeEventsFile, removeEventsDir, executeCommand } = await import("../src/rte/ansible-core.js");
+const { createEventTail } = await import("../src/rte/events.js");
 const { default: JobEvent, redactResult } = await import("../src/models/jobEvent.model.js");
 
 const PLUGIN = path.join(path.dirname(fileURLToPath(import.meta.url)), "../src/rte/callback_plugins/af_events.py");
+
+// ---------------------------------------------------------------------------------------------
+// The events file
+// ---------------------------------------------------------------------------------------------
+
+describe("the events file", () => {
+  test("is made in a private folder of its own, before the playbook starts", () => {
+    const a = makeEventsFile(42);
+    const b = makeEventsFile(42);
+    try {
+      // a folder of its own under the temporary folder, never a name anyone could guess
+      expect(path.dirname(a.dir)).toBe(os.tmpdir());
+      expect(a.dir).not.toBe(b.dir);
+      expect(path.dirname(a.file)).toBe(a.dir);
+      expect(fs.existsSync(a.file)).toBe(true);
+      if (process.platform !== "win32") {
+        expect(fs.statSync(a.dir).mode & 0o777).toBe(0o700);
+        expect(fs.statSync(a.file).mode & 0o777).toBe(0o600);
+      }
+    } finally {
+      removeEventsDir(a.dir);
+      removeEventsDir(b.dir);
+    }
+    expect(fs.existsSync(a.dir)).toBe(false);
+  });
+
+  test("a playbook run makes it, hands it to the plugin, and leaves nothing behind", async () => {
+    const jobid = 900000 + Math.floor(Math.random() * 99999);
+    const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "af-events-run-"));
+    const left = () => fs.readdirSync(os.tmpdir()).filter((n) => n.startsWith(`af_events_${jobid}_`));
+    // what the run tells the job : its output kept (the program says the file's mode there)
+    const output = [];
+    const io = {
+      writeOutput: async (id, record) => { output.push(JSON.stringify(record)); },
+      started: async () => {},
+      exited: async () => {},
+      end: async () => {},
+      isAbortRequested: async () => false,
+      writeEvents: async () => {},
+      setJobLog: async () => {},
+    };
+    // a program that writes where AF_EVENTS_FILE says, as the plugin does, and tells what it saw
+    const script = "const fs=require('fs');fs.appendFileSync(process.env.AF_EVENTS_FILE,'{\"type\":\"play\"}\\n');" +
+      "process.stdout.write(String(fs.statSync(process.env.AF_EVENTS_FILE).mode & 0o777))";
+    try {
+      await executeCommand({ directory: cwd, file: process.execPath, args: ["-e", script], task: "t", artifactsFile: path.join(cwd, "a.json"), events: { full: false } }, jobid, 0, io);
+      expect(left()).toEqual([]);
+      // the file the plugin opened was there already, readable by this user only (0600 : 384)
+      if (process.platform !== "win32") expect(output.join("")).toContain("384");
+    } finally {
+      fs.rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
+  test("the tail reads it and removes it with its folder", async () => {
+    const { dir, file } = makeEventsFile(43);
+    const got = [];
+    const tail = createEventTail({ file, dir, write: async (batch) => got.push(...batch) });
+    fs.appendFileSync(file, JSON.stringify({ type: "play", play: "p" }) + "\n");
+    await tail.stop();
+    expect(got.map((e) => e.type)).toEqual(["play"]);
+    expect(fs.existsSync(dir)).toBe(false);
+  });
+});
 
 // ---------------------------------------------------------------------------------------------
 // What the playbook is told
