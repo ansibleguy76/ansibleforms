@@ -35,8 +35,111 @@ function assertConfigured(store) {
 
 // A dynamic secret engine (database, aws, ...) issues credentials at <mount>/creds/<role> :
 // read as written, not as KV, and every read creates a NEW account in the target system.
+// This is only the SHAPE of such a path : a KV secret can just as well be stored at
+// 'team/creds/app', so whether the mount really is a dynamic engine is decided by
+// isDynamicRef below.
 export function isDynamicPath(ref) {
   return /^\/*[^/]+\/creds\/[^/]+/.test(String(ref || ""));
+}
+
+// ===========================================================================
+// DYNAMIC MOUNT DETECTION
+// ===========================================================================
+// The Vault secret engines that issue credentials at <mount>/creds/<role>.
+export const DYNAMIC_ENGINE_TYPES = new Set([
+  "database", "aws", "azure", "gcp", "consul", "nomad", "rabbitmq", "mongodbatlas",
+  "ldap", "openldap", "ad", "kubernetes", "terraform", "alicloud",
+]);
+// how long a mount's engine type is remembered, per store
+const MOUNT_TYPE_TTL_MS = 5 * 60 * 1000;
+const mountTypeCache = new Map();
+
+/** forget every remembered mount type (the tests) */
+export function clearMountTypeCache() {
+  mountTypeCache.clear();
+}
+
+/**
+ * The mounts the admin declared as dynamic engines in the store's `extra`
+ * ({"dynamic_mounts": ["database", "aws-prod"]} or "database,aws-prod").
+ *
+ * Args:
+ *   store (object): The secret store row.
+ *
+ * Returns:
+ *   string[]|null: The mount names, or null when none are declared.
+ */
+function declaredDynamicMounts(store) {
+  let extra = store?.extra;
+  if (typeof extra === "string") {
+    try { extra = JSON.parse(extra); } catch { extra = null; }
+  }
+  const raw = extra && typeof extra === "object" ? extra.dynamic_mounts : undefined;
+  if (raw === undefined || raw === null || raw === "") return null;
+  const list = Array.isArray(raw) ? raw : String(raw).split(",");
+  return list.map((m) => stripTrailingSlashes(stripLeadingSlashes(String(m).trim()))).filter(Boolean);
+}
+
+/**
+ * Asks Vault which engine serves a mount (sys/internal/ui/mounts/<mount>, the endpoint
+ * Vault's own UI uses : it answers for any mount the token may use, no sudo needed).
+ *
+ * Args:
+ *   store (object): The secret store row.
+ *   mount (string): The mount name.
+ *
+ * Returns:
+ *   Promise<string|null>: The engine type ('kv', 'database', ...), null when Vault
+ *     does not say (no permission, an old Vault, unreachable).
+ */
+async function mountType(store, mount) {
+  const key = `${store.url}|${store.namespace || ""}|${mount}`;
+  const hit = mountTypeCache.get(key);
+  if (hit && Date.now() - hit.at < MOUNT_TYPE_TTL_MS) return hit.type;
+  let type = null;
+  try {
+    const res = await axios.get(`${baseUrl(store)}/v1/sys/internal/ui/mounts/${encodeURIComponent(mount)}`, { headers: headers(store), ...agentsFor(store), timeout: 5000 });
+    type = String(res?.data?.data?.type || "").toLowerCase() || null;
+  } catch {
+    type = null;
+  }
+  // an unknown answer is remembered too, so the fallback does not ask on every read
+  mountTypeCache.set(key, { type, at: Date.now() });
+  return type;
+}
+
+/**
+ * Whether a ref is read from a dynamic secret engine.
+ *
+ * Only a path shaped <mount>/creds/<role> can be, and then :
+ * 1. when the store's extra declares dynamic_mounts, the mount must be one of them ;
+ * 2. the store's default mount is its KV mount, never a dynamic engine ;
+ * 3. otherwise Vault is asked which engine serves the mount : a known dynamic engine
+ *    is dynamic, anything else (kv, generic, ...) is read as KV ;
+ * 4. when Vault does not say, the path's shape decides, as before, so the existing
+ *    dynamic setups keep working.
+ * A KV secret stored at 'team/creds/app' was read as a dynamic credential : no /data/
+ * inserted, so KV v2 answered 404.
+ *
+ * Args:
+ *   store (object): The secret store row.
+ *   ref (string): The path asked for.
+ *
+ * Returns:
+ *   Promise<boolean>: true to read it as a dynamic credential.
+ */
+export async function isDynamicRef(store, ref) {
+  if (!isDynamicPath(ref)) return false;
+  const mount = stripLeadingSlashes(String(ref)).split("/")[0];
+  // step 1 : the admin's own declaration wins
+  const declared = declaredDynamicMounts(store);
+  if (declared) return declared.includes(mount);
+  // step 2 : the configured KV mount
+  if (mount === (store.default_mount || "secret")) return false;
+  // step 3 / 4 : the engine type, when Vault tells it
+  const type = await mountType(store, mount);
+  if (type === null) return true;
+  return DYNAMIC_ENGINE_TYPES.has(type);
 }
 
 // A ref is a path below /v1/ and nothing else. The URL parser resolves dot segments, so
@@ -57,7 +160,7 @@ export function assertSafeRef(ref) {
 async function read(store, ref) {
   assertConfigured(store);
   assertSafeRef(ref);
-  if (isDynamicPath(ref)) return readDynamic(store, stripLeadingSlashes(ref));
+  if (await isDynamicRef(store, ref)) return readDynamic(store, stripLeadingSlashes(ref));
   const version = kvVersion(store);
   const apiPath = buildApiPath(ref, version, store.default_mount);
   let res;
