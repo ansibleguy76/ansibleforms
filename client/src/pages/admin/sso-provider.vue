@@ -407,26 +407,18 @@ onMounted(async () => {
                 <li v-for="(line, l) in note.items" :key="l">{{ line }}</li>
               </ul>
             </div>
-            <div
-              v-for="kind in SSO_TYPES"
-              v-show="fieldShown('type_' + kind)"
-              :key="kind"
-              class="form-check af-short-check af-type-option"
-            >
-              <input
-                :id="'af-ssotype-' + kind"
-                :checked="kind === provider.provider"
-                class="form-check-input"
-                type="radio"
-                name="af-sso-type"
-                :value="kind"
-                disabled
-              />
-              <label class="form-check-label" :for="'af-ssotype-' + kind">
-                <span class="af-short-label">{{ t(`settings.oauth2.type_${kind}`) }}</span>
-                <span class="text-body-secondary small">{{ t(`settings.oauth2.typeHint_${kind}`) }}</span>
-              </label>
-            </div>
+            <AppTypeOptions
+              :options="
+                SSO_TYPES.map((kind) => ({
+                  value: kind,
+                  label: t(`settings.oauth2.type_${kind}`),
+                  hint: t(`settings.oauth2.typeHint_${kind}`),
+                }))
+              "
+              :selected="provider.provider"
+              name="sso-type"
+              :shown="(kind) => fieldShown('type_' + kind)"
+            />
           </template>
           <!-- Credentials : where and as whom - a credential of its type of Connections >
                Credentials (its user the client id, its password the secret, its tenant or issuer) ;

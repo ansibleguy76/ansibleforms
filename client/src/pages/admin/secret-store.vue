@@ -454,26 +454,18 @@ onMounted(async () => {
                   <FaIcon :icon="searchHead('type').tab.icon" class="me-1" />{{ searchHead('type').tab.label }}
                 </h6>
               </template>
-              <div
-                v-for="type in TYPES"
-                v-show="fieldShown(`type-${type.value}`)"
-                :key="type.value"
-                class="form-check af-short-check af-type-option"
-              >
-                <input
-                  :id="'af-type-' + type.value"
-                  v-model="edit.type"
-                  class="form-check-input"
-                  type="radio"
-                  name="af-store-type"
-                  :value="type.value"
-                  disabled
-                />
-                <label class="form-check-label" :for="'af-type-' + type.value">
-                  <span class="af-short-label">{{ type.short || type.label }}</span>
-                  <span class="text-body-secondary small">{{ t(`settings.secretStores.type_${type.value}Hint`) }}</span>
-                </label>
-              </div>
+              <AppTypeOptions
+                :options="
+                  TYPES.map((type) => ({
+                    value: type.value,
+                    label: type.short || type.label,
+                    hint: t(`settings.secretStores.type_${type.value}Hint`),
+                  }))
+                "
+                :selected="edit.type"
+                name="store-type"
+                :shown="(value) => fieldShown(`type-${value}`)"
+              />
               <div v-if="isVault" v-show="fieldShown('enterprise')" class="form-check form-switch mt-3 af-type-option">
                 <input
                   id="af-store-enterprise"

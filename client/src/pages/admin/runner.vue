@@ -29,13 +29,7 @@ import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import Helpers from '@/lib/Helpers';
 import { useAppStore } from '@/stores/app';
-import {
-  RUNNER_KINDS,
-  PROJECT_RUNNER_KINDS,
-  runnerKind,
-  socketPill,
-  noCredentialsText,
-} from '@/config/settings';
+import { RUNNER_KINDS, PROJECT_RUNNER_KINDS, runnerKind, socketPill, noCredentialsText } from '@/config/settings';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { useFormLinks } from '@/composables/useFormLinks';
@@ -401,7 +395,10 @@ const pendingRows = computed(() => {
     [t('settings.runners.rteMode'), info.mode ? t(`settings.runners.rteMode_${info.mode}`) : '–'],
     info.url && [t('settings.fields.uri'), info.url],
     [t('settings.runners.pendingVersion'), info.version || '–'],
-    [t('settings.runners.pendingSince'), runner.value.pending_since ? Helpers.formatServerDate(runner.value.pending_since) : '–'],
+    [
+      t('settings.runners.pendingSince'),
+      runner.value.pending_since ? Helpers.formatServerDate(runner.value.pending_since) : '–',
+    ],
   ].filter(Boolean);
 });
 
@@ -559,7 +556,9 @@ onMounted(async () => {
         <div v-if="runner && edit && ['details', 'type', 'credentials'].some(tabShown)" class="af-runner-tab">
           <!-- an RTE that asked to join : who it says it is, and Approve or Reject -->
           <div v-if="pending" class="alert alert-warning af-runner-pending">
-            <div class="fw-bold mb-1"><FaIcon icon="hourglass-half" class="me-2" />{{ t('settings.runners.pendingTitle') }}</div>
+            <div class="fw-bold mb-1">
+              <FaIcon icon="hourglass-half" class="me-2" />{{ t('settings.runners.pendingTitle') }}
+            </div>
             <div class="mb-2">{{ t('settings.runners.pendingHelp') }}</div>
             <dl class="row mb-2 small">
               <template v-for="row in pendingRows" :key="row[0]">
@@ -668,26 +667,18 @@ onMounted(async () => {
                   <FaIcon :icon="searchHead('type').tab.icon" class="me-1" />{{ searchHead('type').tab.label }}
                 </h6>
               </template>
-              <div
-                v-for="kind in sortedKinds"
-                v-show="fieldShown(`kind-${kind}`)"
-                :key="kind"
-                class="form-check af-short-check af-type-option"
-              >
-                <input
-                  :id="'af-kind-' + kind"
-                  v-model="edit.kind"
-                  class="form-check-input"
-                  type="radio"
-                  name="af-runner-kind"
-                  :value="kind"
-                  disabled
-                />
-                <label class="form-check-label" :for="'af-kind-' + kind">
-                  <span class="af-short-label">{{ t(`settings.runners.type_${kind}`) }}</span>
-                  <span class="text-body-secondary small">{{ t(`settings.runners.type_${kind}Hint`) }}</span>
-                </label>
-              </div>
+              <AppTypeOptions
+                :options="
+                  sortedKinds.map((kind) => ({
+                    value: kind,
+                    label: t(`settings.runners.type_${kind}`),
+                    hint: t(`settings.runners.type_${kind}Hint`),
+                  }))
+                "
+                :selected="edit.kind"
+                name="runner-kind"
+                :shown="(kind) => fieldShown(`kind-${kind}`)"
+              />
               <!-- an RTE's mode : how it talks to the app (RTE_MODE on the RTE) -->
               <template v-if="edit.kind === 'rte'">
                 <div v-show="RTE_MODES.some((m) => fieldShown(`mode-${m}`))" class="form-label fw-bold mt-4">
@@ -696,26 +687,18 @@ onMounted(async () => {
                 <div v-show="RTE_MODES.some((m) => fieldShown(`mode-${m}`))" class="form-text mt-0 mb-2">
                   {{ t('settings.runners.rteModeHelp') }}
                 </div>
-                <div
-                  v-for="mode in RTE_MODES"
-                  v-show="fieldShown(`mode-${mode}`)"
-                  :key="mode"
-                  class="form-check af-short-check af-type-option"
-                >
-                  <input
-                    :id="'af-mode-' + mode"
-                    v-model="edit.rte_mode"
-                    class="form-check-input"
-                    type="radio"
-                    name="af-runner-mode"
-                    :value="mode"
-                    disabled
-                  />
-                  <label class="form-check-label" :for="'af-mode-' + mode">
-                    <span class="af-short-label">{{ t(`settings.runners.rteMode_${mode}`) }}</span>
-                    <span class="text-body-secondary small">{{ t(`settings.runners.rteMode_${mode}Hint`) }}</span>
-                  </label>
-                </div>
+                <AppTypeOptions
+                  :options="
+                    RTE_MODES.map((mode) => ({
+                      value: mode,
+                      label: t(`settings.runners.rteMode_${mode}`),
+                      hint: t(`settings.runners.rteMode_${mode}Hint`),
+                    }))
+                  "
+                  :selected="edit.rte_mode"
+                  name="runner-mode"
+                  :shown="(mode) => fieldShown(`mode-${mode}`)"
+                />
               </template>
             </template>
             <!-- Authentication : an RTE's, a Semaphore's or a Rundeck's token, a Jenkins' user and
