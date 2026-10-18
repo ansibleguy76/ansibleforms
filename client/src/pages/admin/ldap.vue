@@ -16,6 +16,7 @@ import { toast } from 'vue-sonner';
 import Profile from '@/lib/Profile';
 import getSettings from '@/config/settings';
 import { useI18n } from 'vue-i18n';
+import Helpers from '@/lib/Helpers';
 
 const { t } = useI18n();
 const settings = computed(() => getSettings(t));
@@ -37,7 +38,7 @@ async function move(item, direction) {
     await axios.post(`/api/v2/ldapdirectory/${item.id}/move`, { direction });
     await list.value?.loadItems();
   } catch (err) {
-    toast.error(err.response?.data?.details || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 

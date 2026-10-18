@@ -112,7 +112,7 @@ async function update(data) {
     await axios.put(`/api/v2/user/${encodeURIComponent(userId.value)}`, data);
     return true;
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
     return false;
   }
 }
@@ -323,7 +323,7 @@ async function saveDetails() {
     email: edit.value.email.trim(),
   };
   if (await update(data)) {
-    toast.success(`${data.username} ${t('settings.common.isUpdated')}`);
+    toast.success(t('settings.common.nameUpdated', { name: data.username }));
     await load();
   }
 }
@@ -352,7 +352,7 @@ async function saveAddGroup() {
     addingGroup.value = null;
     await load();
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 
@@ -367,7 +367,7 @@ async function removeGroups(ids) {
     try {
       await axios.delete(`/api/v2/user/${encodeURIComponent(userId.value)}/groups/${gid}`);
     } catch (err) {
-      toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+      toast.error(Helpers.parseAxiosResponseError(err));
       break;
     }
   }
@@ -426,7 +426,7 @@ async function setBlocked(blocked) {
     );
     await load();
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 
@@ -439,10 +439,14 @@ const confirmDelete = ref(false);
 async function deleteUser() {
   confirmDelete.value = false;
   try {
+    const name = user.value?.username;
     await axios.delete(`/api/v2/user/${encodeURIComponent(userId.value)}`);
+    // gone : nothing left to save, so leaving does not offer to save it
+    user.value = null;
+    toast.success(t('settings.common.nameDeleted', { name }));
     router.push('/settings/users');
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 

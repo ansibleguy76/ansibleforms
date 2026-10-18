@@ -25,6 +25,7 @@ import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import getSettings from '@/config/settings';
+import Helpers from '@/lib/Helpers';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -57,6 +58,8 @@ function openTest(item) {
 
 // Delete asks first
 const deleting = ref(null);
+// the form (AppAdminSingle), told to forget its changes once the directory is deleted
+const single = ref(null);
 /**
  * Deletes the directory, then goes back to the directories.
  */
@@ -65,10 +68,12 @@ async function deleteDirectory() {
   deleting.value = null;
   try {
     await axios.delete(`/api/v2/ldapdirectory/${encodeURIComponent(directoryId.value)}`);
-    toast.success(`${name} ${t('settings.common.isDeleted')}`);
+    // gone : its form has nothing left to save, so leaving does not offer to save it
+    single.value?.forget();
+    toast.success(t('settings.common.nameDeleted', { name }));
     router.push('/settings/ldap');
   } catch (err) {
-    toast.error(err.response?.data?.details || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 
@@ -93,6 +98,7 @@ onMounted(async () => {
   <AppSettingsPage>
     <AppAdminSingle
       v-if="authenticated"
+      ref="single"
       :key="directoryId"
       apiVersion="2"
       :settings="settings"

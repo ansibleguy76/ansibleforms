@@ -171,7 +171,7 @@ async function update(data) {
     await axios.put(`/api/v2/runner/${encodeURIComponent(runnerId.value)}`, data);
     return true;
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
     return false;
   }
 }
@@ -335,7 +335,7 @@ async function save() {
     rte_mode: e.kind === 'rte' ? e.rte_mode || 'outbound' : null,
   };
   if (await update(data)) {
-    toast.success(`${data.name} ${t('settings.common.isUpdated')}`);
+    toast.success(t('settings.common.nameUpdated', { name: data.name }));
     await load();
   }
 }
@@ -345,7 +345,7 @@ async function save() {
  */
 async function makeDefault() {
   if (await update({ is_default: 1 })) {
-    toast.success(`${runner.value.name} ${t('settings.common.isUpdated')}`);
+    toast.success(t('settings.common.nameUpdated', { name: runner.value.name }));
   }
   await load();
 }
@@ -411,7 +411,7 @@ async function decide(what) {
  */
 async function setEnabled(on) {
   if (await update({ enabled: on ? 1 : 0 })) {
-    toast.success(`${runner.value.name} ${t('settings.common.isUpdated')}`);
+    toast.success(t('settings.common.nameUpdated', { name: runner.value.name }));
   }
   await load();
 }
@@ -443,11 +443,13 @@ const confirmDelete = ref(false);
 async function deleteRunner() {
   confirmDelete.value = false;
   try {
+    const name = runner.value?.name;
     await axios.delete(`/api/v2/runner/${encodeURIComponent(runnerId.value)}`);
     runner.value = null;
+    toast.success(t('settings.common.nameDeleted', { name }));
     router.push('/settings/runners');
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 

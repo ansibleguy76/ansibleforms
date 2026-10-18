@@ -102,7 +102,7 @@ async function save(askAgain = null) {
       ...edit.value,
       askAgain: !!askAgain,
     });
-    toast.success(`${edit.value.title} ${t('settings.common.isUpdated')}`);
+    toast.success(t('settings.common.nameUpdated', { name: edit.value.title }));
     await load();
     return true;
   } catch (err) {
@@ -119,7 +119,11 @@ const confirmDelete = ref(false);
 async function deleteVersion() {
   confirmDelete.value = false;
   try {
+    const name = record.value?.title;
     await axios.delete(`/api/v2/disclaimerversion/${encodeURIComponent(versionId.value)}`);
+    // gone : nothing left to save, so leaving does not offer to save it
+    record.value = null;
+    toast.success(t('settings.common.nameDeleted', { name }));
     router.push('/settings/disclaimer');
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err));

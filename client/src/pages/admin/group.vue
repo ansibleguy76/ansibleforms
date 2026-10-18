@@ -17,6 +17,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import { toast } from 'vue-sonner';
+import Helpers from '@/lib/Helpers';
 import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
@@ -80,16 +81,6 @@ async function load() {
     group.value = null;
   }
   loaded.value = true;
-}
-
-/**
- * The api's error, as a toast.
- *
- * Args:
- *   err (Error): the axios error.
- */
-function toastError(err) {
-  toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
 }
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
@@ -186,10 +177,10 @@ async function saveDetails() {
       name,
       description: edit.value.description.trim(),
     });
-    toast.success(`${name} ${t('settings.common.isUpdated')}`);
+    toast.success(t('settings.common.nameUpdated', { name }));
     await load();
   } catch (err) {
-    toastError(err);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 
@@ -218,7 +209,7 @@ async function saveAddUser() {
     addingUser.value = null;
     await load();
   } catch (err) {
-    toastError(err);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 
@@ -233,7 +224,7 @@ async function removeUsers(ids) {
     try {
       await axios.delete(`/api/v2/user/${uid}/groups/${groupIdNumber.value}`);
     } catch (err) {
-      toastError(err);
+      toast.error(Helpers.parseAxiosResponseError(err));
       break;
     }
   }
@@ -276,10 +267,14 @@ const confirmDelete = ref(false);
 async function deleteGroup() {
   confirmDelete.value = false;
   try {
+    const name = group.value?.name;
     await axios.delete(`/api/v2/group/${encodeURIComponent(groupId.value)}`);
+    // gone : nothing left to save, so leaving does not offer to save it
+    group.value = null;
+    toast.success(t('settings.common.nameDeleted', { name }));
     router.push('/settings/groups');
   } catch (err) {
-    toastError(err);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 

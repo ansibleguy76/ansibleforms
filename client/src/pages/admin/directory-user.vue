@@ -309,7 +309,7 @@ async function act(method, path, body, done) {
     toast.success(done);
     return true;
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
     return false;
   }
 }
@@ -329,7 +329,7 @@ async function setBlocked(blocked) {
     toast.success(done);
     await load();
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 

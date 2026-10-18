@@ -232,13 +232,11 @@ async function updateItem() {
   if (!isInvalid.value) {
     try {
       await axios.put(`/api/v${props.apiVersion}/${objectType.value}/`, item.value);
-      toast.success(objectTitle('', t('settings.common.isUpdated')));
+      toast.success(t('settings.common.nameUpdated', { name: objectTitle('') }));
       emit('saved', item.value);
       loadItem();
     } catch (err) {
-      const errorMessage = err.response?.data?.error || err.message;
-      const errorDetail = err.response?.data?.details || '';
-      toast.error(errorDetail ? `${errorMessage}: ${errorDetail}` : errorMessage);
+      toast.error(Helpers.parseAxiosResponseError(err));
     }
   } else {
     $v.value.item.$touch();
@@ -407,8 +405,17 @@ onMounted(async () => {
   loaded.value = true;
 });
 
+/**
+ * Forgets the changes on the form : the record is gone (deleted by the page), so there is nothing
+ * left to save and leaving must not offer to.
+ */
+function forget() {
+  originalItem.value = null;
+}
+
 defineExpose({
   loadItem,
+  forget,
 });
 </script>
 <template>

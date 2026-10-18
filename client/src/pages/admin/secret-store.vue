@@ -157,7 +157,7 @@ async function update(data) {
     await axios.put(`/api/v2/secretstore/${encodeURIComponent(storeId.value)}`, data);
     return true;
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
     return false;
   }
 }
@@ -275,7 +275,7 @@ async function save() {
   data.credential = e.credential;
   if (isVault.value) Object.assign(data, { kv_version: e.kv_version, default_mount: e.default_mount.trim() });
   if (await update(data)) {
-    toast.success(`${data.name} ${t('settings.common.isUpdated')}`);
+    toast.success(t('settings.common.nameUpdated', { name: data.name }));
     await load();
   }
 }
@@ -307,11 +307,13 @@ const confirmDelete = ref(false);
 async function deleteStore() {
   confirmDelete.value = false;
   try {
+    const name = store.value?.name;
     await axios.delete(`/api/v2/secretstore/${encodeURIComponent(storeId.value)}`);
     store.value = null;
+    toast.success(t('settings.common.nameDeleted', { name }));
     router.push('/settings/secret-stores');
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 

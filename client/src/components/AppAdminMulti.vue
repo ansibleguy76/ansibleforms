@@ -641,7 +641,7 @@ async function updateItem(passwordOnly = false) {
         `/api/v${props.apiVersion}/${objectType}/${itemId.value}`,
         passwordOnly ? item.value : savePayload(),
       );
-      toast.success(objectTitle('', t('settings.common.isUpdated')));
+      toast.success(t('settings.common.nameUpdated', { name: objectTitle('') }));
       loadItems();
     } catch (err) {
       toast.error(Helpers.parseAxiosResponseError(err, 'Failed to update item'));
@@ -657,7 +657,7 @@ async function removeItem() {
     } else {
       await axios.delete(`/api/v${props.apiVersion}/${objectType}/${itemId.value}`);
     }
-    toast.success(objectTitle('', t('settings.common.isDeleted')));
+    toast.success(t('settings.common.nameDeleted', { name: objectTitle('') }));
     unselectItem();
     loadItems();
   } catch (err) {
@@ -1368,7 +1368,7 @@ async function saveDefaults() {
 async function quickUpdate(item, data) {
   try {
     await axios.put(`/api/v${props.apiVersion}/${objectType}/${item[idKey]}`, data);
-    toast.success(objectTitle(item.name || '', t('settings.common.isUpdated')));
+    toast.success(t('settings.common.nameUpdated', { name: objectTitle(item.name || '') }));
     await loadItems();
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err, 'Failed to update item'));

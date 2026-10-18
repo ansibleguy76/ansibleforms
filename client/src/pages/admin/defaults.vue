@@ -163,7 +163,7 @@ async function save() {
   if (themeDirty.value) {
     try {
       await axios.put('/api/v2/settings/', { ...theme.value });
-      toast.success(`${t('sidebar.defaults')} ${t('settings.common.isUpdated')}`);
+      toast.success(t('settings.common.nameUpdated', { name: t('sidebar.defaults') }));
       await loadTheme();
     } catch (err) {
       toast.error(Helpers.parseAxiosResponseError(err));

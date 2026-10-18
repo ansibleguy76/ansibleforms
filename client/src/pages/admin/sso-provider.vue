@@ -28,6 +28,7 @@ import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { recordButtons } from '@/lib/recordButtons';
 import { useRecordSearch } from '@/composables/useRecordSearch';
+import Helpers from '@/lib/Helpers';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -97,7 +98,7 @@ async function update(data) {
     await axios.put(`/api/v2/oauth2/${encodeURIComponent(providerId.value)}`, data);
     return true;
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
     return false;
   }
 }
@@ -212,7 +213,7 @@ async function save() {
     EDITED.map((k) => [k, typeof edit.value[k] === 'string' ? edit.value[k].trim() : edit.value[k]]),
   );
   if (await update(data)) {
-    toast.success(`${data.name} ${t('settings.common.isUpdated')}`);
+    toast.success(t('settings.common.nameUpdated', { name: data.name }));
     await load();
   }
 }
@@ -239,10 +240,14 @@ const confirmDelete = ref(false);
 async function deleteProvider() {
   confirmDelete.value = false;
   try {
+    const name = provider.value?.name;
     await axios.delete(`/api/v2/oauth2/${encodeURIComponent(providerId.value)}`);
+    // gone : nothing left to save, so leaving does not offer to save it
+    provider.value = null;
+    toast.success(t('settings.common.nameDeleted', { name }));
     router.push('/settings/sso');
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 

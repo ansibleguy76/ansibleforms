@@ -219,7 +219,7 @@ async function update(data) {
     await axios.put(`/api/v2/credential/${encodeURIComponent(credentialId.value)}`, data);
     return true;
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
     return false;
   }
 }
@@ -416,7 +416,7 @@ async function save() {
     if (e.client_key.trim()) data.client_key = e.client_key;
   }
   if (await update(data)) {
-    toast.success(`${data.name} ${t('settings.common.isUpdated')}`);
+    toast.success(t('settings.common.nameUpdated', { name: data.name }));
     newPassword.value = '';
     await load();
   }
@@ -557,11 +557,13 @@ const confirmDelete = ref(false);
 async function deleteCredential() {
   confirmDelete.value = false;
   try {
+    const name = credential.value?.name;
     await axios.delete(`/api/v2/credential/${encodeURIComponent(credentialId.value)}`);
     credential.value = null;
+    toast.success(t('settings.common.nameDeleted', { name }));
     router.push('/settings/credentials');
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 

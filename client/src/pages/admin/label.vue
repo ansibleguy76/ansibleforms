@@ -98,7 +98,7 @@ async function save() {
       color: edit.value.color,
       position: edit.value.position === '' ? null : edit.value.position,
     });
-    toast.success(`${t('settings.labels.label')} ${t('settings.common.isUpdated')}`);
+    toast.success(t('settings.common.nameUpdated', { name: edit.value.name }));
     await load();
     return true;
   } catch (err) {
@@ -115,9 +115,11 @@ const confirmDelete = ref(false);
 async function deleteLabel() {
   confirmDelete.value = false;
   try {
+    const name = record.value?.name;
     await axios.delete(`/api/v2/label/${encodeURIComponent(labelId.value)}`);
     // gone : nothing left to save
     record.value = null;
+    toast.success(t('settings.common.nameDeleted', { name }));
     router.push('/settings/labels');
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err));

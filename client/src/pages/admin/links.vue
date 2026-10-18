@@ -352,7 +352,7 @@ useUnsavedGuard(
 async function save() {
   if (anyInvalid.value) return;
   if (envDirty.value) await saveEnvironmentVariables();
-  if (ownDirty.value) await saveOwn(`${t('sidebar.links')} ${t('settings.common.isUpdated')}`);
+  if (ownDirty.value) await saveOwn(t('settings.common.nameUpdated', { name: t('sidebar.links') }));
   await Promise.all([State.loadAppConfig(), State.loadHeaderLinks()]);
 }
 

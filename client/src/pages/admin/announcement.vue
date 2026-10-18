@@ -113,8 +113,9 @@ async function save() {
       start_at: edit.value.start_at || null,
       end_at: edit.value.end_at || null,
     });
-    toast.success(`${t('settings.interface.announcementLabel')} ${t('settings.common.isUpdated')}`);
+    // read again first : the toast names it by its message as saved
     await load();
+    toast.success(t('settings.common.nameUpdated', { name: name.value }));
     return true;
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err));
@@ -130,9 +131,11 @@ const confirmDelete = ref(false);
 async function deleteAnnouncement() {
   confirmDelete.value = false;
   try {
+    const gone = name.value;
     await axios.delete(`/api/v2/announcement/${encodeURIComponent(announcementId.value)}`);
     // gone : nothing left to save
     record.value = null;
+    toast.success(t('settings.common.nameDeleted', { name: gone }));
     router.push('/settings/announcements');
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err));

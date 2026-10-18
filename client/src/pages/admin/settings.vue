@@ -401,7 +401,7 @@ async function saveSettings() {
     // the theme and its colour are Settings > Appearance > Defaults's
     const { url, config_source, default_language } = item.value;
     await axios.put('/api/v2/settings/', { url, config_source, default_language });
-    toast.success(t('settings.settingsPage.label') + ' ' + t('settings.common.isUpdated'));
+    toast.success(t('settings.common.nameUpdated', { name: t('settings.settingsPage.label') }));
     await loadItem();
     return true;
   } catch (err) {

@@ -29,6 +29,7 @@ import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { recordButtons } from '@/lib/recordButtons';
 import { useRecordSearch } from '@/composables/useRecordSearch';
+import Helpers from '@/lib/Helpers';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -365,7 +366,7 @@ const tabMatch = (key) =>
  *   err (Error): the axios error.
  */
 function fail(err) {
-  toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+  toast.error(Helpers.parseAxiosResponseError(err));
 }
 
 /**
@@ -383,7 +384,7 @@ async function save() {
   }
   try {
     await axios.put(`/api/v2/repository/${encodeURIComponent(repoName.value)}`, data);
-    toast.success(`${data.name} ${t('settings.common.isUpdated')}`);
+    toast.success(t('settings.common.nameUpdated', { name: data.name }));
     // renamed : the api knows it by its new name from now on ; its address, its number, stays
     if (data.name !== repoName.value) repoName.value = data.name;
     await load();
@@ -419,9 +420,11 @@ const confirmDelete = ref(false);
 async function deleteRepo() {
   confirmDelete.value = false;
   try {
+    const name = repoName.value;
     await axios.delete(`/api/v2/repository/${encodeURIComponent(repoName.value)}`);
     edit.value = null;
     repo.value = null;
+    toast.success(t('settings.common.nameDeleted', { name }));
     router.push('/settings/repositories');
   } catch (err) {
     fail(err);

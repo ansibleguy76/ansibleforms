@@ -42,7 +42,7 @@ const { edit: look, dirty, load, save } = useSettingsRow(nameOf);
 useUnsavedGuard(
   dirty,
   () => t('settings.common.unsavedChanges'),
-  () => save(`${title.value} ${t('settings.common.isUpdated')}`),
+  () => save(t('settings.common.nameUpdated', { name: title.value })),
 );
 
 const title = computed(() => t('sidebar.name'));
@@ -78,7 +78,7 @@ onMounted(async () => {
         </ul>
       </template>
       <template #actions>
-        <BsButton icon="save" :disabled="!dirty" @click="save(`${title} ${t('settings.common.isUpdated')}`)">{{
+        <BsButton icon="save" :disabled="!dirty" @click="save(t('settings.common.nameUpdated', { name: title }))">{{
           t('settings.common.save')
         }}</BsButton>
       </template>

@@ -137,7 +137,7 @@ async function update(data) {
     await axios.put(`/api/v2/syslogserver/${encodeURIComponent(serverId.value)}`, data);
     return true;
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
     return false;
   }
 }
@@ -231,7 +231,7 @@ async function save() {
     source: e.source.trim(),
   };
   if (await update(data)) {
-    toast.success(`${data.name} ${t('settings.common.isUpdated')}`);
+    toast.success(t('settings.common.nameUpdated', { name: data.name }));
     await load();
   }
 }
@@ -263,11 +263,13 @@ const confirmDelete = ref(false);
 async function deleteServer() {
   confirmDelete.value = false;
   try {
+    const name = server.value?.name;
     await axios.delete(`/api/v2/syslogserver/${encodeURIComponent(serverId.value)}`);
     server.value = null;
+    toast.success(t('settings.common.nameDeleted', { name }));
     router.push('/settings/syslog');
   } catch (err) {
-    toast.error(err.response?.data?.message || err.response?.data?.error || err.message);
+    toast.error(Helpers.parseAxiosResponseError(err));
   }
 }
 
