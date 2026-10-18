@@ -14,20 +14,36 @@ Everything about installing, configuring and writing forms is documented at [ans
 
 ## Features
 
-- Forms for playbooks (on an RTE), templates (AWX, AAP, Ascender, Semaphore) and jobs (Rundeck, Jenkins)
-- Workflows in AWX's syntax, run by AnsibleForms itself: nodes on any runner, conditions, approvals, success and failure links
+- Forms for playbooks (RTE), templates (AWX, AAP, Ascender, Semaphore) and jobs (Rundeck, Jenkins)
+- Workflows in AWX's syntax across runners, with conditions, approvals and success or failure links
 - Cascaded dropdowns fed by databases, REST APIs, files and JavaScript or jq expressions
-- Field dependencies, validation enforced on the server, wizard forms, approvals and notifications by mail, Slack, Teams, Telegram or webhook
-- Roles per form category, with local, LDAP, Entra ID and OIDC logins, a password policy and account lockout
-- Credentials kept in AnsibleForms or in a secret store (HashiCorp Vault, CyberArk), sealed on their way to the RTE
+- Field dependencies, validation enforced on the server and wizard forms
+- Approvals and notifications by mail, Slack, Teams, Telegram or webhook
+- Local, LDAP, Entra ID and OIDC logins, roles per form category, a password policy and lockout
+- Credentials kept encrypted or in HashiCorp Vault or CyberArk, sealed on their way to the RTE
 - Job history and live output, abort and relaunch, stored jobs, one-off and recurring schedules
-- Forms, playbooks, vars files and workflows kept in Git repositories, edited in the built-in designer
+- Forms, playbooks and workflows kept in Git repositories, edited in the built-in designer
 - A REST API with interactive docs, an MCP server and an optional chat assistant
-- An audit log, syslog forwarding, Prometheus metrics, backups and liveness and readiness probes
+- An audit log, syslog forwarding, Prometheus metrics, backups and health probes
 
 ## Installation
 
-Two containers and a MySQL database: the app and an RTE. The images, all on `ghcr.io/ansibleforms`:
+On a Linux server, run the installer and answer its questions:
+
+```sh
+curl -fsSL https://ansibleforms.com/install | sh
+```
+
+It installs a controller (the app, its database and an RTE) or a Runner on its own, on Docker, Podman or Kubernetes. Run again,
+it finds an AnsibleForms already installed, 7.2 included, and upgrades it. The [installation guide](https://ansibleforms.com/installation)
+covers every option, and the setups the installer uses are also ready to deploy by hand:
+
+| Setup | Repository |
+|---|---|
+| Docker Compose | [ansibleforms/docker](https://github.com/ansibleforms/docker) |
+| Kubernetes (Helm) | [ansibleforms/helm-charts](https://github.com/ansibleforms/helm-charts) |
+
+The images, all on `ghcr.io/ansibleforms`:
 
 | Image | What it is |
 |---|---|
@@ -35,13 +51,6 @@ Two containers and a MySQL database: the app and an RTE. The images, all on `ghc
 | `ansibleforms-rte-full` | The RTE that runs the playbooks: ansible with its collections. **The default** |
 | `ansibleforms-rte-core` | A smaller RTE, ansible-core only, to build your own on ([examples/rte](examples/rte)) |
 | `ansibleforms-rte-base` | The RTE without python or ansible, for your own versions of both |
-
-The [installation guide](https://ansibleforms.com/installation) covers every option; the two ready-made setups are:
-
-| Setup | Repository |
-|---|---|
-| Docker Compose | [ansibleforms/docker](https://github.com/ansibleforms/docker) |
-| Kubernetes (Helm) | [ansibleforms/helm-charts](https://github.com/ansibleforms/helm-charts) |
 
 ## Release lines
 
