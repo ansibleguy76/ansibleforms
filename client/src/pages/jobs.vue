@@ -806,20 +806,10 @@ async function refreshLive() {
   }
 }
 useLiveEvent('jobs', refreshLive);
-// download with axios
-async function downloadWithAxios(url, headers) {
-  const response = await axios({
-    method: 'get',
-    headers: headers.headers,
-    url,
-    responseType: 'arraybuffer',
-  });
-  Helpers.forceFileDownload(response);
-}
 // download a job
 async function download(id) {
   try {
-    await downloadWithAxios(`/api/v2/job/${id}/download`);
+    await Helpers.downloadFile(`/api/v2/job/${id}/download`);
   } catch (err) {
     toast.error(err.toString());
   }

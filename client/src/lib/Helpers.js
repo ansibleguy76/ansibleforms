@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { copyText } from 'vue3-clipboard';
 import { buildFormOutput as engineBuildFormOutput } from '@engine/output.js';
 import { getFieldValue as engineGetFieldValue } from '@engine/placeholders.js';
@@ -550,6 +551,23 @@ const Helpers = {
     return quote;
   },
 
+  /**
+   * Downloads a file from the app's api : read as bytes, then saved under the name the server
+   * gives it (forceFileDownload). The signed-in user's token is added by the axios request
+   * interceptor (plugins/index.js), so the caller passes only the address. The jobs page, the
+   * form's output and the logs page each had their own copy that read the token from a second
+   * argument none of them passed, so every download threw before it was even asked for.
+   *
+   * Args:
+   *   url (string): the api address of the file, /api/v2/job/12/download for example.
+   *
+   * Returns:
+   *   Promise<void>: resolves once the browser was handed the file ; rejects with the axios error.
+   */
+  async downloadFile(url) {
+    const response = await axios({ method: 'get', url, responseType: 'arraybuffer' });
+    Helpers.forceFileDownload(response);
+  },
   forceFileDownload(response) {
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');
@@ -558,6 +576,10 @@ const Helpers = {
     link.setAttribute('download', filename);
     document.body.appendChild(link);
     link.click();
+    // the link and the blob's address are only needed for the click : released after it, so
+    // each download does not leave an anchor in the page and its bytes in memory
+    link.remove();
+    setTimeout(() => window.URL.revokeObjectURL(url), 0);
   },
   diff(arrA, arrB) {
     let diff = [];
