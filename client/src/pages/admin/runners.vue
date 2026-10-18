@@ -217,7 +217,7 @@ onMounted(async () => {
                 </span>
               </li>
             </ul>
-            <div class="text-body-secondary small mt-1">
+            <div class="text-body-tertiary small mt-1">
               {{ t('settings.runners.waitingHint', pending.length) }}
             </div>
           </div>
