@@ -200,11 +200,11 @@ onMounted(async () => {
           @click="reviewAll()"
           @keydown.enter="reviewAll()"
         >
-          <!-- the hourglass at the left, as tall as the notice ; the title and the runners beside it -->
-          <FaIcon icon="hourglass-half" class="af-runner-requests-icon" />
           <div>
             <div class="fw-bold af-runner-requests-title">
-              {{ t('settings.runners.waitingNotice', { count: pending.length }, pending.length) }}
+              <FaIcon icon="hourglass-half" class="me-2" />{{
+                t('settings.runners.waitingNotice', { count: pending.length }, pending.length)
+              }}
             </div>
             <ul class="af-runner-requests-list">
               <li v-for="r in pending" :key="r.id">
@@ -238,9 +238,6 @@ onMounted(async () => {
 .af-runner-requests {
   /* the whole notice opens the reviews, one after the other */
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
   margin-bottom: 1rem;
   padding: 0.75rem 1rem;
   /* a dark orange border all around */
@@ -253,18 +250,6 @@ onMounted(async () => {
 }
 [data-bs-theme='dark'] .af-runner-requests {
   border-color: #ff8a3d;
-}
-/* the hourglass : left of every line, in the title's orange */
-.af-runner-requests-icon {
-  flex: none;
-  /* centred on the notice's height : a block, without the line's baseline under it */
-  display: block;
-  align-self: center;
-  font-size: 2.7rem;
-  color: #c24e05;
-}
-[data-bs-theme='dark'] .af-runner-requests-icon {
-  color: #ff8a3d;
 }
 /* its title in a darker orange, readable on the light one */
 .af-runner-requests-title {
