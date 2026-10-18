@@ -30,7 +30,21 @@ vi.mock("../src/models/crud.model.js", () => ({
 const requests = [];
 let secrets = {};
 let lookupStatus = 200;
+// the engine type of each mount, for sys/internal/ui/mounts/<mount> (unknown : 404) ;
+// those lookups are recorded apart, so the secret reads above count only reads
+let mountTypes = {};
+const mountLookups = [];
 const server = http.createServer((req, res) => {
+  if (req.url.startsWith("/v1/sys/internal/ui/mounts/")) {
+    const mount = decodeURIComponent(req.url.slice("/v1/sys/internal/ui/mounts/".length));
+    mountLookups.push(mount);
+    res.setHeader("Content-Type", "application/json");
+    if (!(mount in mountTypes)) {
+      res.statusCode = 404;
+      return res.end(JSON.stringify({ errors: [] }));
+    }
+    return res.end(JSON.stringify({ data: { type: mountTypes[mount], path: `${mount}/` } }));
+  }
   requests.push({ url: req.url, token: req.headers["x-vault-token"], namespace: req.headers["x-vault-namespace"] });
   res.setHeader("Content-Type", "application/json");
   if (req.url === "/v1/auth/token/lookup-self") {
@@ -53,7 +67,7 @@ beforeAll(async () => {
 afterAll(() => server.close());
 
 const Registry = await import("../src/secrets/providers/index.js");
-const { buildApiPath, isDynamicPath } = await import("../src/secrets/providers/vault.js");
+const { buildApiPath, isDynamicPath, clearMountTypeCache } = await import("../src/secrets/providers/vault.js");
 const SecretStore = (await import("../src/models/secretStore.model.js")).default;
 const Import = await import("../src/secrets/importVaultEnv.js");
 
@@ -63,6 +77,9 @@ beforeEach(() => {
   storeRows = {};
   secrets = {};
   requests.length = 0;
+  mountLookups.length = 0;
+  mountTypes = {};
+  clearMountTypeCache();
   lookupStatus = 200;
   Registry.clearSecretCache();
   for (const k of ["VAULT_ADDR", "VAULT_TOKEN"]) delete process.env[k];
@@ -188,6 +205,40 @@ describe("vault dynamic credentials", () => {
     await Registry.readSecret("vault", "database/creds/ro");
     await Registry.readSecret("vault", "database/creds/ro");
     assert.equal(requests.length, 2);
+  });
+
+  test("a KV secret under a 'creds' folder is read as KV, not as a dynamic credential", async () => {
+    storeRows.vault = vaultRow({ cache_ttl_seconds: 0 });
+    mountTypes.team = "kv";
+    secrets["team/data/creds/app"] = { data: { data: { password: "kv" } } };
+    assert.equal((await Registry.readSecret("vault", "team/creds/app")).password, "kv");
+    assert.equal(requests[0].url, "/v1/team/data/creds/app", "KV v2 : /data/ inserted");
+  });
+
+  test("the default mount is the KV mount : never asked, read as KV", async () => {
+    storeRows.vault = vaultRow({ cache_ttl_seconds: 0 });
+    secrets["secret/data/creds/app"] = { data: { data: { password: "kv" } } };
+    assert.equal((await Registry.readSecret("vault", "secret/creds/app")).password, "kv");
+    assert.deepEqual(mountLookups, []);
+  });
+
+  test("a mount Vault names as a database engine is dynamic, and asked once", async () => {
+    storeRows.vault = vaultRow({ cache_ttl_seconds: 0 });
+    mountTypes["db-prod"] = "database";
+    secrets["db-prod/creds/app"] = { lease_duration: 60, data: { username: "u", password: "p" } };
+    await Registry.readSecret("vault", "db-prod/creds/app");
+    await Registry.readSecret("vault", "db-prod/creds/app");
+    assert.deepEqual(requests.map((r) => r.url), ["/v1/db-prod/creds/app", "/v1/db-prod/creds/app"]);
+    assert.deepEqual(mountLookups, ["db-prod"]);
+  });
+
+  test("extra.dynamic_mounts decides, without asking Vault", async () => {
+    storeRows.vault = vaultRow({ cache_ttl_seconds: 0, extra: JSON.stringify({ dynamic_mounts: ["database"] }) });
+    secrets["database/creds/ro"] = { lease_duration: 60, data: { username: "u", password: "p" } };
+    secrets["team/data/creds/app"] = { data: { data: { password: "kv" } } };
+    assert.equal((await Registry.readSecret("vault", "database/creds/ro")).username, "u");
+    assert.equal((await Registry.readSecret("vault", "team/creds/app")).password, "kv");
+    assert.deepEqual(mountLookups, []);
   });
 
   test("the lease is used at 80%, at least one second", async () => {

@@ -185,6 +185,17 @@ var app_config = {
   backupCommandTimeoutSeconds: parseInt(process.env.BACKUP_COMMAND_TIMEOUT_SECONDS, 10) > 0
     ? parseInt(process.env.BACKUP_COMMAND_TIMEOUT_SECONDS, 10)
     : 3600,
+  // Seconds a REST call of the expression functions (fnRestBasic, fnRestAdvanced,
+  // fnRestJwt, fnRestJwtSecure) may wait for an answer ; without a limit an endpoint
+  // that never answers kept the request hanging forever. 60 by default.
+  restTimeoutSeconds: parseInt(process.env.REST_TIMEOUT_SECONDS, 10) > 0
+    ? parseInt(process.env.REST_TIMEOUT_SECONDS, 10)
+    : 60,
+  // Seconds a jq filter (fnJq, the jq of the REST / file / credential functions and
+  // of the database queries) may run before jq is killed (lib/jq.js). 30 by default.
+  jqTimeoutSeconds: parseInt(process.env.JQ_TIMEOUT_SECONDS, 10) > 0
+    ? parseInt(process.env.JQ_TIMEOUT_SECONDS, 10)
+    : 30,
   maskExtravarsRegex: process.env.MASK_EXTRAVARS_REGEX || "password|secret|token",
   // Which keys of the launching user are sent as `ansibleforms_user` in the extravars.
   // Empty (the default) is the full object, exactly as every release before this one, and a

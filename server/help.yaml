@@ -784,6 +784,31 @@
       **Caveat:** this only protects the AnsibleForms Node.js process. Ansible playbooks run
       on the host directly and bypass this guard.
     version: 6.0.0
+  - name: REST_TIMEOUT_SECONDS
+    type: number
+    default: 60
+    short: REST call timeout (seconds)
+    hint: Seconds a REST expression may wait for an answer.
+    description: |
+      How long the REST helper functions (`fn.fnRestBasic`, `fn.fnRestAdvanced`, `fn.fnRestJwt`,
+      `fn.fnRestJwtSecure`) wait for the remote endpoint before the call fails with a timeout error.
+
+      Without a limit, an endpoint that never answers kept the request and the form field waiting forever.
+      A value that is not a number above 0 falls back to the default. Takes effect after a restart.
+    version: 7.3.0
+  - name: JQ_TIMEOUT_SECONDS
+    type: number
+    default: 30
+    short: jq timeout (seconds)
+    hint: Seconds a jq filter may run before it is stopped.
+    description: |
+      How long a jq filter may run before the jq process is killed: `fn.fnJq`, the jq expression of the
+      REST, file and credential functions, and the jq expression of database queries.
+
+      A runaway filter (for example a recursive definition that never ends) used to keep a jq process
+      spinning forever. jq output is also capped at 64 MB. A value that is not a number above 0 falls
+      back to the default. Takes effect after a restart.
+    version: 7.3.0
   - name: EXPRESSION_SANITIZER
     type: string
     # legacy is left out on purpose: the settings page builds its dropdown from this list,

@@ -6,7 +6,7 @@ import mssql from "../lib/mssql.js";
 import postgres from "../lib/postgres.js";
 import mongodb from "../lib/mongodb.js";
 import oracle from "../lib/oracle.js";
-import jq from "node-jq";
+import { runJq } from "../lib/jq.js";
 import { substitute } from "../lib/queryPolicy.js";
 
 //reporter object create
@@ -106,7 +106,10 @@ Query.findAll = async function (query,jqExpression="",cfg,noLog,values=null) {
   // Apply jq expression if provided
   if(jqExpression && jqExpression.trim() !== ""){
     logger.debug(`Applying jq expression: ${jqExpression}`)
-    result = await jq.run(jqExpression, result, { input:"json", output:"json" })
+    // the same runner as the expression functions : the jq definitions (fn2KB,
+    // fnRound, the admin's custom ones) are available here too, and jq is bounded in
+    // time (JQ_TIMEOUT_SECONDS) and output size
+    result = await runJq(jqExpression, result)
     if(!noLog){
       logger.debug(`jq result: ${JSON.stringify(result)}`)
     }

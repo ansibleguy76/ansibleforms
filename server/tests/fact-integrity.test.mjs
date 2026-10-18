@@ -354,7 +354,8 @@ describe("the forms walk and the delete pass see the same files", () => {
   // not among the saved ones, so it was removed. Measured: the form was absent from
   // /config/formlist with no warning, and present after the fix.
   const src = readFileSync(path.join(here, "../src/models/form.model.js"), "utf8");
-  const walk = src.slice(src.indexOf("const walk = (dir) =>"), src.indexOf("files.sort()"));
+  // ONE walk now serves both (walkYamlFiles) ; tests/forms-walk.test.mjs runs it
+  const walk = src.slice(src.indexOf("function walkYamlFiles("), src.indexOf("function listYamlFiles"));
 
   test("the slice really is the walk, so these assertions are not vacuous", () => {
     assert.match(walk, /readdirSync/);
@@ -369,10 +370,11 @@ describe("the forms walk and the delete pass see the same files", () => {
     assert.match(walk, /does not resolve/);
   });
 
-  test("both walks skip .git", () => {
+  test("both walks skip .git, being the same walk", () => {
     assert.match(walk, /entry\.name === "\.git"/);
-    const lister = src.slice(src.indexOf("function listYamlFiles"), src.indexOf("function listYamlFiles") + 500);
-    assert.match(lister, /entry\.name === "\.git"/);
+    const lister = src.slice(src.indexOf("function listYamlFiles"), src.indexOf("function listYamlFiles") + 200);
+    assert.match(lister, /return walkYamlFiles\(dir\)/);
+    assert.match(src, /files = walkYamlFiles\(formsdirpath, warn\)/);
   });
 });
 

@@ -78,10 +78,28 @@ const fixedBackupSources = ['file','database']
 
 const pathDelimiterRegex = new RegExp(`(?<!\\\\)${path.delimiter}`, 'g');
 
+/**
+ * Extracts the '.bak.<17 digit timestamp>' suffix of a backup name.
+ *
+ * The name comes straight from the URL of the restore / delete endpoints, so it is
+ * validated here : a name without the suffix used to crash with a TypeError
+ * (reading [1] of a null match), which surfaced as a 500 instead of a clear 400.
+ *
+ * Args:
+ *   t (string): The backup name, e.g. 'config.yaml.bak.20261018120000000'.
+ *
+ * Returns:
+ *   string: The suffix, e.g. '.bak.20261018120000000'.
+ *
+ * Raises:
+ *   BadRequestError: When the name is not a string or carries no valid suffix.
+ */
 function getBackupSuffix(t){
-  var backuppartre=/(\.bak\.[0-9]{17})$/g
-  var backuppart=backuppartre.exec(t)[1]
-  return backuppart
+  const match = typeof t === 'string' ? /(\.bak\.[0-9]{17})$/.exec(t) : null
+  if(!match){
+    throw new Errors.BadRequestError(`Invalid backup name '${String(t)}'`)
+  }
+  return match[1]
 }
 // Which source a stored snapshot was taken from, told by the artifact that exists
 // for its timestamp : a 'file' / 'database' snapshot carries its source in the name,
@@ -244,20 +262,106 @@ async function getSaveTargets() {
   return { configPath: targetConfigPath, formsDirs, repoMode, repoNames }
 }
 
-// recursively list the yaml files of a forms folder, relative to it (skipping
-// the .git folder) ; used to remove forms that were deleted in the designer
-function listYamlFiles(dir, base = dir) {
-  var result = []
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name === ".git") continue
-    const full = path.join(dir, entry.name)
-    if (entry.isDirectory()) {
-      result = result.concat(listYamlFiles(full, base))
-    } else if (/\.(yaml|yml)$/i.test(entry.name)) {
-      result.push(path.relative(base, full))
+// ===========================================================================
+// YAML FILE WALK
+// ===========================================================================
+/**
+ * Recursively lists the yaml files of a forms folder, relative to that folder.
+ *
+ * This ONE walk serves both the loader (Form.load) and the delete pass of a designer
+ * save (listYamlFiles). They used to be two separate walks that disagreed about
+ * symbolic links : the loader followed a symlinked folder while the delete pass did
+ * not, so a form deleted in the designer stayed on disk when it lived inside a
+ * symlinked folder. Sharing the walk keeps both sides seeing exactly the same set.
+ *
+ * Rules :
+ * - the .git folder is skipped (a repository served from its root would otherwise
+ *   re-stat the whole object store on every request for the form list) ;
+ * - a symbolic link is resolved : a link to a folder is walked, a link to a yaml file
+ *   is listed, a broken link is reported and skipped ;
+ * - every folder is visited at most once, by its REAL path, so a link pointing back
+ *   up the tree (a loop) cannot recurse forever ;
+ * - a folder that cannot be read (permissions, vanished mid-walk) is reported and
+ *   skipped on its own ; the files already collected from the other folders are
+ *   kept. Before, one unreadable subfolder threw out of the whole walk and the
+ *   complete forms folder looked empty.
+ *
+ * Args:
+ *   root (string): The forms folder to walk.
+ *   onWarn (function): Optional callback receiving a human readable warning for
+ *     every skipped folder or broken link. Defaults to logger.warning.
+ *
+ * Returns:
+ *   string[]: The yaml file paths, relative to root, in walk order.
+ *
+ * Raises:
+ *   Error: When root itself cannot be read ; the callers treat that as "this forms
+ *     folder failed to load" and skip it as a whole.
+ */
+function walkYamlFiles(root, onWarn = (m) => logger.warning(m)) {
+  const files = []
+  const visited = new Set()
+  const walk = (dir, isRoot) => {
+    // step 1 : loop guard on the real path (a symlink back up the tree)
+    let real
+    try {
+      real = fs.realpathSync(dir)
+    } catch (e) {
+      if (isRoot) throw e
+      onWarn(`Skipping folder '${dir}': it cannot be resolved (${e.code || e.message})`)
+      return
+    }
+    if (visited.has(real)) {
+      onWarn(`Skipping folder '${dir}': it was already visited (a symbolic link loop)`)
+      return
+    }
+    visited.add(real)
+    // step 2 : read the folder ; an unreadable subfolder is skipped on its own,
+    // only the root itself is fatal for the caller
+    let entries
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true })
+    } catch (e) {
+      if (isRoot) throw e
+      onWarn(`Skipping folder '${dir}': it cannot be read (${e.code || e.message})`)
+      return
+    }
+    // step 3 : collect yaml files, descend into folders
+    for (const entry of entries) {
+      if (entry.name === ".git") continue
+      const fullPath = path.join(dir, entry.name)
+      // A SYMLINK is neither isDirectory() nor isFile() - readdirSync does not follow
+      // them - so resolve it. A symlinked form yaml is a normal way to share one form
+      // between an app and a git checkout, and must be both listed and deletable.
+      let isDir = entry.isDirectory()
+      let isFile = entry.isFile()
+      if (entry.isSymbolicLink()) {
+        try {
+          const st = fs.statSync(fullPath) // follows the link
+          isDir = st.isDirectory()
+          isFile = st.isFile()
+        } catch (e) {
+          // a broken symlink : name it rather than dropping it silently
+          onWarn(`Skipping '${fullPath}': it is a symbolic link that does not resolve (${e.code || e.message})`)
+          continue
+        }
+      }
+      if (isDir) {
+        walk(fullPath, false)
+      } else if (isFile && /\.(yaml|yml)$/i.test(entry.name)) {
+        // relative to the root so getFormsFromFile(root, rel) and the save agree
+        files.push(path.relative(root, fullPath))
+      }
     }
   }
-  return result
+  walk(root, true)
+  return files
+}
+
+// recursively list the yaml files of a forms folder, relative to it ; used to
+// remove forms that were deleted in the designer (same walk as the loader)
+function listYamlFiles(dir) {
+  return walkYamlFiles(dir)
 }
 
 function copyConfigTemplate(to) {
@@ -679,52 +783,13 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
   // Loop through each forms directory (with its repository name)
   for(const formsdir of formsdirs){
     const formsdirpath = formsdir.path
-    var files = [];
+    var files;
     try {
-      // walk directory recursively and collect relative paths for .yml/.yaml files
-      const walk = (dir) => {
-        const entries = fs.readdirSync(dir, { withFileTypes: true });
-        for (const entry of entries) {
-          // listYamlFiles (the delete pass) skips .git ; this walk did not, so a forms
-          // repository served from its root re-stated the whole object store on every
-          // request for the form list
-          if (entry.name === ".git") continue;
-          const fullPath = path.join(dir, entry.name);
-          // A SYMLINK is neither isDirectory() nor isFile() - readdirSync does not follow
-          // them. That made this walk and listYamlFiles disagree, and the disagreement
-          // destroyed data: a symlinked form yaml (a normal way to share one form between
-          // an app and a git checkout) was invisible here - never listed, never in the
-          // designer, and not even reported as a warning - while listYamlFiles matches on
-          // the EXTENSION and so still saw it. On the next designer save it was therefore
-          // an unknown file whose form names were not among the saved ones, and it was
-          // removed. Resolve the link so both walks see the same set.
-          let isDir = entry.isDirectory();
-          let isFile = entry.isFile();
-          if (entry.isSymbolicLink()) {
-            try {
-              const st = fs.statSync(fullPath); // follows the link
-              isDir = st.isDirectory();
-              isFile = st.isFile();
-            } catch (e) {
-              // a broken symlink : name it rather than dropping it silently
-              warn(`Skipping '${fullPath}': it is a symbolic link that does not resolve (${e.code || e.message})`);
-              continue;
-            }
-          }
-          if (isDir) {
-            walk(fullPath);
-          } else if (isFile) {
-            const ext = path.extname(entry.name).toLowerCase();
-            if (ext === '.yml' || ext === '.yaml') {
-              // store path relative to formsdirpath so getFormsFromFile(formsdirpath, relPath) works
-              const rel = path.relative(formsdirpath, fullPath);
-              files.push(rel);
-            }
-          }
-        }
-      };
+      // walk directory recursively and collect relative paths for .yml/.yaml files ;
+      // walkYamlFiles skips an unreadable subfolder on its own (with a warning) and
+      // guards against symbolic link loops
       if (fs.existsSync(formsdirpath)) {
-        walk(formsdirpath);
+        files = walkYamlFiles(formsdirpath, warn);
       } else {
         warn(`Failed to load forms directory '${formsdirpath}'.`);
         continue; // skip this directory
@@ -1677,4 +1742,4 @@ Form.initBackupFolder=function(){
 }
 export default  Form;
 // the form file cache, for the tests
-export { getFormsFromFile };
+export { getFormsFromFile, walkYamlFiles };

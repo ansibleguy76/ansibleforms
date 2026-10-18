@@ -19,6 +19,94 @@ import { nodeId, NODE_DEAD_SECONDS, uptimeSeconds } from '../lib/role.js';
 const CLAIM_MAX_HOURS = 2;
 import { friendlyPullError, configRepoFromPath } from "../lib/forms-git.js";
 
+// ===========================================================================
+// STAGING FOLDER HELPERS
+// ===========================================================================
+/**
+ * Lists the yaml files of the staging folder recursively, relative to it.
+ *
+ * The .git folder is skipped, a symlinked folder is followed once (by its real
+ * path, so a link loop cannot recurse forever), a broken link or an unreadable
+ * subfolder is skipped.
+ *
+ * Args:
+ *   root (string): The staging folder.
+ *
+ * Returns:
+ *   string[]: The relative yaml paths, sorted ; empty when the folder is missing.
+ */
+function stagedYamlFiles(root) {
+  const files = []
+  const visited = new Set()
+  if (!root || !fs.existsSync(root)) return files
+  const walk = (dir) => {
+    // step 1 : loop guard and read ; an unreadable folder is skipped
+    let entries
+    try {
+      const real = fs.realpathSync(dir)
+      if (visited.has(real)) return
+      visited.add(real)
+      entries = fs.readdirSync(dir, { withFileTypes: true })
+    } catch (e) {
+      logger.warning(`Skipping staging folder '${dir}': ${e.code || e.message}`)
+      return
+    }
+    // step 2 : collect yaml files, descend into folders (links resolved)
+    for (const entry of entries) {
+      if (entry.name === ".git") continue
+      const full = path.join(dir, entry.name)
+      let isDir = entry.isDirectory()
+      let isFile = entry.isFile()
+      if (entry.isSymbolicLink()) {
+        try {
+          const st = fs.statSync(full)
+          isDir = st.isDirectory()
+          isFile = st.isFile()
+        } catch {
+          continue // a broken link
+        }
+      }
+      if (isDir) walk(full)
+      else if (isFile && /\.(yaml|yml)$/i.test(entry.name)) files.push(path.relative(root, full))
+    }
+  }
+  walk(root)
+  return files.sort()
+}
+
+/**
+ * Removes the empty subfolders of a folder, deepest first.
+ *
+ * Args:
+ *   dir (string): The folder to clean.
+ *   keepSelf (boolean): true to keep `dir` itself even when it ends up empty.
+ *
+ * Returns:
+ *   boolean: true when `dir` is empty afterwards.
+ */
+function removeEmptyFolders(dir, keepSelf = false) {
+  let entries
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true })
+  } catch {
+    return false
+  }
+  let empty = true
+  for (const entry of entries) {
+    // only real folders : a symlinked folder is someone else's content
+    if (entry.isDirectory() && removeEmptyFolders(path.join(dir, entry.name), false)) continue
+    empty = false
+  }
+  if (empty && !keepSelf) {
+    try {
+      fs.rmdirSync(dir)
+    } catch {
+      return false
+    }
+  }
+  return empty
+}
+
 class Repository extends CrudModel {
   static modelName = 'repositories';
 
@@ -653,10 +741,11 @@ class Repository extends CrudModel {
 
   // are there new forms staged (created in the designer, not yet pushed to a
   // repository) ? they live in the staging folder until a 'Push to repo'
+  // A designer save keeps a form's relative path ('team/deploy.yaml'), so staged
+  // forms can sit in subfolders : the whole staging tree is walked (stagedYamlFiles),
+  // not only its top level, or a nested new form was never flagged nor pushed.
   static hasStagedForms() {
-    const stagingPath = appConfig.formsStagingPath
-    if (!fs.existsSync(stagingPath)) return false
-    return fs.readdirSync(stagingPath).some(f => /\.(yaml|yml)$/i.test(f))
+    return stagedYamlFiles(appConfig.formsStagingPath).length > 0
   }
 
   // the forms repositories with a 'dirty' flag (uncommitted or unpushed changes),
@@ -774,6 +863,11 @@ class Repository extends CrudModel {
   // move every staged new form into this repository's forms folder (issue #414) ;
   // staged forms are the new files the designer created that are not yet bound
   // to a repository. Returns the list of moved file names.
+  //
+  // The staging tree is walked recursively and every form keeps its RELATIVE path
+  // in the repository ('team/deploy.yaml' lands in '<forms folder>/team/deploy.yaml') :
+  // a designer save writes a form to its relative path, and only moving the top
+  // level left nested new forms behind in staging forever.
   static flushStagingInto(name) {
     const stagingPath = appConfig.formsStagingPath
     if (!fs.existsSync(stagingPath)) {
@@ -781,18 +875,20 @@ class Repository extends CrudModel {
     }
     const moved = []
     const dest = Repository.formsFolderOf(name)
-    for (const entry of fs.readdirSync(stagingPath)) {
-      if (!/\.(yaml|yml)$/i.test(entry)) continue
-      fse.ensureDirSync(dest)
-      const target = path.join(dest, entry)
+    for (const rel of stagedYamlFiles(stagingPath)) {
+      const target = path.join(dest, rel)
       if (fs.existsSync(target)) {
         // refuse to clobber an existing form file ; leave it staged so the user can rename
-        logger.warning(`Staged form '${entry}' collides with an existing file in '${name}', leaving it staged`)
+        logger.warning(`Staged form '${rel}' collides with an existing file in '${name}', leaving it staged`)
         continue
       }
-      fse.moveSync(path.join(stagingPath, entry), target)
-      moved.push(entry)
+      // the parent folders of a nested form are created in the repository
+      fse.ensureDirSync(path.dirname(target))
+      fse.moveSync(path.join(stagingPath, rel), target)
+      moved.push(rel)
     }
+    // the subfolders the move emptied are removed, the staging root itself is kept
+    removeEmptyFolders(stagingPath, true)
     if (moved.length) {
       logger.notice(`Assigned ${moved.length} new form(s) to repository '${name}': ${moved.join(", ")}`)
     }

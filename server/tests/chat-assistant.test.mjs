@@ -226,6 +226,49 @@ describe("a summary launches exactly its payload, once, from the click", () => {
     expect(deps.Job.launch).toHaveBeenCalledTimes(1);
   });
 
+  test("a click while a turn is answered is refused (409) and the plan stays usable", async () => {
+    const chat = service([call("resolve", ready), say("Click Launch.")]);
+    const { sessionId, out } = await planned(chat);
+    const planId = out.proposals[0].planId;
+    // a turn in progress : the model answers only when released
+    let release;
+    model.complete.mockImplementationOnce(() => new Promise((resolve) => { release = () => resolve(say("still thinking")); }));
+    const turn = chat.message(user, { sessionId, message: "and now?" });
+    await vi.waitFor(() => expect(release).toBeTypeOf("function"));
+    await expect(chat.approve(user, { sessionId, planId })).rejects.toMatchObject({ code: "busy", status: 409 });
+    expect(deps.Job.launch).not.toHaveBeenCalled();
+    release();
+    await turn;
+    // the plan was not consumed by the refused click
+    expect((await chat.approve(user, { sessionId, planId })).job.id).toBe(77);
+  });
+
+  test("a launch that ends while a turn runs adds its note after that turn", async () => {
+    const chat = service([call("resolve", ready), say("Click Launch.")]);
+    const { sessionId, out } = await planned(chat);
+    const { getSession } = await import("../src/chat/sessions.js");
+    // the launch waits until released
+    let launchDone;
+    deps.Job.launch.mockImplementationOnce(() => new Promise((resolve) => { launchDone = () => resolve({ id: 77 }); }));
+    const click = chat.approve(user, { sessionId, planId: out.proposals[0].planId });
+    await vi.waitFor(() => expect(launchDone).toBeTypeOf("function"));
+    // a turn starts meanwhile, and its model answer waits too
+    let release;
+    model.complete.mockImplementationOnce(() => new Promise((resolve) => { release = () => resolve(say("done")); }));
+    const turn = chat.message(user, { sessionId, message: "hello" });
+    await vi.waitFor(() => expect(release).toBeTypeOf("function"));
+    launchDone();
+    await click;
+    const session = getSession(sessionId, user);
+    // not inside the running turn
+    expect(session.messages.some((m) => /job 77 was launched/.test(m.text || ""))).toBe(false);
+    release();
+    await turn;
+    // after it
+    expect(session.messages.at(-1)).toMatchObject({ role: "user" });
+    expect(session.messages.at(-1).text).toMatch(/job 77 was launched/);
+  });
+
   test("another user cannot even reach the conversation", async () => {
     const chat = service([call("resolve", ready), say("Click Launch.")]);
     const { sessionId, out } = await planned(chat);

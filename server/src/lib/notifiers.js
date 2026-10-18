@@ -26,6 +26,8 @@ import Settings from "../models/settings.model.js";
 const TIMEOUT_MS = 10000;
 // Telegram's longest message ; Slack and Teams take more, a notification is short anyway
 const TELEGRAM_MAX = 4000;
+// the longest (escaped) title of a Telegram message
+const TELEGRAM_TITLE_MAX = 256;
 
 /**
  * A text escaped for HTML (Telegram's parse mode, a mail built from a text).
@@ -38,6 +40,33 @@ const TELEGRAM_MAX = 4000;
  */
 export function escapeHtml(value) {
   return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/**
+ * A text escaped for HTML and cut so that the ESCAPED result fits a length.
+ *
+ * The raw text is cut, never the escaped one, so an entity (&amp; &lt; ...) is never
+ * split ; a cut text ends in '...'. Characters are taken whole (a surrogate pair is
+ * never split either).
+ *
+ * Args:
+ *   value (string): the raw text.
+ *   max (number): the longest escaped result allowed.
+ *
+ * Returns:
+ *   string: the escaped text, at most `max` characters long.
+ */
+export function escapeTruncated(value, max) {
+  const escaped = escapeHtml(value);
+  if (escaped.length <= max) return escaped;
+  const budget = Math.max(0, max - 3);
+  let out = "";
+  for (const ch of String(value ?? "")) {
+    const piece = escapeHtml(ch);
+    if (out.length + piece.length > budget) break;
+    out += piece;
+  }
+  return max >= 3 ? `${out}...` : out;
 }
 
 /**
@@ -134,12 +163,15 @@ export function teamsBody(message, buttonLabel = "Open") {
  */
 export function telegramBody(message, chatId, buttonLabel = "Open") {
   const link = message.link ? `\n<a href="${escapeHtml(message.link)}">${escapeHtml(buttonLabel)}</a>` : "";
-  const room = TELEGRAM_MAX - link.length - escapeHtml(message.title).length - 10;
-  let text = escapeHtml(message.text);
-  if (text.length > room) text = `${text.slice(0, Math.max(0, room - 3))}...`;
+  // the title is limited too : a huge one left no room (or a negative one) for the text
+  const title = escapeTruncated(message.title, TELEGRAM_TITLE_MAX);
+  const room = TELEGRAM_MAX - link.length - title.length - 10;
+  // cut the RAW text, then escape : cutting the escaped text could split an entity
+  // ('&am...') and Telegram refuses the whole message as invalid HTML
+  const text = escapeTruncated(message.text, room);
   return {
     chat_id: chatId,
-    text: `<b>${escapeHtml(message.title)}</b>\n${text}${link}`,
+    text: `<b>${title}</b>\n${text}${link}`,
     parse_mode: "HTML",
     disable_web_page_preview: true,
   };

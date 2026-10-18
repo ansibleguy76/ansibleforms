@@ -381,6 +381,11 @@ const restore = async function(req,res){
         res.status(500).json(RestResult.error(i18n.t(req, 'config.failedRestoreBackup', { name: req.params.backupName })))
       }
     }catch(err){
+      // an invalid backup name (no '.bak.<timestamp>' suffix) is the caller's
+      // mistake : answer 400, not a server error
+      if (err instanceof Errors.BadRequestError) {
+        return res.status(400).json(RestResult.error(i18n.t(req, 'config.failedRestoreForms'), err.message))
+      }
       res.status(500).json(RestResult.error(i18n.t(req, 'config.failedRestoreForms'), helpers.getError(err)))
     }finally{
       // release ONLY when we took it : lock.match means the designer already held

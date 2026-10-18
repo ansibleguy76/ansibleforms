@@ -64,6 +64,9 @@ export function createChatService({
         return await runTurn({ session, message: body?.message, selection: body?.selection, settings, handlers, user, complete });
       } finally {
         session.busy = false;
+        // the notes of a click that landed while this turn ran go in now, after the
+        // turn's tool_use / tool_result pairs (see addOperatorNote)
+        flushOperatorNotes(session);
       }
     },
 
@@ -75,6 +78,11 @@ export function createChatService({
     async approve(user, body, ip) {
       await readySettings();
       const session = getSession(body?.sessionId, user);
+      // A click while a turn is being answered is refused BEFORE the plan is taken (so
+      // the button still works once the turn ends) : the note the launch adds to the
+      // conversation would otherwise land between a tool_use and its tool_result, which
+      // the providers reject - and the conversation was broken for good.
+      if (session.busy) throw new ChatError('busy', 'The previous message is still being answered - try again when it is done', 409);
       const plan = takePlan(body?.planId, { username: user.username, userType: user.type, sessionId: session.id });
       const handlers = createHandlers({ user, deps });
       let launched;
@@ -104,7 +112,7 @@ export function createChatService({
       // the conversation learns what the click did : "did it work ?" can then be answered
       // (the job tool), and the operator may refer to this job without retyping its id
       if (jobId) {
-        session.messages.push({ role: 'user', text: `[The operator clicked ${plan.label}: job ${jobId} was launched for the form '${plan.form}'.]` });
+        addOperatorNote(session, `[The operator clicked ${plan.label}: job ${jobId} was launched for the form '${plan.form}'.]`);
         session.operatorMessages.push(`job ${jobId}`);
       }
       logger.notice(`Chat: ${user.username} launched '${plan.form}' as job ${jobId} (plan ${plan.planId})`);
@@ -120,6 +128,43 @@ export function createChatService({
       return { ok: true };
     },
   };
+}
+
+/**
+ * Adds an operator note (what a click did) to the conversation.
+ *
+ * The launch is awaited, so a new message can start a turn while it runs : the note
+ * is then queued and added when that turn ends (flushOperatorNotes), never in the
+ * middle of the turn's tool calls.
+ *
+ * Args:
+ *   session (object): The chat session.
+ *   text (string): The note, as a user message.
+ *
+ * Returns:
+ *   void
+ */
+function addOperatorNote(session, text) {
+  if (session.busy) {
+    (session.pendingNotes ||= []).push(text);
+    return;
+  }
+  session.messages.push({ role: 'user', text });
+}
+
+/**
+ * Adds the notes queued while a turn ran (addOperatorNote) to the conversation.
+ *
+ * Args:
+ *   session (object): The chat session, no longer busy.
+ *
+ * Returns:
+ *   void
+ */
+function flushOperatorNotes(session) {
+  const notes = session.pendingNotes || [];
+  session.pendingNotes = [];
+  for (const text of notes) session.messages.push({ role: 'user', text });
 }
 
 /** a chat / plan error as the route answers it */
