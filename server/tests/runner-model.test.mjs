@@ -266,3 +266,26 @@ describe("a runner's credential is of its kind", () => {
     assert.equal(rows.at(-1).credential, "p");
   });
 });
+
+describe("the RTE's pin on a runner (rte_cert_sha256)", () => {
+  beforeEach(() => {
+    rows.push({ id: 3, name: "rte-in", type: "rte", uri: "https://rte", token: "t", ca_bundle: "PEM-A", rte_cert_sha256: "abc" });
+  });
+
+  test("never written through the API", async () => {
+    await Runner.update({ rte_cert_sha256: "forged" }, 3);
+    assert.equal(rows.find((r) => r.id === 3).rte_cert_sha256, "abc");
+  });
+
+  test("a ca_bundle changed through the API clears it ; the same one sent back keeps it", async () => {
+    await Runner.update({ ca_bundle: "PEM-A" }, 3);
+    assert.equal(rows.find((r) => r.id === 3).rte_cert_sha256, "abc");
+    await Runner.update({ ca_bundle: "PEM-B" }, 3);
+    assert.equal(rows.find((r) => r.id === 3).rte_cert_sha256, null);
+  });
+
+  test("the RTE hub writes it", async () => {
+    await Runner.update({ ca_bundle: "PEM-C", rte_cert_sha256: "def" }, 3, { fromRte: true });
+    assert.equal(rows.find((r) => r.id === 3).rte_cert_sha256, "def");
+  });
+});

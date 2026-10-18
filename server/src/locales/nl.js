@@ -2,6 +2,8 @@ export default {
   errors: {
     databaseError:
       "Er is een databasefout opgetreden: het serverlogboek bevat de details",
+    duplicateRecord: "Er bestaat al een record met deze naam",
+    valueTooLong: "Een waarde is te lang voor het veld",
     noAccess: "Geen toegang",
     notAdmin: "U bent geen beheerder",
     noSettingsAccess: "U heeft geen toegang tot instellingen",
@@ -98,7 +100,7 @@ export default {
     credentialNotFound:
       "Geen referentie met de naam '{name}'",
     repositoryCredentialType:
-      "Een repository meldt zich aan met een git- of userpass-referentie: '{name}' is van het type {type}",
+      "Een repository meldt zich aan met een gebruiker en een wachtwoord: de referentie '{name}' heeft ze niet allebei",
     credentialSignInAdminOnly:
       "Alleen een admin kan een referentie toevoegen, wijzigen of verwijderen die een aanmelding gebruikt (LDAP, Microsoft Entra ID of OIDC)",
     credentialNotAllowed:

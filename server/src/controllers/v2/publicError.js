@@ -31,8 +31,14 @@ export function isDatabaseError(err) {
 }
 
 /**
- * The error to answer with : a database error logged and replaced by a generic one (a 500), any
- * other as it is.
+ * The error to answer with : a database error logged and replaced by a public one, any other as
+ * it is. Two database errors are the caller's to fix, and are told as such without naming the
+ * table, the key or the value :
+ *
+ *   ER_DUP_ENTRY      a 409 : a record with this name already exists
+ *   ER_DATA_TOO_LONG  a 400 : a value is too long for its field
+ *
+ * Any other database error is a generic 500.
  *
  * Args:
  *   req (object): the request (its language).
@@ -44,6 +50,8 @@ export function isDatabaseError(err) {
 export function publicError(req, err) {
   if (!isDatabaseError(err)) return err;
   logger.error(`Database error answered as a generic one: ${err.code || ''} ${err.sqlMessage || err.message || ''}`);
+  if (err.code === 'ER_DUP_ENTRY') return new Errors.ConflictError(i18n.t(req, 'errors.duplicateRecord'));
+  if (err.code === 'ER_DATA_TOO_LONG') return new Errors.BadRequestError(i18n.t(req, 'errors.valueTooLong'));
   return new Error(i18n.t(req, 'errors.databaseError'));
 }
 

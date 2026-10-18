@@ -2,7 +2,7 @@
 // failures pass to the next server, and a directory's server urls.
 import { test, describe } from "vitest";
 import assert from "node:assert/strict";
-import { DEFAULT_NAME, NAME_RULE, qualify, route, isUnreachable, urls } from "../src/lib/ldapDirectories.js";
+import { DEFAULT_NAME, NAME_RULE, qualify, route, isUnreachable, urls, setDirectoryNames } from "../src/lib/ldapDirectories.js";
 
 const dirs = [
   { name: DEFAULT_NAME, domains: "" },
@@ -19,11 +19,30 @@ describe("qualify", () => {
     assert.equal(qualify({ name: "corp" }, "jane"), "corp/jane");
   });
   test("a '/' in a default directory's name never reads as another directory's member", () => {
+    const names = [DEFAULT_NAME, "corp"];
     // the default directory's group 'corp/Admins' is not the group Admins of corp
-    assert.equal(qualify({ name: DEFAULT_NAME }, "corp/Admins"), "corp%2FAdmins");
-    assert.notEqual(qualify({ name: DEFAULT_NAME }, "corp/jane"), qualify({ name: "corp" }, "jane"));
+    assert.equal(qualify({ name: DEFAULT_NAME }, "corp/Admins", names), "corp%2FAdmins");
+    assert.equal(qualify({ name: DEFAULT_NAME }, "CORP/Admins", names), "CORP%2FAdmins", "whatever the case");
+    assert.notEqual(qualify({ name: DEFAULT_NAME }, "corp/jane", names), qualify({ name: "corp" }, "jane", names));
     // another directory's own '/' stays behind its prefix
-    assert.equal(qualify({ name: "corp" }, "a/b"), "corp/a/b");
+    assert.equal(qualify({ name: "corp" }, "a/b", names), "corp/a/b");
+  });
+  test("any other '/' in a default directory's name stays as it was", () => {
+    const names = [DEFAULT_NAME, "corp"];
+    // no directory named Sales : role mappings on ldap/Sales/EMEA keep matching
+    assert.equal(qualify({ name: DEFAULT_NAME }, "Sales/EMEA", names), "Sales/EMEA");
+    // the default directory's own name is no other directory
+    assert.equal(qualify({ name: DEFAULT_NAME }, DEFAULT_NAME + "/x", names), DEFAULT_NAME + "/x");
+    assert.equal(qualify({ name: DEFAULT_NAME }, "a/corp/b", names), "a/corp/b", "only the part before the first '/'");
+  });
+  test("without names given, the ones kept by setDirectoryNames", () => {
+    setDirectoryNames([DEFAULT_NAME, "sales"]);
+    try {
+      assert.equal(qualify({ name: DEFAULT_NAME }, "Sales/EMEA"), "Sales%2FEMEA");
+      assert.equal(qualify({ name: DEFAULT_NAME }, "corp/jane"), "corp/jane");
+    } finally {
+      setDirectoryNames([]);
+    }
   });
 });
 

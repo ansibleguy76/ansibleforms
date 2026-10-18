@@ -58,6 +58,9 @@ const crudConfigs = {
       // is client_cert) ; a runner's or a secret store's for its url
       { name: 'ignore_certs', isBoolean: true },
       { name: 'ca_bundle' },
+      // the digest of the ca_bundle an RTE's certificate was stored as : written by the RTE hub
+      // only (Credential.update strips it from any other write), read freely
+      { name: 'rte_cert_sha256' },
       { name: 'description' },
       { name: 'db_type' },
       { name: 'vault_path' },
@@ -105,7 +108,9 @@ const crudConfigs = {
       // of itself (host, address, mode, version, its token's fingerprint), as JSON
       { name: 'pending', isBoolean: true },
       { name: 'pending_since' },
-      { name: 'pending_info' }
+      { name: 'pending_info' },
+      // the digest of the ca_bundle its RTE's certificate was stored as : the RTE hub's only
+      { name: 'rte_cert_sha256' }
     ],
     allowCache: true,
     cacheTTL: 3600

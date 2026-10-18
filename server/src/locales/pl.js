@@ -2,6 +2,8 @@ export default {
   errors: {
     databaseError:
       "Wystąpił błąd bazy danych: szczegóły są w dzienniku serwera",
+    duplicateRecord: "Rekord o tej nazwie już istnieje",
+    valueTooLong: "Wartość jest za długa dla swojego pola",
     noAccess: "Brak dostępu",
     notAdmin: "Nie jesteś administratorem",
     noSettingsAccess: "Nie masz dostępu do ustawień",
@@ -103,7 +105,7 @@ export default {
     credentialNotFound:
       "Brak poświadczenia o nazwie '{name}'",
     repositoryCredentialType:
-      "Repozytorium loguje się poświadczeniem git lub userpass: '{name}' jest typu {type}",
+      "Repozytorium loguje się użytkownikiem i hasłem: poświadczenie '{name}' nie ma obu",
     credentialSignInAdminOnly:
       "Tylko admin może dodać, zmienić lub usunąć poświadczenie używane przez logowanie (LDAP, Microsoft Entra ID lub OIDC)",
     credentialNotAllowed:

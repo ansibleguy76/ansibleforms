@@ -265,7 +265,10 @@ export function replacePlaceholderInString(value, ctx, ignoreIncomplete = false,
       if (fieldvalue === undefined) fieldvalue = "__undefined__";
       if (fieldvalue === null) fieldvalue = "__null__";
       if (mode === 'expression' && fieldvalue !== "__undefined__" && fieldvalue !== "__null__") {
-        value = substituteExpressionPlaceholder(value, foundmatch, fieldvalue, isObjectLiteral);
+        // hardened = true : a backtick or `${` in a field value is written as a unicode escape,
+        // so a value landing inside a template literal stays text and never runs as code
+        // (the same protection spliceExpressionValues gives the browser-resolved path)
+        value = substituteExpressionPlaceholder(value, foundmatch, fieldvalue, isObjectLiteral, true);
         resolved[match[1]] = isObjectLiteral ? JSON.parse(fieldvalue) : fieldvalue;
         if (isObjectLiteral && !literals.includes(match[1])) literals.push(match[1]);
       } else {

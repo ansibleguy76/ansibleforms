@@ -9,6 +9,7 @@ import {
   checkDependencies,
   readPlaceholderPath,
 } from "../src/lib/formEngine/placeholders.js";
+import { evalSandbox } from "../src/lib/formEngine/node/sandbox.js";
 
 const ctx = (values, fieldOptions = {}, isReady = () => true) => ({ values, fieldOptions, isReady });
 
@@ -144,5 +145,34 @@ describe("checkDependencies", () => {
 
   test("a field without dependencies is shown", () => {
     expect(checkDependencies({ name: "t" }, {})).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Expression mode : template literals stay inert
+// ---------------------------------------------------------------------------
+// quoteContextAt does not track template literals, so a value spliced into a
+// `...` literal used to keep its backticks and ${...} : a field value could run
+// code inside a runLocal expression. Values are now spliced hardened.
+describe("replacePlaceholderInString - expression mode inside a template literal", () => {
+  test("a ${...} in a field value is literal text, never evaluated", () => {
+    const r = replacePlaceholderInString("`Hello $(name)`", ctx({ name: "${1+1}" }), false, "expression");
+    expect(r.value).not.toContain("${");
+    expect(evalSandbox(r.value)).toBe('Hello "${1+1}"');
+  });
+
+  test("a value cannot close the template literal with a backtick and inject code", () => {
+    const r = replacePlaceholderInString("`Hello $(name)`", ctx({ name: "` + (globalThis.pwned = 1) + `" }), false, "expression");
+    expect(evalSandbox(r.value + "; typeof globalThis.pwned")).toBe("undefined");
+  });
+
+  test("a legitimate backtick value still evaluates to its own text", () => {
+    const r = replacePlaceholderInString("`Hello $(name)`", ctx({ name: "a`b" }), false, "expression");
+    expect(evalSandbox(r.value)).toBe('Hello "a`b"');
+  });
+
+  test("a backtick value in an ordinary string literal is unchanged", () => {
+    const r = replacePlaceholderInString("'$(name)'", ctx({ name: "a`b ${c}" }), false, "expression");
+    expect(evalSandbox(r.value)).toBe("a`b ${c}");
   });
 });

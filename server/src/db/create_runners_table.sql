@@ -26,6 +26,9 @@ CREATE TABLE `runners` (
   `pending` tinyint(4) DEFAULT 0,
   `pending_since` datetime DEFAULT NULL,
   `pending_info` text DEFAULT NULL,
+  -- the SHA-256 of the ca_bundle its RTE's certificate was stored as (a runner without a
+  -- credential) : cleared when an admin changes the bundle
+  `rte_cert_sha256` varchar(64) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_AnsibleForms_runners_natural_key` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

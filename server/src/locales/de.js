@@ -2,6 +2,8 @@ export default {
   errors: {
     databaseError:
       "Ein Datenbankfehler ist aufgetreten: das Serverprotokoll enthaelt die Details",
+    duplicateRecord: "Ein Eintrag mit diesem Namen existiert bereits",
+    valueTooLong: "Ein Wert ist zu lang fuer sein Feld",
     noAccess: "Kein Zugriff",
     notAdmin: "Du bist kein Administrator",
     noSettingsAccess: "Du hast keinen Zugriff auf Einstellungen",
@@ -102,7 +104,7 @@ export default {
     credentialNotFound:
       "Keine Zugangsdaten mit dem Namen '{name}'",
     repositoryCredentialType:
-      "Ein Repository meldet sich mit git- oder userpass-Zugangsdaten an: '{name}' ist vom Typ {type}",
+      "Ein Repository meldet sich mit Benutzer und Passwort an: die Zugangsdaten '{name}' haben nicht beides",
     credentialSignInAdminOnly:
       "Nur ein Admin kann Zugangsdaten hinzufuegen, aendern oder loeschen, die eine Anmeldung verwendet (LDAP, Microsoft Entra ID oder OIDC)",
     credentialNotAllowed:

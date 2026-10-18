@@ -5,7 +5,7 @@ import helpers from "../lib/common.js";
 import yaml from "yaml";
 import crypto from "../lib/crypto.js";
 import { authenticate } from 'ldap-authentication';
-import { DEFAULT_NAME, NAME_RULE, qualify, route, isUnreachable, urls } from '../lib/ldapDirectories.js';
+import { DEFAULT_NAME, NAME_RULE, qualify, route, isUnreachable, urls, setDirectoryNames } from '../lib/ldapDirectories.js';
 import Credential from './credential.model.v2.js';
 import Errors from '../lib/errors.js';
 import { moveOneStep } from './listOrder.js';
@@ -131,8 +131,26 @@ async function checkName(name, current) {
  */
 Ldap.findAll = async function () {
   const rows = await mysql.do("SELECT * FROM AnsibleForms.`ldap` ORDER BY position, id");
+  // the names qualify compares a default directory's name with (lib/ldapDirectories.js)
+  setDirectoryNames(rows.map((r) => r.name));
   return rows.map(decrypted);
 };
+
+/**
+ * Reads the directories' names again for qualify, after a directory was added, renamed or
+ * deleted. A failure only leaves the names as they were : the next sign-in reads them anyway.
+ *
+ * Returns:
+ *   Promise<void>
+ */
+async function refreshDirectoryNames() {
+  try {
+    const rows = await mysql.do("SELECT name FROM AnsibleForms.`ldap`");
+    setDirectoryNames(rows.map((r) => r.name));
+  } catch (e) {
+    logger.warning(`Couldn't read the ldap directory names: ${e.message || e}`);
+  }
+}
 
 /**
  * A directory by its id.
@@ -198,7 +216,9 @@ Ldap.updateById = async function (id, record) {
   if (record.name !== undefined) await checkName(record.name, current);
   if (record.credential !== undefined) await Ldap.checkCredential(record.credential);
   logger.info(`Updating ldap directory '${current.name}'`);
-  return mysql.do("UPDATE AnsibleForms.`ldap` set ? WHERE id = ?", [record, id]);
+  const res = await mysql.do("UPDATE AnsibleForms.`ldap` set ? WHERE id = ?", [record, id]);
+  if (record.name !== undefined) await refreshDirectoryNames();
+  return res;
 };
 
 /**
@@ -231,6 +251,7 @@ Ldap.create = async function (record) {
   }
   logger.info(`Adding ldap directory '${record.name}'`);
   const res = await mysql.do("INSERT INTO AnsibleForms.`ldap` set ?", record);
+  await refreshDirectoryNames();
   return res.insertId;
 };
 
@@ -273,7 +294,9 @@ Ldap.deleteById = async function (id) {
   if (current.name === Ldap.DEFAULT_NAME) throw new Errors.BadRequestError(`The directory '${Ldap.DEFAULT_NAME}' cannot be deleted: turn it off instead`);
   if (current.managed) throw new Errors.AccessDeniedError("This directory comes from the config seed");
   logger.info(`Deleting ldap directory '${current.name}'`);
-  return mysql.do("DELETE FROM AnsibleForms.`ldap` WHERE id = ?", [id]);
+  const res = await mysql.do("DELETE FROM AnsibleForms.`ldap` WHERE id = ?", [id]);
+  await refreshDirectoryNames();
+  return res;
 };
 
 // Does an ldap-authentication failure mean 'the search found no such user' ?

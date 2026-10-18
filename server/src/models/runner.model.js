@@ -44,6 +44,9 @@ class Runner extends CrudModel {
       delete data.pending;
       delete data.pending_since;
       delete data.pending_info;
+      // the digest of the ca_bundle its RTE's certificate was stored as : the RTE hub's only
+      // (rteHub.authenticate) ; cleared by update() when anyone else changes the bundle
+      delete data.rte_cert_sha256;
     }
     if (data.type !== undefined && !RUNNER_TYPES.includes(data.type)) {
       throw new Errors.BadRequestError(`Unknown runner type '${data.type}' - use one of ${RUNNER_TYPES.join(', ')}`);
@@ -245,6 +248,11 @@ class Runner extends CrudModel {
     if (conn && !opts.fromSeed) {
       Object.assign(data, { uri: '', ignore_certs: 0, ca_bundle: null });
       Object.assign(merged, data);
+    }
+    // a ca_bundle changed by anyone but the RTE hub is theirs : its RTE never replaces it
+    const text = (v) => (v === null || v === undefined ? '' : String(v).trim());
+    if (!opts.fromRte && data.ca_bundle !== undefined && text(data.ca_bundle) !== text(current?.ca_bundle)) {
+      data.rte_cert_sha256 = null;
     }
     this.assertComplete(merged, !!conn);
     if ('credential' in data) await this.assertCredential(merged, opts);

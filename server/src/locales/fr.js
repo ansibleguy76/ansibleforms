@@ -2,6 +2,8 @@ export default {
   errors: {
     databaseError:
       "Une erreur de base de données s'est produite : le journal du serveur en donne le détail",
+    duplicateRecord: "Un enregistrement portant ce nom existe déjà",
+    valueTooLong: "Une valeur est trop longue pour son champ",
     noAccess: "Acces refuse",
     notAdmin: "Vous n'etes pas administrateur",
     noSettingsAccess: "Vous n'avez pas acces aux parametres",
@@ -105,7 +107,7 @@ export default {
     credentialNotFound:
       "Aucun identifiant nommé '{name}'",
     repositoryCredentialType:
-      "Un dépôt se connecte avec un identifiant git ou userpass : '{name}' est de type {type}",
+      "Un dépôt se connecte avec un utilisateur et un mot de passe : l'identifiant '{name}' n'a pas les deux",
     credentialSignInAdminOnly:
       "Seul un admin peut ajouter, modifier ou supprimer un identifiant utilisé par une authentification (LDAP, Microsoft Entra ID ou OIDC)",
     credentialNotAllowed:

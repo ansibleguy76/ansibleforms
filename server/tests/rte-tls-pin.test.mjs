@@ -10,6 +10,7 @@ import os from "os";
 import path from "path";
 import https from "https";
 import { execFileSync } from "child_process";
+import { createHash } from "crypto";
 
 process.env.LOG_PATH = process.env.LOG_PATH || "/tmp/ansibleforms-test-logs";
 process.env.DB_HOST ||= "127.0.0.1";
@@ -118,6 +119,10 @@ beforeEach(() => {
   credUpdated.length = 0;
 });
 
+// the digest the hub records of a bundle it stores (rte_cert_sha256) : SHA-256 of the bundle as
+// parseCertBundle writes it
+const digest = (pem) => createHash("sha256").update(parseCertBundle(pem).pem).digest("hex");
+
 const headers = (extra = {}) => ({ authorization: "Bearer rte-token-0123456789", "x-af-rte-name": "dmz-in", "x-af-rte-id": "rte-in-8443", ...extra });
 
 // ─── the certificate itself ───────────────────────────────────────────────────
@@ -154,6 +159,23 @@ describe("an RTE's certificate", () => {
     assert.equal(certToSend({ RTE_URL: "https://rte.dmz:8443" }, { https: false, httpsCert: null }), null, "TLS ended by a proxy in front of it");
     assert.equal(certToSend({}, tls), null);
   });
+
+  test("a certificate file the app would refuse is not sent, said once, and the RTE still registers", async () => {
+    // the RTE's side writes to the real logger (the alias covers ../lib/logger.js only)
+    const { default: rteLogger } = await import("../src/lib/logger.js");
+    const warn = vi.spyOn(rteLogger, "warning").mockImplementation(() => {});
+    try {
+      const env = { RTE_URL: "https://rte.dmz:8443" };
+      assert.equal(certToSend(env, { https: true, httpsCert: Buffer.from("x".repeat(40 * 1024)) }), null, "too large");
+      assert.equal(certToSend(env, { https: true, httpsCert: Buffer.from(certA.repeat(50)) }), null, "too many");
+      const said = warn.mock.calls.map((c) => String(c[0])).filter((m) => m.includes("HTTPS_CERT is not sent"));
+      assert.equal(said.length, 1);
+      // only certificates go out : text around them stays behind
+      assert.equal(certToSend(env, { https: true, httpsCert: `junk\n${certA}` }), parseCertBundle(certA).pem);
+    } finally {
+      warn.mockRestore();
+    }
+  });
 });
 
 // ─── what the app stores ──────────────────────────────────────────────────────
@@ -178,7 +200,8 @@ describe("an inbound RTE registering with its certificate", () => {
   });
 
   test("its own token and a renewed certificate : pinned to the new one ; the same one : nothing written", async () => {
-    credentials["dmz-in-rte"] = { id: 7, name: "dmz-in-rte", credential_type: "rte", password: "rte-token-0123456789", url: "https://rte.dmz:8443", ca_bundle: parseCertBundle(certA).pem };
+    // stored by the hub before : the column holds the digest of the bundle it stored
+    credentials["dmz-in-rte"] = { id: 7, name: "dmz-in-rte", credential_type: "rte", password: "rte-token-0123456789", url: "https://rte.dmz:8443", ca_bundle: parseCertBundle(certA).pem, rte_cert_sha256: digest(certA) };
     // findByName reads the address, the token and the bundle from the credential
     runners["dmz-in"] = { id: 1, name: "dmz-in", type: "rte", credential: "dmz-in-rte", token: "rte-token-0123456789", rte_mode: "inbound", uri: "https://rte.dmz:8443", ca_bundle: parseCertBundle(certA).pem };
     await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certA });
@@ -186,8 +209,84 @@ describe("an inbound RTE registering with its certificate", () => {
     const res = await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certB });
     assert.equal(credentials["dmz-in-rte"].ca_bundle, parseCertBundle(certB).pem);
     assert.equal(credentials["dmz-in-rte"].ignore_certs, 0);
+    assert.equal(credentials["dmz-in-rte"].rte_cert_sha256, digest(certB), "the digest of the bundle stored");
+    assert.equal(credentials["dmz-in-rte"].description, undefined, "the description left alone");
     assert.equal(updated.length, 0, "the runner itself unchanged : its mode and address are the same");
     assert.equal(res.runner.ca_bundle, parseCertBundle(certB).pem);
+    // renewed again : the column names the bundle stored, so the RTE may replace it
+    runners["dmz-in"].ca_bundle = credentials["dmz-in-rte"].ca_bundle;
+    await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certA });
+    assert.equal(credentials["dmz-in-rte"].ca_bundle, parseCertBundle(certA).pem);
+    assert.equal(credentials["dmz-in-rte"].rte_cert_sha256, digest(certA));
+  });
+
+  test("a new credential an RTE joins with records the digest of its certificate", async () => {
+    await hub.authenticate(headers({ "x-af-rte-join": "afj_good" }), { mode: "inbound", url: "https://rte.dmz:8443", cert: certA });
+    assert.equal(credCreated[0].rte_cert_sha256, digest(certA));
+  });
+
+  test("a ca_bundle an admin set by hand is never replaced by the RTE's certificate", async () => {
+    // an admin's own bundle : no digest recorded
+    credentials["dmz-in-rte"] = { id: 7, name: "dmz-in-rte", credential_type: "rte", password: "rte-token-0123456789", url: "https://rte.dmz:8443", ca_bundle: certA, rte_cert_sha256: null };
+    runners["dmz-in"] = { id: 1, name: "dmz-in", type: "rte", credential: "dmz-in-rte", token: "rte-token-0123456789", rte_mode: "inbound", uri: "https://rte.dmz:8443", ca_bundle: certA };
+    const warn = vi.spyOn(logger, "warning");
+    try {
+      const res = await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certB });
+      assert.ok(res.runner);
+      assert.equal(credentials["dmz-in-rte"].ca_bundle, certA, "the admin's bundle stays");
+      assert.equal(credUpdated.length + updated.length, 0);
+      assert.equal(res.runner.ca_bundle, certA);
+      assert.ok(warn.mock.calls.some((c) => /set by hand/.test(String(c[0]))));
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test("a bundle an RTE stored, then changed by an admin, is the admin's", async () => {
+    // the column names certB (an RTE stored it) ; the bundle is certA since
+    credentials["dmz-in-rte"] = { id: 7, name: "dmz-in-rte", credential_type: "rte", password: "rte-token-0123456789", url: "https://rte.dmz:8443", ca_bundle: certA, rte_cert_sha256: digest(certB) };
+    runners["dmz-in"] = { id: 1, name: "dmz-in", type: "rte", credential: "dmz-in-rte", token: "rte-token-0123456789", rte_mode: "inbound", uri: "https://rte.dmz:8443", ca_bundle: certA };
+    await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certB });
+    assert.equal(credentials["dmz-in-rte"].ca_bundle, certA);
+  });
+
+  test("an empty ca_bundle takes the RTE's certificate", async () => {
+    credentials["dmz-in-rte"] = { id: 7, name: "dmz-in-rte", credential_type: "rte", password: "rte-token-0123456789", url: "https://rte.dmz:8443", ca_bundle: null, description: "hand made" };
+    runners["dmz-in"] = { id: 1, name: "dmz-in", type: "rte", credential: "dmz-in-rte", token: "rte-token-0123456789", rte_mode: "inbound", uri: "https://rte.dmz:8443", ca_bundle: null };
+    await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certB });
+    assert.equal(credentials["dmz-in-rte"].ca_bundle, parseCertBundle(certB).pem);
+    assert.equal(credentials["dmz-in-rte"].rte_cert_sha256, digest(certB));
+    assert.equal(credentials["dmz-in-rte"].description, "hand made");
+  });
+
+  test("a runner keeping its own bundle (no credential) : the digest on the runner row", async () => {
+    runners["dmz-in"] = { id: 1, name: "dmz-in", type: "rte", token: "rte-token-0123456789", rte_mode: "inbound", uri: "https://rte.dmz:8443", ca_bundle: parseCertBundle(certA).pem, rte_cert_sha256: digest(certA) };
+    await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certB });
+    assert.equal(runners["dmz-in"].ca_bundle, parseCertBundle(certB).pem);
+    assert.equal(runners["dmz-in"].rte_cert_sha256, digest(certB));
+    // set by hand on the runner : kept
+    runners["dmz-in"] = { id: 1, name: "dmz-in", type: "rte", token: "rte-token-0123456789", rte_mode: "inbound", uri: "https://rte.dmz:8443", ca_bundle: certA, rte_cert_sha256: null };
+    updated.length = 0;
+    await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certB });
+    assert.equal(runners["dmz-in"].ca_bundle, certA);
+    assert.equal(updated.length, 0);
+  });
+
+  test("a hand-made runner whose credential the seed manages : the repin is skipped, not a 500", async () => {
+    credentials["dmz-in-rte"] = { id: 7, name: "dmz-in-rte", credential_type: "rte", password: "rte-token-0123456789", url: "https://rte.dmz:8443", ca_bundle: certA, managed: 1 };
+    runners["dmz-in"] = { id: 1, name: "dmz-in", type: "rte", credential: "dmz-in-rte", token: "rte-token-0123456789", rte_mode: "inbound", uri: "https://rte.dmz:8443", ca_bundle: certA };
+    const warn = vi.spyOn(logger, "warning");
+    try {
+      const res = await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.dmz:8443", cert: certB });
+      assert.ok(res.runner, "let in");
+      assert.equal(credUpdated.length + updated.length, 0);
+      assert.ok(warn.mock.calls.some((c) => /managed by the config seed/.test(String(c[0]))));
+    } finally {
+      warn.mockRestore();
+    }
+    // a new address there : said, not thrown
+    const moved = await hub.authenticate(headers(), { mode: "inbound", url: "https://rte.other:8443", cert: certA });
+    assert.equal(moved.status, 409);
   });
 
   test("a runner managed by the seed keeps the bundle the seed sets", async () => {
@@ -253,6 +352,34 @@ describe("the app dialing a pinned RTE", () => {
     } finally {
       server.close();
     }
+  });
+
+  test("the pin adds to the usual authorities : a chain to them still passes, its name checked", async () => {
+    // a private authority stands in for a public one (a proxy re-encrypting in front of the RTE) :
+    // its leaf, made for 127.0.0.1, chains to it ; certA stays the pinned certificate
+    const caKey = path.join(dir, "ca.key");
+    const caPem = path.join(dir, "ca.pem");
+    execFileSync("openssl", ["req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", caKey, "-out", caPem, "-days", "2", "-subj", "/CN=test-ca"], { stdio: "ignore" });
+    const leafKey = path.join(dir, "leaf.key");
+    const leafCsr = path.join(dir, "leaf.csr");
+    const leafPem = path.join(dir, "leaf.pem");
+    const ext = path.join(dir, "leaf.ext");
+    fs.writeFileSync(ext, "subjectAltName=IP:127.0.0.1\n");
+    execFileSync("openssl", ["req", "-newkey", "rsa:2048", "-nodes", "-keyout", leafKey, "-out", leafCsr, "-subj", "/CN=proxy"], { stdio: "ignore" });
+    execFileSync("openssl", ["x509", "-req", "-in", leafCsr, "-CA", caPem, "-CAkey", caKey, "-CAcreateserial", "-out", leafPem, "-days", "2", "-extfile", ext], { stdio: "ignore" });
+    const ca = fs.readFileSync(caPem, "utf8");
+    const { server, port } = await tlsServer(fs.readFileSync(leafPem, "utf8"), fs.readFileSync(leafKey, "utf8"));
+    try {
+      assert.equal(await get(port, getHttpsAgent({ ca_bundle: `${certA}\n${ca}` }, { pin: true })), "ok", "a chain and the right name");
+      await assert.rejects(get(port, getHttpsAgent({ ca_bundle: certA }, { pin: true })), "no chain to a trusted authority, not pinned");
+    } finally {
+      server.close();
+    }
+    // the system's authorities are kept beside the bundle
+    const tls = await import("tls");
+    const agent = getHttpsAgent({ ca_bundle: certA }, { pin: true });
+    assert.ok(agent.options.ca.includes(tls.rootCertificates[0]), "the public roots stay trusted");
+    assert.ok(agent.options.ca.includes(certA), "and the bundle");
   });
 
   test("the socket to an inbound runner is dialed pinned to its credential's certificate", async () => {

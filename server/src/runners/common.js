@@ -47,7 +47,8 @@ function pemFingerprints(bundle) {
  * ca_bundle's is trusted whatever name the app dials it by - the certificate was sent by the RTE
  * when it registered, and an admin approved it, so it is the RTE's whatever its subject says
  * (a self-signed certificate made for the RTE's container name, dialed by its IP address). Any
- * other certificate is checked as always : a chain to the bundle, and the name.
+ * other certificate is checked as always : a chain to the bundle or to the usual authorities
+ * (Node's roots, the system's), and the name.
  *
  * Args:
  *   runner (object): the runner row (ignore_certs, ca_bundle).
@@ -64,6 +65,11 @@ export function getHttpsAgent(runner, opts = {}) {
   if (opts.pin && runner?.ca_bundle && !runner?.ignore_certs) {
     const pinned = pemFingerprints(runner.ca_bundle);
     if (pinned.size) {
+      // the pin trusts the bundle's certificates ON TOP of the usual authorities, it does not
+      // replace them : an inbound RTE behind a proxy that re-encrypts with a certificate of a
+      // public (or NODE_EXTRA_CA_CERTS) authority still passes the normal chain check, with its
+      // name checked. A `ca` option alone would make the bundle the only trust.
+      options.ca = [...defaultAuthorities(), runner.ca_bundle];
       // a leaf of the bundle that is not self-signed is a trust anchor of its own (no chain
       // to its authority needed) ; its name is not checked, its fingerprint is
       options.allowPartialTrustChain = true;
@@ -71,6 +77,24 @@ export function getHttpsAgent(runner, opts = {}) {
     }
   }
   return new https.Agent(options);
+}
+
+/**
+ * The authorities Node trusts when no `ca` is given : its bundled roots, plus the system's and
+ * NODE_EXTRA_CA_CERTS where this Node can list them (tls.getCACertificates, Node 22.15 and later).
+ *
+ * Returns:
+ *   string[]: the certificates, as PEM.
+ */
+function defaultAuthorities() {
+  if (typeof tls.getCACertificates === "function") {
+    try {
+      return tls.getCACertificates("default");
+    } catch {
+      // an older signature : the bundled roots below
+    }
+  }
+  return [...tls.rootCertificates];
 }
 
 // every call : a connection that hangs must fail and reach the retries, not wait for ever

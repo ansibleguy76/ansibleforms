@@ -2,6 +2,8 @@ export default {
   errors: {
     databaseError:
       "S'ha produït un error de la base de dades: el registre del servidor en té els detalls",
+    duplicateRecord: "Ja existeix un registre amb aquest nom",
+    valueTooLong: "Un valor és massa llarg per al seu camp",
     noAccess: "No hi tens accés",
     notAdmin: "No ets administrador",
     noSettingsAccess: "No tens accés a la configuració",
@@ -100,7 +102,7 @@ export default {
     credentialNotFound:
       "No hi ha cap credencial anomenada '{name}'",
     repositoryCredentialType:
-      "Un repositori inicia sessió amb una credencial git o userpass: '{name}' és de tipus {type}",
+      "Un repositori inicia sessió amb un usuari i una contrasenya: la credencial '{name}' no té tots dos",
     credentialSignInAdminOnly:
       "Només un admin pot afegir, canviar o eliminar una credencial que fa servir un inici de sessió (LDAP, Microsoft Entra ID o OIDC)",
     credentialNotAllowed:

@@ -11,26 +11,56 @@ export const LEGACY_DEFAULT_NAME = "default";
 // digits, - and _ only
 export const NAME_RULE = /^[a-z0-9][a-z0-9_-]{0,49}$/i;
 
+// ─── the names of the directories, as qualify reads them ──────────────────────
+// qualify runs where no database call can be awaited (and must stay a pure rule), so the names
+// of the directories are kept here : models/ldap.model.js sets them each time it reads the
+// directories (every sign-in does, before any name is qualified) and after each change.
+let directoryNames = new Set();
+
+/**
+ * Keeps the names of the existing directories, for qualify.
+ *
+ * Args:
+ *   names (string[]): every directory's name.
+ *
+ * Returns:
+ *   void
+ */
+export function setDirectoryNames(names) {
+  directoryNames = new Set((names || []).filter(Boolean).map((n) => String(n).toLowerCase()));
+}
+
 /**
  * A member's name as roles and the app know it : the default directory's as it is, any other's
  * prefixed with the directory (corp/jane, corp/Admins).
  *
- * A '/' in a name of the default directory is written %2F : unprefixed, a group named
- * 'corp/Admins' (or a user named 'corp/jane') in the default directory read exactly as the group
- * Admins (the user jane) of the directory corp, so whoever could name a group or a user in the
- * default directory took the roles another directory's members are given.
+ * A name of the default directory whose part before its first '/' is the name of another
+ * existing directory has its '/' written %2F : unprefixed, a group named 'corp/Admins' (or a
+ * user named 'corp/jane') in the default directory would read exactly as the group Admins (the
+ * user jane) of the directory corp, so whoever could name a group or a user in the default
+ * directory took the roles another directory's members are given. Any other '/' cannot collide
+ * and stays as it was (role mappings such as ldap/Sales/EMEA keep matching, usernames keep
+ * their form) ; the directory names are compared regardless of case, as route() reads them.
  *
  * Args:
  *   directory (object): the directory ({ name }).
  *   name (string): the user's or the group's name in the directory.
+ *   names (Iterable<string>): the existing directories' names ; by default the ones kept by
+ *     setDirectoryNames.
  *
  * Returns:
  *   string: the qualified name.
  */
-export function qualify(directory, name) {
+export function qualify(directory, name, names = directoryNames) {
   const dir = directory?.name || DEFAULT_NAME;
   if (dir !== DEFAULT_NAME) return `${dir}/${name}`;
-  return typeof name === "string" ? name.replaceAll("/", "%2F") : name;
+  if (typeof name !== "string") return name;
+  const slash = name.indexOf("/");
+  if (slash < 0) return name;
+  const head = name.slice(0, slash).toLowerCase();
+  const others = new Set([...(names || [])].map((n) => String(n).toLowerCase()));
+  others.delete(DEFAULT_NAME.toLowerCase());
+  return others.has(head) ? name.replaceAll("/", "%2F") : name;
 }
 
 /**

@@ -64,6 +64,22 @@ describe("a database error", () => {
     expect(publicMessage({}, new Error("runner unreachable"))).toBe("Error: runner unreachable");
   });
 
+  test("a duplicate is a 409 and a value too long a 400, neither naming the schema", async () => {
+    const { publicError } = await import("../src/controllers/v2/publicError.js");
+    const dup = publicError({}, sqlError("ER_DUP_ENTRY", "Duplicate entry 'x' for key 'credentials.name'"));
+    expect(dup).toBeInstanceOf(Errors.ConflictError);
+    expect(dup.status).toBe(409);
+    expect(dup.message).toBe("errors.duplicateRecord");
+    const long = publicError({}, sqlError("ER_DATA_TOO_LONG", "Data too long for column 'description'"));
+    expect(long).toBeInstanceOf(Errors.BadRequestError);
+    expect(long.status).toBe(400);
+    expect(long.message).toBe("errors.valueTooLong");
+    // any other : the generic 500
+    const other = publicError({}, sqlError("ER_PARSE_ERROR", "near 'x'"));
+    expect(other).not.toBeInstanceOf(Errors.ApiError);
+    expect(other.message).toBe("errors.databaseError");
+  });
+
   test("a credential list that fails on the database says nothing of the statement", async () => {
     failWith = sqlError("ER_BAD_FIELD_ERROR", "Unknown column 'secret_ref' in 'field list'");
     const r = await call(credentials.find);
@@ -86,8 +102,15 @@ describe("a stored job named as another of the user's", () => {
     expect(r.status).toBe(409);
   });
 
-  test("another database error: a generic 500", async () => {
+  test("a value too long: a 400 that names no column", async () => {
     failWith = sqlError("ER_DATA_TOO_LONG", "Data too long for column 'form_data'");
+    const r = await call(stored.create, { body: { name: "x" } });
+    expect(r.status).toBe(400);
+    expect(r.data.error).toBe("errors.valueTooLong");
+  });
+
+  test("another database error: a generic 500", async () => {
+    failWith = sqlError("ER_LOCK_DEADLOCK", "Deadlock found when trying to get lock");
     const r = await call(stored.create, { body: { name: "x" } });
     expect(r.status).toBe(500);
     expect(r.data.error).toBe("errors.databaseError");

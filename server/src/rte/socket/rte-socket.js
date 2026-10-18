@@ -41,7 +41,7 @@ import { FileCache } from "./files.js";
 import {
   SOCKET_CONTRACT, RTE_SOCKET_PATH, CLOSE, WINDOW, MAX_PAYLOAD, REFUSED_CLOSES, REFUSED_STATUSES, REFUSED_REDIAL_MS,
   CONTRACT_REDIAL_MS,
-  socketUrl, fingerprint, certFingerprint, listenHost,
+  socketUrl, fingerprint, certFingerprint, listenHost, parseCertBundle,
 } from "./protocol.js";
 
 // ─── settings ─────────────────────────────────────────────────────────────────
@@ -71,14 +71,32 @@ const TEMPLATE_CERT = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
  *   env (object): the environment (process.env ; the tests set it).
  *   tls (object): { https, httpsCert } (config/https.config.js ; the tests set it).
  *
+ * A certificate file the app would refuse (parseCertBundle : too large, too many certificates,
+ * one that cannot be read) is not sent : the app answers such a registration with a 400, which
+ * the RTE takes as final, so the RTE never registered at all. Without it the RTE registers, a
+ * warning says why nothing is pinned, and the app checks the certificate as any other.
+ *
  * Returns:
- *   string|null: the certificate (PEM), null when none is sent.
+ *   string|null: the certificate (PEM, certificates only), null when none is sent.
  */
 export function certToSend(env = process.env, tls = httpsConfig) {
   if (!tls?.https || !tls.httpsCert) return null;
   if (!/^https:\/\//i.test(String(env.RTE_URL || "").trim())) return null;
-  return Buffer.isBuffer(tls.httpsCert) ? tls.httpsCert.toString("utf8") : String(tls.httpsCert);
+  const text = Buffer.isBuffer(tls.httpsCert) ? tls.httpsCert.toString("utf8") : String(tls.httpsCert);
+  try {
+    return parseCertBundle(text).pem;
+  } catch (e) {
+    // said once : certToSend runs on every registration attempt
+    if (!certWarned) {
+      certWarned = true;
+      logger.warning(`RTE '${rteName()}': HTTPS_CERT is not sent to the app (${e.message}): the app does not pin it and checks this RTE's certificate as any other`);
+    }
+    return null;
+  }
 }
+
+// whether the certificate that cannot be sent was said already (certToSend)
+let certWarned = false;
 
 /**
  * Whether a certificate is the one shipped in the image (its private key is public).

@@ -2,6 +2,8 @@ export default {
   errors: {
     databaseError:
       "データベースエラーが発生しました: 詳細はサーバーログにあります",
+    duplicateRecord: "この名前のレコードはすでに存在します",
+    valueTooLong: "値がフィールドに対して長すぎます",
     noAccess: "アクセス権がありません",
     notAdmin: "管理者ではありません",
     noSettingsAccess: "設定へのアクセス権がありません",
@@ -97,7 +99,7 @@ export default {
     credentialNotFound:
       "'{name}' という名前の資格情報はありません",
     repositoryCredentialType:
-      "リポジトリは git または userpass の資格情報でサインインします: '{name}' は {type} です",
+      "リポジトリはユーザーとパスワードでサインインします: 資格情報 '{name}' には両方がありません",
     credentialSignInAdminOnly:
       "サインインが使う資格情報 (LDAP、Microsoft Entra ID、OIDC) を追加、変更、削除できるのは admin だけです",
     credentialNotAllowed:
