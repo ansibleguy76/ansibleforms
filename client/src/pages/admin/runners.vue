@@ -151,7 +151,12 @@ async function decided() {
   if (inTurn.value && pending.value.length) reviewing.value = pending.value[0];
   else inTurn.value = false;
 }
-useLiveEvent('runners', loadPending);
+// a runner changed elsewhere (one asked to join, approved, its socket up or down) : the notice
+// and the table both read again ; the table not while a dialog of it is open (loadItems(false))
+useLiveEvent('runners', async () => {
+  await loadPending();
+  list.value?.loadItems(false);
+});
 
 async function test_connection(item) {
   if (item) {
