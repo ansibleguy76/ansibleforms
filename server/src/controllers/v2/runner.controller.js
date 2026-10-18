@@ -124,8 +124,12 @@ const update = async (req, res) => {
 const deleteRunner = async (req, res) => {
   try {
     assertAdmin(req);
+    // its name first : an RTE's socket on this node is closed at once (another node's closes at
+    // its next lease renewal, the runner gone)
+    const before = await Runner.findStoredById(req.params.id);
     const deleted = await Runner.delete(req.params.id);
     if (!deleted) throw new Errors.NotFoundError(i18n.t(req, "resources.runnerNotFound"));
+    if (before?.name) dropSocket(before.name, "deleted under Connections > Runners");
     return res.json(RestResult.single(deleted));
   } catch (err) {
     Errors.ReturnError(res, err);

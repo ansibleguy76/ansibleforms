@@ -16,6 +16,7 @@ vi.mock("../src/models/runner.model.js", () => ({
     update: async (data, id) => { calls.push(["update", data, id]); return true; },
     delete: async (id) => { calls.push(["delete", id]); return true; },
     findById: async () => ({ id: 1, name: "rte", type: "rte", token: "secret-token" }),
+    findStoredById: async () => ({ id: 1, name: "rte", type: "rte" }),
     findAll: async () => [],
     countPending: async () => 2,
   },

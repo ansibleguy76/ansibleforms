@@ -1,6 +1,7 @@
 // Runners : where a job runs. One row per RTE (runtime environment container) ; a form
 // names one with `runner: <name>`, or runs on the default one of its type.
 import CrudModel from './crud.model.js';
+import { SECRET_MASK, isMasked } from '../lib/secretMask.js';
 import Errors from '../lib/errors.js';
 import logger from '../lib/logger.js';
 import mysql from './db.model.js';
@@ -13,8 +14,9 @@ export const RUNNER_FLAVOURS = ['aap', 'ascender'];
 // the runners that sign in with a token and launch in one project of their server
 const TOKEN_AND_PROJECT = ['semaphore', 'rundeck'];
 
-// the secret the api shows instead of a stored token ; sent back it means "unchanged"
-export const SECRET_MASK = '********';
+// the secret the api shows instead of a stored token ; sent back it means "unchanged" (any run
+// of asterisks : lib/secretMask.js)
+export { SECRET_MASK };
 
 // how an RTE talks to the app (RTE_MODE) : database (deprecated, the default), outbound (it
 // dials the app) or inbound (the app dials it) - the socket modes hold no database credentials
@@ -47,8 +49,8 @@ class Runner extends CrudModel {
       throw new Errors.BadRequestError(`Unknown runner type '${data.type}' - use one of ${RUNNER_TYPES.join(', ')}`);
     }
     // the api shows secrets masked ; the mask sent back means "unchanged"
-    if (data.token === SECRET_MASK) delete data.token;
-    if (data.password === SECRET_MASK) delete data.password;
+    if (isMasked(data.token)) delete data.token;
+    if (isMasked(data.password)) delete data.password;
     if (typeof data.uri === 'string') data.uri = stripTrailingSlashes(data.uri.trim());
     // a semaphore or rundeck runner signs in with its token only : a user and password are
     // an awx runner's choice
