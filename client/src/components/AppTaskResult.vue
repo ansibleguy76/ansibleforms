@@ -229,6 +229,11 @@ const codeLines = computed(
   color: var(--bs-secondary-color);
   margin-bottom: 0.25rem;
 }
+/* the card the tabs open into : its top corners square, its top border one straight line under the tabs */
+.tab-card-flush-card {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
 /* a code tab : no padding, its grey text the card's whole inside, its bottom corners the card's */
 .af-result-code {
   padding: 0 !important;
