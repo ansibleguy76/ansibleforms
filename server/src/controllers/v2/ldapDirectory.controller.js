@@ -179,12 +179,20 @@ const check = async function (req, res) {
     if (await Ldap.connectionOf(sent.credential).catch(() => null)) {
       for (const key of CONNECTION_KEYS) sent[key] = existing[key] ?? null;
       sent.bind_user_pw = existing.bind_user_pw;
-    }
-    if (isMasked(sent.bind_user_pw)) {
-      if (!sameLdapTarget(sent, existing)) {
-        return res.status(400).json(RestResultv2.error(i18n.t(req, 'resources.ldapCheckFailed'), i18n.t(req, 'resources.storedPasswordOtherServer')));
+    } else {
+      // the bind password : what the request sent ; the stored one only when it sent the mask or
+      // none, and for the stored servers. Merged in with the rest, a request that left it out
+      // took the stored password along to any server it named.
+      const given = req.body.bind_user_pw;
+      if (given === undefined || given === null || isMasked(given)) {
+        if (sameLdapTarget(sent, existing)) {
+          sent.bind_user_pw = existing.bind_user_pw;
+        } else if (isMasked(given)) {
+          return res.status(400).json(RestResultv2.error(i18n.t(req, 'resources.ldapCheckFailed'), i18n.t(req, 'resources.storedPasswordOtherServer')));
+        } else {
+          sent.bind_user_pw = '';
+        }
       }
-      sent.bind_user_pw = existing.bind_user_pw;
     }
     res.status(200).json(RestResultv2.single(await Ldap.check(new Ldap(sent))));
   } catch (err) {
