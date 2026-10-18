@@ -1271,6 +1271,10 @@ function resetResult() {
 
 // Handle submit action from AppForm component
 async function handleSubmitAction({ action, visibility: formVisibility }) {
+  // Refuse while a run is already under way (the same guard the wizard path has) : a
+  // double click on Submit emitted twice before the button hid, and both calls went on to
+  // await the form and launch - two jobs from one click.
+  if (status.value !== '') return;
   visibility.value = formVisibility;
   // a preview (the designer's) runs nothing : submit, schedule, run later and store alike
   if (isPreview.value) {
@@ -1281,14 +1285,17 @@ async function handleSubmitAction({ action, visibility: formVisibility }) {
   switch (action) {
     case 'submit':
       // Main submit action - trigger form submission
-      status.value = 'initializing';
-      // Wait for every dynamic field to settle first. AppForm computes this (canSubmit)
+      // set synchronously, so a second call returns at the guard above
+      status.value = 'stabilizing';
+      // Wait for every dynamic field to settle first. This is the ONLY submit gate. AppForm computes this (canSubmit)
       // and even emits a "submit" event when it flips, but that event is not declared and
       // nothing listens to it - so submitForm used to run the instant the button was
       // pressed and a slow query/expression field was read while still undefined, sending
       // the job a missing or stale extravar with no sign anything was wrong.
       if (mainForm.value?.awaitStable && !(await mainForm.value.awaitStable())) {
         toast.warning(t('form.tooLongToEvaluate'));
+        // and which fields held it up (exposed refs are unwrapped on the instance)
+        if (mainForm.value.unevaluatedFieldsWarning) toast.warning(mainForm.value.unevaluatedFieldsWarning);
         status.value = '';
         return;
       }

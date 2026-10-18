@@ -26,7 +26,7 @@
 import { useRoute } from 'vue-router';
 import { toast } from 'vue-sonner';
 import { useVuelidate } from '@vuelidate/core';
-import { useTemplateRef, nextTick, inject, toRaw } from 'vue';
+import { useTemplateRef, inject, toRaw } from 'vue';
 import { useAppStore } from '@/stores/app';
 import Helpers from '@/lib/Helpers';
 import { buildVuelidateRules } from '@/lib/validationRules';
@@ -170,7 +170,7 @@ const dynamicFieldDependencies = ref({}); // which fields need to be re-evaluate
 const dynamicFieldDependentOf = ref({}); // which fields are dependend from others
 const unevaluatedFields = ref([]); // list of unevaluatedFields
 const defaults = ref({}); // holds default info per field
-const dynamicFieldStatus = ref({}); // holds the status of dynamics fields (running=currently being evaluated, variable=depends on others, fixed=only need 1-time lookup, default=has defaulted, undefined=trigger eval/query)
+const dynamicFieldStatus = ref({}); // holds the status of dynamics fields (running=currently being evaluated, variable=depends on others, fixed=only need 1-time lookup, default=has defaulted, error=evaluation failed and fell back to its default (terminal until refresh or a dependency change), undefined=trigger eval/query)
 const queryresults = ref({}); // holds the results of dynamic dropdown boxes
 const queryerrors = ref({}); // holds errors of dynamic dropdown boxes
 const fieldOptions = ref({}); // holds a couple of fieldoptions for fast access (valueColumn,ignoreIncomplete, ...), only for expression, query and list
@@ -449,7 +449,7 @@ function setExpressionFieldEditable(fieldname, value) {
   ) {
     fieldOptions.value[fieldname].editable = value;
   } else {
-    toast.warning('You can only edit string or number expression fields.');
+    toast.warning(t('form.editOnlyStringNumber'));
   }
   if (!value) {
     resetField(fieldname);
@@ -480,7 +480,7 @@ function clipYaml(fieldName) {
   try {
     const raw = form.value[fieldName];
     if (!raw) {
-      toast.warning('No data to copy');
+      toast.warning(t('form.noDataToCopy'));
       return;
     }
     // Use __output__ (modeled) if available, otherwise fall back to raw
@@ -690,6 +690,21 @@ function isCurrentGeneration(fieldname, gen) {
 // prefill (relaunch with edit values / load from store)
 //----------------------------------------------------------------
 
+// Build one warnings-panel entry. The panel renders these with v-html (for the two-line
+// layout), so both parts are escaped here : they carry field names and references taken
+// from the form definition, which is not ours to trust as markup.
+function escapeWarning(text) {
+  return String(text ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+function warnHtml(title, detail) {
+  return `<span class="text-warning">${escapeWarning(title)}</span><br><span>${escapeWarning(detail)}</span>`;
+}
+
 // a warning the loop can raise without pushing the same text on every tick
 function addWarningOnce(key, html) {
   if (warnedOnce.value[key]) return;
@@ -736,10 +751,7 @@ function isPrefillPending(fieldname) {
 // initialisation from completing
 function flagPrefill(fieldname, reason) {
   prefillFlagged.value[fieldname] = reason;
-  addWarningOnce(
-    `prefill:${fieldname}`,
-    `<span class="text-warning">'${fieldname}' could not be pre-filled</span><br><span>${reason}</span>`,
-  );
+  addWarningOnce(`prefill:${fieldname}`, warnHtml(t('form.warnPrefill', { field: fieldname }), reason));
 }
 
 // Does the restored value still exist in the field's option list? Never set a value that is
@@ -776,15 +788,12 @@ function applyPrefill(fieldname, { validateOptions = false } = {}) {
   if (!(fieldname in prefillValues.value) || prefillFlagged.value[fieldname]) return false;
   const value = prefillValues.value[fieldname];
   if (validateOptions && !prefillMatchesOptions(fieldname, value)) {
-    flagPrefill(fieldname, 'the stored value is no longer one of the available options');
+    flagPrefill(fieldname, t('form.prefillNotAnOption'));
     return false;
   }
   if (JSON.stringify(toRaw(form.value[fieldname])) !== JSON.stringify(toRaw(value))) {
     if ((prefillApplyCount.value[fieldname] || 0) >= MAX_PREFILL_APPLIES) {
-      flagPrefill(
-        fieldname,
-        `it was restored ${MAX_PREFILL_APPLIES} times without settling - a field it depends on keeps changing`,
-      );
+      flagPrefill(fieldname, t('form.prefillChurn', { n: MAX_PREFILL_APPLIES }));
       return false;
     }
     prefillApplyCount.value[fieldname] = (prefillApplyCount.value[fieldname] || 0) + 1;
@@ -812,7 +821,7 @@ function isReadyDependency(fieldname) {
   if (visibility.value[fieldname] === false) return true; // deliberately undefined; waiting on it would deadlock
   if (cycleFields.value[fieldname]) return true; // cyclic or force-released, already warned
   const status = dynamicFieldStatus.value[fieldname];
-  return status === 'fixed' || status === 'variable' || status === 'default';
+  return status === 'fixed' || status === 'variable' || status === 'default' || status === 'error';
 }
 function depsReady(fieldname) {
   return (dynamicFieldDependentOf.value[fieldname] || []).every(isReadyDependency);
@@ -905,6 +914,26 @@ function setFieldToDefault(fieldname) {
   }
 }
 
+// A query or expression call failed. The field falls back to its default value and is
+// marked "error" - a terminal status, settled exactly like "default" : it counts as a
+// ready dependency, it is not picked up again by the next tick and it does not hold the
+// form unsettled. Resetting it to undefined here (what both catch blocks used to do)
+// made the loop fire the failing request again on every tick, forever, and since each
+// attempt counted as progress the stall watchdog never tripped. Retrying is left to the
+// two things that should trigger it : the field's refresh timer and a change in one of
+// its dependencies (both reset the status to undefined).
+function setFieldToError(fieldname) {
+  // a restored value can no longer be checked against options that never loaded :
+  // give up on it, so it does not hold initialisation open
+  if (isInitializing.value && isPrefillPending(fieldname)) {
+    flagPrefill(fieldname, t('form.prefillFieldFailed'));
+  }
+  // step 1 : fall back to the default value (possibly undefined)
+  form.value[fieldname] = defaults.value[fieldname];
+  // step 2 : settle the field - with reeval, so dependents re-derive from the default
+  setFieldStatus(fieldname, 'error');
+}
+
 // set dynamic field status, only for expressions and lists
 function setFieldStatus(fieldname, status, reeval = true) {
   // console.log(`[${fieldname}] ----> ${status}`)
@@ -979,9 +1008,9 @@ function addDynamicFieldDependency(fields, field, foundfield) {
         if (foundfield == field) {
           // we capture self references
           warnings.value.push(
-            `<span class="text-warning">'${foundfield}' has a self reference</span><br><span>This will cause a racing condition</span>`,
+            warnHtml(t('form.warnSelfReference', { field: foundfield }), t('form.warnSelfReferenceDetail')),
           );
-          toast.error("You defined a self reference on field '" + foundfield + "'");
+          toast.error(t('form.selfReferenceToast', { field: foundfield }));
         }
       }
     } else {
@@ -989,16 +1018,16 @@ function addDynamicFieldDependency(fields, field, foundfield) {
       if (foundfield == field) {
         // we capture self references
         warnings.value.push(
-          `<span class="text-warning">'${foundfield}' has a self reference</span><br><span>This will cause a racing condition</span>`,
+          warnHtml(t('form.warnSelfReference', { field: foundfield }), t('form.warnSelfReferenceDetail')),
         );
-        toast.error("You defined a self reference on field '" + foundfield + "'");
+        toast.error(t('form.selfReferenceToast', { field: foundfield }));
       }
     }
   } else {
     // we capture bad references
     if (!Object.keys(form.value).includes(foundfield))
       warnings.value.push(
-        `<span class="text-warning">'${field}' has a reference to unknown field '${foundfield}'</span><br><span>Your form might not function as expected</span>`,
+        warnHtml(t('form.warnUnknownField', { field, ref: foundfield }), t('form.warnUnknownFieldDetail')),
       );
   }
 }
@@ -1033,10 +1062,8 @@ function findVariableDependencies() {
   // whilst checking, we also check if fields are unique
   var dups = Helpers.findDuplicates(fields);
   dups.forEach((item, _i) => {
-    warnings.value.push(
-      `<span class="text-warning">'${item}' has duplicates</span><br><span>Each field must have a unique name</span>`,
-    );
-    toast.error("You have duplicates for field '" + item + "'");
+    warnings.value.push(warnHtml(t('form.warnDuplicates', { field: item }), t('form.warnDuplicatesDetail')));
+    toast.error(t('form.duplicatesToast', { field: item }));
   });
 
   // check for reserved/internal field names that would cause conflicts
@@ -1070,10 +1097,8 @@ function findVariableDependencies() {
   props.currentForm.fields.forEach((item) => {
     if (!item?.name) return;
     if (reservedNames.includes(item.name)) {
-      warnings.value.push(
-        `<span class="text-warning">'${item.name}' is a reserved field name</span><br><span>This will conflict with internal fields. Please choose a different name.</span>`,
-      );
-      toast.error(`Field name '${item.name}' is reserved for internal use`);
+      warnings.value.push(warnHtml(t('form.warnReservedName', { field: item.name }), t('form.warnReservedNameDetail')));
+      toast.error(t('form.reservedNameToast', { field: item.name }));
     }
     if (
       item.name.startsWith('__') &&
@@ -1081,9 +1106,9 @@ function findVariableDependencies() {
       !reservedNames.includes(item.name)
     ) {
       warnings.value.push(
-        `<span class="text-warning">'${item.name}' starts with '__' (double underscore)</span><br><span>This prefix is reserved for internal fields. Please choose a different name or use one of the documented field names.</span>`,
+        warnHtml(t('form.warnReservedPrefix', { field: item.name }), t('form.warnReservedPrefixDetail')),
       );
-      toast.error(`Field name '${item.name}' uses reserved prefix '__'`);
+      toast.error(t('form.reservedPrefixToast', { field: item.name }));
     }
   });
 
@@ -1097,24 +1122,36 @@ function findVariableDependencies() {
         const depRoot = depBase?.split('.')[0]; // handle dot-notation like CREDENTIALS.prompt_ontap
         if (!(fields.includes(depBase) || depRoot in form.value)) {
           warnings.value.push(
-            `<span class="text-warning">'${item.name}' has bad dependencies</span><br><span>${dep.name} is not a valid field name</span>`,
+            warnHtml(
+              t('form.warnBadDependencies', { field: item.name }),
+              t('form.warnNotAFieldName', { ref: dep.name }),
+            ),
           );
         }
       });
     }
     if (item.notIn && !fields.includes(item.notIn.field)) {
       warnings.value.push(
-        `<span class="text-warning">'${item.name}' has bad 'notIn' validation</span><br><span>${item.notIn.field} is not a valid field name</span>`,
+        warnHtml(
+          t('form.warnBadValidation', { field: item.name, rule: 'notIn' }),
+          t('form.warnNotAFieldName', { ref: item.notIn.field }),
+        ),
       );
     }
     if (item.in && !fields.includes(item.in.field)) {
       warnings.value.push(
-        `<span class="text-warning">'${item.name}' has bad 'in' validation</span><br><span>${item.in.field} is not a valid field name</span>`,
+        warnHtml(
+          t('form.warnBadValidation', { field: item.name, rule: 'in' }),
+          t('form.warnNotAFieldName', { ref: item.in.field }),
+        ),
       );
     }
     if (item.sameAs && !fields.includes(item.sameAs)) {
       warnings.value.push(
-        `<span class="text-warning">'${item.name}' has bad 'sameAs' validation</span><br><span>${item.sameAs} is not a valid field name</span>`,
+        warnHtml(
+          t('form.warnBadValidation', { field: item.name, rule: 'sameAs' }),
+          t('form.warnNotAFieldName', { ref: item.sameAs }),
+        ),
       );
     }
 
@@ -1138,7 +1175,10 @@ function findVariableDependencies() {
           defaults.value[foundfield] != undefined
         ) {
           warnings.value.push(
-            `<span class="text-warning">'${item.name}' has a default, referencing field '${foundfield}' which also has a default</span><br><span>Try to avoid dependent fields with both a default</span>`,
+            warnHtml(
+              t('form.warnDefaultChain', { field: item.name, ref: foundfield }),
+              t('form.warnDefaultChainDetail'),
+            ),
           );
         }
       });
@@ -1177,9 +1217,9 @@ function findVariableDependencies() {
                 // racing as it used to.
                 cycleFields.value[key] = true;
                 warnings.value.push(
-                  `<span class="text-warning">'${key}' has a self reference</span><br><span>This will cause a racing condition</span>`,
+                  warnHtml(t('form.warnSelfReference', { field: key }), t('form.warnSelfReferenceDetail')),
                 );
-                toast.error("You defined a self reference on field '" + key + "'");
+                toast.error(t('form.selfReferenceToast', { field: key }));
               }
               finishedFlag = false;
             }
@@ -1292,7 +1332,8 @@ function replacePlaceholderInString(value, ignoreIncomplete = false, mode = 'raw
       }
     }
     if (
-      ((targetflag == 'variable' || targetflag == 'fixed' || targetflag == 'default') && fieldvalue !== undefined) ||
+      ((targetflag == 'variable' || targetflag == 'fixed' || targetflag == 'default' || targetflag == 'error') &&
+        fieldvalue !== undefined) ||
       ((ignoreIncomplete || false) && value !== undefined)
     ) {
       // valid value ?
@@ -1365,7 +1406,7 @@ function stringifyValue(fieldvalue) {
 // in case of unexpected error in the etneral loop, we stop the loop
 function stopLoop(error) {
   clearInterval(interval.value);
-  toast.error('Expression interval stopped !\n' + error);
+  toast.error(t('form.loopStopped', { error }));
 }
 
 // trigger this when a field has changed and we need to see if it has an impact.
@@ -1416,6 +1457,9 @@ function validateForm() {
 
 // handle submit dropdown actions - just emit to parent
 function handleSubmitAction(actionKey) {
+  // Refuse while a submit is already under way : the button only hides once the parent's
+  // new status has rendered, so a fast double click reached here twice
+  if (status.value) return;
   // Validate form before allowing actions
   if (!validateForm()) {
     return;
@@ -1630,9 +1674,7 @@ function initForm() {
     if (declaredFields.has(key)) {
       prefillValues.value[key] = props.initialData[key];
     } else {
-      warnings.value.push(
-        `<span class="text-warning">Stored value for '${key}' was ignored</span><br><span>This form no longer has a field with that name.</span>`,
-      );
+      warnings.value.push(warnHtml(t('form.warnStoredIgnored', { field: key }), t('form.warnStoredIgnoredDetail')));
     }
   });
   // Set initializing flag to suppress defaults during load
@@ -1706,6 +1748,14 @@ function initForm() {
     // extra query parameters and store in externalData
     if (route.query[item.name] != undefined) {
       var queryValue = route.query[item.name];
+      // A repeated parameter (?env=a&env=b) arrives as an array : the last one wins,
+      // the way a later value overrides an earlier one anywhere else in a URL. A bare
+      // ?name (null) inside such a list carries no value, so it is skipped.
+      if (Array.isArray(queryValue)) {
+        queryValue = queryValue.filter((v) => v != null).at(-1);
+        if (queryValue == undefined) return; // forEach callback : nothing usable
+      }
+      queryValue = String(queryValue);
       if (item.type == 'number') {
         // parseInt RETURNS NaN, it never throws, so this catch was unreachable and
         // ?count=abc put NaN into the form: the number box rendered empty, the
@@ -1719,11 +1769,10 @@ function initForm() {
         queryValue = parsed;
       }
       if (item.type == 'checkbox') {
-        if (queryValue.toLowerCase() === 'false') {
-          queryValue = false;
-        } else {
-          queryValue = !!queryValue;
-        }
+        // Only 'false' used to mean false : ?enabled=0, =no or =off all turned the
+        // box ON (any non-empty string is truthy). Every common spelling of "off"
+        // is false now, and so is an empty value.
+        queryValue = !['', '0', 'no', 'false', 'off'].includes(queryValue.trim().toLowerCase());
       }
       externalData.value[item.name] = queryValue;
     }
@@ -1909,13 +1958,17 @@ async function startDynamicFieldsLoop() {
                 delete queryerrors.value[item.name];
               } catch (err) {
                 queryerrors.value[item.name] = err.toString();
+                // terminal : keep the error shown, do not retry on the next tick
                 try {
-                  setFieldToDefault(item.name);
+                  setFieldToError(item.name);
                 } catch (err) {
                   stopLoop('Defaulting ' + item.name);
                 }
               }
             } else {
+              // taken BEFORE the request, so the catch below can tell a stale
+              // failure apart from a current one just like the success path does
+              const gen = fieldGeneration.value[item.name] || 0;
               try {
                 // Send the form and field, NOT the expression text - like the query
                 // call below. The server takes the expression from the definition
@@ -1931,7 +1984,6 @@ async function startDynamicFieldsLoop() {
                 };
                 if (props.rootFormName) body.subformName = props.currentForm.name;
                 if (item.jq) body.jq = item.jq;
-                const gen = fieldGeneration.value[item.name] || 0;
                 const result = await axios.post(`/api/v2/expression?noLog=${!!item.noLog}`, body);
                 // a dependency changed (resetField bumped the generation)
                 // while this was in flight: a newer request owns the field
@@ -1968,9 +2020,15 @@ async function startDynamicFieldsLoop() {
                   setFieldStatus(item.name, 'fixed');
                 }
               } catch (error) {
+                // a dependency changed while this was in flight : a newer
+                // request owns the field now, so this failure is not ours to
+                // report or act on
+                if (!isCurrentGeneration(item.name, gen)) return;
                 queryerrors.value[item.name] = error.toString();
+                // terminal : keep the error shown, do not retry on the next tick
+                // (the refresh timer or a dependency change retries it)
                 try {
-                  setFieldToDefault(item.name);
+                  setFieldToError(item.name);
                 } catch (err) {
                   stopLoop('Defaulting ' + item.name);
                 }
@@ -1985,7 +2043,7 @@ async function startDynamicFieldsLoop() {
             if (!dependsOnEmptyField(item.name)) {
               addWarningOnce(
                 `unresolved:${item.name}`,
-                `<span class="text-warning">'${item.name}' could not be evaluated</span><br><span>A field its expression refers to never produced a value.</span>`,
+                warnHtml(t('form.warnUnresolved', { field: item.name }), t('form.warnUnresolvedExpressionDetail')),
               );
             }
             setFieldToDefault(item.name);
@@ -1997,6 +2055,9 @@ async function startDynamicFieldsLoop() {
           placeholderCheck = replacePlaceholders(item);
 
           if (placeholderCheck.value != undefined) {
+            // taken BEFORE the request, so the catch below can tell a stale
+            // failure apart from a current one just like the success path does
+            const gen = fieldGeneration.value[item.name] || 0;
             try {
               // Send the form and field, NOT the query text. The server
               // resolves the query from the definition with the caller's own
@@ -2020,7 +2081,6 @@ async function startDynamicFieldsLoop() {
               };
               if (props.rootFormName) body.subformName = props.currentForm.name;
               if (item.jq) body.jq = item.jq;
-              const gen = fieldGeneration.value[item.name] || 0;
               const result = await axios.post(`/api/v2/query?noLog=${!!item.noLog}`, body);
               // a dependency changed while this was in flight : a newer
               // request owns the field now, so drop this answer
@@ -2046,13 +2106,17 @@ async function startDynamicFieldsLoop() {
               // Mark as fixed after successful evaluation - will re-evaluate when dependencies change via resetField
               setFieldStatus(item.name, 'fixed');
             } catch (err) {
+              // a dependency changed while this was in flight : a newer
+              // request owns the field now, so this failure is not ours to
+              // report or act on
+              if (!isCurrentGeneration(item.name, gen)) return;
               queryerrors.value[item.name] = err.toString();
+              // terminal : keep the error shown, do not retry on the next tick
+              // (the refresh timer or a dependency change retries it). The old
+              // resetField here put the status back to undefined, so the very
+              // next tick fired the failing query again, forever.
               try {
-                if (item.type == 'expression') {
-                  setFieldToDefault(item.name);
-                } else {
-                  resetField(item.name);
-                }
+                setFieldToError(item.name);
               } catch (err) {
                 stopLoop('Defaulting ' + item.name);
               }
@@ -2066,7 +2130,7 @@ async function startDynamicFieldsLoop() {
             if (!dependsOnEmptyField(item.name)) {
               addWarningOnce(
                 `unresolved:${item.name}`,
-                `<span class="text-warning">'${item.name}' could not be evaluated</span><br><span>A field its query refers to never produced a value.</span>`,
+                warnHtml(t('form.warnUnresolved', { field: item.name }), t('form.warnUnresolvedQueryDetail')),
               );
             }
             try {
@@ -2142,7 +2206,7 @@ async function startDynamicFieldsLoop() {
           delete waitingFields.value[name];
           addWarningOnce(
             `stalled:${name}`,
-            `<span class="text-warning">'${name}' waited too long for the fields it depends on</span><br><span>It was evaluated anyway - its value may be incomplete.</span>`,
+            warnHtml(t('form.warnStalled', { field: name }), t('form.warnStalledDetail')),
           );
         });
       }
@@ -2163,7 +2227,7 @@ async function startDynamicFieldsLoop() {
           // finish, rather than holding the form hostage.
           watchdog.value++;
           if (watchdog.value > 50) {
-            unresolved.forEach((name) => flagPrefill(name, 'the fields it depends on never produced it'));
+            unresolved.forEach((name) => flagPrefill(name, t('form.prefillNeverProduced')));
             isInitializing.value = false;
           }
         }
@@ -2174,30 +2238,11 @@ async function startDynamicFieldsLoop() {
       if (!isInitializing.value) watchdog.value = 0;
     }
 
-    if (status.value == 'initializing') {
-      status.value = '';
-      nextTick(() => {
-        if (validateForm()) {
-          status.value = 'stabilizing';
-          watchdog.value = 0;
-        } else {
-          status.value = '';
-        }
-      });
-    }
-
-    if (status.value == 'stabilizing') {
-      if (canSubmit.value) {
-        status.value = 'submitting';
-        emit('submit', { visibility: visibility.value });
-      } else {
-        if (watchdog.value > 50) {
-          status.value = '';
-          toast.warning(t('form.tooLongToEvaluate'));
-          toast.warning(unevaluatedFieldsWarning.value);
-        }
-      }
-    }
+    // The submit gate lives in ONE place : the parent awaits awaitStable() below. This
+    // loop used to run a second state machine on the same status prop ("initializing" ->
+    // "stabilizing" -> emit an undeclared "submit" nobody listened to), which blanked the
+    // status mid-wait - bringing the submit button back for a second click - and could
+    // toast "took too long" while the parent then went on to submit anyway.
 
     refreshCounter++;
     if (refreshCounter % loopDivider.value == 0) {
@@ -2263,6 +2308,8 @@ defineExpose({
   validateForm,
   visibility,
   awaitStable,
+  // which fields are still unsettled, for the parent's "took too long" toast
+  unevaluatedFieldsWarning,
 });
 </script>
 <template>
@@ -2285,7 +2332,7 @@ defineExpose({
         <p v-if="!canSubmit && !formLoopIsBusy" class="mb-3">{{ unevaluatedFieldsWarning }}</p>
         <p v-for="(w, i) in warnings" :key="'warning' + i" class="mb-3" v-html="w"></p>
         <p v-for="(q, i) in Object.keys(queryerrors)" :key="'queryerror' + i" class="mb-3 has-text-danger">
-          '{{ q }}' has query errors<br />{{ queryerrors[q] }}
+          {{ t('form.queryErrors', { field: q }) }}<br />{{ queryerrors[q] }}
         </p>
       </template>
     </BsOffCanvas>
@@ -2305,7 +2352,7 @@ defineExpose({
           v-if="(!canSubmit && !formLoopIsBusy) || warnings.length > 0 || Object.keys(queryerrors).length > 0"
           @click="showWarnings = true"
         >
-          <popper :content="unevaluatedFieldsWarning || 'This form has warnings - click to review'">
+          <popper :content="unevaluatedFieldsWarning || t('form.hasWarnings')">
             <font-awesome-icon icon="exclamation-triangle" size="lg" class="text-warning" />
           </popper>
           <span
@@ -2327,7 +2374,7 @@ defineExpose({
           class="ms-2"
           v-show="!hideForm"
           v-if="showDebugButtons"
-          title="Show hidden fields"
+          :title="t('form.showHiddenFields')"
           role="button"
           :class="{ 'text-success': !showHidden, 'text-danger': showHidden }"
           @click="showHidden = !showHidden"
@@ -2547,11 +2594,13 @@ defineExpose({
                     :placeholder="
                       (typeof fieldPlaceholders[field.name] === 'object'
                         ? fieldPlaceholders[field.name].value
-                        : fieldPlaceholders[field.name]) || 'Select...'
+                        : fieldPlaceholders[field.name]) || t('form.selectPlaceholder')
                     "
                     :values="field.values || queryresults[field.name] || []"
                     :hasError="v$.form[field.name].$invalid"
-                    :isLoading="!field.values && !['fixed', 'variable'].includes(dynamicFieldStatus[field.name])"
+                    :isLoading="
+                      !field.values && !['fixed', 'variable', 'error'].includes(dynamicFieldStatus[field.name])
+                    "
                     v-model="v$.form[field.name].$model"
                     :icon="field.icon"
                     :columns="field.columns || []"
@@ -2657,7 +2706,7 @@ defineExpose({
                   v-if="field.type == 'yaml'"
                   :class="{
                     'is-loading':
-                      !['fixed', 'variable'].includes(dynamicFieldStatus[field.name]) &&
+                      !['fixed', 'variable', 'error'].includes(dynamicFieldStatus[field.name]) &&
                       (field.expression || field.query),
                   }"
                 >
@@ -2667,10 +2716,10 @@ defineExpose({
                       <BsButton
                         cssClass="btn-sm"
                         icon="pencil-alt"
-                        :title="`Edit ${field.label || field.name}`"
+                        :title="t('form.editField', { name: field.label || field.name })"
                         @click="openYamlSubformEditor(field)"
                       >
-                        Edit
+                        {{ t('form.edit') }}
                       </BsButton>
                       <BsButton
                         v-if="field.showLoadButton"
