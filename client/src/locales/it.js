@@ -1362,7 +1362,8 @@ export default {
       approve: 'Approva',
       reviewApproval: 'Esamina approvazione',
       waitingNotice: "{count} Runner attende l'approvazione | {count} Runner attendono l'approvazione",
-      waitingHint: "Fai clic per esaminarlo | Fai clic per esaminarli, uno dopo l'altro",
+      waitingHint:
+        "Fai clic su questa scheda per esaminarlo | Fai clic su questa scheda per esaminarli, uno dopo l'altro",
       reject: 'Rifiuta',
       approved: '{name} è approvato: riceve job da ora',
       rejected: '{name} è stato rifiutato e rimosso',

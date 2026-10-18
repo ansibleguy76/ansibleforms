@@ -1372,7 +1372,8 @@ export default {
       approve: 'Approuver',
       reviewApproval: "Examiner l'approbation",
       waitingNotice: "{count} Runner attend l'approbation | {count} Runners attendent l'approbation",
-      waitingHint: "Cliquez pour l'examiner | Cliquez pour les examiner, l'un après l'autre",
+      waitingHint:
+        "Cliquez sur cette carte pour l'examiner | Cliquez sur cette carte pour les examiner, l'un après l'autre",
       reject: 'Refuser',
       approved: '{name} est approuvé : il reçoit des jobs dès maintenant',
       rejected: '{name} a été refusé et supprimé',

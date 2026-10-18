@@ -1720,7 +1720,7 @@ export default {
       approve: '批准',
       reviewApproval: '审核审批',
       waitingNotice: '{count} 个运行器等待批准',
-      waitingHint: '点击依次审核',
+      waitingHint: '点击此卡片依次审核',
       reject: '拒绝',
       approved: '{name} 已批准：从现在起接收作业',
       rejected: '{name} 已被拒绝并删除',

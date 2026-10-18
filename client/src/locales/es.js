@@ -1368,7 +1368,7 @@ export default {
       approve: 'Aprobar',
       reviewApproval: 'Revisar aprobación',
       waitingNotice: '{count} Runner espera aprobación | {count} Runners esperan aprobación',
-      waitingHint: 'Haz clic para revisarlo | Haz clic para revisarlos, uno tras otro',
+      waitingHint: 'Haz clic en esta tarjeta para revisarlo | Haz clic en esta tarjeta para revisarlos, uno tras otro',
       reject: 'Rechazar',
       approved: '{name} está aprobado: recibe trabajos a partir de ahora',
       rejected: '{name} se ha rechazado y eliminado',

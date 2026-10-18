@@ -1349,7 +1349,7 @@ export default {
       approve: 'Approve',
       reviewApproval: 'Review approval',
       waitingNotice: '{count} Runner is waiting for approval | {count} Runners are waiting for approval',
-      waitingHint: 'Click to review it | Click to review them, one after the other',
+      waitingHint: 'Click this card to review it | Click this card to review them, one after the other',
       reject: 'Reject',
       approved: '{name} is approved: it takes jobs from now on',
       rejected: '{name} was rejected and removed',

@@ -1808,7 +1808,8 @@ export default {
       approve: 'Aprova',
       reviewApproval: "Revisar l'aprovació",
       waitingNotice: '{count} Runner espera aprovació | {count} Runners esperen aprovació',
-      waitingHint: "Feu clic per revisar-lo | Feu clic per revisar-los, un darrere l'altre",
+      waitingHint:
+        "Feu clic en aquesta targeta per revisar-lo | Feu clic en aquesta targeta per revisar-los, un darrere l'altre",
       reject: 'Rebutja',
       approved: "{name} està aprovat: rep feines a partir d'ara",
       rejected: "{name} s'ha rebutjat i eliminat",

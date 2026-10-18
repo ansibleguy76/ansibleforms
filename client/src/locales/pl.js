@@ -1795,7 +1795,7 @@ export default {
       waitingNotice:
         '{count} Runner czeka na zatwierdzenie | {count} Runnery czekają na zatwierdzenie | {count} Runnerów czeka na zatwierdzenie',
       waitingHint:
-        'Kliknij, aby go rozpatrzyć | Kliknij, aby je rozpatrzyć po kolei | Kliknij, aby je rozpatrzyć po kolei',
+        'Kliknij tę kartę, aby go rozpatrzyć | Kliknij tę kartę, aby je rozpatrzyć po kolei | Kliknij tę kartę, aby je rozpatrzyć po kolei',
       reject: 'Odrzuć',
       approved: '{name} jest zatwierdzony: od teraz dostaje zadania',
       rejected: '{name} został odrzucony i usunięty',

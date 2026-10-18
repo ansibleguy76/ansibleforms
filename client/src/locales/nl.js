@@ -1362,7 +1362,7 @@ export default {
       approve: 'Goedkeuren',
       reviewApproval: 'Goedkeuring beoordelen',
       waitingNotice: '{count} Runner wacht op goedkeuring | {count} Runners wachten op goedkeuring',
-      waitingHint: 'Klik om hem te beoordelen | Klik om ze een voor een te beoordelen',
+      waitingHint: 'Klik op deze kaart om hem te beoordelen | Klik op deze kaart om ze een voor een te beoordelen',
       reject: 'Afwijzen',
       approved: '{name} is goedgekeurd: hij krijgt vanaf nu jobs',
       rejected: '{name} is afgewezen en verwijderd',

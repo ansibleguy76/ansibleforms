@@ -1369,7 +1369,7 @@ export default {
       approve: 'Freigeben',
       reviewApproval: 'Genehmigung prüfen',
       waitingNotice: '{count} Runner wartet auf Freigabe | {count} Runner warten auf Freigabe',
-      waitingHint: 'Zum Prüfen klicken | Zum Prüfen klicken, einen nach dem anderen',
+      waitingHint: 'Auf diese Karte klicken, um ihn zu prüfen | Auf diese Karte klicken, um sie nacheinander zu prüfen',
       reject: 'Ablehnen',
       approved: '{name} ist freigegeben: sie erhält ab jetzt Jobs',
       rejected: '{name} wurde abgelehnt und entfernt',

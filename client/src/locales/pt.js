@@ -1803,7 +1803,7 @@ export default {
       approve: 'Aprovar',
       reviewApproval: 'Rever aprovação',
       waitingNotice: '{count} Runner aguarda aprovação | {count} Runners aguardam aprovação',
-      waitingHint: 'Clique para o rever | Clique para os rever, um após o outro',
+      waitingHint: 'Clique neste cartão para o rever | Clique neste cartão para os rever, um após o outro',
       reject: 'Rejeitar',
       approved: '{name} está aprovado: recebe trabalhos a partir de agora',
       rejected: '{name} foi rejeitado e removido',
