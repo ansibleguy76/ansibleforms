@@ -36,8 +36,10 @@ const Helpers = {
   findDuplicates(arry) {
     return arry.filter((item, index) => arry.indexOf(item) !== index);
   },
+  // A value as HTML text : & < > and both quotes escaped (so it is safe inside an attribute
+  // too, not only between tags), and the characters from U+00A0 up as numeric entities.
   htmlEncode(v) {
-    return v.toString().replace(/[\u00A0-\u9999<>&]/g, function (i) {
+    return String(v ?? '').replace(/[\u00A0-\u9999<>&"']/g, function (i) {
       return '&#' + i.charCodeAt(0) + ';';
     });
   },
