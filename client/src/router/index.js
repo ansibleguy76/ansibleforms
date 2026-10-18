@@ -193,11 +193,6 @@ const routes = [
   },
   // the LDAP directories, each with its page (its tabs in the address)
   { path: '/settings/ldap', name: '/settings/ldap', component: ldap, meta: { permission: 'showSettings' } },
-  // its first tab was once named general : an old link or bookmark still opens it, as Details
-  {
-    path: '/settings/ldap/:id(\\d+)/general',
-    redirect: (to) => ({ name: '/settings/ldap/:id', params: { id: to.params.id }, query: to.query }),
-  },
   {
     path: '/settings/ldap/:id(\\d+)/:tab?',
     name: '/settings/ldap/:id',
@@ -336,12 +331,7 @@ const routes = [
     meta: { permission: 'showSettings' },
   },
   { path: '/settings/roles', name: '/settings/roles', component: roles, meta: { permission: 'showSettings' } },
-  // a role's page : its Details, Users and Groups tabs ; Details was once named general, so an
-  // old link or bookmark to it still opens it
-  {
-    path: '/settings/roles/:name/general',
-    redirect: (to) => ({ name: '/settings/roles/:name', params: { name: to.params.name }, query: to.query }),
-  },
+  // a role's page : its Details, Users and Groups tabs
   {
     path: '/settings/roles/:name/:tab?',
     name: '/settings/roles/:name',
