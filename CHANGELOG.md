@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.3.0](https://github.com/ansibleforms/ansibleforms/compare/7.2.0...7.3.0) (2026-10-18)
+
+
+### Added
+
+* RTEs connect over a WebSocket without database credentials; 7.2 Runners move on upgrade
+* new RTEs wait for approval or use a join token; Runners can be turned off
+* RTE settings on the Runner page: jobs at once, files cache size, job files and drain time
+* inbound RTEs over pinned HTTPS; RTEs get the job's files and keep output across reconnects
+* job pages in cards, with hosts and tasks, result details, output search and a live graph
+* desktop notifications for ended jobs and approvals
+* a user cannot approve their own job unless the approval sets allowSelf
+* LDAP, SSO, Runner and Vault credentials hold their address and secrets, moved on upgrade
+* several LDAP directories; the default one is named main
+* SSO providers get Enabled and Skip the login page, replacing ENABLE_SSO and SSO_AUTO_LOGIN
+* Entra ID naming for its route, members and variables; the Azure names still work
+* new role options with descriptions, and API tokens that never expire
+* disclaimer versions, and asking users to accept again
+* changing ENCRYPTION_SECRET re-encrypts every secret
+* header labels, announcements and schedules, each with an Enabled switch
+* search boxes, screen-fitting sortable tables, and a theme that follows the browser
+* repositories need a branch; REST_TIMEOUT_SECONDS and JQ_TIMEOUT_SECONDS add time limits
+
+
+### Fixed
+
+* REST helper functions check certificates; REST_IGNORE_CERTS skips the check
+* field values cannot run as code, and waiting jobs are visible to owner and approvers only
+* commands run without a shell, and secrets stay out of commands, logs and errors
+* logout revokes the session, and passwords with accented letters or a colon sign in
+* finished jobs stay finished, AWX jobs resume after a restart, one-time schedules run once
+* failing form queries stop retrying, a double submit launches once, the designer saves safely
+* a backup is taken before upgrading, and restores replace the forms and upgrade old databases
+* backups survive full disks and linked folders; forms in subfolders load and are pushed
+* fnParseHtmlWithRegex, fnSsh and fnGetNumberedName work reliably
+* downloads and live updates work again, also under a base path
+* row menus use short labels and offer Enable or Disable wherever there is an Enabled column
+
+
 ## [7.2.0](https://github.com/ansibleforms/ansibleforms/compare/7.1.0...7.2.0) (2026-10-14)
 
 
