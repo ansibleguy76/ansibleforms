@@ -23,6 +23,23 @@ export function jobsListSize(value) {
   return Math.min(10000, Math.max(10, n));
 }
 
+/**
+ * RTE_FILES_MAX_MB : the biggest folder sent to an RTE that has no files of its own
+ * (RTE_FILES=transfer), in MB. 512 when unset, not a number, or not above 0 : a typo must never
+ * switch the limit off (Number("abc") is NaN, and any size compared with NaN passes).
+ *
+ * Args:
+ *   value (string): the variable.
+ *
+ * Returns:
+ *   number: the limit, in MB.
+ */
+export function rteFilesMaxMb(value) {
+  const n = Number(value);
+  if (value === undefined || value === null || String(value).trim() === "" || !Number.isFinite(n) || n <= 0) return 512;
+  return n;
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -153,6 +170,8 @@ var app_config = {
   enableConfigInDatabase: (process.env.ENABLE_CONFIG_IN_DATABASE ?? 0) == 1,
   // the playbook output an RTE stores per stream at most ; the playbook goes on past it
   processMaxBuffer: parseInt(process.env.PROCESS_MAX_BUFFER, 10) || 50 * 1024 * 1024,
+  // the biggest folder (MB) packed for an RTE with RTE_FILES=transfer (lib/jobFiles.js)
+  rteFilesMaxMb: rteFilesMaxMb(process.env.RTE_FILES_MAX_MB),
   adminUsername: process.env.ADMIN_USERNAME || "admin",
   adminPassword: process.env.ADMIN_PASSWORD || DEFAULT_ADMIN_PASSWORD,
   awxApiPrefix: process.env.AWX_API_PREFIX || "/api/v2",
