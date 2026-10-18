@@ -312,6 +312,8 @@ const env = async function(req,res){
       // real environment holds this value, so writing the managed file cannot change it.
       item.editable = EnvSettings.classify(x.name)
       item.refusedReason = EnvSettings.REFUSED[x.name] || null
+      // read by a socket-mode RTE from its runner page as well (the RTE tab) : said beside it
+      item.runnerPage = EnvSettings.RUNNER_PAGE.has(x.name)
       item.overridden = item.editable !== 'refused' && EnvSettings.isOverridden(x.name, managed)
       // With ALLOW_ENV_EDIT=0 the store itself is not ours to write, so nothing on the
       // page is editable. Reported per variable, with a reason, rather than by hiding the

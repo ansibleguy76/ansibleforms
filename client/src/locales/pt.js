@@ -1899,10 +1899,10 @@ export default {
         'Estas definições aplicam-se a um RTE em modo de saída ou de entrada. Um RTE em modo de base de dados lê-as das suas próprias variáveis.',
       maxJobs: 'Máximo de trabalhos em simultâneo',
       maxJobsHelp:
-        'Quantos playbooks este RTE executa ao mesmo tempo; 0 significa sem limite. Vazio: o valor predefinido, {default}.',
+        'Quantos playbooks este RTE executa ao mesmo tempo; 0 significa sem limite. Vazio: a variável {env} do RTE, senão {default}.',
       cacheMb: 'Cache de ficheiros',
       cacheMbHelp:
-        'Quanto dos ficheiros de trabalho enviados pela app este RTE guarda, em MB; 0 não guarda nenhum. Vazio: o valor predefinido, {default} MB.',
+        'Quanto dos ficheiros de trabalho enviados pela app este RTE guarda, em MB; 0 não guarda nenhum. Vazio: a variável {env} do RTE, senão {default}.',
       filesMode: 'Ficheiros de trabalho',
       filesModeHelp:
         'Transferência: a app envia os ficheiros com o trabalho. Local: o RTE executa a partir das suas próprias pastas montadas.',
@@ -1911,10 +1911,10 @@ export default {
       files_local: 'Local',
       drainSeconds: 'Tempo de espera ao parar',
       drainSecondsHelp:
-        'Quanto tempo um RTE que pára espera pelos playbooks em execução, em segundos; mantenha-o abaixo do tempo de paragem da plataforma. Vazio: o valor predefinido, {default}.',
+        'Quanto tempo um RTE que pára espera pelos playbooks em execução, em segundos; mantenha-o abaixo do tempo de paragem da plataforma. Vazio: a variável {env} do RTE, senão {default}.',
       settingDefault: 'predefinido: {value}',
-      setOnRte: 'Definido no RTE com {env}: {value}',
-      cacheUsed: '{mb} MB em uso agora',
+      usesRte: 'Vazio: o RTE usa a sua própria {env}, {value}.',
+      overridesRte: 'Substitui {env} definida no RTE ({value}).',
       socketConnected: 'Ligado',
       socketDisconnected: 'Não ligado',
       socketDisconnectedHint:
@@ -2081,6 +2081,8 @@ export default {
         'Predefinido (inseguro): as palavras-passe guardadas podem ser lidas com a chave pública predefinida',
       secretState_random: 'Não definido: um aleatório a cada arranque, por isso todas as sessões terminam ao reiniciar',
       envRteOnly: 'Lido por um RTE do seu próprio ambiente: defina-o onde o RTE é executado.',
+      envRunnerPage:
+        'Um valor na página de runner de um RTE em modo socket tem prioridade: Ligações > Runners > o runner > RTE.',
       envRelocates: 'Os ficheiros já guardados na localização antiga não são movidos.',
       envRestartPending: 'Guardado. É necessário reiniciar para: {names}',
       mcpDescription:

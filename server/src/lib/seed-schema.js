@@ -141,8 +141,8 @@ const runnerItem = {
     // an RTE's mode (RTE_MODE on it) : outbound (it dials the app), inbound (the app dials it),
     // or database (deprecated, the default before 7.3)
     rte_mode: { type: "string", enum: ["database", "outbound", "inbound"] },
-    // a socket-mode RTE's settings (rte/socket/settings.js), sent over its socket ; a variable
-    // set on the RTE wins : the playbooks it runs at once (0 no limit), its job files cache in MB
+    // a socket-mode RTE's settings (rte/socket/settings.js), sent over its socket ; they win over
+    // the same variables set on the RTE : the playbooks it runs at once (0 no limit), its job files cache in MB
     // (0 keeps none), where it gets a job's files, how long a stop waits
     rte_max_jobs: { type: "integer", minimum: 0, maximum: 1000 },
     rte_cache_mb: { type: "integer", minimum: 0, maximum: 1048576 },

@@ -1867,10 +1867,10 @@ export default {
       rteSettingsSocketOnly:
         'これらの設定はアウトバウンドまたはインバウンドモードの RTE に適用されます。データベースモードの RTE は自身の変数から読み取ります。',
       maxJobs: '最大同時ジョブ数',
-      maxJobsHelp: 'この RTE が同時に実行する Playbook の数。0 は無制限。空欄: 既定値 {default}。',
+      maxJobsHelp: 'この RTE が同時に実行する Playbook の数。0 は無制限。空欄: RTE 自身の {env}、なければ {default}。',
       cacheMb: 'ジョブファイルのキャッシュ',
       cacheMbHelp:
-        'アプリから送られたジョブファイルをこの RTE が保持する量 (MB)。0 は保持しません。空欄: 既定値 {default} MB。',
+        'アプリから送られたジョブファイルをこの RTE が保持する量 (MB)。0 は保持しません。空欄: RTE 自身の {env}、なければ {default}。',
       filesMode: 'ジョブファイル',
       filesModeHelp:
         '転送: アプリがジョブと一緒にファイルを送ります。ローカル: RTE は自身のマウントしたフォルダから実行します。',
@@ -1879,10 +1879,10 @@ export default {
       files_local: 'ローカル',
       drainSeconds: '停止時の待機時間',
       drainSecondsHelp:
-        '停止中の RTE が実行中の Playbook を待つ秒数。プラットフォームの停止タイムアウトより短くしてください。空欄: 既定値 {default}。',
+        '停止中の RTE が実行中の Playbook を待つ秒数。プラットフォームの停止タイムアウトより短くしてください。空欄: RTE 自身の {env}、なければ {default}。',
       settingDefault: '既定: {value}',
-      setOnRte: 'RTE で {env} により設定: {value}',
-      cacheUsed: '現在 {mb} MB 使用中',
+      usesRte: '空欄: RTE は自身の {env} ({value}) を使います。',
+      overridesRte: 'RTE で設定された {env} ({value}) を上書きします。',
       socketConnected: '接続済み',
       socketDisconnected: '未接続',
       socketDisconnectedHint:
@@ -2040,6 +2040,7 @@ export default {
       secretState_default: '既定（安全ではありません）：保存されたパスワードは公開された既定キーで読み取れます',
       secretState_random: '未設定：起動ごとにランダムなため、再起動ですべてのセッションが終了します',
       envRteOnly: 'RTE が自身の環境から読み取ります。RTE が動いている場所で設定してください。',
+      envRunnerPage: 'ソケットモードの RTE では Runner ページの値が優先されます: 接続 > Runner > 該当 Runner > RTE。',
       envRelocates: '以前の場所に保存済みのファイルは移動されません。',
       envRestartPending: '保存しました。次の項目には再起動が必要です: {names}',
       mcpDescription:

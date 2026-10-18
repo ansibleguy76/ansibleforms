@@ -22,8 +22,9 @@ const BUNDLE_DIR = path.join(os.tmpdir(), "ansibleforms-bundles");
 const SKIP_DIRS = new Set([".git", ".joblogs", "node_modules", "__pycache__"]);
 const SKIP_FILE = /^(he_)?extravars_\d+\.json$/;
 // a folder bigger than this is refused : mount it on the RTE instead (RTE_FILES=local) ;
-// RTE_FILES_MAX_MB, read by app.config.js (512 when unset or not a positive number)
-const MAX_BYTES = (config.rteFilesMaxMb > 0 ? config.rteFilesMaxMb : 512) * 1024 * 1024;
+// RTE_FILES_MAX_MB, read by app.config.js (512 when unset or not a positive number) and read
+// again on each job, so a new value saved on Settings > Environment applies at once
+const maxBytes = () => (config.rteFilesMaxMb > 0 ? config.rteFilesMaxMb : 512) * 1024 * 1024;
 // a bundle not used for this long is removed from BUNDLE_DIR (a folder that changes makes a
 // new one each time, so they would pile up otherwise) ; looked for at most once an hour
 export const BUNDLE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -216,8 +217,8 @@ export async function bundleOf(root) {
   // the old bundles, now and then : opportunistically, when one is asked for
   if (Date.now() - lastPrune > PRUNE_EVERY_MS) pruneBundles();
   const { entries, lines, bytes } = manifest(root);
-  if (bytes > MAX_BYTES) {
-    throw new Error(`the folder ${root} holds ${Math.round(bytes / 1048576)} MB, more than RTE_FILES_MAX_MB (${MAX_BYTES / 1048576}): mount it on the RTE and set RTE_FILES=local there`);
+  if (bytes > maxBytes()) {
+    throw new Error(`the folder ${root} holds ${Math.round(bytes / 1048576)} MB, more than RTE_FILES_MAX_MB (${maxBytes() / 1048576}): mount it on the RTE and set RTE_FILES=local there`);
   }
   const hash = crypto.createHash("sha256").update(`${path.resolve(root)}\n${lines.join("\n")}`).digest("hex");
   const file = path.join(BUNDLE_DIR, `${hash}.tgz`);

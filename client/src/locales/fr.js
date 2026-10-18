@@ -1479,10 +1479,10 @@ export default {
         "Ces paramètres s'appliquent à un RTE en mode sortant ou entrant. Un RTE en mode base de données les lit dans ses propres variables.",
       maxJobs: 'Jobs simultanés max.',
       maxJobsHelp:
-        'Combien de playbooks ce RTE exécute à la fois ; 0 signifie sans limite. Vide : la valeur par défaut, {default}.',
+        'Combien de playbooks ce RTE exécute à la fois ; 0 signifie sans limite. Vide : la variable {env} du RTE, sinon {default}.',
       cacheMb: 'Cache des fichiers',
       cacheMbHelp:
-        "Quelle part des fichiers de job envoyés par l'app ce RTE conserve, en Mo ; 0 n'en garde aucun. Vide : la valeur par défaut, {default} Mo.",
+        "Quelle part des fichiers de job envoyés par l'app ce RTE conserve, en Mo ; 0 n'en garde aucun. Vide : la variable {env} du RTE, sinon {default}.",
       filesMode: 'Fichiers de job',
       filesModeHelp:
         "Transfert : l'app envoie les fichiers avec le job. Local : le RTE s'exécute depuis ses propres dossiers montés.",
@@ -1491,10 +1491,10 @@ export default {
       files_local: 'Local',
       drainSeconds: "Délai d'arrêt",
       drainSecondsHelp:
-        "Combien de temps un RTE qui s'arrête attend ses playbooks en cours, en secondes ; gardez-le sous le délai d'arrêt de la plateforme. Vide : la valeur par défaut, {default}.",
+        "Combien de temps un RTE qui s'arrête attend ses playbooks en cours, en secondes ; gardez-le sous le délai d'arrêt de la plateforme. Vide : la variable {env} du RTE, sinon {default}.",
       settingDefault: 'par défaut : {value}',
-      setOnRte: 'Défini sur le RTE avec {env} : {value}',
-      cacheUsed: '{mb} Mo utilisés',
+      usesRte: 'Vide : le RTE utilise sa propre {env}, {value}.',
+      overridesRte: 'Remplace {env} défini sur le RTE ({value}).',
       socketConnected: 'Connecté',
       socketDisconnected: 'Non connecté',
       socketDisconnectedHint:
@@ -2092,6 +2092,8 @@ export default {
       secretState_random:
         'Non défini : un aléatoire à chaque démarrage, donc toutes les sessions se terminent au redémarrage',
       envRteOnly: "Lu par un RTE dans son propre environnement : définissez-le là où le RTE s'exécute.",
+      envRunnerPage:
+        "Une valeur sur la page de runner d'un RTE en mode socket a priorité : Connexions > Runners > le runner > RTE.",
       envRelocates: "Les fichiers déjà présents à l'ancien emplacement ne sont pas déplacés.",
       envRestartPending: 'Enregistré. Un redémarrage est nécessaire pour : {names}',
       mcpDescription:

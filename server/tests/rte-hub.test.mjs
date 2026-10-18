@@ -280,14 +280,14 @@ describe("an RTE's settings from its runner page", async () => {
     assert.deepEqual(entry.sent, [{ t: "settings", settings: { maxJobs: 4, files: "local" } }]);
   });
 
-  test("where an RTE gets a job's files : its variable when set, else its runner's, else transfer", () => {
-    assert.equal(filesMode(fakeEntry({ name: "a" }, { files: "transfer", env: [] })), "transfer");
-    assert.equal(filesMode(fakeEntry({ name: "a", rte_files: "local" }, { files: "transfer", env: [] })), "local");
-    // RTE_FILES set on the RTE wins over the runner page
-    assert.equal(filesMode(fakeEntry({ name: "a", rte_files: "local" }, { files: "transfer", settings: { files: "transfer" }, env: ["files"] })), "transfer");
-    // its health, newer than its hello, says what it applied
-    const entry = fakeEntry({ name: "a" }, { files: "transfer", env: ["files"] });
-    entry.health = { settings: { files: "local" }, env: ["files"] };
+  test("where an RTE gets a job's files : its runner's setting, else its variable, else transfer", () => {
+    assert.equal(filesMode(fakeEntry({ name: "a" }, { files: "transfer", env: {} })), "transfer");
+    assert.equal(filesMode(fakeEntry({ name: "a", rte_files: "local" }, { files: "transfer", env: {} })), "local");
+    // the runner page wins over RTE_FILES set on the RTE
+    assert.equal(filesMode(fakeEntry({ name: "a", rte_files: "transfer" }, { env: { files: "local" } })), "transfer");
+    // an empty field : the RTE's own RTE_FILES, as its health (newer than its hello) says
+    const entry = fakeEntry({ name: "a" }, { env: {} });
+    entry.health = { env: { files: "local" } };
     assert.equal(filesMode(entry), "local");
   });
 

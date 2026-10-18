@@ -40,8 +40,8 @@ const find = async (req, res) => {
  *
  * Returns:
  *   Promise<object[]>: the runners, a socket-mode one with `socket` ({ connected, node, direction,
- *     version, capacity, files, settings, env, cacheUsedMb } or { connected: false }) : settings
- *     the ones in effect on the RTE, env those a variable on it sets.
+ *     version, capacity, files, settings, env } or { connected: false }) : settings
+ *     the ones in effect on the RTE, env the values its own variables set.
  */
 async function withSocket(list) {
   return Promise.all((list || []).map(async (r) => {
@@ -51,7 +51,7 @@ async function withSocket(list) {
     // dialing an inbound RTE that does not answer
     if (!st?.alive || !st.rte_id) return { ...r, socket: { connected: false } };
     const info = st.info || {};
-    return { ...r, socket: { connected: true, node: st.node_id, direction: st.direction, rteId: st.rte_id, version: info.version, ansible: info.ansible, capacity: info.capacity, files: info.files, settings: info.settings, env: info.env, cacheUsedMb: info.cacheUsedMb } };
+    return { ...r, socket: { connected: true, node: st.node_id, direction: st.direction, rteId: st.rte_id, version: info.version, ansible: info.ansible, capacity: info.capacity, files: info.files, settings: info.settings, env: info.env } };
   }));
 }
 

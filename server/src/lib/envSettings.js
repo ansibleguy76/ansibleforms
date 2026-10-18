@@ -4,6 +4,7 @@ import { promises as fs, constants as fsConstants } from 'fs';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import appConfig, { jobsListSize } from '../../config/app.config.js';
+import { RTE_SETTINGS } from '../rte/socket/settings.js';
 import mysql from '../models/db.model.js';
 import logger, { setLogLevel, setLogColor, setLogFormat, rebuildSyslogTransport, rebuildFileTransports } from './logger.js';
 import { setDefaultLocale } from './i18n.js';
@@ -78,6 +79,8 @@ const LIVE = {
   // the fn REST helpers and lib/jq.js read them on every call ; the same fallbacks as app.config
   REST_TIMEOUT_SECONDS: { key: 'restTimeoutSeconds', parse: v => (parseInt(v, 10) > 0 ? parseInt(v, 10) : 60) },
   JQ_TIMEOUT_SECONDS: { key: 'jqTimeoutSeconds', parse: v => (parseInt(v, 10) > 0 ? parseInt(v, 10) : 30) },
+  // lib/jobFiles.js reads it on each job it packs files for ; the same fallback as app.config
+  RTE_FILES_MAX_MB: { key: 'rteFilesMaxMb', parse: v => (String(v ?? '').trim() !== '' && Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : 512) },
   REST_IGNORE_CERTS: { key: 'restIgnoreCerts', parse: v => ['1', 'true', 'yes'].includes(String(v || '').trim().toLowerCase()) },
   // backup.model passes it to every dump and restore it runs ; the same fallback as app.config
   BACKUP_COMMAND_TIMEOUT_SECONDS: { key: 'backupCommandTimeoutSeconds', parse: v => (parseInt(v, 10) > 0 ? parseInt(v, 10) : 3600) },
@@ -161,8 +164,16 @@ const LIVE_ENV_ONLY = new Set([
 ]);
 
 // Read by an RTE (AF_ROLE=rte) from its own environment : this page, on the app, cannot reach
-// it - neither now nor after a restart of the app. Set where the RTE runs.
-const RTE_ONLY = new Set(['LISTEN_HOST', 'RTE_CACHE_MB', 'RTE_DRAIN_SECONDS', 'RTE_MAX_JOBS', 'RTE_REGISTER', 'RTE_TOKEN', 'RTE_URL']);
+// it - neither now nor after a restart of the app. Set where the RTE runs. The app reads none
+// of them (APP_URL is the app's address as an RTE dials it).
+const RTE_ONLY = new Set([
+  'APP_TLS_VERIFY', 'APP_URL', 'LISTEN_HOST', 'RTE_CACHE_MB', 'RTE_CACHE_PATH', 'RTE_DRAIN_SECONDS', 'RTE_FILES',
+  'RTE_JOIN_TOKEN', 'RTE_MAX_JOBS', 'RTE_MODE', 'RTE_NAME', 'RTE_REGISTER', 'RTE_SPOOL_PATH', 'RTE_TOKEN', 'RTE_URL',
+]);
+
+// Of those, the ones a socket-mode RTE also takes from its runner page (Connections > Runners >
+// the runner > RTE, rte/socket/settings.js) : the page says so beside them
+export const RUNNER_PAGE = new Set(RTE_SETTINGS.map((s) => s.env));
 
 // the VAULT_* variables are imported once, as the secret store 'vault' (secrets/importVaultEnv.js)
 // : imported when saved, as a start would, a moment later so that the fields saved together
@@ -526,4 +537,4 @@ export async function writeManaged(map) {
   return text;
 }
 
-export default { MANAGED_ENV_PATH, REFUSED, ENV_EDIT_DISABLED_REASON, RELOCATES, classify, isOverridden, serialize, parseEnvFile, readManaged, validate, applyLive, writeManaged };
+export default { MANAGED_ENV_PATH, REFUSED, ENV_EDIT_DISABLED_REASON, RELOCATES, RUNNER_PAGE, classify, isOverridden, serialize, parseEnvFile, readManaged, validate, applyLive, writeManaged };

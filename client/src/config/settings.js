@@ -2660,18 +2660,20 @@ export default function getSettings(t) {
           noTable: true,
         },
         {
-          // an RTE's mode (RTE_MODE on the RTE) : outbound, inbound, or database (deprecated) ;
-          // a new one outbound, one from before 7.3 database
+          // an RTE's mode (RTE_MODE on the RTE) : outbound, inbound, or database (deprecated), in the
+          // order of their names ; a new one outbound, one from before 7.3 database
           key: 'rte_mode',
           step: 'mode',
           label: t('settings.runners.rteMode'),
           help: t('settings.runners.rteModeHelp'),
           type: 'radio',
-          options: ['outbound', 'inbound', 'database'].map((value) => ({
-            value,
-            label: t(`settings.runners.rteMode_${value}`),
-            hint: t(`settings.runners.rteMode_${value}Hint`),
-          })),
+          options: ['outbound', 'inbound', 'database']
+            .map((value) => ({
+              value,
+              label: t(`settings.runners.rteMode_${value}`),
+              hint: t(`settings.runners.rteMode_${value}Hint`),
+            }))
+            .sort((a, b) => a.label.localeCompare(b.label)),
           // a new one outbound ; one from before 7.3, without a mode, database
           initial: (r) => (r && r.id ? r.rte_mode || 'database' : 'outbound'),
           dependency: 'kind',

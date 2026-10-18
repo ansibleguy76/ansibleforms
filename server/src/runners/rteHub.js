@@ -128,8 +128,8 @@ async function tryLease(name) {
 }
 
 /**
- * Sends an RTE the settings of its runner page (the RTE tab) : empty ones are its defaults, and
- * a variable set on the RTE wins over them there.
+ * Sends an RTE the settings of its runner page (the RTE tab) : they win over the same variables
+ * set on the RTE, which it keeps for the empty ones.
  *
  * Args:
  *   entry (object): the session's entry.
@@ -141,8 +141,8 @@ function sendSettings(entry) {
 }
 
 /**
- * Where an RTE gets a job's files : what it says, when a variable on it sets it (RTE_FILES),
- * else its runner's setting, else transfer.
+ * Where an RTE gets a job's files : its runner's setting, else what a variable on it sets
+ * (RTE_FILES), else transfer.
  *
  * Args:
  *   entry (object): the session's entry.
@@ -152,8 +152,7 @@ function sendSettings(entry) {
  */
 function filesMode(entry) {
   const said = entry.health || entry.hello || {};
-  if (Array.isArray(said.env) && said.env.includes("files")) return said.settings?.files ?? said.files ?? "transfer";
-  return settingsOfRunner(entry.runner).files || "transfer";
+  return settingsOfRunner(entry.runner).files || said.env?.files || "transfer";
 }
 
 /**
@@ -185,7 +184,7 @@ async function renewLease(entry) {
     version: entry.hello?.version, contract: entry.hello?.contract, ansible: entry.hello?.ansible,
     mode: entry.hello?.mode, files: filesMode(entry), capacity: entry.health?.capacity || entry.hello?.capacity,
     running: entry.health?.running || entry.hello?.running || [], node: nodeId,
-    settings: (entry.health || entry.hello)?.settings, env: (entry.health || entry.hello)?.env, cacheUsedMb: (entry.health || entry.hello)?.cacheUsedMb,
+    settings: (entry.health || entry.hello)?.settings, env: (entry.health || entry.hello)?.env,
   });
   const res = await mysql.do(
     "UPDATE AnsibleForms.`runner_leases` SET expires_at=DATE_ADD(NOW(), INTERVAL ? SECOND), rte_id=?, info=? WHERE runner=? AND node_id=?",
