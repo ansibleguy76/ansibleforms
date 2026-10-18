@@ -645,7 +645,7 @@ const SCHEMA_MANIFEST = {
     patchVersion7: { tables: ['secret_stores', 'runners', 'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'notification_channels', 'syslog_servers', 'login_failures', 'token_revocations', 'schema_migrations',
                               'directory_users', 'announcements', 'disclaimer_versions', 'disclaimer_acceptances', 'api_tokens', 'labels',
                               'runner_leases', 'runner_join_tokens', 'job_events'],
-                     columns: ['job_events.result', 'runners.rte_mode', 'runners.enabled', 'schedule.enabled', 'runners.pending', 'runners.pending_since', 'runners.pending_info', 'runners.rte_cert_sha256', 'schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'settings.syslog_env_imported_at', 'jobs.runner', 'jobs.runner_kind', 'jobs.runner_job_url',
+                     columns: ['job_events.result', 'runners.rte_mode', 'runners.enabled', 'schedule.enabled', 'runners.pending', 'runners.pending_since', 'runners.pending_info', 'runners.rte_cert_sha256', 'runners.rte_max_jobs', 'runners.rte_cache_mb', 'runners.rte_files', 'runners.rte_drain_seconds', 'schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'settings.syslog_env_imported_at', 'jobs.runner', 'jobs.runner_kind', 'jobs.runner_job_url',
                                'runners.username', 'runners.password', 'runners.use_credentials', 'runners.node_id', 'jobs.job_log',
                                'jobs.tracker', 'repositories.claim_node', 'repositories.claim_since',
                                'repositories.use_for_workflows', 'repositories.use_for_inventories',
@@ -1190,6 +1190,12 @@ async function patchVersion7(messages, success, failed) {
   // the same for a runner that keeps its own ca_bundle (no credential) : the digest of the bundle
   // its RTE's certificate was stored as
   await checkPromise(addColumn("runners", "rte_cert_sha256", "varchar(64)", true, "NULL"), messages, success, failed);
+  // a socket-mode RTE's settings, set on its runner page and sent over its socket
+  // (rte/socket/settings.js) : empty is the default
+  await checkPromise(addColumn("runners", "rte_max_jobs", "int(11)", true, "NULL"), messages, success, failed);
+  await checkPromise(addColumn("runners", "rte_cache_mb", "int(11)", true, "NULL"), messages, success, failed);
+  await checkPromise(addColumn("runners", "rte_files", "varchar(10)", true, "NULL"), messages, success, failed);
+  await checkPromise(addColumn("runners", "rte_drain_seconds", "int(11)", true, "NULL"), messages, success, failed);
   const leases = fs.readFileSync(`${__dirname}/../db/create_runner_leases_table.sql`);
   await checkPromise(addTable("runner_leases", leases.toString()), messages, success, failed);
   const joinTokens = fs.readFileSync(`${__dirname}/../db/create_runner_join_tokens_table.sql`);

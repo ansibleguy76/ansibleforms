@@ -1473,6 +1473,27 @@ export default {
       rteMode_database: 'Datenbank (veraltet)',
       rteMode_databaseHint: 'Die RTE nutzt die Datenbank der App selbst: entfällt in 8.0.0',
       socket: 'Verbindung',
+      tabRte: 'RTE',
+      rteSettingsSocketOnly:
+        'Diese Einstellungen gelten für ein RTE im Modus ausgehend oder eingehend. Ein RTE im Datenbankmodus liest sie aus seinen eigenen Variablen.',
+      maxJobs: 'Max. gleichzeitige Jobs',
+      maxJobsHelp:
+        'Wie viele Playbooks dieses RTE gleichzeitig ausführt; 0 bedeutet kein Limit. Leer: der Standardwert, {default}.',
+      cacheMb: 'Cache für Jobdateien',
+      cacheMbHelp:
+        'Wie viel der von der App gesendeten Jobdateien dieses RTE behält, in MB; 0 behält keine. Leer: der Standardwert, {default} MB.',
+      filesMode: 'Jobdateien',
+      filesModeHelp:
+        'Übertragung: Die App sendet die Dateien mit dem Job. Lokal: Das RTE arbeitet mit seinen eigenen eingebundenen Ordnern.',
+      files_default: 'Standard (Übertragung)',
+      files_transfer: 'Übertragung',
+      files_local: 'Lokal',
+      drainSeconds: 'Wartezeit beim Stoppen',
+      drainSecondsHelp:
+        'Wie lange ein stoppendes RTE auf laufende Playbooks wartet, in Sekunden; unter dem Stopp-Timeout der Plattform halten. Leer: der Standardwert, {default}.',
+      settingDefault: 'Standard: {value}',
+      setOnRte: 'Auf dem RTE gesetzt mit {env}: {value}',
+      cacheUsed: '{mb} MB belegt',
       socketConnected: 'Verbunden',
       socketDisconnected: 'Nicht verbunden',
       socketDisconnectedHint:

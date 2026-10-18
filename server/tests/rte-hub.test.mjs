@@ -266,3 +266,42 @@ describe("an RTE's items", () => {
     assert.ok(queries.some((q) => q.sql.includes("status='abandoned'") && q.params[0] === 8));
   });
 });
+
+describe("an RTE's settings from its runner page", async () => {
+  const { sessions, filesMode, sendSettings, pushSettings } = await import("../src/runners/rteHub.js");
+  const fakeEntry = (runner, said = {}) => {
+    const sent = [];
+    return { runner, hello: said, health: null, sent, session: { open: true, send: (m) => sent.push(m) } };
+  };
+
+  test("the app sends the runner's settings, the empty ones left to the RTE's defaults", () => {
+    const entry = fakeEntry({ name: "dmz", rte_max_jobs: 4, rte_cache_mb: null, rte_files: "local", rte_drain_seconds: "" });
+    sendSettings(entry);
+    assert.deepEqual(entry.sent, [{ t: "settings", settings: { maxJobs: 4, files: "local" } }]);
+  });
+
+  test("where an RTE gets a job's files : its variable when set, else its runner's, else transfer", () => {
+    assert.equal(filesMode(fakeEntry({ name: "a" }, { files: "transfer", env: [] })), "transfer");
+    assert.equal(filesMode(fakeEntry({ name: "a", rte_files: "local" }, { files: "transfer", env: [] })), "local");
+    // RTE_FILES set on the RTE wins over the runner page
+    assert.equal(filesMode(fakeEntry({ name: "a", rte_files: "local" }, { files: "transfer", settings: { files: "transfer" }, env: ["files"] })), "transfer");
+    // its health, newer than its hello, says what it applied
+    const entry = fakeEntry({ name: "a" }, { files: "transfer", env: ["files"] });
+    entry.health = { settings: { files: "local" }, env: ["files"] };
+    assert.equal(filesMode(entry), "local");
+  });
+
+  test("a saved runner's settings go at once to the RTE this node holds, and only its settings change", () => {
+    const entry = fakeEntry({ name: "dmz", token: "kept", rte_max_jobs: 2 }, { files: "transfer" });
+    sessions.set("dmz", entry);
+    try {
+      pushSettings({ name: "dmz", token: "other", rte_max_jobs: 6, rte_cache_mb: 0 });
+      assert.deepEqual(entry.sent.at(-1), { t: "settings", settings: { maxJobs: 6, cacheMb: 0 } });
+      assert.equal(entry.runner.token, "kept");
+      // not held here : nothing sent, nothing thrown
+      pushSettings({ name: "elsewhere", rte_max_jobs: 1 });
+    } finally {
+      sessions.delete("dmz");
+    }
+  });
+});

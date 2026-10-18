@@ -1863,6 +1863,26 @@ export default {
       rteMode_database: 'データベース (非推奨)',
       rteMode_databaseHint: 'RTE がアプリのデータベースを直接使用します。8.0.0 で削除',
       socket: '接続',
+      tabRte: 'RTE',
+      rteSettingsSocketOnly:
+        'これらの設定はアウトバウンドまたはインバウンドモードの RTE に適用されます。データベースモードの RTE は自身の変数から読み取ります。',
+      maxJobs: '最大同時ジョブ数',
+      maxJobsHelp: 'この RTE が同時に実行する Playbook の数。0 は無制限。空欄: 既定値 {default}。',
+      cacheMb: 'ジョブファイルのキャッシュ',
+      cacheMbHelp:
+        'アプリから送られたジョブファイルをこの RTE が保持する量 (MB)。0 は保持しません。空欄: 既定値 {default} MB。',
+      filesMode: 'ジョブファイル',
+      filesModeHelp:
+        '転送: アプリがジョブと一緒にファイルを送ります。ローカル: RTE は自身のマウントしたフォルダから実行します。',
+      files_default: '既定 (転送)',
+      files_transfer: '転送',
+      files_local: 'ローカル',
+      drainSeconds: '停止時の待機時間',
+      drainSecondsHelp:
+        '停止中の RTE が実行中の Playbook を待つ秒数。プラットフォームの停止タイムアウトより短くしてください。空欄: 既定値 {default}。',
+      settingDefault: '既定: {value}',
+      setOnRte: 'RTE で {env} により設定: {value}',
+      cacheUsed: '現在 {mb} MB 使用中',
       socketConnected: '接続済み',
       socketDisconnected: '未接続',
       socketDisconnectedHint:

@@ -162,7 +162,7 @@ const LIVE_ENV_ONLY = new Set([
 
 // Read by an RTE (AF_ROLE=rte) from its own environment : this page, on the app, cannot reach
 // it - neither now nor after a restart of the app. Set where the RTE runs.
-const RTE_ONLY = new Set(['LISTEN_HOST', 'RTE_DRAIN_SECONDS', 'RTE_MAX_JOBS', 'RTE_REGISTER', 'RTE_TOKEN', 'RTE_URL']);
+const RTE_ONLY = new Set(['LISTEN_HOST', 'RTE_CACHE_MB', 'RTE_DRAIN_SECONDS', 'RTE_MAX_JOBS', 'RTE_REGISTER', 'RTE_TOKEN', 'RTE_URL']);
 
 // the VAULT_* variables are imported once, as the secret store 'vault' (secrets/importVaultEnv.js)
 // : imported when saved, as a start would, a moment later so that the fields saved together

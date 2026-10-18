@@ -110,7 +110,13 @@ const crudConfigs = {
       { name: 'pending_since' },
       { name: 'pending_info' },
       // the digest of the ca_bundle its RTE's certificate was stored as : the RTE hub's only
-      { name: 'rte_cert_sha256' }
+      { name: 'rte_cert_sha256' },
+      // a socket-mode RTE's settings, sent over its socket (rte/socket/settings.js) ; empty : the
+      // default
+      { name: 'rte_max_jobs' },
+      { name: 'rte_cache_mb' },
+      { name: 'rte_files' },
+      { name: 'rte_drain_seconds' }
     ],
     allowCache: true,
     cacheTTL: 3600
