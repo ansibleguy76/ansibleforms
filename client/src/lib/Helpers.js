@@ -674,18 +674,25 @@ const Helpers = {
       if (patternmatch && patternmatch.length == 2) {
         nrsequence = patternmatch[1];
         regex = '^' + pattern.replace(nrsequence, '([0-9]{' + nrsequence.length + '})') + '$';
-        nrs = names
-          .map((item) => {
-            var regexp = new RegExp(regex, 'g');
-            var matches = regexp.exec(item);
-            if (matches && matches.length == 2) {
-              return parseInt(matches[1]);
-            } else {
-              null;
-            }
-          })
-          .filter((item) => item);
+        // 0 counts (filter != null), every number once, sorted numerically : the gap
+        // search walks neighbours, so fillgap never suggests a name already taken
+        // (mirror of the server's fnGetNumberedName)
+        nrs = [
+          ...new Set(
+            names
+              .map((item) => {
+                var regexp = new RegExp(regex, 'g');
+                var matches = regexp.exec(item);
+                if (matches && matches.length == 2) {
+                  return parseInt(matches[1], 10);
+                }
+                return null;
+              })
+              .filter((item) => item != null && !Number.isNaN(item)),
+          ),
+        ].sort((x, y) => x - y);
         var gaps = nrs.reduce(function (acc, cur, ind, arr) {
+          if (ind === 0) return acc;
           var diff = cur - arr[ind - 1];
           if (diff > 1) {
             var i = 1;
@@ -696,15 +703,15 @@ const Helpers = {
           }
           return acc;
         }, []);
-        var max = nrs.length > 0 ? Math.max(...nrs) : null;
-        var gap = gaps.length > 0 ? Math.min(...gaps) : null;
-        if (max) {
+        var max = nrs.length > 0 ? nrs[nrs.length - 1] : null;
+        var gap = gaps.length > 0 ? gaps[0] : null;
+        if (max != null) {
           nr = max + 1;
         }
-        if (fillgap && gap) {
+        if (fillgap && gap != null) {
           nr = gap;
         }
-        if (nr) {
+        if (nr != null) {
           var tmp = pattern.replace(nrsequence, nr.toString().padStart(nrsequence.length, '0'));
           return tmp;
         } else {

@@ -48,16 +48,20 @@ const fnGetNumberedName=function(names,pattern,value,fillgap=false){
   if(patternmatch && patternmatch.length==2){
   	nrsequence=patternmatch[1]
 	  regex="^" + pattern.replace(nrsequence,"([0-9]{"+nrsequence.length+"})") + "$"
-    nrs=names.map((item)=>{
+    // the numbers already taken : 0 is a number too (a 'filter(item => item)'
+    // dropped '000'), every number counts once, and they are sorted NUMERICALLY,
+    // since the gap search below walks neighbours and an unsorted or duplicated list
+    // made fillgap suggest a name that was already taken
+    nrs=[...new Set(names.map((item)=>{
       var regexp=new RegExp(regex,"g");
       var matches=regexp.exec(item)
       if(matches && matches.length==2){
-        return parseInt(matches[1])
-      }else{
-        null
+        return parseInt(matches[1],10)
       }
-    }).filter((item)=>(item))
+      return null
+    }).filter((item)=>(item!=null && !Number.isNaN(item))))].sort((x,y)=>x-y)
     var gaps=nrs.reduce(function(acc, cur, ind, arr) {
+      if (ind === 0) return acc;
       var diff = cur - arr[ind-1];
       if (diff > 1) {
         var i = 1;
@@ -68,15 +72,16 @@ const fnGetNumberedName=function(names,pattern,value,fillgap=false){
       }
       return acc;
     }, []);
-    var max=(nrs.length>0)?Math.max(...nrs):null
-    var gap=(gaps.length>0)?Math.min(...gaps):null
-    if(max){
+    var max=(nrs.length>0)?nrs[nrs.length-1]:null
+    var gap=(gaps.length>0)?gaps[0]:null
+    // compared with null : a max of 0 is a real maximum
+    if(max!=null){
       nr=max+1
     }
-    if(fillgap && gap){
+    if(fillgap && gap!=null){
       nr=gap
     }
-    if(nr){
+    if(nr!=null){
       var tmp = pattern.replace(nrsequence,nr.toString().padStart(nrsequence.length,"0"))
       return tmp
     }else{
