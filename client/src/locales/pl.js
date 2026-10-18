@@ -1786,6 +1786,7 @@ export default {
       pendingVersion: 'Wersja',
       pendingSince: 'Poproszono',
       approve: 'Zatwierdź',
+      reviewApproval: 'Rozpatrz zatwierdzenie',
       reject: 'Odrzuć',
       approved: '{name} jest zatwierdzony: od teraz dostaje zadania',
       rejected: '{name} został odrzucony i usunięty',

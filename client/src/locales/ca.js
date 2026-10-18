@@ -1801,6 +1801,7 @@ export default {
       pendingVersion: 'Versió',
       pendingSince: 'Sol·licitat el',
       approve: 'Aprova',
+      reviewApproval: "Revisar l'aprovació",
       reject: 'Rebutja',
       approved: '{name} està aprovat: rep feines a partir d\'ara',
       rejected: '{name} s\'ha rebutjat i eliminat',

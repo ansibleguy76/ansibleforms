@@ -1355,6 +1355,7 @@ export default {
       pendingVersion: 'Versione',
       pendingSince: 'Richiesto il',
       approve: 'Approva',
+      reviewApproval: 'Esamina approvazione',
       reject: 'Rifiuta',
       approved: '{name} è approvato: riceve job da ora',
       rejected: '{name} è stato rifiutato e rimosso',

@@ -1796,6 +1796,7 @@ export default {
       pendingVersion: 'Versão',
       pendingSince: 'Pedido em',
       approve: 'Aprovar',
+      reviewApproval: 'Rever aprovação',
       reject: 'Rejeitar',
       approved: '{name} está aprovado: recebe trabalhos a partir de agora',
       rejected: '{name} foi rejeitado e removido',

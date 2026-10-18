@@ -1769,6 +1769,7 @@ export default {
       pendingVersion: 'バージョン',
       pendingSince: '申請日時',
       approve: '承認',
+      reviewApproval: '承認を確認',
       reject: '拒否',
       approved: '{name} を承認しました。今後ジョブを受け取ります',
       rejected: '{name} を拒否して削除しました',

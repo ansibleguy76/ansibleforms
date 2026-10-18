@@ -131,6 +131,7 @@ const emit = defineEmits([
   'allow_sign_in',
   'move_up',
   'move_down',
+  'review',
 ]);
 
 // PROPS
@@ -1372,6 +1373,10 @@ function openRecordPage(item) {
 }
 
 function onDataTableRowClick(item) {
+  // a row the page handles itself (settings.rowClickAction : the name of an event) : a runner
+  // waiting for approval opens its review, not its page
+  const own = props.settings.rowClickAction?.(item);
+  if (own) return emit(own, item);
   if (openRecordPage(item)) return;
   if (!rowClickSelects.value) {
     activeRowId.value = item[idKey];

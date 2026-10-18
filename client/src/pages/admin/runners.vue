@@ -16,6 +16,9 @@ const store = useAppStore();
 
 const authenticated = ref(false);
 const tests = ref({});
+// the runner waiting for approval being reviewed (components/AppRunnerApproval.vue)
+const reviewing = ref(null);
+const list = ref(null);
 
 async function test_connection(item) {
   if (item) {
@@ -51,6 +54,17 @@ onMounted(async () => {
       :busyItems="tests"
       :apiVersion="2"
       :readOnly="!store.isAdmin"
+      ref="list"
+      @review="(item) => (reviewing = item)"
+    />
+    <AppRunnerApproval
+      v-if="reviewing"
+      :runner="reviewing"
+      @close="reviewing = null"
+      @decided="
+        reviewing = null;
+        list?.loadItems();
+      "
     />
   </AppSettingsPage>
 </template>

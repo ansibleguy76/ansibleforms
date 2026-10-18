@@ -1713,6 +1713,7 @@ export default {
       pendingVersion: '版本',
       pendingSince: '请求时间',
       approve: '批准',
+      reviewApproval: '审核审批',
       reject: '拒绝',
       approved: '{name} 已批准：从现在起接收作业',
       rejected: '{name} 已被拒绝并删除',

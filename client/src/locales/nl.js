@@ -1355,6 +1355,7 @@ export default {
       pendingVersion: 'Versie',
       pendingSince: 'Aangevraagd op',
       approve: 'Goedkeuren',
+      reviewApproval: 'Goedkeuring beoordelen',
       reject: 'Afwijzen',
       approved: '{name} is goedgekeurd: hij krijgt vanaf nu jobs',
       rejected: '{name} is afgewezen en verwijderd',

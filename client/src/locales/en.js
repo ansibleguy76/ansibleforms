@@ -1342,6 +1342,7 @@ export default {
       pendingVersion: 'Version',
       pendingSince: 'Asked on',
       approve: 'Approve',
+      reviewApproval: 'Review approval',
       reject: 'Reject',
       approved: '{name} is approved: it takes jobs from now on',
       rejected: '{name} was rejected and removed',

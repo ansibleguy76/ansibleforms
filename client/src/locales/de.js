@@ -1362,6 +1362,7 @@ export default {
       pendingVersion: 'Version',
       pendingSince: 'Angefragt am',
       approve: 'Freigeben',
+      reviewApproval: 'Genehmigung prüfen',
       reject: 'Ablehnen',
       approved: '{name} ist freigegeben: sie erhält ab jetzt Jobs',
       rejected: '{name} wurde abgelehnt und entfernt',

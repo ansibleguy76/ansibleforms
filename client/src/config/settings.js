@@ -2473,6 +2473,8 @@ export default function getSettings(t) {
       }),
       // a runner has its own page (pages/admin/runner.vue) : its row and Edit open it, New the wizard
       openPage: (item) => `/settings/runners/${item.id}`,
+      // a runner waiting for approval : its row opens the review (runners.vue), not its page
+      rowClickAction: (item) => (Number(item?.pending) ? 'review' : null),
       // in the row menu : editing, the test, turning it on or off, its token or password (on its
       // page), then Delete last, each apart
       actions: [
@@ -2485,32 +2487,14 @@ export default function getSettings(t) {
           dividerBefore: true,
         },
         {
-          // an RTE that asked to join : Approve (it takes jobs) or Reject (removed), nothing else
-          // changes it until then
-          name: 'approve',
-          title: t('settings.runners.approve'),
-          icon: 'check',
+          // an RTE that asked to join : its review (who it says it is, Approve or Reject), as a
+          // job waiting for approval ; the row opens it too (rowClickAction)
+          name: 'review',
+          title: t('settings.runners.reviewApproval'),
+          icon: 'hourglass-half',
           color: 'change',
           dividerBefore: true,
           shownWhen: (m) => !!Number(m.pending),
-          done: (n, rows) => t('settings.runners.approved', { name: rows[0]?.name }),
-          run: async (ids) => {
-            await axios.post(`/api/v2/runner/${ids[0]}/approve`, {});
-            return 1;
-          },
-        },
-        {
-          name: 'reject',
-          title: t('settings.runners.reject'),
-          icon: 'ban',
-          color: 'delete',
-          shownWhen: (m) => !!Number(m.pending),
-          confirm: (n, rows) => t('settings.runners.rejectConfirm', { name: rows[0]?.name }),
-          done: (n, rows) => t('settings.runners.rejected', { name: rows[0]?.name }),
-          run: async (ids) => {
-            await axios.post(`/api/v2/runner/${ids[0]}/reject`, {});
-            return 1;
-          },
         },
         {
           // only the one that changes it : Enable on a runner turned off, Disable on one turned on
@@ -2578,7 +2562,7 @@ export default function getSettings(t) {
           filterable: true,
           help: t('settings.runners.nameHelp'),
           // an RTE that asked to join : its name, and that it waits for approval (escaped, v-html)
-          render: (v, r) => esc(v ?? '') + (Number(r?.pending) ? ' ' + pill(PILL.amber, t('settings.runners.pending'), t('settings.runners.pendingHint')) : ''),
+          render: (v, r) => esc(v ?? '') + (Number(r?.pending) ? ' ' + pill(PILL.orange, t('settings.runners.pending'), t('settings.runners.pendingHint')) : ''),
           sortValue: (r) => r?.name || '',
         },
         {
