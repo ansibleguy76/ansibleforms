@@ -1389,6 +1389,7 @@ export default {
       pendingTitle: 'Este RTE ha pedido unirse',
       pendingHelp: 'Comprueba la huella del RTE antes de aprobarlo',
       pendingFingerprint: 'Huella',
+      pendingCertFingerprint: "Huella del certificado",
       pendingHost: 'Host',
       pendingIp: 'Dirección IP',
       pendingVersion: 'Versión',

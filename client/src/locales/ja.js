@@ -1798,6 +1798,7 @@ export default {
       pendingTitle: 'この RTE が参加を求めています',
       pendingHelp: '承認する前に RTE のフィンガープリントを確認してください',
       pendingFingerprint: 'フィンガープリント',
+      pendingCertFingerprint: "証明書のフィンガープリント",
       pendingHost: 'ホスト',
       pendingIp: 'IP アドレス',
       pendingVersion: 'バージョン',

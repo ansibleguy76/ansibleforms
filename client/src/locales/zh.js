@@ -1742,6 +1742,7 @@ export default {
       pendingTitle: '此 RTE 请求加入',
       pendingHelp: '批准前请核对 RTE 的指纹',
       pendingFingerprint: '指纹',
+      pendingCertFingerprint: "证书指纹",
       pendingHost: '主机',
       pendingIp: 'IP 地址',
       pendingVersion: '版本',

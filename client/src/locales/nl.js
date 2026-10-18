@@ -1383,6 +1383,7 @@ export default {
       pendingTitle: 'Deze RTE vraagt om lid te worden',
       pendingHelp: 'Controleer de vingerafdruk van de RTE voor goedkeuring',
       pendingFingerprint: 'Vingerafdruk',
+      pendingCertFingerprint: "Vingerafdruk van het certificaat",
       pendingHost: 'Host',
       pendingIp: 'IP-adres',
       pendingVersion: 'Versie',

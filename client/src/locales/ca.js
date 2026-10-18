@@ -1828,6 +1828,7 @@ export default {
       pendingTitle: 'Aquest RTE ha demanat unir-se',
       pendingHelp: "Comproveu l'empremta de l'RTE abans d'aprovar-lo",
       pendingFingerprint: 'Empremta',
+      pendingCertFingerprint: "Empremta del certificat",
       pendingHost: 'Host',
       pendingIp: 'Adreça IP',
       pendingVersion: 'Versió',

@@ -1815,6 +1815,7 @@ export default {
       pendingTitle: 'Ten RTE poprosił o dołączenie',
       pendingHelp: 'Sprawdź odcisk RTE przed zatwierdzeniem',
       pendingFingerprint: 'Odcisk',
+      pendingCertFingerprint: "Odcisk certyfikatu",
       pendingHost: 'Host',
       pendingIp: 'Adres IP',
       pendingVersion: 'Wersja',

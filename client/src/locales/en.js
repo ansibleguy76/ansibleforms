@@ -1370,6 +1370,7 @@ export default {
       pendingTitle: 'This RTE asked to join',
       pendingHelp: 'Check the RTE fingerprint before approving it',
       pendingFingerprint: 'Fingerprint',
+      pendingCertFingerprint: "Certificate fingerprint",
       pendingHost: 'Host',
       pendingIp: 'IP address',
       pendingVersion: 'Version',

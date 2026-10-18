@@ -70,6 +70,12 @@ async function decide(what) {
         <dd>{{ runner.name }}</dd>
         <dt>{{ t('settings.runners.pendingFingerprint') }}</dt>
         <dd class="font-monospace">{{ info.fingerprint || '–' }}</dd>
+        <!-- an inbound RTE : the fingerprint of the certificate it presented (xxxx-xxxx), to
+             compare with the one the RTE shows before approving it -->
+        <template v-if="info.cert_fingerprint">
+          <dt>{{ t('settings.runners.pendingCertFingerprint') }}</dt>
+          <dd class="font-monospace">{{ info.cert_fingerprint }}</dd>
+        </template>
         <dt>{{ t('settings.runners.pendingHost') }}</dt>
         <dd>{{ info.host || '–' }}</dd>
         <dt>{{ t('settings.runners.pendingIp') }}</dt>

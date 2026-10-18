@@ -1823,6 +1823,7 @@ export default {
       pendingTitle: 'Este RTE pediu para aderir',
       pendingHelp: 'Confirme a impressão digital do RTE antes de o aprovar',
       pendingFingerprint: 'Impressão digital',
+      pendingCertFingerprint: "Impressão digital do certificado",
       pendingHost: 'Host',
       pendingIp: 'Endereço IP',
       pendingVersion: 'Versão',

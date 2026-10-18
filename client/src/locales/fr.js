@@ -1391,6 +1391,7 @@ export default {
       pendingTitle: 'Ce RTE demande à rejoindre',
       pendingHelp: "Vérifiez l'empreinte du RTE avant de l'approuver",
       pendingFingerprint: 'Empreinte',
+      pendingCertFingerprint: "Empreinte du certificat",
       pendingHost: 'Hôte',
       pendingIp: 'Adresse IP',
       pendingVersion: 'Version',

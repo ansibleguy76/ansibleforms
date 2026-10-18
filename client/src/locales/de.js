@@ -1390,6 +1390,7 @@ export default {
       pendingTitle: 'Diese RTE möchte beitreten',
       pendingHelp: 'Prüfen Sie den Fingerabdruck der RTE vor der Freigabe',
       pendingFingerprint: 'Fingerabdruck',
+      pendingCertFingerprint: "Zertifikat-Fingerabdruck",
       pendingHost: 'Host',
       pendingIp: 'IP-Adresse',
       pendingVersion: 'Version',
