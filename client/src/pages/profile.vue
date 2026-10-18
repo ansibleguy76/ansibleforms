@@ -338,13 +338,16 @@ async function createToken() {
     const result = await axios.post(
       `/api/v2/auth/login?${query}`,
       {},
-      { auth: { username: profile.value.username, password: tokenForm.value.password } },
+      // the credentials as UTF-8, as the login page sends them (axios' own auth option sends
+      // the name as Latin-1)
+      { headers: { Authorization: Helpers.basicAuthHeader(profile.value.username, tokenForm.value.password) } },
     );
     const token = result.data?.token;
     if (!token) throw new Error('no token');
     showToken(token);
-  } catch {
-    toast.error(t('profilePage.token.failed'));
+  } catch (err) {
+    // the server's reason (a wrong password, a role without api tokens) when it gave one
+    toast.error(err?.response ? Helpers.parseAxiosResponseError(err, t('profilePage.token.failed')) : t('profilePage.token.failed'));
   } finally {
     tokenForm.value.password = '';
     creatingToken.value = false;

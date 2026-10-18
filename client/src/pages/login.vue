@@ -178,10 +178,8 @@ async function login() {
   if (!$v.value.user.$invalid) {
     try {
       console.log('Logging in');
-      // the credentials as UTF-8 bytes, then base64 : btoa alone takes Latin-1 only (it threw
-      // on a character outside it) while the server reads UTF-8 (lib/basicCredentials.js)
-      const bytes = new TextEncoder().encode(`${user.value.username}:${user.value.password}`);
-      var basicAuth = 'Basic ' + btoa(Array.from(bytes, (b) => String.fromCharCode(b)).join(''));
+      // the credentials as UTF-8, as the server reads them (Helpers.basicAuthHeader)
+      var basicAuth = Helpers.basicAuthHeader(user.value.username, user.value.password);
       var postconfig = {
         headers: { Authorization: basicAuth },
       };
