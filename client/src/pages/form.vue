@@ -1655,7 +1655,7 @@ async function getJob(id, final, seq = pollSeq) {
       if (pollFailures.value < 5) {
         timeout.value = setTimeout(async () => await getJob(id, false, seq), 2000);
       } else {
-        message.value = 'Error in axios call to get job\n\n' + err.toString();
+        message.value = t('form.jobReadFailed') + '\n\n' + err.toString();
         status.value = 'error';
       }
     }

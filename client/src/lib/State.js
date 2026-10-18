@@ -6,6 +6,7 @@ import Profile from '@/lib/Profile';
 import Navigate from '@/lib/Navigate';
 import Time from '@/lib/Time';
 import { ssoSettled } from '@/lib/ssoReturn';
+import i18n from '@/plugins/i18n';
 
 // the approvals count being read (refreshApprovals), shared while it is in flight
 let approvalsInFlight = null;
@@ -190,7 +191,8 @@ var State = {
         }
         return false;
       } else {
-        store.errorMessage = 'Failed to check AnsibleForms database schema\n\nUnknown error';
+        // in the user's language, as the error page around it
+        store.errorMessage = `${i18n.global.t('errors.schemaCheckFailed')}\n\n${i18n.global.t('errors.unknownError')}`;
         throw new Error(store.errorMessage, { cause: err });
       }
     }

@@ -824,6 +824,28 @@ export default {
     export: 'CSV exportieren',
   },
   errors: {
+    formsLoadFailed: 'Die Formulare konnten nicht geladen werden.',
+    formLoadFailed: 'Das Formular konnte nicht geladen werden.',
+    formListLoadFailed: 'Die Formularliste konnte nicht geladen werden.',
+    formsSaveFailed: 'Die Formulare konnten nicht gespeichert werden.',
+    formsValidateFailed: 'Die Formulare konnten nicht validiert werden.',
+    backupsLoadFailed: 'Die Sicherungen konnten nicht abgerufen werden.',
+    backupRestoreFailed: 'Die Sicherung konnte nicht wiederhergestellt werden.',
+    lockSetFailed: 'Die Designer-Sperre konnte nicht gesetzt werden: {error}',
+    lockReleaseFailed: 'Die Designer-Sperre konnte nicht freigegeben werden: {error}',
+    endOfLine: 'Hier geht es leider nicht weiter.',
+    fixSteps: 'Sie müssen einige Dinge beheben. Hier sind einige Schritte:',
+    stepDatabase: 'Stellen Sie sicher, dass eine MySQL-Datenbank läuft.',
+    stepSchema: 'Wenn das AnsibleForms-Schema fehlt, gewähren Sie Root-Zugriff, damit es erstellt werden kann.',
+    stepLogin: 'Melden Sie sich als lokaler Administrator an.',
+    stepEnvironment: 'Prüfen Sie Ihre Umgebungsvariablen.',
+    stepLogs: 'Prüfen Sie die Protokolldateien.',
+    stepConfig: 'Stellen Sie sicher, dass eine gültige config.yaml vorhanden ist.',
+    stepRepository: 'Oder legen Sie ein Repository für Ihre Formulare an.',
+    stepNetwork: 'Prüfen Sie Firewalls, Hostnamen, Benutzernamen und Passwort.',
+    settings: 'Einstellungen',
+    logs: 'Protokolle',
+    createRepository: 'Repository anlegen',
     noAccess: 'Kein Zugriff',
     notAdmin: 'Sie sind kein Administrator',
     noSettingsAccess: 'Sie haben keinen Zugriff auf Einstellungen',
@@ -2258,6 +2280,8 @@ export default {
     hasWarnings: 'Diese Konfiguration hat',
   },
   designer: {
+    pasteNotAllowed:
+      'Der Browser hat das Lesen der Zwischenablage nicht erlaubt. Verwenden Sie stattdessen Strg+V im Editor.',
     lockReleasedBy:
       'Ihre Designer-Sperre wurde von {name} freigegeben. Nicht gespeicherte Änderungen können nicht mehr gespeichert werden.',
     title: 'Designer',
@@ -2937,6 +2961,7 @@ export default {
     jobIdNote: '(Job-ID {id})',
   },
   form: {
+    jobReadFailed: 'Der Job konnte nicht gelesen werden.',
     prefillFieldFailed:
       'seine Abfrage oder sein Ausdruck ist fehlgeschlagen, daher konnte der gespeicherte Wert nicht geprüft werden',
     warnSelfReference: "'{field}' verweist auf sich selbst",

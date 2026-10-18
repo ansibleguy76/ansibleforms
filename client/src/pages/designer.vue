@@ -238,7 +238,16 @@ function editorCopy() {
 }
 async function editorPaste() {
   if (!activeEditor.value) return;
-  const text = await navigator.clipboard.readText();
+  // the browser may refuse to read the clipboard (permission denied, not a secure page, an
+  // older Firefox without the API) : say so, rather than an unhandled rejection and a button
+  // that silently does nothing - Ctrl+V in the editor still works there
+  let text;
+  try {
+    text = await navigator.clipboard.readText();
+  } catch {
+    toast.warning(t('designer.pasteNotAllowed'));
+    return;
+  }
   if (text) activeEditor.value.insert(text);
 }
 function editorFormat() {
