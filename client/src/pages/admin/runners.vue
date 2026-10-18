@@ -155,7 +155,10 @@ onMounted(async () => {
 /* the hourglass : left of every line, in the title's orange */
 .af-runner-requests-icon {
   flex: none;
-  font-size: 2.5rem;
+  /* centred on the notice's height : a block, without the line's baseline under it */
+  display: block;
+  align-self: center;
+  font-size: 2.7rem;
   color: #c24e05;
 }
 [data-bs-theme='dark'] .af-runner-requests-icon {
