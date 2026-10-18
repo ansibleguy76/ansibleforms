@@ -107,6 +107,10 @@ export default {
     runnerNotFound: "ランナーが見つかりません",
     runnerAdminOnly:
       "ランナーを追加、変更、削除できるのは admin だけです：ランナーは実行するジョブの認証情報を受け取ります",
+    credentialAdminOnly:
+      "この認証情報を追加、変更、削除できるのは admin だけです：ランナーや接続はそのアドレスとシークレットをここから取得します",
+    credentialInUse:
+      "認証情報 '{name}' は {count} 件のレコードで使用中です（使用元タブに一覧）：先にそれらを変更してください",
     defaultPasswordRefused:
       "公開されている既定のパスワード以外を選んでください",
     passwordTooShort: "パスワードは {min} 文字以上必要です",

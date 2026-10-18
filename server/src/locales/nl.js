@@ -111,6 +111,10 @@ export default {
     runnerNotFound: "Runner niet gevonden",
     runnerAdminOnly:
       "Alleen een admin kan een runner toevoegen, wijzigen of verwijderen: een runner ontvangt de credentials van de jobs die hij uitvoert",
+    credentialAdminOnly:
+      "Alleen een admin kan deze credential toevoegen, wijzigen of verwijderen: een runner of een verbinding neemt er zijn adres en zijn geheim uit",
+    credentialInUse:
+      "De credential '{name}' wordt gebruikt door {count} record(s), vermeld op het tabblad Gebruikt door: wijzig die eerst",
     defaultPasswordRefused:
       "Kies een ander wachtwoord dan het publieke standaardwachtwoord",
     passwordTooShort: "Het wachtwoord heeft minstens {min} tekens nodig",

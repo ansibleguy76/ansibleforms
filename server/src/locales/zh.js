@@ -101,6 +101,10 @@ export default {
     runnerNotFound: "未找到运行器",
     runnerAdminOnly:
       "只有 admin 可以添加、更改或删除运行器：运行器会收到它运行的作业的凭据",
+    credentialAdminOnly:
+      "只有 admin 可以添加、更改或删除此凭据：运行器或连接从中获取其地址和密钥",
+    credentialInUse:
+      "凭据 '{name}' 正被 {count} 条记录使用（列在其“使用者”选项卡中）：请先更改这些记录",
     defaultPasswordRefused: "请选择公开默认密码以外的密码",
     passwordTooShort: "密码至少需要 {min} 个字符",
     passwordIsUsername: "密码不能是用户名",

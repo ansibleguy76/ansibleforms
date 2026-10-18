@@ -242,6 +242,37 @@ class CredentialModel extends CrudModel {
     return new Map((rows || []).map((r) => [r.name, Number(r.n) || 0]));
   }
 
+  /**
+   * How many records use one credential (usageCounts : the tables that name it, not the forms
+   * nor the workflows). What a delete or a rename would leave pointing at nothing.
+   *
+   * Args:
+   *   name (string): the credential's name.
+   *
+   * Returns:
+   *   Promise<number>: how many records name it, 0 when none.
+   */
+  static async usageOf(name) {
+    if (!name) return 0;
+    return (await this.usageCounts()).get(name) || 0;
+  }
+
+  /**
+   * The runners that sign in with a credential : whoever changes it chooses where their jobs'
+   * secrets go, whatever its type (a runner may still name a deprecated api or userpass one).
+   *
+   * Args:
+   *   name (string): the credential's name.
+   *
+   * Returns:
+   *   Promise<string[]>: the names of the runners that name it, empty when none.
+   */
+  static async runnersUsing(name) {
+    if (!name) return [];
+    const rows = await mysql.do("SELECT name FROM AnsibleForms.`runners` WHERE credential = ?", [name]);
+    return (rows || []).map((r) => r.name);
+  }
+
   static async findById(id) {
     return super.findById(this.modelName, id);
   }

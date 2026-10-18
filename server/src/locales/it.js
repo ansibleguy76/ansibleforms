@@ -109,6 +109,10 @@ export default {
     runnerNotFound: "Runner non trovato",
     runnerAdminOnly:
       "Solo un admin può aggiungere, modificare o eliminare un runner: un runner riceve le credenziali dei job che esegue",
+    credentialAdminOnly:
+      "Solo un admin può aggiungere, modificare o eliminare questa credenziale: un runner o una connessione ne prende l'indirizzo e il segreto",
+    credentialInUse:
+      "La credenziale '{name}' è in uso da {count} record, elencati nella scheda Usata da: modificali prima",
     defaultPasswordRefused:
       "Scegli una password diversa da quella predefinita pubblica",
     passwordTooShort: "La password deve avere almeno {min} caratteri",

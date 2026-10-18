@@ -113,6 +113,10 @@ export default {
     runnerNotFound: "Nie znaleziono runnera",
     runnerAdminOnly:
       "Tylko admin może dodać, zmienić lub usunąć runner: runner otrzymuje poświadczenia zadań, które uruchamia",
+    credentialAdminOnly:
+      "Tylko admin może dodać, zmienić lub usunąć to poświadczenie: runner lub połączenie bierze z niego swój adres i sekret",
+    credentialInUse:
+      "Poświadczenie '{name}' jest używane przez {count} rekord(y), wymienione na karcie Używane przez: najpierw je zmień",
     defaultPasswordRefused: "Wybierz inne hasło niż publiczne hasło domyślne",
     passwordTooShort: "Hasło musi mieć co najmniej {min} znaków",
     passwordIsUsername: "Hasło nie może być nazwą użytkownika",

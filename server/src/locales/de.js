@@ -115,6 +115,10 @@ export default {
     runnerNotFound: "Runner nicht gefunden",
     runnerAdminOnly:
       "Nur ein Admin kann einen Runner hinzufuegen, aendern oder loeschen: ein Runner erhaelt die Zugangsdaten der Jobs, die er ausfuehrt",
+    credentialAdminOnly:
+      "Nur ein Admin kann diese Zugangsdaten hinzufuegen, aendern oder loeschen: ein Runner oder eine Verbindung nimmt daraus seine Adresse und sein Geheimnis",
+    credentialInUse:
+      "Die Zugangsdaten '{name}' werden von {count} Eintrag/Eintraegen verwendet, aufgelistet im Reiter Verwendet von: aendern Sie diese zuerst",
     defaultPasswordRefused:
       "Wählen Sie ein anderes Passwort als das öffentliche Standardpasswort",
     passwordTooShort: "Das Passwort braucht mindestens {min} Zeichen",

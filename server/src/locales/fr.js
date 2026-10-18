@@ -118,6 +118,10 @@ export default {
     runnerNotFound: "Runner introuvable",
     runnerAdminOnly:
       "Seul un admin peut ajouter, modifier ou supprimer un runner : un runner recoit les identifiants des jobs qu'il execute",
+    credentialAdminOnly:
+      "Seul un admin peut ajouter, modifier ou supprimer cet identifiant : un runner ou une connexion en prend son adresse et son secret",
+    credentialInUse:
+      "L'identifiant '{name}' est utilisé par {count} enregistrement(s), listés dans son onglet Utilisé par : modifiez-les d'abord",
     defaultPasswordRefused:
       "Choisissez un autre mot de passe que le mot de passe par défaut, public",
     passwordTooShort: "Le mot de passe doit compter au moins {min} caractères",

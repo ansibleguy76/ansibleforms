@@ -7,6 +7,7 @@ import { RUNNER_TYPES, getRunner } from "../../runners/index.js";
 import RunnerJoinToken from "../../models/runnerJoinToken.model.js";
 import { socketState, isSocketRunner, dropSocket } from "../../runners/rteHub.js";
 import { publish } from "../../lib/liveEvents.js";
+import { isAdminRequest } from "../../lib/adminGrants.js";
 
 // the token and password are stored encrypted and decrypted on read, so they never leave
 // here unmasked
@@ -75,8 +76,9 @@ const types = async (req, res) => {
  *   Errors.AccessDeniedError: the user is not an admin.
  */
 function assertAdmin(req) {
-  const roles = req?.user?.user?.roles || [];
-  if (!roles.includes("admin")) {
+  // the one admin rule (lib/adminGrants.js) : the credentials a runner signs in with are guarded
+  // by it too (controllers/v2/credential.controller.js)
+  if (!isAdminRequest(req)) {
     throw new Errors.AccessDeniedError(i18n.t(req, "resources.runnerAdminOnly"));
   }
 }

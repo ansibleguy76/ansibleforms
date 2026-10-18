@@ -110,6 +110,10 @@ export default {
     runnerNotFound: "No s'ha trobat el runner",
     runnerAdminOnly:
       "Només un admin pot afegir, canviar o eliminar un runner: un runner rep les credencials dels treballs que executa",
+    credentialAdminOnly:
+      "Només un admin pot afegir, canviar o eliminar aquesta credencial: un runner o una connexió en pren l'adreça i el secret",
+    credentialInUse:
+      "La credencial '{name}' està en ús per {count} registre(s), llistats a la pestanya Usada per: canvieu-los primer",
     defaultPasswordRefused:
       "Trieu una altra contrasenya que no sigui la pública per defecte",
     passwordTooShort: "La contrasenya necessita almenys {min} caràcters",
