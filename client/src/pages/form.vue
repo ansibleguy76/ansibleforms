@@ -15,6 +15,7 @@ import State from '@/lib/State';
 import Navigate from '@/lib/Navigate';
 import TokenStorage from '@/lib/TokenStorage';
 import { formsPath, formFromPath, formPath, slugOf } from '@/lib/formsPath';
+import { renderMarkdown } from '@/lib/markdown';
 import YAML from 'yaml';
 import { useFollowOutput } from '@/composables/useFollowOutput';
 import Time from '@/lib/Time';
@@ -2046,7 +2047,8 @@ onBeforeUnmount(() => {
                   <div v-show="idx === wizardIndex">
                     <!-- Step help -->
                     <div v-if="step.help && step.showHelp" class="alert alert-light" role="alert">
-                      <vue-showdown :markdown="step.help" flavor="github" :options="{ ghCodeBlocks: true }" />
+                      <!-- sanitized : the help is form-provided markdown (lib/markdown.js) -->
+                      <div v-html="renderMarkdown(step.help)"></div>
                     </div>
 
                     <!-- Regular subform step: stepper is injected into the
