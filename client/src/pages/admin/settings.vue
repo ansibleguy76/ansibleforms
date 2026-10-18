@@ -102,6 +102,7 @@ const envGroupOrder = [
       'MASK_EXTRAVARS_REGEX',
       'EXTRAVARS_USER_FIELDS',
       'EXPRESSION_SANITIZER',
+      'JQ_TIMEOUT_SECONDS',
       'LAUNCH_VALIDATION',
     ],
   },

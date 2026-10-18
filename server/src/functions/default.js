@@ -4,13 +4,11 @@ import fsPromises from 'fs/promises';
 import path from 'path';
 import dns from 'dns';
 import https from 'https';
-import { fileURLToPath } from 'url';
 import { spawn } from 'child_process';
 import { inspect } from 'node:util';
 
 // Third-party modules
 import axios from "axios";
-import jq from "node-jq";
 import yaml from "yaml";
 import JSONbig from 'json-bigint';
 import dayjs from "dayjs";
@@ -28,15 +26,12 @@ import Errors from "../lib/errors.js";
 import Helpers from '../lib/common.js';
 import { readSecret, mapPayloadToCredential, parseInlineSecret } from "../secrets/providers/index.js";
 import { playbookEnv } from '../lib/playbookEnv.js';
+import { runJq } from "../lib/jq.js";
+import appConfig from "../../config/app.config.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const jqDef = await fsPromises.readFile(path.join(__dirname, 'jq.definitions'), 'utf8');
-const jqCustomDef = await fsPromises.readFile(new URL('./jq.custom.definitions', import.meta.url), 'utf8');
-
-const combinedJqDef = (jqDef + jqCustomDef).replace(/(\r\n|\n|\r)/gm, "");
-logger.debug("jq definitions loaded: " + combinedJqDef)
+// The jq definitions (jq.definitions + jq.custom.definitions) are prefixed by
+// runJq (lib/jq.js), joined with newlines so a '#' comment in the custom file cannot
+// swallow the filter ; runJq also bounds jq's run time (JQ_TIMEOUT_SECONDS) and output.
 
 const fnGetNumberedName=function(names,pattern,value,fillgap=false){
   var nr=null
@@ -112,7 +107,7 @@ const fnJq=async function(input,jqe){
       return result
     }
     try{
-      result=await jq.run(combinedJqDef+jqe, input, { input:"json",output:"json" })
+      result=await runJq(jqe, input)
     }catch(e){
       logger.error("Error in fnJq: ",e)
       throw(e)
@@ -181,7 +176,7 @@ const fnReadJsonFile = async function(path,jqe=null) {
     let rawdata = fs.readFileSync(path,'utf8');
     result = JSON.parse(rawdata)
     if(jqe){
-      result=await jq.run(combinedJqDef+jqe, result, { input:"json",output:"json" })
+      result=await runJq(jqe, result)
     }
   }catch(e){
     logger.error("Error in fnReadJsonFile: ",e)
@@ -196,7 +191,7 @@ const fnReadYamlFile = async function(path,jqe=null) {
     let rawdata = fs.readFileSync(path,'utf8');
     result = yaml.parse(rawdata)
     if(jqe){
-      result=await jq.run(combinedJqDef+jqe, result, { input:"json",output:"json" })
+      result=await runJq(jqe, result)
     }
   }catch(e){
     logger.error("Error in fnReadYamlFile: ",e)
@@ -228,7 +223,7 @@ const fnCredentials = async function(name,fallbackname="",credJqe=null){
         const payload = await readSecret(inline.store, inline.ref)
         let projected = payload
         if (credJqe) {
-          projected = await jq.run(combinedJqDef + credJqe, payload, { input: "json", output: "json" })
+          projected = await runJq(credJqe, payload)
         }
         result = mapPayloadToCredential(projected)
       } else {
@@ -245,7 +240,7 @@ const fnCredentials = async function(name,fallbackname="",credJqe=null){
         }
         if (result && credJqe) {
           // Allow callers to reshape a stored credential too (rare, but symmetric).
-          result = await jq.run(combinedJqDef + credJqe, result, { input: "json", output: "json" })
+          result = await runJq(credJqe, result)
         }
       }
     }catch(e){
@@ -255,10 +250,24 @@ const fnCredentials = async function(name,fallbackname="",credJqe=null){
   }
   return result
 }
+/**
+ * The REST call time limit, in milliseconds, from REST_TIMEOUT_SECONDS.
+ *
+ * Returns:
+ *   number: The limit ; 60 seconds when the setting is missing or not above 0.
+ */
+const restTimeoutMs = function(){
+  const s = Number(appConfig.restTimeoutSeconds)
+  return (s > 0 ? s : 60) * 1000
+}
 const fnRestBasic = async function(action,url,body,credential=null,jqe=null,sort=null,hasBigInt=false){
   var headers={}
   if(credential){
     const restCreds = await fnCredentials(credential)
+    // a credential that does not exist used to crash with a TypeError on .user
+    if(!restCreds){
+      throw new Error(`[fnRestBasic] Credential '${credential}' not found`)
+    }
     // RFC 7617: username:password must be UTF-8 encoded before base64 encoding
     // This handles special characters like :, @, and UTF-8 characters (é, ñ, 中文, etc.)
     headers.Authorization="Basic " + Buffer.from(restCreds.user + ':' + restCreds.password, 'utf8').toString('base64')
@@ -296,7 +305,10 @@ const fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort=n
   })
   var axiosConfig = {
     headers: {},
-    httpsAgent:httpsAgent
+    httpsAgent:httpsAgent,
+    // REST_TIMEOUT_SECONDS (read on each call) : an endpoint that never answers used
+    // to keep the request, and the form field waiting for it, hanging forever
+    timeout: restTimeoutMs()
   }
   if(hasBigInt){
     logger.debug("Using bigint transform")
@@ -365,7 +377,7 @@ const fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort=n
     if(raw) return {data:data.data,response_headers:data.headers} // return raw data
     result=data.data
     if(jqe){
-      result=await jq.run(combinedJqDef+jqe, result, { input:"json",output:"json" })
+      result=await runJq(jqe, result)
     }
     if(sort)result=fnSort(result,sort)
   }catch(e){
@@ -386,6 +398,10 @@ const fnRestJwtSecure = async function(action,url,body,tokenname,jqe=null,sort=n
   var headers={}
   if(tokenname){
     var token = await fnCredentials(tokenname)
+    // a credential that does not exist used to crash with a TypeError on .password
+    if(!token || token.password == null){
+      throw new Error(`[fnRestJwtSecure] Credential '${tokenname}' not found or has no password`)
+    }
     headers.Authorization=tokenPrefix + " " + token.password
   }
   return await fnRestAdvanced(action,url,body,headers,jqe,sort,hasBigInt)
@@ -471,7 +487,7 @@ const fnSsh = async function(user,host,cmd,jqe=null,timeoutSeconds=SSH_TIMEOUT_S
     })
   })
   if(jqe){
-    result=await jq.run(combinedJqDef+jqe, result, { input:"json",output:"json" })
+    result=await runJq(jqe, result)
   }
   return result
 
