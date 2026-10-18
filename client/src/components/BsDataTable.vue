@@ -755,7 +755,8 @@ function exportCsv() {
     <!-- The pager : the rows shown on the left, the page size and boxes on the right ; under
          the page's card with pagerTo (styles/tables.scss, .af-table-pager), else under the table -->
     <Teleport defer :to="pagerTo || 'body'" :disabled="!pagerTo">
-      <div v-if="!bare" class="af-table-pager" :class="{ 'af-table-pager-inline': !pagerTo }">
+      <!-- bare : hidden, not left out - the pagination hands the table its rows -->
+      <div v-show="!bare" class="af-table-pager" :class="{ 'af-table-pager-inline': !pagerTo }">
         <span class="af-table-count">{{ pageRange }}</span>
         <BsPagination
           :key="filterVersion"

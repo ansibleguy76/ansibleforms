@@ -115,26 +115,28 @@ onMounted(async () => {
       <!-- the runners waiting for approval : a card of its own above the runners', a click on one
            opens its review -->
       <template #aboveCard>
-        <div v-if="pending.length" class="card af-runner-requests">
-          <div class="card-body">
-            <h6 class="af-runner-requests-title">
-              <FaIcon icon="hourglass-half" class="me-2" />{{
-                t('settings.runners.waitingTitle', { count: pending.length })
-              }}
-            </h6>
-            <BsDataTable
-              framed
-              bare
-              :items="pending"
-              :columns="pendingColumns"
-              :selectable="false"
-              :rowClickSelects="false"
-              :pageSize="50"
-              linkColumn="name"
-              @row-click="(r) => (reviewing = r)"
-            />
+        <template v-if="pending.length">
+          <h6 class="af-runner-requests-title">
+            <FaIcon icon="hourglass-half" class="me-2" />{{
+              t('settings.runners.waitingTitle', { count: pending.length })
+            }}
+          </h6>
+          <div class="card af-runner-requests">
+            <div class="card-body">
+              <BsDataTable
+                framed
+                bare
+                :items="pending"
+                :columns="pendingColumns"
+                :selectable="false"
+                :rowClickSelects="false"
+                :pageSize="50"
+                linkColumn="name"
+                @row-click="(r) => (reviewing = r)"
+              />
+            </div>
           </div>
-        </div>
+        </template>
       </template>
     </AppAdminMulti>
     <AppRunnerApproval v-if="reviewing" :runner="reviewing" @close="reviewing = null" @decided="decided" />
