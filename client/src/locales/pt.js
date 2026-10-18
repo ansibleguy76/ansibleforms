@@ -1802,8 +1802,8 @@ export default {
       pendingSince: 'Pedido em',
       approve: 'Aprovar',
       reviewApproval: 'Rever aprovação',
-      waitingNotice:
-        '{count} Runner aguarda aprovação: confirme a impressão digital e aprove ou rejeite | {count} Runners aguardam aprovação: confirme as impressões digitais e aprove ou rejeite',
+      waitingNotice: '{count} Runner aguarda aprovação | {count} Runners aguardam aprovação',
+      waitingHint: 'Clique para o rever | Clique para os rever, um após o outro',
       reject: 'Rejeitar',
       approved: '{name} está aprovado: recebe trabalhos a partir de agora',
       rejected: '{name} foi rejeitado e removido',

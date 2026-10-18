@@ -1807,8 +1807,8 @@ export default {
       pendingSince: 'Sol·licitat el',
       approve: 'Aprova',
       reviewApproval: "Revisar l'aprovació",
-      waitingNotice:
-        "{count} Runner espera aprovació: comproveu-ne l'empremta i aproveu-lo o rebutgeu-lo | {count} Runners esperen aprovació: comproveu-ne les empremtes i aproveu-los o rebutgeu-los",
+      waitingNotice: '{count} Runner espera aprovació | {count} Runners esperen aprovació',
+      waitingHint: "Feu clic per revisar-lo | Feu clic per revisar-los, un darrere l'altre",
       reject: 'Rebutja',
       approved: "{name} està aprovat: rep feines a partir d'ara",
       rejected: "{name} s'ha rebutjat i eliminat",

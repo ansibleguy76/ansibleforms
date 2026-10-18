@@ -5,7 +5,7 @@ import axios from 'axios';
 import getSettings from '@/config/settings';
 import { useI18n } from 'vue-i18n';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const settings = computed(() => getSettings(t));
 import Helpers from '@/lib/Helpers';
 import { useAppStore } from '@/stores/app';
@@ -44,28 +44,62 @@ const info = (r) => {
 };
 /**
  * A runner waiting for approval in a few words : its host, its IP address, its mode, its address
- * (inbound), its fingerprint and when it asked, each as key: value. Its version is in the review
- * dialog : it does not decide an approval (an RTE of another contract cannot ask to join).
+ * (inbound), its fingerprint and when it asked, each as key and value ; its version is in the
+ * review dialog (it does not decide an approval : an RTE of another contract cannot ask to join).
+ * When it asked reads as a while ago, its full date and time on hover.
  *
  * Args:
  *   r (object): the runner.
  *
  * Returns:
- *   string: the words, joined by a dot.
+ *   Array<object>: { key, value, title? }, those it has.
  */
-function describe(r) {
+function details(r) {
   const i = info(r);
   return [
-    [t('settings.runners.pendingHost'), i.host],
-    [t('settings.runners.pendingIp'), i.ip],
-    [t('settings.runners.rteMode'), i.mode && t(`settings.runners.rteMode_${i.mode}`)],
-    [t('settings.fields.uri'), i.url],
-    [t('settings.runners.pendingFingerprint'), i.fingerprint],
-    [t('settings.runners.pendingSince'), r.pending_since && Helpers.formatServerDate(r.pending_since)],
-  ]
-    .filter(([, value]) => value)
-    .map(([key, value]) => `${key}: ${value}`)
-    .join(' · ');
+    { key: t('settings.runners.pendingHost'), value: i.host },
+    { key: t('settings.runners.pendingIp'), value: i.ip },
+    { key: t('settings.runners.rteMode'), value: i.mode && t(`settings.runners.rteMode_${i.mode}`) },
+    { key: t('settings.fields.uri'), value: i.url },
+    { key: t('settings.runners.pendingFingerprint'), value: i.fingerprint },
+    {
+      key: t('settings.runners.pendingSince'),
+      value: r.pending_since && ago(r.pending_since),
+      title: r.pending_since && Helpers.formatServerDate(r.pending_since),
+    },
+  ].filter((d) => d.value);
+}
+
+// now, again every 30 seconds : "a while ago" keeps up while the page is open
+const now = ref(Date.now());
+const clock = setInterval(() => (now.value = Date.now()), 30000);
+onBeforeUnmount(() => clearInterval(clock));
+
+/**
+ * A moment as a while ago, in the language shown (2 minutes ago, yesterday).
+ *
+ * Args:
+ *   value (string): a date as the api gives it (ISO, UTC).
+ *
+ * Returns:
+ *   string: the words.
+ */
+function ago(value) {
+  const seconds = Math.round((new Date(value).getTime() - now.value) / 1000);
+  if (Number.isNaN(seconds)) return '';
+  const rtf = new Intl.RelativeTimeFormat(locale.value, { numeric: 'auto' });
+  const steps = [
+    ['second', 60],
+    ['minute', 60],
+    ['hour', 24],
+    ['day', 30],
+  ];
+  let amount = seconds;
+  for (const [unit, size] of steps) {
+    if (Math.abs(amount) < size) return rtf.format(unit === 'second' ? Math.min(amount, 0) : amount, unit);
+    amount = Math.round(amount / size);
+  }
+  return rtf.format(amount, 'month');
 }
 
 /**
@@ -175,9 +209,17 @@ onMounted(async () => {
             <ul class="af-runner-requests-list">
               <li v-for="r in pending" :key="r.id">
                 <a href="#" class="fw-semibold" @click.prevent.stop="reviewOne(r)">{{ r.name }}</a>
-                <span class="text-body-secondary small ms-2">{{ describe(r) }}</span>
+                <span class="text-body-secondary small ms-2">
+                  <template v-for="(d, n) in details(r)" :key="d.key"
+                    ><template v-if="n"> · </template
+                    ><span :title="d.title || undefined">{{ d.key }}: {{ d.value }}</span></template
+                  >
+                </span>
               </li>
             </ul>
+            <div class="text-body-secondary small mt-1">
+              {{ t('settings.runners.waitingHint', pending.length) }}
+            </div>
           </div>
         </div>
       </template>
@@ -230,6 +272,13 @@ onMounted(async () => {
 }
 [data-bs-theme='dark'] .af-runner-requests-title {
   color: #ff8a3d;
+}
+/* the names as the tables' links : blue, not underlined */
+.af-runner-requests-list a {
+  text-decoration: none;
+}
+.af-runner-requests-list a:hover {
+  text-decoration: underline;
 }
 .af-runner-requests-list {
   margin: 0.375rem 0 0;

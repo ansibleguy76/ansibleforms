@@ -1368,8 +1368,8 @@ export default {
       pendingSince: 'Angefragt am',
       approve: 'Freigeben',
       reviewApproval: 'Genehmigung prüfen',
-      waitingNotice:
-        '{count} Runner wartet auf Freigabe: Fingerabdruck prüfen und freigeben oder ablehnen | {count} Runner warten auf Freigabe: Fingerabdrücke prüfen und freigeben oder ablehnen',
+      waitingNotice: '{count} Runner wartet auf Freigabe | {count} Runner warten auf Freigabe',
+      waitingHint: 'Zum Prüfen klicken | Zum Prüfen klicken, einen nach dem anderen',
       reject: 'Ablehnen',
       approved: '{name} ist freigegeben: sie erhält ab jetzt Jobs',
       rejected: '{name} wurde abgelehnt und entfernt',
