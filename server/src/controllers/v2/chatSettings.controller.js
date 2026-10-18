@@ -8,6 +8,7 @@ import { checkProvider } from '../../chat/providers/index.js';
 import CredentialModel from '../../models/credential.model.v2.js';
 import Errors from '../../lib/errors.js';
 import { isAdminRequest } from '../../lib/adminGrants.js';
+import { stripTrailingSlashes } from '../../lib/url.js';
 
 // the mask the key is shown as (lib/secretMask.js)
 const MASK = SECRET_MASK;
@@ -25,7 +26,7 @@ const MASK = SECRET_MASK;
  *   boolean: true when the key would go to the saved target.
  */
 function sameTarget(saved, wanted) {
-  const text = (v) => (v === null || v === undefined ? '' : String(v).trim()).replace(/\/+$/, '');
+  const text = (v) => stripTrailingSlashes(v === null || v === undefined ? '' : String(v).trim());
   const flag = (v) => v === true || Number(v) === 1;
   return text(saved?.provider) === text(wanted?.provider)
     && text(saved?.base_url) === text(wanted?.base_url)
