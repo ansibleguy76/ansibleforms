@@ -783,7 +783,7 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
   // Loop through each forms directory (with its repository name)
   for(const formsdir of formsdirs){
     const formsdirpath = formsdir.path
-    var files = [];
+    var files;
     try {
       // walk directory recursively and collect relative paths for .yml/.yaml files ;
       // walkYamlFiles skips an unreadable subfolder on its own (with a warning) and

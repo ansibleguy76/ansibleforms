@@ -96,7 +96,7 @@ async function mountType(store, mount) {
   const key = `${store.url}|${store.namespace || ""}|${mount}`;
   const hit = mountTypeCache.get(key);
   if (hit && Date.now() - hit.at < MOUNT_TYPE_TTL_MS) return hit.type;
-  let type = null;
+  let type;
   try {
     const res = await axios.get(`${baseUrl(store)}/v1/sys/internal/ui/mounts/${encodeURIComponent(mount)}`, { headers: headers(store), ...agentsFor(store), timeout: 5000 });
     type = String(res?.data?.data?.type || "").toLowerCase() || null;
