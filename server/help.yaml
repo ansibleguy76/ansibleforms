@@ -470,6 +470,8 @@
       them in a private folder of its own, removed when it ends. It needs no shared disk and
       no access to the repositories. `local`: the RTE runs from its own folders, as a
       database-mode RTE - mount the playbooks (`ANSIBLE_PATH`) and repositories (`REPO_PATH`).
+      It can be set on the runner page instead (Connections > Runners > the runner > RTE) ; set
+      here, it wins there.
   - name: RTE_FILES_MAX_MB
     version: 7.3.0
     type: number
@@ -495,11 +497,23 @@
     type: string
     default: "%PERSISTENT_FOLDER%/rte-files"
     short: Where a socket-mode RTE keeps the job files the app sent
-    hint: "On an RTE with RTE_FILES=transfer: the packed folders it got, the 20 used last."
+    hint: "On an RTE with RTE_FILES=transfer: the packed folders it got, up to RTE_CACHE_MB."
     description: |
       On an RTE with `RTE_FILES=transfer`: the playbooks and inventory folders the app sent,
-      packed, each under its hash ; the 20 used most recently are kept. Each running job
-      unpacks them under `jobs/` in a private folder, removed when the job ends.
+      packed, each under its hash ; those used most recently are kept, up to `RTE_CACHE_MB`. Each
+      running job unpacks them under `jobs/` in a private folder, removed when the job ends.
+  - name: RTE_CACHE_MB
+    version: 7.3.0
+    type: number
+    allowed: 0 or a positive integer
+    default: 1024
+    short: The size of a socket-mode RTE's job files cache
+    hint: "On an RTE with RTE_FILES=transfer, in MB; 0 keeps none. Also on its runner page."
+    description: |
+      On an RTE with `RTE_FILES=transfer`: how much the job files it keeps (`RTE_CACHE_PATH`)
+      may take, in MB. The ones used longest ago go first ; 0 keeps none, so the app sends a
+      job's files with every job. It can be set on the runner page instead (Connections >
+      Runners > the runner > RTE) ; set here, it wins there.
   - name: RTE_TOKEN
     version: 7.0.0
     type: string
@@ -542,7 +556,8 @@
       Read by an RTE (`AF_ROLE=rte`). A full RTE does not take another job: the job waits, says
       so in its output, and is handed over as soon as a playbook ends (see RTE_QUEUE_MINUTES).
       Size it to the RTE's cpu and memory: every playbook is an ansible-playbook process with its
-      forks. Run more RTE replicas to run more at once.
+      forks. Run more RTE replicas to run more at once. On a socket-mode RTE it can be set on its
+      runner page instead (Connections > Runners > the runner > RTE) ; set here, it wins there.
   - name: RTE_DRAIN_SECONDS
     version: 7.0.0
     type: number
@@ -554,7 +569,8 @@
       Read by an RTE. On a stop (SIGTERM: a rolling update, a scale down) it takes no new job and
       waits this long for the running playbooks to end ; those still running then end as
       abandoned. Keep it below what the platform waits before it kills the container:
-      Kubernetes' terminationGracePeriodSeconds (30 by default), docker stop's --time (10).
+      Kubernetes' terminationGracePeriodSeconds (30 by default), docker stop's --time (10). On a
+      socket-mode RTE it can be set on its runner page instead ; set here, it wins there.
   - name: RTE_QUEUE_MINUTES
     version: 7.0.0
     type: number

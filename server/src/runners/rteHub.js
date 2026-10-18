@@ -31,6 +31,7 @@ import { forgetJobSecrets } from "../lib/outputMask.js";
 import { publish } from "../lib/liveEvents.js";
 import { bundleOf, bundleByHash, readChunks } from "../lib/jobFiles.js";
 import { Session } from "../rte/socket/session.js";
+import { RTE_SETTINGS, settingsOfRunner } from "../rte/socket/settings.js";
 import dbJobIO from "../rte/jobio-db.js";
 import { abandonJobs } from "../rte/abandon.js";
 import { isIP } from "net";
@@ -127,6 +128,50 @@ async function tryLease(name) {
 }
 
 /**
+ * Sends an RTE the settings of its runner page (the RTE tab) : empty ones are its defaults, and
+ * a variable set on the RTE wins over them there.
+ *
+ * Args:
+ *   entry (object): the session's entry.
+ */
+function sendSettings(entry) {
+  const settings = settingsOfRunner(entry.runner);
+  entry.sentSettings = JSON.stringify(settings);
+  entry.session.send({ t: "settings", settings });
+}
+
+/**
+ * Where an RTE gets a job's files : what it says, when a variable on it sets it (RTE_FILES),
+ * else its runner's setting, else transfer.
+ *
+ * Args:
+ *   entry (object): the session's entry.
+ *
+ * Returns:
+ *   string: transfer or local.
+ */
+function filesMode(entry) {
+  const said = entry.health || entry.hello || {};
+  if (Array.isArray(said.env) && said.env.includes("files")) return said.settings?.files ?? said.files ?? "transfer";
+  return settingsOfRunner(entry.runner).files || "transfer";
+}
+
+/**
+ * Sends the RTE of a runner its settings now, when this node holds its socket : the runner page
+ * saved them (the other nodes send them at their next lease renewal).
+ *
+ * Args:
+ *   runner (object): the runner, as stored now.
+ */
+export function pushSettings(runner) {
+  const entry = sessions.get(runner?.name);
+  if (!entry || !entry.session.open || !entry.hello) return;
+  // its settings' columns only : the rest of what the session holds stays as renewTick read it
+  for (const s of RTE_SETTINGS) entry.runner[s.column] = runner[s.column] ?? null;
+  sendSettings(entry);
+}
+
+/**
  * Renews a lease this node holds, with what the RTE last said.
  *
  * Args:
@@ -138,8 +183,9 @@ async function tryLease(name) {
 async function renewLease(entry) {
   const info = JSON.stringify({
     version: entry.hello?.version, contract: entry.hello?.contract, ansible: entry.hello?.ansible,
-    mode: entry.hello?.mode, files: entry.hello?.files, capacity: entry.health?.capacity || entry.hello?.capacity,
+    mode: entry.hello?.mode, files: filesMode(entry), capacity: entry.health?.capacity || entry.hello?.capacity,
     running: entry.health?.running || entry.hello?.running || [], node: nodeId,
+    settings: (entry.health || entry.hello)?.settings, env: (entry.health || entry.hello)?.env, cacheUsedMb: (entry.health || entry.hello)?.cacheUsedMb,
   });
   const res = await mysql.do(
     "UPDATE AnsibleForms.`runner_leases` SET expires_at=DATE_ADD(NOW(), INTERVAL ? SECOND), rte_id=?, info=? WHERE runner=? AND node_id=?",
@@ -350,6 +396,8 @@ function adopt(session, runner, direction) {
     // step 3 : welcomed ; a runner waiting for approval : connected, but it gets no job until an
     // admin approves it
     session.send({ t: "welcome", node: nodeId, contract: SOCKET_CONTRACT, version: appVersion, pending: isPending(entry) });
+    // its settings from its runner page, before any job
+    sendSettings(entry);
     logger.notice(`RTE '${name}' (${entry.rteId}, ${msg.version}, ${direction}) connected`);
     await renewLease(entry).catch(() => {});
     if (!current()) return;
@@ -370,7 +418,13 @@ function adopt(session, runner, direction) {
     dispatch().catch(() => {});
   });
   session.on("m:health", (msg) => {
+    const first = !entry.health;
+    const before = JSON.stringify(entry.health?.settings ?? null);
     entry.health = msg;
+    // the runner page shows the settings it applied without waiting for the next lease renewal
+    if (first || JSON.stringify(msg.settings ?? null) !== before) {
+      renewLease(entry).then(() => publish("runners")).catch(() => {});
+    }
   });
   // the answers of this socket's own claims only
   session.on("m:claimed", (msg) => settleClaim(msg.jobId, { claimed: true }, entry));
@@ -421,6 +475,8 @@ async function renewTick(entry) {
     return;
   }
   entry.runner = { ...entry.runner, ...row };
+  // its settings changed on its runner page (on any node) : sent to it
+  if (JSON.stringify(settingsOfRunner(entry.runner)) !== entry.sentSettings) sendSettings(entry);
   // step 2 : the lease
   try {
     if (!(await renewLease(entry))) {
@@ -1105,7 +1161,7 @@ async function runMessage(jobId, entry) {
     paths: { playbookRepo, inventoryRepos },
   };
   // an RTE without files of its own : the folders, packed, by their hashes
-  if (entry.hello?.files === "transfer") {
+  if (filesMode(entry) === "transfer") {
     msg.files = await jobFileHashes(inventoryRepos);
     // the only files this RTE may fetch : the ones of the jobs sent to it
     if (msg.files.playbooks?.hash) entry.hashes.add(msg.files.playbooks.hash);
@@ -1683,6 +1739,6 @@ export function dropSocket(name, reason) {
   if (entry) entry.session.close(CLOSE.UNAUTHORIZED, reason);
 }
 
-export { sessions, waiting, cancelSent, claims, sending, masked, pruneEnded, ALLOWED_MAX, warnPlain, dialing, dispatch, dialInbound, storeItem, sendJob, onItem, onFetch, adopt, renewTick, abandonLost, NODE_DEAD_SECONDS };
+export { filesMode, sendSettings, sessions, waiting, cancelSent, claims, sending, masked, pruneEnded, ALLOWED_MAX, warnPlain, dialing, dispatch, dialInbound, storeItem, sendJob, onItem, onFetch, adopt, renewTick, abandonLost, NODE_DEAD_SECONDS };
 
-export default { startRteHub, handleUpgrade, authenticate, registerHandler, kick, cancel, socketState, isSocketRunner, holdsSocket };
+export default { startRteHub, handleUpgrade, authenticate, registerHandler, kick, cancel, socketState, isSocketRunner, holdsSocket, pushSettings };

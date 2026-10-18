@@ -38,6 +38,7 @@ import { runAnsibleJob, useJobIO } from "../ansible-core.js";
 import { Session } from "./session.js";
 import { JobSpool } from "./spool.js";
 import { FileCache } from "./files.js";
+import { RTE_SETTINGS, parseSetting, settingsOfEnv, effectiveSettings } from "./settings.js";
 import {
   SOCKET_CONTRACT, RTE_SOCKET_PATH, CLOSE, WINDOW, MAX_PAYLOAD, REFUSED_CLOSES, REFUSED_STATUSES, REFUSED_REDIAL_MS,
   CONTRACT_REDIAL_MS,
@@ -46,15 +47,19 @@ import {
 
 // ─── settings ─────────────────────────────────────────────────────────────────
 
-const maxJobs = () => Math.max(0, parseInt(process.env.RTE_MAX_JOBS ?? 10, 10) || 0);
-const drainSeconds = () => Math.max(0, parseInt(process.env.RTE_DRAIN_SECONDS ?? 25, 10) || 0);
+// what the app sent from the runner's page (a settings message) ; a variable set on this RTE wins
+let fromRunner = {};
+// the settings in effect : { maxJobs, cacheMb, files, drainSeconds } (rte/socket/settings.js)
+const settings = () => effectiveSettings(settingsOfEnv(), fromRunner);
+const maxJobs = () => settings().maxJobs;
+const drainSeconds = () => settings().drainSeconds;
 // the persistent folder (server/persistent, /app/dist/persistent in the image)
 const PERSISTENT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../persistent");
 // where the items wait for the app's ack, and where the job files the app sent are kept
 const spoolDir = () => process.env.RTE_SPOOL_PATH || path.join(PERSISTENT, "rte-spool");
 const cacheDir = () => process.env.RTE_CACHE_PATH || path.join(PERSISTENT, "rte-files");
 // transfer : the app sends the job's files ; local : the RTE runs from its own folders (mounts)
-const filesMode = () => (String(process.env.RTE_FILES || "transfer").toLowerCase() === "local" ? "local" : "transfer");
+const filesMode = () => settings().files;
 // the name the RTE joins as (its runner under Connections > Runners) : RTE_NAME, else its node id
 const rteName = () => String(process.env.RTE_NAME || "").trim() || nodeId;
 // the certificate shipped in the image (config/https.config.js copies it when none is mounted) :
@@ -150,6 +155,52 @@ function capacity() {
     freeMemoryMb: Math.round(os.freemem() / 1048576),
     load: Math.round(os.loadavg()[0] * 100) / 100,
   };
+}
+
+/**
+ * This RTE's settings, in its hello and health : the runner page shows them, those set by a
+ * variable here read-only.
+ *
+ * Returns:
+ *   object: { settings : those in effect, env : the keys a variable sets, cacheUsedMb }.
+ */
+function settingsReport() {
+  return {
+    settings: settings(),
+    env: Object.keys(settingsOfEnv()),
+    cacheUsedMb: cache ? Math.round((cache.usedBytes() / 1048576) * 10) / 10 : 0,
+  };
+}
+
+/**
+ * Takes the settings the app sends from the runner's page (settings) : the valid ones kept, the
+ * cache size and the stop's wait applied at once, and the health sent so the page shows them.
+ *
+ * Args:
+ *   msg (object): { settings : { maxJobs, cacheMb, files, drainSeconds }, an empty one the default }.
+ */
+function onSettings(msg) {
+  const before = settings();
+  const next = {};
+  for (const s of RTE_SETTINGS) {
+    const v = parseSetting(s, msg?.settings?.[s.key]);
+    if (v !== undefined) next[s.key] = v;
+  }
+  fromRunner = next;
+  const now = settings();
+  cache?.setMaxBytes(now.cacheMb * 1048576);
+  stopWithin((now.drainSeconds + 8) * 1000);
+  const changed = RTE_SETTINGS.filter((s) => before[s.key] !== now[s.key]).map((s) => `${s.key} ${now[s.key]}`);
+  if (changed.length) logger.notice(`RTE '${rteName()}': settings from its runner: ${changed.join(", ")}`);
+  for (const key of Object.keys(settingsOfEnv())) {
+    if (next[key] !== undefined && next[key] !== now[key]) logger.notice(`RTE '${rteName()}': ${key} is set on this RTE (${now[key]}), the runner's ${next[key]} is not used`);
+  }
+  sendHealth();
+}
+
+/** the health to the app : what it runs, its free slots and its settings */
+function sendHealth() {
+  if (welcomed) session?.send({ t: "health", capacity: capacity(), running: [...jobs.entries()].filter(([, e]) => e.running).map(([id]) => id), stopping: isStopping(), ...settingsReport() });
 }
 
 /**
@@ -487,6 +538,7 @@ function attach(sess) {
   sess.on("m:cancel", onCancel);
   sess.on("m:ack", onAck);
   sess.on("m:file", (msg) => cache.deliver(msg));
+  sess.on("m:settings", onSettings);
   sess.on("close", (code, reason) => {
     if (session === sess) {
       session = null;
@@ -508,6 +560,7 @@ function attach(sess) {
     capacity: capacity(),
     running: [...jobs.entries()].filter(([, e]) => e.running).map(([id]) => id),
     spooled: [...jobs.keys()],
+    ...settingsReport(),
   });
 }
 
@@ -722,7 +775,7 @@ export async function startSocketRte(rteMode) {
   installFatalHandlers("RTE");
   useJobIO(socketJobIO);
   fs.mkdirSync(spoolDir(), { recursive: true, mode: 0o700 });
-  cache = new FileCache(cacheDir(), 20, nodeId);
+  cache = new FileCache(cacheDir(), settings().cacheMb * 1048576, nodeId);
   ansible = await ansibleVersion();
 
   // the items an earlier start left : sent once connected ; a job that had not ended cannot go on
@@ -801,9 +854,9 @@ export async function startSocketRte(rteMode) {
 
   // its health to the app every 20 s : what it runs and its free slots
   setInterval(() => {
-    if (welcomed) session?.send({ t: "health", capacity: capacity(), running: [...jobs.entries()].filter(([, e]) => e.running).map(([id]) => id), stopping: isStopping() });
+    sendHealth();
   }, 20000).unref();
 }
 
 // for the tests
-export { socketJobIO, jobs, capacity, onRun, onAck, onCancel, attach, maskDeep, earlyCancels, rememberCancel, takeEarlyCancel };
+export { socketJobIO, jobs, capacity, onRun, onAck, onCancel, onSettings, settings, attach, maskDeep, earlyCancels, rememberCancel, takeEarlyCancel };

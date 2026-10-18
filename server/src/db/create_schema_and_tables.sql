@@ -236,6 +236,13 @@ CREATE TABLE `runners` (
   -- the SHA-256 of the ca_bundle its RTE's certificate was stored as (a runner without a
   -- credential) : cleared when an admin changes the bundle
   `rte_cert_sha256` varchar(64) DEFAULT NULL,
+  -- a socket-mode RTE's settings, sent to it over its socket (rte/socket/settings.js) : the
+  -- playbooks it runs at once, its job files cache in MB, transfer or local files, and how long
+  -- a stop waits ; empty : the default, and a variable set on the RTE wins
+  `rte_max_jobs` int(11) DEFAULT NULL,
+  `rte_cache_mb` int(11) DEFAULT NULL,
+  `rte_files` varchar(10) DEFAULT NULL,
+  `rte_drain_seconds` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_AnsibleForms_runners_natural_key` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

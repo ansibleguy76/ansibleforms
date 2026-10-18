@@ -1474,6 +1474,27 @@ export default {
       rteMode_database: 'Base de données (obsolète)',
       rteMode_databaseHint: "Le RTE utilise lui-même la base de l'application : supprimé en 8.0.0",
       socket: 'Connexion',
+      tabRte: 'RTE',
+      rteSettingsSocketOnly:
+        "Ces paramètres s'appliquent à un RTE en mode sortant ou entrant. Un RTE en mode base de données les lit dans ses propres variables.",
+      maxJobs: 'Jobs simultanés max.',
+      maxJobsHelp:
+        'Combien de playbooks ce RTE exécute à la fois ; 0 signifie sans limite. Vide : la valeur par défaut, {default}.',
+      cacheMb: 'Cache des fichiers',
+      cacheMbHelp:
+        "Quelle part des fichiers de job envoyés par l'app ce RTE conserve, en Mo ; 0 n'en garde aucun. Vide : la valeur par défaut, {default} Mo.",
+      filesMode: 'Fichiers de job',
+      filesModeHelp:
+        "Transfert : l'app envoie les fichiers avec le job. Local : le RTE s'exécute depuis ses propres dossiers montés.",
+      files_default: 'Par défaut (transfert)',
+      files_transfer: 'Transfert',
+      files_local: 'Local',
+      drainSeconds: "Délai d'arrêt",
+      drainSecondsHelp:
+        "Combien de temps un RTE qui s'arrête attend ses playbooks en cours, en secondes ; gardez-le sous le délai d'arrêt de la plateforme. Vide : la valeur par défaut, {default}.",
+      settingDefault: 'par défaut : {value}',
+      setOnRte: 'Défini sur le RTE avec {env} : {value}',
+      cacheUsed: '{mb} Mo utilisés',
       socketConnected: 'Connecté',
       socketDisconnected: 'Non connecté',
       socketDisconnectedHint:

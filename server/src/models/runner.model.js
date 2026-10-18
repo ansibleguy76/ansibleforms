@@ -8,6 +8,7 @@ import mysql from './db.model.js';
 import { RUNNER_TYPES, getRunner } from '../runners/index.js';
 import { stripTrailingSlashes } from '../lib/url.js';
 import Credential from './credential.model.v2.js';
+import { normalizeRunnerSettings } from '../rte/socket/settings.js';
 
 // the flavours of an awx runner (none is AWX) : which product it is (its uri carries its API path)
 export const RUNNER_FLAVOURS = ['aap', 'ascender'];
@@ -71,6 +72,10 @@ class Runner extends CrudModel {
     if (data.enabled !== undefined && data.enabled !== null) {
       data.enabled = data.enabled === true || data.enabled === 1 || data.enabled === '1' || data.enabled === 'true' ? 1 : 0;
     }
+    // a socket-mode RTE's settings (the runner page's RTE tab) : a whole number in range, transfer
+    // or local, or empty for the default
+    const badSetting = normalizeRunnerSettings(data);
+    if (badSetting) throw new Errors.BadRequestError(badSetting);
     // the flavour of an awx runner : 'aap', 'ascender', or none (AWX) - which product it is
     if (data.flavour !== undefined) {
       if (data.flavour === '' || data.flavour === null) data.flavour = null;

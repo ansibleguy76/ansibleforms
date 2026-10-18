@@ -8,6 +8,10 @@
 /*                    whether it is the default of its kind       */
 /*    Type            RTE, AWX, AAP, Ascender, Semaphore, Rundeck,*/
 /*                    Jenkins                                     */
+/*    RTE             an RTE's mode and connection ; in a socket  */
+/*                    mode its settings, sent to it : jobs at     */
+/*                    once, its files cache, transfer or local    */
+/*                    files, the wait of a stop                   */
 /*    Credentials     its credential : a token, or a user and     */
 /*                    password (AWX), a user and its token        */
 /*                    (Jenkins), and the server it connects to ;  */
@@ -52,9 +56,36 @@ const runner = ref(null); // as saved
 const edit = ref(null); // as edited
 // what this page edits : the token and the password have their own dialog
 // (where it connects is its credential's)
-const EDITED = ['name', 'description', 'kind', 'project', 'credential', 'rte_mode'];
+const EDITED = [
+  'name',
+  'description',
+  'kind',
+  'project',
+  'credential',
+  'rte_mode',
+  'rte_max_jobs',
+  'rte_cache_mb',
+  'rte_files',
+  'rte_drain_seconds',
+];
 // how an RTE talks to the app (RTE_MODE) : the socket modes first, database deprecated last
 const RTE_MODES = ['outbound', 'inbound', 'database'];
+// a socket-mode RTE's settings (server rte/socket/settings.js) : its key in what the RTE says,
+// its column, the variable that sets it on the RTE (then read only here), its default ; the
+// numbers with their unit after the field
+const RTE_NUMBERS = [
+  { key: 'maxJobs', column: 'rte_max_jobs', env: 'RTE_MAX_JOBS', def: 10, icon: 'layer-group', unit: '' },
+  { key: 'cacheMb', column: 'rte_cache_mb', env: 'RTE_CACHE_MB', def: 1024, icon: 'box-archive', unit: 'MB' },
+  {
+    key: 'drainSeconds',
+    column: 'rte_drain_seconds',
+    env: 'RTE_DRAIN_SECONDS',
+    def: 25,
+    icon: 'hourglass-half',
+    unit: 's',
+  },
+];
+const RTE_FILES = { key: 'files', column: 'rte_files', env: 'RTE_FILES', def: 'transfer' };
 
 /**
  * The fields of a runner as this page edits them : its kind from its type and flavour.
@@ -74,6 +105,11 @@ function editable(record) {
     credential: record.credential ?? '',
     // an RTE from before 7.3 : database
     rte_mode: record.rte_mode || 'database',
+    // its settings : empty is the default
+    rte_max_jobs: record.rte_max_jobs ?? '',
+    rte_cache_mb: record.rte_cache_mb ?? '',
+    rte_files: record.rte_files ?? '',
+    rte_drain_seconds: record.rte_drain_seconds ?? '',
   };
 }
 
@@ -182,6 +218,8 @@ async function update(data) {
 const tabs = computed(() => [
   { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
   { key: 'type', label: t('settings.runners.stepType'), icon: 'shapes' },
+  // an RTE : its mode, its connection and its settings
+  ...(runner.value?.type === 'rte' ? [{ key: 'rte', label: t('settings.runners.tabRte'), icon: 'gauge' }] : []),
   { key: 'credentials', label: t('settings.runners.stepAuth'), icon: 'key' },
   { key: 'forms', label: t('settings.linked.forms'), icon: 'rectangle-list', count: runnerForms.value.length },
   { key: 'jobs', label: t('settings.linked.jobs'), icon: 'history', count: runnerJobs.value.length },
@@ -270,8 +308,6 @@ const tabFields = computed(() => {
   const e = edit.value || {};
   return {
     details: [
-      runner.value?.type === 'rte' && ['rte_mode_text', t('settings.runners.rteMode')],
-      runner.value?.socket && ['socket', t('settings.runners.socket')],
       ['name', t('settings.fields.name'), t('settings.runners.nameHelp')],
       ['description', t('settings.fields.description')],
       ['is_default', t('settings.runners.isDefault'), t('settings.runners.defaultHelp', { forms: defaultFor.value })],
@@ -301,6 +337,23 @@ const tabFields = computed(() => {
         ],
       hasProject.value && ['project', t('settings.runners.project'), t(`settings.runners.projectHelp_${e.kind}`)],
     ].filter(Boolean),
+    rte:
+      runner.value?.type === 'rte'
+        ? [
+            ['rte_mode_text', t('settings.runners.rteMode')],
+            runner.value?.socket && ['socket', t('settings.runners.socket')],
+            ...(socketRte.value
+              ? [
+                  ...RTE_NUMBERS.map((f) => [
+                    f.column,
+                    t(`settings.runners.${f.key}`),
+                    t(`settings.runners.${f.key}Help`, { default: f.def }),
+                  ]),
+                  ['rte_files', t('settings.runners.filesMode'), t('settings.runners.filesModeHelp')],
+                ]
+              : [['rte_socket_only', t('settings.runners.rteSettingsSocketOnly')]]),
+          ].filter(Boolean)
+        : [],
   };
 });
 // the fields shown : those whose label or help has the text
@@ -335,6 +388,11 @@ async function save() {
     // an RTE's mode ; none for the other kinds
     rte_mode: e.kind === 'rte' ? e.rte_mode || 'outbound' : null,
   };
+  // an RTE's settings : a whole number, transfer or local, or empty for the default
+  if (e.kind === 'rte') {
+    for (const f of RTE_NUMBERS) data[f.column] = String(e[f.column] ?? '').trim() === '' ? null : Number(e[f.column]);
+    data.rte_files = e.rte_files || null;
+  }
   if (await update(data)) {
     toast.success(t('settings.common.nameUpdated', { name: data.name }));
     await load();
@@ -354,6 +412,27 @@ async function makeDefault() {
 
 // an RTE's mode as plain words : Outbound, Inbound, or Database (deprecated) for one from before 7.3
 const rteModeText = computed(() => t(`settings.runners.rteMode_${runner.value?.rte_mode || 'database'}`));
+// an RTE in a socket mode, as saved : its settings go to it over its socket
+const socketRte = computed(
+  () => runner.value?.type === 'rte' && ['outbound', 'inbound'].includes(runner.value?.rte_mode),
+);
+// a setting a variable on the RTE sets : read only here, with the value the RTE uses
+const setOnRte = (f) => !!runner.value?.socket?.env?.includes(f.key);
+const rteValue = (f) => runner.value?.socket?.settings?.[f.key];
+// what the RTE says now beside a setting : the cache it uses
+function rteNow(f) {
+  const sock = runner.value?.socket;
+  if (!sock?.connected) return '';
+  if (f.key === 'cacheMb' && sock.cacheUsedMb !== undefined)
+    return t('settings.runners.cacheUsed', { mb: sock.cacheUsedMb });
+  return '';
+}
+// Job files : the default, transfer or local
+const filesOptions = computed(() => [
+  { value: '', label: t('settings.runners.files_default') },
+  { value: 'transfer', label: t('settings.runners.files_transfer') },
+  { value: 'local', label: t('settings.runners.files_local') },
+]);
 
 // an RTE that asked to join : what it said of itself, for the admin to recognise it
 const pending = computed(() => !!Number(runner.value?.pending));
@@ -533,7 +612,7 @@ onMounted(async () => {
         </div>
         <!-- the record loading : its fields as grey placeholders, where they come -->
         <AppSkeleton v-else-if="!loaded && !runner" shape="form" :count="3" />
-        <div v-if="runner && edit && ['details', 'type', 'credentials'].some(tabShown)" class="af-runner-tab">
+        <div v-if="runner && edit && ['details', 'type', 'credentials', 'rte'].some(tabShown)" class="af-runner-tab">
           <!-- an RTE that asked to join : who it says it is, and Approve or Reject -->
           <div v-if="pending" class="alert alert-warning af-runner-pending">
             <div class="fw-bold mb-1">
@@ -571,16 +650,6 @@ onMounted(async () => {
                   <FaIcon :icon="searchHead('details').tab.icon" class="me-1" />{{ searchHead('details').tab.label }}
                 </h6>
               </template>
-              <!-- an RTE : how it talks to the app, in words (it is chosen on the Type tab) -->
-              <div v-if="runner.type === 'rte'" v-show="fieldShown('rte_mode_text')" class="mb-3">
-                <div class="form-label fw-bold">{{ t('settings.runners.rteMode') }}</div>
-                <div>{{ rteModeText }}</div>
-              </div>
-              <!-- a socket-mode RTE : its socket, connected or not, as a badge -->
-              <div v-if="runner.socket" v-show="fieldShown('socket')" class="mb-3">
-                <div class="form-label fw-bold">{{ t('settings.runners.socket') }}</div>
-                <span v-html="socketPill(t, runner)"></span>
-              </div>
               <BsInput
                 class="af-runner-field"
                 v-model="edit.name"
@@ -735,6 +804,81 @@ onMounted(async () => {
                 :label="t('settings.runners.project')"
               />
             </template>
+            <!-- RTE : how it talks to the app and its connection ; in a socket mode its settings,
+                 sent to it over its socket, those a variable on it sets read only -->
+            <template v-if="runner.type === 'rte' && tabShown('rte')">
+              <template v-if="searching && searchHead('rte')">
+                <hr v-if="!searchHead('rte').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('rte').first }"
+                >
+                  <FaIcon :icon="searchHead('rte').tab.icon" class="me-1" />{{ searchHead('rte').tab.label }}
+                </h6>
+              </template>
+              <!-- how it talks to the app, in words (it is chosen on the Type tab) -->
+              <div v-show="fieldShown('rte_mode_text')" class="mb-3">
+                <div class="form-label fw-bold">{{ t('settings.runners.rteMode') }}</div>
+                <div>{{ rteModeText }}</div>
+              </div>
+              <!-- a socket-mode RTE : its socket, connected or not, as a badge -->
+              <div v-if="runner.socket" v-show="fieldShown('socket')" class="mb-3">
+                <div class="form-label fw-bold">{{ t('settings.runners.socket') }}</div>
+                <span v-html="socketPill(t, runner)"></span>
+              </div>
+              <template v-if="socketRte">
+                <div v-for="f in RTE_NUMBERS" :key="f.column" v-show="fieldShown(f.column)">
+                  <BsInput
+                    class="af-runner-number"
+                    :class="{ 'mb-0': setOnRte(f) || rteNow(f) }"
+                    v-model="edit[f.column]"
+                    type="number"
+                    :icon="f.icon"
+                    :isFloating="false"
+                    :suffix="f.unit"
+                    :disabled="setOnRte(f)"
+                    :placeholder="t('settings.runners.settingDefault', { value: f.def })"
+                    :help="t(`settings.runners.${f.key}Help`, { default: f.def })"
+                    :label="t(`settings.runners.${f.key}`)"
+                  />
+                  <p v-if="setOnRte(f) || rteNow(f)" class="form-text mt-1 mb-3">
+                    <template v-if="setOnRte(f)">
+                      <FaIcon icon="lock" class="me-1" />{{
+                        t('settings.runners.setOnRte', { env: f.env, value: rteValue(f) })
+                      }}
+                    </template>
+                    <template v-if="setOnRte(f) && rteNow(f)"> · </template>
+                    <template v-if="rteNow(f)">{{ rteNow(f) }}</template>
+                  </p>
+                </div>
+                <div v-show="fieldShown('rte_files')">
+                  <BsInput
+                    class="af-runner-number"
+                    :class="{ 'mb-0': setOnRte(RTE_FILES) }"
+                    v-model="edit.rte_files"
+                    type="select"
+                    icon="folder-tree"
+                    :isFloating="false"
+                    :values="filesOptions"
+                    :disabled="setOnRte(RTE_FILES)"
+                    :help="t('settings.runners.filesModeHelp')"
+                    :label="t('settings.runners.filesMode')"
+                  />
+                  <p v-if="setOnRte(RTE_FILES)" class="form-text mt-1 mb-3">
+                    <FaIcon icon="lock" class="me-1" />{{
+                      t('settings.runners.setOnRte', {
+                        env: RTE_FILES.env,
+                        value: t(`settings.runners.files_${rteValue(RTE_FILES) || 'transfer'}`),
+                      })
+                    }}
+                  </p>
+                </div>
+              </template>
+              <!-- database mode : the settings are its own variables -->
+              <p v-else v-show="fieldShown('rte_socket_only')" class="form-text mb-0">
+                {{ t('settings.runners.rteSettingsSocketOnly') }}
+              </p>
+            </template>
           </fieldset>
         </div>
         <!-- Forms : the forms that run on it ; a row opens the form -->
@@ -827,6 +971,10 @@ onMounted(async () => {
 /* the wide fields' width of the settings pages, as a user's and a repository's */
 .af-runner-field :deep(.input-group) {
   max-width: 40rem;
+}
+/* a number or a short choice : a narrow field */
+.af-runner-number :deep(.input-group) {
+  max-width: 20rem;
 }
 /* the tab ends a little above the card's edge, as every record's page (24px in all) */
 .af-runner-tab {

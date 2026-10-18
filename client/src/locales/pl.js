@@ -1885,6 +1885,26 @@ export default {
       rteMode_database: 'Baza danych (przestarzały)',
       rteMode_databaseHint: 'RTE sam używa bazy danych aplikacji: usunięte w 8.0.0',
       socket: 'Połączenie',
+      tabRte: 'RTE',
+      rteSettingsSocketOnly:
+        'Te ustawienia dotyczą RTE w trybie wychodzącym lub przychodzącym. RTE w trybie bazy danych odczytuje je z własnych zmiennych.',
+      maxJobs: 'Maks. równoczesnych zadań',
+      maxJobsHelp: 'Ile playbooków to RTE uruchamia naraz; 0 oznacza brak limitu. Puste: wartość domyślna, {default}.',
+      cacheMb: 'Pamięć podręczna plików',
+      cacheMbHelp:
+        'Ile plików zadań wysłanych przez aplikację to RTE przechowuje, w MB; 0 nie przechowuje żadnych. Puste: wartość domyślna, {default} MB.',
+      filesMode: 'Pliki zadań',
+      filesModeHelp:
+        'Transfer: aplikacja wysyła pliki razem z zadaniem. Lokalnie: RTE działa z własnych zamontowanych folderów.',
+      files_default: 'Domyślnie (transfer)',
+      files_transfer: 'Transfer',
+      files_local: 'Lokalnie',
+      drainSeconds: 'Czas oczekiwania przy zatrzymaniu',
+      drainSecondsHelp:
+        'Jak długo zatrzymywane RTE czeka na uruchomione playbooki, w sekundach; utrzymuj poniżej limitu zatrzymania platformy. Puste: wartość domyślna, {default}.',
+      settingDefault: 'domyślnie: {value}',
+      setOnRte: 'Ustawione na RTE przez {env}: {value}',
+      cacheUsed: '{mb} MB w użyciu',
       socketConnected: 'Połączony',
       socketDisconnected: 'Niepołączony',
       socketDisconnectedHint:

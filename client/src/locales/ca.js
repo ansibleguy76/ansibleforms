@@ -1900,6 +1900,27 @@ export default {
       rteMode_database: 'Base de dades (obsolet)',
       rteMode_databaseHint: "L'RTE fa servir la base de dades de l'aplicació: s'elimina a la 8.0.0",
       socket: 'Connexió',
+      tabRte: 'RTE',
+      rteSettingsSocketOnly:
+        "Aquests paràmetres s'apliquen a un RTE en mode sortint o entrant. Un RTE en mode base de dades els llegeix de les seves pròpies variables.",
+      maxJobs: 'Màxim de treballs simultanis',
+      maxJobsHelp:
+        'Quants playbooks executa alhora aquest RTE; 0 vol dir sense límit. Buit: el valor per defecte, {default}.',
+      cacheMb: 'Memòria cau de fitxers',
+      cacheMbHelp:
+        "Quant dels fitxers de treball que l'app ha enviat conserva aquest RTE, en MB; 0 no en conserva cap. Buit: el valor per defecte, {default} MB.",
+      filesMode: 'Fitxers de treball',
+      filesModeHelp:
+        "Transferència: l'app envia els fitxers amb el treball. Local: l'RTE s'executa des de les seves carpetes muntades.",
+      files_default: 'Per defecte (transferència)',
+      files_transfer: 'Transferència',
+      files_local: 'Local',
+      drainSeconds: "Temps d'espera en aturar",
+      drainSecondsHelp:
+        "Quant espera un RTE que s'atura els seus playbooks en execució, en segons; mantingueu-lo per sota del temps d'aturada de la plataforma. Buit: el valor per defecte, {default}.",
+      settingDefault: 'per defecte: {value}',
+      setOnRte: "Definit a l'RTE amb {env}: {value}",
+      cacheUsed: '{mb} MB en ús ara',
       socketConnected: 'Connectat',
       socketDisconnected: 'No connectat',
       socketDisconnectedHint:

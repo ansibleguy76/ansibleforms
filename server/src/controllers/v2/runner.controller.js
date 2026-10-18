@@ -5,7 +5,7 @@ import Errors from "../../lib/errors.js";
 import i18n from "../../lib/i18n.js";
 import { RUNNER_TYPES, getRunner } from "../../runners/index.js";
 import RunnerJoinToken from "../../models/runnerJoinToken.model.js";
-import { socketState, isSocketRunner, dropSocket } from "../../runners/rteHub.js";
+import { socketState, isSocketRunner, dropSocket, pushSettings } from "../../runners/rteHub.js";
 import { publish } from "../../lib/liveEvents.js";
 import { isAdminRequest } from "../../lib/adminGrants.js";
 
@@ -40,7 +40,8 @@ const find = async (req, res) => {
  *
  * Returns:
  *   Promise<object[]>: the runners, a socket-mode one with `socket` ({ connected, node, direction,
- *     version, capacity, files } or { connected: false }).
+ *     version, capacity, files, settings, env, cacheUsedMb } or { connected: false }) : settings
+ *     the ones in effect on the RTE, env those a variable on it sets.
  */
 async function withSocket(list) {
   return Promise.all((list || []).map(async (r) => {
@@ -50,7 +51,7 @@ async function withSocket(list) {
     // dialing an inbound RTE that does not answer
     if (!st?.alive || !st.rte_id) return { ...r, socket: { connected: false } };
     const info = st.info || {};
-    return { ...r, socket: { connected: true, node: st.node_id, direction: st.direction, rteId: st.rte_id, version: info.version, ansible: info.ansible, capacity: info.capacity, files: info.files } };
+    return { ...r, socket: { connected: true, node: st.node_id, direction: st.direction, rteId: st.rte_id, version: info.version, ansible: info.ansible, capacity: info.capacity, files: info.files, settings: info.settings, env: info.env, cacheUsedMb: info.cacheUsedMb } };
   }));
 }
 
@@ -115,6 +116,9 @@ const update = async (req, res) => {
     }
     const updated = await Runner.update(req.body, req.params.id);
     if (!updated) throw new Errors.NotFoundError(i18n.t(req, "resources.runnerNotFound"));
+    // its RTE gets its settings now when this node holds its socket, else at the next renewal
+    const saved = await Runner.findById(req.params.id).catch(() => null);
+    if (saved) pushSettings(saved);
     return res.json(RestResult.single(updated));
   } catch (err) {
     Errors.ReturnError(res, err);

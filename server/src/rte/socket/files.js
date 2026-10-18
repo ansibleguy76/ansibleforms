@@ -4,8 +4,8 @@
 /*  (RTE_FILES=transfer, the socket modes' default) : the         */
 /*  playbooks folder and the inventories, each a tar.gz the app   */
 /*  names by a hash of its content. The RTE keeps the packed      */
-/*  ones it got (RTE_CACHE_PATH) and asks for a hash it does not  */
-/*  have. Each job unpacks them in a private folder of its own,   */
+/*  ones it got (RTE_CACHE_PATH, up to its cache size) and asks   */
+/*  for a hash it does not have. Each job unpacks them in a private folder of its own,   */
 /*  removed when it ends : no job sees what another one wrote,    */
 /*  and no inventory stays unpacked on the disk.                  */
 /*                                                                */
@@ -34,13 +34,14 @@ export class FileCache {
   /**
    * Args:
    *   dir (string): the cache folder (RTE_CACHE_PATH).
-   *   keep (number): the bundles kept ; the ones used longest ago go first.
+   *   maxBytes (number): the size the bundles kept may take ; the ones used longest ago go
+   *     first, and 0 keeps none once its job unpacked it.
    *   owner (string): the RTE (its node id) : its jobs' folders go under jobs/<owner>, so RTEs
    *     that share the cache never remove each other's.
    */
-  constructor(dir, keep = 20, owner = "rte") {
+  constructor(dir, maxBytes = 1024 * 1048576, owner = "rte") {
     this.dir = dir;
-    this.keep = keep;
+    this.maxBytes = Math.max(0, Number(maxBytes) || 0);
     this.jobsDir = path.join(dir, JOBS, String(owner).replace(/[^A-Za-z0-9._-]/g, "_") || "rte");
     // hash -> { promise, resolve, reject, file, stream, hasher, timer } : a bundle being received
     this.pending = new Map();
@@ -116,6 +117,27 @@ export class FileCache {
   }
 
   /**
+   * A new cache size (the runner's settings changed) : the bundles beyond it go now.
+   *
+   * Args:
+   *   maxBytes (number): the size the bundles kept may take.
+   */
+  setMaxBytes(maxBytes) {
+    this.maxBytes = Math.max(0, Number(maxBytes) || 0);
+    this._evict();
+  }
+
+  /**
+   * The size the bundles kept take now.
+   *
+   * Returns:
+   *   number: bytes.
+   */
+  usedBytes() {
+    return this._bundles().reduce((sum, b) => sum + b.size, 0);
+  }
+
+  /**
    * A private folder for a job (0700, a random name), under this RTE's jobs folder : its
    * bundles are unpacked in it, and it goes when the job ends (release).
    *
@@ -158,6 +180,8 @@ export class FileCache {
       file = await this.ensure(hash, ask);
       await tar.x({ file, cwd: into, strict: true });
     }
+    // a cache of size 0 keeps nothing : the next job asks for it again
+    if (this.maxBytes === 0 && !this.pending.has(hash)) fs.rmSync(file, { force: true });
     return into;
   }
 
@@ -211,8 +235,9 @@ export class FileCache {
         clearTimeout(entry.timer);
         this.pending.delete(hash);
         logger.notice(`RTE: received the job files ${hash.slice(0, 12)}`);
+        // the one just come stays, whatever the size : its job unpacks it next
+        this._evict(hash);
         entry.resolve(this.path(hash));
-        this._evict();
       } catch (e) {
         this._fail(hash, e);
       }
@@ -241,19 +266,39 @@ export class FileCache {
     for (const hash of [...this.pending.keys()]) this._fail(hash, err);
   }
 
-  /** the bundles beyond `keep`, used longest ago, go */
-  _evict() {
-    let entries;
+  /** the bundles kept : { name, hash, size, time }, the one used last first */
+  _bundles() {
+    const out = [];
+    let names;
     try {
-      entries = fs.readdirSync(this.dir)
-        .filter((n) => n.endsWith(SUFFIX) && HASH.test(n.slice(0, -SUFFIX.length)))
-        .map((n) => ({ n, t: fs.statSync(path.join(this.dir, n)).mtimeMs }))
-        .sort((a, b) => b.t - a.t);
+      names = fs.readdirSync(this.dir);
     } catch {
-      return;
+      return out;
     }
-    for (const e of entries.slice(this.keep)) {
-      fs.rmSync(path.join(this.dir, e.n), { force: true });
+    for (const n of names) {
+      if (!n.endsWith(SUFFIX) || !HASH.test(n.slice(0, -SUFFIX.length))) continue;
+      try {
+        const st = fs.statSync(path.join(this.dir, n));
+        out.push({ name: n, hash: n.slice(0, -SUFFIX.length), size: st.size, time: st.mtimeMs });
+      } catch {
+        // gone meanwhile
+      }
+    }
+    return out.sort((a, b) => b.time - a.time);
+  }
+
+  /**
+   * The bundles beyond the cache size, used longest ago, go.
+   *
+   * Args:
+   *   keepHash (string): a bundle that stays whatever the size (the one just come).
+   */
+  _evict(keepHash = null) {
+    let total = 0;
+    for (const b of this._bundles()) {
+      if (b.hash === keepHash) continue;
+      total += b.size;
+      if (total > this.maxBytes) fs.rmSync(path.join(this.dir, b.name), { force: true });
     }
   }
 
