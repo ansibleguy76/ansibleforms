@@ -105,30 +105,35 @@ const json = computed(() => (result.value ? JSON.stringify(result.value, null, 2
           <span class="fw-semibold text-break">{{ event.host }}</span>
           <span class="text-body-secondary text-break">{{ event.task }}</span>
         </div>
-        <ul class="nav nav-tabs mb-3">
+        <!-- the tabs open into their card, as a record page's (bootstrap-override.scss, .tab-card-flush-card) -->
+        <ul class="nav nav-tabs mb-0">
           <li v-for="x in tabs" :key="x.key" class="nav-item">
             <a class="nav-link" :class="{ active: tab === x.key }" href="#" @click.prevent="tab = x.key">{{
               x.label
             }}</a>
           </li>
         </ul>
-        <template v-if="tab === 'details'">
-          <dl class="af-result-facts">
-            <template v-for="[label, value] in facts" :key="label">
-              <dt>{{ label }}</dt>
-              <dd>{{ value }}</dd>
+        <div class="card tab-card-flush-card">
+          <div class="card-body">
+            <template v-if="tab === 'details'">
+              <dl class="af-result-facts">
+                <template v-for="[label, value] in facts" :key="label">
+                  <dt>{{ label }}</dt>
+                  <dd>{{ value }}</dd>
+                </template>
+              </dl>
+              <template v-if="message">
+                <div class="af-result-label">{{ t('jobs.taskResult.message') }}</div>
+                <pre class="af-result-pre">{{
+                  typeof message === 'string' ? message : JSON.stringify(message, null, 2)
+                }}</pre>
+              </template>
             </template>
-          </dl>
-          <template v-if="message">
-            <div class="af-result-label">{{ t('jobs.taskResult.message') }}</div>
-            <pre class="af-result-pre">{{
-              typeof message === 'string' ? message : JSON.stringify(message, null, 2)
-            }}</pre>
-          </template>
-        </template>
-        <pre v-else-if="tab === 'json'" class="af-result-pre">{{ json }}</pre>
-        <pre v-else-if="tab === 'stdout'" class="af-result-pre">{{ stdout }}</pre>
-        <pre v-else-if="tab === 'stderr'" class="af-result-pre">{{ stderr }}</pre>
+            <pre v-else-if="tab === 'json'" class="af-result-pre">{{ json }}</pre>
+            <pre v-else-if="tab === 'stdout'" class="af-result-pre">{{ stdout }}</pre>
+            <pre v-else-if="tab === 'stderr'" class="af-result-pre">{{ stderr }}</pre>
+          </div>
+        </div>
       </template>
     </template>
   </BsModal>
@@ -140,6 +145,9 @@ const json = computed(() => (result.value ? JSON.stringify(result.value, null, 2
   grid-template-columns: max-content minmax(0, 1fr);
   gap: 0.4rem 1.5rem;
   margin: 0 0 1rem;
+  &:last-child {
+    margin-bottom: 0;
+  }
   dt {
     font-size: 0.7rem;
     font-weight: 600;
