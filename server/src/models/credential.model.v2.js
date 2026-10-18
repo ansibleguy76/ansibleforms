@@ -195,6 +195,22 @@ class CredentialModel extends CrudModel {
   }
 
   /**
+   * The first of the credentials a record names that only an admin may name (isAdminGuarded).
+   *
+   * Args:
+   *   names (string[]): the credential names, empty ones left out.
+   *
+   * Returns:
+   *   Promise<string|null>: the first such name, or null when none is.
+   */
+  static async firstAdminGuarded(names) {
+    for (const name of (names || []).filter(Boolean)) {
+      if (await this.isAdminGuarded(await this.findRowByName(name))) return name;
+    }
+    return null;
+  }
+
+  /**
    * The credential a record names, read by its exact name without its secret : the row as the
    * credentials table holds it, or null when there is none.
    *

@@ -91,6 +91,10 @@ export default {
     failedGetLock: "Error al obtener el bloqueo",
   },
   resources: {
+    credentialNotFound:
+      "No hay ninguna credencial llamada '{name}'",
+    repositoryCredentialType:
+      "Un repositorio inicia sesión con una credencial git o userpass: '{name}' es de tipo {type}",
     credentialSignInAdminOnly:
       "Solo un admin puede añadir, cambiar o eliminar una credencial que usa un inicio de sesión (LDAP, Microsoft Entra ID u OIDC)",
     credentialNotAllowed:

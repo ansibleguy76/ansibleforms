@@ -107,6 +107,9 @@ class Repository extends CrudModel {
     const cleared = Repository.CLEARABLE.filter((key) => key in data && (data[key] === "" || data[key] === null));
     helpers.removeEmptyFields(data);
     for (const key of cleared) data[key] = null;
+    // moved to another address without its password typed again (controllers/v2/repository
+    // guardRepositoryCredential) : the stored password stays behind, written empty
+    if (opts.dropPassword) data.password = "";
 
     // `name` is an editable field (the repositories page renders it so), and the working
     // tree lives at repoPath/<name>. Renaming the row alone left the tree behind under

@@ -94,6 +94,10 @@ export default {
     failedGetLock: "Nie udało się pobrać blokady",
   },
   resources: {
+    credentialNotFound:
+      "Brak poświadczenia o nazwie '{name}'",
+    repositoryCredentialType:
+      "Repozytorium loguje się poświadczeniem git lub userpass: '{name}' jest typu {type}",
     credentialSignInAdminOnly:
       "Tylko admin może dodać, zmienić lub usunąć poświadczenie używane przez logowanie (LDAP, Microsoft Entra ID lub OIDC)",
     credentialNotAllowed:

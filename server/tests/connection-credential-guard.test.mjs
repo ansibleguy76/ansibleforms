@@ -1,0 +1,159 @@
+// A notification channel posts its token (a webhook's bearer, a telegram bot's) or signs in with
+// its login (mail) at an address its editor types, and a repository hands git its credential at
+// the address it clones from. A user with only connections access could name a runner's token or
+// an SSO client there, or point a channel or a repository that names a credential at their own
+// server, and receive the secret. These pin the rules : a credential only an admin may name is
+// refused to them, a repository takes a git or a userpass credential only, and a move to another
+// address drops the credential (and a repository's own password) unless chosen again.
+import { describe, test, expect, vi, beforeEach } from "vitest";
+
+process.env.DB_HOST ||= "127.0.0.1";
+process.env.DB_PORT ||= "3306";
+process.env.DB_USER ||= "test";
+process.env.DB_PASSWORD ||= "test";
+
+// the credentials there are : an open api token, a runner's token, an SSO client, a git login
+const creds = {
+  "hook-token": { name: "hook-token", credential_type: "api" },
+  "rte-token": { name: "rte-token", credential_type: "rte" },
+  "sso-client": { name: "sso-client", credential_type: "oidc" },
+  "git-bot": { name: "git-bot", credential_type: "git" },
+  "runner-login": { name: "runner-login", credential_type: "userpass" },
+};
+vi.mock("../src/models/credential.model.v2.js", () => ({
+  default: {
+    findRowByName: async (name) => creds[name] || null,
+    async isAdminGuarded(record) {
+      if (!record) return false;
+      return ["rte", "oidc", "ldap", "entraid"].includes(record.credential_type) || record.name === "runner-login";
+    },
+    async firstAdminGuarded(names) {
+      for (const n of names.filter(Boolean)) if (await this.isAdminGuarded(creds[n])) return n;
+      return null;
+    },
+  },
+}));
+
+// the channels there are, and what the model was asked to write
+const writes = [];
+const channels = {
+  1: { id: 1, name: "hook", type: "webhook", url: "https://hooks.local/x", verify_tls: 1, token_credential: "hook-token" },
+  2: { id: 2, name: "bot", type: "telegram", api_url: "", token_credential: "hook-token", chat_id: "1" },
+};
+vi.mock("../src/models/notificationChannel.model.js", () => ({
+  default: {
+    findById: async (id) => (channels[id] ? { ...channels[id] } : null),
+    create: async (data) => { writes.push(["create", { ...data }]); return 5; },
+    update: async (data, id) => { writes.push(["update", { ...data }, id]); return true; },
+  },
+}));
+vi.mock("../src/lib/notifiers.js", () => ({ send: async () => "id" }));
+
+// the repositories there are
+const repos = {
+  infra: { id: 1, name: "infra", uri: "https://git.local/infra.git", credential: "git-bot", password: "" },
+  legacy: { id: 2, name: "legacy", uri: "https://git.local/legacy.git", credential: null, user: "me", password: "stored" },
+};
+const repoWrites = [];
+vi.mock("../src/models/repository.model.js", () => ({
+  default: {
+    findByName: async (name) => ({ ...repos[name] }),
+    create: async (data) => { repoWrites.push(["create", { ...data }]); return 3; },
+    update: async (data, name, opts) => { repoWrites.push(["update", { ...data }, name, opts]); return true; },
+  },
+}));
+vi.mock("../src/services/cron.service.js", () => ({ default: { addRepository() {}, removeRepository() {} } }));
+
+const { default: channelController } = await import("../src/controllers/v2/notificationChannel.controller.js");
+const { default: repoController } = await import("../src/controllers/v2/repository.controller.js");
+
+function call(handler, user, { body = {}, params = {} } = {}) {
+  return new Promise((resolve) => {
+    const res = {
+      statusCode: 200,
+      status(c) { this.statusCode = c; return this; },
+      json(data) { resolve({ status: this.statusCode, data }); return this; },
+    };
+    handler({ body, params, query: {}, headers: {}, user: { user } }, res);
+  });
+}
+
+const ops = { username: "ops", roles: ["ops"], options: { showConnectionsSettings: true } };
+const admin = { username: "admin", roles: ["admin"] };
+
+beforeEach(() => { writes.length = 0; repoWrites.length = 0; });
+
+describe("a notification channel", () => {
+  test("naming a runner's token or an SSO client: refused to a connections user", async () => {
+    expect((await call(channelController.create, ops, { body: { name: "x", type: "webhook", url: "https://evil", token_credential: "rte-token" } })).status).toBe(403);
+    expect((await call(channelController.update, ops, { body: { token_credential: "sso-client" }, params: { id: "1" } })).status).toBe(403);
+    expect(writes).toEqual([]);
+  });
+
+  test("an admin may name them", async () => {
+    expect((await call(channelController.create, admin, { body: { name: "x", type: "webhook", url: "https://a", token_credential: "rte-token" } })).status).toBeLessThan(300);
+  });
+
+  test("an open credential stays usable", async () => {
+    expect((await call(channelController.create, ops, { body: { name: "x", type: "webhook", url: "https://a", token_credential: "hook-token" } })).status).toBeLessThan(300);
+  });
+
+  test("moved to another url by a connections user: the credential it keeps is dropped", async () => {
+    await call(channelController.update, ops, { body: { url: "https://evil", token_credential: "hook-token" }, params: { id: "1" } });
+    expect(writes[0][1].token_credential).toBe("");
+  });
+
+  test("the certificate check turned off counts as a move", async () => {
+    await call(channelController.update, ops, { body: { verify_tls: 0 }, params: { id: "1" } });
+    expect(writes[0][1].token_credential).toBe("");
+  });
+
+  test("a telegram bot moved to another API address drops its token too", async () => {
+    await call(channelController.update, ops, { body: { api_url: "https://evil" }, params: { id: "2" } });
+    expect(writes[0][1].token_credential).toBe("");
+  });
+
+  test("the same url keeps it ; an admin's move keeps it", async () => {
+    await call(channelController.update, ops, { body: { url: "https://hooks.local/x ", token_credential: "hook-token" }, params: { id: "1" } });
+    await call(channelController.update, admin, { body: { url: "https://new", token_credential: "hook-token" }, params: { id: "1" } });
+    expect(writes.map((w) => w[1].token_credential)).toEqual(["hook-token", "hook-token"]);
+  });
+});
+
+describe("a repository", () => {
+  test("takes a git or a userpass credential only, whoever saves it", async () => {
+    const r = await call(repoController.create, admin, { body: { name: "r", uri: "https://git", credential: "hook-token" } });
+    expect(r.status).toBe(400);
+    expect((await call(repoController.update, admin, { body: { credential: "rte-token" }, params: { name: "infra" } })).status).toBe(400);
+    expect(repoWrites).toEqual([]);
+  });
+
+  test("a credential that does not exist: 400", async () => {
+    expect((await call(repoController.create, admin, { body: { name: "r", uri: "https://git", credential: "nope" } })).status).toBe(400);
+  });
+
+  test("a userpass credential a runner names: refused to a connections user", async () => {
+    expect((await call(repoController.create, ops, { body: { name: "r", uri: "https://evil", credential: "runner-login" } })).status).toBe(403);
+    expect((await call(repoController.create, admin, { body: { name: "r", uri: "https://git", credential: "runner-login" } })).status).toBeLessThan(300);
+  });
+
+  test("moved to another address by a connections user: its credential is dropped", async () => {
+    await call(repoController.update, ops, { body: { uri: "https://evil/x.git", credential: "git-bot" }, params: { name: "infra" } });
+    expect(repoWrites[0][1].credential).toBe("");
+  });
+
+  test("and its own password, unless typed again", async () => {
+    await call(repoController.update, ops, { body: { uri: "https://evil/x.git", password: "**********" }, params: { name: "legacy" } });
+    expect(repoWrites[0][1].password).toBeUndefined();
+    expect(repoWrites[0][3]).toEqual({ dropPassword: true });
+    await call(repoController.update, ops, { body: { uri: "https://evil/x.git", password: "typed" }, params: { name: "legacy" } });
+    expect(repoWrites[1][1].password).toBe("typed");
+    expect(repoWrites[1][3]).toEqual({ dropPassword: false });
+  });
+
+  test("an admin's move keeps both", async () => {
+    await call(repoController.update, admin, { body: { uri: "https://new/x.git", credential: "git-bot" }, params: { name: "infra" } });
+    expect(repoWrites[0][1].credential).toBe("git-bot");
+    expect(repoWrites[0][3]).toEqual({ dropPassword: false });
+  });
+});

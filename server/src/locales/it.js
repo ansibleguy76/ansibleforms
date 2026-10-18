@@ -87,6 +87,10 @@ export default {
     failedGetLock: "Impossibile ottenere il lock",
   },
   resources: {
+    credentialNotFound:
+      "Nessuna credenziale chiamata '{name}'",
+    repositoryCredentialType:
+      "Un repository accede con una credenziale git o userpass: '{name}' è di tipo {type}",
     credentialSignInAdminOnly:
       "Solo un admin può aggiungere, modificare o eliminare una credenziale usata da un accesso (LDAP, Microsoft Entra ID o OIDC)",
     credentialNotAllowed:

@@ -96,6 +96,10 @@ export default {
     failedGetLock: "Echec de la recuperation du verrou",
   },
   resources: {
+    credentialNotFound:
+      "Aucun identifiant nommé '{name}'",
+    repositoryCredentialType:
+      "Un dépôt se connecte avec un identifiant git ou userpass : '{name}' est de type {type}",
     credentialSignInAdminOnly:
       "Seul un admin peut ajouter, modifier ou supprimer un identifiant utilisé par une authentification (LDAP, Microsoft Entra ID ou OIDC)",
     credentialNotAllowed:

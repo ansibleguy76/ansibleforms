@@ -88,6 +88,10 @@ export default {
     failedGetLock: "ロックの取得に失敗しました",
   },
   resources: {
+    credentialNotFound:
+      "'{name}' という名前の資格情報はありません",
+    repositoryCredentialType:
+      "リポジトリは git または userpass の資格情報でサインインします: '{name}' は {type} です",
     credentialSignInAdminOnly:
       "サインインが使う資格情報 (LDAP、Microsoft Entra ID、OIDC) を追加、変更、削除できるのは admin だけです",
     credentialNotAllowed:

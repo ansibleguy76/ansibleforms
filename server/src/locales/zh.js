@@ -82,6 +82,10 @@ export default {
     failedGetLock: "获取锁失败",
   },
   resources: {
+    credentialNotFound:
+      "没有名为 '{name}' 的凭据",
+    repositoryCredentialType:
+      "仓库使用 git 或 userpass 凭据登录：'{name}' 是 {type} 类型",
     credentialSignInAdminOnly:
       "只有 admin 可以添加、更改或删除登录所用的凭据 (LDAP、Microsoft Entra ID 或 OIDC)",
     credentialNotAllowed:

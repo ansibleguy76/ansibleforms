@@ -89,6 +89,10 @@ export default {
     failedGetLock: "Kan vergrendeling niet ophalen",
   },
   resources: {
+    credentialNotFound:
+      "Geen referentie met de naam '{name}'",
+    repositoryCredentialType:
+      "Een repository meldt zich aan met een git- of userpass-referentie: '{name}' is van het type {type}",
     credentialSignInAdminOnly:
       "Alleen een admin kan een referentie toevoegen, wijzigen of verwijderen die een aanmelding gebruikt (LDAP, Microsoft Entra ID of OIDC)",
     credentialNotAllowed:

@@ -8,6 +8,69 @@ import RestResult from "../../models/restResult.model.v2.js";
 import Errors from "../../lib/errors.js";
 import Helpers from "../../lib/common.js";
 import i18n from "../../lib/i18n.js";
+import CredentialModel from "../../models/credential.model.v2.js";
+import { isAdminRequest } from "../../lib/adminGrants.js";
+
+// the fields that say where a channel sends the credential it names, by type : a mail channel's
+// own server (used while its credential has none), a webhook's url and a telegram bot's API
+// address ; a certificate check turned off counts too
+const CHANNEL_TARGETS = { mail: ["server", "port", "secure"], webhook: ["url", "verify_tls"], telegram: ["api_url"] };
+const FLAG_FIELDS = ["secure", "verify_tls"];
+// the fields a channel names a credential in
+const CHANNEL_CREDENTIALS = ["credential", "token_credential"];
+
+/**
+ * Whether a write sends a channel's credential to another place : one of its type's target fields
+ * sent with another value than the stored one.
+ *
+ * Args:
+ *   existing (object): the channel as it is.
+ *   data (object): the fields written.
+ *
+ * Returns:
+ *   boolean: true when the write points it elsewhere.
+ */
+function channelTargetChanged(existing, data) {
+  const text = (v) => (v === null || v === undefined ? "" : String(v).trim());
+  const flag = (v) => v === true || Number(v) === 1;
+  return (CHANNEL_TARGETS[existing.type] || []).some((f) => {
+    if (data[f] === undefined) return false;
+    return FLAG_FIELDS.includes(f) ? flag(data[f]) !== flag(existing[f]) : text(data[f]) !== text(existing[f]);
+  });
+}
+
+/**
+ * Keeps a user who is not an admin from sending a credential's secret where they choose. A channel
+ * posts its token (a webhook's bearer, a telegram bot's) or signs in with its login (mail) at an
+ * address the user types : they may only name credentials that are not an admin's
+ * (models/credential.model.v2.js isAdminGuarded), and moving a channel to another address drops the
+ * credential it names, unless another one is chosen with it. An admin's write is left as it is.
+ *
+ * Args:
+ *   req (object): the request (its body is changed in place).
+ *   existing (object|null): the channel as it is, null on a create.
+ *
+ * Returns:
+ *   Promise<void>: settles when the write may go on.
+ *
+ * Raises:
+ *   Errors.AccessDeniedError: a credential named is an admin's.
+ */
+async function guardChannelCredentials(req, existing) {
+  if (isAdminRequest(req)) return;
+  const data = req.body;
+  // the credentials this write chooses : the ones it names that the channel did not already
+  const chosen = CHANNEL_CREDENTIALS.filter((k) => data[k] && data[k] !== existing?.[k]).map((k) => data[k]);
+  const guarded = await CredentialModel.firstAdminGuarded(chosen);
+  if (guarded) throw new Errors.AccessDeniedError(i18n.t(req, "resources.credentialNotAllowed", { name: guarded }));
+  // moved elsewhere : the credential it keeps stays behind
+  if (existing && channelTargetChanged(existing, data)) {
+    for (const k of CHANNEL_CREDENTIALS) {
+      const kept = data[k] === undefined ? existing[k] : data[k];
+      if (kept && kept === existing[k]) data[k] = "";
+    }
+  }
+}
 
 const find = async (req, res) => {
   try {
@@ -27,6 +90,7 @@ const create = async (req, res) => {
     if (!req.body || Object.keys(req.body).length === 0) {
       throw new Errors.BadRequestError(i18n.t(req, "errors.requiredFields"));
     }
+    await guardChannelCredentials(req, null);
     const id = await NotificationChannel.create(req.body);
     return res.status(201).json(RestResult.single({ message: i18n.t(req, "success.created", { resource: "Notification channel" }), id }));
   } catch (err) {
@@ -50,6 +114,9 @@ const update = async (req, res) => {
     if (!req.body || Object.keys(req.body).length === 0) {
       throw new Errors.BadRequestError(i18n.t(req, "errors.requiredFields"));
     }
+    const existing = await NotificationChannel.findById(req.params.id);
+    if (!existing) throw new Errors.NotFoundError(`No notification channel with id ${req.params.id}`);
+    await guardChannelCredentials(req, existing);
     await NotificationChannel.update(req.body, req.params.id);
     return res.json(RestResult.single({ message: i18n.t(req, "success.updated", { resource: "Notification channel" }) }));
   } catch (err) {
