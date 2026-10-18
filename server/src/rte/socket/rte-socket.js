@@ -14,7 +14,6 @@ import https from "https";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { timingSafeEqual } from "crypto";
 import { fileURLToPath } from "url";
 import { execFile } from "child_process";
 import WebSocket, { WebSocketServer } from "ws";
@@ -29,6 +28,7 @@ import { appVersion as version } from "../../lib/version.js";
 import { openJobSecrets } from "../../lib/sealedSecrets.js";
 import { collectSecrets, registerJobSecrets, maskOutput } from "../../lib/outputMask.js";
 import { installFatalHandlers } from "../../lib/fatal.js";
+import { safeEqual, bearerToken } from "../../lib/safeEqual.js";
 import { requestContext } from "../../lib/requestContext.js";
 import { httpMetrics, metricsHandler, addScrapeGauge } from "../../lib/metrics.js";
 import { onShutdown, stopWithin, isStopping } from "../../lib/shutdown.js";
@@ -590,13 +590,11 @@ export async function startSocketRte(rteMode) {
   if (mode === "inbound") {
     // the app dials /rte/v1/socket with this RTE's token ; a newer socket replaces the older one
     // (the app node holding the lease changed)
-    const expected = Buffer.from(token);
     const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_PAYLOAD });
     server.on("upgrade", (req, socket, head) => {
       const url = new URL(req.url, "http://x");
       if (url.pathname !== RTE_SOCKET_PATH) return socket.destroy();
-      const given = Buffer.from(String(req.headers.authorization || "").replace(/^Bearer\s+/i, ""));
-      if (!(given.length === expected.length && timingSafeEqual(given, expected))) {
+      if (!safeEqual(bearerToken(req.headers.authorization), token)) {
         logger.warning(`RTE: refused a socket without the right token from ${req.socket.remoteAddress}`);
         socket.write("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n");
         return socket.destroy();

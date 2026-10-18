@@ -14,8 +14,8 @@
 /*    - an RTE : the playbooks it runs now.                       */
 /*                                                                */
 /******************************************************************/
-import { timingSafeEqual } from "crypto";
 import client from "prom-client";
+import { safeEqual, bearerToken } from "./safeEqual.js";
 
 export const registry = new client.Registry();
 client.collectDefaultMetrics({ register: registry, prefix: "af_" });
@@ -116,9 +116,7 @@ export function metricsHandler() {
   return async (req, res) => {
     const token = process.env.METRICS_TOKEN || "";
     if (!token) return res.status(404).json({ error: "Not found" });
-    const given = Buffer.from(String(req.headers.authorization || "").replace(/^Bearer\s+/i, ""));
-    const expected = Buffer.from(token);
-    if (given.length !== expected.length || !timingSafeEqual(given, expected)) return res.status(401).json({ error: "invalid token" });
+    if (!safeEqual(bearerToken(req.headers.authorization), token)) return res.status(401).json({ error: "invalid token" });
     res.setHeader("Content-Type", registry.contentType);
     res.end(await registry.metrics());
   };

@@ -17,7 +17,6 @@
 import express from "express";
 import http from "http";
 import https from "https";
-import { timingSafeEqual } from "crypto";
 import { execFile } from "child_process";
 import logger from "../lib/logger.js";
 import mysql from "../models/db.model.js";
@@ -26,8 +25,10 @@ import httpsConfig from "../../config/https.config.js";
 import appConfig from "../../config/app.config.js";
 import { runAnsibleJob, runnerIdentity, useJobIO } from "./ansible-core.js";
 import dbJobIO from "./jobio-db.js";
+import { abandonJobs } from "./abandon.js";
 import { RTE_CONTRACT } from "./contract.js";
 import { openJobSecrets } from "../lib/sealedSecrets.js";
+import { safeEqual, bearerToken } from "../lib/safeEqual.js";
 import { readinessHandlers } from "../lib/readiness.js";
 import { requestContext } from "../lib/requestContext.js";
 import { installFatalHandlers } from "../lib/fatal.js";
@@ -78,10 +79,8 @@ function ansibleVersion() {
 }
 
 function bearer(token) {
-  const expected = Buffer.from(token);
   return (req, res, next) => {
-    const given = Buffer.from(String(req.headers.authorization || "").replace(/^Bearer\s+/i, ""));
-    if (given.length === expected.length && timingSafeEqual(given, expected)) return next();
+    if (safeEqual(bearerToken(req.headers.authorization), token)) return next();
     logger.warning(`RTE: refused a call without the right token from ${req.ip}`);
     return res.status(401).json({ error: "invalid token" });
   };
@@ -89,12 +88,9 @@ function bearer(token) {
 
 // a job this RTE was running when it stopped cannot finish any more ; only its own jobs
 async function abandonOwnJobs() {
-  const res = await mysql.do(
-    "UPDATE AnsibleForms.`jobs` SET status='abandoned', abort_requested=0 WHERE status='running' AND host=?",
-    [runnerIdentity()]
-  );
-  if (res?.changedRows) {
-    logger.warning(`RTE: abandoned ${res.changedRows} job(s) left running by a previous start`);
+  const abandoned = await abandonJobs({ host: runnerIdentity() });
+  if (abandoned) {
+    logger.warning(`RTE: abandoned ${abandoned} job(s) left running by a previous start`);
     // the browsers see them stop
     publish("jobs");
   }
