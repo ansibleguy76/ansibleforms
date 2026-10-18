@@ -7,6 +7,8 @@
   },
   "tags": [
     { "name": "authentication", "description": "Authentication and refresh tokens" },
+    { "name": "label", "description": "The labels beside the header's logo (Settings > Appearance > Labels)" },
+    { "name": "disclaimer", "description": "The disclaimer users accept, its versions (Settings > Access > Disclaimer)" },
     { "name": "system", "description": "System information and status" },
     { "name": "user", "description": "User management and profile" },
     { "name": "group", "description": "Group management" },
@@ -721,7 +723,8 @@
                           "rebase_on_start": { "type": "boolean" },
                           "cron": { "type": "string" },
                           "status": { "type": "string" },
-                          "output": { "type": "string" },
+                          "pull_output": { "type": "string" },
+                          "push_output": { "type": "string" },
                           "head": { "type": "string" }
                         }
                       }
@@ -821,7 +824,8 @@
                     "rebase_on_start": { "type": "boolean" },
                     "cron": { "type": "string" },
                     "status": { "type": "string" },
-                    "output": { "type": "string" },
+                    "pull_output": { "type": "string" },
+                    "push_output": { "type": "string" },
                     "head": { "type": "string" }
                   }
                 }
@@ -1170,6 +1174,74 @@
         "security": [ { "basicAuth": [] } ]
       }
     },
+    "/auth/entraid": {
+      "get": {
+        "tags": [
+          "authentication"
+        ],
+        "summary": "Sign in with Microsoft Entra ID : redirects to Microsoft's sign-in page",
+        "description": "The enabled Entra ID provider's client (its credential's client id, secret, tenant and redirect URL). The paths of before 7.3, /auth/azureadoauth2..., answer the same (deprecated, removed in 8.0); 'azuread' stays the provider's name in the database and the config seed.",
+        "responses": {
+          "302": {
+            "description": "To Microsoft's sign-in page"
+          },
+          "401": {
+            "description": "Entra ID is not enabled or its client is not complete"
+          }
+        }
+      }
+    },
+    "/auth/entraid/callback": {
+      "get": {
+        "tags": [
+          "authentication"
+        ],
+        "summary": "Where Microsoft sends the user back : signs the user in and hands the app a one-time handoff token",
+        "responses": {
+          "302": {
+            "description": "To the app, with a one-time handoff token"
+          },
+          "401": {
+            "description": "The sign-in failed or was refused"
+          }
+        }
+      }
+    },
+    "/auth/entraid/login": {
+      "post": {
+        "tags": [
+          "authentication"
+        ],
+        "summary": "Trade the one-time handoff token of the callback for the app's tokens",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "description": "the one-time handoff token of the callback"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "{ token, refreshtoken }"
+          },
+          "401": {
+            "description": "An unknown, used or expired handoff token, or the user may not sign in"
+          }
+        }
+      }
+    },
     "/token": {
       "post": {
         "tags": ["authentication"],
@@ -1250,6 +1322,224 @@
         "responses": { "200": { "description": "Runner deleted" }, "404": { "description": "Not found" } }
       }
     },
+    "/runner/pending": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "runner"
+        ],
+        "summary": "How many RTEs wait for an admin's approval (the header bell)",
+        "responses": {
+          "200": {
+            "description": "{ count }"
+          }
+        }
+      }
+    },
+    "/runner/jointoken": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "runner"
+        ],
+        "summary": "The join tokens RTEs add themselves with (never the tokens themselves)",
+        "responses": {
+          "200": {
+            "description": "{ count, records }"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "runner"
+        ],
+        "summary": "Make a join token, shown once (admin only)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "expiresInHours": {
+                    "type": "integer",
+                    "description": "none or 0 : it does not expire"
+                  },
+                  "maxUses": {
+                    "type": "integer",
+                    "description": "none or 0 : no limit"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The token, this once, with a message"
+          },
+          "403": {
+            "description": "Not an admin"
+          }
+        }
+      }
+    },
+    "/runner/jointoken/{id}/revoke": {
+      "post": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "runner"
+        ],
+        "summary": "Revoke a join token : it adds no runner any more, the runners it added stay (admin only)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ message }"
+          },
+          "403": {
+            "description": "Not an admin"
+          },
+          "404": {
+            "description": "No such join token"
+          }
+        }
+      }
+    },
+    "/runner/jointoken/{id}": {
+      "delete": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "runner"
+        ],
+        "summary": "Delete a join token (admin only)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ message }"
+          },
+          "403": {
+            "description": "Not an admin"
+          },
+          "404": {
+            "description": "No such join token"
+          }
+        }
+      }
+    },
+    "/runner/{id}/approve": {
+      "post": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "runner"
+        ],
+        "summary": "Approve an RTE that asked to join : it takes jobs from now on (admin only)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The runner, its secrets masked"
+          },
+          "403": {
+            "description": "Not an admin"
+          },
+          "404": {
+            "description": "No such runner waiting"
+          }
+        }
+      }
+    },
+    "/runner/{id}/reject": {
+      "post": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "runner"
+        ],
+        "summary": "Reject an RTE that asked to join : removed with its credential, its socket closed (admin only)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The runner removed, its secrets masked"
+          },
+          "403": {
+            "description": "Not an admin"
+          },
+          "404": {
+            "description": "No such runner waiting"
+          }
+        }
+      }
+    },
     "/runner/{id}/check": {
       "post": {
         "security": [ { "bearerAuth": [] } ],
@@ -1296,11 +1586,11 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "Added, with its id"
           },
           "400": {
-            "description": "Invalid or taken name"
+            "description": "No data, an invalid or taken name, a credential that is not an ldap one, or no servers"
           }
         }
       }
@@ -1405,7 +1695,69 @@
             "description": "Deleted"
           },
           "400": {
-            "description": "The default directory, or from the config seed"
+            "description": "The default directory"
+          },
+          "403": {
+            "description": "From the config seed"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/ldapdirectory/{id}/move": {
+      "post": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "ldapdirectory"
+        ],
+        "summary": "Move a directory one place up or down in the lookup order, the others renumbered with it in one transaction",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "direction"
+                ],
+                "properties": {
+                  "direction": {
+                    "type": "string",
+                    "enum": [
+                      "up",
+                      "down"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "{ moved } : false when it is already first (up) or last (down)"
+          },
+          "400": {
+            "description": "Another direction"
+          },
+          "404": {
+            "description": "Not found"
           }
         }
       }
@@ -1775,6 +2127,85 @@
         }
       }
     },
+    "/job/{id}/events": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "job"
+        ],
+        "summary": "A playbook job's structured events : the host-by-task grid, the timeline and the recap",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ count, records } : each event without its whole result (detailed says it has one)"
+          },
+          "403": {
+            "description": "The job is not the user's"
+          },
+          "404": {
+            "description": "No such job"
+          }
+        }
+      }
+    },
+    "/job/{id}/events/{order}": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "job"
+        ],
+        "summary": "One event of a job with its whole result : a host's or a loop item's details",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The event, its result parsed"
+          },
+          "400": {
+            "description": "The order is not a whole number from 0"
+          },
+          "403": {
+            "description": "The job is not the user's"
+          },
+          "404": {
+            "description": "No such job, or no event at that order"
+          }
+        }
+      }
+    },
     "/job/{id}/node/{nodeId}": {
       "get": {
         "security": [ { "bearerAuth": [] } ],
@@ -1901,7 +2332,7 @@
         "tags": ["credential"],
         "summary": "Create a new credential",
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Credential" } } } },
-        "responses": { "201": { "description": "Credential created" } }
+        "responses": { "200": { "description": "Credential created, with its id" }, "403": { "description": "A runner's or a secret store's credential type (it carries an address) : an admin's" } }
       }
     },
     "/credential/{id}": {
@@ -1918,14 +2349,14 @@
         "summary": "Update credential by ID",
         "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Credential" } } } },
-        "responses": { "200": { "description": "Credential updated" }, "404": { "description": "Not found" } }
+        "responses": { "200": { "description": "Credential updated" }, "403": { "description": "A credential that carries an address or that a runner signs in with : an admin's" }, "404": { "description": "Not found" }, "409": { "description": "Renamed while records use it (its Used by tab)" } }
       },
       "delete": {
         "security": [ { "bearerAuth": [] } ],
         "tags": ["credential"],
         "summary": "Delete credential by ID",
         "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
-        "responses": { "200": { "description": "Credential deleted" }, "404": { "description": "Not found" } }
+        "responses": { "200": { "description": "Credential deleted" }, "403": { "description": "A credential that carries an address or that a runner signs in with : an admin's" }, "404": { "description": "Not found" }, "409": { "description": "Records use it (its Used by tab)" } }
       }
     },
     "/credential/testdb/{id}": {
@@ -1935,6 +2366,522 @@
         "summary": "Test database connection for credential by ID",
         "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
         "responses": { "200": { "description": "Database connection ok" }, "404": { "description": "Not found" } }
+      }
+    },
+    "/label": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "label"
+        ],
+        "summary": "The labels beside the logo in their order, each saying whether it is first or last ; one by ?name=",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ count, records }, or one label"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "label"
+        ],
+        "summary": "Add a label, after the others unless a position is given",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "color": {
+                    "type": "string",
+                    "enum": [
+                      "blue",
+                      "green",
+                      "amber",
+                      "orange",
+                      "red",
+                      "grey"
+                    ]
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "position": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "{ message, id }"
+          },
+          "400": {
+            "description": "No text, an unknown colour or a position that is no number"
+          }
+        }
+      }
+    },
+    "/label/{id}": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "label"
+        ],
+        "summary": "A label",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The label"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "label"
+        ],
+        "summary": "Change a label",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "color": {
+                    "type": "string",
+                    "enum": [
+                      "blue",
+                      "green",
+                      "amber",
+                      "orange",
+                      "red",
+                      "grey"
+                    ]
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "position": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "{ message }"
+          },
+          "400": {
+            "description": "No data, no text or an unknown colour"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "label"
+        ],
+        "summary": "Delete a label",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ message }"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/label/{id}/move": {
+      "post": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "label"
+        ],
+        "summary": "Move a label one place up or down in the header, the others renumbered with it in one transaction",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "direction"
+                ],
+                "properties": {
+                  "direction": {
+                    "type": "string",
+                    "enum": [
+                      "up",
+                      "down"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "{ moved } : false when it is already first (up) or last (down)"
+          },
+          "400": {
+            "description": "Another direction"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/disclaimerversion": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "disclaimer"
+        ],
+        "summary": "Every version of the disclaimer, each as it was agreed to",
+        "responses": {
+          "200": {
+            "description": "{ count, records }"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "disclaimer"
+        ],
+        "summary": "Add a version of the disclaimer, not enabled (enable makes it the one users accept)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "text",
+                  "checkbox_label"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "checkbox_label": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "{ id, version }"
+          },
+          "400": {
+            "description": "No title, text or checkbox label"
+          }
+        }
+      }
+    },
+    "/disclaimerversion/{id}": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "disclaimer"
+        ],
+        "summary": "One version of the disclaimer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The version"
+          },
+          "404": {
+            "description": "No version has that number"
+          }
+        }
+      },
+      "put": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "disclaimer"
+        ],
+        "summary": "Change a version's text",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "text",
+                  "checkbox_label"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "checkbox_label": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The version"
+          },
+          "404": {
+            "description": "No version has that number"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "disclaimer"
+        ],
+        "summary": "Delete a version and who accepted it ; the enabled one deleted, the disclaimer is off (none enabled), as when the last one goes",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ message }"
+          },
+          "404": {
+            "description": "No version has that number"
+          }
+        }
+      }
+    },
+    "/disclaimerversion/{id}/enable": {
+      "post": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "disclaimer"
+        ],
+        "summary": "Enable a version (the one users accept) or disable it",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The version"
+          },
+          "404": {
+            "description": "No version has that number"
+          }
+        }
+      }
+    },
+    "/disclaimerversion/{id}/restore": {
+      "post": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "tags": [
+          "disclaimer"
+        ],
+        "summary": "Restore a version : enabled again, the one users accept (as enable)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ version }"
+          },
+          "404": {
+            "description": "No version has that number"
+          }
+        }
       }
     },
     "/oauth2": {
