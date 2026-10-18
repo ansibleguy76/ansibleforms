@@ -516,14 +516,6 @@ onMounted(async () => {
 .af-provider-note ul {
   padding-left: 1.25rem;
 }
-/* the radio buttons : their labels one width, so the grey hints line up, as a credential's */
-.af-short-check {
-  margin-bottom: 0.6rem;
-}
-.af-short-label {
-  display: inline-block;
-  min-width: 12rem;
-}
 /* the last switch : the tab's end, the card's padding below it */
 .af-provider-switch:last-child {
   margin-bottom: 0 !important;

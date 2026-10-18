@@ -981,14 +981,6 @@ onMounted(async () => {
 .af-runner-tab fieldset > :last-child :deep(.mb-3:last-child) {
   margin-bottom: 0 !important;
 }
-/* the radio buttons : their labels one width, so the grey hints line up, as in the dialog */
-.af-short-check {
-  margin-bottom: 0.6rem;
-}
-.af-short-label {
-  display: inline-block;
-  min-width: 12rem;
-}
 </style>
 <route lang="yaml">
 meta:
