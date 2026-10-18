@@ -94,6 +94,8 @@ export default {
     failedGetLock: "Nie udało się pobrać blokady",
   },
   resources: {
+    cantTouchDirectoryAdmin:
+      "Tylko admin może zablokować, wylogować, zapomnieć lub unieważnić tokeny użytkownika z rolą admin",
     credentialNotFound:
       "Brak poświadczenia o nazwie '{name}'",
     repositoryCredentialType:

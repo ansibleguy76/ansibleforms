@@ -64,6 +64,8 @@ vi.mock("../src/lib/userGroups.js", () => ({
   forgetGroups: () => {},
 }));
 vi.mock("../src/lib/adminGrants.js", () => ({
+  // the requests here are an admin's unless a test refuses it (refuseAdmin)
+  isAdminRequest: (req) => !req.refuseAdmin,
   assertMayTouchAdmin: async (req) => {
     if (req.refuseAdmin) {
       const { default: Errors } = await import("../src/lib/errors.js");

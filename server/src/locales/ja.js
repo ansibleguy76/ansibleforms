@@ -88,6 +88,8 @@ export default {
     failedGetLock: "ロックの取得に失敗しました",
   },
   resources: {
+    cantTouchDirectoryAdmin:
+      "admin ロールを持つユーザーのブロック、サインアウト、削除、トークンの取り消しができるのは admin だけです",
     credentialNotFound:
       "'{name}' という名前の資格情報はありません",
     repositoryCredentialType:

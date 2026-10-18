@@ -89,6 +89,8 @@ export default {
     failedGetLock: "Kan vergrendeling niet ophalen",
   },
   resources: {
+    cantTouchDirectoryAdmin:
+      "Alleen een admin kan een gebruiker met de admin-rol blokkeren, afmelden, vergeten of zijn tokens intrekken",
     credentialNotFound:
       "Geen referentie met de naam '{name}'",
     repositoryCredentialType:

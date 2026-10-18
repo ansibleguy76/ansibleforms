@@ -18,6 +18,7 @@ import logger from '../../lib/logger.js';
 import authConfig from '../../../config/auth.config.js';
 import { DIRECTORY_TYPES } from '../../models/directoryUser.model.js';
 import { assertMayTouchAdmin } from '../../lib/adminGrants.js';
+import { assertMayTouchDirectoryAdmin } from './directory.controller.js';
 import { userToJwt } from './login.controller.js';
 import { NEVER_DAYS, apiTokenDays, mayMakeApiTokens } from '../../lib/tokenLifetime.js';
 
@@ -141,6 +142,8 @@ const revokeForUser = async function (req, res) {
   try {
     const user = await named(req, res);
     if (!user) return;
+    // a directory user who is an admin : the admin role's own to change, as a local admin account
+    if (user.type !== 'local') await assertMayTouchDirectoryAdmin(req, { type: user.type, name: user.username });
     if (!(await ApiToken.revoke(req.params.sid, user.username, user.type))) return res.status(404).json(RestResult.error(i18n.t(req, 'errors.apiTokenNotFound')));
     res.json(RestResult.single({ revoked: true }));
   } catch (err) {

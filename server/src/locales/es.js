@@ -91,6 +91,8 @@ export default {
     failedGetLock: "Error al obtener el bloqueo",
   },
   resources: {
+    cantTouchDirectoryAdmin:
+      "Solo un admin puede bloquear, cerrar la sesión, olvidar o revocar los tokens de un usuario con el rol admin",
     credentialNotFound:
       "No hay ninguna credencial llamada '{name}'",
     repositoryCredentialType:

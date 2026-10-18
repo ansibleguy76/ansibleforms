@@ -86,6 +86,8 @@ export default {
     failedGetLock: "Failed to get lock",
   },
   resources: {
+    cantTouchDirectoryAdmin:
+      "Only an admin can block, sign out, forget or revoke the tokens of a user who has the admin role",
     credentialNotFound:
       "No credential named '{name}'",
     repositoryCredentialType:

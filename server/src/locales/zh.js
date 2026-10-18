@@ -82,6 +82,8 @@ export default {
     failedGetLock: "获取锁失败",
   },
   resources: {
+    cantTouchDirectoryAdmin:
+      "只有 admin 可以封禁、注销、遗忘拥有 admin 角色的用户或撤销其令牌",
     credentialNotFound:
       "没有名为 '{name}' 的凭据",
     repositoryCredentialType:

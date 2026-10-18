@@ -93,6 +93,8 @@ export default {
     failedGetLock: "Abrufen der Sperre fehlgeschlagen",
   },
   resources: {
+    cantTouchDirectoryAdmin:
+      "Nur ein Admin kann einen Benutzer mit der Admin-Rolle sperren, abmelden, vergessen oder seine Tokens widerrufen",
     credentialNotFound:
       "Keine Zugangsdaten mit dem Namen '{name}'",
     repositoryCredentialType:

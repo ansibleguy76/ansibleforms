@@ -96,6 +96,8 @@ export default {
     failedGetLock: "Echec de la recuperation du verrou",
   },
   resources: {
+    cantTouchDirectoryAdmin:
+      "Seul un admin peut bloquer, déconnecter, oublier ou révoquer les jetons d'un utilisateur qui a le rôle admin",
     credentialNotFound:
       "Aucun identifiant nommé '{name}'",
     repositoryCredentialType:
