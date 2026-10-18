@@ -2645,7 +2645,8 @@ defineExpose({
                     :values="field.values || queryresults[field.name] || []"
                     :hasError="v$.form[field.name].$invalid"
                     :isLoading="
-                      !field.values && !['fixed', 'variable', 'error'].includes(dynamicFieldStatus[field.name])
+                      !field.values &&
+                      !['fixed', 'variable', 'default', 'error'].includes(dynamicFieldStatus[field.name])
                     "
                     v-model="v$.form[field.name].$model"
                     :icon="field.icon"
@@ -2752,7 +2753,7 @@ defineExpose({
                   v-if="field.type == 'yaml'"
                   :class="{
                     'is-loading':
-                      !['fixed', 'variable', 'error'].includes(dynamicFieldStatus[field.name]) &&
+                      !['fixed', 'variable', 'default', 'error'].includes(dynamicFieldStatus[field.name]) &&
                       (field.expression || field.query),
                   }"
                 >

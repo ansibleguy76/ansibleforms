@@ -138,3 +138,14 @@ describe('a validation rule the engine could not compile', () => {
   });
 });
 
+//----------------------------------------------------------------
+// a field that fell back to its default
+//----------------------------------------------------------------
+
+describe('a field settled on its default stops spinning', () => {
+  it('counts the default status as settled, like an error', () => {
+    const lists = src.match(/\[[^\]]*'fixed', 'variable'[^\]]*\]\.includes\(dynamicFieldStatus\[field\.name\]\)/g);
+    expect(lists.length).toBe(2);
+    lists.forEach((l) => expect(l).toContain("'default'"));
+  });
+});
