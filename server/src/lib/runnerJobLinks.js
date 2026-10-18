@@ -30,20 +30,13 @@ const UI_KINDS = { job: "playbook", workflow_job: "workflow", project_update: "p
  */
 export function uiJobUrl(runner, id, kind = "playbook") {
   if (runner?.type !== "awx" || !/^\d+$/.test(String(id ?? "")) || !Object.values(UI_KINDS).includes(kind)) return "";
-  let url;
-  try {
-    url = new URL(String(runner.uri || ""));
-  } catch (e) {
-    return "";
-  }
-  if (!["http:", "https:"].includes(url.protocol)) return "";
   // the UI is where the API is, without the API path (https://aap.example.com/api/controller/v2) ;
   // a path before it stays (/tower/api/v2). Never the credentials a uri may carry.
-  const api = url.pathname.search(/\/api(\/|$)/);
-  const base = url.origin + (api >= 0 ? url.pathname.slice(0, api) : url.pathname).replace(/\/+$/, "");
+  const base = uiBase(runner);
+  if (!base) return "";
   // the AAP 2.5 gateway (its controller under /api/controller) has its own UI ; an AAP before 2.5
-  // is the controller alone, with AWX's
-  const gateway = runner.flavour === "aap" && /\/api\/controller(\/|$)/.test(url.pathname);
+  // is the controller alone, with AWX's (the uri parses : uiBase read it)
+  const gateway = runner.flavour === "aap" && /\/api\/controller(\/|$)/.test(new URL(String(runner.uri)).pathname);
   return gateway ? `${base}/execution/jobs/${kind}/${id}/output` : `${base}/#/jobs/${kind}/${id}/output`;
 }
 

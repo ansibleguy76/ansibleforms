@@ -5,17 +5,6 @@ import appConfig from '../../config/app.config.js';
 
 const algorithm = 'aes-256-ctr';
 
-const encrypt = (text) => {
-    if(text){
-      const iv = crypto.randomBytes(16);
-      const cipher = crypto.createCipheriv(algorithm, appConfig.encryptionSecret, iv);
-      const encrypted = Buffer.concat([cipher.update(text), cipher.final()]);
-      return encrypted.toString('hex') + "." + iv.toString('hex')
-    }else{
-      return ""
-    }
-};
-
 const encrypt_to_file = (path,text) => {
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv('aes-256-cbc', appConfig.encryptionSecret, iv);
@@ -59,17 +48,27 @@ const decryptWith = (key, hash) => {
     return Buffer.concat([decipher.update(Buffer.from(content, 'hex')), decipher.final()]);
 };
 
-const decrypt = (hash) => {
-    if(hash){
-      const tmp = hash.split(".")
-      const hash2 = {content:tmp[0],iv:tmp[1]}
-      const decipher = crypto.createDecipheriv(algorithm, appConfig.encryptionSecret, Buffer.from(hash2.iv, 'hex'));
-      const decrpyted = Buffer.concat([decipher.update(Buffer.from(hash2.content, 'hex')), decipher.final()]);
-      return decrpyted.toString();
-    }else{
-      return ""
-    }
-};
+/**
+ * A value encrypted with ENCRYPTION_SECRET's key : encryptWith with that key.
+ *
+ * Args:
+ *   text (string): the value.
+ *
+ * Returns:
+ *   string: the ciphertext and its iv, hex, joined by a dot ; empty for an empty value.
+ */
+const encrypt = (text) => encryptWith(appConfig.encryptionSecret, text);
+
+/**
+ * A value decrypted with ENCRYPTION_SECRET's key : decryptWith with that key, as text.
+ *
+ * Args:
+ *   hash (string): the ciphertext and its iv, hex, joined by a dot.
+ *
+ * Returns:
+ *   string: the value ; empty for an empty hash.
+ */
+const decrypt = (hash) => (hash ? decryptWith(appConfig.encryptionSecret, hash).toString() : "");
 // promise wrapper for bcrypthash
 const hashPassword = (pw) => {
     const saltrounds = 10

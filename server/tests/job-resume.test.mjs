@@ -16,7 +16,7 @@ const { Awx, printedWorkflowNodeIds } = await import("../src/runners/awx/api.js"
 const { default: mysql } = await import("../src/models/db.model.js");
 const { default: Runner } = await import("../src/models/runner.model.js");
 const { RUNNERS } = await import("../src/runners/index.js");
-const { resumeAbandoned, findResumable, resumableRunnerTypes } = await import("../src/lib/jobResume.js");
+const { resumeAbandoned, findResumable, resumableRunnerTypes, abandonAndResumeOnce, resetStartForTests } = await import("../src/lib/jobResume.js");
 
 // --------------------------------------------------------------------------------------
 // the test database : the jobs, and the output rows with their id, order and stream
@@ -63,9 +63,24 @@ mysql.do = async function (sql, params) {
     if (j?.status === "running") Object.assign(j, { status: "abandoned", end: "now" });
     return { affectedRows: 1 };
   }
+  // Job.abandonOwn : the running jobs of a tracker, and the untracked ones when asked
+  if (sql.includes("set status='abandoned',abort_requested=0 where (status='running' or abort_requested) and host IS NULL and (tracker=?")) {
+    const untracked = sql.includes("or tracker IS NULL");
+    let changedRows = 0;
+    for (const j of Object.values(jobs)) {
+      if (j.status !== "running") continue;
+      const tracker = j.tracker ?? null;
+      if ((params[0] !== null && tracker === params[0]) || (untracked && tracker === null)) {
+        j.status = "abandoned";
+        changedRows++;
+      }
+    }
+    return { changedRows };
+  }
   if (sql.includes("JOIN AnsibleForms.`runners` r")) {
     lastSelect = { sql, params };
-    return candidates.map((c) => ({ ...c }));
+    // the candidates still abandoned : a claimed one is 'running' again
+    return candidates.filter((c) => jobs[c.id]?.status === "abandoned").map((c) => ({ ...c, tracker: jobs[c.id].tracker ?? null }));
   }
   if (sql.includes("UPDATE AnsibleForms.`jobs` set ? WHERE id=?")) {
     Object.assign((jobs[params[1]] ||= {}), params[0]);
@@ -247,5 +262,66 @@ describe("resumeAbandoned", () => {
     await until(() => jobs[3].status === "failed");
     assert.equal(jobs[3].status, "failed");
     assert.match(outputOf(3).at(-1), /step 'deploy' ran \(job 9\): that step ended with success, the steps after it were not run/);
+  });
+});
+
+describe("abandonAndResumeOnce", () => {
+  const realResume = RUNNERS.awx.resume;
+  const realFind = Runner.findByName;
+  afterAll(() => {
+    RUNNERS.awx.resume = realResume;
+    Runner.findByName = realFind;
+  });
+  beforeEach(() => {
+    Runner.findByName = async (name) => (name === "awx-test" ? runner : null);
+    resetStartForTests();
+  });
+  // a follow that runs on : the job stays running while the next call comes
+  const followInto = (followed) => (ctx) => {
+    followed.push(ctx.jobId);
+    return new Promise(() => {});
+  };
+
+  test("a dedicated worker's start and its bootstrap follow a resumed job with one loop only", async () => {
+    // a job this worker followed before it restarted, and one from before 7 nobody follows
+    jobs[11] = { status: "running", tracker: "worker:w1" };
+    jobs[12] = { status: "running", tracker: null };
+    candidates = [
+      { id: 11, runner: "awx-test", awx_id: 88 },
+      { id: 12, runner: "awx-test", awx_id: 88 },
+    ];
+    const followed = [];
+    RUNNERS.awx.resume = followInto(followed);
+    // the worker's start : its own job only
+    assert.deepEqual(await abandonAndResumeOnce("worker:w1"), { abandoned: 1, resumed: 1 });
+    assert.equal(jobs[11].status, "running");
+    assert.equal(jobs[12].status, "running");
+    // the bootstrap once the lock is held : the untracked job only, the resumed one left alone
+    assert.deepEqual(await abandonAndResumeOnce("worker:w1", { untracked: true }), { abandoned: 1, resumed: 1 });
+    assert.equal(jobs[11].status, "running");
+    assert.equal(jobs[11].tracker, "worker:w1");
+    assert.equal(jobs[12].tracker, "worker:w1");
+    // a third call does nothing
+    assert.deepEqual(await abandonAndResumeOnce("worker:w1", { untracked: true }), { abandoned: 0, resumed: 0 });
+    await new Promise((r) => setTimeout(r, 50));
+    assert.deepEqual(followed.sort(), [11, 12]);
+  });
+
+  test("an app process's bootstrap does it all in one go, and only once", async () => {
+    jobs[13] = { status: "running", tracker: "app:a1" };
+    jobs[14] = { status: "running", tracker: null };
+    assert.deepEqual(await abandonAndResumeOnce("app:a1", { untracked: true }), { abandoned: 2, resumed: 0 });
+    assert.deepEqual(await abandonAndResumeOnce("app:a1"), { abandoned: 0, resumed: 0 });
+  });
+
+  test("calls made together run one after the other, and a job gets one loop", async () => {
+    jobs[15] = { status: "running", tracker: "worker:w1" };
+    candidates = [{ id: 15, runner: "awx-test", awx_id: 88 }];
+    const followed = [];
+    RUNNERS.awx.resume = followInto(followed);
+    const [a, b] = await Promise.all([abandonAndResumeOnce("worker:w1"), abandonAndResumeOnce("worker:w1", { untracked: true })]);
+    assert.equal(a.resumed + b.resumed, 1);
+    await new Promise((r) => setTimeout(r, 50));
+    assert.deepEqual(followed, [15]);
   });
 });
