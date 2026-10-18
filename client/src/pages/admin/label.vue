@@ -17,7 +17,7 @@ import Helpers from '@/lib/Helpers';
 import { PILL } from '@/lib/tableCells';
 import { LABEL_COLORS } from '@/config/settings';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
-import { useRouteTab } from '@/composables/useRouteTab';
+import { useSingleTab } from '@/composables/useSingleTab';
 import { useRecordSearch } from '@/composables/useRecordSearch';
 import { reloadKeepingEdits } from '@/lib/keepEdits';
 
@@ -134,11 +134,6 @@ const previewLabels = computed(() => {
     .sort((a, b) => (Number(a.position) || 0) - (Number(b.position) || 0));
 });
 
-// ─── tabs ─────────────────────────────────────────────────────────────────────
-// one tab, Details, as every record's page : the tab kept in the address
-const tabs = computed(() => [{ key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' }]);
-const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
-
 // ─── search ───────────────────────────────────────────────────────────────────
 // A word typed in the title line's search narrows the page, as Settings > General's : the fields
 // whose label or help has it, under the tab's name, the tab set aside meanwhile.
@@ -163,10 +158,12 @@ const pageCrumbs = computed(() => [
     to: `/settings/labels/${labelId.value}`,
   },
 ]);
-// and the open tab last, as every page in tabs names it : Labels › PRODUCTION › Details
-const crumbs = computed(() => {
-  const tab = tabs.value.find((x) => x.key === activeTab.value);
-  return tab ? [...pageCrumbs.value, { title: tab.label, icon: tab.icon, to: tabLink(tab.key) }] : pageCrumbs.value;
+// one tab, Details, as every record's page ; named last in the title : Labels › PRODUCTION › Details
+const { tabs, activeTab, crumbs } = useSingleTab({
+  key: 'details',
+  label: () => t('settings.common.tabDetails'),
+  icon: 'sliders',
+  pageCrumbs: () => pageCrumbs.value,
 });
 
 onMounted(async () => {
