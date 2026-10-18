@@ -30,11 +30,17 @@ vi.mock("../src/models/job.model.js", () => ({
 // the claim is one conditional statement : it takes the row only while it is still 'queued'
 vi.mock("../src/models/db.model.js", () => ({
   default: {
-    do: async (sql) => {
+    do: async (sql, params) => {
       if (/SET state='running',.* WHERE id=\? AND state='queued'/.test(sql)) {
         if (row.state !== "queued") return { affectedRows: 0 };
         row.state = "running";
         writes.push("running");
+        return { affectedRows: 1 };
+      }
+      // a one-time schedule that could not be deleted : turned off, with its outcome
+      if (/SET output=\?, status=\?, last_run=\?, state='idle', enabled=0/.test(sql)) {
+        Object.assign(row, { output: params[0], status: params[1], state: "idle", enabled: 0 });
+        writes.push("off");
         return { affectedRows: 1 };
       }
       return [];
@@ -45,7 +51,7 @@ vi.mock("../src/models/db.model.js", () => ({
 
 // the cron service is only touched for one-time schedules
 vi.mock("../src/services/cron.service.js", () => ({
-  default: { removeScheduleJob: () => {}, addScheduleJob: () => {} },
+  default: { removeScheduleJob: () => {}, addScheduleJob: () => {}, removeSchedule: (id) => { removedFromCron.push(id); } },
 }));
 
 const { default: Schedule } = await import("../src/models/schedule.model.js");
@@ -54,6 +60,7 @@ const { default: CrudModel } = await import("../src/models/crud.model.js");
 // record every state write, in order
 let row = {};
 let writes = [];
+let removedFromCron = [];
 beforeEach(() => {
   launched = null;
   launchImpl = async () => ({ id: 42 });
@@ -129,5 +136,33 @@ describe("a schedule that cannot even be parsed fails once", () => {
     await Schedule.launch(1);
     assert.equal(row.status, "success");
     assert.equal(launched.extravars.host, "server1");
+  });
+});
+
+describe("a one-time schedule runs once", () => {
+  // It was set idle, THEN deleted : a delete that failed left it idle, enabled and past its
+  // run_at - what the cron's every-minute check queues - so it launched again, every minute.
+  let deleted;
+  beforeEach(() => {
+    row.one_time_run = 1;
+    deleted = [];
+    removedFromCron = [];
+    CrudModel.delete = async (model, id) => { deleted.push(id); return { affectedRows: 1 }; };
+  });
+
+  test("it is deleted, never set idle first", async () => {
+    await Schedule.launch(1);
+    assert.deepEqual(deleted, [1]);
+    assert.deepEqual(writes, ["running"], "no idle write before (or after) the delete");
+    assert.deepEqual(removedFromCron, [1]);
+  });
+
+  test("a delete that fails leaves it turned off, not idle and enabled", async () => {
+    CrudModel.delete = async () => { throw new Error("This record is managed by the config seed (schedule) and is read only"); };
+    await Schedule.launch(1);
+    assert.deepEqual(writes, ["running", "off"]);
+    assert.equal(row.enabled, 0, "the cron skips a schedule turned off");
+    assert.equal(row.status, "success", "and its outcome is kept");
+    assert.deepEqual(removedFromCron, [1]);
   });
 });
