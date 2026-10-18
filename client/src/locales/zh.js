@@ -1746,7 +1746,7 @@ export default {
       authUserHint: 'AWX 用户及其密码',
       caBundleHelp: '签署运行器证书的颁发机构的 PEM 证书：先根证书，再中间证书。',
       customCa: '使用自定义 CA 证书',
-      default_rte: 'Playbook 表单',
+      default_rte: 'Playbook 表单和工作流',
       default_awx: 'AWX、AAP 和 Ascender 表单',
       default_semaphore: 'Semaphore 表单',
       default_rundeck: 'Rundeck 表单',

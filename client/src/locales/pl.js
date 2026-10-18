@@ -1820,7 +1820,7 @@ export default {
       authUserHint: 'Użytkownik AWX i jego hasło',
       caBundleHelp: 'Certyfikaty PEM urzędu, który podpisał certyfikat runnera: jego główny, potem pośrednie.',
       customCa: 'Użyj własnego certyfikatu CA',
-      default_rte: 'Formularze playbooków',
+      default_rte: 'Formularze playbooków i workflowy',
       default_awx: 'Formularze AWX, AAP i Ascender',
       default_semaphore: 'Formularze Semaphore',
       default_rundeck: 'Formularze Rundeck',

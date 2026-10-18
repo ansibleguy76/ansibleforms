@@ -1375,7 +1375,7 @@ export default {
       authUserHint: 'An AWX user and its password',
       caBundleHelp: "The private CA's certificates in PEM: its root, then any intermediates.",
       customCa: 'Use a custom CA certificate',
-      default_rte: 'Playbook forms',
+      default_rte: 'Playbook forms and workflows',
       default_awx: 'AWX, AAP and Ascender forms',
       default_semaphore: 'Semaphore forms',
       default_rundeck: 'Rundeck forms',

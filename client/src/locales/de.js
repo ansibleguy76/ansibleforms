@@ -1396,7 +1396,7 @@ export default {
       caBundleHelp:
         'Die PEM-Zertifikate der Stelle, die das Zertifikat des Runners signiert hat: ihre Wurzel, dann die Zwischenzertifikate.',
       customCa: 'Eigenes CA-Zertifikat verwenden',
-      default_rte: 'Playbook-Formulare',
+      default_rte: 'Playbook-Formulare und Workflows',
       default_awx: 'AWX-, AAP- und Ascender-Formulare',
       default_semaphore: 'Semaphore-Formulare',
       default_rundeck: 'Rundeck-Formulare',

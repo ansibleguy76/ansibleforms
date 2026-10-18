@@ -1389,7 +1389,7 @@ export default {
       caBundleHelp:
         'De PEM-certificaten van de autoriteit die het certificaat van de runner ondertekende: de root, dan de tussenliggende.',
       customCa: 'Een eigen CA-certificaat gebruiken',
-      default_rte: 'Playbookformulieren',
+      default_rte: 'Playbookformulieren en workflows',
       default_awx: 'AWX-, AAP- en Ascender-formulieren',
       default_semaphore: 'Semaphore-formulieren',
       default_rundeck: 'Rundeck-formulieren',

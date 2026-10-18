@@ -1835,7 +1835,7 @@ export default {
       caBundleHelp:
         "Els certificats PEM de l'autoritat que va signar el certificat del runner: la seva arrel i després els intermedis.",
       customCa: 'Utilitza un certificat de CA personalitzat',
-      default_rte: 'Formularis de playbook',
+      default_rte: 'Formularis de playbook i workflows',
       default_awx: 'Formularis AWX, AAP i Ascender',
       default_semaphore: 'Formularis Semaphore',
       default_rundeck: 'Formularis Rundeck',

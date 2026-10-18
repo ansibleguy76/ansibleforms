@@ -1802,7 +1802,7 @@ export default {
       authUserHint: 'AWX のユーザーとそのパスワード',
       caBundleHelp: 'ランナーの証明書に署名した認証局の PEM 証明書: ルート、次に中間証明書。',
       customCa: 'カスタム CA 証明書を使用',
-      default_rte: 'Playbook のフォーム',
+      default_rte: 'Playbook のフォームとワークフロー',
       default_awx: 'AWX・AAP・Ascender のフォーム',
       default_semaphore: 'Semaphore のフォーム',
       default_rundeck: 'Rundeck のフォーム',

@@ -1389,7 +1389,7 @@ export default {
       caBundleHelp:
         'I certificati PEM dell’autorità che ha firmato il certificato del runner: la radice, poi gli intermedi.',
       customCa: 'Usa un certificato CA personalizzato',
-      default_rte: 'Form playbook',
+      default_rte: 'Form playbook e workflow',
       default_awx: 'Form AWX, AAP e Ascender',
       default_semaphore: 'Form Semaphore',
       default_rundeck: 'Form Rundeck',
