@@ -787,6 +787,27 @@ export default {
     previous: 'Zurueck',
     next: 'Weiter',
     apply: 'Anwenden',
+    // copying to the clipboard, and a record saved by its name
+    copied: 'In die Zwischenablage kopiert',
+    copyFailed: 'Kopieren in die Zwischenablage fehlgeschlagen: {error}',
+    nameUpdated: '{name} wurde aktualisiert',
+  },
+  // a YAML file loaded into a field or saved from it (AppListField, BsYamlEditor, AppForm)
+  yamlFile: {
+    load: 'YAML laden',
+    download: 'Herunterladen',
+    wrongType: 'Bitte eine .yml- oder .yaml-Datei auswählen',
+    noData: 'Ungültige YAML-Datei: keine Daten gefunden',
+    nothingToDownload: 'Keine Daten zum Herunterladen',
+    loaded: 'Aus {file} geladen',
+    loadedRows: '{n} Zeile aus {file} geladen | {n} Zeilen aus {file} geladen',
+    parseFailed: '{file} konnte nicht gelesen werden: {error}',
+    downloaded: 'Als YAML heruntergeladen',
+    downloadFailed: 'Herunterladen fehlgeschlagen: {error}',
+    singleToArray: 'Einzelnes Objekt in eine Liste umgewandelt',
+    firstItemLoaded: 'Erster Listeneintrag geladen',
+    noItems: 'Keine Einträge',
+    subformMissing: 'Das Unterformular {subform}, auf das das Feld {field} verweist, wurde nicht gefunden.',
   },
   dataTable: {
     rangeOf: '{from}–{to} von {total}',
@@ -2887,6 +2908,9 @@ export default {
     mainJob: 'Hauptjob',
     stepN: 'Schritt {n}',
     failedToLoad: 'Jobs konnten nicht geladen werden',
+    failedToLoadOutput: 'Jobausgabe konnte nicht geladen werden',
+    failedToRead: 'Job {id} konnte nicht gelesen werden',
+    jobIdNote: '(Job-ID {id})',
   },
   form: {
     storedJobLoaded: '„{name}" in das Formular geladen',
@@ -2980,6 +3004,7 @@ export default {
     wizardSummaryHidden: 'nicht zutreffend',
     wizardSummaryPending: 'nicht abgeschlossen',
     wizardMissingSubform: 'Wizard-Schritt verweist auf unbekanntes Unterformular',
+    failedToGetJob: 'Job konnte nicht gelesen werden',
   },
   logs: {
     title: 'Serverprotokoll',

@@ -783,6 +783,27 @@ export default {
     previous: 'Poprzednia',
     next: 'Następna',
     apply: 'Zastosuj',
+    // copying to the clipboard, and a record saved by its name
+    copied: 'Skopiowano do schowka',
+    copyFailed: 'Nie udało się skopiować do schowka: {error}',
+    nameUpdated: 'Zaktualizowano: {name}',
+  },
+  // a YAML file loaded into a field or saved from it (AppListField, BsYamlEditor, AppForm)
+  yamlFile: {
+    load: 'Wczytaj YAML',
+    download: 'Pobierz',
+    wrongType: 'Wybierz plik .yml lub .yaml',
+    noData: 'Nieprawidłowy plik YAML: brak danych',
+    nothingToDownload: 'Brak danych do pobrania',
+    loaded: 'Wczytano z {file}',
+    loadedRows: 'Wczytano {n} wiersz z {file} | Wczytano {n} wiersze z {file} | Wczytano {n} wierszy z {file}',
+    parseFailed: 'Nie udało się odczytać {file}: {error}',
+    downloaded: 'Pobrano jako YAML',
+    downloadFailed: 'Nie udało się pobrać: {error}',
+    singleToArray: 'Pojedynczy obiekt zamieniono na listę',
+    firstItemLoaded: 'Wczytano pierwszy element listy',
+    noItems: 'Brak elementów',
+    subformMissing: 'Nie znaleziono podformularza {subform}, do którego odwołuje się pole {field}.',
   },
   dataTable: {
     rangeOf: '{from}–{to} z {total}',
@@ -2856,6 +2877,9 @@ export default {
     mainJob: 'Zadanie główne',
     stepN: 'Krok {n}',
     failedToLoad: 'Nie udało się wczytać zadań',
+    failedToLoadOutput: 'Nie udało się wczytać wyniku zadania',
+    failedToRead: 'Nie udało się odczytać zadania {id}',
+    jobIdNote: '(id zadania {id})',
   },
   form: {
     storedJobLoaded: 'Załadowano „{name}" do formularza',
@@ -2950,6 +2974,7 @@ export default {
     wizardSummaryHidden: 'nie dotyczy',
     wizardSummaryPending: 'nieukończony',
     wizardMissingSubform: 'Krok kreatora odwołuje się do nieznanego podformularza',
+    failedToGetJob: 'Nie udało się odczytać zadania',
   },
   logs: {
     title: 'Dziennik serwera',

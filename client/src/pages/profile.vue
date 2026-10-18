@@ -424,7 +424,7 @@ resumePendingToken();
 
 async function copyToken() {
   try {
-    await navigator.clipboard.writeText(tokenResult.value.token);
+    await Helpers.copyToClipboard(tokenResult.value.token);
     toast.success(t('profilePage.token.copied'));
   } catch {
     // no clipboard access (plain http) : the token stays selectable in its box

@@ -778,6 +778,27 @@ export default {
     previous: 'Previous',
     next: 'Next',
     apply: 'Apply',
+    // copying to the clipboard, and a record saved by its name
+    copied: 'Copied to clipboard',
+    copyFailed: 'Could not copy to clipboard: {error}',
+    nameUpdated: '{name} is updated',
+  },
+  // a YAML file loaded into a field or saved from it (AppListField, BsYamlEditor, AppForm)
+  yamlFile: {
+    load: 'Load YAML',
+    download: 'Download',
+    wrongType: 'Please select a .yml or .yaml file',
+    noData: 'Invalid YAML file: no data found',
+    nothingToDownload: 'No data to download',
+    loaded: 'Loaded from {file}',
+    loadedRows: 'Loaded {n} row from {file} | Loaded {n} rows from {file}',
+    parseFailed: 'Failed to parse {file}: {error}',
+    downloaded: 'Downloaded as YAML',
+    downloadFailed: 'Failed to download: {error}',
+    singleToArray: 'Single object converted to a list',
+    firstItemLoaded: 'First list item loaded',
+    noItems: 'No items',
+    subformMissing: 'Subform {subform} referenced by field {field} was not found.',
   },
   dataTable: {
     rangeOf: '{from}–{to} of {total}',
@@ -2836,6 +2857,9 @@ export default {
     mainJob: 'Main job',
     stepN: 'Step {n}',
     failedToLoad: 'Failed to load jobs',
+    failedToLoadOutput: 'Failed to load the job output',
+    failedToRead: 'Failed to read job {id}',
+    jobIdNote: '(job id {id})',
   },
   form: {
     storedJobLoaded: '"{name}" loaded into the form',
@@ -2928,6 +2952,7 @@ export default {
     wizardSummaryHidden: 'not applicable',
     wizardSummaryPending: 'not completed',
     wizardMissingSubform: 'Wizard step references unknown subform',
+    failedToGetJob: 'Failed to read the job',
   },
   logs: {
     title: 'Server log',

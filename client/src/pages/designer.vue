@@ -220,14 +220,18 @@ function editorCut() {
   if (!activeEditor.value) return;
   const text = activeEditor.value.getSelectedText();
   if (text) {
-    navigator.clipboard.writeText(text);
-    activeEditor.value.session.remove(activeEditor.value.getSelectionRange());
+    // removed once it is really on the clipboard : a refused copy no longer loses the text
+    const editor = activeEditor.value;
+    const range = editor.getSelectionRange();
+    Helpers.copyToClipboard(text)
+      .then(() => editor.session.remove(range))
+      .catch(() => {});
   }
 }
 function editorCopy() {
   if (!activeEditor.value) return;
   const text = activeEditor.value.getSelectedText();
-  if (text) navigator.clipboard.writeText(text);
+  if (text) Helpers.copyToClipboard(text).catch(() => {});
 }
 async function editorPaste() {
   if (!activeEditor.value) return;

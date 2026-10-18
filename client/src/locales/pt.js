@@ -786,6 +786,27 @@ export default {
     previous: 'Anterior',
     next: 'Seguinte',
     apply: 'Aplicar',
+    // copying to the clipboard, and a record saved by its name
+    copied: 'Copiado para a área de transferência',
+    copyFailed: 'Não foi possível copiar para a área de transferência: {error}',
+    nameUpdated: '{name} foi atualizado',
+  },
+  // a YAML file loaded into a field or saved from it (AppListField, BsYamlEditor, AppForm)
+  yamlFile: {
+    load: 'Carregar YAML',
+    download: 'Transferir',
+    wrongType: 'Selecione um ficheiro .yml ou .yaml',
+    noData: 'Ficheiro YAML inválido: sem dados',
+    nothingToDownload: 'Sem dados para transferir',
+    loaded: 'Carregado de {file}',
+    loadedRows: '{n} linha carregada de {file} | {n} linhas carregadas de {file}',
+    parseFailed: 'Não foi possível ler {file}: {error}',
+    downloaded: 'Transferido como YAML',
+    downloadFailed: 'Não foi possível transferir: {error}',
+    singleToArray: 'Objeto único convertido em lista',
+    firstItemLoaded: 'Carregado o primeiro item da lista',
+    noItems: 'Sem itens',
+    subformMissing: 'O subformulário {subform} referido pelo campo {field} não foi encontrado.',
   },
   dataTable: {
     rangeOf: '{from}–{to} de {total}',
@@ -2873,6 +2894,9 @@ export default {
     mainJob: 'Tarefa principal',
     stepN: 'Passo {n}',
     failedToLoad: 'Falha ao carregar as tarefas',
+    failedToLoadOutput: 'Falha ao carregar a saída da tarefa',
+    failedToRead: 'Falha ao ler a tarefa {id}',
+    jobIdNote: '(id da tarefa {id})',
   },
   form: {
     storedJobLoaded: '"{name}" carregado no formulário',
@@ -2966,6 +2990,7 @@ export default {
     wizardSummaryHidden: 'não aplicável',
     wizardSummaryPending: 'não concluído',
     wizardMissingSubform: 'O passo do assistente referencia um subformulário desconhecido',
+    failedToGetJob: 'Falha ao ler a tarefa',
   },
   logs: {
     title: 'Registo do servidor',

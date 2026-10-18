@@ -623,53 +623,16 @@ watch(
 
 // METHODS
 
-// copy string to clipboard
-async function copyToClipboard(textToCopy) {
-  // Navigator clipboard api needs a secure context (https)
-  if (navigator.clipboard && window.isSecureContext) {
-    await navigator.clipboard.writeText(textToCopy);
-  } else {
-    // Use the 'out of viewport hidden text area' trick
-    const textArea = document.createElement('textarea');
-    textArea.value = textToCopy;
-
-    // Move textarea out of the viewport so it's not visible
-    textArea.style.position = 'absolute';
-    textArea.style.left = '-999999px';
-
-    document.body.prepend(textArea);
-    textArea.select();
-
-    try {
-      document.execCommand('copy');
-    } catch (error) {
-      console.error(error);
-    } finally {
-      textArea.remove();
-    }
-  }
-}
-
 // copy object to clipboard as json or yaml
+// (Helpers.copyToClipboard : one copy for the whole app, its promise rejecting when nothing
+// was copied, so the success toast only says what really happened)
 async function clip(v, doNotStringify = false, asYaml = false) {
-  if (doNotStringify) {
-    try {
-      await copyToClipboard(v);
-      toast.success('Copied to clipboard');
-    } catch (err) {
-      toast.error('Error copying to clipboard: \n' + err.toString());
-    }
-  } else {
-    try {
-      if (asYaml) {
-        await copyToClipboard(YAML.stringify(v));
-      } else {
-        await copyToClipboard(JSON.stringify(v, null, 2));
-      }
-      toast.success('Copied to clipboard');
-    } catch (err) {
-      toast.error('Error copying to clipboard: \n' + err.toString());
-    }
+  try {
+    const text = doNotStringify ? v : asYaml ? YAML.stringify(v) : JSON.stringify(v, null, 2);
+    await Helpers.copyToClipboard(text);
+    toast.success(t('common.copied'));
+  } catch (err) {
+    toast.error(t('common.copyFailed', { error: String(err?.message || err) }));
   }
 }
 // copy the job's output as it reads on screen (the filter applied or not) : the output is
@@ -779,7 +742,7 @@ async function loadOutput(id, sub = false) {
       if (idx >= 0) jobs.value[idx] = data;
     }
   } else {
-    toast.error(result.data?.error || 'Failed to load job output');
+    toast.error(result.data?.error || t('jobs.failedToLoadOutput'));
   }
 }
 // Live : the server says the jobs changed (lib/liveEvents.js) - one launched, its status, its
@@ -851,7 +814,7 @@ async function openReview(id) {
       message: replacePlaceholders(data.approval?.message || '', data.extravars),
     };
   } catch (err) {
-    toast.error(Helpers.parseAxiosResponseError(err) || `Failed to read job ${id}`);
+    toast.error(Helpers.parseAxiosResponseError(err) || t('jobs.failedToRead', { id }));
   }
 }
 // someone else approved or rejected it while the review was open : the live list, or the job's
@@ -1094,7 +1057,7 @@ onMounted(async () => {
     } catch (err) {
       // a deep link to a job that is gone (or not visible) must not
       // abort the mount : the list and the polling still have to start
-      toast.error(Helpers.parseAxiosResponseError(err, 'Failed to load job output'));
+      toast.error(Helpers.parseAxiosResponseError(err, t('jobs.failedToLoadOutput')));
     }
   }
   await loadJobs(true);
@@ -1821,7 +1784,7 @@ onMounted(async () => {
                       @keydown.space.self.prevent="toggleOutput('main')"
                     >
                       <FaIcon :icon="foldedOutputs.main ? 'chevron-right' : 'chevron-down'" class="af-job-chevron" />
-                      {{ t('jobs.mainJob') }} (jobid {{ jobId }})
+                      {{ t('jobs.mainJob') }} {{ t('jobs.jobIdNote', { id: jobId }) }}
                       <AppStatusPill :status="job.status" />
                     </h3>
                     <!-- a wrapper to fold : the output has more than one root, v-show cannot reach it -->
@@ -1857,8 +1820,8 @@ onMounted(async () => {
                         :icon="foldedOutputs[step.id] ? 'chevron-right' : 'chevron-down'"
                         class="af-job-chevron"
                       />
-                      {{ t('jobs.stepN', { n: i + 1 })
-                      }}<template v-if="step.target"> · {{ step.target }}</template> (jobid {{ step.id }})
+                      {{ t('jobs.stepN', { n: i + 1 }) }}<template v-if="step.target"> · {{ step.target }}</template>
+                      {{ t('jobs.jobIdNote', { id: step.id }) }}
                       <AppStatusPill :status="step.status" />
                     </h3>
                     <div v-show="!foldedOutputs[step.id]">

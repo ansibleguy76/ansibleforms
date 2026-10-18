@@ -20,6 +20,7 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner';
+import Helpers from '@/lib/Helpers';
 import { flatten, readMap, formsUsingConstant, formsUsingVarsFile } from '@/config/previews';
 
 const props = defineProps({
@@ -50,7 +51,7 @@ const fileUsedBy = computed(() => (props.mode === 'vars' ? formsUsingVarsFile(pr
  */
 async function copy(text) {
   try {
-    await navigator.clipboard.writeText(text);
+    await Helpers.copyToClipboard(text);
     toast.success(t('valuesPreview.copied', { text }));
   } catch {
     toast.error(t('valuesPreview.copyFailed'));

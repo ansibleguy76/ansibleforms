@@ -63,27 +63,27 @@ async function handleFileLoad(event) {
   try {
     const fileName = file.name.toLowerCase();
     if (!fileName.endsWith('.yml') && !fileName.endsWith('.yaml')) {
-      toast.error('Please select a .yml or .yaml file');
+      toast.error(t('yamlFile.wrongType'));
       return;
     }
     try {
       const text = await file.text();
       const parsed = YAML.parse(text);
       if (parsed === null || parsed === undefined) {
-        toast.error('Invalid YAML file - no data found');
+        toast.error(t('yamlFile.noData'));
         return;
       }
       const arrayData = Array.isArray(parsed) ? parsed : [parsed];
-      if (!Array.isArray(parsed)) toast.info('Single object converted to array');
+      if (!Array.isArray(parsed)) toast.info(t('yamlFile.singleToArray'));
 
       // Apply modeling transformation: build __output__ for each row from raw fields
       // so the modeled structure is immediately visible without manual edit
       rows.value = Helpers.applySubformModeling(arrayData, props.subform?.fields, props.subforms || []);
 
       commit();
-      toast.success(`Loaded ${arrayData.length} row(s) from ${file.name}`);
+      toast.success(t('yamlFile.loadedRows', { n: arrayData.length, file: file.name }, arrayData.length));
     } catch (e) {
-      toast.error(`Failed to parse ${file.name}: ${e.message}`);
+      toast.error(t('yamlFile.parseFailed', { file: file.name, error: e.message }));
     }
   } finally {
     event.target.value = '';
@@ -93,7 +93,7 @@ async function handleFileLoad(event) {
 function handleDownload() {
   try {
     if (!rows.value || rows.value.length === 0) {
-      toast.error('No data to download');
+      toast.error(t('yamlFile.nothingToDownload'));
       return;
     }
 
@@ -125,9 +125,9 @@ function handleDownload() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    toast.success('List data downloaded as YAML');
+    toast.success(t('yamlFile.downloaded'));
   } catch (e) {
-    toast.error(`Failed to download: ${e.message}`);
+    toast.error(t('yamlFile.downloadFailed', { error: e.message }));
   }
 }
 
@@ -336,14 +336,21 @@ function canDelete(row) {
   <div>
     <!-- Missing subform placeholder -->
     <div v-if="!subform" class="alert alert-danger">
-      Subform <code>{{ field.subform }}</code> referenced by field <code>{{ field.name }}</code> was not found.
+      <i18n-t keypath="yamlFile.subformMissing" scope="global">
+        <template #subform
+          ><code>{{ field.subform }}</code></template
+        >
+        <template #field
+          ><code>{{ field.name }}</code></template
+        >
+      </i18n-t>
     </div>
 
     <template v-else>
       <!-- Load/Download buttons -->
       <div v-if="showLoadButton || showDownloadButton" class="mb-2 d-flex gap-2">
         <BsButton v-if="showLoadButton" cssClass="btn-sm" icon="file-import" @click="triggerFileInput">
-          Load YAML
+          {{ t('yamlFile.load') }}
         </BsButton>
         <BsButton
           v-if="showDownloadButton"
@@ -352,7 +359,7 @@ function canDelete(row) {
           @click="handleDownload"
           :disabled="!rows || rows.length === 0"
         >
-          Download
+          {{ t('yamlFile.download') }}
         </BsButton>
         <input
           v-if="showLoadButton"
@@ -367,7 +374,7 @@ function canDelete(row) {
         <table class="table table-bordered mb-0">
           <thead>
             <tr>
-              <th style="width: 6rem">Actions</th>
+              <th style="width: 6rem">{{ t('common.actions') }}</th>
               <th v-for="col in columns" :key="'list-th-' + col.name" class="bg-primary-subtle">
                 {{ col.label || col.name }}
               </th>
@@ -425,7 +432,7 @@ function canDelete(row) {
               <td v-for="col in columns" :key="'list-add-' + col.name" class="bg-secondary-subtle"></td>
             </tr>
             <tr v-if="!allowInsert && rows.length === 0">
-              <td :colspan="columns.length + 1" class="text-muted">No items</td>
+              <td :colspan="columns.length + 1" class="text-muted">{{ t('yamlFile.noItems') }}</td>
             </tr>
           </tbody>
         </table>

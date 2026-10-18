@@ -786,6 +786,27 @@ export default {
     previous: 'Anterior',
     next: 'Siguiente',
     apply: 'Aplicar',
+    // copying to the clipboard, and a record saved by its name
+    copied: 'Copiado al portapapeles',
+    copyFailed: 'No se pudo copiar al portapapeles: {error}',
+    nameUpdated: '{name} fue actualizado',
+  },
+  // a YAML file loaded into a field or saved from it (AppListField, BsYamlEditor, AppForm)
+  yamlFile: {
+    load: 'Cargar YAML',
+    download: 'Descargar',
+    wrongType: 'Selecciona un archivo .yml o .yaml',
+    noData: 'Archivo YAML no válido: no contiene datos',
+    nothingToDownload: 'No hay datos para descargar',
+    loaded: 'Cargado desde {file}',
+    loadedRows: 'Cargada {n} fila desde {file} | Cargadas {n} filas desde {file}',
+    parseFailed: 'No se pudo leer {file}: {error}',
+    downloaded: 'Descargado como YAML',
+    downloadFailed: 'No se pudo descargar: {error}',
+    singleToArray: 'Objeto único convertido en lista',
+    firstItemLoaded: 'Cargado el primer elemento de la lista',
+    noItems: 'Sin elementos',
+    subformMissing: 'No se encontró el subformulario {subform} al que hace referencia el campo {field}.',
   },
   dataTable: {
     rangeOf: '{from}–{to} de {total}',
@@ -2875,6 +2896,9 @@ export default {
     mainJob: 'Trabajo principal',
     stepN: 'Paso {n}',
     failedToLoad: 'Error al cargar los trabajos',
+    failedToLoadOutput: 'Error al cargar la salida del trabajo',
+    failedToRead: 'Error al leer el trabajo {id}',
+    jobIdNote: '(id de trabajo {id})',
   },
   form: {
     storedJobLoaded: '"{name}" cargado en el formulario',
@@ -2968,6 +2992,7 @@ export default {
     wizardSummaryHidden: 'no aplicable',
     wizardSummaryPending: 'no completado',
     wizardMissingSubform: 'El paso del asistente hace referencia a un subformulario desconocido',
+    failedToGetJob: 'Error al leer el trabajo',
   },
   logs: {
     title: 'Registro del servidor',

@@ -785,6 +785,27 @@ export default {
     previous: 'Vorige',
     next: 'Volgende',
     apply: 'Toepassen',
+    // copying to the clipboard, and a record saved by its name
+    copied: 'Gekopieerd naar het klembord',
+    copyFailed: 'Kopiëren naar het klembord is mislukt: {error}',
+    nameUpdated: '{name} is bijgewerkt',
+  },
+  // a YAML file loaded into a field or saved from it (AppListField, BsYamlEditor, AppForm)
+  yamlFile: {
+    load: 'YAML laden',
+    download: 'Downloaden',
+    wrongType: 'Kies een .yml- of .yaml-bestand',
+    noData: 'Ongeldig YAML-bestand: geen gegevens gevonden',
+    nothingToDownload: 'Geen gegevens om te downloaden',
+    loaded: 'Geladen uit {file}',
+    loadedRows: '{n} rij geladen uit {file} | {n} rijen geladen uit {file}',
+    parseFailed: '{file} kon niet worden gelezen: {error}',
+    downloaded: 'Gedownload als YAML',
+    downloadFailed: 'Downloaden mislukt: {error}',
+    singleToArray: 'Enkel object omgezet naar een lijst',
+    firstItemLoaded: 'Eerste item van de lijst geladen',
+    noItems: 'Geen items',
+    subformMissing: 'Het subformulier {subform} waarnaar veld {field} verwijst, is niet gevonden.',
   },
   dataTable: {
     rangeOf: '{from}–{to} van {total}',
@@ -2866,6 +2887,9 @@ export default {
     mainJob: 'Hoofd job',
     stepN: 'Stap {n}',
     failedToLoad: 'Jobs laden mislukt',
+    failedToLoadOutput: 'Uitvoer van de job laden mislukt',
+    failedToRead: 'Job {id} lezen mislukt',
+    jobIdNote: '(job-id {id})',
   },
   form: {
     storedJobLoaded: '"{name}" in het formulier geladen',
@@ -2959,6 +2983,7 @@ export default {
     wizardSummaryHidden: 'niet van toepassing',
     wizardSummaryPending: 'niet voltooid',
     wizardMissingSubform: 'Wizard-stap verwijst naar onbekend subformulier',
+    failedToGetJob: 'Job lezen mislukt',
   },
   logs: {
     title: 'Serverlog',

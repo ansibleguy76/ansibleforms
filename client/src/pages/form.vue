@@ -1210,52 +1210,16 @@ async function submitForm(formObjectData) {
   launchForm(postdata);
 }
 
-async function copyToClipboard(textToCopy) {
-  // Navigator clipboard api needs a secure context (https)
-  if (navigator.clipboard && window.isSecureContext) {
-    await navigator.clipboard.writeText(textToCopy);
-  } else {
-    // Use the 'out of viewport hidden text area' trick
-    const textArea = document.createElement('textarea');
-    textArea.value = textToCopy;
-
-    // Move textarea out of the viewport so it's not visible
-    textArea.style.position = 'absolute';
-    textArea.style.left = '-999999px';
-
-    document.body.prepend(textArea);
-    textArea.select();
-
-    try {
-      document.execCommand('copy');
-    } catch (error) {
-      console.error(error);
-    } finally {
-      textArea.remove();
-    }
-  }
-}
-
 // copy to clipboard
+// (Helpers.copyToClipboard : one copy for the whole app, its promise rejecting when nothing
+// was copied, so the success toast only says what really happened)
 async function clip(v, doNotStringify = false, asYaml = false) {
-  if (doNotStringify) {
-    try {
-      await copyToClipboard(v);
-      toast.success('Copied to clipboard');
-    } catch (err) {
-      toast.error('Error copying to clipboard: \n' + err.toString());
-    }
-  } else {
-    try {
-      if (asYaml) {
-        await copyToClipboard(YAML.stringify(v));
-      } else {
-        await copyToClipboard(JSON.stringify(v, null, 2));
-      }
-      toast.success('Copied to clipboard');
-    } catch (err) {
-      toast.error('Error copying to clipboard: \n' + err.toString());
-    }
+  try {
+    const text = doNotStringify ? v : asYaml ? YAML.stringify(v) : JSON.stringify(v, null, 2);
+    await Helpers.copyToClipboard(text);
+    toast.success(t('common.copied'));
+  } catch (err) {
+    toast.error(t('common.copyFailed', { error: String(err?.message || err) }));
   }
 }
 
@@ -1622,7 +1586,7 @@ async function getJob(id, final, seq = pollSeq) {
     // an older chain's failure says nothing : the form moved on
     if (seq !== pollSeq) return;
     console.log('error getting job ' + err.toString());
-    toast.error('Failed to get job');
+    toast.error(t('form.failedToGetJob'));
 
     // optional chaining : on a network failure err.response is undefined, so this threw a
     // TypeError from inside the catch itself, killing the poll chain with an unhandled
@@ -2373,7 +2337,7 @@ onBeforeUnmount(() => {
                 >
                   <template #title>
                     <h3 v-if="job.job_type == 'multistep' && subjob?.output" class="af-job-title">
-                      {{ t('form.mainJob') }} (jobid {{ job.id }})
+                      {{ t('form.mainJob') }} {{ t('jobs.jobIdNote', { id: job.id }) }}
                       <AppStatusPill :status="job.status" />
                     </h3>
                   </template>
@@ -2391,7 +2355,7 @@ onBeforeUnmount(() => {
                 >
                   <template #title>
                     <h3 class="af-job-title">
-                      {{ t('form.currentStep') }} (jobid {{ subjob.id }})
+                      {{ t('form.currentStep') }} {{ t('jobs.jobIdNote', { id: subjob.id }) }}
                       <AppStatusPill :status="subjob.status" />
                     </h3>
                   </template>
