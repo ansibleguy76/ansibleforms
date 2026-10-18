@@ -1171,12 +1171,18 @@ function fillJobRunnerKinds() {
     .then((res) => `filled the runner kind of ${res?.affectedRows ?? 0} job(s)`);
 }
 
-// Idempotent by its WHERE clause : only a credential without a valid type gets one - database for
+// Idempotent by its WHERE clause : only a credential without a type gets one - database for
 // a database one, else userpass, a user and a password : what a credential from 6 is, mostly a
-// REST login (it used to become ssh)
+// REST login (it used to become ssh).
+//
+// Only a MISSING type (NULL or empty), never one outside a list kept here : this ran on every
+// boot with the types of 7.0 written out (NOT IN ('userpass', ... 'oidc')), so every
+// credential of a type added later (rte, awx, aap, ascender, semaphore, rundeck, jenkins,
+// vault in 7.3) was turned back into a userpass one at each start. The API validates the
+// type on every write (Credential.TYPES), so a type that is set is a valid one.
 function fillCredentialTypes() {
   return mysql
-    .do("UPDATE AnsibleForms.`credentials` SET credential_type=IF(is_database,'database','userpass') WHERE credential_type IS NULL OR credential_type NOT IN ('userpass','ssh','git','api','database','cyberark','smtp','ldap','entraid','oidc')")
+    .do("UPDATE AnsibleForms.`credentials` SET credential_type=IF(is_database,'database','userpass') WHERE credential_type IS NULL OR credential_type = ''")
     .then((res) => `Set the type of ${res?.affectedRows ?? 0} credential(s)`);
 }
 
