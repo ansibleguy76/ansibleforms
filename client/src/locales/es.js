@@ -1354,7 +1354,7 @@ export default {
       pending: 'Pendiente de aprobación',
       pendingHint: 'Este RTE ha pedido unirse. Apruébalo para que reciba trabajos, o recházalo.',
       pendingTitle: 'Este RTE ha pedido unirse',
-      pendingHelp: 'Este RTE ha pedido unirse: comprueba su huella antes de aprobarlo.',
+      pendingHelp: 'Comprueba su huella antes de aprobarlo:',
       pendingFingerprint: 'Huella',
       pendingHost: 'Host',
       pendingIp: 'Conectado desde',

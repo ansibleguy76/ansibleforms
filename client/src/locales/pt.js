@@ -1789,7 +1789,7 @@ export default {
       pending: 'A aguardar aprovação',
       pendingHint: 'Este RTE pediu para aderir. Aprove-o para receber trabalhos, ou rejeite-o.',
       pendingTitle: 'Este RTE pediu para aderir',
-      pendingHelp: 'Este RTE pediu para aderir: confirme a impressão digital antes de o aprovar.',
+      pendingHelp: 'Confirme a impressão digital antes de aprovar:',
       pendingFingerprint: 'Impressão digital',
       pendingHost: 'Host',
       pendingIp: 'Ligado a partir de',

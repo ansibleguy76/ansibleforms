@@ -1706,7 +1706,7 @@ export default {
       pending: '等待批准',
       pendingHint: '此 RTE 请求加入。批准后它会接收作业，也可以拒绝。',
       pendingTitle: '此 RTE 请求加入',
-      pendingHelp: '此 RTE 请求加入：批准前请核对其指纹。',
+      pendingHelp: '批准前请核对其指纹：',
       pendingFingerprint: '指纹',
       pendingHost: '主机',
       pendingIp: '连接来源',
