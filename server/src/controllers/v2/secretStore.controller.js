@@ -4,6 +4,30 @@ import RestResult from "../../models/restResult.model.v2.js";
 import Errors from "../../lib/errors.js";
 import i18n from "../../lib/i18n.js";
 import { checkStore, listMounts } from "../../secrets/providers/index.js";
+import { isAdminRequest } from "../../lib/adminGrants.js";
+
+/**
+ * Refuses a write of a secret store to anyone but an admin. A store logs in with a Vault token or
+ * a CyberArk client key, which it sends to its address on every read and on Check : a user with
+ * only connections access who could add a store, or change the address of one, would receive
+ * that secret at a server of their own, and every secret the credentials read through it. The
+ * same rule as a runner's (controllers/v2/runner.controller.js assertAdmin) ; Check and the
+ * mounts of a saved store, which send its secret only where an admin pointed it, stay open.
+ *
+ * Args:
+ *   req (object): the request.
+ *
+ * Returns:
+ *   void
+ *
+ * Raises:
+ *   Errors.AccessDeniedError: the user is not an admin.
+ */
+function assertAdmin(req) {
+  if (!isAdminRequest(req)) {
+    throw new Errors.AccessDeniedError(i18n.t(req, "resources.secretStoreAdminOnly"));
+  }
+}
 
 // token and client_key are stored encrypted and CrudModel decrypts them on read, so
 // nothing leaves here without masking them - onto a copy, never the cached record.
@@ -29,6 +53,7 @@ const find = async (req, res) => {
 
 const create = async (req, res) => {
   try {
+    assertAdmin(req);
     if (!req.body || Object.keys(req.body).length === 0) {
       throw new Errors.BadRequestError(i18n.t(req, 'errors.requiredFields'));
     }
@@ -51,6 +76,7 @@ const findById = async (req, res) => {
 
 const update = async (req, res) => {
   try {
+    assertAdmin(req);
     if (!req.body || Object.keys(req.body).length === 0) {
       throw new Errors.BadRequestError(i18n.t(req, 'errors.requiredFields'));
     }
@@ -64,6 +90,7 @@ const update = async (req, res) => {
 
 const deleteStore = async (req, res) => {
   try {
+    assertAdmin(req);
     const deleted = await SecretStore.delete(req.params.id);
     if (!deleted) throw new Errors.NotFoundError(i18n.t(req, 'resources.secretStoreNotFound'));
     return res.json(RestResult.single(deleted));

@@ -30,12 +30,19 @@ import { useRouteTab } from '@/composables/useRouteTab';
 import { recordButtons } from '@/lib/recordButtons';
 import { useRecordSearch } from '@/composables/useRecordSearch';
 import Helpers from '@/lib/Helpers';
+import { useAppStore } from '@/stores/app';
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const authenticated = ref(false);
 const loaded = ref(false);
+// where its content comes from (its address and branch) and what the app reads from it (its
+// usages) choose the configuration, the forms and the playbooks the app runs : only an admin
+// changes them, adds or deletes a repository (the server refuses the others, as a runner's page
+// does) ; its name, description, credential and schedule stay editable for a connections user
+const appStore = useAppStore();
+const sourceLocked = computed(() => !appStore.isAdmin);
 
 // ─── the repository ───────────────────────────────────────────────────────────
 // the repository by its number in the address (/settings/repositories/1), as every record ; the
@@ -535,6 +542,7 @@ onMounted(async () => {
               v-show="fieldShown('branch')"
               icon="code-branch"
               placeholder="main"
+              :readonly="sourceLocked"
               :isFloating="false"
               :required="true"
               :label="t('settings.fields.branch')"
@@ -545,6 +553,7 @@ onMounted(async () => {
               v-show="fieldShown('uri')"
               icon="fab,git"
               placeholder="https://github.com/account/repo.git"
+              :readonly="sourceLocked"
               :isFloating="false"
               :required="true"
               :help="t('settings.repositories.helpUri')"
@@ -616,7 +625,7 @@ onMounted(async () => {
                 v-model="edit[usage.key]"
                 class="form-check-input"
                 type="checkbox"
-                :disabled="!!takenBy(usage)"
+                :disabled="sourceLocked || !!takenBy(usage)"
               />
               <label class="form-check-label" :for="'af-usage-' + usage.key">
                 <span class="af-short-label">{{ usage.label }}</span>
@@ -712,7 +721,7 @@ onMounted(async () => {
         <BsButton icon="redo" cssClass="text-nowrap" :disabled="running" @click="run('reset')">{{
           t('settings.repositories.reset')
         }}</BsButton>
-        <BsButton icon="trash" @click="confirmDelete = true">{{ t('common.delete') }}</BsButton>
+        <BsButton v-if="appStore.isAdmin" icon="trash" @click="confirmDelete = true">{{ t('common.delete') }}</BsButton>
         <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
       </template>
       <!-- the record loading : its buttons as grey placeholders, so the title line keeps its

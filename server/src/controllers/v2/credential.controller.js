@@ -75,6 +75,44 @@ async function assertMayChange(req, ...records) {
   if (guarded) throw new Errors.AccessDeniedError(i18n.t(req, 'resources.credentialAdminOnly'));
 }
 
+// where a credential reads its password from : a secret store, and the place in it (vault_path the
+// deprecated one, the store named `vault`)
+const SECRET_REF_FIELDS = ['secret_store', 'secret_ref', 'vault_path'];
+
+/**
+ * Refuses to a user who is not an admin a write that chooses which secret a credential reads. A
+ * credential naming a secret store and a secret_ref (or a vault_path) is given that secret when it
+ * is used : a user with only connections access who could point one at any path of any store, and
+ * then name it in a webhook or a repository of theirs, would receive whatever the store keeps
+ * there (another team's passwords, a runner's token). Setting or changing secret_store, secret_ref
+ * or vault_path, on any credential, is therefore an admin's. Sent back as they are, or all three
+ * emptied (the credential then reads no secret at all), is left to them.
+ *
+ * Args:
+ *   req (object): the request.
+ *   before (object|null): the credential as it is, null on a create.
+ *
+ * Returns:
+ *   void
+ *
+ * Raises:
+ *   Errors.AccessDeniedError: the user is not an admin and the write sets or changes where the
+ *     credential reads its secret from.
+ */
+function assertSecretRefUnchanged(req, before) {
+  if (isAdminRequest(req) || !req.body) return;
+  const body = req.body;
+  // text compared trimmed, so the dialog sending the same value back is no change
+  const text = (v) => (v === null || v === undefined ? '' : String(v).trim());
+  const changed = SECRET_REF_FIELDS.some((f) => body[f] !== undefined && text(body[f]) !== text(before?.[f]));
+  if (!changed) return;
+  // what it reads from once written : the field sent, else the one it has
+  const after = (f) => text(body[f] !== undefined ? body[f] : before?.[f]);
+  // every reference dropped : it reads no secret, nothing to receive
+  if (SECRET_REF_FIELDS.every((f) => after(f) === '')) return;
+  throw new Errors.AccessDeniedError(i18n.t(req, 'resources.credentialSecretRefAdminOnly'));
+}
+
 /**
  * Refuses to delete or rename a credential records still name (an LDAP directory, an SSO provider,
  * a runner, a mail channel...) : they would point at nothing, and stop working without a word.
@@ -175,6 +213,8 @@ const credentialController = {
   async create(req, res) {
     try {
       await assertMayChange(req, req.body);
+      // the secret it reads from a secret store : an admin's to choose
+      assertSecretRefUnchanged(req, null);
       const credential = await CredentialModel.create(req.body);
       res.json(RestResult.single({ message: i18n.t(req, 'success.created', { resource: 'Credential' }), id: credential }));
     } catch (err) {
@@ -198,6 +238,9 @@ const credentialController = {
     try {
       const before = await CredentialModel.findById(req.params.id).catch(() => null);
       await assertMayChange(req, before, req.body);
+      // the secret it reads from a secret store : an admin's to choose or change (checked on the
+      // write as sent, before dropSecretOnRetarget empties the reference itself)
+      assertSecretRefUnchanged(req, before);
       // moved elsewhere without its password typed again : the stored one stays behind
       dropSecretOnRetarget(req, before);
       // a new name leaves what names the old one pointing at nothing

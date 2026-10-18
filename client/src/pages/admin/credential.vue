@@ -151,6 +151,12 @@ const adminOnly = computed(() => {
 });
 // read only : one of the config seed, or one only an admin changes
 const readOnly = computed(() => managed.value || adminOnly.value);
+// which secret it reads from a secret store (its store and its reference) : only an admin chooses
+// or changes it, on any credential (the server refuses the others) ; a connections user may still
+// turn a credential back to keeping its own password, which drops the reference
+const secretRefLocked = computed(() => !appStore.isAdmin);
+// the From a secret store choice, for who may not choose one : open only while it already reads one
+const storeSourceLocked = computed(() => secretRefLocked.value && !credential.value?.secret_store);
 const type = computed(() => edit.value?.credential_type);
 const isCyberark = computed(() => type.value === 'cyberark');
 const isDatabase = computed(() => type.value === 'database');
@@ -1021,6 +1027,7 @@ onMounted(async () => {
                   type="radio"
                   name="af-credential-source"
                   :value="opt.value"
+                  :disabled="opt.value === 'store' && storeSourceLocked"
                 />
                 <label class="form-check-label" :for="'af-source-' + opt.value">
                   <span class="af-short-label">{{ opt.label }}</span>
@@ -1034,6 +1041,7 @@ onMounted(async () => {
                   v-show="fieldShown('secret_store')"
                   type="select"
                   icon="vault"
+                  :disabled="secretRefLocked"
                   :isFloating="false"
                   :values="secretStores"
                   valueKey="name"
@@ -1046,6 +1054,7 @@ onMounted(async () => {
                   v-model="edit.secret_ref"
                   v-show="fieldShown('secret_ref')"
                   icon="shield-alt"
+                  :readonly="secretRefLocked"
                   :placeholder="t('settings.credentials.secretRefPlaceholder')"
                   :isFloating="false"
                   :help="t('settings.credentials.secretRefHelp')"

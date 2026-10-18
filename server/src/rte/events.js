@@ -23,13 +23,15 @@ const MAX_BATCH_BYTES = 2 * 1024 * 1024;
  *
  * Args:
  *   file (string): the file the plugin writes (AF_EVENTS_FILE).
+ *   dir (string): the private folder the file is in (rte/ansible-core.js makeEventsFile), removed
+ *     with it ; none for a file on its own.
  *   write (function): (events[]) => Promise : stores a batch, in order.
  *
  * Returns:
- *   {stop: function}: stop() reads what is left, hands it on, removes the file, and resolves
- *     once the last batch is stored.
+ *   {stop: function}: stop() reads what is left, hands it on, removes the file (and its folder),
+ *     and resolves once the last batch is stored.
  */
-export function createEventTail({ file, write }) {
+export function createEventTail({ file, dir = "", write }) {
   let offset = 0;
   // a line the plugin is still writing : kept until its end comes
   let partial = "";
@@ -97,6 +99,14 @@ export function createEventTail({ file, write }) {
         fs.unlinkSync(file);
       } catch {
         // never written
+      }
+      // and its private folder, once empty (what else is in it is not this tail's to remove)
+      if (dir) {
+        try {
+          fs.rmdirSync(dir);
+        } catch {
+          // gone already, or not empty
+        }
       }
       return writing;
     },

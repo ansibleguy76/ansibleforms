@@ -4,9 +4,13 @@ import Profile from '@/lib/Profile';
 import axios from 'axios';
 import getSettings from '@/config/settings';
 import { useI18n } from 'vue-i18n';
+import { useAppStore } from '@/stores/app';
 
 const { t } = useI18n();
 const settings = computed(() => getSettings(t));
+// a store's writes are an admin's (the server refuses the others) : shown read only to the rest,
+// Test connection kept, as the runners' list
+const store = useAppStore();
 import Helpers from '@/lib/Helpers';
 
 const authenticated = ref(false);
@@ -45,6 +49,7 @@ onMounted(async () => {
       @test="test_connection"
       :busyItems="tests"
       :apiVersion="2"
+      :readOnly="!store.isAdmin"
     />
   </AppSettingsPage>
 </template>

@@ -6,12 +6,16 @@
 #
 # Loaded without being enabled (CALLBACK_NEEDS_ENABLED False), as af_artifacts : the RTE puts its
 # folder first in the callback plugins path, and it writes nothing when AF_EVENTS_FILE is not set.
-# A result carries its message and a few fields, never the module's whole return : the full text
-# is in the output already, and a result can be large.
+# A result carries its message and a few fields (its summary). The module's whole return (a task's
+# details) is kept only when the job runs verbose (AF_EVENTS_FULL=1, the RTE sets it when it passes
+# ansible-playbook a -v flag) : then the job's output carries it too. Even then its invocation (the
+# module's arguments, as the task passed them) is left out, and the values of keys that look like a
+# secret (password, secret, token, key...) are masked.
 from __future__ import annotations
 
 import json
 import os
+import re
 import time
 
 from ansible.plugins.callback import CallbackBase
@@ -34,6 +38,35 @@ MAX_TEXT = 2000
 MAX_RESULT = 65536
 MAX_RESULT_TEXT = 8000
 MAX_RESULT_ITEMS = 200
+# the whole result is kept only when the job runs verbose : else the summary alone
+FULL = os.environ.get("AF_EVENTS_FULL") == "1"
+# the keys a result never keeps, at any depth : the module's arguments as the task passed them
+# (a password, a token, a request's body and headers)
+DROPPED_KEYS = ("invocation",)
+# the keys whose values are masked, at any depth : those that look like a secret, as the app's
+# MASK_EXTRAVARS_REGEX (password|secret|token by default), with a request's own (authorization,
+# cookie) and keys ; the app's own pattern added when the RTE passes it (AF_EVENTS_MASK_REGEX)
+SECRET_KEYS = "password|passwd|secret|token|key|authorization|cookie|credential"
+MASK = "********"
+
+
+def _secret_pattern():
+    """The pattern a secret's key matches : the built-in one, and the app's own when it is set and
+    compiles (a JavaScript pattern the app takes may not be one Python reads : then left out).
+
+    Returns:
+        A compiled regular expression, matched case-insensitively anywhere in a key.
+    """
+    extra = os.environ.get("AF_EVENTS_MASK_REGEX", "").strip()
+    if extra:
+        try:
+            return re.compile(f"(?:{SECRET_KEYS})|(?:{extra})", re.IGNORECASE)
+        except re.error:
+            pass
+    return re.compile(SECRET_KEYS, re.IGNORECASE)
+
+
+SECRET_RE = _secret_pattern()
 
 
 def _short(value):
@@ -71,23 +104,52 @@ def _trim(value):
     return value
 
 
+def _redact(value):
+    """Leaves out what a stored result never keeps, recursively : the invocation (the module's
+    arguments), and the value of every key that looks like a secret, masked.
+
+    Args:
+        value: a result or one of its values.
+
+    Returns:
+        A copy of the value, its secrets masked and its invocations left out.
+    """
+    if isinstance(value, dict):
+        out = {}
+        for k, v in value.items():
+            if str(k) in DROPPED_KEYS:
+                continue
+            # a secret's value masked whatever it is, an empty one left as it is (nothing to hide)
+            if SECRET_RE.search(str(k)) and v not in (None, "", [], {}) and not isinstance(v, bool):
+                out[k] = MASK
+            else:
+                out[k] = _redact(v)
+        return out
+    if isinstance(value, list):
+        return [_redact(v) for v in value]
+    return value
+
+
 def _full(data):
-    """A host's whole result, as its details show it : Ansible's own keys (_ansible_*) left out,
-    cut when its JSON is longer than MAX_RESULT. A task with no_log has its result censored by
-    Ansible before it comes here.
+    """A host's whole result, as its details show it : Ansible's own keys (_ansible_*) and its
+    invocation left out, the values of its secret keys masked, cut when its JSON is longer than
+    MAX_RESULT. Kept only when the job runs verbose (FULL) : else None, its summary alone is
+    stored. A task with no_log has its result censored by Ansible before it comes here.
 
     Args:
         data: the result's dictionary.
 
     Returns:
-        The result to keep, or None when there is none.
+        The result to keep, or None when there is none or the job does not run verbose.
     """
-    kept = {k: v for k, v in (data or {}).items() if not str(k).startswith("_ansible")}
+    if not FULL:
+        return None
+    kept = _redact({k: v for k, v in (data or {}).items() if not str(k).startswith("_ansible")})
     if not kept:
         return None
-    if len(json.dumps(kept, default=str)) > MAX_RESULT:
+    if len(json.dumps(kept, default=str, ensure_ascii=False)) > MAX_RESULT:
         kept = _trim(kept)
-        if len(json.dumps(kept, default=str)) > MAX_RESULT:
+        if len(json.dumps(kept, default=str, ensure_ascii=False)) > MAX_RESULT:
             kept = {"msg": "The result is too large to keep", "keys": sorted(kept.keys())}
     return kept
 
@@ -126,7 +188,15 @@ class CallbackModule(CallbackBase):
         event = {"type": kind, "time": round(time.time(), 3), "play": self._play, "task": self._task}
         event.update({k: v for k, v in fields.items() if v is not None})
         try:
-            self._handle.write(json.dumps(event, default=str) + "\n")
+            # non-ASCII kept as it is (ensure_ascii False) : escaped as \uXXXX, a secret with an
+            # accent would no longer match its value when the app masks the output
+            line = json.dumps(event, default=str, ensure_ascii=False)
+            try:
+                line.encode("utf-8")
+            except UnicodeEncodeError:
+                # a text ansible could not decode (a lone surrogate) : that one event escaped, as before
+                line = json.dumps(event, default=str)
+            self._handle.write(line + "\n")
             self._handle.flush()
         except OSError:
             self._handle = None
@@ -196,8 +266,12 @@ class CallbackModule(CallbackBase):
         fields = {k: _short(data[k]) for k in RESULT_FIELDS if k in data}
         item = data.get("item") if "item" in data else None
         task = getattr(result, "_task", None)
+        # a loop's item that is a dictionary or a list : as JSON, its secret keys masked, non-ASCII
+        # kept as it is so the app's mask still finds a secret's value in it
+        if item is not None and not isinstance(item, (str, int, float, bool)):
+            item = json.dumps(_redact(item), default=str, ensure_ascii=False)
         return {
-            "item": _short(item if isinstance(item, (str, int, float, bool)) else json.dumps(item, default=str)) if item is not None else None,
+            "item": _short(item) if item is not None else None,
             "data": fields or None,
             "action": getattr(task, "action", None),
             "result": _full(data),

@@ -5,9 +5,19 @@ import Profile from '@/lib/Profile';
 import getSettings from '@/config/settings';
 import { useI18n } from 'vue-i18n';
 import Helpers from '@/lib/Helpers';
+import { useAppStore } from '@/stores/app';
 
 const { t } = useI18n();
 const settings = computed(() => getSettings(t));
+// adding or deleting a repository is an admin's (its content becomes the configuration, the forms
+// or the playbooks the app runs ; the server refuses the others) : no Add, no Delete for them, the
+// rest (Edit, Pull, Push, Reset) stays theirs
+const store = useAppStore();
+const repoSettings = computed(() => {
+  const base = settings.value.repositories;
+  if (store.isAdmin) return base;
+  return { ...base, noCreate: true, actions: (base.actions || []).filter((a) => a.name !== 'delete') };
+});
 
 const adminMulti = ref(null);
 const authenticated = ref(false);
@@ -79,7 +89,7 @@ onMounted(async () => {
     <AppAdminMulti
       v-if="authenticated"
       ref="adminMulti"
-      :settings="settings.repositories"
+      :settings="repoSettings"
       :apiVersion="2"
       @trigger="triggerClone"
       @reset="triggerReset"
