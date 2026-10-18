@@ -1264,8 +1264,18 @@ export async function moveMailServersToChannels() {
 
 /**
  * The mail settings as the first mail channel, active, their login an smtp credential.
- * Idempotent : only while there is no mail channel yet. Not on a seeded instance : the seed
- * owns the mail settings, which stay what it sends with.
+ * Not on a seeded instance : the seed owns the mail settings, which stay what it sends with.
+ *
+ * Once, and only once : the settings' mail server, user and password are emptied in the same
+ * transaction as the copy. It used to key only on "no mail channel yet", with the settings left
+ * as they were - so an admin who deleted the channel 'default' got it back at the next restart,
+ * every restart. The copy, the credential and the emptying apply together or not at all, so a
+ * crash in between can neither lose the settings nor copy them twice.
+ *
+ * A channel already named 'default' (a Slack or Teams one made by hand) is never overwritten :
+ * the insert would fail on its unique name and fail the whole patch at every start. The settings
+ * are then left as they are (the mail still goes out through them while no mail channel is
+ * active) and the log says what to rename.
  *
  * Returns:
  *   Promise<string|null>: what was done, or null when there was nothing to do.
@@ -1276,22 +1286,32 @@ export async function copyMailSettingsToServers() {
   const rows = await mysql.do("SELECT * FROM AnsibleForms.`settings` LIMIT 1");
   const s = rows[0];
   if (!s?.mail_server || s.managed) return null;
-  let credential = null;
-  if (s.mail_username) {
-    // the password is copied as it is stored : the same key encrypts both tables
-    credential = "mail-login";
-    await mysql.do(
-      "INSERT INTO AnsibleForms.`credentials` (name, user, password, description, is_database, credential_type) " +
-        "SELECT ?, ?, ?, 'The login of the mail server (from the mail settings)', 0, 'smtp' FROM DUAL " +
-        "WHERE NOT EXISTS (SELECT 1 FROM AnsibleForms.`credentials` WHERE name = ?)",
-      [credential, s.mail_username, s.mail_password || null, credential],
-    );
+  // the name it takes is somebody's already : skipped, said once per start
+  const named = await mysql.do("SELECT type FROM AnsibleForms.`notification_channels` WHERE name = 'default'");
+  if (named.length) {
+    const message = `The mail settings were not copied to a mail channel: a ${named[0].type} channel is named 'default' already. Rename it and restart, or add a mail channel under Connections > Notifications`;
+    logger.warning(message);
+    return message;
   }
-  await mysql.do(
-    "INSERT INTO AnsibleForms.`notification_channels` (name, description, type, enabled, server, port, secure, from_address, credential, is_active) VALUES (?, ?, 'mail', 1, ?, ?, ?, ?, ?, 1)",
-    ["default", "From the mail settings", s.mail_server, s.mail_port || null, s.mail_secure ? 1 : 0, s.mail_from || null, credential],
-  );
-  return "Copied the mail settings to the mail channel 'default'" + (credential ? ", its login to the credential 'mail-login'" : "");
+  let credential = null;
+  await mysql.transaction(async (query) => {
+    if (s.mail_username) {
+      // the password is copied as it is stored : the same key encrypts both tables ; a
+      // credential already named mail-login (made by hand) is never taken over
+      credential = await freeCredentialName("mail-login", query);
+      await query(
+        "INSERT INTO AnsibleForms.`credentials` (name, user, password, description, is_database, credential_type) VALUES (?, ?, ?, 'The login of the mail server (from the mail settings)', 0, 'smtp')",
+        [credential, s.mail_username, s.mail_password || null],
+      );
+    }
+    await query(
+      "INSERT INTO AnsibleForms.`notification_channels` (name, description, type, enabled, server, port, secure, from_address, credential, is_active) VALUES (?, ?, 'mail', 1, ?, ?, ?, ?, ?, 1)",
+      ["default", "From the mail settings", s.mail_server, s.mail_port || null, s.mail_secure ? 1 : 0, s.mail_from || null, credential],
+    );
+    // copied : the settings no longer send, nor copy again ('' : what a fresh install has)
+    await query("UPDATE AnsibleForms.`settings` SET mail_server = '', mail_username = '', mail_password = ''");
+  });
+  return "Copied the mail settings to the mail channel 'default'" + (credential ? `, its login to the credential '${credential}'` : "");
 }
 
 /**
@@ -1299,14 +1319,16 @@ export async function copyMailSettingsToServers() {
  *
  * Args:
  *   name (string): the name wanted.
+ *   query (function): what runs the lookups ; the move's transaction (mysql.transaction hands
+ *     one over), so the name is checked on the connection that inserts it. mysql.do when none.
  *
  * Returns:
  *   Promise<string>: a free name.
  */
-async function freeCredentialName(name) {
+async function freeCredentialName(name, query = (sql, params) => mysql.do(sql, params)) {
   for (let n = 1; ; n++) {
     const candidate = n === 1 ? name : `${name}-${n}`;
-    const taken = await mysql.do("SELECT 1 FROM AnsibleForms.`credentials` WHERE name = ?", [candidate]);
+    const taken = await query("SELECT 1 FROM AnsibleForms.`credentials` WHERE name = ?", [candidate]);
     if (!taken.length) return candidate;
   }
 }

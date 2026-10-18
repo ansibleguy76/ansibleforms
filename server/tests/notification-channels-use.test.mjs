@@ -15,15 +15,24 @@ process.env.DB_PASSWORD ||= "test";
 // the queries ; each answers what the test queues (else [])
 const queries = [];
 let answers = [];
-vi.mock("../src/models/db.model.js", () => ({
-  default: {
-    do: async (sql, args) => {
-      queries.push({ sql, args });
-      const next = answers.find((a) => a.match.test(sql));
-      return next ? (typeof next.rows === "function" ? next.rows(sql, args) : next.rows) : [];
+// a transaction runs its statements through the same responder, each marked as part of it
+let transactions = 0;
+vi.mock("../src/models/db.model.js", () => {
+  const run = async (sql, args, tx = false) => {
+    queries.push({ sql, args, tx });
+    const next = answers.find((a) => a.match.test(sql));
+    return next ? (typeof next.rows === "function" ? next.rows(sql, args) : next.rows) : [];
+  };
+  return {
+    default: {
+      do: (sql, args) => run(sql, args),
+      transaction: async (fn) => {
+        transactions++;
+        return fn((sql, args) => run(sql, args, true));
+      },
     },
-  },
-}));
+  };
+});
 
 // what reached the channels
 const sent = [];
@@ -43,6 +52,7 @@ const { moveMailServersToChannels, copyMailSettingsToServers, moveMailServersToC
 
 beforeEach(() => {
   queries.length = 0;
+  transactions = 0;
   answers = [];
   sent.length = 0;
   vi.restoreAllMocks();
@@ -173,6 +183,37 @@ describe("the mail servers of a release candidate become mail channels", () => {
     expect(await copyMailSettingsToServers()).toMatch(/mail channel 'default'/);
     const insert = queries.find((q) => /INSERT INTO AnsibleForms\.`notification_channels`/.test(q.sql));
     expect(insert.sql).toMatch(/VALUES \(\?, \?, 'mail', 1/);
+  });
+
+  test("copied once: the settings' server and login emptied with the copy, in one transaction", async () => {
+    answers = [
+      { match: /COUNT\(\*\) AS n/, rows: [{ n: 0 }] },
+      { match: /SELECT \* FROM AnsibleForms\.`settings`/, rows: [{ mail_server: "smtp.example.com", mail_port: 25, mail_username: "af", mail_password: "enc" }] },
+    ];
+    expect(await copyMailSettingsToServers()).toMatch(/credential 'mail-login'/);
+    expect(transactions).toBe(1);
+    const writes = queries.filter((q) => /^(INSERT|UPDATE)/.test(q.sql));
+    expect(writes.map((q) => q.tx)).toEqual([true, true, true]);
+    expect(writes[2].sql).toMatch(/UPDATE AnsibleForms\.`settings` SET mail_server = ''/);
+  });
+
+  test("a hand-made credential named mail-login is not taken over", async () => {
+    answers = [
+      { match: /COUNT\(\*\) AS n/, rows: [{ n: 0 }] },
+      { match: /SELECT \* FROM AnsibleForms\.`settings`/, rows: [{ mail_server: "smtp.example.com", mail_username: "af" }] },
+      { match: /SELECT 1 FROM AnsibleForms\.`credentials` WHERE name = \?/, rows: (sql, args) => (args[0] === "mail-login" ? [{ 1: 1 }] : []) },
+    ];
+    expect(await copyMailSettingsToServers()).toMatch(/credential 'mail-login-2'/);
+  });
+
+  test("a channel of another type named default: not overwritten, the settings kept", async () => {
+    answers = [
+      { match: /COUNT\(\*\) AS n/, rows: [{ n: 0 }] },
+      { match: /SELECT \* FROM AnsibleForms\.`settings`/, rows: [{ mail_server: "smtp.example.com" }] },
+      { match: /SELECT type FROM AnsibleForms\.`notification_channels` WHERE name = 'default'/, rows: [{ type: "slack" }] },
+    ];
+    expect(await copyMailSettingsToServers()).toMatch(/slack channel is named 'default'/);
+    expect(queries.some((q) => /^(INSERT|UPDATE)/.test(q.sql))).toBe(false);
   });
 });
 
