@@ -73,7 +73,17 @@ const CERT_MAX_BLOCKS = 8;
 export function parseCertBundle(pem) {
   const text = Buffer.isBuffer(pem) ? pem.toString("utf8") : String(pem ?? "");
   if (Buffer.byteLength(text) > CERT_MAX_BYTES) throw new Error(`the certificate is larger than ${CERT_MAX_BYTES / 1024} KB`);
-  const blocks = text.match(/-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/g) || [];
+  // the certificate blocks, each from its BEGIN line to the END after it (read by position : a
+  // pattern with a lazy body backtracks badly on a text of many BEGIN lines)
+  const BEGIN = "-----BEGIN CERTIFICATE-----";
+  const END = "-----END CERTIFICATE-----";
+  const blocks = [];
+  for (let at = text.indexOf(BEGIN); at !== -1; at = text.indexOf(BEGIN, at)) {
+    const end = text.indexOf(END, at + BEGIN.length);
+    if (end === -1) break;
+    blocks.push(text.slice(at, end + END.length));
+    at = end + END.length;
+  }
   if (!blocks.length) throw new Error("no PEM certificate (-----BEGIN CERTIFICATE-----) in it");
   if (blocks.length > CERT_MAX_BLOCKS) throw new Error(`more than ${CERT_MAX_BLOCKS} certificates in it`);
   const certs = blocks.map((b, i) => {
