@@ -9,10 +9,18 @@ process.env.DB_PASSWORD ||= "test";
 
 let row;
 const updates = [];
+// the credentials there are, by name, and the runners that name one
+const creds = {
+  "chat-key": { name: "chat-key", credential_type: "api", password: "" },
+  "runner-token": { name: "runner-token", credential_type: "api", password: "" },
+  "a-login": { name: "a-login", credential_type: "userpass", password: "" },
+};
 vi.mock("../src/models/db.model.js", () => ({
   default: {
     do: async (sql, rec) => {
       if (/^UPDATE/.test(sql)) { updates.push(rec); return { affectedRows: 1 }; }
+      if (/runners/.test(sql)) return rec?.[0] === "runner-token" ? [{ name: "rte1" }] : [];
+      if (/credentials/.test(sql)) return creds[rec?.[0]] ? [structuredClone(creds[rec[0]])] : [];
       return row ? [structuredClone(row)] : [];
     },
   },
@@ -36,6 +44,10 @@ const controller = (await import("../src/controllers/v2/chatSettings.controller.
 const anthropic = (await import("../src/chat/providers/anthropic.js")).default;
 const openai = (await import("../src/chat/providers/openai.js")).default;
 const { complete } = await import("../src/chat/providers/index.js");
+
+// an admin, and a user with only connections access
+const admin = { user: { username: "admin", roles: ["admin"] } };
+const ops = { user: { username: "ops", roles: ["ops"], options: { showConnectionsSettings: true } } };
 
 const res = () => {
   const r = { statusCode: 200, body: null };
@@ -63,9 +75,81 @@ describe("chat settings", () => {
     const r = res();
     await controller.find({}, r);
     expect(r.body.api_key).toBe("**********");
-    await controller.update({ body: { provider: "openai", api_key: "**********", model: "gpt" } }, res());
+    await controller.update({ user: admin, body: { provider: "openai", api_key: "**********", model: "gpt" } }, res());
     expect(crypto.decrypt(updates[0].api_key)).toBe("sk-real");
     expect(updates[0].provider).toBe("openai");
+  });
+
+  test("another provider by a connections user: the stored key stays behind", async () => {
+    await controller.update({ user: ops, body: { provider: "openai", api_key: "**********", model: "gpt" } }, res());
+    expect(updates[0].api_key).toBe("");
+  });
+
+  test("another base url by a connections user: the saved credential stays behind too", async () => {
+    row.credential = "chat-key";
+    await controller.update({ user: ops, body: { provider: "anthropic", base_url: "https://evil", credential: "chat-key", model: "m" } }, res());
+    expect(updates[0].credential).toBe(null);
+  });
+
+  test("the same target keeps the key and the credential", async () => {
+    row.credential = "chat-key";
+    await controller.update({ user: ops, body: { provider: "anthropic", api_key: "**********", credential: "chat-key", model: "m2" } }, res());
+    expect(crypto.decrypt(updates[0].api_key)).toBe("sk-real");
+    expect(updates[0].credential).toBe("chat-key");
+  });
+
+  test("a credential a runner names: refused to a connections user", async () => {
+    const r = res();
+    await controller.update({ user: ops, body: { provider: "anthropic", credential: "runner-token", model: "m" } }, r);
+    expect(r.statusCode).toBe(403);
+    expect(updates).toEqual([]);
+  });
+
+  describe("the provider check", () => {
+    afterEach(() => { vi.unstubAllGlobals(); });
+    const sent = [];
+    beforeEach(() => {
+      sent.length = 0;
+      vi.stubGlobal("fetch", vi.fn(async (url, init) => {
+        sent.push({ url, headers: init.headers });
+        return { ok: true, status: 200, text: async () => JSON.stringify({ content: [{ type: "text", text: "OK" }] }) };
+      }));
+    });
+
+    test("the stored key is not sent to another base url", async () => {
+      const r = res();
+      await controller.check({ user: ops, body: { base_url: "https://evil", api_key: "**********" } }, r);
+      expect(r.statusCode).toBe(400);
+      expect(sent).toEqual([]);
+    });
+
+    test("nor a credential's key to another provider", async () => {
+      const r = res();
+      await controller.check({ user: ops, body: { provider: "openai", credential: "chat-key" } }, r);
+      expect(r.statusCode).toBe(400);
+      expect(sent).toEqual([]);
+    });
+
+    test("only an api credential is checked", async () => {
+      const r = res();
+      await controller.check({ user: ops, body: { credential: "a-login" } }, r);
+      expect(r.statusCode).toBe(400);
+      expect(sent).toEqual([]);
+    });
+
+    test("a key typed on the page may go to another base url", async () => {
+      const r = res();
+      await controller.check({ user: ops, body: { base_url: "https://other", api_key: "sk-typed" } }, r);
+      expect(r.statusCode).toBe(200);
+      expect(sent[0].url).toContain("https://other");
+    });
+
+    test("the stored key goes to the saved provider", async () => {
+      const r = res();
+      await controller.check({ user: ops, body: { api_key: "**********" } }, r);
+      expect(r.statusCode).toBe(200);
+      expect(JSON.stringify(sent[0].headers)).toContain("sk-real");
+    });
   });
 
   test("a row managed by the config seed is read only", async () => {
