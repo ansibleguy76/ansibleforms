@@ -148,4 +148,68 @@ export async function resumeAbandoned(self = nodeId) {
   return taken;
 }
 
-export default { resumeAbandoned, findResumable, claim, RESUME_WITHIN_HOURS };
+// --------------------------------------------------------------------------------------
+// once per process : the start's abandon and take-over
+// --------------------------------------------------------------------------------------
+
+// what this process's start abandoned already : its own jobs (tracker = this node), and the
+// jobs nobody follows (no tracker, from before 7). A dedicated worker abandons its own at its
+// start and again when it gets the worker lock (init) : the second time would abandon the jobs
+// the first take-over just claimed (they name this node), and a second loop would follow each.
+const startDone = { own: false, untracked: false };
+// the calls run one after the other : a second one waits for the first to have claimed its jobs
+let startChain = Promise.resolve();
+
+/**
+ * Abandons the jobs this process followed before it restarted, then follows again the ones
+ * still running on their runner (resumeAbandoned) : once per process, whoever asks first (the
+ * start of the node, the worker's start, the bootstrap once the worker lock is held). A later
+ * call only does what the first did not : the jobs nobody follows, when it asks for them and
+ * the first did not. Its own jobs are never abandoned twice, so a job taken over here is
+ * followed by one loop only.
+ *
+ * Args:
+ *   self (string): this node.
+ *   options (object):
+ *     untracked (boolean): also the jobs nobody follows (no tracker, from before 7).
+ *
+ * Returns:
+ *   Promise<{ abandoned: number, resumed: number }>: the jobs abandoned, and taken over again.
+ */
+export function abandonAndResumeOnce(self = nodeId, { untracked = false } = {}) {
+  const run = startChain.then(async () => {
+    let abandoned;
+    if (!startDone.own) {
+      // the first call : its own jobs, and the untracked ones when asked (marked done once
+      // the statement went through, so a database that was not there yet is tried again)
+      abandoned = await Job.abandonOwn(self, { untracked });
+      startDone.own = true;
+      startDone.untracked = untracked;
+    } else if (untracked && !startDone.untracked) {
+      // a later one asking for the untracked jobs : only those (tracker=NULL matches no row,
+      // so the jobs this node took over are left as they are)
+      abandoned = await Job.abandonOwn(null, { untracked: true });
+      startDone.untracked = true;
+    } else {
+      return { abandoned: 0, resumed: 0 };
+    }
+    // the ones still running on their runner (an AWX template) are followed again (#1084) ;
+    // a job already taken over is 'running', not 'abandoned', and is never claimed twice
+    const resumed = await resumeAbandoned(self);
+    return { abandoned: abandoned || 0, resumed };
+  });
+  // a failed call does not stop the next one
+  startChain = run.catch(() => {});
+  return run;
+}
+
+/**
+ * Forgets what this process's start abandoned : for the tests only.
+ */
+export function resetStartForTests() {
+  startDone.own = false;
+  startDone.untracked = false;
+  startChain = Promise.resolve();
+}
+
+export default { resumeAbandoned, abandonAndResumeOnce, findResumable, claim, RESUME_WITHIN_HOURS };

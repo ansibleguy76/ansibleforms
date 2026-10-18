@@ -30,7 +30,6 @@ import { bump } from './lib/epochs.js';
 import { waitForDatabase } from './init/index.js';
 import { runWorker, stopLostWorker } from './init/worker.js';
 import { startCluster } from './init/cluster.js';
-import Job from './models/job.model.js';
 import Schema, { SCHEMA_MANIFEST } from './models/schema.model.js';
 import mysql from './models/db.model.js';
 import { missingFromManifest } from './lib/schemaCompleteness.js';
@@ -41,7 +40,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { databaseUserPrivileges } from './lib/dbPrivileges.js';
-import { resumeAbandoned } from './lib/jobResume.js';
+import { abandonAndResumeOnce } from './lib/jobResume.js';
 
 const __filename = fileURLToPath(import.meta.url);
 // the server folder : the built client lives in ./views next to index.js
@@ -123,10 +122,10 @@ export async function startApp(){
     // worker's to create and to patch
     await waitForTheWorkersSchema();
     // the jobs this node followed before it restarted (the worker's start does this too) ; then
-    // the ones still running on their runner (an AWX template) are followed again (#1084)
-    Job.abandonOwn(nodeId)
-      .then((changed) => { if (changed) logger.warning(`Abandoned ${changed} jobs this node followed before it restarted`); })
-      .then(() => resumeAbandoned(nodeId))
+    // the ones still running on their runner (an AWX template) are followed again (#1084).
+    // Once per process : when this node takes the worker lock later, the bootstrap leaves them
+    abandonAndResumeOnce(nodeId)
+      .then(({ abandoned }) => { if (abandoned) logger.warning(`Abandoned ${abandoned} jobs this node followed before it restarted`); })
       .catch((err) => logger.error('Failed to abandon jobs: ' + (err.message || err)));
   }
   await ansibleforms.load(app);

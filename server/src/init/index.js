@@ -20,7 +20,7 @@ import { importVaultFromEnvOnce } from "../secrets/importVaultEnv.js";
 import { importSyslogFromEnvOnce } from "../lib/syslogServers.js";
 import { nodeId } from "../lib/role.js";
 import { die } from "../lib/die.js";
-import { resumeAbandoned } from "../lib/jobResume.js";
+import { abandonAndResumeOnce } from "../lib/jobResume.js";
 
 // The worker's start : the database bootstrap and every background task. It runs only in the
 // process holding the worker lock (lib/workerLock.js) - AF_ROLE unset, or a worker - so
@@ -260,13 +260,14 @@ const initOnce = async function({ boot = false } = {}){
     // the jobs this process followed before it restarted, and the jobs nobody follows (from
     // before 7, when no job named its node). A job another app node follows is left alone :
     // that node is alive, or the worker's dead-node sweep ends it (Job.abandonDeadNodes).
-    logger.info("Checking old jobs")
-    Job.abandonOwn(nodeId, { untracked: true })
-    .then((changed)=>{
-      logger.warning(`Abandoned ${changed} jobs`)
-    })
+    // Once per process : a dedicated worker did its own at its start already, and abandoning
+    // them again would take back the jobs it just followed again (only the untracked ones go) ;
     // the ones still running on their runner (an AWX template) are followed again (#1084)
-    .then(()=>resumeAbandoned(nodeId))
+    logger.info("Checking old jobs")
+    abandonAndResumeOnce(nodeId, { untracked: true })
+    .then(({ abandoned })=>{
+      if(abandoned) logger.warning(`Abandoned ${abandoned} jobs`)
+    })
     .catch((err)=>{
       logger.error("Failed to abandon jobs: " + err)
     })
