@@ -67,6 +67,12 @@ let welcomed = false;
 let cache = null;
 let mode = "outbound";
 let ansible = null;
+// the cancels of jobs this RTE does not run (yet) : jobId -> until when it is kept. The app may
+// ask to stop a job before its run message arrives (it claims the job in its database first) :
+// the cancel is kept a minute and applied when the run comes, never dropped
+const earlyCancels = new Map();
+const EARLY_CANCEL_MS = 60000;
+const EARLY_CANCEL_MAX = 1000;
 
 /**
  * This RTE's capacity, in its hello and health : the app sends no job to a full RTE.
@@ -293,6 +299,11 @@ async function onRun(msg) {
     running: true,
   };
   jobs.set(jobId, entry);
+  // a cancel that came before this run : the job starts aborted (the run polls the flag)
+  if (takeEarlyCancel(jobId)) {
+    entry.abort = true;
+    logger.notice(`RTE: job ${jobId} was cancelled before it arrived: stopping it at once`);
+  }
   session?.send({ t: "claimed", jobId });
   logger.notice(`RTE: running job ${jobId}`);
   (async () => {
@@ -311,14 +322,54 @@ async function onRun(msg) {
 }
 
 /**
- * Stops a job (cancel) : the flag first, so the run ends as aborted, then its process group.
+ * Keeps the cancel of a job this RTE does not run yet, for EARLY_CANCEL_MS : its run message
+ * may still be on its way. The ones expired go first, and at most EARLY_CANCEL_MAX are kept.
+ *
+ * Args:
+ *   jobId (number): the job.
+ *   now (number): the time, in ms (the tests set it).
+ */
+function rememberCancel(jobId, now = Date.now()) {
+  // step 1 : the expired ones forgotten
+  for (const [id, until] of earlyCancels) if (until <= now) earlyCancels.delete(id);
+  // step 2 : full : the oldest goes (a Map keeps the order they came in)
+  while (earlyCancels.size >= EARLY_CANCEL_MAX) earlyCancels.delete(earlyCancels.keys().next().value);
+  earlyCancels.set(jobId, now + EARLY_CANCEL_MS);
+}
+
+/**
+ * Takes the cancel kept for a job, if one came less than EARLY_CANCEL_MS ago.
+ *
+ * Args:
+ *   jobId (number): the job.
+ *   now (number): the time, in ms (the tests set it).
+ *
+ * Returns:
+ *   boolean: true when the job was cancelled before it arrived.
+ */
+function takeEarlyCancel(jobId, now = Date.now()) {
+  const until = earlyCancels.get(jobId);
+  earlyCancels.delete(jobId);
+  return !!until && until > now;
+}
+
+/**
+ * Stops a job (cancel) : the flag first, so the run ends as aborted, then its process group. A
+ * job this RTE does not know yet : the cancel is kept, and applied when its run comes.
  *
  * Args:
  *   msg (object): { jobId }.
  */
 function onCancel(msg) {
-  const entry = jobs.get(parseInt(msg.jobId, 10));
-  if (!entry?.running) return;
+  const jobId = parseInt(msg.jobId, 10);
+  if (!Number.isInteger(jobId) || jobId <= 0) return;
+  const entry = jobs.get(jobId);
+  // not known yet (its run is on its way) : kept a while ; known and ended : nothing to stop
+  if (!entry) {
+    rememberCancel(jobId);
+    return;
+  }
+  if (!entry.running) return;
   entry.abort = true;
   if (entry.pid > 0) {
     try {
@@ -673,4 +724,4 @@ export async function startSocketRte(rteMode) {
 }
 
 // for the tests
-export { socketJobIO, jobs, capacity, onRun, onAck, onCancel, attach, maskDeep };
+export { socketJobIO, jobs, capacity, onRun, onAck, onCancel, attach, maskDeep, earlyCancels, rememberCancel, takeEarlyCancel };

@@ -55,8 +55,12 @@ const waiting = new Map();
 const claims = new Map();
 // jobs being handed over now (sendJob) : kick and dispatch never hand one over twice at once
 const sending = new Set();
-// jobs whose cancel was sent ; jobs whose output masks this process registered
-const cancelSent = new Set();
+// jobs whose cancel reached an RTE that had claimed them : jobId -> the session's entry it went
+// on (a cancel sent while the job is still handed over is never marked : the RTE may not know
+// the job yet, so dispatch sends it again once it claimed it ; the session closing forgets its
+// marks, so the next session sends them again)
+const cancelSent = new Map();
+// jobs whose output masks this process registered
 const masked = new Set();
 // each job's items, written one after the other : jobId -> Promise
 const writing = new Map();
@@ -373,6 +377,9 @@ function adopt(session, runner, direction) {
       if (code !== CLOSE.LEASE_LOST && code !== CLOSE.REPLACED) releaseLease(name);
     }
     for (const [jobId, c] of claims) if (c.entry === entry) settleClaim(jobId, { claimed: false, error: "the socket closed", lost: true }, entry);
+    // the cancels sent on this socket : sent again on the next one (the RTE that comes back
+    // may be a new container, or may have missed them)
+    forgetCancels(entry);
     logger.warning(`RTE '${name}' disconnected (${code}${reason ? `: ${reason}` : ""})`);
     publish("runners");
   });
@@ -886,6 +893,30 @@ async function ensureMask(jobId) {
 }
 
 /**
+ * Whether a job is being handed over on this node now : claimed in the database, but the RTE
+ * has not said claimed yet, so it may not know the job (a cancel sent now could be ignored).
+ *
+ * Args:
+ *   jobId (number): the job.
+ *
+ * Returns:
+ *   boolean
+ */
+function handingOver(jobId) {
+  return sending.has(jobId) || claims.has(jobId);
+}
+
+/**
+ * Forgets the cancels sent on a session (it closed) : the next session sends them again.
+ *
+ * Args:
+ *   entry (object): the session's entry.
+ */
+function forgetCancels(entry) {
+  for (const [jobId, sentOn] of cancelSent) if (sentOn === entry) cancelSent.delete(jobId);
+}
+
+/**
  * Forgets what this node keeps of a job that ended here (failed, abandoned, ended) : its wait,
  * its cancel sent, its output masks.
  *
@@ -1034,8 +1065,11 @@ async function dispatch() {
   );
   for (const a of aborts || []) {
     if (cancelSent.has(a.id)) continue;
+    // still handed over : the RTE may not know the job yet and would drop the cancel ; sent at
+    // the next round, once it said claimed
+    if (handingOver(a.id)) continue;
     const entry = ready.find((e) => e.rteId === a.host && e.runner.name === a.runner);
-    if (entry?.session.send({ t: "cancel", jobId: a.id })) cancelSent.add(a.id);
+    if (entry?.session.send({ t: "cancel", jobId: a.id })) cancelSent.set(a.id, entry);
   }
 }
 
@@ -1068,7 +1102,9 @@ export function kick(jobId, runner) {
 export function cancel(jobId, runner) {
   const entry = sessions.get(runner.name);
   if (!entry?.session.send({ t: "cancel", jobId })) return false;
-  cancelSent.add(jobId);
+  // marked only once the RTE claimed the job : sent while it is handed over, the RTE keeps it a
+  // while and applies it when the run comes, and dispatch sends it again after the claim
+  if (!handingOver(jobId)) cancelSent.set(jobId, entry);
   return true;
 }
 
@@ -1313,6 +1349,6 @@ export function dropSocket(name, reason) {
   if (entry) entry.session.close(CLOSE.UNAUTHORIZED, reason);
 }
 
-export { sessions, waiting, cancelSent, dialing, dispatch, dialInbound, storeItem, sendJob, onItem, onFetch, adopt, renewTick, abandonLost, NODE_DEAD_SECONDS };
+export { sessions, waiting, cancelSent, claims, sending, dialing, dispatch, dialInbound, storeItem, sendJob, onItem, onFetch, adopt, renewTick, abandonLost, NODE_DEAD_SECONDS };
 
 export default { startRteHub, handleUpgrade, authenticate, registerHandler, kick, cancel, socketState, isSocketRunner, holdsSocket };

@@ -278,7 +278,7 @@ describe("a job handed over", () => {
 
   test("abandoned : its wait and its cancel sent are forgotten", async () => {
     hub.waiting.set(42, { firstWait: Date.now(), retryAt: 0, said: true });
-    hub.cancelSent.add(42);
+    hub.cancelSent.set(42, {});
     await hub.storeItem(entryOf(runners["dmz-1"]), 42, { kind: "abandon", message: "lost" });
     assert.equal(hub.waiting.has(42), false);
     assert.equal(hub.cancelSent.has(42), false);
@@ -289,6 +289,67 @@ describe("a job handed over", () => {
     const select = queries.find((q) => q.sql.includes("status='running' AND host=?"));
     assert.match(select.sql, /AND runner=\?/);
     assert.deepEqual(select.params, ["rte-host-a-8000", "dmz-1"]);
+  });
+});
+
+describe("an abort of a socket-mode job", () => {
+  // the aborts the database holds (dispatch's second query) : the job, its RTE and its runner
+  const withAborts = async (list, fn) => {
+    const doBefore = mysql.do;
+    mysql.do = async (sql, params) => {
+      if (sql.includes("abort_requested=1 AND host IN")) return list;
+      return doBefore(sql, params);
+    };
+    try {
+      await fn();
+    } finally {
+      mysql.do = doBefore;
+    }
+  };
+
+  test("a cancel while the job is still handed over is not marked : sent again once the RTE claimed it", async () => {
+    const entry = entryOf(runners["dmz-1"]);
+    hub.sessions.set("dmz-1", entry);
+    try {
+      // claimed in the database, the run message on its way : the RTE does not know the job yet
+      hub.sending.add(50);
+      assert.equal(hub.cancel(50, runners["dmz-1"]), true, "sent : the RTE keeps it until the run comes");
+      assert.equal(hub.cancelSent.has(50), false, "but never marked as received");
+      await withAborts([{ id: 50, host: "rte-host-a-8000", runner: "dmz-1" }], async () => {
+        await hub.dispatch();
+        assert.equal(entry.session.sent.filter((m) => m.t === "cancel").length, 1, "not resent while handed over");
+        // the RTE said claimed : the next round sends it, and marks it
+        hub.sending.delete(50);
+        await hub.dispatch();
+        assert.equal(entry.session.sent.filter((m) => m.t === "cancel").length, 2);
+        assert.equal(hub.cancelSent.get(50), entry);
+        await hub.dispatch();
+        assert.equal(entry.session.sent.filter((m) => m.t === "cancel").length, 2, "once marked, sent once");
+      });
+    } finally {
+      hub.sending.delete(50);
+      hub.cancelSent.delete(50);
+      hub.sessions.delete("dmz-1");
+    }
+  });
+
+  test("the cancels sent on a socket are forgotten when it closes : the next socket sends them again", async () => {
+    const session = new FakeSession();
+    hub.adopt(session, runners["dmz-1"], "outbound");
+    hello(session);
+    await settle();
+    assert.equal(hub.cancel(60, runners["dmz-1"]), true);
+    assert.ok(hub.cancelSent.has(60));
+    session.close(CLOSE.GOING_AWAY, "gone");
+    assert.equal(hub.cancelSent.has(60), false);
+    // the RTE back on a new socket : dispatch sends the cancel there
+    const again = new FakeSession();
+    hub.adopt(again, runners["dmz-1"], "outbound");
+    hello(again);
+    await settle();
+    await withAborts([{ id: 60, host: "rte-host-a-8000", runner: "dmz-1" }], () => hub.dispatch());
+    assert.deepEqual(again.sent.filter((m) => m.t === "cancel"), [{ t: "cancel", jobId: 60 }]);
+    hub.cancelSent.delete(60);
   });
 });
 

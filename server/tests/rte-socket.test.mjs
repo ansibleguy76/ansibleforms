@@ -203,6 +203,32 @@ describe("the RTE dialing the app again", async () => {
     assert.ok(REFUSED_REDIAL_MS >= 10 * 60 * 1000);
   });
 
+  test("a cancel of a job this RTE does not know yet is kept a minute, then applied by its run", async () => {
+    const { onCancel, earlyCancels, rememberCancel, takeEarlyCancel } = await import("../src/rte/socket/rte-socket.js");
+    earlyCancels.clear();
+    onCancel({ t: "cancel", jobId: 91 });
+    assert.ok(earlyCancels.has(91), "kept, not dropped");
+    assert.equal(takeEarlyCancel(91), true, "the run takes it");
+    assert.equal(takeEarlyCancel(91), false, "once");
+    // older than a minute : forgotten
+    rememberCancel(92, 1000);
+    assert.equal(takeEarlyCancel(92, 1000 + 61000), false);
+    // a job known and ended : nothing kept
+    jobs.set(93, { running: false, spool: {} });
+    try {
+      onCancel({ t: "cancel", jobId: 93 });
+      assert.equal(earlyCancels.has(93), false);
+    } finally {
+      jobs.delete(93);
+    }
+    // at most 1000 kept, the oldest go first
+    for (let i = 1; i <= 1005; i++) rememberCancel(10000 + i);
+    assert.equal(earlyCancels.size, 1000);
+    assert.equal(earlyCancels.has(10001), false);
+    assert.equal(earlyCancels.has(11005), true);
+    earlyCancels.clear();
+  });
+
   test("events are masked before they reach the spool, as the output is", async () => {
     const { registerJobSecrets, forgetJobSecrets } = await import("../src/lib/outputMask.js");
     const appended = [];
