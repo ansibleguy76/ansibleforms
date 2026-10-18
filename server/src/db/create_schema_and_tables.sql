@@ -235,9 +235,9 @@ CREATE TABLE `runners` (
 DROP TABLE IF EXISTS `ldap`;
 CREATE TABLE `ldap` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  -- a directory's name : 'default' keeps the short names (ldap/<group>, the bare username) ; any
+  -- a directory's name : 'main' keeps the short names (ldap/<group>, the bare username) ; any
   -- other's members are named ldap/<name>/<group> and <name>/<user>
-  `name` varchar(100) NOT NULL DEFAULT 'default',
+  `name` varchar(100) NOT NULL DEFAULT 'main',
   -- what it is, for the list and its page
   `description` varchar(250) DEFAULT NULL,
   -- the order a bare username is looked up in, the lowest first

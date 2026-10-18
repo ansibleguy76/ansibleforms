@@ -912,7 +912,7 @@ export default {
       deleteConfirm: '削除してもよろしいですか:',
       isCreated: 'を作成しました',
       isUpdated: 'を更新しました',
-      // the grey note after a record's type or name that is the default (defaultNote)
+      // the badge after a record's type or name that is the default (defaultNote)
       defaultNote: '既定',
       isDeleted: 'を削除しました',
       bulkDeleteConfirm: '{count} 件を削除しますか？',

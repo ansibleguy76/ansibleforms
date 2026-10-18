@@ -917,8 +917,8 @@ export default {
       deleteConfirm: 'Sei sicuro di voler eliminare',
       isCreated: 'e stato creato',
       isUpdated: 'e stato aggiornato',
-      // the grey note after a record's type or name that is the default (defaultNote)
-      defaultNote: 'predefinito',
+      // the badge after a record's type or name that is the default (defaultNote)
+      defaultNote: 'Predefinito',
       isDeleted: 'e stato eliminato',
       bulkDeleteConfirm: 'Eliminare {count} elemento/i?',
       bulkDeleteConfirmSkip:

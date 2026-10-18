@@ -25,6 +25,7 @@ function dropTable(table) {
     });
 }
 "use strict";
+import { DEFAULT_NAME as DEFAULT_LDAP, LEGACY_DEFAULT_NAME as LEGACY_DEFAULT_LDAP } from "../lib/ldapDirectories.js";
 import logger from "../lib/logger.js";
 import mysql from "./db.model.js";
 import appConfig from "../../config/app.config.js";
@@ -1110,6 +1111,8 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addColumn("runners", "rte_mode", "varchar(10)", true, "NULL"), messages, success, failed);
   // a runner turned off takes no job (Connections > Runners, Enable / Disable)
   await checkPromise(addColumn("runners", "enabled", "tinyint(4)", true, "1"), messages, success, failed);
+  // the LDAP directory named "default" up to 7.2 is "main" from 7.3 : its members keep their short names
+  await checkPromise(renameDefaultLdap(), messages, success, failed);
   // an RTE that asks to join waits for an admin's approval (Connections > Runners, Approve)
   await checkPromise(addColumn("runners", "pending", "tinyint(4)", true, "0"), messages, success, failed);
   await checkPromise(addColumn("runners", "pending_since", "datetime", true, "NULL"), messages, success, failed);
@@ -1610,6 +1613,23 @@ function connectionCredentialType(record) {
  * Returns:
  *   Promise<string|null>: what was done, or null when there was nothing to do.
  */
+/**
+ * Renames the LDAP directory named "default" (up to 7.2) to "main" (DEFAULT_NAME) : the one whose
+ * members keep their short names, so no role, group or user name changes. Only when no
+ * directory is named "main" yet ; the column's default follows.
+ *
+ * Returns:
+ *   Promise<string|null>: what was done, or null when there was nothing to do.
+ */
+export async function renameDefaultLdap() {
+  const rows = await mysql.do("SELECT name FROM AnsibleForms.`ldap` WHERE name IN (?, ?)", [LEGACY_DEFAULT_LDAP, DEFAULT_LDAP]);
+  const names = new Set(rows.map((r) => r.name));
+  await mysql.do(`ALTER TABLE AnsibleForms.\`ldap\` ALTER COLUMN \`name\` SET DEFAULT '${DEFAULT_LDAP}'`);
+  if (!names.has(LEGACY_DEFAULT_LDAP) || names.has(DEFAULT_LDAP)) return null;
+  await mysql.do("UPDATE AnsibleForms.`ldap` SET name = ? WHERE name = ?", [DEFAULT_LDAP, LEGACY_DEFAULT_LDAP]);
+  return `LDAP directory '${LEGACY_DEFAULT_LDAP}' renamed to '${DEFAULT_LDAP}'`;
+}
+
 export async function retypeConnectionCredentials() {
   const stores = await mysql.do("SELECT id, type, NULL AS flavour, credential FROM AnsibleForms.`secret_stores` WHERE COALESCE(credential, '') <> ''");
   const runners = await mysql.do("SELECT id, type, flavour, credential FROM AnsibleForms.`runners` WHERE COALESCE(credential, '') <> ''");

@@ -79,7 +79,7 @@ function decrypted(row) {
 }
 
 /**
- * Checks a directory's name : the rule, and 'default' reserved for the first one.
+ * Checks a directory's name : the rule, and DEFAULT_NAME ('main') reserved for the first one.
  *
  * Args:
  *   name (string): the name.

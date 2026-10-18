@@ -917,8 +917,8 @@ export default {
       deleteConfirm: 'Weet u zeker dat u wilt verwijderen',
       isCreated: 'is aangemaakt',
       isUpdated: 'is bijgewerkt',
-      // the grey note after a record's type or name that is the default (defaultNote)
-      defaultNote: 'standaard',
+      // the badge after a record's type or name that is the default (defaultNote)
+      defaultNote: 'Standaard',
       isDeleted: 'is verwijderd',
       bulkDeleteConfirm: '{count} item(s) verwijderen?',
       bulkDeleteConfirmSkip:

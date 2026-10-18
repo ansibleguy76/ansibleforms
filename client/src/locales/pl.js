@@ -914,8 +914,8 @@ export default {
       deleteConfirm: 'Czy na pewno chcesz usunąć',
       isCreated: '– utworzono',
       isUpdated: '– zaktualizowano',
-      // the grey note after a record's type or name that is the default (defaultNote)
-      defaultNote: 'domyślny',
+      // the badge after a record's type or name that is the default (defaultNote)
+      defaultNote: 'Domyślny',
       isDeleted: '– usunięto',
       bulkDeleteConfirm: 'Usunąć {count} element(y)?',
       bulkDeleteConfirmSkip:

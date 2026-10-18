@@ -196,13 +196,13 @@
   vertical-align: middle;
 }
 /* when a repository's last pull or push ended, beside its pill (config/settings.js pillDate) */
-/* "(default)" after the type or the name of the record that is the default : light grey, a
-   little smaller, as the date after a pill (defaultNote in config/settings.js) */
-.af-default-note {
-  margin-left: 0.35rem;
-  font-size: 0.85em;
-  color: var(--bs-secondary-color);
-  white-space: nowrap;
+/* a smaller badge, beside a value rather than a value itself : "Default" after a type or a name
+   (defaultNote in config/settings.js) */
+.af-pill.af-pill-small {
+  height: 16px;
+  padding: 0 0.4rem;
+  font-size: 0.65rem;
+  vertical-align: 0.1em;
 }
 .af-pill-date {
   margin-left: 0.4rem;

@@ -3,8 +3,10 @@
 // unit tested (tests/ldap-directories.test.mjs) ; models/ldap.model.js uses them.
 
 // the directory whose members keep their short names (ldap/<group>, the bare username) : the one
-// there was before several could be made
-export const DEFAULT_NAME = "default";
+// there was before several could be made. Named "default" up to 7.2 (renamed by the 7.3 schema
+// patch, renameDefaultLdap), which read as "default (default)" in the list
+export const DEFAULT_NAME = "main";
+export const LEGACY_DEFAULT_NAME = "default";
 // a directory's name : it prefixes its members (ldap/<name>/<group>, <name>/<user>), so letters,
 // digits, - and _ only
 export const NAME_RULE = /^[a-z0-9][a-z0-9_-]{0,49}$/i;

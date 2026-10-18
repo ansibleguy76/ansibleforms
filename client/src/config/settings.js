@@ -145,20 +145,23 @@ function pillDate(value) {
   return text ? ` <span class="af-pill-date">${esc(text)}</span>` : '';
 }
 
+// the LDAP directory whose members keep their short names (server/src/lib/ldapDirectories.js)
+const LDAP_DEFAULT = 'main';
+
 /**
- * The grey "(default)" note after the type or the name of the record that is the default : a
+ * The dark grey "Default" badge after the type or the name of the record that is the default : a
  * runner the default of its type, the mail channel the app sends with, the SSO provider its type
- * signs in with, the default LDAP directory. A note rather than a column of one tick.
+ * signs in with, the main LDAP directory. A badge rather than a column of one tick.
  *
  * Args:
  *   t (function): the translation function.
  *   on (boolean): whether the record is the default.
  *
  * Returns:
- *   string: the note's HTML (static markup and an escaped locale string), "" when not.
+ *   string: the badge's HTML (a pill, its label escaped), "" when not.
  */
 export function defaultNote(t, on) {
-  return on ? ` <span class="af-default-note">(${esc(t('settings.common.defaultNote'))})</span>` : '';
+  return on ? ' ' + pill(`${PILL.grey} af-pill-small`, t('settings.common.defaultNote')) : '';
 }
 
 /**
@@ -2122,7 +2125,7 @@ export default function getSettings(t) {
       // one, which is turned off instead
       actions: [
         { name: 'test', title: t('settings.common.testConnection'), icon: 'plug', dependency: 'enable' },
-        { name: 'delete', title: t('common.delete'), icon: 'trash', showWhen: (item) => item.name !== 'default' },
+        { name: 'delete', title: t('common.delete'), icon: 'trash', showWhen: (item) => item.name !== LDAP_DEFAULT },
       ],
       fields: [
         {
@@ -2144,7 +2147,7 @@ export default function getSettings(t) {
           help: t('settings.ldap.nameHelp'),
           placeholder: 'corp',
           required: true,
-          disabledWhen: (item, saved) => saved.name === 'default',
+          disabledWhen: (item, saved) => saved.name === LDAP_DEFAULT,
         },
         {
           // what it is, for the list and its page
@@ -3877,7 +3880,7 @@ function ldapDirectories(t, ldap) {
   // so the list is always in the lookup order
   const column = {
     // the default directory (named default) : "(default)" after its name (defaultNote)
-    name: { sortable: false, filterable: true, render: (v) => esc(v ?? '') + defaultNote(t, v === 'default') },
+    name: { sortable: false, filterable: true, render: (v) => esc(v ?? '') + defaultNote(t, v === LDAP_DEFAULT) },
     description: { sortable: false, filterable: true },
     // a ✓ as every list's Enabled, first as theirs
     enable: { sortable: false, label: t('settings.ldap.enabled'), type: 'checkbox' },
@@ -3924,7 +3927,7 @@ function ldapDirectories(t, ldap) {
         title: t('settings.ldap.deleteDirectory'),
         icon: 'trash',
         color: 'delete',
-        enabledWhen: (r) => r.name !== 'default',
+        enabledWhen: (r) => r.name !== LDAP_DEFAULT,
       },
     ],
     fields: [
