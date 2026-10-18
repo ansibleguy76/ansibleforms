@@ -211,6 +211,8 @@ export default {
     failedLaunch: "Failed to launch form",
     invalidFormData: "The form data is not valid",
     failedRelaunch: "Failed to relaunch job",
+    invalidEventOrder:
+      "An event's order is a whole number from 0: '{order}' is not",
     failedApprove: "Failed to approve job",
     failedReject: "Failed to reject job",
     approved: "Job {id} has been approved",

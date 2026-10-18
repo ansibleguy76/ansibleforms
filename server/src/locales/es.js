@@ -221,6 +221,8 @@ export default {
     failedLaunch: "Error al lanzar el formulario",
     invalidFormData: "Los datos del formulario no son válidos",
     failedRelaunch: "Error al relanzar el trabajo",
+    invalidEventOrder:
+      "El orden de un evento es un número entero desde 0: '{order}' no lo es",
     failedApprove: "Error al aprobar el trabajo",
     failedReject: "Error al rechazar el trabajo",
     approved: "El trabajo {id} ha sido aprobado",

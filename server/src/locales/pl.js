@@ -222,6 +222,8 @@ export default {
     failedLaunch: "Nie udało się uruchomić formularza",
     invalidFormData: "Dane formularza są nieprawidłowe",
     failedRelaunch: "Nie udało się ponownie uruchomić zadania",
+    invalidEventOrder:
+      "Kolejność zdarzenia to liczba całkowita od 0: '{order}' nią nie jest",
     failedApprove: "Nie udało się zatwierdzić zadania",
     failedReject: "Nie udało się odrzucić zadania",
     approved: "Zadanie {id} zostało zatwierdzone",

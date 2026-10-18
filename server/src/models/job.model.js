@@ -834,6 +834,32 @@ Job.checkExists = async function (id) {
     throw new Errors.NotFoundError(`Job ${id} not found`);
   }
 };
+/**
+ * Checks that a user may read a job, without reading it : the same rule as Job.findById (who
+ * sees every job, the job's owner, or anyone while it waits for an approval), for the endpoints
+ * that only need the answer (its events). findById reads the whole output for it.
+ *
+ * Args:
+ *   user (object): the caller.
+ *   id (number|string): the job.
+ *
+ * Returns:
+ *   Promise<void>: settles when the user may read it.
+ *
+ * Raises:
+ *   Errors.NotFoundError: no such job.
+ *   Errors.AccessDeniedError: the user may not read it.
+ */
+Job.assertReadable = async function (user, id) {
+  await Job.checkExists(id);
+  if (seesAllJobs(user)) return;
+  if (!user?.username) throw new Errors.AccessDeniedError(`You do not have access to job ${id}`);
+  const res = await mysql.do(
+    "SELECT id FROM AnsibleForms.`jobs` WHERE id=? AND ((user=? AND user_type=?) OR status='approve')",
+    [id, user.username, user.type]
+  );
+  if (res.length != 1) throw new Errors.AccessDeniedError(`You do not have access to job ${id}`);
+};
 Job.findAll = async function (user, records, filter = {}) {
   logger.info("Finding all jobs");
   // narrowed to one user's jobs (user and user_type) or one runner's (a settings page's Jobs

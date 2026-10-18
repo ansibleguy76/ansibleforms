@@ -218,6 +218,8 @@ export default {
     failedLaunch: "フォームの起動に失敗しました",
     invalidFormData: "フォームのデータが無効です",
     failedRelaunch: "ジョブの再起動に失敗しました",
+    invalidEventOrder:
+      "イベントの順序は 0 以上の整数です：'{order}' は違います",
     failedApprove: "ジョブの承認に失敗しました",
     failedReject: "ジョブの却下に失敗しました",
     approved: "ジョブ {id} は承認されました",

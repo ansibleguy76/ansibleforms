@@ -225,6 +225,8 @@ export default {
     failedLaunch: "Formular konnte nicht gestartet werden",
     invalidFormData: "Die Formulardaten sind ungültig",
     failedRelaunch: "Job konnte nicht neu gestartet werden",
+    invalidEventOrder:
+      "Die Reihenfolge eines Events ist eine ganze Zahl ab 0: '{order}' ist keine",
     failedApprove: "Job-Freigabe fehlgeschlagen",
     failedReject: "Job-Ablehnung fehlgeschlagen",
     approved: "Job {id} wurde freigegeben",

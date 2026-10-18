@@ -57,10 +57,11 @@ const getJob = async function(req, res) {
   }
 };
 // a playbook job's structured events (the af_events callback plugin) : the job page's host-by-task
-// grid, timeline and recap ; the job read as getJob reads it, so only who may see the job sees them
+// grid, timeline and recap ; only who may see the job (as getJob) sees them
 const getJobEvents = async function(req, res) {
   try {
-    await Job.findById(req.user.user, req.params.id, false, true)
+    // who may see the job (Job.assertReadable : findById's rule, without reading its output)
+    await Job.assertReadable(req.user.user, req.params.id)
     res.status(200).json(RestResultv2.list(await JobEvent.findByJob(req.params.id)));
   } catch (err) {
     if (err.name === 'NotFoundError') {
@@ -76,8 +77,13 @@ const getJobEvents = async function(req, res) {
 // see the job
 const getJobEvent = async function(req, res) {
   try {
-    await Job.findById(req.user.user, req.params.id, false, true)
-    const event = await JobEvent.findOne(req.params.id, Number(req.params.order));
+    // an event's place among the job's events : a whole number from 0, nothing else
+    const order = String(req.params.order ?? '');
+    if (!/^\d+$/.test(order) || !Number.isSafeInteger(Number(order))) {
+      return res.status(400).json(RestResultv2.error(i18n.t(req, 'jobs.invalidEventOrder', { order })));
+    }
+    await Job.assertReadable(req.user.user, req.params.id)
+    const event = await JobEvent.findOne(req.params.id, Number(order));
     if (!event) return res.status(404).json(RestResultv2.error(`No event ${req.params.order} in job ${req.params.id}`));
     res.status(200).json(RestResultv2.single(event));
   } catch (err) {

@@ -229,6 +229,8 @@ export default {
     failedLaunch: "Echec du lancement du formulaire",
     invalidFormData: "Les données du formulaire ne sont pas valides",
     failedRelaunch: "Echec du relancement de la tache",
+    invalidEventOrder:
+      "L'ordre d'un événement est un nombre entier à partir de 0 : '{order}' ne l'est pas",
     failedApprove: "Echec de l'approbation de la tache",
     failedReject: "Echec du rejet de la tache",
     approved: "La tache {id} a ete approuvee",

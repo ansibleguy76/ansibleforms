@@ -222,6 +222,8 @@ export default {
     failedLaunch: "No s'ha pogut llançar el formulari",
     invalidFormData: "Les dades del formulari no són vàlides",
     failedRelaunch: "No s'ha pogut tornar a llançar la tasca",
+    invalidEventOrder:
+      "L'ordre d'un esdeveniment és un nombre enter des de 0: '{order}' no ho és",
     failedApprove: "No s'ha pogut aprovar la tasca",
     failedReject: "No s'ha pogut rebutjar la tasca",
     approved: "La tasca {id} s'ha aprovat",

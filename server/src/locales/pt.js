@@ -218,6 +218,8 @@ export default {
     failedLaunch: "Falha ao iniciar o formulário",
     invalidFormData: "Os dados do formulário não são válidos",
     failedRelaunch: "Falha ao relançar a tarefa",
+    invalidEventOrder:
+      "A ordem de um evento é um número inteiro a partir de 0: '{order}' não é",
     failedApprove: "Falha ao aprovar a tarefa",
     failedReject: "Falha ao rejeitar a tarefa",
     approved: "A tarefa {id} foi aprovada",

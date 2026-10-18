@@ -215,6 +215,8 @@ export default {
     failedLaunch: "Avvio modulo non riuscito",
     invalidFormData: "I dati del modulo non sono validi",
     failedRelaunch: "Riavvio job non riuscito",
+    invalidEventOrder:
+      "L'ordine di un evento è un numero intero da 0: '{order}' non lo è",
     failedApprove: "Approvazione job non riuscita",
     failedReject: "Rifiuto job non riuscito",
     approved: "Il job {id} e stato approvato",

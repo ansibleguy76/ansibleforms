@@ -218,6 +218,8 @@ export default {
     failedLaunch: "Kan formulier niet starten",
     invalidFormData: "De formuliergegevens zijn niet geldig",
     failedRelaunch: "Kan job niet herstarten",
+    invalidEventOrder:
+      "De volgorde van een event is een geheel getal vanaf 0: '{order}' is dat niet",
     failedApprove: "Kan job niet goedkeuren",
     failedReject: "Kan job niet afwijzen",
     approved: "Job {id} is goedgekeurd",
