@@ -74,7 +74,9 @@ async function triggerRestore(item) {
       try {
         restores.value[item.folder] = t('admin.backups.restoring');
         const result = await axios.post(`/api/v2/backup/${item.folder}/restore?backupFirst=${withBackup}`, {});
-        toast.success(result.data.message);
+        // restored, but the older schema could not be brought up to this release : a warning
+        if (result.data?.schemaUpgraded === false) toast.warning(result.data.message);
+        else toast.success(result.data.message);
         adminMulti.value.loadItems();
       } catch (err) {
         const msg = Helpers.parseAxiosResponseError(err, t('admin.backups.restoreFailed'));

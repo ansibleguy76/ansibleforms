@@ -337,7 +337,7 @@ onMounted(async () => {
                 <ul class="dropdown-menu dropdown-menu-end">
                   <li>
                     <a class="dropdown-item" href="#" @click.prevent="openRow(item)">
-                      <font-awesome-icon icon="pencil" class="me-2" />{{ t('settings.settingsPage.editRole') }}
+                      <font-awesome-icon icon="pencil" class="me-2" />{{ t('common.edit') }}
                     </a>
                   </li>
                   <li><hr class="dropdown-divider" /></li>

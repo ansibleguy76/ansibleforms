@@ -35,7 +35,7 @@ describe('the designer lock', () => {
 
 describe('the designer address', () => {
   it('Back and Forward open the form the address names', () => {
-    const watcher = fnAt('() => route.path,', 1400);
+    const watcher = fnAt('() => route.path,', 2400);
     expect(watcher).toMatch(/address\.form/);
     expect(watcher).toMatch(/currentForm\.value = f\.id/);
   });

@@ -541,7 +541,7 @@ export const SECRET_STORE_TYPES = [
  * Returns:
  *   object[]: the two actions.
  */
-export function enableActions(enableTitle, disableTitle) {
+export function enableActions(enableTitle, disableTitle, { field = 'enabled', extra = () => ({}) } = {}) {
   return [
     {
       name: 'enable',
@@ -549,8 +549,8 @@ export function enableActions(enableTitle, disableTitle) {
       icon: 'toggle-on',
       color: 'edit',
       dividerBefore: true,
-      shownWhen: (m) => !m.enabled,
-      update: () => ({ enabled: 1 }),
+      shownWhen: (m) => !m[field],
+      update: (m) => ({ [field]: 1, ...extra(m) }),
     },
     {
       name: 'disable',
@@ -558,8 +558,8 @@ export function enableActions(enableTitle, disableTitle) {
       icon: 'toggle-off',
       color: 'edit',
       dividerBefore: true,
-      shownWhen: (m) => !!m.enabled,
-      update: () => ({ enabled: 0 }),
+      shownWhen: (m) => !!m[field],
+      update: (m) => ({ [field]: 0, ...extra(m) }),
     },
   ];
 }
@@ -629,7 +629,7 @@ export default function getSettings(t) {
       ],
       // in the row menu : editing, the groups, the password, then Delete last, each apart
       actions: [
-        { name: 'edit', title: t('settings.users.editUser'), icon: 'pencil', color: 'edit' },
+        { name: 'edit', title: t('common.edit'), icon: 'pencil', color: 'edit' },
         // the user's Groups tab, its Add group dialog open
         {
           name: 'add_group',
@@ -670,7 +670,7 @@ export default function getSettings(t) {
         },
         {
           name: 'delete',
-          title: t('settings.users.deleteUser'),
+          title: t('common.delete'),
           icon: 'trash',
           color: 'delete',
           // the admin user is the way back in : never deleted (the server refuses it too) ; an
@@ -841,7 +841,7 @@ export default function getSettings(t) {
         !item.source || item.source === 'local' ? `/settings/groups/${item.id}` : directoryPath('groups', item),
       // in the row menu : editing, its users, then Delete last, each apart
       actions: [
-        { name: 'edit', title: t('settings.groups.editGroup'), icon: 'pencil', color: 'edit' },
+        { name: 'edit', title: t('common.edit'), icon: 'pencil', color: 'edit' },
         // the group's Users tab, its Add user dialog open
         {
           name: 'add_user',
@@ -855,7 +855,7 @@ export default function getSettings(t) {
         },
         {
           name: 'delete',
-          title: t('settings.groups.deleteGroup'),
+          title: t('common.delete'),
           icon: 'trash',
           color: 'delete',
           // the admins group is never deleted (the server refuses it too) ; an LDAP or SSO group
@@ -955,7 +955,7 @@ export default function getSettings(t) {
       actions: [
         // in the row menu : editing, then git (Pull, Push, Reset), then its credentials, then its
         // output (both on its page), then Delete last, each apart ; the same icons as its page's buttons
-        { name: 'edit', icon: 'pencil', title: t('settings.repositories.editRepository'), color: 'edit' },
+        { name: 'edit', icon: 'pencil', title: t('common.edit'), color: 'edit' },
         {
           name: 'trigger',
           icon: 'download',
@@ -1006,7 +1006,7 @@ export default function getSettings(t) {
           color: 'preview',
           to: (r) => `/settings/repositories/${r.id}/push-output`,
         },
-        { name: 'delete', icon: 'trash', title: t('settings.repositories.deleteRepository'), color: 'delete' },
+        { name: 'delete', icon: 'trash', title: t('common.delete'), color: 'delete' },
       ],
       fields: [
         // no columns : the id, and git's output (on the repository's page)
@@ -1268,18 +1268,14 @@ export default function getSettings(t) {
         },
       ],
       actions: [
-        { name: 'edit', title: t('settings.oauth2.editProvider'), icon: 'pencil', color: 'edit' },
-        // the one its type signs in with : the others of its type stop being it (oauth2.model)
-        {
-          name: 'use',
-          title: t('settings.oauth2.useForSignIn'),
-          icon: 'right-to-bracket',
-          color: 'edit',
-          dividerBefore: true,
-          enabledWhen: (p) => !p.enable,
-          update: (p) => ({ enable: 1, provider: p.provider }),
-        },
-        { name: 'delete', title: t('settings.oauth2.deleteProvider'), icon: 'trash', color: 'delete' },
+        { name: 'edit', title: t('common.edit'), icon: 'pencil', color: 'edit' },
+        // on or off, as every list with an Enabled column : turned on, the others of its type stop
+        // being the one its type signs in with (oauth2.model), so its type goes along
+        ...enableActions(t('settings.common.enable'), t('settings.common.disable'), {
+          field: 'enable',
+          extra: (p) => ({ provider: p.provider }),
+        }),
+        { name: 'delete', title: t('common.delete'), icon: 'trash', color: 'delete' },
       ],
       fields: [
         // the provider its type's login button signs in with (one per type) : a yes / no column,
@@ -1461,7 +1457,7 @@ export default function getSettings(t) {
       actions: [
         // in the row menu, as every list's : editing, running it now, then Delete last, each
         // apart
-        { name: 'edit', icon: 'pencil', title: t('settings.schedules.editSchedule'), color: 'edit' },
+        { name: 'edit', icon: 'pencil', title: t('common.edit'), color: 'edit' },
         {
           name: 'trigger',
           icon: 'play',
@@ -1470,7 +1466,7 @@ export default function getSettings(t) {
           dividerBefore: true,
         },
         ...enableActions(t('settings.schedules.enable'), t('settings.schedules.disable')),
-        { name: 'delete', icon: 'trash', title: t('settings.schedules.deleteSchedule'), color: 'delete' },
+        { name: 'delete', icon: 'trash', title: t('common.delete'), color: 'delete' },
       ],
       // the short columns as wide as their headers, a date as wide as its text, the name and
       // the form share the rest
@@ -1627,7 +1623,7 @@ export default function getSettings(t) {
       // in the row menu, as every list's : editing, opening its form with its values, then
       // Delete last, each apart
       actions: [
-        { name: 'edit', icon: 'pencil', title: t('settings.storedJobs.editJob'), color: 'edit' },
+        { name: 'edit', icon: 'pencil', title: t('common.edit'), color: 'edit' },
         {
           name: 'open_form',
           icon: 'play',
@@ -1636,7 +1632,7 @@ export default function getSettings(t) {
           dividerBefore: true,
           to: (j) => ({ path: formPath(j.form_name), query: { storedJob: j.id } }),
         },
-        { name: 'delete', icon: 'trash', title: t('settings.storedJobs.deleteJob'), color: 'delete' },
+        { name: 'delete', icon: 'trash', title: t('common.delete'), color: 'delete' },
       ],
       fields: [
         { key: 'id', hidden: true, noInput: true },
@@ -1735,7 +1731,7 @@ export default function getSettings(t) {
       icon: 'server',
       actions: [
         { name: 'preview', title: t('settings.knownhosts.showEntry'), icon: 'copy', color: 'change' },
-        { name: 'delete', title: t('settings.knownhosts.deleteEntry'), icon: 'trash', color: 'delete' },
+        { name: 'delete', title: t('common.delete'), icon: 'trash', color: 'delete' },
       ],
       fields: [
         { key: 'id', label: t('settings.knownhosts.hostEntry'), filterable: true, hidden: true, noInput: true },
@@ -1780,7 +1776,7 @@ export default function getSettings(t) {
       // in the row menu, as the runners' : editing, the test (a database's), then Delete last, each
       // apart (its password is changed on its page)
       actions: [
-        { name: 'edit', title: t('settings.credentials.editCredential'), icon: 'pencil', color: 'edit' },
+        { name: 'edit', title: t('common.edit'), icon: 'pencil', color: 'edit' },
         {
           name: 'test',
           title: t('settings.common.testConnection'),
@@ -1789,7 +1785,7 @@ export default function getSettings(t) {
           dependency: 'is_database',
           dividerBefore: true,
         },
-        { name: 'delete', title: t('settings.credentials.deleteCredential'), icon: 'trash', color: 'delete' },
+        { name: 'delete', title: t('common.delete'), icon: 'trash', color: 'delete' },
       ],
       fields: [
         {
@@ -2589,7 +2585,7 @@ export default function getSettings(t) {
       // in the row menu : editing, the test, turning it on or off, its token or password (on its
       // page), then Delete last, each apart
       actions: [
-        { name: 'edit', title: t('settings.runners.editRunner'), icon: 'pencil', color: 'edit' },
+        { name: 'edit', title: t('common.edit'), icon: 'pencil', color: 'edit' },
         {
           name: 'test',
           title: t('settings.common.testConnection'),
@@ -2607,7 +2603,7 @@ export default function getSettings(t) {
           dividerBefore: true,
           to: (r) => `/settings/runners/${r.id}/credentials`,
         },
-        { name: 'delete', title: t('settings.runners.deleteRunner'), icon: 'trash', color: 'delete' },
+        { name: 'delete', title: t('common.delete'), icon: 'trash', color: 'delete' },
       ],
       fields: [
         {
@@ -2830,7 +2826,7 @@ export default function getSettings(t) {
       // in the row menu : editing, turning it on or off, for mail making it the active one, a test
       // (on its page, its dialog open), then Delete last, each apart
       actions: [
-        { name: 'edit', title: t('settings.notificationChannels.editChannel'), icon: 'pencil', color: 'edit' },
+        { name: 'edit', title: t('common.edit'), icon: 'pencil', color: 'edit' },
         ...enableActions(t('settings.notificationChannels.enable'), t('settings.notificationChannels.disable')),
         {
           // a mail channel only : the one the app sends its mail with ; the others stop being it
@@ -2852,7 +2848,7 @@ export default function getSettings(t) {
         },
         {
           name: 'delete',
-          title: t('settings.notificationChannels.deleteChannel'),
+          title: t('common.delete'),
           icon: 'trash',
           color: 'delete',
         },
@@ -3084,7 +3080,7 @@ export default function getSettings(t) {
       // in the row menu : editing, turning it on or off, a test message (on its page), then
       // Delete last, each apart
       actions: [
-        { name: 'edit', title: t('settings.syslogServers.editServer'), icon: 'pencil', color: 'edit' },
+        { name: 'edit', title: t('common.edit'), icon: 'pencil', color: 'edit' },
         ...enableActions(t('settings.syslogServers.enable'), t('settings.syslogServers.disable')),
         {
           name: 'send_test',
@@ -3095,7 +3091,7 @@ export default function getSettings(t) {
           // its page, the message sent there once it is open (a tab of its own no more)
           to: (m) => ({ path: `/settings/syslog/${m.id}`, query: { test: '1' } }),
         },
-        { name: 'delete', title: t('settings.syslogServers.deleteServer'), icon: 'trash', color: 'delete' },
+        { name: 'delete', title: t('common.delete'), icon: 'trash', color: 'delete' },
       ],
       fields: [
         { key: 'id', hidden: true, noInput: true, noTable: true },
@@ -3254,11 +3250,11 @@ export default function getSettings(t) {
         { key: 'when', label: t('settings.interface.announcementStepWhen') },
       ],
       actions: [
-        { name: 'edit', title: t('settings.interface.announcementEdit'), icon: 'pencil', color: 'edit' },
+        { name: 'edit', title: t('common.edit'), icon: 'pencil', color: 'edit' },
         ...enableActions(t('settings.interface.announcementEnable'), t('settings.interface.announcementDisable')),
         {
           name: 'delete',
-          title: t('settings.interface.announcementDelete'),
+          title: t('common.delete'),
           icon: 'trash',
           color: 'delete',
         },
@@ -3340,11 +3336,11 @@ export default function getSettings(t) {
       openPage: (item) => `/settings/labels/${item.id}`,
       // in the header's order, as the server lists them (lowest position first)
       actions: [
-        { name: 'edit', title: t('settings.labels.edit'), icon: 'pencil', color: 'edit' },
+        { name: 'edit', title: t('common.edit'), icon: 'pencil', color: 'edit' },
         ...enableActions(t('settings.labels.enable'), t('settings.labels.disable')),
         // its place in the header : one up, one down
         ...moveActions('label', t('settings.labels.moveUp'), t('settings.labels.moveDown')),
-        { name: 'delete', title: t('settings.labels.delete'), icon: 'trash', color: 'delete', dividerBefore: true },
+        { name: 'delete', title: t('common.delete'), icon: 'trash', color: 'delete', dividerBefore: true },
       ],
       fields: [
         { key: 'id', hidden: true, noInput: true, noTable: true },
@@ -3424,20 +3420,35 @@ export default function getSettings(t) {
       // users accept : who accepted it is not asked again), or deleted with who accepted it
       openPage: (item) => `/settings/disclaimer/${item.version}`,
       actions: [
-        { name: 'edit', title: t('settings.disclaimer.editDisclaimer'), icon: 'pencil', color: 'edit' },
+        { name: 'edit', title: t('common.edit'), icon: 'pencil', color: 'edit' },
         {
-          // Enable this version : the one users accept (who accepted it is not asked again)
-          name: 'restore',
-          title: t('settings.disclaimer.restore'),
-          icon: 'check',
-          color: 'change',
-          // the enabled one is the disclaimer already
-          enabledWhen: (r) => !r.enabled,
+          // Enable this version : the one users accept (who accepted it is not asked again), as
+          // every list with an Enabled column
+          name: 'enable',
+          title: t('settings.common.enable'),
+          icon: 'toggle-on',
+          color: 'edit',
           dividerBefore: true,
+          shownWhen: (r) => !r.enabled,
           confirm: (_count, rows) => t('settings.disclaimer.restoreConfirm', { version: rows[0].version }),
           done: (version) => t('settings.disclaimer.restoreDone', { version }),
           run: async (ids) => {
             await axios.post(`/api/v2/disclaimerversion/${ids[0]}/enable`, { enabled: true });
+            return ids[0];
+          },
+        },
+        {
+          // Disable the enabled one : the disclaimer is off until a version is enabled again
+          name: 'disable',
+          title: t('settings.common.disable'),
+          icon: 'toggle-off',
+          color: 'edit',
+          dividerBefore: true,
+          shownWhen: (r) => !!r.enabled,
+          confirm: (_count, rows) => t('settings.disclaimer.disableConfirm', { version: rows[0].version }),
+          done: (version) => t('settings.disclaimer.disableDone', { version }),
+          run: async (ids) => {
+            await axios.post(`/api/v2/disclaimerversion/${ids[0]}/enable`, { enabled: false });
             return ids[0];
           },
         },
@@ -3530,7 +3541,7 @@ export default function getSettings(t) {
       // in the row menu, as the runners' : editing, the test, its credentials (on its page), then
       // Delete last, each apart
       actions: [
-        { name: 'edit', title: t('settings.secretStores.editStore'), icon: 'pencil', color: 'edit' },
+        { name: 'edit', title: t('common.edit'), icon: 'pencil', color: 'edit' },
         {
           name: 'test',
           title: t('settings.common.testConnection'),
@@ -3547,7 +3558,7 @@ export default function getSettings(t) {
           dividerBefore: true,
           to: (r) => `/settings/secret-stores/${r.id}/credentials`,
         },
-        { name: 'delete', title: t('settings.secretStores.deleteStore'), icon: 'trash', color: 'delete' },
+        { name: 'delete', title: t('common.delete'), icon: 'trash', color: 'delete' },
       ],
       fields: [
         {
@@ -3858,14 +3869,17 @@ function ldapDirectories(t, ldap) {
     ],
     openPage: (item) => `/settings/ldap/${item.id}`,
     actions: [
-      { name: 'edit', title: t('settings.ldap.editDirectory'), icon: 'pencil', color: 'edit' },
+      { name: 'edit', title: t('common.edit'), icon: 'pencil', color: 'edit' },
       { name: 'test', title: t('settings.common.testConnection'), icon: 'plug', color: 'test', dividerBefore: true },
+      // on or off, as every list with an Enabled column (the default directory too : it is turned
+      // off rather than deleted)
+      ...enableActions(t('settings.common.enable'), t('settings.common.disable'), { field: 'enable' }),
       // its place in the lookup order : one up, one down
       ...moveActions('ldapdirectory', t('settings.ldap.moveUp'), t('settings.ldap.moveDown')),
       {
         // never the default directory : it is turned off instead
         name: 'delete',
-        title: t('settings.ldap.deleteDirectory'),
+        title: t('common.delete'),
         icon: 'trash',
         color: 'delete',
         enabledWhen: (r) => r.name !== LDAP_DEFAULT,

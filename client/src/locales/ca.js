@@ -760,6 +760,9 @@ export default {
       'Aquesta pàgina encara executa una compilació més antiga que la del servidor. Torna a carregar la pàgina per obtenir la versió nova.',
   },
   common: {
+    edit: 'Edita',
+    open: 'Obre',
+    abort: 'Avorta',
     downloadFailed: 'La baixada ha fallat.',
     jumpToLatest: 'Ves al més recent',
     newLines: 'Línies noves',
@@ -932,6 +935,8 @@ export default {
       presetMonthly: 'Mensualment',
     },
     common: {
+      enable: 'Activa',
+      disable: 'Desactiva',
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
       zoneBrowser: 'La zona horària del teu navegador ({zone})',
       zoneApp: "La zona horària de l'aplicació ({zone})",
@@ -1119,12 +1124,10 @@ export default {
       labelPlural: 'Etiquetes',
       description:
         "Les etiquetes al costat del logotip de la capçalera: PRODUCTION, EU... diverses instàncies obertes alhora es distingeixen d'un cop d'ull.",
-      edit: 'Edita l’etiqueta',
       enable: 'Activa',
       disable: 'Desactiva',
       moveUp: 'Puja',
       moveDown: 'Baixa',
-      delete: 'Suprimeix l’etiqueta',
       enabledDone: 'L’etiqueta es mostra al costat del logotip',
       disabledDone: 'L’etiqueta està amagada',
       enabled: 'Activat',
@@ -1201,8 +1204,6 @@ export default {
       bannerEndHelp: "En aquest moment s'amaga i s'elimina. Deixa-ho buit per mantenir-lo fins que s'elimini.",
       announcementLabel: 'Anunci',
       announcementPlural: 'Anuncis',
-      announcementEdit: "Edita l'anunci",
-      announcementDelete: "Elimina l'anunci",
       announcementStepMessage: 'Missatge',
       announcementStepWhen: 'Quan',
       announcementCreatedBy: 'Creat per',
@@ -1220,12 +1221,10 @@ export default {
       label: 'Usuari',
       labelPlural: 'Usuaris',
       description: "Comptes d'usuari locals per a l'autenticació i el control d'accés.",
-      editUser: "Edita l'usuari",
       addToGroup: 'Afegeix a un grup',
       stepUser: 'Usuari',
       stepPassword: 'Contrasenya',
       stepGroup: 'Grup',
-      deleteUser: "Suprimeix l'usuari",
       noGroup: 'Encara sense grup.',
       noRole: 'Encara cap rol.',
       signInHelp:
@@ -1245,8 +1244,6 @@ export default {
       label: 'Grup',
       description: 'Organitza els usuaris locals en grups locals per gestionar els permisos.',
       showGroup: 'Mostra el grup',
-      deleteGroup: 'Suprimeix el grup',
-      editGroup: 'Edita el grup',
       addUserToGroup: 'Afegeix un usuari',
       removeFromGroup: 'Treu del grup',
       noUsers: 'Encara no hi ha usuaris en aquest grup.',
@@ -1260,8 +1257,6 @@ export default {
       label: 'Repositori',
       labelPlural: 'Repositoris',
       description: 'Repositoris Git per desar formularis, playbooks, configuració i fitxers de variables.',
-      editRepository: 'Edita el repositori',
-      deleteRepository: 'Suprimeix el repositori',
       resetRepository: 'Restableix el repositori',
       helpName: 'Alfanumèric amb guions i guions baixos',
       helpUri: 'Només es permeten URI ssh o https',
@@ -1334,10 +1329,8 @@ export default {
       labelPlural: 'Proveïdors SSO',
       description:
         "Configura proveïdors d'identitat externs per a l'inici de sessió únic (Microsoft Entra ID, OIDC, etc.).",
-      editProvider: 'Edita el proveïdor',
       tabProviders: 'Proveïdors',
       active: 'Activat',
-      useForSignIn: 'Fes-lo servir per iniciar la sessió',
       credential: 'Credencial',
       credentialHelp: 'Una credencial del seu tipus: Microsoft Entra ID o Open ID.',
       ownClient:
@@ -1355,7 +1348,6 @@ export default {
       typeHint_oidc: 'Els usuaris inicien sessió amb un proveïdor OpenID Connect (Keycloak, Okta...)',
       stepSignIn: 'Inici de sessió',
       stepGroups: 'Grups',
-      deleteProvider: 'Suprimeix el proveïdor',
       provider: 'Proveïdor',
       tenantId: 'ID del tenant',
       clientId: 'ID del client',
@@ -1378,11 +1370,9 @@ export default {
       label: 'Programació',
       labelPlural: 'Programacions',
       description: "Automatitza l'enviament de formularis amb una programació cron recurrent o una execució única.",
-      editSchedule: 'Edita la programació',
       stepSchedule: 'Programació',
       stepExtraVars: 'Extra vars',
       nextRun: 'Propera execució',
-      deleteSchedule: 'Suprimeix la programació',
       runSchedule: 'Executa ara',
       oneTimeRanRemoved:
         "La programació d'una sola execució s'ha executat i s'ha eliminat: la seva tasca és a la pàgina de Tasques.",
@@ -1444,7 +1434,6 @@ export default {
       askAgain: 'Torna a demanar',
       askAgainConfirm: "Vols demanar a {count} usuari(s) que tornin a acceptar l'avís? La seva acceptació s'esborra.",
       askAgainDone: "{count} usuari(s) tornaran a acceptar l'avís al proper inici de sessió.",
-      restore: 'Activa aquesta versió',
       versionEnabled: 'Activat',
       label: 'Avís',
       labelPlural: 'Avisos',
@@ -1457,14 +1446,14 @@ export default {
       restoreConfirm:
         "Vols activar la versió {version}? Als usuaris que ja l'havien acceptada no se'ls torna a demanar.",
       restoreDone: 'La versió {version} està activada.',
+      disableConfirm: "Vols desactivar la versió {version}? L'avís es desactiva fins que s'activi una versió.",
+      disableDone: "La versió {version} està desactivada: l'avís està desactivat.",
     },
     notificationChannels: {
       label: 'Canal de notificació',
       labelPlural: 'Canals de notificació',
       description:
         "On van les notificacions: servidors SMTP (un d'ells el predeterminat, amb el qual l'aplicació envia el correu), Slack, Microsoft Teams, Telegram i webhooks. Un formulari anomena els seus canals a les notificacions i a l'aprovació.",
-      editChannel: 'Edita el canal de notificació',
-      deleteChannel: 'Elimina el canal de notificació',
       enable: 'Activa',
       disable: 'Desactiva',
       enabled: 'Activat',
@@ -1536,8 +1525,6 @@ export default {
       labelPlural: 'Servidors syslog',
       description:
         "Els servidors syslog als quals s'envien el registre del servidor i les entrades d'auditoria, com un SIEM: cadascun rep el registre del servidor, les entrades d'auditoria o tots dos.",
-      editServer: 'Edita el servidor syslog',
-      deleteServer: 'Suprimeix el servidor syslog',
       enable: 'Activa',
       disable: 'Desactiva',
       enabled: 'Activat',
@@ -1580,8 +1567,6 @@ export default {
       label: 'Magatzem de secrets',
       description:
         "Gestors de secrets externs, com ara HashiCorp Vault, d'on les credencials llegeixen l'usuari i la contrasenya.",
-      editStore: 'Edita el magatzem de secrets',
-      deleteStore: 'Suprimeix el magatzem de secrets',
       nameHelp: "Les credencials fan servir aquest nom; anomeneu 'vault' un HashiCorp Vault per a les rutes Vault.",
       type: 'Tipus',
       namespace: 'Espai de noms',
@@ -1628,9 +1613,7 @@ export default {
       description:
         "Valors de formulari desats per tornar-los a executar: obriu-ne un al seu formulari, omplert, des d'aquí o amb el botó Carrega del formulari.",
       viewDetails: 'Mostra els detalls de la tasca desada',
-      deleteJob: 'Suprimeix la tasca desada',
       userTypeName: 'Usuari (tipus/nom)',
-      editJob: 'Edita la tasca desada',
       openInForm: 'Obre al formulari',
       tabValues: 'Valors',
       valuesNotMap: 'Els valors han de ser un mapa de noms de camp i valors.',
@@ -1647,15 +1630,12 @@ export default {
       description:
         "Els servidors en què l'aplicació confia per SSH. L'amfitrió d'un repositori s'afegeix en clonar-lo per primer cop; els playbooks s'executen en un RTE, que té els seus.",
       showEntry: "Copia l'amfitrió al porta-retalls",
-      deleteEntry: "Suprimeix l'entrada de l'amfitrió",
       hostEntry: "Entrada de l'amfitrió",
     },
     credentials: {
       label: 'Credencial',
       description:
         'Credencials reutilitzables per connectar-se a bases de dades i serveis externs des dels formularis.',
-      editCredential: 'Edita la credencial',
-      deleteCredential: 'Suprimeix la credencial',
       adminOnlyNotice:
         "Només un admin pot canviar aquesta credencial: un runner, una connexió o un inici de sessió en pren l'adreça i el secret.",
       enableDbFields: 'Activa els camps de base de dades',
@@ -1804,8 +1784,6 @@ export default {
       directory: 'Directori LDAP',
       directoriesDescription:
         "Els directoris LDAP i Active Directory amb què inicien sessió els usuaris. Un usuari es cerca en el seu ordre, tret que anomeni un directori (corp\\jane) o un dels seus dominis (jane{'@'}corp.example).",
-      editDirectory: 'Edita el directori',
-      deleteDirectory: 'Elimina el directori',
       moveUp: 'Puja',
       moveDown: 'Baixa',
       tabGeneral: 'General',
@@ -1871,8 +1849,6 @@ export default {
       label: 'Runner',
       description:
         "On s'executen les tasques: contenidors d'entorn d'execució (RTE) per als playbooks (la imatge AnsibleForms amb AF_ROLE=rte), i AWX / Ansible Automation Platform / Ascender per a les plantilles.",
-      editRunner: 'Edita el runner',
-      deleteRunner: 'Elimina el runner',
       nameHelp: 'Un formulari fa referència al runner amb aquest nom: runner: <name>.',
       type: 'Tipus',
       isDefault: 'És el predeterminat',
@@ -2137,7 +2113,6 @@ export default {
       addSubconstant: 'Afegeix una subclau',
       addRole: 'Afegeix un rol',
       newRole: 'Rol nou',
-      editRole: 'Edita el rol',
       addConstant: 'Afegeix una constant',
       newConstant: 'Constant nova',
       addSubkey: 'Afegeix una subclau',
@@ -2981,6 +2956,10 @@ export default {
     warnStalled: "'{field}' ha esperat massa temps els camps dels quals depèn",
     warnStalledDetail: "S'ha avaluat igualment, així que el seu valor pot ser incomplet.",
     warnPrefill: "No s'ha pogut emplenar prèviament '{field}'",
+    warnRegexShape: "La regla regex de '{field}' s'ignora",
+    warnRegexShapeDetail: "Una regex s'ha d'indicar com una expressió amb una descripció.",
+    warnRegexInvalid: "'{field}' té una regex no vàlida",
+    warnRegexInvalidDetail: "La regex '{regex}' no es pot fer servir ({error}), així que la regla s'ignora.",
     prefillNotAnOption: 'el valor desat ja no és una de les opcions disponibles',
     prefillChurn:
       "s'ha restaurat {n} vegades sense estabilitzar-se, així que un camp del qual depèn no para de canviar",
