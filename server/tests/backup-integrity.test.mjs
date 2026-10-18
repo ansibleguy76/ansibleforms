@@ -6,7 +6,14 @@
 // exactly what backup.model.js imports - so the model already runs against those.
 // Importing the same mock modules here hands back the same objects, and setting
 // fields on them is how this drives the model without touching a real database.
-import { test, describe, beforeEach, afterEach } from "vitest";
+import { test, describe, beforeEach, afterEach, vi } from "vitest";
+
+// the database a restore releases the jobs and claims of the backup's time in : every
+// statement recorded, never a real connection
+const statements = [];
+vi.mock("../src/models/db.model.js", () => ({
+  default: { do: async (sql) => { statements.push(sql); return { changedRows: 0, affectedRows: 0 }; } },
+}));
 import assert from "node:assert/strict";
 import { promises as fs } from "fs";
 import path from "path";
@@ -248,5 +255,50 @@ describe("the environment file is captured but never silently restored", () => {
     // without this an operator cannot tell that a folder is credential-bearing
     assert.equal(listed.envFileExists, true);
     assert.ok(listed.envFileSize > 0);
+  });
+});
+
+describe("a restore leaves nothing of the backup's time running", () => {
+  // the dump holds the jobs that were running when it was taken and the claims taken then :
+  // nothing follows them on this instance, so they are released once the dump is replayed
+  test("its running jobs end abandoned, its repository and schedule claims are released", async () => {
+    const folder = "20260107000000";
+    await fs.mkdir(path.join(tmpRoot, folder), { recursive: true });
+    await fs.writeFile(path.join(tmpRoot, folder, "ansibleforms.sql"), "-- dump\n");
+    statements.length = 0;
+    await BackupModel.restore(folder, false);
+    const jobs = statements.find((s) => /UPDATE AnsibleForms.`jobs`/.test(s));
+    assert.match(jobs, /SET status='abandoned', abort_requested=0, host=NULL, pid=NULL WHERE status='running' OR \(status='approve' AND job_type='workflow'\)/);
+    assert.ok(statements.some((s) => /UPDATE AnsibleForms.`repositories` SET status='failed', claim_node=NULL WHERE status='running'/.test(s)));
+    assert.ok(statements.some((s) => /UPDATE AnsibleForms.`schedule` SET state='idle', claim_node=NULL WHERE state='running'/.test(s)));
+  });
+
+  test("nothing is released when the restore was refused", async () => {
+    const folder = "20260108000000";
+    await fs.mkdir(path.join(tmpRoot, folder), { recursive: true });
+    statements.length = 0;
+    await assert.rejects(() => BackupModel.restore(folder, false));
+    assert.deepEqual(statements, []);
+  });
+});
+
+describe("the dump and the restore keep the operator's MYSQL_* settings", () => {
+  test("MYSQL_* reach the command, MYSQL_PWD does not", async () => {
+    const { mysqlClientEnv } = await import("../src/models/backup.model.js");
+    const env = mysqlClientEnv({ MYSQL_HOME: "/etc/mysql-af", MYSQL_UNIX_PORT: "/run/mysqld.sock", MYSQL_PWD: "secret", PATH: "/usr/bin" });
+    assert.deepEqual(env, { MYSQL_HOME: "/etc/mysql-af", MYSQL_UNIX_PORT: "/run/mysqld.sock" });
+  });
+
+  test("the runner leases are runtime state : never dumped", async () => {
+    const seen = [];
+    Cmd.executeSilentCommand = async (cmd) => {
+      seen.push(cmd);
+      if (cmd.stdoutFile) await fs.writeFile(cmd.stdoutFile, "-- dump\n");
+      return "";
+    };
+    await BackupModel.doBackup("leases");
+    assert.match(seen[0].command, /--ignore-table=AnsibleForms\.runner_leases/);
+    assert.equal(seen[0].env.MYSQL_PWD, undefined);
+    assert.ok("AF_DB_PASSWORD" in seen[0].env);
   });
 });

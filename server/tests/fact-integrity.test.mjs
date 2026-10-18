@@ -216,7 +216,7 @@ describe("the backup shell command quotes every value it interpolates", () => {
       assert.doesNotMatch(c, /dbPassword/, "the command text is logged and shown : no password in it");
       assert.match(c, /-p"\$AF_DB_PASSWORD"/);
     }
-    assert.equal([...backup.matchAll(/env: \{ AF_DB_PASSWORD: dbPassword/g)].length, 2, "the dump and the restore pass it");
+    assert.equal([...backup.matchAll(/env: \{ ...mysqlClientEnv\(\), AF_DB_PASSWORD: dbPassword/g)].length, 2, "the dump and the restore pass it, with the MYSQL_* settings");
   });
 
   test("the old hand-rolled password escape is gone", () => {
