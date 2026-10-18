@@ -269,6 +269,12 @@ An AWX/AAP connection is a runner of type *AWX* with an AWX credential ; the v7 
 the existing AAP connections there. A database-mode RTE (deprecated) still adds itself when it
 starts (`RTE_REGISTER=1`), with the app's database settings and `ENCRYPTION_SECRET`.
 
+A database-mode runner moves to a socket mode by itself: once its RTE restarts with `RTE_MODE`
+outbound or inbound, the runner's name as `RTE_NAME` and the runner's own token, the runner takes
+that mode, keeps its jobs and is no longer swept as a registered row; no approval is needed (the
+installer's upgrade of a 7.2 Runner does exactly this). A join token never moves it, and a
+runner the config seed declares in database mode stays refused until the seed says `rte_mode`.
+
 ## Where the token lives
 
 | Side | Where | How |
