@@ -329,15 +329,49 @@ class Schedule extends CrudModel {
       output = "Failed to launch: " + err.message;
       status = "failed";
     }
-    await super.update(this.modelName, { output, status, state: 'idle', last_run: currentDate }, id);
-    
-    // Auto-delete one-time schedules after execution
+    // A one-time schedule is deleted after its run, BEFORE anything sets it idle : idle, its
+    // run_at passed and still enabled, it is exactly what the cron's every-minute check queues,
+    // so a delete that failed after the idle write launched it again, every minute, for ever.
     if(schedule.one_time_run === 1){
-      logger.info(`Deleting one-time schedule '${schedule.name}' after execution`);
-      await super.delete(this.modelName, id);
-      // Remove from cron service to stop checking
-      cronService.removeSchedule(id);
+      await this.endOneTime(schedule, { output, status, last_run: currentDate });
+      return;
     }
+    await super.update(this.modelName, { output, status, state: 'idle', last_run: currentDate }, id);
+  }
+
+  /**
+   * Ends a one-time schedule after its run : deleted, and dropped from the cron registry. When
+   * the delete fails (a seeded schedule is read only, the database refused it), it is left
+   * turned off instead (enabled 0 : the cron skips it, Run now still runs it) with its outcome,
+   * in one statement - never idle and enabled, which would launch it again.
+   *
+   * Args:
+   *   schedule (object): the schedule row ({ id, name }).
+   *   outcome (object): { output, status, last_run } of this run.
+   *
+   * Returns:
+   *   Promise<void>: once it is deleted or turned off (a failure of both is logged).
+   */
+  static async endOneTime(schedule, outcome) {
+    const id = schedule.id;
+    logger.info(`Deleting one-time schedule '${schedule.name}' after execution`);
+    try {
+      await super.delete(this.modelName, id);
+    } catch (err) {
+      logger.error(`Could not delete one-time schedule '${schedule.name}', turning it off instead: ${err.message || err}`);
+      try {
+        // straight to the row : the crud update refuses a seeded schedule, and this is the
+        // scheduler's own state, not an edit of its configuration
+        await mysql.do(
+          "UPDATE AnsibleForms.`schedule` SET output=?, status=?, last_run=?, state='idle', enabled=0, claim_node=NULL WHERE id=?",
+          [outcome.output, outcome.status, outcome.last_run, id], true);
+        CrudModel.changed(this.modelName);
+      } catch (e) {
+        logger.error(`Could not turn off one-time schedule '${schedule.name}' either: ${e.message || e}`);
+      }
+    }
+    // Remove from cron service to stop checking
+    cronService.removeSchedule(id);
   }
 }
 

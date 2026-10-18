@@ -276,6 +276,8 @@ describe("Schedule.launch", () => {
 
   test("an unreadable owner fails the run instead of falling back to admin", async () => {
     row.owner = "not json";
+    // a recurring one : a one-time schedule is deleted after its run, its outcome with it
+    row.one_time_run = 0;
     await Schedule.launch(1);
     assert.equal(launched, null, "nothing may run");
     assert.equal(row.status, "failed");

@@ -13,12 +13,14 @@ import dotenv from 'dotenv';
 import Errors from '../lib/errors.js';
 import logger from '../lib/logger.js';
 import { bump } from '../lib/epochs.js';
+import mysql from './db.model.js';
 
 // The tables that describe the running processes, not the configuration : which nodes are up,
-// what changed between them (lib/epochs.js), who holds the designer. A restore must not bring
-// back gone nodes, an old designer lock or old change counters - so they are not dumped, and a
-// restore leaves the live ones as they are.
-const RUNTIME_TABLES = ['nodes', 'cache_epochs', 'designer_lock']
+// what changed between them (lib/epochs.js), who holds the designer, which RTE holds which
+// job slot (runner_leases). A restore must not bring back gone nodes, an old designer lock, old
+// change counters or leases of jobs long gone - so they are not dumped, and a restore leaves
+// the live ones as they are.
+const RUNTIME_TABLES = ['nodes', 'cache_epochs', 'designer_lock', 'runner_leases']
   .map((t) => `--ignore-table=AnsibleForms.${t}`).join(' ')
   // tablespaces are the server's, not the schema's : dumping them needs the PROCESS right, which
   // a user limited to the AnsibleForms schema does not have (mysqldump and mariadb-dump)
@@ -38,6 +40,61 @@ const RUNTIME_TABLES = ['nodes', 'cache_epochs', 'designer_lock']
  */
 function shQuote(value) {
   return `'${String(value ?? '').replace(/'/g, `'"'"'`)}'`;
+}
+
+/**
+ * The operator's MYSQL_* variables, for the dump and restore commands.
+ *
+ * A command runs with the environment a playbook gets (lib/playbookEnv.js), which drops every
+ * MYSQL_* variable : right for a playbook, wrong for mysqldump and mysql, which read
+ * MYSQL_HOME, MYSQL_TEST_LOGIN_FILE, MYSQL_UNIX_PORT ... for their option files, socket and
+ * TLS settings. So they are handed back here, through cmd.env. MYSQL_PWD stays out : the
+ * password reaches the command as $AF_DB_PASSWORD (DB_PASSWORD), never a second one that may
+ * disagree with it.
+ *
+ * Args:
+ *   env (object): the server's environment.
+ *
+ * Returns:
+ *   object: the MYSQL_* variables, MYSQL_PWD excepted.
+ */
+export function mysqlClientEnv(env = process.env) {
+  const out = {};
+  for (const [name, value] of Object.entries(env || {})) {
+    if (!name.startsWith('MYSQL_') || name === 'MYSQL_PWD') continue;
+    if (value === undefined) continue;
+    out[name] = value;
+  }
+  return out;
+}
+
+/**
+ * What a restore brought back from the time of the backup that nothing follows any more : the
+ * jobs that were running then (their loops, their trackers and their RTE are not this
+ * instance's now), and the repository and schedule claims taken then. Left as they are, the
+ * jobs would show 'running' until a sweep gave up on them, a repository would refuse every pull
+ * and save, and the schedule queue would wait for a launch that never ends.
+ *
+ * Returns:
+ *   Promise<object>: { jobs, repositories, schedules } : how many rows were released.
+ */
+async function releaseRestoredRuntime() {
+  const released = { jobs: 0, repositories: 0, schedules: 0 };
+  // step 1 : the jobs under way in the dump - running, or a workflow waiting on an approval
+  // node - end as abandoned, their abort answered, no process and no RTE on them
+  const jobs = await mysql.do(
+    "UPDATE AnsibleForms.`jobs` SET status='abandoned', abort_requested=0, host=NULL, pid=NULL " +
+    "WHERE status='running' OR (status='approve' AND job_type='workflow')");
+  released.jobs = jobs?.changedRows || 0;
+  // step 2 : the repository claims (a pull or a save of then) : failed, as a stale claim is
+  const repos = await mysql.do(
+    "UPDATE AnsibleForms.`repositories` SET status='failed', claim_node=NULL WHERE status='running'");
+  released.repositories = repos?.changedRows || 0;
+  // step 3 : a schedule launching then : idle again, so the queue goes on
+  const schedules = await mysql.do(
+    "UPDATE AnsibleForms.`schedule` SET state='idle', claim_node=NULL WHERE state='running'");
+  released.schedules = schedules?.changedRows || 0;
+  return released;
 }
 
 // --- Helpers for backup details ---
@@ -388,13 +445,14 @@ class BackupModel {
     try {
       // the password reaches the command through its environment : Cmd puts it in place of
       // "$AF_DB_PASSWORD" when it splits the command, so the command text (logged, shown, in an
-      // error) never holds it, and a wrapper (docker exec ...) still gets it as an argument
+      // error) never holds it, and a wrapper (docker exec ...) still gets it as an argument ;
+      // the operator's MYSQL_* settings go with it (mysqlClientEnv), MYSQL_PWD excepted
       const dumpCmd = `${appConfig.mysqldumpCommand} -h ${shQuote(dbHost)} -u${shQuote(dbUser)} -p"$AF_DB_PASSWORD" -P ${shQuote(dbPort)} ${RUNTIME_TABLES} ${shQuote(dbName)}`;
       const cmdObj = {
         command: dumpCmd,
         directory: process.cwd(),
         description: `Database backup to ${backupFile}`,
-        env: { AF_DB_PASSWORD: dbPassword ?? '' },
+        env: { ...mysqlClientEnv(), AF_DB_PASSWORD: dbPassword ?? '' },
         // the dump goes to the file (no shell : no > redirect)
         stdoutFile: backupFile
       };
@@ -453,7 +511,7 @@ class BackupModel {
       command: restoreCmd,
       directory: process.cwd(),
       description: `Database restore from ${backupFile}`,
-      env: { AF_DB_PASSWORD: dbPassword ?? '' },
+      env: { ...mysqlClientEnv(), AF_DB_PASSWORD: dbPassword ?? '' },
       // the dump is read from the file (no shell : no < redirect)
       stdinFile: backupFile
     };
@@ -474,6 +532,17 @@ class BackupModel {
         `(currently ${appConfig.backupCommandTimeoutSeconds}s) if the dump is large.`,
         { cause: err }
       );
+    }
+    // what the dump brought back from then and nothing follows now : its running jobs, its
+    // repository and schedule claims (releaseRestoredRuntime). A failure here leaves the
+    // restore done : the sweeps release them later, so it is said, not thrown
+    try {
+      const released = await releaseRestoredRuntime();
+      if (released.jobs || released.repositories || released.schedules) {
+        logger.warning(`Restore from '${folder}': abandoned ${released.jobs} job(s) that were running at the time of the backup, released ${released.repositories} repository and ${released.schedules} schedule claim(s)`);
+      }
+    } catch (err) {
+      logger.error(`Restore from '${folder}': could not release the jobs and claims of the backup's time: ${err.message || err}`);
     }
     await this.restoreFormsAndFolder(restoreFolder);
     // every process drops what it had cached of the replaced rows (lib/epochs.js)

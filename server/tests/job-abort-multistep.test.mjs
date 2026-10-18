@@ -38,6 +38,13 @@ vi.mock("../src/models/db.model.js", () => ({
         row(params[0]).abort_requested = 0;
         return { changedRows: 1 };
       }
+      // a step begun : only while the multistep is still running (Job.claimNextStep)
+      if (/SET step=\? WHERE id=\? AND status='running'/.test(sql)) {
+        const j = row(params[1]);
+        if (!j || j.status !== "running") return { affectedRows: 0 };
+        j.step = params[0];
+        return { affectedRows: 1 };
+      }
       if (/SELECT runner FROM AnsibleForms.`jobs`/.test(sql)) {
         return [{ runner: row(params[0])?.runner ?? null }];
       }

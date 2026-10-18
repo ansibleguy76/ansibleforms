@@ -21,6 +21,7 @@ import { importSyslogFromEnvOnce } from "../lib/syslogServers.js";
 import { nodeId } from "../lib/role.js";
 import { die } from "../lib/die.js";
 import { abandonAndResumeOnce } from "../lib/jobResume.js";
+import { confirmWorkerLock } from "../lib/workerLock.js";
 
 // The worker's start : the database bootstrap and every background task. It runs only in the
 // process holding the worker lock (lib/workerLock.js) - AF_ROLE unset, or a worker - so
@@ -365,6 +366,13 @@ const initOnce = async function({ boot = false } = {}){
 
   async function checkSchedules(){
     try{
+      // only while this process holds the worker lock, confirmed on the lock's connection : a
+      // worker that lost it (another took over, the database unreachable) launches nothing,
+      // and picks the queue up again once the lock is its own again
+      if(!(await confirmWorkerLock().catch(() => false))){
+        logger.debug("Not holding the worker lock, the schedule queue waits")
+        return
+      }
       // logger.info("Checking schedules")
       // one schedule at a time : wait while one is still launching
       const running = await mysql.do("SELECT id FROM AnsibleForms.`schedule` WHERE state='running'",undefined,true)

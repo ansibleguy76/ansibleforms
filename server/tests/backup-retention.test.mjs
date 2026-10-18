@@ -31,6 +31,8 @@ vi.mock("croner", () => ({
 }));
 vi.mock("../src/models/db.model.js", () => ({ default: { do: async () => [] } }));
 vi.mock("../src/models/audit.model.js", () => ({ default: { log: async () => {} } }));
+// the tasks run only in the worker holding the lock : this one does
+vi.mock("../src/lib/workerLock.js", () => ({ confirmWorkerLock: async () => true }));
 
 const cronService = (await import("../src/services/cron.service.js")).default;
 

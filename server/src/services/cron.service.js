@@ -1,7 +1,8 @@
 'use strict';
 
-import { Cron } from 'croner';
+import { Cron as Croner } from 'croner';
 import logger from '../lib/logger.js';
+import { confirmWorkerLock } from '../lib/workerLock.js';
 import mysql from '../models/db.model.js';
 import Repository from '../models/repository.model.js';
 import Lock from '../models/lock.model.js';
@@ -24,6 +25,39 @@ import { resumeAbandoned } from '../lib/jobResume.js';
 // the cron registry is re-read from the database this often even without a change notice
 // (lib/epochs.js), in case one was missed
 const RESYNC_SAFETY_MS = 5 * 60 * 1000;
+
+/**
+ * A background task's run, tied to the worker lock : before each tick it confirms, on the lock's
+ * own connection, that this process still holds the lock (lib/workerLock.js confirmWorkerLock).
+ * A process that lost it - another worker took over, or the database is unreachable - runs no
+ * pull, no schedule, no backup, no seed reload and no sweep, from that tick on, whether or not
+ * it has noticed the loss and exited yet. Once it holds the lock again, the ticks run again.
+ *
+ * Args:
+ *   fn (function): the task's run.
+ *
+ * Returns:
+ *   function: the guarded run.
+ */
+export function whileWorker(fn) {
+  return async (...args) => {
+    const held = await confirmWorkerLock().catch(() => false);
+    if (!held) {
+      logger.debug('A background task was skipped: this process does not hold the worker lock');
+      return;
+    }
+    return fn(...args);
+  };
+}
+
+// every task of the registry is a Croner whose run is guarded by whileWorker : one place, so a
+// task added later cannot forget it. A Croner built without a run (validateCronExpression) is
+// left as it is.
+class Cron extends Croner {
+  constructor(pattern, options, fn) {
+    super(pattern, options, typeof fn === 'function' ? whileWorker(fn) : fn);
+  }
+}
 
 const scheduleSignature = (oneTimeRun, cron, runAt) =>
   `${oneTimeRun}|${cron || ''}|${runAt ? new Date(runAt).getTime() : ''}`;
