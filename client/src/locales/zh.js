@@ -2110,7 +2110,7 @@ export default {
       delegatedGroupRead: '委托权限 GroupMember.Read.All',
       groupMembership: '组成员身份',
       groupsFromGraph: '登录时从 Microsoft Graph 读取（含嵌套组），无需 groups 声明。',
-      groupsRoleMapping: '在角色中，以 azuread/ 加组的显示名称来指定组（例如 azuread/AF-Admins）。',
+      groupsRoleMapping: '在角色中，以 entraid/ 加组的显示名称来指定组（例如 entraid/AF-Admins）。',
       openIdTestedWith: 'Open ID 目前仅在 Keycloak 上测试过。',
     },
   },

@@ -2220,7 +2220,7 @@ export default {
       groupMembership: 'Pertença a grupos',
       groupsFromGraph: 'Lidos do Microsoft Graph no início de sessão, aninhados incluídos; sem claim groups.',
       groupsRoleMapping:
-        'Numa função, indique um grupo como azuread/ seguido do seu nome a apresentar (ex. azuread/AF-Admins).',
+        'Numa função, indique um grupo como entraid/ seguido do seu nome a apresentar (ex. entraid/AF-Admins).',
       openIdTestedWith: 'Até agora, o Open ID só foi testado com o Keycloak.',
     },
   },

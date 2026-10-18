@@ -2227,7 +2227,7 @@ export default {
       groupMembership: 'Pertinença a grups',
       groupsFromGraph: 'Es llegeixen de Microsoft Graph en iniciar sessió, imbricats inclosos; sense claim groups.',
       groupsRoleMapping:
-        'En un rol, indica un grup com a azuread/ seguit del seu nom visible (p. ex. azuread/AF-Admins).',
+        'En un rol, indica un grup com a entraid/ seguit del seu nom visible (p. ex. entraid/AF-Admins).',
       openIdTestedWith: "De moment, Open ID només s'ha provat amb Keycloak.",
     },
   },

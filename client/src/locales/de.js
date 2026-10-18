@@ -2232,7 +2232,7 @@ export default {
       groupsFromGraph:
         'Beim Login aus Microsoft Graph gelesen, inkl. verschachtelter Gruppen; kein Groups-Claim nötig.',
       groupsRoleMapping:
-        'In einer Rolle wird eine Gruppe als azuread/ gefolgt von ihrem Anzeigenamen angegeben (z.B. azuread/AF-Admins).',
+        'In einer Rolle wird eine Gruppe als entraid/ gefolgt von ihrem Anzeigenamen angegeben (z.B. entraid/AF-Admins).',
       openIdTestedWith: 'Open ID wurde bisher nur mit Keycloak getestet.',
     },
   },

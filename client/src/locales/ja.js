@@ -2178,7 +2178,7 @@ export default {
       delegatedGroupRead: '委任された GroupMember.Read.All',
       groupMembership: 'グループメンバーシップ',
       groupsFromGraph: 'ログイン時に Microsoft Graph から読み取り（ネストを含む）。groups クレームは不要です。',
-      groupsRoleMapping: 'ロールでは、グループを azuread/ に続けて表示名で指定します (例: azuread/AF-Admins)。',
+      groupsRoleMapping: 'ロールでは、グループを entraid/ に続けて表示名で指定します (例: entraid/AF-Admins)。',
       openIdTestedWith: 'Open ID はこれまで Keycloak でのみテストされています。',
     },
   },
