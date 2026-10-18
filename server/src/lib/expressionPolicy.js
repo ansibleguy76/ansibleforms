@@ -1,5 +1,6 @@
 'use strict';
 import Form from '../models/form.model.js';
+import appConfig from '../../config/app.config.js';
 import { QueryPolicyError, authoritativeValues, findFieldOwner } from './queryPolicy.js';
 import { spliceExpressionValues } from './formEngine/placeholders.js';
 
@@ -17,12 +18,32 @@ import { spliceExpressionValues } from './formEngine/placeholders.js';
  * What a form's expression does is the architect's decision and keeps working unchanged ;
  * the caller only supplies data.
  *
- * A raw expression in the body is still accepted from a user with showSettings or
- * showDesigner : they write the forms and can already put any expression in one.
+ * A raw expression in the body is still accepted from a user with showSettings, or from a
+ * designer who writes forms : they can already put any expression in one.
  */
 
 // the field types the browser evaluates itself (AppForm's aliases) - never on the server
 const LOCAL_TYPES = new Set(['local', 'local_out', 'credential', 'html']);
+
+/**
+ * Whether a user may have a raw expression evaluated : one with the admin settings, or one who
+ * writes forms - the designer switched on for the instance (SHOW_DESIGNER), their own designer
+ * option, and the right to save forms (allowFormDesign), as the designer's form writes require
+ * (lib/middleware.js checkDesignerMiddleware and checkFormDesignMiddleware). A designer who may
+ * only read the forms, or who works on playbooks or inventories alone, cannot put an
+ * expression in a form, so may not run one either.
+ *
+ * Args:
+ *   user (object): the caller ({ options }).
+ *
+ * Returns:
+ *   boolean: true when a raw expression may run.
+ */
+export function mayRunRawExpression(user) {
+  const options = user?.options || {};
+  if (options.showSettings) return true;
+  return !!(appConfig.showDesigner && options.showDesigner && options.allowFormDesign);
+}
 
 /**
  * Decide what expression actually runs for a request, and refuse the ones that may not.
@@ -35,7 +56,7 @@ export async function resolveExpression(req) {
   const user = req?.user?.user || {};
   const body = req?.body || {};
   const noLog = req?.query?.noLog == "true";
-  const mayRunRaw = !!(user.options?.showSettings || user.options?.showDesigner);
+  const mayRunRaw = mayRunRawExpression(user);
 
   // a designer previewing an unsaved form has no definition to bind to yet - and may write
   // any expression into one anyway - so their raw text is evaluated as it always was

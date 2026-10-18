@@ -295,6 +295,22 @@ describe("a part of the settings on its own", () => {
   });
 });
 
+// a syslog server receives the whole server log and every audit entry : more than a user with only
+// connections access may read, so the mount takes the admin settings
+describe("the syslog servers are the admin settings' only", () => {
+  const src = readFileSync(path.join(here, "../src/app.js"), "utf8");
+  test("the mount guards with checkSettingsMiddleware, not the connections guard", () => {
+    const mount = src.split("\n").find((l) => l.includes("/api/v2/syslogserver"));
+    assert.ok(mount, "the syslog server mount is found");
+    assert.match(mount, /Middleware\.checkSettingsMiddleware/);
+    assert.doesNotMatch(mount, /checkConnectionsMiddleware/);
+  });
+
+  test("a connections-only user is refused by that guard", () => {
+    assert.equal(run(Middleware.checkSettingsMiddleware, withOption("showConnectionsSettings", true)).nexted, false);
+  });
+});
+
 describe("the designer's forms config is written only with allowFormDesign", () => {
   test("allowFormDesign passes, false is refused with 403", () => {
     assert.equal(run(Middleware.checkFormDesignMiddleware, withOption("allowFormDesign", true)).nexted, true);

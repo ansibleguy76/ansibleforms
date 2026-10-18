@@ -1,5 +1,7 @@
 export default {
   errors: {
+    databaseError:
+      "Er is een databasefout opgetreden: het serverlogboek bevat de details",
     noAccess: "Geen toegang",
     notAdmin: "U bent geen beheerder",
     noSettingsAccess: "U heeft geen toegang tot instellingen",
@@ -89,6 +91,20 @@ export default {
     failedGetLock: "Kan vergrendeling niet ophalen",
   },
   resources: {
+    storedJobNameInUse:
+      "Je hebt al een opgeslagen job met de naam '{name}': kies een andere naam",
+    cantTouchDirectoryAdmin:
+      "Alleen een admin kan een gebruiker met de admin-rol blokkeren, afmelden, vergeten of zijn tokens intrekken",
+    credentialNotFound:
+      "Geen referentie met de naam '{name}'",
+    repositoryCredentialType:
+      "Een repository meldt zich aan met een git- of userpass-referentie: '{name}' is van het type {type}",
+    credentialSignInAdminOnly:
+      "Alleen een admin kan een referentie toevoegen, wijzigen of verwijderen die een aanmelding gebruikt (LDAP, Microsoft Entra ID of OIDC)",
+    credentialNotAllowed:
+      "Alleen een admin kan de referentie '{name}' hier gebruiken: een runner, een verbinding of een aanmelding gebruikt ze",
+    storedKeyOtherProvider:
+      "De opgeslagen sleutel gaat alleen naar de opgeslagen provider en basis-URL: typ de sleutel om een andere te controleren",
     backupCreated: "Backup aangemaakt",
     lockAdded: "Vergrendeling toegevoegd",
     lockDeleted: "Vergrendeling verwijderd",
@@ -208,6 +224,8 @@ export default {
     hostNameRequired: 'Host naam (query param "name" of "host") vereist',
   },
   jobs: {
+    cantApproveOwnJob:
+      "Je kunt je eigen job niet goedkeuren: een andere goedkeurder moet hem goedkeuren",
     mustProvideJobId: "U moet een job-id opgeven",
     abortRequested: "Job afbreken aangevraagd",
     failedAbort: "Kan job niet afbreken",

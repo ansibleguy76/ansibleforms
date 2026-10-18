@@ -1,5 +1,7 @@
 export default {
   errors: {
+    databaseError:
+      "データベースエラーが発生しました: 詳細はサーバーログにあります",
     noAccess: "アクセス権がありません",
     notAdmin: "管理者ではありません",
     noSettingsAccess: "設定へのアクセス権がありません",
@@ -88,6 +90,20 @@ export default {
     failedGetLock: "ロックの取得に失敗しました",
   },
   resources: {
+    storedJobNameInUse:
+      "'{name}' という名前の保存済みジョブはすでにあります: 別の名前を選んでください",
+    cantTouchDirectoryAdmin:
+      "admin ロールを持つユーザーのブロック、サインアウト、削除、トークンの取り消しができるのは admin だけです",
+    credentialNotFound:
+      "'{name}' という名前の資格情報はありません",
+    repositoryCredentialType:
+      "リポジトリは git または userpass の資格情報でサインインします: '{name}' は {type} です",
+    credentialSignInAdminOnly:
+      "サインインが使う資格情報 (LDAP、Microsoft Entra ID、OIDC) を追加、変更、削除できるのは admin だけです",
+    credentialNotAllowed:
+      "ここで資格情報 '{name}' を使えるのは admin だけです: ランナー、接続、またはサインインが使っています",
+    storedKeyOtherProvider:
+      "保存されたキーは保存済みのプロバイダーとベース URL にのみ送信されます: 別のものを確認するにはキーを入力してください",
     backupCreated: "バックアップを作成しました",
     lockAdded: "ロックを追加しました",
     lockDeleted: "ロックを削除しました",
@@ -208,6 +224,8 @@ export default {
       'ホスト名 (クエリパラメーター "name" または "host") が必要です',
   },
   jobs: {
+    cantApproveOwnJob:
+      "自分のジョブは承認できません: 別の承認者が承認する必要があります",
     mustProvideJobId: "jobid を指定する必要があります",
     abortRequested: "ジョブの中止を要求しました",
     failedAbort: "ジョブの中止に失敗しました",

@@ -7,6 +7,7 @@ import Ldap from '../../models/ldap.model.js';
 import Errors from '../../lib/errors.js';
 import logger from "../../lib/logger.js";
 import directoryController, { sameLdapTarget } from './ldapDirectory.controller.js';
+import { publicError, isDatabaseError } from './publicError.js';
 
 // kept here for whoever imported it from this controller before it moved
 export { sameLdapTarget };
@@ -28,7 +29,8 @@ function onDefault(handler) {
       directory = await Ldap.find();
     } catch (err) {
       logger.error("Error finding the default LDAP directory: ", err);
-      return Errors.ReturnError(res, new Errors.NotFoundError(String(err?.message || err)));
+      // a database error is logged above, and told as a generic one (publicError)
+      return Errors.ReturnError(res, isDatabaseError(err) ? publicError(req, err) : new Errors.NotFoundError(String(err?.message || err)));
     }
     req.params = { ...(req.params || {}), id: String(directory.id) };
     return handler(req, res);

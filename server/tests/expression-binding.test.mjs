@@ -52,7 +52,7 @@ const call = async (body, user, query = {}) => {
 
 const plainUser = { username: "bob", type: "local", roles: ["default"], options: {} };
 const settingsUser = { username: "root", type: "local", roles: ["admin"], options: { showSettings: true } };
-const designerUser = { username: "ann", type: "local", roles: ["designers"], options: { showDesigner: true } };
+const designerUser = { username: "ann", type: "local", roles: ["designers"], options: { showDesigner: true, allowFormDesign: true } };
 
 beforeEach(() => {
   ran = null; formLoadArgs = null;
@@ -92,6 +92,25 @@ describe("a raw expression is refused for an ordinary user", () => {
     assert.equal(res.statusCode, 200);
     assert.equal(ran.expr, "1+1");
     assert.equal(formLoadArgs, null, "nothing to bind to: the raw text is evaluated as before");
+  });
+
+  test("a designer who may not save forms (allowFormDesign off) may not", async () => {
+    const res = await call({ expression: "fn.fnCredentials('.*')" }, { ...designerUser, options: { showDesigner: true, allowFormDesign: false } });
+    assert.equal(res.statusCode, 403);
+    assert.equal(ran, null);
+  });
+
+  test("nor a designer while the designer is switched off for the instance", async () => {
+    const appConfig = (await import("./__mocks__/app.config.js")).default;
+    const before = appConfig.showDesigner;
+    appConfig.showDesigner = false;
+    try {
+      const res = await call({ expression: "fn.fnCredentials('.*')" }, designerUser);
+      assert.equal(res.statusCode, 403);
+      assert.equal(ran, null);
+    } finally {
+      appConfig.showDesigner = before;
+    }
   });
 });
 

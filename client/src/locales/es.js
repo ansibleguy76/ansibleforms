@@ -2373,6 +2373,9 @@ export default {
     visualOnEvent: 'Según evento',
     visualApproval: 'Pedir aprobación',
     visualApprovalHelp: 'Un trabajo espera hasta que alguien con uno de estos roles lo aprueba.',
+    visualApprovalAllowSelf: 'Quien lanza el trabajo puede aprobarlo',
+    visualApprovalAllowSelfHelp:
+      'Desactivado, otro aprobador debe aprobarlo. Un admin siempre puede aprobar cualquier trabajo.',
     visualApprovalTitle: 'Título',
     visualApprovalMessage: 'Mensaje',
     visualApprovers: 'Aprobado por',

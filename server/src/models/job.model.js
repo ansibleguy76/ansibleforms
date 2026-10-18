@@ -942,9 +942,32 @@ Job.checkExists = async function (id) {
   }
 };
 /**
+ * The SQL condition that lets an approver read a job someone else launched : it waits for an
+ * approval (status approve) and one of the user's roles is among its approval's roles - the rule
+ * Job.findApprovals counts with, and Job.approve and Job.reject check. A job waiting for an
+ * approval used to be readable by every signed-in user, its extra vars and output included.
+ *
+ * Args:
+ *   user (object): the caller (its roles).
+ *   alias (string): the jobs table's alias with its dot ('j.'), or '' for none.
+ *
+ * Returns:
+ *   {sql: string, params: string[]}: the condition, and the values of its placeholders ; a
+ *     condition that is never true for a user without roles.
+ */
+function approverCondition(user, alias = "") {
+  const roles = [...new Set((user?.roles || []).filter((r) => typeof r === "string" && r))];
+  if (!roles.length) return { sql: "0", params: [] };
+  const contains = roles.map(() => `JSON_CONTAINS(${alias}approval, JSON_QUOTE(?), '$.roles')`).join(" OR ");
+  return {
+    sql: `(${alias}status='approve' AND JSON_VALID(${alias}approval) AND (${contains}))`,
+    params: roles,
+  };
+}
+/**
  * Checks that a user may read a job, without reading it : the same rule as Job.findById (who
- * sees every job, the job's owner, or anyone while it waits for an approval), for the endpoints
- * that only need the answer (its events). findById reads the whole output for it.
+ * sees every job, the job's owner, or an approver while it waits for their approval), for the
+ * endpoints that only need the answer (its events). findById reads the whole output for it.
  *
  * Args:
  *   user (object): the caller.
@@ -961,9 +984,11 @@ Job.assertReadable = async function (user, id) {
   await Job.checkExists(id);
   if (seesAllJobs(user)) return;
   if (!user?.username) throw new Errors.AccessDeniedError(`You do not have access to job ${id}`);
+  // the owner, or an approver of the job's approval while it waits for it
+  const approver = approverCondition(user);
   const res = await mysql.do(
-    "SELECT id FROM AnsibleForms.`jobs` WHERE id=? AND ((user=? AND user_type=?) OR status='approve')",
-    [id, user.username, user.type]
+    "SELECT id FROM AnsibleForms.`jobs` WHERE id=? AND ((user=? AND user_type=?) OR " + approver.sql + ")",
+    [id, user.username, user.type, ...approver.params]
   );
   if (res.length != 1) throw new Errors.AccessDeniedError(`You do not have access to job ${id}`);
 };
@@ -982,9 +1007,11 @@ Job.findAll = async function (user, records, filter = {}) {
       "SELECT id,form,target,status,CONVERT_TZ(start, 'UTC', ?) AS start,CONVERT_TZ(end, 'UTC', ?) AS end,user,user_type,job_type,parent_id,approval,runner,runner_kind FROM AnsibleForms.`jobs` WHERE " + narrowed + " ORDER BY id DESC LIMIT ?";
     return await mysql.do(query, [loggerConfig.tz, loggerConfig.tz, ...vars, records], true);
   } else {
+    // their own jobs, and the ones waiting for an approval one of their roles may give
+    const approver = approverCondition(user);
     query =
-      "SELECT id,form,target,status,CONVERT_TZ(start, 'UTC', ?) AS start,CONVERT_TZ(end, 'UTC', ?) AS end,user,user_type,job_type,parent_id,approval,runner,runner_kind FROM AnsibleForms.`jobs` WHERE ((user=? AND user_type=?) OR (status='approve')) AND " + narrowed + " ORDER BY id DESC LIMIT ?";
-    return await mysql.do(query, [loggerConfig.tz, loggerConfig.tz, user.username, user.type, ...vars, records], true);
+      "SELECT id,form,target,status,CONVERT_TZ(start, 'UTC', ?) AS start,CONVERT_TZ(end, 'UTC', ?) AS end,user,user_type,job_type,parent_id,approval,runner,runner_kind FROM AnsibleForms.`jobs` WHERE ((user=? AND user_type=?) OR " + approver.sql + ") AND " + narrowed + " ORDER BY id DESC LIMIT ?";
+    return await mysql.do(query, [loggerConfig.tz, loggerConfig.tz, user.username, user.type, ...approver.params, ...vars, records], true);
   }
 };
 Job.findApprovals = async function (user) {
@@ -1154,9 +1181,11 @@ Job.findById = async function (user, id, asText, logSafe = false) {
       "SELECT j.id,j.form,j.target,j.status,CONVERT_TZ(j.start, 'UTC', ?) AS start,CONVERT_TZ(j.end, 'UTC', ?) AS end,j.user,j.user_type,j.job_type,j.runner,j.runner_kind,j.extravars,j.credentials,j.notifications,j.approval,j.step,j.parent_id,j.awx_id,j.awx_artifacts,j.awx_workflow,j.runner_job_url,j.job_log,j.abort_requested,j.raw_form_data,sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=?;";
     params = [safeTimezone, safeTimezone, id, id];
   } else {
+    // the owner, or an approver of the job's approval while it waits for it (approverCondition)
+    const approver = approverCondition(user, "j.");
     query =
-      "SELECT j.id,j.form,j.target,j.status,CONVERT_TZ(j.start, 'UTC', ?) AS start,CONVERT_TZ(j.end, 'UTC', ?) AS end,j.user,j.user_type,j.job_type,j.runner,j.runner_kind,j.extravars,j.credentials,j.notifications,j.approval,j.step,j.parent_id,j.awx_id,j.awx_artifacts,j.awx_workflow,j.runner_job_url,j.job_log,j.abort_requested,j.raw_form_data,sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs WHERE user=? AND user_type=?)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=? AND ((j.user=? AND j.user_type=?) OR (j.status='approve'));";
-    params = [safeTimezone, safeTimezone, user.username, user.type, id, id, user.username, user.type];
+      "SELECT j.id,j.form,j.target,j.status,CONVERT_TZ(j.start, 'UTC', ?) AS start,CONVERT_TZ(j.end, 'UTC', ?) AS end,j.user,j.user_type,j.job_type,j.runner,j.runner_kind,j.extravars,j.credentials,j.notifications,j.approval,j.step,j.parent_id,j.awx_id,j.awx_artifacts,j.awx_workflow,j.runner_job_url,j.job_log,j.abort_requested,j.raw_form_data,sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs WHERE user=? AND user_type=?)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=? AND ((j.user=? AND j.user_type=?) OR " + approver.sql + ");";
+    params = [safeTimezone, safeTimezone, user.username, user.type, id, id, user.username, user.type, ...approver.params];
   }
   try {
     var res = await mysql.do(query, params, true);
@@ -1909,6 +1938,15 @@ Job.approve = async function (user, id) {
       throw new Errors.AccessDeniedError(
         `Approve denied for user ${user.username}`
       );
+    }
+    // four eyes : who launched the job does not approve it themselves, unless the form's approval
+    // allows it (allowSelf: true). An admin approves any job, their own included. Rejecting one's
+    // own job (withdrawing it) stays allowed.
+    const ownJob = job.user === user?.username && (job.user_type || "local") === (user?.type || "local");
+    if (ownJob && approval.allowSelf !== true && !user?.roles?.includes("admin")) {
+      logger.warning(`Approve denied for user ${user.username}: the job is their own`);
+      // its code lets the controller say it in the approver's language
+      throw Object.assign(new Errors.AccessDeniedError(i18n.t(null, "jobs.cantApproveOwnJob")), { code: "OWN_JOB" });
     }
   }
   var extravars = {};

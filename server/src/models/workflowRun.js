@@ -511,6 +511,8 @@ export async function runWorkflow({ Job, form, formObj, user, extravars, credent
       notifications: formObj.approval?.notifications || [],
       // and its channels (Connections > Notifications : Slack, Teams, Telegram, a webhook)
       channels: formObj.approval?.channels || [],
+      // whether the one who launched it may approve it too (Job.approve ; an admin always may)
+      allowSelf: !!formObj.approval?.allowSelf,
     };
     await print(`APPROVE [${node.name}] ${"*".repeat(Math.max(5, 69 - node.name.length))}`);
     // only a running job waits : one that is not (abandoned, ended) would read as never

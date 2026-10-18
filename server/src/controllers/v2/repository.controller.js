@@ -4,7 +4,60 @@ import RestResult from '../../models/restResult.model.v2.js';
 import cronService from '../../services/cron.service.js';
 import logger from '../../lib/logger.js';
 import i18n from '../../lib/i18n.js';
-import { SECRET_MASK } from '../../lib/secretMask.js';
+import { SECRET_MASK, isMasked } from '../../lib/secretMask.js';
+import CredentialModel from '../../models/credential.model.v2.js';
+import Errors from '../../lib/errors.js';
+import { isAdminRequest } from '../../lib/adminGrants.js';
+
+// the credential types git signs in with : a git one, or a user and a password
+const REPOSITORY_CREDENTIAL_TYPES = ['git', 'userpass'];
+
+/**
+ * Checks the credential a repository is given, and what moving a repository takes along. Git signs
+ * in with a git or a userpass credential only : any other (a runner's token, a sign-in's client
+ * secret) would be sent to the repository's address. A user who is not an admin may not name a
+ * credential only an admin may (models/credential.model.v2.js isAdminGuarded), and moving a
+ * repository to another address drops the credential and the password it keeps, unless they are
+ * chosen or typed again with it. An admin's move is left as it is.
+ *
+ * Args:
+ *   req (object): the request (its body is changed in place).
+ *   existing (object|null): the repository as it is, null on a create.
+ *
+ * Returns:
+ *   Promise<{dropPassword: boolean}>: whether the update clears the repository's own password.
+ *
+ * Raises:
+ *   Errors.BadRequestError: the credential does not exist, or is not a git or userpass one.
+ *   Errors.AccessDeniedError: the credential is an admin's.
+ */
+async function guardRepositoryCredential(req, existing) {
+  const data = req.body;
+  const outcome = { dropPassword: false };
+  // a credential this write chooses (the one it already names, sent back, is not checked again)
+  if (data.credential && data.credential !== existing?.credential) {
+    const cred = await CredentialModel.findRowByName(data.credential);
+    if (!cred) throw new Errors.BadRequestError(i18n.t(req, 'resources.credentialNotFound', { name: data.credential }));
+    if (!REPOSITORY_CREDENTIAL_TYPES.includes(cred.credential_type || 'userpass')) {
+      throw new Errors.BadRequestError(i18n.t(req, 'resources.repositoryCredentialType', { name: data.credential, type: cred.credential_type }));
+    }
+    if (!isAdminRequest(req) && (await CredentialModel.isAdminGuarded(cred))) {
+      throw new Errors.AccessDeniedError(i18n.t(req, 'resources.credentialNotAllowed', { name: data.credential }));
+    }
+  }
+  // moved elsewhere by a user who is not an admin : what it signs in with stays behind
+  const text = (v) => (v === null || v === undefined ? '' : String(v).trim());
+  if (existing && !isAdminRequest(req) && data.uri !== undefined && text(data.uri) !== text(existing.uri)) {
+    const kept = data.credential === undefined ? existing.credential : data.credential;
+    if (kept && kept === existing.credential) data.credential = '';
+    const typed = typeof data.password === 'string' && data.password !== '' && !isMasked(data.password);
+    if (!typed && existing.password) {
+      delete data.password;
+      outcome.dropPassword = true;
+    }
+  }
+  return outcome;
+}
 
 const find = async function(req, res) {
   try {
@@ -20,6 +73,7 @@ const create = async function(req, res) {
     return res.status(400).json(RestResult.error(i18n.t(req, 'errors.requiredFields')));
   }
   try {
+    await guardRepositoryCredential(req, null);
     const insertId = await Repository.create(req.body);
     // Fetch the created record to get all fields including cron
     const created = await Repository.findByName(req.body.name);
@@ -49,7 +103,10 @@ const update = async function(req, res) {
     return res.status(400).json(RestResult.error(i18n.t(req, 'errors.requiredFields')));
   }
   try {
-    await Repository.update(req.body, req.params.name);
+    const existing = await Repository.findByName(req.params.name);
+    if (!existing) throw new Errors.NotFoundError(i18n.t(req, 'resources.failedFindRepository'));
+    const { dropPassword } = await guardRepositoryCredential(req, existing);
+    await Repository.update(req.body, req.params.name, { dropPassword });
     // The record may have been RENAMED : `name` is an editable field on the repositories
     // page. Reading it back by req.params.name found nothing and threw, so a rename that
     // had already committed was reported as a 500 - and neither cron call below ran, so

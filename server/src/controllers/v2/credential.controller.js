@@ -2,6 +2,7 @@ import CredentialModel from '../../models/credential.model.v2.js';
 import RestResult from '../../models/restResult.model.v2.js';
 import Errors from '../../lib/errors.js';
 import i18n from '../../lib/i18n.js';
+import { publicError } from './publicError.js';
 import mysql from '../../lib/mysql.js';
 import postgres from '../../lib/postgres.js';
 import mssql from '../../lib/mssql.js';
@@ -14,7 +15,7 @@ import Form from '../../models/form.model.js';
 import { formCredentials } from '../../lib/formLinks.js';
 import { workflowCredentials } from '../../models/workflowRun.js';
 import { isAdminRequest } from '../../lib/adminGrants.js';
-import { SECRET_MASK, masked } from '../../lib/secretMask.js';
+import { SECRET_MASK, masked, isMasked } from '../../lib/secretMask.js';
 
 // the credential types an SSO provider signs in with : a change to one of them is a change to the
 // sign-in, which reads its client, tenant or issuer and redirect URL when it starts
@@ -53,12 +54,17 @@ async function reloadSso() {
  *   Promise<void>: settles when the change is allowed.
  *
  * Raises:
- *   Errors.AccessDeniedError: the user is not an admin and the credential carries an address or
- *     a runner names it.
+ *   Errors.AccessDeniedError: the user is not an admin and the credential carries an address, a
+ *     sign-in reads it (ldap, entraid, oidc) or a runner names it.
  */
 async function assertMayChange(req, ...records) {
   if (isAdminRequest(req)) return;
   const present = records.filter(Boolean);
+  // a type a sign-in reads (an LDAP bind account, an SSO client) : who changes it chooses who
+  // signs in, and where the sign-in sends its secret
+  if (present.some((r) => CredentialModel.SIGNIN_TYPES.includes(r.credential_type))) {
+    throw new Errors.AccessDeniedError(i18n.t(req, 'resources.credentialSignInAdminOnly'));
+  }
   // a type that carries the address of the one server it logs in to (a runner's, a secret store's)
   let guarded = present.some((r) => CredentialModel.URL_TYPES.includes(r.credential_type));
   // or one a runner names, whatever its type (a deprecated api or userpass one)
@@ -86,6 +92,38 @@ async function assertMayChange(req, ...records) {
 async function assertUnused(req, name) {
   const count = await CredentialModel.usageOf(name);
   if (count) throw new Errors.ConflictError(i18n.t(req, 'resources.credentialInUse', { name, count }));
+}
+
+/**
+ * Keeps a stored secret from following a credential to another target. A user who is not an admin
+ * and moves a credential to another server, port, issuer, tenant or address without typing its
+ * password again would otherwise send the stored password (or the secret store's) to a server of
+ * their choosing : the write clears the stored password, and the secret store reference unless it
+ * names another one. An admin's write is left as it is.
+ *
+ * Args:
+ *   req (object): the request (its body is changed in place).
+ *   before (object|null): the credential as it is.
+ *
+ * Returns:
+ *   void
+ */
+function dropSecretOnRetarget(req, before) {
+  if (isAdminRequest(req) || !before || !req.body) return;
+  const body = req.body;
+  if (!CredentialModel.targetChanged(before, body)) return;
+  // a password typed again is the user's own choice to send there ; the mask or nothing is not
+  const typed = typeof body.password === 'string' && body.password !== '' && !isMasked(body.password);
+  if (!typed) body.password = '';
+  // a secret store reference sent back as it is (or not sent) follows the same rule
+  const text = (v) => (v === null || v === undefined ? '' : String(v).trim());
+  const sameStore = text(body.secret_store ?? before.secret_store) === text(before.secret_store)
+    && text(body.secret_ref ?? before.secret_ref) === text(before.secret_ref);
+  if ((before.secret_store || before.vault_path) && sameStore) {
+    body.secret_store = null;
+    body.secret_ref = null;
+    body.vault_path = null;
+  }
 }
 
 const credentialController = {
@@ -130,7 +168,7 @@ const credentialController = {
         res.json(RestResult.list(credentials));
       }
     } catch (err) {
-      Errors.ReturnError(res, err);
+      Errors.ReturnError(res, publicError(req, err));
     }
   },
 
@@ -140,7 +178,7 @@ const credentialController = {
       const credential = await CredentialModel.create(req.body);
       res.json(RestResult.single({ message: i18n.t(req, 'success.created', { resource: 'Credential' }), id: credential }));
     } catch (err) {
-      Errors.ReturnError(res, err);
+      Errors.ReturnError(res, publicError(req, err));
     }
   },
 
@@ -152,7 +190,7 @@ const credentialController = {
       if (credential.client_key) credential.client_key = SECRET_MASK;
       res.json(RestResult.single(credential));
     } catch (err) {
-      Errors.ReturnError(res, err);
+      Errors.ReturnError(res, publicError(req, err));
     }
   },
 
@@ -160,13 +198,15 @@ const credentialController = {
     try {
       const before = await CredentialModel.findById(req.params.id).catch(() => null);
       await assertMayChange(req, before, req.body);
+      // moved elsewhere without its password typed again : the stored one stays behind
+      dropSecretOnRetarget(req, before);
       // a new name leaves what names the old one pointing at nothing
       if (before && req.body?.name !== undefined && req.body.name !== before.name) await assertUnused(req, before.name);
       await CredentialModel.update(req.body, req.params.id);
       if ([before?.credential_type, req.body?.credential_type].some((t) => SSO_TYPES.includes(t))) await reloadSso();
       res.json(RestResult.single({ message: i18n.t(req, 'success.updated', { resource: 'Credential' }) }));
     } catch (err) {
-      Errors.ReturnError(res, err);
+      Errors.ReturnError(res, publicError(req, err));
     }
   },
 
@@ -179,7 +219,7 @@ const credentialController = {
       if (SSO_TYPES.includes(before?.credential_type)) await reloadSso();
       res.json(RestResult.single({ message: i18n.t(req, 'success.deleted', { resource: 'Credential' }) }));
     } catch (err) {
-      Errors.ReturnError(res, err);
+      Errors.ReturnError(res, publicError(req, err));
     }
   },
 
@@ -202,7 +242,7 @@ const credentialController = {
       }
       res.json(RestResult.single({ message: i18n.t(req, 'success.connectionOk', { resource: 'Database' }) }));
     } catch (err) {
-      Errors.ReturnError(res, err);
+      Errors.ReturnError(res, publicError(req, err));
     }
   }
 };

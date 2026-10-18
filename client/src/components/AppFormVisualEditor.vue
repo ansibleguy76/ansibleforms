@@ -1319,6 +1319,23 @@ defineExpose({
                 </select>
               </div>
             </div>
+            <!-- whether the requester may approve their own job (allowSelf) : off, another approver
+                 must ; an admin always may -->
+            <div>
+              <div class="form-check form-switch mb-0">
+                <input
+                  id="af-appr-self"
+                  class="form-check-input"
+                  type="checkbox"
+                  role="switch"
+                  :checked="nested('approval').allowSelf === true"
+                  :disabled="locked"
+                  @change="setNested('approval', 'allowSelf', $event.target.checked || undefined)"
+                />
+                <label class="form-check-label" for="af-appr-self">{{ t('designer.visualApprovalAllowSelf') }}</label>
+              </div>
+              <div class="form-text">{{ t('designer.visualApprovalAllowSelfHelp') }}</div>
+            </div>
             <!-- the channels it is asked in first, then the mail's recipients when mail is among them -->
             <div>
               <label class="form-label fw-bold">{{ t('designer.visualChannels') }}</label>

@@ -1,5 +1,7 @@
 export default {
   errors: {
+    databaseError:
+      "Une erreur de base de données s'est produite : le journal du serveur en donne le détail",
     noAccess: "Acces refuse",
     notAdmin: "Vous n'etes pas administrateur",
     noSettingsAccess: "Vous n'avez pas acces aux parametres",
@@ -96,6 +98,20 @@ export default {
     failedGetLock: "Echec de la recuperation du verrou",
   },
   resources: {
+    storedJobNameInUse:
+      "Vous avez déjà une tâche enregistrée nommée '{name}' : choisissez un autre nom",
+    cantTouchDirectoryAdmin:
+      "Seul un admin peut bloquer, déconnecter, oublier ou révoquer les jetons d'un utilisateur qui a le rôle admin",
+    credentialNotFound:
+      "Aucun identifiant nommé '{name}'",
+    repositoryCredentialType:
+      "Un dépôt se connecte avec un identifiant git ou userpass : '{name}' est de type {type}",
+    credentialSignInAdminOnly:
+      "Seul un admin peut ajouter, modifier ou supprimer un identifiant utilisé par une authentification (LDAP, Microsoft Entra ID ou OIDC)",
+    credentialNotAllowed:
+      "Seul un admin peut utiliser ici l'identifiant '{name}' : un runner, une connexion ou une authentification l'utilise",
+    storedKeyOtherProvider:
+      "La clé enregistrée n'est envoyée qu'au fournisseur et à l'URL de base enregistrés : saisissez la clé pour en vérifier un autre",
     backupCreated: "Sauvegarde creee",
     lockAdded: "Verrou ajoute",
     lockDeleted: "Verrou supprime",
@@ -218,6 +234,8 @@ export default {
       'Nom d\'hote requis (parametre de requete "name" ou "host")',
   },
   jobs: {
+    cantApproveOwnJob:
+      "Vous ne pouvez pas approuver votre propre tâche : un autre approbateur doit l'approuver",
     mustProvideJobId: "Vous devez fournir un jobid",
     abortRequested: "Arret de tache demande",
     failedAbort: "Echec de l'arret de la tache",

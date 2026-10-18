@@ -572,7 +572,8 @@
               "channels": {
                 "type": "array",
                 "items": { "type": "string", "minLength": 1 }
-              }
+              },
+              "allowSelf": {"type": "boolean"}
             },
             "additionalProperties": false
           }

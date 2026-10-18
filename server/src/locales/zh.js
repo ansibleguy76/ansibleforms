@@ -1,5 +1,7 @@
 export default {
   errors: {
+    databaseError:
+      "发生数据库错误：详细信息见服务器日志",
     noAccess: "无访问权限",
     notAdmin: "您不是管理员",
     noSettingsAccess: "您无权访问设置",
@@ -82,6 +84,20 @@ export default {
     failedGetLock: "获取锁失败",
   },
   resources: {
+    storedJobNameInUse:
+      "您已有名为 '{name}' 的已保存作业：请选择其他名称",
+    cantTouchDirectoryAdmin:
+      "只有 admin 可以封禁、注销、遗忘拥有 admin 角色的用户或撤销其令牌",
+    credentialNotFound:
+      "没有名为 '{name}' 的凭据",
+    repositoryCredentialType:
+      "仓库使用 git 或 userpass 凭据登录：'{name}' 是 {type} 类型",
+    credentialSignInAdminOnly:
+      "只有 admin 可以添加、更改或删除登录所用的凭据 (LDAP、Microsoft Entra ID 或 OIDC)",
+    credentialNotAllowed:
+      "只有 admin 可以在此使用凭据 '{name}'：运行器、连接或登录正在使用它",
+    storedKeyOtherProvider:
+      "保存的密钥只会发送到已保存的提供商和基础 URL：请输入密钥以检查其他提供商",
     backupCreated: "备份已创建",
     lockAdded: "已添加锁",
     lockDeleted: "已删除锁",
@@ -189,6 +205,8 @@ export default {
     hostNameRequired: '需要提供主机名（查询参数 "name" 或 "host"）',
   },
   jobs: {
+    cantApproveOwnJob:
+      "您不能批准自己的作业：必须由其他审批人批准",
     mustProvideJobId: "您必须提供作业 ID",
     abortRequested: "已请求中止作业",
     failedAbort: "中止作业失败",

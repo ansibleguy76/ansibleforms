@@ -2370,6 +2370,9 @@ export default {
     visualOnEvent: 'No evento',
     visualApproval: 'Pedir aprovação',
     visualApprovalHelp: 'Um trabalho espera até alguém com uma destas funções o aprovar.',
+    visualApprovalAllowSelf: 'Quem lançou o trabalho pode aprová-lo',
+    visualApprovalAllowSelfHelp:
+      'Desligado, outro aprovador tem de o aprovar. Um admin pode sempre aprovar qualquer trabalho.',
     visualApprovalTitle: 'Título',
     visualApprovalMessage: 'Mensagem',
     visualApprovers: 'Aprovado por',

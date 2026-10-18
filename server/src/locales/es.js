@@ -1,5 +1,7 @@
 export default {
   errors: {
+    databaseError:
+      "Se ha producido un error de la base de datos: el registro del servidor tiene los detalles",
     noAccess: "Sin acceso",
     notAdmin: "No eres administrador",
     noSettingsAccess: "No tienes acceso a la configuración",
@@ -91,6 +93,20 @@ export default {
     failedGetLock: "Error al obtener el bloqueo",
   },
   resources: {
+    storedJobNameInUse:
+      "Ya tienes un trabajo guardado llamado '{name}': elige otro nombre",
+    cantTouchDirectoryAdmin:
+      "Solo un admin puede bloquear, cerrar la sesión, olvidar o revocar los tokens de un usuario con el rol admin",
+    credentialNotFound:
+      "No hay ninguna credencial llamada '{name}'",
+    repositoryCredentialType:
+      "Un repositorio inicia sesión con una credencial git o userpass: '{name}' es de tipo {type}",
+    credentialSignInAdminOnly:
+      "Solo un admin puede añadir, cambiar o eliminar una credencial que usa un inicio de sesión (LDAP, Microsoft Entra ID u OIDC)",
+    credentialNotAllowed:
+      "Solo un admin puede usar aquí la credencial '{name}': la usa un runner, una conexión o un inicio de sesión",
+    storedKeyOtherProvider:
+      "La clave guardada solo se envía al proveedor y a la URL base guardados: escribe la clave para comprobar otro",
     backupCreated: "Copia de seguridad creada",
     lockAdded: "Bloqueo añadido",
     lockDeleted: "Bloqueo eliminado",
@@ -211,6 +227,8 @@ export default {
       'Se requiere el nombre del host (parámetro "name" o "host")',
   },
   jobs: {
+    cantApproveOwnJob:
+      "No puedes aprobar tu propio trabajo: otro aprobador debe aprobarlo",
     mustProvideJobId: "Debes proporcionar un jobid",
     abortRequested: "Se ha solicitado abortar el trabajo",
     failedAbort: "Error al abortar el trabajo",

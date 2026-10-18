@@ -2377,6 +2377,9 @@ export default {
     visualOnEvent: 'Segons esdeveniment',
     visualApproval: 'Demanar aprovació',
     visualApprovalHelp: "Una tasca espera fins que algú amb un d'aquests rols l'aprova.",
+    visualApprovalAllowSelf: 'Qui ha llançat la tasca la pot aprovar',
+    visualApprovalAllowSelfHelp:
+      "Desactivat, l'ha d'aprovar un altre aprovador. Un admin sempre pot aprovar qualsevol tasca.",
     visualApprovalTitle: 'Títol',
     visualApprovalMessage: 'Missatge',
     visualApprovers: 'Aprovat per',

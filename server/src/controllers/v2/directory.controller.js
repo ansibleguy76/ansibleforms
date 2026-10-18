@@ -6,12 +6,56 @@
 import DirectoryUser, { DIRECTORY_TYPES } from '../../models/directoryUser.model.js';
 import RestResult from '../../models/restResult.model.v2.js';
 import i18n from '../../lib/i18n.js';
+import { publicError } from './publicError.js';
 import helpers from '../../lib/common.js';
 import mysql from '../../models/db.model.js';
 import { revokeUser } from '../../lib/tokenRevocation.js';
 import { revocationHorizonSeconds } from '../../lib/tokenLifetime.js';
 import { configRoles } from '../../lib/roleCounts.js';
-import { directoryUserRows, directoryGroupRows } from '../../lib/directoryViews.js';
+import { directoryUserRows, directoryGroupRows, rolesOfDirectoryUser } from '../../lib/directoryViews.js';
+import { isAdminRequest } from '../../lib/adminGrants.js';
+import Errors from '../../lib/errors.js';
+
+/**
+ * Refuses to a user who is not an admin a change of a directory user who is one : blocking its
+ * sign-in, ending its sessions, forgetting it, revoking its api tokens. The same rule as for a
+ * local admin account (lib/adminGrants.js assertMayTouchAdmin) : a user with settings access but
+ * not the admin role could otherwise lock every admin out. A directory user is an admin when the
+ * config's admin role names it or one of the groups it was seen in, or when it had the admin role
+ * at its last sign-in.
+ *
+ * Args:
+ *   req (object): the request (the signed-in user).
+ *   id (object): the directory user, { type, name }.
+ *
+ * Returns:
+ *   Promise<void>: settles when the change is allowed.
+ *
+ * Raises:
+ *   Errors.AccessDeniedError: the request is not an admin's and the user maps to the admin role.
+ */
+export async function assertMayTouchDirectoryAdmin(req, id) {
+  if (isAdminRequest(req)) return;
+  const [seen, roles] = await Promise.all([DirectoryUser.findAll(), configRoles()]);
+  const record = seen.find((u) => u.type === id.type && String(u.username).toLowerCase() === String(id.name).toLowerCase());
+  const mapped = rolesOfDirectoryUser(roles, id.type, record?.username || id.name, record?.groups || []);
+  if (mapped.includes('admin') || (record?.roles || []).includes('admin')) {
+    throw new Errors.AccessDeniedError(i18n.t(req, 'resources.cantTouchDirectoryAdmin'));
+  }
+}
+
+/**
+ * Answers a refusal of assertMayTouchDirectoryAdmin with 403, any other failure with 500.
+ *
+ * Args:
+ *   req (object): the request.
+ *   res (object): the response.
+ *   err (Error): the failure.
+ */
+function failed(req, res, err) {
+  if (err instanceof Errors.AccessDeniedError) return res.status(403).json(RestResult.error(err.message));
+  res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedDirectoryUser'), helpers.getError(publicError(req, err))));
+}
 
 /**
  * The type and name of the request, checked : a directory type and a name.
@@ -58,7 +102,7 @@ const findUser = async function (req, res) {
     const record = seen.find((u) => u.type === id.type && u.username.toLowerCase() === id.name.toLowerCase());
     res.json(RestResult.single({ ...row, groups: record?.groups || [], roles_at_login: record?.roles || [] }));
   } catch (err) {
-    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedDirectoryUser'), helpers.getError(err)));
+    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedDirectoryUser'), helpers.getError(publicError(req, err))));
   }
 };
 
@@ -67,6 +111,8 @@ const setBlocked = async function (req, res) {
   const id = identity(req, res);
   if (!id) return;
   try {
+    // an admin directory user is the admin role's own to change
+    await assertMayTouchDirectoryAdmin(req, id);
     const blocked = !!req.body?.blocked;
     // never the user asking : it would lock itself out
     const me = req.user?.user;
@@ -77,7 +123,7 @@ const setBlocked = async function (req, res) {
     if (blocked) await endSessions(id);
     res.json(RestResult.single({ blocked }));
   } catch (err) {
-    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedDirectoryUser'), helpers.getError(err)));
+    failed(req, res, err);
   }
 };
 
@@ -86,10 +132,12 @@ const endUserSessions = async function (req, res) {
   const id = identity(req, res);
   if (!id) return;
   try {
+    // an admin directory user is the admin role's own to change
+    await assertMayTouchDirectoryAdmin(req, id);
     await endSessions(id);
     res.json(RestResult.single({ ended: true }));
   } catch (err) {
-    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedDirectoryUser'), helpers.getError(err)));
+    failed(req, res, err);
   }
 };
 
@@ -98,11 +146,13 @@ const forgetUser = async function (req, res) {
   const id = identity(req, res);
   if (!id) return;
   try {
+    // an admin directory user is the admin role's own to change
+    await assertMayTouchDirectoryAdmin(req, id);
     const forgotten = await DirectoryUser.forget(id.type, id.name);
     if (!forgotten) return res.status(409).json(RestResult.error(i18n.t(req, 'resources.directoryUserKept')));
     res.json(RestResult.single({ forgotten }));
   } catch (err) {
-    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedDirectoryUser'), helpers.getError(err)));
+    failed(req, res, err);
   }
 };
 
@@ -116,7 +166,7 @@ const findGroup = async function (req, res) {
     if (!row) return res.status(404).json(RestResult.error(i18n.t(req, 'resources.groupNotFound')));
     res.json(RestResult.single(row));
   } catch (err) {
-    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedFindGroup'), helpers.getError(err)));
+    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedFindGroup'), helpers.getError(publicError(req, err))));
   }
 };
 

@@ -1,5 +1,7 @@
 export default {
   errors: {
+    databaseError:
+      "Ein Datenbankfehler ist aufgetreten: das Serverprotokoll enthaelt die Details",
     noAccess: "Kein Zugriff",
     notAdmin: "Du bist kein Administrator",
     noSettingsAccess: "Du hast keinen Zugriff auf Einstellungen",
@@ -93,6 +95,20 @@ export default {
     failedGetLock: "Abrufen der Sperre fehlgeschlagen",
   },
   resources: {
+    storedJobNameInUse:
+      "Du hast bereits einen gespeicherten Job namens '{name}': waehle einen anderen Namen",
+    cantTouchDirectoryAdmin:
+      "Nur ein Admin kann einen Benutzer mit der Admin-Rolle sperren, abmelden, vergessen oder seine Tokens widerrufen",
+    credentialNotFound:
+      "Keine Zugangsdaten mit dem Namen '{name}'",
+    repositoryCredentialType:
+      "Ein Repository meldet sich mit git- oder userpass-Zugangsdaten an: '{name}' ist vom Typ {type}",
+    credentialSignInAdminOnly:
+      "Nur ein Admin kann Zugangsdaten hinzufuegen, aendern oder loeschen, die eine Anmeldung verwendet (LDAP, Microsoft Entra ID oder OIDC)",
+    credentialNotAllowed:
+      "Nur ein Admin kann die Zugangsdaten '{name}' hier verwenden: ein Runner, eine Verbindung oder eine Anmeldung verwendet sie",
+    storedKeyOtherProvider:
+      "Der gespeicherte Schluessel wird nur an den gespeicherten Anbieter und die Basis-URL gesendet: gib den Schluessel ein, um einen anderen zu pruefen",
     backupCreated: "Backup erstellt",
     lockAdded: "Sperre hinzugefuegt",
     lockDeleted: "Sperre entfernt",
@@ -215,6 +231,8 @@ export default {
       'Host-Name erforderlich (Query-Parameter "name" oder "host")',
   },
   jobs: {
+    cantApproveOwnJob:
+      "Du kannst deinen eigenen Job nicht genehmigen: ein anderer Genehmiger muss ihn genehmigen",
     mustProvideJobId: "Du musst eine Job-ID angeben",
     abortRequested: "Job-Abbruch angefordert",
     failedAbort: "Job-Abbruch fehlgeschlagen",

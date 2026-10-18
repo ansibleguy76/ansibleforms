@@ -1778,6 +1778,9 @@
                       "type": "string",
                       "minLength": 1
                     }
+                  },
+                  "allowSelf": {
+                    "type": "boolean"
                   }
                 },
                 "additionalProperties": false
@@ -1833,6 +1836,9 @@
                 "type": "string",
                 "minLength": 1
               }
+            },
+            "allowSelf": {
+              "type": "boolean"
             }
           },
           "additionalProperties": false
@@ -6273,6 +6279,9 @@
                         "type": "string",
                         "minLength": 1
                       }
+                    },
+                    "allowSelf": {
+                      "type": "boolean"
                     }
                   },
                   "additionalProperties": false
@@ -6328,6 +6337,9 @@
                   "type": "string",
                   "minLength": 1
                 }
+              },
+              "allowSelf": {
+                "type": "boolean"
               }
             },
             "additionalProperties": false

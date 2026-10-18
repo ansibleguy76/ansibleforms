@@ -2328,6 +2328,9 @@ export default {
     visualOnEvent: 'イベント',
     visualApproval: '承認を求める',
     visualApprovalHelp: 'これらのロールを持つ人が承認するまでジョブは待機します。',
+    visualApprovalAllowSelf: '依頼者が自分のジョブを承認できる',
+    visualApprovalAllowSelfHelp:
+      'オフの場合は別の承認者が承認する必要があります。admin はいつでもどのジョブでも承認できます。',
     visualApprovalTitle: 'タイトル',
     visualApprovalMessage: 'メッセージ',
     visualApprovers: '承認者',

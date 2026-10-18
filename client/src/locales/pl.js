@@ -2353,6 +2353,9 @@ export default {
     visualOnEvent: 'Przy zdarzeniu',
     visualApproval: 'Wymagaj zatwierdzenia',
     visualApprovalHelp: 'Zadanie czeka, aż zatwierdzi je ktoś z jedną z tych ról.',
+    visualApprovalAllowSelf: 'Zlecający może zatwierdzić własne zadanie',
+    visualApprovalAllowSelfHelp:
+      'Wyłączone: musi je zatwierdzić inny zatwierdzający. Admin zawsze może zatwierdzić każde zadanie.',
     visualApprovalTitle: 'Tytuł',
     visualApprovalMessage: 'Wiadomość',
     visualApprovers: 'Zatwierdzane przez',

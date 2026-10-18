@@ -2383,6 +2383,9 @@ export default {
     visualOnEvent: 'Bei Ereignis',
     visualApproval: 'Genehmigung anfordern',
     visualApprovalHelp: 'Ein Job wartet, bis jemand mit einer dieser Rollen ihn genehmigt.',
+    visualApprovalAllowSelf: 'Der Antragsteller darf seinen eigenen Job genehmigen',
+    visualApprovalAllowSelfHelp:
+      'Aus: ein anderer Genehmiger muss ihn genehmigen. Ein Admin kann jeden Job immer genehmigen.',
     visualApprovalTitle: 'Titel',
     visualApprovalMessage: 'Nachricht',
     visualApprovers: 'Genehmigt von',

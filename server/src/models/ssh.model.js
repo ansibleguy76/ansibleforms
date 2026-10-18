@@ -27,8 +27,9 @@ Ssh.generate = function(force){
     format: 'PEM'
   })
   .then((keys)=>{
+    // the private key is never logged, at any level : a debug log is read and shipped (syslog)
+    // by more people than may sign in as AnsibleForms on every server
     logger.warning('SSH Keys created!');
-    logger.debug('private key: '+keys.key);
     logger.notice('public key: '+keys.pubKey);
   })
 }

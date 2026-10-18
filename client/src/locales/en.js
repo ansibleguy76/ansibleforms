@@ -2335,6 +2335,8 @@ export default {
     visualOnEvent: 'On event',
     visualApproval: 'Ask for approval',
     visualApprovalHelp: 'A job waits until someone with one of these roles approves it.',
+    visualApprovalAllowSelf: 'The requester may approve their own job',
+    visualApprovalAllowSelfHelp: 'Off, another approver must approve it. An admin can always approve any job.',
     visualApprovalTitle: 'Title',
     visualApprovalMessage: 'Message',
     visualApprovers: 'Approved by',

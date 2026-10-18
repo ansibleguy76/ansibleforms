@@ -1,5 +1,7 @@
 export default {
   errors: {
+    databaseError:
+      "S'ha produït un error de la base de dades: el registre del servidor en té els detalls",
     noAccess: "No hi tens accés",
     notAdmin: "No ets administrador",
     noSettingsAccess: "No tens accés a la configuració",
@@ -91,6 +93,20 @@ export default {
     failedGetLock: "No s'ha pogut obtenir el bloqueig",
   },
   resources: {
+    storedJobNameInUse:
+      "Ja tens una tasca desada anomenada '{name}': tria un altre nom",
+    cantTouchDirectoryAdmin:
+      "Només un admin pot bloquejar, tancar la sessió, oblidar o revocar els tokens d'un usuari que té el rol admin",
+    credentialNotFound:
+      "No hi ha cap credencial anomenada '{name}'",
+    repositoryCredentialType:
+      "Un repositori inicia sessió amb una credencial git o userpass: '{name}' és de tipus {type}",
+    credentialSignInAdminOnly:
+      "Només un admin pot afegir, canviar o eliminar una credencial que fa servir un inici de sessió (LDAP, Microsoft Entra ID o OIDC)",
+    credentialNotAllowed:
+      "Només un admin pot fer servir aquí la credencial '{name}': la fa servir un runner, una connexió o un inici de sessió",
+    storedKeyOtherProvider:
+      "La clau desada només s'envia al proveïdor i a l'URL base desats: escriu la clau per comprovar-ne un altre",
     backupCreated: "Còpia de seguretat creada",
     lockAdded: "Bloqueig afegit",
     lockDeleted: "Bloqueig suprimit",
@@ -211,6 +227,8 @@ export default {
       'Cal el nom de l\'amfitrió (paràmetre de consulta "name" o "host")',
   },
   jobs: {
+    cantApproveOwnJob:
+      "No pots aprovar la teva pròpia tasca: l'ha d'aprovar un altre aprovador",
     mustProvideJobId: "Has d'indicar un jobid",
     abortRequested: "S'ha sol·licitat l'avortament de la tasca",
     failedAbort: "No s'ha pogut avortar la tasca",

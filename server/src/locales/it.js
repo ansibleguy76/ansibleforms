@@ -1,5 +1,7 @@
 export default {
   errors: {
+    databaseError:
+      "Si è verificato un errore del database: il log del server ha i dettagli",
     noAccess: "Accesso negato",
     notAdmin: "Non sei un amministratore",
     noSettingsAccess: "Non hai accesso alle impostazioni",
@@ -87,6 +89,20 @@ export default {
     failedGetLock: "Impossibile ottenere il lock",
   },
   resources: {
+    storedJobNameInUse:
+      "Hai già un job salvato chiamato '{name}': scegli un altro nome",
+    cantTouchDirectoryAdmin:
+      "Solo un admin può bloccare, disconnettere, dimenticare o revocare i token di un utente con il ruolo admin",
+    credentialNotFound:
+      "Nessuna credenziale chiamata '{name}'",
+    repositoryCredentialType:
+      "Un repository accede con una credenziale git o userpass: '{name}' è di tipo {type}",
+    credentialSignInAdminOnly:
+      "Solo un admin può aggiungere, modificare o eliminare una credenziale usata da un accesso (LDAP, Microsoft Entra ID o OIDC)",
+    credentialNotAllowed:
+      "Solo un admin può usare qui la credenziale '{name}': la usa un runner, una connessione o un accesso",
+    storedKeyOtherProvider:
+      "La chiave salvata viene inviata solo al provider e all'URL di base salvati: digita la chiave per verificarne un altro",
     backupCreated: "Backup creato",
     lockAdded: "Lock aggiunto",
     lockDeleted: "Lock rimosso",
@@ -205,6 +221,8 @@ export default {
     hostNameRequired: 'Nome host richiesto (parametro query "name" o "host")',
   },
   jobs: {
+    cantApproveOwnJob:
+      "Non puoi approvare il tuo job: deve approvarlo un altro approvatore",
     mustProvideJobId: "Devi fornire un jobid",
     abortRequested: "Interruzione job richiesta",
     failedAbort: "Interruzione job non riuscita",

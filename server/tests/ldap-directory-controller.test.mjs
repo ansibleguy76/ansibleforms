@@ -124,6 +124,50 @@ describe("the legacy /api/v2/ldap", () => {
   });
 });
 
+// the stored bind password reaches only the stored servers : a check that names other servers
+// and sends the mask is refused, one that leaves the password out binds without it
+describe("the bind password of a check", () => {
+  let binds;
+  beforeEach(async () => {
+    const appConfig = (await import("./__mocks__/app.config.js")).default;
+    appConfig.encryptionSecret ||= "0123456789abcdef0123456789abcdef";
+    const { default: crypto } = await import("../src/lib/crypto.js");
+    directories[1].bind_user_pw = crypto.encrypt("stored-pw");
+    const { default: Ldap } = await import("../src/models/ldap.model.js");
+    binds = [];
+    vi.spyOn(Ldap, "authenticateOn").mockImplementation(async (cfg, bindPassword) => {
+      binds.push({ server: cfg.server, bindPassword });
+      return { dn: "cn=u" };
+    });
+  });
+
+  test("left out, for the stored servers: the stored one", async () => {
+    await call(controller.check, { params: { id: "1" }, body: { testuser: "u", testpassword: "p" } });
+    expect(binds).toEqual([{ server: "ldap.corp", bindPassword: "stored-pw" }]);
+  });
+
+  test("left out, for other servers: none", async () => {
+    await call(controller.check, { params: { id: "1" }, body: { server: "evil.example.com", testuser: "u", testpassword: "p" } });
+    expect(binds).toEqual([{ server: "evil.example.com", bindPassword: "" }]);
+  });
+
+  test("the legacy route follows the same rule", async () => {
+    await call(legacy.check, { body: { server: "evil.example.com", testuser: "u", testpassword: "p" } });
+    expect(binds).toEqual([{ server: "evil.example.com", bindPassword: "" }]);
+  });
+
+  test("the mask, for other servers: refused, nothing bound", async () => {
+    const r = await call(controller.check, { params: { id: "1" }, body: { server: "evil.example.com", bind_user_pw: "**********", testuser: "u", testpassword: "p" } });
+    expect(r.status).toBe(400);
+    expect(binds).toEqual([]);
+  });
+
+  test("typed: what was typed, wherever", async () => {
+    await call(controller.check, { params: { id: "1" }, body: { server: "other", bind_user_pw: "typed", testuser: "u", testpassword: "p" } });
+    expect(binds).toEqual([{ server: "other", bindPassword: "typed" }]);
+  });
+});
+
 describe("withEnds", () => {
   test("marks the first and the last, an empty list stays empty", () => {
     expect(withEnds([{ id: 1 }])).toEqual([{ id: 1, isFirst: true, isLast: true }]);

@@ -1,5 +1,7 @@
 export default {
   errors: {
+    databaseError:
+      "Wystąpił błąd bazy danych: szczegóły są w dzienniku serwera",
     noAccess: "Brak dostępu",
     notAdmin: "Nie jesteś administratorem",
     noSettingsAccess: "Nie masz dostępu do ustawień",
@@ -94,6 +96,20 @@ export default {
     failedGetLock: "Nie udało się pobrać blokady",
   },
   resources: {
+    storedJobNameInUse:
+      "Masz już zapisane zadanie o nazwie '{name}': wybierz inną nazwę",
+    cantTouchDirectoryAdmin:
+      "Tylko admin może zablokować, wylogować, zapomnieć lub unieważnić tokeny użytkownika z rolą admin",
+    credentialNotFound:
+      "Brak poświadczenia o nazwie '{name}'",
+    repositoryCredentialType:
+      "Repozytorium loguje się poświadczeniem git lub userpass: '{name}' jest typu {type}",
+    credentialSignInAdminOnly:
+      "Tylko admin może dodać, zmienić lub usunąć poświadczenie używane przez logowanie (LDAP, Microsoft Entra ID lub OIDC)",
+    credentialNotAllowed:
+      "Tylko admin może użyć tutaj poświadczenia '{name}': używa go runner, połączenie lub logowanie",
+    storedKeyOtherProvider:
+      "Zapisany klucz jest wysyłany tylko do zapisanego dostawcy i bazowego URL: wpisz klucz, aby sprawdzić innego",
     backupCreated: "Utworzono kopię zapasową",
     lockAdded: "Dodano blokadę",
     lockDeleted: "Usunięto blokadę",
@@ -211,6 +227,8 @@ export default {
       'Wymagana nazwa hosta (parametr zapytania "name" lub "host")',
   },
   jobs: {
+    cantApproveOwnJob:
+      "Nie możesz zatwierdzić własnego zadania: musi je zatwierdzić inny zatwierdzający",
     mustProvideJobId: "Musisz podać jobid",
     abortRequested: "Zażądano przerwania zadania",
     failedAbort: "Nie udało się przerwać zadania",

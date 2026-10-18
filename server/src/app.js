@@ -274,8 +274,10 @@ const load = async (app) => {
   // no user signs in ; limited per address as the sign-in is
   app.post(`/api/v2/rte/register`, cors(), authLimiter, jsonBody, registerHandler);
   app.use(`/api/v2/notificationchannel`, cors(), authobj, Middleware.checkConnectionsMiddleware, notificationChannelRoutesv2);
-  // the syslog servers the server log and the audit entries go to (Connections > Syslog)
-  app.use(`/api/v2/syslogserver`, cors(), authobj, Middleware.checkConnectionsMiddleware, syslogServerRoutesv2);
+  // the syslog servers the server log and the audit entries go to (Connections > Syslog) : the
+  // admin settings only. A server added receives the whole server log and every audit entry, more
+  // than a connections-only user may read (the logs and the audit log have their own options).
+  app.use(`/api/v2/syslogserver`, cors(), authobj, Middleware.checkSettingsMiddleware, syslogServerRoutesv2);
   // Settings > Appearance > Announcements
   app.use(`/api/v2/announcement`, cors(), authobj, Middleware.checkAppearanceMiddleware, announcementRoutesv2);
   // the labels beside the header's logo (Appearance > Labels)

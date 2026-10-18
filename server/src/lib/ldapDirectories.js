@@ -15,6 +15,11 @@ export const NAME_RULE = /^[a-z0-9][a-z0-9_-]{0,49}$/i;
  * A member's name as roles and the app know it : the default directory's as it is, any other's
  * prefixed with the directory (corp/jane, corp/Admins).
  *
+ * A '/' in a name of the default directory is written %2F : unprefixed, a group named
+ * 'corp/Admins' (or a user named 'corp/jane') in the default directory read exactly as the group
+ * Admins (the user jane) of the directory corp, so whoever could name a group or a user in the
+ * default directory took the roles another directory's members are given.
+ *
  * Args:
  *   directory (object): the directory ({ name }).
  *   name (string): the user's or the group's name in the directory.
@@ -24,7 +29,8 @@ export const NAME_RULE = /^[a-z0-9][a-z0-9_-]{0,49}$/i;
  */
 export function qualify(directory, name) {
   const dir = directory?.name || DEFAULT_NAME;
-  return dir === DEFAULT_NAME ? name : `${dir}/${name}`;
+  if (dir !== DEFAULT_NAME) return `${dir}/${name}`;
+  return typeof name === "string" ? name.replaceAll("/", "%2F") : name;
 }
 
 /**

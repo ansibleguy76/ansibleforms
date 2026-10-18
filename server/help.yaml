@@ -5489,7 +5489,16 @@
               The notification channels of Connections > Notifications that receive the approval message, with a link to the job, where it is approved or rejected: Slack, Microsoft Teams, Telegram, a webhook.  
               A mail channel in this list sends the approval mail to the `notifications` addresses through that server instead of the active one.  
               A name that is not there is said in the log and skipped. (Added in 7.0.0)
-          examples: 
+          - name: allowSelf
+            type: boolean
+            required: false
+            default: false
+            allowed: true or false
+            short: The requester may approve their own job
+            description: |
+              By default the user who launched a job cannot approve it, even with one of the approver roles: another approver must, so every approved job was seen by two people. The requester can still reject (withdraw) their own job.
+              Set `allowSelf: true` to let the requester approve their own job too. An admin can always approve any job, their own included, whatever this says. (Added in 7.3.0)
+          examples:
           - name: Remove host
             language: YAML
             code: |
