@@ -44,7 +44,7 @@ const info = (r) => {
 };
 /**
  * A runner waiting for approval in a few words : its host, where it called from, its mode and
- * its fingerprint.
+ * its fingerprint, each as key: value.
  *
  * Args:
  *   r (object): the runner.
@@ -55,12 +55,13 @@ const info = (r) => {
 function describe(r) {
   const i = info(r);
   return [
-    i.host,
-    i.ip,
-    i.mode && t(`settings.runners.rteMode_${i.mode}`),
-    i.fingerprint && `${t('settings.runners.pendingFingerprint')} ${i.fingerprint}`,
+    [t('settings.runners.pendingHost'), i.host],
+    [t('settings.runners.pendingIp'), i.ip],
+    [t('settings.runners.rteMode'), i.mode && t(`settings.runners.rteMode_${i.mode}`)],
+    [t('settings.runners.pendingFingerprint'), i.fingerprint],
   ]
-    .filter(Boolean)
+    .filter(([, value]) => value)
+    .map(([key, value]) => `${key}: ${value}`)
     .join(' · ');
 }
 
