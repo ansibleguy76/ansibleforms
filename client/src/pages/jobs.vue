@@ -1854,6 +1854,7 @@ onMounted(async () => {
                         :workflow="job?.awx_workflow"
                         :title="job.job_type == 'awx' ? job.target : jobPlaybook || job.form"
                         :jobId="jobId"
+                        :events="jobEvents"
                         numbered
                         lineLinks
                       />
@@ -1880,7 +1881,7 @@ onMounted(async () => {
                       <AppStatusPill :status="step.status" />
                     </h3>
                     <div v-show="!foldedOutputs[step.id]">
-                      <AppAnsibleOutput :output="step.shown" :jobLog="step.job_log" numbered />
+                      <AppAnsibleOutput :output="step.shown" :jobLog="step.job_log" :jobId="step.id" numbered />
                     </div>
                   </div>
                   <!-- scrolled up while it runs : back to its end, following again -->

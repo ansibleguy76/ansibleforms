@@ -2343,6 +2343,7 @@ onBeforeUnmount(() => {
                   :workflow="job.awx_workflow"
                   :title="outputTitle"
                   :jobId="job.id"
+                  :events="jobEvents"
                   :copyLabel="t('jobs.copy')"
                   numbered
                   @copy="(text) => clip(text, true)"
@@ -2360,6 +2361,7 @@ onBeforeUnmount(() => {
                   ref="subOutput"
                   :output="filteredSubJobOutput"
                   :jobLog="subjob.job_log"
+                  :jobId="subjob.id"
                   :copyLabel="t('jobs.copy')"
                   numbered
                   @copy="(text) => clip(text, true)"

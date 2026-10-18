@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch, nextTick, onMounted, onUpdated } from 'vue';
+import { computed, ref, watch, nextTick, onMounted, onUpdated, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAppStore } from '@/stores/app';
 import { jobLogLines } from '@/lib/jobLog';
@@ -63,6 +63,13 @@ const props = defineProps({
   lineLinks: {
     type: Boolean,
     default: false,
+  },
+  // the job's events, when the page already reads them (useJobEvents) : handed down so they are
+  // read once, not by the page and again here. Left out (a multistep job's step, the form's
+  // current step) : this output reads its own job's events itself
+  events: {
+    type: Array,
+    default: null,
   },
 });
 const store = useAppStore();
@@ -184,31 +191,58 @@ const lines = computed(() => {
 // The job's events (the af_events callback plugin) pair with the output's lines : the TASKs in
 // order by their name, then within a task each host's result lines (ok, changed, fatal,
 // skipping, unreachable) and loop item lines in order. A paired line opens its event's details.
-const events = ref([]);
+// the events read here, when the page hands none down (the events prop)
+const ownEvents = ref([]);
+// the events the lines pair with : the page's when it reads them, else this output's own
+const events = computed(() => props.events ?? ownEvents.value);
 // the event shown in the dialog (its order), null : none
 const detailOrder = ref(null);
 
 /**
- * Reads the job's events (their summary : the details are read when one opens).
+ * Reads the job's events (their summary : the details are read when one opens), only when the
+ * page hands none down. An answer for a job no longer shown is dropped : the job changed while
+ * it was read.
  */
 async function loadEvents() {
-  if (!props.jobId || !props.numbered) return;
-  const res = await axios.get(`/api/v2/job/${encodeURIComponent(props.jobId)}/events`).catch(() => null);
-  events.value = res?.data?.records || [];
+  if (props.events !== null || !props.jobId || !props.numbered) return;
+  const id = props.jobId;
+  const res = await axios.get(`/api/v2/job/${encodeURIComponent(id)}/events`).catch(() => null);
+  if (id !== props.jobId) return;
+  ownEvents.value = res?.data?.records || [];
 }
 onMounted(loadEvents);
 // a running job's output grows : its new results' events read too, at most every 3 seconds
 let eventsTimer = null;
+/**
+ * Drops the pending read of the events, when one waits.
+ */
+function stopEventsTimer() {
+  if (eventsTimer) clearTimeout(eventsTimer);
+  eventsTimer = null;
+}
 watch(
   () => props.output,
   () => {
-    if (eventsTimer) return;
+    if (eventsTimer || props.events !== null) return;
     eventsTimer = setTimeout(() => {
       eventsTimer = null;
       loadEvents();
     }, 3000);
   },
 );
+// another job shown in the same output : the events of the one before go at once (its lines
+// would pair with them), its details dialog closes, and the new job's events are read
+watch(
+  () => props.jobId,
+  () => {
+    stopEventsTimer();
+    ownEvents.value = [];
+    detailOrder.value = null;
+    loadEvents();
+  },
+);
+// gone : a pending read of the events with it
+onBeforeUnmount(stopEventsTimer);
 
 const RESULT_TYPES = new Set(['ok', 'changed', 'failed', 'skipped', 'unreachable']);
 // a host's result line : its status word, then its host (and where it delegates : host -> other)
