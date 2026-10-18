@@ -82,6 +82,12 @@ export default {
     failedGetLock: "获取锁失败",
   },
   resources: {
+    credentialSignInAdminOnly:
+      "只有 admin 可以添加、更改或删除登录所用的凭据 (LDAP、Microsoft Entra ID 或 OIDC)",
+    credentialNotAllowed:
+      "只有 admin 可以在此使用凭据 '{name}'：运行器、连接或登录正在使用它",
+    storedKeyOtherProvider:
+      "保存的密钥只会发送到已保存的提供商和基础 URL：请输入密钥以检查其他提供商",
     backupCreated: "备份已创建",
     lockAdded: "已添加锁",
     lockDeleted: "已删除锁",

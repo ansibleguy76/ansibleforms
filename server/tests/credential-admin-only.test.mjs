@@ -18,12 +18,19 @@ const rows = {
   2: { id: 2, name: "plain", credential_type: "userpass" },
   3: { id: 3, name: "runner-login", credential_type: "userpass" },
   4: { id: 4, name: "ldap-bind", credential_type: "ldap" },
+  5: { id: 5, name: "sso-client", credential_type: "oidc", issuer: "https://idp" },
+  6: { id: 6, name: "smtp-relay", credential_type: "smtp", host: "mail.local", port: 25, password: "stored" },
+  7: { id: 7, name: "from-store", credential_type: "database", host: "db.local", port: 3306, secret_store: "vault", secret_ref: "db/app" },
 };
 const usage = new Map([["ldap-bind", 2], ["runner-login", 1]]);
 const runnerRefs = { "runner-login": ["awx1"] };
 
-vi.mock("../src/models/credential.model.v2.js", () => ({
-  default: {
+vi.mock("../src/models/credential.model.v2.js", async () => {
+  // the real comparison of which fields say where the secret goes
+  const { default: actual } = await vi.importActual("../src/models/credential.model.v2.js");
+  return { default: {
+    SIGNIN_TYPES: ["ldap", "entraid", "oidc"],
+    targetChanged: actual.targetChanged.bind(actual),
     URL_TYPES: ["rte", "awx", "aap", "ascender", "semaphore", "rundeck", "jenkins", "vault", "cyberark"],
     create: async (data) => { calls.push(["create", data]); return 9; },
     update: async (data, id) => { calls.push(["update", data, id]); return true; },
@@ -31,8 +38,8 @@ vi.mock("../src/models/credential.model.v2.js", () => ({
     findById: async (id) => ({ ...rows[id] }),
     usageOf: async (name) => usage.get(name) || 0,
     runnersUsing: async (name) => runnerRefs[name] || [],
-  },
-}));
+  } };
+});
 vi.mock("../src/auth/auth_entraid.js", () => ({ default: { initialize: async () => {} } }));
 vi.mock("../src/auth/auth_oidc.js", () => ({ default: { initialize: async () => {} } }));
 
@@ -104,5 +111,58 @@ describe("a credential in use", () => {
     const r = await call(controller.update, admin, { body: { name: "ldap-bind", password: "p" }, params: { id: "4" } });
     expect(r.status).toBeLessThan(300);
     expect(calls.length).toBe(1);
+  });
+});
+
+describe("a credential a sign-in reads (ldap, entraid, oidc)", () => {
+  test.each(["ldap", "entraid", "oidc"])("creating a %s one: refused for a connections user", async (type) => {
+    const r = await call(controller.create, connectionsUser, { body: { name: "x", credential_type: type, host: "evil" } });
+    expect(r.status).toBe(403);
+    expect(calls).toEqual([]);
+  });
+
+  test("updating or deleting one: refused for a connections user", async () => {
+    expect((await call(controller.update, connectionsUser, { body: { host: "evil" }, params: { id: "4" } })).status).toBe(403);
+    expect((await call(controller.update, connectionsUser, { body: { issuer: "https://evil" }, params: { id: "5" } })).status).toBe(403);
+    expect((await call(controller.delete, connectionsUser, { params: { id: "5" } })).status).toBe(403);
+    expect(calls).toEqual([]);
+  });
+
+  test("an admin may", async () => {
+    expect((await call(controller.create, admin, { body: { name: "x", credential_type: "oidc" } })).status).toBeLessThan(300);
+    expect((await call(controller.update, admin, { body: { issuer: "https://new" }, params: { id: "5" } })).status).toBeLessThan(300);
+  });
+});
+
+describe("a credential moved to another target", () => {
+  test("by a connections user without a new password: the stored one is cleared", async () => {
+    const r = await call(controller.update, connectionsUser, { body: { host: "evil", password: "**********" }, params: { id: "6" } });
+    expect(r.status).toBeLessThan(300);
+    expect(calls[0][1].password).toBe("");
+  });
+
+  test("a new port alone counts as another target", async () => {
+    await call(controller.update, connectionsUser, { body: { port: "2525" }, params: { id: "6" } });
+    expect(calls[0][1].password).toBe("");
+  });
+
+  test("a password typed again is kept", async () => {
+    await call(controller.update, connectionsUser, { body: { host: "new", password: "typed" }, params: { id: "6" } });
+    expect(calls[0][1].password).toBe("typed");
+  });
+
+  test("the same target sent back keeps the stored password", async () => {
+    await call(controller.update, connectionsUser, { body: { host: " mail.local ", port: "25", password: "**********" }, params: { id: "6" } });
+    expect(calls[0][1].password).toBe("**********");
+  });
+
+  test("a secret store reference sent back as it is is cleared too", async () => {
+    await call(controller.update, connectionsUser, { body: { host: "evil", secret_store: "vault", secret_ref: "db/app" }, params: { id: "7" } });
+    expect(calls[0][1]).toMatchObject({ password: "", secret_store: null, secret_ref: null });
+  });
+
+  test("an admin's change is left as it is", async () => {
+    await call(controller.update, admin, { body: { host: "new", password: "**********" }, params: { id: "6" } });
+    expect(calls[0][1].password).toBe("**********");
   });
 });

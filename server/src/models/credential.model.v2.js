@@ -165,6 +165,70 @@ class CredentialModel extends CrudModel {
   // runner's and a secret store's
   static URL_TYPES = ['rte', 'awx', 'aap', 'ascender', 'semaphore', 'rundeck', 'jenkins', 'vault', 'cyberark'];
 
+  // the types a sign-in reads its client, its tenant or issuer, or its bind account from : an LDAP
+  // directory's bind account, an Entra ID or Open ID provider's client. Whoever changes one
+  // chooses who signs in, and where the sign-in sends its secret : an admin's to change.
+  static SIGNIN_TYPES = ['ldap', 'entraid', 'oidc'];
+
+  // the fields that say where a credential's secret goes : its server (host and port), its
+  // provider (issuer, tenant) or its address (url). A change of any of them by a user who did not
+  // type the secret again must not take the stored secret along to the new target.
+  static TARGET_FIELDS = ['host', 'port', 'issuer', 'tenant_id', 'url'];
+
+  /**
+   * Whether a credential is an admin's to change and to name : one a connection takes its address
+   * from (URL_TYPES), one a sign-in reads (SIGNIN_TYPES), or one a runner names, whatever its
+   * type. A user with only connections access may neither change it nor point a notification
+   * channel or a repository at it : both would hand its secret to a server of their choosing.
+   *
+   * Args:
+   *   record (object|null): the credential ({ name, credential_type }).
+   *
+   * Returns:
+   *   Promise<boolean>: true when only an admin may change or name it.
+   */
+  static async isAdminGuarded(record) {
+    if (!record) return false;
+    if (this.URL_TYPES.includes(record.credential_type)) return true;
+    if (this.SIGNIN_TYPES.includes(record.credential_type)) return true;
+    return !!(record.name && (await this.runnersUsing(record.name)).length);
+  }
+
+  /**
+   * The credential a record names, read by its exact name without its secret : the row as the
+   * credentials table holds it, or null when there is none.
+   *
+   * Args:
+   *   name (string): the credential's name.
+   *
+   * Returns:
+   *   Promise<object|null>: { name, credential_type, ... }, or null.
+   */
+  static async findRowByName(name) {
+    if (!name) return null;
+    return super.findByName(this.modelName, name);
+  }
+
+  /**
+   * Whether a write moves a credential's secret to another target : one of TARGET_FIELDS sent
+   * with another value than the stored one (text compared trimmed, so '389' and 389 are one).
+   *
+   * Args:
+   *   before (object): the credential as it is.
+   *   data (object): the fields written.
+   *
+   * Returns:
+   *   boolean: true when the write points it elsewhere.
+   */
+  static targetChanged(before, data) {
+    // a url is stored without its trailing slashes (requireTypeFields) : compared the same way
+    const text = (f, v) => {
+      const t = v === null || v === undefined ? '' : String(v).trim();
+      return f === 'url' ? stripTrailingSlashes(t) : t;
+    };
+    return this.TARGET_FIELDS.some((f) => data?.[f] !== undefined && text(f, data[f]) !== text(f, before?.[f]));
+  }
+
   /**
    * Where a credential connects : its server address and TLS, when it carries an address. A
    * secret store or a runner that names it then connects there (models/secretStore.model.js,

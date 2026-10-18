@@ -87,6 +87,12 @@ export default {
     failedGetLock: "Impossibile ottenere il lock",
   },
   resources: {
+    credentialSignInAdminOnly:
+      "Solo un admin può aggiungere, modificare o eliminare una credenziale usata da un accesso (LDAP, Microsoft Entra ID o OIDC)",
+    credentialNotAllowed:
+      "Solo un admin può usare qui la credenziale '{name}': la usa un runner, una connessione o un accesso",
+    storedKeyOtherProvider:
+      "La chiave salvata viene inviata solo al provider e all'URL di base salvati: digita la chiave per verificarne un altro",
     backupCreated: "Backup creato",
     lockAdded: "Lock aggiunto",
     lockDeleted: "Lock rimosso",

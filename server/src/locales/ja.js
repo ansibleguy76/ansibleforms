@@ -88,6 +88,12 @@ export default {
     failedGetLock: "ロックの取得に失敗しました",
   },
   resources: {
+    credentialSignInAdminOnly:
+      "サインインが使う資格情報 (LDAP、Microsoft Entra ID、OIDC) を追加、変更、削除できるのは admin だけです",
+    credentialNotAllowed:
+      "ここで資格情報 '{name}' を使えるのは admin だけです: ランナー、接続、またはサインインが使っています",
+    storedKeyOtherProvider:
+      "保存されたキーは保存済みのプロバイダーとベース URL にのみ送信されます: 別のものを確認するにはキーを入力してください",
     backupCreated: "バックアップを作成しました",
     lockAdded: "ロックを追加しました",
     lockDeleted: "ロックを削除しました",

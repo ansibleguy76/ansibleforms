@@ -86,6 +86,12 @@ export default {
     failedGetLock: "Failed to get lock",
   },
   resources: {
+    credentialSignInAdminOnly:
+      "Only an admin can add, change or delete a credential a sign-in uses (LDAP, Microsoft Entra ID or OIDC)",
+    credentialNotAllowed:
+      "Only an admin can use the credential '{name}' here: a runner, a connection or a sign-in uses it",
+    storedKeyOtherProvider:
+      "The stored key is only sent to the saved provider and base URL: type the key to check another one",
     backupCreated: "Backup created",
     lockAdded: "Lock added",
     lockDeleted: "Lock deleted",

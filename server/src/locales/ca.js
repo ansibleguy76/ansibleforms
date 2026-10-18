@@ -91,6 +91,12 @@ export default {
     failedGetLock: "No s'ha pogut obtenir el bloqueig",
   },
   resources: {
+    credentialSignInAdminOnly:
+      "Només un admin pot afegir, canviar o eliminar una credencial que fa servir un inici de sessió (LDAP, Microsoft Entra ID o OIDC)",
+    credentialNotAllowed:
+      "Només un admin pot fer servir aquí la credencial '{name}': la fa servir un runner, una connexió o un inici de sessió",
+    storedKeyOtherProvider:
+      "La clau desada només s'envia al proveïdor i a l'URL base desats: escriu la clau per comprovar-ne un altre",
     backupCreated: "Còpia de seguretat creada",
     lockAdded: "Bloqueig afegit",
     lockDeleted: "Bloqueig suprimit",

@@ -93,6 +93,12 @@ export default {
     failedGetLock: "Abrufen der Sperre fehlgeschlagen",
   },
   resources: {
+    credentialSignInAdminOnly:
+      "Nur ein Admin kann Zugangsdaten hinzufuegen, aendern oder loeschen, die eine Anmeldung verwendet (LDAP, Microsoft Entra ID oder OIDC)",
+    credentialNotAllowed:
+      "Nur ein Admin kann die Zugangsdaten '{name}' hier verwenden: ein Runner, eine Verbindung oder eine Anmeldung verwendet sie",
+    storedKeyOtherProvider:
+      "Der gespeicherte Schluessel wird nur an den gespeicherten Anbieter und die Basis-URL gesendet: gib den Schluessel ein, um einen anderen zu pruefen",
     backupCreated: "Backup erstellt",
     lockAdded: "Sperre hinzugefuegt",
     lockDeleted: "Sperre entfernt",

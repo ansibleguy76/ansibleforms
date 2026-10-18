@@ -96,6 +96,12 @@ export default {
     failedGetLock: "Echec de la recuperation du verrou",
   },
   resources: {
+    credentialSignInAdminOnly:
+      "Seul un admin peut ajouter, modifier ou supprimer un identifiant utilisé par une authentification (LDAP, Microsoft Entra ID ou OIDC)",
+    credentialNotAllowed:
+      "Seul un admin peut utiliser ici l'identifiant '{name}' : un runner, une connexion ou une authentification l'utilise",
+    storedKeyOtherProvider:
+      "La clé enregistrée n'est envoyée qu'au fournisseur et à l'URL de base enregistrés : saisissez la clé pour en vérifier un autre",
     backupCreated: "Sauvegarde creee",
     lockAdded: "Verrou ajoute",
     lockDeleted: "Verrou supprime",

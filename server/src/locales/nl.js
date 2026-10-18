@@ -89,6 +89,12 @@ export default {
     failedGetLock: "Kan vergrendeling niet ophalen",
   },
   resources: {
+    credentialSignInAdminOnly:
+      "Alleen een admin kan een referentie toevoegen, wijzigen of verwijderen die een aanmelding gebruikt (LDAP, Microsoft Entra ID of OIDC)",
+    credentialNotAllowed:
+      "Alleen een admin kan de referentie '{name}' hier gebruiken: een runner, een verbinding of een aanmelding gebruikt ze",
+    storedKeyOtherProvider:
+      "De opgeslagen sleutel gaat alleen naar de opgeslagen provider en basis-URL: typ de sleutel om een andere te controleren",
     backupCreated: "Backup aangemaakt",
     lockAdded: "Vergrendeling toegevoegd",
     lockDeleted: "Vergrendeling verwijderd",

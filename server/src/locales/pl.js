@@ -94,6 +94,12 @@ export default {
     failedGetLock: "Nie udało się pobrać blokady",
   },
   resources: {
+    credentialSignInAdminOnly:
+      "Tylko admin może dodać, zmienić lub usunąć poświadczenie używane przez logowanie (LDAP, Microsoft Entra ID lub OIDC)",
+    credentialNotAllowed:
+      "Tylko admin może użyć tutaj poświadczenia '{name}': używa go runner, połączenie lub logowanie",
+    storedKeyOtherProvider:
+      "Zapisany klucz jest wysyłany tylko do zapisanego dostawcy i bazowego URL: wpisz klucz, aby sprawdzić innego",
     backupCreated: "Utworzono kopię zapasową",
     lockAdded: "Dodano blokadę",
     lockDeleted: "Usunięto blokadę",

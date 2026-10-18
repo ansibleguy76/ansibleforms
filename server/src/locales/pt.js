@@ -88,6 +88,12 @@ export default {
     failedGetLock: "Falha ao obter o bloqueio",
   },
   resources: {
+    credentialSignInAdminOnly:
+      "Só um admin pode adicionar, alterar ou eliminar uma credencial usada por um início de sessão (LDAP, Microsoft Entra ID ou OIDC)",
+    credentialNotAllowed:
+      "Só um admin pode usar aqui a credencial '{name}': usa-a um runner, uma ligação ou um início de sessão",
+    storedKeyOtherProvider:
+      "A chave guardada só é enviada ao fornecedor e ao URL base guardados: escreva a chave para verificar outro",
     backupCreated: "Cópia de segurança criada",
     lockAdded: "Bloqueio adicionado",
     lockDeleted: "Bloqueio eliminado",
