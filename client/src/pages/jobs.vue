@@ -21,6 +21,7 @@ import { jobsPath, statusFromSlug } from '@/lib/jobsPath';
 import { formPath } from '@/lib/formsPath';
 import { jobTypeLabel, jobTypeName, hasArtifacts } from '@/lib/jobTypes';
 import { useNodeOutput } from '@/composables/useNodeOutput';
+import { mayApprove } from '@/lib/jobNotifications';
 
 // INIT
 
@@ -885,21 +886,11 @@ function replacePlaceholders(msg, extravars) {
   );
 }
 // find extravars
+// The value a dotted placeholder names in the extravars (a.b.c), or undefined when a key on the
+// way is missing : optional chaining, because the walk used to read master[obj] on undefined as
+// soon as a middle key was absent and threw out of the approval review.
 function findExtravar(data, expr) {
-  var outputValue = '';
-  expr.split(/\s*\.\s*/).reduce((master, obj, level, arr) => {
-    if (level === arr.length - 1) {
-      try {
-        outputValue = master[obj];
-      } catch (err) {
-        outputValue = '/bad placeholder/';
-      }
-    } else {
-      outputValue = master;
-    }
-    return master[obj];
-  }, data);
-  return outputValue;
+  return expr.split(/\s*\.\s*/).reduce((master, obj) => master?.[obj], data);
 }
 async function jobAction(id, action, method = 'post', uri_suffix = '') {
   try {
@@ -1060,22 +1051,12 @@ function getJob(id) {
   router.push({ path: `/jobs/${id}`, query: route.query }).catch((_e) => {});
 }
 // check if approval is allowed for a job
+// One rule with the desktop notifications (lib/jobNotifications.js mayApprove) : an admin any,
+// else one of the roles the approval names. It reads the approval as the list sends it (a JSON
+// string) or as the single-job endpoint does (an object), and a malformed one refuses instead
+// of throwing inside the render.
 function approvalAllowed(job) {
-  if (store.profile?.roles?.includes('admin')) return true;
-  if (!job.approval) return true;
-  // not admin and approval - lets check access
-  // The list endpoint returns `approval` as a JSON STRING, the single-job endpoint
-  // returns it already PARSED - and a single-job payload once ended up in this list. A
-  // multistep job going running -> approve mid-poll therefore reached
-  // here as an object, and JSON.parse('[object Object]') threw inside the render,
-  // breaking the jobs table for every non-admin approver.
-  var approval = typeof job.approval === 'string' ? JSON.parse(job.approval) : job.approval;
-  var access = approval?.roles?.filter((role) => store.profile?.roles?.includes(role));
-  if (access?.length > 0) {
-    return true;
-  } else {
-    return false;
-  }
+  return mayApprove(job, store.profile);
 }
 // keep track of collapsed multistep jobs
 function toggleCollapse(id) {
