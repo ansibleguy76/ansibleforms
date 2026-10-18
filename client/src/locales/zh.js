@@ -2699,6 +2699,24 @@ export default {
     copyOutput: '复制输出',
     downloadOutput: '下载输出',
     // a playbook's structured events : the hosts-and-tasks panel (AppJobEvents)
+    // a host's result of a task, its line of the output clicked (AppTaskResult)
+    taskResult: {
+      title: '任务结果',
+      open: '查看此结果',
+      failed: '无法读取结果',
+      details: '详情',
+      host: '主机',
+      play: 'Play',
+      task: '任务',
+      module: '模块',
+      item: '项',
+      started: '开始时间',
+      duration: '耗时',
+      rc: '返回码',
+      message: '消息',
+      stdout: '标准输出',
+      stderr: '标准错误',
+    },
     events: {
       button: '主机和任务',
       title: '主机和任务',

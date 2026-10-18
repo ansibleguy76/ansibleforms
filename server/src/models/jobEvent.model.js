@@ -12,7 +12,8 @@ import mysql from "./db.model.js";
 import { maskOutput } from "../lib/outputMask.js";
 
 // the event types the plugin writes ; anything else is not stored
-const TYPES = new Set(["play", "task", "ok", "changed", "failed", "skipped", "unreachable", "ignored", "stats"]);
+// item : one item of a loop, a line of the output of its own (its status in data.status)
+const TYPES = new Set(["play", "task", "ok", "changed", "failed", "skipped", "unreachable", "ignored", "stats", "item"]);
 
 /**
  * Cuts a text to a column's length.
@@ -44,7 +45,8 @@ const JobEvent = {
    *
    * Args:
    *   jobId (number): the job.
-   *   events (object[]): [{ order, type, play, task, host, duration, time, item, data }].
+   *   events (object[]): [{ order, type, play, task, host, duration, time, start, item, status,
+   *     action, data, result }] : data the result's summary, result the whole of it.
    *
    * Returns:
    *   Promise<number>: the events stored.
@@ -53,7 +55,13 @@ const JobEvent = {
     const rows = [];
     for (const e of events || []) {
       if (!e || !TYPES.has(e.type) || !Number.isInteger(Number(e.order))) continue;
-      const data = e.data === undefined && e.item === undefined ? null : JSON.stringify(e.item === undefined ? e.data : { ...(e.data || {}), item: e.item });
+      // the summary : the result's fields, and what the row has no column for (its item, a loop
+      // item's status, its module, when the host started)
+      const extra = Object.fromEntries(
+        [["item", e.item], ["status", e.status], ["action", e.action], ["start", num(e.start)]].filter(([, v]) => v !== undefined && v !== null),
+      );
+      const data = e.data === undefined && !Object.keys(extra).length ? null : JSON.stringify({ ...(e.data || {}), ...extra });
+      const result = e.result === undefined || e.result === null ? null : JSON.stringify(e.result);
       rows.push([
         jobId,
         Number(e.order),
@@ -64,11 +72,12 @@ const JobEvent = {
         num(e.duration),
         num(e.time),
         data === null ? null : maskOutput(jobId, data),
+        result === null ? null : maskOutput(jobId, result),
       ]);
     }
     if (!rows.length) return 0;
     const res = await mysql.do(
-      "INSERT IGNORE INTO AnsibleForms.`job_events` (job_id, `order`, type, play, task, host, duration, time, data) VALUES ?",
+      "INSERT IGNORE INTO AnsibleForms.`job_events` (job_id, `order`, type, play, task, host, duration, time, data, result) VALUES ?",
       [rows]
     );
     return res?.affectedRows || 0;
@@ -85,7 +94,7 @@ const JobEvent = {
    */
   async findByJob(jobId) {
     const rows = await mysql.do(
-      "SELECT `order`, type, play, task, host, duration, time, data FROM AnsibleForms.`job_events` WHERE job_id=? ORDER BY `order`",
+      "SELECT `order`, type, play, task, host, duration, time, data, (result IS NOT NULL) AS detailed FROM AnsibleForms.`job_events` WHERE job_id=? ORDER BY `order`",
       [jobId]
     );
     return (rows || []).map((r) => {
@@ -106,8 +115,54 @@ const JobEvent = {
         duration: r.duration === null ? null : Number(r.duration),
         time: r.time === null ? null : Number(r.time),
         data,
+        // whether its details hold a whole result (read with findOne)
+        detailed: !!r.detailed,
       };
     });
+  },
+
+  /**
+   * One event of a job, with its whole result : a host's or a loop item's details.
+   *
+   * Args:
+   *   jobId (number): the job.
+   *   order (number): the event's place among the job's events.
+   *
+   * Returns:
+   *   Promise<object|null>: the event as findByJob gives it, with result (parsed), or null.
+   */
+  async findOne(jobId, order) {
+    const rows = await mysql.do(
+      "SELECT `order`, type, play, task, host, duration, time, data, result FROM AnsibleForms.`job_events` WHERE job_id=? AND `order`=?",
+      [jobId, order]
+    );
+    const r = rows?.[0];
+    if (!r) return null;
+    const parse = (text, fallback) => {
+      if (!text) return null;
+      try {
+        return JSON.parse(text);
+      } catch {
+        return fallback(text);
+      }
+    };
+    // the task it belongs to : its module (the task event's action), when results have none
+    const task = await mysql.do(
+      "SELECT data FROM AnsibleForms.`job_events` WHERE job_id=? AND type='task' AND `order`<? ORDER BY `order` DESC LIMIT 1",
+      [jobId, order]
+    );
+    return {
+      order: r.order,
+      type: r.type,
+      play: r.play,
+      task: r.task,
+      host: r.host,
+      duration: r.duration === null ? null : Number(r.duration),
+      time: r.time === null ? null : Number(r.time),
+      data: parse(r.data, (text) => ({ msg: text })),
+      result: parse(r.result, (text) => ({ msg: text })),
+      taskData: parse(task?.[0]?.data, () => null),
+    };
   },
 };
 

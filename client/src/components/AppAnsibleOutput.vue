@@ -3,6 +3,7 @@ import { computed, ref, watch, nextTick, onMounted, onUpdated } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAppStore } from '@/stores/app';
 import { jobLogLines } from '@/lib/jobLog';
+import axios from 'axios';
 
 /******************************************************************/
 /*                                                                */
@@ -178,6 +179,116 @@ const lines = computed(() => {
   });
   return out;
 });
+
+// ─── a host's result, clicked : its details (AppTaskResult) ─────────────────────
+// The job's events (the af_events callback plugin) pair with the output's lines : the TASKs in
+// order by their name, then within a task each host's result lines (ok, changed, fatal,
+// skipping, unreachable) and loop item lines in order. A paired line opens its event's details.
+const events = ref([]);
+// the event shown in the dialog (its order), null : none
+const detailOrder = ref(null);
+
+/**
+ * Reads the job's events (their summary : the details are read when one opens).
+ */
+async function loadEvents() {
+  if (!props.jobId || !props.numbered) return;
+  const res = await axios.get(`/api/v2/job/${encodeURIComponent(props.jobId)}/events`).catch(() => null);
+  events.value = res?.data?.records || [];
+}
+onMounted(loadEvents);
+// a running job's output grows : its new results' events read too, at most every 3 seconds
+let eventsTimer = null;
+watch(
+  () => props.output,
+  () => {
+    if (eventsTimer) return;
+    eventsTimer = setTimeout(() => {
+      eventsTimer = null;
+      loadEvents();
+    }, 3000);
+  },
+);
+
+const RESULT_TYPES = new Set(['ok', 'changed', 'failed', 'skipped', 'unreachable']);
+// a host's result line : its status word, then its host (and where it delegates : host -> other)
+const RESULT_LINE = /^(ok|changed|failed|fatal|skipping|unreachable):\s+\[([^\]]+)\]/;
+
+// line index -> the order of its event, for the lines that pair with one that has details
+const resultOf = computed(() => {
+  const map = new Map();
+  if (!events.value.length) return map;
+  // the tasks in order : each its hosts' results and loop items, in order
+  const tasks = [];
+  for (const e of events.value) {
+    if (e.type === 'task') tasks.push({ name: e.task, results: {}, items: {} });
+    else if (tasks.length && e.host && (RESULT_TYPES.has(e.type) || e.type === 'item')) {
+      const bucket = e.type === 'item' ? tasks[tasks.length - 1].items : tasks[tasks.length - 1].results;
+      (bucket[e.host] ||= []).push(e);
+    }
+  }
+  let next = 0;
+  let task = null;
+  let seen = {};
+  // a result printed with its body (ok: [host] => { ... }) : its lines up to the closing brace
+  let body = null;
+  // the error ansible prints before a failed result ([ERROR]: Task failed ..., its origin and
+  // the playbook's lines) : the lines from it to the result, the same failure
+  let preamble = null;
+  lines.value.forEach((line, index) => {
+    const text = plain(line.html);
+    if (body !== null && !line.level && !RESULT_LINE.test(text)) {
+      map.set(index, body);
+      if (text.trimEnd() === '}') body = null;
+      return;
+    }
+    body = null;
+    if (!line.level && task && !RESULT_LINE.test(text)) {
+      if (text.startsWith('[ERROR]:')) preamble = [];
+      if (preamble) preamble.push(index);
+      return;
+    }
+    const before = preamble || [];
+    preamble = null;
+    if (line.level === 3) {
+      // TASK [name] or RUNNING HANDLER [name] : the next task of that name
+      const name = text.replace(/^(TASK|RUNNING HANDLER) \[/, '').replace(/\]\s*\**\s*$/, '');
+      const at = tasks.findIndex((x, i) => i >= next && x.name === name);
+      task = at >= 0 ? tasks[at] : null;
+      if (at >= 0) next = at + 1;
+      seen = {};
+      return;
+    }
+    if (line.level || !task) return;
+    const m = RESULT_LINE.exec(text);
+    if (!m) return;
+    const host = m[2].split(' -> ')[0].trim();
+    const item = /\(item=/.test(text);
+    const key = `${item ? 'i' : 'r'}:${host}`;
+    const k = (seen[key] = (seen[key] ?? -1) + 1);
+    const event = (item ? task.items : task.results)[host]?.[k];
+    if (!event?.detailed) return;
+    map.set(index, event.order);
+    if (m[1] === 'failed' || m[1] === 'fatal') for (const i of before) map.set(i, event.order);
+    if (text.trimEnd().endsWith('{')) body = event.order;
+  });
+  return map;
+});
+
+/**
+ * Opens a host's result's details, when the line clicked is one (and no text is being selected).
+ *
+ * Args:
+ *   index (number): the line's index.
+ */
+function openResult(index) {
+  if (window.getSelection?.()?.toString()) return;
+  const order = resultOf.value.get(index);
+  if (order !== undefined) detailOrder.value = order;
+}
+
+// the result under the mouse : all its lines (its body too) highlighted as one
+const hoverOrder = ref(null);
 
 // the folded sections, by their head line's index
 const folded = ref(new Set());
@@ -681,7 +792,16 @@ function copyLog() {
                 <FaIcon :icon="folded.has(line.index) ? 'caret-right' : 'caret-down'" />
               </button>
             </span>
-            <span class="af-ansible-text"
+            <span
+              class="af-ansible-text"
+              :class="{
+                'af-ansible-result': resultOf.has(line.index),
+                'af-ansible-result-hover': hoverOrder !== null && resultOf.get(line.index) === hoverOrder,
+              }"
+              :title="resultOf.has(line.index) ? t('jobs.taskResult.open') : undefined"
+              @click="openResult(line.index)"
+              @mouseenter="hoverOrder = resultOf.get(line.index) ?? null"
+              @mouseleave="hoverOrder = null"
               ><span v-html="line.html"></span
               ><span v-if="folded.has(line.index)" class="af-ansible-more" @click="toggle(line.index)">{{
                 line.end - line.index - 1
@@ -693,6 +813,7 @@ function copyLog() {
     </div>
   </div>
   <div v-else class="ansible" v-html="output"></div>
+  <AppTaskResult v-if="detailOrder !== null" :jobId="jobId" :order="detailOrder" @close="detailOrder = null" />
   <!-- the job's log file : a section with its header, as the output's own, its lines numbered -->
   <div v-if="logLines.length" class="af-logfile af-node-card">
     <div
@@ -724,6 +845,13 @@ function copyLog() {
   </div>
 </template>
 <style lang="scss">
+/* a host's result line with details : a click opens them (AppTaskResult), as in AWX */
+.af-ansible-result {
+  cursor: pointer;
+}
+.af-ansible-result-hover {
+  background: color-mix(in srgb, var(--bs-primary) 12%, transparent);
+}
 .has-text-weight-bold {
   font-weight: bold;
 }

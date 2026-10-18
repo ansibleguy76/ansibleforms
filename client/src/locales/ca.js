@@ -2832,6 +2832,24 @@ export default {
     copyOutput: 'Copia la sortida',
     downloadOutput: 'Baixa la sortida',
     // a playbook's structured events : the hosts-and-tasks panel (AppJobEvents)
+    // a host's result of a task, its line of the output clicked (AppTaskResult)
+    taskResult: {
+      title: 'Resultat de la tasca',
+      open: 'Mostra aquest resultat',
+      failed: "No s'ha pogut llegir el resultat",
+      details: 'Detalls',
+      host: 'Host',
+      play: 'Play',
+      task: 'Tasca',
+      module: 'Mòdul',
+      item: 'Element',
+      started: 'Inici',
+      duration: 'Durada',
+      rc: 'Codi de retorn',
+      message: 'Missatge',
+      stdout: 'Sortida estàndard',
+      stderr: 'Error estàndard',
+    },
     events: {
       button: 'Hosts i tasques',
       title: 'Hosts i tasques',

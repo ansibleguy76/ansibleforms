@@ -2778,6 +2778,24 @@ export default {
     copyOutput: '出力をコピー',
     downloadOutput: '出力をダウンロード',
     // a playbook's structured events : the hosts-and-tasks panel (AppJobEvents)
+    // a host's result of a task, its line of the output clicked (AppTaskResult)
+    taskResult: {
+      title: 'タスクの結果',
+      open: 'この結果を表示',
+      failed: '結果を読み込めませんでした',
+      details: '詳細',
+      host: 'ホスト',
+      play: 'プレイ',
+      task: 'タスク',
+      module: 'モジュール',
+      item: 'アイテム',
+      started: '開始',
+      duration: '所要時間',
+      rc: '戻りコード',
+      message: 'メッセージ',
+      stdout: '標準出力',
+      stderr: '標準エラー',
+    },
     events: {
       button: 'ホストとタスク',
       title: 'ホストとタスク',
