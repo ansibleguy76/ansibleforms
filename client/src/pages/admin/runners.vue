@@ -71,10 +71,48 @@ function describe(r) {
 /**
  * After an approval or a rejection : both tables read again.
  */
+// reviewing them one after the other (the notice clicked) : once one is decided the next opens,
+// until none is left or the dialog is closed
+const inTurn = ref(false);
+
+/**
+ * Opens the review of the first runner waiting, the others to follow once it is decided.
+ */
+function reviewAll() {
+  if (!pending.value.length) return;
+  inTurn.value = true;
+  reviewing.value = pending.value[0];
+}
+
+/**
+ * Opens the review of one runner (its name clicked), alone.
+ *
+ * Args:
+ *   r (object): the runner.
+ */
+function reviewOne(r) {
+  inTurn.value = false;
+  reviewing.value = r;
+}
+
+/**
+ * Closes the review : the ones left wait.
+ */
+function closeReview() {
+  reviewing.value = null;
+  inTurn.value = false;
+}
+
+/**
+ * After an approval or a rejection : both tables read again, and the next one waiting reviewed
+ * when they are reviewed in turn.
+ */
 async function decided() {
   reviewing.value = null;
   await loadPending();
   list.value?.loadItems();
+  if (inTurn.value && pending.value.length) reviewing.value = pending.value[0];
+  else inTurn.value = false;
 }
 useLiveEvent('runners', loadPending);
 
@@ -120,7 +158,14 @@ onMounted(async () => {
       <template #aboveCard>
         <!-- the runners waiting for approval : an orange notice above the runners, as the review
              dialog's, each one a link that opens its review -->
-        <div v-if="pending.length" class="af-runner-requests">
+        <div
+          v-if="pending.length"
+          class="af-runner-requests"
+          role="button"
+          tabindex="0"
+          @click="reviewAll()"
+          @keydown.enter="reviewAll()"
+        >
           <!-- the hourglass at the left, as tall as the notice ; the title and the runners beside it -->
           <FaIcon icon="hourglass-half" class="af-runner-requests-icon" />
           <div>
@@ -129,7 +174,7 @@ onMounted(async () => {
             </div>
             <ul class="af-runner-requests-list">
               <li v-for="r in pending" :key="r.id">
-                <a href="#" class="fw-semibold" @click.prevent="reviewing = r">{{ r.name }}</a>
+                <a href="#" class="fw-semibold" @click.prevent.stop="reviewOne(r)">{{ r.name }}</a>
                 <span class="text-body-secondary small ms-2">{{ describe(r) }}</span>
               </li>
             </ul>
@@ -137,12 +182,20 @@ onMounted(async () => {
         </div>
       </template>
     </AppAdminMulti>
-    <AppRunnerApproval v-if="reviewing" :runner="reviewing" @close="reviewing = null" @decided="decided" />
+    <AppRunnerApproval
+      v-if="reviewing"
+      :key="reviewing.id"
+      :runner="reviewing"
+      @close="closeReview()"
+      @decided="decided"
+    />
   </AppSettingsPage>
 </template>
 <style scoped lang="scss">
 /* the runners waiting for approval : the review dialog's orange notice (AppRunnerApproval) */
 .af-runner-requests {
+  /* the whole notice opens the reviews, one after the other */
+  cursor: pointer;
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -152,6 +205,9 @@ onMounted(async () => {
   border: 1px solid #c24e05;
   border-radius: 0.375rem;
   background: color-mix(in srgb, #ef6009 8%, transparent);
+}
+.af-runner-requests:hover {
+  background: color-mix(in srgb, #ef6009 14%, transparent);
 }
 [data-bs-theme='dark'] .af-runner-requests {
   border-color: #ff8a3d;
