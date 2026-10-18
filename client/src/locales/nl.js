@@ -1470,10 +1470,10 @@ export default {
         'Deze instellingen gelden voor een RTE in uitgaande of inkomende modus. Een RTE in databasemodus leest ze uit zijn eigen variabelen.',
       maxJobs: 'Max. gelijktijdige jobs',
       maxJobsHelp:
-        'Hoeveel playbooks deze RTE tegelijk uitvoert; 0 betekent geen limiet. Leeg: de standaard, {default}.',
+        'Hoeveel playbooks deze RTE tegelijk uitvoert; 0 betekent geen limiet. Leeg: de eigen {env} van de RTE, anders {default}.',
       cacheMb: 'Cache voor jobbestanden',
       cacheMbHelp:
-        'Hoeveel van de door de app gestuurde jobbestanden deze RTE bewaart, in MB; 0 bewaart niets. Leeg: de standaard, {default} MB.',
+        'Hoeveel van de door de app gestuurde jobbestanden deze RTE bewaart, in MB; 0 bewaart niets. Leeg: de eigen {env} van de RTE, anders {default}.',
       filesMode: 'Jobbestanden',
       filesModeHelp:
         'Overdracht: de app stuurt de bestanden met de job mee. Lokaal: de RTE draait vanuit zijn eigen gekoppelde mappen.',
@@ -1482,10 +1482,10 @@ export default {
       files_local: 'Lokaal',
       drainSeconds: 'Wachttijd bij stoppen',
       drainSecondsHelp:
-        'Hoe lang een stoppende RTE wacht op lopende playbooks, in seconden; houd dit onder de stoptime-out van het platform. Leeg: de standaard, {default}.',
+        'Hoe lang een stoppende RTE wacht op lopende playbooks, in seconden; houd dit onder de stoptime-out van het platform. Leeg: de eigen {env} van de RTE, anders {default}.',
       settingDefault: 'standaard: {value}',
-      setOnRte: 'Ingesteld op de RTE met {env}: {value}',
-      cacheUsed: '{mb} MB in gebruik',
+      usesRte: 'Leeg: de RTE gebruikt zijn eigen {env}, {value}.',
+      overridesRte: 'Overschrijft {env} op de RTE ({value}).',
       socketConnected: 'Verbonden',
       socketDisconnected: 'Niet verbonden',
       socketDisconnectedHint:
@@ -2075,6 +2075,8 @@ export default {
         'Standaard (onveilig): opgeslagen wachtwoorden zijn leesbaar met de openbare standaardsleutel',
       secretState_random: 'Niet ingesteld: bij elke start een willekeurige, dus elke sessie eindigt bij een herstart',
       envRteOnly: 'Gelezen door een RTE uit zijn eigen omgeving: stel het in waar de RTE draait.',
+      envRunnerPage:
+        'Een waarde op de runnerpagina van een RTE in socketmodus gaat voor: Verbindingen > Runners > de runner > RTE.',
       envRelocates: 'Bestanden op de oude locatie worden niet verplaatst.',
       envRestartPending: 'Opgeslagen. Een herstart is nodig voor: {names}',
       mcpDescription:

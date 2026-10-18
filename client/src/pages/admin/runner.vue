@@ -71,7 +71,7 @@ const EDITED = [
 // how an RTE talks to the app (RTE_MODE) : the socket modes first, database deprecated last
 const RTE_MODES = ['outbound', 'inbound', 'database'];
 // a socket-mode RTE's settings (server rte/socket/settings.js) : its key in what the RTE says,
-// its column, the variable that sets it on the RTE (then read only here), its default ; the
+// its column, the variable on the RTE it overrides (used when empty), its default ; the
 // numbers with their unit after the field
 const RTE_NUMBERS = [
   { key: 'maxJobs', column: 'rte_max_jobs', env: 'RTE_MAX_JOBS', def: 10, icon: 'layer-group', unit: '' },
@@ -347,7 +347,7 @@ const tabFields = computed(() => {
                   ...RTE_NUMBERS.map((f) => [
                     f.column,
                     t(`settings.runners.${f.key}`),
-                    t(`settings.runners.${f.key}Help`, { default: f.def }),
+                    t(`settings.runners.${f.key}Help`, { default: f.def, env: f.env }),
                   ]),
                   ['rte_files', t('settings.runners.filesMode'), t('settings.runners.filesModeHelp')],
                 ]
@@ -416,17 +416,28 @@ const rteModeText = computed(() => t(`settings.runners.rteMode_${runner.value?.r
 const socketRte = computed(
   () => runner.value?.type === 'rte' && ['outbound', 'inbound'].includes(runner.value?.rte_mode),
 );
-// a setting a variable on the RTE sets : read only here, with the value the RTE uses
-const setOnRte = (f) => !!runner.value?.socket?.env?.includes(f.key);
-const rteValue = (f) => runner.value?.socket?.settings?.[f.key];
-// what the RTE says now beside a setting : the cache it uses
-function rteNow(f) {
-  const sock = runner.value?.socket;
-  if (!sock?.connected) return '';
-  if (f.key === 'cacheMb' && sock.cacheUsedMb !== undefined)
-    return t('settings.runners.cacheUsed', { mb: sock.cacheUsedMb });
-  return '';
+// the value a variable on the RTE gives a setting : what an empty field uses, and what a value
+// here overrides (the runner page wins)
+const rteEnv = (f) => runner.value?.socket?.env?.[f.key];
+/**
+ * Says beside a setting what the RTE's own variable does : used while the field is empty,
+ * overridden once it holds a value ; nothing when the RTE has no such variable.
+ *
+ * Args:
+ *   f (object): the setting (RTE_NUMBERS, RTE_FILES).
+ *
+ * Returns:
+ *   string: the words, or empty.
+ */
+function rteEnvNote(f) {
+  const v = rteEnv(f);
+  if (v === undefined || v === null) return '';
+  const value = f.key === 'files' ? t(`settings.runners.files_${v}`) : String(v);
+  const empty = String(edit.value?.[f.column] ?? '').trim() === '';
+  return t(empty ? 'settings.runners.usesRte' : 'settings.runners.overridesRte', { env: f.env, value });
 }
+// the note under a setting : what the RTE's own variable does
+const notesOf = (f) => rteEnvNote(f);
 // Job files : the default, transfer or local
 const filesOptions = computed(() => [
   { value: '', label: t('settings.runners.files_default') },
@@ -805,7 +816,8 @@ onMounted(async () => {
               />
             </template>
             <!-- RTE : how it talks to the app and its connection ; in a socket mode its settings,
-                 sent to it over its socket, those a variable on it sets read only -->
+                 sent to it over its socket : they win over the same variables on the RTE, which
+                 fill the empty ones -->
             <template v-if="runner.type === 'rte' && tabShown('rte')">
               <template v-if="searching && searchHead('rte')">
                 <hr v-if="!searchHead('rte').first" class="mt-4 mb-0 af-search-line" />
@@ -830,48 +842,31 @@ onMounted(async () => {
                 <div v-for="f in RTE_NUMBERS" :key="f.column" v-show="fieldShown(f.column)">
                   <BsInput
                     class="af-runner-number"
-                    :class="{ 'mb-0': setOnRte(f) || rteNow(f) }"
+                    :class="{ 'mb-0': notesOf(f) }"
                     v-model="edit[f.column]"
                     type="number"
                     :icon="f.icon"
                     :isFloating="false"
                     :suffix="f.unit"
-                    :disabled="setOnRte(f)"
-                    :placeholder="t('settings.runners.settingDefault', { value: f.def })"
-                    :help="t(`settings.runners.${f.key}Help`, { default: f.def })"
+                    :placeholder="t('settings.runners.settingDefault', { value: rteEnv(f) ?? f.def })"
+                    :help="t(`settings.runners.${f.key}Help`, { default: f.def, env: f.env })"
                     :label="t(`settings.runners.${f.key}`)"
                   />
-                  <p v-if="setOnRte(f) || rteNow(f)" class="form-text mt-1 mb-3">
-                    <template v-if="setOnRte(f)">
-                      <FaIcon icon="lock" class="me-1" />{{
-                        t('settings.runners.setOnRte', { env: f.env, value: rteValue(f) })
-                      }}
-                    </template>
-                    <template v-if="setOnRte(f) && rteNow(f)"> · </template>
-                    <template v-if="rteNow(f)">{{ rteNow(f) }}</template>
-                  </p>
+                  <p v-if="notesOf(f)" class="form-text mt-1 mb-3">{{ notesOf(f) }}</p>
                 </div>
                 <div v-show="fieldShown('rte_files')">
                   <BsInput
                     class="af-runner-number"
-                    :class="{ 'mb-0': setOnRte(RTE_FILES) }"
+                    :class="{ 'mb-0': notesOf(RTE_FILES) }"
                     v-model="edit.rte_files"
                     type="select"
                     icon="folder-tree"
                     :isFloating="false"
                     :values="filesOptions"
-                    :disabled="setOnRte(RTE_FILES)"
                     :help="t('settings.runners.filesModeHelp')"
                     :label="t('settings.runners.filesMode')"
                   />
-                  <p v-if="setOnRte(RTE_FILES)" class="form-text mt-1 mb-3">
-                    <FaIcon icon="lock" class="me-1" />{{
-                      t('settings.runners.setOnRte', {
-                        env: RTE_FILES.env,
-                        value: t(`settings.runners.files_${rteValue(RTE_FILES) || 'transfer'}`),
-                      })
-                    }}
-                  </p>
+                  <p v-if="notesOf(RTE_FILES)" class="form-text mt-1 mb-3">{{ notesOf(RTE_FILES) }}</p>
                 </div>
               </template>
               <!-- database mode : the settings are its own variables -->

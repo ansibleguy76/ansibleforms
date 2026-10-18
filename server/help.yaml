@@ -470,8 +470,8 @@
       them in a private folder of its own, removed when it ends. It needs no shared disk and
       no access to the repositories. `local`: the RTE runs from its own folders, as a
       database-mode RTE - mount the playbooks (`ANSIBLE_PATH`) and repositories (`REPO_PATH`).
-      It can be set on the runner page instead (Connections > Runners > the runner > RTE) ; set
-      here, it wins there.
+      It can be set on the runner page (Connections > Runners > the runner > RTE) ; a value
+      there wins over this one.
   - name: RTE_FILES_MAX_MB
     version: 7.3.0
     type: number
@@ -512,8 +512,8 @@
     description: |
       On an RTE with `RTE_FILES=transfer`: how much the job files it keeps (`RTE_CACHE_PATH`)
       may take, in MB. The ones used longest ago go first ; 0 keeps none, so the app sends a
-      job's files with every job. It can be set on the runner page instead (Connections >
-      Runners > the runner > RTE) ; set here, it wins there.
+      job's files with every job. It can be set on the runner page (Connections >
+      Runners > the runner > RTE) ; a value there wins over this variable.
   - name: RTE_TOKEN
     version: 7.0.0
     type: string
@@ -557,7 +557,7 @@
       so in its output, and is handed over as soon as a playbook ends (see RTE_QUEUE_MINUTES).
       Size it to the RTE's cpu and memory: every playbook is an ansible-playbook process with its
       forks. Run more RTE replicas to run more at once. On a socket-mode RTE it can be set on its
-      runner page instead (Connections > Runners > the runner > RTE) ; set here, it wins there.
+      runner page (Connections > Runners > the runner > RTE) ; a value there wins over this one.
   - name: RTE_DRAIN_SECONDS
     version: 7.0.0
     type: number
@@ -570,7 +570,7 @@
       waits this long for the running playbooks to end ; those still running then end as
       abandoned. Keep it below what the platform waits before it kills the container:
       Kubernetes' terminationGracePeriodSeconds (30 by default), docker stop's --time (10). On a
-      socket-mode RTE it can be set on its runner page instead ; set here, it wins there.
+      socket-mode RTE it can be set on its runner page ; a value there wins over this one.
   - name: RTE_QUEUE_MINUTES
     version: 7.0.0
     type: number

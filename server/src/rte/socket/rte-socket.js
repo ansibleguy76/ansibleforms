@@ -47,7 +47,8 @@ import {
 
 // ─── settings ─────────────────────────────────────────────────────────────────
 
-// what the app sent from the runner's page (a settings message) ; a variable set on this RTE wins
+// what the app sent from the runner's page (a settings message) : it wins over the same variable
+// set on this RTE, which is the fallback of an empty field
 let fromRunner = {};
 // the settings in effect : { maxJobs, cacheMb, files, drainSeconds } (rte/socket/settings.js)
 const settings = () => effectiveSettings(settingsOfEnv(), fromRunner);
@@ -158,17 +159,16 @@ function capacity() {
 }
 
 /**
- * This RTE's settings, in its hello and health : the runner page shows them, those set by a
- * variable here read-only.
+ * This RTE's settings, in its hello and health : the runner page shows them, and beside an empty
+ * field the value a variable here gives it.
  *
  * Returns:
- *   object: { settings : those in effect, env : the keys a variable sets, cacheUsedMb }.
+ *   object: { settings : those in effect, env : the values its variables set, by key }.
  */
 function settingsReport() {
   return {
     settings: settings(),
-    env: Object.keys(settingsOfEnv()),
-    cacheUsedMb: cache ? Math.round((cache.usedBytes() / 1048576) * 10) / 10 : 0,
+    env: settingsOfEnv(),
   };
 }
 
@@ -192,9 +192,6 @@ function onSettings(msg) {
   stopWithin((now.drainSeconds + 8) * 1000);
   const changed = RTE_SETTINGS.filter((s) => before[s.key] !== now[s.key]).map((s) => `${s.key} ${now[s.key]}`);
   if (changed.length) logger.notice(`RTE '${rteName()}': settings from its runner: ${changed.join(", ")}`);
-  for (const key of Object.keys(settingsOfEnv())) {
-    if (next[key] !== undefined && next[key] !== now[key]) logger.notice(`RTE '${rteName()}': ${key} is set on this RTE (${now[key]}), the runner's ${next[key]} is not used`);
-  }
   sendHealth();
 }
 

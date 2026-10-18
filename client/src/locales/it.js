@@ -1471,10 +1471,10 @@ export default {
         'Queste impostazioni valgono per un RTE in modalità in uscita o in entrata. Un RTE in modalità database le legge dalle proprie variabili.',
       maxJobs: 'Job simultanei max',
       maxJobsHelp:
-        'Quanti playbook esegue insieme questo RTE; 0 significa nessun limite. Vuoto: il valore predefinito, {default}.',
+        "Quanti playbook esegue insieme questo RTE; 0 significa nessun limite. Vuoto: la variabile {env} dell'RTE, altrimenti {default}.",
       cacheMb: 'Cache dei file',
       cacheMbHelp:
-        "Quanta parte dei file dei job inviati dall'app conserva questo RTE, in MB; 0 non ne conserva. Vuoto: il valore predefinito, {default} MB.",
+        "Quanta parte dei file dei job inviati dall'app conserva questo RTE, in MB; 0 non ne conserva. Vuoto: la variabile {env} dell'RTE, altrimenti {default}.",
       filesMode: 'File dei job',
       filesModeHelp: "Trasferimento: l'app invia i file con il job. Locale: l'RTE usa le proprie cartelle montate.",
       files_default: 'Predefinito (trasferimento)',
@@ -1482,10 +1482,10 @@ export default {
       files_local: 'Locale',
       drainSeconds: 'Attesa allo stop',
       drainSecondsHelp:
-        'Quanto un RTE che si ferma attende i playbook in esecuzione, in secondi; tenerlo sotto il timeout di arresto della piattaforma. Vuoto: il valore predefinito, {default}.',
+        "Quanto un RTE che si ferma attende i playbook in esecuzione, in secondi; tenerlo sotto il timeout di arresto della piattaforma. Vuoto: la variabile {env} dell'RTE, altrimenti {default}.",
       settingDefault: 'predefinito: {value}',
-      setOnRte: "Impostato sull'RTE con {env}: {value}",
-      cacheUsed: '{mb} MB in uso ora',
+      usesRte: "Vuoto: l'RTE usa la propria {env}, {value}.",
+      overridesRte: "Sostituisce {env} impostata sull'RTE ({value}).",
       socketConnected: 'Connesso',
       socketDisconnected: 'Non connesso',
       socketDisconnectedHint:
@@ -2073,6 +2073,8 @@ export default {
         'Predefinito (non sicuro): le password salvate si possono leggere con la chiave pubblica predefinita',
       secretState_random: 'Non impostato: uno casuale a ogni avvio, quindi ogni sessione termina al riavvio',
       envRteOnly: "Letto da un RTE dal proprio ambiente: impostalo dove gira l'RTE.",
+      envRunnerPage:
+        'Un valore nella pagina del runner di un RTE in modalità socket ha la precedenza: Connessioni > Runner > il runner > RTE.',
       envRelocates: 'I file già presenti nella posizione precedente non vengono spostati.',
       envRestartPending: 'Salvato. È necessario un riavvio per: {names}',
       mcpDescription:

@@ -1905,10 +1905,10 @@ export default {
         "Aquests paràmetres s'apliquen a un RTE en mode sortint o entrant. Un RTE en mode base de dades els llegeix de les seves pròpies variables.",
       maxJobs: 'Màxim de treballs simultanis',
       maxJobsHelp:
-        'Quants playbooks executa alhora aquest RTE; 0 vol dir sense límit. Buit: el valor per defecte, {default}.',
+        "Quants playbooks executa alhora aquest RTE; 0 vol dir sense límit. Buit: la variable {env} de l'RTE, si no {default}.",
       cacheMb: 'Memòria cau de fitxers',
       cacheMbHelp:
-        "Quant dels fitxers de treball que l'app ha enviat conserva aquest RTE, en MB; 0 no en conserva cap. Buit: el valor per defecte, {default} MB.",
+        "Quant dels fitxers de treball que l'app ha enviat conserva aquest RTE, en MB; 0 no en conserva cap. Buit: la variable {env} de l'RTE, si no {default}.",
       filesMode: 'Fitxers de treball',
       filesModeHelp:
         "Transferència: l'app envia els fitxers amb el treball. Local: l'RTE s'executa des de les seves carpetes muntades.",
@@ -1917,10 +1917,10 @@ export default {
       files_local: 'Local',
       drainSeconds: "Temps d'espera en aturar",
       drainSecondsHelp:
-        "Quant espera un RTE que s'atura els seus playbooks en execució, en segons; mantingueu-lo per sota del temps d'aturada de la plataforma. Buit: el valor per defecte, {default}.",
+        "Quant espera un RTE que s'atura els seus playbooks en execució, en segons; mantingueu-lo per sota del temps d'aturada de la plataforma. Buit: la variable {env} de l'RTE, si no {default}.",
       settingDefault: 'per defecte: {value}',
-      setOnRte: "Definit a l'RTE amb {env}: {value}",
-      cacheUsed: '{mb} MB en ús ara',
+      usesRte: "Buit: l'RTE fa servir la seva {env}, {value}.",
+      overridesRte: "Substitueix {env} definida a l'RTE ({value}).",
       socketConnected: 'Connectat',
       socketDisconnected: 'No connectat',
       socketDisconnectedHint:
@@ -2089,6 +2089,8 @@ export default {
       secretState_random:
         "Sense definir: un d'aleatori a cada inici, de manera que totes les sessions acaben en reiniciar",
       envRteOnly: "El llegeix un RTE del seu propi entorn: defineix-lo on s'executa el RTE.",
+      envRunnerPage:
+        "Un valor a la pàgina de runner d'un RTE en mode socket té prioritat: Connexions > Runners > el runner > RTE.",
       envRelocates: 'Els fitxers que ja hi ha a la ubicació antiga no es mouen.',
       envRestartPending: 'Desat. Cal un reinici per a: {names}',
       mcpDescription:

@@ -1889,10 +1889,11 @@ export default {
       rteSettingsSocketOnly:
         'Te ustawienia dotyczą RTE w trybie wychodzącym lub przychodzącym. RTE w trybie bazy danych odczytuje je z własnych zmiennych.',
       maxJobs: 'Maks. równoczesnych zadań',
-      maxJobsHelp: 'Ile playbooków to RTE uruchamia naraz; 0 oznacza brak limitu. Puste: wartość domyślna, {default}.',
+      maxJobsHelp:
+        'Ile playbooków to RTE uruchamia naraz; 0 oznacza brak limitu. Puste: własna zmienna {env} RTE, w przeciwnym razie {default}.',
       cacheMb: 'Pamięć podręczna plików',
       cacheMbHelp:
-        'Ile plików zadań wysłanych przez aplikację to RTE przechowuje, w MB; 0 nie przechowuje żadnych. Puste: wartość domyślna, {default} MB.',
+        'Ile plików zadań wysłanych przez aplikację to RTE przechowuje, w MB; 0 nie przechowuje żadnych. Puste: własna zmienna {env} RTE, w przeciwnym razie {default}.',
       filesMode: 'Pliki zadań',
       filesModeHelp:
         'Transfer: aplikacja wysyła pliki razem z zadaniem. Lokalnie: RTE działa z własnych zamontowanych folderów.',
@@ -1901,10 +1902,10 @@ export default {
       files_local: 'Lokalnie',
       drainSeconds: 'Czas oczekiwania przy zatrzymaniu',
       drainSecondsHelp:
-        'Jak długo zatrzymywane RTE czeka na uruchomione playbooki, w sekundach; utrzymuj poniżej limitu zatrzymania platformy. Puste: wartość domyślna, {default}.',
+        'Jak długo zatrzymywane RTE czeka na uruchomione playbooki, w sekundach; utrzymuj poniżej limitu zatrzymania platformy. Puste: własna zmienna {env} RTE, w przeciwnym razie {default}.',
       settingDefault: 'domyślnie: {value}',
-      setOnRte: 'Ustawione na RTE przez {env}: {value}',
-      cacheUsed: '{mb} MB w użyciu',
+      usesRte: 'Puste: RTE używa własnej {env}, {value}.',
+      overridesRte: 'Zastępuje {env} ustawioną na RTE ({value}).',
       socketConnected: 'Połączony',
       socketDisconnected: 'Niepołączony',
       socketDisconnectedHint:
@@ -2066,6 +2067,8 @@ export default {
       secretState_default: 'Domyślny (niebezpieczny): zapisane hasła można odczytać publicznym kluczem domyślnym',
       secretState_random: 'Nieustawiony: przy każdym starcie losowy, więc każda sesja kończy się przy restarcie',
       envRteOnly: 'Odczytywane przez RTE z jego własnego środowiska: ustaw je tam, gdzie działa RTE.',
+      envRunnerPage:
+        'Wartość na stronie runnera RTE w trybie gniazda ma pierwszeństwo: Połączenia > Runnery > runner > RTE.',
       envRelocates: 'Pliki zapisane już w starej lokalizacji nie są przenoszone.',
       envRestartPending: 'Zapisano. Ponowne uruchomienie jest wymagane dla: {names}',
       mcpDescription:

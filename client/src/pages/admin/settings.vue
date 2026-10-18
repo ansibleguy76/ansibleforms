@@ -687,6 +687,7 @@ onMounted(async () => {
                   <!-- read by an RTE from its own environment : this page cannot reach it -->
                   <div v-if="envEditable(e) && e.editable === 'rte'" class="form-text env-restart">
                     {{ t('settings.settingsPage.envRteOnly') }}
+                    <template v-if="e.runnerPage"> {{ t('settings.settingsPage.envRunnerPage') }}</template>
                   </div>
                   <div v-if="envEditable(e) && e.editable === 'restart'" class="form-text env-restart">
                     {{ t('settings.settingsPage.envRestartRequired') }}

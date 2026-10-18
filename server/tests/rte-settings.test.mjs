@@ -33,11 +33,11 @@ describe("the settings", () => {
     assert.equal(parseSetting(byKey("files"), "shared"), undefined);
   });
 
-  test("the variable on the RTE wins, then the runner's, then the default", () => {
-    const fromEnv = settingsOfEnv({ RTE_MAX_JOBS: "3", RTE_FILES: "nonsense" });
+  test("the runner's value wins, then the variable on the RTE, then the default", () => {
+    const fromEnv = settingsOfEnv({ RTE_MAX_JOBS: "3", RTE_DRAIN_SECONDS: "60", RTE_FILES: "nonsense" });
     const fromRunner = settingsOfRunner({ rte_max_jobs: 8, rte_files: "local", rte_cache_mb: 50 });
-    assert.deepEqual(fromEnv, { maxJobs: 3 });
-    assert.deepEqual(effectiveSettings(fromEnv, fromRunner), { maxJobs: 3, cacheMb: 50, files: "local", drainSeconds: 25 });
+    assert.deepEqual(fromEnv, { maxJobs: 3, drainSeconds: 60 });
+    assert.deepEqual(effectiveSettings(fromEnv, fromRunner), { maxJobs: 8, cacheMb: 50, files: "local", drainSeconds: 60 });
     assert.deepEqual(effectiveSettings({}, {}), { maxJobs: 10, cacheMb: 1024, files: "transfer", drainSeconds: 25 });
   });
 
@@ -81,12 +81,11 @@ describe("the RTE applying its runner's settings", async () => {
     onSettings({ settings: {} });
   });
 
-  test("what the app sends is used, a variable on the RTE still wins, and empty is the default", () => {
+  test("what the app sends wins over a variable on the RTE, which fills an empty field", () => {
+    process.env.RTE_MAX_JOBS = "7";
     onSettings({ settings: { maxJobs: 2, files: "local", drainSeconds: 40 } });
     assert.deepEqual(settings(), { maxJobs: 2, cacheMb: 1024, files: "local", drainSeconds: 40 });
-    process.env.RTE_MAX_JOBS = "7";
-    assert.equal(settings().maxJobs, 7);
-    // a value the app should never send is ignored, never a crash
+    // a value the app should never send is ignored, never a crash : the variable, else the default
     onSettings({ settings: { maxJobs: "lots", cacheMb: -3 } });
     assert.deepEqual(settings(), { maxJobs: 7, cacheMb: 1024, files: "transfer", drainSeconds: 25 });
   });

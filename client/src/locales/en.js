@@ -1453,10 +1453,11 @@ export default {
       rteSettingsSocketOnly:
         'These settings apply to an RTE in outbound or inbound mode. A database-mode RTE reads them from its own variables.',
       maxJobs: 'Max concurrent jobs',
-      maxJobsHelp: 'How many playbooks this RTE runs at once; 0 sets no limit. Empty: the default, {default}.',
+      maxJobsHelp:
+        "How many playbooks this RTE runs at once; 0 sets no limit. Empty: the RTE's own {env}, else {default}.",
       cacheMb: 'Job files cache',
       cacheMbHelp:
-        'How much of the job files the app sent this RTE keeps, in MB; 0 keeps none. Empty: the default, {default} MB.',
+        "How much of the job files the app sent this RTE keeps, in MB; 0 keeps none. Empty: the RTE's own {env}, else {default}.",
       filesMode: 'Job files',
       filesModeHelp:
         "Transfer: the app sends a job's files with the job. Local: the RTE runs from its own mounted folders.",
@@ -1465,10 +1466,10 @@ export default {
       files_local: 'Local',
       drainSeconds: 'Drain time on stop',
       drainSecondsHelp:
-        "How long a stopping RTE waits for its running playbooks, in seconds; keep it below the platform's stop timeout. Empty: the default, {default}.",
+        "How long a stopping RTE waits for its running playbooks, in seconds; keep it below the platform's stop timeout. Empty: the RTE's own {env}, else {default}.",
       settingDefault: 'default: {value}',
-      setOnRte: 'Set on the RTE with {env}: {value}',
-      cacheUsed: '{mb} MB used now',
+      usesRte: 'Empty: the RTE uses its own {env}, {value}.',
+      overridesRte: 'Overrides {env} set on the RTE ({value}).',
       socketConnected: 'Connected',
       socketDisconnected: 'Not connected',
       socketDisconnectedHint:
@@ -2049,6 +2050,8 @@ export default {
       secretState_default: 'Default (unsafe): stored passwords can be read with the public default key',
       secretState_random: 'Not set: a random one each start, so every session ends at a restart',
       envRteOnly: 'Read by an RTE from its own environment: set it where the RTE runs.',
+      envRunnerPage:
+        "A value on a socket-mode RTE's runner page wins over it: Connections > Runners > the runner > RTE.",
       envRelocates: 'Files already stored at the old location are not moved.',
       envRestartPending: 'Saved. A restart is needed for: {names}',
       mcpDescription:

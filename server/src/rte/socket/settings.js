@@ -5,8 +5,9 @@
 /*  playbooks it runs at once, the size of its job files cache,   */
 /*  where it gets a job's files and how long a stop waits. The    */
 /*  app sends them over the socket (a settings message) once it   */
-/*  welcomes the RTE and whenever they change. A variable set on  */
-/*  the RTE itself wins : the runner page shows it, read-only.    */
+/*  welcomes the RTE and whenever they change. They win over the  */
+/*  same variables set on the RTE, which are its fallback when a  */
+/*  field of the runner page is empty.                            */
 /*                                                                */
 /*  Shared by the app (runners/rteHub.js, models/runner.model.js) */
 /*  and the RTE (rte/socket/rte-socket.js).                       */
@@ -68,8 +69,8 @@ export function settingsOfRunner(runner) {
 }
 
 /**
- * The settings a set of variables sets (the RTE's environment) : those the runner page cannot
- * change.
+ * The settings a set of variables sets (the RTE's environment) : its own values, used where the
+ * runner page leaves a field empty.
  *
  * Args:
  *   env (object): the variables (process.env).
@@ -87,7 +88,7 @@ export function settingsOfEnv(env = process.env) {
 }
 
 /**
- * The settings in effect : the variable, else the runner's, else the default.
+ * The settings in effect : the runner's, else the variable on the RTE, else the default.
  *
  * Args:
  *   fromEnv (object): settingsOfEnv.
@@ -98,7 +99,7 @@ export function settingsOfEnv(env = process.env) {
  */
 export function effectiveSettings(fromEnv = {}, fromRunner = {}) {
   const out = {};
-  for (const s of RTE_SETTINGS) out[s.key] = fromEnv[s.key] ?? fromRunner[s.key] ?? s.def;
+  for (const s of RTE_SETTINGS) out[s.key] = fromRunner[s.key] ?? fromEnv[s.key] ?? s.def;
   return out;
 }
 

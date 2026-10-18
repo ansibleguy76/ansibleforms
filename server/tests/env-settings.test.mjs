@@ -117,6 +117,20 @@ describe("editing environment variables", () => {
         assert.equal(Env.classify(name), "live", name);
       }
       for (const name of ["RTE_MAX_JOBS", "RTE_TOKEN", "RTE_URL"]) assert.equal(Env.classify(name), "rte", name);
+      // the socket-mode RTE's variables : read by the RTE only, never by the app
+      for (const name of ["APP_URL", "APP_TLS_VERIFY", "RTE_MODE", "RTE_NAME", "RTE_JOIN_TOKEN", "RTE_FILES", "RTE_SPOOL_PATH", "RTE_CACHE_PATH"]) {
+        assert.equal(Env.classify(name), "rte", name);
+      }
+      // the ones its runner page sets as well
+      assert.deepEqual([...Env.RUNNER_PAGE].sort(), ["RTE_CACHE_MB", "RTE_DRAIN_SECONDS", "RTE_FILES", "RTE_MAX_JOBS"]);
+      // the largest folder sent to an RTE : at once, the same fallback as at a start
+      const savedMax = appConfig.rteFilesMaxMb;
+      assert.equal(Env.classify("RTE_FILES_MAX_MB"), "live");
+      assert.equal(Env.applyLive("RTE_FILES_MAX_MB", "64"), true);
+      assert.equal(appConfig.rteFilesMaxMb, 64);
+      assert.equal(Env.applyLive("RTE_FILES_MAX_MB", "nonsense"), true);
+      assert.equal(appConfig.rteFilesMaxMb, 512);
+      appConfig.rteFilesMaxMb = savedMax;
       // which process this is : never from this page
       assert.equal(Env.classify("AF_ROLE"), "refused");
       // how the process itself starts : still at the next start

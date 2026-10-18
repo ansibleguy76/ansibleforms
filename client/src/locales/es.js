@@ -1476,10 +1476,10 @@ export default {
         'Estos ajustes se aplican a un RTE en modo saliente o entrante. Un RTE en modo base de datos los lee de sus propias variables.',
       maxJobs: 'Máximo de trabajos simultáneos',
       maxJobsHelp:
-        'Cuántos playbooks ejecuta a la vez este RTE; 0 significa sin límite. Vacío: el valor por defecto, {default}.',
+        'Cuántos playbooks ejecuta a la vez este RTE; 0 significa sin límite. Vacío: la variable {env} del RTE, si no {default}.',
       cacheMb: 'Caché de archivos',
       cacheMbHelp:
-        'Cuánto de los archivos de trabajo que la app envió conserva este RTE, en MB; 0 no conserva ninguno. Vacío: el valor por defecto, {default} MB.',
+        'Cuánto de los archivos de trabajo que la app envió conserva este RTE, en MB; 0 no conserva ninguno. Vacío: la variable {env} del RTE, si no {default}.',
       filesMode: 'Archivos de trabajo',
       filesModeHelp:
         'Transferencia: la app envía los archivos con el trabajo. Local: el RTE se ejecuta desde sus propias carpetas montadas.',
@@ -1488,10 +1488,10 @@ export default {
       files_local: 'Local',
       drainSeconds: 'Tiempo de espera al parar',
       drainSecondsHelp:
-        'Cuánto espera un RTE que se detiene a sus playbooks en ejecución, en segundos; manténgalo por debajo del tiempo de parada de la plataforma. Vacío: el valor por defecto, {default}.',
+        'Cuánto espera un RTE que se detiene a sus playbooks en ejecución, en segundos; manténgalo por debajo del tiempo de parada de la plataforma. Vacío: la variable {env} del RTE, si no {default}.',
       settingDefault: 'por defecto: {value}',
-      setOnRte: 'Definido en el RTE con {env}: {value}',
-      cacheUsed: '{mb} MB en uso ahora',
+      usesRte: 'Vacío: el RTE usa su propia {env}, {value}.',
+      overridesRte: 'Sustituye a {env} definida en el RTE ({value}).',
       socketConnected: 'Conectado',
       socketDisconnected: 'No conectado',
       socketDisconnectedHint:
@@ -2085,6 +2085,8 @@ export default {
       secretState_random:
         'Sin definir: uno aleatorio en cada arranque, así que todas las sesiones terminan al reiniciar',
       envRteOnly: 'Lo lee un RTE de su propio entorno: defínelo donde se ejecuta el RTE.',
+      envRunnerPage:
+        'Un valor en la página de runner de un RTE en modo socket tiene prioridad: Conexiones > Runners > el runner > RTE.',
       envRelocates: 'Los archivos ya guardados en la ubicación anterior no se mueven.',
       envRestartPending: 'Guardado. Se necesita un reinicio para: {names}',
       mcpDescription:

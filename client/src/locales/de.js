@@ -1478,10 +1478,10 @@ export default {
         'Diese Einstellungen gelten für ein RTE im Modus ausgehend oder eingehend. Ein RTE im Datenbankmodus liest sie aus seinen eigenen Variablen.',
       maxJobs: 'Max. gleichzeitige Jobs',
       maxJobsHelp:
-        'Wie viele Playbooks dieses RTE gleichzeitig ausführt; 0 bedeutet kein Limit. Leer: der Standardwert, {default}.',
+        'Wie viele Playbooks dieses RTE gleichzeitig ausführt; 0 bedeutet kein Limit. Leer: die eigene {env} des RTE, sonst {default}.',
       cacheMb: 'Cache für Jobdateien',
       cacheMbHelp:
-        'Wie viel der von der App gesendeten Jobdateien dieses RTE behält, in MB; 0 behält keine. Leer: der Standardwert, {default} MB.',
+        'Wie viel der von der App gesendeten Jobdateien dieses RTE behält, in MB; 0 behält keine. Leer: die eigene {env} des RTE, sonst {default}.',
       filesMode: 'Jobdateien',
       filesModeHelp:
         'Übertragung: Die App sendet die Dateien mit dem Job. Lokal: Das RTE arbeitet mit seinen eigenen eingebundenen Ordnern.',
@@ -1490,10 +1490,10 @@ export default {
       files_local: 'Lokal',
       drainSeconds: 'Wartezeit beim Stoppen',
       drainSecondsHelp:
-        'Wie lange ein stoppendes RTE auf laufende Playbooks wartet, in Sekunden; unter dem Stopp-Timeout der Plattform halten. Leer: der Standardwert, {default}.',
+        'Wie lange ein stoppendes RTE auf laufende Playbooks wartet, in Sekunden; unter dem Stopp-Timeout der Plattform halten. Leer: die eigene {env} des RTE, sonst {default}.',
       settingDefault: 'Standard: {value}',
-      setOnRte: 'Auf dem RTE gesetzt mit {env}: {value}',
-      cacheUsed: '{mb} MB belegt',
+      usesRte: 'Leer: Das RTE nutzt seine eigene {env}, {value}.',
+      overridesRte: 'Überschreibt {env} auf dem RTE ({value}).',
       socketConnected: 'Verbunden',
       socketDisconnected: 'Nicht verbunden',
       socketDisconnectedHint:
@@ -2092,6 +2092,8 @@ export default {
         'Standard (unsicher): gespeicherte Passwörter sind mit dem öffentlichen Standardschlüssel lesbar',
       secretState_random: 'Nicht gesetzt: bei jedem Start ein zufälliger, daher endet jede Sitzung bei einem Neustart',
       envRteOnly: 'Wird von einem RTE aus seiner eigenen Umgebung gelesen: dort setzen, wo das RTE läuft.',
+      envRunnerPage:
+        'Ein Wert auf der Runner-Seite eines RTE im Socket-Modus hat Vorrang: Verbindungen > Runner > der Runner > RTE.',
       envRelocates: 'Bereits am alten Ort gespeicherte Dateien werden nicht verschoben.',
       envRestartPending: 'Gespeichert. Ein Neustart ist nötig für: {names}',
       mcpDescription:

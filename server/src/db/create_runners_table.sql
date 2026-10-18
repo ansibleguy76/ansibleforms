@@ -31,7 +31,7 @@ CREATE TABLE `runners` (
   `rte_cert_sha256` varchar(64) DEFAULT NULL,
   -- a socket-mode RTE's settings, sent to it over its socket (rte/socket/settings.js) : the
   -- playbooks it runs at once, its job files cache in MB, transfer or local files, and how long
-  -- a stop waits ; empty : the default, and a variable set on the RTE wins
+  -- a stop waits ; they win over the same variables on the RTE, used when one is empty
   `rte_max_jobs` int(11) DEFAULT NULL,
   `rte_cache_mb` int(11) DEFAULT NULL,
   `rte_files` varchar(10) DEFAULT NULL,
