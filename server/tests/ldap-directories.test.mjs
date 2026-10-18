@@ -18,6 +18,13 @@ describe("qualify", () => {
   test("prefixes any other directory's names", () => {
     assert.equal(qualify({ name: "corp" }, "jane"), "corp/jane");
   });
+  test("a '/' in a default directory's name never reads as another directory's member", () => {
+    // the default directory's group 'corp/Admins' is not the group Admins of corp
+    assert.equal(qualify({ name: DEFAULT_NAME }, "corp/Admins"), "corp%2FAdmins");
+    assert.notEqual(qualify({ name: DEFAULT_NAME }, "corp/jane"), qualify({ name: "corp" }, "jane"));
+    // another directory's own '/' stays behind its prefix
+    assert.equal(qualify({ name: "corp" }, "a/b"), "corp/a/b");
+  });
 });
 
 describe("route", () => {
