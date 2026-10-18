@@ -14,7 +14,7 @@ import axios from 'axios';
 import State from '@/lib/State';
 import Navigate from '@/lib/Navigate';
 import TokenStorage from '@/lib/TokenStorage';
-import { formsPath, formFromPath } from '@/lib/formsPath';
+import { formsPath, formFromPath, formPath, slugOf } from '@/lib/formsPath';
 import YAML from 'yaml';
 import { useFollowOutput } from '@/composables/useFollowOutput';
 import Time from '@/lib/Time';
@@ -897,8 +897,27 @@ async function reloadForm(reset = true) {
   if (reset) {
     resetResult();
   }
-  await loadForm();
+  await loadFormSafely();
   key.value++;
+}
+
+/**
+ * Loads the form of the address, its failure shown instead of thrown. Form.load throws on
+ * every non-200 (403 for a form the roles no longer grant, 404, 500 for a config error) : the
+ * page then shows its explanation and a toast, rather than an unhandled rejection that left
+ * it on the loader. The previous failure is forgotten first, so a form that loads after one
+ * that did not is drawn.
+ */
+async function loadFormSafely() {
+  formNotFound.value = false;
+  loadError.value = '';
+  try {
+    await loadForm();
+  } catch (err) {
+    formNotFound.value = true;
+    loadError.value = Helpers.parseAxiosResponseError(err, t('form.formNotFoundMsg'));
+    toast.error(loadError.value);
+  }
 }
 
 // ─── the forms menu (the Forms page's categories, in the left column) ─────────────────────
@@ -1035,7 +1054,16 @@ function doAction(a, jobid) {
   }
   if (action == 'load') {
     laterInThisForm(() => {
-      Navigate.toPath(router, '/form', { form: form, __previous_jobid__: jobid }, true);
+      // the form's own address (/form/<slug>), the job that ran passed on : a field named
+      // __previous_jobid__ in that form gets it from the query (AppForm.vue). Another form's
+      // address reloads through the watch on the slug ; this same form is loaded again here.
+      const sameForm = slugOf(form) === route.params.slug;
+      router
+        .push({ path: formPath(form), query: { __previous_jobid__: jobid } })
+        .then(() => {
+          if (sameForm) reloadForm();
+        })
+        .catch(() => {});
     }, wait);
   }
   if (action == 'reload') {
@@ -1804,13 +1832,7 @@ onMounted(async () => {
   // error) and nothing caught it, so currentForm stayed null and formNotFound stayed
   // false - the one branch that renders an explanation was never reached. The user got a
   // spinner, no toast, and only an unhandled rejection in devtools.
-  try {
-    await loadForm();
-  } catch (err) {
-    formNotFound.value = true;
-    loadError.value = Helpers.parseAxiosResponseError(err, t('form.formNotFoundMsg'));
-    toast.error(loadError.value);
-  }
+  await loadFormSafely();
   resetResult();
 });
 
@@ -1819,6 +1841,9 @@ watch(
   () => route.params.slug,
   async (newForm, oldForm) => {
     if (newForm && newForm !== oldForm) {
+      // the previous form is not drawn while this one loads (nor stays when this one fails)
+      currentForm.value = null;
+      formLoaded.value = false;
       await reloadForm();
     }
   },
