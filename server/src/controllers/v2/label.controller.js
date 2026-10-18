@@ -5,13 +5,13 @@ import Label from "../../models/label.model.js";
 import RestResult from "../../models/restResult.model.v2.js";
 import Errors from "../../lib/errors.js";
 import i18n from "../../lib/i18n.js";
+import { withEnds } from "../../models/listOrder.js";
 
 const find = async (req, res) => {
   try {
     if (req.query.name) return res.json(RestResult.single(await Label.findByName(req.query.name)));
     // in their order, each saying whether it is first or last (its row's Move up, Move down)
-    const all = await Label.findAll();
-    return res.json(RestResult.list(all.map((l, i) => ({ ...l, isFirst: i === 0, isLast: i === all.length - 1 }))));
+    return res.json(RestResult.list(withEnds(await Label.findAll())));
   } catch (err) {
     Errors.ReturnError(res, err);
   }
