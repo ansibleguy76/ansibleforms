@@ -36,7 +36,7 @@ curl -fsSL https://ansibleforms.com/install | sh
 
 It installs a controller (the app, its database and an RTE) or a Runner, on Docker, Podman or Kubernetes.
 
-Run again, it finds an AnsibleForms already installed, 7.2 included, and upgrades it.
+Run again, it finds an AnsibleForms already installed and upgrades it.
 
 The [installation guide](https://ansibleforms.com/installation) covers every option. The setups it uses also deploy by hand:
 
