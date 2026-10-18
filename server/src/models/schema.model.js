@@ -2272,6 +2272,9 @@ async function checkAll({ patch = true } = {}) {
 
   // patch the tables : a backup first when they have something to change, and what was applied
   // recorded after
+  // whether the backup before the upgrade failed : the patches did not run at all then, and the
+  // caller (init) names that cause, and the UPGRADE_BACKUP=0 escape, rather than what fails next
+  let backupFailed = false;
   if (patch) {
     try {
       const done = await backupBeforeUpgrade();
@@ -2281,6 +2284,7 @@ async function checkAll({ patch = true } = {}) {
       messages.push(why);
       failed.push(why);
       logger.error(why);
+      backupFailed = true;
     }
     if (failed.length === 0) await checkPromise(patchAll(messages, success, failed), messages, success, failed);
     if (failed.length === 0) await checkPromise(recordMigrations().then(() => null), messages, success, failed);
@@ -2288,7 +2292,7 @@ async function checkAll({ patch = true } = {}) {
 
   if (failed.length > 0) {
     // some of the patches failed // throw now
-    resultobj = { message: messages, data: { success: success, failed: failed } };
+    resultobj = { message: messages, data: { success: success, failed: failed, backupFailed } };
     const err = new Error("Patching failed");
     err.result = resultobj;
     throw err;
