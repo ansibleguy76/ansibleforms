@@ -477,3 +477,25 @@ describe("the credentials of the secret stores and runners get the type of their
     expect(await retypeConnectionCredentials()).toBe(null);
   });
 });
+
+describe("each move writes a credential and the record naming it in one transaction", () => {
+  // a crash between the two used to leave a credential nothing named, and the next start
+  // made a second one (-2) beside it
+  const writes = () => queries.filter((q) => /^(INSERT|UPDATE)/.test(q.sql));
+
+  test("a mail channel, an SSO provider, an LDAP directory, a runner, a secret store", async () => {
+    answers = [{ match: /FROM AnsibleForms\.`notification_channels`/, rows: [{ id: 1, name: "relay", server: "smtp", port: 25, secure: 0, credential: null }] }];
+    await moveMailServersToCredentials();
+    answers = [{ match: /FROM AnsibleForms\.`oauth2_providers`/, rows: [{ id: 3, name: "e", provider: "azuread", client_id: "c", credential: null }] }];
+    await moveSsoClientsToCredentials();
+    answers = [{ match: /FROM AnsibleForms\.`ldap`/, rows: [{ id: 2, name: "eu", server: "ldap.eu", credential: null }] }];
+    await moveLdapServersToCredentials();
+    answers = [{ match: /FROM AnsibleForms\.`runners`/, rows: [{ id: 1, name: "s", type: "semaphore", token: "t" }] }];
+    await moveRunnerSecretsToCredentials();
+    answers = [{ match: /FROM AnsibleForms\.`secret_stores`/, rows: [{ id: 1, name: "v", type: "vault", address: "https://v", token: "t", credential: null }] }];
+    await moveConnectionsToCredentials();
+    expect(transactions).toBe(5);
+    expect(writes().length).toBe(10);
+    expect(writes().every((q) => q.tx)).toBe(true);
+  });
+});
