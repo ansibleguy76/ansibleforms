@@ -538,9 +538,16 @@ export async function fnLs(dirPath, options = {}) {
  * @returns {Promise<Array>} - Array of objects containing all group matches
  */
 const fnParseHtmlWithRegex = async function(url, regexPattern, regexFlags = 'g', credential = null) {
+  // The most matches one call returns (a pattern matching at every position
+  // of a large page would otherwise build millions of objects)
+  const PARSE_HTML_MAX_MATCHES = 10000;
   logger.debug(`[fnParseHtmlWithRegex] Fetching HTML from: ${url}`);
   logger.debug(`[fnParseHtmlWithRegex] Using regex pattern: ${regexPattern}`);
-  
+
+  // Outbound host allow/deny check (REST_ALLOWED_HOSTS / REST_DENIED_HOSTS),
+  // like fnRestAdvanced : no-op when neither env var is set
+  await assertUrlAllowed(url);
+
   try {
     // Dynamically import axios
     const { default: axios } = await import('axios');
@@ -567,32 +574,47 @@ const fnParseHtmlWithRegex = async function(url, regexPattern, regexFlags = 'g',
       headers: headers
     });
     
-    logger.debug(`[fnParseHtmlWithRegex] Successfully fetched ${response.data.length} characters`);
-    
-    // Create regex object
-    const regex = new RegExp(regexPattern, regexFlags);
+    // A JSON response arrives parsed : the regex runs over its text form
+    const html = (typeof response.data === 'string') ? response.data : JSON.stringify(response.data ?? '');
+    logger.debug(`[fnParseHtmlWithRegex] Successfully fetched ${html.length} characters`);
+
+    // -----------------------------------------------------------------------
+    // Run the regex
+    // -----------------------------------------------------------------------
+    // A hand-written exec() loop never ends on a zero-length match with the
+    // g flag (lastIndex does not move) and repeats the first match forever
+    // without it. matchAll advances past empty matches by itself ; it needs
+    // the g flag, so it is added when missing and, without it, only the
+    // first match is kept, as before. The number of matches is capped so a
+    // pattern matching everywhere cannot exhaust memory.
+    const flags = String(regexFlags ?? '');
+    const wantsAll = flags.includes('g');
+    const regex = new RegExp(regexPattern, wantsAll ? flags : flags + 'g');
     const matches = [];
-    let match;
-    
-    // Extract all matches with groups
-    while ((match = regex.exec(response.data)) !== null) {
+
+    for (const match of html.matchAll(regex)) {
       const matchResult = {
         fullMatch: match[0],
         groups: [],
         namedGroups: match.groups || {}
       };
-      
+
       // Add numbered groups (excluding index 0 which is the full match)
       for (let i = 1; i < match.length; i++) {
         matchResult.groups.push(match[i]);
       }
-      
+
       matches.push(matchResult);
-      
-      // Prevent infinite loops on global regex without 'g' flag
-      if (!regexFlags.includes('g')) break;
+
+      // Without the g flag : the first match only
+      if (!wantsAll) break;
+      // Cap : stop collecting, keep what was found
+      if (matches.length >= PARSE_HTML_MAX_MATCHES) {
+        logger.warning(`[fnParseHtmlWithRegex] Stopped after ${PARSE_HTML_MAX_MATCHES} matches`);
+        break;
+      }
     }
-    
+
     logger.debug(`[fnParseHtmlWithRegex] Found ${matches.length} matches`);
     return matches;
     
