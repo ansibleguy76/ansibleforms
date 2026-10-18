@@ -918,6 +918,8 @@ export default {
       deleteConfirm: 'Segur que vols suprimir',
       isCreated: "s'ha creat",
       isUpdated: "s'ha actualitzat",
+      // the grey note after a record's type or name that is the default (defaultNote)
+      defaultNote: 'predeterminat',
       isDeleted: "s'ha suprimit",
       bulkDeleteConfirm: 'Voleu eliminar {count} element(s)?',
       bulkDeleteConfirmSkip:

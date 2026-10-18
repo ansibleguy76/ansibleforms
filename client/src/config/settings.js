@@ -146,6 +146,22 @@ function pillDate(value) {
 }
 
 /**
+ * The grey "(default)" note after the type or the name of the record that is the default : a
+ * runner the default of its type, the mail channel the app sends with, the SSO provider its type
+ * signs in with, the default LDAP directory. A note rather than a column of one tick.
+ *
+ * Args:
+ *   t (function): the translation function.
+ *   on (boolean): whether the record is the default.
+ *
+ * Returns:
+ *   string: the note's HTML (static markup and an escaped locale string), "" when not.
+ */
+export function defaultNote(t, on) {
+  return on ? ` <span class="af-default-note">(${esc(t('settings.common.defaultNote'))})</span>` : '';
+}
+
+/**
  * A repository's push as a pill : its last push failed red ; else changes saved here and not
  * pushed yet, pending changes in the designer's push orange (something waits) ; else its last
  * push worked, success green ; never pushed (or a repository the app does not write to) an en
@@ -1189,10 +1205,12 @@ export default function getSettings(t) {
         // not in the dialog ; a new one is it when its type has none, another is chosen with Use for
         // sign-in
         {
+          // shown as "(default)" after its type (defaultNote), not a column
           key: 'enable',
           label: t('settings.oauth2.active'),
           type: 'checkbox',
           noInput: true,
+          noTable: true,
         },
         { key: 'name', label: t('settings.fields.name'), required: true, icon: 'heading' },
         {
@@ -1210,7 +1228,7 @@ export default function getSettings(t) {
             hint: t(`settings.oauth2.typeHint_${value}`),
           })),
           initial: (r) => r?.provider || 'azuread',
-          render: (v) => esc(t(`settings.oauth2.type_${SSO_TYPES.includes(v) ? v : 'oidc'}`)),
+          render: (v, r) => esc(t(`settings.oauth2.type_${SSO_TYPES.includes(v) ? v : 'oidc'}`)) + defaultNote(t, !!r?.enable),
         },
         { key: 'description', label: t('settings.fields.description'), required: false, icon: 'info-circle' },
         {
@@ -2543,8 +2561,10 @@ export default function getSettings(t) {
           label: t('settings.runners.isDefault'),
           help: t('settings.runners.isDefaultHelp'),
           type: 'checkbox',
-          // turned on on its page (the one before stops being it), not in the dialog : a column only
+          // turned on on its page (the one before stops being it) ; shown as "(default)" after its
+          // type in the list (defaultNote), not a column
           noInput: true,
+          noTable: true,
         },
         {
           // taking jobs or not : a yes / no column ; a new runner is on, the row menu and its page
@@ -2627,7 +2647,7 @@ export default function getSettings(t) {
           label: t('settings.runners.type'),
           noInput: true,
           filterable: true,
-          render: (_, r) => escapeHtml(t(`settings.runners.kind_${runnerKind(r)}`)),
+          render: (_, r) => escapeHtml(t(`settings.runners.kind_${runnerKind(r)}`)) + defaultNote(t, !!r?.is_default),
           sortValue: (r) => runnerKind(r),
         },
         {
@@ -2797,12 +2817,12 @@ export default function getSettings(t) {
       fields: [
         { key: 'id', hidden: true, noInput: true, noTable: true },
         {
-          // a mail channel the app sends its mail with : a yes / no column ; the first column, before Enabled
+          // a mail channel the app sends its mail with : "(default)" after its type (defaultNote)
           key: 'is_active',
           label: t('settings.notificationChannels.active'),
           type: 'checkbox',
           noInput: true,
-          hideBelow: 900,
+          noTable: true,
         },
         {
           // sending or not : a yes / no column ; a new channel is on, the row menu turns it on or off
@@ -2825,7 +2845,8 @@ export default function getSettings(t) {
             hint: t(`settings.notificationChannels.typeHint_${value}`),
           })),
           initial: (r) => r?.type || 'mail',
-          render: (v) => esc(t(`settings.notificationChannels.type_${CHANNEL_TYPES.includes(v) ? v : 'mail'}`)),
+          render: (v, r) =>
+            esc(t(`settings.notificationChannels.type_${CHANNEL_TYPES.includes(v) ? v : 'mail'}`)) + defaultNote(t, !!r?.is_active),
         },
         {
           // what it is for : a column after the type
@@ -3855,7 +3876,8 @@ function ldapDirectories(t, ldap) {
   // the columns : on or off (first, as every list's Enabled), the name, the description ; never sorted,
   // so the list is always in the lookup order
   const column = {
-    name: { sortable: false, filterable: true },
+    // the default directory (named default) : "(default)" after its name (defaultNote)
+    name: { sortable: false, filterable: true, render: (v) => esc(v ?? '') + defaultNote(t, v === 'default') },
     description: { sortable: false, filterable: true },
     // a ✓ as every list's Enabled, first as theirs
     enable: { sortable: false, label: t('settings.ldap.enabled'), type: 'checkbox' },

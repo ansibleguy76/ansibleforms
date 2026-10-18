@@ -898,6 +898,8 @@ export default {
       deleteConfirm: '确定要删除',
       isCreated: '已创建',
       isUpdated: '已更新',
+      // the grey note after a record's type or name that is the default (defaultNote)
+      defaultNote: '默认',
       isDeleted: '已删除',
       bulkDeleteConfirm: '删除 {count} 项？',
       bulkDeleteConfirmSkip: '删除 {count} 项？所选的 {skipped} 项无法删除，将保持不变。',

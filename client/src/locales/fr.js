@@ -922,6 +922,8 @@ export default {
       deleteConfirm: 'Etes-vous sur de vouloir supprimer',
       isCreated: 'est cree',
       isUpdated: 'est mis a jour',
+      // the grey note after a record's type or name that is the default (defaultNote)
+      defaultNote: 'par défaut',
       isDeleted: 'est supprime',
       bulkDeleteConfirm: 'Supprimer {count} élément(s) ?',
       bulkDeleteConfirmSkip:

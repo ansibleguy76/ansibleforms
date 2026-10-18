@@ -912,6 +912,8 @@ export default {
       deleteConfirm: '削除してもよろしいですか:',
       isCreated: 'を作成しました',
       isUpdated: 'を更新しました',
+      // the grey note after a record's type or name that is the default (defaultNote)
+      defaultNote: '既定',
       isDeleted: 'を削除しました',
       bulkDeleteConfirm: '{count} 件を削除しますか？',
       bulkDeleteConfirmSkip: '{count} 件を削除しますか？選択した {skipped} 件は削除できないため、そのまま残ります。',

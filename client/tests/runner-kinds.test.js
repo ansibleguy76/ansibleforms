@@ -53,9 +53,9 @@ describe('a runner kind and what is stored', () => {
     expect(credential.createDefaults({ kind: 'ascender' })).toEqual({ credential_type: 'ascender' });
   });
 
-  it('the list shows default, enabled, name, type and description ; the rest is on its page', () => {
+  it('the list shows enabled, name, type (with its default note) and description ; the rest is on its page', () => {
     expect(runners.defaultPicker).toBeUndefined();
     const columns = runners.fields.filter((f) => !f.noTable && !f.hidden).map((f) => f.key);
-    expect(columns).toEqual(['is_default', 'enabled', 'name', 'type', 'description']);
+    expect(columns).toEqual(['enabled', 'name', 'type', 'description']);
   });
 });
