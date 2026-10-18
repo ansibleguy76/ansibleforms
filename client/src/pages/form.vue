@@ -1507,7 +1507,7 @@ async function abortJob(id) {
       abortTriggered.value = true;
     }
   } catch (err) {
-    toast.error(Helpers.parseAxiosResponseError(err, 'Failed to abort job'));
+    toast.error(Helpers.parseAxiosResponseError(err, t('form.failedToAbort')));
   }
 }
 // download a job
@@ -1615,7 +1615,7 @@ async function launchForm(postdata) {
     toast.info(t('designer.previewNotRun'));
     return;
   }
-  message.value = 'Connecting with job api ';
+  message.value = t('form.connecting');
   status.value = '';
   // the previous job is done with : until the server answers with the new id, the abort
   // button must not point at it (an abort clicked during the launch went to the old job)

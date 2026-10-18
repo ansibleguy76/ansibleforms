@@ -2983,6 +2983,9 @@ export default {
     wizardSummaryPending: 'non completato',
     wizardMissingSubform: 'Il passo della procedura guidata fa riferimento a un sottomodulo sconosciuto',
     failedToGetJob: 'Impossibile leggere il job',
+    failedToAbort: 'Impossibile interrompere il job',
+    connecting: 'Connessione all’API dei job',
+    editTitle: 'Modifica {title}',
   },
   logs: {
     title: 'Log del server',

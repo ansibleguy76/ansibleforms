@@ -2975,6 +2975,9 @@ export default {
     wizardSummaryPending: 'nieukończony',
     wizardMissingSubform: 'Krok kreatora odwołuje się do nieznanego podformularza',
     failedToGetJob: 'Nie udało się odczytać zadania',
+    failedToAbort: 'Nie udało się przerwać zadania',
+    connecting: 'Łączenie z API zadań',
+    editTitle: 'Edytuj {title}',
   },
   logs: {
     title: 'Dziennik serwera',

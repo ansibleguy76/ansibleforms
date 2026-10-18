@@ -2953,6 +2953,9 @@ export default {
     wizardSummaryPending: 'not completed',
     wizardMissingSubform: 'Wizard step references unknown subform',
     failedToGetJob: 'Failed to read the job',
+    failedToAbort: 'Failed to abort the job',
+    connecting: 'Connecting to the job API',
+    editTitle: 'Edit {title}',
   },
   logs: {
     title: 'Server log',

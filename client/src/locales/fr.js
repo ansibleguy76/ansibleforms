@@ -3000,6 +3000,9 @@ export default {
     wizardSummaryPending: 'non terminé',
     wizardMissingSubform: "L'étape de l'assistant fait référence à un sous-formulaire inconnu",
     failedToGetJob: 'Échec de la lecture du job',
+    failedToAbort: "Impossible d'annuler la tâche",
+    connecting: 'Connexion à l’API des tâches',
+    editTitle: 'Modifier {title}',
   },
   logs: {
     title: 'Journal du serveur',

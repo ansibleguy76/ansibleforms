@@ -3005,6 +3005,9 @@ export default {
     wizardSummaryPending: 'nicht abgeschlossen',
     wizardMissingSubform: 'Wizard-Schritt verweist auf unbekanntes Unterformular',
     failedToGetJob: 'Job konnte nicht gelesen werden',
+    failedToAbort: 'Der Job konnte nicht abgebrochen werden',
+    connecting: 'Verbindung zur Job-API wird hergestellt',
+    editTitle: '{title} bearbeiten',
   },
   logs: {
     title: 'Serverprotokoll',

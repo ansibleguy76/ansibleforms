@@ -2991,6 +2991,9 @@ export default {
     wizardSummaryPending: 'não concluído',
     wizardMissingSubform: 'O passo do assistente referencia um subformulário desconhecido',
     failedToGetJob: 'Falha ao ler a tarefa',
+    failedToAbort: 'Não foi possível abortar o trabalho',
+    connecting: 'A ligar à API de trabalhos',
+    editTitle: 'Editar {title}',
   },
   logs: {
     title: 'Registo do servidor',

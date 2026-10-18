@@ -1506,7 +1506,7 @@ function openYamlSubformEditor(field) {
   }
 
   // Resolve placeholders in titleEdit so $(__parent__.fieldname) works
-  const subtitle = Helpers.resolveTitlePlaceholders(field.titleEdit || `Edit ${title}`, form.value);
+  const subtitle = Helpers.resolveTitlePlaceholders(field.titleEdit || t('form.editTitle', { title }), form.value);
 
   editStack.push({
     title,

@@ -2997,6 +2997,9 @@ export default {
     wizardSummaryPending: 'no completat',
     wizardMissingSubform: "El pas de l'assistent fa referència a un subformulari desconegut",
     failedToGetJob: "No s'ha pogut llegir la tasca",
+    failedToAbort: "No s'ha pogut avortar la tasca",
+    connecting: 'Connectant amb l’API de tasques',
+    editTitle: 'Edita {title}',
   },
   logs: {
     title: 'Registre del servidor',

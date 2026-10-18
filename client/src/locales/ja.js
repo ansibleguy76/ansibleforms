@@ -2945,6 +2945,9 @@ export default {
     wizardSummaryPending: '未完了',
     wizardMissingSubform: 'ウィザードのステップが不明なサブフォームを参照しています',
     failedToGetJob: 'ジョブの読み込みに失敗しました',
+    failedToAbort: 'ジョブを中止できませんでした',
+    connecting: 'ジョブ API に接続しています',
+    editTitle: '{title} を編集',
   },
   logs: {
     title: 'サーバーログ',

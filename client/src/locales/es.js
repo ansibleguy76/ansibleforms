@@ -2993,6 +2993,9 @@ export default {
     wizardSummaryPending: 'no completado',
     wizardMissingSubform: 'El paso del asistente hace referencia a un subformulario desconocido',
     failedToGetJob: 'Error al leer el trabajo',
+    failedToAbort: 'No se pudo abortar el trabajo',
+    connecting: 'Conectando con la API de trabajos',
+    editTitle: 'Editar {title}',
   },
   logs: {
     title: 'Registro del servidor',

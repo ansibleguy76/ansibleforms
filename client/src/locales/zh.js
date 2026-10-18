@@ -2864,6 +2864,9 @@ export default {
     wizardSummaryPending: '未完成',
     wizardMissingSubform: '向导步骤引用了未知的子表单',
     failedToGetJob: '读取作业失败',
+    failedToAbort: '无法中止作业',
+    connecting: '正在连接作业 API',
+    editTitle: '编辑 {title}',
   },
   logs: {
     title: '服务器日志',

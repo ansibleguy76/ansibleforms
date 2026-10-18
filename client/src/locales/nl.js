@@ -2984,6 +2984,9 @@ export default {
     wizardSummaryPending: 'niet voltooid',
     wizardMissingSubform: 'Wizard-stap verwijst naar onbekend subformulier',
     failedToGetJob: 'Job lezen mislukt',
+    failedToAbort: 'De job kon niet worden afgebroken',
+    connecting: 'Verbinden met de job-API',
+    editTitle: '{title} bewerken',
   },
   logs: {
     title: 'Serverlog',
