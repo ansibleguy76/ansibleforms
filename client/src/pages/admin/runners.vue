@@ -117,17 +117,19 @@ onMounted(async () => {
         <!-- the runners waiting for approval : an orange notice above the runners, as the review
              dialog's, each one a link that opens its review -->
         <div v-if="pending.length" class="af-runner-requests">
-          <div class="fw-bold af-runner-requests-title">
-            <FaIcon icon="hourglass-half" class="me-2" />{{
-              t('settings.runners.waitingNotice', { count: pending.length }, pending.length)
-            }}
+          <!-- the hourglass at the left, as tall as the notice ; the title and the runners beside it -->
+          <FaIcon icon="hourglass-half" class="af-runner-requests-icon" />
+          <div>
+            <div class="fw-bold af-runner-requests-title">
+              {{ t('settings.runners.waitingNotice', { count: pending.length }, pending.length) }}
+            </div>
+            <ul class="af-runner-requests-list">
+              <li v-for="r in pending" :key="r.id">
+                <a href="#" class="fw-semibold" @click.prevent="reviewing = r">{{ r.name }}</a>
+                <span class="text-body-secondary small ms-2">{{ describe(r) }}</span>
+              </li>
+            </ul>
           </div>
-          <ul class="af-runner-requests-list">
-            <li v-for="r in pending" :key="r.id">
-              <a href="#" class="fw-semibold" @click.prevent="reviewing = r">{{ r.name }}</a>
-              <span class="text-body-secondary small ms-2">{{ describe(r) }}</span>
-            </li>
-          </ul>
         </div>
       </template>
     </AppAdminMulti>
@@ -137,6 +139,9 @@ onMounted(async () => {
 <style scoped lang="scss">
 /* the runners waiting for approval : the review dialog's orange notice (AppRunnerApproval) */
 .af-runner-requests {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
   margin-bottom: 1rem;
   padding: 0.75rem 1rem;
   /* a dark orange border all around */
@@ -147,6 +152,15 @@ onMounted(async () => {
 [data-bs-theme='dark'] .af-runner-requests {
   border-color: #ff8a3d;
 }
+/* the hourglass : left of every line, in the title's orange */
+.af-runner-requests-icon {
+  flex: none;
+  font-size: 1.75rem;
+  color: #c24e05;
+}
+[data-bs-theme='dark'] .af-runner-requests-icon {
+  color: #ff8a3d;
+}
 /* its title in a darker orange, readable on the light one */
 .af-runner-requests-title {
   color: #c24e05;
@@ -156,7 +170,7 @@ onMounted(async () => {
 }
 .af-runner-requests-list {
   margin: 0.375rem 0 0;
-  padding-left: 1.75rem;
+  padding-left: 1.25rem;
   li + li {
     margin-top: 0.125rem;
   }
