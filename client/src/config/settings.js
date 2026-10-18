@@ -2442,11 +2442,12 @@ export default function getSettings(t) {
       description: t('settings.runners.description'),
       icon: 'rocket',
       selectable: false,
-      // the dialog in steps : what the runner is, its kind, how the app logs in and where (its
-      // credential's server), a project under it
+      // the dialog in steps : what the runner is, its kind, an RTE's mode (a step of its own, for
+      // an RTE only), how the app logs in and where (its credential's server), a project under it
       steps: [
         { key: 'runner', label: t('settings.runners.stepRunner') },
         { key: 'type', label: t('settings.runners.stepType') },
+        { key: 'mode', label: t('settings.runners.stepMode'), when: (i) => (i.kind || runnerKind(i)) === 'rte' },
         { key: 'credentials', label: t('settings.runners.stepAuth') },
       ],
       // the kind chosen is stored as a type and a flavour : an RTE, or an awx runner that is an
@@ -2503,7 +2504,8 @@ export default function getSettings(t) {
           icon: 'toggle-on',
           color: 'edit',
           dividerBefore: true,
-          shownWhen: (m) => !m.enabled && !Number(m.pending),
+          // not one of the config seed : it declares enabled itself
+          shownWhen: (m) => !m.enabled && !Number(m.pending) && !m.managed,
           update: () => ({ enabled: 1 }),
         },
         {
@@ -2512,7 +2514,7 @@ export default function getSettings(t) {
           icon: 'toggle-off',
           color: 'edit',
           dividerBefore: true,
-          shownWhen: (m) => !!m.enabled && !Number(m.pending),
+          shownWhen: (m) => !!m.enabled && !Number(m.pending) && !m.managed,
           update: () => ({ enabled: 0 }),
         },
         {
@@ -2585,7 +2587,7 @@ export default function getSettings(t) {
           // an RTE's mode (RTE_MODE on the RTE) : outbound, inbound, or database (deprecated) ;
           // a new one outbound, one from before 7.3 database
           key: 'rte_mode',
-          step: 'type',
+          step: 'mode',
           label: t('settings.runners.rteMode'),
           help: t('settings.runners.rteModeHelp'),
           type: 'radio',
@@ -2594,7 +2596,8 @@ export default function getSettings(t) {
             label: t(`settings.runners.rteMode_${value}`),
             hint: t(`settings.runners.rteMode_${value}Hint`),
           })),
-          initial: (r) => (r?.id ? r.rte_mode || 'database' : 'outbound'),
+          // a new one outbound ; one from before 7.3, without a mode, database
+          initial: (r) => (r && r.id ? r.rte_mode || 'database' : 'outbound'),
           dependency: 'kind',
           dependencyValues: ['rte'],
           noTable: true,

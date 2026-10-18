@@ -1857,13 +1857,13 @@ export default {
       rteModeHelp: "Com parla el RTE amb l'aplicació: RTE_MODE al RTE.",
       rteMode_outbound: 'Sortint',
       rteMode_outboundHint:
-        "El RTE es connecta a l'aplicació i manté un WebSocket obert: res no hi arriba des de fora, sense credencials de base de dades",
+        'L\'RTE truca a l\'aplicació: res no hi arriba des de fora',
       rteMode_inbound: 'Entrant',
       rteMode_inboundHint:
-        "L'aplicació es connecta al RTE a l'adreça de la seva credencial per un WebSocket: sense credencials de base de dades",
+        'L\'aplicació truca a l\'RTE a l\'adreça de la seva credencial',
       rteMode_database: 'Base de dades (obsolet)',
       rteMode_databaseHint:
-        "El RTE llegeix i escriu ell mateix a la base de dades de l'aplicació: s'elimina a la 8.0.0",
+        'L\'RTE fa servir la base de dades de l\'aplicació: s\'elimina a la 8.0.0',
       socket: 'Connexió',
       socketConnected: 'Connectat',
       socketDisconnected: 'No connectat',
@@ -1878,6 +1878,7 @@ export default {
       stepConnection: 'Connexió',
       stepRunner: 'Runner',
       stepType: 'Tipus',
+      stepMode: 'Mode',
       kind_rte: 'RTE',
       kind_awx: 'AWX',
       kind_aap: 'Ansible Automation Platform',
@@ -1885,7 +1886,7 @@ export default {
       tokenHelp_rte: "El RTE_TOKEN de l'RTE.",
       tokenHelp_api: "Un token d'API.",
       type_rte: 'RTE',
-      type_rteHint: 'Entorn d\'execució: executa playbooks d\'Ansible i workflows, en un contenidor o com a servei',
+      type_rteHint: 'Entorn d\'execució, per a playbooks d\'Ansible i workflows',
       type_awx: 'AWX',
       type_awxHint: 'AWX, per a formularis de plantilla',
       type_aap: 'AAP',
