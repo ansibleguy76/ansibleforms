@@ -53,6 +53,80 @@ export function slugOf(name) {
 }
 
 /**
+ * A category's or a form's name as it read in an address up to 7.2.
+ *
+ * Args:
+ *   name (string): the name ('Straße').
+ *
+ * Returns:
+ *   string: the 7.2 slug : lower case, accents dropped, every run of characters other than a
+ *     Latin letter or a digit a dash, none at either end ('stra-e') ; empty for a name without
+ *     any of them ('日本語').
+ *
+ * slugOf keeps every letter now (ß, ł, ø, æ, đ, ı, any script) and reads a percent-encoded
+ * name back first, so some names have another address than they had : a bookmark or a link
+ * written before still names its form or category through this, the address it had then.
+ */
+export function legacySlugOf(name) {
+  return String(name ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Whether an address names a name, as it reads in an address now.
+ *
+ * Args:
+ *   name (string): the form's or category's name ('Network Ops').
+ *   slug (string): the part of the address ('network-ops', 'Network Ops').
+ *
+ * Returns:
+ *   boolean: true when both read the same in an address.
+ */
+export function slugMatches(name, slug) {
+  return slugOf(name) === slugOf(slug);
+}
+
+/**
+ * Whether an address names a name the way a 7.2 address did (legacySlugOf).
+ *
+ * Args:
+ *   name (string): the form's or category's name ('Straße').
+ *   slug (string): the part of the address ('stra-e').
+ *
+ * Returns:
+ *   boolean: true when the address is the name's 7.2 address ; never for a name that had
+ *     none (no Latin letter or digit : every such name had the same, empty, address).
+ */
+export function legacySlugMatches(name, slug) {
+  const legacy = legacySlugOf(name);
+  return !!legacy && legacy === slugOf(slug);
+}
+
+/**
+ * The item an address names, among items that have a name : the address of today first, the
+ * one of 7.2 next, so an older bookmark still opens what it named.
+ *
+ * Args:
+ *   slug (string): the part of the address ('approval-demo', 'Approval demo', 'stra-e').
+ *   items (Array): the items, each with a name ({ name }, { id, name }).
+ *
+ * Returns:
+ *   object|undefined: the item whose name is exactly the address, else the first whose name
+ *     reads as the address now, else the first whose name read as it in 7.2 ; undefined when
+ *     no item has that address.
+ */
+export function findBySlug(slug, items) {
+  const list = (items || []).filter((x) => x && x.name !== undefined && x.name !== null);
+  const named = list.filter((x) => slugMatches(x.name, slug));
+  if (named.length) return named.find((x) => x.name === slug) || named[0];
+  return list.find((x) => legacySlugMatches(x.name, slug));
+}
+
+/**
  * The forms list's address for a category.
  *
  * Args:
@@ -85,7 +159,8 @@ export function categoryFromPath(slugs, categories) {
   const names = [];
   let level = categories || [];
   for (const part of parts) {
-    const found = level.find((c) => slugOf(c.name) === part);
+    // its address now, else the one it had in 7.2 (a bookmark from then)
+    const found = findBySlug(part, level);
     if (!found) return null;
     names.push(found.name);
     level = found.items || [];
@@ -115,11 +190,11 @@ export function formPath(name) {
  *
  * Returns:
  *   string|null: the form's name ('Approval demo'), its exact name first when two forms
- *     read the same in an address ('Test 1', 'test-1') ; null when no form has it.
+ *     read the same in an address ('Test 1', 'test-1'), then the form whose 7.2 address it is
+ *     (legacySlugOf) ; null when no form has it.
  */
 export function formFromPath(slug, forms) {
-  // /form/Approval-Demo or /form/Approval demo is /form/approval-demo
-  const named = (forms || []).filter((f) => slugOf(f.name) === slugOf(slug));
-  if (!named.length) return null;
-  return (named.find((f) => f.name === slug) || named[0]).name;
+  // /form/Approval-Demo or /form/Approval demo is /form/approval-demo ; a 7.2 address
+  // (/form/stra-e for Straße) still opens its form
+  return findBySlug(slug, forms)?.name ?? null;
 }

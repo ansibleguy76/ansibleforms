@@ -1,7 +1,15 @@
 // lib/formsPath.js : the forms list's addresses, /forms/all and /forms/<category>, and the
 // category an address names, read back against the forms config's categories.
 import { describe, it, expect } from 'vitest';
-import { slugOf, formsPath, categoryFromPath, formPath, formFromPath } from '../src/lib/formsPath.js';
+import {
+  slugOf,
+  legacySlugOf,
+  findBySlug,
+  formsPath,
+  categoryFromPath,
+  formPath,
+  formFromPath,
+} from '../src/lib/formsPath.js';
 
 const categories = [
   { name: 'Default' },
@@ -81,5 +89,49 @@ describe('the forms list addresses', () => {
     expect(formFromPath('Approval demo', forms)).toBe('Approval demo');
     // two forms that read the same : the one named exactly so
     expect(formFromPath('test-1', forms)).toBe('test-1');
+  });
+});
+
+// slugOf keeps every letter now and reads a percent-encoded name back first : some names have
+// another address than in 7.2, and the addresses of then (bookmarks, links) still work
+describe('the addresses of 7.2', () => {
+  it('are the 7.2 slugs : Latin letters and digits only', () => {
+    expect(legacySlugOf('Straße')).toBe('stra-e');
+    expect(legacySlugOf('Łódź Øresund')).toBe('odz-resund');
+    expect(legacySlugOf('Network Ops')).toBe('network-ops');
+    expect(legacySlugOf('日本語')).toBe('');
+    // the addresses of today differ for these names
+    expect(slugOf('Straße')).toBe('straße');
+    expect(slugOf('Łódź Øresund')).toBe('łodz-øresund');
+  });
+
+  it('still open their form', () => {
+    const forms = [{ name: 'Straße' }, { name: 'Æsir đ ı' }, { name: 'Other' }];
+    expect(formFromPath('stra-e', forms)).toBe('Straße');
+    expect(formFromPath('sir', forms)).toBe('Æsir đ ı');
+    // the address of today too
+    expect(formFromPath('straße', forms)).toBe('Straße');
+    expect(formFromPath(slugOf('Æsir đ ı'), forms)).toBe('Æsir đ ı');
+  });
+
+  it('still open their category, at every level', () => {
+    const cats = [{ name: 'Straße', items: [{ name: 'Łódź' }] }];
+    expect(categoryFromPath('stra-e', cats)).toBe('Straße');
+    expect(categoryFromPath('stra-e/odz', cats)).toBe('Straße/Łódź');
+    expect(categoryFromPath('straße/łodz', cats)).toBe('Straße/Łódź');
+  });
+
+  it('come after the addresses of today', () => {
+    // 'stra-e' is a form's address today and another's 7.2 address : today's wins
+    const forms = [{ name: 'Straße' }, { name: 'Stra e' }];
+    expect(formFromPath('stra-e', forms)).toBe('Stra e');
+    // the exact name before the first of the same slug
+    expect(findBySlug('test-1', [{ name: 'Test 1' }, { name: 'test-1' }]).name).toBe('test-1');
+  });
+
+  it('never match a name that had no 7.2 address', () => {
+    // every name without a Latin letter or digit had the empty address in 7.2
+    expect(formFromPath('', [{ name: '日本語' }])).toBeNull();
+    expect(findBySlug('%3F', [{ name: '日本語' }])).toBeUndefined();
   });
 });
