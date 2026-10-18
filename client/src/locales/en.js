@@ -1343,7 +1343,7 @@ export default {
       pendingHelp: 'Check the RTE fingerprint before approving it',
       pendingFingerprint: 'Fingerprint',
       pendingHost: 'Host',
-      pendingIp: 'Called from',
+      pendingIp: 'IP address',
       pendingVersion: 'Version',
       pendingSince: 'Asked on',
       approve: 'Approve',

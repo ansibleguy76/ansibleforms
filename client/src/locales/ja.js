@@ -1770,7 +1770,7 @@ export default {
       pendingHelp: '承認する前に RTE のフィンガープリントを確認してください',
       pendingFingerprint: 'フィンガープリント',
       pendingHost: 'ホスト',
-      pendingIp: '接続元',
+      pendingIp: 'IP アドレス',
       pendingVersion: 'バージョン',
       pendingSince: '申請日時',
       approve: '承認',

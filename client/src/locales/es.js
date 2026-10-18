@@ -1362,7 +1362,7 @@ export default {
       pendingHelp: 'Comprueba la huella del RTE antes de aprobarlo',
       pendingFingerprint: 'Huella',
       pendingHost: 'Host',
-      pendingIp: 'Conectado desde',
+      pendingIp: 'Dirección IP',
       pendingVersion: 'Versión',
       pendingSince: 'Solicitado el',
       approve: 'Aprobar',

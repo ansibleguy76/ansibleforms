@@ -1714,7 +1714,7 @@ export default {
       pendingHelp: '批准前请核对 RTE 的指纹',
       pendingFingerprint: '指纹',
       pendingHost: '主机',
-      pendingIp: '连接来源',
+      pendingIp: 'IP 地址',
       pendingVersion: '版本',
       pendingSince: '请求时间',
       approve: '批准',

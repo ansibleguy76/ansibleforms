@@ -1787,7 +1787,7 @@ export default {
       pendingHelp: 'Sprawdź odcisk RTE przed zatwierdzeniem',
       pendingFingerprint: 'Odcisk',
       pendingHost: 'Host',
-      pendingIp: 'Połączony z',
+      pendingIp: 'Adres IP',
       pendingVersion: 'Wersja',
       pendingSince: 'Poproszono',
       approve: 'Zatwierdź',

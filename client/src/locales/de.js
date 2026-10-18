@@ -1363,7 +1363,7 @@ export default {
       pendingHelp: 'Prüfen Sie den Fingerabdruck der RTE vor der Freigabe',
       pendingFingerprint: 'Fingerabdruck',
       pendingHost: 'Host',
-      pendingIp: 'Verbunden von',
+      pendingIp: 'IP-Adresse',
       pendingVersion: 'Version',
       pendingSince: 'Angefragt am',
       approve: 'Freigeben',

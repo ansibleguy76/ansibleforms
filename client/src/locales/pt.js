@@ -1797,7 +1797,7 @@ export default {
       pendingHelp: 'Confirme a impressão digital do RTE antes de o aprovar',
       pendingFingerprint: 'Impressão digital',
       pendingHost: 'Host',
-      pendingIp: 'Ligado a partir de',
+      pendingIp: 'Endereço IP',
       pendingVersion: 'Versão',
       pendingSince: 'Pedido em',
       approve: 'Aprovar',

@@ -1356,7 +1356,7 @@ export default {
       pendingHelp: 'Controleer de vingerafdruk van de RTE voor goedkeuring',
       pendingFingerprint: 'Vingerafdruk',
       pendingHost: 'Host',
-      pendingIp: 'Verbonden vanaf',
+      pendingIp: 'IP-adres',
       pendingVersion: 'Versie',
       pendingSince: 'Aangevraagd op',
       approve: 'Goedkeuren',

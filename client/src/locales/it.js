@@ -1356,7 +1356,7 @@ export default {
       pendingHelp: "Verifica l'impronta dell'RTE prima di approvarlo",
       pendingFingerprint: 'Impronta',
       pendingHost: 'Host',
-      pendingIp: 'Connesso da',
+      pendingIp: 'Indirizzo IP',
       pendingVersion: 'Versione',
       pendingSince: 'Richiesto il',
       approve: 'Approva',

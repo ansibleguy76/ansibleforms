@@ -1802,7 +1802,7 @@ export default {
       pendingHelp: "Comproveu l'empremta de l'RTE abans d'aprovar-lo",
       pendingFingerprint: 'Empremta',
       pendingHost: 'Host',
-      pendingIp: 'Connectat des de',
+      pendingIp: 'Adreça IP',
       pendingVersion: 'Versió',
       pendingSince: 'Sol·licitat el',
       approve: 'Aprova',
