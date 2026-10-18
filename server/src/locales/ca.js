@@ -1,5 +1,7 @@
 export default {
   errors: {
+    databaseError:
+      "S'ha produït un error de la base de dades: el registre del servidor en té els detalls",
     noAccess: "No hi tens accés",
     notAdmin: "No ets administrador",
     noSettingsAccess: "No tens accés a la configuració",
@@ -91,6 +93,8 @@ export default {
     failedGetLock: "No s'ha pogut obtenir el bloqueig",
   },
   resources: {
+    storedJobNameInUse:
+      "Ja tens una tasca desada anomenada '{name}': tria un altre nom",
     cantTouchDirectoryAdmin:
       "Només un admin pot bloquejar, tancar la sessió, oblidar o revocar els tokens d'un usuari que té el rol admin",
     credentialNotFound:

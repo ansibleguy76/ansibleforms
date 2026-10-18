@@ -1,5 +1,7 @@
 export default {
   errors: {
+    databaseError:
+      "A database error occurred: the server log has the details",
     noAccess: "No access",
     notAdmin: "You are not an admin",
     noSettingsAccess: "You do not have access to settings",
@@ -86,6 +88,8 @@ export default {
     failedGetLock: "Failed to get lock",
   },
   resources: {
+    storedJobNameInUse:
+      "You already have a stored job named '{name}': choose another name",
     cantTouchDirectoryAdmin:
       "Only an admin can block, sign out, forget or revoke the tokens of a user who has the admin role",
     credentialNotFound:

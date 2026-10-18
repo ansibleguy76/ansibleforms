@@ -1,5 +1,7 @@
 export default {
   errors: {
+    databaseError:
+      "データベースエラーが発生しました: 詳細はサーバーログにあります",
     noAccess: "アクセス権がありません",
     notAdmin: "管理者ではありません",
     noSettingsAccess: "設定へのアクセス権がありません",
@@ -88,6 +90,8 @@ export default {
     failedGetLock: "ロックの取得に失敗しました",
   },
   resources: {
+    storedJobNameInUse:
+      "'{name}' という名前の保存済みジョブはすでにあります: 別の名前を選んでください",
     cantTouchDirectoryAdmin:
       "admin ロールを持つユーザーのブロック、サインアウト、削除、トークンの取り消しができるのは admin だけです",
     credentialNotFound:

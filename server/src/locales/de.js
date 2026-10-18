@@ -1,5 +1,7 @@
 export default {
   errors: {
+    databaseError:
+      "Ein Datenbankfehler ist aufgetreten: das Serverprotokoll enthaelt die Details",
     noAccess: "Kein Zugriff",
     notAdmin: "Du bist kein Administrator",
     noSettingsAccess: "Du hast keinen Zugriff auf Einstellungen",
@@ -93,6 +95,8 @@ export default {
     failedGetLock: "Abrufen der Sperre fehlgeschlagen",
   },
   resources: {
+    storedJobNameInUse:
+      "Du hast bereits einen gespeicherten Job namens '{name}': waehle einen anderen Namen",
     cantTouchDirectoryAdmin:
       "Nur ein Admin kann einen Benutzer mit der Admin-Rolle sperren, abmelden, vergessen oder seine Tokens widerrufen",
     credentialNotFound:

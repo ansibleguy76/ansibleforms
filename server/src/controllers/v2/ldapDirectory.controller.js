@@ -7,6 +7,7 @@ import RestResultv2 from '../../models/restResult.model.v2.js';
 import Errors from '../../lib/errors.js';
 import logger from "../../lib/logger.js";
 import i18n from '../../lib/i18n.js';
+import { publicError } from './publicError.js';
 import { withEnds } from '../../models/listOrder.js';
 import { SECRET_MASK, isMasked } from '../../lib/secretMask.js';
 
@@ -91,7 +92,7 @@ const findAll = async function (req, res) {
     res.status(200).json(RestResultv2.list(withEnds(all.map(shown))));
   } catch (err) {
     logger.error("Error finding the LDAP directories: ", err);
-    Errors.ReturnError(res, err);
+    Errors.ReturnError(res, publicError(req, err));
   }
 };
 
@@ -100,7 +101,7 @@ const findById = async function (req, res) {
     res.status(200).json(RestResultv2.single(shown(await Ldap.withConnection(await existingOf(req)))));
   } catch (err) {
     logger.error("Error finding the LDAP directory: ", err);
-    Errors.ReturnError(res, err);
+    Errors.ReturnError(res, publicError(req, err));
   }
 };
 
@@ -111,7 +112,7 @@ const create = async function (req, res) {
     res.status(201).json(RestResultv2.single({ id, message: i18n.t(req, 'resources.ldapCreated') }));
   } catch (err) {
     logger.error("Error adding an LDAP directory: ", err);
-    Errors.ReturnError(res, err);
+    Errors.ReturnError(res, publicError(req, err));
   }
 };
 
@@ -139,7 +140,7 @@ const update = async function (req, res) {
     res.status(200).json(RestResultv2.single({ message: i18n.t(req, 'resources.ldapUpdated') }));
   } catch (err) {
     logger.error("Error updating the LDAP directory: ", err);
-    Errors.ReturnError(res, err);
+    Errors.ReturnError(res, publicError(req, err));
   }
 };
 
@@ -149,7 +150,7 @@ const remove = async function (req, res) {
     res.status(200).json(RestResultv2.single({ message: i18n.t(req, 'resources.ldapDeleted') }));
   } catch (err) {
     logger.error("Error deleting the LDAP directory: ", err);
-    Errors.ReturnError(res, err);
+    Errors.ReturnError(res, publicError(req, err));
   }
 };
 
@@ -160,7 +161,7 @@ const move = async function (req, res) {
     res.status(200).json(RestResultv2.single({ moved }));
   } catch (err) {
     logger.error("Error moving the LDAP directory: ", err);
-    Errors.ReturnError(res, err);
+    Errors.ReturnError(res, publicError(req, err));
   }
 };
 
@@ -200,7 +201,7 @@ const check = async function (req, res) {
     // a request refused (no data, no such directory, a credential of another kind) says why ;
     // the directory's own answer is the check's result, under what failed
     if (err instanceof Errors.ApiError) return Errors.ReturnError(res, err);
-    res.status(500).json(RestResultv2.error(i18n.t(req, 'resources.ldapCheckFailed'), err.message || err.toString()));
+    res.status(500).json(RestResultv2.error(i18n.t(req, 'resources.ldapCheckFailed'), publicError(req, err).message || err.toString()));
   }
 };
 

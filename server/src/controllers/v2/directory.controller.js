@@ -6,6 +6,7 @@
 import DirectoryUser, { DIRECTORY_TYPES } from '../../models/directoryUser.model.js';
 import RestResult from '../../models/restResult.model.v2.js';
 import i18n from '../../lib/i18n.js';
+import { publicError } from './publicError.js';
 import helpers from '../../lib/common.js';
 import mysql from '../../models/db.model.js';
 import { revokeUser } from '../../lib/tokenRevocation.js';
@@ -53,7 +54,7 @@ export async function assertMayTouchDirectoryAdmin(req, id) {
  */
 function failed(req, res, err) {
   if (err instanceof Errors.AccessDeniedError) return res.status(403).json(RestResult.error(err.message));
-  res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedDirectoryUser'), helpers.getError(err)));
+  res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedDirectoryUser'), helpers.getError(publicError(req, err))));
 }
 
 /**
@@ -101,7 +102,7 @@ const findUser = async function (req, res) {
     const record = seen.find((u) => u.type === id.type && u.username.toLowerCase() === id.name.toLowerCase());
     res.json(RestResult.single({ ...row, groups: record?.groups || [], roles_at_login: record?.roles || [] }));
   } catch (err) {
-    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedDirectoryUser'), helpers.getError(err)));
+    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedDirectoryUser'), helpers.getError(publicError(req, err))));
   }
 };
 
@@ -165,7 +166,7 @@ const findGroup = async function (req, res) {
     if (!row) return res.status(404).json(RestResult.error(i18n.t(req, 'resources.groupNotFound')));
     res.json(RestResult.single(row));
   } catch (err) {
-    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedFindGroup'), helpers.getError(err)));
+    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedFindGroup'), helpers.getError(publicError(req, err))));
   }
 };
 

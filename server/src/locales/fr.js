@@ -1,5 +1,7 @@
 export default {
   errors: {
+    databaseError:
+      "Une erreur de base de données s'est produite : le journal du serveur en donne le détail",
     noAccess: "Acces refuse",
     notAdmin: "Vous n'etes pas administrateur",
     noSettingsAccess: "Vous n'avez pas acces aux parametres",
@@ -96,6 +98,8 @@ export default {
     failedGetLock: "Echec de la recuperation du verrou",
   },
   resources: {
+    storedJobNameInUse:
+      "Vous avez déjà une tâche enregistrée nommée '{name}' : choisissez un autre nom",
     cantTouchDirectoryAdmin:
       "Seul un admin peut bloquer, déconnecter, oublier ou révoquer les jetons d'un utilisateur qui a le rôle admin",
     credentialNotFound:

@@ -1,5 +1,7 @@
 export default {
   errors: {
+    databaseError:
+      "Se ha producido un error de la base de datos: el registro del servidor tiene los detalles",
     noAccess: "Sin acceso",
     notAdmin: "No eres administrador",
     noSettingsAccess: "No tienes acceso a la configuración",
@@ -91,6 +93,8 @@ export default {
     failedGetLock: "Error al obtener el bloqueo",
   },
   resources: {
+    storedJobNameInUse:
+      "Ya tienes un trabajo guardado llamado '{name}': elige otro nombre",
     cantTouchDirectoryAdmin:
       "Solo un admin puede bloquear, cerrar la sesión, olvidar o revocar los tokens de un usuario con el rol admin",
     credentialNotFound:

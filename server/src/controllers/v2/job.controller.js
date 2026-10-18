@@ -8,6 +8,7 @@ import logger from "../../lib/logger.js";
 import stream from 'stream';
 import Audit from "../../models/audit.model.js";
 import i18n from '../../lib/i18n.js';
+import { publicMessage } from './publicError.js';
 import appConfig from '../../../config/app.config.js';
 
 const abortJob = async function(req, res) {
@@ -27,7 +28,7 @@ const abortJob = async function(req, res) {
     } else if (err.name === 'AccessDeniedError') {
       res.status(403).json(RestResultv2.error(err.message));
     } else {
-      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedAbort'), err.toString()));
+      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedAbort'), publicMessage(req, err)));
     }
   }
 };
@@ -52,7 +53,7 @@ const getJob = async function(req, res) {
     } else if (err.name === 'AccessDeniedError') {
       res.status(403).json(RestResultv2.error(err.message));
     } else {
-      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieve'), err.toString()));
+      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieve'), publicMessage(req, err)));
     }
   }
 };
@@ -69,7 +70,7 @@ const getJobEvents = async function(req, res) {
     } else if (err.name === 'AccessDeniedError') {
       res.status(403).json(RestResultv2.error(err.message));
     } else {
-      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieve'), err.toString()));
+      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieve'), publicMessage(req, err)));
     }
   }
 };
@@ -92,7 +93,7 @@ const getJobEvent = async function(req, res) {
     } else if (err.name === 'AccessDeniedError') {
       res.status(403).json(RestResultv2.error(err.message));
     } else {
-      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieve'), err.toString()));
+      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieve'), publicMessage(req, err)));
     }
   }
 };
@@ -109,7 +110,7 @@ const getWorkflowNode = async function(req, res) {
     } else if (err.name === 'AccessDeniedError') {
       res.status(403).json(RestResultv2.error(err.message));
     } else {
-      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieve'), err.toString()));
+      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieve'), publicMessage(req, err)));
     }
   }
 };
@@ -125,7 +126,7 @@ const findAllJobs = async function(req, res) {
       const jobs = await Job.findAll(user,records,{ user: req.query.user, userType: req.query.user_type, runner: req.query.runner })
       res.status(200).json(RestResultv2.list(jobs));
     }catch(err){
-      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieveJobs'), err.toString()));
+      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieveJobs'), publicMessage(req, err)));
     }
 };
 const findApprovals = async function(req, res) {
@@ -134,7 +135,7 @@ const findApprovals = async function(req, res) {
       const count = await Job.findApprovals(user)
       res.status(200).json(RestResultv2.single(count));
     }catch(err){
-      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieveApprovals'), err.toString()));
+      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieveApprovals'), publicMessage(req, err)));
     }
 };
 const download = async function(req,res){
@@ -170,7 +171,7 @@ const download = async function(req,res){
     } else if (err.name === 'AccessDeniedError') {
       res.status(403).json(RestResultv2.error(err.message));
     } else {
-      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieve'), err.toString()));
+      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieve'), publicMessage(req, err)));
     }
   }
 }
@@ -187,7 +188,7 @@ const getRawFormData = async function(req, res) {
     } else if (err.name === 'BadRequestError') {
       res.status(400).json(RestResultv2.error(err.message));
     } else {
-      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieveRawData'), err.toString()));
+      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieveRawData'), publicMessage(req, err)));
     }
   }
 };
@@ -202,7 +203,7 @@ const deleteJob = async function(req, res) {
     } else if (err.name === 'AccessDeniedError') {
       res.status(403).json(RestResultv2.error(err.message));
     } else {
-      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedDelete'), err.toString()));
+      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedDelete'), publicMessage(req, err)));
     }
   }
 };
@@ -243,7 +244,7 @@ const launch = async function(req, res) {
           }
           logger.error("Errors in job launch: ", err)
           try{
-            res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedLaunch'), err.toString()));
+            res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedLaunch'), publicMessage(req, err)));
           }catch(e){}
         }
     }
@@ -285,7 +286,7 @@ const relaunchJob = async function(req, res) {
         res.status(409).json(RestResultv2.error(err.message));
       } else {
         logger.error(`Error relaunching job: ${err.toString()}`);
-        res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRelaunch'), err.toString()));
+        res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRelaunch'), publicMessage(req, err)));
       }
     }
 };
@@ -319,7 +320,7 @@ const approveJob = async function(req, res) {
         res.status(409).json(RestResultv2.error(err.message));
       } else {
         logger.error(`Error: ${err.toString()}`)
-        res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedApprove'), err.toString()));
+        res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedApprove'), publicMessage(req, err)));
       }
     }    
 };
@@ -350,7 +351,7 @@ const rejectJob = async function(req, res) {
         res.status(409).json(RestResultv2.error(err.message));
       } else {
         logger.error(`Error: ${err.toString()}`)
-        res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedReject'), err.toString()));
+        res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedReject'), publicMessage(req, err)));
       }
     }    
 

@@ -2,6 +2,7 @@ import CredentialModel from '../../models/credential.model.v2.js';
 import RestResult from '../../models/restResult.model.v2.js';
 import Errors from '../../lib/errors.js';
 import i18n from '../../lib/i18n.js';
+import { publicError } from './publicError.js';
 import mysql from '../../lib/mysql.js';
 import postgres from '../../lib/postgres.js';
 import mssql from '../../lib/mssql.js';
@@ -167,7 +168,7 @@ const credentialController = {
         res.json(RestResult.list(credentials));
       }
     } catch (err) {
-      Errors.ReturnError(res, err);
+      Errors.ReturnError(res, publicError(req, err));
     }
   },
 
@@ -177,7 +178,7 @@ const credentialController = {
       const credential = await CredentialModel.create(req.body);
       res.json(RestResult.single({ message: i18n.t(req, 'success.created', { resource: 'Credential' }), id: credential }));
     } catch (err) {
-      Errors.ReturnError(res, err);
+      Errors.ReturnError(res, publicError(req, err));
     }
   },
 
@@ -189,7 +190,7 @@ const credentialController = {
       if (credential.client_key) credential.client_key = SECRET_MASK;
       res.json(RestResult.single(credential));
     } catch (err) {
-      Errors.ReturnError(res, err);
+      Errors.ReturnError(res, publicError(req, err));
     }
   },
 
@@ -205,7 +206,7 @@ const credentialController = {
       if ([before?.credential_type, req.body?.credential_type].some((t) => SSO_TYPES.includes(t))) await reloadSso();
       res.json(RestResult.single({ message: i18n.t(req, 'success.updated', { resource: 'Credential' }) }));
     } catch (err) {
-      Errors.ReturnError(res, err);
+      Errors.ReturnError(res, publicError(req, err));
     }
   },
 
@@ -218,7 +219,7 @@ const credentialController = {
       if (SSO_TYPES.includes(before?.credential_type)) await reloadSso();
       res.json(RestResult.single({ message: i18n.t(req, 'success.deleted', { resource: 'Credential' }) }));
     } catch (err) {
-      Errors.ReturnError(res, err);
+      Errors.ReturnError(res, publicError(req, err));
     }
   },
 
@@ -241,7 +242,7 @@ const credentialController = {
       }
       res.json(RestResult.single({ message: i18n.t(req, 'success.connectionOk', { resource: 'Database' }) }));
     } catch (err) {
-      Errors.ReturnError(res, err);
+      Errors.ReturnError(res, publicError(req, err));
     }
   }
 };

@@ -1,5 +1,7 @@
 export default {
   errors: {
+    databaseError:
+      "Wystąpił błąd bazy danych: szczegóły są w dzienniku serwera",
     noAccess: "Brak dostępu",
     notAdmin: "Nie jesteś administratorem",
     noSettingsAccess: "Nie masz dostępu do ustawień",
@@ -94,6 +96,8 @@ export default {
     failedGetLock: "Nie udało się pobrać blokady",
   },
   resources: {
+    storedJobNameInUse:
+      "Masz już zapisane zadanie o nazwie '{name}': wybierz inną nazwę",
     cantTouchDirectoryAdmin:
       "Tylko admin może zablokować, wylogować, zapomnieć lub unieważnić tokeny użytkownika z rolą admin",
     credentialNotFound:

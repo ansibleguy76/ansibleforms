@@ -1,5 +1,7 @@
 export default {
   errors: {
+    databaseError:
+      "Er is een databasefout opgetreden: het serverlogboek bevat de details",
     noAccess: "Geen toegang",
     notAdmin: "U bent geen beheerder",
     noSettingsAccess: "U heeft geen toegang tot instellingen",
@@ -89,6 +91,8 @@ export default {
     failedGetLock: "Kan vergrendeling niet ophalen",
   },
   resources: {
+    storedJobNameInUse:
+      "Je hebt al een opgeslagen job met de naam '{name}': kies een andere naam",
     cantTouchDirectoryAdmin:
       "Alleen een admin kan een gebruiker met de admin-rol blokkeren, afmelden, vergeten of zijn tokens intrekken",
     credentialNotFound:

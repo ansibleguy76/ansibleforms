@@ -1,5 +1,7 @@
 export default {
   errors: {
+    databaseError:
+      "发生数据库错误：详细信息见服务器日志",
     noAccess: "无访问权限",
     notAdmin: "您不是管理员",
     noSettingsAccess: "您无权访问设置",
@@ -82,6 +84,8 @@ export default {
     failedGetLock: "获取锁失败",
   },
   resources: {
+    storedJobNameInUse:
+      "您已有名为 '{name}' 的已保存作业：请选择其他名称",
     cantTouchDirectoryAdmin:
       "只有 admin 可以封禁、注销、遗忘拥有 admin 角色的用户或撤销其令牌",
     credentialNotFound:

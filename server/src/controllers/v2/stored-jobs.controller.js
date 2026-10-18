@@ -3,6 +3,7 @@ import CrudModel from "../../models/crud.model.js";
 import RestResult from "../../models/restResult.model.v2.js";
 import Errors from "../../lib/errors.js";
 import i18n from "../../lib/i18n.js";
+import { publicError } from "./publicError.js";
 
 // The columns a caller may write. Everything else in the body is dropped :
 //  - id : the row key. On create a chosen id is inserted as is, and on update it moves the
@@ -18,6 +19,25 @@ function pickWritable(body) {
     if (body && body[key] !== undefined) data[key] = body[key];
   }
   return data;
+}
+
+/**
+ * The error a write of a stored job answers with : a name the user already gave another stored
+ * job (the database's unique key, ER_DUP_ENTRY) is a 409 that says so, where it was a 500 with
+ * the database's own message (the key's name and the value) ; any other as publicError tells it.
+ *
+ * Args:
+ *   req (object): the request (its language, and the name it sent).
+ *   err (any): the error.
+ *
+ * Returns:
+ *   any: the error to hand to Errors.ReturnError.
+ */
+function writeError(req, err) {
+  if (err?.code === 'ER_DUP_ENTRY') {
+    return new Errors.ConflictError(i18n.t(req, 'resources.storedJobNameInUse', { name: String(req.body?.name ?? '') }));
+  }
+  return publicError(req, err);
 }
 
 const stored_jobsController = {
@@ -47,7 +67,7 @@ const stored_jobsController = {
         return res.json(RestResult.list(visible));
       }
     } catch (err) {
-      Errors.ReturnError(res, err);
+      Errors.ReturnError(res, publicError(req, err));
     }
   },
 
@@ -61,7 +81,8 @@ const stored_jobsController = {
       const id = await CrudModel.create('stored_jobs', data);
       return res.status(201).json(RestResult.single(i18n.t(req, 'resources.storedJobAdded'), { id }));
     } catch (err) {
-      Errors.ReturnError(res, err);
+      // a name already taken : 409 (writeError)
+      Errors.ReturnError(res, writeError(req, err));
     }
   },
 
@@ -77,7 +98,7 @@ const stored_jobsController = {
       }
       return res.json(RestResult.single(item));
     } catch (err) {
-      Errors.ReturnError(res, err);
+      Errors.ReturnError(res, publicError(req, err));
     }
   },
 
@@ -102,7 +123,8 @@ const stored_jobsController = {
       }
       return res.json(RestResult.single(i18n.t(req, 'resources.storedJobUpdated')));
     } catch (err) {
-      Errors.ReturnError(res, err);
+      // a name already taken : 409 (writeError)
+      Errors.ReturnError(res, writeError(req, err));
     }
   },
 
@@ -120,7 +142,7 @@ const stored_jobsController = {
       await CrudModel.delete('stored_jobs', req.params.id);
       return res.json(RestResult.single(i18n.t(req, 'resources.storedJobDeleted')));
     } catch (err) {
-      Errors.ReturnError(res, err);
+      Errors.ReturnError(res, publicError(req, err));
     }
   }
 };
