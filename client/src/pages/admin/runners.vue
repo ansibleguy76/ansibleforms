@@ -43,8 +43,9 @@ const info = (r) => {
   }
 };
 /**
- * A runner waiting for approval in a few words : its host, where it called from, its mode and
- * its fingerprint, each as key: value.
+ * A runner waiting for approval in a few words, as the review dialog lists it : its host, where
+ * it called from, its mode, its address (inbound), its version, its fingerprint and when it
+ * asked, each as key: value.
  *
  * Args:
  *   r (object): the runner.
@@ -58,7 +59,10 @@ function describe(r) {
     [t('settings.runners.pendingHost'), i.host],
     [t('settings.runners.pendingIp'), i.ip],
     [t('settings.runners.rteMode'), i.mode && t(`settings.runners.rteMode_${i.mode}`)],
+    [t('settings.fields.uri'), i.url],
+    [t('settings.runners.pendingVersion'), i.version],
     [t('settings.runners.pendingFingerprint'), i.fingerprint],
+    [t('settings.runners.pendingSince'), r.pending_since && Helpers.formatServerDate(r.pending_since)],
   ]
     .filter(([, value]) => value)
     .map(([key, value]) => `${key}: ${value}`)
