@@ -22,6 +22,8 @@ import { useI18n } from 'vue-i18n';
 import Helpers from '@/lib/Helpers';
 import Time from '@/lib/Time';
 import YAML from 'yaml';
+import { hljs } from '@/lib/Highlight';
+import { jobLogLines } from '@/lib/jobLog';
 
 const { t } = useI18n();
 
@@ -94,6 +96,18 @@ const tabs = computed(() =>
 const json = computed(() => (result.value ? JSON.stringify(result.value, null, 2) : ''));
 // the same result as YAML, as a playbook writes its variables
 const yaml = computed(() => (result.value ? YAML.stringify(result.value) : ''));
+
+// each code tab coloured : JSON and YAML by highlight.js (escaped by it), the outputs as the
+// job's log file (their ANSI colours, a log line's level), all in the theme's colours
+const highlighted = (code, language) => (code ? hljs.highlight(code, { language }).value : '');
+const jsonHtml = computed(() => highlighted(json.value, 'json'));
+const yamlHtml = computed(() => highlighted(yaml.value, 'yaml'));
+const outputHtml = (value) =>
+  jobLogLines(value)
+    .map((line) => line.html)
+    .join('\n');
+const stdoutHtml = computed(() => outputHtml(stdout.value));
+const stderrHtml = computed(() => outputHtml(stderr.value));
 </script>
 <template>
   <BsModal size="lg" icon="circle-info" @close="emit('close')">
@@ -134,10 +148,12 @@ const yaml = computed(() => (result.value ? YAML.stringify(result.value) : ''));
                 }}</pre>
               </template>
             </template>
-            <pre v-else-if="tab === 'json'" class="af-result-pre">{{ json }}</pre>
-            <pre v-else-if="tab === 'yaml'" class="af-result-pre">{{ yaml }}</pre>
-            <pre v-else-if="tab === 'stdout'" class="af-result-pre">{{ stdout }}</pre>
-            <pre v-else-if="tab === 'stderr'" class="af-result-pre">{{ stderr }}</pre>
+            <!-- eslint-disable vue/no-v-html -- escaped : highlight.js and jobLogLines escape the text -->
+            <pre v-else-if="tab === 'json'" class="af-result-pre" v-html="jsonHtml"></pre>
+            <pre v-else-if="tab === 'yaml'" class="af-result-pre" v-html="yamlHtml"></pre>
+            <pre v-else-if="tab === 'stdout'" class="af-result-pre af-result-ansi" v-html="stdoutHtml"></pre>
+            <pre v-else-if="tab === 'stderr'" class="af-result-pre af-result-ansi" v-html="stderrHtml"></pre>
+            <!-- eslint-enable vue/no-v-html -->
           </div>
         </div>
       </template>
@@ -195,5 +211,30 @@ const yaml = computed(() => (result.value ? YAML.stringify(result.value) : ''));
   font-size: 0.8125rem;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+/* an output's colours : the job output's (AppAnsibleOutput), readable in light and dark */
+.af-result-ansi {
+  :deep(.has-text-danger) {
+    color: var(--af-ansible-output-danger);
+  }
+  :deep(.has-text-success) {
+    color: var(--af-ansible-output-text-success);
+  }
+  :deep(.has-text-warning) {
+    color: var(--af-ansible-output-text-warning);
+  }
+  :deep(.has-text-info) {
+    color: var(--af-ansible-output-text-info);
+  }
+  :deep(.has-text-purple) {
+    color: var(--af-ansible-output-text-purple);
+  }
+  :deep(.has-text-muted),
+  :deep(.af-log-time) {
+    color: var(--bs-secondary-color);
+  }
+  :deep(.has-text-weight-bold) {
+    font-weight: 700;
+  }
 }
 </style>

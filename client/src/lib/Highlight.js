@@ -10,6 +10,9 @@ hljs.registerLanguage('yaml', yaml);
 hljs.registerLanguage('javascript', javascript);
 hljs.registerLanguage('json', json);
 
+// the same highlight.js, its languages registered, for a component that renders its HTML itself
+export { hljs };
+
 // v-highlightjs: highlights every <code> inside the element with highlight.js
 //
 // The function shorthand of `app.directive` registers the same callback for
