@@ -17,24 +17,66 @@ process.env.DB_PASSWORD ||= "test";
 let legacy;
 let hasMigrations;
 let recorded;
+// the upgrade_backup row's release (none : never backed up before an upgrade), what was written
+let backedUpFor;
+const writes = [];
 vi.mock("../src/models/db.model.js", () => ({
   default: {
     do: async (sql, params) => {
       if (/information_schema\.tables/.test(sql)) return legacy.map((t) => ({ t }));
       if (/^SHOW TABLES FROM \?\? WHERE/.test(sql)) return params[2] === "schema_migrations" && hasMigrations ? [{ t: "schema_migrations" }] : [];
       if (/FROM AnsibleForms\.`schema_migrations` WHERE name = 'schema'/.test(sql)) return recorded ? [{ version: recorded }] : [];
+      if (/FROM AnsibleForms\.`schema_migrations` WHERE name = \?/.test(sql) && params[0] === "upgrade_backup") return backedUpFor ? [{ version: backedUpFor }] : [];
+      if (/^INSERT INTO AnsibleForms\.`schema_migrations`/.test(sql)) {
+        writes.push(params);
+        if (params[0] === "upgrade_backup") backedUpFor = params[1];
+      }
       return [];
     },
   },
 }));
+// the backup itself : counted, never run
+const backups = [];
+vi.mock("../src/models/backup.model.js", () => ({
+  default: { doBackup: async (why) => { backups.push(why); return { backupFolder: "/backups/" + backups.length }; } },
+}));
 vi.mock("../src/lib/version.js", () => ({ appVersion: "7.3.0", majorMinor: (v) => String(v).split(".").slice(0, 2).join(".") }));
 
-const { pendingUpgrade, compareReleases } = await import("../src/models/schema.model.js");
+const { pendingUpgrade, backupBeforeUpgrade, compareReleases } = await import("../src/models/schema.model.js");
 
 beforeEach(() => {
   legacy = [];
   hasMigrations = true;
   recorded = "7.3.0";
+  backedUpFor = null;
+  writes.length = 0;
+  backups.length = 0;
+});
+
+describe("one backup per release, however often the patches fail", () => {
+  test("backed up once, recorded ; the next start of the same release does not back up again", async () => {
+    recorded = "7.2.0";
+    assert.match(await backupBeforeUpgrade(), /Backed up the database before the upgrade \(\/backups\/1\)/);
+    assert.equal(backups.length, 1);
+    assert.deepEqual(writes.find((w) => w[0] === "upgrade_backup"), ["upgrade_backup", "7.3.0"]);
+    // the patch failed : the schema stays at 7.2.0, the upgrade still pending
+    assert.match(await backupBeforeUpgrade(), /already/);
+    assert.equal(backups.length, 1);
+  });
+
+  test("a backup recorded for an older release : backed up again for this one", async () => {
+    recorded = "7.2.0";
+    backedUpFor = "7.2.0";
+    await backupBeforeUpgrade();
+    assert.equal(backups.length, 1);
+    assert.equal(backedUpFor, "7.3.0");
+  });
+
+  test("nothing pending : no backup, nothing recorded", async () => {
+    assert.equal(await backupBeforeUpgrade(), null);
+    assert.equal(backups.length, 0);
+    assert.equal(writes.length, 0);
+  });
 });
 
 describe("an upgrade is pending, and backed up first", () => {

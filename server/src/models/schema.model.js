@@ -1930,6 +1930,45 @@ async function pendingUpgrade() {
   return pending;
 }
 
+// the schema_migrations row naming the release the database was last backed up for before an
+// upgrade (backupBeforeUpgrade) : one backup per release, however often the patches fail
+const UPGRADE_BACKUP_MARKER = "upgrade_backup";
+
+/**
+ * Whether the database was backed up before the upgrade to this release already : the
+ * UPGRADE_BACKUP_MARKER row names this release. A database without schema_migrations (from
+ * before it existed) has no row : not backed up yet.
+ *
+ * Returns:
+ *   Promise<boolean>
+ */
+async function upgradeBackedUp() {
+  if (!(await tablePresent("schema_migrations"))) return false;
+  const rows = await mysql.do("SELECT version FROM AnsibleForms.`schema_migrations` WHERE name = ?", [UPGRADE_BACKUP_MARKER]);
+  return rows?.[0]?.version === appVersion;
+}
+
+/**
+ * Records that the database was backed up before the upgrade to this release
+ * (UPGRADE_BACKUP_MARKER). Without schema_migrations yet (the patches make it) nothing is
+ * recorded : the next start, the patches having run, records it if it backs up again. A failure
+ * to record is logged, never fatal : the backup itself succeeded.
+ *
+ * Returns:
+ *   Promise<void>
+ */
+async function recordUpgradeBackup() {
+  try {
+    if (!(await tablePresent("schema_migrations"))) return;
+    await mysql.do(
+      "INSERT INTO AnsibleForms.`schema_migrations` (name, version, applied_at) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE version = VALUES(version), applied_at = NOW()",
+      [UPGRADE_BACKUP_MARKER, appVersion]
+    );
+  } catch (err) {
+    logger.warning(`Couldn't record the backup before the upgrade to ${appVersion}: ${err.message}`);
+  }
+}
+
 // a backup that failed is not tried again on every request (an app node checks the schema per
 // request until it is complete) : once a minute at most
 const BACKUP_RETRY_MS = 60000;
@@ -1957,10 +1996,17 @@ async function backupBeforeUpgrade() {
   if (Date.now() - backupFailedAt < BACKUP_RETRY_MS) {
     throw new Error("The database needs upgrading, and the backup before it failed less than a minute ago. Fix the backup (MYSQLDUMP_COMMAND, BACKUP_PATH), or set UPGRADE_BACKUP=0 to upgrade without one");
   }
+  // backed up once per release : a patch that keeps failing leaves the upgrade pending, and every
+  // restart took another full backup of the database, filling the backup folder
+  if (await upgradeBackedUp()) {
+    logger.notice(`The database was backed up before the upgrade to ${appVersion} already: not again`);
+    return `Backed up before the upgrade to ${appVersion} already`;
+  }
   const { default: Backup } = await import("./backup.model.js");
   try {
     const { backupFolder } = await Backup.doBackup(`Before the upgrade to ${appVersion}`);
     logger.notice(`Backed up the database before the upgrade: ${backupFolder}`);
+    await recordUpgradeBackup();
     return `Backed up the database before the upgrade (${backupFolder})`;
   } catch (err) {
     backupFailedAt = Date.now();
@@ -2164,7 +2210,7 @@ export { SCHEMA_MANIFEST };
 // the 7 patch on its own, for the test that runs it on a database from before its columns
 export { patchVersion7 };
 // what makes a start back up the database before patching, for its test
-export { pendingUpgrade };
+export { pendingUpgrade, backupBeforeUpgrade };
 export default Schema;
 
 // function addRecord(table,names,values){
