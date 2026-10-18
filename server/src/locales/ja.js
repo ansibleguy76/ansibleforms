@@ -2,6 +2,8 @@ export default {
   errors: {
     databaseError:
       "データベースエラーが発生しました: 詳細はサーバーログにあります",
+    duplicateRecord: "この名前のレコードはすでに存在します",
+    valueTooLong: "値がフィールドに対して長すぎます",
     noAccess: "アクセス権がありません",
     notAdmin: "管理者ではありません",
     noSettingsAccess: "設定へのアクセス権がありません",

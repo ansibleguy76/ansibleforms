@@ -2,6 +2,8 @@ export default {
   errors: {
     databaseError:
       "S'ha produït un error de la base de dades: el registre del servidor en té els detalls",
+    duplicateRecord: "Ja existeix un registre amb aquest nom",
+    valueTooLong: "Un valor és massa llarg per al seu camp",
     noAccess: "No hi tens accés",
     notAdmin: "No ets administrador",
     noSettingsAccess: "No tens accés a la configuració",

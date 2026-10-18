@@ -2,6 +2,8 @@ export default {
   errors: {
     databaseError:
       "发生数据库错误：详细信息见服务器日志",
+    duplicateRecord: "已存在同名记录",
+    valueTooLong: "某个值超出了其字段的长度",
     noAccess: "无访问权限",
     notAdmin: "您不是管理员",
     noSettingsAccess: "您无权访问设置",

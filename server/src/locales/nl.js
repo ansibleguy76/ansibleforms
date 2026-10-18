@@ -2,6 +2,8 @@ export default {
   errors: {
     databaseError:
       "Er is een databasefout opgetreden: het serverlogboek bevat de details",
+    duplicateRecord: "Er bestaat al een record met deze naam",
+    valueTooLong: "Een waarde is te lang voor het veld",
     noAccess: "Geen toegang",
     notAdmin: "U bent geen beheerder",
     noSettingsAccess: "U heeft geen toegang tot instellingen",

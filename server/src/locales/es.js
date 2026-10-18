@@ -2,6 +2,8 @@ export default {
   errors: {
     databaseError:
       "Se ha producido un error de la base de datos: el registro del servidor tiene los detalles",
+    duplicateRecord: "Ya existe un registro con este nombre",
+    valueTooLong: "Un valor es demasiado largo para su campo",
     noAccess: "Sin acceso",
     notAdmin: "No eres administrador",
     noSettingsAccess: "No tienes acceso a la configuración",

@@ -2,6 +2,8 @@ export default {
   errors: {
     databaseError:
       "Wystąpił błąd bazy danych: szczegóły są w dzienniku serwera",
+    duplicateRecord: "Rekord o tej nazwie już istnieje",
+    valueTooLong: "Wartość jest za długa dla swojego pola",
     noAccess: "Brak dostępu",
     notAdmin: "Nie jesteś administratorem",
     noSettingsAccess: "Nie masz dostępu do ustawień",

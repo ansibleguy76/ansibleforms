@@ -2,6 +2,8 @@ export default {
   errors: {
     databaseError:
       "Si è verificato un errore del database: il log del server ha i dettagli",
+    duplicateRecord: "Esiste già un record con questo nome",
+    valueTooLong: "Un valore è troppo lungo per il suo campo",
     noAccess: "Accesso negato",
     notAdmin: "Non sei un amministratore",
     noSettingsAccess: "Non hai accesso alle impostazioni",

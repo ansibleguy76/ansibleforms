@@ -2,6 +2,8 @@ export default {
   errors: {
     databaseError:
       "Ein Datenbankfehler ist aufgetreten: das Serverprotokoll enthaelt die Details",
+    duplicateRecord: "Ein Eintrag mit diesem Namen existiert bereits",
+    valueTooLong: "Ein Wert ist zu lang fuer sein Feld",
     noAccess: "Kein Zugriff",
     notAdmin: "Du bist kein Administrator",
     noSettingsAccess: "Du hast keinen Zugriff auf Einstellungen",
