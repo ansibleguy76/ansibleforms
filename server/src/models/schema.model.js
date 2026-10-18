@@ -2050,7 +2050,8 @@ async function pendingUpgrade() {
   // runs only after a successful patch run) : it read as a fresh install, and was patched with
   // no backup. A fresh install lacks nothing the manifest names (create_schema_and_tables.sql
   // builds all of it), while that database lacks what its failing patches add, beside the core
-  // tables (users, jobs) holding its data
+  // tables (users, jobs) holding its data. Not with a row of this release : a development build
+  // adding a column patches without a backup, as it always did (no dump tool needed there)
   if (!recorded) {
     const missing = await missingOnExistingDatabase();
     if (missing.length) {

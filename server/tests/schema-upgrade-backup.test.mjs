@@ -126,6 +126,12 @@ describe("an upgrade is pending, and backed up first", () => {
     assert.match(pending[0], /unrecorded schema to 7\.3\.0 \(it lacks runners\./);
   });
 
+  test("a row of this release on a schema lacking what a development build adds: not pending", async () => {
+    // no dump tool on a development machine : a new column there patches without a backup
+    have = { tables: manifestTables().filter((t) => t !== "job_events"), columns: manifestColumns() };
+    assert.deepEqual(await pendingUpgrade(), []);
+  });
+
   test("no row and a missing table, but no users or jobs table: not an existing install, not pending", async () => {
     recorded = null;
     have = { tables: manifestTables().filter((t) => t !== "users" && t !== "jobs"), columns: [] };
