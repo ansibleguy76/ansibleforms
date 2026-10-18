@@ -970,6 +970,14 @@ export default {
       roleDirectly: 'Directly',
       roleThroughGroups: 'Through {groups}',
       roleEveryone: 'Everyone',
+      // a record's toasts, by its name ({name}) in the word order of the language
+      nameUpdated: '{name} is updated',
+      nameDeleted: '{name} is deleted',
+      // the admin forms' validation messages (AppAdminMulti, AppAdminSingle), by the field's label
+      fieldRequired: '{field} is required',
+      fieldEmail: '{field} must be a valid email address',
+      fieldYaml: '{field} must be valid YAML',
+      fieldInvalid: '{field} is not valid',
     },
     fields: {
       id: 'ID',

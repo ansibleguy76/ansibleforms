@@ -955,6 +955,14 @@ export default {
       roleDirectly: '直接',
       roleThroughGroups: '通过 {groups}',
       roleEveryone: '所有人',
+      // a record's toasts, by its name ({name}) in the word order of the language
+      nameUpdated: '{name} 已更新',
+      nameDeleted: '{name} 已删除',
+      // the admin forms' validation messages (AppAdminMulti, AppAdminSingle), by the field's label
+      fieldRequired: '{field} 为必填项',
+      fieldEmail: '{field} 必须是有效的电子邮件地址',
+      fieldYaml: '{field} 必须是有效的 YAML',
+      fieldInvalid: '{field} 无效',
     },
     fields: {
       id: 'ID',

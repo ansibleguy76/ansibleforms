@@ -210,6 +210,8 @@ const childFields = computed(() => props.settings.childFields || {});
 const noCreate = computed(() => props.settings.noCreate === true || props.readOnly);
 
 // VUELIDATE
+// the messages are translated, the field's label in them (settings.common.field*), and read
+// when shown : a change of language follows without rebuilding the rules
 
 function getRules() {
   const ruleObj = { item: {} };
@@ -218,23 +220,26 @@ function getRules() {
     if (field.required && field.dependency && Array.isArray(field.dependencyValues)) {
       // a field of some types only (an Entra ID credential's tenant) : required while it is shown
       rule.required = helpers.withMessage(
-        `${field.label} is required`,
+        () => t('settings.common.fieldRequired', { field: field.label }),
         requiredIf(() => field.dependencyValues.includes(item.value[field.dependency])),
       );
     } else if (field.requiredWhen) {
       // required by a rule of its own (an smtp credential's host : its mail server)
       rule.required = helpers.withMessage(
-        `${field.label} is required`,
+        () => t('settings.common.fieldRequired', { field: field.label }),
         requiredIf(() => !!field.requiredWhen(item.value)),
       );
     } else if (field.required) {
-      rule.required = helpers.withMessage(`${field.label} is required`, required);
+      rule.required = helpers.withMessage(() => t('settings.common.fieldRequired', { field: field.label }), required);
     }
     if (field.type == 'email') {
-      rule.email = helpers.withMessage(`${field.label} must be a valid email address`, email);
+      rule.email = helpers.withMessage(() => t('settings.common.fieldEmail', { field: field.label }), email);
     }
     if (field.type == 'checkbox' && field.required) {
-      rule.checkboxRequired = helpers.withMessage(`${field.label} is required`, sameAs(computed(() => true)));
+      rule.checkboxRequired = helpers.withMessage(
+        () => t('settings.common.fieldRequired', { field: field.label }),
+        sameAs(computed(() => true)),
+      );
     }
     // regex validation
     if (field.regex && field.regex.expression) {
@@ -264,7 +269,7 @@ function getRules() {
     if (typeof field.validator === 'function') {
       const check = field.validator;
       rule.custom = helpers.withMessage(
-        ({ $response }) => $response || `${field.label} is not valid`,
+        ({ $response }) => $response || t('settings.common.fieldInvalid', { field: field.label }),
         (value) => {
           if (!helpers.req(value)) return true;
           let message;
@@ -281,15 +286,18 @@ function getRules() {
       );
     }
     if (field.type == 'editor' && field.lang == 'yaml') {
-      rule.editorType = helpers.withMessage(`${field.label} must be valid YAML`, (value) => {
-        if (!helpers.req(value)) return true;
-        try {
-          const parsed = yaml.parse(value);
-          return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed);
-        } catch (e) {
-          return false;
-        }
-      });
+      rule.editorType = helpers.withMessage(
+        () => t('settings.common.fieldYaml', { field: field.label }),
+        (value) => {
+          if (!helpers.req(value)) return true;
+          try {
+            const parsed = yaml.parse(value);
+            return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed);
+          } catch (e) {
+            return false;
+          }
+        },
+      );
     }
     ruleObj.item[field.key] = rule;
     // if (field.type == 'password') {

@@ -976,6 +976,14 @@ export default {
       roleDirectly: 'Directament',
       roleThroughGroups: 'A través de {groups}',
       roleEveryone: 'Tothom',
+      // a record's toasts, by its name ({name}) in the word order of the language
+      nameUpdated: "S'ha actualitzat {name}",
+      nameDeleted: "S'ha suprimit {name}",
+      // the admin forms' validation messages (AppAdminMulti, AppAdminSingle), by the field's label
+      fieldRequired: '{field} és obligatori',
+      fieldEmail: '{field} ha de ser una adreça electrònica vàlida',
+      fieldYaml: '{field} ha de ser YAML vàlid',
+      fieldInvalid: '{field} no és vàlid',
     },
     fields: {
       id: 'ID',

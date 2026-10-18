@@ -971,6 +971,14 @@ export default {
       roleDirectly: '直接',
       roleThroughGroups: '{groups} 経由',
       roleEveryone: '全員',
+      // a record's toasts, by its name ({name}) in the word order of the language
+      nameUpdated: '{name} を更新しました',
+      nameDeleted: '{name} を削除しました',
+      // the admin forms' validation messages (AppAdminMulti, AppAdminSingle), by the field's label
+      fieldRequired: '{field} は必須です',
+      fieldEmail: '{field} には有効なメールアドレスを入力してください',
+      fieldYaml: '{field} は有効な YAML でなければなりません',
+      fieldInvalid: '{field} が無効です',
     },
     fields: {
       id: 'ID',

@@ -168,18 +168,23 @@ const fieldsDict = computed(() =>
 );
 
 // validation
+// the messages are translated, the field's label in them (settings.common.field*), and read
+// when shown : a change of language follows without rebuilding the rules
 function getRules() {
   const ruleObj = { item: {} };
   fields.value.forEach((field) => {
     var rule = {};
     if (field.required) {
-      rule.required = helpers.withMessage(`${field.label} is required`, required);
+      rule.required = helpers.withMessage(() => t('settings.common.fieldRequired', { field: field.label }), required);
     }
     if (field.type == 'email') {
-      rule.email = helpers.withMessage(`${field.label} must be a valid email address`, email);
+      rule.email = helpers.withMessage(() => t('settings.common.fieldEmail', { field: field.label }), email);
     }
     if (field.type == 'checkbox' && field.required) {
-      rule.checkboxRequired = helpers.withMessage(`${field.label} is required`, sameAs(computed(() => true)));
+      rule.checkboxRequired = helpers.withMessage(
+        () => t('settings.common.fieldRequired', { field: field.label }),
+        sameAs(computed(() => true)),
+      );
     }
     ruleObj.item[field.key] = rule;
   });
