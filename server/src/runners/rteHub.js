@@ -53,6 +53,8 @@ const sessions = new Map();
 const waiting = new Map();
 // the claims an RTE has not answered yet : jobId -> { resolve, timer }
 const claims = new Map();
+// jobs being handed over now (sendJob) : kick and dispatch never hand one over twice at once
+const sending = new Set();
 // jobs whose cancel was sent ; jobs whose output masks this process registered
 const cancelSent = new Set();
 const masked = new Set();
@@ -179,20 +181,96 @@ export async function socketState(name) {
  *   Promise<void>
  */
 async function rteHeartbeat(entry) {
-  if (!entry.rteId) return;
+  // a runner waiting for approval runs nothing : no row of its own on the Status page yet
+  if (!entry.rteId || isPending(entry)) return;
   const info = JSON.stringify({ mode: entry.hello?.mode, runner: entry.runner.name, socket: nodeId, capacity: entry.health?.capacity || entry.hello?.capacity });
-  await mysql.tryDo(
-    "INSERT INTO AnsibleForms.`nodes` (id, role, version, started_at, last_seen, is_worker, info) VALUES (?, 'rte', ?, NOW(), NOW(), 0, ?) " +
-      "ON DUPLICATE KEY UPDATE role='rte', version=VALUES(version), last_seen=NOW(), is_worker=0, info=VALUES(info)",
-    [entry.rteId, entry.hello?.version || null, info]
-  ).catch((e) => logger.debug(`RTE heartbeat for ${entry.rteId}: ${e.message}`));
+  try {
+    // step 1 : its row, renewed - only the row of an RTE : an app or a worker node's row is
+    // never written over, whatever id the RTE said it has
+    const res = await mysql.tryDo(
+      "UPDATE AnsibleForms.`nodes` SET version=?, last_seen=NOW(), is_worker=0, info=? WHERE id=? AND role='rte'",
+      [entry.hello?.version || null, info, entry.rteId]
+    );
+    // step 2 : none yet : added ; a row of another role by that id stays as it is
+    if (!res?.affectedRows) {
+      await mysql.tryDo(
+        "INSERT IGNORE INTO AnsibleForms.`nodes` (id, role, version, started_at, last_seen, is_worker, info) VALUES (?, 'rte', ?, NOW(), NOW(), 0, ?)",
+        [entry.rteId, entry.hello?.version || null, info]
+      );
+    }
+  } catch (e) {
+    logger.debug(`RTE heartbeat for ${entry.rteId}: ${e.message}`);
+  }
 }
 
 // ─── a socket's life ──────────────────────────────────────────────────────────
 
 /**
- * Takes an RTE's socket : waits for its hello, checks its contract, welcomes it, and from then
- * on keeps its lease and its heartbeat, writes what it sends and sends it its jobs.
+ * Whether a session's runner waits for an admin's approval : connected, but it gets no job, and
+ * nothing it sends is stored.
+ *
+ * Args:
+ *   entry (object): the session's entry.
+ *
+ * Returns:
+ *   boolean
+ */
+function isPending(entry) {
+  return !!Number(entry?.runner?.pending);
+}
+
+/**
+ * Whether a session may run jobs : welcomed, open, and its runner approved.
+ *
+ * Args:
+ *   entry (object): the session's entry.
+ *
+ * Returns:
+ *   boolean
+ */
+function canRun(entry) {
+  return !!(entry?.hello && entry.session.open && !isPending(entry));
+}
+
+/**
+ * Why an RTE may not go by the id it said in its hello, if it may not : the id is what its jobs
+ * are claimed with (jobs.host) and the name of its row in `nodes`, so one runner's RTE must not
+ * take the id of an app node, nor of another runner's RTE.
+ *
+ * Args:
+ *   name (string): the runner the socket signed in as.
+ *   rteId (string): the id its hello said.
+ *
+ * Returns:
+ *   Promise<string|null>: why it is taken, null when it is free (or this runner's already).
+ */
+async function rteIdTaken(name, rteId) {
+  // step 1 : a node by that id : an app or a worker node, or a live RTE of another runner (a
+  // database-mode RTE writes no runner in its row : taken while it lives)
+  const nodes = await mysql.do(
+    "SELECT role, info, last_seen > (NOW() - INTERVAL ? SECOND) AS alive FROM AnsibleForms.`nodes` WHERE id=?",
+    [NODE_DEAD_SECONDS, rteId],
+    true
+  );
+  const node = nodes?.[0];
+  if (node && node.role !== "rte") return `it is the id of a node of role ${node.role}`;
+  if (node && Number(node.alive) && safeParse(node.info, {}, `nodes.info ${rteId}`)?.runner !== name) return "a live RTE of another runner goes by it";
+  // step 2 : the socket of another approved runner's RTE, held now by any app node (a runner
+  // waiting for approval holds nothing : it cannot keep an id from its RTE)
+  const leases = await mysql.do(
+    "SELECT l.runner FROM AnsibleForms.`runner_leases` l JOIN AnsibleForms.`runners` r ON r.name = l.runner " +
+      "WHERE l.rte_id=? AND l.runner<>? AND l.expires_at > NOW() AND COALESCE(r.pending, 0) = 0 LIMIT 1",
+    [rteId, name],
+    true
+  );
+  if (leases?.length) return `the RTE of runner '${leases[0].runner}' goes by it`;
+  return null;
+}
+
+/**
+ * Takes an RTE's socket : waits for its hello, checks its contract and its id, welcomes it, and
+ * from then on keeps its lease and its heartbeat, writes what it sends and sends it its jobs. A
+ * runner waiting for approval gets its socket and its lease, nothing more.
  *
  * Args:
  *   session (Session): the socket.
@@ -203,23 +281,52 @@ function adopt(session, runner, direction) {
   const name = runner.name;
   const previous = sessions.get(name);
   if (previous && previous.session !== session) previous.session.close(CLOSE.REPLACED, "a newer socket of this RTE took over");
-  const entry = { session, runner, direction, hello: null, health: null, rteId: null };
+  // allowed : jobId -> Promise<boolean>, whether this RTE may write a job (itemAllowed) ;
+  // refused : the jobs it was refused, said once in the log ; hashes : the job files sent to
+  // it, the only ones it may fetch
+  const entry = { session, runner, direction, hello: null, health: null, rteId: null, allowed: new Map(), refused: new Set(), hashes: new Set() };
   sessions.set(name, entry);
+  // this socket is still the runner's, and open : after each wait, a closed or replaced one stops
+  const current = () => sessions.get(name) === entry && session.open;
 
   const hello = setTimeout(() => {
     if (!entry.hello) session.close(CLOSE.PROTOCOL, "no hello");
   }, 15000);
   hello.unref?.();
 
+  let helloSeen = false;
   session.on("m:hello", async (msg) => {
+    // one hello per socket : a second one is ignored, never a second lease timer
+    if (helloSeen) {
+      logger.debug(`RTE '${name}': a second hello on the same socket, ignored`);
+      return;
+    }
+    helloSeen = true;
     clearTimeout(hello);
     if (msg.contract !== SOCKET_CONTRACT) {
       logger.warning(`RTE '${name}' speaks contract ${msg.contract}, this app (${appVersion}) contract ${SOCKET_CONTRACT}: refused`);
       session.close(CLOSE.CONTRACT, `this app speaks contract ${SOCKET_CONTRACT}`);
       return;
     }
+    // step 1 : its id, checked : never an app node's, nor another runner's RTE's
+    const rteId = String(msg.id || `rte-${name}`).slice(0, 250);
+    let taken;
+    try {
+      taken = await rteIdTaken(name, rteId);
+    } catch (e) {
+      logger.error(`RTE '${name}': could not check its id: ${e.message}`);
+      session.close(CLOSE.LEASE_LOST, "no lease");
+      return;
+    }
+    if (!current()) return;
+    if (taken) {
+      logger.warning(`RTE '${name}' says it is '${rteId}', refused: ${taken}`);
+      session.close(CLOSE.ID_TAKEN, `the id ${rteId} is taken: ${taken}`);
+      return;
+    }
     entry.hello = msg;
-    entry.rteId = String(msg.id || `rte-${name}`);
+    entry.rteId = rteId;
+    // step 2 : its lease
     try {
       await takeLease(name, direction, entry.rteId);
     } catch (e) {
@@ -227,25 +334,25 @@ function adopt(session, runner, direction) {
       session.close(CLOSE.LEASE_LOST, "no lease");
       return;
     }
-    // a runner waiting for approval : connected, but it gets no job until an admin approves it
-    session.send({ t: "welcome", node: nodeId, contract: SOCKET_CONTRACT, version: appVersion, pending: !!Number(runner.pending) });
+    if (!current()) return;
+    // step 3 : welcomed ; a runner waiting for approval : connected, but it gets no job until an
+    // admin approves it
+    session.send({ t: "welcome", node: nodeId, contract: SOCKET_CONTRACT, version: appVersion, pending: isPending(entry) });
     logger.notice(`RTE '${name}' (${entry.rteId}, ${msg.version}, ${direction}) connected`);
     await renewLease(entry).catch(() => {});
+    if (!current()) return;
     await rteHeartbeat(entry);
+    if (!current()) return;
     publish("runners");
-    await abandonLost(entry, msg).catch((e) => logger.error(`RTE '${name}': ${e.message}`));
-    entry.renew = setInterval(async () => {
-      try {
-        if (!(await renewLease(entry))) {
-          logger.warning(`RTE '${name}': another node holds its socket now, closing this one`);
-          session.close(CLOSE.LEASE_LOST, "lease taken by another node");
-          return;
-        }
-      } catch (e) {
-        logger.debug(`RTE '${name}': lease renewal failed: ${e.message}`);
-      }
-      await rteHeartbeat(entry);
-    }, RENEW_MS);
+    // step 4 : the jobs it came back without : abandoned (an approved runner's only : one
+    // waiting for approval has no job)
+    if (!isPending(entry)) {
+      await abandonLost(entry, msg).catch((e) => logger.error(`RTE '${name}': ${e.message}`));
+      if (!current()) return;
+    }
+    // step 5 : its lease and its heartbeat kept, every RENEW_MS
+    clearInterval(entry.renew);
+    entry.renew = setInterval(() => renewTick(entry).catch((e) => logger.debug(`RTE '${name}': ${e.message}`)), RENEW_MS);
     entry.renew.unref?.();
     // its jobs waiting already : sent now
     dispatch().catch(() => {});
@@ -253,10 +360,11 @@ function adopt(session, runner, direction) {
   session.on("m:health", (msg) => {
     entry.health = msg;
   });
-  session.on("m:claimed", (msg) => settleClaim(msg.jobId, { claimed: true }));
-  session.on("m:refused", (msg) => settleClaim(msg.jobId, { claimed: false, error: msg.error, busy: !!msg.busy }));
+  // the answers of this socket's own claims only
+  session.on("m:claimed", (msg) => settleClaim(msg.jobId, { claimed: true }, entry));
+  session.on("m:refused", (msg) => settleClaim(msg.jobId, { claimed: false, error: msg.error, busy: !!msg.busy }, entry));
   session.on("m:item", (msg) => onItem(entry, msg));
-  session.on("m:fetch", (msg) => sendFiles(entry, msg.hash).catch((e) => logger.error(`RTE '${name}': sending files: ${e.message}`)));
+  session.on("m:fetch", (msg) => onFetch(entry, msg));
   session.on("close", (code, reason) => {
     clearTimeout(hello);
     clearInterval(entry.renew);
@@ -264,10 +372,52 @@ function adopt(session, runner, direction) {
       sessions.delete(name);
       if (code !== CLOSE.LEASE_LOST && code !== CLOSE.REPLACED) releaseLease(name);
     }
-    for (const [jobId, c] of claims) if (c.runner === name) settleClaim(jobId, { claimed: false, error: "the socket closed", lost: true });
+    for (const [jobId, c] of claims) if (c.entry === entry) settleClaim(jobId, { claimed: false, error: "the socket closed", lost: true }, entry);
     logger.warning(`RTE '${name}' disconnected (${code}${reason ? `: ${reason}` : ""})`);
     publish("runners");
   });
+}
+
+/**
+ * One renewal of a session : its runner read again (gone : the socket closes, approved : it
+ * takes jobs from now on), its lease renewed (another node holds it : the socket closes) and
+ * its heartbeat written.
+ *
+ * Args:
+ *   entry (object): the session's entry.
+ *
+ * Returns:
+ *   Promise<void>
+ */
+async function renewTick(entry) {
+  const name = entry.runner.name;
+  // step 1 : the runner, as stored now : rejected or deleted on any node, the socket closes ; the
+  // RTE waits a long while before it dials again (rte-socket.js redialWait)
+  let row;
+  try {
+    row = await Runner.findByName(name);
+  } catch (e) {
+    logger.debug(`RTE '${name}': reading its runner failed: ${e.message}`);
+    row = entry.runner;
+  }
+  if (!row || row.type !== "rte") {
+    logger.warning(`RTE '${name}': its runner is gone (rejected or deleted), closing its socket`);
+    entry.session.close(CLOSE.UNAUTHORIZED, "this runner was removed under Connections > Runners");
+    return;
+  }
+  entry.runner = { ...entry.runner, ...row };
+  // step 2 : the lease
+  try {
+    if (!(await renewLease(entry))) {
+      logger.warning(`RTE '${name}': another node holds its socket now, closing this one`);
+      entry.session.close(CLOSE.LEASE_LOST, "lease taken by another node");
+      return;
+    }
+  } catch (e) {
+    logger.debug(`RTE '${name}': lease renewal failed: ${e.message}`);
+  }
+  // step 3 : the heartbeat
+  await rteHeartbeat(entry);
 }
 
 /**
@@ -283,10 +433,13 @@ function adopt(session, runner, direction) {
  */
 async function abandonLost(entry, hello) {
   const known = new Set([...(hello.running || []), ...(hello.spooled || [])].map(Number));
-  const rows = await mysql.do("SELECT id FROM AnsibleForms.`jobs` WHERE status='running' AND host=?", [entry.rteId]);
+  const name = entry.runner.name;
+  // only the jobs of its own runner : never another runner's, whatever id the RTE said
+  const rows = await mysql.do("SELECT id FROM AnsibleForms.`jobs` WHERE status='running' AND host=? AND runner=?", [entry.rteId, name]);
   for (const { id } of rows || []) {
     if (known.has(Number(id))) continue;
-    if (await abandonJobs({ id, host: entry.rteId })) logger.warning(`Job ${id}: RTE '${entry.runner.name}' came back without it: abandoned`);
+    if (await abandonJobs({ id, host: entry.rteId, runner: name })) logger.warning(`Job ${id}: RTE '${name}' came back without it: abandoned`);
+    forgetJob(Number(id));
   }
 }
 
@@ -338,9 +491,10 @@ export async function authenticate(headers, opts = {}) {
     if (runner) return { status: 401, error: `the token of RTE '${name}' is not the one stored for its runner: check its RTE_TOKEN` };
     return askToJoin({ name, token, mode, url, fields, headers, ip: opts.ip });
   }
+  // a seeded runner first : refused before the join token is used, which would cost it a use
+  if (runner?.managed) return { status: 409, error: `runner '${name}' is managed by the config seed: its token is set there` };
   const used = await RunnerJoinToken.use(join);
   if (!used) return { status: 401, error: "the join token (RTE_JOIN_TOKEN) is unknown, revoked, expired or used up" };
-  if (runner?.managed) return { status: 409, error: `runner '${name}' is managed by the config seed: its token is set there` };
   // the token goes in a credential of type rte, as every runner signs in (Connections >
   // Credentials) : the runner names it, and an inbound one's address is the credential's
   const credential = await storeToken(name, token, mode === "inbound" ? url : "", runner?.credential);
@@ -353,6 +507,9 @@ export async function authenticate(headers, opts = {}) {
   }
   return { runner: await Runner.findByName(name) };
 }
+
+// the requests to join, one after the other (askToJoin)
+let joinQueue = Promise.resolve();
 
 /**
  * An RTE nobody knows asks to join : it becomes a runner waiting for an admin's approval,
@@ -367,7 +524,31 @@ export async function authenticate(headers, opts = {}) {
  * Returns:
  *   Promise<object>: { runner, pending: true }, or { status, error } when refused.
  */
-async function askToJoin({ name, token, mode, url, fields, headers, ip }) {
+function askToJoin(req) {
+  // one at a time on this node : two RTEs asking at once cannot both pass the count of the ones
+  // waiting (between the nodes the overshoot is one per node at most)
+  const turn = joinQueue.then(() => addPending(req));
+  joinQueue = turn.catch(() => {});
+  return turn;
+}
+
+/**
+ * Adds a runner waiting for approval, when fewer than PENDING_MAX wait (askToJoin, one at a
+ * time).
+ *
+ * Args:
+ *   req (object): { name, token, mode, url, fields, headers, ip }.
+ *
+ * Returns:
+ *   Promise<object>: { runner, pending: true }, or { status, error } when refused.
+ */
+async function addPending({ name, token, mode, url, fields, headers, ip }) {
+  // asked twice at once (the socket and the registration call) : the first one added it
+  const already = await Runner.findByName(name);
+  if (already) {
+    if (already.type === "rte" && safeEqual(token, already.token)) return { runner: already, pending: !!Number(already.pending) };
+    return { status: 401, error: `the token of RTE '${name}' is not the one stored for its runner: check its RTE_TOKEN` };
+  }
   if ((await Runner.countPending()) >= PENDING_MAX) {
     return { status: 429, error: `${PENDING_MAX} RTEs already wait for approval under Connections > Runners: approve or reject them first` };
   }
@@ -456,9 +637,41 @@ export async function registerHandler(req, res) {
   }
 }
 
+// the upgrades to the RTE socket, per address : address -> { since, count } (upgradeAllowed)
+const upgrades = new Map();
+const UPGRADE_WINDOW_MS = 60 * 1000;
+
+/**
+ * Whether an address may try the RTE socket now : the ceiling of the registration call
+ * (AUTH_RATE_LIMIT a minute, lib/authRateLimit.js, 0 turns it off), counted per address on this
+ * node, so a flood of upgrades stops before any token or database is looked at.
+ *
+ * Args:
+ *   ip (string): the caller's address (the socket's, as express sees req.ip).
+ *   now (number): the time, in ms (the tests set it).
+ *
+ * Returns:
+ *   boolean: false when the address went over the ceiling this minute.
+ */
+export function upgradeAllowed(ip, now = Date.now()) {
+  const limit = appConfig.authRateLimit;
+  if (!limit) return true;
+  // step 1 : the windows that ended are forgotten, now and then (a scan of the map, not per call)
+  if (upgrades.size > 1000) for (const [k, w] of upgrades) if (now - w.since >= UPGRADE_WINDOW_MS) upgrades.delete(k);
+  // step 2 : this address's window : a new one when its last ended
+  const key = String(ip || "?");
+  let w = upgrades.get(key);
+  if (!w || now - w.since >= UPGRADE_WINDOW_MS) {
+    w = { since: now, count: 0 };
+    upgrades.set(key, w);
+  }
+  w.count++;
+  return w.count <= limit;
+}
+
 /**
  * The upgrade of an HTTP request to the RTE socket (outbound RTEs) : authenticated, then taken.
- * Other upgrades are left for whoever else listens.
+ * Other upgrades are left for whoever else listens. Too many from one address : 429.
  *
  * Args:
  *   req (IncomingMessage): the request.
@@ -471,6 +684,14 @@ export async function registerHandler(req, res) {
 export function handleUpgrade(req, socket, head) {
   const pathname = new URL(req.url, "http://x").pathname;
   if (pathname !== `${appConfig.baseUrl || ""}${APP_SOCKET_PATH}`) return false;
+  // the address of the socket, not a header a caller writes itself : as the registration call's
+  // limiter counts (express without trust proxy)
+  if (!upgradeAllowed(req.socket.remoteAddress)) {
+    const body = JSON.stringify({ error: "Too many requests, slow down" });
+    socket.write(`HTTP/1.1 429 Too Many Requests\r\nContent-Type: application/json\r\nContent-Length: ${Buffer.byteLength(body)}\r\nConnection: close\r\n\r\n${body}`);
+    socket.destroy();
+    return true;
+  }
   authenticate(req.headers, { ip: req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress })
     .then((res) => {
       if (!res.runner) {
@@ -528,7 +749,13 @@ async function dialInbound() {
       dialing.delete(name);
       adopt(new Session(ws, `rte '${name}'`), runner, "inbound");
     });
-    ws.on("unexpected-response", (req, res) => logger.warning(`Runner '${name}': the RTE at ${url} refused the socket (${res.statusCode}): check its RTE_TOKEN`));
+    ws.on("unexpected-response", (req, res) => {
+      logger.warning(`Runner '${name}': the RTE at ${url} refused the socket (${res.statusCode}): check its RTE_TOKEN`);
+      // listening to this event takes the abort of the handshake over from ws : without it no
+      // close comes, and the runner stays in `dialing` for good (never dialed again)
+      res.resume();
+      ws.terminate();
+    });
     ws.on("error", (e) => {
       dialing.delete(name);
       logger.debug(`Runner '${name}': dialing ${url}: ${e.message}`);
@@ -545,10 +772,12 @@ async function dialInbound() {
  * Args:
  *   jobId (number): the job.
  *   result (object): { claimed, error, busy, lost }.
+ *   entry (object): the session that answers, when one does : only the session the job was
+ *     sent on settles its claim, never another RTE's.
  */
-function settleClaim(jobId, result) {
+function settleClaim(jobId, result, entry = null) {
   const c = claims.get(Number(jobId));
-  if (!c) return;
+  if (!c || (entry && c.entry !== entry)) return;
   clearTimeout(c.timer);
   claims.delete(Number(jobId));
   c.resolve(result);
@@ -585,7 +814,12 @@ async function runMessage(jobId, entry) {
     paths: { playbookRepo, inventoryRepos },
   };
   // an RTE without files of its own : the folders, packed, by their hashes
-  if (entry.hello?.files === "transfer") msg.files = await jobFileHashes(inventoryRepos);
+  if (entry.hello?.files === "transfer") {
+    msg.files = await jobFileHashes(inventoryRepos);
+    // the only files this RTE may fetch : the ones of the jobs sent to it
+    if (msg.files.playbooks?.hash) entry.hashes.add(msg.files.playbooks.hash);
+    for (const inv of msg.files.inventories) entry.hashes.add(inv.hash);
+  }
   return msg;
 }
 
@@ -693,6 +927,27 @@ async function failJob(jobId, message) {
  *   Promise<void>
  */
 async function sendJob(jobId, entry) {
+  // handed over already (kick and dispatch both found it) : one hand-over at a time
+  if (sending.has(jobId)) return;
+  sending.add(jobId);
+  try {
+    await handOver(jobId, entry);
+  } finally {
+    sending.delete(jobId);
+  }
+}
+
+/**
+ * One hand-over of a job to an RTE (sendJob, never twice at once for a job).
+ *
+ * Args:
+ *   jobId (number): the job.
+ *   entry (object): the session's entry.
+ *
+ * Returns:
+ *   Promise<void>
+ */
+async function handOver(jobId, entry) {
   const name = entry.runner.name;
   const wait = waiting.get(jobId) || { firstWait: Date.now(), retryAt: 0, said: false };
   waiting.set(jobId, wait);
@@ -713,7 +968,8 @@ async function sendJob(jobId, entry) {
   if (cap && cap.free === 0) return busy(`it runs ${cap.running} jobs already (RTE_MAX_JOBS)`);
   const claim = await mysql.do("UPDATE AnsibleForms.`jobs` SET host=? WHERE id=? AND status='running' AND host IS NULL", [entry.rteId, jobId]);
   if (!claim?.affectedRows) {
-    waiting.delete(jobId);
+    // claimed elsewhere, or ended : its wait goes - its own, never one another hand-over set since
+    if (waiting.get(jobId) === wait) waiting.delete(jobId);
     return;
   }
   let msg;
@@ -726,12 +982,12 @@ async function sendJob(jobId, entry) {
   const answer = new Promise((resolve) => {
     const timer = setTimeout(() => settleClaim(jobId, { claimed: false, error: "no answer", lost: true }), CLAIM_TIMEOUT_MS);
     timer.unref?.();
-    claims.set(jobId, { resolve, timer, runner: name });
+    claims.set(jobId, { resolve, timer, runner: name, entry });
   });
   if (!entry.session.send(msg)) settleClaim(jobId, { claimed: false, error: "the socket is closed", lost: true });
   const res = await answer;
   if (res.claimed) {
-    waiting.delete(jobId);
+    if (waiting.get(jobId) === wait) waiting.delete(jobId);
     logger.notice(`Job ${jobId}: RTE '${name}' took it`);
     return;
   }
@@ -750,7 +1006,8 @@ async function sendJob(jobId, entry) {
  */
 async function dispatch() {
   if (!sessions.size) return;
-  const ready = [...sessions.values()].filter((e) => e.hello && e.session.open);
+  // not a runner waiting for approval : it gets no job, and no cancel of another RTE's job
+  const ready = [...sessions.values()].filter(canRun);
   if (!ready.length) return;
   const byName = new Map(ready.map((e) => [e.runner.name, e]));
   const rows = await mysql.do(
@@ -769,14 +1026,15 @@ async function dispatch() {
   }
   const ids = ready.map((e) => e.rteId).filter(Boolean);
   if (!ids.length) return;
+  // a job's cancel goes to the RTE that holds it, of its own runner
   const aborts = await mysql.do(
-    "SELECT id, host FROM AnsibleForms.`jobs` WHERE status='running' AND abort_requested=1 AND host IN (?)",
-    [ids],
+    "SELECT id, host, runner FROM AnsibleForms.`jobs` WHERE status='running' AND abort_requested=1 AND host IN (?) AND runner IN (?)",
+    [ids, [...byName.keys()]],
     true
   );
   for (const a of aborts || []) {
     if (cancelSent.has(a.id)) continue;
-    const entry = ready.find((e) => e.rteId === a.host);
+    const entry = ready.find((e) => e.rteId === a.host && e.runner.name === a.runner);
     if (entry?.session.send({ t: "cancel", jobId: a.id })) cancelSent.add(a.id);
   }
 }
@@ -791,7 +1049,7 @@ async function dispatch() {
  */
 export function kick(jobId, runner) {
   const entry = sessions.get(runner.name);
-  if (entry?.hello && entry.session.open && !claims.has(jobId)) {
+  if (canRun(entry) && !claims.has(jobId)) {
     sendJob(jobId, entry).catch((e) => logger.error(`Job ${jobId}: handing it to RTE '${runner.name}' failed: ${e.message}`));
   }
 }
@@ -817,7 +1075,42 @@ export function cancel(jobId, runner) {
 // ─── what the RTEs send ───────────────────────────────────────────────────────
 
 /**
- * Writes one item of a job (in order with the job's others) and acks it.
+ * Whether an RTE may write a job's items : a job of its own runner, held by it or by nobody (not
+ * claimed yet, or ended : an item resent after a reconnect), or by an RTE of the same runner
+ * (it came back under another id, a new container with its spool). Asked once per job and
+ * socket : the answer is kept on the session.
+ *
+ * Args:
+ *   entry (object): the session's entry.
+ *   jobId (number): the job.
+ *
+ * Returns:
+ *   Promise<boolean>
+ */
+function itemAllowed(entry, jobId) {
+  if (!entry.allowed.has(jobId)) {
+    const check = (async () => {
+      const rows = await mysql.do(
+        "SELECT j.runner, j.host, n.role, n.info FROM AnsibleForms.`jobs` j LEFT JOIN AnsibleForms.`nodes` n ON n.id = j.host WHERE j.id=?",
+        [jobId],
+        true
+      );
+      const row = rows?.[0];
+      if (!row || row.runner !== entry.runner.name) return false;
+      if (!row.host || row.host === entry.rteId) return true;
+      return row.role === "rte" && safeParse(row.info, {}, `nodes.info ${row.host}`)?.runner === entry.runner.name;
+    })();
+    // a failed query is asked again with the next item, never kept as a refusal
+    check.catch(() => entry.allowed.delete(jobId));
+    entry.allowed.set(jobId, check);
+  }
+  return entry.allowed.get(jobId);
+}
+
+/**
+ * Writes one item of a job (in order with the job's others) and acks it. A runner waiting for
+ * approval writes nothing, and an RTE writes the jobs of its own runner only (itemAllowed) : what
+ * it is refused is dropped, never acked.
  *
  * Args:
  *   entry (object): the session's entry.
@@ -826,9 +1119,22 @@ export function cancel(jobId, runner) {
 function onItem(entry, msg) {
   const jobId = Number(msg.jobId);
   const item = msg.item || {};
+  if (!Number.isInteger(jobId) || jobId <= 0) return;
+  if (isPending(entry)) {
+    logger.warning(`Job ${jobId}: RTE '${entry.runner.name}' waits for approval and sent an item of it: dropped`);
+    return;
+  }
   const prev = writing.get(jobId) || Promise.resolve();
   const next = prev
     .then(async () => {
+      if (!(await itemAllowed(entry, jobId))) {
+        // once per job and socket in the log : a misbehaving RTE does not flood it
+        if (!entry.refused.has(jobId)) {
+          entry.refused.add(jobId);
+          logger.warning(`Job ${jobId}: RTE '${entry.runner.name}' (${entry.rteId}) sent an item of a job that is not its own: dropped`);
+        }
+        return;
+      }
       await ensureMask(jobId);
       await storeItem(entry, jobId, item);
       entry.session.send({ t: "ack", jobId, seq: item.seq });
@@ -888,6 +1194,24 @@ async function storeItem(entry, jobId, item) {
     default:
       logger.debug(`Job ${jobId}: an item of an unknown kind '${item.kind}' (a newer RTE) was skipped`);
   }
+}
+
+/**
+ * An RTE asks for the files of a job (fetch) : sent when they are the files of a job sent to
+ * it on this socket, never to a runner waiting for approval.
+ *
+ * Args:
+ *   entry (object): the session's entry.
+ *   msg (object): { hash }.
+ */
+function onFetch(entry, msg) {
+  const hash = String(msg.hash || "");
+  if (isPending(entry) || !entry.hashes.has(hash)) {
+    logger.warning(`RTE '${entry.runner.name}' asked for files that were not sent to it (${hash.slice(0, 12)}): refused`);
+    entry.session.send({ t: "file", hash, error: "these files were not sent to this RTE" });
+    return;
+  }
+  sendFiles(entry, hash).catch((e) => logger.error(`RTE '${entry.runner.name}': sending files: ${e.message}`));
 }
 
 /**
@@ -989,6 +1313,6 @@ export function dropSocket(name, reason) {
   if (entry) entry.session.close(CLOSE.UNAUTHORIZED, reason);
 }
 
-export { sessions, dispatch, storeItem, sendJob, onItem, adopt, NODE_DEAD_SECONDS };
+export { sessions, waiting, cancelSent, dialing, dispatch, dialInbound, storeItem, sendJob, onItem, onFetch, adopt, renewTick, abandonLost, NODE_DEAD_SECONDS };
 
 export default { startRteHub, handleUpgrade, authenticate, registerHandler, kick, cancel, socketState, isSocketRunner, holdsSocket };
