@@ -133,7 +133,7 @@ var State = {
       return;
     }
     const res = await axios.get('/api/v2/runner/pending').catch(() => null);
-    store.runnerApprovals = Number(res?.data) || 0;
+    store.runnerApprovals = Number(res?.data?.count) || 0;
   },
 
   // who holds the designer lock, for the lock icon on the header's Designer link ; only for

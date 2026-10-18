@@ -90,7 +90,8 @@ const create = async (req, res) => {
       throw new Errors.BadRequestError(i18n.t(req, "errors.requiredFields"));
     }
     const created = await Runner.create(req.body);
-    return res.status(201).json(RestResult.single(i18n.t(req, "resources.runnerAdded"), created));
+    // { message, id }, as the other records answer a create
+    return res.status(201).json(RestResult.single({ message: i18n.t(req, "resources.runnerAdded"), id: created }));
   } catch (err) {
     Errors.ReturnError(res, err);
   }
@@ -131,10 +132,11 @@ const deleteRunner = async (req, res) => {
   }
 };
 
-// how many RTEs wait for approval : the header bell's count, for whoever sees the runners
+// how many RTEs wait for approval : the header bell's count, for whoever sees the runners ;
+// { count }, as every answer is an object
 const pendingCount = async (req, res) => {
   try {
-    return res.json(await Runner.countPending());
+    return res.json(RestResult.single({ count: await Runner.countPending() }));
   } catch (err) {
     Errors.ReturnError(res, err);
   }
@@ -205,7 +207,7 @@ const revokeJoinToken = async (req, res) => {
   try {
     assertAdmin(req);
     if (!(await RunnerJoinToken.revoke(req.params.id))) throw new Errors.NotFoundError(i18n.t(req, "resources.joinTokenNotFound"));
-    return res.json(RestResult.single(i18n.t(req, "resources.joinTokenRevoked")));
+    return res.json(RestResult.single({ message: i18n.t(req, "resources.joinTokenRevoked") }));
   } catch (err) {
     Errors.ReturnError(res, err);
   }
@@ -216,7 +218,7 @@ const deleteJoinToken = async (req, res) => {
   try {
     assertAdmin(req);
     if (!(await RunnerJoinToken.remove(req.params.id))) throw new Errors.NotFoundError(i18n.t(req, "resources.joinTokenNotFound"));
-    return res.json(RestResult.single(i18n.t(req, "resources.joinTokenDeleted")));
+    return res.json(RestResult.single({ message: i18n.t(req, "resources.joinTokenDeleted") }));
   } catch (err) {
     Errors.ReturnError(res, err);
   }
