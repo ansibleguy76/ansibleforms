@@ -741,11 +741,8 @@ onMounted(async () => {
               />
               <!-- an RTE's mode : how it talks to the app (RTE_MODE on the RTE) -->
               <template v-if="edit.kind === 'rte'">
-                <div v-show="RTE_MODES.some((m) => fieldShown(`mode-${m}`))" class="form-label fw-bold mt-4">
+                <div v-show="RTE_MODES.some((m) => fieldShown(`mode-${m}`))" class="form-label fw-bold mt-4 mb-2">
                   {{ t('settings.runners.rteMode') }}
-                </div>
-                <div v-show="RTE_MODES.some((m) => fieldShown(`mode-${m}`))" class="form-text mt-0 mb-2">
-                  {{ t('settings.runners.rteModeHelp') }}
                 </div>
                 <AppTypeOptions
                   :options="
