@@ -1162,7 +1162,7 @@ function generateJsonOutput(filedata = {}) {
       subforms: currentForm.value.subforms || [],
     });
   } catch (err) {
-    toast.error('Failed to generate json output.\r\nContact the developer.\r\n' + (err.message || err.toString()));
+    toast.error(t('form.outputFailed', { error: err.message || err.toString() }));
   }
 }
 
@@ -1176,7 +1176,7 @@ async function uploadFile(fieldname, file) {
     onUploadProgress: (progressEvent) => {
       fileProgress.value[fieldname] = Math.round((progressEvent.loaded / progressEvent.total) * 100);
       if (fileProgress.value[fieldname] == 100) {
-        toast.success(`File ${file.name} uploaded`);
+        toast.success(t('form.fileUploaded', { name: file.name }));
         setTimeout(() => {
           fileProgress.value[fieldname] = undefined;
         }, 2000);
@@ -1394,13 +1394,14 @@ async function createSchedule() {
 
     const successMessage =
       scheduleAction.value === 'schedule'
-        ? `Schedule "${scheduleForm.value.name}" created successfully`
-        : `Job "${scheduleForm.value.name}" scheduled successfully`;
+        ? t('form.scheduleCreated', { name: scheduleForm.value.name })
+        : t('form.jobScheduled', { name: scheduleForm.value.name });
     toast.success(successMessage);
     closeScheduleOffcanvas();
   } catch (error) {
     console.error('Error creating schedule:', error);
-    toast.error(error.response?.data?.message || 'Failed to create schedule');
+    // the server answers { error } (and perhaps details) : read as every other page does
+    toast.error(Helpers.parseAxiosResponseError(error, t('form.scheduleCreateFailed')));
   } finally {
     scheduleSubmitting.value = false;
   }
@@ -1449,14 +1450,14 @@ async function createStoredJob() {
 
     await axios.post('/api/v2/stored-jobs', storedJobData);
 
-    toast.success(`Form data saved as "${storeForm.value.name}"`);
+    toast.success(t('form.formDataSaved', { name: storeForm.value.name }));
     closeStoreOffcanvas();
   } catch (error) {
     console.error('Error storing job:', error);
     if (error.response?.status === 409) {
-      toast.error('A saved form with this name already exists');
+      toast.error(t('form.savedFormExists'));
     } else {
-      toast.error(error.response?.data?.message || 'Failed to save form data');
+      toast.error(Helpers.parseAxiosResponseError(error, t('form.formDataSaveFailed')));
     }
   } finally {
     storeSubmitting.value = false;
@@ -1477,7 +1478,7 @@ async function openLoadOffcanvas() {
     storedJobs.value = response.data.records || [];
   } catch (error) {
     console.error('Error fetching stored jobs:', error);
-    toast.error('Failed to load saved forms');
+    toast.error(Helpers.parseAxiosResponseError(error, t('form.savedFormsLoadFailed')));
     storedJobs.value = [];
   } finally {
     loadSubmitting.value = false;
@@ -1497,10 +1498,10 @@ async function loadStoredJob(storedJob) {
     ctx.onLoad(parsedData);
 
     closeLoadOffcanvas();
-    toast.success(`Loaded "${storedJob.name}"`);
+    toast.success(t('form.storedJobLoaded', { name: storedJob.name }));
   } catch (error) {
     console.error('Error loading stored job:', error);
-    toast.error('Failed to load form data');
+    toast.error(t('form.formDataLoadFailed'));
   } finally {
     loadSubmitting.value = false;
   }
@@ -1528,7 +1529,7 @@ function handleSubformAction(entry, { action, value }) {
 async function abortJob(id) {
   // no id yet : the job is still being created
   if (!id) return;
-  toast.warning('Aborting job ' + id);
+  toast.warning(t('form.abortingJob', { id }));
   try {
     const result = await axios.post(`/api/v2/job/${id}/abort`, {});
     if (result.status == 200) {
@@ -1755,22 +1756,23 @@ async function loadForm() {
         const result = await axios.get(`/api/v2/job/${route.query.prefillJobId}/rawformdata`);
         if (result.data) {
           initialFormData.value = result.data;
-          toast.info(`Form pre-filled with data from previous job #${route.query.prefillJobId}`);
+          toast.info(t('form.prefilled', { id: route.query.prefillJobId }));
         } else {
           console.log('No data in result:', result.data);
         }
       } catch (err) {
         console.error('Failed to load pre-fill data:', err);
 
-        let errorMessage = 'Failed to load previous job data';
+        // the server's own words when it sent some ({ error }), else what its status means
+        let errorMessage = t('form.prefillFailed');
         if (err.response?.data?.error) {
-          errorMessage = err.response.data.error;
+          errorMessage = Helpers.parseAxiosResponseError(err, errorMessage);
         } else if (err.response?.status === 404) {
-          errorMessage = 'Previous job data not found or no longer available';
+          errorMessage = t('form.prefillNotFound');
         } else if (err.response?.status === 403) {
-          errorMessage = 'You do not have permission to relaunch jobs';
+          errorMessage = t('form.prefillForbidden');
         } else if (err.response?.status === 400) {
-          errorMessage = err.response.data?.error || 'Cannot load data: form mismatch';
+          errorMessage = t('form.prefillMismatch');
         }
 
         toast.error(errorMessage);
