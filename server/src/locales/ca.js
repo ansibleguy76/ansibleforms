@@ -128,6 +128,8 @@ export default {
     runnerNotFound: "No s'ha trobat el runner",
     runnerAdminOnly:
       "Només un admin pot afegir, canviar o eliminar un runner: un runner rep les credencials dels treballs que executa",
+    repositoryAdminOnly:
+      "Només un admin pot afegir o eliminar un repositori, o canviar-ne l'adreça, la branca o per a què s'usa: el seu contingut esdevé la configuració, els formularis o els playbooks que executa AnsibleForms",
     credentialAdminOnly:
       "Només un admin pot afegir, canviar o eliminar aquesta credencial: un runner o una connexió en pren l'adreça i el secret",
     credentialInUse:

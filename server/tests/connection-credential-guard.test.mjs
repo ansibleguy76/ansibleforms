@@ -135,13 +135,13 @@ describe("a repository", () => {
     // an admin's database login, a secret store's password : a login git can use
     expect((await call(repoController.create, admin, { body: { name: "r", uri: "https://git", credential: "db-login" } })).status).toBeLessThan(300);
     expect((await call(repoController.create, admin, { body: { name: "r", uri: "https://git", credential: "vaulted" } })).status).toBeLessThan(300);
-    expect((await call(repoController.create, ops, { body: { name: "r", uri: "https://git", credential: "db-login" } })).status).toBeLessThan(300);
+    expect((await call(repoController.update, ops, { body: { credential: "db-login" }, params: { name: "infra" } })).status).toBeLessThan(300);
     // a git credential without its password
     expect((await call(repoController.create, admin, { body: { name: "r", uri: "https://git", credential: "git-nopass" } })).status).toBe(400);
   });
 
   test("a sign-in's client, user and password though it has : refused to a connections user", async () => {
-    expect((await call(repoController.create, ops, { body: { name: "r", uri: "https://evil", credential: "sso-client" } })).status).toBe(403);
+    expect((await call(repoController.update, ops, { body: { credential: "sso-client" }, params: { name: "infra" } })).status).toBe(403);
   });
 
   test("a credential that does not exist: 400", async () => {
@@ -149,22 +149,17 @@ describe("a repository", () => {
   });
 
   test("a userpass credential a runner names: refused to a connections user", async () => {
-    expect((await call(repoController.create, ops, { body: { name: "r", uri: "https://evil", credential: "runner-login" } })).status).toBe(403);
+    expect((await call(repoController.update, ops, { body: { credential: "runner-login" }, params: { name: "infra" } })).status).toBe(403);
     expect((await call(repoController.create, admin, { body: { name: "r", uri: "https://git", credential: "runner-login" } })).status).toBeLessThan(300);
   });
 
-  test("moved to another address by a connections user: its credential is dropped", async () => {
-    await call(repoController.update, ops, { body: { uri: "https://evil/x.git", credential: "git-bot" }, params: { name: "infra" } });
-    expect(repoWrites[0][1].credential).toBe("");
-  });
-
-  test("and its own password, unless typed again", async () => {
-    await call(repoController.update, ops, { body: { uri: "https://evil/x.git", password: "**********" }, params: { name: "legacy" } });
-    expect(repoWrites[0][1].password).toBeUndefined();
-    expect(repoWrites[0][3]).toEqual({ dropPassword: true });
-    await call(repoController.update, ops, { body: { uri: "https://evil/x.git", password: "typed" }, params: { name: "legacy" } });
-    expect(repoWrites[1][1].password).toBe("typed");
-    expect(repoWrites[1][3]).toEqual({ dropPassword: false });
+  test("moved to another address by a connections user: refused, nothing written", async () => {
+    // the address is an admin's since 7.3 (assertRepositoryAdminFields) : the move that would
+    // have dropped the credential and the password is not made at all
+    const r = await call(repoController.update, ops, { body: { uri: "https://evil/x.git", credential: "git-bot" }, params: { name: "infra" } });
+    expect(r.status).toBe(403);
+    expect((await call(repoController.update, ops, { body: { uri: "https://evil/x.git", password: "typed" }, params: { name: "legacy" } })).status).toBe(403);
+    expect(repoWrites).toEqual([]);
   });
 
   test("an admin's move keeps both", async () => {

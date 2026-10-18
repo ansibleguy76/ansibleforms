@@ -126,6 +126,8 @@ export default {
     runnerNotFound: "Runner not found",
     runnerAdminOnly:
       "Only an admin can add, change or delete a runner: a runner receives the credentials of the jobs it runs",
+    repositoryAdminOnly:
+      "Only an admin can add or delete a repository, or change its address, its branch or what it is used for: its content becomes the configuration, the forms or the playbooks AnsibleForms runs",
     credentialAdminOnly:
       "Only an admin can add, change or delete this credential: a runner or a connection takes its address and its secret from it",
     credentialInUse:

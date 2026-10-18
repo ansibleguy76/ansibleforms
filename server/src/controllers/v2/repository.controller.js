@@ -73,6 +73,59 @@ async function guardRepositoryCredential(req, existing) {
   return outcome;
 }
 
+// ---------------------------------------------------------------------------------------------
+// What only an admin may change on a repository
+// ---------------------------------------------------------------------------------------------
+
+// the flags that make a repository's content what AnsibleForms loads and runs : its configuration
+// (roles, and with them who is an admin), its forms, playbooks, workflows and inventories
+const USE_FOR_FLAGS = ['use_for_config', 'use_for_forms', 'use_for_playbooks', 'use_for_workflows', 'use_for_inventories'];
+
+// where its content comes from : the remote and the branch it pulls
+const SOURCE_FIELDS = ['uri', 'branch'];
+
+/**
+ * Refuses to a user who is not an admin a write that chooses what AnsibleForms loads or runs. A
+ * repository marked use_for_config, use_for_forms or use_for_playbooks (or workflows,
+ * inventories) is pulled into the configuration, the forms and the playbooks : a user with only
+ * connections access who could add one, point an existing one at a git server of their own, or
+ * mark one of theirs so, would write the roles (and make themselves admin) or the code the
+ * runners execute. Adding or deleting a repository, changing its address or its branch, and
+ * setting or changing any of its use_for_* flags is therefore an admin's, as a runner is
+ * (controllers/v2/runner.controller.js assertAdmin). The rest stays open to them : its
+ * description, schedule, credential (guardRepositoryCredential), and pulling, pushing or
+ * resetting it.
+ *
+ * Args:
+ *   req (object): the request.
+ *   existing (object|null): the repository as it is, null on a create or a delete (always refused
+ *     to a user who is not an admin).
+ *
+ * Returns:
+ *   void
+ *
+ * Raises:
+ *   Errors.AccessDeniedError: the user is not an admin and the write adds or deletes a
+ *     repository, or changes its address, branch or a use_for_* flag.
+ */
+function assertRepositoryAdminFields(req, existing) {
+  if (isAdminRequest(req)) return;
+  const refuse = () => { throw new Errors.AccessDeniedError(i18n.t(req, 'resources.repositoryAdminOnly')); };
+  // a create or a delete : the whole repository is what it changes
+  if (!existing) refuse();
+  const data = req.body || {};
+  // text compared trimmed, so the dialog sending the same value back is no change
+  const text = (v) => (v === null || v === undefined ? '' : String(v).trim());
+  // a flag compared as on or off, whatever it is sent as (true, 1, '1', 'true', or off)
+  const flag = (v) => v === true || v === 1 || v === '1' || v === 'true';
+  for (const field of SOURCE_FIELDS) {
+    if (data[field] !== undefined && text(data[field]) !== text(existing[field])) refuse();
+  }
+  for (const field of USE_FOR_FLAGS) {
+    if (data[field] !== undefined && flag(data[field]) !== flag(existing[field])) refuse();
+  }
+}
+
 const find = async function(req, res) {
   try {
     const repositories = await Repository.withUnpushed(await Repository.findAll());
@@ -87,6 +140,8 @@ const create = async function(req, res) {
     return res.status(400).json(RestResult.error(i18n.t(req, 'errors.requiredFields')));
   }
   try {
+    // a new repository is a new source of configuration, forms or playbooks : an admin's
+    assertRepositoryAdminFields(req, null);
     await guardRepositoryCredential(req, null);
     const insertId = await Repository.create(req.body);
     // Fetch the created record to get all fields including cron
@@ -119,6 +174,8 @@ const update = async function(req, res) {
   try {
     const existing = await Repository.findByName(req.params.name);
     if (!existing) throw new Errors.NotFoundError(i18n.t(req, 'resources.failedFindRepository'));
+    // its address, branch and use_for_* flags : an admin's (the rest is the connections user's too)
+    assertRepositoryAdminFields(req, existing);
     const { dropPassword } = await guardRepositoryCredential(req, existing);
     await Repository.update(req.body, req.params.name, { dropPassword });
     // The record may have been RENAMED : `name` is an editable field on the repositories
@@ -149,6 +206,8 @@ const update = async function(req, res) {
 
 const deleteRepository = async function(req, res) {
   try {
+    // deleting one takes away what the configuration, the forms or the playbooks load : an admin's
+    assertRepositoryAdminFields(req, null);
     await Repository.delete(req.params.name);
     // Remove from cron service
     logger.info(`Removing repository '${req.params.name}' from cron service`);
