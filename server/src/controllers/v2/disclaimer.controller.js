@@ -114,7 +114,7 @@ const deleteVersion = async (req, res) => {
   }
 };
 
-// a version restored : its text the current one again, as a new version
+// a version restored : enabled again, the one users accept (Disclaimer.restoreVersion, as Enable)
 const restoreVersion = async (req, res) => {
   try {
     const version = await Disclaimer.restoreVersion(req.params.id, req.user?.user?.username);
