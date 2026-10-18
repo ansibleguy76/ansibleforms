@@ -34,9 +34,11 @@ On a Linux server, run the installer and answer its questions:
 curl -fsSL https://ansibleforms.com/install | sh
 ```
 
-It installs a controller (the app, its database and an RTE) or a Runner on its own, on Docker, Podman or Kubernetes. Run again,
-it finds an AnsibleForms already installed, 7.2 included, and upgrades it. The [installation guide](https://ansibleforms.com/installation)
-covers every option, and the setups the installer uses are also ready to deploy by hand:
+It installs a controller (the app, its database and an RTE) or a Runner, on Docker, Podman or Kubernetes.
+
+Run again, it finds an AnsibleForms already installed, 7.2 included, and upgrades it.
+
+The [installation guide](https://ansibleforms.com/installation) covers every option. The setups it uses also deploy by hand:
 
 | Setup | Repository |
 |---|---|
