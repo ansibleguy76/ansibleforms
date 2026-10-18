@@ -10,6 +10,8 @@
 /******************************************************************/
 import mysql from "./db.model.js";
 import { maskOutput } from "../lib/outputMask.js";
+import appConfig from "../../config/app.config.js";
+import Helpers from "../lib/common.js";
 
 // the event types the plugin writes ; anything else is not stored
 // item : one item of a loop, a line of the output of its own (its status in data.status)
@@ -26,6 +28,57 @@ const TYPES = new Set(["play", "task", "ok", "changed", "failed", "skipped", "un
  *   string|null: the text, or null for none.
  */
 const cut = (value, max) => (value === undefined || value === null || value === "" ? null : String(value).slice(0, max));
+
+// ---------------------------------------------------------------------------------------------
+// What a stored result never keeps
+// ---------------------------------------------------------------------------------------------
+
+// the keys left out of a result, at any depth : the module's arguments as the task passed them (a
+// password, a token, a request's body and headers)
+const DROPPED_KEYS = new Set(["invocation"]);
+// the keys whose values are masked, at any depth, besides the app's MASK_EXTRAVARS_REGEX : a
+// request's own (authorization, cookie) and keys, as the af_events plugin masks them
+const SECRET_KEYS = "password|passwd|secret|token|key|authorization|cookie|credential";
+const MASK = "********";
+
+/**
+ * The pattern a secret's key matches : the app's MASK_EXTRAVARS_REGEX (live-editable, so read on
+ * each call ; Helpers.safeRegExp caches it and falls back to the default when it does not compile)
+ * and the built-in keys.
+ *
+ * Returns:
+ *   RegExp: matched case-insensitively anywhere in a key.
+ */
+function secretKeyPattern() {
+  const app = appConfig.maskExtravarsRegex || "password|secret|token";
+  return Helpers.safeRegExp(`(?:${app})|(?:${SECRET_KEYS})`, SECRET_KEYS, "i", "MASK_EXTRAVARS_REGEX");
+}
+
+/**
+ * Leaves out of a result what is never stored, recursively : its invocation (the module's
+ * arguments), and the value of every key that looks like a secret, masked. The af_events plugin
+ * does so itself ; done again here for an RTE of an older version, or one that does not.
+ *
+ * Args:
+ *   value (any): a result or one of its values.
+ *   pattern (RegExp): the secret keys' pattern (secretKeyPattern).
+ *
+ * Returns:
+ *   any: a copy, its secrets masked and its invocations left out.
+ */
+export function redactResult(value, pattern = secretKeyPattern()) {
+  if (Array.isArray(value)) return value.map((v) => redactResult(v, pattern));
+  if (!value || typeof value !== "object") return value;
+  const out = {};
+  for (const [k, v] of Object.entries(value)) {
+    if (DROPPED_KEYS.has(k)) continue;
+    // a secret's value masked whatever it is ; an empty one or a flag left as it is
+    const empty = v === null || v === undefined || v === "" || typeof v === "boolean"
+      || (Array.isArray(v) && !v.length) || (typeof v === "object" && v && !Array.isArray(v) && !Object.keys(v).length);
+    out[k] = pattern.test(k) && !empty ? MASK : redactResult(v, pattern);
+  }
+  return out;
+}
 
 /**
  * A number, or null.
@@ -53,6 +106,7 @@ const JobEvent = {
    */
   async create(jobId, events) {
     const rows = [];
+    const pattern = secretKeyPattern();
     for (const e of events || []) {
       if (!e || !TYPES.has(e.type) || !Number.isInteger(Number(e.order))) continue;
       // the summary : the result's fields, and what the row has no column for (its item, a loop
@@ -61,7 +115,9 @@ const JobEvent = {
         [["item", e.item], ["status", e.status], ["action", e.action], ["start", num(e.start)]].filter(([, v]) => v !== undefined && v !== null),
       );
       const data = e.data === undefined && !Object.keys(extra).length ? null : JSON.stringify({ ...(e.data || {}), ...extra });
-      const result = e.result === undefined || e.result === null ? null : JSON.stringify(e.result);
+      // its whole result (sent only for a job that runs verbose) : its invocation left out, its
+      // secret keys masked, then masked as the output
+      const result = e.result === undefined || e.result === null ? null : JSON.stringify(redactResult(e.result, pattern));
       rows.push([
         jobId,
         Number(e.order),
