@@ -82,6 +82,9 @@ const props = defineProps({
   empty: { type: String, default: '' },
   toolbarTo: { type: String, default: null },
   pagerTo: { type: String, default: null },
+  // the rows alone : no toolbar (search, columns, export) and no pager, for a short list above
+  // another (the runners waiting for approval)
+  bare: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['update:selectedIds', 'row-click']);
@@ -590,6 +593,7 @@ function exportCsv() {
       <!-- on the title line (toolbarTo) : right aligned, the search narrowing first, and the
            buttons wrapping onto another row only when even that does not make room -->
       <div
+        v-if="!bare"
         class="d-flex align-items-center gap-2"
         :class="toolbarTo ? 'bs-dt-toolbar-moved flex-wrap' : framed ? 'bs-dt-toolbar flex-wrap' : 'mb-2 flex-wrap'"
       >
@@ -751,7 +755,8 @@ function exportCsv() {
     <!-- The pager : the rows shown on the left, the page size and boxes on the right ; under
          the page's card with pagerTo (styles/tables.scss, .af-table-pager), else under the table -->
     <Teleport defer :to="pagerTo || 'body'" :disabled="!pagerTo">
-      <div class="af-table-pager" :class="{ 'af-table-pager-inline': !pagerTo }">
+      <!-- bare : hidden, not left out - the pagination hands the table its rows -->
+      <div v-show="!bare" class="af-table-pager" :class="{ 'af-table-pager-inline': !pagerTo }">
         <span class="af-table-count">{{ pageRange }}</span>
         <BsPagination
           :key="filterVersion"

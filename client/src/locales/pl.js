@@ -1787,11 +1787,16 @@ export default {
       pendingHelp: 'Sprawdź odcisk RTE przed zatwierdzeniem',
       pendingFingerprint: 'Odcisk',
       pendingHost: 'Host',
-      pendingIp: 'Połączony z',
+      pendingIp: 'Adres IP',
       pendingVersion: 'Wersja',
       pendingSince: 'Poproszono',
+      pendingAgo: 'poprosił {when}',
       approve: 'Zatwierdź',
       reviewApproval: 'Rozpatrz zatwierdzenie',
+      waitingNotice:
+        '{count} Runner czeka na zatwierdzenie | {count} Runnery czekają na zatwierdzenie | {count} Runnerów czeka na zatwierdzenie',
+      waitingHint:
+        'Kliknij tę kartę, aby go rozpatrzyć | Kliknij tę kartę, aby je rozpatrzyć po kolei | Kliknij tę kartę, aby je rozpatrzyć po kolei',
       reject: 'Odrzuć',
       approved: '{name} jest zatwierdzony: od teraz dostaje zadania',
       rejected: '{name} został odrzucony i usunięty',

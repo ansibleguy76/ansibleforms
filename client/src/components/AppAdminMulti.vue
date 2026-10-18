@@ -131,7 +131,6 @@ const emit = defineEmits([
   'allow_sign_in',
   'move_up',
   'move_down',
-  'review',
 ]);
 
 // PROPS
@@ -196,7 +195,11 @@ const idKey = props.settings.idKey || 'id';
 const objectType = props.settings.type;
 const objectLabel = computed(() => props.settings.label || '');
 // in a sentence (Add repository, Edit repository) : lowered, but an acronym or a German noun
-const objectLabelInSentence = computed(() => inSentence(objectLabel.value, locale.value));
+// in a sentence (Add runner) : lower case, unless the label is a name the app always writes with
+// its capital (settings.properNoun : Runner)
+const objectLabelInSentence = computed(() =>
+  props.settings.properNoun ? objectLabel.value : inSentence(objectLabel.value, locale.value),
+);
 const objectLabelPlural = computed(() => props.settings.labelPlural || `${objectLabel.value}s`);
 const objectIcon = computed(() => props.settings.icon);
 const objectDescription = computed(() => props.settings.description || '');
@@ -337,7 +340,13 @@ async function loadItems(force = true) {
   // this was the other half.) Assigning the new list when it arrives also removes
   // the "no data" flicker.
   resetSelection();
-  itemList.value = await loadList(objectType, isFlat, undefined, props.settings.listQuery || '');
+  // the rows the list shows : all, or those settings.rowFilter keeps (the runners waiting for
+  // approval are in a table of their own above it)
+  const rows = await loadList(objectType, isFlat, undefined, props.settings.listQuery || '');
+  itemList.value =
+    typeof props.settings.rowFilter === 'function' && Array.isArray(rows)
+      ? rows.filter(props.settings.rowFilter)
+      : rows;
   // kept for the records' pages : which buttons a record has, before it is read (lib/recordButtons.js)
   rememberRows(objectType, itemList.value);
   // Drop selected rows that are no longer there. resetSelection() clears the SINGLE
@@ -1374,10 +1383,6 @@ function openRecordPage(item) {
 }
 
 function onDataTableRowClick(item) {
-  // a row the page handles itself (settings.rowClickAction : the name of an event) : a runner
-  // waiting for approval opens its review, not its page
-  const own = props.settings.rowClickAction?.(item);
-  if (own) return emit(own, item);
   if (openRecordPage(item)) return;
   if (!rowClickSelects.value) {
     activeRowId.value = item[idKey];
@@ -1622,6 +1627,8 @@ defineExpose({
       <div :id="pagerId"></div>
       <slot></slot>
     </template>
+    <!-- the page's own card above the list's (the runners waiting for approval) -->
+    <template v-if="$slots.aboveCard" #aboveCard><slot name="aboveCard"></slot></template>
     <!-- the page's own tabs (the SSO page : General, Providers), above the card -->
     <template v-if="$slots.tabs" #tabs><slot name="tabs"></slot></template>
     <!-- action buttons go BELOW the card, never in the header : see AppSettings -->
