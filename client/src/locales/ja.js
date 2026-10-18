@@ -1807,7 +1807,7 @@ export default {
       stepAuth: '認証情報',
       credential: '資格情報',
       credentialHelp_rte:
-        '接続 > 認証情報 の RTE 資格情報: その RTE_TOKEN と、アウトバウンドでなければ RTE のアドレス。',
+        'RTE のトークン。インバウンドの場合はそのアドレスも。',
       credentialHelp_awx: '接続 > 認証情報 の AWX 資格情報: アドレスと、トークンまたはユーザーとパスワード。',
       credentialHelp_aap: '接続 > 認証情報 の AAP 資格情報: アドレスと、トークンまたはユーザーとパスワード。',
       credentialHelp_ascender: '接続 > 認証情報 の Ascender 資格情報: アドレスと、トークンまたはユーザーとパスワード。',

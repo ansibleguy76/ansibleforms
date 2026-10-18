@@ -1394,7 +1394,7 @@ export default {
       stepAuth: 'Referenties',
       credential: 'Referentie',
       credentialHelp_rte:
-        'Een RTE-referentie van Verbindingen > Referenties: zijn RTE_TOKEN, en het adres van de RTE tenzij die uitgaand is.',
+        'Het token van de RTE, en zijn adres bij inkomend.',
       credentialHelp_awx:
         'Een AWX-referentie van Verbindingen > Referenties: het adres, en een token of een gebruiker en wachtwoord.',
       credentialHelp_aap:

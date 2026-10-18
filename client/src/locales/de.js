@@ -1401,7 +1401,7 @@ export default {
       stepAuth: 'Anmeldedaten',
       credential: 'Zugangsdaten',
       credentialHelp_rte:
-        'Eine RTE-Anmeldeinformation aus Verbindungen > Zugangsdaten: ihr RTE_TOKEN und die Adresse der RTE, außer sie ist ausgehend.',
+        'Das Token der RTE, und ihre Adresse bei Eingehend.',
       credentialHelp_awx:
         'Eine AWX-Anmeldeinformation aus Verbindungen > Zugangsdaten: Adresse und Token oder Benutzer und Passwort.',
       credentialHelp_aap:

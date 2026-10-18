@@ -1404,7 +1404,7 @@ export default {
       stepAuth: 'Identifiants',
       credential: 'Identifiant',
       credentialHelp_rte:
-        "Un identifiant RTE de Connexions > Identifiants : son RTE_TOKEN, et l'adresse du RTE sauf s'il est sortant.",
+        "Le jeton du RTE, et son adresse s'il est entrant.",
       credentialHelp_awx:
         'Un identifiant AWX de Connexions > Identifiants : son adresse, et un jeton ou un utilisateur et un mot de passe.',
       credentialHelp_aap:

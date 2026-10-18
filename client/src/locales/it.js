@@ -1394,7 +1394,7 @@ export default {
       stepAuth: 'Credenziali',
       credential: 'Credenziale',
       credentialHelp_rte:
-        "Una credenziale RTE di Connessioni > Credenziali: il suo RTE_TOKEN, e l'indirizzo dell'RTE se non è in uscita.",
+        "Il token dell'RTE, e il suo indirizzo se in entrata.",
       credentialHelp_awx:
         'Una credenziale AWX di Connessioni > Credenziali: il suo indirizzo, e un token o un utente e una password.',
       credentialHelp_aap:

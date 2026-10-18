@@ -1825,7 +1825,7 @@ export default {
       stepAuth: 'Poświadczenia',
       credential: 'Poświadczenie',
       credentialHelp_rte:
-        'Poświadczenie RTE z Połączenia > Poświadczenia: jego RTE_TOKEN oraz adres RTE, chyba że działa w trybie wychodzącym.',
+        'Token RTE oraz jego adres w trybie przychodzącym.',
       credentialHelp_awx: 'Poświadczenie AWX z Połączenia > Poświadczenia: adres oraz token lub użytkownik i hasło.',
       credentialHelp_aap: 'Poświadczenie AAP z Połączenia > Poświadczenia: adres oraz token lub użytkownik i hasło.',
       credentialHelp_ascender:

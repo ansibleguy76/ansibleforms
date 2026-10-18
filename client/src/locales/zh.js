@@ -1750,7 +1750,7 @@ export default {
       skipVerify: '跳过证书验证',
       stepAuth: '凭据',
       credential: '凭据',
-      credentialHelp_rte: '连接 > 凭据 中的 RTE 凭据：其 RTE_TOKEN，以及 RTE 的地址（出站模式除外）。',
+      credentialHelp_rte: 'RTE 的令牌，入站模式时还有其地址。',
       credentialHelp_awx: '连接 > 凭据 中的 AWX 凭据：其地址，以及令牌或用户和密码。',
       credentialHelp_aap: '连接 > 凭据 中的 AAP 凭据：其地址，以及令牌或用户和密码。',
       credentialHelp_ascender: '连接 > 凭据 中的 Ascender 凭据：其地址，以及令牌或用户和密码。',

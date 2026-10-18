@@ -1840,7 +1840,7 @@ export default {
       stepAuth: 'Credencials',
       credential: 'Credencial',
       credentialHelp_rte:
-        "Una credencial RTE de Connexions > Credencials: el seu RTE_TOKEN, i l'adreça del RTE tret que sigui sortint.",
+        "El token de l'RTE, i la seva adreça si és entrant.",
       credentialHelp_awx:
         'Una credencial AWX de Connexions > Credencials: la seva adreça, i un token o un usuari i contrasenya.',
       credentialHelp_aap:
