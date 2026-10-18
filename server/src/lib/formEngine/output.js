@@ -176,7 +176,9 @@ export function filterRawFormData(fields, values, subforms = []) {
     const name = field?.name;
     if (!name || !(name in (values || {}))) return;
     if (field.type === 'constant' || field.type === 'password') return;
-    if (name === 'server' || name === 'database' || name === 'metadata') return;
+    // No name-based exclusion : only DECLARED fields are walked here, so a field named
+    // server, database or metadata is the user's own input. Dropping those names lost them
+    // from the relaunch values, and validateLaunch then judged the launch without them.
     if (field.type === 'list') out[name] = stripRowPasswords(field, values[name], subforms);
     // a yaml field with a subform is one such row
     else if (field.type === 'yaml' && field.subform && values[name] && typeof values[name] === 'object' && !Array.isArray(values[name])) {

@@ -1122,7 +1122,7 @@ function getWizardRawFormData() {
   return { __wizard__: true, drafts, skipped: { ...wizardSkipped } };
 }
 
-// Get filtered raw form data (excludes constants, passwords, system fields)
+// Get filtered raw form data (excludes constants and passwords)
 function getFilteredRawFormData() {
   if (wizardActive.value) return getWizardRawFormData();
   const rawFormData = {};
@@ -1138,8 +1138,10 @@ function getFilteredRawFormData() {
     // Skip password fields for security
     if (field.type === 'password') return;
 
-    // Skip system fields
-    if (fieldName === 'server' || fieldName === 'database' || fieldName === 'metadata') return;
+    // No name-based exclusion : only the form's own declared fields are walked, so a field
+    // named server, database or metadata is user input like any other. Skipping those names
+    // dropped them from the rawFormData the server validates the launch with (validateLaunch)
+    // - the same rule as server/src/lib/formEngine/output.js filterRawFormData.
 
     // Include this field
     rawFormData[fieldName] = form.value[fieldName];
