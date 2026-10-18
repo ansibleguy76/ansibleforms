@@ -40,6 +40,7 @@ import { JobSpool } from "./spool.js";
 import { FileCache } from "./files.js";
 import {
   SOCKET_CONTRACT, RTE_SOCKET_PATH, CLOSE, WINDOW, MAX_PAYLOAD, REFUSED_CLOSES, REFUSED_STATUSES, REFUSED_REDIAL_MS,
+  CONTRACT_REDIAL_MS,
   socketUrl, fingerprint,
 } from "./protocol.js";
 
@@ -475,8 +476,10 @@ function rteHeaders(token) {
  * How long an outbound RTE waits before it dials the app again. A socket that dropped, or an
  * app that did not answer : a little longer each time (1 s up to 30 s, with some jitter so a
  * fleet does not dial at once). Refused (the runner rejected or removed, the token, the join
- * token or the id refused, another contract) : REFUSED_REDIAL_MS, since dialing again sooner
- * would be refused the same way until an admin acts.
+ * token refused, a runner of that name approved already) : REFUSED_REDIAL_MS, since dialing
+ * again sooner would be refused the same way until an admin acts. Another contract : the app
+ * or this RTE is being upgraded, CONTRACT_REDIAL_MS (a minute), so it is back soon after the
+ * other side follows.
  *
  * Args:
  *   close (object): { code : the socket's close code, status : the HTTP status the handshake
@@ -491,6 +494,8 @@ export function redialWait({ code, status, delay, random = Math.random() }) {
   if (REFUSED_CLOSES.includes(code) || REFUSED_STATUSES.includes(status)) {
     return { wait: REFUSED_REDIAL_MS, delay: 1000, refused: true };
   }
+  // another contract : refused too, but only until one side is upgraded
+  if (code === CLOSE.CONTRACT) return { wait: CONTRACT_REDIAL_MS, delay: 1000, refused: true };
   return { wait: delay + Math.floor(random * 1000), delay: Math.min(delay * 2, 30000), refused: false };
 }
 
@@ -542,7 +547,8 @@ function dialOut(token) {
       if (isStopping()) return;
       const next = redialWait({ code, status: refusedStatus, delay });
       delay = next.delay;
-      if (next.refused) logger.warning(`RTE '${rteName()}': the app refused this RTE (${refusedStatus || code}): dialing again in ${Math.round(next.wait / 60000)} minutes, or restart it once an admin acted`);
+      if (next.refused && code === CLOSE.CONTRACT) logger.warning(`RTE '${rteName()}': the app speaks another contract (an upgrade in progress?): dialing again in ${Math.round(next.wait / 1000)} seconds`);
+      else if (next.refused) logger.warning(`RTE '${rteName()}': the app refused this RTE (${refusedStatus || code}): dialing again in ${Math.round(next.wait / 60000)} minutes, or restart it once an admin acted`);
       else logger.info(`RTE: dialing the app again in ${Math.round(next.wait / 1000)} seconds`);
       setTimeout(connect, next.wait).unref?.();
     });

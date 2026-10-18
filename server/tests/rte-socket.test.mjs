@@ -185,7 +185,7 @@ describe("what goes wrong on the RTE's side", () => {
 
 describe("the RTE dialing the app again", async () => {
   const { redialWait, socketJobIO, jobs } = await import("../src/rte/socket/rte-socket.js");
-  const { CLOSE, REFUSED_REDIAL_MS } = await import("../src/rte/socket/protocol.js");
+  const { CLOSE, REFUSED_REDIAL_MS, CONTRACT_REDIAL_MS } = await import("../src/rte/socket/protocol.js");
 
   test("a socket that dropped : a backoff of 1 s doubling up to 30 s", () => {
     assert.deepEqual(redialWait({ code: 1006, status: null, delay: 1000, random: 0 }), { wait: 1000, delay: 2000, refused: false });
@@ -194,13 +194,21 @@ describe("the RTE dialing the app again", async () => {
     assert.equal(redialWait({ code: CLOSE.ID_TAKEN, status: null, delay: 1000, random: 0 }).refused, false);
   });
 
-  test("rejected, removed, a token refused, another contract : a long wait, not a flood of dials", () => {
-    for (const close of [{ code: CLOSE.UNAUTHORIZED }, { code: CLOSE.CONTRACT }, { code: 1006, status: 401 }, { code: 1006, status: 409 }]) {
+  test("rejected, removed, a token refused, a name taken : a long wait, not a flood of dials", () => {
+    for (const close of [{ code: CLOSE.UNAUTHORIZED }, { code: 1006, status: 401 }, { code: 1006, status: 403 }, { code: 1006, status: 409 }]) {
       const next = redialWait({ status: null, delay: 4000, random: 0, ...close });
       assert.equal(next.refused, true, JSON.stringify(close));
       assert.equal(next.wait, REFUSED_REDIAL_MS);
     }
     assert.ok(REFUSED_REDIAL_MS >= 10 * 60 * 1000);
+  });
+
+  test("another contract (an upgrade under way) : about a minute, not ten", () => {
+    const next = redialWait({ code: CLOSE.CONTRACT, status: null, delay: 4000, random: 0 });
+    assert.equal(next.refused, true);
+    assert.equal(next.wait, CONTRACT_REDIAL_MS);
+    assert.ok(CONTRACT_REDIAL_MS >= 30 * 1000 && CONTRACT_REDIAL_MS <= 2 * 60 * 1000);
+    assert.equal(next.delay, 1000);
   });
 
   test("a cancel of a job this RTE does not know yet is kept a minute, then applied by its run", async () => {

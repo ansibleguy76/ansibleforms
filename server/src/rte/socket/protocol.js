@@ -89,13 +89,17 @@ export const CLOSE = {
 };
 
 // the closes and the refusals of the handshake (HTTP status) that dialing again soon will not
-// change : the runner was rejected or removed, the token or the join token refused, another
-// contract. An outbound RTE waits REFUSED_REDIAL_MS before it dials again, not its usual 1 to
-// 30 seconds : an admin has to act first. An id taken (ID_TAKEN) is not one of them : it frees
-// itself once the node that had it stops answering
-export const REFUSED_CLOSES = [CLOSE.UNAUTHORIZED, CLOSE.CONTRACT];
+// change : the runner was rejected or removed, the token or the join token refused, a runner of
+// that name approved already (409). An outbound RTE waits REFUSED_REDIAL_MS before it dials
+// again, not its usual 1 to 30 seconds : an admin has to act first. An id taken (ID_TAKEN) is
+// not one of them : it frees itself once the node that had it stops answering
+export const REFUSED_CLOSES = [CLOSE.UNAUTHORIZED];
 export const REFUSED_STATUSES = [401, 403, 409];
 export const REFUSED_REDIAL_MS = 10 * 60 * 1000;
+// another contract (CONTRACT) : the app or the RTE is being upgraded, and the other side
+// usually follows within minutes. A short wait, not REFUSED_REDIAL_MS : a rolling upgrade must
+// not leave an RTE offline for ten minutes after its app came back
+export const CONTRACT_REDIAL_MS = 60 * 1000;
 
 // a ping every 20 s keeps proxies from closing an idle socket ; nothing heard for 60 s : gone
 export const PING_MS = 20000;
