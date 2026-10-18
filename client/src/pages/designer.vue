@@ -3972,16 +3972,13 @@ onBeforeUnmount(() => {
           </template>
         </template>
         <template #footer>
-          <!-- nothing picked : restoring would dereference a null backup -->
-          <BsButton
-            icon="undo"
-            :disabled="!backupToRestore"
-            @click="
-              restoreBackup();
-              resetAction();
-            "
-            >{{ t('designer.restore') }}</BsButton
-          >
+          <!-- nothing picked : restoring would dereference a null backup.
+               No resetAction() after it : restoreBackup closes this modal itself once the
+               restore is done, and with unsaved edits it swaps it for the reload confirm -
+               which a trailing resetAction() cleared again at once, so Restore did nothing. -->
+          <BsButton icon="undo" :disabled="!backupToRestore" @click="restoreBackup()">{{
+            t('designer.restore')
+          }}</BsButton>
         </template>
       </BsModal>
 
