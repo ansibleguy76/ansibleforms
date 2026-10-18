@@ -48,6 +48,10 @@ const DISPATCH_MS = 2000;
 const DIAL_MS = 10000;
 // how long an RTE has to say claimed or refused
 const CLAIM_TIMEOUT_MS = 30000;
+// how often what this node keeps of jobs that ended elsewhere is let go (pruneEnded)
+const PRUNE_MS = 60000;
+// a session's answers of itemAllowed (and its refusals said once) kept at most : the oldest go
+const ALLOWED_MAX = 500;
 
 // runner name -> { session, runner, direction, hello, health, rteId, renew, heartbeat }
 const sessions = new Map();
@@ -1010,6 +1014,48 @@ function forgetJob(jobId) {
 }
 
 /**
+ * Lets go of what this node keeps of the jobs that ended anywhere : its masks and the job's
+ * secrets, its cancel sent, its wait, and the sessions' answers of itemAllowed. A job usually
+ * ends on the node holding its socket (its end item, forgetJob), but a node that sent a job and
+ * lost the socket, or registered its masks for an item, never sees that end : every PRUNE_MS
+ * the jobs it keeps something of are looked up, and the ones no longer running are forgotten.
+ * The jobs being handed over or written now are left alone.
+ *
+ * Returns:
+ *   Promise<number>: how many jobs were forgotten.
+ */
+async function pruneEnded() {
+  // step 1 : every job this node keeps something of
+  const ids = new Set([...masked, ...cancelSent.keys(), ...waiting.keys()]);
+  for (const e of sessions.values()) {
+    for (const id of e.allowed.keys()) ids.add(id);
+    for (const id of e.refused) ids.add(id);
+  }
+  // step 2 : the ones in hand now stay (their end, or their claim, comes through here)
+  for (const id of [...sending, ...claims.keys(), ...writing.keys()]) ids.delete(id);
+  if (!ids.size) return 0;
+  // step 3 : the ones still running, looked up in slices (never one huge IN list)
+  const list = [...ids];
+  const running = new Set();
+  for (let i = 0; i < list.length; i += 500) {
+    const rows = await mysql.do("SELECT id FROM AnsibleForms.`jobs` WHERE id IN (?) AND status='running'", [list.slice(i, i + 500)], true);
+    for (const r of rows || []) running.add(Number(r.id));
+  }
+  // step 4 : the others forgotten, here and on every session
+  let forgotten = 0;
+  for (const id of list) {
+    if (running.has(id) || sending.has(id) || claims.has(id) || writing.has(id)) continue;
+    forgetJob(id);
+    for (const e of sessions.values()) {
+      e.allowed.delete(id);
+      e.refused.delete(id);
+    }
+    forgotten++;
+  }
+  return forgotten;
+}
+
+/**
  * Fails a job that cannot run (refused, or waited too long), when it still runs
  * (runners/common.js), and forgets it.
  *
@@ -1217,6 +1263,9 @@ function itemAllowed(entry, jobId) {
     })();
     // a failed query is asked again with the next item, never kept as a refusal
     check.catch(() => entry.allowed.delete(jobId));
+    // at most ALLOWED_MAX answers kept : a socket that lives for months does not keep one per
+    // job it ever wrote (the oldest goes first ; asked again if it ever comes back)
+    while (entry.allowed.size >= ALLOWED_MAX) entry.allowed.delete(entry.allowed.keys().next().value);
     entry.allowed.set(jobId, check);
   }
   return entry.allowed.get(jobId);
@@ -1245,6 +1294,7 @@ function onItem(entry, msg) {
       if (!(await itemAllowed(entry, jobId))) {
         // once per job and socket in the log : a misbehaving RTE does not flood it
         if (!entry.refused.has(jobId)) {
+          while (entry.refused.size >= ALLOWED_MAX) entry.refused.delete(entry.refused.values().next().value);
           entry.refused.add(jobId);
           logger.warning(`Job ${jobId}: RTE '${entry.runner.name}' (${entry.rteId}) sent an item of a job that is not its own: dropped`);
         }
@@ -1376,12 +1426,16 @@ export function startRteHub(httpServer) {
   dispatchTimer.unref?.();
   const dialTimer = setInterval(() => dialInbound().catch((e) => logger.debug(`RTE inbound dial: ${e.message}`)), DIAL_MS);
   dialTimer.unref?.();
+  // what this node keeps of the jobs that ended elsewhere, let go now and then
+  const pruneTimer = setInterval(() => pruneEnded().catch((e) => logger.debug(`RTE prune: ${e.message}`)), PRUNE_MS);
+  pruneTimer.unref?.();
   setTimeout(() => dialInbound().catch(() => {}), 2000).unref?.();
   logger.notice(`Taking RTE sockets on ${appConfig.baseUrl || ""}${APP_SOCKET_PATH}`);
   return {
     stop() {
       clearInterval(dispatchTimer);
       clearInterval(dialTimer);
+      clearInterval(pruneTimer);
       for (const e of sessions.values()) e.session.close(CLOSE.GOING_AWAY, "the app node stops");
     },
   };
@@ -1428,6 +1482,6 @@ export function dropSocket(name, reason) {
   if (entry) entry.session.close(CLOSE.UNAUTHORIZED, reason);
 }
 
-export { sessions, waiting, cancelSent, claims, sending, dialing, dispatch, dialInbound, storeItem, sendJob, onItem, onFetch, adopt, renewTick, abandonLost, NODE_DEAD_SECONDS };
+export { sessions, waiting, cancelSent, claims, sending, masked, pruneEnded, ALLOWED_MAX, dialing, dispatch, dialInbound, storeItem, sendJob, onItem, onFetch, adopt, renewTick, abandonLost, NODE_DEAD_SECONDS };
 
 export default { startRteHub, handleUpgrade, authenticate, registerHandler, kick, cancel, socketState, isSocketRunner, holdsSocket };

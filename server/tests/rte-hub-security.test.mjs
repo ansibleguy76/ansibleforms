@@ -353,6 +353,51 @@ describe("an abort of a socket-mode job", () => {
   });
 });
 
+describe("what a node keeps of the jobs", () => {
+  test("the jobs that ended elsewhere are forgotten : masks, cancels, waits and the sessions' answers ; the running ones and the ones in hand stay", async () => {
+    const entry = entryOf(runners["dmz-1"]);
+    hub.sessions.set("dmz-1", entry);
+    const doBefore = mysql.do;
+    // jobs 71 and 74 still run ; 72 and 73 ended on another node
+    mysql.do = async (sql, params) => {
+      if (sql.includes("WHERE id IN (?) AND status='running'")) return params[0].filter((id) => [71, 74].includes(id)).map((id) => ({ id }));
+      return doBefore(sql, params);
+    };
+    try {
+      hub.masked.add(71);
+      hub.masked.add(72);
+      hub.cancelSent.set(72, entry);
+      hub.waiting.set(73, { firstWait: 0, retryAt: 0, said: false });
+      entry.allowed.set(73, Promise.resolve(true));
+      entry.refused.add(72);
+      // 75 ended too, but is being handed over now : left alone
+      hub.masked.add(75);
+      hub.sending.add(75);
+      assert.equal(await hub.pruneEnded(), 2, "72 and 73");
+      assert.deepEqual([hub.masked.has(71), hub.masked.has(72), hub.masked.has(75)], [true, false, true]);
+      assert.equal(hub.cancelSent.has(72), false);
+      assert.equal(hub.waiting.has(73), false);
+      assert.equal(entry.allowed.has(73), false);
+      assert.equal(entry.refused.has(72), false);
+    } finally {
+      mysql.do = doBefore;
+      hub.sending.delete(75);
+      for (const id of [71, 72, 75]) hub.masked.delete(id);
+      hub.sessions.delete("dmz-1");
+    }
+  });
+
+  test("a session keeps at most ALLOWED_MAX answers of whether it may write a job", async () => {
+    const entry = entryOf(runners["dmz-1"]);
+    for (let id = 1; id <= hub.ALLOWED_MAX + 10; id++) jobs[id] = { runner: "dmz-1", host: null };
+    for (let id = 1; id <= hub.ALLOWED_MAX + 10; id++) hub.onItem(entry, { t: "item", jobId: id, item: { seq: 1, kind: "exited" } });
+    await settle();
+    assert.equal(entry.allowed.size, hub.ALLOWED_MAX);
+    assert.equal(entry.allowed.has(1), false, "the oldest went");
+    assert.equal(entry.allowed.has(hub.ALLOWED_MAX + 10), true);
+  });
+});
+
 describe("the socket's door", () => {
   test("upgrades have a ceiling per address (AUTH_RATE_LIMIT a minute), 0 turns it off", () => {
     const before = appConfig.authRateLimit;
