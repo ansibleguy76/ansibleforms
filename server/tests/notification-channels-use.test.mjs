@@ -476,6 +476,37 @@ describe("the credentials of the secret stores and runners get the type of their
     answers[1] = { match: /SELECT \* FROM AnsibleForms\.`credentials`/, rows: [cred({ managed: 1 })] };
     expect(await retypeConnectionCredentials()).toBe(null);
   });
+
+  test("awx, aap and ascender are one family: an aap credential of an awx runner is left as it is", async () => {
+    answers = [
+      { match: /FROM AnsibleForms\.`runners`/, rows: [{ id: 3, type: "awx", flavour: null, credential: "tower" }] },
+      { match: /SELECT \* FROM AnsibleForms\.`credentials`/, rows: [cred({ name: "tower", credential_type: "aap" })] },
+    ];
+    expect(await retypeConnectionCredentials()).toBe(null);
+    expect(queries.some((q) => /SET credential_type = \?|^INSERT INTO AnsibleForms\.`credentials`/.test(q.sql))).toBe(false);
+  });
+
+  test("an awx and an aap runner sharing one login: retyped once, never split", async () => {
+    answers = [
+      { match: /FROM AnsibleForms\.`runners`/, rows: [{ id: 3, type: "awx", flavour: null, credential: "tower" }, { id: 4, type: "awx", flavour: "aap", credential: "tower" }] },
+      { match: /SELECT \* FROM AnsibleForms\.`credentials`/, rows: [cred({ name: "tower", credential_type: "api" })] },
+    ];
+    expect(await retypeConnectionCredentials()).toMatch(/^Gave .*\(tower is awx\)$/);
+    expect(queries.some((q) => /^INSERT INTO AnsibleForms\.`credentials`/.test(q.sql))).toBe(false);
+  });
+
+  test("once: its marker recorded, also with nothing to do ; marked, nothing is read or rewritten", async () => {
+    expect(await retypeConnectionCredentials()).toBe(null);
+    expect(queries.find((q) => /^INSERT IGNORE INTO AnsibleForms\.`schema_migrations`/.test(q.sql)).args[0]).toBe("retype_connection_credentials");
+    queries.length = 0;
+    answers = [
+      { match: /FROM AnsibleForms\.`schema_migrations`/, rows: [{ 1: 1 }] },
+      { match: /FROM AnsibleForms\.`runners`/, rows: [{ id: 2, type: "jenkins", flavour: null, credential: "login" }] },
+      { match: /SELECT \* FROM AnsibleForms\.`credentials`/, rows: [cred()] },
+    ];
+    expect(await retypeConnectionCredentials()).toBe(null);
+    expect(queries.length).toBe(1);
+  });
 });
 
 describe("each move writes a credential and the record naming it in one transaction", () => {

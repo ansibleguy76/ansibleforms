@@ -1118,7 +1118,8 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addColumn("settings", "encryption_check", "text", true, "NULL"), messages, success, failed);
   await checkPromise(moveConnectionsToCredentials(), messages, success, failed);
   // and those credentials are of the runner's or the store's kind : rte, awx, aap, ascender,
-  // semaphore, rundeck, jenkins, vault (a CyberArk's already cyberark)
+  // semaphore, rundeck, jenkins, vault (a CyberArk's already cyberark) ; once (its marker in
+  // schema_migrations), so a type an admin chooses later is never rewritten
   await checkPromise(retypeConnectionCredentials(), messages, success, failed);
   // the API tokens issued, listed and revoked on the profile and the user's page (models/apiToken.model.js)
   const apiTokens = fs.readFileSync(`${__dirname}/../db/create_api_tokens_table.sql`);
@@ -1734,11 +1735,62 @@ export async function renameDefaultLdap() {
   return `LDAP directory '${LEGACY_DEFAULT_LDAP}' renamed to '${DEFAULT_LDAP}'`;
 }
 
+// the schema_migrations row that says the credentials of the secret stores and runners were
+// given the type of their kind (retypeConnectionCredentials) : once, never again after
+const RETYPE_MARKER = "retype_connection_credentials";
+
+// the credential types of one product line : an awx runner is an AWX, an AAP or an Ascender
+// (its flavour), and the three speak the same API with the same login. A credential of any of
+// them serves a runner of any other : never retyped, nor split, within the family
+const AWX_FAMILY = new Set(["awx", "aap", "ascender"]);
+
+/**
+ * The family a credential type belongs to, for the comparison in retypeConnectionCredentials :
+ * awx for awx, aap and ascender (AWX_FAMILY), the type itself for any other.
+ *
+ * Args:
+ *   type (string|null): a credential type, or a runner's or a secret store's kind.
+ *
+ * Returns:
+ *   string|null: the family.
+ */
+function credentialFamily(type) {
+  return AWX_FAMILY.has(type) ? "awx" : type;
+}
+
 export async function retypeConnectionCredentials() {
+  // step 1 : once only. It ran at every start, so an admin who chose another type (an aap
+  // credential for an awx runner, the same product line) had it rewritten at the next restart
+  const marker = await mysql.do("SELECT 1 FROM AnsibleForms.`schema_migrations` WHERE name = ?", [RETYPE_MARKER]);
+  if (marker.length) return null;
+  // step 2 : the records that name a credential
   const stores = await mysql.do("SELECT id, type, NULL AS flavour, credential FROM AnsibleForms.`secret_stores` WHERE COALESCE(credential, '') <> ''");
   const runners = await mysql.do("SELECT id, type, flavour, credential FROM AnsibleForms.`runners` WHERE COALESCE(credential, '') <> ''");
   const records = [...stores.map((r) => ({ ...r, table: "secret_stores" })), ...runners.map((r) => ({ ...r, table: "runners" }))];
-  if (!records.length) return null;
+  const done = [];
+  if (records.length) await retypeRecords(records, done);
+  // step 6 : recorded, also when there was nothing to retype (a fresh install) : a runner or a
+  // credential an admin adds later is theirs, never retyped. Not reached when a transaction
+  // failed : the next start tries again
+  await mysql.do("INSERT IGNORE INTO AnsibleForms.`schema_migrations` (name, version, applied_at) VALUES (?, ?, NOW())", [RETYPE_MARKER, appVersion]);
+  if (!done.length) return null;
+  const message = `Gave the credentials of the secret stores and runners the type of their kind (${done.join(", ")})`;
+  logger.notice(message);
+  return message;
+}
+
+/**
+ * The work of retypeConnectionCredentials, once its marker said it had not run : each credential
+ * the records name given their kind, or copied per family of kinds.
+ *
+ * Args:
+ *   records (object[]): the secret stores and runners that name a credential, each with its table.
+ *   done (string[]): what was done, appended to.
+ *
+ * Returns:
+ *   Promise<void>
+ */
+async function retypeRecords(records, done) {
   const others = new Set(
     (
       await mysql.do(
@@ -1753,7 +1805,6 @@ export async function retypeConnectionCredentials() {
     if (!byCredential.has(r.credential)) byCredential.set(r.credential, []);
     byCredential.get(r.credential).push(r);
   }
-  const done = [];
   for (const [credName, users] of byCredential) {
     // one transaction per credential : its new type, its copies and the records that name
     // them are written together or not at all. A crash in between used to leave a copy nothing
@@ -1761,15 +1812,25 @@ export async function retypeConnectionCredentials() {
     await mysql.transaction(async (query) => {
       const cred = (await query("SELECT * FROM AnsibleForms.`credentials` WHERE name = ?", [credName]))[0];
       if (!cred || cred.managed) return;
-      const kinds = [...new Set(users.map(connectionCredentialType))];
-      if (kinds.length === 1 && kinds[0] === cred.credential_type) return;
-      // the type it keeps : its records' kind when they are all of one and nothing else checks it
-      const keeps = kinds.length === 1 && !others.has(credName) ? kinds[0] : cred.credential_type;
+      // step 3 : the families its records are of, each with the first kind seen in it (the type
+      // a copy for that family gets) : an AWX and an AAP runner sharing one login are one
+      // family, served by one credential, and an aap credential serves an awx runner as it is
+      const families = new Map();
+      for (const u of users) {
+        const kind = connectionCredentialType(u);
+        if (!families.has(credentialFamily(kind))) families.set(credentialFamily(kind), kind);
+      }
+      if (families.size === 1 && families.has(credentialFamily(cred.credential_type))) return;
+      // step 4 : the type it keeps : its records' kind when they are all of one family and
+      // nothing else checks it
+      const keeps = families.size === 1 && !others.has(credName) ? [...families.values()][0] : cred.credential_type;
       if (keeps !== cred.credential_type) {
         await query("UPDATE AnsibleForms.`credentials` SET credential_type = ?, is_database = 0 WHERE id = ?", [keeps, cred.id]);
         done.push(`${credName} is ${keeps}`);
       }
-      for (const kind of kinds.filter((k) => k !== keeps)) {
+      // step 5 : a copy for each other family, which the records of that family then name
+      for (const [family, kind] of families) {
+        if (family === credentialFamily(keeps)) continue;
         // a copy : its login (stored encrypted, the same key for both rows), its server and TLS
         const copy = await freeCredentialName(`${credName}-${kind}`, query);
         await query(
@@ -1777,7 +1838,7 @@ export async function retypeConnectionCredentials() {
             "SELECT ?, user, password, ?, 0, ?, secret_store, secret_ref, client_cert, client_key, url, ignore_certs, ca_bundle FROM AnsibleForms.`credentials` WHERE id = ?",
           [copy, `The ${kind} login of ${credName}`, kind, cred.id],
         );
-        for (const r of users.filter((u) => connectionCredentialType(u) === kind)) {
+        for (const r of users.filter((u) => credentialFamily(connectionCredentialType(u)) === family)) {
           await query(`UPDATE AnsibleForms.\`${r.table}\` SET credential = ? WHERE id = ?`, [copy, r.id]);
         }
         done.push(`a copy of ${credName} for ${kind}, ${copy}`);
@@ -1788,10 +1849,6 @@ export async function retypeConnectionCredentials() {
       }
     });
   }
-  if (!done.length) return null;
-  const message = `Gave the credentials of the secret stores and runners the type of their kind (${done.join(", ")})`;
-  logger.notice(message);
-  return message;
 }
 
 /**
