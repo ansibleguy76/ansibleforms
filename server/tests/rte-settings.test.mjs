@@ -10,7 +10,8 @@ import path from "path";
 process.env.LOG_PATH = process.env.LOG_PATH || "/tmp/ansibleforms-test-logs";
 
 const { parseSetting, settingsOfRunner, settingsOfEnv, effectiveSettings, normalizeRunnerSettings, RTE_SETTINGS } = await import("../src/rte/socket/settings.js");
-const { FileCache } = await import("../src/rte/socket/files.js");
+const settingsModule = await import("../src/rte/socket/settings.js");
+const { FileCache, OWNER_GONE_MS } = await import("../src/rte/socket/files.js");
 
 const byKey = (key) => RTE_SETTINGS.find((s) => s.key === key);
 
@@ -45,8 +46,25 @@ describe("the settings", () => {
     const data = { rte_max_jobs: "5", rte_cache_mb: "", rte_files: "Local" };
     assert.equal(normalizeRunnerSettings(data), null);
     assert.deepEqual(data, { rte_max_jobs: 5, rte_cache_mb: null, rte_files: "local" });
-    assert.match(normalizeRunnerSettings({ rte_drain_seconds: 5000 }), /rte_drain_seconds must be a whole number from 0 to 3600/);
+    assert.match(normalizeRunnerSettings({ rte_drain_seconds: 90000 }), /rte_drain_seconds must be a whole number from 0 to 86400/);
     assert.match(normalizeRunnerSettings({ rte_files: "nfs" }), /rte_files must be one of transfer, local/);
+  });
+});
+
+describe("the RTE's own variables", () => {
+  test("read as before 7.3 : a number as far as it goes, out of range brought to its limit, and said", () => {
+    const { parseEnvSetting, envSettingWarnings } = settingsModule;
+    assert.equal(parseEnvSetting(byKey("drainSeconds"), "7200"), 7200);
+    assert.equal(parseEnvSetting(byKey("drainSeconds"), "999999"), 86400);
+    assert.equal(parseEnvSetting(byKey("maxJobs"), "8 jobs"), 8);
+    assert.equal(parseEnvSetting(byKey("maxJobs"), "-2"), 0);
+    assert.equal(parseEnvSetting(byKey("maxJobs"), "many"), undefined);
+    assert.deepEqual(settingsOfEnv({ RTE_MAX_JOBS: "20000", RTE_FILES: "LOCAL" }), { maxJobs: 10000, files: "local" });
+    const said = envSettingWarnings({ RTE_MAX_JOBS: "20000", RTE_DRAIN_SECONDS: "60", RTE_FILES: "nfs", RTE_CACHE_MB: "lots" });
+    assert.equal(said.length, 3);
+    assert.match(said.join("\n"), /RTE_MAX_JOBS=20000 is read as 10000/);
+    assert.match(said.join("\n"), /RTE_FILES=nfs is not one of transfer, local: not used/);
+    assert.match(said.join("\n"), /RTE_CACHE_MB=lots is not a number: not used/);
   });
 });
 
@@ -70,6 +88,40 @@ describe("the job files cache, kept to its size", () => {
     assert.equal(cache.has("c".repeat(64)), true);
     cache.setMaxBytes(0);
     assert.equal(cache.usedBytes(), 0);
+  });
+});
+
+describe("RTEs sharing one cache", () => {
+  test("each transfer writes a file of its own, so two RTEs fetching one bundle never mix", async () => {
+    const one = new FileCache(path.join(dir, "shared"), 1048576, "rte-a");
+    const two = new FileCache(path.join(dir, "shared"), 1048576, "rte-b");
+    const hash = "f".repeat(64);
+    one.ensure(hash, () => true).catch(() => {});
+    two.ensure(hash, () => true).catch(() => {});
+    assert.notEqual(one.pending.get(hash).file, two.pending.get(hash).file);
+    // both files written to, then one RTE's socket drops
+    await Promise.all([one, two].map((c) => new Promise((r) => c.pending.get(hash).stream.write("x", r))));
+    one.failAll(new Error("closed"));
+    // one RTE's socket dropping removes its own transfer only
+    assert.ok(fs.existsSync(two.pending.get(hash).file));
+    two.failAll(new Error("closed"));
+  });
+
+  test("the jobs folder of an RTE that stopped saying it runs is removed, a living one's kept", () => {
+    const where = path.join(dir, "owners");
+    const gone = new FileCache(where, 1048576, "rte-old-host");
+    fs.mkdirSync(path.join(gone.jobsDir, "12-abc"));
+    fs.writeFileSync(path.join(gone.jobsDir, "12-abc", "extravars_12.json"), "{}");
+    const alive = new FileCache(where, 1048576, "rte-other");
+    const later = Date.now() + OWNER_GONE_MS + 60000;
+    // the living one says so again ; the old one never will
+    alive.heartbeat(later);
+    fs.utimesSync(path.join(alive.jobsDir, ".alive"), new Date(later), new Date(later));
+    const me = new FileCache(where, 1048576, "rte-new-host");
+    me.heartbeat(later);
+    assert.equal(fs.existsSync(gone.jobsDir), false);
+    assert.equal(fs.existsSync(alive.jobsDir), true);
+    assert.equal(fs.existsSync(me.jobsDir), true);
   });
 });
 

@@ -1814,7 +1814,7 @@ export default {
         '此 RTE 保留应用发送的作业文件的大小（MB）；0 表示不保留。留空：使用 RTE 自身的 {env}，否则为 {default}。',
       filesMode: '作业文件',
       filesModeHelp: '传输：应用随作业发送文件。本地：RTE 从其自身挂载的文件夹运行。',
-      files_default: '默认（传输）',
+      files_defaultValue: '默认（{value}）',
       files_transfer: '传输',
       files_local: '本地',
       drainSeconds: '停止时的等待时间',

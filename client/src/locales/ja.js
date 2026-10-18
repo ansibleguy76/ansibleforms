@@ -1874,7 +1874,7 @@ export default {
       filesMode: 'ジョブファイル',
       filesModeHelp:
         '転送: アプリがジョブと一緒にファイルを送ります。ローカル: RTE は自身のマウントしたフォルダから実行します。',
-      files_default: '既定 (転送)',
+      files_defaultValue: '既定 ({value})',
       files_transfer: '転送',
       files_local: 'ローカル',
       drainSeconds: '停止時の待機時間',

@@ -1897,7 +1897,7 @@ export default {
       filesMode: 'Pliki zadań',
       filesModeHelp:
         'Transfer: aplikacja wysyła pliki razem z zadaniem. Lokalnie: RTE działa z własnych zamontowanych folderów.',
-      files_default: 'Domyślnie (transfer)',
+      files_defaultValue: 'Domyślnie ({value})',
       files_transfer: 'Transfer',
       files_local: 'Lokalnie',
       drainSeconds: 'Czas oczekiwania przy zatrzymaniu',

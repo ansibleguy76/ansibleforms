@@ -26,6 +26,11 @@ const HASH = /^[a-f0-9]{64}$/;
 const SUFFIX = ".tar.gz";
 // the folder, under the cache, that holds the running jobs' folders, one per RTE
 const JOBS = "jobs";
+// the file each RTE touches in its jobs folder while it runs (heartbeat) ; a jobs folder whose
+// file is older than OWNER_GONE_MS belongs to an RTE that is gone (killed mid-job, or recreated
+// with another node id) : removed, with what its jobs left, by any RTE that shares the cache
+const ALIVE = ".alive";
+export const OWNER_GONE_MS = 10 * 60 * 1000;
 
 /**
  * The bundles this RTE has, on its disk, and the folders its jobs run from.
@@ -47,6 +52,24 @@ export class FileCache {
     this.pending = new Map();
     fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
     this._prune();
+    this.heartbeat();
+  }
+
+  /**
+   * Says this RTE runs (the alive file of its jobs folder written), and removes the jobs folders
+   * of the RTEs that stopped saying so : the RTE calls it every 20 seconds.
+   *
+   * Args:
+   *   now (number): the time, in ms (the tests set it).
+   */
+  heartbeat(now = Date.now()) {
+    try {
+      fs.mkdirSync(this.jobsDir, { recursive: true, mode: 0o700 });
+      fs.writeFileSync(path.join(this.jobsDir, ALIVE), new Date(now).toISOString(), { mode: 0o600 });
+    } catch (e) {
+      logger.warning(`RTE: could not write ${path.join(this.jobsDir, ALIVE)}: ${e.message}`);
+    }
+    this._pruneOwners(now);
   }
 
   /**
@@ -104,7 +127,8 @@ export class FileCache {
       entry.resolve = resolve;
       entry.reject = reject;
     });
-    entry.file = path.join(this.dir, `${hash}.part`);
+    // a name of its own : RTEs sharing the cache may fetch the same bundle at once
+    entry.file = path.join(this.dir, `${hash}.${crypto.randomBytes(6).toString("hex")}.part`);
     entry.stream = fs.createWriteStream(entry.file, { mode: 0o600 });
     // a disk full, a folder gone : the transfer fails, the job with it (never an uncaught error)
     entry.stream.on("error", (e) => this._fail(hash, new Error(`the job's files ${hash.slice(0, 12)} could not be written: ${e.message}`)));
@@ -181,7 +205,7 @@ export class FileCache {
       await tar.x({ file, cwd: into, strict: true });
     }
     // a cache of size 0 keeps nothing : the next job asks for it again
-    if (this.maxBytes === 0 && !this.pending.has(hash)) fs.rmSync(file, { force: true });
+    if (this.maxBytes === 0 && !this.pending.has(hash)) this._remove(file);
     return into;
   }
 
@@ -298,7 +322,57 @@ export class FileCache {
     for (const b of this._bundles()) {
       if (b.hash === keepHash) continue;
       total += b.size;
-      if (total > this.maxBytes) fs.rmSync(path.join(this.dir, b.name), { force: true });
+      if (total > this.maxBytes) this._remove(path.join(this.dir, b.name));
+    }
+  }
+
+  /**
+   * A file or folder removed ; one that cannot go (permissions, busy) is said in the log, never
+   * thrown : a job waiting for its files, or a settings message, must not fail on it.
+   *
+   * Args:
+   *   target (string): the path.
+   */
+  _remove(target) {
+    try {
+      fs.rmSync(target, { recursive: true, force: true });
+    } catch (e) {
+      logger.warning(`RTE: could not remove ${target}: ${e.message}`);
+    }
+  }
+
+  /**
+   * The jobs folders of the RTEs that are gone go : their alive file (or, without one, the folder)
+   * not written for OWNER_GONE_MS. This RTE's own is never one of them.
+   *
+   * Args:
+   *   now (number): the time, in ms.
+   */
+  _pruneOwners(now = Date.now()) {
+    const parent = path.join(this.dir, JOBS);
+    let names;
+    try {
+      names = fs.readdirSync(parent);
+    } catch {
+      return;
+    }
+    for (const n of names) {
+      const folder = path.join(parent, n);
+      if (folder === this.jobsDir) continue;
+      let seen;
+      try {
+        seen = fs.statSync(path.join(folder, ALIVE)).mtimeMs;
+      } catch {
+        try {
+          seen = fs.statSync(folder).mtimeMs;
+        } catch {
+          continue;
+        }
+      }
+      if (now - seen > OWNER_GONE_MS) {
+        logger.notice(`RTE: removing the jobs folder of an RTE that is gone: ${folder}`);
+        this._remove(folder);
+      }
     }
   }
 
@@ -308,13 +382,7 @@ export class FileCache {
    * unpacked. Another RTE sharing the cache keeps its job folders and its transfers.
    */
   _prune() {
-    const remove = (target) => {
-      try {
-        fs.rmSync(target, { recursive: true, force: true });
-      } catch (e) {
-        logger.warning(`RTE: could not remove ${target}: ${e.message}`);
-      }
-    };
+    const remove = (target) => this._remove(target);
     remove(this.jobsDir);
     let names;
     try {

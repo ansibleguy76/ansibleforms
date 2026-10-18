@@ -1547,6 +1547,10 @@ function onItem(entry, msg) {
   const prev = writing.get(jobId) || Promise.resolve();
   const next = prev
     .then(async () => {
+      // an item of this socket failed to store : the acks are cumulative, so no later item is
+      // acked (it would ack the failed one too) ; the socket closes and the RTE sends again all
+      // it has not had acked
+      if (entry.storeFailed) return;
       if (!(await itemAllowed(entry, jobId))) {
         // once per job and socket in the log : a misbehaving RTE does not flood it
         if (!entry.refused.has(jobId)) {
@@ -1560,7 +1564,11 @@ function onItem(entry, msg) {
       await storeItem(entry, jobId, item);
       entry.session.send({ t: "ack", jobId, seq: item.seq });
     })
-    .catch((e) => logger.error(`Job ${jobId}: storing what RTE '${entry.runner.name}' sent failed (sent again after a reconnect): ${e.message}`))
+    .catch((e) => {
+      logger.error(`Job ${jobId}: storing what RTE '${entry.runner.name}' sent failed, closing its socket so it sends it again: ${e.message}`);
+      entry.storeFailed = true;
+      entry.session.close(CLOSE.GOING_AWAY, "an item could not be stored: send again");
+    })
     .finally(() => {
       if (writing.get(jobId) === next) writing.delete(jobId);
     });
@@ -1600,7 +1608,7 @@ async function storeItem(entry, jobId, item) {
       break;
     case "end":
       // the end, its last line and its notifications : sent from here, never from the RTE
-      await Job.endJobStatus(jobId, item.order, item.stream, item.status, item.message, item.artifacts || {});
+      await Job.endJobStatus(jobId, item.order, item.stream, item.status, item.message, item.artifacts || {}, { rethrow: true });
       if (item.status === "aborted") await Job.resetAbortRequested(jobId).catch(() => {});
       await mysql.do("UPDATE AnsibleForms.`jobs` SET host=NULL, pid=NULL WHERE id=?", [jobId]);
       forgetJob(jobId);

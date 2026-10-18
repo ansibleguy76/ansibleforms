@@ -1477,7 +1477,7 @@ export default {
       filesMode: 'Jobbestanden',
       filesModeHelp:
         'Overdracht: de app stuurt de bestanden met de job mee. Lokaal: de RTE draait vanuit zijn eigen gekoppelde mappen.',
-      files_default: 'Standaard (overdracht)',
+      files_defaultValue: 'Standaard ({value})',
       files_transfer: 'Overdracht',
       files_local: 'Lokaal',
       drainSeconds: 'Wachttijd bij stoppen',

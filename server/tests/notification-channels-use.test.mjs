@@ -429,7 +429,19 @@ describe("an RTE added by hand moves its address and token to a credential", () 
     expect(await moveConnectionsToCredentials()).toMatch(/rte-dc2 into rte-dc2-token/);
     const insert = queries.find((q) => /^INSERT INTO AnsibleForms\.`credentials` SET/.test(q.sql)).args[0];
     expect(insert).toMatchObject({ name: "rte-dc2-token", credential_type: "api", password: "enc", url: "https://rte-dc2:8000" });
-    expect(queries.find((q) => /^UPDATE AnsibleForms\.`runners`/.test(q.sql)).args[0]).toMatchObject({ uri: "", token: null, credential: "rte-dc2-token" });
+    const update = queries.find((q) => /^UPDATE AnsibleForms\.`runners`/.test(q.sql)).args[0];
+    expect(update).toMatchObject({ token: null, credential: "rte-dc2-token" });
+    // its address kept : an RTE still on 7.2 finds its runner by it, and adds no second one
+    expect(update).not.toHaveProperty("uri");
+  });
+
+  test("moved before (its credential has its address): nothing to do again", async () => {
+    answers = [
+      { match: /FROM AnsibleForms\.`runners`/, rows: [{ id: 5, name: "rte-dc2", type: "rte", address: "https://rte-dc2:8000/", token: null, ignore_certs: 0, ca_bundle: null, credential: "rte-dc2-token" }] },
+      { match: /SELECT name, url FROM AnsibleForms\.`credentials`/, rows: [{ name: "rte-dc2-token", url: "https://rte-dc2:8000" }] },
+    ];
+    expect(await moveConnectionsToCredentials()).toBe(null);
+    expect(queries.some((q) => /^UPDATE|^INSERT/.test(q.sql))).toBe(false);
   });
 });
 

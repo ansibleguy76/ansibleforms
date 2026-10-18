@@ -72,6 +72,8 @@ const ends = [];
 vi.mock("../src/models/job.model.js", () => ({
   default: {
     createOutputOnce: async (record) => {
+      // the database failing on one line (the store test below)
+      if (record.output === "db down") throw new Error("connection lost");
       if (outputs.some((o) => o.job_id === record.job_id && o.order === record.order)) return false;
       outputs.push(record);
       return true;
@@ -249,7 +251,8 @@ describe("an RTE's items", () => {
     await storeItem(entry, 6, item);
     await storeItem(entry, 6, item);
     assert.equal(ends.length, 1);
-    assert.deepEqual(ends[0], [6, 9, "stdout", "success", "done", { a: 1 }]);
+    // a failure thrown back (rethrow) : the item is not acked, and the RTE sends it again
+    assert.deepEqual(ends[0], [6, 9, "stdout", "success", "done", { a: 1 }, { rethrow: true }]);
   });
 
   test("events, the log and the process's start go where a database-mode RTE wrote them", async () => {
@@ -303,5 +306,28 @@ describe("an RTE's settings from its runner page", async () => {
     } finally {
       sessions.delete("dmz");
     }
+  });
+});
+
+describe("an item that could not be stored", async () => {
+  const { onItem } = await import("../src/runners/rteHub.js");
+
+  test("is never acked by a later one : the socket closes and the RTE sends both again", async () => {
+    const sent = [];
+    const closed = [];
+    const entry = {
+      runner: { name: "dmz" },
+      rteId: "rte-dmz",
+      hello: {},
+      allowed: new Map([[31, Promise.resolve(true)]]),
+      refused: new Set(),
+      session: { open: true, send: (m) => sent.push(m), close: (code, why) => closed.push([code, why]) },
+    };
+    onItem(entry, { jobId: 31, item: { kind: "output", seq: 1, record: { order: 1, output: "db down" } } });
+    onItem(entry, { jobId: 31, item: { kind: "output", seq: 2, record: { order: 2, output: "next line" } } });
+    await new Promise((r) => setTimeout(r, 50));
+    assert.deepEqual(sent.filter((m) => m.t === "ack"), []);
+    assert.equal(closed.length, 1);
+    assert.equal(outputs.some((o) => o.job_id === 31), false);
   });
 });

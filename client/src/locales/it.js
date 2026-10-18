@@ -1477,7 +1477,7 @@ export default {
         "Quanta parte dei file dei job inviati dall'app conserva questo RTE, in MB; 0 non ne conserva. Vuoto: la variabile {env} dell'RTE, altrimenti {default}.",
       filesMode: 'File dei job',
       filesModeHelp: "Trasferimento: l'app invia i file con il job. Locale: l'RTE usa le proprie cartelle montate.",
-      files_default: 'Predefinito (trasferimento)',
+      files_defaultValue: 'Predefinito ({value})',
       files_transfer: 'Trasferimento',
       files_local: 'Locale',
       drainSeconds: 'Attesa allo stop',

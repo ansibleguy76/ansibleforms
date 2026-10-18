@@ -1485,7 +1485,7 @@ export default {
       filesMode: 'Jobdateien',
       filesModeHelp:
         'Übertragung: Die App sendet die Dateien mit dem Job. Lokal: Das RTE arbeitet mit seinen eigenen eingebundenen Ordnern.',
-      files_default: 'Standard (Übertragung)',
+      files_defaultValue: 'Standard ({value})',
       files_transfer: 'Übertragung',
       files_local: 'Lokal',
       drainSeconds: 'Wartezeit beim Stoppen',

@@ -1912,7 +1912,7 @@ export default {
       filesMode: 'Fitxers de treball',
       filesModeHelp:
         "Transferència: l'app envia els fitxers amb el treball. Local: l'RTE s'executa des de les seves carpetes muntades.",
-      files_default: 'Per defecte (transferència)',
+      files_defaultValue: 'Per defecte ({value})',
       files_transfer: 'Transferència',
       files_local: 'Local',
       drainSeconds: "Temps d'espera en aturar",

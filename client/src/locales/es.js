@@ -1483,7 +1483,7 @@ export default {
       filesMode: 'Archivos de trabajo',
       filesModeHelp:
         'Transferencia: la app envía los archivos con el trabajo. Local: el RTE se ejecuta desde sus propias carpetas montadas.',
-      files_default: 'Por defecto (transferencia)',
+      files_defaultValue: 'Por defecto ({value})',
       files_transfer: 'Transferencia',
       files_local: 'Local',
       drainSeconds: 'Tiempo de espera al parar',

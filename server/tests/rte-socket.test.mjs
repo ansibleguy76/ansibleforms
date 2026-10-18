@@ -138,7 +138,7 @@ describe("the job files", () => {
     const file = await ready;
     // kept packed : nothing unpacked in the cache itself
     assert.equal(file, cache.path(b.hash));
-    assert.deepEqual(fs.readdirSync(path.join(dir, "cache")), [path.basename(file)]);
+    assert.deepEqual(fs.readdirSync(path.join(dir, "cache")).filter((n) => n !== "jobs"), [path.basename(file)]);
     const jobDir = cache.jobFolder(12);
     const folder = await cache.checkout(b.hash, () => assert.fail("asked again"), path.join(jobDir, "playbooks"));
     assert.equal(fs.statSync(jobDir).mode & 0o777, 0o700);
@@ -196,7 +196,9 @@ describe("the job files", () => {
     fs.writeFileSync(path.join(where, `${hash}.tar.gz`), "kept");
     new FileCache(where, 20, "rte-a");
     assert.deepEqual(fs.readdirSync(where).sort(), [`${hash}.tar.gz`, `${other}.part`, "jobs"]);
-    assert.deepEqual(fs.readdirSync(path.join(where, "jobs")), ["rte-b"]);
+    // its own folder made anew, empty but for its alive file ; the other RTE's kept
+    assert.deepEqual(fs.readdirSync(path.join(where, "jobs")).sort(), ["rte-a", "rte-b"]);
+    assert.deepEqual(fs.readdirSync(path.join(where, "jobs", "rte-a")), [".alive"]);
   });
 
   test("a damaged bundle is refused", async () => {
@@ -230,8 +232,8 @@ describe("what goes wrong on the RTE's side", () => {
   test("a bundle that cannot be written fails its job, never the process", async () => {
     const cache = new FileCache(path.join(dir, "cache3"));
     const hash = "c".repeat(64);
-    // where the bundle would be written is a folder : the write stream fails
-    fs.mkdirSync(path.join(dir, "cache3", `${hash}.part`));
+    // the cache folder gone (a volume unmounted) : the write stream fails
+    fs.rmSync(path.join(dir, "cache3"), { recursive: true, force: true });
     await assert.rejects(cache.ensure(hash, () => true), /could not be written/);
     assert.equal(cache.pending.size, 0);
   });
