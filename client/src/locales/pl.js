@@ -2729,6 +2729,8 @@ export default {
     badYamlDuplicate: 'Nie można zduplikować: nieprawidłowy YAML',
   },
   jobs: {
+    ownJobRejectOnly:
+      'To jest Twoje własne zadanie, a jego zatwierdzenie nie pozwala na samodzielne zatwierdzenie. Musi je zatwierdzić inna osoba; nadal możesz je odrzucić, aby je wycofać.',
     // the jobs page's left menu
     // a job's status where the menu has no entry for it
     statusLabel: {

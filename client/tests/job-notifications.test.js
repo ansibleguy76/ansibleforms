@@ -1,7 +1,7 @@
 // lib/jobNotifications.js : what a look tells - the user's jobs that ended since the last look,
 // the jobs that now wait for its approval - each once, the first look telling nothing.
 import { describe, it, expect, beforeEach } from 'vitest';
-import { whatIsNew, mayApprove, turnNotificationsOff } from '@/lib/jobNotifications';
+import { whatIsNew, mayApprove, mayDecide, turnNotificationsOff } from '@/lib/jobNotifications';
 
 const me = { username: 'anna', type: 'local', roles: ['public'] };
 const job = (id, status, extra = {}) => ({ id, status, user: 'anna', user_type: 'local', form: 'Patch', ...extra });
@@ -49,5 +49,17 @@ describe('who may approve', () => {
     expect(mayApprove({ approval }, { roles: ['public'] })).toBe(false);
     expect(mayApprove({}, { roles: ['public'] })).toBe(true);
     expect(mayApprove({ approval: '{broken' }, { roles: ['public'] })).toBe(false);
+  });
+
+  it('not their own job, unless the approval allows it or they are an admin (four eyes)', () => {
+    const me = { username: 'alice', type: 'local', roles: ['ops'] };
+    const own = { user: 'alice', user_type: 'local', approval: JSON.stringify({ roles: ['ops'] }) };
+    expect(mayApprove(own, me)).toBe(false);
+    // Reject (withdrawing it) stays theirs
+    expect(mayDecide(own, me)).toBe(true);
+    expect(mayApprove({ ...own, approval: { roles: ['ops'], allowSelf: true } }, me)).toBe(true);
+    expect(mayApprove(own, { ...me, roles: ['admin'] })).toBe(true);
+    // the same name from another login type is somebody else
+    expect(mayApprove({ ...own, user_type: 'ldap' }, me)).toBe(true);
   });
 });

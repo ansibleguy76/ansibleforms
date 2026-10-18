@@ -2738,6 +2738,8 @@ export default {
     badYamlDuplicate: 'Impossibile duplicare: YAML non valido',
   },
   jobs: {
+    ownJobRejectOnly:
+      'Questo job è tuo e la sua approvazione non consente di approvarlo da solo. Deve approvarlo un altro approvatore; puoi comunque rifiutarlo per ritirarlo.',
     // the jobs page's left menu
     // a job's status where the menu has no entry for it
     statusLabel: {

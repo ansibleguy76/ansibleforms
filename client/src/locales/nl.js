@@ -2740,6 +2740,8 @@ export default {
     badYamlDuplicate: 'Dupliceren niet mogelijk: ongeldige YAML',
   },
   jobs: {
+    ownJobRejectOnly:
+      'Dit is uw eigen job en de goedkeuring ervan staat niet toe dat u hem zelf goedkeurt. Een andere goedkeurder moet hem goedkeuren; u kunt hem nog wel afwijzen om hem in te trekken.',
     // the jobs page's left menu
     // a job's status where the menu has no entry for it
     statusLabel: {

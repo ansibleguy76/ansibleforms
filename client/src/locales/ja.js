@@ -2701,6 +2701,8 @@ export default {
     badYamlDuplicate: '複製できません: YAML が正しくありません',
   },
   jobs: {
+    ownJobRejectOnly:
+      'これはあなた自身のジョブで、その承認設定では自分で承認できません。別の承認者が承認する必要があります。却下して取り下げることはできます。',
     // the jobs page's left menu
     // a job's status where the menu has no entry for it
     statusLabel: {

@@ -2753,6 +2753,8 @@ export default {
     badYamlDuplicate: 'No es pot duplicar: YAML incorrecte',
   },
   jobs: {
+    ownJobRejectOnly:
+      "Aquesta tasca és teva i la seva aprovació no permet que l'aprovis tu mateix. L'ha d'aprovar un altre aprovador; encara la pots rebutjar per retirar-la.",
     // the jobs page's left menu
     // a job's status where the menu has no entry for it
     statusLabel: {

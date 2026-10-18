@@ -2760,6 +2760,8 @@ export default {
     badYamlDuplicate: 'Duplizieren nicht möglich: ungültiges YAML',
   },
   jobs: {
+    ownJobRejectOnly:
+      'Dies ist Ihr eigener Job, und seine Genehmigung erlaubt keine Selbstgenehmigung. Ein anderer Genehmiger muss ihn genehmigen; Sie können ihn weiterhin ablehnen, um ihn zurückzuziehen.',
     // the jobs page's left menu
     // a job's status where the menu has no entry for it
     statusLabel: {

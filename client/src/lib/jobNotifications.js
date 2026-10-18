@@ -144,8 +144,43 @@ function reset() {
 // ─── deciding ────────────────────────────────────────────────────────────────
 
 /**
- * Whether the user may approve a job, as the jobs page decides it (an admin any, else one of
- * the roles the job's approval names ; none named, anyone who sees it).
+ * A job's approval as an object : the list sends it as a JSON string, the job's page as an
+ * object.
+ *
+ * Args:
+ *   job (object): the job.
+ *
+ * Returns:
+ *   object|null|false: the approval ; null when the job has none ; false when it cannot be read.
+ */
+function approvalOf(job) {
+  if (!job?.approval) return null;
+  if (typeof job.approval !== 'string') return job.approval;
+  try {
+    return JSON.parse(job.approval);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Whether the job is the signed-in user's own : launched by that username with that login type.
+ *
+ * Args:
+ *   job (object): the job, { user, user_type }.
+ *   profile (object): the signed-in user, { username, type }.
+ *
+ * Returns:
+ *   boolean: true for its own job.
+ */
+export function isOwnJob(job, profile) {
+  return !!job?.user && job.user === profile?.username && (job.user_type || 'local') === (profile?.type || 'local');
+}
+
+/**
+ * Whether the user may decide on a job waiting for approval at all, Reject included, as the jobs
+ * page decides it (an admin any, else one of the roles the job's approval names ; none named,
+ * anyone who sees it). The requester may always reject (withdraw) their own job.
  *
  * Args:
  *   job (object): the job, its approval a JSON string (the list) or an object.
@@ -154,19 +189,33 @@ function reset() {
  * Returns:
  *   boolean: true when it may.
  */
-export function mayApprove(job, profile) {
+export function mayDecide(job, profile) {
   const roles = profile?.roles || [];
   if (roles.includes('admin')) return true;
-  if (!job?.approval) return true;
-  let approval = job.approval;
-  if (typeof approval === 'string') {
-    try {
-      approval = JSON.parse(approval);
-    } catch {
-      return false;
-    }
-  }
+  const approval = approvalOf(job);
+  if (approval === null) return true;
+  if (approval === false) return false;
   return (approval?.roles || []).some((role) => roles.includes(role));
+}
+
+/**
+ * Whether the user may APPROVE a job : as mayDecide, and the four-eyes rule of the server
+ * (server/src/models/job.model.js Job.approve) - who launched the job does not approve it
+ * themselves, unless its approval allows it (allowSelf: true) or they are an admin. Offering
+ * Approve there only led to the server refusing it.
+ *
+ * Args:
+ *   job (object): the job, { approval, user, user_type }.
+ *   profile (object): the signed-in user, { username, type, roles }.
+ *
+ * Returns:
+ *   boolean: true when it may.
+ */
+export function mayApprove(job, profile) {
+  if (!mayDecide(job, profile)) return false;
+  if ((profile?.roles || []).includes('admin')) return true;
+  if (!isOwnJob(job, profile)) return true;
+  return approvalOf(job)?.allowSelf === true;
 }
 
 /**
@@ -449,5 +498,7 @@ export default {
   turnNotificationsOff,
   followJobNotifications,
   whatIsNew,
+  mayDecide,
   mayApprove,
+  isOwnJob,
 };

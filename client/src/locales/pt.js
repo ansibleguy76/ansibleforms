@@ -2746,6 +2746,8 @@ export default {
     badYamlDuplicate: 'Não é possível duplicar: YAML inválido',
   },
   jobs: {
+    ownJobRejectOnly:
+      'Esta tarefa é sua e a respetiva aprovação não permite que a aprove você mesmo. Outro aprovador tem de a aprovar; pode ainda rejeitá-la para a retirar.',
     // the jobs page's left menu
     // a job's status where the menu has no entry for it
     statusLabel: {

@@ -2621,6 +2621,7 @@ export default {
     badYamlDuplicate: '无法创建副本：YAML 有误',
   },
   jobs: {
+    ownJobRejectOnly: '这是您自己的作业，其审批设置不允许自行批准。必须由其他审批人批准；您仍可以拒绝以撤回该作业。',
     // the jobs page's left menu
     // a job's status where the menu has no entry for it
     statusLabel: {
