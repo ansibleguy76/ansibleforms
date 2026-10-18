@@ -100,14 +100,47 @@ const yaml = computed(() => (result.value ? YAML.stringify(result.value) : ''));
 // each code tab coloured : JSON and YAML by highlight.js (escaped by it), the outputs as the
 // job's log file (their ANSI colours, a log line's level), all in the theme's colours
 const highlighted = (code, language) => (code ? hljs.highlight(code, { language }).value : '');
-const jsonHtml = computed(() => highlighted(json.value, 'json'));
-const yamlHtml = computed(() => highlighted(yaml.value, 'yaml'));
-const outputHtml = (value) =>
-  jobLogLines(value)
-    .map((line) => line.html)
-    .join('\n');
-const stdoutHtml = computed(() => outputHtml(stdout.value));
-const stderrHtml = computed(() => outputHtml(stderr.value));
+
+/**
+ * Highlighted HTML as its lines, each well formed : a span open at a line's end (a YAML block
+ * text, a long string) is closed there and opened again on the next line.
+ *
+ * Args:
+ *   html (string): the HTML, its text escaped, only spans as tags.
+ *
+ * Returns:
+ *   string[]: each line's HTML ; a last empty line left out.
+ */
+function htmlLines(html) {
+  const lines = [];
+  const open = [];
+  let line = '';
+  for (const part of html.split(/(<span[^>]*>|<\/span>|\n)/)) {
+    if (part === '\n') {
+      lines.push(line + '</span>'.repeat(open.length));
+      line = open.join('');
+    } else {
+      if (part.startsWith('<span')) open.push(part);
+      else if (part === '</span>') open.pop();
+      line += part;
+    }
+  }
+  if (line.replace(/<[^>]*>/g, '') !== '' || !lines.length) lines.push(line);
+  return lines;
+}
+const jsonLines = computed(() => htmlLines(highlighted(json.value, 'json')));
+const yamlLines = computed(() => htmlLines(highlighted(yaml.value, 'yaml')));
+const outputLines = (value) => jobLogLines(value).map((line) => line.html);
+// the tab shown its lines, numbered as the server log's
+const codeLines = computed(
+  () =>
+    ({
+      json: jsonLines.value,
+      yaml: yamlLines.value,
+      stdout: outputLines(stdout.value),
+      stderr: outputLines(stderr.value),
+    })[tab.value] || [],
+);
 </script>
 <template>
   <BsModal size="lg" icon="circle-info" @close="emit('close')">
@@ -148,12 +181,15 @@ const stderrHtml = computed(() => outputHtml(stderr.value));
                 }}</pre>
               </template>
             </template>
-            <!-- eslint-disable vue/no-v-html -- escaped : highlight.js and jobLogLines escape the text -->
-            <pre v-else-if="tab === 'json'" class="af-result-pre" v-html="jsonHtml"></pre>
-            <pre v-else-if="tab === 'yaml'" class="af-result-pre" v-html="yamlHtml"></pre>
-            <pre v-else-if="tab === 'stdout'" class="af-result-pre af-result-ansi" v-html="stdoutHtml"></pre>
-            <pre v-else-if="tab === 'stderr'" class="af-result-pre af-result-ansi" v-html="stderrHtml"></pre>
-            <!-- eslint-enable vue/no-v-html -->
+            <!-- a code tab : each line its number in the server log's grey column, a long line
+                 wrapping under its own start -->
+            <div v-else class="af-result-pre af-result-lines" :class="{ 'af-result-ansi': tab.startsWith('std') }">
+              <div v-for="(line, i) in codeLines" :key="i" class="af-result-line">
+                <span class="af-result-no">{{ i + 1 }}</span>
+                <!-- eslint-disable-next-line vue/no-v-html -- escaped : highlight.js and jobLogLines escape the text -->
+                <span class="af-result-text" v-html="line"></span>
+              </div>
+            </div>
           </div>
         </div>
       </template>
@@ -211,6 +247,34 @@ const stderrHtml = computed(() => outputHtml(stderr.value));
   font-size: 0.8125rem;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+/* the numbered lines : the gutter's grey the whole height, as the server log's and the output's */
+.af-result-lines {
+  padding: 0.5rem 0;
+  font-family: var(--bs-font-monospace);
+  background: linear-gradient(
+    to right,
+    var(--af-output-gutter-bg) 3rem,
+    var(--af-field-border) 3rem,
+    var(--af-field-border) calc(3rem + 1px),
+    var(--bs-tertiary-bg) calc(3rem + 1px)
+  );
+  .af-result-line {
+    display: flex;
+    align-items: flex-start;
+  }
+  .af-result-no {
+    flex: 0 0 3rem;
+    padding-right: 0.5rem;
+    text-align: right;
+    color: var(--bs-tertiary-color);
+    user-select: none;
+  }
+  .af-result-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0 0.75rem;
+  }
 }
 /* an output's colours : the job output's (AppAnsibleOutput), readable in light and dark */
 .af-result-ansi {
