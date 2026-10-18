@@ -132,6 +132,8 @@ export default {
       "Només un admin pot afegir o eliminar un repositori, o canviar-ne l'adreça, la branca o per a què s'usa: el seu contingut esdevé la configuració, els formularis o els playbooks que executa AnsibleForms",
     secretStoreAdminOnly:
       "Només un admin pot afegir, canviar o eliminar un magatzem de secrets: inicia sessió amb un token o una clau que s'enviaria a la seva adreça",
+    credentialSecretRefAdminOnly:
+      "Només un admin pot triar o canviar el magatzem de secrets i el secret del qual una credencial llegeix la contrasenya",
     credentialAdminOnly:
       "Només un admin pot afegir, canviar o eliminar aquesta credencial: un runner o una connexió en pren l'adreça i el secret",
     credentialInUse:

@@ -133,6 +133,8 @@ export default {
       "Alleen een admin kan een repository toevoegen of verwijderen, of het adres, de branch of het gebruik ervan wijzigen: de inhoud wordt de configuratie, de formulieren of de playbooks die AnsibleForms uitvoert",
     secretStoreAdminOnly:
       "Alleen een admin kan een secret store toevoegen, wijzigen of verwijderen: hij logt in met een token of een sleutel die naar zijn adres zou worden gestuurd",
+    credentialSecretRefAdminOnly:
+      "Alleen een admin kan de secret store en het secret kiezen of wijzigen waaruit een credential zijn wachtwoord leest",
     credentialAdminOnly:
       "Alleen een admin kan deze credential toevoegen, wijzigen of verwijderen: een runner of een verbinding neemt er zijn adres en zijn geheim uit",
     credentialInUse:

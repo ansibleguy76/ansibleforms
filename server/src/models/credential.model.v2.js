@@ -177,12 +177,14 @@ class CredentialModel extends CrudModel {
 
   /**
    * Whether a credential is an admin's to change and to name : one a connection takes its address
-   * from (URL_TYPES), one a sign-in reads (SIGNIN_TYPES), or one a runner names, whatever its
-   * type. A user with only connections access may neither change it nor point a notification
-   * channel or a repository at it : both would hand its secret to a server of their choosing.
+   * from (URL_TYPES), one a sign-in reads (SIGNIN_TYPES), one that reads its password from a
+   * secret store (secret_store, or the deprecated vault_path : only an admin chooses which secret,
+   * controllers/v2/credential.controller.js assertSecretRefUnchanged), or one a runner names,
+   * whatever its type. A user with only connections access may not point a notification channel or
+   * a repository at it : both would hand its secret to a server of their choosing.
    *
    * Args:
-   *   record (object|null): the credential ({ name, credential_type }).
+   *   record (object|null): the credential ({ name, credential_type, secret_store, vault_path }).
    *
    * Returns:
    *   Promise<boolean>: true when only an admin may change or name it.
@@ -191,6 +193,9 @@ class CredentialModel extends CrudModel {
     if (!record) return false;
     if (this.URL_TYPES.includes(record.credential_type)) return true;
     if (this.SIGNIN_TYPES.includes(record.credential_type)) return true;
+    // a secret an admin chose to read from a secret store : named elsewhere by a connections user,
+    // it would be sent to the address of their webhook or repository
+    if (String(record.secret_store || '').trim() || String(record.vault_path || '').trim()) return true;
     return !!(record.name && (await this.runnersUsing(record.name)).length);
   }
 

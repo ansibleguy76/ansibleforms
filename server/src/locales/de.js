@@ -137,6 +137,8 @@ export default {
       "Nur ein Admin kann ein Repository hinzufuegen oder loeschen oder seine Adresse, seinen Branch oder seine Verwendung aendern: sein Inhalt wird die Konfiguration, die Formulare oder die Playbooks, die AnsibleForms ausfuehrt",
     secretStoreAdminOnly:
       "Nur ein Admin kann einen Secret Store hinzufuegen, aendern oder loeschen: er meldet sich mit einem Token oder Schluessel an, der an seine Adresse gesendet wuerde",
+    credentialSecretRefAdminOnly:
+      "Nur ein Admin kann den Secret Store und das Secret waehlen oder aendern, aus dem ein Zugangsdatum sein Passwort liest",
     credentialAdminOnly:
       "Nur ein Admin kann diese Zugangsdaten hinzufuegen, aendern oder loeschen: ein Runner oder eine Verbindung nimmt daraus seine Adresse und sein Geheimnis",
     credentialInUse:
