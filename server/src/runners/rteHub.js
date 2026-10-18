@@ -11,27 +11,31 @@
 //
 // Any node may launch a job (runners/rte.js) : it writes the job as always, and the node holding
 // the socket sends it - at once when it is the same node, else within two seconds (dispatch).
-import crypto from "crypto";
-import https from "https";
 import WebSocket, { WebSocketServer } from "ws";
 import logger from "../lib/logger.js";
 import mysql from "../models/db.model.js";
 import Job from "../models/job.model.js";
-import JobEvent from "../models/jobEvent.model.js";
-import Runner, { SOCKET_MODES, PENDING_MAX } from "../models/runner.model.js";
+import Runner, { PENDING_MAX } from "../models/runner.model.js";
 import RunnerJoinToken from "../models/runnerJoinToken.model.js";
 import Credential from "../models/credential.model.v2.js";
 import appConfig from "../../config/app.config.js";
 import { nodeId, NODE_DEAD_SECONDS } from "../lib/role.js";
 import { appVersion } from "../lib/version.js";
 import { safeParse } from "../lib/safejson.js";
+import { safeEqual } from "../lib/safeEqual.js";
 import { resolveJobSecrets } from "../lib/jobSecrets.js";
 import { sealJobSecrets } from "../lib/sealedSecrets.js";
 import { forgetJobSecrets } from "../lib/outputMask.js";
 import { publish } from "../lib/liveEvents.js";
 import { bundleOf, bundleByHash, readChunks } from "../lib/jobFiles.js";
 import { Session } from "../rte/socket/session.js";
-import { SOCKET_CONTRACT, APP_SOCKET_PATH, CLOSE, CHUNK_BYTES, MAX_PAYLOAD, inboundUrl, fingerprint } from "../rte/socket/protocol.js";
+import dbJobIO from "../rte/jobio-db.js";
+import { abandonJobs } from "../rte/abandon.js";
+import { getHttpsAgent, failRteJob, abortWhileWaiting, sayWaitingForSlot } from "./common.js";
+import {
+  SOCKET_CONTRACT, SOCKET_MODES, APP_SOCKET_PATH, CLOSE, CHUNK_BYTES, MAX_PAYLOAD, RETRY_MS,
+  queueMinutes, inboundUrl, fingerprint,
+} from "../rte/socket/protocol.js";
 
 // how long a lease lasts, renewed every 20 s while the socket is open
 const LEASE_SECONDS = 60;
@@ -42,9 +46,6 @@ const DISPATCH_MS = 2000;
 const DIAL_MS = 10000;
 // how long an RTE has to say claimed or refused
 const CLAIM_TIMEOUT_MS = 30000;
-// how long a refused-busy job waits before it is sent again
-const RETRY_MS = 10000;
-const queueMinutes = () => Math.max(0, parseInt(process.env.RTE_QUEUE_MINUTES ?? 60, 10) || 0);
 
 // runner name -> { session, runner, direction, hello, health, rteId, renew, heartbeat }
 const sessions = new Map();
@@ -285,28 +286,11 @@ async function abandonLost(entry, hello) {
   const rows = await mysql.do("SELECT id FROM AnsibleForms.`jobs` WHERE status='running' AND host=?", [entry.rteId]);
   for (const { id } of rows || []) {
     if (known.has(Number(id))) continue;
-    const res = await mysql.do("UPDATE AnsibleForms.`jobs` SET status='abandoned', abort_requested=0 WHERE id=? AND status='running'", [id]);
-    if (res?.changedRows) logger.warning(`Job ${id}: RTE '${entry.runner.name}' came back without it: abandoned`);
+    if (await abandonJobs({ id, host: entry.rteId })) logger.warning(`Job ${id}: RTE '${entry.runner.name}' came back without it: abandoned`);
   }
 }
 
 // ─── outbound : an RTE dials this node ────────────────────────────────────────
-
-/**
- * Whether two tokens are the same, in constant time.
- *
- * Args:
- *   a (string): one.
- *   b (string): the other.
- *
- * Returns:
- *   boolean
- */
-function sameToken(a, b) {
-  const x = Buffer.from(String(a || ""));
-  const y = Buffer.from(String(b || ""));
-  return x.length > 0 && x.length === y.length && crypto.timingSafeEqual(x, y);
-}
 
 /**
  * Who an RTE that calls in is (its socket, outbound, or its one registration call, either mode) :
@@ -336,7 +320,7 @@ export async function authenticate(headers, opts = {}) {
   const fields = mode === "inbound" ? { rte_mode: "inbound", uri: url } : { rte_mode: "outbound", ...(url ? { uri: url } : {}) };
   const runner = await Runner.findByName(name);
   if (runner && runner.type !== "rte") return { status: 409, error: `'${name}' is a ${runner.type} runner, not an RTE` };
-  if (runner && sameToken(token, runner.token)) {
+  if (runner && safeEqual(token, runner.token)) {
     if (runner.rte_mode !== fields.rte_mode || (mode === "inbound" && runner.uri !== url)) {
       if (runner.managed) return { status: 409, error: `runner '${name}' is managed by the config seed: its mode and address are set there` };
       // an inbound one's address : its credential's when it names one
@@ -538,7 +522,7 @@ async function dialInbound() {
       headers: { Authorization: `Bearer ${runner.token || ""}`, "X-AF-Node": nodeId },
       maxPayload: MAX_PAYLOAD,
       handshakeTimeout: 10000,
-      agent: url.startsWith("wss:") ? new https.Agent({ rejectUnauthorized: !runner.ignore_certs, ca: runner.ca_bundle || undefined }) : undefined,
+      agent: url.startsWith("wss:") ? getHttpsAgent(runner) : undefined,
     });
     ws.on("open", () => {
       dialing.delete(name);
@@ -668,7 +652,22 @@ async function ensureMask(jobId) {
 }
 
 /**
- * Fails a job that cannot run (refused, or waited too long), when it still runs.
+ * Forgets what this node keeps of a job that ended here (failed, abandoned, ended) : its wait,
+ * its cancel sent, its output masks.
+ *
+ * Args:
+ *   jobId (number): the job.
+ */
+function forgetJob(jobId) {
+  waiting.delete(jobId);
+  cancelSent.delete(jobId);
+  forgetJobSecrets(jobId);
+  masked.delete(jobId);
+}
+
+/**
+ * Fails a job that cannot run (refused, or waited too long), when it still runs
+ * (runners/common.js), and forgets it.
  *
  * Args:
  *   jobId (number): the job.
@@ -678,11 +677,8 @@ async function ensureMask(jobId) {
  *   Promise<void>
  */
 async function failJob(jobId, message) {
-  await Job.endJobStatus(jobId, (await Job.lastOrder(jobId)) + 1, "stderr", "failed", `[ERROR]: ${message}`);
-  await Job.resetAbortRequested(jobId).catch(() => {});
-  waiting.delete(jobId);
-  forgetJobSecrets(jobId);
-  masked.delete(jobId);
+  await failRteJob(jobId, message);
+  forgetJob(jobId);
 }
 
 /**
@@ -709,7 +705,7 @@ async function sendJob(jobId, entry) {
     }
     if (!wait.said) {
       wait.said = true;
-      await Job.printJobOutput(`ok: [Waiting for a free slot on RTE ${name}: ${why}]`, "stdout", jobId, (await Job.lastOrder(jobId)) + 1);
+      await sayWaitingForSlot(jobId, name, why);
     }
   };
   // a full RTE (its last health) : not sent, it waits
@@ -764,8 +760,7 @@ async function dispatch() {
   );
   for (const r of rows || []) {
     if (r.abort_requested) {
-      await Job.endJobStatus(r.id, (await Job.lastOrder(r.id)) + 1, "stderr", "aborted", "Playbook was aborted by the operator while it waited for the RTE");
-      await Job.resetAbortRequested(r.id).catch(() => {});
+      await abortWhileWaiting(r.id);
       waiting.delete(r.id);
       continue;
     }
@@ -862,16 +857,16 @@ async function storeItem(entry, jobId, item) {
     case "output":
       await Job.createOutputOnce({ ...item.record, job_id: jobId });
       break;
+    // events, the log and the process's start : as a database-mode RTE writes them (rte/jobio-db.js),
+    // masked there ; the host is the RTE this socket says it is, never what the item says
     case "events":
-      await JobEvent.create(jobId, item.events);
+      await dbJobIO.writeEvents(jobId, item.events);
       break;
-    case "log": {
-      const { maskOutput } = await import("../lib/outputMask.js");
-      await mysql.do("UPDATE AnsibleForms.`jobs` SET job_log=? WHERE id=?", [maskOutput(jobId, item.content || ""), jobId]);
+    case "log":
+      await dbJobIO.setJobLog(jobId, item.content || "");
       break;
-    }
     case "started":
-      await mysql.do("UPDATE AnsibleForms.`jobs` SET pid=?, host=? WHERE id=?", [item.pid || null, entry.rteId, jobId]);
+      await dbJobIO.started(jobId, item.pid || null, entry.rteId);
       break;
     case "exited":
       await mysql.do("UPDATE AnsibleForms.`jobs` SET pid=NULL WHERE id=?", [jobId]);
@@ -881,20 +876,15 @@ async function storeItem(entry, jobId, item) {
       await Job.endJobStatus(jobId, item.order, item.stream, item.status, item.message, item.artifacts || {});
       if (item.status === "aborted") await Job.resetAbortRequested(jobId).catch(() => {});
       await mysql.do("UPDATE AnsibleForms.`jobs` SET host=NULL, pid=NULL WHERE id=?", [jobId]);
-      cancelSent.delete(jobId);
-      forgetJobSecrets(jobId);
-      masked.delete(jobId);
+      forgetJob(jobId);
       break;
-    case "abandon": {
-      const res = await mysql.do("UPDATE AnsibleForms.`jobs` SET status='abandoned', abort_requested=0, host=NULL, pid=NULL WHERE id=? AND status='running'", [jobId]);
-      if (res?.changedRows) {
+    case "abandon":
+      if (await abandonJobs({ id: jobId })) {
         await Job.printJobOutput(`[ERROR]: ${item.message || "the RTE lost the job"}`, "stderr", jobId, (await Job.lastOrder(jobId)) + 1);
         publish("jobs");
       }
-      forgetJobSecrets(jobId);
-      masked.delete(jobId);
+      forgetJob(jobId);
       break;
-    }
     default:
       logger.debug(`Job ${jobId}: an item of an unknown kind '${item.kind}' (a newer RTE) was skipped`);
   }

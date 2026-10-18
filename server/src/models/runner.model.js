@@ -19,8 +19,8 @@ export const SECRET_MASK = '********';
 // how an RTE talks to the app (RTE_MODE) : database (deprecated, the default), outbound (it
 // dials the app) or inbound (the app dials it) - the socket modes hold no database credentials
 export const RTE_MODES = ['database', 'outbound', 'inbound'];
-// the modes that talk over a WebSocket (runners/rteHub.js)
-export const SOCKET_MODES = ['outbound', 'inbound'];
+// the modes that talk over a WebSocket (runners/rteHub.js) : defined with the socket's protocol
+export { SOCKET_MODES } from '../rte/socket/protocol.js';
 
 // a runner its RTE registered (rte/register.js) whose RTE has not answered for this long is
 // removed by the worker ; until then the Runners page shows it as unresponsive

@@ -53,6 +53,22 @@ export const RTE_SOCKET_PATH = "/rte/v1/socket";
 
 // the modes an RTE runs in (RTE_MODE)
 export const MODES = ["outbound", "inbound", "database"];
+// the modes that talk over this socket (a runner's rte_mode) ; database is the deprecated one
+export const SOCKET_MODES = ["outbound", "inbound"];
+
+// ─── the app's side : how long a job waits for an RTE ─────────────────────────
+// (runners/rte.js and runners/rteHub.js both follow these ; kept here, where nothing is imported)
+
+/**
+ * How long a job waits for a free RTE (RTE_QUEUE_MINUTES, 60 by default, 0 : for ever), read
+ * each time so a change applies without a restart.
+ *
+ * Returns:
+ *   number: the minutes.
+ */
+export const queueMinutes = () => Math.max(0, parseInt(process.env.RTE_QUEUE_MINUTES ?? 60, 10) || 0);
+// how often a job an RTE refused as busy is offered again
+export const RETRY_MS = 10000;
 
 // why a socket was closed : the reason goes with it, for the log on the other side
 export const CLOSE = {
@@ -154,4 +170,4 @@ export function inboundUrl(uri) {
   return url.toString();
 }
 
-export default { SOCKET_CONTRACT, APP_SOCKET_PATH, RTE_SOCKET_PATH, MODES, CLOSE, PING_MS, DEAD_MS, WINDOW, CHUNK_BYTES, MAX_PAYLOAD, encode, decode, socketUrl, inboundUrl };
+export default { SOCKET_CONTRACT, APP_SOCKET_PATH, RTE_SOCKET_PATH, MODES, SOCKET_MODES, queueMinutes, RETRY_MS, CLOSE, PING_MS, DEAD_MS, WINDOW, CHUNK_BYTES, MAX_PAYLOAD, encode, decode, socketUrl, inboundUrl };
