@@ -387,6 +387,11 @@
       it drops. Nothing reaches the RTE from outside: only its zone to the app on the app's port,
       through a proxy if `HTTPS_PROXY` says so. The first time it joins with `RTE_JOIN_TOKEN`.
 
+      `HTTPS_PROXY` and `NO_PROXY` (lower case read too) are the system's own proxy variables,
+      set on the RTE's container rather than here, and a playbook keeps them: the socket to the
+      app and an inbound RTE's registration call go through `HTTPS_PROXY`, unless the app's host
+      is in `NO_PROXY` (host names, `.domain` suffixes, or `*` for every host).
+
       `inbound`: the RTE listens and the app dials it at its runner's address (`RTE_URL`), one
       app node at a time. With `APP_URL` (and `RTE_JOIN_TOKEN` the first time) it registers
       itself with one call ; without, add its runner under Connections > Runners (type RTE, mode
@@ -5923,12 +5928,18 @@
       code: |
         fn.fnSsh('root','172.16.0.1','ls -la')
 
-        // fn.fnSsh(user,host,command,jq-expression)
+        // fn.fnSsh('root','172.16.0.1','sleep 90; uptime',null,120) // waits up to 120 seconds
+
+        // fn.fnSsh(user,host,command,jq-expression,timeoutSeconds)
         // - user: the ssh user
         // - host: the host
         // - command: the command to trigger by ssh
-        // - jq-expression: an optional jq-expression (https://jqplay.org)  
-        //  
+        // - jq-expression: an optional jq-expression (https://jqplay.org), null for none
+        // - timeoutSeconds: an optional time limit in seconds (default 60). When it is reached ssh
+        //   is asked to stop (SIGTERM), killed (SIGKILL) if it is still running 5 seconds later,
+        //   and the function fails with "ssh to user@host timed out after N seconds"
+        //
+        // It returns the output lines (stdout and stderr) with a last line exit(<code>).
         // You must use 'known_hosts' and 'public-key' to setup non-interactive password-less authentication.
         // In the settings you can find the public-key and add your target-host to known_hosts
     - name: list files in a directory

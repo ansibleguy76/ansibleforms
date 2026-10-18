@@ -13,6 +13,7 @@
 //     tables, because create_schema_and_tables.sql drops all 16 of them first.
 import { test, describe, beforeEach, vi } from "vitest";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 
 process.env.DB_HOST ||= "127.0.0.1";
 process.env.DB_PORT ||= "3306";
@@ -460,6 +461,24 @@ describe("runners are seedable", () => {
     assert.equal(doc.runners.items[3].credential, "rte-login", "one that names a credential is left alone");
     assert.equal(byName.named, undefined);
     assert.equal(doc.runners.items[2].use_credentials, undefined);
+  });
+
+  test("a name a hand-made credential has is not taken : it would be adopted and overwritten", () => {
+    const { doc } = foldRunnerSecretsIntoCredentials(
+      { runners: { items: [
+        { name: "rte-dev", type: "rte", uri: "http://rte:8010", token: "t" },
+        { name: "jenkins", type: "jenkins", uri: "https://jenkins", username: "af", token: "jt" },
+      ] } },
+      ["rte-dev", "jenkins", "jenkins-runner"],
+    );
+    assert.deepEqual(doc.runners.items.map((r) => r.credential), ["rte-dev-runner", "jenkins-runner-2"]);
+    assert.deepEqual(doc.credentials.items.map((c) => c.name), ["rte-dev-runner", "jenkins-runner-2"]);
+  });
+
+  test("the seed reserves the credentials it does not own before it folds", () => {
+    const source = fs.readFileSync(new URL("../src/lib/seed.js", import.meta.url), "utf8");
+    assert.match(source, /SELECT name FROM AnsibleForms\.`credentials` WHERE COALESCE\(managed, 0\) = 0/);
+    assert.match(source, /foldRunnerSecretsIntoCredentials\(doc, reserved\)/);
   });
 
   test("a seed whose runners all name a credential is returned as it is", () => {

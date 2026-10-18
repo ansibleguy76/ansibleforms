@@ -155,6 +155,8 @@ CREATE TABLE `syslog_servers` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- the labels beside the header's logo (Settings > Appearance > Labels)
+-- (keep in sync with src/db/create_labels_table.sql)
+DROP TABLE IF EXISTS `labels`;
 CREATE TABLE `labels` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   -- the text of the pill beside the logo (PRODUCTION, EU)
@@ -646,6 +648,78 @@ CREATE TABLE `api_tokens` (
   PRIMARY KEY (`sid`),
   KEY `idx_api_tokens_user` (`username_type`, `username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- the RTE over a WebSocket (rte/socket) : the app node holding each runner's socket
+-- (keep in sync with src/db/create_runner_leases_table.sql, the patch for existing installs)
+DROP TABLE IF EXISTS `runner_leases`;
+CREATE TABLE `runner_leases` (
+  -- the runner whose socket is held (its name under Connections > Runners)
+  `runner` varchar(250) NOT NULL,
+  -- the app node holding it (lib/role.js nodeId) : only that node sends the runner its jobs
+  `node_id` varchar(250) NOT NULL,
+  -- renewed while the node holds the socket ; past it another node may take it over
+  `expires_at` datetime NOT NULL,
+  -- outbound (the RTE dialed in) or inbound (this node dialed the RTE)
+  `direction` varchar(10) NOT NULL,
+  -- the RTE on the other end (its node id) and what it said : version, contract, ansible,
+  -- capacity, files mode (JSON) - any app node reads it for the Runners and Status pages
+  `rte_id` varchar(250) DEFAULT NULL,
+  `info` text DEFAULT NULL,
+  PRIMARY KEY (`runner`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- the join tokens an RTE adds itself as a runner with (Connections > Runners)
+-- (keep in sync with src/db/create_runner_join_tokens_table.sql)
+DROP TABLE IF EXISTS `runner_join_tokens`;
+CREATE TABLE `runner_join_tokens` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  -- what it is for, as the admin named it (dmz-runners)
+  `name` varchar(100) NOT NULL,
+  -- the token's SHA-256 : the token itself is shown once, when it is made
+  `token_hash` char(64) NOT NULL,
+  -- the first characters, so a list can tell the tokens apart
+  `prefix` varchar(16) NOT NULL,
+  `created_by` varchar(250) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  -- after this it adds no runner any more ; NULL : never
+  `expires_at` datetime DEFAULT NULL,
+  -- how many runners may join with it ; NULL : any number
+  `max_uses` int(11) DEFAULT NULL,
+  `uses` int(11) NOT NULL DEFAULT 0,
+  `last_used_at` datetime DEFAULT NULL,
+  -- revoked by an admin : refused from then on
+  `revoked` tinyint(4) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_runner_join_tokens_hash` (`token_hash`),
+  UNIQUE KEY `uk_runner_join_tokens_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- a playbook's structured events (the af_events callback plugin) : the job page's grid and recap
+-- (keep in sync with src/db/create_job_events_table.sql ; it references jobs, created above)
+DROP TABLE IF EXISTS `job_events`;
+CREATE TABLE `job_events` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `job_id` int(11) NOT NULL,
+  -- its place among the job's events, from 1 (the af_events callback plugin's order)
+  `order` int(11) NOT NULL,
+  -- play, task, ok, changed, failed, skipped, unreachable, ignored or stats
+  `type` varchar(20) NOT NULL,
+  `play` varchar(500) DEFAULT NULL,
+  `task` varchar(500) DEFAULT NULL,
+  `host` varchar(250) DEFAULT NULL,
+  -- seconds the host took on the task (a host result)
+  `duration` decimal(10,3) DEFAULT NULL,
+  -- when it happened, as the playbook saw it (unix seconds)
+  `time` decimal(14,3) DEFAULT NULL,
+  -- the result's message and fields, or the recap's counts : JSON, masked as the output
+  `data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  -- a host's or a loop item's whole result, as its details show it (a click on its output line) :
+  -- JSON, masked as the output ; read one at a time, never with the list
+  `result` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_job_events_order` (`job_id`, `order`),
+  CONSTRAINT `FK_job_events_jobs` FOREIGN KEY (`job_id`) REFERENCES `jobs` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- enable foreign key checks
 SET FOREIGN_KEY_CHECKS=1;

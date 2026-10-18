@@ -5,7 +5,8 @@ node_modules
 # remove local persistent
 **/persistent/**
 
-# local env files
+# local env files : every real .env, anywhere (the examples, .env.example, are committed)
+.env
 .env.development
 .env.docker
 .env.local

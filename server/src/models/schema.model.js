@@ -1054,7 +1054,16 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addColumn("ldap", "name", "varchar(100)", false, "'default'"), messages, success, failed);
   await checkPromise(addColumn("ldap", "position", "int(11)", false, "1"), messages, success, failed);
   await checkPromise(addColumn("ldap", "domains", "varchar(1000)", true, "NULL"), messages, success, failed);
+  // the name is unique : rows that share one (several rows of the single-row table of before,
+  // all named 'default' by the column's default) get distinct names first, or the key could
+  // never be added and this patch failed at every start
+  await checkPromise(dedupeLdapNames(), messages, success, failed);
   await checkPromise(addUniqueKey("ldap", "name"), messages, success, failed);
+  // the LDAP directory named "default" up to 7.2 is "main" from 7.3 : its members keep their short
+  // names. Here, after the name column and its key, and before its servers move to a credential
+  // below (moveLdapServersToCredentials) : that credential is named after the directory, so it is
+  // main-ldap, not a default-ldap left behind for the directory main
+  await checkPromise(renameDefaultLdap(), messages, success, failed);
   // a directory can bind with a credential of Connections > Credentials instead of its own user
   // and password, as a repository can
   await checkPromise(addColumn("ldap", "credential", "varchar(250)", true, "NULL"), messages, success, failed);
@@ -1117,8 +1126,6 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addColumn("runners", "enabled", "tinyint(4)", true, "1"), messages, success, failed);
   // a schedule turned off does not fire (Settings > Schedules, Enable / Disable)
   await checkPromise(addColumn("schedule", "enabled", "tinyint(4)", true, "1"), messages, success, failed);
-  // the LDAP directory named "default" up to 7.2 is "main" from 7.3 : its members keep their short names
-  await checkPromise(renameDefaultLdap(), messages, success, failed);
   // an RTE that asks to join waits for an admin's approval (Connections > Runners, Approve)
   await checkPromise(addColumn("runners", "pending", "tinyint(4)", true, "0"), messages, success, failed);
   await checkPromise(addColumn("runners", "pending_since", "datetime", true, "NULL"), messages, success, failed);
@@ -1171,12 +1178,18 @@ function fillJobRunnerKinds() {
     .then((res) => `filled the runner kind of ${res?.affectedRows ?? 0} job(s)`);
 }
 
-// Idempotent by its WHERE clause : only a credential without a valid type gets one - database for
+// Idempotent by its WHERE clause : only a credential without a type gets one - database for
 // a database one, else userpass, a user and a password : what a credential from 6 is, mostly a
-// REST login (it used to become ssh)
+// REST login (it used to become ssh).
+//
+// Only a MISSING type (NULL or empty), never one outside a list kept here : this ran on every
+// boot with the types of 7.0 written out (NOT IN ('userpass', ... 'oidc')), so every
+// credential of a type added later (rte, awx, aap, ascender, semaphore, rundeck, jenkins,
+// vault in 7.3) was turned back into a userpass one at each start. The API validates the
+// type on every write (Credential.TYPES), so a type that is set is a valid one.
 function fillCredentialTypes() {
   return mysql
-    .do("UPDATE AnsibleForms.`credentials` SET credential_type=IF(is_database,'database','userpass') WHERE credential_type IS NULL OR credential_type NOT IN ('userpass','ssh','git','api','database','cyberark','smtp','ldap','entraid','oidc')")
+    .do("UPDATE AnsibleForms.`credentials` SET credential_type=IF(is_database,'database','userpass') WHERE credential_type IS NULL OR credential_type = ''")
     .then((res) => `Set the type of ${res?.affectedRows ?? 0} credential(s)`);
 }
 
@@ -1258,8 +1271,18 @@ export async function moveMailServersToChannels() {
 
 /**
  * The mail settings as the first mail channel, active, their login an smtp credential.
- * Idempotent : only while there is no mail channel yet. Not on a seeded instance : the seed
- * owns the mail settings, which stay what it sends with.
+ * Not on a seeded instance : the seed owns the mail settings, which stay what it sends with.
+ *
+ * Once, and only once : the settings' mail server, user and password are emptied in the same
+ * transaction as the copy. It used to key only on "no mail channel yet", with the settings left
+ * as they were - so an admin who deleted the channel 'default' got it back at the next restart,
+ * every restart. The copy, the credential and the emptying apply together or not at all, so a
+ * crash in between can neither lose the settings nor copy them twice.
+ *
+ * A channel already named 'default' (a Slack or Teams one made by hand) is never overwritten :
+ * the insert would fail on its unique name and fail the whole patch at every start. The settings
+ * are then left as they are (the mail still goes out through them while no mail channel is
+ * active) and the log says what to rename.
  *
  * Returns:
  *   Promise<string|null>: what was done, or null when there was nothing to do.
@@ -1270,22 +1293,32 @@ export async function copyMailSettingsToServers() {
   const rows = await mysql.do("SELECT * FROM AnsibleForms.`settings` LIMIT 1");
   const s = rows[0];
   if (!s?.mail_server || s.managed) return null;
-  let credential = null;
-  if (s.mail_username) {
-    // the password is copied as it is stored : the same key encrypts both tables
-    credential = "mail-login";
-    await mysql.do(
-      "INSERT INTO AnsibleForms.`credentials` (name, user, password, description, is_database, credential_type) " +
-        "SELECT ?, ?, ?, 'The login of the mail server (from the mail settings)', 0, 'smtp' FROM DUAL " +
-        "WHERE NOT EXISTS (SELECT 1 FROM AnsibleForms.`credentials` WHERE name = ?)",
-      [credential, s.mail_username, s.mail_password || null, credential],
-    );
+  // the name it takes is somebody's already : skipped, said once per start
+  const named = await mysql.do("SELECT type FROM AnsibleForms.`notification_channels` WHERE name = 'default'");
+  if (named.length) {
+    const message = `The mail settings were not copied to a mail channel: a ${named[0].type} channel is named 'default' already. Rename it and restart, or add a mail channel under Connections > Notifications`;
+    logger.warning(message);
+    return message;
   }
-  await mysql.do(
-    "INSERT INTO AnsibleForms.`notification_channels` (name, description, type, enabled, server, port, secure, from_address, credential, is_active) VALUES (?, ?, 'mail', 1, ?, ?, ?, ?, ?, 1)",
-    ["default", "From the mail settings", s.mail_server, s.mail_port || null, s.mail_secure ? 1 : 0, s.mail_from || null, credential],
-  );
-  return "Copied the mail settings to the mail channel 'default'" + (credential ? ", its login to the credential 'mail-login'" : "");
+  let credential = null;
+  await mysql.transaction(async (query) => {
+    if (s.mail_username) {
+      // the password is copied as it is stored : the same key encrypts both tables ; a
+      // credential already named mail-login (made by hand) is never taken over
+      credential = await freeCredentialName("mail-login", query);
+      await query(
+        "INSERT INTO AnsibleForms.`credentials` (name, user, password, description, is_database, credential_type) VALUES (?, ?, ?, 'The login of the mail server (from the mail settings)', 0, 'smtp')",
+        [credential, s.mail_username, s.mail_password || null],
+      );
+    }
+    await query(
+      "INSERT INTO AnsibleForms.`notification_channels` (name, description, type, enabled, server, port, secure, from_address, credential, is_active) VALUES (?, ?, 'mail', 1, ?, ?, ?, ?, ?, 1)",
+      ["default", "From the mail settings", s.mail_server, s.mail_port || null, s.mail_secure ? 1 : 0, s.mail_from || null, credential],
+    );
+    // copied : the settings no longer send, nor copy again ('' : what a fresh install has)
+    await query("UPDATE AnsibleForms.`settings` SET mail_server = '', mail_username = '', mail_password = ''");
+  });
+  return "Copied the mail settings to the mail channel 'default'" + (credential ? `, its login to the credential '${credential}'` : "");
 }
 
 /**
@@ -1293,14 +1326,16 @@ export async function copyMailSettingsToServers() {
  *
  * Args:
  *   name (string): the name wanted.
+ *   query (function): what runs the lookups ; the move's transaction (mysql.transaction hands
+ *     one over), so the name is checked on the connection that inserts it. mysql.do when none.
  *
  * Returns:
  *   Promise<string>: a free name.
  */
-async function freeCredentialName(name) {
+async function freeCredentialName(name, query = (sql, params) => mysql.do(sql, params)) {
   for (let n = 1; ; n++) {
     const candidate = n === 1 ? name : `${name}-${n}`;
-    const taken = await mysql.do("SELECT 1 FROM AnsibleForms.`credentials` WHERE name = ?", [candidate]);
+    const taken = await query("SELECT 1 FROM AnsibleForms.`credentials` WHERE name = ?", [candidate]);
     if (!taken.length) return candidate;
   }
 }
@@ -1327,33 +1362,38 @@ export async function moveMailServersToCredentials() {
   if (!channels.length) return null;
   const done = [];
   for (const c of channels) {
-    const server = String(c.server).trim();
-    const port = c.port || null;
-    const secure = c.secure ? 1 : 0;
-    const creds = c.credential ? await mysql.do("SELECT * FROM AnsibleForms.`credentials` WHERE name = ?", [c.credential]) : [];
-    const cred = creds[0];
-    let name = cred?.name || null;
-    if (cred && !String(cred.host || "").trim()) {
-      await mysql.do("UPDATE AnsibleForms.`credentials` SET host = ?, port = ?, secure = ? WHERE id = ?", [server, port, secure, cred.id]);
-      done.push(`${c.name} into ${name}`);
-    } else if (cred && (String(cred.host).trim() !== server || (cred.port || null) !== port || (cred.secure ? 1 : 0) !== secure)) {
-      // a copy : its login (stored encrypted, the same key for both rows) and the channel's server
-      name = await freeCredentialName(`${cred.name}-${c.name}`);
-      await mysql.do(
-        "INSERT INTO AnsibleForms.`credentials` (name, user, password, description, is_database, credential_type, secret_store, secret_ref, host, port, secure) " +
-          "SELECT ?, user, password, ?, 0, 'smtp', secret_store, secret_ref, ?, ?, ? FROM AnsibleForms.`credentials` WHERE id = ?",
-        [name, `The login of ${cred.name}, with the server of the mail channel ${c.name}`, server, port, secure, cred.id],
-      );
-      done.push(`${c.name} into a copy of ${cred.name}, ${name}`);
-    } else if (!cred) {
-      name = await freeCredentialName(`${c.name}-smtp`);
-      await mysql.do(
-        "INSERT INTO AnsibleForms.`credentials` (name, description, is_database, credential_type, host, port, secure) VALUES (?, ?, 0, 'smtp', ?, ?, ?)",
-        [name, `The server of the mail channel ${c.name}`, server, port, secure],
-      );
-      done.push(`${c.name} into ${name}`);
-    }
-    await mysql.do("UPDATE AnsibleForms.`notification_channels` SET server = NULL, port = NULL, secure = 0, credential = ? WHERE id = ?", [name, c.id]);
+    // one transaction per record : the credential and the record that names it are written
+    // together or not at all. A crash in between used to leave a credential nothing named,
+    // and the next start made a second one (-2) beside it
+    await mysql.transaction(async (query) => {
+      const server = String(c.server).trim();
+      const port = c.port || null;
+      const secure = c.secure ? 1 : 0;
+      const creds = c.credential ? await query("SELECT * FROM AnsibleForms.`credentials` WHERE name = ?", [c.credential]) : [];
+      const cred = creds[0];
+      let name = cred?.name || null;
+      if (cred && !String(cred.host || "").trim()) {
+        await query("UPDATE AnsibleForms.`credentials` SET host = ?, port = ?, secure = ? WHERE id = ?", [server, port, secure, cred.id]);
+        done.push(`${c.name} into ${name}`);
+      } else if (cred && (String(cred.host).trim() !== server || (cred.port || null) !== port || (cred.secure ? 1 : 0) !== secure)) {
+        // a copy : its login (stored encrypted, the same key for both rows) and the channel's server
+        name = await freeCredentialName(`${cred.name}-${c.name}`, query);
+        await query(
+          "INSERT INTO AnsibleForms.`credentials` (name, user, password, description, is_database, credential_type, secret_store, secret_ref, host, port, secure) " +
+            "SELECT ?, user, password, ?, 0, 'smtp', secret_store, secret_ref, ?, ?, ? FROM AnsibleForms.`credentials` WHERE id = ?",
+          [name, `The login of ${cred.name}, with the server of the mail channel ${c.name}`, server, port, secure, cred.id],
+        );
+        done.push(`${c.name} into a copy of ${cred.name}, ${name}`);
+      } else if (!cred) {
+        name = await freeCredentialName(`${c.name}-smtp`, query);
+        await query(
+          "INSERT INTO AnsibleForms.`credentials` (name, description, is_database, credential_type, host, port, secure) VALUES (?, ?, 0, 'smtp', ?, ?, ?)",
+          [name, `The server of the mail channel ${c.name}`, server, port, secure],
+        );
+        done.push(`${c.name} into ${name}`);
+      }
+      await query("UPDATE AnsibleForms.`notification_channels` SET server = NULL, port = NULL, secure = 0, credential = ? WHERE id = ?", [name, c.id]);
+    });
   }
   const message = `Moved the server of ${channels.length} mail channel(s) to their smtp credential${done.length ? ` (${done.join(", ")})` : ""}`;
   logger.notice(message);
@@ -1402,38 +1442,43 @@ export async function moveSsoClientsToCredentials() {
   if (!providers.length) return null;
   const done = [];
   for (const p of providers) {
-    const type = p.provider === "azuread" ? "entraid" : "oidc";
-    const tenant = type === "entraid" ? p.tenant_id || null : null;
-    const issuer = type === "oidc" ? p.issuer || null : null;
-    let name = p.credential || null;
-    if (name) {
-      // its credential : the tenant or the issuer it lacks
-      const column = type === "entraid" ? "tenant_id" : "issuer";
-      const value = type === "entraid" ? tenant : issuer;
-      if (value) {
-        await mysql.do(`UPDATE AnsibleForms.\`credentials\` SET ${column} = ? WHERE name = ? AND (${column} IS NULL OR ${column} = '')`, [value, name]);
+    // one transaction per record : the credential and the record that names it are written
+    // together or not at all. A crash in between used to leave a credential nothing named,
+    // and the next start made a second one (-2) beside it
+    await mysql.transaction(async (query) => {
+      const type = p.provider === "azuread" ? "entraid" : "oidc";
+      const tenant = type === "entraid" ? p.tenant_id || null : null;
+      const issuer = type === "oidc" ? p.issuer || null : null;
+      let name = p.credential || null;
+      if (name) {
+        // its credential : the tenant or the issuer it lacks
+        const column = type === "entraid" ? "tenant_id" : "issuer";
+        const value = type === "entraid" ? tenant : issuer;
+        if (value) {
+          await query(`UPDATE AnsibleForms.\`credentials\` SET ${column} = ? WHERE name = ? AND (${column} IS NULL OR ${column} = '')`, [value, name]);
+        }
+        if (p.redirect_uri) {
+          await query("UPDATE AnsibleForms.`credentials` SET redirect_uri = ? WHERE name = ? AND (redirect_uri IS NULL OR redirect_uri = '')", [p.redirect_uri, name]);
+        }
+        done.push(`${p.name} kept ${name}`);
+      } else if (p.client_id) {
+        const slug = String(p.name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || type;
+        name = await freeCredentialName(`${slug}-sso`, query);
+        await query(
+          "INSERT INTO AnsibleForms.`credentials` (name, user, password, description, is_database, credential_type, tenant_id, issuer, redirect_uri) VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?)",
+          [name, p.client_id, p.client_secret || null, `The client of the SSO provider ${p.name}`, type, tenant, issuer, p.redirect_uri || null],
+        );
+        done.push(`${p.name} into ${name}`);
+      } else {
+        // no client and no credential : nothing signs in with it yet ; its own kept for when one is
+        // chosen
+        return;
       }
-      if (p.redirect_uri) {
-        await mysql.do("UPDATE AnsibleForms.`credentials` SET redirect_uri = ? WHERE name = ? AND (redirect_uri IS NULL OR redirect_uri = '')", [p.redirect_uri, name]);
-      }
-      done.push(`${p.name} kept ${name}`);
-    } else if (p.client_id) {
-      const slug = String(p.name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || type;
-      name = await freeCredentialName(`${slug}-sso`);
-      await mysql.do(
-        "INSERT INTO AnsibleForms.`credentials` (name, user, password, description, is_database, credential_type, tenant_id, issuer, redirect_uri) VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?)",
-        [name, p.client_id, p.client_secret || null, `The client of the SSO provider ${p.name}`, type, tenant, issuer, p.redirect_uri || null],
+      await query(
+        "UPDATE AnsibleForms.`oauth2_providers` SET client_id = NULL, client_secret = NULL, tenant_id = NULL, issuer = NULL, redirect_uri = NULL, credential = ? WHERE id = ?",
+        [name, p.id],
       );
-      done.push(`${p.name} into ${name}`);
-    } else {
-      // no client and no credential : nothing signs in with it yet ; its own kept for when one is
-      // chosen
-      continue;
-    }
-    await mysql.do(
-      "UPDATE AnsibleForms.`oauth2_providers` SET client_id = NULL, client_secret = NULL, tenant_id = NULL, issuer = NULL, redirect_uri = NULL, credential = ? WHERE id = ?",
-      [name, p.id],
-    );
+    });
   }
   if (!done.length) return null;
   const message = `Moved the client of ${done.length} SSO provider(s) to credentials (${done.join(", ")})`;
@@ -1465,21 +1510,26 @@ export async function moveRunnerSecretsToCredentials() {
   if (!runners.length) return null;
   const done = [];
   for (const r of runners) {
-    const login = r.type === "jenkins" || (r.type === "awx" && r.use_credentials);
-    const name = await freeCredentialName(`${r.name}-${login ? "login" : "token"}`);
-    await mysql.do("INSERT INTO AnsibleForms.`credentials` SET ?", [
-      {
-        name,
-        user: login ? r.username || null : null,
-        // a Jenkins' password is its user's API token ; an AWX's with a login its password
-        password: r.type === "jenkins" ? r.token || null : login ? r.password || null : r.token || null,
-        description: `The ${login ? "login" : "token"} of the runner ${r.name}`,
-        is_database: 0,
-        credential_type: login ? "userpass" : "api",
-      },
-    ]);
-    await mysql.do("UPDATE AnsibleForms.`runners` SET token = NULL, password = NULL, credential = ? WHERE id = ?", [name, r.id]);
-    done.push(`${r.name} into ${name}`);
+    // one transaction per record : the credential and the record that names it are written
+    // together or not at all. A crash in between used to leave a credential nothing named,
+    // and the next start made a second one (-2) beside it
+    await mysql.transaction(async (query) => {
+      const login = r.type === "jenkins" || (r.type === "awx" && r.use_credentials);
+      const name = await freeCredentialName(`${r.name}-${login ? "login" : "token"}`, query);
+      await query("INSERT INTO AnsibleForms.`credentials` SET ?", [
+        {
+          name,
+          user: login ? r.username || null : null,
+          // a Jenkins' password is its user's API token ; an AWX's with a login its password
+          password: r.type === "jenkins" ? r.token || null : login ? r.password || null : r.token || null,
+          description: `The ${login ? "login" : "token"} of the runner ${r.name}`,
+          is_database: 0,
+          credential_type: login ? "userpass" : "api",
+        },
+      ]);
+      await query("UPDATE AnsibleForms.`runners` SET token = NULL, password = NULL, credential = ? WHERE id = ?", [name, r.id]);
+      done.push(`${r.name} into ${name}`);
+    });
   }
   const message = `Moved the token or login of ${runners.length} runner(s) to credentials (${done.join(", ")})`;
   logger.notice(message);
@@ -1535,53 +1585,58 @@ export async function moveConnectionsToCredentials() {
   const done = [];
   for (const kind of kinds) {
     for (const r of kind.rows) {
-      const c = {
-        url: String(r.address).trim().replace(/\/+$/, ""),
-        ignore_certs: r.ignore_certs ? 1 : 0,
-        ca_bundle: r.ca_bundle || null,
-      };
-      const creds = r.credential ? await mysql.do("SELECT * FROM AnsibleForms.`credentials` WHERE name = ?", [r.credential]) : [];
-      const cred = creds[0];
-      let name = cred?.name || null;
-      // its own secrets moved with it : emptied on the record too
-      let ownSecrets = false;
-      if (cred && URL_TYPES.includes(cred.credential_type) && !String(cred.url || "").trim()) {
-        await mysql.do("UPDATE AnsibleForms.`credentials` SET ? WHERE id = ?", [c, cred.id]);
-        done.push(`${r.name} into ${name}`);
-      } else if (cred && (!URL_TYPES.includes(cred.credential_type) || String(cred.url).trim() !== c.url)) {
-        // a copy : its login (stored encrypted, the same key for both rows) and the record's address
-        name = await freeCredentialName(`${cred.name}-${r.name}`);
-        const type = URL_TYPES.includes(cred.credential_type) ? cred.credential_type : "api";
-        await mysql.do(
-          "INSERT INTO AnsibleForms.`credentials` (name, user, password, description, is_database, credential_type, secret_store, secret_ref, client_cert, client_key, url, ignore_certs, ca_bundle) " +
-            "SELECT ?, user, password, ?, 0, ?, secret_store, secret_ref, client_cert, client_key, ?, ?, ? FROM AnsibleForms.`credentials` WHERE id = ?",
-          [name, `The login of ${cred.name}, with the address of the ${kind.label} ${r.name}`, type, c.url, c.ignore_certs, c.ca_bundle, cred.id],
-        );
-        done.push(`${r.name} into a copy of ${cred.name}, ${name}`);
-      } else if (!cred) {
-        const cyberark = r.type === "cyberark_ccp";
-        name = await freeCredentialName(`${r.name}-${cyberark ? "appid" : "token"}`);
-        await mysql.do("INSERT INTO AnsibleForms.`credentials` SET ?", [
-          {
-            name,
-            user: cyberark ? r.app_id || null : null,
-            password: cyberark ? null : r.token || null,
-            client_cert: cyberark ? r.client_cert || null : null,
-            client_key: cyberark ? r.client_key || null : null,
-            description: `The ${cyberark ? "AppID" : "token"} and address of the ${kind.label} ${r.name}`,
-            is_database: 0,
-            credential_type: cyberark ? "cyberark" : "api",
-            ...c,
-          },
-        ]);
-        ownSecrets = true;
-        done.push(`${r.name} into ${name}`);
-      }
-      const cleared = { [kind.column]: "", ignore_certs: 0, ca_bundle: null, credential: name };
-      if (ownSecrets) {
-        Object.assign(cleared, kind.table === "secret_stores" ? { token: null, app_id: null, client_cert: null, client_key: null } : { token: null });
-      }
-      await mysql.do(`UPDATE AnsibleForms.\`${kind.table}\` SET ? WHERE id = ?`, [cleared, r.id]);
+      // one transaction per record : the credential and the record that names it are written
+      // together or not at all. A crash in between used to leave a credential nothing named,
+      // and the next start made a second one (-2) beside it
+      await mysql.transaction(async (query) => {
+        const c = {
+          url: String(r.address).trim().replace(/\/+$/, ""),
+          ignore_certs: r.ignore_certs ? 1 : 0,
+          ca_bundle: r.ca_bundle || null,
+        };
+        const creds = r.credential ? await query("SELECT * FROM AnsibleForms.`credentials` WHERE name = ?", [r.credential]) : [];
+        const cred = creds[0];
+        let name = cred?.name || null;
+        // its own secrets moved with it : emptied on the record too
+        let ownSecrets = false;
+        if (cred && URL_TYPES.includes(cred.credential_type) && !String(cred.url || "").trim()) {
+          await query("UPDATE AnsibleForms.`credentials` SET ? WHERE id = ?", [c, cred.id]);
+          done.push(`${r.name} into ${name}`);
+        } else if (cred && (!URL_TYPES.includes(cred.credential_type) || String(cred.url).trim() !== c.url)) {
+          // a copy : its login (stored encrypted, the same key for both rows) and the record's address
+          name = await freeCredentialName(`${cred.name}-${r.name}`, query);
+          const type = URL_TYPES.includes(cred.credential_type) ? cred.credential_type : "api";
+          await query(
+            "INSERT INTO AnsibleForms.`credentials` (name, user, password, description, is_database, credential_type, secret_store, secret_ref, client_cert, client_key, url, ignore_certs, ca_bundle) " +
+              "SELECT ?, user, password, ?, 0, ?, secret_store, secret_ref, client_cert, client_key, ?, ?, ? FROM AnsibleForms.`credentials` WHERE id = ?",
+            [name, `The login of ${cred.name}, with the address of the ${kind.label} ${r.name}`, type, c.url, c.ignore_certs, c.ca_bundle, cred.id],
+          );
+          done.push(`${r.name} into a copy of ${cred.name}, ${name}`);
+        } else if (!cred) {
+          const cyberark = r.type === "cyberark_ccp";
+          name = await freeCredentialName(`${r.name}-${cyberark ? "appid" : "token"}`, query);
+          await query("INSERT INTO AnsibleForms.`credentials` SET ?", [
+            {
+              name,
+              user: cyberark ? r.app_id || null : null,
+              password: cyberark ? null : r.token || null,
+              client_cert: cyberark ? r.client_cert || null : null,
+              client_key: cyberark ? r.client_key || null : null,
+              description: `The ${cyberark ? "AppID" : "token"} and address of the ${kind.label} ${r.name}`,
+              is_database: 0,
+              credential_type: cyberark ? "cyberark" : "api",
+              ...c,
+            },
+          ]);
+          ownSecrets = true;
+          done.push(`${r.name} into ${name}`);
+        }
+        const cleared = { [kind.column]: "", ignore_certs: 0, ca_bundle: null, credential: name };
+        if (ownSecrets) {
+          Object.assign(cleared, kind.table === "secret_stores" ? { token: null, app_id: null, client_cert: null, client_key: null } : { token: null });
+        }
+        await query(`UPDATE AnsibleForms.\`${kind.table}\` SET ? WHERE id = ?`, [cleared, r.id]);
+      });
     }
   }
   const count = kinds.reduce((n, k) => n + k.rows.length, 0);
@@ -1629,6 +1684,40 @@ function connectionCredentialType(record) {
  * Returns:
  *   Promise<string|null>: what was done, or null when there was nothing to do.
  */
+/**
+ * Gives the LDAP directories that share a name distinct ones, before the unique key on the name
+ * is added : the table was single-row by design up to 7.2, without a key, so a database could
+ * hold several rows, and the name column a patch adds names every one of them 'default'. The
+ * first (lowest id) keeps its name, the others get -<id> after it (-<id>-2 ... when that is
+ * taken). Not once the key is there : a name can not be shared then.
+ *
+ * Returns:
+ *   Promise<string|null>: what was done, or null when there was nothing to do.
+ */
+export async function dedupeLdapNames() {
+  const key = await mysql.do("SHOW INDEX FROM ??.?? WHERE Key_name = ?", ["AnsibleForms", "ldap", "unique_name"]);
+  if (key.length) return null;
+  const rows = await mysql.do("SELECT id, name FROM AnsibleForms.`ldap` ORDER BY id");
+  const taken = new Set(rows.map((r) => r.name));
+  const seen = new Set();
+  const renamed = [];
+  for (const r of rows) {
+    if (!seen.has(r.name)) {
+      seen.add(r.name);
+      continue;
+    }
+    let name = `${r.name}-${r.id}`;
+    for (let n = 2; taken.has(name); n++) name = `${r.name}-${r.id}-${n}`;
+    taken.add(name);
+    await mysql.do("UPDATE AnsibleForms.`ldap` SET name = ? WHERE id = ?", [name, r.id]);
+    renamed.push(`${r.id} to '${name}'`);
+  }
+  if (!renamed.length) return null;
+  const message = `LDAP directories shared a name: renamed ${renamed.join(", ")} so the name can be unique`;
+  logger.warning(message);
+  return message;
+}
+
 export async function renameDefaultLdap() {
   const rows = await mysql.do("SELECT name FROM AnsibleForms.`ldap` WHERE name IN (?, ?)", [LEGACY_DEFAULT_LDAP, DEFAULT_LDAP]);
   const names = new Set(rows.map((r) => r.name));
@@ -1659,33 +1748,38 @@ export async function retypeConnectionCredentials() {
   }
   const done = [];
   for (const [credName, users] of byCredential) {
-    const cred = (await mysql.do("SELECT * FROM AnsibleForms.`credentials` WHERE name = ?", [credName]))[0];
-    if (!cred || cred.managed) continue;
-    const kinds = [...new Set(users.map(connectionCredentialType))];
-    if (kinds.length === 1 && kinds[0] === cred.credential_type) continue;
-    // the type it keeps : its records' kind when they are all of one and nothing else checks it
-    const keeps = kinds.length === 1 && !others.has(credName) ? kinds[0] : cred.credential_type;
-    if (keeps !== cred.credential_type) {
-      await mysql.do("UPDATE AnsibleForms.`credentials` SET credential_type = ?, is_database = 0 WHERE id = ?", [keeps, cred.id]);
-      done.push(`${credName} is ${keeps}`);
-    }
-    for (const kind of kinds.filter((k) => k !== keeps)) {
-      // a copy : its login (stored encrypted, the same key for both rows), its server and TLS
-      const copy = await freeCredentialName(`${credName}-${kind}`);
-      await mysql.do(
-        "INSERT INTO AnsibleForms.`credentials` (name, user, password, description, is_database, credential_type, secret_store, secret_ref, client_cert, client_key, url, ignore_certs, ca_bundle) " +
-          "SELECT ?, user, password, ?, 0, ?, secret_store, secret_ref, client_cert, client_key, url, ignore_certs, ca_bundle FROM AnsibleForms.`credentials` WHERE id = ?",
-        [copy, `The ${kind} login of ${credName}`, kind, cred.id],
-      );
-      for (const r of users.filter((u) => connectionCredentialType(u) === kind)) {
-        await mysql.do(`UPDATE AnsibleForms.\`${r.table}\` SET credential = ? WHERE id = ?`, [copy, r.id]);
+    // one transaction per credential : its new type, its copies and the records that name
+    // them are written together or not at all. A crash in between used to leave a copy nothing
+    // named, and the next start made a second one (-2) beside it
+    await mysql.transaction(async (query) => {
+      const cred = (await query("SELECT * FROM AnsibleForms.`credentials` WHERE name = ?", [credName]))[0];
+      if (!cred || cred.managed) return;
+      const kinds = [...new Set(users.map(connectionCredentialType))];
+      if (kinds.length === 1 && kinds[0] === cred.credential_type) return;
+      // the type it keeps : its records' kind when they are all of one and nothing else checks it
+      const keeps = kinds.length === 1 && !others.has(credName) ? kinds[0] : cred.credential_type;
+      if (keeps !== cred.credential_type) {
+        await query("UPDATE AnsibleForms.`credentials` SET credential_type = ?, is_database = 0 WHERE id = ?", [keeps, cred.id]);
+        done.push(`${credName} is ${keeps}`);
       }
-      done.push(`a copy of ${credName} for ${kind}, ${copy}`);
-    }
-    // kept of a type without a server : the address it was given went with its copies
-    if (!["rte", "awx", "aap", "ascender", "semaphore", "rundeck", "jenkins", "vault", "cyberark"].includes(keeps) && cred.url) {
-      await mysql.do("UPDATE AnsibleForms.`credentials` SET url = NULL WHERE id = ?", [cred.id]);
-    }
+      for (const kind of kinds.filter((k) => k !== keeps)) {
+        // a copy : its login (stored encrypted, the same key for both rows), its server and TLS
+        const copy = await freeCredentialName(`${credName}-${kind}`, query);
+        await query(
+          "INSERT INTO AnsibleForms.`credentials` (name, user, password, description, is_database, credential_type, secret_store, secret_ref, client_cert, client_key, url, ignore_certs, ca_bundle) " +
+            "SELECT ?, user, password, ?, 0, ?, secret_store, secret_ref, client_cert, client_key, url, ignore_certs, ca_bundle FROM AnsibleForms.`credentials` WHERE id = ?",
+          [copy, `The ${kind} login of ${credName}`, kind, cred.id],
+        );
+        for (const r of users.filter((u) => connectionCredentialType(u) === kind)) {
+          await query(`UPDATE AnsibleForms.\`${r.table}\` SET credential = ? WHERE id = ?`, [copy, r.id]);
+        }
+        done.push(`a copy of ${credName} for ${kind}, ${copy}`);
+      }
+      // kept of a type without a server : the address it was given went with its copies
+      if (!["rte", "awx", "aap", "ascender", "semaphore", "rundeck", "jenkins", "vault", "cyberark"].includes(keeps) && cred.url) {
+        await query("UPDATE AnsibleForms.`credentials` SET url = NULL WHERE id = ?", [cred.id]);
+      }
+    });
   }
   if (!done.length) return null;
   const message = `Gave the credentials of the secret stores and runners the type of their kind (${done.join(", ")})`;
@@ -1717,47 +1811,52 @@ export async function moveLdapServersToCredentials() {
   if (!dirs.length) return null;
   const done = [];
   for (const d of dirs) {
-    const c = {
-      host: String(d.server).trim(),
-      port: d.port || null,
-      secure: d.enable_tls ? 1 : 0,
-      ignore_certs: d.ignore_certs ? 1 : 0,
-      client_cert: d.cert || null,
-      ca_bundle: d.ca_bundle || null,
-    };
-    const creds = d.credential ? await mysql.do("SELECT * FROM AnsibleForms.`credentials` WHERE name = ?", [d.credential]) : [];
-    const cred = creds[0];
-    let name = cred?.name || null;
-    if (cred && !String(cred.host || "").trim()) {
-      await mysql.do("UPDATE AnsibleForms.`credentials` SET ? WHERE id = ?", [c, cred.id]);
-      done.push(`${d.name} into ${name}`);
-    } else if (cred && (String(cred.host).trim() !== c.host || (cred.port || null) !== c.port || (cred.secure ? 1 : 0) !== c.secure)) {
-      name = await freeCredentialName(`${cred.name}-${d.name}`);
-      await mysql.do(
-        "INSERT INTO AnsibleForms.`credentials` (name, user, password, description, is_database, credential_type, secret_store, secret_ref, host, port, secure, ignore_certs, client_cert, ca_bundle) " +
-          "SELECT ?, user, password, ?, 0, 'ldap', secret_store, secret_ref, ?, ?, ?, ?, ?, ? FROM AnsibleForms.`credentials` WHERE id = ?",
-        [name, `The bind account of ${cred.name}, with the servers of the LDAP directory ${d.name}`, c.host, c.port, c.secure, c.ignore_certs, c.client_cert, c.ca_bundle, cred.id],
+    // one transaction per record : the credential and the record that names it are written
+    // together or not at all. A crash in between used to leave a credential nothing named,
+    // and the next start made a second one (-2) beside it
+    await mysql.transaction(async (query) => {
+      const c = {
+        host: String(d.server).trim(),
+        port: d.port || null,
+        secure: d.enable_tls ? 1 : 0,
+        ignore_certs: d.ignore_certs ? 1 : 0,
+        client_cert: d.cert || null,
+        ca_bundle: d.ca_bundle || null,
+      };
+      const creds = d.credential ? await query("SELECT * FROM AnsibleForms.`credentials` WHERE name = ?", [d.credential]) : [];
+      const cred = creds[0];
+      let name = cred?.name || null;
+      if (cred && !String(cred.host || "").trim()) {
+        await query("UPDATE AnsibleForms.`credentials` SET ? WHERE id = ?", [c, cred.id]);
+        done.push(`${d.name} into ${name}`);
+      } else if (cred && (String(cred.host).trim() !== c.host || (cred.port || null) !== c.port || (cred.secure ? 1 : 0) !== c.secure)) {
+        name = await freeCredentialName(`${cred.name}-${d.name}`, query);
+        await query(
+          "INSERT INTO AnsibleForms.`credentials` (name, user, password, description, is_database, credential_type, secret_store, secret_ref, host, port, secure, ignore_certs, client_cert, ca_bundle) " +
+            "SELECT ?, user, password, ?, 0, 'ldap', secret_store, secret_ref, ?, ?, ?, ?, ?, ? FROM AnsibleForms.`credentials` WHERE id = ?",
+          [name, `The bind account of ${cred.name}, with the servers of the LDAP directory ${d.name}`, c.host, c.port, c.secure, c.ignore_certs, c.client_cert, c.ca_bundle, cred.id],
+        );
+        done.push(`${d.name} into a copy of ${cred.name}, ${name}`);
+      } else if (!cred) {
+        name = await freeCredentialName(`${d.name}-ldap`, query);
+        await query("INSERT INTO AnsibleForms.`credentials` SET ?", [
+          {
+            name,
+            user: d.bind_user_dn || null,
+            password: d.bind_user_pw || null,
+            description: `The servers and bind account of the LDAP directory ${d.name}`,
+            is_database: 0,
+            credential_type: "ldap",
+            ...c,
+          },
+        ]);
+        done.push(`${d.name} into ${name}`);
+      }
+      await query(
+        "UPDATE AnsibleForms.`ldap` SET server = NULL, port = NULL, enable_tls = 0, ignore_certs = 0, cert = NULL, ca_bundle = NULL, credential = ? WHERE id = ?",
+        [name, d.id],
       );
-      done.push(`${d.name} into a copy of ${cred.name}, ${name}`);
-    } else if (!cred) {
-      name = await freeCredentialName(`${d.name}-ldap`);
-      await mysql.do("INSERT INTO AnsibleForms.`credentials` SET ?", [
-        {
-          name,
-          user: d.bind_user_dn || null,
-          password: d.bind_user_pw || null,
-          description: `The servers and bind account of the LDAP directory ${d.name}`,
-          is_database: 0,
-          credential_type: "ldap",
-          ...c,
-        },
-      ]);
-      done.push(`${d.name} into ${name}`);
-    }
-    await mysql.do(
-      "UPDATE AnsibleForms.`ldap` SET server = NULL, port = NULL, enable_tls = 0, ignore_certs = 0, cert = NULL, ca_bundle = NULL, credential = ? WHERE id = ?",
-      [name, d.id],
-    );
+    });
   }
   const message = `Moved the servers of ${dirs.length} LDAP directory(ies) to their ldap credential${done.length ? ` (${done.join(", ")})` : ""}`;
   logger.notice(message);
@@ -1768,19 +1867,67 @@ export async function moveLdapServersToCredentials() {
 const LEGACY_TABLES = ["staging", "datasource", "datasource_schemas", "awx", "azuread", "oidc"];
 
 /**
- * Whether the patches have something to change that loses data : a table an upgrade drops.
+ * Compares two release numbers (7.2.0, 7.3.0-rc.1) on their numeric parts : major, minor,
+ * patch. A pre-release suffix is ignored, so 7.3.0-rc.1 and 7.3.0 compare equal : the schema
+ * of a release candidate is the release's.
+ *
+ * Args:
+ *   a (string): a release number.
+ *   b (string): another.
+ *
+ * Returns:
+ *   number|null: below 0 when a is older, 0 when equal, above 0 when newer ; null when either
+ *     is not a release number (a local build reporting "unknown").
+ */
+export function compareReleases(a, b) {
+  const parse = (v) => {
+    const m = /^v?(\d+)\.(\d+)\.(\d+)/.exec(String(v || "").trim());
+    return m ? m.slice(1, 4).map(Number) : null;
+  };
+  const x = parse(a);
+  const y = parse(b);
+  if (!x || !y) return null;
+  for (let i = 0; i < 3; i++) {
+    if (x[i] !== y[i]) return x[i] - y[i];
+  }
+  return 0;
+}
+
+/**
+ * Whether the patches have something to change that is worth a backup first :
+ *   - a table an upgrade drops (and copies from first) : that loses data
+ *   - a schema recorded by an older release than this one (schema_migrations, row 'schema',
+ *     written by recordMigrations after every successful patch run) : a new release moves
+ *     data around too (7.3 moves secrets into credentials, retypes them, renames the LDAP
+ *     directory), not only adds to it, and there was no way back from that
+ *   - a database from before schema_migrations existed (the table is missing) : the same
+ *     upgrade, from further back
+ * A fresh install has the table without the row : nothing to back up there, and a backup that
+ * cannot run (no mysqldump on a development machine) must not stop its first patch run. The
+ * same release starting again finds its own version recorded : no backup on every restart.
  *
  * Returns:
  *   Promise<string[]>: what is pending, for the log ; empty when nothing is.
  */
 async function pendingUpgrade() {
-  // what loses data : the tables an upgrade drops (and copies from first). An added table, column
-  // or index loses nothing, and needs no backup - every release adds some.
+  const pending = [];
+  // what loses data : the tables an upgrade drops (and copies from first)
   const legacy = await mysql.do(
     "SELECT table_name AS t FROM information_schema.tables WHERE table_schema='AnsibleForms' AND table_name IN (?)",
     [LEGACY_TABLES]
   );
-  return legacy.map((r) => `drop ${r.t}`);
+  pending.push(...legacy.map((r) => `drop ${r.t}`));
+  // what a new release moves : the schema an older release recorded
+  if (!(await tablePresent("schema_migrations"))) {
+    pending.push(`upgrade an unrecorded schema to ${appVersion}`);
+    return pending;
+  }
+  const rows = await mysql.do("SELECT version FROM AnsibleForms.`schema_migrations` WHERE name = 'schema'");
+  const recorded = rows?.[0]?.version;
+  if (recorded && (compareReleases(recorded, appVersion) ?? 0) < 0) {
+    pending.push(`upgrade the schema from ${recorded} to ${appVersion}`);
+  }
+  return pending;
 }
 
 // a backup that failed is not tried again on every request (an app node checks the schema per
@@ -1838,6 +1985,92 @@ async function recordMigrations() {
     "INSERT INTO AnsibleForms.`schema_migrations` (name, version, applied_at) VALUES ('schema', ?, NOW()) ON DUPLICATE KEY UPDATE applied_at = IF(version = VALUES(version), applied_at, NOW()), version = VALUES(version)",
     [appVersion]
   );
+}
+
+// ---------------------------------------------------------------------------------------
+// The ENABLE_SSO and SSO_AUTO_LOGIN variables, removed in 7.3
+// ---------------------------------------------------------------------------------------
+
+// the schema_migrations row that says they were imported (recordMigrations writes the others)
+const SSO_ENV_MARKER = "sso_env_import";
+
+/**
+ * Whether a removed boolean variable is set to an off value : 0, false, no or off.
+ *
+ * Args:
+ *   value (string|undefined): the variable.
+ *
+ * Returns:
+ *   boolean: true when it switches something off.
+ */
+function envOff(value) {
+  return ["0", "false", "no", "off"].includes(String(value ?? "").trim().toLowerCase());
+}
+
+/**
+ * Whether a removed boolean variable is set to an on value : 1, true, yes or on.
+ *
+ * Args:
+ *   value (string|undefined): the variable.
+ *
+ * Returns:
+ *   boolean: true when it switches something on.
+ */
+function envOn(value) {
+  return ["1", "true", "yes", "on"].includes(String(value ?? "").trim().toLowerCase());
+}
+
+/**
+ * The ENABLE_SSO and SSO_AUTO_LOGIN variables of before 7.3 carried over, once, to the SSO
+ * providers that replaced them (each has Enabled and Skip the login page since 7.3) : without
+ * this an upgrade dropped them silently, so an instance with SSO switched off as a whole came
+ * back with its providers' login buttons, and one that skipped the login page no longer did.
+ *   - ENABLE_SSO off (0, false) : every SSO provider disabled
+ *   - SSO_AUTO_LOGIN on (1, true) and exactly one provider enabled (what it acted on : the only
+ *     active provider) : that provider skips the login page
+ * Recorded in schema_migrations (row sso_env_import) in the same transaction, so it runs once :
+ * a provider enabled again later is never switched off by the variable still being there. While
+ * either variable is set, every start says it is ignored and where it is configured now.
+ * Nothing is recorded while neither is set (a fresh install, an instance that never used them).
+ *
+ * Args:
+ *   options (object): { env } - the environment, for tests.
+ *
+ * Returns:
+ *   Promise<string>: "none" (neither variable set), "imported" or "ignored" (imported before).
+ */
+export async function importSsoEnvOnce({ env = process.env } = {}) {
+  const enableSso = env.ENABLE_SSO;
+  const autoLogin = env.SSO_AUTO_LOGIN;
+  const isSet = (v) => v !== undefined && String(v).trim() !== "";
+  if (!isSet(enableSso) && !isSet(autoLogin)) return "none";
+  const notice = "ENABLE_SSO and SSO_AUTO_LOGIN are no longer read since 7.3: single sign-on is configured per provider under Settings > SSO (Enabled, Skip the login page) - remove them from the environment";
+  const marker = await mysql.do("SELECT 1 FROM AnsibleForms.`schema_migrations` WHERE name = ?", [SSO_ENV_MARKER]);
+  if (marker.length) {
+    logger.warning(notice);
+    return "ignored";
+  }
+  const done = [];
+  await mysql.transaction(async (query) => {
+    // SSO switched off as a whole : every provider's login button goes
+    if (envOff(enableSso)) {
+      const res = await query("UPDATE AnsibleForms.`oauth2_providers` SET enable = 0 WHERE enable <> 0");
+      done.push(`ENABLE_SSO=${enableSso} disabled ${res?.affectedRows ?? 0} SSO provider(s)`);
+    }
+    // the login page went straight to the only active provider : that one skips it now
+    if (envOn(autoLogin)) {
+      const enabled = await query("SELECT id, name FROM AnsibleForms.`oauth2_providers` WHERE enable = 1");
+      if (enabled.length === 1) {
+        await query("UPDATE AnsibleForms.`oauth2_providers` SET auto_login = 1 WHERE id = ?", [enabled[0].id]);
+        done.push(`SSO_AUTO_LOGIN=${autoLogin} set the provider '${enabled[0].name}' to skip the login page`);
+      } else {
+        done.push(`SSO_AUTO_LOGIN=${autoLogin} applied to no provider: ${enabled.length} are enabled, it acted on exactly one`);
+      }
+    }
+    await query("INSERT IGNORE INTO AnsibleForms.`schema_migrations` (name, version, applied_at) VALUES (?, ?, NOW())", [SSO_ENV_MARKER, appVersion]);
+  });
+  logger.warning(`Imported the SSO environment variables once${done.length ? ` (${done.join("; ")})` : ""}. ${notice}`);
+  return "imported";
 }
 
 // PATCHING : Patch All
@@ -1930,6 +2163,8 @@ async function checkAll({ patch = true } = {}) {
 export { SCHEMA_MANIFEST };
 // the 7 patch on its own, for the test that runs it on a database from before its columns
 export { patchVersion7 };
+// what makes a start back up the database before patching, for its test
+export { pendingUpgrade };
 export default Schema;
 
 // function addRecord(table,names,values){

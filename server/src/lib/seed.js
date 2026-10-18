@@ -26,7 +26,7 @@ import yaml from "yaml";
 import logger from "./logger.js";
 import crypto from "./crypto.js";
 import appConfig from "../../config/app.config.js";
-import { validateSeed, interpolateEnv, foldAwxIntoRunners, foldRunnerSecretsIntoCredentials } from "./seed-schema.js";
+import { validateSeed, interpolateEnv, foldAwxIntoRunners, foldRunnerSecretsIntoCredentials, runnerOwnsSecrets } from "./seed-schema.js";
 import CrudModel from "../models/crud.model.js";
 import OAuth2 from "../models/oauth2.model.js";
 import Credential from "../models/credential.model.v2.js";
@@ -454,7 +454,16 @@ async function applySeedNow({ schemaIsReady = true } = {}) {
   }
   // a runner's own token, or user and password : deprecated since 7.3 in favour of a credential
   // of its kind (credential:), removed in 8. Applied as such a credential, named after the runner
-  const runnerSecrets = foldRunnerSecretsIntoCredentials(doc);
+  // The credentials made by hand are reserved : a generated name equal to one of them would
+  // adopt it (applyListSection), overwriting it with the runner's token. Read only when a
+  // runner has secrets to fold. The seed's own (managed) ones are not reserved : the one named
+  // after the runner is this credential, from the previous start.
+  let reserved = [];
+  if ((doc.runners?.items || []).some(runnerOwnsSecrets)) {
+    // the names only : findAll would decrypt every secret for nothing
+    reserved = (await mysql.do("SELECT name FROM AnsibleForms.`credentials` WHERE COALESCE(managed, 0) = 0")).map((c) => c.name);
+  }
+  const runnerSecrets = foldRunnerSecretsIntoCredentials(doc, reserved);
   doc = runnerSecrets.doc;
   for (const name of runnerSecrets.folded) {
     const credential = doc.runners.items.find((r) => r.name === name).credential;
