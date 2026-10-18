@@ -1259,8 +1259,16 @@ async function clip(v, doNotStringify = false, asYaml = false) {
   }
 }
 
+// The poll chain's token : each run's chain carries the value it started with, and checks it
+// after every await. Clearing the timeout alone did not stop a chain whose getJob request was
+// in flight at that moment : its answer came back after the reset (or after the page was left)
+// and scheduled the next poll anyway, writing job and status on a form that had moved on.
+// Bumping the token (a reset, a new run, the page unmounted) ends every older chain.
+let pollSeq = 0;
+
 // reset result
 function resetResult() {
+  pollSeq++;
   clearTimeout(timeout.value);
   status.value = '';
   message.value = '';
@@ -1547,10 +1555,13 @@ async function download(id) {
   }
 }
 // get job output
-async function getJob(id, final) {
+// seq : the poll chain's token (pollSeq) ; a chain whose token is no longer current stops
+async function getJob(id, final, seq = pollSeq) {
   try {
     // get the job result
     const result = await axios.get(`/api/v2/job/${id}`);
+    // reset, relaunched or left while the request was in flight : this chain is over
+    if (seq !== pollSeq) return;
     pollFailures.value = 0; // a poll got through : forget earlier blips
     // store the job result
     job.value = result.data;
@@ -1561,6 +1572,7 @@ async function getJob(id, final) {
       const lastsubjob = job.value.subjobs.slice(-1)[0];
       try {
         const subjobresult = await axios.get(`/api/v2/job/${lastsubjob}`);
+        if (seq !== pollSeq) return;
         subjob.value = subjobresult.data;
       } catch (e) {
         console.error('Error getting job: ' + lastsubjob);
@@ -1572,13 +1584,13 @@ async function getJob(id, final) {
       if (status.value == 'approve') {
         State.refreshApprovals(); // refresh approvals if needed
       }
-      timeout.value = setTimeout(async () => await getJob(id), 2000);
+      timeout.value = setTimeout(async () => await getJob(id, false, seq), 2000);
     } else {
       // the job seems finished
       if (!final) {
         // have we done a final result check?
         // 1 final check
-        timeout.value = setTimeout(async () => await getJob(id, true), 2000);
+        timeout.value = setTimeout(async () => await getJob(id, true, seq), 2000);
       } else {
         // any frontend actions to do?
         if (currentForm.value.onFinish) {
@@ -1607,6 +1619,8 @@ async function getJob(id, final) {
       }
     }
   } catch (err) {
+    // an older chain's failure says nothing : the form moved on
+    if (seq !== pollSeq) return;
     console.log('error getting job ' + err.toString());
     toast.error('Failed to get job');
 
@@ -1621,7 +1635,7 @@ async function getJob(id, final) {
       // abort button: the only way out was closing the output or reloading the page.
       pollFailures.value++;
       if (pollFailures.value < 5) {
-        timeout.value = setTimeout(async () => await getJob(id), 2000);
+        timeout.value = setTimeout(async () => await getJob(id, false, seq), 2000);
       } else {
         message.value = 'Error in axios call to get job\n\n' + err.toString();
         status.value = 'error';
@@ -1643,24 +1657,31 @@ async function launchForm(postdata) {
   // button must not point at it (an abort clicked during the launch went to the old job)
   jobId.value = undefined;
   abortTriggered.value = false;
+  // a new run : its own poll chain, any older one ended
+  const seq = ++pollSeq;
   try {
     status.value = 'running';
     const result = await axios.post(`/api/v2/job/`, postdata);
+    // reset or left while the launch was answered : nothing to follow on this page
+    if (seq !== pollSeq) return;
     jobId.value = result.data.id;
     if (currentForm.value.onSubmit) {
       currentForm.value.onSubmit.forEach((action) => {
         doAction(action, jobId.value);
       });
     }
-    timeout.value = setTimeout(async () => await getJob(jobId.value), 2000);
+    timeout.value = setTimeout(async () => await getJob(jobId.value, false, seq), 2000);
   } catch (err) {
+    if (seq !== pollSeq) return;
     status.value = 'failed';
     toast.error(Helpers.parseAxiosResponseError(err, 'Failed to invoke job launch'));
     if (err.response?.status != 401) {
       resetResult();
     }
+  } finally {
+    // also after an early return above : the json output never stays paused
+    pauseJsonOutput.value = false;
   }
-  pauseJsonOutput.value = false;
 }
 
 /**
@@ -1840,6 +1861,8 @@ watch(
 );
 
 onBeforeUnmount(() => {
+  // the poll chain ends too, also one whose request is in flight
+  pollSeq++;
   clearTimeout(timeout.value);
   // the onSuccess/onFailure timers too : otherwise they navigate the router, or reload a
   // form, on a component that no longer exists
