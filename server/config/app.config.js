@@ -191,6 +191,9 @@ var app_config = {
   restTimeoutSeconds: parseInt(process.env.REST_TIMEOUT_SECONDS, 10) > 0
     ? parseInt(process.env.REST_TIMEOUT_SECONDS, 10)
     : 60,
+  // Whether the REST helper functions skip the endpoint's certificate check. Until 7.3 they
+  // always did ; they now check it, this the way back for self-signed endpoints. 0 by default.
+  restIgnoreCerts: ["1", "true", "yes"].includes(String(process.env.REST_IGNORE_CERTS || "").trim().toLowerCase()),
   // Seconds a jq filter (fnJq, the jq of the REST / file / credential functions and
   // of the database queries) may run before jq is killed (lib/jq.js). 30 by default.
   jqTimeoutSeconds: parseInt(process.env.JQ_TIMEOUT_SECONDS, 10) > 0

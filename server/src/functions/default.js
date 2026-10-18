@@ -305,8 +305,10 @@ const fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort=n
   // No-op when neither env var is set.
   await assertUrlAllowed(url);
 
+  // the endpoint's certificate checked, as every other connection's ; REST_IGNORE_CERTS (read on
+  // each call) is the way back for an endpoint with a self-signed certificate
   const httpsAgent = new https.Agent({
-    rejectUnauthorized: false,
+    rejectUnauthorized: !appConfig.restIgnoreCerts,
   })
   var axiosConfig = {
     headers: {},

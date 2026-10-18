@@ -794,7 +794,21 @@
       `fn.fnRestJwtSecure`) wait for the remote endpoint before the call fails with a timeout error.
 
       Without a limit, an endpoint that never answers kept the request and the form field waiting forever.
-      A value that is not a number above 0 falls back to the default. Takes effect after a restart.
+      A value that is not a number above 0 falls back to the default. Takes effect when saved.
+    version: 7.3.0
+  - name: REST_IGNORE_CERTS
+    type: boolean
+    allowed: 0, 1
+    default: 0
+    short: Ignore REST certificates
+    hint: Skip the certificate check of the REST helper functions.
+    description: |
+      Whether the REST helper functions (`fn.fnRestBasic`, `fn.fnRestAdvanced`, `fn.fnRestJwt`,
+      `fn.fnRestJwtSecure`) skip the TLS certificate check of the endpoint they call.
+
+      Until 7.3.0 they never checked it, so a man in the middle could read their tokens and answers.
+      They now check it like every other connection: trust a private CA with NODE_EXTRA_CA_CERTS, or set
+      this to 1 only for endpoints with a self-signed certificate. Takes effect when saved.
     version: 7.3.0
   - name: JQ_TIMEOUT_SECONDS
     type: number
@@ -807,7 +821,7 @@
 
       A runaway filter (for example a recursive definition that never ends) used to keep a jq process
       spinning forever. jq output is also capped at 64 MB. A value that is not a number above 0 falls
-      back to the default. Takes effect after a restart.
+      back to the default. Takes effect when saved.
     version: 7.3.0
   - name: EXPRESSION_SANITIZER
     type: string
