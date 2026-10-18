@@ -432,13 +432,14 @@
     type: string
     allowed: a join token of Connections > Runners (afj_...)
     short: The token an RTE joins the app with, once
-    hint: "On an RTE: a join token from Connections > Runners > Add runner."
+    hint: "On an RTE: a join token that approves it at once, for unattended installs."
     description: |
-      On an RTE in a socket mode, the first time: a join token made under Connections > Runners
-      > Add runner. The RTE presents it once, with its own `RTE_TOKEN` and `RTE_NAME`, and the
-      app adds it as a runner (or gives an existing runner of that name the new token). From then
-      on it signs in with its own token ; the join token can expire or be revoked without
-      affecting it.
+      On an RTE in a socket mode, the first time, optional. Without it an RTE the app does not
+      know asks to join and waits for an admin's approval under Connections > Runners. With it
+      the RTE is approved at once - for unattended installs - and the app adds it as a runner
+      (or gives an existing runner of that name the new token). Join tokens are made through the
+      API (`POST /api/v2/runner/jointoken`, an admin). From then on the RTE signs in with its own
+      token ; the join token can expire or be revoked without affecting it.
   - name: RTE_NAME
     version: 7.3.0
     type: string

@@ -247,15 +247,19 @@ release, so its tags always match the app's.
 
 ## Using a runner, step by step
 
-1. **Make a join token**: Settings > Connections > Runners > Join tokens. It is shown once,
-   stored hashed, and may expire or be limited to a number of uses. The installer takes the
-   line the dialog shows for it (`afjoin2.` + the app's address and the token).
-2. **Start an RTE** (see [Running it](#running-it)) with a token of its own (`RTE_TOKEN`),
-   its mode, its name (`RTE_NAME`) and the join token: outbound with `APP_URL`, inbound with
+1. **Start an RTE** (see [Running it](#running-it)) with a token of its own (`RTE_TOKEN`),
+   its mode and its name (`RTE_NAME`): outbound with `APP_URL`, inbound with `APP_URL` and
    `RTE_URL`. Or let the installer do it: `ansibleforms-installer`, role Runner.
-3. **It adds itself, once**: the app adds a runner of that name with an RTE credential
-   `<name>-rte` holding its token (and, inbound, its address), or updates the runner of that
-   name. Without a join token, add both by hand: an RTE credential under Connections >
+2. **It asks to join** (`rteHub.askToJoin`): the app adds a runner of that name waiting for
+   approval, turned off, with an RTE credential `<name>-rte` holding its token (and, inbound,
+   its address), and what it said of itself (host, address, mode, version, its token's
+   fingerprint, which the RTE logs and the installer prints). The header bell counts it. At
+   most `PENDING_MAX` (20) wait ; the worker removes those not handled within a day.
+3. **An admin approves it** (`POST /api/v2/runner/:id/approve`, the review dialog of
+   Connections > Runners): it is enabled, and the default of its type when there is none.
+   Rejected (`/reject`), it is removed with its credential and its socket closed. A join token
+   (`RTE_JOIN_TOKEN`, made through `POST /api/v2/runner/jointoken`) approves it at once, for
+   unattended installs. Or add both by hand: an RTE credential under Connections >
    Credentials, then a runner of type *RTE* with its mode and that credential. *Test
    connection* shows its release, contract, ansible, mode, files and capacity.
 4. **Point forms at it**: `runner: <name>` on a form or a step (also in the designer's form
