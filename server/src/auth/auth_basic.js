@@ -1,5 +1,4 @@
 import passport from 'passport';
-import { BasicStrategy as basicStrategy } from 'passport-http';
 import User from './../models/user.model.js';
 import authConfig from '../../config/auth.config.js';
 import logger from '../lib/logger.js';
@@ -7,12 +6,12 @@ import Helpers from '../lib/common.js';
 import Ldap from '../models/ldap.model.js';
 import { ldapDisplayName } from '../lib/displayName.js'
 import { DEFAULT_ADMIN_PASSWORD } from '../../config/app.config.js'
-
+import { Utf8BasicStrategy } from '../lib/basicCredentials.js'
 
 // create username / password login strategy
 passport.use(
   'basic',
-  new basicStrategy(
+  new Utf8BasicStrategy(
     async (username, password, done) => {
       // authentication against database first
       try{
@@ -44,7 +43,7 @@ passport.use(
 
 passport.use(
   'ldap',
-  new basicStrategy(
+  new Utf8BasicStrategy(
     async (username, password, done) => {
       // authentication against database first
       try{

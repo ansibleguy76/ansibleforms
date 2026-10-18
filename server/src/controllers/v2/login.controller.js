@@ -22,6 +22,7 @@ import { loginBlocked, loginFailed, loginSucceeded } from "../../lib/loginThrott
 import { newSessionId, revokeSession, consumeOnce } from "../../lib/tokenRevocation.js";
 import { NEVER_DAYS, apiTokenDays, revocationHorizonSeconds } from "../../lib/tokenLifetime.js";
 import { admitSignIn } from "../../lib/signInGate.js";
+import { parseBasicCredentials } from "../../lib/basicCredentials.js";
 import { tokenUser, forgetGroups } from "../../lib/userGroups.js";
 import ApiToken from "../../models/apiToken.model.js";
 
@@ -37,18 +38,10 @@ import ApiToken from "../../models/apiToken.model.js";
 // - req.body is empty on every login. Only the half before the colon is ever read;
 // the password half is never assigned to anything.
 function attemptedUsername(req) {
-  const header = req.headers?.authorization || '';
-  const m = /^Basic\s+(.+)$/i.exec(header.trim());
-  if (m) {
-    try {
-      const decoded = Buffer.from(m[1], 'base64').toString('utf8');
-      const sep = decoded.indexOf(':');
-      const name = sep >= 0 ? decoded.slice(0, sep) : decoded;
-      if (name) return name;
-    } catch {
-      // an unparsable header is still an attempt worth recording, just anonymously
-    }
-  }
+  // the same reading as the sign-in itself (lib/basicCredentials.js) : UTF-8, the name ends at
+  // the first colon ; an unparsable header is still an attempt worth recording, anonymously
+  const name = parseBasicCredentials(req.headers?.authorization)?.username;
+  if (name) return name;
   // other clients may post a body instead
   return req.body?.username || null;
 }
