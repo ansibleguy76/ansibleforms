@@ -115,17 +115,21 @@ function htmlLines(html) {
   const lines = [];
   const open = [];
   let line = '';
+  // the last line has text of its own, not only the spans carried into it
+  let text = false;
   for (const part of html.split(/(<span[^>]*>|<\/span>|\n)/)) {
     if (part === '\n') {
       lines.push(line + '</span>'.repeat(open.length));
       line = open.join('');
+      text = false;
     } else {
       if (part.startsWith('<span')) open.push(part);
       else if (part === '</span>') open.pop();
+      else if (part) text = true;
       line += part;
     }
   }
-  if (line.replace(/<[^>]*>/g, '') !== '' || !lines.length) lines.push(line);
+  if (text || !lines.length) lines.push(line);
   return lines;
 }
 const jsonLines = computed(() => htmlLines(highlighted(json.value, 'json')));
