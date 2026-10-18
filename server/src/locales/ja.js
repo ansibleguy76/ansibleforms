@@ -169,6 +169,7 @@ export default {
     ldapCreated: "LDAP ディレクトリを追加しました",
     failedCreateLdap: "LDAP ディレクトリを追加できませんでした",
     ldapDeleted: "LDAP ディレクトリを削除しました",
+    ldapNotFound: "LDAP ディレクトリが見つかりません",
     failedDeleteLdap: "LDAP ディレクトリを削除できませんでした",
     seedManagedSettings:
       "設定は config seed で管理されており、読み取り専用です",
@@ -217,9 +218,9 @@ export default {
     deleted: "ジョブを削除しました",
     failedLaunch: "フォームの起動に失敗しました",
     invalidFormData: "フォームのデータが無効です",
-    failedRelaunch: "ジョブの再起動に失敗しました",
     invalidEventOrder:
       "イベントの順序は 0 以上の整数です：'{order}' は違います",
+    failedRelaunch: "ジョブの再起動に失敗しました",
     failedApprove: "ジョブの承認に失敗しました",
     failedReject: "ジョブの却下に失敗しました",
     approved: "ジョブ {id} は承認されました",

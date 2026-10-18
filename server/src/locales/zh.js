@@ -155,6 +155,7 @@ export default {
     ldapCreated: "已添加 LDAP 目录",
     failedCreateLdap: "添加 LDAP 目录失败",
     ldapDeleted: "已删除 LDAP 目录",
+    ldapNotFound: "未找到 LDAP 目录",
     failedDeleteLdap: "删除 LDAP 目录失败",
     seedManagedSettings: "设置由配置种子管理，为只读",
     seedManagedLdap: "LDAP 配置由配置种子管理，为只读",
@@ -198,9 +199,9 @@ export default {
     deleted: "作业已删除",
     failedLaunch: "运行表单失败",
     invalidFormData: "表单数据无效",
-    failedRelaunch: "重新运行作业失败",
     invalidEventOrder:
       "事件的顺序是从 0 开始的整数：'{order}' 不是",
+    failedRelaunch: "重新运行作业失败",
     failedApprove: "批准作业失败",
     failedReject: "拒绝作业失败",
     approved: "作业 {id} 已获批准",

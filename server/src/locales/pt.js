@@ -169,6 +169,7 @@ export default {
     ldapCreated: "Diretório LDAP adicionado",
     failedCreateLdap: "Falha ao adicionar o diretório LDAP",
     ldapDeleted: "Diretório LDAP eliminado",
+    ldapNotFound: "Diretório LDAP não encontrado",
     failedDeleteLdap: "Falha ao eliminar o diretório LDAP",
     seedManagedSettings:
       "As definições são geridas pelo config seed e são só de leitura",
@@ -217,9 +218,9 @@ export default {
     deleted: "Tarefa eliminada",
     failedLaunch: "Falha ao iniciar o formulário",
     invalidFormData: "Os dados do formulário não são válidos",
-    failedRelaunch: "Falha ao relançar a tarefa",
     invalidEventOrder:
       "A ordem de um evento é um número inteiro a partir de 0: '{order}' não é",
+    failedRelaunch: "Falha ao relançar a tarefa",
     failedApprove: "Falha ao aprovar a tarefa",
     failedReject: "Falha ao rejeitar a tarefa",
     approved: "A tarefa {id} foi aprovada",

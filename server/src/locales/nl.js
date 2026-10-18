@@ -170,6 +170,7 @@ export default {
     ldapCreated: "LDAP-directory toegevoegd",
     failedCreateLdap: "Kan de LDAP-directory niet toevoegen",
     ldapDeleted: "LDAP-directory verwijderd",
+    ldapNotFound: "LDAP-directory niet gevonden",
     failedDeleteLdap: "Kan de LDAP-directory niet verwijderen",
     seedManagedSettings:
       "De instellingen worden beheerd door de configuratie-seed en zijn alleen-lezen",
@@ -217,9 +218,9 @@ export default {
     deleted: "Job verwijderd",
     failedLaunch: "Kan formulier niet starten",
     invalidFormData: "De formuliergegevens zijn niet geldig",
-    failedRelaunch: "Kan job niet herstarten",
     invalidEventOrder:
       "De volgorde van een event is een geheel getal vanaf 0: '{order}' is dat niet",
+    failedRelaunch: "Kan job niet herstarten",
     failedApprove: "Kan job niet goedkeuren",
     failedReject: "Kan job niet afwijzen",
     approved: "Job {id} is goedgekeurd",

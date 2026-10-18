@@ -172,6 +172,7 @@ export default {
     ldapCreated: "Dodano katalog LDAP",
     failedCreateLdap: "Nie udało się dodać katalogu LDAP",
     ldapDeleted: "Usunięto katalog LDAP",
+    ldapNotFound: "Nie znaleziono katalogu LDAP",
     failedDeleteLdap: "Nie udało się usunąć katalogu LDAP",
     seedManagedSettings:
       "Ustawieniami zarządza config seed, są tylko do odczytu",
@@ -221,9 +222,9 @@ export default {
     deleted: "Usunięto zadanie",
     failedLaunch: "Nie udało się uruchomić formularza",
     invalidFormData: "Dane formularza są nieprawidłowe",
-    failedRelaunch: "Nie udało się ponownie uruchomić zadania",
     invalidEventOrder:
       "Kolejność zdarzenia to liczba całkowita od 0: '{order}' nią nie jest",
+    failedRelaunch: "Nie udało się ponownie uruchomić zadania",
     failedApprove: "Nie udało się zatwierdzić zadania",
     failedReject: "Nie udało się odrzucić zadania",
     approved: "Zadanie {id} zostało zatwierdzone",

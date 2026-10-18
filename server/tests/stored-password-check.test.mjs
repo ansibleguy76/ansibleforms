@@ -11,7 +11,11 @@ const storedLdap = { server: "ldap.corp", port: 636, enable_tls: 1, ignore_certs
 let ldapChecked = null;
 vi.mock("../src/models/ldap.model.js", () => {
   function Ldap(cfg) { Object.assign(this, cfg); }
-  Ldap.find = async () => ({ ...storedLdap });
+  // the default directory, as /ldap hands it to the directory handlers
+  Ldap.find = async () => ({ id: 1, ...storedLdap });
+  Ldap.findById = async (id) => (String(id) === "1" ? { id: 1, ...storedLdap } : null);
+  Ldap.connectionOf = async () => null;
+  Ldap.checkCredential = async () => {};
   Ldap.check = async (cfg) => { ldapChecked = cfg; return "ok"; };
   return { default: Ldap };
 });

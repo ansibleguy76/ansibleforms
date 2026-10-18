@@ -167,6 +167,7 @@ export default {
     ldapCreated: "Directory LDAP aggiunta",
     failedCreateLdap: "Impossibile aggiungere la directory LDAP",
     ldapDeleted: "Directory LDAP eliminata",
+    ldapNotFound: "Directory LDAP non trovata",
     failedDeleteLdap: "Impossibile eliminare la directory LDAP",
     seedManagedSettings:
       "Le impostazioni sono gestite dal seed di configurazione e sono di sola lettura",
@@ -214,9 +215,9 @@ export default {
     deleted: "Job eliminato",
     failedLaunch: "Avvio modulo non riuscito",
     invalidFormData: "I dati del modulo non sono validi",
-    failedRelaunch: "Riavvio job non riuscito",
     invalidEventOrder:
       "L'ordine di un evento è un numero intero da 0: '{order}' non lo è",
+    failedRelaunch: "Riavvio job non riuscito",
     failedApprove: "Approvazione job non riuscita",
     failedReject: "Rifiuto job non riuscito",
     approved: "Il job {id} e stato approvato",

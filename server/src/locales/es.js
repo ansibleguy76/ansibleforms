@@ -172,6 +172,7 @@ export default {
     ldapCreated: "Directorio LDAP añadido",
     failedCreateLdap: "No se pudo añadir el directorio LDAP",
     ldapDeleted: "Directorio LDAP eliminado",
+    ldapNotFound: "Directorio LDAP no encontrado",
     failedDeleteLdap: "No se pudo eliminar el directorio LDAP",
     seedManagedSettings:
       "Los ajustes están gestionados por el seed de configuración y son de solo lectura",
@@ -220,9 +221,9 @@ export default {
     deleted: "Trabajo eliminado",
     failedLaunch: "Error al lanzar el formulario",
     invalidFormData: "Los datos del formulario no son válidos",
-    failedRelaunch: "Error al relanzar el trabajo",
     invalidEventOrder:
       "El orden de un evento es un número entero desde 0: '{order}' no lo es",
+    failedRelaunch: "Error al relanzar el trabajo",
     failedApprove: "Error al aprobar el trabajo",
     failedReject: "Error al rechazar el trabajo",
     approved: "El trabajo {id} ha sido aprobado",

@@ -179,6 +179,7 @@ export default {
     ldapCreated: "Annuaire LDAP ajouté",
     failedCreateLdap: "Impossible d'ajouter l'annuaire LDAP",
     ldapDeleted: "Annuaire LDAP supprimé",
+    ldapNotFound: "Annuaire LDAP introuvable",
     failedDeleteLdap: "Impossible de supprimer l'annuaire LDAP",
     seedManagedSettings:
       "Les paramètres sont gérés par le seed de configuration et sont en lecture seule",
@@ -228,9 +229,9 @@ export default {
     deleted: "Tache supprimee",
     failedLaunch: "Echec du lancement du formulaire",
     invalidFormData: "Les données du formulaire ne sont pas valides",
-    failedRelaunch: "Echec du relancement de la tache",
     invalidEventOrder:
       "L'ordre d'un événement est un nombre entier à partir de 0 : '{order}' ne l'est pas",
+    failedRelaunch: "Echec du relancement de la tache",
     failedApprove: "Echec de l'approbation de la tache",
     failedReject: "Echec du rejet de la tache",
     approved: "La tache {id} a ete approuvee",

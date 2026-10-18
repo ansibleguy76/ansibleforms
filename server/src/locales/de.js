@@ -176,6 +176,7 @@ export default {
     ldapCreated: "LDAP-Verzeichnis hinzugefügt",
     failedCreateLdap: "LDAP-Verzeichnis konnte nicht hinzugefügt werden",
     ldapDeleted: "LDAP-Verzeichnis gelöscht",
+    ldapNotFound: "LDAP-Verzeichnis nicht gefunden",
     failedDeleteLdap: "LDAP-Verzeichnis konnte nicht gelöscht werden",
     seedManagedSettings:
       "Die Einstellungen werden vom Konfigurations-Seed verwaltet und sind schreibgeschützt",
@@ -224,9 +225,9 @@ export default {
     deleted: "Job geloescht",
     failedLaunch: "Formular konnte nicht gestartet werden",
     invalidFormData: "Die Formulardaten sind ungültig",
-    failedRelaunch: "Job konnte nicht neu gestartet werden",
     invalidEventOrder:
       "Die Reihenfolge eines Events ist eine ganze Zahl ab 0: '{order}' ist keine",
+    failedRelaunch: "Job konnte nicht neu gestartet werden",
     failedApprove: "Job-Freigabe fehlgeschlagen",
     failedReject: "Job-Ablehnung fehlgeschlagen",
     approved: "Job {id} wurde freigegeben",
