@@ -12,7 +12,7 @@ import { resolveExpression } from '../../lib/expressionPolicy.js';
  *
  * The expression TEXT comes from the form definition, not from the request - see
  * lib/expressionPolicy.js. A raw expression in the body is accepted only from a user with
- * settings or designer access.
+ * settings access, or a designer who may save forms (mayRunRawExpression).
  */
 const execute = async function(req, res) {
     //handles null error
