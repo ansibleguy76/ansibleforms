@@ -3,6 +3,7 @@ import Cmd from '../lib/cmd.js';
 import dbConfig from '../../config/db.config.js';
 import { promises as fs } from 'fs';
 import path from 'path';
+import os from 'os';
 import appConfig from '../../config/app.config.js';
 import { MANAGED_ENV_PATH } from '../lib/envSettings.js';
 import Helpers from '../lib/common.js';
@@ -169,27 +170,232 @@ async function describeBackup(folder) {
   };
 }
 
-// reusable directory copy helper (used by copyFormsAndFolder and restore)
-async function copyDir(src, dest) {
-  // if source doesn't exist or isn't a directory, do nothing
+// ===========================================================================
+// DIRECTORY COPY / SWAP HELPERS
+// ===========================================================================
+/**
+ * Recursively copies a directory (used by copyFormsAndFolder and the restore).
+ *
+ * Symbolic links are resolved with lstat/stat rather than trusted to the dirent :
+ * - a link to a folder is followed and its CONTENT copied (fs.copyFile on a folder
+ *   used to fail with EISDIR and abort the whole backup) ;
+ * - a link to a file is copied as the file it points to ;
+ * - a broken link is skipped with a warning (it used to fail with ENOENT and abort
+ *   the whole backup, which was then deleted) ;
+ * - every folder is copied at most once, by its REAL path, so a link pointing back
+ *   up the tree cannot recurse forever ;
+ * - anything that is neither a file nor a folder (a socket, a fifo) is skipped.
+ *
+ * Args:
+ *   src (string): The folder to copy. When it does not exist or is not a folder,
+ *     nothing is done.
+ *   dest (string): The destination folder, created when missing.
+ *   visited (Set<string>): Internal ; the real paths already copied (loop guard).
+ *
+ * Returns:
+ *   Promise<void>
+ *
+ * Raises:
+ *   Error: On a real copy failure (a full disk, a permission error on a file).
+ */
+async function copyDir(src, dest, visited = new Set()) {
+  // step 1 : if source doesn't exist or isn't a directory, do nothing
   try {
     const stat = await fs.stat(src);
     if (!stat.isDirectory()) return;
   } catch {
     return;
   }
+  // step 2 : loop guard on the real path
+  const real = await fs.realpath(src);
+  if (visited.has(real)) {
+    logger.warning(`Not copying '${src}' again: it was already copied (a symbolic link loop)`);
+    return;
+  }
+  visited.add(real);
   logger.debug(`Copying dir ${src} -> ${dest}`)
   await fs.mkdir(dest, { recursive: true });
+  // step 3 : copy every entry, resolving symbolic links
   const entries = await fs.readdir(src, { withFileTypes: true });
   for (const entry of entries) {
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
-    if (entry.isDirectory()) {
-      await copyDir(srcPath, destPath);
-    } else {
+    let isDir = entry.isDirectory();
+    let isFile = entry.isFile();
+    if (entry.isSymbolicLink()) {
+      try {
+        const st = await fs.stat(srcPath); // follows the link
+        isDir = st.isDirectory();
+        isFile = st.isFile();
+      } catch (e) {
+        logger.warning(`Skipping '${srcPath}': it is a symbolic link that does not resolve (${e.code || e.message})`);
+        continue;
+      }
+    }
+    if (isDir) {
+      await copyDir(srcPath, destPath, visited);
+    } else if (isFile) {
       logger.debug(`Copying file ${srcPath} -> ${destPath}`)
       await fs.copyFile(srcPath, destPath);
+    } else {
+      logger.warning(`Skipping '${srcPath}': it is neither a file nor a folder`);
     }
+  }
+}
+
+// rename failures that mean "this folder cannot be swapped as a whole" : a mount
+// point (EBUSY, a docker volume), another filesystem (EXDEV), or a parent folder we
+// may not write in (EACCES / EPERM)
+const SWAP_UNSUPPORTED = new Set(['EBUSY', 'EXDEV', 'EACCES', 'EPERM']);
+
+/**
+ * Empties a folder without removing the folder itself.
+ *
+ * Args:
+ *   dir (string): The folder to empty.
+ *
+ * Returns:
+ *   Promise<void>
+ */
+async function emptyDir(dir) {
+  for (const entry of await fs.readdir(dir)) {
+    await fs.rm(path.join(dir, entry), { recursive: true, force: true });
+  }
+}
+
+/**
+ * Replaces the CONTENT of a folder with the content of another one, keeping the
+ * folder itself. The fallback of replaceDir for a folder that cannot be renamed
+ * (a mount point). A verbatim copy of the current content is kept aside first, and
+ * put back when anything fails midway, so the folder is never left half restored.
+ *
+ * Args:
+ *   staging (string): The folder holding the new content.
+ *   target (string): The folder whose content is replaced.
+ *
+ * Returns:
+ *   Promise<void>
+ *
+ * Raises:
+ *   Error: The original failure, after the previous content was put back.
+ */
+async function replaceContents(staging, target) {
+  // step 1 : an exact copy of the current content (links kept as links)
+  const aside = await fs.mkdtemp(path.join(os.tmpdir(), 'af-forms-old-'));
+  try {
+    await fs.cp(target, aside, { recursive: true, verbatimSymlinks: true });
+    // step 2 : swap the content
+    try {
+      await emptyDir(target);
+      await copyDir(staging, target);
+    } catch (e) {
+      // step 3 : roll back to the previous content
+      logger.error(`Restoring '${target}' failed midway, putting the previous content back: ${e.message}`);
+      await emptyDir(target);
+      await fs.cp(aside, target, { recursive: true, verbatimSymlinks: true });
+      throw e;
+    }
+  } finally {
+    await fs.rm(aside, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
+/**
+ * Replaces a folder by a copy of another one, so that NOTHING of the previous
+ * content survives (a restore used to merge the backup into the existing folder :
+ * forms created after the backup stayed, and a form deleted since came back next to
+ * them).
+ *
+ * The backup is first copied into a staging folder beside the target ; only when
+ * that copy is complete is the current folder renamed aside, the staging folder
+ * renamed into its place and the old one removed. A failure while staging leaves
+ * the current folder untouched, a failure during the swap renames the old folder
+ * back. When the target cannot be renamed (a mount point, as with a docker volume),
+ * its content is swapped instead, with the same roll back (replaceContents).
+ *
+ * A target that is a symbolic link is resolved first, so the link itself is kept
+ * and the folder it points to is the one replaced.
+ *
+ * Args:
+ *   src (string): The folder to restore from. When it is missing, nothing is done.
+ *   targetDir (string): The folder to replace.
+ *
+ * Returns:
+ *   Promise<boolean>: true when the folder was replaced, false when src is missing.
+ *
+ * Raises:
+ *   Error: When the copy or the swap fails ; the previous folder is then in place.
+ */
+async function replaceDir(src, targetDir) {
+  // step 1 : nothing to restore from
+  try {
+    if (!(await fs.stat(src)).isDirectory()) return false;
+  } catch {
+    return false;
+  }
+  // step 2 : resolve a symlinked target, so the link survives
+  let target = targetDir;
+  let existed = true;
+  try {
+    target = await fs.realpath(targetDir);
+  } catch (e) {
+    if (e.code !== 'ENOENT') throw e;
+    existed = false;
+  }
+  const parent = path.dirname(target);
+  const stamp = `${Date.now()}-${process.pid}`;
+  const base = path.basename(target);
+  // step 3 : stage a complete copy beside the target (same filesystem, so the
+  // renames below are atomic) ; fall back to a temp folder when the parent cannot
+  // be written, and then swap the content
+  let staging = path.join(parent, `.${base}.restore-${stamp}`);
+  let besideTarget = true;
+  try {
+    await fs.mkdir(parent, { recursive: true });
+    await fs.mkdir(staging);
+  } catch (e) {
+    if (!SWAP_UNSUPPORTED.has(e.code)) throw e;
+    staging = await fs.mkdtemp(path.join(os.tmpdir(), 'af-forms-restore-'));
+    besideTarget = false;
+  }
+  try {
+    await copyDir(src, staging);
+    if (!existed) {
+      // step 4a : no current folder, just move the staged one in
+      await fs.rename(staging, target);
+      return true;
+    }
+    if (!besideTarget) {
+      // step 4b : the staging is elsewhere, swap the content
+      await replaceContents(staging, target);
+      return true;
+    }
+    // step 4c : rename the current folder aside
+    const aside = path.join(parent, `.${base}.old-${stamp}`);
+    try {
+      await fs.rename(target, aside);
+    } catch (e) {
+      if (!SWAP_UNSUPPORTED.has(e.code)) throw e;
+      // a mount point cannot be renamed : swap its content instead
+      await replaceContents(staging, target);
+      return true;
+    }
+    // step 5 : move the staged copy in ; on failure, put the old folder back
+    try {
+      await fs.rename(staging, target);
+    } catch (e) {
+      logger.error(`Restoring '${target}' failed midway, putting the previous folder back: ${e.message}`);
+      await fs.rename(aside, target);
+      throw e;
+    }
+    // step 6 : the old folder is no longer needed
+    await fs.rm(aside, { recursive: true, force: true }).catch((e) => {
+      logger.warning(`Could not remove the previous folder '${aside}': ${e.message}`);
+    });
+    return true;
+  } finally {
+    // a staging folder that was not moved into place
+    await fs.rm(staging, { recursive: true, force: true }).catch(() => {});
   }
 }
 
@@ -388,10 +594,12 @@ class BackupModel {
     const configYamlBackup = path.join(restoreFolder, path.basename(configFile));
     await copyFileIfExists(configYamlBackup, configFile);
     
-    // Restore forms directory
+    // Restore forms directory : REPLACED by the backup's copy (not merged into it),
+    // so forms created after the backup do not survive the restore ; see replaceDir
+    // for the staging / swap / roll back
     const formsDir = appConfig.formsFolderPath;
     const formsDirBackup = path.join(restoreFolder, 'forms');
-    await copyDir(formsDirBackup, formsDir);
+    await replaceDir(formsDirBackup, formsDir);
   }
 
 
@@ -579,3 +787,5 @@ class BackupModel {
 }
 
 export default BackupModel;
+// the directory helpers, for the tests
+export { copyDir, replaceDir };
