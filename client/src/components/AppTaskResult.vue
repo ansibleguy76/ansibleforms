@@ -21,6 +21,7 @@ import axios from 'axios';
 import { useI18n } from 'vue-i18n';
 import Helpers from '@/lib/Helpers';
 import Time from '@/lib/Time';
+import YAML from 'yaml';
 
 const { t } = useI18n();
 
@@ -85,11 +86,14 @@ const tabs = computed(() =>
   [
     { key: 'details', label: t('jobs.taskResult.details') },
     { key: 'json', label: 'JSON', when: !!result.value },
+    { key: 'yaml', label: 'YAML', when: !!result.value },
     { key: 'stdout', label: t('jobs.taskResult.stdout'), when: !!stdout.value },
     { key: 'stderr', label: t('jobs.taskResult.stderr'), when: !!stderr.value },
   ].filter((x) => x.when !== false),
 );
 const json = computed(() => (result.value ? JSON.stringify(result.value, null, 2) : ''));
+// the same result as YAML, as a playbook writes its variables
+const yaml = computed(() => (result.value ? YAML.stringify(result.value) : ''));
 </script>
 <template>
   <BsModal size="lg" icon="circle-info" @close="emit('close')">
@@ -130,6 +134,7 @@ const json = computed(() => (result.value ? JSON.stringify(result.value, null, 2
               </template>
             </template>
             <pre v-else-if="tab === 'json'" class="af-result-pre">{{ json }}</pre>
+            <pre v-else-if="tab === 'yaml'" class="af-result-pre">{{ yaml }}</pre>
             <pre v-else-if="tab === 'stdout'" class="af-result-pre">{{ stdout }}</pre>
             <pre v-else-if="tab === 'stderr'" class="af-result-pre">{{ stderr }}</pre>
           </div>
