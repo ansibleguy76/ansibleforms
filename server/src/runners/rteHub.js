@@ -12,6 +12,7 @@
 // Any node may launch a job (runners/rte.js) : it writes the job as always, and the node holding
 // the socket sends it - at once when it is the same node, else within two seconds (dispatch).
 import WebSocket, { WebSocketServer } from "ws";
+import express from "express";
 import logger from "../lib/logger.js";
 import mysql from "../models/db.model.js";
 import Job from "../models/job.model.js";
@@ -23,6 +24,7 @@ import { nodeId, NODE_DEAD_SECONDS } from "../lib/role.js";
 import { appVersion } from "../lib/version.js";
 import { safeParse } from "../lib/safejson.js";
 import { safeEqual } from "../lib/safeEqual.js";
+import { compileTrustProxy } from "../lib/trustProxy.js";
 import { resolveJobSecrets } from "../lib/jobSecrets.js";
 import { sealJobSecrets } from "../lib/sealedSecrets.js";
 import { forgetJobSecrets } from "../lib/outputMask.js";
@@ -648,13 +650,62 @@ export async function registerHandler(req, res) {
 const upgrades = new Map();
 const UPGRADE_WINDOW_MS = 60 * 1000;
 
+// a scratch express app carrying TRUST_PROXY as 'trust proxy', compiled again when the value
+// changes (the settings page applies it without a restart) : { raw, app } (clientAddress)
+let trustApp = { raw: undefined, app: null };
+
+/**
+ * The client's address of an upgrade request, as express answers req.ip for every other request
+ * of this app : the TCP peer, unless TRUST_PROXY names the reverse proxies allowed to report the
+ * client in X-Forwarded-For (lib/trustProxy.js). An upgrade never reaches express, so the same
+ * 'trust proxy' value is compiled on a scratch app and its req.ip getter asked : the same code,
+ * the same answer, and a header a client writes itself is never believed unless TRUST_PROXY
+ * says so.
+ *
+ * Args:
+ *   req (IncomingMessage): the upgrade request (headers, socket).
+ *
+ * Returns:
+ *   string: the client's address ("?" when the socket has none any more).
+ */
+export function clientAddress(req) {
+  // step 1 : the scratch app, compiled again when TRUST_PROXY changed ; an invalid value trusts
+  // nothing, as applyTrustProxy falls back to
+  const raw = process.env.TRUST_PROXY;
+  if (!trustApp.app || trustApp.raw !== raw) {
+    let value;
+    try {
+      value = compileTrustProxy(raw);
+    } catch {
+      value = false;
+    }
+    const app = express();
+    app.set("trust proxy", value);
+    trustApp = { raw, app };
+  }
+  // step 2 : express's own req.ip, on a request made of this one's headers and socket
+  const view = Object.create(express.request, {
+    app: { value: trustApp.app },
+    headers: { value: req.headers || {} },
+    socket: { value: req.socket },
+    connection: { value: req.socket },
+  });
+  try {
+    return view.ip || req.socket?.remoteAddress || "?";
+  } catch {
+    return req.socket?.remoteAddress || "?";
+  }
+}
+
 /**
  * Whether an address may try the RTE socket now : the ceiling of the registration call
  * (AUTH_RATE_LIMIT a minute, lib/authRateLimit.js, 0 turns it off), counted per address on this
- * node, so a flood of upgrades stops before any token or database is looked at.
+ * node, so a flood of upgrades stops before any token or database is looked at. Each try counts
+ * at once (a burst of tries in flight is stopped too) ; one that was let in is taken back
+ * (upgradeSucceeded), so an RTE that reconnects often never locks itself out.
  *
  * Args:
- *   ip (string): the caller's address (the socket's, as express sees req.ip).
+ *   ip (string): the caller's address (clientAddress, as express sees req.ip).
  *   now (number): the time, in ms (the tests set it).
  *
  * Returns:
@@ -677,6 +728,18 @@ export function upgradeAllowed(ip, now = Date.now()) {
 }
 
 /**
+ * Takes back the try of an upgrade that was let in : only the refused ones count against an
+ * address's ceiling.
+ *
+ * Args:
+ *   ip (string): the caller's address, as upgradeAllowed() was asked with.
+ */
+export function upgradeSucceeded(ip) {
+  const w = upgrades.get(String(ip || "?"));
+  if (w && w.count > 0) w.count--;
+}
+
+/**
  * The upgrade of an HTTP request to the RTE socket (outbound RTEs) : authenticated, then taken.
  * Other upgrades are left for whoever else listens. Too many from one address : 429.
  *
@@ -691,23 +754,26 @@ export function upgradeAllowed(ip, now = Date.now()) {
 export function handleUpgrade(req, socket, head) {
   const pathname = new URL(req.url, "http://x").pathname;
   if (pathname !== `${appConfig.baseUrl || ""}${APP_SOCKET_PATH}`) return false;
-  // the address of the socket, not a header a caller writes itself : as the registration call's
-  // limiter counts (express without trust proxy)
-  if (!upgradeAllowed(req.socket.remoteAddress)) {
+  // the client's address as express sees req.ip (TRUST_PROXY), so the registration call's limiter
+  // and this one count the same address ; never a forwarded header nobody said to trust
+  const ip = clientAddress(req);
+  if (!upgradeAllowed(ip)) {
     const body = JSON.stringify({ error: "Too many requests, slow down" });
     socket.write(`HTTP/1.1 429 Too Many Requests\r\nContent-Type: application/json\r\nContent-Length: ${Buffer.byteLength(body)}\r\nConnection: close\r\n\r\n${body}`);
     socket.destroy();
     return true;
   }
-  authenticate(req.headers, { ip: req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress })
+  authenticate(req.headers, { ip })
     .then((res) => {
       if (!res.runner) {
-        logger.warning(`Refused an RTE socket from ${req.socket.remoteAddress}: ${res.error}`);
+        logger.warning(`Refused an RTE socket from ${ip}: ${res.error}`);
         const body = JSON.stringify({ error: res.error });
         socket.write(`HTTP/1.1 ${res.status} Refused\r\nContent-Type: application/json\r\nContent-Length: ${Buffer.byteLength(body)}\r\nConnection: close\r\n\r\n${body}`);
         socket.destroy();
         return;
       }
+      // let in : this try does not count against the address
+      upgradeSucceeded(ip);
       wss.handleUpgrade(req, socket, head, (ws) => adopt(new Session(ws, `rte '${res.runner.name}'`), res.runner, "outbound"));
     })
     .catch((e) => {

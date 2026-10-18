@@ -369,6 +369,39 @@ describe("the socket's door", () => {
     }
   });
 
+  test("an upgrade let in does not count against its address ; a refused one does", () => {
+    const before = appConfig.authRateLimit;
+    try {
+      appConfig.authRateLimit = 2;
+      const t = 2_000_000;
+      for (let i = 0; i < 5; i++) {
+        assert.equal(hub.upgradeAllowed("10.8.8.8", t), true, `reconnect ${i + 1}`);
+        hub.upgradeSucceeded("10.8.8.8");
+      }
+      assert.deepEqual([1, 2, 3].map(() => hub.upgradeAllowed("10.8.8.8", t)), [true, true, false]);
+    } finally {
+      appConfig.authRateLimit = before;
+    }
+  });
+
+  test("the client's address follows TRUST_PROXY, as express's req.ip does", () => {
+    const before = process.env.TRUST_PROXY;
+    const req = { headers: { "x-forwarded-for": "203.0.113.7, 10.0.0.2" }, socket: { remoteAddress: "10.0.0.1" } };
+    try {
+      delete process.env.TRUST_PROXY;
+      assert.equal(hub.clientAddress(req), "10.0.0.1", "no trust proxy : the TCP peer, the header ignored");
+      process.env.TRUST_PROXY = "1";
+      assert.equal(hub.clientAddress(req), "10.0.0.2", "one hop trusted");
+      process.env.TRUST_PROXY = "10.0.0.0/8";
+      assert.equal(hub.clientAddress(req), "203.0.113.7", "the proxies by range");
+      process.env.TRUST_PROXY = "not-an-address";
+      assert.equal(hub.clientAddress(req), "10.0.0.1", "invalid : nothing trusted");
+    } finally {
+      if (before === undefined) delete process.env.TRUST_PROXY;
+      else process.env.TRUST_PROXY = before;
+    }
+  });
+
   test("an inbound RTE that refuses the socket is dialed again : its close comes", async () => {
     const server = http.createServer();
     server.on("upgrade", (req, socket) => {
