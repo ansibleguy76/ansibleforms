@@ -1371,6 +1371,7 @@ export default {
       pendingSince: 'Demandé le',
       approve: 'Approuver',
       reviewApproval: "Examiner l'approbation",
+      waitingTitle: "Runners en attente d'approbation ({count})",
       reject: 'Refuser',
       approved: '{name} est approuvé : il reçoit des jobs dès maintenant',
       rejected: '{name} a été refusé et supprimé',

@@ -1361,6 +1361,7 @@ export default {
       pendingSince: 'Aangevraagd op',
       approve: 'Goedkeuren',
       reviewApproval: 'Goedkeuring beoordelen',
+      waitingTitle: 'Runners die wachten op goedkeuring ({count})',
       reject: 'Afwijzen',
       approved: '{name} is goedgekeurd: hij krijgt vanaf nu jobs',
       rejected: '{name} is afgewezen en verwijderd',

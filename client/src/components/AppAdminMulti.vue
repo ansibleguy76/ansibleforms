@@ -131,7 +131,6 @@ const emit = defineEmits([
   'allow_sign_in',
   'move_up',
   'move_down',
-  'review',
 ]);
 
 // PROPS
@@ -337,7 +336,13 @@ async function loadItems(force = true) {
   // this was the other half.) Assigning the new list when it arrives also removes
   // the "no data" flicker.
   resetSelection();
-  itemList.value = await loadList(objectType, isFlat, undefined, props.settings.listQuery || '');
+  // the rows the list shows : all, or those settings.rowFilter keeps (the runners waiting for
+  // approval are in a table of their own above it)
+  const rows = await loadList(objectType, isFlat, undefined, props.settings.listQuery || '');
+  itemList.value =
+    typeof props.settings.rowFilter === 'function' && Array.isArray(rows)
+      ? rows.filter(props.settings.rowFilter)
+      : rows;
   // kept for the records' pages : which buttons a record has, before it is read (lib/recordButtons.js)
   rememberRows(objectType, itemList.value);
   // Drop selected rows that are no longer there. resetSelection() clears the SINGLE
@@ -1374,10 +1379,6 @@ function openRecordPage(item) {
 }
 
 function onDataTableRowClick(item) {
-  // a row the page handles itself (settings.rowClickAction : the name of an event) : a runner
-  // waiting for approval opens its review, not its page
-  const own = props.settings.rowClickAction?.(item);
-  if (own) return emit(own, item);
   if (openRecordPage(item)) return;
   if (!rowClickSelects.value) {
     activeRowId.value = item[idKey];
@@ -1539,6 +1540,8 @@ defineExpose({
       <AppSkeleton v-if="loading" shape="buttons" :widths="toolbarRoom" />
     </template>
     <template #default>
+      <!-- the page's own block above the list (the runners waiting for approval) -->
+      <slot name="beforeTable"></slot>
       <BsDataTable
         v-if="!loading && itemList != undefined"
         framed

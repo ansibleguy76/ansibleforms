@@ -1348,6 +1348,7 @@ export default {
       pendingSince: 'Asked on',
       approve: 'Approve',
       reviewApproval: 'Review approval',
+      waitingTitle: 'Runners waiting for approval ({count})',
       reject: 'Reject',
       approved: '{name} is approved: it takes jobs from now on',
       rejected: '{name} was rejected and removed',

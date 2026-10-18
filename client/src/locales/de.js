@@ -1368,6 +1368,7 @@ export default {
       pendingSince: 'Angefragt am',
       approve: 'Freigeben',
       reviewApproval: 'Genehmigung prüfen',
+      waitingTitle: 'Runner warten auf Freigabe ({count})',
       reject: 'Ablehnen',
       approved: '{name} ist freigegeben: sie erhält ab jetzt Jobs',
       rejected: '{name} wurde abgelehnt und entfernt',

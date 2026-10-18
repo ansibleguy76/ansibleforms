@@ -1719,6 +1719,7 @@ export default {
       pendingSince: '请求时间',
       approve: '批准',
       reviewApproval: '审核审批',
+      waitingTitle: '等待批准的运行器 ({count})',
       reject: '拒绝',
       approved: '{name} 已批准：从现在起接收作业',
       rejected: '{name} 已被拒绝并删除',

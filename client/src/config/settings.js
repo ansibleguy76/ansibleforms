@@ -2523,8 +2523,8 @@ export default function getSettings(t) {
       }),
       // a runner has its own page (pages/admin/runner.vue) : its row and Edit open it, New the wizard
       openPage: (item) => `/settings/runners/${item.id}`,
-      // a runner waiting for approval : its row opens the review (runners.vue), not its page
-      rowClickAction: (item) => (Number(item?.pending) ? 'review' : null),
+      // the runners waiting for approval are in a table of their own above the list (runners.vue)
+      rowFilter: (item) => !Number(item?.pending),
       // in the row menu : editing, the test, turning it on or off, its token or password (on its
       // page), then Delete last, each apart
       actions: [
@@ -2537,23 +2537,13 @@ export default function getSettings(t) {
           dividerBefore: true,
         },
         {
-          // an RTE that asked to join : its review (who it says it is, Approve or Reject), as a
-          // job waiting for approval ; the row opens it too (rowClickAction)
-          name: 'review',
-          title: t('settings.runners.reviewApproval'),
-          icon: 'hourglass-half',
-          color: 'change',
-          dividerBefore: true,
-          shownWhen: (m) => !!Number(m.pending),
-        },
-        {
           // only the one that changes it : Enable on a runner turned off, Disable on one turned on
           name: 'enable',
           title: t('settings.runners.enable'),
           icon: 'toggle-on',
           color: 'edit',
           dividerBefore: true,
-          shownWhen: (m) => !m.enabled && !Number(m.pending),
+          shownWhen: (m) => !m.enabled,
           update: () => ({ enabled: 1 }),
         },
         {
@@ -2562,7 +2552,7 @@ export default function getSettings(t) {
           icon: 'toggle-off',
           color: 'edit',
           dividerBefore: true,
-          shownWhen: (m) => !!m.enabled && !Number(m.pending),
+          shownWhen: (m) => !!m.enabled,
           update: () => ({ enabled: 0 }),
         },
         {
@@ -2613,13 +2603,6 @@ export default function getSettings(t) {
           required: true,
           filterable: true,
           help: t('settings.runners.nameHelp'),
-          // an RTE that asked to join : its name, and that it waits for approval (escaped, v-html)
-          render: (v, r) =>
-            esc(v ?? '') +
-            (Number(r?.pending)
-              ? ' ' + pill(PILL.orange, t('settings.runners.pending'), t('settings.runners.pendingHint'))
-              : ''),
-          sortValue: (r) => r?.name || '',
         },
         {
           // RTE, AWX, AAP or Ascender : one choice, radio buttons (not stored : the type and the
