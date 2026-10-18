@@ -4,9 +4,15 @@ import path from 'path';
 import { parse } from 'shell-quote';
 import config from '../../config/app.config.js';
 import logger from './logger.js';
+import { playbookEnv } from './playbookEnv.js';
 var Cmd = function(){
 
 }
+
+// how long a command may run when the caller gives no time (executeSilentCommand), and how long
+// a command asked to stop (SIGTERM) gets to end before it is killed (SIGKILL)
+Cmd.DEFAULT_TIMEOUT_SECONDS = 60
+Cmd.KILL_GRACE_MS = 5000
 
 /**
  * Stops a command and every process it started : it runs detached, in a process group of its
@@ -14,8 +20,9 @@ var Cmd = function(){
  *
  * Args:
  *   pid (number): the command's process id.
+ *   signal (string): the signal, SIGTERM by default (SIGKILL : one that ignored SIGTERM).
  */
-Cmd.killChildren = (pid) => {
+Cmd.killChildren = (pid, signal = 'SIGTERM') => {
   // Defensive: pid must be numeric. Anything else is an injection attempt or a programming bug.
   const numericPid = parseInt(pid, 10);
   if (!Number.isInteger(numericPid) || numericPid <= 0) {
@@ -23,11 +30,11 @@ Cmd.killChildren = (pid) => {
     return;
   }
   try {
-    process.kill(-numericPid, 'SIGTERM');
+    process.kill(-numericPid, signal);
   } catch (e) {
     // not a group leader (or gone already) : the process itself
     try {
-      process.kill(numericPid, 'SIGTERM');
+      process.kill(numericPid, signal);
     } catch (e2) {
       logger.debug(`Cmd.killChildren: process.kill failed for pid ${numericPid}: ${e2.message}`);
     }
@@ -89,32 +96,6 @@ Cmd.runCommand = (file, args = []) => {
 };
 
 /**
- * Runs a command and gives its output, never through a shell (an argument can not become a
- * second command). Its output is masked (an address's password) before it is kept.
- *
- * Args:
- *   cmd (object): what to run :
- *     command (string): the command line, split by Cmd.splitCommand ; its $NAMEs from env.
- *     directory (string): where it runs.
- *     description (string): for the log.
- *     maskedCommand (string): the command as it is logged and shown, when the command itself
- *       must not be (none : the command as written, its $NAMEs not filled in).
- *     env (object): variables added to its environment (and its $NAMEs).
- *     stdinFile (string): a file its input is read from (the shell's < file).
- *     stdoutFile (string): a file its output is written to instead of being kept (the shell's
- *       > file).
- *   silent (boolean): not logged as a notice.
- *   singleLine (boolean): only its first line, and no "Running command" line.
- *   timeoutSeconds (number): stopped after this long.
- *
- * Returns:
- *   Promise<string>: its output.
- *
- * Raises:
- *   Error: it could not start, ended with another code than 0, or ran out of time ; the message
- *     is its output.
- */
-/**
  * The folder a command runs in, when it is one a command may run in : the server's own folder, or
  * one in the repositories folder (a clone). Anything else is refused, whatever a caller passes.
  *
@@ -134,7 +115,39 @@ Cmd.workingFolder = (directory) => {
   throw new Error(`A command can not run in '${resolved}': only in the server's folder or a repository's`);
 };
 
-Cmd.executeSilentCommand = async (cmd,silent=false,singleLine=false,timeoutSeconds=60) => {
+/**
+ * Runs a command and gives its output, never through a shell (an argument can not become a
+ * second command). Its output is masked (an address's password) before it is kept.
+ *
+ * Args:
+ *   cmd (object): what to run :
+ *     command (string): the command line, split by Cmd.splitCommand ; its $NAMEs from env.
+ *     directory (string): where it runs.
+ *     description (string): for the log.
+ *     maskedCommand (string): the command as it is logged and shown, when the command itself
+ *       must not be (none : the command as written, its $NAMEs not filled in).
+ *     env (object): variables added to its environment (and its $NAMEs).
+ *     stdinFile (string): a file its input is read from (the shell's < file).
+ *     stdoutFile (string): a file its output is written to instead of being kept (the shell's
+ *       > file).
+ *   silent (boolean): not logged as a notice.
+ *   singleLine (boolean): only its first line, and no "Running command" line.
+ *   timeoutSeconds (number): stopped after this long (SIGTERM, then SIGKILL when it does not
+ *     end within Cmd.KILL_GRACE_MS).
+ *
+ * It runs with the environment a playbook gets (lib/playbookEnv.js) : the server's, without the
+ * variables AnsibleForms reads itself (ENCRYPTION_SECRET, DB_PASSWORD, ACCESS_TOKEN_SECRET,
+ * RTE_TOKEN...), so git, a credential helper or a dump tool never sees them ; PATH, HOME, the
+ * proxies, GIT_* and SSH_* are kept, and cmd.env is added on top.
+ *
+ * Returns:
+ *   Promise<string>: its output.
+ *
+ * Raises:
+ *   Error: it could not start, ended with another code than 0, ran out of time, or its output
+ *     file could not be written ; the message is its output.
+ */
+Cmd.executeSilentCommand = async (cmd,silent=false,singleLine=false,timeoutSeconds=Cmd.DEFAULT_TIMEOUT_SECONDS) => {
   return new Promise((resolve,reject)=>{
     try{
       var directory = Cmd.workingFolder(cmd.directory)
@@ -150,11 +163,22 @@ Cmd.executeSilentCommand = async (cmd,silent=false,singleLine=false,timeoutSecon
       if(!silent){
         logger.notice(`Running command: ${maskedCommand}`)
       }
-      // detached : in a process group of its own, so a timeout stops it and what it started
-      var child = spawn(basecmd,parameters,{stdio:[cmd.stdinFile ? "pipe" : "ignore","pipe","pipe"],cwd:directory,detached:true,env:{...process.env,...env}});
+      // detached : in a process group of its own, so a timeout stops it and what it started ;
+      // with the environment a playbook gets : none of the app's own secrets
+      var child = spawn(basecmd,parameters,{stdio:[cmd.stdinFile ? "pipe" : "ignore","pipe","pipe"],cwd:directory,detached:true,env:{...playbookEnv(process.env),...env}});
+      // set by the timeout itself : a SIGTERM sent by someone else is not "timed out"
+      var timedOut = false
+      var killTimer = null
       var timeout = setTimeout(()=>{
+        timedOut = true
         Cmd.killChildren(child.pid)
+        // one that ignores SIGTERM (or a child of it) is killed after a grace period
+        killTimer = setTimeout(()=>Cmd.killChildren(child.pid, 'SIGKILL'), Cmd.KILL_GRACE_MS)
       },timeoutSeconds*1000)
+      const stopTimers = () => {
+        clearTimeout(timeout)
+        clearTimeout(killTimer)
+      }
       if (cmd.stdinFile) {
         const input = fs.createReadStream(cmd.stdinFile)
         input.on("error", (e) => { out.push(e.message); child.stdin.destroy() })
@@ -162,8 +186,24 @@ Cmd.executeSilentCommand = async (cmd,silent=false,singleLine=false,timeoutSecon
         input.pipe(child.stdin)
       }
       var written = null
+      // the output file could not be written (a full disk, a folder that went away) : without a
+      // listener the stream's 'error' would crash the process
+      var writeError = null
       if (cmd.stdoutFile) {
         written = fs.createWriteStream(cmd.stdoutFile)
+        written.on('error', (e) => {
+          if (writeError) return
+          writeError = e
+          stopTimers()
+          logger.error(`${description}: writing ${cmd.stdoutFile} failed: ${e.message}`)
+          // nobody reads its output any more : stopped, and what it still writes is dropped
+          child.stdout.unpipe(written)
+          child.stdout.resume()
+          Cmd.killChildren(child.pid)
+          killTimer = setTimeout(()=>Cmd.killChildren(child.pid, 'SIGKILL'), Cmd.KILL_GRACE_MS)
+          out.push(`Writing the output to ${cmd.stdoutFile} failed: ${e.message}`)
+          reject(new Error(out.map((line)=>line.replace(/\n+$/g,'')).join("\n")))
+        })
         child.stdout.pipe(written)
       } else {
         child.stdout.on('data',function(data){
@@ -177,17 +217,29 @@ Cmd.executeSilentCommand = async (cmd,silent=false,singleLine=false,timeoutSecon
       // 'close', not 'exit' : 'exit' can fire before the output is read, and a quick command
       // (git status) then resolves with no output at all
       child.on('close',async function(code){
-        clearTimeout(timeout)
+        if (writeError) {
+          // rejected already ; only the kill that may still be pending is left
+          clearTimeout(killTimer)
+          return
+        }
+        stopTimers()
         if (!started) return
-        // the file it wrote is complete before anyone reads it
-        if (written) await new Promise((r) => written.end(r))
+        // the file it wrote is complete before anyone reads it (a stream that failed meanwhile
+        // never calls back : its 'error' ends it)
+        if (written) {
+          await new Promise((r) => {
+            written.once('error', () => r())
+            written.end(r)
+          })
+          if (writeError) return
+        }
         logger.info(description + " finished: " + code)
         out = out.map((line)=>{
           return line.replace(/\n+$/g,'').replace(/\r\n/g,'')
         })
         out.push("")
         if(code!==0){
-          if(child.signalCode=='SIGTERM'){
+          if(timedOut){
             out.push("The command timed out")
           }
           reject(new Error(singleLine ? out[0] : out.join("\n")))
@@ -198,7 +250,7 @@ Cmd.executeSilentCommand = async (cmd,silent=false,singleLine=false,timeoutSecon
       // it could not start (the program is not installed, the folder does not exist)
       child.on('error',function(data){
         started = false
-        clearTimeout(timeout)
+        stopTimers()
         if (data?.code === "ENOENT") out.push(`'${basecmd}' was not found, or the folder '${directory}' does not exist`)
         else out.push(Cmd.maskUrlCredentials(data.toString()))
         reject(new Error(out.join('\n')))
