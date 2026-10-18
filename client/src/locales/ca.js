@@ -345,8 +345,6 @@ export default {
       copied: 'Token copiat',
       once: 'Copieu-lo ara: només es mostra un cop. Guardeu-lo com una contrasenya.',
       example: "Envia'l a la capçalera Authorization de cada crida a l'API:",
-      notForType:
-        "Els tokens de l'API es creen amb la teva contrasenya, així que no estan disponibles per als comptes {type}.",
       failed: "No s'ha pogut crear el token. Comprova la teva contrasenya.",
       another: 'Crea un altre token',
       name: 'Nom',

@@ -347,8 +347,6 @@ export default {
       copied: 'Token copié',
       once: "Copiez-le maintenant : il n'est affiché qu'une fois. Gardez-le comme un mot de passe.",
       example: "Envoyez-le dans l'en-tête Authorization de chaque appel API :",
-      notForType:
-        'Les tokens API sont créés avec votre mot de passe : ils ne sont pas disponibles pour les comptes {type}.',
       failed: "Le token n'a pas pu être créé. Vérifiez votre mot de passe.",
       another: 'Créer un autre token',
       name: 'Nom',

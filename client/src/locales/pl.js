@@ -2934,7 +2934,8 @@ export default {
     runLaterOneTime: 'Uruchom później (jednorazowo)',
     store: 'Zapisz',
     copyExtravars: 'Kopiuj extravars',
-    unevaluated: 'Nie obliczono: {fields}...',
+    unevaluated:
+      'Pole {fields} nie zostało obliczone... | Pola {fields} nie zostały obliczone... | Pól {fields} nie obliczono...',
     itemCount: '{n} element | {n} elementy | {n} elementów',
     copiedToClipboard: 'Skopiowano do schowka',
     copiedYamlToClipboard: 'Skopiowano zamodelowany YAML do schowka',

@@ -345,8 +345,6 @@ export default {
       copied: 'Token copiado',
       once: 'Copie-o agora: só é mostrado uma vez. Guarde-o como uma palavra-passe.',
       example: 'Envie-o no cabeçalho Authorization de cada chamada à API:',
-      notForType:
-        'Os tokens de API são criados com a sua palavra-passe, por isso não estão disponíveis para contas {type}.',
       failed: 'Não foi possível criar o token. Verifique a sua palavra-passe.',
       another: 'Criar outro token',
       name: 'Nome',
