@@ -760,6 +760,7 @@ export default {
       'Deze pagina draait nog een oudere build dan de server. Herlaad de pagina om de nieuwe versie te krijgen.',
   },
   common: {
+    downloadFailed: 'Het downloaden is mislukt.',
     jumpToLatest: 'Naar nieuwste',
     newLines: 'Nieuwe regels',
     filter: 'Filter',

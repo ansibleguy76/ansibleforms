@@ -126,7 +126,8 @@ async function download() {
   try {
     await Helpers.downloadFile(`/api/v2/log/download`);
   } catch (err) {
-    toast.error(err.message);
+    // the server's reason (downloadFile decodes its error body), else a translated fallback
+    toast.error(Helpers.parseAxiosResponseError(err, t('common.downloadFailed')));
   }
 }
 onMounted(() => load(true));

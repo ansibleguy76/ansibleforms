@@ -1568,7 +1568,8 @@ async function download(id) {
   try {
     await Helpers.downloadFile(`/api/v2/job/${id}/download`);
   } catch (err) {
-    toast.error(err.toString());
+    // the server's reason (downloadFile decodes its error body), else a translated fallback
+    toast.error(Helpers.parseAxiosResponseError(err, t('common.downloadFailed')));
   }
 }
 // get job output

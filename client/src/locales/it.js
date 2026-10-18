@@ -761,6 +761,7 @@ export default {
       'Questa pagina usa ancora una build più vecchia del server. Ricarica la pagina per ottenere la nuova versione.',
   },
   common: {
+    downloadFailed: 'Il download non è riuscito.',
     jumpToLatest: 'Vai alle ultime',
     newLines: 'Nuove righe',
     filter: 'Filtra',

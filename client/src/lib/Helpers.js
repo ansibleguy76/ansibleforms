@@ -581,10 +581,48 @@ const Helpers = {
    *
    * Returns:
    *   Promise<void>: resolves once the browser was handed the file ; rejects with the axios error.
+   *
+   * Raises:
+   *   AxiosError: the request failed. Its response body is decoded first : asked for as bytes,
+   *     the server's JSON error ({ error, details }) arrived as an ArrayBuffer, so
+   *     parseAxiosResponseError found no message in it and every caller showed a bare
+   *     "Request failed with status code 403". Decoded, the caller shows the server's reason,
+   *     or its own translated fallback when there is none.
    */
   async downloadFile(url) {
-    const response = await axios({ method: 'get', url, responseType: 'arraybuffer' });
-    Helpers.forceFileDownload(response);
+    try {
+      const response = await axios({ method: 'get', url, responseType: 'arraybuffer' });
+      Helpers.forceFileDownload(response);
+    } catch (err) {
+      Helpers.decodeArrayBufferError(err);
+      throw err;
+    }
+  },
+  /**
+   * Turns an error response read as bytes back into what the server sent : its JSON object
+   * when the body is JSON, else its text ; an empty body becomes undefined. Changed in place.
+   *
+   * Args:
+   *   err (object): an axios error, its response.data possibly an ArrayBuffer.
+   *
+   * Returns:
+   *   object: the same error.
+   */
+  decodeArrayBufferError(err) {
+    const data = err?.response?.data;
+    if (!(data instanceof ArrayBuffer) && !ArrayBuffer.isView(data)) return err;
+    try {
+      const text = new TextDecoder('utf-8').decode(data);
+      try {
+        err.response.data = JSON.parse(text);
+      } catch {
+        // not JSON (a proxy's html error page, plain text) : no message to read from it
+        err.response.data = text.trim().startsWith('<') ? undefined : text || undefined;
+      }
+    } catch {
+      err.response.data = undefined;
+    }
+    return err;
   },
   forceFileDownload(response) {
     const url = window.URL.createObjectURL(new Blob([response.data]));

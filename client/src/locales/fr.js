@@ -763,6 +763,7 @@ export default {
       'Cette page utilise encore une build plus ancienne que le serveur. Rechargez la page pour obtenir la nouvelle version.',
   },
   common: {
+    downloadFailed: 'Le téléchargement a échoué.',
     jumpToLatest: 'Aller aux dernières',
     newLines: 'Nouvelles lignes',
     filter: 'Filtrer',

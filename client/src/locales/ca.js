@@ -760,6 +760,7 @@ export default {
       'Aquesta pàgina encara executa una compilació més antiga que la del servidor. Torna a carregar la pàgina per obtenir la versió nova.',
   },
   common: {
+    downloadFailed: 'La baixada ha fallat.',
     jumpToLatest: 'Ves al més recent',
     newLines: 'Línies noves',
     filter: 'Filtre',

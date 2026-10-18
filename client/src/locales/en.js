@@ -753,6 +753,7 @@ export default {
     cacheMismatchMsg: 'This page still runs an older build than the server. Reload the page to get the new version.',
   },
   common: {
+    downloadFailed: 'The download failed.',
     jumpToLatest: 'Jump to latest',
     newLines: 'New lines',
     filter: 'Filter',

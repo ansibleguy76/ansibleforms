@@ -755,6 +755,7 @@ export default {
       'このページはサーバーより古いビルドで動作しています。ページを再読み込みして新しいバージョンを取得してください。',
   },
   common: {
+    downloadFailed: 'ダウンロードに失敗しました。',
     jumpToLatest: '最新へ移動',
     newLines: '新しい行',
     filter: 'フィルター',

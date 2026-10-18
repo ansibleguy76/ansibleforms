@@ -743,6 +743,7 @@ export default {
     cacheMismatchMsg: '此页面运行的构建仍比服务器的旧。请重新加载页面以获取新版本。',
   },
   common: {
+    downloadFailed: '下载失败。',
     jumpToLatest: '跳到最新',
     newLines: '新行',
     filter: '筛选',

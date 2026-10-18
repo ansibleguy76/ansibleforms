@@ -761,6 +761,7 @@ export default {
       'Esta página ainda executa uma build mais antiga do que a do servidor. Recarregue a página para obter a nova versão.',
   },
   common: {
+    downloadFailed: 'A transferência falhou.',
     jumpToLatest: 'Ir para as mais recentes',
     newLines: 'Linhas novas',
     filter: 'Filtrar',

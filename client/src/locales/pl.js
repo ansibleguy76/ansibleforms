@@ -758,6 +758,7 @@ export default {
       'Ta strona nadal działa na starszej kompilacji niż serwer. Przeładuj stronę, aby uzyskać nową wersję.',
   },
   common: {
+    downloadFailed: 'Pobieranie nie powiodło się.',
     jumpToLatest: 'Przejdź do najnowszych',
     newLines: 'Nowe wiersze',
     filter: 'Filtr',
