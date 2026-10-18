@@ -1792,7 +1792,8 @@ export default {
       pendingSince: 'Poproszono',
       approve: 'Zatwierdź',
       reviewApproval: 'Rozpatrz zatwierdzenie',
-      waitingTitle: 'Runnery czekające na zatwierdzenie ({count})',
+      waitingNotice:
+        '{count} Runner czeka na zatwierdzenie: sprawdź odcisk i zatwierdź lub odrzuć | {count} Runnery czekają na zatwierdzenie: sprawdź odciski i zatwierdź lub odrzuć | {count} Runnerów czeka na zatwierdzenie: sprawdź odciski i zatwierdź lub odrzuć',
       reject: 'Odrzuć',
       approved: '{name} jest zatwierdzony: od teraz dostaje zadania',
       rejected: '{name} został odrzucony i usunięty',

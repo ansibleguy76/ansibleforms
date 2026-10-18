@@ -1361,7 +1361,8 @@ export default {
       pendingSince: 'Aangevraagd op',
       approve: 'Goedkeuren',
       reviewApproval: 'Goedkeuring beoordelen',
-      waitingTitle: 'Runners die wachten op goedkeuring ({count})',
+      waitingNotice:
+        '{count} Runner wacht op goedkeuring: controleer de vingerafdruk en keur goed of wijs af | {count} Runners wachten op goedkeuring: controleer de vingerafdrukken en keur goed of wijs af',
       reject: 'Afwijzen',
       approved: '{name} is goedgekeurd: hij krijgt vanaf nu jobs',
       rejected: '{name} is afgewezen en verwijderd',
