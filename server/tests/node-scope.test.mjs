@@ -33,8 +33,10 @@ beforeEach(() => {
       lockRow = { data: params[1] };
       return { affectedRows: 1 };
     }
-    if (/^UPDATE AnsibleForms.`designer_lock` SET data=\?, created=NOW\(\) WHERE id=\? AND JSON_VALID\(data\) AND JSON_UNQUOTE/.test(sql)) {
-      if (!holderIs(params[2], params[3])) return { affectedRows: 0 };
+    // taking it : its holder's own, or an admin's force-release record (free)
+    const released = () => { try { return JSON.parse(lockRow?.data).released === true; } catch { return false; } };
+    if (/^UPDATE AnsibleForms.`designer_lock` SET data=\?, created=NOW\(\) WHERE id=\? AND \(\(JSON_VALID\(data\) AND JSON_UNQUOTE/.test(sql)) {
+      if (!holderIs(params[2], params[3]) && !released()) return { affectedRows: 0 };
       lockRow = { data: params[0] };
       return { affectedRows: 1 };
     }
