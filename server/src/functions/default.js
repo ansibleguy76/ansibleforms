@@ -390,7 +390,31 @@ const fnRestJwtSecure = async function(action,url,body,tokenname,jqe=null,sort=n
   }
   return await fnRestAdvanced(action,url,body,headers,jqe,sort,hasBigInt)
 }
-const fnSsh = async function(user,host,cmd,jqe=null){
+// how long fnSsh waits for the remote command (the same default as Cmd.executeSilentCommand),
+// and how long a stopped ssh gets to end before it is killed
+const SSH_TIMEOUT_SECONDS = 60
+const SSH_KILL_GRACE_MS = 5000
+
+/**
+ * Runs a command on a remote host over ssh, and gives its output lines.
+ *
+ * Args:
+ *   user (string): the remote user.
+ *   host (string): the remote host.
+ *   cmd (string): the command, as the remote host's shell reads it.
+ *   jqe (string): a jq expression applied to the output lines (none : the lines).
+ *   timeoutSeconds (number): ssh is stopped after this long.
+ *
+ * Returns:
+ *   Promise<string[]|any>: the output lines (stdout and stderr) and a last `exit(<code>)` line ;
+ *     what jqe made of them when one is given.
+ *
+ * Raises:
+ *   Error: ssh could not start, or ran out of time.
+ */
+const fnSsh = async function(user,host,cmd,jqe=null,timeoutSeconds=SSH_TIMEOUT_SECONDS){
+  // a form's value : anything but a positive number is the default
+  timeoutSeconds = Number(timeoutSeconds) > 0 ? Number(timeoutSeconds) : SSH_TIMEOUT_SECONDS
 
   var result= await new Promise((resolve,reject)=>{
     // Form-controlled values : ssh is run without a shell, so none of them can become a second
@@ -404,33 +428,47 @@ const fnSsh = async function(user,host,cmd,jqe=null){
     child.stdout.setEncoding("utf8");
     child.stderr.setEncoding("utf8");
     var output=[]
-    
+    var timedOut=false
+    var killTimer=null
+    // out of time : asked to stop, then killed when it does not
+    var timeout=setTimeout(()=>{
+      timedOut=true
+      child.kill("SIGTERM")
+      killTimer=setTimeout(()=>child.kill("SIGKILL"),SSH_KILL_GRACE_MS)
+    },timeoutSeconds*1000)
+    const stopTimers=()=>{
+      clearTimeout(timeout)
+      clearTimeout(killTimer)
+    }
+
     // add output eventlistener to the process to save output
     child.stdout.on('data',function(data){
-      // save the output ; but whilst saving, we quickly check the status to detect abort
       data.split(/\r?\n/).forEach(element => {
         output.push(element)
       });
     })
     // add error eventlistener to the process to save output
     child.stderr.on('data',function(data){
-      // save the output ; but whilst saving, we quickly check the status to detect abort
       data.split(/\r?\n/).forEach(element => {
         output.push(element)
       });
     })
-    // add exit eventlistener to the process to handle status update
-    child.on('exit',function(data){
-      output.push(`exit(${data})`)
-
+    // 'close', not 'exit' : 'exit' can fire before the last output is read, which was then lost
+    child.on('close',function(code,signal){
+      stopTimers()
+      if(timedOut){
+        reject(new Error(`ssh to ${destination} timed out after ${timeoutSeconds} seconds`))
+        return
+      }
+      output.push(`exit(${code ?? signal})`)
       resolve(output)
     })
-    // add error eventlistener to the process; set failed
+    // it could not start (ssh is not installed)
     child.on('error',function(data){
-      output.push(Helpers.getError())
+      stopTimers()
       logger.error(inspect(data))
-      reject(output)
-    })  
+      reject(new Error(`ssh to ${destination} failed: ${Helpers.getError(data)}`))
+    })
   })
   if(jqe){
     result=await jq.run(combinedJqDef+jqe, result, { input:"json",output:"json" })
