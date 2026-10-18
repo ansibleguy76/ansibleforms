@@ -107,6 +107,21 @@ export function certFingerprint(pem) {
   }
 }
 
+/**
+ * The address an RTE listens on (LISTEN_HOST) : every interface when it is not set, as before ;
+ * 127.0.0.1 keeps a native outbound RTE's probes and metrics on its own host. Read each time an
+ * RTE starts (rte/server.js, rte/socket/rte-socket.js).
+ *
+ * Args:
+ *   env (object): the environment (process.env ; the tests set it).
+ *
+ * Returns:
+ *   string|undefined: the host, undefined for every interface.
+ */
+export function listenHost(env = process.env) {
+  return String(env.LISTEN_HOST || "").trim() || undefined;
+}
+
 // where the app takes an RTE's socket (under BASE_URL), and where an inbound RTE takes the app's
 export const APP_SOCKET_PATH = "/api/v2/rte/socket";
 export const RTE_SOCKET_PATH = "/rte/v1/socket";

@@ -140,6 +140,13 @@ describe("an RTE's certificate", () => {
     assert.equal(certFingerprint(sample), "b10e-d0d7");
   });
 
+  test("the RTE listens on every interface unless LISTEN_HOST names one", async () => {
+    const { listenHost } = await import("../src/rte/socket/protocol.js");
+    assert.equal(listenHost({}), undefined);
+    assert.equal(listenHost({ LISTEN_HOST: " " }), undefined);
+    assert.equal(listenHost({ LISTEN_HOST: "127.0.0.1" }), "127.0.0.1");
+  });
+
   test("sent by the RTE only when it serves HTTPS and the app dials an https RTE_URL", () => {
     const tls = { https: true, httpsCert: Buffer.from(certA) };
     assert.equal(certToSend({ RTE_URL: "https://rte.dmz:8443" }, tls), certA);

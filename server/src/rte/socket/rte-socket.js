@@ -41,7 +41,7 @@ import { FileCache } from "./files.js";
 import {
   SOCKET_CONTRACT, RTE_SOCKET_PATH, CLOSE, WINDOW, MAX_PAYLOAD, REFUSED_CLOSES, REFUSED_STATUSES, REFUSED_REDIAL_MS,
   CONTRACT_REDIAL_MS,
-  socketUrl, fingerprint, certFingerprint,
+  socketUrl, fingerprint, certFingerprint, listenHost,
 } from "./protocol.js";
 
 // ─── settings ─────────────────────────────────────────────────────────────────
@@ -759,8 +759,10 @@ export async function startSocketRte(rteMode) {
     });
   }
 
-  await new Promise((resolve) => server.listen(port, resolve));
-  logger.notice(`RTE '${rteName()}' ${version} (${mode}, files ${filesMode()}) listening on ${httpsConfig.https ? "https" : "http"} port ${port}, token fingerprint ${fingerprint(token)}`);
+  // every interface, unless LISTEN_HOST names one (127.0.0.1 : a native outbound RTE)
+  const host = listenHost();
+  await new Promise((resolve) => server.listen(port, host, resolve));
+  logger.notice(`RTE '${rteName()}' ${version} (${mode}, files ${filesMode()}) listening on ${httpsConfig.https ? "https" : "http"} ${host ? `${host}:` : "port "}${port}, token fingerprint ${fingerprint(token)}`);
   if (mode === "inbound" && httpsConfig.https && httpsConfig.httpsCert) {
     const pem = httpsConfig.httpsCert.toString("utf8");
     logger.notice(`RTE '${rteName()}': certificate fingerprint ${certFingerprint(pem) || "?"}${certToSend() ? " (sent to the app when it registers: the app dials it pinned to it)" : ""}`);

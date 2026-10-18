@@ -27,6 +27,7 @@ import { runAnsibleJob, runnerIdentity, useJobIO } from "./ansible-core.js";
 import dbJobIO from "./jobio-db.js";
 import { abandonJobs } from "./abandon.js";
 import { RTE_CONTRACT } from "./contract.js";
+import { listenHost } from "./socket/protocol.js";
 import { openJobSecrets } from "../lib/sealedSecrets.js";
 import { safeEqual, bearerToken } from "../lib/safeEqual.js";
 import { readinessHandlers } from "../lib/readiness.js";
@@ -297,8 +298,10 @@ export async function startRte({ firstDelayMs, maxDelayMs } = {}) {
   onShutdown("server", () => new Promise((resolve) => server.close(() => resolve())));
   // listening first : on a fresh install the app may still be creating the schema, and an RTE
   // that waits for it without listening looks hung to its probes
-  await new Promise((resolve) => server.listen(port, resolve));
-  logger.notice(`RTE '${runnerIdentity()}' ${version} listening on ${httpsConfig.https ? "https" : "http"} port ${port}, waiting for the database`);
+  // every interface, unless LISTEN_HOST names one
+  const host = listenHost();
+  await new Promise((resolve) => server.listen(port, host, resolve));
+  logger.notice(`RTE '${runnerIdentity()}' ${version} listening on ${httpsConfig.https ? "https" : "http"} ${host ? `${host}:` : "port "}${port}, waiting for the database`);
 
   try {
     // the database and its schema, then the jobs a previous start left running ; false : the
