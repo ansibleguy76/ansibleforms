@@ -1343,6 +1343,7 @@ export default {
       nextRun: 'Next run',
       deleteSchedule: 'Delete schedule',
       runSchedule: 'Run now',
+      oneTimeRanRemoved: "The one-time schedule ran and was removed: its job is on the Jobs page.",
       placeholderName: 'Schedule name',
       oneTimeRun: 'One time run',
       oneTimeRunPlaceholder: 'Run once instead of recurring',

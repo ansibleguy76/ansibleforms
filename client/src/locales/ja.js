@@ -1346,6 +1346,7 @@ export default {
       nextRun: '次回実行',
       deleteSchedule: 'スケジュールを削除',
       runSchedule: '今すぐ実行',
+      oneTimeRanRemoved: "1 回限りのスケジュールが実行され、削除されました。そのジョブはジョブページにあります。",
       placeholderName: 'スケジュール名',
       oneTimeRun: '1 回限りの実行',
       oneTimeRunPlaceholder: '定期実行ではなく 1 回だけ実行',

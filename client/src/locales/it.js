@@ -1355,6 +1355,7 @@ export default {
       nextRun: 'Prossima esecuzione',
       deleteSchedule: 'Elimina pianificazione',
       runSchedule: 'Esegui ora',
+      oneTimeRanRemoved: "La pianificazione singola è stata eseguita e rimossa: il suo job è nella pagina Job.",
       placeholderName: 'Nome pianificazione',
       oneTimeRun: 'Esecuzione una tantum',
       oneTimeRunPlaceholder: 'Esegui una sola volta invece che ricorrente',

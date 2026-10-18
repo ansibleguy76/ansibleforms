@@ -1311,6 +1311,7 @@ export default {
       nextRun: '下次运行',
       deleteSchedule: '删除调度',
       runSchedule: '立即运行',
+      oneTimeRanRemoved: "一次性计划已运行并被删除：其作业在作业页面上。",
       placeholderName: '调度名称',
       oneTimeRun: '一次性运行',
       oneTimeRunPlaceholder: '只运行一次，不重复',

@@ -1363,6 +1363,7 @@ export default {
       nextRun: 'Prochaine exécution',
       deleteSchedule: 'Supprimer la planification',
       runSchedule: 'Exécuter maintenant',
+      oneTimeRanRemoved: "La planification unique s'est exécutée et a été supprimée : sa tâche est sur la page Tâches.",
       placeholderName: 'Nom de la planification',
       oneTimeRun: 'Execution unique',
       oneTimeRunPlaceholder: 'Executer une seule fois au lieu de recurremment',

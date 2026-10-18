@@ -1362,6 +1362,7 @@ export default {
       nextRun: 'Nächster Lauf',
       deleteSchedule: 'Zeitplan loeschen',
       runSchedule: 'Jetzt ausführen',
+      oneTimeRanRemoved: "Der einmalige Zeitplan wurde ausgeführt und entfernt: sein Job steht auf der Seite Jobs.",
       placeholderName: 'Name des Zeitplans',
       oneTimeRun: 'Einmaliger Lauf',
       oneTimeRunPlaceholder: 'Einmal statt wiederkehrend ausfuehren',

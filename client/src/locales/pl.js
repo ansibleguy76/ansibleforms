@@ -1353,6 +1353,7 @@ export default {
       nextRun: 'Następne uruchomienie',
       deleteSchedule: 'Usuń harmonogram',
       runSchedule: 'Uruchom teraz',
+      oneTimeRanRemoved: "Jednorazowy harmonogram został wykonany i usunięty: jego zadanie jest na stronie Zadania.",
       placeholderName: 'Nazwa harmonogramu',
       oneTimeRun: 'Jednorazowe uruchomienie',
       oneTimeRunPlaceholder: 'Uruchom raz zamiast cyklicznie',

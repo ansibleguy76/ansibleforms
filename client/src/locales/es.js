@@ -1361,6 +1361,7 @@ export default {
       nextRun: 'Próxima ejecución',
       deleteSchedule: 'Eliminar programación',
       runSchedule: 'Ejecutar ahora',
+      oneTimeRanRemoved: "La programación de una sola ejecución se ejecutó y se eliminó: su trabajo está en la página de Trabajos.",
       placeholderName: 'Nombre de la programación',
       oneTimeRun: 'Ejecución única',
       oneTimeRunPlaceholder: 'Ejecutar una sola vez en lugar de recurrentemente',

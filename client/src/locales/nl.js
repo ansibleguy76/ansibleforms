@@ -1355,6 +1355,7 @@ export default {
       nextRun: 'Volgende run',
       deleteSchedule: 'Planner verwijderen',
       runSchedule: 'Nu uitvoeren',
+      oneTimeRanRemoved: "De eenmalige planning is uitgevoerd en verwijderd: de job staat op de pagina Jobs.",
       placeholderName: 'Planner naam',
       oneTimeRun: 'Eenmalige uitvoering',
       oneTimeRunPlaceholder: 'Eenmalig uitvoeren in plaats van herhalend',

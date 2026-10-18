@@ -1361,6 +1361,7 @@ export default {
       nextRun: 'Propera execució',
       deleteSchedule: 'Suprimeix la programació',
       runSchedule: 'Executa ara',
+      oneTimeRanRemoved: "La programació d'una sola execució s'ha executat i s'ha eliminat: la seva tasca és a la pàgina de Tasques.",
       placeholderName: 'Nom de la programació',
       oneTimeRun: 'Execució única',
       oneTimeRunPlaceholder: 'Executa una sola vegada en lloc de forma recurrent',

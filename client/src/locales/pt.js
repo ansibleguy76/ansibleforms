@@ -1360,6 +1360,7 @@ export default {
       nextRun: 'Próxima execução',
       deleteSchedule: 'Eliminar agendamento',
       runSchedule: 'Executar agora',
+      oneTimeRanRemoved: "O agendamento único foi executado e removido: o seu trabalho está na página de Trabalhos.",
       placeholderName: 'Nome do agendamento',
       oneTimeRun: 'Execução única',
       oneTimeRunPlaceholder: 'Executar uma vez em vez de forma recorrente',
