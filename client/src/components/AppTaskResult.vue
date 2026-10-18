@@ -118,7 +118,8 @@ const yaml = computed(() => (result.value ? YAML.stringify(result.value) : ''));
           </li>
         </ul>
         <div class="card tab-card-flush-card">
-          <div class="card-body">
+          <!-- a code tab (JSON, YAML, its output) : the grey text fills the card, edge to edge -->
+          <div class="card-body" :class="{ 'af-result-code': tab !== 'details' }">
             <template v-if="tab === 'details'">
               <dl class="af-result-facts">
                 <template v-for="[label, value] in facts" :key="label">
@@ -175,6 +176,13 @@ const yaml = computed(() => (result.value ? YAML.stringify(result.value) : ''));
   text-transform: uppercase;
   color: var(--bs-secondary-color);
   margin-bottom: 0.25rem;
+}
+/* a code tab : no padding, its grey text the card's whole inside, its bottom corners the card's */
+.af-result-code {
+  padding: 0 !important;
+  .af-result-pre {
+    border-radius: 0 0 calc(var(--bs-border-radius) - 1px) calc(var(--bs-border-radius) - 1px);
+  }
 }
 /* a result's text : the output's monospace, scrolling in the dialog rather than stretching it */
 .af-result-pre {
