@@ -47,7 +47,8 @@ import { ref, computed, inject, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useCellPopovers } from '@/composables/useCellPopovers';
-import { csvCell, htmlToText, isSortable, compareRows } from '@/lib/dataTable';
+import { csvCell, isSortable, compareRows } from '@/lib/dataTable';
+import { cellText } from '@/lib/recordSearch';
 import { EMPTY_CELL, orEmpty } from '@/lib/tableCells';
 import BsSearch from './BsSearch.vue';
 import BsColumnPicker from './BsColumnPicker.vue';
@@ -76,20 +77,9 @@ const hidden = ref(new Set());
 const shownColumns = computed(() => props.columns.filter((c) => !hidden.value.has(c.key)));
 // the first column held at the right edge (end) : the room left goes before it ; none, after the last
 const endFrom = computed(() => shownColumns.value.find((c) => c.end)?.key || null);
-/**
- * A cell's plain text : its column's value(), its html() without the tags, or its field.
- *
- * Args:
- *   col (object): the column.
- *   row (object): the item.
- *
- * Returns:
- *   string: the text, empty for none.
- */
-function plain(col, row) {
-  const v = col.html ? htmlToText(col.html(row)) : col.value ? col.value(row) : row[col.key];
-  return v === null || v === undefined ? '' : String(v);
-}
+// a cell's plain text : its column's html() without the tags, its value(), or its field ; the
+// record pages' search reads the same (lib/recordSearch.js), so a tab matches by what it shows
+const plain = cellText;
 // the order : a named column's header clicked sorts by it, A to Z, again Z to A (lib/dataTable.js)
 const sortKey = ref(null);
 const sortDir = ref(1);

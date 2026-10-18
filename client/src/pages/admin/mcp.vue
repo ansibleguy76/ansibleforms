@@ -7,6 +7,7 @@ import Profile from '@/lib/Profile';
 import BaseUrl from '@/lib/BaseUrl';
 import { useEnvVars } from '@/composables/useEnvVars';
 import { useRouteTab } from '@/composables/useRouteTab';
+import { useRecordSearch } from '@/composables/useRecordSearch';
 
 /******************************************************************/
 /*                                                                */
@@ -51,19 +52,11 @@ const mcpOn = computed(() => String(envEdits.value.ENABLE_MCP ?? '0') === '1');
 // A word typed in the title line's search narrows both tabs at once, as Settings > General's :
 // the switches that match (label, name, help), the client configuration when it matches (the
 // endpoint, a client's name), each under its tab's name, the tabs set aside meanwhile.
-const search = ref('');
-const searching = computed(() => !!search.value.trim());
-const matches = (...texts) => {
-  const q = search.value.trim().toLowerCase();
-  return (
-    !q ||
-    texts.some((x) =>
-      String(x ?? '')
-        .toLowerCase()
-        .includes(q),
-    )
-  );
-};
+const { search, searching, matches, shownTabs, tabShown, searchHead } = useRecordSearch({
+  tabs: () => pageTabs.value,
+  activeTab: () => activeTab.value,
+  tabMatch: (key) => (key === 'general' ? shownEnvItems.value.length : clientsMatch.value),
+});
 const envMatch = (e) => matches(e.short, e.name, e.hint, e.description);
 const shownEnvItems = computed(() => envItems.value.filter(envMatch));
 const clientsMatch = computed(() =>
@@ -75,18 +68,6 @@ const clientsMatch = computed(() =>
     ...mcpClients.value.map((c) => c.label),
   ),
 );
-// the tabs shown : the active one, or while searching each one with a match
-const shownTabs = computed(() =>
-  searching.value
-    ? pageTabs.value.filter((tab) => (tab.key === 'general' ? shownEnvItems.value.length : clientsMatch.value))
-    : pageTabs.value.filter((tab) => tab.key === activeTab.value),
-);
-const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
-// while searching, a tab's name over its matches (the first without the line above)
-const searchHead = (key) => {
-  const i = shownTabs.value.findIndex((tab) => tab.key === key);
-  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
-};
 
 // how an MCP client connects : the endpoint under the public root url (Settings > Mail &
 // URL), or this page's own address when none is set

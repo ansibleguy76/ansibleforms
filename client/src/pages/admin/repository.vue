@@ -28,6 +28,7 @@ import { cronValidationMessage } from '@/config/cron';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { recordButtons } from '@/lib/recordButtons';
+import { useRecordSearch } from '@/composables/useRecordSearch';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -322,19 +323,11 @@ const crumbs = computed(() => {
 // the fields of Details, Credentials, Usage and Schedule whose label or help has it (a usage by
 // its name and grey words), the lines of git's outputs with it, each under its tab's name, the
 // tabs set aside meanwhile.
-const search = ref('');
-const searching = computed(() => !!search.value.trim());
-const matches = (...texts) => {
-  const q = search.value.trim().toLowerCase();
-  return (
-    !q ||
-    texts.some((x) =>
-      String(x ?? '')
-        .toLowerCase()
-        .includes(q),
-    )
-  );
-};
+const { search, searching, matches, matchingKeys, shownTabs, tabShown, searchHead } = useRecordSearch({
+  tabs: () => tabs.value,
+  activeTab: () => activeTab.value,
+  tabMatch: (key) => tabMatch(key),
+});
 // each tab's fields : [key, label, help], only those it shows (as the template's v-if)
 const tabFields = computed(() => ({
   details: [
@@ -358,28 +351,11 @@ const tabFields = computed(() => ({
   ],
 }));
 // the fields shown : those whose label or help has the text
-const shownFields = computed(() =>
-  Object.values(tabFields.value)
-    .flat()
-    .filter(([, ...texts]) => matches(...texts))
-    .map(([key]) => key),
-);
+const shownFields = computed(() => matchingKeys(Object.values(tabFields.value).flat()));
 const fieldShown = (key) => shownFields.value.includes(key);
 // an output tab with a line that has the text, a tab of fields with one of them shown
 const tabMatch = (key) =>
   key.endsWith('-output') ? outputLines(key).length > 0 : (tabFields.value[key] || []).some(([k]) => fieldShown(k));
-// the tabs shown : the active one, or while searching each one with a match
-const shownTabs = computed(() =>
-  searching.value
-    ? tabs.value.filter((tab) => tabMatch(tab.key))
-    : tabs.value.filter((tab) => tab.key === activeTab.value),
-);
-const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
-// while searching, a tab's name over its matches (the first without the line above)
-const searchHead = (key) => {
-  const i = shownTabs.value.findIndex((tab) => tab.key === key);
-  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
-};
 
 // ─── actions ──────────────────────────────────────────────────────────────────
 /**

@@ -21,6 +21,7 @@ import State from '@/lib/State';
 import { useEnvVars } from '@/composables/useEnvVars';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
+import { useRecordSearch } from '@/composables/useRecordSearch';
 
 const { t } = useI18n();
 
@@ -177,30 +178,16 @@ async function save() {
 // ─── search ──────────────────────────────────────────────────────────────────
 // A word typed in the title line's search narrows the page, as Settings > General's : the
 // settings whose label or help has it, under the tab's name, the tab set aside meanwhile.
-const search = ref('');
-const searching = computed(() => !!search.value.trim());
-const matches = (...texts) => {
-  const q = search.value.trim().toLowerCase();
-  return (
-    !q ||
-    texts.some((x) =>
-      String(x ?? '')
-        .toLowerCase()
-        .includes(q),
-    )
-  );
-};
+const { search, searching, matchingKeys } = useRecordSearch();
 // each setting by what it can be found by, in the page's order
 const shownFields = computed(() =>
-  [
+  matchingKeys([
     ['theme', t('settings.settingsPage.defaultTheme'), t('settings.settingsPage.defaultThemeHelp')],
     ['language', ...languageEnv.value.flatMap((e) => [e.short, e.name, e.hint, e.description])],
     ['forms', t('settings.interface.formsView'), t('settings.interface.formsViewHelp')],
     ['timezone', t('settings.interface.timezone'), t('settings.interface.timezoneHelp')],
     ['date', t('settings.interface.dateFormat'), t('settings.interface.dateFormatHelp')],
-  ]
-    .filter(([, ...texts]) => matches(...texts))
-    .map(([key]) => key),
+  ]),
 );
 // a tab's settings shown now : searching, those that match ; else its own, when it is open
 const groupShown = (group) =>

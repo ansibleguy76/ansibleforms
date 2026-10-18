@@ -26,6 +26,7 @@ import { useEnvVars } from '@/composables/useEnvVars';
 import { useSettingsRow } from '@/composables/useSettingsRow';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
+import { useRecordSearch } from '@/composables/useRecordSearch';
 
 const { t } = useI18n();
 const authenticated = ref(false);
@@ -72,19 +73,11 @@ const builtin = computed(() =>
 // the Designer's switch when it matches (its name, its help), the own links whose label or
 // address match (and a link holding one that does, so a link inside keeps its place), each
 // under its tab's name, the tabs set aside meanwhile.
-const search = ref('');
-const searching = computed(() => !!search.value.trim());
-const matches = (...texts) => {
-  const q = search.value.trim().toLowerCase();
-  return (
-    !q ||
-    texts.some((x) =>
-      String(x ?? '')
-        .toLowerCase()
-        .includes(q),
-    )
-  );
-};
+const { search, searching, matches, shownTabs, tabShown, searchHead } = useRecordSearch({
+  tabs: () => tabs.value,
+  activeTab: () => activeTab.value,
+  tabMatch: (key) => (key === 'builtin' ? shownBuiltin.value.length : own.value.header_links.some(linkShown)),
+});
 const shownBuiltin = computed(() => builtin.value.filter((e) => matches(e.short, e.name, e.hint)));
 /**
  * Whether an own link shows while searching : its label or its address matches, or one of the
@@ -100,20 +93,6 @@ function linkShown(l) {
   if (matches(l.label, l.url)) return true;
   return !l.parent && own.value.header_links.some((c) => c.parent === l.id && matches(c.label, c.url));
 }
-// the tabs shown : the active one, or while searching each one with a match
-const shownTabs = computed(() =>
-  searching.value
-    ? tabs.value.filter((tab) =>
-        tab.key === 'builtin' ? shownBuiltin.value.length : own.value.header_links.some(linkShown),
-      )
-    : tabs.value.filter((tab) => tab.key === activeTab.value),
-);
-const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
-// while searching, a tab's name over its matches (the first without the line above)
-const searchHead = (key) => {
-  const i = shownTabs.value.findIndex((tab) => tab.key === key);
-  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
-};
 
 // ─── Custom : the instance's own links, in the settings row ──────────────────
 

@@ -27,6 +27,7 @@ import getSettings, { SSO_TYPES, noCredentialsText } from '@/config/settings';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { recordButtons } from '@/lib/recordButtons';
+import { useRecordSearch } from '@/composables/useRecordSearch';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -165,19 +166,11 @@ const crumbs = computed(() => {
 // A word typed in the title line's search narrows every tab at once, as Settings > General's :
 // the fields, switches and types whose label or help has it, a tab's help when it has it, each
 // under its tab's name, the tabs set aside meanwhile.
-const search = ref('');
-const searching = computed(() => !!search.value.trim());
-const matches = (...texts) => {
-  const q = search.value.trim().toLowerCase();
-  return (
-    !q ||
-    texts.some((x) =>
-      String(x ?? '')
-        .toLowerCase()
-        .includes(q),
-    )
-  );
-};
+const { search, searching, matches, matchingKeys, shownTabs, tabShown, searchHead } = useRecordSearch({
+  tabs: () => tabs.value,
+  activeTab: () => activeTab.value,
+  tabMatch: (key) => shownFields.value[key]?.length || shownNotes(key).length,
+});
 // each tab's fields : [key, label, help], only the ones the page draws
 const tabFields = computed(() => ({
   details: [
@@ -200,28 +193,11 @@ const tabFields = computed(() => ({
 }));
 // the fields that match, per tab
 const shownFields = computed(() =>
-  Object.fromEntries(
-    Object.entries(tabFields.value).map(([tab, fields]) => [
-      tab,
-      fields.filter(([, ...texts]) => matches(...texts)).map(([key]) => key),
-    ]),
-  ),
+  Object.fromEntries(Object.entries(tabFields.value).map(([tab, fields]) => [tab, matchingKeys(fields)])),
 );
 const fieldShown = (key) => Object.values(shownFields.value).some((keys) => keys.includes(key));
 // a tab's help : shown while it has the text searched (whole), or always when not searching
 const shownNotes = (key) => tabNotes(key).filter((note) => matches(note.title, note.text, ...(note.items || [])));
-// the tabs shown : the active one, or while searching each one with a match
-const shownTabs = computed(() =>
-  searching.value
-    ? tabs.value.filter((tab) => shownFields.value[tab.key]?.length || shownNotes(tab.key).length)
-    : tabs.value.filter((tab) => tab.key === activeTab.value),
-);
-const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
-// while searching, a tab's name over its matches (the first without the line above)
-const searchHead = (key) => {
-  const i = shownTabs.value.findIndex((tab) => tab.key === key);
-  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
-};
 
 // ─── actions ──────────────────────────────────────────────────────────────────
 /**

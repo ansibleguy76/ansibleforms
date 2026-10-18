@@ -27,7 +27,6 @@ import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import Helpers from '@/lib/Helpers';
 import { formPath } from '@/lib/formsPath';
-import { htmlToText } from '@/lib/dataTable';
 import { sourceLabel } from '@/config/settings';
 import { setSignInBlocked } from '@/lib/signIn';
 import { useRouteTab } from '@/composables/useRouteTab';
@@ -35,6 +34,7 @@ import { useRoleAssignments } from '@/composables/useRoleAssignments';
 import { useRoleMembership } from '@/composables/useRoleMembership';
 import { useFormLinks } from '@/composables/useFormLinks';
 import { useUserLinks } from '@/composables/useUserLinks';
+import { useRecordSearch } from '@/composables/useRecordSearch';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -244,21 +244,13 @@ const details = computed(() =>
 // rows of the other tabs with it in one of their cells (AppLinkedTable's search), each under its
 // tab's name, the tabs set aside meanwhile. API tokens too : its tokens are read once when a
 // search starts (tokenRows), its table given the word.
-const search = ref('');
-const searching = computed(() => !!search.value.trim());
-const matches = (...texts) => {
-  const q = search.value.trim().toLowerCase();
-  return (
-    !q ||
-    texts.some((x) =>
-      String(x ?? '')
-        .toLowerCase()
-        .includes(q),
-    )
-  );
-};
+const { search, searching, matches, matchingKeys, shownTabs, tabShown, searchHead, tableMatches } = useRecordSearch({
+  tabs: () => tabs.value,
+  activeTab: () => activeTab.value,
+  tabMatch: (key) => tabMatches.value[key],
+});
 const shownFields = computed(() =>
-  [
+  matchingKeys([
     ...details.value.map((d) => [d.key, d.label, d.value]),
     [
       'signIn',
@@ -267,27 +259,9 @@ const shownFields = computed(() =>
         ? t('settings.directory.blockedNote')
         : t('settings.directory.signInHelp', { source: sourceName.value }),
     ],
-  ]
-    .filter(([, ...texts]) => matches(...texts))
-    .map(([key]) => key),
+  ]),
 );
 const fieldShown = (key) => shownFields.value.includes(key);
-/**
- * Whether a table keeps a row : one of its cells with the text, as AppLinkedTable filters them
- * (its columns' value(), html() without the tags, or the field).
- *
- * Args:
- *   rows (object[]): the table's rows.
- *   columns (object[]): its columns.
- *
- * Returns:
- *   boolean: whether some row matches.
- */
-function tableMatches(rows, columns) {
-  return rows.some((row) =>
-    matches(...columns.map((c) => (c.html ? htmlToText(c.html(row)) : c.value ? c.value(row) : row[c.key]))),
-  );
-}
 // the API tokens, for the search only : the tab's own table reads them when it shows, and while a
 // word is searched the page must know whether one has it before showing the tab ; read once,
 // when a search starts
@@ -312,18 +286,6 @@ const tabMatches = computed(() => ({
   activity: tableMatches(activity.value, activityColumns.value),
   tokens: (tokenRows.value || []).some((r) => matches(...Object.values(r || {}))),
 }));
-// the tabs shown : the active one, or while searching each one with a match
-const shownTabs = computed(() =>
-  searching.value
-    ? tabs.value.filter((tab) => tabMatches.value[tab.key])
-    : tabs.value.filter((tab) => tab.key === activeTab.value),
-);
-const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
-// while searching, a tab's name over its matches (the first without the line above)
-const searchHead = (key) => {
-  const i = shownTabs.value.findIndex((tab) => tab.key === key);
-  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
-};
 
 // ─── actions ──────────────────────────────────────────────────────────────────
 // Block asks first (its sessions end at once) ; Forget asks first ; Allow and End sessions do not

@@ -17,6 +17,7 @@ import Profile from '@/lib/Profile';
 import Helpers from '@/lib/Helpers';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useSingleTab } from '@/composables/useSingleTab';
+import { useRecordSearch } from '@/composables/useRecordSearch';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -161,29 +162,15 @@ const pageCrumbs = computed(() => [
 // ─── search ───────────────────────────────────────────────────────────────────
 // A word typed in the title line's search narrows the page, as Settings > General's : the fields
 // whose label or help has it, under the tab's name, the tab set aside meanwhile.
-const search = ref('');
-const searching = computed(() => !!search.value.trim());
-const matches = (...texts) => {
-  const q = search.value.trim().toLowerCase();
-  return (
-    !q ||
-    texts.some((x) =>
-      String(x ?? '')
-        .toLowerCase()
-        .includes(q),
-    )
-  );
-};
+const { search, searching, matchingKeys } = useRecordSearch();
 const shownFields = computed(() =>
-  [
+  matchingKeys([
     ['message', t('settings.interface.banner'), t('settings.interface.bannerHelp')],
     ['level', t('settings.interface.bannerLevel'), t('settings.interface.bannerLevelHelp')],
     ['start', t('settings.interface.bannerStart'), t('settings.interface.bannerStartHelp')],
     ['end', t('settings.interface.bannerEnd'), t('settings.interface.bannerEndHelp')],
     ['enabled', t('settings.interface.announcementEnabled'), t('settings.interface.announcementEnabledHelp')],
-  ]
-    .filter(([, ...texts]) => matches(...texts))
-    .map(([key]) => key),
+  ]),
 );
 const fieldShown = (key) => shownFields.value.includes(key);
 

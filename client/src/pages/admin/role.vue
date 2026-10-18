@@ -22,6 +22,7 @@ import { useRouteTab } from '@/composables/useRouteTab';
 import { useFormLinks } from '@/composables/useFormLinks';
 import { formPath } from '@/lib/formsPath';
 import { recordButtons } from '@/lib/recordButtons';
+import { useRecordSearch } from '@/composables/useRecordSearch';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -268,19 +269,11 @@ async function removeMembers(kind, uids) {
 // Details when one of its labels has it (the name, the description, the options and their
 // groups), the users, groups and forms with it in one of their cells, each under its tab's
 // name, the tabs set aside meanwhile.
-const search = ref('');
-const searching = computed(() => !!search.value.trim());
-const matches = (...texts) => {
-  const q = search.value.trim().toLowerCase();
-  return (
-    !q ||
-    texts.some((x) =>
-      String(x ?? '')
-        .toLowerCase()
-        .includes(q),
-    )
-  );
-};
+const { search, searching, matches, shownTabs, tabShown, searchHead } = useRecordSearch({
+  tabs: () => tabs.value,
+  activeTab: () => activeTab.value,
+  tabMatch: (key) => (key === 'general' ? generalMatch.value : shownRows.value[key].length),
+});
 // the editor's fields are its own (AppRoleEditor) : Details shown whole when one matches
 const generalMatch = computed(() =>
   matches(
@@ -298,18 +291,6 @@ const shownRows = computed(() => ({
   groups: role.value?._default ? [] : groupRows.value.filter((r) => matches(r.name, r.provider, r.description)),
   forms: roleForms.value.filter((f) => matches(f.name, f.description)),
 }));
-// the tabs shown : the active one, or while searching each one with a match
-const shownTabs = computed(() =>
-  searching.value
-    ? tabs.value.filter((tab) => (tab.key === 'general' ? generalMatch.value : shownRows.value[tab.key].length))
-    : tabs.value.filter((tab) => tab.key === activeTab.value),
-);
-const tabShown = (key) => shownTabs.value.some((tab) => tab.key === key);
-// while searching, a tab's name over its matches (the first without the line above)
-const searchHead = (key) => {
-  const i = shownTabs.value.findIndex((tab) => tab.key === key);
-  return i < 0 ? null : { tab: shownTabs.value[i], first: i === 0 };
-};
 
 // Delete asks first : it saves at once
 const confirmDelete = ref(false);

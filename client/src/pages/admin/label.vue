@@ -18,6 +18,7 @@ import { PILL } from '@/lib/tableCells';
 import { LABEL_COLORS } from '@/config/settings';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
+import { useRecordSearch } from '@/composables/useRecordSearch';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -140,29 +141,15 @@ const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((
 // ─── search ───────────────────────────────────────────────────────────────────
 // A word typed in the title line's search narrows the page, as Settings > General's : the fields
 // whose label or help has it, under the tab's name, the tab set aside meanwhile.
-const search = ref('');
-const searching = computed(() => !!search.value.trim());
-const matches = (...texts) => {
-  const q = search.value.trim().toLowerCase();
-  return (
-    !q ||
-    texts.some((x) =>
-      String(x ?? '')
-        .toLowerCase()
-        .includes(q),
-    )
-  );
-};
+const { search, searching, matchingKeys } = useRecordSearch();
 const shownFields = computed(() =>
-  [
+  matchingKeys([
     ['name', t('settings.labels.label'), t('settings.labels.nameHelp')],
     ['color', t('settings.labels.color'), t('settings.labels.colorHelp')],
     ['position', t('settings.labels.position'), t('settings.labels.positionHelp')],
     ['enabled', t('settings.labels.enabled'), t('settings.labels.enabledHelp')],
     ['preview', t('settings.labels.preview')],
-  ]
-    .filter(([, ...texts]) => matches(...texts))
-    .map(([key]) => key),
+  ]),
 );
 const fieldShown = (key) => shownFields.value.includes(key);
 
