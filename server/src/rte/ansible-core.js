@@ -156,6 +156,26 @@ export function makeEventsFile(jobid) {
 }
 
 /**
+ * Makes the file set_stats is written to (the artifacts plugin) : in a folder of its own under the
+ * temporary folder (mkdtemp, readable by this user only), as the events file. Under the guessable
+ * name af_artifacts_<id>.json in the shared temporary folder, another local user could read a
+ * job's artifacts, or plant the file (a link) before the plugin wrote it.
+ *
+ * Args:
+ *   jobid (number|string): the job.
+ *
+ * Returns:
+ *   {dir: string, file: string}: the folder and the file the plugin writes in it (not made yet :
+ *     the plugin writes it only when the playbook calls set_stats).
+ */
+export function makeArtifactsFile(jobid) {
+  const safeId = String(jobid).replace(/[^0-9A-Za-z_-]/g, "");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `af_artifacts_${safeId}_`));
+  fs.chmodSync(dir, 0o700);
+  return { dir, file: path.join(dir, "artifacts.json") };
+}
+
+/**
  * Removes a job's events folder and what is left in it, quietly : stop() of the tail removes the
  * file, this the folder, on every way out (a playbook that never started too).
  *
@@ -441,6 +461,7 @@ async function launchPlaybook(ev, secrets, jobid, counter) {
     hiddenExtravarsFileName: hiddenExtravarsFileName,
     keepExtravars: keepExtravars,
     // what set_stats gathers : written there by the artifacts plugin, stored on the job
+    // (a private folder made when the playbook starts : makeArtifactsFile)
     artifactsFile: path.join(os.tmpdir(), `af_artifacts_${jobid}.json`),
     // and the structured events (af_events) : one JSON line each, sent on as they come, in a
     // private folder made when the playbook starts (makeEventsFile) ; a host's whole result only
@@ -480,6 +501,7 @@ export function executeCommand(cmd, jobid, counter, io = currentIO()) {
   var keepExtravars = cmd.keepExtravars;
   var task = cmd.task;
   var artifactsFile = cmd.artifactsFile;
+  var artifactsDir = "";
   // the structured events : asked for by a playbook (cmd.events), their file made in a private
   // folder just before ansible-playbook starts (makeEventsFile)
   var eventsWanted = !!cmd.events;
@@ -544,6 +566,8 @@ export function executeCommand(cmd, jobid, counter, io = currentIO()) {
 
       // the events file : made now, so it exists, private, before the plugin opens it
       if (eventsWanted) ({ dir: eventsDir, file: eventsFile } = makeEventsFile(jobid));
+      // and the artifacts file's folder, private as well
+      if (artifactsFile) ({ dir: artifactsDir, file: artifactsFile } = makeArtifactsFile(jobid));
 
       // adding abort signal
       // spawn, not exec : no shell, and exec ignores `detached`. Detached, the process runs
@@ -647,6 +671,7 @@ export function executeCommand(cmd, jobid, counter, io = currentIO()) {
         removeExtravarsFiles();
         // what set_stats gathered, stored on the job whatever its end (AWX keeps a failed job's too)
         const artifacts = takeArtifacts(artifactsFile);
+        removeEventsDir(artifactsDir);
         // the log as the playbook left it, before the job ends
         await syncJobLog(true);
         // Clear the PID and host from the database as the process has ended
@@ -715,6 +740,7 @@ export function executeCommand(cmd, jobid, counter, io = currentIO()) {
         removeEventsDir(eventsDir);
         removeExtravarsFiles();
         takeArtifacts(artifactsFile);
+        removeEventsDir(artifactsDir);
         await syncJobLog(true);
         // Clear the PID and host from the database as the process has errored
         logger.debug(`[Job ${jobid}] Process with PID ${child.pid} encountered an error`);
@@ -730,6 +756,7 @@ export function executeCommand(cmd, jobid, counter, io = currentIO()) {
       if (!settle()) return;
       removeExtravarsFiles();
       takeArtifacts(artifactsFile);
+      removeEventsDir(artifactsDir);
       // the tail's last read before its folder goes
       if (events) events.stop().finally(() => removeEventsDir(eventsDir));
       else removeEventsDir(eventsDir);
