@@ -395,8 +395,7 @@ Ldap.withConnection = async function (cfg) {
  */
 Ldap.bindAccount = async function (cfg, ownPassword) {
   if (!cfg.credential) return { dn: cfg.bind_user_dn, password: ownPassword };
-  const exact = "^" + String(cfg.credential).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$";
-  const cred = await Credential.resolveCredential(exact);
+  const cred = await Credential.resolveByName(cfg.credential);
   if (!cred || !cred.user) {
     throw new Error(`The ldap directory '${cfg.name}' uses the credential '${cfg.credential}', which is not found`);
   }

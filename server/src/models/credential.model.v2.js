@@ -334,6 +334,25 @@ class CredentialModel extends CrudModel {
     return result;
   }
 
+  /**
+   * A credential resolved for use by its exact name, never as a pattern : the name a record
+   * stores (an LDAP directory's, an SSO provider's, a runner's, a repository's...) escaped into
+   * an anchored REGEXP, so a name with a dot or a bracket finds itself and nothing else.
+   *
+   * Args:
+   *   name (string): the credential's name.
+   *
+   * Returns:
+   *   Promise<object>: the credential, as resolveCredential gives it.
+   *
+   * Raises:
+   *   Errors.NotFoundError: no credential has that name.
+   */
+  static async resolveByName(name) {
+    const exact = "^" + String(name ?? "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$";
+    return this.resolveCredential(exact);
+  }
+
   // The row a name or pattern finds (fallback when it finds none), cached with its password
   // still encrypted : decrypting and reading the secret store happen on every resolution, so a
   // rotated secret is never served from here.

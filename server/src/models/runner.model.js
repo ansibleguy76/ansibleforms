@@ -123,8 +123,7 @@ class Runner extends CrudModel {
     // where it connects : its credential's address and TLS when that carries an address
     const conn = await this.connectionFor(row);
     if (conn) row = { ...row, ...conn };
-    const exact = "^" + String(row.credential).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$";
-    const cred = await Credential.resolveCredential(exact).catch((e) => {
+    const cred = await Credential.resolveByName(row.credential).catch((e) => {
       logger.error(`Couldn't read the credential '${row.credential}' of the runner '${row.name}': ${e.message || e}`);
       return null;
     });

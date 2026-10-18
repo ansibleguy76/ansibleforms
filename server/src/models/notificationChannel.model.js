@@ -368,8 +368,7 @@ class NotificationChannel extends CrudModel {
    *   Promise<object|null>: { user, password }, or null when there is none.
    */
   static async resolveCredential(name) {
-    const exact = '^' + String(name).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$';
-    return Credential.resolveCredential(exact);
+    return Credential.resolveByName(name);
   }
 }
 

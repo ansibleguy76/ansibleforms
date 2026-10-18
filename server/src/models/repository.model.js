@@ -256,8 +256,7 @@ class Repository extends CrudModel {
    */
   static async withCredential(repo) {
     if (!repo?.credential) return repo
-    const exact = '^' + String(repo.credential).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$'
-    const cred = await Credential.resolveCredential(exact)
+    const cred = await Credential.resolveByName(repo.credential)
     if (!cred || !cred.user) {
       throw new Error(`Repository '${repo.name}' uses the credential '${repo.credential}', which is not found`)
     }
