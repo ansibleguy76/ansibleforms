@@ -132,6 +132,8 @@ const runnerItem = {
     ignore_certs: bool,
     ca_bundle: str,
     is_default: bool,
+    // turned off, no job goes to it (1, on, when not said)
+    enabled: bool,
     // an awx runner that is an AAP or an Ascender ; none is AWX
     flavour: { type: "string", enum: ["aap", "ascender"] },
     // a semaphore runner's project id, a rundeck runner's project name, a jenkins runner's folder

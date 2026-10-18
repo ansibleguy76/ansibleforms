@@ -221,6 +221,8 @@ CREATE TABLE `runners` (
   `node_id` varchar(250) DEFAULT NULL,
   -- an RTE : database (deprecated), outbound (it dials the app) or inbound (the app dials it)
   `rte_mode` varchar(10) DEFAULT NULL,
+  -- turned off, no job goes to it (it stays listed, its settings kept)
+  `enabled` tinyint(4) DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_AnsibleForms_runners_natural_key` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

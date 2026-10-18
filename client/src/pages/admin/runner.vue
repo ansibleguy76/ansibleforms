@@ -303,6 +303,7 @@ const tabFields = computed(() => {
       ['name', t('settings.fields.name'), t('settings.runners.nameHelp')],
       ['description', t('settings.fields.description')],
       ['is_default', t('settings.runners.isDefault'), t('settings.runners.defaultHelp', { forms: defaultFor.value })],
+      ['enabled', t('settings.runners.enabled'), t('settings.runners.enabledHelp')],
     ],
     type: [
       ...sortedKinds.value.map((kind) => [
@@ -391,6 +392,19 @@ async function save() {
  */
 async function makeDefault() {
   if (await update({ is_default: 1 })) {
+    toast.success(`${runner.value.name} ${t('settings.common.isUpdated')}`);
+  }
+  await load();
+}
+
+/**
+ * Turns it on or off, saved at once : turned off, no job goes to it.
+ *
+ * Args:
+ *   on (boolean): on or off.
+ */
+async function setEnabled(on) {
+  if (await update({ enabled: on ? 1 : 0 })) {
     toast.success(`${runner.value.name} ${t('settings.common.isUpdated')}`);
   }
   await load();
@@ -566,6 +580,24 @@ onMounted(async () => {
                   />
                 </div>
                 <div class="form-text">{{ t('settings.runners.defaultHelp', { forms: defaultFor }) }}</div>
+              </div>
+              <div v-show="fieldShown('enabled')" class="mb-3">
+                <label class="form-label fw-bold d-block" for="af-runner-enabled">{{
+                  t('settings.runners.enabled')
+                }}</label>
+                <!-- saved at once, as the default -->
+                <div class="form-check form-switch mb-0">
+                  <input
+                    id="af-runner-enabled"
+                    class="form-check-input"
+                    type="checkbox"
+                    role="switch"
+                    :checked="runner.enabled === undefined || runner.enabled === null || !!Number(runner.enabled)"
+                    :disabled="readOnly"
+                    @change="setEnabled($event.target.checked)"
+                  />
+                </div>
+                <div class="form-text">{{ t('settings.runners.enabledHelp') }}</div>
               </div>
             </template>
             <!-- Type : RTE, AWX, AAP, Ascender, Semaphore or Rundeck, each its label and a few grey words -->

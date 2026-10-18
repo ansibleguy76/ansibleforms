@@ -592,7 +592,7 @@ const SCHEMA_MANIFEST = {
     patchVersion7: { tables: ['secret_stores', 'runners', 'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'notification_channels', 'syslog_servers', 'login_failures', 'token_revocations', 'schema_migrations',
                               'directory_users', 'announcements', 'disclaimer_versions', 'disclaimer_acceptances', 'api_tokens', 'labels',
                               'runner_leases', 'runner_join_tokens', 'job_events'],
-                     columns: ['runners.rte_mode', 'schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'settings.syslog_env_imported_at', 'jobs.runner', 'jobs.runner_kind', 'jobs.runner_job_url',
+                     columns: ['runners.rte_mode', 'runners.enabled', 'schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'settings.syslog_env_imported_at', 'jobs.runner', 'jobs.runner_kind', 'jobs.runner_job_url',
                                'runners.username', 'runners.password', 'runners.use_credentials', 'runners.node_id', 'jobs.job_log',
                                'jobs.tracker', 'repositories.claim_node', 'repositories.claim_since',
                                'repositories.use_for_workflows', 'repositories.use_for_inventories',
@@ -1108,6 +1108,8 @@ async function patchVersion7(messages, success, failed) {
   // the RTE over a WebSocket (rte/socket) : how each RTE talks to the app (database, outbound or
   // inbound), the app node holding each socket, and the join tokens runners add themselves with
   await checkPromise(addColumn("runners", "rte_mode", "varchar(10)", true, "NULL"), messages, success, failed);
+  // a runner turned off takes no job (Connections > Runners, Enable / Disable)
+  await checkPromise(addColumn("runners", "enabled", "tinyint(4)", true, "1"), messages, success, failed);
   const leases = fs.readFileSync(`${__dirname}/../db/create_runner_leases_table.sql`);
   await checkPromise(addTable("runner_leases", leases.toString()), messages, success, failed);
   const joinTokens = fs.readFileSync(`${__dirname}/../db/create_runner_join_tokens_table.sql`);

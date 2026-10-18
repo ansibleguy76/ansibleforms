@@ -54,6 +54,10 @@ class Runner extends CrudModel {
         throw new Errors.BadRequestError(`Unknown RTE mode '${data.rte_mode}' - use one of ${RTE_MODES.join(', ')}`);
       }
     }
+    // turned on or off (Enable / Disable) : 1 or 0, whatever the client or the seed sends
+    if (data.enabled !== undefined && data.enabled !== null) {
+      data.enabled = data.enabled === true || data.enabled === 1 || data.enabled === '1' || data.enabled === 'true' ? 1 : 0;
+    }
     // the flavour of an awx runner : 'aap', 'ascender', or none (AWX) - which product it is
     if (data.flavour !== undefined) {
       if (data.flavour === '' || data.flavour === null) data.flavour = null;

@@ -2459,22 +2459,6 @@ export default function getSettings(t) {
       description: t('settings.runners.description'),
       icon: 'rocket',
       selectable: false,
-      // the defaults, chosen in a dialog (Edit defaults) : one per runner type, where the forms
-      // of that type (ansible on an RTE ; awx, aap and ascender on an awx runner ; semaphore,
-      // rundeck, jenkins on theirs) run when they name no runner
-      defaultPicker: {
-        key: 'is_default',
-        groupBy: (r) => r?.type || null,
-        title: t('settings.runners.defaultsTitle'),
-        editLabel: t('settings.runners.editDefaults'),
-        groups: ['rte', 'awx', 'semaphore', 'rundeck', 'jenkins'].map((type) => ({
-          key: type,
-          label: t(`settings.runners.default_${type}`),
-          help: t(`settings.runners.default_${type}Help`),
-          icon: type === 'rte' ? 'fac,ansible' : 'rocket',
-          describe: (r) => t(`settings.runners.kind_${runnerKind(r)}`),
-        })),
-      },
       // the dialog in steps : what the runner is, its kind, how the app logs in and where (its
       // credential's server), a project under it
       steps: [
@@ -2506,8 +2490,8 @@ export default function getSettings(t) {
       }),
       // a runner has its own page (pages/admin/runner.vue) : its row and Edit open it, New the wizard
       openPage: (item) => `/settings/runners/${item.id}`,
-      // in the row menu : editing, the test, its token or password (on its page), then Delete
-      // last, each apart
+      // in the row menu : editing, the test, turning it on or off, its token or password (on its
+      // page), then Delete last, each apart
       actions: [
         { name: 'edit', title: t('settings.runners.editRunner'), icon: 'pencil', color: 'edit' },
         {
@@ -2516,6 +2500,25 @@ export default function getSettings(t) {
           icon: 'plug',
           color: 'test',
           dividerBefore: true,
+        },
+        {
+          // only the one that changes it : Enable on a runner turned off, Disable on one turned on
+          name: 'enable',
+          title: t('settings.runners.enable'),
+          icon: 'toggle-on',
+          color: 'edit',
+          dividerBefore: true,
+          shownWhen: (m) => !m.enabled,
+          update: () => ({ enabled: 1 }),
+        },
+        {
+          name: 'disable',
+          title: t('settings.runners.disable'),
+          icon: 'toggle-off',
+          color: 'edit',
+          dividerBefore: true,
+          shownWhen: (m) => !!m.enabled,
+          update: () => ({ enabled: 0 }),
         },
         {
           // the credential it signs in with : its page's Credentials tab
@@ -2544,7 +2547,15 @@ export default function getSettings(t) {
           label: t('settings.runners.isDefault'),
           help: t('settings.runners.isDefaultHelp'),
           type: 'checkbox',
-          // chosen in the Edit defaults dialog (defaultPicker), not in the runner's : a column only
+          // turned on on its page (the one before stops being it), not in the dialog : a column only
+          noInput: true,
+        },
+        {
+          // taking jobs or not : a yes / no column ; a new runner is on, the row menu and its page
+          // turn it on or off
+          key: 'enabled',
+          label: t('settings.runners.enabled'),
+          type: 'checkbox',
           noInput: true,
         },
         {
@@ -2595,6 +2606,7 @@ export default function getSettings(t) {
           key: 'rte_mode_column',
           label: t('settings.runners.rteMode'),
           noInput: true,
+          noTable: true,
           filterable: true,
           render: (_, r) => rteModePill(t, r),
           sortValue: (r) => (r?.type === 'rte' ? r.rte_mode || 'database' : ''),
@@ -2604,6 +2616,7 @@ export default function getSettings(t) {
           key: 'socket',
           label: t('settings.runners.socket'),
           noInput: true,
+          noTable: true,
           render: (_, r) => socketPill(t, r),
           sortValue: (r) => (r?.socket ? (r.socket.connected ? 1 : 0) : -1),
         },
@@ -2620,7 +2633,7 @@ export default function getSettings(t) {
           key: 'flavour',
           label: t('settings.runners.flavour'),
           noInput: true,
-          hidden: true,
+          noTable: true,
           render: (v) => escapeHtml(RUNNER_FLAVOURS.find((x) => x.value === (v || null))?.label || ''),
         },
         {
@@ -2638,6 +2651,7 @@ export default function getSettings(t) {
           key: 'state',
           label: t('settings.runners.state'),
           noInput: true,
+          noTable: true,
           sortable: true,
           render: (v) => registrationPill(t, v),
         },
@@ -2647,8 +2661,7 @@ export default function getSettings(t) {
           icon: 'globe',
           label: t('settings.fields.uri'),
           noInput: true,
-          // in Columns : the description shows instead
-          hidden: true,
+          noTable: true,
         },
         {
           // as whom and where : a credential of Connections > Credentials of its kind (an RTE's
@@ -2682,7 +2695,7 @@ export default function getSettings(t) {
           line: 1,
           label: t('settings.runners.project'),
           required: false,
-          hidden: true,
+          noTable: true,
           help: (r) =>
             t(`settings.runners.projectHelp_${PROJECT_RUNNER_KINDS.includes(r.kind) ? r.kind : 'semaphore'}`),
           dependency: 'kind',
@@ -2694,7 +2707,7 @@ export default function getSettings(t) {
           label: t('settings.ldap.ignoreCerts'),
           type: 'checkbox',
           noInput: true,
-          hidden: true,
+          noTable: true,
         },
       ],
     },

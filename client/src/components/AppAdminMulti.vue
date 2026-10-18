@@ -1104,30 +1104,6 @@ const dataTableColumns = computed(() => {
     });
 });
 
-// Only when something is actually seeded : an always-present column would be an
-// empty stripe on every instance that does not use a config seed.
-const anyManaged = computed(() => (itemList.value || []).some(isManaged));
-const columnsWithManaged = computed(() => {
-  if (!anyManaged.value) return dataTableColumns.value;
-  return [
-    ...dataTableColumns.value,
-    {
-      key: 'managed',
-      label: t('settings.common.seedManaged'),
-      sortable: true,
-      filterable: false,
-      // static markup only - nothing from the row is interpolated, because
-      // render() output goes through v-html
-      // Text only. This app loads the FontAwesome SVG core and renders icons via
-      // the FaIcon component - there is no webfont CSS - so an <i class="fas ...">
-      // here produced an empty element and a stray gap, not a lock.
-      // a row the seed does not manage : an en dash, as the other empty cells
-      render: (val) =>
-        val ? '<span class="badge text-bg-secondary">' + escapeHtml(t('settings.common.seedManaged')) + '</span>' : '–',
-    },
-  ];
-});
-
 // Records the declarative config seed owns (https://ansibleforms.com/seed). The API answers 403 on
 // them, so offering Edit and Delete would only produce an error - and the seed
 // re-applies on every start, so even a successful change would be reverted.
@@ -1564,7 +1540,7 @@ defineExpose({
         :toolbarTo="'#' + toolsId"
         :pagerTo="'#' + pagerId"
         :items="itemList"
-        :columns="columnsWithManaged"
+        :columns="dataTableColumns"
         :idKey="idKey"
         :selectedIds="selectedIds"
         :selectable="dataTableSelectable"

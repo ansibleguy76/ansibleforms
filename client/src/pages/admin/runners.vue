@@ -16,8 +16,6 @@ const store = useAppStore();
 
 const authenticated = ref(false);
 const tests = ref({});
-// the join tokens RTEs add themselves with (components/AppJoinTokens.vue)
-const joinTokensOpen = ref(false);
 
 async function test_connection(item) {
   if (item) {
@@ -53,14 +51,6 @@ onMounted(async () => {
       :busyItems="tests"
       :apiVersion="2"
       :readOnly="!store.isAdmin"
-    >
-      <!-- the join tokens an RTE in a socket mode joins with, before the defaults and Add -->
-      <template #actionsBefore>
-        <BsButton cssClass="text-nowrap" icon="ticket" @click="joinTokensOpen = true">{{
-          t('settings.runners.joinTokens')
-        }}</BsButton>
-      </template>
-    </AppAdminMulti>
-    <AppJoinTokens v-if="joinTokensOpen" :readOnly="!store.isAdmin" @close="joinTokensOpen = false" />
+    />
   </AppSettingsPage>
 </template>

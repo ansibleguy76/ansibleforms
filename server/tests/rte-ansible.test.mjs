@@ -458,6 +458,14 @@ describe("which runner runs a playbook job", () => {
     await assert.rejects(resolveRunner({ jobType: "awx", formType: "jenkins", extravars: {} }), /No runner for a form of type jenkins: add one of type jenkins/);
   });
 
+  test("a runner turned off takes no job, named or default ; one from before the column takes them", async () => {
+    runnerRows = [{ name: "rte-off", type: "rte", is_default: 1, enabled: 0 }, { name: "rte-on", type: "rte", enabled: 1 }, { name: "rte-old", type: "rte" }];
+    await assert.rejects(resolveRunner({ jobType: "ansible", extravars: {} }), /Runner 'rte-off' is disabled - enable it under Connections > Runners/);
+    await assert.rejects(resolveRunner({ jobType: "ansible", extravars: { __runner__: "rte-off" } }), /Runner 'rte-off' is disabled/);
+    assert.equal((await resolveRunner({ jobType: "ansible", extravars: { __runner__: "rte-on" } })).row.name, "rte-on");
+    assert.equal((await resolveRunner({ jobType: "ansible", extravars: { __runner__: "rte-old" } })).row.name, "rte-old");
+  });
+
   test("a job whose form type is not given is matched by capability, as before", async () => {
     runnerRows = [{ name: "sem", type: "semaphore" }, { name: "ci", type: "jenkins" }];
     assert.equal((await resolveRunner({ jobType: "awx", extravars: { __runner__: "ci" } })).impl.type, "jenkins");
