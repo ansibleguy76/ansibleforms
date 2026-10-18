@@ -121,6 +121,25 @@ describe("the schema manifest describes what the code actually builds", () => {
     assert.deepEqual(orphans, [], "SCHEMA_MANIFEST demands tables that nothing creates");
   });
 
+  // The base tables are what a fresh install must build by itself : the patches run after
+  // the create script, but a table only a patch makes was missing from a fresh install until
+  // the first patch run (job_events, runner_leases and runner_join_tokens were, in 7.3).
+  test("every base table of the manifest is created by the fresh SQL", () => {
+    const block = /base:\s*\{\s*tables:\s*\[([\s\S]*?)\]/.exec(model)[1];
+    const base = [...block.matchAll(/'(\w+)'/g)].map((m) => m[1]);
+    assert.ok(base.length > 10, `only found ${base.length} base tables`);
+    const missing = base.filter((t) => !sqlTables.has(t)).sort();
+    assert.deepEqual(missing, [], "base tables of SCHEMA_MANIFEST that create_schema_and_tables.sql does not create");
+  });
+
+  // The script runs only on an empty database, but a table it creates without dropping it
+  // first fails the whole script when it is there (a half-created schema, run again).
+  test("every table the fresh SQL creates is dropped first", () => {
+    const dropped = new Set([...sql.matchAll(/DROP TABLE IF EXISTS\s+`?(\w+)`?/gi)].map((m) => m[1]));
+    const missing = [...sqlTables].filter((t) => !dropped.has(t)).sort();
+    assert.deepEqual(missing, [], "tables created without a DROP TABLE IF EXISTS before them");
+  });
+
   // The rule written down in CLAUDE.md: a patch and the fresh install must stay in step.
   test("every column a patch adds is also in the fresh SQL", () => {
     const missing = [...patchColumns].filter((c) => {
