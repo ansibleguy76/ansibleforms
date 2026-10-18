@@ -26,10 +26,11 @@ router.get('/', middleware.checkDesignerMiddleware, configController.findAll);
 router.get('/formlist', configController.findList);
 // every form, its roles and its runners : the settings pages' Forms tabs
 router.get('/formslinked', middleware.checkAnySettingsMiddleware, configController.formsLinked);
-// the credentials each form names, for a credential's Used by tab (lib/formLinks.js formCredentials)
-router.get('/formscredentials', middleware.checkAnySettingsMiddleware, configController.formsCredentials);
+// the credentials each form names, for a credential's Used by tab (lib/formLinks.js formCredentials) :
+// with the connections access the credentials themselves need (/api/v2/credential)
+router.get('/formscredentials', middleware.checkConnectionsMiddleware, configController.formsCredentials);
 // the credentials each of the designer's workflows names (models/workflowRun.js workflowCredentials)
-router.get('/workflowscredentials', middleware.checkAnySettingsMiddleware, configController.workflowsCredentials);
+router.get('/workflowscredentials', middleware.checkConnectionsMiddleware, configController.workflowsCredentials);
 // flat list of form names (for dropdowns : datasources and schedules)
 router.get('/formnames', middleware.checkSettingsOrScheduledJobsMiddleware, configController.formNames);
 // get one config (no admin)

@@ -110,6 +110,10 @@ export default {
     runnerNotFound: "No s'ha trobat el runner",
     runnerAdminOnly:
       "Només un admin pot afegir, canviar o eliminar un runner: un runner rep les credencials dels treballs que executa",
+    credentialAdminOnly:
+      "Només un admin pot afegir, canviar o eliminar aquesta credencial: un runner o una connexió en pren l'adreça i el secret",
+    credentialInUse:
+      "La credencial '{name}' està en ús per {count} registre(s), llistats a la pestanya Usada per: canvieu-los primer",
     defaultPasswordRefused:
       "Trieu una altra contrasenya que no sigui la pública per defecte",
     passwordTooShort: "La contrasenya necessita almenys {min} caràcters",
@@ -168,6 +172,7 @@ export default {
     ldapCreated: "Directori LDAP afegit",
     failedCreateLdap: "No s'ha pogut afegir el directori LDAP",
     ldapDeleted: "Directori LDAP eliminat",
+    ldapNotFound: "Directori LDAP no trobat",
     failedDeleteLdap: "No s'ha pogut eliminar el directori LDAP",
     seedManagedSettings:
       "La configuració la gestiona el config seed i és de només lectura",
@@ -217,6 +222,8 @@ export default {
     deleted: "Tasca suprimida",
     failedLaunch: "No s'ha pogut llançar el formulari",
     invalidFormData: "Les dades del formulari no són vàlides",
+    invalidEventOrder:
+      "L'ordre d'un esdeveniment és un nombre enter des de 0: '{order}' no ho és",
     failedRelaunch: "No s'ha pogut tornar a llançar la tasca",
     failedApprove: "No s'ha pogut aprovar la tasca",
     failedReject: "No s'ha pogut rebutjar la tasca",

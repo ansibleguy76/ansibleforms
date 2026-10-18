@@ -101,6 +101,10 @@ export default {
     runnerNotFound: "未找到运行器",
     runnerAdminOnly:
       "只有 admin 可以添加、更改或删除运行器：运行器会收到它运行的作业的凭据",
+    credentialAdminOnly:
+      "只有 admin 可以添加、更改或删除此凭据：运行器或连接从中获取其地址和密钥",
+    credentialInUse:
+      "凭据 '{name}' 正被 {count} 条记录使用（列在其“使用者”选项卡中）：请先更改这些记录",
     defaultPasswordRefused: "请选择公开默认密码以外的密码",
     passwordTooShort: "密码至少需要 {min} 个字符",
     passwordIsUsername: "密码不能是用户名",
@@ -151,6 +155,7 @@ export default {
     ldapCreated: "已添加 LDAP 目录",
     failedCreateLdap: "添加 LDAP 目录失败",
     ldapDeleted: "已删除 LDAP 目录",
+    ldapNotFound: "未找到 LDAP 目录",
     failedDeleteLdap: "删除 LDAP 目录失败",
     seedManagedSettings: "设置由配置种子管理，为只读",
     seedManagedLdap: "LDAP 配置由配置种子管理，为只读",
@@ -194,6 +199,8 @@ export default {
     deleted: "作业已删除",
     failedLaunch: "运行表单失败",
     invalidFormData: "表单数据无效",
+    invalidEventOrder:
+      "事件的顺序是从 0 开始的整数：'{order}' 不是",
     failedRelaunch: "重新运行作业失败",
     failedApprove: "批准作业失败",
     failedReject: "拒绝作业失败",

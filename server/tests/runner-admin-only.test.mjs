@@ -16,7 +16,9 @@ vi.mock("../src/models/runner.model.js", () => ({
     update: async (data, id) => { calls.push(["update", data, id]); return true; },
     delete: async (id) => { calls.push(["delete", id]); return true; },
     findById: async () => ({ id: 1, name: "rte", type: "rte", token: "secret-token" }),
+    findStoredById: async () => ({ id: 1, name: "rte", type: "rte" }),
     findAll: async () => [],
+    countPending: async () => 2,
   },
 }));
 
@@ -54,5 +56,19 @@ describe("changing a runner", () => {
   test("seeing and testing stay open to settings users", async () => {
     const r = await call(controller.findById, settingsUser);
     expect(r.status).toBe(200);
+  });
+});
+
+describe("the answers' shapes", () => {
+  test("the pending count is an object, as every answer", async () => {
+    const r = await call(controller.pendingCount, settingsUser);
+    expect(r.data).toEqual({ count: 2 });
+  });
+
+  test("a create says what it did and the new id", async () => {
+    const r = await call(controller.create, admin);
+    expect(r.status).toBe(201);
+    expect(r.data).toMatchObject({ id: 1 });
+    expect(typeof r.data.message).toBe("string");
   });
 });

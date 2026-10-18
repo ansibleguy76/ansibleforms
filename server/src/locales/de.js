@@ -115,6 +115,10 @@ export default {
     runnerNotFound: "Runner nicht gefunden",
     runnerAdminOnly:
       "Nur ein Admin kann einen Runner hinzufuegen, aendern oder loeschen: ein Runner erhaelt die Zugangsdaten der Jobs, die er ausfuehrt",
+    credentialAdminOnly:
+      "Nur ein Admin kann diese Zugangsdaten hinzufuegen, aendern oder loeschen: ein Runner oder eine Verbindung nimmt daraus seine Adresse und sein Geheimnis",
+    credentialInUse:
+      "Die Zugangsdaten '{name}' werden von {count} Eintrag/Eintraegen verwendet, aufgelistet im Reiter Verwendet von: aendern Sie diese zuerst",
     defaultPasswordRefused:
       "Wählen Sie ein anderes Passwort als das öffentliche Standardpasswort",
     passwordTooShort: "Das Passwort braucht mindestens {min} Zeichen",
@@ -172,6 +176,7 @@ export default {
     ldapCreated: "LDAP-Verzeichnis hinzugefügt",
     failedCreateLdap: "LDAP-Verzeichnis konnte nicht hinzugefügt werden",
     ldapDeleted: "LDAP-Verzeichnis gelöscht",
+    ldapNotFound: "LDAP-Verzeichnis nicht gefunden",
     failedDeleteLdap: "LDAP-Verzeichnis konnte nicht gelöscht werden",
     seedManagedSettings:
       "Die Einstellungen werden vom Konfigurations-Seed verwaltet und sind schreibgeschützt",
@@ -220,6 +225,8 @@ export default {
     deleted: "Job geloescht",
     failedLaunch: "Formular konnte nicht gestartet werden",
     invalidFormData: "Die Formulardaten sind ungültig",
+    invalidEventOrder:
+      "Die Reihenfolge eines Events ist eine ganze Zahl ab 0: '{order}' ist keine",
     failedRelaunch: "Job konnte nicht neu gestartet werden",
     failedApprove: "Job-Freigabe fehlgeschlagen",
     failedReject: "Job-Ablehnung fehlgeschlagen",

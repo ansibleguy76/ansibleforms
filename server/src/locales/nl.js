@@ -111,6 +111,10 @@ export default {
     runnerNotFound: "Runner niet gevonden",
     runnerAdminOnly:
       "Alleen een admin kan een runner toevoegen, wijzigen of verwijderen: een runner ontvangt de credentials van de jobs die hij uitvoert",
+    credentialAdminOnly:
+      "Alleen een admin kan deze credential toevoegen, wijzigen of verwijderen: een runner of een verbinding neemt er zijn adres en zijn geheim uit",
+    credentialInUse:
+      "De credential '{name}' wordt gebruikt door {count} record(s), vermeld op het tabblad Gebruikt door: wijzig die eerst",
     defaultPasswordRefused:
       "Kies een ander wachtwoord dan het publieke standaardwachtwoord",
     passwordTooShort: "Het wachtwoord heeft minstens {min} tekens nodig",
@@ -166,6 +170,7 @@ export default {
     ldapCreated: "LDAP-directory toegevoegd",
     failedCreateLdap: "Kan de LDAP-directory niet toevoegen",
     ldapDeleted: "LDAP-directory verwijderd",
+    ldapNotFound: "LDAP-directory niet gevonden",
     failedDeleteLdap: "Kan de LDAP-directory niet verwijderen",
     seedManagedSettings:
       "De instellingen worden beheerd door de configuratie-seed en zijn alleen-lezen",
@@ -213,6 +218,8 @@ export default {
     deleted: "Job verwijderd",
     failedLaunch: "Kan formulier niet starten",
     invalidFormData: "De formuliergegevens zijn niet geldig",
+    invalidEventOrder:
+      "De volgorde van een event is een geheel getal vanaf 0: '{order}' is dat niet",
     failedRelaunch: "Kan job niet herstarten",
     failedApprove: "Kan job niet goedkeuren",
     failedReject: "Kan job niet afwijzen",

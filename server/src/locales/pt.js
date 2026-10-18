@@ -107,6 +107,10 @@ export default {
     runnerNotFound: "Runner não encontrado",
     runnerAdminOnly:
       "Só um admin pode adicionar, alterar ou eliminar um runner: um runner recebe as credenciais dos trabalhos que executa",
+    credentialAdminOnly:
+      "Só um admin pode adicionar, alterar ou eliminar esta credencial: um runner ou uma ligação obtém dela o seu endereço e o seu segredo",
+    credentialInUse:
+      "A credencial '{name}' está em uso por {count} registo(s), listados no separador Usada por: altere-os primeiro",
     defaultPasswordRefused:
       "Escolha outra palavra-passe que não a predefinida pública",
     passwordTooShort: "A palavra-passe precisa de pelo menos {min} caracteres",
@@ -165,6 +169,7 @@ export default {
     ldapCreated: "Diretório LDAP adicionado",
     failedCreateLdap: "Falha ao adicionar o diretório LDAP",
     ldapDeleted: "Diretório LDAP eliminado",
+    ldapNotFound: "Diretório LDAP não encontrado",
     failedDeleteLdap: "Falha ao eliminar o diretório LDAP",
     seedManagedSettings:
       "As definições são geridas pelo config seed e são só de leitura",
@@ -213,6 +218,8 @@ export default {
     deleted: "Tarefa eliminada",
     failedLaunch: "Falha ao iniciar o formulário",
     invalidFormData: "Os dados do formulário não são válidos",
+    invalidEventOrder:
+      "A ordem de um evento é um número inteiro a partir de 0: '{order}' não é",
     failedRelaunch: "Falha ao relançar a tarefa",
     failedApprove: "Falha ao aprovar a tarefa",
     failedReject: "Falha ao rejeitar a tarefa",

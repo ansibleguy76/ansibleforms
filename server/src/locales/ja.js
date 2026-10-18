@@ -107,6 +107,10 @@ export default {
     runnerNotFound: "ランナーが見つかりません",
     runnerAdminOnly:
       "ランナーを追加、変更、削除できるのは admin だけです：ランナーは実行するジョブの認証情報を受け取ります",
+    credentialAdminOnly:
+      "この認証情報を追加、変更、削除できるのは admin だけです：ランナーや接続はそのアドレスとシークレットをここから取得します",
+    credentialInUse:
+      "認証情報 '{name}' は {count} 件のレコードで使用中です（使用元タブに一覧）：先にそれらを変更してください",
     defaultPasswordRefused:
       "公開されている既定のパスワード以外を選んでください",
     passwordTooShort: "パスワードは {min} 文字以上必要です",
@@ -165,6 +169,7 @@ export default {
     ldapCreated: "LDAP ディレクトリを追加しました",
     failedCreateLdap: "LDAP ディレクトリを追加できませんでした",
     ldapDeleted: "LDAP ディレクトリを削除しました",
+    ldapNotFound: "LDAP ディレクトリが見つかりません",
     failedDeleteLdap: "LDAP ディレクトリを削除できませんでした",
     seedManagedSettings:
       "設定は config seed で管理されており、読み取り専用です",
@@ -213,6 +218,8 @@ export default {
     deleted: "ジョブを削除しました",
     failedLaunch: "フォームの起動に失敗しました",
     invalidFormData: "フォームのデータが無効です",
+    invalidEventOrder:
+      "イベントの順序は 0 以上の整数です：'{order}' は違います",
     failedRelaunch: "ジョブの再起動に失敗しました",
     failedApprove: "ジョブの承認に失敗しました",
     failedReject: "ジョブの却下に失敗しました",

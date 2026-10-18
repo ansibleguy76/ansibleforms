@@ -15,11 +15,11 @@
 export const SETTINGS_SECTIONS = {
   appearance: {
     option: 'showAppearanceSettings',
-    // Settings > Appearance : defaults, name, links, environment label
+    // Settings > Appearance : defaults, name, links (the environment label of before is the
+    // labels' first now : Settings > Appearance > Labels, its own api)
     settingsFields: [
       'app_name', 'default_date_format', 'default_language', 'default_theme',
-      'default_theme_color', 'default_timezone', 'env_label', 'env_label_color', 'env_label_show',
-      'forms_view', 'header_links',
+      'default_theme_color', 'default_timezone', 'forms_view', 'header_links',
     ],
     envVars: ['DEFAULT_LANGUAGE', 'SHOW_DESIGNER'],
   },

@@ -114,6 +114,10 @@ export default {
     runnerNotFound: "Runner no encontrado",
     runnerAdminOnly:
       "Solo un admin puede añadir, cambiar o eliminar un runner: un runner recibe las credenciales de los trabajos que ejecuta",
+    credentialAdminOnly:
+      "Solo un admin puede añadir, cambiar o eliminar esta credencial: un runner o una conexión toma de ella su dirección y su secreto",
+    credentialInUse:
+      "La credencial '{name}' está en uso por {count} registro(s), listados en su pestaña Usada por: cámbielos primero",
     defaultPasswordRefused:
       "Elija otra contraseña distinta de la predeterminada pública",
     passwordTooShort: "La contraseña necesita al menos {min} caracteres",
@@ -168,6 +172,7 @@ export default {
     ldapCreated: "Directorio LDAP añadido",
     failedCreateLdap: "No se pudo añadir el directorio LDAP",
     ldapDeleted: "Directorio LDAP eliminado",
+    ldapNotFound: "Directorio LDAP no encontrado",
     failedDeleteLdap: "No se pudo eliminar el directorio LDAP",
     seedManagedSettings:
       "Los ajustes están gestionados por el seed de configuración y son de solo lectura",
@@ -216,6 +221,8 @@ export default {
     deleted: "Trabajo eliminado",
     failedLaunch: "Error al lanzar el formulario",
     invalidFormData: "Los datos del formulario no son válidos",
+    invalidEventOrder:
+      "El orden de un evento es un número entero desde 0: '{order}' no lo es",
     failedRelaunch: "Error al relanzar el trabajo",
     failedApprove: "Error al aprobar el trabajo",
     failedReject: "Error al rechazar el trabajo",

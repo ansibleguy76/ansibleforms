@@ -67,16 +67,9 @@ var Settings=function(settings){
     if(settings.app_name !== undefined){
       this.app_name = text(settings.app_name, 100);
     }
-    if(settings.env_label !== undefined){
-      this.env_label = text(settings.env_label, 40);
-    }
-    // the label shown or not : kept while hidden, so it comes back as it was
-    if(settings.env_label_show !== undefined){
-      this.env_label_show = settings.env_label_show === false || settings.env_label_show === 0 || settings.env_label_show === '0' ? 0 : 1;
-    }
-    if(settings.env_label_color !== undefined){
-      this.env_label_color = oneOf(settings.env_label_color, LABEL_COLORS);
-    }
+    // the environment label of before (env_label, env_label_color, env_label_show) is neither
+    // written nor read : it became the first of the labels (Settings > Appearance > Labels, the
+    // schema patch addLabelsTable), its columns kept only for that move
     if(settings.forms_view !== undefined){
       this.forms_view = oneOf(settings.forms_view, FORMS_VIEWS);
     }
@@ -476,6 +469,11 @@ Settings.find = function () {
         // internal bookkeeping (secrets/importVaultEnv.js, lib/syslogServers.js), not settings
         delete res[0].vault_env_imported_at
         delete res[0].syslog_env_imported_at
+        // the environment label of before : the labels' first now (Settings > Appearance >
+        // Labels), its columns kept only for that move
+        delete res[0].env_label
+        delete res[0].env_label_color
+        delete res[0].env_label_show
         return res[0]
       }else{
         logger.error("No settings record in the database, something is wrong")
@@ -522,7 +520,7 @@ Settings.findUrl = function () {
 // endpoint blocks the SPA from rendering even the login page, so a MySQL outage
 // must cost one connectTimeout, not one per setting.
 Settings.findAppDefaults = function () {
-  return mysql.do("SELECT default_language, default_theme, default_theme_color, app_name, env_label, env_label_show, env_label_color, forms_view, default_timezone, default_date_format, header_links FROM AnsibleForms.`settings` LIMIT 1")
+  return mysql.do("SELECT default_language, default_theme, default_theme_color, app_name, forms_view, default_timezone, default_date_format, header_links FROM AnsibleForms.`settings` LIMIT 1")
     .then(async (res) => {
       const r = res[0] || {};
       // the announcements enabled and not ended yet (Settings > Appearance > Announcements) ;

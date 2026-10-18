@@ -7,6 +7,8 @@ import crypto from "../lib/crypto.js";
 import { authenticate } from 'ldap-authentication';
 import { DEFAULT_NAME, NAME_RULE, qualify, route, isUnreachable, urls } from '../lib/ldapDirectories.js';
 import Credential from './credential.model.v2.js';
+import Errors from '../lib/errors.js';
+import { moveOneStep } from './listOrder.js';
 
 //ldap object create
 var Ldap=function(ldap){
@@ -79,6 +81,25 @@ function decrypted(row) {
 }
 
 /**
+ * Checks the credential a directory names : one of Connections > Credentials, of type ldap. Its
+ * servers and bind account are where the directory connects and as whom, so a credential of
+ * another kind (a runner's token, a database login) is never handed to an LDAP server - not by a
+ * save, not by a test (controllers/v2/ldapDirectory.controller.js check).
+ *
+ * Args:
+ *   name (string): the credential's name ; none, nothing to check.
+ *
+ * Raises:
+ *   Errors.BadRequestError: no such credential, or another type.
+ */
+Ldap.checkCredential = async function (name) {
+  if (!name) return;
+  const rows = await mysql.do("SELECT credential_type FROM AnsibleForms.`credentials` WHERE name = ?", [name]);
+  if (!rows.length) throw new Errors.BadRequestError(`No credential named '${name}'`);
+  if (rows[0].credential_type !== "ldap") throw new Errors.BadRequestError(`An LDAP directory needs an ldap credential: '${name}' is not one`);
+};
+
+/**
  * Checks a directory's name : the rule, and DEFAULT_NAME ('main') reserved for the first one.
  *
  * Args:
@@ -86,36 +107,20 @@ function decrypted(row) {
  *   current (object): the directory renamed, or none for a new one.
  *
  * Raises:
- *   Error: the name breaks the rule, is taken, or renames the default directory.
+ *   Errors.BadRequestError: the name breaks the rule, is taken, or renames the default directory.
  */
-/**
- * Checks the credential a directory names : one of Connections > Credentials, of type ldap.
- *
- * Args:
- *   name (string): the credential's name ; none, nothing to check.
- *
- * Raises:
- *   Error: no such credential, or another type.
- */
-async function checkCredential(name) {
-  if (!name) return;
-  const rows = await mysql.do("SELECT credential_type FROM AnsibleForms.`credentials` WHERE name = ?", [name]);
-  if (!rows.length) throw new Error(`No credential named '${name}'`);
-  if (rows[0].credential_type !== "ldap") throw new Error(`An LDAP directory needs an ldap credential: '${name}' is not one`);
-}
-
 async function checkName(name, current) {
   if (current && current.name === Ldap.DEFAULT_NAME && name !== Ldap.DEFAULT_NAME) {
-    throw new Error(`The directory '${Ldap.DEFAULT_NAME}' keeps its name: its members' names depend on it`);
+    throw new Errors.BadRequestError(`The directory '${Ldap.DEFAULT_NAME}' keeps its name: its members' names depend on it`);
   }
   if (!NAME_RULE.test(name || "")) {
-    throw new Error("A directory's name has letters, digits, - and _ only (at most 50)");
+    throw new Errors.BadRequestError("A directory's name has letters, digits, - and _ only (at most 50)");
   }
   if ((!current || current.name !== Ldap.DEFAULT_NAME) && name.toLowerCase() === Ldap.DEFAULT_NAME) {
-    throw new Error(`'${Ldap.DEFAULT_NAME}' is the name of the first directory`);
+    throw new Errors.BadRequestError(`'${Ldap.DEFAULT_NAME}' is the name of the first directory`);
   }
   const taken = await mysql.do("SELECT id FROM AnsibleForms.`ldap` WHERE name = ? AND id <> ?", [name, current?.id ?? 0]);
-  if (taken.length) throw new Error(`There is already a directory named '${name}'`);
+  if (taken.length) throw new Errors.BadRequestError(`There is already a directory named '${name}'`);
 }
 
 /**
@@ -180,17 +185,18 @@ Ldap.update = async function (record) {
  *   record (object): the fields to write, converted (new Ldap).
  *
  * Raises:
- *   Error: no such directory, or its new name is not valid.
+ *   Errors.NotFoundError: no such directory.
+ *   Errors.BadRequestError: its new name or its credential is not valid.
  */
 Ldap.updateById = async function (id, record) {
   const current = await Ldap.findById(id);
-  if (!current) throw new Error(`No ldap directory ${id}`);
+  if (!current) throw new Errors.NotFoundError(`No ldap directory ${id}`);
   // the test fields and the id are never columns to write
   delete record.testuser;
   delete record.testpassword;
   delete record.id;
   if (record.name !== undefined) await checkName(record.name, current);
-  if (record.credential !== undefined) await checkCredential(record.credential);
+  if (record.credential !== undefined) await Ldap.checkCredential(record.credential);
   logger.info(`Updating ldap directory '${current.name}'`);
   return mysql.do("UPDATE AnsibleForms.`ldap` set ? WHERE id = ?", [record, id]);
 };
@@ -205,18 +211,19 @@ Ldap.updateById = async function (id, record) {
  *   number: its id.
  *
  * Raises:
- *   Error: its name is not valid or taken.
+ *   Errors.BadRequestError: its name is not valid or taken, its credential is not an ldap one, or
+ *     it has no servers.
  */
 Ldap.create = async function (record) {
   delete record.testuser;
   delete record.testpassword;
   delete record.id;
   await checkName(record.name);
-  await checkCredential(record.credential);
+  await Ldap.checkCredential(record.credential);
   // where it connects : its credential's servers (its own, from before, only for the config seed
   // and the API of before)
   if (!String(record.server || "").trim() && !(await Ldap.connectionOf(record.credential))) {
-    throw new Error("An LDAP directory needs an ldap credential with its servers (host)");
+    throw new Errors.BadRequestError("An LDAP directory needs an ldap credential with its servers (host)");
   }
   if (!record.position) {
     const last = await mysql.do("SELECT COALESCE(MAX(position), 0) AS p FROM AnsibleForms.`ldap`");
@@ -239,20 +246,14 @@ Ldap.create = async function (record) {
  *   boolean: false when it is already first (up) or last (down) : nothing moved.
  *
  * Raises:
- *   Error: no such directory, or another direction.
+ *   Errors.BadRequestError: another direction.
+ *   Errors.NotFoundError: no such directory.
  */
 Ldap.move = async function (id, direction) {
-  if (!["up", "down"].includes(direction)) throw new Error("Move a directory up or down");
+  // the one rule of the ordered lists (models/listOrder.js), as the labels' : renumbered in one
+  // transaction, never by halves
   const rows = await mysql.do("SELECT id FROM AnsibleForms.`ldap` ORDER BY position, id");
-  const at = rows.findIndex((r) => String(r.id) === String(id));
-  if (at < 0) throw new Error(`No ldap directory ${id}`);
-  const to = direction === "up" ? at - 1 : at + 1;
-  if (to < 0 || to >= rows.length) return false;
-  [rows[at], rows[to]] = [rows[to], rows[at]];
-  for (let i = 0; i < rows.length; i++) {
-    await mysql.do("UPDATE AnsibleForms.`ldap` SET position = ? WHERE id = ?", [i + 1, rows[i].id]);
-  }
-  return true;
+  return moveOneStep("ldap", rows, id, direction, "directory");
 };
 
 /**
@@ -262,13 +263,15 @@ Ldap.move = async function (id, direction) {
  *   id (number|string): the directory.
  *
  * Raises:
- *   Error: no such directory, it is the default one, or the config seed's.
+ *   Errors.NotFoundError: no such directory.
+ *   Errors.BadRequestError: it is the default one.
+ *   Errors.AccessDeniedError: it is the config seed's.
  */
 Ldap.deleteById = async function (id) {
   const current = await Ldap.findById(id);
-  if (!current) throw new Error(`No ldap directory ${id}`);
-  if (current.name === Ldap.DEFAULT_NAME) throw new Error(`The directory '${Ldap.DEFAULT_NAME}' cannot be deleted: turn it off instead`);
-  if (current.managed) throw new Error("This directory comes from the config seed");
+  if (!current) throw new Errors.NotFoundError(`No ldap directory ${id}`);
+  if (current.name === Ldap.DEFAULT_NAME) throw new Errors.BadRequestError(`The directory '${Ldap.DEFAULT_NAME}' cannot be deleted: turn it off instead`);
+  if (current.managed) throw new Errors.AccessDeniedError("This directory comes from the config seed");
   logger.info(`Deleting ldap directory '${current.name}'`);
   return mysql.do("DELETE FROM AnsibleForms.`ldap` WHERE id = ?", [id]);
 };
@@ -392,8 +395,7 @@ Ldap.withConnection = async function (cfg) {
  */
 Ldap.bindAccount = async function (cfg, ownPassword) {
   if (!cfg.credential) return { dn: cfg.bind_user_dn, password: ownPassword };
-  const exact = "^" + String(cfg.credential).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$";
-  const cred = await Credential.resolveCredential(exact);
+  const cred = await Credential.resolveByName(cfg.credential);
   if (!cred || !cred.user) {
     throw new Error(`The ldap directory '${cfg.name}' uses the credential '${cfg.credential}', which is not found`);
   }

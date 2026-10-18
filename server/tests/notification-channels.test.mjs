@@ -56,7 +56,13 @@ vi.mock("../src/models/crud.model.js", () => ({
 // a credential resolved for use : user and password, by its exact-name regex
 let resolved = {};
 vi.mock("../src/models/credential.model.v2.js", () => ({
-  default: { resolveCredential: async (regex) => resolved[regex] || null },
+  default: {
+    resolveCredential: async (regex) => resolved[regex] || null,
+    // the exact name, escaped into an anchored pattern, as the model does
+    resolveByName(name) {
+      return this.resolveCredential("^" + String(name).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$");
+    },
+  },
 }));
 
 // what axios was asked ; a failure when the test sets one (an error, or (config) => error)

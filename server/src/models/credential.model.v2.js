@@ -6,6 +6,7 @@ import crypto from '../lib/crypto.js';
 import { readSecret, mapPayloadToCredential, parseInlineSecret, VAULT_STORE_NAME } from '../secrets/providers/index.js';
 import dbConfig from '../../config/db.config.js';
 import { stripTrailingSlashes } from '../lib/url.js';
+import { isMasked } from '../lib/secretMask.js';
 import { currentScope, assertCredentialAllowed, assertSecretStoreAllowed } from "../lib/resourceScope.js";
 
 class CredentialModel extends CrudModel {
@@ -192,7 +193,7 @@ class CredentialModel extends CrudModel {
   static async update(data, id, opts = {}) {
     // the api shows the client key masked ; the mask sent back means "unchanged", and an
     // empty one too (the dialog leaves a secret empty to keep it)
-    if (data.client_key === '**********' || data.client_key === '') delete data.client_key;
+    if (isMasked(data.client_key) || data.client_key === '') delete data.client_key;
     // its type stays what it was made as (what uses it expects it : an SSO provider an entraid
     // one, a mail channel an smtp one) ; the config seed may change it
     if (!opts.fromSeed && data.credential_type !== undefined && data.credential_type !== null && data.credential_type !== '') {
@@ -240,6 +241,37 @@ class CredentialModel extends CrudModel {
         ") used WHERE name IS NOT NULL AND name <> '' GROUP BY name",
     );
     return new Map((rows || []).map((r) => [r.name, Number(r.n) || 0]));
+  }
+
+  /**
+   * How many records use one credential (usageCounts : the tables that name it, not the forms
+   * nor the workflows). What a delete or a rename would leave pointing at nothing.
+   *
+   * Args:
+   *   name (string): the credential's name.
+   *
+   * Returns:
+   *   Promise<number>: how many records name it, 0 when none.
+   */
+  static async usageOf(name) {
+    if (!name) return 0;
+    return (await this.usageCounts()).get(name) || 0;
+  }
+
+  /**
+   * The runners that sign in with a credential : whoever changes it chooses where their jobs'
+   * secrets go, whatever its type (a runner may still name a deprecated api or userpass one).
+   *
+   * Args:
+   *   name (string): the credential's name.
+   *
+   * Returns:
+   *   Promise<string[]>: the names of the runners that name it, empty when none.
+   */
+  static async runnersUsing(name) {
+    if (!name) return [];
+    const rows = await mysql.do("SELECT name FROM AnsibleForms.`runners` WHERE credential = ?", [name]);
+    return (rows || []).map((r) => r.name);
   }
 
   static async findById(id) {
@@ -301,6 +333,25 @@ class CredentialModel extends CrudModel {
     }
     stripSecretSource(result);
     return result;
+  }
+
+  /**
+   * A credential resolved for use by its exact name, never as a pattern : the name a record
+   * stores (an LDAP directory's, an SSO provider's, a runner's, a repository's...) escaped into
+   * an anchored REGEXP, so a name with a dot or a bracket finds itself and nothing else.
+   *
+   * Args:
+   *   name (string): the credential's name.
+   *
+   * Returns:
+   *   Promise<object>: the credential, as resolveCredential gives it.
+   *
+   * Raises:
+   *   Errors.NotFoundError: no credential has that name.
+   */
+  static async resolveByName(name) {
+    const exact = "^" + String(name ?? "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$";
+    return this.resolveCredential(exact);
   }
 
   // The row a name or pattern finds (fallback when it finds none), cached with its password

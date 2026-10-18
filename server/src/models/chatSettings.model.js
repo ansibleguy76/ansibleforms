@@ -117,8 +117,7 @@ ChatSettings.assertCredentialUsable = async function (name) {
 ChatSettings.withCredential = async function (row) {
   if (!row?.credential) return row;
   const { default: Credential } = await import('./credential.model.v2.js');
-  const exact = '^' + String(row.credential).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$';
-  const cred = await Credential.resolveCredential(exact);
+  const cred = await Credential.resolveByName(row.credential);
   if (!cred) {
     logger.error(`The chat uses the credential '${row.credential}', which is not found`);
     return { ...row, api_key: '' };

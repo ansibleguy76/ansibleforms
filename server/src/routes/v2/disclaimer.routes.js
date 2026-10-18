@@ -20,7 +20,8 @@ disclaimerVersionRouter.get('/:id', disclaimerController.version);
 disclaimerVersionRouter.put('/:id', disclaimerController.updateVersion);
 // enabled (the one users accept) or disabled { enabled }
 disclaimerVersionRouter.post('/:id/enable', disclaimerController.enableVersion);
-// deleted (never the current one), or restored as a new version
+// deleted with who accepted it (the enabled one too : the disclaimer is then off, as when the last
+// one goes), or restored : enabled again, as Enable does
 disclaimerVersionRouter.delete('/:id', disclaimerController.deleteVersion);
 disclaimerVersionRouter.post('/:id/restore', disclaimerController.restoreVersion);
 

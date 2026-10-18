@@ -121,6 +121,22 @@ class OAuth2 extends CrudModel {
     static async findByProperty(property, value) {
         return super.findByProperty(this.modelName, property, value);
     }
+
+    /**
+     * The provider type the login page skips to : the enabled provider set to Skip the login
+     * page (auto_login), the first by id. Whether it can sign in is the caller's (its type's
+     * settings).
+     *
+     * Returns:
+     *   Promise<string|null>: 'azuread' or 'oidc', or null when none is set or the table cannot be
+     *     read (a database before its patch).
+     */
+    static async autoLoginProvider() {
+        return mysql
+            .do('SELECT provider FROM AnsibleForms.`oauth2_providers` WHERE enable = 1 AND auto_login = 1 ORDER BY id LIMIT 1')
+            .then((rows) => rows?.[0]?.provider || null)
+            .catch(() => null);
+    }
 }
 
 export default OAuth2;

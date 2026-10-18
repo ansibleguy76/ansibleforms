@@ -6,6 +6,7 @@ import CrudModel from './crud.model.js';
 import Errors from '../lib/errors.js';
 import mysql from './db.model.js';
 import { LABEL_COLORS } from './settings.model.js';
+import { moveOneStep } from './listOrder.js';
 
 // the longest text kept (the column's size)
 export const MAX_LABEL = 40;
@@ -101,18 +102,8 @@ class Label extends CrudModel {
    *   BadRequestError: another direction ; NotFoundError: no label has that id.
    */
   static async move(id, direction) {
-    if (direction !== 'up' && direction !== 'down') throw new Errors.BadRequestError(`A label moves up or down: '${direction}' is not`);
-    const all = await this.findAll();
-    const at = all.findIndex((l) => String(l.id) === String(id));
-    if (at < 0) throw new Errors.NotFoundError(`No label with id ${id}`);
-    const to = direction === 'up' ? at - 1 : at + 1;
-    if (to < 0 || to >= all.length) return false;
-    [all[at], all[to]] = [all[to], all[at]];
-    await mysql.transaction(async (run) => {
-      for (let i = 0; i < all.length; i++) {
-        await run('UPDATE AnsibleForms.`labels` SET position = ? WHERE id = ?', [i + 1, all[i].id]);
-      }
-    });
+    // the one rule of the ordered lists (models/listOrder.js), as the LDAP directories'
+    if (!(await moveOneStep('labels', await this.findAll(), id, direction, 'label'))) return false;
     // the cached list holds the old places
     this.changed(this.modelName);
     await this.applied();

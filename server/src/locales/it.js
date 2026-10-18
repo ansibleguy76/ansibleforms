@@ -109,6 +109,10 @@ export default {
     runnerNotFound: "Runner non trovato",
     runnerAdminOnly:
       "Solo un admin può aggiungere, modificare o eliminare un runner: un runner riceve le credenziali dei job che esegue",
+    credentialAdminOnly:
+      "Solo un admin può aggiungere, modificare o eliminare questa credenziale: un runner o una connessione ne prende l'indirizzo e il segreto",
+    credentialInUse:
+      "La credenziale '{name}' è in uso da {count} record, elencati nella scheda Usata da: modificali prima",
     defaultPasswordRefused:
       "Scegli una password diversa da quella predefinita pubblica",
     passwordTooShort: "La password deve avere almeno {min} caratteri",
@@ -163,6 +167,7 @@ export default {
     ldapCreated: "Directory LDAP aggiunta",
     failedCreateLdap: "Impossibile aggiungere la directory LDAP",
     ldapDeleted: "Directory LDAP eliminata",
+    ldapNotFound: "Directory LDAP non trovata",
     failedDeleteLdap: "Impossibile eliminare la directory LDAP",
     seedManagedSettings:
       "Le impostazioni sono gestite dal seed di configurazione e sono di sola lettura",
@@ -210,6 +215,8 @@ export default {
     deleted: "Job eliminato",
     failedLaunch: "Avvio modulo non riuscito",
     invalidFormData: "I dati del modulo non sono validi",
+    invalidEventOrder:
+      "L'ordine di un evento è un numero intero da 0: '{order}' non lo è",
     failedRelaunch: "Riavvio job non riuscito",
     failedApprove: "Approvazione job non riuscita",
     failedReject: "Rifiuto job non riuscito",

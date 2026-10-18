@@ -4,6 +4,7 @@ import OAuth2 from '../../models/oauth2.model.js';
 import RestResult from '../../models/restResult.model.v2.js';
 import Errors from '../../lib/errors.js';
 import i18n from '../../lib/i18n.js';
+import { SECRET_MASK } from '../../lib/secretMask.js';
 import auth_entraid from '../../auth/auth_entraid.js';
 import auth_oidc from '../../auth/auth_oidc.js';
 
@@ -15,14 +16,14 @@ const oauth2Controller = {
         const oauth2 = await OAuth2.findByName(req.query.name);
         // Mask client_secret before returning to API
         if (oauth2 && oauth2.client_secret) {
-          oauth2.client_secret = '**********';
+          oauth2.client_secret = SECRET_MASK;
         }
         return res.json(RestResult.single(oauth2));
       } else {
         const oauth2List = await OAuth2.findAll();
         // Mask client_secrets before returning to API
         oauth2List.forEach(o => {
-          if (o.client_secret) o.client_secret = '**********';
+          if (o.client_secret) o.client_secret = SECRET_MASK;
         });
         return res.json(RestResult.list(oauth2List));
       }
@@ -47,7 +48,7 @@ const oauth2Controller = {
   async findById(req, res) {
     try {
       const oauth2 = await OAuth2.findById(req.params.id);
-      oauth2.client_secret = "********"; // mask the client_secret for API
+      oauth2.client_secret = SECRET_MASK; // mask the client_secret for API
       return res.json(RestResult.single(oauth2));
     } catch (err) {
       Errors.ReturnError(res, err);

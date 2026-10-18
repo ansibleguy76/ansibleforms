@@ -29,6 +29,10 @@ vi.mock("../src/models/credential.model.v2.js", () => ({
       if (stored === null) throw new Error("No credential found");
       return { ...stored };
     },
+    // the exact name, escaped into an anchored pattern, as the model does
+    resolveByName(name) {
+      return this.resolveCredential("^" + String(name).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$");
+    },
   },
 }));
 

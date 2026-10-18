@@ -102,6 +102,13 @@ describe("resolveCredential", () => {
     assert.equal(c.name, "default_db");
   });
 
+  test("resolveByName finds the exact name only, its regex characters taken as they are", async () => {
+    rows = [dbRow({ name: "dbXprod" }), dbRow({ name: "db.prod" }), dbRow({ name: "db.prod-old" })];
+    assert.equal((await Credential.resolveByName("db.prod")).name, "db.prod");
+    await assert.rejects(Credential.resolveByName("db.pro"), Errors.NotFoundError);
+    await assert.rejects(Credential.resolveByName("db.*"), Errors.NotFoundError);
+  });
+
   test("throws NotFoundError when neither matches", async () => {
     rows = [dbRow()];
     await assert.rejects(Credential.resolveCredential("nope", "neither"), Errors.NotFoundError);

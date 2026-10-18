@@ -13,6 +13,8 @@ import logger from '../../lib/logger.js';
 import Form from '../../models/form.model.js';
 import { formCredentials } from '../../lib/formLinks.js';
 import { workflowCredentials } from '../../models/workflowRun.js';
+import { isAdminRequest } from '../../lib/adminGrants.js';
+import { SECRET_MASK, masked } from '../../lib/secretMask.js';
 
 // the credential types an SSO provider signs in with : a change to one of them is a change to the
 // sign-in, which reads its client, tenant or issuer and redirect URL when it starts
@@ -34,6 +36,58 @@ async function reloadSso() {
   }
 }
 
+/**
+ * Refuses a change of a credential a connection takes its address from, or a runner signs in with,
+ * to anyone but an admin : the same rule as a change of the runner itself
+ * (controllers/v2/runner.controller.js assertAdmin). Since 7.3 a runner, a secret store and the
+ * other connections take their URL and token from their credential : a user with only connections
+ * access who could point one at another server would receive every secret sent through it,
+ * although the runner itself is closed to them.
+ *
+ * Args:
+ *   req (object): the request.
+ *   records (object[]): the credential as it is and as it is written ({ name, credential_type }),
+ *     any of them missing.
+ *
+ * Returns:
+ *   Promise<void>: settles when the change is allowed.
+ *
+ * Raises:
+ *   Errors.AccessDeniedError: the user is not an admin and the credential carries an address or
+ *     a runner names it.
+ */
+async function assertMayChange(req, ...records) {
+  if (isAdminRequest(req)) return;
+  const present = records.filter(Boolean);
+  // a type that carries the address of the one server it logs in to (a runner's, a secret store's)
+  let guarded = present.some((r) => CredentialModel.URL_TYPES.includes(r.credential_type));
+  // or one a runner names, whatever its type (a deprecated api or userpass one)
+  for (const r of present) {
+    if (guarded) break;
+    if (r.name && (await CredentialModel.runnersUsing(r.name)).length) guarded = true;
+  }
+  if (guarded) throw new Errors.AccessDeniedError(i18n.t(req, 'resources.credentialAdminOnly'));
+}
+
+/**
+ * Refuses to delete or rename a credential records still name (an LDAP directory, an SSO provider,
+ * a runner, a mail channel...) : they would point at nothing, and stop working without a word.
+ *
+ * Args:
+ *   req (object): the request.
+ *   name (string): the credential's name as it is.
+ *
+ * Returns:
+ *   Promise<void>: settles when nothing names it.
+ *
+ * Raises:
+ *   Errors.ConflictError: records name it (its Used by tab lists them).
+ */
+async function assertUnused(req, name) {
+  const count = await CredentialModel.usageOf(name);
+  if (count) throw new Errors.ConflictError(i18n.t(req, 'resources.credentialInUse', { name, count }));
+}
+
 const credentialController = {
   async find(req, res) {
     try {
@@ -41,9 +95,9 @@ const credentialController = {
         const credential = await CredentialModel.findByName(req.query.name);
         // Mask password before returning to API
         if (credential && credential.password) {
-          credential.password = '**********';
+          credential.password = SECRET_MASK;
         }
-        if (credential && credential.client_key) credential.client_key = '**********';
+        if (credential && credential.client_key) credential.client_key = SECRET_MASK;
         res.json(RestResult.single(credential));
       } else {
         // how many records use each (used_by_count), as its Used by tab lists them ; a count that
@@ -69,8 +123,8 @@ const credentialController = {
         const credentials = (await CredentialModel.findAll()).map((c) => ({
           ...c,
           // Mask passwords before returning to API
-          password: c.password ? '**********' : c.password,
-          client_key: c.client_key ? '**********' : c.client_key,
+          password: masked(c.password),
+          client_key: masked(c.client_key),
           used_by_count: usage.get(c.name) || 0,
         }));
         res.json(RestResult.list(credentials));
@@ -82,6 +136,7 @@ const credentialController = {
 
   async create(req, res) {
     try {
+      await assertMayChange(req, req.body);
       const credential = await CredentialModel.create(req.body);
       res.json(RestResult.single({ message: i18n.t(req, 'success.created', { resource: 'Credential' }), id: credential }));
     } catch (err) {
@@ -93,8 +148,8 @@ const credentialController = {
     try {
       const credential = await CredentialModel.findById(req.params.id);
       // Mask password before returning to API
-      credential.password = '**********';
-      if (credential.client_key) credential.client_key = '**********';
+      credential.password = SECRET_MASK;
+      if (credential.client_key) credential.client_key = SECRET_MASK;
       res.json(RestResult.single(credential));
     } catch (err) {
       Errors.ReturnError(res, err);
@@ -104,6 +159,9 @@ const credentialController = {
   async update(req, res) {
     try {
       const before = await CredentialModel.findById(req.params.id).catch(() => null);
+      await assertMayChange(req, before, req.body);
+      // a new name leaves what names the old one pointing at nothing
+      if (before && req.body?.name !== undefined && req.body.name !== before.name) await assertUnused(req, before.name);
       await CredentialModel.update(req.body, req.params.id);
       if ([before?.credential_type, req.body?.credential_type].some((t) => SSO_TYPES.includes(t))) await reloadSso();
       res.json(RestResult.single({ message: i18n.t(req, 'success.updated', { resource: 'Credential' }) }));
@@ -115,6 +173,8 @@ const credentialController = {
   async delete(req, res) {
     try {
       const before = await CredentialModel.findById(req.params.id).catch(() => null);
+      await assertMayChange(req, before);
+      if (before) await assertUnused(req, before.name);
       await CredentialModel.delete(req.params.id);
       if (SSO_TYPES.includes(before?.credential_type)) await reloadSso();
       res.json(RestResult.single({ message: i18n.t(req, 'success.deleted', { resource: 'Credential' }) }));

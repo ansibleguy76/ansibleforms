@@ -1,8 +1,6 @@
 'use strict';
-import logger from "../lib/logger.js";
 import mysql from "./db.model.js";
-import crypto from "../lib/crypto.js";
-import Credential from "./credential.model.v2.js";
+import { resolveSsoClient } from "./ssoClient.js";
 import { redirectUrl } from "../lib/ssoCallback.js";
 
 class EntraId {
@@ -20,26 +18,8 @@ class EntraId {
   static async find() {
     const res = await mysql.do("SELECT tenant_id,client_id, client_secret, credential, enable, groupfilter,redirect_uri FROM AnsibleForms.`oauth2_providers` WHERE provider='azuread' AND enable ORDER BY id LIMIT 1;");
     if (res.length > 0) {
-      let record = res[0];
-      try {
-        record.client_secret = record.client_secret ? crypto.decrypt(record.client_secret) : "";
-      } catch (e) {
-        logger.error("Couldn't decrypt azuread client_secret, did the secretkey change?");
-        record.client_secret = "";
-      }
-      // a credential of Connections > Credentials : its user the client id, its password the secret
-      if (record.credential) {
-        const exact = "^" + String(record.credential).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$";
-        const cred = await Credential.resolveCredential(exact).catch((e) => {
-          logger.error(`Couldn't read the credential '${record.credential}' of the azuread provider: ${e.message || e}`);
-          return null;
-        });
-        record.client_id = cred?.user || "";
-        record.credential_redirect_uri = cred?.redirect_uri || "";
-        record.client_secret = cred?.password || "";
-        // an Entra ID credential holds the tenant too
-        record.tenant_id = cred?.tenant_id || record.tenant_id;
-      }
+      // its client : its own secret decrypted, its credential's client over it (models/ssoClient.js)
+      const record = await resolveSsoClient(res[0], "azuread");
       return {
         tenant_id: record.tenant_id || null,
         client_id: record.client_id || "",

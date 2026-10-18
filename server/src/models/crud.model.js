@@ -1,4 +1,5 @@
 import Errors from '../lib/errors.js';
+import { isMasked } from '../lib/secretMask.js';
 import logger from '../lib/logger.js';
 import crypto from '../lib/crypto.js';
 import NodeCache from 'node-cache';
@@ -53,8 +54,8 @@ class CrudModel {
   }
 
   /**
-   * Whether a value is the mask the API shows a secret as ('**********', or '********' for
-   * runners and secret stores) : sent back on an update, it means "unchanged".
+   * Whether a value is the mask the API shows a secret as (lib/secretMask.js : '**********', or
+   * the '********' runners and older clients send) : sent back on an update, it means "unchanged".
    *
    * Args:
    *   value (any): the value sent.
@@ -63,7 +64,7 @@ class CrudModel {
    *   boolean: true for a run of 8 or more asterisks.
    */
   static isSecretMask(value) {
-    return typeof value === 'string' && /^\*{8,}$/.test(value);
+    return isMasked(value);
   }
 
   static getFieldValues(modelName, data, isUpdate=false) {
