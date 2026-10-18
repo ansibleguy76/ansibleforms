@@ -155,7 +155,7 @@ onMounted(async () => {
 /* the hourglass : left of every line, in the title's orange */
 .af-runner-requests-icon {
   flex: none;
-  font-size: 1.75rem;
+  font-size: 2.5rem;
   color: #c24e05;
 }
 [data-bs-theme='dark'] .af-runner-requests-icon {
