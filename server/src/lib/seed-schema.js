@@ -158,6 +158,20 @@ export function foldAwxIntoRunners(doc) {
 }
 
 /**
+ * Whether a seeded runner carries its own secrets (a token, or a user and password) instead of
+ * naming a credential : what foldRunnerSecretsIntoCredentials folds.
+ *
+ * Args:
+ *   runner (object): a runner item of the seed.
+ *
+ * Returns:
+ *   boolean: true when it does.
+ */
+export function runnerOwnsSecrets(runner) {
+  return !runner.credential && !!(runner.token || runner.username || runner.password);
+}
+
+/**
  * A runner's own secrets in the seed (its token, or its user and password) as a credential of its
  * kind : deprecated since 7.3, removed in 8. Each such runner names a new credential of the
  * credentials section, called after it, carrying its address, its TLS and its secrets, so the
@@ -165,19 +179,27 @@ export function foldAwxIntoRunners(doc) {
  * runner that already names a credential is left alone. Returns a new document and the names of
  * the runners folded ; the warning is the caller's.
  *
+ * The name is the runner's, else <runner>-runner, then <runner>-runner-2 ... : never one the
+ * seed's own credentials section declares, nor one in `reserved`. The caller reserves the
+ * credentials already in the database that the seed does not own (made by hand) : declaring
+ * their name would ADOPT them (applyListSection), overwriting somebody's credential with the
+ * runner's token. A credential the seed owns already keeps its name : it is this one, from the
+ * previous start.
+ *
  * Args:
  *   doc (object): the seed document, validated.
+ *   reserved (Iterable<string>): names the credentials must not take ; none by default.
  *
  * Returns:
  *   { doc: object, folded: string[] }: the document, and the runners whose secrets moved.
  */
-export function foldRunnerSecretsIntoCredentials(doc) {
+export function foldRunnerSecretsIntoCredentials(doc, reserved = []) {
   const items = doc?.runners?.items || [];
-  const own = (r) => !r.credential && !!(r.token || r.username || r.password);
-  if (!items.some(own)) return { doc, folded: [] };
+  if (!items.some(runnerOwnsSecrets)) return { doc, folded: [] };
+  const own = runnerOwnsSecrets;
   const credentials = doc.credentials ? { ...doc.credentials } : { items: [] };
   credentials.items = [...(credentials.items || [])];
-  const taken = new Set(credentials.items.map((c) => c.name));
+  const taken = new Set([...credentials.items.map((c) => c.name), ...reserved]);
   const folded = [];
   const runnerItems = items.map((r) => {
     if (!own(r)) return r;
