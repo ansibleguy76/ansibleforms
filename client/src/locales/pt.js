@@ -1800,6 +1800,7 @@ export default {
       pendingIp: 'Endereço IP',
       pendingVersion: 'Versão',
       pendingSince: 'Pedido em',
+      pendingAgo: 'pediu {when}',
       approve: 'Aprovar',
       reviewApproval: 'Rever aprovação',
       waitingNotice: '{count} Runner aguarda aprovação | {count} Runners aguardam aprovação',

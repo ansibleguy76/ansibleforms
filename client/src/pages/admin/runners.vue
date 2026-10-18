@@ -46,7 +46,7 @@ const info = (r) => {
  * A runner waiting for approval in a few words : its host, its IP address, its mode, its address
  * (inbound), its fingerprint and when it asked, each as key and value ; its version is in the
  * review dialog (it does not decide an approval : an RTE of another contract cannot ask to join).
- * When it asked reads as a while ago, its full date and time on hover.
+ * When it asked reads as a phrase (asked 17 minutes ago), its full date and time on hover.
  *
  * Args:
  *   r (object): the runner.
@@ -62,9 +62,11 @@ function details(r) {
     { key: t('settings.runners.rteMode'), value: i.mode && t(`settings.runners.rteMode_${i.mode}`) },
     { key: t('settings.fields.uri'), value: i.url },
     { key: t('settings.runners.pendingFingerprint'), value: i.fingerprint },
+    // when it asked : a phrase (asked 17 minutes ago), not key: value ; its date on hover
     {
-      key: t('settings.runners.pendingSince'),
-      value: r.pending_since && ago(r.pending_since),
+      key: 'since',
+      text: r.pending_since && t('settings.runners.pendingAgo', { when: ago(r.pending_since) }),
+      value: r.pending_since,
       title: r.pending_since && Helpers.formatServerDate(r.pending_since),
     },
   ].filter((d) => d.value);
@@ -216,7 +218,7 @@ onMounted(async () => {
                 <span class="text-body-secondary small ms-2">
                   <template v-for="(d, n) in details(r)" :key="d.key"
                     ><template v-if="n"> · </template
-                    ><span :title="d.title || undefined">{{ d.key }}: {{ d.value }}</span></template
+                    ><span :title="d.title || undefined">{{ d.text || `${d.key}: ${d.value}` }}</span></template
                   >
                 </span>
               </li>

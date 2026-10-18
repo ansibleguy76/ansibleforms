@@ -1365,6 +1365,7 @@ export default {
       pendingIp: 'Dirección IP',
       pendingVersion: 'Versión',
       pendingSince: 'Solicitado el',
+      pendingAgo: 'lo pidió {when}',
       approve: 'Aprobar',
       reviewApproval: 'Revisar aprobación',
       waitingNotice: '{count} Runner espera aprobación | {count} Runners esperan aprobación',

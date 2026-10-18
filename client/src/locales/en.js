@@ -1346,6 +1346,7 @@ export default {
       pendingIp: 'IP address',
       pendingVersion: 'Version',
       pendingSince: 'Asked on',
+      pendingAgo: 'asked {when}',
       approve: 'Approve',
       reviewApproval: 'Review approval',
       waitingNotice: '{count} Runner is waiting for approval | {count} Runners are waiting for approval',

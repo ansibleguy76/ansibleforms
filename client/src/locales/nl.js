@@ -1359,6 +1359,7 @@ export default {
       pendingIp: 'IP-adres',
       pendingVersion: 'Versie',
       pendingSince: 'Aangevraagd op',
+      pendingAgo: 'aangevraagd {when}',
       approve: 'Goedkeuren',
       reviewApproval: 'Goedkeuring beoordelen',
       waitingNotice: '{count} Runner wacht op goedkeuring | {count} Runners wachten op goedkeuring',

@@ -1805,6 +1805,7 @@ export default {
       pendingIp: 'Adreça IP',
       pendingVersion: 'Versió',
       pendingSince: 'Sol·licitat el',
+      pendingAgo: 'ho va demanar {when}',
       approve: 'Aprova',
       reviewApproval: "Revisar l'aprovació",
       waitingNotice: '{count} Runner espera aprovació | {count} Runners esperen aprovació',

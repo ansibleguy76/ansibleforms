@@ -1366,6 +1366,7 @@ export default {
       pendingIp: 'IP-Adresse',
       pendingVersion: 'Version',
       pendingSince: 'Angefragt am',
+      pendingAgo: 'angefragt {when}',
       approve: 'Freigeben',
       reviewApproval: 'Genehmigung prüfen',
       waitingNotice: '{count} Runner wartet auf Freigabe | {count} Runner warten auf Freigabe',

@@ -1717,6 +1717,7 @@ export default {
       pendingIp: 'IP 地址',
       pendingVersion: '版本',
       pendingSince: '请求时间',
+      pendingAgo: '{when}申请',
       approve: '批准',
       reviewApproval: '审核审批',
       waitingNotice: '{count} 个运行器等待批准',

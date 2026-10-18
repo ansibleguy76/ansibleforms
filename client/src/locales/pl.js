@@ -1790,6 +1790,7 @@ export default {
       pendingIp: 'Adres IP',
       pendingVersion: 'Wersja',
       pendingSince: 'Poproszono',
+      pendingAgo: 'poprosił {when}',
       approve: 'Zatwierdź',
       reviewApproval: 'Rozpatrz zatwierdzenie',
       waitingNotice:

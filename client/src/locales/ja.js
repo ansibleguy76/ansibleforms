@@ -1773,6 +1773,7 @@ export default {
       pendingIp: 'IP アドレス',
       pendingVersion: 'バージョン',
       pendingSince: '申請日時',
+      pendingAgo: '{when}に申請',
       approve: '承認',
       reviewApproval: '承認を確認',
       waitingNotice: '{count} 件のランナーが承認を待っています',

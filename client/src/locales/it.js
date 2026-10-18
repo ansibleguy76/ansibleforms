@@ -1359,6 +1359,7 @@ export default {
       pendingIp: 'Indirizzo IP',
       pendingVersion: 'Versione',
       pendingSince: 'Richiesto il',
+      pendingAgo: 'richiesto {when}',
       approve: 'Approva',
       reviewApproval: 'Esamina approvazione',
       waitingNotice: "{count} Runner attende l'approvazione | {count} Runner attendono l'approvazione",
