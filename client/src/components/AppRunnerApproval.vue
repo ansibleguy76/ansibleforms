@@ -114,7 +114,7 @@ async function decide(what) {
   gap: 0.5rem 1.5rem;
   margin: 0;
   dt {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
