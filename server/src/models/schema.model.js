@@ -1620,8 +1620,10 @@ const URL_TYPES = ["api", "userpass", "cyberark"];
  *     stored (the same key encrypts all tables)
  * The record's own address and TLS then emptied (the columns are NOT NULL : ''). Not a seeded
  * record : the seed owns it, and its own address is still used while its credential has none.
- * Not an RTE that registered itself : it writes its own address and token. Idempotent : only a
- * record with an address left.
+ * Not an RTE that registered itself : it writes its own address and token. An RTE added by hand
+ * keeps its address as well (its credential's is the one used) : an RTE still on 7.2 finds its
+ * runner by that address, and would otherwise register itself as a second runner. Idempotent :
+ * only a record with an address left, an RTE only while its credential has not that address.
  *
  * Returns:
  *   Promise<string|null>: what was done, or null when there was nothing to do.
@@ -1647,6 +1649,14 @@ export async function moveConnectionsToCredentials() {
       ),
     },
   ];
+  // an RTE whose credential has its address already : moved before (it keeps its own, above)
+  const credUrls = new Map(
+    ((await mysql.do("SELECT name, url FROM AnsibleForms.`credentials`")) || []).map((c) => [c.name, String(c.url || "").trim().replace(/\/+$/, "")]),
+  );
+  const runnersKind = kinds.find((k) => k.table === "runners");
+  runnersKind.rows = (runnersKind.rows || []).filter(
+    (r) => !(r.type === "rte" && r.credential && credUrls.get(r.credential) === String(r.address).trim().replace(/\/+$/, "")),
+  );
   if (!kinds.some((k) => k.rows.length)) return null;
   const done = [];
   for (const kind of kinds) {
@@ -1698,6 +1708,8 @@ export async function moveConnectionsToCredentials() {
           done.push(`${r.name} into ${name}`);
         }
         const cleared = { [kind.column]: "", ignore_certs: 0, ca_bundle: null, credential: name };
+        // an RTE keeps its address : one still on 7.2 finds its runner by it (see above)
+        if (kind.table === "runners" && r.type === "rte") delete cleared[kind.column];
         if (ownSecrets) {
           Object.assign(cleared, kind.table === "secret_stores" ? { token: null, app_id: null, client_cert: null, client_key: null } : { token: null });
         }

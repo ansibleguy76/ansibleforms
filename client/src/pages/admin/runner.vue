@@ -277,7 +277,12 @@ async function loadJobs() {
     jobs.value = [];
   }
 }
-const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
+// every tab a runner may have : the url's is checked before the runner is read (the RTE tab is an
+// RTE's only), then shownTab falls back to Details for a runner without it
+const { activeTab, tabLink } = useRouteTab('details', (key) =>
+  ['details', 'type', 'rte', 'credentials', 'forms', 'jobs'].includes(key),
+);
+const shownTab = computed(() => (tabs.value.some((x) => x.key === activeTab.value) ? activeTab.value : 'details'));
 
 // the title : Runners › <name>, each step a link
 const pageCrumbs = computed(() => [
@@ -290,7 +295,7 @@ const pageCrumbs = computed(() => [
 ]);
 // and the open tab last, as every page in tabs names it : Users › admin › Groups
 const crumbs = computed(() => {
-  const tab = tabs.value.find((x) => x.key === activeTab.value);
+  const tab = tabs.value.find((x) => x.key === shownTab.value);
   return tab ? [...pageCrumbs.value, { title: tab.label, icon: tab.icon, to: tabLink(tab.key) }] : pageCrumbs.value;
 });
 
@@ -304,7 +309,7 @@ const defaultFor = computed(() => t(`settings.runners.default_${runner.value?.ty
 // each under its tab's name, the tabs set aside meanwhile.
 const { search, searching, matchingKeys, tableMatches, shownTabs, tabShown, searchHead } = useRecordSearch({
   tabs: () => tabs.value,
-  activeTab: () => activeTab.value,
+  activeTab: () => shownTab.value,
   tabMatch: (key) => tabMatch(key),
 });
 // each tab's fields : [key, label, help], only those its kind shows (as the template's v-if)
@@ -444,7 +449,13 @@ function rteEnvNote(f) {
 const notesOf = (f) => rteEnvNote(f);
 // Job files : the default, transfer or local
 const filesOptions = computed(() => [
-  { value: '', label: t('settings.runners.files_default') },
+  // the default : the RTE's own RTE_FILES when it has one, else transfer
+  {
+    value: '',
+    label: t('settings.runners.files_defaultValue', {
+      value: t(`settings.runners.files_${rteEnv(RTE_FILES) || 'transfer'}`),
+    }),
+  },
   { value: 'transfer', label: t('settings.runners.files_transfer') },
   { value: 'local', label: t('settings.runners.files_local') },
 ]);
@@ -603,12 +614,7 @@ onMounted(async () => {
       <template v-if="runner && !searching" #tabs>
         <ul class="nav nav-tabs mb-0">
           <li v-for="tab in tabs" :key="tab.key" class="nav-item">
-            <a
-              class="nav-link"
-              :class="{ active: activeTab === tab.key }"
-              href="#"
-              @click.prevent="activeTab = tab.key"
-            >
+            <a class="nav-link" :class="{ active: shownTab === tab.key }" href="#" @click.prevent="activeTab = tab.key">
               <FaIcon :icon="tab.icon" class="me-1" />
               {{ tab.label }}
               <span v-if="tab.count !== undefined" class="badge af-tab-count ms-1">{{ tab.count }}</span>
@@ -762,60 +768,6 @@ onMounted(async () => {
                 />
               </template>
             </template>
-            <!-- Authentication : an RTE's, a Semaphore's or a Rundeck's token, a Jenkins' user and
-                 its token ; an AWX's token, or a user and password -->
-            <template v-if="tabShown('credentials')">
-              <template v-if="searching && searchHead('credentials')">
-                <hr v-if="!searchHead('credentials').first" class="mt-4 mb-0 af-search-line" />
-                <h6
-                  class="fw-bold text-body-secondary af-search-tab"
-                  :class="{ 'af-search-first': searchHead('credentials').first }"
-                >
-                  <FaIcon :icon="searchHead('credentials').tab.icon" class="me-1" />{{
-                    searchHead('credentials').tab.label
-                  }}
-                </h6>
-              </template>
-              <BsInput
-                class="af-runner-field"
-                v-model="edit.credential"
-                v-show="fieldShown('credential')"
-                type="select"
-                icon="key"
-                :isFloating="false"
-                :values="credentials"
-                :emptyText="noCredentialsText(t, edit.kind || 'rte')"
-                valueKey="name"
-                labelKey="name"
-                :help="t(`settings.runners.credentialHelp_${edit.kind || 'rte'}`)"
-                :label="t('settings.runners.credential')"
-              />
-              <!-- a credential without a server : said (it connects to its credential's) -->
-              <p
-                v-if="edit.credential && !chosenServer && !outboundRte"
-                v-show="fieldShown('no_server')"
-                class="form-text text-warning-emphasis mb-0"
-              >
-                {{ t('settings.credentials.noServer') }}
-              </p>
-              <!-- one from before credentials : its own token, until a credential is chosen -->
-              <p v-if="ownSecret && !edit.credential" v-show="fieldShown('own_token')" class="form-text mb-0">
-                {{ t(runner.node_id ? 'settings.runners.ownTokenRte' : 'settings.runners.ownToken') }}
-              </p>
-              <!-- a Semaphore's project id, a Rundeck's project name, a Jenkins' folder : where on
-                   the credential's server it launches -->
-              <BsInput
-                v-if="hasProject"
-                class="af-runner-field mt-3"
-                v-model="edit.project"
-                v-show="fieldShown('project')"
-                icon="folder"
-                :isFloating="false"
-                :required="!isJenkins"
-                :help="t(`settings.runners.projectHelp_${edit.kind}`)"
-                :label="t('settings.runners.project')"
-              />
-            </template>
             <!-- RTE : how it talks to the app and its connection ; in a socket mode its settings,
                  sent to it over its socket : they win over the same variables on the RTE, which
                  fill the empty ones -->
@@ -874,6 +826,60 @@ onMounted(async () => {
               <p v-else v-show="fieldShown('rte_socket_only')" class="form-text mb-0">
                 {{ t('settings.runners.rteSettingsSocketOnly') }}
               </p>
+            </template>
+            <!-- Authentication : an RTE's, a Semaphore's or a Rundeck's token, a Jenkins' user and
+                 its token ; an AWX's token, or a user and password -->
+            <template v-if="tabShown('credentials')">
+              <template v-if="searching && searchHead('credentials')">
+                <hr v-if="!searchHead('credentials').first" class="mt-4 mb-0 af-search-line" />
+                <h6
+                  class="fw-bold text-body-secondary af-search-tab"
+                  :class="{ 'af-search-first': searchHead('credentials').first }"
+                >
+                  <FaIcon :icon="searchHead('credentials').tab.icon" class="me-1" />{{
+                    searchHead('credentials').tab.label
+                  }}
+                </h6>
+              </template>
+              <BsInput
+                class="af-runner-field"
+                v-model="edit.credential"
+                v-show="fieldShown('credential')"
+                type="select"
+                icon="key"
+                :isFloating="false"
+                :values="credentials"
+                :emptyText="noCredentialsText(t, edit.kind || 'rte')"
+                valueKey="name"
+                labelKey="name"
+                :help="t(`settings.runners.credentialHelp_${edit.kind || 'rte'}`)"
+                :label="t('settings.runners.credential')"
+              />
+              <!-- a credential without a server : said (it connects to its credential's) -->
+              <p
+                v-if="edit.credential && !chosenServer && !outboundRte"
+                v-show="fieldShown('no_server')"
+                class="form-text text-warning-emphasis mb-0"
+              >
+                {{ t('settings.credentials.noServer') }}
+              </p>
+              <!-- one from before credentials : its own token, until a credential is chosen -->
+              <p v-if="ownSecret && !edit.credential" v-show="fieldShown('own_token')" class="form-text mb-0">
+                {{ t(runner.node_id ? 'settings.runners.ownTokenRte' : 'settings.runners.ownToken') }}
+              </p>
+              <!-- a Semaphore's project id, a Rundeck's project name, a Jenkins' folder : where on
+                   the credential's server it launches -->
+              <BsInput
+                v-if="hasProject"
+                class="af-runner-field mt-3"
+                v-model="edit.project"
+                v-show="fieldShown('project')"
+                icon="folder"
+                :isFloating="false"
+                :required="!isJenkins"
+                :help="t(`settings.runners.projectHelp_${edit.kind}`)"
+                :label="t('settings.runners.project')"
+              />
             </template>
           </fieldset>
         </div>
@@ -936,7 +942,7 @@ onMounted(async () => {
       <template v-if="runner" #actions>
         <!-- Credentials : a new credential of the type it signs in with, chosen once made -->
         <AppNewCredentialButton
-          v-if="activeTab === 'credentials'"
+          v-if="shownTab === 'credentials'"
           :type="edit?.kind || 'rte'"
           :disabled="readOnly"
           @created="onCredentialCreated"

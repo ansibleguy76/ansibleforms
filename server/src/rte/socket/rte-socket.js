@@ -38,7 +38,7 @@ import { runAnsibleJob, useJobIO } from "../ansible-core.js";
 import { Session } from "./session.js";
 import { JobSpool } from "./spool.js";
 import { FileCache } from "./files.js";
-import { RTE_SETTINGS, parseSetting, settingsOfEnv, effectiveSettings } from "./settings.js";
+import { RTE_SETTINGS, parseSetting, settingsOfEnv, effectiveSettings, envSettingWarnings } from "./settings.js";
 import {
   SOCKET_CONTRACT, RTE_SOCKET_PATH, CLOSE, WINDOW, MAX_PAYLOAD, REFUSED_CLOSES, REFUSED_STATUSES, REFUSED_REDIAL_MS,
   CONTRACT_REDIAL_MS,
@@ -772,6 +772,7 @@ export async function startSocketRte(rteMode) {
   installFatalHandlers("RTE");
   useJobIO(socketJobIO);
   fs.mkdirSync(spoolDir(), { recursive: true, mode: 0o700 });
+  for (const line of envSettingWarnings()) logger.warning(`RTE: ${line}`);
   cache = new FileCache(cacheDir(), settings().cacheMb * 1048576, nodeId);
   ansible = await ansibleVersion();
 
@@ -849,9 +850,11 @@ export async function startSocketRte(rteMode) {
   // inbound with the app's address : one call so the app knows this RTE and dials it
   else if (process.env.APP_URL) registerInbound(token).catch((e) => logger.error(`RTE: registration: ${e.message}`));
 
-  // its health to the app every 20 s : what it runs and its free slots
+  // its health to the app every 20 s : what it runs and its free slots ; and its jobs folder
+  // said alive, so an RTE sharing the cache never takes it for one that is gone
   setInterval(() => {
     sendHealth();
+    cache?.heartbeat();
   }, 20000).unref();
 }
 

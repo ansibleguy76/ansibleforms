@@ -559,13 +559,16 @@ const KEEP_WORKFLOW_ABORT = { toSqlString: () => "IF(job_type='workflow', abort_
 // stopped answering) that its runner finished after all ends with what really happened
 const ENDS_FROM = ["running", "abandoned"];
 
+// opts.rethrow : a failure is thrown to the caller, not only logged - the RTE hub then does not
+// ack the end, and the RTE sends it again (runners/rteHub.js onItem)
 Job.endJobStatus = async (
   jobid,
   counter,
   stream,
   status,
   message,
-  awx_artifacts = {}
+  awx_artifacts = {},
+  opts = {}
 ) => {
   try {
     // the end is written once : a second writer (a late RTE, a sweep, the app failing it) finds
@@ -590,6 +593,7 @@ Job.endJobStatus = async (
     return await Job.sendStatusNotification(jobid);
   } catch (error) {
     logger.error("Failed to end the job.", error);
+    if (opts.rethrow) throw error;
   }
 };
 Job.printJobOutput = async (data, type, jobid, counter, incrementIssue) => {

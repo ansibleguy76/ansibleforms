@@ -1486,7 +1486,7 @@ export default {
       filesMode: 'Fichiers de job',
       filesModeHelp:
         "Transfert : l'app envoie les fichiers avec le job. Local : le RTE s'exécute depuis ses propres dossiers montés.",
-      files_default: 'Par défaut (transfert)',
+      files_defaultValue: 'Par défaut ({value})',
       files_transfer: 'Transfert',
       files_local: 'Local',
       drainSeconds: "Délai d'arrêt",

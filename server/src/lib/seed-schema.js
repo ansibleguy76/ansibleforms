@@ -144,10 +144,10 @@ const runnerItem = {
     // a socket-mode RTE's settings (rte/socket/settings.js), sent over its socket ; they win over
     // the same variables set on the RTE : the playbooks it runs at once (0 no limit), its job files cache in MB
     // (0 keeps none), where it gets a job's files, how long a stop waits
-    rte_max_jobs: { type: "integer", minimum: 0, maximum: 1000 },
+    rte_max_jobs: { type: "integer", minimum: 0, maximum: 10000 },
     rte_cache_mb: { type: "integer", minimum: 0, maximum: 1048576 },
     rte_files: { type: "string", enum: ["transfer", "local"] },
-    rte_drain_seconds: { type: "integer", minimum: 0, maximum: 3600 },
+    rte_drain_seconds: { type: "integer", minimum: 0, maximum: 86400 },
   },
 };
 
