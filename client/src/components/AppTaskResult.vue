@@ -233,6 +233,13 @@ const codeLines = computed(
 .tab-card-flush-card {
   border-top-left-radius: 0;
   border-top-right-radius: 0;
+  /* a tab longer than the dialog scrolls inside the card, its scrollbar on the card's right
+     edge : the dialog's header, the status line, the tabs and the footer stay in view */
+  > .card-body {
+    max-height: calc(100dvh - 20rem);
+    overflow-y: auto;
+    border-radius: 0 0 calc(var(--bs-border-radius) - 1px) calc(var(--bs-border-radius) - 1px);
+  }
 }
 /* a code tab : no padding, its grey text the card's whole inside, its bottom corners the card's */
 .af-result-code {
@@ -241,10 +248,8 @@ const codeLines = computed(
     border-radius: 0 0 calc(var(--bs-border-radius) - 1px) calc(var(--bs-border-radius) - 1px);
   }
 }
-/* a result's text : the output's monospace, scrolling in the dialog rather than stretching it */
+/* a result's text : the output's monospace, the card scrolling it */
 .af-result-pre {
-  max-height: 55vh;
-  overflow: auto;
   margin: 0;
   padding: 0.75rem;
   border-radius: 0.375rem;
