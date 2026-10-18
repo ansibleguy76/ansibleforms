@@ -78,10 +78,28 @@ const fixedBackupSources = ['file','database']
 
 const pathDelimiterRegex = new RegExp(`(?<!\\\\)${path.delimiter}`, 'g');
 
+/**
+ * Extracts the '.bak.<17 digit timestamp>' suffix of a backup name.
+ *
+ * The name comes straight from the URL of the restore / delete endpoints, so it is
+ * validated here : a name without the suffix used to crash with a TypeError
+ * (reading [1] of a null match), which surfaced as a 500 instead of a clear 400.
+ *
+ * Args:
+ *   t (string): The backup name, e.g. 'config.yaml.bak.20261018120000000'.
+ *
+ * Returns:
+ *   string: The suffix, e.g. '.bak.20261018120000000'.
+ *
+ * Raises:
+ *   BadRequestError: When the name is not a string or carries no valid suffix.
+ */
 function getBackupSuffix(t){
-  var backuppartre=/(\.bak\.[0-9]{17})$/g
-  var backuppart=backuppartre.exec(t)[1]
-  return backuppart
+  const match = typeof t === 'string' ? /(\.bak\.[0-9]{17})$/.exec(t) : null
+  if(!match){
+    throw new Errors.BadRequestError(`Invalid backup name '${String(t)}'`)
+  }
+  return match[1]
 }
 // Which source a stored snapshot was taken from, told by the artifact that exists
 // for its timestamp : a 'file' / 'database' snapshot carries its source in the name,
