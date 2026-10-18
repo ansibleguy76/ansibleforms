@@ -143,6 +143,8 @@ const json = computed(() => (result.value ? JSON.stringify(result.value, null, 2
 .af-result-facts {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
+  /* each label on its value's line : both on the text's baseline */
+  align-items: baseline;
   gap: 0.4rem 1.5rem;
   margin: 0 0 1rem;
   &:last-child {
@@ -154,7 +156,6 @@ const json = computed(() => (result.value ? JSON.stringify(result.value, null, 2
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--bs-secondary-color);
-    align-self: baseline;
   }
   dd {
     margin: 0;
