@@ -2836,7 +2836,7 @@ export default function getSettings(t) {
           // a mail channel only : the one the app sends its mail with ; the others stop being it
           name: 'use',
           title: t('settings.notificationChannels.useForMail'),
-          icon: 'envelope',
+          icon: 'check',
           color: 'edit',
           shownWhen: (m) => m.type === 'mail',
           enabledWhen: (m) => !m.is_active,
