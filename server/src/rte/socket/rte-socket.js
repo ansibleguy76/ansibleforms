@@ -40,7 +40,8 @@ import { JobSpool } from "./spool.js";
 import { FileCache } from "./files.js";
 import {
   SOCKET_CONTRACT, RTE_SOCKET_PATH, CLOSE, WINDOW, MAX_PAYLOAD, REFUSED_CLOSES, REFUSED_STATUSES, REFUSED_REDIAL_MS,
-  socketUrl, fingerprint,
+  CONTRACT_REDIAL_MS,
+  socketUrl, fingerprint, certFingerprint, listenHost,
 } from "./protocol.js";
 
 // ─── settings ─────────────────────────────────────────────────────────────────
@@ -56,6 +57,45 @@ const cacheDir = () => process.env.RTE_CACHE_PATH || path.join(PERSISTENT, "rte-
 const filesMode = () => (String(process.env.RTE_FILES || "transfer").toLowerCase() === "local" ? "local" : "transfer");
 // the name the RTE joins as (its runner under Connections > Runners) : RTE_NAME, else its node id
 const rteName = () => String(process.env.RTE_NAME || "").trim() || nodeId;
+// the certificate shipped in the image (config/https.config.js copies it when none is mounted) :
+// its private key is public, pinning it proves nothing
+const TEMPLATE_CERT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../templates/seed/cert.pem.template");
+
+/**
+ * The certificate an inbound RTE sends when it registers (field cert of the registration call),
+ * so the app dials it pinned to it : its HTTPS_CERT, when it serves HTTPS (HTTPS=1) and the
+ * address the app dials (RTE_URL) is https. Behind a proxy that ends TLS for it, the RTE runs
+ * without HTTPS=1 and sends none : the app checks the proxy's certificate as any other.
+ *
+ * Args:
+ *   env (object): the environment (process.env ; the tests set it).
+ *   tls (object): { https, httpsCert } (config/https.config.js ; the tests set it).
+ *
+ * Returns:
+ *   string|null: the certificate (PEM), null when none is sent.
+ */
+export function certToSend(env = process.env, tls = httpsConfig) {
+  if (!tls?.https || !tls.httpsCert) return null;
+  if (!/^https:\/\//i.test(String(env.RTE_URL || "").trim())) return null;
+  return Buffer.isBuffer(tls.httpsCert) ? tls.httpsCert.toString("utf8") : String(tls.httpsCert);
+}
+
+/**
+ * Whether a certificate is the one shipped in the image (its private key is public).
+ *
+ * Args:
+ *   pem (string): the certificate.
+ *
+ * Returns:
+ *   boolean
+ */
+function isTemplateCert(pem) {
+  try {
+    return certFingerprint(pem) !== null && certFingerprint(pem) === certFingerprint(fs.readFileSync(TEMPLATE_CERT));
+  } catch {
+    return false;
+  }
+}
 
 // ─── state ────────────────────────────────────────────────────────────────────
 
@@ -67,6 +107,12 @@ let welcomed = false;
 let cache = null;
 let mode = "outbound";
 let ansible = null;
+// the cancels of jobs this RTE does not run (yet) : jobId -> until when it is kept. The app may
+// ask to stop a job before its run message arrives (it claims the job in its database first) :
+// the cancel is kept a minute and applied when the run comes, never dropped
+const earlyCancels = new Map();
+const EARLY_CANCEL_MS = 60000;
+const EARLY_CANCEL_MAX = 1000;
 
 /**
  * This RTE's capacity, in its hello and health : the app sends no job to a full RTE.
@@ -293,6 +339,11 @@ async function onRun(msg) {
     running: true,
   };
   jobs.set(jobId, entry);
+  // a cancel that came before this run : the job starts aborted (the run polls the flag)
+  if (takeEarlyCancel(jobId)) {
+    entry.abort = true;
+    logger.notice(`RTE: job ${jobId} was cancelled before it arrived: stopping it at once`);
+  }
   session?.send({ t: "claimed", jobId });
   logger.notice(`RTE: running job ${jobId}`);
   (async () => {
@@ -311,14 +362,54 @@ async function onRun(msg) {
 }
 
 /**
- * Stops a job (cancel) : the flag first, so the run ends as aborted, then its process group.
+ * Keeps the cancel of a job this RTE does not run yet, for EARLY_CANCEL_MS : its run message
+ * may still be on its way. The ones expired go first, and at most EARLY_CANCEL_MAX are kept.
+ *
+ * Args:
+ *   jobId (number): the job.
+ *   now (number): the time, in ms (the tests set it).
+ */
+function rememberCancel(jobId, now = Date.now()) {
+  // step 1 : the expired ones forgotten
+  for (const [id, until] of earlyCancels) if (until <= now) earlyCancels.delete(id);
+  // step 2 : full : the oldest goes (a Map keeps the order they came in)
+  while (earlyCancels.size >= EARLY_CANCEL_MAX) earlyCancels.delete(earlyCancels.keys().next().value);
+  earlyCancels.set(jobId, now + EARLY_CANCEL_MS);
+}
+
+/**
+ * Takes the cancel kept for a job, if one came less than EARLY_CANCEL_MS ago.
+ *
+ * Args:
+ *   jobId (number): the job.
+ *   now (number): the time, in ms (the tests set it).
+ *
+ * Returns:
+ *   boolean: true when the job was cancelled before it arrived.
+ */
+function takeEarlyCancel(jobId, now = Date.now()) {
+  const until = earlyCancels.get(jobId);
+  earlyCancels.delete(jobId);
+  return !!until && until > now;
+}
+
+/**
+ * Stops a job (cancel) : the flag first, so the run ends as aborted, then its process group. A
+ * job this RTE does not know yet : the cancel is kept, and applied when its run comes.
  *
  * Args:
  *   msg (object): { jobId }.
  */
 function onCancel(msg) {
-  const entry = jobs.get(parseInt(msg.jobId, 10));
-  if (!entry?.running) return;
+  const jobId = parseInt(msg.jobId, 10);
+  if (!Number.isInteger(jobId) || jobId <= 0) return;
+  const entry = jobs.get(jobId);
+  // not known yet (its run is on its way) : kept a while ; known and ended : nothing to stop
+  if (!entry) {
+    rememberCancel(jobId);
+    return;
+  }
+  if (!entry.running) return;
   entry.abort = true;
   if (entry.pid > 0) {
     try {
@@ -424,8 +515,10 @@ function rteHeaders(token) {
  * How long an outbound RTE waits before it dials the app again. A socket that dropped, or an
  * app that did not answer : a little longer each time (1 s up to 30 s, with some jitter so a
  * fleet does not dial at once). Refused (the runner rejected or removed, the token, the join
- * token or the id refused, another contract) : REFUSED_REDIAL_MS, since dialing again sooner
- * would be refused the same way until an admin acts.
+ * token refused, a runner of that name approved already) : REFUSED_REDIAL_MS, since dialing
+ * again sooner would be refused the same way until an admin acts. Another contract : the app
+ * or this RTE is being upgraded, CONTRACT_REDIAL_MS (a minute), so it is back soon after the
+ * other side follows.
  *
  * Args:
  *   close (object): { code : the socket's close code, status : the HTTP status the handshake
@@ -440,6 +533,8 @@ export function redialWait({ code, status, delay, random = Math.random() }) {
   if (REFUSED_CLOSES.includes(code) || REFUSED_STATUSES.includes(status)) {
     return { wait: REFUSED_REDIAL_MS, delay: 1000, refused: true };
   }
+  // another contract : refused too, but only until one side is upgraded
+  if (code === CLOSE.CONTRACT) return { wait: CONTRACT_REDIAL_MS, delay: 1000, refused: true };
   return { wait: delay + Math.floor(random * 1000), delay: Math.min(delay * 2, 30000), refused: false };
 }
 
@@ -491,7 +586,8 @@ function dialOut(token) {
       if (isStopping()) return;
       const next = redialWait({ code, status: refusedStatus, delay });
       delay = next.delay;
-      if (next.refused) logger.warning(`RTE '${rteName()}': the app refused this RTE (${refusedStatus || code}): dialing again in ${Math.round(next.wait / 60000)} minutes, or restart it once an admin acted`);
+      if (next.refused && code === CLOSE.CONTRACT) logger.warning(`RTE '${rteName()}': the app speaks another contract (an upgrade in progress?): dialing again in ${Math.round(next.wait / 1000)} seconds`);
+      else if (next.refused) logger.warning(`RTE '${rteName()}': the app refused this RTE (${refusedStatus || code}): dialing again in ${Math.round(next.wait / 60000)} minutes, or restart it once an admin acted`);
       else logger.info(`RTE: dialing the app again in ${Math.round(next.wait / 1000)} seconds`);
       setTimeout(connect, next.wait).unref?.();
     });
@@ -539,7 +635,10 @@ async function registerInbound(token) {
   for (;;) {
     if (isStopping()) return;
     try {
-      const { data } = await axios.post(url, { mode: "inbound", url: process.env.RTE_URL }, { headers, httpsAgent, proxy: false, timeout: 15000 });
+      // its certificate goes with it (an https RTE_URL, HTTPS=1) : the app dials it pinned to it
+      const cert = certToSend();
+      const body = { mode: "inbound", url: process.env.RTE_URL, ...(cert ? { cert } : {}) };
+      const { data } = await axios.post(url, body, { headers, httpsAgent, proxy: false, timeout: 15000 });
       if (data.pending) logger.warning(`RTE '${rteName()}': asked to join as inbound runner '${data.runner}': the app dials it once an admin approves it under Connections > Runners (fingerprint ${fingerprint(token)})`);
       else logger.notice(`RTE '${rteName()}': registered with the app as inbound runner '${data.runner}' at ${data.uri}: the app dials it from now on`);
       return;
@@ -660,8 +759,17 @@ export async function startSocketRte(rteMode) {
     });
   }
 
-  await new Promise((resolve) => server.listen(port, resolve));
-  logger.notice(`RTE '${rteName()}' ${version} (${mode}, files ${filesMode()}) listening on ${httpsConfig.https ? "https" : "http"} port ${port}, token fingerprint ${fingerprint(token)}`);
+  // every interface, unless LISTEN_HOST names one (127.0.0.1 : a native outbound RTE)
+  const host = listenHost();
+  await new Promise((resolve) => server.listen(port, host, resolve));
+  logger.notice(`RTE '${rteName()}' ${version} (${mode}, files ${filesMode()}) listening on ${httpsConfig.https ? "https" : "http"} ${host ? `${host}:` : "port "}${port}, token fingerprint ${fingerprint(token)}`);
+  if (mode === "inbound" && httpsConfig.https && httpsConfig.httpsCert) {
+    const pem = httpsConfig.httpsCert.toString("utf8");
+    logger.notice(`RTE '${rteName()}': certificate fingerprint ${certFingerprint(pem) || "?"}${certToSend() ? " (sent to the app when it registers: the app dials it pinned to it)" : ""}`);
+    if (isTemplateCert(pem)) logger.warning(`[SECURITY] RTE '${rteName()}': HTTPS_CERT is the sample certificate shipped in the image, whose private key is public: mount a certificate of your own (HTTPS_CERT, HTTPS_KEY)`);
+  } else if (mode === "inbound" && /^http:\/\//i.test(String(process.env.RTE_URL || ""))) {
+    logger.warning(`RTE '${rteName()}': inbound over plain http: the app sends RTE_TOKEN in clear. Set HTTPS=1 and an https RTE_URL so the app pins this RTE's certificate`);
+  }
   if (mode === "outbound") dialOut(token);
   // inbound with the app's address : one call so the app knows this RTE and dials it
   else if (process.env.APP_URL) registerInbound(token).catch((e) => logger.error(`RTE: registration: ${e.message}`));
@@ -673,4 +781,4 @@ export async function startSocketRte(rteMode) {
 }
 
 // for the tests
-export { socketJobIO, jobs, capacity, onRun, onAck, onCancel, attach, maskDeep };
+export { socketJobIO, jobs, capacity, onRun, onAck, onCancel, attach, maskDeep, earlyCancels, rememberCancel, takeEarlyCancel };

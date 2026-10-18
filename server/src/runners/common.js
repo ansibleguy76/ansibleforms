@@ -5,6 +5,8 @@
 // did not run : failed, aborted while it waited, waiting for a free slot.
 import axios from "axios";
 import https from "https";
+import tls from "tls";
+import { X509Certificate } from "crypto";
 import { stripTrailingSlashes } from "../lib/url.js";
 // a cycle (job.model imports the orchestrator, which reaches the runners) ; Job is only used
 // when a job runs, long after both modules have loaded
@@ -16,20 +18,59 @@ export function delay(t, v) {
 }
 
 /**
+ * The SHA-256 fingerprints of the certificates in a PEM bundle, as Node writes them
+ * (AB:CD:...), the ones that cannot be read left out.
+ *
+ * Args:
+ *   bundle (string): the PEM text.
+ *
+ * Returns:
+ *   Set<string>
+ */
+function pemFingerprints(bundle) {
+  const out = new Set();
+  for (const block of String(bundle || "").match(/-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/g) || []) {
+    try {
+      out.add(new X509Certificate(block).fingerprint256);
+    } catch {
+      // not a certificate : it pins nothing
+    }
+  }
+  return out;
+}
+
+/**
  * The certificate checked or not, against a private authority's certificates when given : the
  * agent of a runner's http calls, and of the socket the app dials to an inbound RTE.
  *
+ * Pinned (opts.pin, the socket to an inbound RTE) : a server whose own certificate is one of the
+ * ca_bundle's is trusted whatever name the app dials it by - the certificate was sent by the RTE
+ * when it registered, and an admin approved it, so it is the RTE's whatever its subject says
+ * (a self-signed certificate made for the RTE's container name, dialed by its IP address). Any
+ * other certificate is checked as always : a chain to the bundle, and the name.
+ *
  * Args:
  *   runner (object): the runner row (ignore_certs, ca_bundle).
+ *   opts (object): { pin : true to trust the bundle's own certificates by fingerprint }.
  *
  * Returns:
  *   https.Agent
  */
-export function getHttpsAgent(runner) {
-  return new https.Agent({
+export function getHttpsAgent(runner, opts = {}) {
+  const options = {
     rejectUnauthorized: !runner?.ignore_certs,
     ca: runner?.ca_bundle || undefined,
-  });
+  };
+  if (opts.pin && runner?.ca_bundle && !runner?.ignore_certs) {
+    const pinned = pemFingerprints(runner.ca_bundle);
+    if (pinned.size) {
+      // a leaf of the bundle that is not self-signed is a trust anchor of its own (no chain
+      // to its authority needed) ; its name is not checked, its fingerprint is
+      options.allowPartialTrustChain = true;
+      options.checkServerIdentity = (host, cert) => (pinned.has(cert?.fingerprint256) ? undefined : tls.checkServerIdentity(host, cert));
+    }
+  }
+  return new https.Agent(options);
 }
 
 // every call : a connection that hangs must fail and reach the retries, not wait for ever

@@ -12,6 +12,7 @@
 // Any node may launch a job (runners/rte.js) : it writes the job as always, and the node holding
 // the socket sends it - at once when it is the same node, else within two seconds (dispatch).
 import WebSocket, { WebSocketServer } from "ws";
+import express from "express";
 import logger from "../lib/logger.js";
 import mysql from "../models/db.model.js";
 import Job from "../models/job.model.js";
@@ -23,6 +24,7 @@ import { nodeId, NODE_DEAD_SECONDS } from "../lib/role.js";
 import { appVersion } from "../lib/version.js";
 import { safeParse } from "../lib/safejson.js";
 import { safeEqual } from "../lib/safeEqual.js";
+import { compileTrustProxy } from "../lib/trustProxy.js";
 import { resolveJobSecrets } from "../lib/jobSecrets.js";
 import { sealJobSecrets } from "../lib/sealedSecrets.js";
 import { forgetJobSecrets } from "../lib/outputMask.js";
@@ -31,10 +33,11 @@ import { bundleOf, bundleByHash, readChunks } from "../lib/jobFiles.js";
 import { Session } from "../rte/socket/session.js";
 import dbJobIO from "../rte/jobio-db.js";
 import { abandonJobs } from "../rte/abandon.js";
+import { isIP } from "net";
 import { getHttpsAgent, failRteJob, abortWhileWaiting, sayWaitingForSlot } from "./common.js";
 import {
   SOCKET_CONTRACT, SOCKET_MODES, APP_SOCKET_PATH, CLOSE, CHUNK_BYTES, MAX_PAYLOAD, RETRY_MS,
-  queueMinutes, inboundUrl, fingerprint,
+  queueMinutes, inboundUrl, fingerprint, parseCertBundle, certFingerprint,
 } from "../rte/socket/protocol.js";
 
 // how long a lease lasts, renewed every 20 s while the socket is open
@@ -46,6 +49,10 @@ const DISPATCH_MS = 2000;
 const DIAL_MS = 10000;
 // how long an RTE has to say claimed or refused
 const CLAIM_TIMEOUT_MS = 30000;
+// how often what this node keeps of jobs that ended elsewhere is let go (pruneEnded)
+const PRUNE_MS = 60000;
+// a session's answers of itemAllowed (and its refusals said once) kept at most : the oldest go
+const ALLOWED_MAX = 500;
 
 // runner name -> { session, runner, direction, hello, health, rteId, renew, heartbeat }
 const sessions = new Map();
@@ -55,8 +62,12 @@ const waiting = new Map();
 const claims = new Map();
 // jobs being handed over now (sendJob) : kick and dispatch never hand one over twice at once
 const sending = new Set();
-// jobs whose cancel was sent ; jobs whose output masks this process registered
-const cancelSent = new Set();
+// jobs whose cancel reached an RTE that had claimed them : jobId -> the session's entry it went
+// on (a cancel sent while the job is still handed over is never marked : the RTE may not know
+// the job yet, so dispatch sends it again once it claimed it ; the session closing forgets its
+// marks, so the next session sends them again)
+const cancelSent = new Map();
+// jobs whose output masks this process registered
 const masked = new Set();
 // each job's items, written one after the other : jobId -> Promise
 const writing = new Map();
@@ -373,6 +384,9 @@ function adopt(session, runner, direction) {
       if (code !== CLOSE.LEASE_LOST && code !== CLOSE.REPLACED) releaseLease(name);
     }
     for (const [jobId, c] of claims) if (c.entry === entry) settleClaim(jobId, { claimed: false, error: "the socket closed", lost: true }, entry);
+    // the cancels sent on this socket : sent again on the next one (the RTE that comes back
+    // may be a new container, or may have missed them)
+    forgetCancels(entry);
     logger.warning(`RTE '${name}' disconnected (${code}${reason ? `: ${reason}` : ""})`);
     publish("runners");
   });
@@ -448,14 +462,22 @@ async function abandonLost(entry, hello) {
 /**
  * Who an RTE that calls in is (its socket, outbound, or its one registration call, either mode) :
  * its runner, signed in with its own token ; or a new runner, added with a join token of
- * Connections > Runners. A runner whose token changed (the RTE was installed again) is let in
- * with a join token too, and keeps the new token. The runner takes the mode the RTE runs in, and
- * an inbound one the address the app dials it on.
+ * Connections > Runners. A join token only adds a runner, or gives a new token to one still
+ * waiting for approval : an approved runner is never taken over with one (whoever holds a join
+ * token could otherwise point an approved runner, and its jobs and secrets, at a host of their
+ * own) ; its RTE signs in with its current token, or an admin changes the token. The runner
+ * takes the mode the RTE runs in, and an inbound one the address the app dials it on.
+ *
+ * An inbound RTE with an https address sends its certificate (cert, PEM) : it becomes the
+ * ca_bundle of the runner's credential, ignore_certs off, and the app dials it pinned to it
+ * (getHttpsAgent, pin). A runner signed in with its own token takes a new certificate the same
+ * way (the RTE's certificate was renewed) ; with a join token, or asking to join, the first one.
  *
  * Args:
  *   headers (object): the request's headers : Authorization (its RTE_TOKEN), X-AF-RTE-Name,
  *     X-AF-RTE-Id, X-AF-RTE-Join (a join token), X-AF-RTE-Url (its address).
- *   opts (object): { mode : outbound (default) or inbound, url : its address, over the header }.
+ *   opts (object): { mode : outbound (default) or inbound, url : its address, over the header,
+ *     cert : an inbound RTE's certificate (PEM), ip : the caller's address }.
  *
  * Returns:
  *   Promise<object>: { runner } when let in, { error, status } when not.
@@ -469,38 +491,67 @@ export async function authenticate(headers, opts = {}) {
   if (token.length < 16) return { status: 401, error: "the RTE's token (RTE_TOKEN) is missing or shorter than 16 characters" };
   if (!name || !/^[A-Za-z0-9_.:@-]{1,250}$/.test(name)) return { status: 400, error: "the RTE's name (RTE_NAME) is missing or not a valid runner name" };
   if (mode === "inbound" && !/^https?:\/\//i.test(url)) return { status: 400, error: "an inbound RTE registers with its address (RTE_URL), which the app dials" };
+  // an inbound RTE's certificate : only with an https address, certificates only
+  let cert = null;
+  if (opts.cert) {
+    if (mode !== "inbound" || !/^https:\/\//i.test(url)) return { status: 400, error: "a certificate (cert) is sent only by an inbound RTE with an https address (RTE_URL)" };
+    try {
+      cert = parseCertBundle(opts.cert).pem;
+    } catch (e) {
+      return { status: 400, error: `the RTE's certificate (cert) is not one: ${e.message}` };
+    }
+  }
   // what the runner becomes : its mode, and an inbound one's address
   const fields = mode === "inbound" ? { rte_mode: "inbound", uri: url } : { rte_mode: "outbound", ...(url ? { uri: url } : {}) };
   const runner = await Runner.findByName(name);
   if (runner && runner.type !== "rte") return { status: 409, error: `'${name}' is a ${runner.type} runner, not an RTE` };
   if (runner && safeEqual(token, runner.token)) {
-    if (runner.rte_mode !== fields.rte_mode || (mode === "inbound" && runner.uri !== url)) {
-      if (runner.managed) return { status: 409, error: `runner '${name}' is managed by the config seed: its mode and address are set there` };
-      // an inbound one's address : its credential's when it names one
+    const moved = runner.rte_mode !== fields.rte_mode || (mode === "inbound" && runner.uri !== url);
+    // a certificate other than the one pinned : the RTE's certificate was renewed
+    const repinned = !!cert && samePem(runner.ca_bundle) !== cert;
+    if (moved && runner.managed) return { status: 409, error: `runner '${name}' is managed by the config seed: its mode and address are set there` };
+    if (repinned && runner.managed) {
+      logger.warning(`Runner '${name}' is managed by the config seed: the certificate its RTE sent (fingerprint ${certFingerprint(cert)}) is not stored, set its ca_bundle there`);
+    } else if (moved || repinned) {
+      const pin = repinned ? { ca_bundle: cert, ignore_certs: 0 } : {};
+      // an inbound one's address and certificate : its credential's when it names one
       if (mode === "inbound" && runner.credential) {
-        await storeToken(name, token, url, runner.credential);
-        await Runner.update({ rte_mode: "inbound", uri: "" }, runner.id, { fromRte: true });
+        await storeToken(name, token, url, runner.credential, repinned ? cert : null);
+        if (moved) await Runner.update({ rte_mode: "inbound", uri: "" }, runner.id, { fromRte: true });
       } else {
-        await Runner.update(fields, runner.id, { fromRte: true });
+        await Runner.update({ ...fields, ...pin }, runner.id, { fromRte: true });
       }
-      logger.notice(`Runner '${name}' is ${mode} now${mode === "inbound" ? ` at ${url}` : ""}`);
+      if (moved) logger.notice(`Runner '${name}' is ${mode} now${mode === "inbound" ? ` at ${url}` : ""}`);
+      if (repinned) logger.notice(`Runner '${name}': the app dials it pinned to its new certificate (fingerprint ${certFingerprint(cert)})`);
     }
-    return { runner: { ...runner, ...fields } };
+    return { runner: { ...runner, ...fields, ...(repinned && !runner.managed ? { ca_bundle: cert, ignore_certs: 0 } : {}) } };
   }
   if (!join) {
     if (runner) return { status: 401, error: `the token of RTE '${name}' is not the one stored for its runner: check its RTE_TOKEN` };
-    return askToJoin({ name, token, mode, url, fields, headers, ip: opts.ip });
+    return askToJoin({ name, token, mode, url, fields, headers, ip: opts.ip, cert });
   }
   // a seeded runner first : refused before the join token is used, which would cost it a use
   if (runner?.managed) return { status: 409, error: `runner '${name}' is managed by the config seed: its token is set there` };
+  // an approved runner : its own token only, never a join token (refused before the join token
+  // is used, too)
+  if (runner && !Number(runner.pending)) {
+    logger.warning(`RTE '${name}': a join token was offered for the approved runner of that name with another token: refused`);
+    return {
+      status: 409,
+      error: `runner '${name}' exists and is approved: a join token cannot give it a new token. Use its current RTE_TOKEN, or have an admin change the token in its credential (or remove the runner) under Connections`,
+    };
+  }
   const used = await RunnerJoinToken.use(join);
   if (!used) return { status: 401, error: "the join token (RTE_JOIN_TOKEN) is unknown, revoked, expired or used up" };
   // the token goes in a credential of type rte, as every runner signs in (Connections >
   // Credentials) : the runner names it, and an inbound one's address is the credential's
-  const credential = await storeToken(name, token, mode === "inbound" ? url : "", runner?.credential);
+  const credential = await storeToken(name, token, mode === "inbound" ? url : "", runner?.credential, cert);
+  if (cert) logger.notice(`Runner '${name}': the app dials it pinned to its certificate (fingerprint ${certFingerprint(cert)})`);
   if (runner) {
+    // a runner still waiting for approval (an approved one was refused above) : a new token,
+    // still waiting for an admin
     await Runner.update({ credential, token: null, rte_mode: fields.rte_mode, ...(mode === "inbound" ? { uri: "" } : {}) }, runner.id, { fromRte: true });
-    logger.notice(`Runner '${name}' got a new token (credential '${credential}') through the join token '${used.name}'`);
+    logger.notice(`Runner '${name}', waiting for approval, got a new token (credential '${credential}') through the join token '${used.name}'`);
   } else {
     await Runner.create({ name, type: "rte", uri: "", credential, rte_mode: fields.rte_mode, description: `Joined with the join token '${used.name}'` }, { fromRte: true });
     logger.notice(`Runner '${name}' (${mode}) added through the join token '${used.name}', signing in with the credential '${credential}'`);
@@ -519,7 +570,7 @@ let joinQueue = Promise.resolve();
  * until it is approved. At most PENDING_MAX wait at once.
  *
  * Args:
- *   req (object): { name, token, mode, url, fields, headers, ip }.
+ *   req (object): { name, token, mode, url, fields, headers, ip, cert }.
  *
  * Returns:
  *   Promise<object>: { runner, pending: true }, or { status, error } when refused.
@@ -537,12 +588,12 @@ function askToJoin(req) {
  * time).
  *
  * Args:
- *   req (object): { name, token, mode, url, fields, headers, ip }.
+ *   req (object): { name, token, mode, url, fields, headers, ip, cert }.
  *
  * Returns:
  *   Promise<object>: { runner, pending: true }, or { status, error } when refused.
  */
-async function addPending({ name, token, mode, url, fields, headers, ip }) {
+async function addPending({ name, token, mode, url, fields, headers, ip, cert = null }) {
   // asked twice at once (the socket and the registration call) : the first one added it
   const already = await Runner.findByName(name);
   if (already) {
@@ -561,27 +612,50 @@ async function addPending({ name, token, mode, url, fields, headers, ip }) {
     mode,
     url: mode === "inbound" ? url : null,
     fingerprint: fingerprint(token),
+    // the certificate the app will dial it pinned to (an inbound RTE over https), as the token's
+    cert_fingerprint: cert ? certFingerprint(cert) : null,
   };
-  const credential = await storeToken(name, token, mode === "inbound" ? url : "", null);
+  const credential = await storeToken(name, token, mode === "inbound" ? url : "", null, cert);
   await Runner.create({
     name, type: "rte", uri: "", credential, rte_mode: fields.rte_mode, enabled: 0,
     pending: 1, pending_since: new Date(), pending_info: JSON.stringify(info),
     description: `Asked to join from ${info.host || info.ip || "an unknown host"}`,
   }, { fromRte: true });
-  logger.notice(`RTE '${name}' (${mode}, fingerprint ${info.fingerprint}) asked to join from ${info.ip || "?"}: approve it under Connections > Runners`);
+  logger.notice(`RTE '${name}' (${mode}, fingerprint ${info.fingerprint}${cert ? `, certificate ${info.cert_fingerprint}` : ""}) asked to join from ${info.ip || "?"}: approve it under Connections > Runners`);
   publish("runners");
   return { runner: await Runner.findByName(name), pending: true };
 }
 
 /**
+ * A PEM bundle as parseCertBundle writes it, to compare a stored one with a new one ; null when
+ * it holds no certificate.
+ *
+ * Args:
+ *   pem (string|null): the stored bundle.
+ *
+ * Returns:
+ *   string|null
+ */
+function samePem(pem) {
+  try {
+    return pem ? parseCertBundle(pem).pem : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Keeps an RTE's token in a credential of type rte : the one its runner names already, else a
- * new one named after the runner (<runner>-rte, a number added when that name is taken).
+ * new one named after the runner (<runner>-rte, a number added when that name is taken). An
+ * inbound RTE's certificate, when it sent one, goes with it : the credential's ca_bundle, its
+ * ignore_certs off, so the app dials it pinned to that certificate.
  *
  * Args:
  *   runnerName (string): the runner.
  *   token (string): its RTE_TOKEN.
  *   url (string): the address the app dials it on (inbound), "" for none (outbound).
  *   current (string|null): the credential the runner names already.
+ *   cert (string|null): its certificate (PEM, parseCertBundle), null to keep what is stored.
  *
  * Returns:
  *   Promise<string>: the credential's name.
@@ -589,12 +663,13 @@ async function addPending({ name, token, mode, url, fields, headers, ip }) {
  * Raises:
  *   Error: the runner's credential is managed by the config seed.
  */
-async function storeToken(runnerName, token, url, current) {
+async function storeToken(runnerName, token, url, current, cert = null) {
+  const pin = cert ? { ca_bundle: cert, ignore_certs: 0 } : {};
   if (current) {
     const cred = await Credential.findByName(current).catch(() => null);
     if (cred && cred.credential_type === "rte") {
       if (cred.managed) throw new Error(`the credential '${current}' of runner '${runnerName}' is managed by the config seed`);
-      await Credential.update({ password: token, url: url || null }, cred.id, { fromRte: true });
+      await Credential.update({ password: token, url: url || null, ...pin }, cred.id, { fromRte: true });
       return current;
     }
   }
@@ -605,6 +680,7 @@ async function storeToken(runnerName, token, url, current) {
     credential_type: "rte",
     password: token,
     url: url || null,
+    ...pin,
     description: `The token of the RTE '${runnerName}' (its RTE_TOKEN), stored when it joined`,
   }, { fromRte: true });
   return name;
@@ -616,7 +692,8 @@ async function storeToken(runnerName, token, url, current) {
  * user signs in : the RTE's token, or a join token, is the proof.
  *
  * Args:
- *   req (Request): { headers as authenticate(), body: { mode, url } }.
+ *   req (Request): { headers as authenticate(), body: { mode, url, cert : an inbound RTE's
+ *     certificate (PEM) when its address is https } }.
  *   res (Response): 200 { runner, mode } ; else the status and why.
  *
  * Returns:
@@ -624,7 +701,7 @@ async function storeToken(runnerName, token, url, current) {
  */
 export async function registerHandler(req, res) {
   try {
-    const out = await authenticate(req.headers, { mode: req.body?.mode, url: req.body?.url, ip: req.ip });
+    const out = await authenticate(req.headers, { mode: req.body?.mode, url: req.body?.url, cert: req.body?.cert, ip: req.ip });
     if (!out.runner) {
       logger.warning(`Refused an RTE registration from ${req.ip}: ${out.error}`);
       return res.status(out.status).json({ error: out.error });
@@ -641,13 +718,62 @@ export async function registerHandler(req, res) {
 const upgrades = new Map();
 const UPGRADE_WINDOW_MS = 60 * 1000;
 
+// a scratch express app carrying TRUST_PROXY as 'trust proxy', compiled again when the value
+// changes (the settings page applies it without a restart) : { raw, app } (clientAddress)
+let trustApp = { raw: undefined, app: null };
+
+/**
+ * The client's address of an upgrade request, as express answers req.ip for every other request
+ * of this app : the TCP peer, unless TRUST_PROXY names the reverse proxies allowed to report the
+ * client in X-Forwarded-For (lib/trustProxy.js). An upgrade never reaches express, so the same
+ * 'trust proxy' value is compiled on a scratch app and its req.ip getter asked : the same code,
+ * the same answer, and a header a client writes itself is never believed unless TRUST_PROXY
+ * says so.
+ *
+ * Args:
+ *   req (IncomingMessage): the upgrade request (headers, socket).
+ *
+ * Returns:
+ *   string: the client's address ("?" when the socket has none any more).
+ */
+export function clientAddress(req) {
+  // step 1 : the scratch app, compiled again when TRUST_PROXY changed ; an invalid value trusts
+  // nothing, as applyTrustProxy falls back to
+  const raw = process.env.TRUST_PROXY;
+  if (!trustApp.app || trustApp.raw !== raw) {
+    let value;
+    try {
+      value = compileTrustProxy(raw);
+    } catch {
+      value = false;
+    }
+    const app = express();
+    app.set("trust proxy", value);
+    trustApp = { raw, app };
+  }
+  // step 2 : express's own req.ip, on a request made of this one's headers and socket
+  const view = Object.create(express.request, {
+    app: { value: trustApp.app },
+    headers: { value: req.headers || {} },
+    socket: { value: req.socket },
+    connection: { value: req.socket },
+  });
+  try {
+    return view.ip || req.socket?.remoteAddress || "?";
+  } catch {
+    return req.socket?.remoteAddress || "?";
+  }
+}
+
 /**
  * Whether an address may try the RTE socket now : the ceiling of the registration call
  * (AUTH_RATE_LIMIT a minute, lib/authRateLimit.js, 0 turns it off), counted per address on this
- * node, so a flood of upgrades stops before any token or database is looked at.
+ * node, so a flood of upgrades stops before any token or database is looked at. Each try counts
+ * at once (a burst of tries in flight is stopped too) ; one that was let in is taken back
+ * (upgradeSucceeded), so an RTE that reconnects often never locks itself out.
  *
  * Args:
- *   ip (string): the caller's address (the socket's, as express sees req.ip).
+ *   ip (string): the caller's address (clientAddress, as express sees req.ip).
  *   now (number): the time, in ms (the tests set it).
  *
  * Returns:
@@ -670,6 +796,18 @@ export function upgradeAllowed(ip, now = Date.now()) {
 }
 
 /**
+ * Takes back the try of an upgrade that was let in : only the refused ones count against an
+ * address's ceiling.
+ *
+ * Args:
+ *   ip (string): the caller's address, as upgradeAllowed() was asked with.
+ */
+export function upgradeSucceeded(ip) {
+  const w = upgrades.get(String(ip || "?"));
+  if (w && w.count > 0) w.count--;
+}
+
+/**
  * The upgrade of an HTTP request to the RTE socket (outbound RTEs) : authenticated, then taken.
  * Other upgrades are left for whoever else listens. Too many from one address : 429.
  *
@@ -684,23 +822,26 @@ export function upgradeAllowed(ip, now = Date.now()) {
 export function handleUpgrade(req, socket, head) {
   const pathname = new URL(req.url, "http://x").pathname;
   if (pathname !== `${appConfig.baseUrl || ""}${APP_SOCKET_PATH}`) return false;
-  // the address of the socket, not a header a caller writes itself : as the registration call's
-  // limiter counts (express without trust proxy)
-  if (!upgradeAllowed(req.socket.remoteAddress)) {
+  // the client's address as express sees req.ip (TRUST_PROXY), so the registration call's limiter
+  // and this one count the same address ; never a forwarded header nobody said to trust
+  const ip = clientAddress(req);
+  if (!upgradeAllowed(ip)) {
     const body = JSON.stringify({ error: "Too many requests, slow down" });
     socket.write(`HTTP/1.1 429 Too Many Requests\r\nContent-Type: application/json\r\nContent-Length: ${Buffer.byteLength(body)}\r\nConnection: close\r\n\r\n${body}`);
     socket.destroy();
     return true;
   }
-  authenticate(req.headers, { ip: req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress })
+  authenticate(req.headers, { ip })
     .then((res) => {
       if (!res.runner) {
-        logger.warning(`Refused an RTE socket from ${req.socket.remoteAddress}: ${res.error}`);
+        logger.warning(`Refused an RTE socket from ${ip}: ${res.error}`);
         const body = JSON.stringify({ error: res.error });
         socket.write(`HTTP/1.1 ${res.status} Refused\r\nContent-Type: application/json\r\nContent-Length: ${Buffer.byteLength(body)}\r\nConnection: close\r\n\r\n${body}`);
         socket.destroy();
         return;
       }
+      // let in : this try does not count against the address
+      upgradeSucceeded(ip);
       wss.handleUpgrade(req, socket, head, (ws) => adopt(new Session(ws, `rte '${res.runner.name}'`), res.runner, "outbound"));
     })
     .catch((e) => {
@@ -714,6 +855,47 @@ export function handleUpgrade(req, socket, head) {
 // ─── inbound : this node dials the RTE ────────────────────────────────────────
 
 const dialing = new Set();
+// the inbound runners whose plain http address was said in the log (once per runner and process)
+const plainWarned = new Set();
+
+/**
+ * Whether a host name is this machine : localhost, 127.0.0.0/8 or ::1. A token sent to it in
+ * clear never leaves the host.
+ *
+ * Args:
+ *   host (string): the URL's hostname (an IPv6 address in brackets, as URL writes it).
+ *
+ * Returns:
+ *   boolean
+ */
+export function isLoopback(host) {
+  const h = String(host || "").toLowerCase().replace(/^\[|\]$/g, "");
+  if (h === "localhost" || h.endsWith(".localhost")) return true;
+  if (isIP(h) === 4) return h.startsWith("127.");
+  if (isIP(h) === 6) return h === "::1" || /^::ffff:127\./.test(h);
+  return false;
+}
+
+/**
+ * Says once per runner that the app dials an inbound RTE over plain http on another host : its
+ * token (Authorization: Bearer, which also seals the job's secrets) crosses the network in
+ * clear. HTTPS=1 on the RTE and an https RTE_URL pin its certificate instead.
+ *
+ * Args:
+ *   name (string): the runner.
+ *   uri (string): its address.
+ */
+function warnPlain(name, uri) {
+  let url;
+  try {
+    url = new URL(uri);
+  } catch {
+    return;
+  }
+  if (url.protocol !== "http:" || isLoopback(url.hostname) || plainWarned.has(name)) return;
+  plainWarned.add(name);
+  logger.warning(`[SECURITY] Runner '${name}': the app dials its RTE over plain http (${url.origin}): its token crosses the network in clear. Run the RTE with HTTPS=1 and an https RTE_URL, so the app pins its certificate`);
+}
 
 /**
  * Looks at the inbound runners : takes the lease of each one free or expired, and dials the
@@ -731,6 +913,7 @@ async function dialInbound() {
     const runner = await Runner.findByName(name);
     if (!runner?.uri) continue;
     dialing.add(name);
+    warnPlain(name, runner.uri);
     let url;
     try {
       url = inboundUrl(runner.uri);
@@ -743,7 +926,8 @@ async function dialInbound() {
       headers: { Authorization: `Bearer ${runner.token || ""}`, "X-AF-Node": nodeId },
       maxPayload: MAX_PAYLOAD,
       handshakeTimeout: 10000,
-      agent: url.startsWith("wss:") ? getHttpsAgent(runner) : undefined,
+      // pinned : the certificate the RTE sent when it registered (its credential's ca_bundle)
+      agent: url.startsWith("wss:") ? getHttpsAgent(runner, { pin: true }) : undefined,
     });
     ws.on("open", () => {
       dialing.delete(name);
@@ -886,6 +1070,30 @@ async function ensureMask(jobId) {
 }
 
 /**
+ * Whether a job is being handed over on this node now : claimed in the database, but the RTE
+ * has not said claimed yet, so it may not know the job (a cancel sent now could be ignored).
+ *
+ * Args:
+ *   jobId (number): the job.
+ *
+ * Returns:
+ *   boolean
+ */
+function handingOver(jobId) {
+  return sending.has(jobId) || claims.has(jobId);
+}
+
+/**
+ * Forgets the cancels sent on a session (it closed) : the next session sends them again.
+ *
+ * Args:
+ *   entry (object): the session's entry.
+ */
+function forgetCancels(entry) {
+  for (const [jobId, sentOn] of cancelSent) if (sentOn === entry) cancelSent.delete(jobId);
+}
+
+/**
  * Forgets what this node keeps of a job that ended here (failed, abandoned, ended) : its wait,
  * its cancel sent, its output masks.
  *
@@ -897,6 +1105,48 @@ function forgetJob(jobId) {
   cancelSent.delete(jobId);
   forgetJobSecrets(jobId);
   masked.delete(jobId);
+}
+
+/**
+ * Lets go of what this node keeps of the jobs that ended anywhere : its masks and the job's
+ * secrets, its cancel sent, its wait, and the sessions' answers of itemAllowed. A job usually
+ * ends on the node holding its socket (its end item, forgetJob), but a node that sent a job and
+ * lost the socket, or registered its masks for an item, never sees that end : every PRUNE_MS
+ * the jobs it keeps something of are looked up, and the ones no longer running are forgotten.
+ * The jobs being handed over or written now are left alone.
+ *
+ * Returns:
+ *   Promise<number>: how many jobs were forgotten.
+ */
+async function pruneEnded() {
+  // step 1 : every job this node keeps something of
+  const ids = new Set([...masked, ...cancelSent.keys(), ...waiting.keys()]);
+  for (const e of sessions.values()) {
+    for (const id of e.allowed.keys()) ids.add(id);
+    for (const id of e.refused) ids.add(id);
+  }
+  // step 2 : the ones in hand now stay (their end, or their claim, comes through here)
+  for (const id of [...sending, ...claims.keys(), ...writing.keys()]) ids.delete(id);
+  if (!ids.size) return 0;
+  // step 3 : the ones still running, looked up in slices (never one huge IN list)
+  const list = [...ids];
+  const running = new Set();
+  for (let i = 0; i < list.length; i += 500) {
+    const rows = await mysql.do("SELECT id FROM AnsibleForms.`jobs` WHERE id IN (?) AND status='running'", [list.slice(i, i + 500)], true);
+    for (const r of rows || []) running.add(Number(r.id));
+  }
+  // step 4 : the others forgotten, here and on every session
+  let forgotten = 0;
+  for (const id of list) {
+    if (running.has(id) || sending.has(id) || claims.has(id) || writing.has(id)) continue;
+    forgetJob(id);
+    for (const e of sessions.values()) {
+      e.allowed.delete(id);
+      e.refused.delete(id);
+    }
+    forgotten++;
+  }
+  return forgotten;
 }
 
 /**
@@ -1034,8 +1284,11 @@ async function dispatch() {
   );
   for (const a of aborts || []) {
     if (cancelSent.has(a.id)) continue;
+    // still handed over : the RTE may not know the job yet and would drop the cancel ; sent at
+    // the next round, once it said claimed
+    if (handingOver(a.id)) continue;
     const entry = ready.find((e) => e.rteId === a.host && e.runner.name === a.runner);
-    if (entry?.session.send({ t: "cancel", jobId: a.id })) cancelSent.add(a.id);
+    if (entry?.session.send({ t: "cancel", jobId: a.id })) cancelSent.set(a.id, entry);
   }
 }
 
@@ -1068,7 +1321,9 @@ export function kick(jobId, runner) {
 export function cancel(jobId, runner) {
   const entry = sessions.get(runner.name);
   if (!entry?.session.send({ t: "cancel", jobId })) return false;
-  cancelSent.add(jobId);
+  // marked only once the RTE claimed the job : sent while it is handed over, the RTE keeps it a
+  // while and applies it when the run comes, and dispatch sends it again after the claim
+  if (!handingOver(jobId)) cancelSent.set(jobId, entry);
   return true;
 }
 
@@ -1102,6 +1357,9 @@ function itemAllowed(entry, jobId) {
     })();
     // a failed query is asked again with the next item, never kept as a refusal
     check.catch(() => entry.allowed.delete(jobId));
+    // at most ALLOWED_MAX answers kept : a socket that lives for months does not keep one per
+    // job it ever wrote (the oldest goes first ; asked again if it ever comes back)
+    while (entry.allowed.size >= ALLOWED_MAX) entry.allowed.delete(entry.allowed.keys().next().value);
     entry.allowed.set(jobId, check);
   }
   return entry.allowed.get(jobId);
@@ -1130,6 +1388,7 @@ function onItem(entry, msg) {
       if (!(await itemAllowed(entry, jobId))) {
         // once per job and socket in the log : a misbehaving RTE does not flood it
         if (!entry.refused.has(jobId)) {
+          while (entry.refused.size >= ALLOWED_MAX) entry.refused.delete(entry.refused.values().next().value);
           entry.refused.add(jobId);
           logger.warning(`Job ${jobId}: RTE '${entry.runner.name}' (${entry.rteId}) sent an item of a job that is not its own: dropped`);
         }
@@ -1261,12 +1520,16 @@ export function startRteHub(httpServer) {
   dispatchTimer.unref?.();
   const dialTimer = setInterval(() => dialInbound().catch((e) => logger.debug(`RTE inbound dial: ${e.message}`)), DIAL_MS);
   dialTimer.unref?.();
+  // what this node keeps of the jobs that ended elsewhere, let go now and then
+  const pruneTimer = setInterval(() => pruneEnded().catch((e) => logger.debug(`RTE prune: ${e.message}`)), PRUNE_MS);
+  pruneTimer.unref?.();
   setTimeout(() => dialInbound().catch(() => {}), 2000).unref?.();
   logger.notice(`Taking RTE sockets on ${appConfig.baseUrl || ""}${APP_SOCKET_PATH}`);
   return {
     stop() {
       clearInterval(dispatchTimer);
       clearInterval(dialTimer);
+      clearInterval(pruneTimer);
       for (const e of sessions.values()) e.session.close(CLOSE.GOING_AWAY, "the app node stops");
     },
   };
@@ -1313,6 +1576,6 @@ export function dropSocket(name, reason) {
   if (entry) entry.session.close(CLOSE.UNAUTHORIZED, reason);
 }
 
-export { sessions, waiting, cancelSent, dialing, dispatch, dialInbound, storeItem, sendJob, onItem, onFetch, adopt, renewTick, abandonLost, NODE_DEAD_SECONDS };
+export { sessions, waiting, cancelSent, claims, sending, masked, pruneEnded, ALLOWED_MAX, warnPlain, dialing, dispatch, dialInbound, storeItem, sendJob, onItem, onFetch, adopt, renewTick, abandonLost, NODE_DEAD_SECONDS };
 
 export default { startRteHub, handleUpgrade, authenticate, registerHandler, kick, cancel, socketState, isSocketRunner, holdsSocket };

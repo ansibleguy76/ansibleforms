@@ -26,7 +26,7 @@
 /*                                                                */
 /******************************************************************/
 
-import { createHash } from "crypto";
+import { createHash, X509Certificate } from "crypto";
 
 // the contract of a socket-mode RTE ; a database-mode RTE speaks rte/contract.js's
 export const SOCKET_CONTRACT = 3;
@@ -45,6 +45,91 @@ export const SOCKET_CONTRACT = 3;
 export function fingerprint(token) {
   const hex = createHash("sha256").update(String(token || "")).digest("hex");
   return `${hex.slice(0, 4)}-${hex.slice(4, 8)}`;
+}
+
+// ─── an inbound RTE's certificate (HTTPS=1, an https RTE_URL) ─────────────────
+// It sends its certificate (HTTPS_CERT, PEM) in its registration call, field `cert` ; the app
+// keeps it as the ca_bundle of the runner's credential (ignore_certs off) and dials it pinned to
+// that certificate (runners/common.js getHttpsAgent, pin).
+
+// the largest certificate file taken (a leaf and its chain fit well under it)
+export const CERT_MAX_BYTES = 32 * 1024;
+// the certificates in one file, at most
+const CERT_MAX_BLOCKS = 8;
+
+/**
+ * Reads a PEM file of certificates (a leaf, maybe its chain) : every block parsed, nothing else
+ * kept, so what is stored is certificates only.
+ *
+ * Args:
+ *   pem (string|Buffer): the file's text.
+ *
+ * Returns:
+ *   object: { pem : the certificates, as PEM, one after the other ; certs : X509Certificate[] }.
+ *
+ * Raises:
+ *   Error: too large, no certificate in it, too many, or one that cannot be read.
+ */
+export function parseCertBundle(pem) {
+  const text = Buffer.isBuffer(pem) ? pem.toString("utf8") : String(pem ?? "");
+  if (Buffer.byteLength(text) > CERT_MAX_BYTES) throw new Error(`the certificate is larger than ${CERT_MAX_BYTES / 1024} KB`);
+  // the certificate blocks, each from its BEGIN line to the END after it (read by position : a
+  // pattern with a lazy body backtracks badly on a text of many BEGIN lines)
+  const BEGIN = "-----BEGIN CERTIFICATE-----";
+  const END = "-----END CERTIFICATE-----";
+  const blocks = [];
+  for (let at = text.indexOf(BEGIN); at !== -1; at = text.indexOf(BEGIN, at)) {
+    const end = text.indexOf(END, at + BEGIN.length);
+    if (end === -1) break;
+    blocks.push(text.slice(at, end + END.length));
+    at = end + END.length;
+  }
+  if (!blocks.length) throw new Error("no PEM certificate (-----BEGIN CERTIFICATE-----) in it");
+  if (blocks.length > CERT_MAX_BLOCKS) throw new Error(`more than ${CERT_MAX_BLOCKS} certificates in it`);
+  const certs = blocks.map((b, i) => {
+    try {
+      return new X509Certificate(b);
+    } catch (e) {
+      throw new Error(`certificate ${i + 1} cannot be read: ${e.message}`, { cause: e });
+    }
+  });
+  return { pem: certs.map((c) => c.toString().trim()).join("\n") + "\n", certs };
+}
+
+/**
+ * A certificate's fingerprint, as a token's : the first 8 hexadecimal digits of the SHA-256 of
+ * its first certificate (the leaf), as abcd-ef12. The RTE logs it at its start, and the Runners
+ * page can show it on a runner waiting for approval (pending_info.cert_fingerprint), so an admin
+ * can tell it is the certificate of the RTE they started.
+ *
+ * Args:
+ *   pem (string|Buffer): the certificate (its file).
+ *
+ * Returns:
+ *   string|null: the fingerprint, null when it is not a certificate.
+ */
+export function certFingerprint(pem) {
+  try {
+    const hex = parseCertBundle(pem).certs[0].fingerprint256.replace(/:/g, "").toLowerCase();
+    return `${hex.slice(0, 4)}-${hex.slice(4, 8)}`;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The address an RTE listens on (LISTEN_HOST) : every interface when it is not set, as before ;
+ * 127.0.0.1 keeps a native outbound RTE's probes and metrics on its own host. Read each time an
+ * RTE starts (rte/server.js, rte/socket/rte-socket.js).
+ *
+ * Args:
+ *   env (object): the environment (process.env ; the tests set it).
+ *
+ * Returns:
+ *   string|undefined: the host, undefined for every interface.
+ */
+export function listenHost(env = process.env) {
+  return String(env.LISTEN_HOST || "").trim() || undefined;
 }
 
 // where the app takes an RTE's socket (under BASE_URL), and where an inbound RTE takes the app's
@@ -89,13 +174,17 @@ export const CLOSE = {
 };
 
 // the closes and the refusals of the handshake (HTTP status) that dialing again soon will not
-// change : the runner was rejected or removed, the token or the join token refused, another
-// contract. An outbound RTE waits REFUSED_REDIAL_MS before it dials again, not its usual 1 to
-// 30 seconds : an admin has to act first. An id taken (ID_TAKEN) is not one of them : it frees
-// itself once the node that had it stops answering
-export const REFUSED_CLOSES = [CLOSE.UNAUTHORIZED, CLOSE.CONTRACT];
+// change : the runner was rejected or removed, the token or the join token refused, a runner of
+// that name approved already (409). An outbound RTE waits REFUSED_REDIAL_MS before it dials
+// again, not its usual 1 to 30 seconds : an admin has to act first. An id taken (ID_TAKEN) is
+// not one of them : it frees itself once the node that had it stops answering
+export const REFUSED_CLOSES = [CLOSE.UNAUTHORIZED];
 export const REFUSED_STATUSES = [401, 403, 409];
 export const REFUSED_REDIAL_MS = 10 * 60 * 1000;
+// another contract (CONTRACT) : the app or the RTE is being upgraded, and the other side
+// usually follows within minutes. A short wait, not REFUSED_REDIAL_MS : a rolling upgrade must
+// not leave an RTE offline for ten minutes after its app came back
+export const CONTRACT_REDIAL_MS = 60 * 1000;
 
 // a ping every 20 s keeps proxies from closing an idle socket ; nothing heard for 60 s : gone
 export const PING_MS = 20000;

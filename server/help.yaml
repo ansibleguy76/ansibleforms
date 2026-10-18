@@ -437,7 +437,8 @@
       On an RTE in a socket mode, the first time, optional. Without it an RTE the app does not
       know asks to join and waits for an admin's approval under Connections > Runners. With it
       the RTE is approved at once - for unattended installs - and the app adds it as a runner
-      (or gives an existing runner of that name the new token). Join tokens are made through the
+      (or gives a runner of that name still waiting for approval the new token ; an approved
+      runner keeps its token, which only an admin changes). Join tokens are made through the
       API (`POST /api/v2/runner/jointoken`, an admin). From then on the RTE signs in with its own
       token ; the join token can expire or be revoked without affecting it.
   - name: RTE_NAME
@@ -558,6 +559,17 @@
       A job handed to an RTE that is full (RTE_MAX_JOBS) or stopping waits for it, asking again
       every 10 seconds, for this many minutes ; then it fails and says why. An abort ends the
       wait at once.
+  - name: LISTEN_HOST
+    version: 7.3.0
+    type: string
+    allowed: an IP address or host name of this machine
+    short: The address an RTE listens on
+    hint: "On an RTE: 127.0.0.1 keeps it on its own host (a native outbound RTE)."
+    description: |
+      On an RTE (`AF_ROLE=rte`): the address its listener binds (its probes, its metrics and,
+      inbound, the socket the app dials). Not set: every interface, as before. `127.0.0.1` keeps
+      a native outbound RTE, which takes no call from the app, reachable from its own host only.
+      An inbound RTE must listen where the app reaches it (`RTE_URL`).
   - name: RTE_URL
     version: 7.0.0
     type: string
@@ -573,6 +585,13 @@
       Not set: the RTE registers this container's IP address and `PORT`, named after the node
       (`rte-<hostname>-<port>`, as on the Status page). That works without any setting, but the
       address and the name change when the container is recreated - set `RTE_URL` in production.
+
+      An inbound RTE (`RTE_MODE=inbound`) over TLS: set `HTTPS=1` with its own `HTTPS_CERT` and
+      `HTTPS_KEY`, and an `https://` address here. When it registers (`APP_URL`) it sends its
+      certificate, the app keeps it as the ca_bundle of the runner's credential and dials the
+      RTE pinned to it, whatever name the certificate was made for. A runner waiting for
+      approval shows the certificate's fingerprint, which the RTE logs at its start. Over plain
+      `http://` to another host the app sends `RTE_TOKEN` in clear, and says so in its log.
   - name: JOB_RETENTION_DAYS
     version: 6.3.0
     type: number

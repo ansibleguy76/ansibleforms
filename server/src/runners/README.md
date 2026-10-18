@@ -208,7 +208,7 @@ Every process writes a heartbeat in `nodes` (RTEs too). A job belongs to the RTE
 | `GET /metrics` (the RTE) | with `METRICS_TOKEN` |
 | `GET /rte/v1/socket` (inbound RTE) | the WebSocket an app node opens, `Authorization: Bearer <RTE_TOKEN>` ; a newer socket replaces the older one |
 | `GET /api/v2/rte/socket` (the app) | the WebSocket an outbound RTE opens with its token, its name and, the first time, a join token |
-| `POST /api/v2/rte/register` (the app) | an inbound RTE with `RTE_JOIN_TOKEN` registers its address once ; the app adds the runner and its `<name>-rte` credential |
+| `POST /api/v2/rte/register` (the app) | an inbound RTE with `RTE_JOIN_TOKEN` registers its address once ; the app adds the runner and its `<name>-rte` credential. Body `{ mode: "inbound", url, cert }` : `cert` is the RTE's certificate (PEM, its `HTTPS_CERT`), sent when it runs `HTTPS=1` with an `https://` `RTE_URL` ; it becomes the credential's ca_bundle (ignore_certs off) and the app dials the RTE pinned to it |
 
 ### Database mode (deprecated)
 
@@ -350,7 +350,13 @@ See [examples/rte](../../../examples/rte).
   nothing from outside but its probes ; an inbound one takes only a socket carrying its token.
 - Every socket and every call carries the RTE's token; anything else is refused. Nothing else
   restricts who may call an inbound RTE - no address list, no client certificate - so keep it
-  off the public network. `HTTPS=1` works as for the app.
+  off the public network. `HTTPS=1` works as for the app : an inbound RTE with `HTTPS=1` and an
+  `https://` `RTE_URL` sends its certificate when it registers, and the app dials it pinned to
+  that certificate (its fingerprint shown on a runner waiting for approval,
+  `pending_info.cert_fingerprint`). Over plain `http://` to another host the app logs a warning
+  once per runner : the token crosses the network in clear.
+- A join token adds a runner, or gives a new token to one still waiting for approval ; it never
+  takes over an approved runner (409), whose token only its RTE or an admin changes.
 - A join token adds a runner: it is shown once, stored hashed, and can expire or be limited to
   a number of uses ; delete it once the RTEs joined.
 - A fake RTE (a runner pointed at another address, or a stolen token) receives the jobs, with
@@ -401,6 +407,7 @@ started them. (The worker role and several app nodes exist since 7: see
 - `tests/schema-awx-to-runners.test.mjs` - the awx table moving into runners.
 - `tests/rte-socket.test.mjs` - the socket's addresses, the spool (each item exactly once, resent after a reconnect), the events tail, the job files cache.
 - `tests/rte-hub.test.mjs` - the app's side : who calls in (its token, a join token that adds the runner and its credential, an inbound registration), the items stored once after a reconnect (output, events, log, the end), a job lost by a restarted RTE.
+- `tests/rte-tls-pin.test.mjs` - an inbound RTE over TLS : the certificate it sends, kept in its credential and pinned, its fingerprint for the approval, the dial pinned to it, the warning for plain http.
 - `tests/rte-server.test.mjs` - the database-mode RTE API : the token, which jobs it takes, the contract.
 - `tests/rte-handover.test.mjs` - the app's side : a refusal, a lost answer, the contract sent.
 - `tests/rte-contract.test.mjs` - an RTE accepted by contract, not by release.
