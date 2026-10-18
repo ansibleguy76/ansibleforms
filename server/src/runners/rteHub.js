@@ -469,6 +469,12 @@ async function abandonLost(entry, hello) {
  * own) ; its RTE signs in with its current token, or an admin changes the token. The runner
  * takes the mode the RTE runs in, and an inbound one the address the app dials it on.
  *
+ * A runner of 7.2 (database mode) moves to the socket the same way, at once and without an
+ * approval : its own RTE, upgraded, signs in with the runner's token (compared in constant
+ * time with the one of its credential, or its own). It stops being a registered row (node_id),
+ * the move is logged and the Runners page told. Refused for a runner the config seed declares
+ * in database mode (the seed says how to change it) and for one waiting for approval.
+ *
  * An inbound RTE with an https address sends its certificate (cert, PEM) : it becomes the
  * ca_bundle of the runner's credential, ignore_certs off, and the app dials it pinned to it
  * (getHttpsAgent, pin). A runner signed in with its own token takes a new certificate the same
@@ -508,9 +514,23 @@ export async function authenticate(headers, opts = {}) {
   if (runner && runner.type !== "rte") return { status: 409, error: `'${name}' is a ${runner.type} runner, not an RTE` };
   if (runner && safeEqual(token, runner.token)) {
     const moved = runner.rte_mode !== fields.rte_mode || (mode === "inbound" && runner.uri !== url);
+    // a runner of 7.2 (database mode, the mode of a runner with none) whose RTE now talks over
+    // the socket : the same RTE upgraded (the installer's upgrade of a 7.2 Runner), proven by
+    // the runner's own token - never a join token, which never reaches this branch
+    const fromDatabase = SOCKET_MODES.includes(fields.rte_mode) && !SOCKET_MODES.includes(runner.rte_mode);
     // a certificate other than the one pinned : the RTE's certificate was renewed
     let repinned = !!cert && samePem(runner.ca_bundle) !== cert;
+    // a seeded runner keeps the mode its seed declares : the seed is changed first, then the
+    // RTE ; one the seed already declares in this mode is not moved, so it gets here unrefused
+    if (moved && runner.managed && fromDatabase) {
+      return { status: 409, error: `runner '${name}' is managed by the config seed in database mode: set rte_mode: ${mode} for it in the seed (and its credential${mode === "inbound" ? " with the address the app dials, RTE_URL" : ""}), then restart this RTE` };
+    }
     if (moved && runner.managed) return { status: 409, error: `runner '${name}' is managed by the config seed: its mode and address are set there` };
+    // a database-mode runner is always approved (pending ones only ever came over the socket) :
+    // one that is not would be moved out of an admin's sight
+    if (fromDatabase && Number(runner.pending)) {
+      return { status: 409, error: `runner '${name}' waits for approval: an admin approves it under Connections > Runners first` };
+    }
     // where an inbound one's address and certificate are kept : its credential when it names an
     // rte one (storeToken), else the runner itself
     const viaCredential = mode === "inbound" && !!runner.credential;
@@ -535,15 +555,30 @@ export async function authenticate(headers, opts = {}) {
       logger.warning(`Runner '${name}' is managed by the config seed: the certificate its RTE sent (fingerprint ${certFingerprint(cert)}) is not stored, set its ca_bundle there`);
     } else if (moved || repinned) {
       const pin = repinned ? { ca_bundle: cert, ignore_certs: 0, rte_cert_sha256: bundleDigest(cert) } : {};
+      // a runner its 7.2 RTE registered itself (node_id) is no longer that RTE's row once it
+      // talks over the socket : the worker's sweep (Runner.removeUnresponsive) would remove it
+      // as soon as the old container's heartbeat stops, and the new RTE goes by another id
+      const registered = fromDatabase && runner.node_id ? { node_id: null } : {};
       // an inbound one's address and certificate : its credential's when it names one
       if (viaCredential) {
-        await storeToken(name, token, url, runner.credential, repinned ? cert : null);
-        if (moved) await Runner.update({ rte_mode: "inbound", uri: "" }, runner.id, { fromRte: true });
+        // step 1 : the token, the address and the certificate in its rte credential ; one of
+        // another type (an api credential of before 7.3) gets an rte one beside it, named here
+        const stored = await storeToken(name, token, url, runner.credential, repinned ? cert : null);
+        const named = stored.name !== runner.credential ? { credential: stored.name } : {};
+        // step 2 : the runner itself, when its mode, its credential or its registration changed
+        if (moved || named.credential) await Runner.update({ rte_mode: "inbound", uri: "", ...named, ...registered }, runner.id, { fromRte: true });
       } else {
-        await Runner.update({ ...fields, ...pin }, runner.id, { fromRte: true });
+        await Runner.update({ ...fields, ...pin, ...registered }, runner.id, { fromRte: true });
       }
-      if (moved) logger.notice(`Runner '${name}' is ${mode} now${mode === "inbound" ? ` at ${url}` : ""}`);
+      if (moved && fromDatabase) {
+        logger.notice(`Runner '${name}' moved from database mode to ${mode}${mode === "inbound" ? ` at ${url}` : ""}: its RTE signed in with the runner's own token`);
+      } else if (moved) {
+        logger.notice(`Runner '${name}' is ${mode} now${mode === "inbound" ? ` at ${url}` : ""}`);
+      }
       if (repinned) logger.notice(`Runner '${name}': the app dials it pinned to its new certificate (fingerprint ${certFingerprint(cert)})`);
+      // the Runners page shows the new mode (and address) at once, whichever way it came in
+      publish("runners");
+      return { runner: { ...runner, ...fields, ...registered, ...(repinned ? { ca_bundle: cert, ignore_certs: 0 } : {}) } };
     }
     return { runner: { ...runner, ...fields, ...(repinned && !runner.managed ? { ca_bundle: cert, ignore_certs: 0 } : {}) } };
   }
