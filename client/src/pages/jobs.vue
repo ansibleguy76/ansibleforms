@@ -855,6 +855,32 @@ function replacePlaceholders(msg, extravars) {
 function findExtravar(data, expr) {
   return expr.split(/\s*\.\s*/).reduce((master, obj) => master?.[obj], data);
 }
+/**
+ * Reads a job again once it was approved or rejected. An approver is often neither the job's
+ * owner nor someone who sees every job : the server then refuses to show it (403), or it is
+ * gone (404). That is not a failure of the decision, which went through : the job is closed
+ * quietly instead (its page goes back to the list), and the list was already read again.
+ *
+ * Args:
+ *   id (number): the job decided.
+ *
+ * Raises:
+ *   Error: any other failure of the read, for the caller's toast.
+ */
+async function reloadDecided(id) {
+  try {
+    await loadOutput(id);
+  } catch (err) {
+    const status = err?.response?.status;
+    if (status !== 403 && status !== 404) throw err;
+    // step 1 : the job no longer selected, nor shown as missing
+    job.value = null;
+    jobId.value = undefined;
+    jobMissing.value = false;
+    // step 2 : on the job's own page, back to the list it came from
+    if (isJobPage.value) router.push({ path: listPath.value, query: route.query }).catch(() => {});
+  }
+}
 async function jobAction(id, action, method = 'post', uri_suffix = '') {
   try {
     jobId.value = id;
@@ -884,6 +910,8 @@ async function jobAction(id, action, method = 'post', uri_suffix = '') {
       // If relaunch, navigate to the new job
       if (action === 'relaunch' && result.data.id) {
         getJob(result.data.id);
+      } else if (action === 'approve' || action === 'reject') {
+        await reloadDecided(id);
       } else {
         await loadOutput(id);
       }
@@ -1436,15 +1464,15 @@ onMounted(async () => {
                   <td class="bs-dt-row-actions">
                     <div class="dropdown">
                       <!-- fixed, so the menu opens over the table's frame instead of being cut by it -->
-                      <a
-                        role="button"
+                      <button
+                        type="button"
                         class="bs-dt-row-menu px-2"
                         data-bs-toggle="dropdown"
                         data-bs-popper-config='{"strategy":"fixed"}'
                         :aria-label="t('common.actions')"
                       >
                         <font-awesome-icon icon="ellipsis-vertical" />
-                      </a>
+                      </button>
                       <ul class="dropdown-menu dropdown-menu-end">
                         <li>
                           <a class="dropdown-item" href="#" @click.prevent="getJob(j.id)"

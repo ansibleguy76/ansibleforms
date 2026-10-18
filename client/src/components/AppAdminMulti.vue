@@ -1426,26 +1426,30 @@ async function bulkDelete() {
     ? t('settings.common.bulkDeleteConfirmSkip', { count: ids.length, skipped })
     : t('settings.common.bulkDeleteConfirm', { count: ids.length });
   if (!confirm(question)) return;
-  try {
-    await Promise.all(
-      ids.map((id) => {
-        if (isFlat) {
-          // `?? id` used to stand in here. With an index-based id that sent
-          // `?name=3` and asked the server to delete an entry literally named
-          // "3" - a wrong request rather than an error. The row is guaranteed
-          // present now, so there is nothing to fall back to.
-          const name = present.get(id).name;
-          return axios.delete(`/api/v${props.apiVersion}/${objectType}?name=${encodeURIComponent(name)}`);
-        }
-        return axios.delete(`/api/v${props.apiVersion}/${objectType}/${id}`);
-      }),
-    );
-    toast.success(t('settings.common.countDeleted', { n: ids.length }));
-    selectedIds.value = new Set();
-    await loadItems();
-  } catch (err) {
-    toast.error(Helpers.parseAxiosResponseError(err, 'Failed to delete items'));
+  // each delete on its own : one refused (a 403, a row in use) must not hide that the others
+  // went, nor leave the list showing rows that are gone and the selection still ticked
+  const results = await Promise.allSettled(
+    ids.map((id) => {
+      if (isFlat) {
+        // `?? id` used to stand in here. With an index-based id that sent
+        // `?name=3` and asked the server to delete an entry literally named
+        // "3" - a wrong request rather than an error. The row is guaranteed
+        // present now, so there is nothing to fall back to.
+        const name = present.get(id).name;
+        return axios.delete(`/api/v${props.apiVersion}/${objectType}?name=${encodeURIComponent(name)}`);
+      }
+      return axios.delete(`/api/v${props.apiVersion}/${objectType}/${id}`);
+    }),
+  );
+  // what went is said, what failed too (the first reason : they are usually the same)
+  const failed = results.filter((r) => r.status === 'rejected');
+  if (failed.length < results.length) {
+    toast.success(t('settings.common.countDeleted', { n: results.length - failed.length }));
   }
+  if (failed.length) toast.error(Helpers.parseAxiosResponseError(failed[0].reason, t('common.delete')));
+  // either way the selection is cleared and the list read again
+  selectedIds.value = new Set();
+  await loadItems();
 }
 
 // ─── the list's own actions that run (action.run) : on a row, and on the rows ticked ────
@@ -1488,10 +1492,13 @@ async function runAction(action, rows) {
     if (action.done !== false) {
       toast.success(action.done ? action.done(typeof n === 'number' ? n : rows.length, rows) : action.title);
     }
-    selectedIds.value = new Set();
-    await loadItems();
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err, action.title));
+  } finally {
+    // a failure may still have acted on some rows : the selection cleared and the list read
+    // again either way, so what is shown is what the server has
+    selectedIds.value = new Set();
+    await loadItems();
   }
 }
 
@@ -1595,14 +1602,15 @@ defineExpose({
           <div class="dropdown">
             <!-- fixed, so the menu opens over the table's frame instead of being cut by it (the
                  frame hides its overflow, for its rounded corners) -->
-            <a
-              role="button"
+            <button
+              type="button"
               class="bs-dt-row-menu px-2"
               data-bs-toggle="dropdown"
               data-bs-popper-config='{"strategy":"fixed"}'
+              :aria-label="t('common.actions')"
             >
               <font-awesome-icon icon="ellipsis-vertical" />
-            </a>
+            </button>
             <ul class="dropdown-menu dropdown-menu-end">
               <template v-for="(action, idx) in actionsFor(item)" :key="action.name + idx">
                 <li v-if="(action.name === 'delete' || action.dividerBefore) && idx > 0">

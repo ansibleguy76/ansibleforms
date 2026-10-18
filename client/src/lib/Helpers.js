@@ -43,6 +43,22 @@ const Helpers = {
       return '&#' + i.charCodeAt(0) + ';';
     });
   },
+  /**
+   * The Authorization header of a Basic sign-in : the credentials as UTF-8 bytes, then base64.
+   * btoa alone takes Latin-1 only (it threw on a character outside it) while the server reads
+   * UTF-8 and ends the name at the first colon (server/src/lib/basicCredentials.js).
+   *
+   * Args:
+   *   username (string): the user's name.
+   *   password (string): the password.
+   *
+   * Returns:
+   *   string: "Basic <base64>".
+   */
+  basicAuthHeader(username, password) {
+    const bytes = new TextEncoder().encode(`${username}:${password}`);
+    return 'Basic ' + btoa(Array.from(bytes, (b) => String.fromCharCode(b)).join(''));
+  },
   parseAxiosResponseError(err, custom = 'An error occurred') {
     // Parse Axios error
     if (err.response) {

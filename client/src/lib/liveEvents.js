@@ -18,6 +18,7 @@
 /*  Each listener hears a name at most once a second.             */
 /*                                                                */
 /******************************************************************/
+import BaseUrl from '@/lib/BaseUrl';
 import TokenStorage from '@/lib/TokenStorage';
 
 const LOCK = 'af-live-events';
@@ -126,9 +127,15 @@ async function lead() {
     controller = new AbortController();
     try {
       const sent = TokenStorage.getToken();
-      let res = await fetch('/api/v2/events', { ...TokenStorage.getAuthentication(), signal: controller.signal });
+      let res = await fetch(`${BaseUrl}/api/v2/events`, {
+        ...TokenStorage.getAuthentication(),
+        signal: controller.signal,
+      });
       if (res.status === 401 && (await TokenStorage.getNewToken(sent))) {
-        res = await fetch('/api/v2/events', { ...TokenStorage.getAuthentication(), signal: controller.signal });
+        res = await fetch(`${BaseUrl}/api/v2/events`, {
+          ...TokenStorage.getAuthentication(),
+          signal: controller.signal,
+        });
       }
       if (res.ok && res.body) {
         delay = 2000;

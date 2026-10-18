@@ -444,9 +444,20 @@ describe('the form page always reaches a definite state', () => {
     // formNotFound stayed false - the template fell to the bare spinner and stayed there.
     // Measured as a non-admin opening a role-restricted form: spinner for ever with the
     // fix removed, the alert with it in place.
-    const fn = src.slice(src.indexOf('onMounted(async () =>'), src.indexOf('// Watch for route changes'));
+    const fn = src.slice(
+      src.indexOf('async function loadFormSafely()'),
+      src.indexOf('async function loadFormSafely()') + 800,
+    );
     expect(fn).toMatch(/try \{\s*\n\s*await loadForm\(\);/);
     expect(fn).toMatch(/formNotFound\.value = true/);
+    // the first load and every reload (another form opened from this one) go through it
+    const mounted = src.slice(src.indexOf('onMounted(async () =>'), src.indexOf('onMounted(async () =>') + 1200);
+    expect(mounted).toMatch(/await loadFormSafely\(\);/);
+    const reload = src.slice(
+      src.indexOf('async function reloadForm('),
+      src.indexOf('async function reloadForm(') + 300,
+    );
+    expect(reload).toMatch(/await loadFormSafely\(\);/);
   });
 
   it('the reason is shown rather than a generic message', () => {

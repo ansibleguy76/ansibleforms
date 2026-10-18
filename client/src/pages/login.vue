@@ -178,7 +178,8 @@ async function login() {
   if (!$v.value.user.$invalid) {
     try {
       console.log('Logging in');
-      var basicAuth = 'Basic ' + btoa(`${user.value.username}:${user.value.password}`);
+      // the credentials as UTF-8, as the server reads them (Helpers.basicAuthHeader)
+      var basicAuth = Helpers.basicAuthHeader(user.value.username, user.value.password);
       var postconfig = {
         headers: { Authorization: basicAuth },
       };

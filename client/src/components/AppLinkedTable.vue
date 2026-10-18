@@ -413,14 +413,15 @@ function text(col, row) {
           <!-- its menu : the actions of the rows ticked, for this one (none under a job's step) -->
           <td v-if="rowActions.length" class="bs-dt-row-actions" @click.stop>
             <div v-if="!child" class="dropdown">
-              <a
-                role="button"
+              <button
+                type="button"
                 class="bs-dt-row-menu px-2"
                 data-bs-toggle="dropdown"
                 data-bs-popper-config='{"strategy":"fixed"}'
+                :aria-label="t('common.actions')"
               >
                 <FaIcon icon="ellipsis-vertical" />
-              </a>
+              </button>
               <ul class="dropdown-menu dropdown-menu-end">
                 <li v-for="action in rowActions" :key="action.title">
                   <a

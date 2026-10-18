@@ -61,8 +61,10 @@ const filtered = computed(() => {
 // The log is read again every 2 seconds, as a terminal follows a file : while the view is at
 // its bottom it follows the new lines ; scrolled up to read an older one, it stays where it is
 // and AppFollowButton takes it back down (useFollowOutput, as a running job's output). A failing
-// read stops it, Refresh starts it again.
+// read does not stop it : it is said once, then tried again later and later (doubling up to
+// 30 seconds), and the reading goes on at its pace as soon as one answers ; Refresh tries at once.
 const POLL_MS = 2000;
+const MAX_BACKOFF_MS = 30000;
 const { newLines, paused, jumpToEnd } = useFollowOutput(
   scroller,
   () => log.value,
@@ -70,31 +72,36 @@ const { newLines, paused, jumpToEnd } = useFollowOutput(
 );
 let pollTimer = null;
 let stopped = false;
-let failed = false;
+// the reads that failed in a row : 0 while it answers
+let failures = 0;
 
 function stopPolling() {
   if (pollTimer) clearTimeout(pollTimer);
   pollTimer = null;
 }
 
+/**
+ * Plans the next read : in 2 seconds, or later after failed reads (2 s doubled per failure,
+ * at most 30 s).
+ */
 function schedulePoll() {
   stopPolling();
-  if (stopped || failed) return;
+  if (stopped) return;
+  const delay = failures ? Math.min(POLL_MS * 2 ** failures, MAX_BACKOFF_MS) : POLL_MS;
   pollTimer = setTimeout(() => {
     pollTimer = null;
     load();
-  }, POLL_MS);
+  }, delay);
 }
 
 /**
- * Reads the last lines of the log, then the next read in 2 seconds.
+ * Reads the last lines of the log, then plans the next read.
  *
  * Args:
- *   force (boolean): Refresh : read again after a failed read too.
+ *   force (boolean): Refresh, or the first read : read now, even while the tab is hidden.
  */
 async function load(force = false) {
-  if (force) failed = false;
-  if (isLoading.value || failed) return;
+  if (isLoading.value) return;
   // a hidden tab reads nothing : the next visible poll catches up
   if (!force && document.hidden) return schedulePoll();
   isLoading.value = true;
@@ -102,12 +109,11 @@ async function load(force = false) {
     const result = await axios.get(`/api/v2/log?lines=${LINES}`);
     // followed down by useFollowOutput, or said by AppFollowButton while scrolled up
     if (result.data != '...' && result.data !== log.value) log.value = result.data;
+    failures = 0;
   } catch (err) {
-    // a failing log endpoint stops the reading, once said ; Refresh starts it again
-    if (!stopped) {
-      failed = true;
-      toast.error(Helpers.parseAxiosResponseError(err));
-    }
+    // said once per run of failures (not every few seconds), then tried again later
+    if (!stopped && (failures === 0 || force)) toast.error(Helpers.parseAxiosResponseError(err));
+    failures++;
   } finally {
     // always released, also when the server answered the "..." placeholder
     isLoading.value = false;

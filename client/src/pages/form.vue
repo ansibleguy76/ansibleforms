@@ -14,7 +14,7 @@ import axios from 'axios';
 import State from '@/lib/State';
 import Navigate from '@/lib/Navigate';
 import TokenStorage from '@/lib/TokenStorage';
-import { formsPath, formFromPath } from '@/lib/formsPath';
+import { formsPath, formFromPath, formPath, slugOf } from '@/lib/formsPath';
 import YAML from 'yaml';
 import { useFollowOutput } from '@/composables/useFollowOutput';
 import Time from '@/lib/Time';
@@ -897,8 +897,27 @@ async function reloadForm(reset = true) {
   if (reset) {
     resetResult();
   }
-  await loadForm();
+  await loadFormSafely();
   key.value++;
+}
+
+/**
+ * Loads the form of the address, its failure shown instead of thrown. Form.load throws on
+ * every non-200 (403 for a form the roles no longer grant, 404, 500 for a config error) : the
+ * page then shows its explanation and a toast, rather than an unhandled rejection that left
+ * it on the loader. The previous failure is forgotten first, so a form that loads after one
+ * that did not is drawn.
+ */
+async function loadFormSafely() {
+  formNotFound.value = false;
+  loadError.value = '';
+  try {
+    await loadForm();
+  } catch (err) {
+    formNotFound.value = true;
+    loadError.value = Helpers.parseAxiosResponseError(err, t('form.formNotFoundMsg'));
+    toast.error(loadError.value);
+  }
 }
 
 // ─── the forms menu (the Forms page's categories, in the left column) ─────────────────────
@@ -1035,7 +1054,16 @@ function doAction(a, jobid) {
   }
   if (action == 'load') {
     laterInThisForm(() => {
-      Navigate.toPath(router, '/form', { form: form, __previous_jobid__: jobid }, true);
+      // the form's own address (/form/<slug>), the job that ran passed on : a field named
+      // __previous_jobid__ in that form gets it from the query (AppForm.vue). Another form's
+      // address reloads through the watch on the slug ; this same form is loaded again here.
+      const sameForm = slugOf(form) === route.params.slug;
+      router
+        .push({ path: formPath(form), query: { __previous_jobid__: jobid } })
+        .then(() => {
+          if (sameForm) reloadForm();
+        })
+        .catch(() => {});
     }, wait);
   }
   if (action == 'reload') {
@@ -1134,7 +1162,7 @@ function generateJsonOutput(filedata = {}) {
       subforms: currentForm.value.subforms || [],
     });
   } catch (err) {
-    toast.error('Failed to generate json output.\r\nContact the developer.\r\n' + (err.message || err.toString()));
+    toast.error(t('form.outputFailed', { error: err.message || err.toString() }));
   }
 }
 
@@ -1148,7 +1176,7 @@ async function uploadFile(fieldname, file) {
     onUploadProgress: (progressEvent) => {
       fileProgress.value[fieldname] = Math.round((progressEvent.loaded / progressEvent.total) * 100);
       if (fileProgress.value[fieldname] == 100) {
-        toast.success(`File ${file.name} uploaded`);
+        toast.success(t('form.fileUploaded', { name: file.name }));
         setTimeout(() => {
           fileProgress.value[fieldname] = undefined;
         }, 2000);
@@ -1366,13 +1394,14 @@ async function createSchedule() {
 
     const successMessage =
       scheduleAction.value === 'schedule'
-        ? `Schedule "${scheduleForm.value.name}" created successfully`
-        : `Job "${scheduleForm.value.name}" scheduled successfully`;
+        ? t('form.scheduleCreated', { name: scheduleForm.value.name })
+        : t('form.jobScheduled', { name: scheduleForm.value.name });
     toast.success(successMessage);
     closeScheduleOffcanvas();
   } catch (error) {
     console.error('Error creating schedule:', error);
-    toast.error(error.response?.data?.message || 'Failed to create schedule');
+    // the server answers { error } (and perhaps details) : read as every other page does
+    toast.error(Helpers.parseAxiosResponseError(error, t('form.scheduleCreateFailed')));
   } finally {
     scheduleSubmitting.value = false;
   }
@@ -1421,14 +1450,14 @@ async function createStoredJob() {
 
     await axios.post('/api/v2/stored-jobs', storedJobData);
 
-    toast.success(`Form data saved as "${storeForm.value.name}"`);
+    toast.success(t('form.formDataSaved', { name: storeForm.value.name }));
     closeStoreOffcanvas();
   } catch (error) {
     console.error('Error storing job:', error);
     if (error.response?.status === 409) {
-      toast.error('A saved form with this name already exists');
+      toast.error(t('form.savedFormExists'));
     } else {
-      toast.error(error.response?.data?.message || 'Failed to save form data');
+      toast.error(Helpers.parseAxiosResponseError(error, t('form.formDataSaveFailed')));
     }
   } finally {
     storeSubmitting.value = false;
@@ -1449,7 +1478,7 @@ async function openLoadOffcanvas() {
     storedJobs.value = response.data.records || [];
   } catch (error) {
     console.error('Error fetching stored jobs:', error);
-    toast.error('Failed to load saved forms');
+    toast.error(Helpers.parseAxiosResponseError(error, t('form.savedFormsLoadFailed')));
     storedJobs.value = [];
   } finally {
     loadSubmitting.value = false;
@@ -1469,10 +1498,10 @@ async function loadStoredJob(storedJob) {
     ctx.onLoad(parsedData);
 
     closeLoadOffcanvas();
-    toast.success(`Loaded "${storedJob.name}"`);
+    toast.success(t('form.storedJobLoaded', { name: storedJob.name }));
   } catch (error) {
     console.error('Error loading stored job:', error);
-    toast.error('Failed to load form data');
+    toast.error(t('form.formDataLoadFailed'));
   } finally {
     loadSubmitting.value = false;
   }
@@ -1500,7 +1529,7 @@ function handleSubformAction(entry, { action, value }) {
 async function abortJob(id) {
   // no id yet : the job is still being created
   if (!id) return;
-  toast.warning('Aborting job ' + id);
+  toast.warning(t('form.abortingJob', { id }));
   try {
     const result = await axios.post(`/api/v2/job/${id}/abort`, {});
     if (result.status == 200) {
@@ -1727,22 +1756,23 @@ async function loadForm() {
         const result = await axios.get(`/api/v2/job/${route.query.prefillJobId}/rawformdata`);
         if (result.data) {
           initialFormData.value = result.data;
-          toast.info(`Form pre-filled with data from previous job #${route.query.prefillJobId}`);
+          toast.info(t('form.prefilled', { id: route.query.prefillJobId }));
         } else {
           console.log('No data in result:', result.data);
         }
       } catch (err) {
         console.error('Failed to load pre-fill data:', err);
 
-        let errorMessage = 'Failed to load previous job data';
+        // the server's own words when it sent some ({ error }), else what its status means
+        let errorMessage = t('form.prefillFailed');
         if (err.response?.data?.error) {
-          errorMessage = err.response.data.error;
+          errorMessage = Helpers.parseAxiosResponseError(err, errorMessage);
         } else if (err.response?.status === 404) {
-          errorMessage = 'Previous job data not found or no longer available';
+          errorMessage = t('form.prefillNotFound');
         } else if (err.response?.status === 403) {
-          errorMessage = 'You do not have permission to relaunch jobs';
+          errorMessage = t('form.prefillForbidden');
         } else if (err.response?.status === 400) {
-          errorMessage = err.response.data?.error || 'Cannot load data: form mismatch';
+          errorMessage = t('form.prefillMismatch');
         }
 
         toast.error(errorMessage);
@@ -1804,13 +1834,7 @@ onMounted(async () => {
   // error) and nothing caught it, so currentForm stayed null and formNotFound stayed
   // false - the one branch that renders an explanation was never reached. The user got a
   // spinner, no toast, and only an unhandled rejection in devtools.
-  try {
-    await loadForm();
-  } catch (err) {
-    formNotFound.value = true;
-    loadError.value = Helpers.parseAxiosResponseError(err, t('form.formNotFoundMsg'));
-    toast.error(loadError.value);
-  }
+  await loadFormSafely();
   resetResult();
 });
 
@@ -1819,6 +1843,9 @@ watch(
   () => route.params.slug,
   async (newForm, oldForm) => {
     if (newForm && newForm !== oldForm) {
+      // the previous form is not drawn while this one loads (nor stays when this one fails)
+      currentForm.value = null;
+      formLoaded.value = false;
       await reloadForm();
     }
   },

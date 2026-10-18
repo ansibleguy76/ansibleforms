@@ -99,7 +99,10 @@ async function swap(handoff, provider) {
       }
       return;
     }
-    reason = data?.error || data?.message || reason;
+    // the server's message and, when it sent them, its details (the provider's reason), as
+    // Helpers.parseAxiosResponseError reads an api answer
+    const message = data?.error || data?.message || reason;
+    reason = data?.details ? `${message}: ${data.details}` : message;
   } catch (err) {
     reason = err?.message || reason;
   }

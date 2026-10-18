@@ -176,7 +176,9 @@ describe('Time.momentOf', () => {
         }
       }
     }
-  });
+    // some three thousand moments, each through Intl : about a second alone, but a busy
+    // runner (the whole suite in parallel) took it past the 5 s default
+  }, 30000);
 
   test('the second 02:30 of an autumn night in Madrid is kept, not read as the first', () => {
     const second = '2026-10-25T01:30:00.000Z'; // 02:30 CET

@@ -90,8 +90,12 @@ const launchError = computed(() =>
  *
  * Args:
  *   keepEdits (boolean): keep what is being edited (a refresh while it runs).
+ *
+ * Returns:
+ *   Promise<boolean>: false when the server no longer has it (404), true otherwise.
  */
 async function load(keepEdits = false) {
+  let found = true;
   try {
     const res = await axios.get(`/api/v2/schedule/${encodeURIComponent(scheduleId.value)}`);
     const record = res.data.records ? res.data.records[0] : res.data;
@@ -103,10 +107,12 @@ async function load(keepEdits = false) {
     }
     schedule.value = record?.id ? record : null;
     if (schedule.value && (!keepEdits || !edit.value)) edit.value = editable(record);
-  } catch {
+  } catch (err) {
     schedule.value = null;
+    if (err?.response?.status === 404) found = false;
   }
   loaded.value = true;
+  return found;
 }
 
 /**
@@ -121,8 +127,17 @@ async function loadForms() {
 let poll = null;
 function watchRun() {
   clearInterval(poll);
+  // a one-time schedule is deleted by the server once it has run : its page would read as
+  // missing on the next poll, so the jobs are opened instead, where its job is
+  const oneTime = !!schedule.value?.one_time_run;
   poll = setInterval(async () => {
-    await load(true);
+    const found = await load(true);
+    if (!found && oneTime) {
+      clearInterval(poll);
+      toast.info(t('settings.schedules.oneTimeRanRemoved'));
+      router.push('/jobs');
+      return;
+    }
     if (!running.value) clearInterval(poll);
   }, 2000);
 }
