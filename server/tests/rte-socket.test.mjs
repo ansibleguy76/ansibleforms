@@ -156,3 +156,67 @@ describe("the job files", () => {
     assert.equal(cache.has(b.hash), false);
   });
 });
+
+describe("what goes wrong on the RTE's side", () => {
+  test("a character cut between two reads of the events file is read whole", async () => {
+    const file = path.join(dir, "events-utf8.jsonl");
+    const got = [];
+    const tail = createEventTail({ file, write: async (batch) => got.push(...batch) });
+    const line = Buffer.from(JSON.stringify({ type: "task", task: "créer le dépôt ✓" }) + "\n", "utf8");
+    // cut inside the 3 bytes of the check mark
+    const cut = line.indexOf(Buffer.from("✓", "utf8")) + 1;
+    fs.writeFileSync(file, line.subarray(0, cut));
+    await new Promise((r) => setTimeout(r, 700));
+    fs.appendFileSync(file, line.subarray(cut));
+    await tail.stop();
+    assert.equal(got.length, 1);
+    assert.equal(got[0].task, "créer le dépôt ✓");
+  });
+
+  test("a bundle that cannot be written fails its job, never the process", async () => {
+    const cache = new FileCache(path.join(dir, "cache3"));
+    const hash = "c".repeat(64);
+    // where the bundle would be written is a folder : the write stream fails
+    fs.mkdirSync(path.join(dir, "cache3", `${hash}.part`));
+    await assert.rejects(cache.ensure(hash, () => true), /could not be written/);
+    assert.equal(cache.pending.size, 0);
+  });
+});
+
+describe("the RTE dialing the app again", async () => {
+  const { redialWait, socketJobIO, jobs } = await import("../src/rte/socket/rte-socket.js");
+  const { CLOSE, REFUSED_REDIAL_MS } = await import("../src/rte/socket/protocol.js");
+
+  test("a socket that dropped : a backoff of 1 s doubling up to 30 s", () => {
+    assert.deepEqual(redialWait({ code: 1006, status: null, delay: 1000, random: 0 }), { wait: 1000, delay: 2000, refused: false });
+    assert.equal(redialWait({ code: 1006, status: null, delay: 30000, random: 0 }).delay, 30000);
+    // an id taken frees itself : the usual backoff
+    assert.equal(redialWait({ code: CLOSE.ID_TAKEN, status: null, delay: 1000, random: 0 }).refused, false);
+  });
+
+  test("rejected, removed, a token refused, another contract : a long wait, not a flood of dials", () => {
+    for (const close of [{ code: CLOSE.UNAUTHORIZED }, { code: CLOSE.CONTRACT }, { code: 1006, status: 401 }, { code: 1006, status: 409 }]) {
+      const next = redialWait({ status: null, delay: 4000, random: 0, ...close });
+      assert.equal(next.refused, true, JSON.stringify(close));
+      assert.equal(next.wait, REFUSED_REDIAL_MS);
+    }
+    assert.ok(REFUSED_REDIAL_MS >= 10 * 60 * 1000);
+  });
+
+  test("events are masked before they reach the spool, as the output is", async () => {
+    const { registerJobSecrets, forgetJobSecrets } = await import("../src/lib/outputMask.js");
+    const appended = [];
+    jobs.set(77, { spool: { append: (item) => appended.push(item) } });
+    registerJobSecrets(77, ["s3cr3t-value"]);
+    try {
+      await socketJobIO.writeEvents(77, [{ type: "ok", order: 1, result: { msg: "password is s3cr3t-value", rc: 0, nested: ["s3cr3t-value"] } }]);
+    } finally {
+      jobs.delete(77);
+      forgetJobSecrets(77);
+    }
+    const ev = appended[0].events[0];
+    assert.equal(JSON.stringify(ev).includes("s3cr3t-value"), false);
+    assert.equal(ev.result.rc, 0, "the shape and the numbers kept");
+    assert.equal(ev.result.nested.length, 1);
+  });
+});

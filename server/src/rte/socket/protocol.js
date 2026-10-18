@@ -74,6 +74,8 @@ export const RETRY_MS = 10000;
 export const CLOSE = {
   // the token, the name or the join token was refused
   UNAUTHORIZED: 4401,
+  // the RTE's id (its hello) is another node's, or the RTE of another runner uses it
+  ID_TAKEN: 4403,
   // the other side speaks another contract
   CONTRACT: 4409,
   // a newer socket of the same RTE took over (it reconnected, to this node or another)
@@ -85,6 +87,15 @@ export const CLOSE = {
   // the process stops
   GOING_AWAY: 1001,
 };
+
+// the closes and the refusals of the handshake (HTTP status) that dialing again soon will not
+// change : the runner was rejected or removed, the token or the join token refused, another
+// contract. An outbound RTE waits REFUSED_REDIAL_MS before it dials again, not its usual 1 to
+// 30 seconds : an admin has to act first. An id taken (ID_TAKEN) is not one of them : it frees
+// itself once the node that had it stops answering
+export const REFUSED_CLOSES = [CLOSE.UNAUTHORIZED, CLOSE.CONTRACT];
+export const REFUSED_STATUSES = [401, 403, 409];
+export const REFUSED_REDIAL_MS = 10 * 60 * 1000;
 
 // a ping every 20 s keeps proxies from closing an idle socket ; nothing heard for 60 s : gone
 export const PING_MS = 20000;
