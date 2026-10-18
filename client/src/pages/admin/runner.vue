@@ -68,7 +68,7 @@ const EDITED = [
   'rte_files',
   'rte_drain_seconds',
 ];
-// how an RTE talks to the app (RTE_MODE) : the socket modes first, database deprecated last
+// how an RTE talks to the app (RTE_MODE) : outbound, inbound or database (deprecated)
 const RTE_MODES = ['outbound', 'inbound', 'database'];
 // a socket-mode RTE's settings (server rte/socket/settings.js) : its key in what the RTE says,
 // its column, the variable on the RTE it overrides (used when empty), its default ; the
@@ -124,6 +124,10 @@ const hasProject = computed(() => PROJECT_RUNNER_KINDS.includes(edit.value?.kind
 // a runner keeps the type and the mode it was made with (an RTE says its mode itself when it connects)
 const sortedKinds = computed(() =>
   [...RUNNER_KINDS].sort((a, b) => t(`settings.runners.type_${a}`).localeCompare(t(`settings.runners.type_${b}`))),
+);
+// an RTE's modes in the order of their names, in the language shown, as the dialog's
+const sortedModes = computed(() =>
+  [...RTE_MODES].sort((a, b) => t(`settings.runners.rteMode_${a}`).localeCompare(t(`settings.runners.rteMode_${b}`))),
 );
 // a Jenkins signs in with a user and that user's API token ; its folder (project) is optional
 const isJenkins = computed(() => edit.value?.kind === 'jenkins');
@@ -320,7 +324,7 @@ const tabFields = computed(() => {
         t(`settings.runners.type_${kind}Hint`),
       ]),
       ...(e.kind === 'rte'
-        ? RTE_MODES.map((mode) => [
+        ? sortedModes.value.map((mode) => [
             `mode-${mode}`,
             t(`settings.runners.rteMode_${mode}`),
             t(`settings.runners.rteMode_${mode}Hint`),
@@ -746,7 +750,7 @@ onMounted(async () => {
                 </div>
                 <AppTypeOptions
                   :options="
-                    RTE_MODES.map((mode) => ({
+                    sortedModes.map((mode) => ({
                       value: mode,
                       label: t(`settings.runners.rteMode_${mode}`),
                       hint: t(`settings.runners.rteMode_${mode}Hint`),
