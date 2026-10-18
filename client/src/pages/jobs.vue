@@ -2104,7 +2104,7 @@ onMounted(async () => {
   margin: 0;
   /* the labels of the job page's facts : small, upper case, quiet */
   dt {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
