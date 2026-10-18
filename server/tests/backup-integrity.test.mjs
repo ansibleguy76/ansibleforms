@@ -207,6 +207,23 @@ describe("the environment file is captured but never silently restored", () => {
     assert.match(text, /removed from this backup on purpose/);
   });
 
+  test("the forms folder's symbolic links are listed beside its copy, and restored as links", async () => {
+    const shared = path.join(tmpRoot, "shared");
+    await fs.mkdir(shared, { recursive: true });
+    await fs.writeFile(path.join(shared, "s.yaml"), "shared");
+    await fs.mkdir(appConfig.formsFolderPath, { recursive: true });
+    await fs.symlink("../../shared", path.join(appConfig.formsFolderPath, "linked"));
+    const folder = path.join(tmpRoot, "links");
+    await fs.mkdir(folder, { recursive: true });
+    await BackupModel.backupFormsAndFolder(folder);
+    const manifest = JSON.parse(await fs.readFile(path.join(folder, "forms-links.json"), "utf8"));
+    assert.deepEqual(manifest.links, [{ path: "linked", target: "../../shared" }]);
+    // the copy holds the content, for a restore where the target is gone
+    assert.equal(await fs.readFile(path.join(folder, "forms", "linked", "s.yaml"), "utf8"), "shared");
+    await BackupModel.restoreFormsAndFolder(folder);
+    assert.equal(await fs.readlink(path.join(appConfig.formsFolderPath, "linked")), "../../shared");
+  });
+
   test("the copy is not readable by anyone else", async () => {
     const folder = path.join(tmpRoot, "envmode");
     await fs.mkdir(folder, { recursive: true });

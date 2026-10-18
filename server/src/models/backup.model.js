@@ -243,6 +243,121 @@ async function copyDir(src, dest, visited = new Set()) {
   }
 }
 
+// the file in a backup folder that lists the symbolic links of the forms folder (recordLinks) :
+// the backup holds their content (copyDir follows them), the restore makes them links again
+const LINKS_MANIFEST = 'forms-links.json';
+
+/**
+ * The symbolic links in a folder, as they are written (readlink : a relative target stays
+ * relative), with their path relative to the folder. A linked folder is not walked into : the
+ * link is what a restore puts back, and what it points to comes with it.
+ *
+ * Args:
+ *   root (string): The folder to walk (the forms folder).
+ *
+ * Returns:
+ *   Promise<object[]>: [{ path, target }], parents before what they hold ; empty when the folder
+ *     is missing.
+ */
+async function recordLinks(root) {
+  const links = [];
+  // step 1 : walk without following links
+  async function walk(dir, rel) {
+    let entries;
+    try {
+      entries = await fs.readdir(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const entryRel = rel ? path.join(rel, entry.name) : entry.name;
+      const full = path.join(dir, entry.name);
+      if (entry.isSymbolicLink()) {
+        links.push({ path: entryRel, target: await fs.readlink(full) });
+      } else if (entry.isDirectory()) {
+        await walk(full, entryRel);
+      }
+    }
+  }
+  // step 2 : a forms folder that is itself a link is resolved (replaceDir keeps that link)
+  try {
+    await walk(await fs.realpath(root), '');
+  } catch {
+    // no forms folder : no links
+  }
+  return links;
+}
+
+/**
+ * Makes the recorded symbolic links links again in a restored copy of the forms folder, in place
+ * of the plain copies copyDir made of them. A link whose target no longer resolves (from where
+ * the link will be, in the final folder) keeps the copy the backup holds, with a warning : the
+ * content would otherwise be lost. A link that was broken at backup time has no copy : it is put
+ * back as it was.
+ *
+ * Args:
+ *   staging (string): The restored copy, where the links are made.
+ *   finalDir (string): Where that copy ends up : relative targets are resolved from there.
+ *   links (object[]): [{ path, target }], as recordLinks returned them.
+ *
+ * Returns:
+ *   Promise<void>
+ */
+async function applyLinks(staging, finalDir, links) {
+  const made = [];
+  for (const link of links || []) {
+    // step 1 : only a path inside the folder, and not inside a link already made
+    const rel = path.normalize(String(link?.path || ''));
+    if (!rel || rel.startsWith('..') || path.isAbsolute(rel) || typeof link.target !== 'string') continue;
+    if (made.some((m) => rel.startsWith(m + path.sep))) continue;
+    const at = path.join(staging, rel);
+    // step 2 : the copy is kept when the target is gone
+    const resolved = path.resolve(path.dirname(path.join(finalDir, rel)), link.target);
+    let copied = true;
+    try {
+      await fs.lstat(at);
+    } catch {
+      copied = false;
+    }
+    let reachable = true;
+    try {
+      await fs.stat(resolved);
+    } catch {
+      reachable = false;
+    }
+    if (!reachable && copied) {
+      logger.warning(`Restored '${rel}' as a copy: it was a symbolic link to '${link.target}', which no longer exists`);
+      continue;
+    }
+    // step 3 : the copy goes, the link takes its place
+    await fs.rm(at, { recursive: true, force: true });
+    await fs.mkdir(path.dirname(at), { recursive: true });
+    await fs.symlink(link.target, at);
+    made.push(rel);
+  }
+}
+
+/**
+ * Gives a new folder the mode and the owner of the one it replaces : a restored forms folder
+ * was created with this process's defaults, and an operator's group-writable folder (or one
+ * owned by another user) changed under them. The owner is best effort : only root may give a
+ * folder away.
+ *
+ * Args:
+ *   from (string): The folder being replaced.
+ *   to (string): The folder taking its place.
+ *
+ * Returns:
+ *   Promise<void>
+ */
+async function copyFolderMode(from, to) {
+  const st = await fs.stat(from);
+  await fs.chmod(to, st.mode & 0o7777);
+  await fs.chown(to, st.uid, st.gid).catch((e) => {
+    if (e.code !== 'EPERM') logger.warning(`Could not give '${to}' the owner of '${from}': ${e.message}`);
+  });
+}
+
 // rename failures that mean "this folder cannot be swapped as a whole" : a mount
 // point (EBUSY, a docker volume), another filesystem (EXDEV), or a parent folder we
 // may not write in (EACCES / EPERM)
@@ -287,7 +402,9 @@ async function replaceContents(staging, target) {
     // step 2 : swap the content
     try {
       await emptyDir(target);
-      await copyDir(staging, target);
+      // verbatim : the staged copy holds the restored links as links (applyLinks), and
+      // copyDir would turn them into copies again
+      await fs.cp(staging, target, { recursive: true, verbatimSymlinks: true });
     } catch (e) {
       // step 3 : roll back to the previous content
       logger.error(`Restoring '${target}' failed midway, putting the previous content back: ${e.message}`);
@@ -319,6 +436,8 @@ async function replaceContents(staging, target) {
  * Args:
  *   src (string): The folder to restore from. When it is missing, nothing is done.
  *   targetDir (string): The folder to replace.
+ *   options (object): { links } - the symbolic links the folder had at backup time
+ *     (recordLinks), made links again in the restored copy (applyLinks).
  *
  * Returns:
  *   Promise<boolean>: true when the folder was replaced, false when src is missing.
@@ -326,7 +445,7 @@ async function replaceContents(staging, target) {
  * Raises:
  *   Error: When the copy or the swap fails ; the previous folder is then in place.
  */
-async function replaceDir(src, targetDir) {
+async function replaceDir(src, targetDir, { links = [] } = {}) {
   // step 1 : nothing to restore from
   try {
     if (!(await fs.stat(src)).isDirectory()) return false;
@@ -360,6 +479,8 @@ async function replaceDir(src, targetDir) {
   }
   try {
     await copyDir(src, staging);
+    // the links of then : links again, not the copies copyDir made of them
+    await applyLinks(staging, target, links);
     if (!existed) {
       // step 4a : no current folder, just move the staged one in
       await fs.rename(staging, target);
@@ -370,7 +491,11 @@ async function replaceDir(src, targetDir) {
       await replaceContents(staging, target);
       return true;
     }
-    // step 4c : rename the current folder aside
+    // step 4c : the staged folder takes the current one's mode and owner (it was made with this
+    // process's defaults), then the current folder is renamed aside
+    await copyFolderMode(target, staging).catch((e) => {
+      logger.warning(`Could not give the restored '${target}' the mode of the previous one: ${e.message}`);
+    });
     const aside = path.join(parent, `.${base}.old-${stamp}`);
     try {
       await fs.rename(target, aside);
@@ -548,6 +673,12 @@ class BackupModel {
     const formsDir = appConfig.formsFolderPath;
     const destDir = path.join(backupFolder, 'forms');
     await copyDir(formsDir, destDir);
+    // and its symbolic links : the copy above holds what they point to, this says they were
+    // links, so a restore makes them links again rather than plain copies (applyLinks)
+    const links = await recordLinks(formsDir);
+    if (links.length) {
+      await fs.writeFile(path.join(backupFolder, LINKS_MANIFEST), JSON.stringify({ links }, null, 2), 'utf8');
+    }
   }
 
 
@@ -599,7 +730,15 @@ class BackupModel {
     // for the staging / swap / roll back
     const formsDir = appConfig.formsFolderPath;
     const formsDirBackup = path.join(restoreFolder, 'forms');
-    await replaceDir(formsDirBackup, formsDir);
+    // the symbolic links it had (a backup from before this manifest has none listed : its links
+    // come back as copies, as they always did)
+    let links = [];
+    try {
+      links = JSON.parse(await fs.readFile(path.join(restoreFolder, LINKS_MANIFEST), 'utf8')).links || [];
+    } catch (e) {
+      if (e.code !== 'ENOENT') logger.warning(`Could not read the symbolic links of the backup's forms folder, they are restored as copies: ${e.message}`);
+    }
+    await replaceDir(formsDirBackup, formsDir, { links });
   }
 
 
@@ -804,4 +943,4 @@ class BackupModel {
 
 export default BackupModel;
 // the directory helpers, for the tests
-export { copyDir, replaceDir };
+export { copyDir, replaceDir, recordLinks };
