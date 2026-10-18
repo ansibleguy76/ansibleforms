@@ -880,6 +880,13 @@ class BackupModel {
         { cause: err }
       );
     }
+    // the schema that came back can be an older release's (the backup taken before an upgrade) :
+    // it is checked and patched again before success is reported, or this release ran on the old
+    // schema, its cached "schema is up to date" of before saying all was well. First, right after
+    // the dump : what runs meanwhile (the background tasks) queries the old tables until then.
+    // Imported here : the schema model imports the bootstrap, which imports this model
+    const { default: Schema } = await import('./schema.model.js');
+    const schema = await Schema.upgradeAfterRestore();
     // what the dump brought back from then and nothing follows now : its running jobs, its
     // repository and schedule claims (releaseRestoredRuntime). A failure here leaves the
     // restore done : the sweeps release them later, so it is said, not thrown
@@ -892,12 +899,6 @@ class BackupModel {
       logger.error(`Restore from '${folder}': could not release the jobs and claims of the backup's time: ${err.message || err}`);
     }
     await this.restoreFormsAndFolder(restoreFolder);
-    // the schema that came back can be an older release's (the backup taken before an upgrade) :
-    // it is checked and patched again before success is reported, or this release ran on the old
-    // schema, its cached "schema is up to date" of before saying all was well. Imported here :
-    // the schema model imports the bootstrap, which imports this model
-    const { default: Schema } = await import('./schema.model.js');
-    const schema = await Schema.upgradeAfterRestore();
     // every process drops what it had cached of the replaced rows (lib/epochs.js)
     bump('restore');
     if (!schema.upgraded) {
