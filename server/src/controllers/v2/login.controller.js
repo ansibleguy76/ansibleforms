@@ -2,7 +2,7 @@
 import User from "../../models/user.model.js";
 import Token from "../../models/token.model.js";
 import EntraId from "../../models/entraId.model.js";
-import mysql from "../../models/db.model.js";
+import OAuth2 from "../../models/oauth2.model.js";
 import OIDC from "../../models/oidc.model.js";
 import passport from 'passport';
 import jwt from 'jsonwebtoken';
@@ -201,10 +201,7 @@ const settings = async function(req, res) {
       issuer: oidcRaw.issuer,
       groupfilter: oidcRaw.groupfilter,
     };
-    const skipTo = await mysql
-      .do("SELECT provider FROM AnsibleForms.`oauth2_providers` WHERE enable = 1 AND auto_login = 1 ORDER BY id LIMIT 1")
-      .then((rows) => rows[0]?.provider || null)
-      .catch(() => null);
+    const skipTo = await OAuth2.autoLoginProvider();
     // the enabled provider set to Skip the login page, the login page goes straight to it
     const usable = { azuread: entra.enable, oidc: oidc.enabled };
     const autoLogin = skipTo && usable[skipTo] ? skipTo : null;
