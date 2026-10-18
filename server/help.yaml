@@ -574,6 +574,13 @@
       Not set: the RTE registers this container's IP address and `PORT`, named after the node
       (`rte-<hostname>-<port>`, as on the Status page). That works without any setting, but the
       address and the name change when the container is recreated - set `RTE_URL` in production.
+
+      An inbound RTE (`RTE_MODE=inbound`) over TLS: set `HTTPS=1` with its own `HTTPS_CERT` and
+      `HTTPS_KEY`, and an `https://` address here. When it registers (`APP_URL`) it sends its
+      certificate, the app keeps it as the ca_bundle of the runner's credential and dials the
+      RTE pinned to it, whatever name the certificate was made for. A runner waiting for
+      approval shows the certificate's fingerprint, which the RTE logs at its start. Over plain
+      `http://` to another host the app sends `RTE_TOKEN` in clear, and says so in its log.
   - name: JOB_RETENTION_DAYS
     version: 6.3.0
     type: number

@@ -33,10 +33,11 @@ import { bundleOf, bundleByHash, readChunks } from "../lib/jobFiles.js";
 import { Session } from "../rte/socket/session.js";
 import dbJobIO from "../rte/jobio-db.js";
 import { abandonJobs } from "../rte/abandon.js";
+import { isIP } from "net";
 import { getHttpsAgent, failRteJob, abortWhileWaiting, sayWaitingForSlot } from "./common.js";
 import {
   SOCKET_CONTRACT, SOCKET_MODES, APP_SOCKET_PATH, CLOSE, CHUNK_BYTES, MAX_PAYLOAD, RETRY_MS,
-  queueMinutes, inboundUrl, fingerprint,
+  queueMinutes, inboundUrl, fingerprint, parseCertBundle, certFingerprint,
 } from "../rte/socket/protocol.js";
 
 // how long a lease lasts, renewed every 20 s while the socket is open
@@ -467,10 +468,16 @@ async function abandonLost(entry, hello) {
  * own) ; its RTE signs in with its current token, or an admin changes the token. The runner
  * takes the mode the RTE runs in, and an inbound one the address the app dials it on.
  *
+ * An inbound RTE with an https address sends its certificate (cert, PEM) : it becomes the
+ * ca_bundle of the runner's credential, ignore_certs off, and the app dials it pinned to it
+ * (getHttpsAgent, pin). A runner signed in with its own token takes a new certificate the same
+ * way (the RTE's certificate was renewed) ; with a join token, or asking to join, the first one.
+ *
  * Args:
  *   headers (object): the request's headers : Authorization (its RTE_TOKEN), X-AF-RTE-Name,
  *     X-AF-RTE-Id, X-AF-RTE-Join (a join token), X-AF-RTE-Url (its address).
- *   opts (object): { mode : outbound (default) or inbound, url : its address, over the header }.
+ *   opts (object): { mode : outbound (default) or inbound, url : its address, over the header,
+ *     cert : an inbound RTE's certificate (PEM), ip : the caller's address }.
  *
  * Returns:
  *   Promise<object>: { runner } when let in, { error, status } when not.
@@ -484,27 +491,44 @@ export async function authenticate(headers, opts = {}) {
   if (token.length < 16) return { status: 401, error: "the RTE's token (RTE_TOKEN) is missing or shorter than 16 characters" };
   if (!name || !/^[A-Za-z0-9_.:@-]{1,250}$/.test(name)) return { status: 400, error: "the RTE's name (RTE_NAME) is missing or not a valid runner name" };
   if (mode === "inbound" && !/^https?:\/\//i.test(url)) return { status: 400, error: "an inbound RTE registers with its address (RTE_URL), which the app dials" };
+  // an inbound RTE's certificate : only with an https address, certificates only
+  let cert = null;
+  if (opts.cert) {
+    if (mode !== "inbound" || !/^https:\/\//i.test(url)) return { status: 400, error: "a certificate (cert) is sent only by an inbound RTE with an https address (RTE_URL)" };
+    try {
+      cert = parseCertBundle(opts.cert).pem;
+    } catch (e) {
+      return { status: 400, error: `the RTE's certificate (cert) is not one: ${e.message}` };
+    }
+  }
   // what the runner becomes : its mode, and an inbound one's address
   const fields = mode === "inbound" ? { rte_mode: "inbound", uri: url } : { rte_mode: "outbound", ...(url ? { uri: url } : {}) };
   const runner = await Runner.findByName(name);
   if (runner && runner.type !== "rte") return { status: 409, error: `'${name}' is a ${runner.type} runner, not an RTE` };
   if (runner && safeEqual(token, runner.token)) {
-    if (runner.rte_mode !== fields.rte_mode || (mode === "inbound" && runner.uri !== url)) {
-      if (runner.managed) return { status: 409, error: `runner '${name}' is managed by the config seed: its mode and address are set there` };
-      // an inbound one's address : its credential's when it names one
+    const moved = runner.rte_mode !== fields.rte_mode || (mode === "inbound" && runner.uri !== url);
+    // a certificate other than the one pinned : the RTE's certificate was renewed
+    const repinned = !!cert && samePem(runner.ca_bundle) !== cert;
+    if (moved && runner.managed) return { status: 409, error: `runner '${name}' is managed by the config seed: its mode and address are set there` };
+    if (repinned && runner.managed) {
+      logger.warning(`Runner '${name}' is managed by the config seed: the certificate its RTE sent (fingerprint ${certFingerprint(cert)}) is not stored, set its ca_bundle there`);
+    } else if (moved || repinned) {
+      const pin = repinned ? { ca_bundle: cert, ignore_certs: 0 } : {};
+      // an inbound one's address and certificate : its credential's when it names one
       if (mode === "inbound" && runner.credential) {
-        await storeToken(name, token, url, runner.credential);
-        await Runner.update({ rte_mode: "inbound", uri: "" }, runner.id, { fromRte: true });
+        await storeToken(name, token, url, runner.credential, repinned ? cert : null);
+        if (moved) await Runner.update({ rte_mode: "inbound", uri: "" }, runner.id, { fromRte: true });
       } else {
-        await Runner.update(fields, runner.id, { fromRte: true });
+        await Runner.update({ ...fields, ...pin }, runner.id, { fromRte: true });
       }
-      logger.notice(`Runner '${name}' is ${mode} now${mode === "inbound" ? ` at ${url}` : ""}`);
+      if (moved) logger.notice(`Runner '${name}' is ${mode} now${mode === "inbound" ? ` at ${url}` : ""}`);
+      if (repinned) logger.notice(`Runner '${name}': the app dials it pinned to its new certificate (fingerprint ${certFingerprint(cert)})`);
     }
-    return { runner: { ...runner, ...fields } };
+    return { runner: { ...runner, ...fields, ...(repinned && !runner.managed ? { ca_bundle: cert, ignore_certs: 0 } : {}) } };
   }
   if (!join) {
     if (runner) return { status: 401, error: `the token of RTE '${name}' is not the one stored for its runner: check its RTE_TOKEN` };
-    return askToJoin({ name, token, mode, url, fields, headers, ip: opts.ip });
+    return askToJoin({ name, token, mode, url, fields, headers, ip: opts.ip, cert });
   }
   // a seeded runner first : refused before the join token is used, which would cost it a use
   if (runner?.managed) return { status: 409, error: `runner '${name}' is managed by the config seed: its token is set there` };
@@ -521,7 +545,8 @@ export async function authenticate(headers, opts = {}) {
   if (!used) return { status: 401, error: "the join token (RTE_JOIN_TOKEN) is unknown, revoked, expired or used up" };
   // the token goes in a credential of type rte, as every runner signs in (Connections >
   // Credentials) : the runner names it, and an inbound one's address is the credential's
-  const credential = await storeToken(name, token, mode === "inbound" ? url : "", runner?.credential);
+  const credential = await storeToken(name, token, mode === "inbound" ? url : "", runner?.credential, cert);
+  if (cert) logger.notice(`Runner '${name}': the app dials it pinned to its certificate (fingerprint ${certFingerprint(cert)})`);
   if (runner) {
     // a runner still waiting for approval (an approved one was refused above) : a new token,
     // still waiting for an admin
@@ -545,7 +570,7 @@ let joinQueue = Promise.resolve();
  * until it is approved. At most PENDING_MAX wait at once.
  *
  * Args:
- *   req (object): { name, token, mode, url, fields, headers, ip }.
+ *   req (object): { name, token, mode, url, fields, headers, ip, cert }.
  *
  * Returns:
  *   Promise<object>: { runner, pending: true }, or { status, error } when refused.
@@ -563,12 +588,12 @@ function askToJoin(req) {
  * time).
  *
  * Args:
- *   req (object): { name, token, mode, url, fields, headers, ip }.
+ *   req (object): { name, token, mode, url, fields, headers, ip, cert }.
  *
  * Returns:
  *   Promise<object>: { runner, pending: true }, or { status, error } when refused.
  */
-async function addPending({ name, token, mode, url, fields, headers, ip }) {
+async function addPending({ name, token, mode, url, fields, headers, ip, cert = null }) {
   // asked twice at once (the socket and the registration call) : the first one added it
   const already = await Runner.findByName(name);
   if (already) {
@@ -587,27 +612,50 @@ async function addPending({ name, token, mode, url, fields, headers, ip }) {
     mode,
     url: mode === "inbound" ? url : null,
     fingerprint: fingerprint(token),
+    // the certificate the app will dial it pinned to (an inbound RTE over https), as the token's
+    cert_fingerprint: cert ? certFingerprint(cert) : null,
   };
-  const credential = await storeToken(name, token, mode === "inbound" ? url : "", null);
+  const credential = await storeToken(name, token, mode === "inbound" ? url : "", null, cert);
   await Runner.create({
     name, type: "rte", uri: "", credential, rte_mode: fields.rte_mode, enabled: 0,
     pending: 1, pending_since: new Date(), pending_info: JSON.stringify(info),
     description: `Asked to join from ${info.host || info.ip || "an unknown host"}`,
   }, { fromRte: true });
-  logger.notice(`RTE '${name}' (${mode}, fingerprint ${info.fingerprint}) asked to join from ${info.ip || "?"}: approve it under Connections > Runners`);
+  logger.notice(`RTE '${name}' (${mode}, fingerprint ${info.fingerprint}${cert ? `, certificate ${info.cert_fingerprint}` : ""}) asked to join from ${info.ip || "?"}: approve it under Connections > Runners`);
   publish("runners");
   return { runner: await Runner.findByName(name), pending: true };
 }
 
 /**
+ * A PEM bundle as parseCertBundle writes it, to compare a stored one with a new one ; null when
+ * it holds no certificate.
+ *
+ * Args:
+ *   pem (string|null): the stored bundle.
+ *
+ * Returns:
+ *   string|null
+ */
+function samePem(pem) {
+  try {
+    return pem ? parseCertBundle(pem).pem : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Keeps an RTE's token in a credential of type rte : the one its runner names already, else a
- * new one named after the runner (<runner>-rte, a number added when that name is taken).
+ * new one named after the runner (<runner>-rte, a number added when that name is taken). An
+ * inbound RTE's certificate, when it sent one, goes with it : the credential's ca_bundle, its
+ * ignore_certs off, so the app dials it pinned to that certificate.
  *
  * Args:
  *   runnerName (string): the runner.
  *   token (string): its RTE_TOKEN.
  *   url (string): the address the app dials it on (inbound), "" for none (outbound).
  *   current (string|null): the credential the runner names already.
+ *   cert (string|null): its certificate (PEM, parseCertBundle), null to keep what is stored.
  *
  * Returns:
  *   Promise<string>: the credential's name.
@@ -615,12 +663,13 @@ async function addPending({ name, token, mode, url, fields, headers, ip }) {
  * Raises:
  *   Error: the runner's credential is managed by the config seed.
  */
-async function storeToken(runnerName, token, url, current) {
+async function storeToken(runnerName, token, url, current, cert = null) {
+  const pin = cert ? { ca_bundle: cert, ignore_certs: 0 } : {};
   if (current) {
     const cred = await Credential.findByName(current).catch(() => null);
     if (cred && cred.credential_type === "rte") {
       if (cred.managed) throw new Error(`the credential '${current}' of runner '${runnerName}' is managed by the config seed`);
-      await Credential.update({ password: token, url: url || null }, cred.id, { fromRte: true });
+      await Credential.update({ password: token, url: url || null, ...pin }, cred.id, { fromRte: true });
       return current;
     }
   }
@@ -631,6 +680,7 @@ async function storeToken(runnerName, token, url, current) {
     credential_type: "rte",
     password: token,
     url: url || null,
+    ...pin,
     description: `The token of the RTE '${runnerName}' (its RTE_TOKEN), stored when it joined`,
   }, { fromRte: true });
   return name;
@@ -642,7 +692,8 @@ async function storeToken(runnerName, token, url, current) {
  * user signs in : the RTE's token, or a join token, is the proof.
  *
  * Args:
- *   req (Request): { headers as authenticate(), body: { mode, url } }.
+ *   req (Request): { headers as authenticate(), body: { mode, url, cert : an inbound RTE's
+ *     certificate (PEM) when its address is https } }.
  *   res (Response): 200 { runner, mode } ; else the status and why.
  *
  * Returns:
@@ -650,7 +701,7 @@ async function storeToken(runnerName, token, url, current) {
  */
 export async function registerHandler(req, res) {
   try {
-    const out = await authenticate(req.headers, { mode: req.body?.mode, url: req.body?.url, ip: req.ip });
+    const out = await authenticate(req.headers, { mode: req.body?.mode, url: req.body?.url, cert: req.body?.cert, ip: req.ip });
     if (!out.runner) {
       logger.warning(`Refused an RTE registration from ${req.ip}: ${out.error}`);
       return res.status(out.status).json({ error: out.error });
@@ -804,6 +855,47 @@ export function handleUpgrade(req, socket, head) {
 // ─── inbound : this node dials the RTE ────────────────────────────────────────
 
 const dialing = new Set();
+// the inbound runners whose plain http address was said in the log (once per runner and process)
+const plainWarned = new Set();
+
+/**
+ * Whether a host name is this machine : localhost, 127.0.0.0/8 or ::1. A token sent to it in
+ * clear never leaves the host.
+ *
+ * Args:
+ *   host (string): the URL's hostname (an IPv6 address in brackets, as URL writes it).
+ *
+ * Returns:
+ *   boolean
+ */
+export function isLoopback(host) {
+  const h = String(host || "").toLowerCase().replace(/^\[|\]$/g, "");
+  if (h === "localhost" || h.endsWith(".localhost")) return true;
+  if (isIP(h) === 4) return h.startsWith("127.");
+  if (isIP(h) === 6) return h === "::1" || /^::ffff:127\./.test(h);
+  return false;
+}
+
+/**
+ * Says once per runner that the app dials an inbound RTE over plain http on another host : its
+ * token (Authorization: Bearer, which also seals the job's secrets) crosses the network in
+ * clear. HTTPS=1 on the RTE and an https RTE_URL pin its certificate instead.
+ *
+ * Args:
+ *   name (string): the runner.
+ *   uri (string): its address.
+ */
+function warnPlain(name, uri) {
+  let url;
+  try {
+    url = new URL(uri);
+  } catch {
+    return;
+  }
+  if (url.protocol !== "http:" || isLoopback(url.hostname) || plainWarned.has(name)) return;
+  plainWarned.add(name);
+  logger.warning(`[SECURITY] Runner '${name}': the app dials its RTE over plain http (${url.origin}): its token crosses the network in clear. Run the RTE with HTTPS=1 and an https RTE_URL, so the app pins its certificate`);
+}
 
 /**
  * Looks at the inbound runners : takes the lease of each one free or expired, and dials the
@@ -821,6 +913,7 @@ async function dialInbound() {
     const runner = await Runner.findByName(name);
     if (!runner?.uri) continue;
     dialing.add(name);
+    warnPlain(name, runner.uri);
     let url;
     try {
       url = inboundUrl(runner.uri);
@@ -833,7 +926,8 @@ async function dialInbound() {
       headers: { Authorization: `Bearer ${runner.token || ""}`, "X-AF-Node": nodeId },
       maxPayload: MAX_PAYLOAD,
       handshakeTimeout: 10000,
-      agent: url.startsWith("wss:") ? getHttpsAgent(runner) : undefined,
+      // pinned : the certificate the RTE sent when it registered (its credential's ca_bundle)
+      agent: url.startsWith("wss:") ? getHttpsAgent(runner, { pin: true }) : undefined,
     });
     ws.on("open", () => {
       dialing.delete(name);
@@ -1482,6 +1576,6 @@ export function dropSocket(name, reason) {
   if (entry) entry.session.close(CLOSE.UNAUTHORIZED, reason);
 }
 
-export { sessions, waiting, cancelSent, claims, sending, masked, pruneEnded, ALLOWED_MAX, dialing, dispatch, dialInbound, storeItem, sendJob, onItem, onFetch, adopt, renewTick, abandonLost, NODE_DEAD_SECONDS };
+export { sessions, waiting, cancelSent, claims, sending, masked, pruneEnded, ALLOWED_MAX, warnPlain, dialing, dispatch, dialInbound, storeItem, sendJob, onItem, onFetch, adopt, renewTick, abandonLost, NODE_DEAD_SECONDS };
 
 export default { startRteHub, handleUpgrade, authenticate, registerHandler, kick, cancel, socketState, isSocketRunner, holdsSocket };

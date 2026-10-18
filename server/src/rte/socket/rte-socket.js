@@ -41,7 +41,7 @@ import { FileCache } from "./files.js";
 import {
   SOCKET_CONTRACT, RTE_SOCKET_PATH, CLOSE, WINDOW, MAX_PAYLOAD, REFUSED_CLOSES, REFUSED_STATUSES, REFUSED_REDIAL_MS,
   CONTRACT_REDIAL_MS,
-  socketUrl, fingerprint,
+  socketUrl, fingerprint, certFingerprint,
 } from "./protocol.js";
 
 // ─── settings ─────────────────────────────────────────────────────────────────
@@ -57,6 +57,45 @@ const cacheDir = () => process.env.RTE_CACHE_PATH || path.join(PERSISTENT, "rte-
 const filesMode = () => (String(process.env.RTE_FILES || "transfer").toLowerCase() === "local" ? "local" : "transfer");
 // the name the RTE joins as (its runner under Connections > Runners) : RTE_NAME, else its node id
 const rteName = () => String(process.env.RTE_NAME || "").trim() || nodeId;
+// the certificate shipped in the image (config/https.config.js copies it when none is mounted) :
+// its private key is public, pinning it proves nothing
+const TEMPLATE_CERT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../templates/seed/cert.pem.template");
+
+/**
+ * The certificate an inbound RTE sends when it registers (field cert of the registration call),
+ * so the app dials it pinned to it : its HTTPS_CERT, when it serves HTTPS (HTTPS=1) and the
+ * address the app dials (RTE_URL) is https. Behind a proxy that ends TLS for it, the RTE runs
+ * without HTTPS=1 and sends none : the app checks the proxy's certificate as any other.
+ *
+ * Args:
+ *   env (object): the environment (process.env ; the tests set it).
+ *   tls (object): { https, httpsCert } (config/https.config.js ; the tests set it).
+ *
+ * Returns:
+ *   string|null: the certificate (PEM), null when none is sent.
+ */
+export function certToSend(env = process.env, tls = httpsConfig) {
+  if (!tls?.https || !tls.httpsCert) return null;
+  if (!/^https:\/\//i.test(String(env.RTE_URL || "").trim())) return null;
+  return Buffer.isBuffer(tls.httpsCert) ? tls.httpsCert.toString("utf8") : String(tls.httpsCert);
+}
+
+/**
+ * Whether a certificate is the one shipped in the image (its private key is public).
+ *
+ * Args:
+ *   pem (string): the certificate.
+ *
+ * Returns:
+ *   boolean
+ */
+function isTemplateCert(pem) {
+  try {
+    return certFingerprint(pem) !== null && certFingerprint(pem) === certFingerprint(fs.readFileSync(TEMPLATE_CERT));
+  } catch {
+    return false;
+  }
+}
 
 // ─── state ────────────────────────────────────────────────────────────────────
 
@@ -596,7 +635,10 @@ async function registerInbound(token) {
   for (;;) {
     if (isStopping()) return;
     try {
-      const { data } = await axios.post(url, { mode: "inbound", url: process.env.RTE_URL }, { headers, httpsAgent, proxy: false, timeout: 15000 });
+      // its certificate goes with it (an https RTE_URL, HTTPS=1) : the app dials it pinned to it
+      const cert = certToSend();
+      const body = { mode: "inbound", url: process.env.RTE_URL, ...(cert ? { cert } : {}) };
+      const { data } = await axios.post(url, body, { headers, httpsAgent, proxy: false, timeout: 15000 });
       if (data.pending) logger.warning(`RTE '${rteName()}': asked to join as inbound runner '${data.runner}': the app dials it once an admin approves it under Connections > Runners (fingerprint ${fingerprint(token)})`);
       else logger.notice(`RTE '${rteName()}': registered with the app as inbound runner '${data.runner}' at ${data.uri}: the app dials it from now on`);
       return;
@@ -719,6 +761,13 @@ export async function startSocketRte(rteMode) {
 
   await new Promise((resolve) => server.listen(port, resolve));
   logger.notice(`RTE '${rteName()}' ${version} (${mode}, files ${filesMode()}) listening on ${httpsConfig.https ? "https" : "http"} port ${port}, token fingerprint ${fingerprint(token)}`);
+  if (mode === "inbound" && httpsConfig.https && httpsConfig.httpsCert) {
+    const pem = httpsConfig.httpsCert.toString("utf8");
+    logger.notice(`RTE '${rteName()}': certificate fingerprint ${certFingerprint(pem) || "?"}${certToSend() ? " (sent to the app when it registers: the app dials it pinned to it)" : ""}`);
+    if (isTemplateCert(pem)) logger.warning(`[SECURITY] RTE '${rteName()}': HTTPS_CERT is the sample certificate shipped in the image, whose private key is public: mount a certificate of your own (HTTPS_CERT, HTTPS_KEY)`);
+  } else if (mode === "inbound" && /^http:\/\//i.test(String(process.env.RTE_URL || ""))) {
+    logger.warning(`RTE '${rteName()}': inbound over plain http: the app sends RTE_TOKEN in clear. Set HTTPS=1 and an https RTE_URL so the app pins this RTE's certificate`);
+  }
   if (mode === "outbound") dialOut(token);
   // inbound with the app's address : one call so the app knows this RTE and dials it
   else if (process.env.APP_URL) registerInbound(token).catch((e) => logger.error(`RTE: registration: ${e.message}`));
