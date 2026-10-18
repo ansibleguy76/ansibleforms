@@ -67,3 +67,29 @@ describe('one submit gate, and no double launch', () => {
     expect(fnAt(formPage, 'async function handleSubmitAction')).toMatch(/if \(status\.value !== ''\) return;/);
   });
 });
+
+describe('switching forms shows the form of the address', () => {
+  const formPage = read('src/pages/form.vue');
+  const fnAt = (name, len) => formPage.slice(formPage.indexOf(name), formPage.indexOf(name) + len);
+
+  it('a reload closes every subform being edited', () => {
+    expect(fnAt('async function reloadForm(', 700)).toMatch(/editStack\.splice\(0\)/);
+  });
+
+  it('another address starts from empty values', () => {
+    expect(fnAt('() => route.params.slug,', 700)).toMatch(/form\.value = \{\}/);
+  });
+
+  it('only the newest load writes the page', () => {
+    expect(fnAt('async function loadFormSafely()', 600)).toMatch(/const seq = \+\+loadSeq;/);
+    const load = formPage.slice(
+      formPage.indexOf('async function loadForm(seq'),
+      formPage.indexOf('onMounted(async () =>'),
+    );
+    // every awaited answer is checked before it is used
+    const awaits = load.match(/await (formNameOf|Form\.load|axios\.get)\(/g) || [];
+    const checks = load.match(/if \(stale\(\)\) return;/g) || [];
+    expect(awaits.length).toBeGreaterThan(0);
+    expect(checks.length).toBeGreaterThanOrEqual(awaits.length);
+  });
+});

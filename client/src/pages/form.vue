@@ -898,9 +898,20 @@ async function reloadForm(reset = true) {
   if (reset) {
     resetResult();
   }
+  // Close every subform being edited : the form is drawn anew below (key++), and an entry
+  // left on the stack hid the fresh form behind a subform editor whose onSave wrote into
+  // the list field of a form instance that no longer exists.
+  editStack.splice(0);
   await loadFormSafely();
   key.value++;
 }
+
+// The load chain's token, as pollSeq is for the job poll : each load carries the value it
+// started with and checks it after every await. Switching forms quickly (the menu, the
+// search, Back) started a second load while the first was in flight, and whichever answered
+// LAST was drawn - the page could show the form the user had already left, under the new
+// address. Only the newest load may write anything.
+let loadSeq = 0;
 
 /**
  * Loads the form of the address, its failure shown instead of thrown. Form.load throws on
@@ -910,11 +921,14 @@ async function reloadForm(reset = true) {
  * that did not is drawn.
  */
 async function loadFormSafely() {
+  const seq = ++loadSeq;
   formNotFound.value = false;
   loadError.value = '';
   try {
-    await loadForm();
+    await loadForm(seq);
   } catch (err) {
+    // a newer load owns the page now : this one's failure is not about the form shown
+    if (seq !== loadSeq) return;
     formNotFound.value = true;
     loadError.value = Helpers.parseAxiosResponseError(err, t('form.formNotFoundMsg'));
     toast.error(loadError.value);
@@ -1701,7 +1715,19 @@ async function formNameOf(slug) {
   return formFromPath(slug, (await Form.list())?.forms);
 }
 
-async function loadForm() {
+/**
+ * Loads the form of the address into the page.
+ *
+ * Args:
+ *   seq (number): this load's token (loadSeq) ; once a newer load started, this one stops at
+ *     its next await without writing anything.
+ *
+ * Raises:
+ *   Error: Form.load's failure (loadFormSafely shows it).
+ */
+async function loadForm(seq = loadSeq) {
+  // a newer load started while this one was waiting : drop this one's results
+  const stale = () => seq !== loadSeq;
   const slug = route.params.slug;
   if (!slug) {
     console.error('No form name provided in the URL');
@@ -1711,6 +1737,7 @@ async function loadForm() {
   // a preview carries the designer's copy of the form, perhaps not saved yet : its name is only
   // needed when that copy is missing
   const formName = await formNameOf(slug);
+  if (stale()) return;
   if (!formName && !route.query.preview) {
     console.error('No form with the address ' + slug);
     formNotFound.value = true;
@@ -1748,10 +1775,14 @@ async function loadForm() {
         formNotFound.value = true;
         return;
       }
-      formConfig.value = await Form.load(formName);
+      const loaded = await Form.load(formName);
+      if (stale()) return;
+      formConfig.value = loaded;
     }
   } else {
-    formConfig.value = await Form.load(formName);
+    const loaded = await Form.load(formName);
+    if (stale()) return;
+    formConfig.value = loaded;
   }
   if (formConfig.value.forms.length == 0) {
     console.error('No forms found in the configuration for form: ' + formName);
@@ -1764,6 +1795,7 @@ async function loadForm() {
       try {
         console.log('Loading pre-fill data from job:', route.query.prefillJobId);
         const result = await axios.get(`/api/v2/job/${route.query.prefillJobId}/rawformdata`);
+        if (stale()) return;
         if (result.data) {
           initialFormData.value = result.data;
           toast.info(t('form.prefilled', { id: route.query.prefillJobId }));
@@ -1771,6 +1803,7 @@ async function loadForm() {
           console.log('No data in result:', result.data);
         }
       } catch (err) {
+        if (stale()) return;
         console.error('Failed to load pre-fill data:', err);
 
         // the server's own words when it sent some ({ error }), else what its status means
@@ -1822,12 +1855,14 @@ async function loadForm() {
     if (route.query.storedJob) {
       try {
         const res = await axios.get(`/api/v2/stored-jobs/${encodeURIComponent(route.query.storedJob)}`);
+        if (stale()) return;
         const stored = res.data?.records ? res.data.records[0] : res.data;
         if (stored?.form_data) {
           buildMainStoreCtx().onLoad(JSON.parse(stored.form_data));
           toast.success(t('form.storedJobLoaded', { name: stored.name }));
         }
       } catch (err) {
+        if (stale()) return;
         toast.error(Helpers.parseAxiosResponseError(err, t('form.storedJobLoadFailed')));
       }
     }
@@ -1856,6 +1891,9 @@ watch(
       // the previous form is not drawn while this one loads (nor stays when this one fails)
       currentForm.value = null;
       formLoaded.value = false;
+      // nor are its values carried over : AppForm fills form in place, so a field the new
+      // form shares by name started from the old form's value (subforms close in reloadForm)
+      form.value = {};
       await reloadForm();
     }
   },

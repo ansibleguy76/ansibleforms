@@ -448,14 +448,14 @@ describe('the form page always reaches a definite state', () => {
       src.indexOf('async function loadFormSafely()'),
       src.indexOf('async function loadFormSafely()') + 800,
     );
-    expect(fn).toMatch(/try \{\s*\n\s*await loadForm\(\);/);
+    expect(fn).toMatch(/try \{\s*\n\s*await loadForm\(seq\);/);
     expect(fn).toMatch(/formNotFound\.value = true/);
     // the first load and every reload (another form opened from this one) go through it
     const mounted = src.slice(src.indexOf('onMounted(async () =>'), src.indexOf('onMounted(async () =>') + 1200);
     expect(mounted).toMatch(/await loadFormSafely\(\);/);
     const reload = src.slice(
       src.indexOf('async function reloadForm('),
-      src.indexOf('async function reloadForm(') + 300,
+      src.indexOf('async function reloadForm(') + 700,
     );
     expect(reload).toMatch(/await loadFormSafely\(\);/);
   });
