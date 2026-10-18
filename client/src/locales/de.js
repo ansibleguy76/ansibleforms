@@ -1322,6 +1322,9 @@ export default {
       extra: 'Extra (JSON)',
     },
     schedules: {
+      enabled: 'Aktiviert',
+      enable: 'Aktivieren',
+      disable: 'Deaktivieren',
       label: 'Zeitplan',
       labelPlural: 'Zeitplaene',
       description:

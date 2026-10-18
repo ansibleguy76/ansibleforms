@@ -317,6 +317,8 @@ const crudConfigs = {
       { name: 'output' },
       { name: 'status' },
       { name: 'state' },
+      // turned off, its cron or one time run does not fire
+      { name: 'enabled', isBoolean: true },
       { name: 'last_run', isDatetime: true },
       { name: 'queue_id' },
       // who planned it, as a JSON user object : set ONLY by Schedule.plan, never from a

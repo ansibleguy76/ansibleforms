@@ -1322,6 +1322,9 @@ export default {
       extra: 'Extra (JSON)',
     },
     schedules: {
+      enabled: 'Activado',
+      enable: 'Activar',
+      disable: 'Desactivar',
       label: 'Programación',
       labelPlural: 'Programaciones',
       description: 'Automatizar envíos de formularios con un calendario cron recurrente o ejecución única.',

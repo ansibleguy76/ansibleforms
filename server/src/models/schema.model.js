@@ -593,7 +593,7 @@ const SCHEMA_MANIFEST = {
     patchVersion7: { tables: ['secret_stores', 'runners', 'nodes', 'cache_epochs', 'designer_lock', 'user_groups', 'notification_channels', 'syslog_servers', 'login_failures', 'token_revocations', 'schema_migrations',
                               'directory_users', 'announcements', 'disclaimer_versions', 'disclaimer_acceptances', 'api_tokens', 'labels',
                               'runner_leases', 'runner_join_tokens', 'job_events'],
-                     columns: ['runners.rte_mode', 'runners.enabled', 'runners.pending', 'runners.pending_since', 'runners.pending_info', 'schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'settings.syslog_env_imported_at', 'jobs.runner', 'jobs.runner_kind', 'jobs.runner_job_url',
+                     columns: ['runners.rte_mode', 'runners.enabled', 'schedule.enabled', 'runners.pending', 'runners.pending_since', 'runners.pending_info', 'schedule.owner', 'credentials.secret_store', 'credentials.secret_ref', 'settings.vault_env_imported_at', 'settings.syslog_env_imported_at', 'jobs.runner', 'jobs.runner_kind', 'jobs.runner_job_url',
                                'runners.username', 'runners.password', 'runners.use_credentials', 'runners.node_id', 'jobs.job_log',
                                'jobs.tracker', 'repositories.claim_node', 'repositories.claim_since',
                                'repositories.use_for_workflows', 'repositories.use_for_inventories',
@@ -1111,6 +1111,8 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addColumn("runners", "rte_mode", "varchar(10)", true, "NULL"), messages, success, failed);
   // a runner turned off takes no job (Connections > Runners, Enable / Disable)
   await checkPromise(addColumn("runners", "enabled", "tinyint(4)", true, "1"), messages, success, failed);
+  // a schedule turned off does not fire (Settings > Schedules, Enable / Disable)
+  await checkPromise(addColumn("schedule", "enabled", "tinyint(4)", true, "1"), messages, success, failed);
   // the LDAP directory named "default" up to 7.2 is "main" from 7.3 : its members keep their short names
   await checkPromise(renameDefaultLdap(), messages, success, failed);
   // an RTE that asks to join waits for an admin's approval (Connections > Runners, Approve)

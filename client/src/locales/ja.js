@@ -1307,6 +1307,9 @@ export default {
       extra: '追加設定 (JSON)',
     },
     schedules: {
+      enabled: '有効',
+      enable: '有効にする',
+      disable: '無効にする',
       label: 'スケジュール',
       labelPlural: 'スケジュール',
       description: '定期的な cron スケジュールまたは 1 回限りの実行で、フォームの送信を自動化します。',

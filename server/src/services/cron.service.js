@@ -174,7 +174,8 @@ class CronService {
           logger.debug(`Checking one-time schedule: ${name} (ID: ${id})`);
           try {
             const schedules = await mysql.do(
-              "SELECT id, run_at FROM AnsibleForms.`schedule` WHERE id=? AND COALESCE(state,'')<>'running' AND COALESCE(state,'')<>'queued'",
+              // turned off (enabled 0) : it waits, Run now still runs it
+              "SELECT id, run_at FROM AnsibleForms.`schedule` WHERE id=? AND COALESCE(enabled,1)=1 AND COALESCE(state,'')<>'running' AND COALESCE(state,'')<>'queued'",
               [id],
               true
             );
@@ -215,7 +216,8 @@ class CronService {
           try {
             // Check if schedule is already running or queued
             const schedules = await mysql.do(
-              "SELECT id FROM AnsibleForms.`schedule` WHERE id=? AND COALESCE(state,'')<>'running' AND COALESCE(state,'')<>'queued'",
+              // turned off (enabled 0) : this occurrence is skipped, Run now still runs it
+              "SELECT id FROM AnsibleForms.`schedule` WHERE id=? AND COALESCE(enabled,1)=1 AND COALESCE(state,'')<>'running' AND COALESCE(state,'')<>'queued'",
               [id],
               true
             );

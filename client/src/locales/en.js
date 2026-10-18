@@ -1304,6 +1304,9 @@ export default {
       extra: 'Extra (JSON)',
     },
     schedules: {
+      enabled: 'Enabled',
+      enable: 'Enable',
+      disable: 'Disable',
       label: 'Schedule',
       labelPlural: 'Schedules',
       description: 'Automate form submissions on a recurring cron schedule or one-time run.',

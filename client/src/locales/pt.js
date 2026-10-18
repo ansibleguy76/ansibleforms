@@ -1323,6 +1323,9 @@ export default {
       extra: 'Extra (JSON)',
     },
     schedules: {
+      enabled: 'Ativado',
+      enable: 'Ativar',
+      disable: 'Desativar',
       label: 'Agendamento',
       labelPlural: 'Agendamentos',
       description: 'Automatize submissões de formulários com um agendamento cron recorrente ou uma execução única.',

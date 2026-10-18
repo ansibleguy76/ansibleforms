@@ -1316,6 +1316,9 @@ export default {
       extra: 'Extra (JSON)',
     },
     schedules: {
+      enabled: 'Ingeschakeld',
+      enable: 'Inschakelen',
+      disable: 'Uitschakelen',
       label: 'Planner',
       labelPlural: 'Planners',
       description: 'Automatiseer formulierinzendingen met een terugkerend cron-schema of eenmalige uitvoering.',

@@ -1272,6 +1272,9 @@ export default {
       extra: '附加（JSON）',
     },
     schedules: {
+      enabled: '已启用',
+      enable: '启用',
+      disable: '禁用',
       label: '调度',
       labelPlural: '调度',
       description: '按周期性 cron 调度或一次性运行自动提交表单。',

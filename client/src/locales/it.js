@@ -1316,6 +1316,9 @@ export default {
       extra: 'Extra (JSON)',
     },
     schedules: {
+      enabled: 'Abilitato',
+      enable: 'Attiva',
+      disable: 'Disattiva',
       label: 'Pianificazione',
       labelPlural: 'Pianificazioni',
       description: "Automatizzare l'invio di formulari con una pianificazione cron ricorrente o un'esecuzione singola.",

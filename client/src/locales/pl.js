@@ -1313,6 +1313,9 @@ export default {
       extra: 'Dodatkowe (JSON)',
     },
     schedules: {
+      enabled: 'Włączony',
+      enable: 'Włącz',
+      disable: 'Wyłącz',
       label: 'Harmonogram',
       labelPlural: 'Harmonogramy',
       description:

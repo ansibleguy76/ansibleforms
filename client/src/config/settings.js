@@ -1391,6 +1391,26 @@ export default function getSettings(t) {
           color: 'refresh',
           dividerBefore: true,
         },
+        {
+          // only the one that changes it : Enable on a schedule turned off (paused), Disable on one
+          // turned on ; its settings are kept, Run now still runs it
+          name: 'enable',
+          title: t('settings.schedules.enable'),
+          icon: 'toggle-on',
+          color: 'edit',
+          dividerBefore: true,
+          shownWhen: (m) => !m.enabled,
+          update: () => ({ enabled: 1 }),
+        },
+        {
+          name: 'disable',
+          title: t('settings.schedules.disable'),
+          icon: 'toggle-off',
+          color: 'edit',
+          dividerBefore: true,
+          shownWhen: (m) => !!m.enabled,
+          update: () => ({ enabled: 0 }),
+        },
         { name: 'delete', icon: 'trash', title: t('settings.schedules.deleteSchedule'), color: 'delete' },
       ],
       // the short columns as wide as their headers, a date as wide as its text, the name and
@@ -1398,6 +1418,14 @@ export default function getSettings(t) {
       fields: [
         { key: 'id', hidden: true, noInput: true },
         { key: 'output', hidden: true, noInput: true },
+        {
+          // firing or paused : a yes / no column, first as every list's Enabled ; a new schedule is
+          // on, the row menu turns it on or off
+          key: 'enabled',
+          label: t('settings.schedules.enabled'),
+          type: 'checkbox',
+          noInput: true,
+        },
         {
           key: 'name',
           icon: 'heading',

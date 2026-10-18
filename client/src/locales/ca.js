@@ -1324,6 +1324,9 @@ export default {
       extra: 'Extra (JSON)',
     },
     schedules: {
+      enabled: 'Activat',
+      enable: 'Activa',
+      disable: 'Desactiva',
       label: 'Programació',
       labelPlural: 'Programacions',
       description: "Automatitza l'enviament de formularis amb una programació cron recurrent o una execució única.",
