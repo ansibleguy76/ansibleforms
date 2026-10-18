@@ -8,6 +8,7 @@
 /*                                                                */
 /******************************************************************/
 import fs from "fs";
+import { StringDecoder } from "string_decoder";
 import logger from "../lib/logger.js";
 
 const POLL_MS = 500;
@@ -32,6 +33,9 @@ export function createEventTail({ file, write }) {
   let offset = 0;
   // a line the plugin is still writing : kept until its end comes
   let partial = "";
+  // a character cut between two reads (UTF-8 takes up to 4 bytes) : its first bytes kept until
+  // the rest comes, never decoded on their own as a replacement character
+  const decoder = new StringDecoder("utf8");
   let order = 0;
   let writing = Promise.resolve();
   let stopped = false;
@@ -49,7 +53,7 @@ export function createEventTail({ file, write }) {
       const buf = Buffer.alloc(size - offset);
       fs.readSync(fd, buf, 0, buf.length, offset);
       offset = size;
-      const lines = (partial + buf.toString("utf8")).split("\n");
+      const lines = (partial + decoder.write(buf)).split("\n");
       partial = lines.pop();
       const events = [];
       for (const line of lines) {

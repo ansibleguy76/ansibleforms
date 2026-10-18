@@ -156,6 +156,26 @@ function localPlaybookRoot(repo) {
   return fs.existsSync(sub) ? sub : folder;
 }
 
+/**
+ * A value with every text in it masked (the job's secrets replaced), its shape kept : an event
+ * carries a host's whole result, where a secret may sit at any depth.
+ *
+ * Args:
+ *   jobId (number): the job.
+ *   value (any): the value (an event, a list of them, a text, a number).
+ *
+ * Returns:
+ *   any: the value, masked.
+ */
+function maskDeep(jobId, value) {
+  if (typeof value === "string") return maskOutput(jobId, value);
+  if (Array.isArray(value)) return value.map((v) => maskDeep(jobId, v));
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, maskDeep(jobId, v)]));
+  }
+  return value;
+}
+
 const socketJobIO = {
   mode: "socket",
   async load(jobId) {
@@ -181,8 +201,9 @@ const socketJobIO = {
   async writeOutput(jobId, record) {
     emit(jobId, { kind: "output", record: { ...record, output: maskOutput(jobId, record.output) } });
   },
+  // masked before the spool, as the output and the log : no secret on this RTE's disk
   async writeEvents(jobId, events) {
-    emit(jobId, { kind: "events", events });
+    emit(jobId, { kind: "events", events: maskDeep(jobId, events) });
   },
   async setJobLog(jobId, content) {
     emit(jobId, { kind: "log", content: maskOutput(jobId, content) });
