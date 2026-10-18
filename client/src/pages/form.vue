@@ -1210,57 +1210,29 @@ async function submitForm(formObjectData) {
   launchForm(postdata);
 }
 
-async function copyToClipboard(textToCopy) {
-  // Navigator clipboard api needs a secure context (https)
-  if (navigator.clipboard && window.isSecureContext) {
-    await navigator.clipboard.writeText(textToCopy);
-  } else {
-    // Use the 'out of viewport hidden text area' trick
-    const textArea = document.createElement('textarea');
-    textArea.value = textToCopy;
-
-    // Move textarea out of the viewport so it's not visible
-    textArea.style.position = 'absolute';
-    textArea.style.left = '-999999px';
-
-    document.body.prepend(textArea);
-    textArea.select();
-
-    try {
-      document.execCommand('copy');
-    } catch (error) {
-      console.error(error);
-    } finally {
-      textArea.remove();
-    }
-  }
-}
-
 // copy to clipboard
+// (Helpers.copyToClipboard : one copy for the whole app, its promise rejecting when nothing
+// was copied, so the success toast only says what really happened)
 async function clip(v, doNotStringify = false, asYaml = false) {
-  if (doNotStringify) {
-    try {
-      await copyToClipboard(v);
-      toast.success('Copied to clipboard');
-    } catch (err) {
-      toast.error('Error copying to clipboard: \n' + err.toString());
-    }
-  } else {
-    try {
-      if (asYaml) {
-        await copyToClipboard(YAML.stringify(v));
-      } else {
-        await copyToClipboard(JSON.stringify(v, null, 2));
-      }
-      toast.success('Copied to clipboard');
-    } catch (err) {
-      toast.error('Error copying to clipboard: \n' + err.toString());
-    }
+  try {
+    const text = doNotStringify ? v : asYaml ? YAML.stringify(v) : JSON.stringify(v, null, 2);
+    await Helpers.copyToClipboard(text);
+    toast.success(t('common.copied'));
+  } catch (err) {
+    toast.error(t('common.copyFailed', { error: String(err?.message || err) }));
   }
 }
+
+// The poll chain's token : each run's chain carries the value it started with, and checks it
+// after every await. Clearing the timeout alone did not stop a chain whose getJob request was
+// in flight at that moment : its answer came back after the reset (or after the page was left)
+// and scheduled the next poll anyway, writing job and status on a form that had moved on.
+// Bumping the token (a reset, a new run, the page unmounted) ends every older chain.
+let pollSeq = 0;
 
 // reset result
 function resetResult() {
+  pollSeq++;
   clearTimeout(timeout.value);
   status.value = '';
   message.value = '';
@@ -1535,32 +1507,25 @@ async function abortJob(id) {
       abortTriggered.value = true;
     }
   } catch (err) {
-    toast.error(Helpers.parseAxiosResponseError(err, 'Failed to abort job'));
+    toast.error(Helpers.parseAxiosResponseError(err, t('form.failedToAbort')));
   }
-}
-// download with axios
-async function downloadWithAxios(url, headers) {
-  const response = await axios({
-    method: 'get',
-    headers: headers.headers,
-    url,
-    responseType: 'arraybuffer',
-  });
-  Helpers.forceFileDownload(response);
 }
 // download a job
 async function download(id) {
   try {
-    await downloadWithAxios(`/api/v2/job/${id}/download`);
+    await Helpers.downloadFile(`/api/v2/job/${id}/download`);
   } catch (err) {
     toast.error(err.toString());
   }
 }
 // get job output
-async function getJob(id, final) {
+// seq : the poll chain's token (pollSeq) ; a chain whose token is no longer current stops
+async function getJob(id, final, seq = pollSeq) {
   try {
     // get the job result
     const result = await axios.get(`/api/v2/job/${id}`);
+    // reset, relaunched or left while the request was in flight : this chain is over
+    if (seq !== pollSeq) return;
     pollFailures.value = 0; // a poll got through : forget earlier blips
     // store the job result
     job.value = result.data;
@@ -1571,6 +1536,7 @@ async function getJob(id, final) {
       const lastsubjob = job.value.subjobs.slice(-1)[0];
       try {
         const subjobresult = await axios.get(`/api/v2/job/${lastsubjob}`);
+        if (seq !== pollSeq) return;
         subjob.value = subjobresult.data;
       } catch (e) {
         console.error('Error getting job: ' + lastsubjob);
@@ -1582,13 +1548,13 @@ async function getJob(id, final) {
       if (status.value == 'approve') {
         State.refreshApprovals(); // refresh approvals if needed
       }
-      timeout.value = setTimeout(async () => await getJob(id), 2000);
+      timeout.value = setTimeout(async () => await getJob(id, false, seq), 2000);
     } else {
       // the job seems finished
       if (!final) {
         // have we done a final result check?
         // 1 final check
-        timeout.value = setTimeout(async () => await getJob(id, true), 2000);
+        timeout.value = setTimeout(async () => await getJob(id, true, seq), 2000);
       } else {
         // any frontend actions to do?
         if (currentForm.value.onFinish) {
@@ -1617,8 +1583,10 @@ async function getJob(id, final) {
       }
     }
   } catch (err) {
+    // an older chain's failure says nothing : the form moved on
+    if (seq !== pollSeq) return;
     console.log('error getting job ' + err.toString());
-    toast.error('Failed to get job');
+    toast.error(t('form.failedToGetJob'));
 
     // optional chaining : on a network failure err.response is undefined, so this threw a
     // TypeError from inside the catch itself, killing the poll chain with an unhandled
@@ -1631,7 +1599,7 @@ async function getJob(id, final) {
       // abort button: the only way out was closing the output or reloading the page.
       pollFailures.value++;
       if (pollFailures.value < 5) {
-        timeout.value = setTimeout(async () => await getJob(id), 2000);
+        timeout.value = setTimeout(async () => await getJob(id, false, seq), 2000);
       } else {
         message.value = 'Error in axios call to get job\n\n' + err.toString();
         status.value = 'error';
@@ -1647,30 +1615,37 @@ async function launchForm(postdata) {
     toast.info(t('designer.previewNotRun'));
     return;
   }
-  message.value = 'Connecting with job api ';
+  message.value = t('form.connecting');
   status.value = '';
   // the previous job is done with : until the server answers with the new id, the abort
   // button must not point at it (an abort clicked during the launch went to the old job)
   jobId.value = undefined;
   abortTriggered.value = false;
+  // a new run : its own poll chain, any older one ended
+  const seq = ++pollSeq;
   try {
     status.value = 'running';
     const result = await axios.post(`/api/v2/job/`, postdata);
+    // reset or left while the launch was answered : nothing to follow on this page
+    if (seq !== pollSeq) return;
     jobId.value = result.data.id;
     if (currentForm.value.onSubmit) {
       currentForm.value.onSubmit.forEach((action) => {
         doAction(action, jobId.value);
       });
     }
-    timeout.value = setTimeout(async () => await getJob(jobId.value), 2000);
+    timeout.value = setTimeout(async () => await getJob(jobId.value, false, seq), 2000);
   } catch (err) {
+    if (seq !== pollSeq) return;
     status.value = 'failed';
     toast.error(Helpers.parseAxiosResponseError(err, 'Failed to invoke job launch'));
     if (err.response?.status != 401) {
       resetResult();
     }
+  } finally {
+    // also after an early return above : the json output never stays paused
+    pauseJsonOutput.value = false;
   }
-  pauseJsonOutput.value = false;
 }
 
 /**
@@ -1850,6 +1825,8 @@ watch(
 );
 
 onBeforeUnmount(() => {
+  // the poll chain ends too, also one whose request is in flight
+  pollSeq++;
   clearTimeout(timeout.value);
   // the onSuccess/onFailure timers too : otherwise they navigate the router, or reload a
   // form, on a component that no longer exists
@@ -2353,13 +2330,14 @@ onBeforeUnmount(() => {
                   :workflow="job.awx_workflow"
                   :title="outputTitle"
                   :jobId="job.id"
+                  :events="jobEvents"
                   :copyLabel="t('jobs.copy')"
                   numbered
                   @copy="(text) => clip(text, true)"
                 >
                   <template #title>
                     <h3 v-if="job.job_type == 'multistep' && subjob?.output" class="af-job-title">
-                      {{ t('form.mainJob') }} (jobid {{ job.id }})
+                      {{ t('form.mainJob') }} {{ t('jobs.jobIdNote', { id: job.id }) }}
                       <AppStatusPill :status="job.status" />
                     </h3>
                   </template>
@@ -2370,13 +2348,14 @@ onBeforeUnmount(() => {
                   ref="subOutput"
                   :output="filteredSubJobOutput"
                   :jobLog="subjob.job_log"
+                  :jobId="subjob.id"
                   :copyLabel="t('jobs.copy')"
                   numbered
                   @copy="(text) => clip(text, true)"
                 >
                   <template #title>
                     <h3 class="af-job-title">
-                      {{ t('form.currentStep') }} (jobid {{ subjob.id }})
+                      {{ t('form.currentStep') }} {{ t('jobs.jobIdNote', { id: subjob.id }) }}
                       <AppStatusPill :status="subjob.status" />
                     </h3>
                   </template>
@@ -2601,6 +2580,8 @@ onBeforeUnmount(() => {
   </BsOffCanvas>
 </template>
 <style scoped lang="scss">
+/* the amber of a text found in a page (styles/_find.scss) */
+@use '@/styles/find' as *;
 /* the form's extravars : a card under the divider, as far over the toolbar row as the
    divider is over it */
 .af-form-extravars {
@@ -2628,7 +2609,7 @@ onBeforeUnmount(() => {
 /* a field whose name has the text searched : marked as the browser marks a found text, the one
    in view outlined */
 :deep(.af-field-hit) {
-  background-color: rgba(255, 193, 7, 0.4);
+  background-color: $af-find-highlight;
   border-radius: 0.2rem;
   padding: 0 0.25rem;
   /* the name only, not the row : the field's own buttons stay at the right */

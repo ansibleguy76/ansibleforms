@@ -213,7 +213,7 @@ async function save() {
   };
   try {
     await axios.put(`/api/v2/stored-jobs/${encodeURIComponent(storedId.value)}`, data);
-    toast.success(`${data.name} ${t('settings.common.isUpdated')}`);
+    toast.success(t('common.nameUpdated', { name: data.name }));
     await load();
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err));

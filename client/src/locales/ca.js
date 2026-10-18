@@ -345,8 +345,6 @@ export default {
       copied: 'Token copiat',
       once: 'Copieu-lo ara: només es mostra un cop. Guardeu-lo com una contrasenya.',
       example: "Envia'l a la capçalera Authorization de cada crida a l'API:",
-      notForType:
-        "Els tokens de l'API es creen amb la teva contrasenya, així que no estan disponibles per als comptes {type}.",
       failed: "No s'ha pogut crear el token. Comprova la teva contrasenya.",
       another: 'Crea un altre token',
       name: 'Nom',
@@ -787,6 +785,27 @@ export default {
     previous: 'Anterior',
     next: 'Següent',
     apply: 'Aplica',
+    // copying to the clipboard, and a record saved by its name
+    copied: 'Copiat al porta-retalls',
+    copyFailed: "No s'ha pogut copiar al porta-retalls: {error}",
+    nameUpdated: "{name} s'ha actualitzat",
+  },
+  // a YAML file loaded into a field or saved from it (AppListField, BsYamlEditor, AppForm)
+  yamlFile: {
+    load: 'Carrega YAML',
+    download: 'Baixa',
+    wrongType: 'Selecciona un fitxer .yml o .yaml',
+    noData: 'Fitxer YAML no vàlid: no conté dades',
+    nothingToDownload: 'No hi ha dades per baixar',
+    loaded: 'Carregat des de {file}',
+    loadedRows: "S'ha carregat {n} fila de {file} | S'han carregat {n} files de {file}",
+    parseFailed: "No s'ha pogut llegir {file}: {error}",
+    downloaded: 'Baixat com a YAML',
+    downloadFailed: "No s'ha pogut baixar: {error}",
+    singleToArray: 'Objecte únic convertit en llista',
+    firstItemLoaded: "S'ha carregat el primer element de la llista",
+    noItems: 'Cap element',
+    subformMissing: "No s'ha trobat el subformulari {subform} al qual fa referència el camp {field}.",
   },
   dataTable: {
     rangeOf: '{from}–{to} de {total}',
@@ -2881,6 +2900,9 @@ export default {
     mainJob: 'Tasca principal',
     stepN: 'Pas {n}',
     failedToLoad: "No s'han pogut carregar les tasques",
+    failedToLoadOutput: "No s'ha pogut carregar la sortida de la tasca",
+    failedToRead: "No s'ha pogut llegir la tasca {id}",
+    jobIdNote: '(id de tasca {id})',
   },
   form: {
     storedJobLoaded: '"{name}" carregat al formulari',
@@ -2974,6 +2996,10 @@ export default {
     wizardSummaryHidden: 'no aplicable',
     wizardSummaryPending: 'no completat',
     wizardMissingSubform: "El pas de l'assistent fa referència a un subformulari desconegut",
+    failedToGetJob: "No s'ha pogut llegir la tasca",
+    failedToAbort: "No s'ha pogut avortar la tasca",
+    connecting: 'Connectant amb l’API de tasques',
+    editTitle: 'Edita {title}',
   },
   logs: {
     title: 'Registre del servidor',

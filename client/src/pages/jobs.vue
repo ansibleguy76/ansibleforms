@@ -21,6 +21,7 @@ import { jobsPath, statusFromSlug } from '@/lib/jobsPath';
 import { formPath } from '@/lib/formsPath';
 import { jobTypeLabel, jobTypeName, hasArtifacts } from '@/lib/jobTypes';
 import { useNodeOutput } from '@/composables/useNodeOutput';
+import { mayApprove } from '@/lib/jobNotifications';
 
 // INIT
 
@@ -622,53 +623,16 @@ watch(
 
 // METHODS
 
-// copy string to clipboard
-async function copyToClipboard(textToCopy) {
-  // Navigator clipboard api needs a secure context (https)
-  if (navigator.clipboard && window.isSecureContext) {
-    await navigator.clipboard.writeText(textToCopy);
-  } else {
-    // Use the 'out of viewport hidden text area' trick
-    const textArea = document.createElement('textarea');
-    textArea.value = textToCopy;
-
-    // Move textarea out of the viewport so it's not visible
-    textArea.style.position = 'absolute';
-    textArea.style.left = '-999999px';
-
-    document.body.prepend(textArea);
-    textArea.select();
-
-    try {
-      document.execCommand('copy');
-    } catch (error) {
-      console.error(error);
-    } finally {
-      textArea.remove();
-    }
-  }
-}
-
 // copy object to clipboard as json or yaml
+// (Helpers.copyToClipboard : one copy for the whole app, its promise rejecting when nothing
+// was copied, so the success toast only says what really happened)
 async function clip(v, doNotStringify = false, asYaml = false) {
-  if (doNotStringify) {
-    try {
-      await copyToClipboard(v);
-      toast.success('Copied to clipboard');
-    } catch (err) {
-      toast.error('Error copying to clipboard: \n' + err.toString());
-    }
-  } else {
-    try {
-      if (asYaml) {
-        await copyToClipboard(YAML.stringify(v));
-      } else {
-        await copyToClipboard(JSON.stringify(v, null, 2));
-      }
-      toast.success('Copied to clipboard');
-    } catch (err) {
-      toast.error('Error copying to clipboard: \n' + err.toString());
-    }
+  try {
+    const text = doNotStringify ? v : asYaml ? YAML.stringify(v) : JSON.stringify(v, null, 2);
+    await Helpers.copyToClipboard(text);
+    toast.success(t('common.copied'));
+  } catch (err) {
+    toast.error(t('common.copyFailed', { error: String(err?.message || err) }));
   }
 }
 // copy the job's output as it reads on screen (the filter applied or not) : the output is
@@ -778,7 +742,7 @@ async function loadOutput(id, sub = false) {
       if (idx >= 0) jobs.value[idx] = data;
     }
   } else {
-    toast.error(result.data?.error || 'Failed to load job output');
+    toast.error(result.data?.error || t('jobs.failedToLoadOutput'));
   }
 }
 // Live : the server says the jobs changed (lib/liveEvents.js) - one launched, its status, its
@@ -806,20 +770,10 @@ async function refreshLive() {
   }
 }
 useLiveEvent('jobs', refreshLive);
-// download with axios
-async function downloadWithAxios(url, headers) {
-  const response = await axios({
-    method: 'get',
-    headers: headers.headers,
-    url,
-    responseType: 'arraybuffer',
-  });
-  Helpers.forceFileDownload(response);
-}
 // download a job
 async function download(id) {
   try {
-    await downloadWithAxios(`/api/v2/job/${id}/download`);
+    await Helpers.downloadFile(`/api/v2/job/${id}/download`);
   } catch (err) {
     toast.error(err.toString());
   }
@@ -860,7 +814,7 @@ async function openReview(id) {
       message: replacePlaceholders(data.approval?.message || '', data.extravars),
     };
   } catch (err) {
-    toast.error(Helpers.parseAxiosResponseError(err) || `Failed to read job ${id}`);
+    toast.error(Helpers.parseAxiosResponseError(err) || t('jobs.failedToRead', { id }));
   }
 }
 // someone else approved or rejected it while the review was open : the live list, or the job's
@@ -895,21 +849,11 @@ function replacePlaceholders(msg, extravars) {
   );
 }
 // find extravars
+// The value a dotted placeholder names in the extravars (a.b.c), or undefined when a key on the
+// way is missing : optional chaining, because the walk used to read master[obj] on undefined as
+// soon as a middle key was absent and threw out of the approval review.
 function findExtravar(data, expr) {
-  var outputValue = '';
-  expr.split(/\s*\.\s*/).reduce((master, obj, level, arr) => {
-    if (level === arr.length - 1) {
-      try {
-        outputValue = master[obj];
-      } catch (err) {
-        outputValue = '/bad placeholder/';
-      }
-    } else {
-      outputValue = master;
-    }
-    return master[obj];
-  }, data);
-  return outputValue;
+  return expr.split(/\s*\.\s*/).reduce((master, obj) => master?.[obj], data);
 }
 async function jobAction(id, action, method = 'post', uri_suffix = '') {
   try {
@@ -1070,22 +1014,12 @@ function getJob(id) {
   router.push({ path: `/jobs/${id}`, query: route.query }).catch((_e) => {});
 }
 // check if approval is allowed for a job
+// One rule with the desktop notifications (lib/jobNotifications.js mayApprove) : an admin any,
+// else one of the roles the approval names. It reads the approval as the list sends it (a JSON
+// string) or as the single-job endpoint does (an object), and a malformed one refuses instead
+// of throwing inside the render.
 function approvalAllowed(job) {
-  if (store.profile?.roles?.includes('admin')) return true;
-  if (!job.approval) return true;
-  // not admin and approval - lets check access
-  // The list endpoint returns `approval` as a JSON STRING, the single-job endpoint
-  // returns it already PARSED - and a single-job payload once ended up in this list. A
-  // multistep job going running -> approve mid-poll therefore reached
-  // here as an object, and JSON.parse('[object Object]') threw inside the render,
-  // breaking the jobs table for every non-admin approver.
-  var approval = typeof job.approval === 'string' ? JSON.parse(job.approval) : job.approval;
-  var access = approval?.roles?.filter((role) => store.profile?.roles?.includes(role));
-  if (access?.length > 0) {
-    return true;
-  } else {
-    return false;
-  }
+  return mayApprove(job, store.profile);
 }
 // keep track of collapsed multistep jobs
 function toggleCollapse(id) {
@@ -1123,7 +1057,7 @@ onMounted(async () => {
     } catch (err) {
       // a deep link to a job that is gone (or not visible) must not
       // abort the mount : the list and the polling still have to start
-      toast.error(Helpers.parseAxiosResponseError(err, 'Failed to load job output'));
+      toast.error(Helpers.parseAxiosResponseError(err, t('jobs.failedToLoadOutput')));
     }
   }
   await loadJobs(true);
@@ -1850,7 +1784,7 @@ onMounted(async () => {
                       @keydown.space.self.prevent="toggleOutput('main')"
                     >
                       <FaIcon :icon="foldedOutputs.main ? 'chevron-right' : 'chevron-down'" class="af-job-chevron" />
-                      {{ t('jobs.mainJob') }} (jobid {{ jobId }})
+                      {{ t('jobs.mainJob') }} {{ t('jobs.jobIdNote', { id: jobId }) }}
                       <AppStatusPill :status="job.status" />
                     </h3>
                     <!-- a wrapper to fold : the output has more than one root, v-show cannot reach it -->
@@ -1864,6 +1798,7 @@ onMounted(async () => {
                         :workflow="job?.awx_workflow"
                         :title="job.job_type == 'awx' ? job.target : jobPlaybook || job.form"
                         :jobId="jobId"
+                        :events="jobEvents"
                         numbered
                         lineLinks
                       />
@@ -1885,12 +1820,12 @@ onMounted(async () => {
                         :icon="foldedOutputs[step.id] ? 'chevron-right' : 'chevron-down'"
                         class="af-job-chevron"
                       />
-                      {{ t('jobs.stepN', { n: i + 1 })
-                      }}<template v-if="step.target"> · {{ step.target }}</template> (jobid {{ step.id }})
+                      {{ t('jobs.stepN', { n: i + 1 }) }}<template v-if="step.target"> · {{ step.target }}</template>
+                      {{ t('jobs.jobIdNote', { id: step.id }) }}
                       <AppStatusPill :status="step.status" />
                     </h3>
                     <div v-show="!foldedOutputs[step.id]">
-                      <AppAnsibleOutput :output="step.shown" :jobLog="step.job_log" numbered />
+                      <AppAnsibleOutput :output="step.shown" :jobLog="step.job_log" :jobId="step.id" numbered />
                     </div>
                   </div>
                   <!-- scrolled up while it runs : back to its end, following again -->
@@ -2086,40 +2021,8 @@ onMounted(async () => {
     }
   }
 }
-/* the approval review (openReview) : the question, then the job's facts as label and value */
-/* the question set apart : the orange of a job that needs approval, on its left edge */
-.af-review-ask {
-  margin-bottom: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-left: 3px solid #ef6009;
-  border-radius: 0.375rem;
-  background: color-mix(in srgb, #ef6009 8%, transparent);
-  overflow-wrap: anywhere;
-}
-.af-review-facts {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  align-items: baseline;
-  gap: 0.5rem 1.5rem;
-  margin: 0;
-  /* the labels of the job page's facts : small, upper case, quiet */
-  dt {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--bs-secondary-color);
-  }
-  /* the values in bold, the link under them as a link */
-  dd {
-    margin: 0;
-    font-weight: 600;
-    overflow-wrap: anywhere;
-  }
-  dd.af-review-link {
-    font-weight: 400;
-  }
-}
+/* the approval review (openReview) : its question and facts are shared with the runners' review
+   (styles/facts.scss) */
 /* the kind of user, after the name : a quiet tag */
 .af-job-fact-note {
   margin-left: 0.375rem;

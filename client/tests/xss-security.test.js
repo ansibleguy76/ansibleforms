@@ -40,6 +40,17 @@ describe('Helpers.htmlEncode', () => {
     expect(result).not.toContain('<svg');
   });
 
+  it('escapes both quotes, so the value is safe inside an attribute', () => {
+    const result = Helpers.htmlEncode(`" onmouseover='x'`);
+    expect(result).not.toMatch(/["']/);
+    expect(result).toBe('&#34; onmouseover=&#39;x&#39;');
+  });
+
+  it('reads null and undefined as empty', () => {
+    expect(Helpers.htmlEncode(null)).toBe('');
+    expect(Helpers.htmlEncode(undefined)).toBe('');
+  });
+
   it('handles empty string', () => {
     expect(Helpers.htmlEncode('')).toBe('');
   });

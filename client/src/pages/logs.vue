@@ -115,19 +115,10 @@ async function load(force = false) {
   }
   schedulePoll();
 }
-async function downloadWithAxios(url, authHeaders) {
-  const response = await axios({
-    method: 'get',
-    headers: authHeaders.headers,
-    url,
-    responseType: 'arraybuffer',
-  });
-  Helpers.forceFileDownload(response);
-}
 
 async function download() {
   try {
-    await downloadWithAxios(`/api/v2/log/download`);
+    await Helpers.downloadFile(`/api/v2/log/download`);
   } catch (err) {
     toast.error(err.message);
   }

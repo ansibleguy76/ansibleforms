@@ -768,6 +768,27 @@ export default {
     previous: '上一页',
     next: '下一页',
     apply: '应用',
+    // copying to the clipboard, and a record saved by its name
+    copied: '已复制到剪贴板',
+    copyFailed: '无法复制到剪贴板：{error}',
+    nameUpdated: '{name} 已更新',
+  },
+  // a YAML file loaded into a field or saved from it (AppListField, BsYamlEditor, AppForm)
+  yamlFile: {
+    load: '加载 YAML',
+    download: '下载',
+    wrongType: '请选择 .yml 或 .yaml 文件',
+    noData: '无效的 YAML 文件：未找到数据',
+    nothingToDownload: '没有可下载的数据',
+    loaded: '已从 {file} 加载',
+    loadedRows: '已从 {file} 加载 {n} 行',
+    parseFailed: '无法解析 {file}：{error}',
+    downloaded: '已下载为 YAML',
+    downloadFailed: '下载失败：{error}',
+    singleToArray: '已将单个对象转换为列表',
+    firstItemLoaded: '已加载列表的第一项',
+    noItems: '没有项目',
+    subformMissing: '未找到字段 {field} 引用的子表单 {subform}。',
   },
   dataTable: {
     rangeOf: '第 {from}–{to} 项，共 {total} 项',
@@ -2748,6 +2769,9 @@ export default {
     mainJob: '主作业',
     stepN: '步骤 {n}',
     failedToLoad: '加载作业失败',
+    failedToLoadOutput: '加载作业输出失败',
+    failedToRead: '读取作业 {id} 失败',
+    jobIdNote: '(作业 ID {id})',
   },
   form: {
     storedJobLoaded: '已将“{name}”载入表单',
@@ -2839,6 +2863,10 @@ export default {
     wizardSummaryHidden: '不适用',
     wizardSummaryPending: '未完成',
     wizardMissingSubform: '向导步骤引用了未知的子表单',
+    failedToGetJob: '读取作业失败',
+    failedToAbort: '无法中止作业',
+    connecting: '正在连接作业 API',
+    editTitle: '编辑 {title}',
   },
   logs: {
     title: '服务器日志',

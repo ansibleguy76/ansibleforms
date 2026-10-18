@@ -1506,7 +1506,7 @@ function openYamlSubformEditor(field) {
   }
 
   // Resolve placeholders in titleEdit so $(__parent__.fieldname) works
-  const subtitle = Helpers.resolveTitlePlaceholders(field.titleEdit || `Edit ${title}`, form.value);
+  const subtitle = Helpers.resolveTitlePlaceholders(field.titleEdit || t('form.editTitle', { title }), form.value);
 
   editStack.push({
     title,
@@ -1533,18 +1533,18 @@ async function handleYamlSubformLoad(event, fieldName) {
   if (!file) return;
   const fileName = file.name.toLowerCase();
   if (!fileName.endsWith('.yml') && !fileName.endsWith('.yaml')) {
-    toast.error('Please select a .yml or .yaml file');
+    toast.error(t('yamlFile.wrongType'));
     return;
   }
   try {
     const text = await file.text();
     const parsed = YAML.parse(text);
     if (parsed === null || parsed === undefined) {
-      toast.error('Invalid YAML file - no data found');
+      toast.error(t('yamlFile.noData'));
       return;
     }
     const value = Array.isArray(parsed) ? parsed[0] : parsed;
-    if (Array.isArray(parsed)) toast.info('First array item loaded');
+    if (Array.isArray(parsed)) toast.info(t('yamlFile.firstItemLoaded'));
 
     // Apply modeling transformation: build __output__ from raw fields
     // so the modeled structure is immediately visible without manual edit
@@ -1552,10 +1552,10 @@ async function handleYamlSubformLoad(event, fieldName) {
     const resolvedSubform = fieldDef?.subform ? props.subforms.find((s) => s.name === fieldDef.subform) : null;
     form.value[fieldName] = Helpers.applySubformModeling(value, resolvedSubform?.fields, props.subforms || []);
 
-    toast.success(`Loaded from ${file.name}`);
+    toast.success(t('yamlFile.loaded', { file: file.name }));
     evaluateDynamicFields(fieldName);
   } catch (e) {
-    toast.error(`Failed to parse ${file.name}: ${e.message}`);
+    toast.error(t('yamlFile.parseFailed', { file: file.name, error: e.message }));
   }
   event.target.value = '';
 }
@@ -1564,7 +1564,7 @@ function handleYamlSubformDownload(fieldName, _label) {
   try {
     const raw = form.value[fieldName];
     if (!raw) {
-      toast.error('No data to download');
+      toast.error(t('yamlFile.nothingToDownload'));
       return;
     }
 
@@ -1588,9 +1588,9 @@ function handleYamlSubformDownload(fieldName, _label) {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    toast.success('Downloaded as YAML');
+    toast.success(t('yamlFile.downloaded'));
   } catch (e) {
-    toast.error(`Failed to download: ${e.message}`);
+    toast.error(t('yamlFile.downloadFailed', { error: e.message }));
   }
 }
 
@@ -2678,7 +2678,7 @@ defineExpose({
                         icon="file-import"
                         @click="triggerYamlSubformLoad(field.name)"
                       >
-                        Load YAML
+                        {{ t('yamlFile.load') }}
                       </BsButton>
                       <BsButton
                         v-if="field.showDownloadButton"
@@ -2687,7 +2687,7 @@ defineExpose({
                         :disabled="!v$.form[field.name].$model"
                         @click="handleYamlSubformDownload(field.name)"
                       >
-                        Download
+                        {{ t('yamlFile.download') }}
                       </BsButton>
                       <BsButton
                         v-if="v$.form[field.name].$model"

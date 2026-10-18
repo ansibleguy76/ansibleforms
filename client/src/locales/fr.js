@@ -347,8 +347,6 @@ export default {
       copied: 'Token copié',
       once: "Copiez-le maintenant : il n'est affiché qu'une fois. Gardez-le comme un mot de passe.",
       example: "Envoyez-le dans l'en-tête Authorization de chaque appel API :",
-      notForType:
-        'Les tokens API sont créés avec votre mot de passe : ils ne sont pas disponibles pour les comptes {type}.',
       failed: "Le token n'a pas pu être créé. Vérifiez votre mot de passe.",
       another: 'Créer un autre token',
       name: 'Nom',
@@ -790,6 +788,27 @@ export default {
     previous: 'Precedent',
     next: 'Suivant',
     apply: 'Appliquer',
+    // copying to the clipboard, and a record saved by its name
+    copied: 'Copié dans le presse-papiers',
+    copyFailed: 'Impossible de copier dans le presse-papiers : {error}',
+    nameUpdated: '{name} est mis à jour',
+  },
+  // a YAML file loaded into a field or saved from it (AppListField, BsYamlEditor, AppForm)
+  yamlFile: {
+    load: 'Charger un YAML',
+    download: 'Télécharger',
+    wrongType: 'Choisissez un fichier .yml ou .yaml',
+    noData: 'Fichier YAML invalide : aucune donnée trouvée',
+    nothingToDownload: 'Aucune donnée à télécharger',
+    loaded: 'Chargé depuis {file}',
+    loadedRows: '{n} ligne chargée depuis {file} | {n} lignes chargées depuis {file}',
+    parseFailed: 'Impossible de lire {file} : {error}',
+    downloaded: 'Téléchargé en YAML',
+    downloadFailed: 'Échec du téléchargement : {error}',
+    singleToArray: 'Objet unique converti en liste',
+    firstItemLoaded: 'Premier élément de la liste chargé',
+    noItems: 'Aucun élément',
+    subformMissing: 'Le sous-formulaire {subform} référencé par le champ {field} est introuvable.',
   },
   dataTable: {
     rangeOf: '{from}–{to} sur {total}',
@@ -2884,6 +2903,9 @@ export default {
     mainJob: 'Job principal',
     stepN: 'Étape {n}',
     failedToLoad: 'Echec du chargement des jobs',
+    failedToLoadOutput: 'Échec du chargement de la sortie du job',
+    failedToRead: 'Échec de la lecture du job {id}',
+    jobIdNote: '(id du job {id})',
   },
   form: {
     storedJobLoaded: '« {name} » chargé dans le formulaire',
@@ -2977,6 +2999,10 @@ export default {
     wizardSummaryHidden: 'non applicable',
     wizardSummaryPending: 'non terminé',
     wizardMissingSubform: "L'étape de l'assistant fait référence à un sous-formulaire inconnu",
+    failedToGetJob: 'Échec de la lecture du job',
+    failedToAbort: "Impossible d'annuler la tâche",
+    connecting: 'Connexion à l’API des tâches',
+    editTitle: 'Modifier {title}',
   },
   logs: {
     title: 'Journal du serveur',

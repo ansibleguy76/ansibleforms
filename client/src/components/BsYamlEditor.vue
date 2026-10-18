@@ -17,6 +17,8 @@ import YAML from 'yaml';
 import Helpers from '@/lib/Helpers';
 import { toast } from 'vue-sonner';
 
+const { t } = useI18n();
+
 const model = defineModel();
 const emit = defineEmits(['update:modelValue', 'blur']);
 
@@ -65,7 +67,7 @@ async function handleFileLoad(event) {
   // Check file extension
   const fileName = file.name.toLowerCase();
   if (!fileName.endsWith('.yml') && !fileName.endsWith('.yaml')) {
-    toast.error('Please select a .yml or .yaml file');
+    toast.error(t('yamlFile.wrongType'));
     return;
   }
 
@@ -73,10 +75,10 @@ async function handleFileLoad(event) {
     const text = await file.text();
     const parsed = YAML.parse(text);
     model.value = parsed;
-    toast.success(`Loaded ${file.name}`);
+    toast.success(t('yamlFile.loaded', { file: file.name }));
     emit('update:modelValue', parsed);
   } catch (e) {
-    toast.error(`Failed to parse ${file.name}: ${e.message}`);
+    toast.error(t('yamlFile.parseFailed', { file: file.name, error: e.message }));
   }
 
   // Reset input so same file can be loaded again
@@ -97,9 +99,9 @@ function handleDownload() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    toast.success('YAML file downloaded');
+    toast.success(t('yamlFile.downloaded'));
   } catch (e) {
-    toast.error(`Failed to download: ${e.message}`);
+    toast.error(t('yamlFile.downloadFailed', { error: e.message }));
   }
 }
 </script>
@@ -115,7 +117,7 @@ function handleDownload() {
         @click="triggerFileInput"
         :disabled="disabled || readonly"
       >
-        Load YAML
+        {{ t('yamlFile.load') }}
       </BsButton>
 
       <BsButton
@@ -125,7 +127,7 @@ function handleDownload() {
         @click="handleDownload"
         :disabled="disabled || !model"
       >
-        Download
+        {{ t('yamlFile.download') }}
       </BsButton>
 
       <!-- Hidden file input -->

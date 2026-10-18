@@ -20,6 +20,13 @@
 :root {
   --af-unpushed-orange: #d97400;
 }
+
+// The orange of what waits on a person's approval : a job's pill and its menu badge, the approval
+// reviews' question (styles/facts.scss), a runner asking to join. The same in light and dark :
+// white text on it reads in both, and the pills keep one colour per status across themes.
+:root {
+  --af-approve: #ef6009;
+}
 .btn-outline-orange {
   @include button-outline-variant(#d97400);
 }
@@ -717,7 +724,7 @@ textarea:focus::placeholder {
 // a text found in a page (lib/findInText.js : a job's output) : marked as the browser marks a found
 // text, the one in view stronger
 ::highlight(af-find) {
-  background-color: rgba(255, 193, 7, 0.4);
+  background-color: $af-find-highlight;
 }
 ::highlight(af-find-current) {
   background-color: rgba(255, 152, 0, 0.85);

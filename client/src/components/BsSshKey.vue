@@ -13,6 +13,8 @@
 import Helpers from '@/lib/Helpers';
 import { toast } from 'vue-sonner';
 
+const { t } = useI18n();
+
 // INIT
 
 // MODEL
@@ -42,8 +44,8 @@ function copyToClipboard() {
   // await the real result : the success toast used to fire even when nothing was
   // copied (see Helpers.copyToClipboard)
   Helpers.copyToClipboard(model.value)
-    .then(() => toast.success('Copied to clipboard'))
-    .catch((err) => toast.error(err?.message || 'Could not copy to the clipboard'));
+    .then(() => toast.success(t('common.copied')))
+    .catch((err) => toast.error(t('common.copyFailed', { error: String(err?.message || err) })));
 }
 </script>
 <template>

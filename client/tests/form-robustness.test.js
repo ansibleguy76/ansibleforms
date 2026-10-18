@@ -468,7 +468,18 @@ describe('one failed job poll does not end the polling', () => {
     // poll for good - and "error" has no case in formStatus, so it rendered as "Pending"
     // with no spinner and no abort button
     expect(fn).toMatch(/pollFailures\.value\+\+/);
-    expect(fn).toMatch(/timeout\.value = setTimeout\(async \(\) => await getJob\(id\), 2000\)/);
+    expect(fn).toMatch(/timeout\.value = setTimeout\(async \(\) => await getJob\(id, false, seq\), 2000\)/);
+  });
+
+  it('an answer that comes back after a reset or unmount ends its chain', () => {
+    // clearTimeout alone missed a chain whose request was in flight : its answer scheduled
+    // the next poll anyway, on a form that had moved on (or no longer existed)
+    expect(fn).toMatch(/async function getJob\(id, final, seq = pollSeq\)/);
+    expect(fn).toMatch(/if \(seq !== pollSeq\) return;/);
+    const reset = src.slice(src.indexOf('function resetResult()'), src.indexOf('function resetResult()') + 120);
+    expect(reset).toMatch(/pollSeq\+\+/);
+    const unmount = src.slice(src.indexOf('onBeforeUnmount(() => {'), src.indexOf('onBeforeUnmount(() => {') + 200);
+    expect(unmount).toMatch(/pollSeq\+\+/);
   });
 
   it('a sustained outage still gives up', () => {

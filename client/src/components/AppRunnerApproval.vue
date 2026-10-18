@@ -97,33 +97,3 @@ async function decide(what) {
     </template>
   </BsModal>
 </template>
-<style scoped lang="scss">
-/* as the jobs page's review of a job waiting for approval (pages/jobs.vue) */
-.af-review-ask {
-  margin-bottom: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-left: 3px solid #ef6009;
-  border-radius: 0.375rem;
-  background: color-mix(in srgb, #ef6009 8%, transparent);
-  overflow-wrap: anywhere;
-}
-.af-review-facts {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  align-items: baseline;
-  gap: 0.5rem 1.5rem;
-  margin: 0;
-  dt {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--bs-secondary-color);
-  }
-  dd {
-    margin: 0;
-    font-weight: 600;
-    overflow-wrap: anywhere;
-  }
-}
-</style>

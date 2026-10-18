@@ -786,6 +786,27 @@ export default {
     previous: 'Precedente',
     next: 'Successivo',
     apply: 'Applica',
+    // copying to the clipboard, and a record saved by its name
+    copied: 'Copiato negli appunti',
+    copyFailed: 'Impossibile copiare negli appunti: {error}',
+    nameUpdated: '{name} è stato aggiornato',
+  },
+  // a YAML file loaded into a field or saved from it (AppListField, BsYamlEditor, AppForm)
+  yamlFile: {
+    load: 'Carica YAML',
+    download: 'Scarica',
+    wrongType: 'Seleziona un file .yml o .yaml',
+    noData: 'File YAML non valido: nessun dato trovato',
+    nothingToDownload: 'Nessun dato da scaricare',
+    loaded: 'Caricato da {file}',
+    loadedRows: '{n} riga caricata da {file} | {n} righe caricate da {file}',
+    parseFailed: 'Impossibile leggere {file}: {error}',
+    downloaded: 'Scaricato come YAML',
+    downloadFailed: 'Download non riuscito: {error}',
+    singleToArray: 'Oggetto singolo convertito in elenco',
+    firstItemLoaded: 'Caricato il primo elemento della lista',
+    noItems: 'Nessun elemento',
+    subformMissing: 'Il sottomodulo {subform} a cui fa riferimento il campo {field} non è stato trovato.',
   },
   dataTable: {
     rangeOf: '{from}–{to} di {total}',
@@ -2865,6 +2886,9 @@ export default {
     mainJob: 'Job principale',
     stepN: 'Passo {n}',
     failedToLoad: 'Impossibile caricare i job',
+    failedToLoadOutput: "Impossibile caricare l'output del job",
+    failedToRead: 'Impossibile leggere il job {id}',
+    jobIdNote: '(id job {id})',
   },
   form: {
     storedJobLoaded: '"{name}" caricato nel modulo',
@@ -2958,6 +2982,10 @@ export default {
     wizardSummaryHidden: 'non applicabile',
     wizardSummaryPending: 'non completato',
     wizardMissingSubform: 'Il passo della procedura guidata fa riferimento a un sottomodulo sconosciuto',
+    failedToGetJob: 'Impossibile leggere il job',
+    failedToAbort: 'Impossibile interrompere il job',
+    connecting: 'Connessione all’API dei job',
+    editTitle: 'Modifica {title}',
   },
   logs: {
     title: 'Log del server',

@@ -290,21 +290,23 @@ const total = computed(() => tasks.value.reduce((sum, task) => sum + longest(tas
   border-radius: 3px;
   vertical-align: middle;
 }
-/* the results' colours : ansible's own (green ok, amber changed, red failed, cyan skipped) */
+/* the results' colours : the output's own (public/css/themes.css), so a host's cell reads as its
+   line in the output does in every theme (green ok, orange changed, red failed, purple
+   unreachable, cyan skipped) */
 .af-cell-ok {
-  background: #2e7d32;
+  background: var(--af-ansible-output-success);
 }
 .af-cell-changed {
-  background: #f9a825;
+  background: var(--af-ansible-output-warning);
 }
 .af-cell-failed {
-  background: #c62828;
+  background: var(--af-ansible-output-danger);
 }
 .af-cell-unreachable {
-  background: #6a1b9a;
+  background: var(--af-ansible-output-purple);
 }
 .af-cell-skipped {
-  background: #26a69a;
+  background: var(--af-ansible-output-info);
 }
 .af-cell-none {
   background: var(--bs-tertiary-bg);

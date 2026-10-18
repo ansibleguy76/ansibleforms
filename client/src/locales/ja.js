@@ -780,6 +780,27 @@ export default {
     previous: '前へ',
     next: '次へ',
     apply: '適用',
+    // copying to the clipboard, and a record saved by its name
+    copied: 'クリップボードにコピーしました',
+    copyFailed: 'クリップボードにコピーできませんでした: {error}',
+    nameUpdated: '{name} を更新しました',
+  },
+  // a YAML file loaded into a field or saved from it (AppListField, BsYamlEditor, AppForm)
+  yamlFile: {
+    load: 'YAML を読み込む',
+    download: 'ダウンロード',
+    wrongType: '.yml または .yaml ファイルを選択してください',
+    noData: '無効な YAML ファイルです: データがありません',
+    nothingToDownload: 'ダウンロードするデータがありません',
+    loaded: '{file} から読み込みました',
+    loadedRows: '{file} から {n} 行を読み込みました',
+    parseFailed: '{file} を解析できませんでした: {error}',
+    downloaded: 'YAML としてダウンロードしました',
+    downloadFailed: 'ダウンロードできませんでした: {error}',
+    singleToArray: '単一のオブジェクトをリストに変換しました',
+    firstItemLoaded: 'リストの最初の項目を読み込みました',
+    noItems: '項目がありません',
+    subformMissing: 'フィールド {field} が参照するサブフォーム {subform} が見つかりません。',
   },
   dataTable: {
     rangeOf: '{total} 件中 {from}–{to}',
@@ -2827,6 +2848,9 @@ export default {
     mainJob: 'メインジョブ',
     stepN: 'ステップ {n}',
     failedToLoad: 'ジョブの読み込みに失敗しました',
+    failedToLoadOutput: 'ジョブの出力の読み込みに失敗しました',
+    failedToRead: 'ジョブ {id} の読み込みに失敗しました',
+    jobIdNote: '(ジョブ ID {id})',
   },
   form: {
     storedJobLoaded: '「{name}」をフォームに読み込みました',
@@ -2920,6 +2944,10 @@ export default {
     wizardSummaryHidden: '該当なし',
     wizardSummaryPending: '未完了',
     wizardMissingSubform: 'ウィザードのステップが不明なサブフォームを参照しています',
+    failedToGetJob: 'ジョブの読み込みに失敗しました',
+    failedToAbort: 'ジョブを中止できませんでした',
+    connecting: 'ジョブ API に接続しています',
+    editTitle: '{title} を編集',
   },
   logs: {
     title: 'サーバーログ',
