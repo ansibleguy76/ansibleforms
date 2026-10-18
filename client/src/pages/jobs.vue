@@ -1464,15 +1464,15 @@ onMounted(async () => {
                   <td class="bs-dt-row-actions">
                     <div class="dropdown">
                       <!-- fixed, so the menu opens over the table's frame instead of being cut by it -->
-                      <a
-                        role="button"
+                      <button
+                        type="button"
                         class="bs-dt-row-menu px-2"
                         data-bs-toggle="dropdown"
                         data-bs-popper-config='{"strategy":"fixed"}'
                         :aria-label="t('common.actions')"
                       >
                         <font-awesome-icon icon="ellipsis-vertical" />
-                      </a>
+                      </button>
                       <ul class="dropdown-menu dropdown-menu-end">
                         <li>
                           <a class="dropdown-item" href="#" @click.prevent="getJob(j.id)"

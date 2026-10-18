@@ -1602,14 +1602,15 @@ defineExpose({
           <div class="dropdown">
             <!-- fixed, so the menu opens over the table's frame instead of being cut by it (the
                  frame hides its overflow, for its rounded corners) -->
-            <a
-              role="button"
+            <button
+              type="button"
               class="bs-dt-row-menu px-2"
               data-bs-toggle="dropdown"
               data-bs-popper-config='{"strategy":"fixed"}'
+              :aria-label="t('common.actions')"
             >
               <font-awesome-icon icon="ellipsis-vertical" />
-            </a>
+            </button>
             <ul class="dropdown-menu dropdown-menu-end">
               <template v-for="(action, idx) in actionsFor(item)" :key="action.name + idx">
                 <li v-if="(action.name === 'delete' || action.dividerBefore) && idx > 0">

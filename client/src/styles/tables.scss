@@ -278,6 +278,16 @@
 .bs-dt-row-menu:hover {
   color: var(--bs-body-color);
 }
+/* the menu's trigger is a real button (focusable, named for screen readers) : the browser's
+   button look taken off, so it reads as the bare icon it was as a link */
+button.bs-dt-row-menu {
+  background: none;
+  border: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  font: inherit;
+  line-height: inherit;
+}
 .bs-dt-selected .bs-dt-row-menu,
 .bs-dt-selected .bs-dt-row-menu:hover {
   color: inherit;

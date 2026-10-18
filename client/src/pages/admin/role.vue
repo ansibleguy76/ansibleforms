@@ -492,14 +492,15 @@ onMounted(async () => {
                 </template>
                 <template v-if="!readOnly" #row-actions="{ item }">
                   <div v-if="item.named" class="dropdown">
-                    <a
-                      role="button"
+                    <button
+                      type="button"
                       class="bs-dt-row-menu px-2"
                       data-bs-toggle="dropdown"
                       data-bs-popper-config='{"strategy":"fixed"}'
+                      :aria-label="t('common.actions')"
                     >
                       <FaIcon icon="ellipsis-vertical" />
-                    </a>
+                    </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                       <li>
                         <a
