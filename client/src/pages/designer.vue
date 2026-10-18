@@ -1724,7 +1724,18 @@ watch(
   () => route.path,
   () => {
     const address = addressOf(route.params);
-    if (address.view && address.view !== currentTab.value) currentTab.value = address.view;
+    // through selectTab : a project file with unsaved changes asks first (and stays when the
+    // answer is no - the address watcher below then puts the address back)
+    if (address.view && address.view !== currentTab.value) selectTab(address.view);
+    // and the form the address names. Back/Forward between two forms changed the address
+    // only : the form shown stayed, so the address and the editor disagreed, and the next
+    // switch of editor rewrote the address back to the form shown. Set directly, not through
+    // selectForm (that pushes an address of its own) ; switching forms loses nothing, every
+    // form's buffer is kept until saved.
+    if (address.form && currentTab.value === 'Forms' && loaded.value) {
+      const f = idmapping.value.find((x) => slugOf(x.name) === slugOf(address.form));
+      if (f && f.id !== currentForm.value) currentForm.value = f.id;
+    }
     nextTick(() => {
       if (loaded.value) applyEditor(address.editor);
     });
@@ -3063,7 +3074,11 @@ async function setLock(proceed = true) {
     await loadBackups();
   } catch (err) {
     toast.error(err.message);
-    lock.value = undefined;
+    // Read who holds it now rather than clearing it : `lock = undefined` left the YAML
+    // editors (readonly only for a templated config) editable with no lock at all, and the
+    // next save answered 423. The real lock read back shows "locked by" and keeps every
+    // editor read-only.
+    await loadLock();
     // `loaded` is only ever set back to true inside loadForms(), which is never reached
     // when Lock.set throws - and the panel renders a spinner while `lock && !lock.free &&
     // !loaded`. So losing a race for the lock (someone else took it between the 5s poll
@@ -3134,7 +3149,8 @@ async function releaseLock() {
     await deleteLock();
   } catch (err) {
     toast.error(err.message);
-    lock.value = undefined;
+    // the lock as it really is now, not a cleared one (see setLock)
+    await loadLock();
   }
 }
 
@@ -3152,7 +3168,8 @@ async function deleteLock(proceed = true) {
     await loadAll();
   } catch (err) {
     toast.error(err.message);
-    lock.value = undefined;
+    // the lock as it really is now, not a cleared one (see setLock)
+    await loadLock();
     // same as setLock : a failed release must not leave the editor behind a spinner with
     // the in-memory buffers unreachable
     loaded.value = true;
@@ -3195,8 +3212,12 @@ const loadRepo = ref('');
 // unpushed work : a repository with uncommitted/unpushed changes, or new forms
 // still staged. Drives the "you have unpushed changes" indicator on Save (repository).
 const hasUnpushed = computed(() => stagedForms.value || formsRepos.value.some((r) => r.dirty));
-// a push or load is in flight : gate other actions that would race it
-const busy = computed(() => syncing.value || loadingRepos.value);
+// a save is in flight : a second Save (a double click, Ctrl+S held) used to post the same
+// buffers again while the first request was still out - two backups, and on a repository two
+// commits racing each other
+const saving = ref(false);
+// a push, load or save is in flight : gate other actions that would race it
+const busy = computed(() => syncing.value || loadingRepos.value || saving.value);
 // gate for everything that WRITES : the same in-flight guard, plus the ytt
 // template case where the designer only holds an expansion of the real config
 // the categories, the constants and the forms are changed only with the role option allowFormDesign
@@ -3405,7 +3426,7 @@ async function validateForms() {
 }
 
 async function saveForms(close = false) {
-  if (busy.value) return; // a push/load is in flight : ignore (e.g. Ctrl+S)
+  if (busy.value) return; // a push/load/save is in flight : ignore (e.g. Ctrl+S)
   // the forms without allowFormDesign : read, not saved (Ctrl+S included ; the server refuses too)
   if (!canDesignForms.value) {
     if (close) resetAction();
@@ -3440,6 +3461,7 @@ async function saveForms(close = false) {
     toast.info(t('designer.noChanges'));
     return;
   }
+  saving.value = true;
   try {
     // the roles are Settings' (Settings > Roles) : the ones stored now go back as they are, so
     // a role changed there while the designer was open is never written over with the copy it
@@ -3465,6 +3487,9 @@ async function saveForms(close = false) {
     // Restore until the page is reloaded
     if (canRestore.value) await loadBackups();
     if (formsRepos.value.length > 0) await loadFormsRepos(); // saved to a working tree => now unpushed
+    // the save is done : what "Save and close" goes on to (a reload, a release) must not find
+    // the designer still busy with it
+    saving.value = false;
     if (close && typeof nextAction.value === 'function') {
       const cb = nextAction.value;
       nextAction.value = false;
@@ -3476,6 +3501,8 @@ async function saveForms(close = false) {
     }
   } catch (err) {
     toast.error(err.message);
+  } finally {
+    saving.value = false;
   }
 }
 
@@ -5012,7 +5039,7 @@ onBeforeUnmount(() => {
                 <div v-else-if="loaded && currentTab == 'Categories'">
                   <BsInput
                     type="editor"
-                    :readonly="configTemplated || !canDesignForms"
+                    :readonly="!lock?.match || configTemplated || !canDesignForms"
                     :isFloating="false"
                     v-model="categories"
                     @save="saveForms()"
@@ -5094,7 +5121,7 @@ onBeforeUnmount(() => {
                 <div v-else-if="loaded && currentTab == 'Constants'">
                   <BsInput
                     type="editor"
-                    :readonly="configTemplated || !canDesignForms"
+                    :readonly="!lock?.match || configTemplated || !canDesignForms"
                     :isFloating="false"
                     v-model="constants"
                     @save="saveForms()"
@@ -5173,7 +5200,7 @@ onBeforeUnmount(() => {
                     <div v-else-if="editorTarget" :key="'formeditor-' + currentForm">
                       <BsInput
                         type="editor"
-                        :readonly="configTemplated || !canDesignForms"
+                        :readonly="!lock?.match || configTemplated || !canDesignForms"
                         :isFloating="false"
                         v-model="forms[currentForm]"
                         @save="saveForms()"
