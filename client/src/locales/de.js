@@ -762,6 +762,7 @@ export default {
       'Diese Seite läuft noch mit einem älteren Build als der Server. Laden Sie die Seite neu, um die neue Version zu erhalten.',
   },
   common: {
+    downloadFailed: 'Der Download ist fehlgeschlagen.',
     jumpToLatest: 'Zum Neuesten springen',
     newLines: 'Neue Zeilen',
     filter: 'Filtern',
@@ -823,6 +824,28 @@ export default {
     export: 'CSV exportieren',
   },
   errors: {
+    formsLoadFailed: 'Die Formulare konnten nicht geladen werden.',
+    formLoadFailed: 'Das Formular konnte nicht geladen werden.',
+    formListLoadFailed: 'Die Formularliste konnte nicht geladen werden.',
+    formsSaveFailed: 'Die Formulare konnten nicht gespeichert werden.',
+    formsValidateFailed: 'Die Formulare konnten nicht validiert werden.',
+    backupsLoadFailed: 'Die Sicherungen konnten nicht abgerufen werden.',
+    backupRestoreFailed: 'Die Sicherung konnte nicht wiederhergestellt werden.',
+    lockSetFailed: 'Die Designer-Sperre konnte nicht gesetzt werden: {error}',
+    lockReleaseFailed: 'Die Designer-Sperre konnte nicht freigegeben werden: {error}',
+    endOfLine: 'Hier geht es leider nicht weiter.',
+    fixSteps: 'Sie müssen einige Dinge beheben. Hier sind einige Schritte:',
+    stepDatabase: 'Stellen Sie sicher, dass eine MySQL-Datenbank läuft.',
+    stepSchema: 'Wenn das AnsibleForms-Schema fehlt, gewähren Sie Root-Zugriff, damit es erstellt werden kann.',
+    stepLogin: 'Melden Sie sich als lokaler Administrator an.',
+    stepEnvironment: 'Prüfen Sie Ihre Umgebungsvariablen.',
+    stepLogs: 'Prüfen Sie die Protokolldateien.',
+    stepConfig: 'Stellen Sie sicher, dass eine gültige config.yaml vorhanden ist.',
+    stepRepository: 'Oder legen Sie ein Repository für Ihre Formulare an.',
+    stepNetwork: 'Prüfen Sie Firewalls, Hostnamen, Benutzernamen und Passwort.',
+    settings: 'Einstellungen',
+    logs: 'Protokolle',
+    createRepository: 'Repository anlegen',
     noAccess: 'Kein Zugriff',
     notAdmin: 'Sie sind kein Administrator',
     noSettingsAccess: 'Sie haben keinen Zugriff auf Einstellungen',
@@ -2238,6 +2261,9 @@ export default {
     },
   },
   forms: {
+    listLoadFailed: 'Die Formularliste konnte nicht geladen werden.',
+    listLoadFailedReason:
+      'Der Server hat keinen Grund genannt. Prüfen Sie das Serverprotokoll und versuchen Sie es erneut.',
     // what the forms page is for, in the info popover after its title
     pageDescription:
       'Die Formulare, die Sie ausführen können. Wählen Sie links eine Kategorie oder filtern Sie nach Namen und öffnen Sie dann ein Formular, um es auszufüllen und zu starten.',
@@ -2254,6 +2280,10 @@ export default {
     hasWarnings: 'Diese Konfiguration hat',
   },
   designer: {
+    pasteNotAllowed:
+      'Der Browser hat das Lesen der Zwischenablage nicht erlaubt. Verwenden Sie stattdessen Strg+V im Editor.',
+    lockReleasedBy:
+      'Ihre Designer-Sperre wurde von {name} freigegeben. Nicht gespeicherte Änderungen können nicht mehr gespeichert werden.',
     title: 'Designer',
     offDescription:
       'Bearbeiten Sie Kategorien, Konstanten, Formulare und Rollen. Starten Sie den Designer, um die Konfiguration beim Bearbeiten zu sperren.',
@@ -2755,6 +2785,8 @@ export default {
     badYamlDuplicate: 'Duplizieren nicht möglich: ungültiges YAML',
   },
   jobs: {
+    ownJobRejectOnly:
+      'Dies ist Ihr eigener Job, und seine Genehmigung erlaubt keine Selbstgenehmigung. Ein anderer Genehmiger muss ihn genehmigen; Sie können ihn weiterhin ablehnen, um ihn zurückzuziehen.',
     // the jobs page's left menu
     // a job's status where the menu has no entry for it
     statusLabel: {
@@ -2929,6 +2961,50 @@ export default {
     jobIdNote: '(Job-ID {id})',
   },
   form: {
+    jobReadFailed: 'Der Job konnte nicht gelesen werden.',
+    prefillFieldFailed:
+      'seine Abfrage oder sein Ausdruck ist fehlgeschlagen, daher konnte der gespeicherte Wert nicht geprüft werden',
+    warnSelfReference: "'{field}' verweist auf sich selbst",
+    warnSelfReferenceDetail: 'Das führt zu einer Race Condition',
+    selfReferenceToast: "Sie haben im Feld '{field}' einen Selbstverweis definiert",
+    warnUnknownField: "'{field}' verweist auf das unbekannte Feld '{ref}'",
+    warnUnknownFieldDetail: 'Das Formular funktioniert möglicherweise nicht wie erwartet',
+    warnDuplicates: "'{field}' ist mehrfach vorhanden",
+    warnDuplicatesDetail: 'Jedes Feld muss einen eindeutigen Namen haben',
+    duplicatesToast: "Das Feld '{field}' ist mehrfach vorhanden",
+    warnReservedName: "'{field}' ist ein reservierter Feldname",
+    warnReservedNameDetail: 'Das kollidiert mit internen Feldern. Bitte wählen Sie einen anderen Namen.',
+    reservedNameToast: "Der Feldname '{field}' ist für die interne Verwendung reserviert",
+    warnReservedPrefix: "'{field}' beginnt mit '__' (doppelter Unterstrich)",
+    warnReservedPrefixDetail:
+      'Dieses Präfix ist für interne Felder reserviert. Bitte wählen Sie einen anderen Namen oder einen der dokumentierten Feldnamen.',
+    reservedPrefixToast: "Der Feldname '{field}' verwendet das reservierte Präfix '__'",
+    warnBadDependencies: "'{field}' hat fehlerhafte Abhängigkeiten",
+    warnNotAFieldName: '{ref} ist kein gültiger Feldname',
+    warnBadValidation: "'{field}' hat eine fehlerhafte '{rule}'-Validierung",
+    warnDefaultChain: "'{field}' hat einen Standardwert und verweist auf das Feld '{ref}', das ebenfalls einen hat",
+    warnDefaultChainDetail: 'Vermeiden Sie abhängige Felder, die beide einen Standardwert haben',
+    warnStoredIgnored: "Der gespeicherte Wert für '{field}' wurde ignoriert",
+    warnStoredIgnoredDetail: 'Dieses Formular hat kein Feld mit diesem Namen mehr.',
+    warnUnresolved: "'{field}' konnte nicht ausgewertet werden",
+    warnUnresolvedExpressionDetail: 'Ein Feld, auf das sein Ausdruck verweist, hat nie einen Wert geliefert.',
+    warnUnresolvedQueryDetail: 'Ein Feld, auf das seine Abfrage verweist, hat nie einen Wert geliefert.',
+    warnStalled: "'{field}' hat zu lange auf die Felder gewartet, von denen es abhängt",
+    warnStalledDetail: 'Es wurde trotzdem ausgewertet, daher ist sein Wert möglicherweise unvollständig.',
+    warnPrefill: "'{field}' konnte nicht vorausgefüllt werden",
+    prefillNotAnOption: 'der gespeicherte Wert gehört nicht mehr zu den verfügbaren Optionen',
+    prefillChurn:
+      'es wurde {n}-mal wiederhergestellt, ohne sich zu stabilisieren; ein Feld, von dem es abhängt, ändert sich ständig',
+    prefillNeverProduced: 'die Felder, von denen es abhängt, haben ihn nie geliefert',
+    editOnlyStringNumber: 'Sie können nur Ausdrucksfelder mit Text oder Zahlen bearbeiten.',
+    noDataToCopy: 'Keine Daten zum Kopieren',
+    loopStopped: 'Die Auswertung der Felder wurde angehalten: {error}',
+    queryErrors: "'{field}' hat Abfragefehler",
+    hasWarnings: 'Dieses Formular hat Warnungen, zum Prüfen klicken',
+    showHiddenFields: 'Ausgeblendete Felder anzeigen',
+    selectPlaceholder: 'Auswählen...',
+    editField: '{name} bearbeiten',
+    edit: 'Bearbeiten',
     storedJobLoaded: '„{name}" in das Formular geladen',
     storedJobLoadFailed: 'Der gespeicherte Job konnte nicht geladen werden',
     showHelp: 'Hilfe anzeigen',

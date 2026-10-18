@@ -263,6 +263,23 @@ describe("the raw form data a wizard job keeps", () => {
   test("a form keeps its fields' values, as before", () => {
     expect(filterRawFormDataOf(formObj, { host: "prod-1", pw: "x", other: 1 })).toEqual({ host: "prod-1" });
   });
+
+  test("declared fields named server, database or metadata are kept like any other", () => {
+    // they used to be dropped by name, so validateLaunch judged the launch without them
+    const form = {
+      name: "Sys",
+      fields: [
+        { name: "server", type: "text" },
+        { name: "database", type: "text" },
+        { name: "metadata", type: "text" },
+      ],
+    };
+    expect(filterRawFormDataOf(form, { server: "db1", database: "app", metadata: "x", stray: 1 })).toEqual({
+      server: "db1",
+      database: "app",
+      metadata: "x",
+    });
+  });
 });
 
 describe("guardLaunch", () => {

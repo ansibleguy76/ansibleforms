@@ -22,16 +22,34 @@ export const ALL_FORMS = 'all';
  *   name (string): the name ('Network Ops').
  *
  * Returns:
- *   string: lower case, every run of other characters a dash, none at either end
- *     ('network-ops').
+ *   string: lower case, accents dropped, every run of characters that are not a letter or a
+ *     digit (in any script) a dash, none at either end ('network-ops', 'cafe-debacle',
+ *     '日本語-フォーム'). A name with no letter or digit at all ('???') is written
+ *     percent-encoded instead ('%3F%3F%3F'), so it still has an address of its own.
+ *
+ * Only Latin letters and digits used to be kept, so a name written in another script
+ * (Japanese, Chinese, Greek, Cyrillic) came out empty : every such form had the same
+ * address, /form/, and none of them could be opened from it.
  */
 export function slugOf(name) {
-  return String(name)
+  let text = String(name ?? '');
+  // an address read back (or one typed percent-encoded) : its characters, so that slugOf of
+  // a slug is that slug again - a name that is not valid percent-encoding stays as it is
+  try {
+    text = decodeURIComponent(text);
+  } catch {
+    // a lone '%' (a name like '100%') : not encoded, kept
+  }
+  const slug = text
     .toLowerCase()
+    // accents off (é is e + a combining accent), then composed again : a Hangul syllable
+    // or a kana with a voicing mark is one character in the address, not its parts
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
+    .normalize('NFC')
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
     .replace(/^-+|-+$/g, '');
+  return slug || encodeURIComponent(text);
 }
 
 /**

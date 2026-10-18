@@ -16,6 +16,30 @@ describe('the forms list addresses', () => {
     expect(slugOf('  A/B & C  ')).toBe('a-b-c');
   });
 
+  it('keep letters and digits of every script, not only Latin ones', () => {
+    // these all came out empty : every such form had the address /form/
+    expect(slugOf('日本語 フォーム')).toBe('日本語-フォーム');
+    expect(slugOf('Сервер 1')).toBe('сервер-1');
+    expect(slugOf('部署 / 网络')).toBe('部署-网络');
+    // a kana with a voicing mark stays one character
+    expect(slugOf('ガ')).toBe('ガ');
+  });
+
+  it('give a name without any letter or digit a percent-encoded address', () => {
+    expect(slugOf('???')).toBe('%3F%3F%3F');
+    // read back from the address (decoded or not), it is the same form
+    expect(slugOf('%3F%3F%3F')).toBe('%3F%3F%3F');
+    expect(formFromPath('???', [{ name: '???' }, { name: 'Other' }])).toBe('???');
+    expect(formFromPath('%3F%3F%3F', [{ name: '???' }])).toBe('???');
+  });
+
+  it('are idempotent : the slug of a slug is that slug', () => {
+    for (const name of ['Network Ops', 'Café Débâcle', '日本語 フォーム', '???', '100%']) {
+      expect(slugOf(slugOf(name))).toBe(slugOf(name));
+    }
+    expect(formFromPath(slugOf('日本語 フォーム'), [{ name: '日本語 フォーム' }])).toBe('日本語 フォーム');
+  });
+
   it('are /forms/all for every form, and a sub category under its parent', () => {
     expect(formsPath('')).toBe('/forms/all');
     expect(formsPath('Expressions')).toBe('/forms/expressions');

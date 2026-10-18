@@ -761,6 +761,7 @@ export default {
       'Questa pagina usa ancora una build più vecchia del server. Ricarica la pagina per ottenere la nuova versione.',
   },
   common: {
+    downloadFailed: 'Il download non è riuscito.',
     jumpToLatest: 'Vai alle ultime',
     newLines: 'Nuove righe',
     filter: 'Filtra',
@@ -822,6 +823,28 @@ export default {
     export: 'Esporta CSV',
   },
   errors: {
+    formsLoadFailed: 'Impossibile caricare i moduli.',
+    formLoadFailed: 'Impossibile caricare il modulo.',
+    formListLoadFailed: "Impossibile caricare l'elenco dei moduli.",
+    formsSaveFailed: 'Impossibile salvare i moduli.',
+    formsValidateFailed: 'Impossibile convalidare i moduli.',
+    backupsLoadFailed: 'Impossibile ottenere i backup.',
+    backupRestoreFailed: 'Impossibile ripristinare il backup.',
+    lockSetFailed: 'Impossibile acquisire il blocco del designer: {error}',
+    lockReleaseFailed: 'Impossibile rilasciare il blocco del designer: {error}',
+    endOfLine: 'Temo che si sia arrivati al capolinea.',
+    fixSteps: 'Dovrai sistemare alcune cose. Ecco alcuni passaggi:',
+    stepDatabase: 'Assicurati che un database MySQL sia in esecuzione.',
+    stepSchema: "Se lo schema di AnsibleForms non è presente, fornisci l'accesso root perché possa essere creato.",
+    stepLogin: 'Accedi come amministratore locale.',
+    stepEnvironment: "Ricontrolla le variabili d'ambiente.",
+    stepLogs: 'Controlla i file di log.',
+    stepConfig: 'Assicurati di avere un file config.yaml valido.',
+    stepRepository: 'Oppure crea un repository che ospiti i tuoi moduli.',
+    stepNetwork: 'Ricontrolla firewall, nome host, nome utente e password.',
+    settings: 'Impostazioni',
+    logs: 'Log',
+    createRepository: 'Crea repository',
     noAccess: 'Accesso negato',
     notAdmin: 'Non sei un amministratore',
     noSettingsAccess: 'Non hai accesso alle impostazioni',
@@ -2218,6 +2241,8 @@ export default {
     },
   },
   forms: {
+    listLoadFailed: "Impossibile caricare l'elenco dei moduli.",
+    listLoadFailedReason: 'Il server non ha indicato il motivo. Controlla il log del server, poi riprova.',
     // what the forms page is for, in the info popover after its title
     pageDescription:
       'I moduli che puoi eseguire. Scegli una categoria a sinistra o filtra per nome, poi apri un modulo per compilarlo e avviarlo.',
@@ -2234,6 +2259,9 @@ export default {
     hasWarnings: 'Questa configurazione ha',
   },
   designer: {
+    pasteNotAllowed: "Il browser non ha consentito di leggere gli appunti. Usa invece Ctrl+V nell'editor.",
+    lockReleasedBy:
+      'Il tuo blocco del designer è stato rilasciato da {name}. Le modifiche non salvate non possono più essere salvate.',
     title: 'Designer',
     offDescription:
       'Modifica categorie, costanti, form e ruoli. Avvia il designer per bloccare la configurazione mentre la modifichi.',
@@ -2734,6 +2762,8 @@ export default {
     badYamlDuplicate: 'Impossibile duplicare: YAML non valido',
   },
   jobs: {
+    ownJobRejectOnly:
+      'Questo job è tuo e la sua approvazione non consente di approvarlo da solo. Deve approvarlo un altro approvatore; puoi comunque rifiutarlo per ritirarlo.',
     // the jobs page's left menu
     // a job's status where the menu has no entry for it
     statusLabel: {
@@ -2907,6 +2937,50 @@ export default {
     jobIdNote: '(id job {id})',
   },
   form: {
+    jobReadFailed: 'Impossibile leggere il job.',
+    prefillFieldFailed:
+      'la sua query o espressione non è riuscita, quindi il valore salvato non ha potuto essere verificato',
+    warnSelfReference: "'{field}' fa riferimento a se stesso",
+    warnSelfReferenceDetail: 'Questo causerà una race condition',
+    selfReferenceToast: "Hai definito un riferimento a se stesso nel campo '{field}'",
+    warnUnknownField: "'{field}' fa riferimento al campo sconosciuto '{ref}'",
+    warnUnknownFieldDetail: 'Il modulo potrebbe non funzionare come previsto',
+    warnDuplicates: "'{field}' è duplicato",
+    warnDuplicatesDetail: 'Ogni campo deve avere un nome univoco',
+    duplicatesToast: "Il campo '{field}' è duplicato",
+    warnReservedName: "'{field}' è un nome di campo riservato",
+    warnReservedNameDetail: 'Andrà in conflitto con i campi interni. Scegli un nome diverso.',
+    reservedNameToast: "Il nome di campo '{field}' è riservato all'uso interno",
+    warnReservedPrefix: "'{field}' inizia con '__' (doppio trattino basso)",
+    warnReservedPrefixDetail:
+      'Questo prefisso è riservato ai campi interni. Scegli un nome diverso o usa uno dei nomi di campo documentati.',
+    reservedPrefixToast: "Il nome di campo '{field}' usa il prefisso riservato '__'",
+    warnBadDependencies: "'{field}' ha dipendenze errate",
+    warnNotAFieldName: '{ref} non è un nome di campo valido',
+    warnBadValidation: "'{field}' ha una validazione '{rule}' errata",
+    warnDefaultChain: "'{field}' ha un valore predefinito e fa riferimento al campo '{ref}', che ne ha anch'esso uno",
+    warnDefaultChainDetail: 'Evita campi dipendenti che abbiano entrambi un valore predefinito',
+    warnStoredIgnored: "Il valore salvato per '{field}' è stato ignorato",
+    warnStoredIgnoredDetail: 'Questo modulo non ha più un campo con quel nome.',
+    warnUnresolved: "Impossibile valutare '{field}'",
+    warnUnresolvedExpressionDetail: 'Un campo a cui fa riferimento la sua espressione non ha mai prodotto un valore.',
+    warnUnresolvedQueryDetail: 'Un campo a cui fa riferimento la sua query non ha mai prodotto un valore.',
+    warnStalled: "'{field}' ha atteso troppo a lungo i campi da cui dipende",
+    warnStalledDetail: 'È stato valutato comunque, quindi il suo valore potrebbe essere incompleto.',
+    warnPrefill: "Impossibile precompilare '{field}'",
+    prefillNotAnOption: 'il valore salvato non è più tra le opzioni disponibili',
+    prefillChurn:
+      'è stato ripristinato {n} volte senza stabilizzarsi, quindi un campo da cui dipende continua a cambiare',
+    prefillNeverProduced: "i campi da cui dipende non l'hanno mai prodotto",
+    editOnlyStringNumber: 'Puoi modificare solo campi espressione di tipo testo o numero.',
+    noDataToCopy: 'Nessun dato da copiare',
+    loopStopped: 'La valutazione dei campi si è interrotta: {error}',
+    queryErrors: "'{field}' ha errori di query",
+    hasWarnings: 'Questo modulo ha degli avvisi, fai clic per esaminarli',
+    showHiddenFields: 'Mostra i campi nascosti',
+    selectPlaceholder: 'Seleziona...',
+    editField: 'Modifica {name}',
+    edit: 'Modifica',
     storedJobLoaded: '"{name}" caricato nel modulo',
     storedJobLoadFailed: 'Impossibile caricare il job salvato',
     showHelp: 'Mostra aiuto',

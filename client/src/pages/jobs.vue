@@ -21,7 +21,7 @@ import { jobsPath, statusFromSlug } from '@/lib/jobsPath';
 import { formPath } from '@/lib/formsPath';
 import { jobTypeLabel, jobTypeName, hasArtifacts } from '@/lib/jobTypes';
 import { useNodeOutput } from '@/composables/useNodeOutput';
-import { mayApprove } from '@/lib/jobNotifications';
+import { mayApprove, mayDecide } from '@/lib/jobNotifications';
 
 // INIT
 
@@ -775,7 +775,8 @@ async function download(id) {
   try {
     await Helpers.downloadFile(`/api/v2/job/${id}/download`);
   } catch (err) {
-    toast.error(err.toString());
+    // the server's reason (downloadFile decodes its error body), else a translated fallback
+    toast.error(Helpers.parseAxiosResponseError(err, t('common.downloadFailed')));
   }
 }
 // display a subset of jobs (by pagination)
@@ -1041,12 +1042,18 @@ async function rejectJob(id) {
 function getJob(id) {
   router.push({ path: `/jobs/${id}`, query: route.query }).catch((_e) => {});
 }
-// check if approval is allowed for a job
-// One rule with the desktop notifications (lib/jobNotifications.js mayApprove) : an admin any,
+// check if the user may decide on a job waiting for approval (its review, Reject included)
+// One rule with the desktop notifications (lib/jobNotifications.js mayDecide) : an admin any,
 // else one of the roles the approval names. It reads the approval as the list sends it (a JSON
 // string) or as the single-job endpoint does (an object), and a malformed one refuses instead
 // of throwing inside the render.
 function approvalAllowed(job) {
+  return mayDecide(job, store.profile);
+}
+// and whether Approve itself is theirs to press : not on their own job unless its approval
+// allows it (allowSelf) or they are an admin - the server refuses it otherwise (four eyes).
+// Their own job's review still offers Reject : withdrawing it stays allowed.
+function approveAllowed(job) {
   return mayApprove(job, store.profile);
 }
 // keep track of collapsed multistep jobs
@@ -1207,6 +1214,10 @@ onMounted(async () => {
       <template #title>{{ t('jobs.reviewApproval') }}</template>
       <template #default>
         <div v-if="reviewDecided" class="alert alert-info mb-3">{{ t('jobs.alreadyDecided') }}</div>
+        <!-- their own job, its approval not allowing self-approval : Reject (withdraw) only -->
+        <div v-else-if="!approveAllowed(reviewJob)" class="alert alert-warning mb-3">
+          {{ t('jobs.ownJobRejectOnly') }}
+        </div>
         <!-- what is asked : the form's own approval message, its $(...) placeholders filled in with
              the job's values and html-encoded (replacePlaceholders) ; a generic line without one -->
         <div v-if="reviewJob.message" class="af-review-ask" v-html="reviewJob.message"></div>
@@ -1245,9 +1256,14 @@ onMounted(async () => {
         <BsButton icon="circle-xmark" colorClass="danger" :disabled="reviewDecided" @click="decide(false)">{{
           t('jobs.reject')
         }}</BsButton>
-        <BsButton icon="circle-check" colorClass="success" :disabled="reviewDecided" @click="decide(true)">{{
-          t('jobs.approve')
-        }}</BsButton>
+        <BsButton
+          v-if="approveAllowed(reviewJob)"
+          icon="circle-check"
+          colorClass="success"
+          :disabled="reviewDecided"
+          @click="decide(true)"
+          >{{ t('jobs.approve') }}</BsButton
+        >
       </template>
     </BsModal>
     <!-- a workflow node's output, opened from the graph : over the full screen too -->

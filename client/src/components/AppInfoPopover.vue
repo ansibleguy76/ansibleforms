@@ -26,11 +26,9 @@ import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Popover } from 'bootstrap';
 import { disposeWhenHidden } from '@/lib/popoverDispose';
-import showdown from 'showdown';
-
-// markdown to html, as the forms' help was shown (github flavour, fenced code)
-const converter = new showdown.Converter({ ghCodeBlocks: true });
-converter.setFlavor('github');
+// markdown to html, as the forms' help was shown (github flavour, fenced code), through the
+// app's one html policy before Bootstrap's own sanitizer sees it as well
+import { renderMarkdown } from '@/lib/markdown';
 
 // PROPS
 
@@ -63,7 +61,7 @@ const props = defineProps({
  *   string: the popover's content.
  */
 function content(text) {
-  return props.markdown ? converter.makeHtml(String(text || '')) : text;
+  return props.markdown ? renderMarkdown(text || '') : text;
 }
 
 // INIT

@@ -760,6 +760,7 @@ export default {
       'Deze pagina draait nog een oudere build dan de server. Herlaad de pagina om de nieuwe versie te krijgen.',
   },
   common: {
+    downloadFailed: 'Het downloaden is mislukt.',
     jumpToLatest: 'Naar nieuwste',
     newLines: 'Nieuwe regels',
     filter: 'Filter',
@@ -821,6 +822,28 @@ export default {
     export: 'Exporteer CSV',
   },
   errors: {
+    formsLoadFailed: 'De formulieren konden niet worden geladen.',
+    formLoadFailed: 'Het formulier kon niet worden geladen.',
+    formListLoadFailed: 'De lijst met formulieren kon niet worden geladen.',
+    formsSaveFailed: 'De formulieren konden niet worden opgeslagen.',
+    formsValidateFailed: 'De formulieren konden niet worden gevalideerd.',
+    backupsLoadFailed: 'De back-ups konden niet worden opgehaald.',
+    backupRestoreFailed: 'De back-up kon niet worden hersteld.',
+    lockSetFailed: 'De designervergrendeling kon niet worden genomen: {error}',
+    lockReleaseFailed: 'De designervergrendeling kon niet worden vrijgegeven: {error}',
+    endOfLine: 'Hier houdt het helaas op.',
+    fixSteps: 'U moet een paar dingen oplossen. Hier zijn enkele stappen:',
+    stepDatabase: 'Zorg dat er een MySQL-database draait.',
+    stepSchema: 'Als het AnsibleForms-schema ontbreekt, geef dan root-toegang zodat het kan worden aangemaakt.',
+    stepLogin: 'Meld u aan als lokale beheerder.',
+    stepEnvironment: 'Controleer uw omgevingsvariabelen.',
+    stepLogs: 'Controleer de logbestanden.',
+    stepConfig: 'Zorg dat u een geldig config.yaml-bestand hebt.',
+    stepRepository: 'Of maak een repository aan voor uw formulieren.',
+    stepNetwork: 'Controleer firewalls, hostnaam, gebruikersnaam en wachtwoord.',
+    settings: 'Instellingen',
+    logs: 'Logboeken',
+    createRepository: 'Repository aanmaken',
     noAccess: 'Geen toegang',
     notAdmin: 'U bent geen beheerder',
     noSettingsAccess: 'U heeft geen toegang tot instellingen',
@@ -2220,6 +2243,8 @@ export default {
     },
   },
   forms: {
+    listLoadFailed: 'De lijst met formulieren kon niet worden geladen.',
+    listLoadFailedReason: 'De server gaf geen reden op. Controleer het serverlogboek en probeer het opnieuw.',
     // what the forms page is for, in the info popover after its title
     pageDescription:
       'De formulieren die u kunt uitvoeren. Kies links een categorie of filter op naam, en open dan een formulier om het in te vullen en te starten.',
@@ -2236,6 +2261,10 @@ export default {
     hasWarnings: 'Deze configuratie heeft',
   },
   designer: {
+    pasteNotAllowed:
+      'De browser stond het lezen van het klembord niet toe. Gebruik in plaats daarvan Ctrl+V in de editor.',
+    lockReleasedBy:
+      'Uw designervergrendeling is vrijgegeven door {name}. Niet-opgeslagen wijzigingen kunnen niet meer worden opgeslagen.',
     title: 'Designer',
     offDescription:
       'Bewerk de categorieën, constanten, formulieren en rollen. Start de designer om de configuratie te vergrendelen tijdens het bewerken.',
@@ -2736,6 +2765,8 @@ export default {
     badYamlDuplicate: 'Dupliceren niet mogelijk: ongeldige YAML',
   },
   jobs: {
+    ownJobRejectOnly:
+      'Dit is uw eigen job en de goedkeuring ervan staat niet toe dat u hem zelf goedkeurt. Een andere goedkeurder moet hem goedkeuren; u kunt hem nog wel afwijzen om hem in te trekken.',
     // the jobs page's left menu
     // a job's status where the menu has no entry for it
     statusLabel: {
@@ -2908,6 +2939,49 @@ export default {
     jobIdNote: '(job-id {id})',
   },
   form: {
+    jobReadFailed: 'De job kon niet worden gelezen.',
+    prefillFieldFailed: 'de query of expressie is mislukt, dus de opgeslagen waarde kon niet worden gecontroleerd',
+    warnSelfReference: "'{field}' verwijst naar zichzelf",
+    warnSelfReferenceDetail: 'Dit veroorzaakt een race condition',
+    selfReferenceToast: "U hebt een verwijzing naar zichzelf gedefinieerd in veld '{field}'",
+    warnUnknownField: "'{field}' verwijst naar het onbekende veld '{ref}'",
+    warnUnknownFieldDetail: 'Het formulier werkt mogelijk niet zoals verwacht',
+    warnDuplicates: "'{field}' komt meerdere keren voor",
+    warnDuplicatesDetail: 'Elk veld moet een unieke naam hebben',
+    duplicatesToast: "Het veld '{field}' komt meerdere keren voor",
+    warnReservedName: "'{field}' is een gereserveerde veldnaam",
+    warnReservedNameDetail: 'Dit botst met interne velden. Kies een andere naam.',
+    reservedNameToast: "De veldnaam '{field}' is gereserveerd voor intern gebruik",
+    warnReservedPrefix: "'{field}' begint met '__' (dubbel liggend streepje)",
+    warnReservedPrefixDetail:
+      'Dit voorvoegsel is gereserveerd voor interne velden. Kies een andere naam of gebruik een van de gedocumenteerde veldnamen.',
+    reservedPrefixToast: "De veldnaam '{field}' gebruikt het gereserveerde voorvoegsel '__'",
+    warnBadDependencies: "'{field}' heeft ongeldige afhankelijkheden",
+    warnNotAFieldName: '{ref} is geen geldige veldnaam',
+    warnBadValidation: "'{field}' heeft een ongeldige '{rule}'-validatie",
+    warnDefaultChain: "'{field}' heeft een standaardwaarde en verwijst naar veld '{ref}', dat er ook een heeft",
+    warnDefaultChainDetail: 'Vermijd afhankelijke velden die allebei een standaardwaarde hebben',
+    warnStoredIgnored: "De opgeslagen waarde voor '{field}' is genegeerd",
+    warnStoredIgnoredDetail: 'Dit formulier heeft geen veld met die naam meer.',
+    warnUnresolved: "'{field}' kon niet worden geëvalueerd",
+    warnUnresolvedExpressionDetail: 'Een veld waarnaar de expressie verwijst, heeft nooit een waarde opgeleverd.',
+    warnUnresolvedQueryDetail: 'Een veld waarnaar de query verwijst, heeft nooit een waarde opgeleverd.',
+    warnStalled: "'{field}' heeft te lang gewacht op de velden waarvan het afhangt",
+    warnStalledDetail: 'Het is toch geëvalueerd, dus de waarde is mogelijk onvolledig.',
+    warnPrefill: "'{field}' kon niet vooraf worden ingevuld",
+    prefillNotAnOption: 'de opgeslagen waarde is niet langer een van de beschikbare opties',
+    prefillChurn:
+      'het is {n} keer hersteld zonder stabiel te worden, dus een veld waarvan het afhangt blijft veranderen',
+    prefillNeverProduced: 'de velden waarvan het afhangt hebben deze nooit opgeleverd',
+    editOnlyStringNumber: 'U kunt alleen expressievelden met tekst of getallen bewerken.',
+    noDataToCopy: 'Geen gegevens om te kopiëren',
+    loopStopped: 'De evaluatie van de velden is gestopt: {error}',
+    queryErrors: "'{field}' heeft queryfouten",
+    hasWarnings: 'Dit formulier heeft waarschuwingen, klik om ze te bekijken',
+    showHiddenFields: 'Verborgen velden tonen',
+    selectPlaceholder: 'Selecteren...',
+    editField: '{name} bewerken',
+    edit: 'Bewerken',
     storedJobLoaded: '"{name}" in het formulier geladen',
     storedJobLoadFailed: 'De opgeslagen job kon niet worden geladen',
     showHelp: 'Toon hulp',

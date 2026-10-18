@@ -15,6 +15,7 @@ import State from '@/lib/State';
 import Navigate from '@/lib/Navigate';
 import TokenStorage from '@/lib/TokenStorage';
 import { formsPath, formFromPath, formPath, slugOf } from '@/lib/formsPath';
+import { renderMarkdown } from '@/lib/markdown';
 import YAML from 'yaml';
 import { useFollowOutput } from '@/composables/useFollowOutput';
 import Time from '@/lib/Time';
@@ -897,9 +898,20 @@ async function reloadForm(reset = true) {
   if (reset) {
     resetResult();
   }
+  // Close every subform being edited : the form is drawn anew below (key++), and an entry
+  // left on the stack hid the fresh form behind a subform editor whose onSave wrote into
+  // the list field of a form instance that no longer exists.
+  editStack.splice(0);
   await loadFormSafely();
   key.value++;
 }
+
+// The load chain's token, as pollSeq is for the job poll : each load carries the value it
+// started with and checks it after every await. Switching forms quickly (the menu, the
+// search, Back) started a second load while the first was in flight, and whichever answered
+// LAST was drawn - the page could show the form the user had already left, under the new
+// address. Only the newest load may write anything.
+let loadSeq = 0;
 
 /**
  * Loads the form of the address, its failure shown instead of thrown. Form.load throws on
@@ -909,11 +921,14 @@ async function reloadForm(reset = true) {
  * that did not is drawn.
  */
 async function loadFormSafely() {
+  const seq = ++loadSeq;
   formNotFound.value = false;
   loadError.value = '';
   try {
-    await loadForm();
+    await loadForm(seq);
   } catch (err) {
+    // a newer load owns the page now : this one's failure is not about the form shown
+    if (seq !== loadSeq) return;
     formNotFound.value = true;
     loadError.value = Helpers.parseAxiosResponseError(err, t('form.formNotFoundMsg'));
     toast.error(loadError.value);
@@ -1057,7 +1072,7 @@ function doAction(a, jobid) {
       // the form's own address (/form/<slug>), the job that ran passed on : a field named
       // __previous_jobid__ in that form gets it from the query (AppForm.vue). Another form's
       // address reloads through the watch on the slug ; this same form is loaded again here.
-      const sameForm = slugOf(form) === route.params.slug;
+      const sameForm = slugOf(form) === slugOf(route.params.slug);
       router
         .push({ path: formPath(form), query: { __previous_jobid__: jobid } })
         .then(() => {
@@ -1121,7 +1136,7 @@ function getWizardRawFormData() {
   return { __wizard__: true, drafts, skipped: { ...wizardSkipped } };
 }
 
-// Get filtered raw form data (excludes constants, passwords, system fields)
+// Get filtered raw form data (excludes constants and passwords)
 function getFilteredRawFormData() {
   if (wizardActive.value) return getWizardRawFormData();
   const rawFormData = {};
@@ -1137,8 +1152,10 @@ function getFilteredRawFormData() {
     // Skip password fields for security
     if (field.type === 'password') return;
 
-    // Skip system fields
-    if (fieldName === 'server' || fieldName === 'database' || fieldName === 'metadata') return;
+    // No name-based exclusion : only the form's own declared fields are walked, so a field
+    // named server, database or metadata is user input like any other. Skipping those names
+    // dropped them from the rawFormData the server validates the launch with (validateLaunch)
+    // - the same rule as server/src/lib/formEngine/output.js filterRawFormData.
 
     // Include this field
     rawFormData[fieldName] = form.value[fieldName];
@@ -1271,6 +1288,10 @@ function resetResult() {
 
 // Handle submit action from AppForm component
 async function handleSubmitAction({ action, visibility: formVisibility }) {
+  // Refuse while a run is already under way (the same guard the wizard path has) : a
+  // double click on Submit emitted twice before the button hid, and both calls went on to
+  // await the form and launch - two jobs from one click.
+  if (status.value !== '') return;
   visibility.value = formVisibility;
   // a preview (the designer's) runs nothing : submit, schedule, run later and store alike
   if (isPreview.value) {
@@ -1281,14 +1302,17 @@ async function handleSubmitAction({ action, visibility: formVisibility }) {
   switch (action) {
     case 'submit':
       // Main submit action - trigger form submission
-      status.value = 'initializing';
-      // Wait for every dynamic field to settle first. AppForm computes this (canSubmit)
+      // set synchronously, so a second call returns at the guard above
+      status.value = 'stabilizing';
+      // Wait for every dynamic field to settle first. This is the ONLY submit gate. AppForm computes this (canSubmit)
       // and even emits a "submit" event when it flips, but that event is not declared and
       // nothing listens to it - so submitForm used to run the instant the button was
       // pressed and a slow query/expression field was read while still undefined, sending
       // the job a missing or stale extravar with no sign anything was wrong.
       if (mainForm.value?.awaitStable && !(await mainForm.value.awaitStable())) {
         toast.warning(t('form.tooLongToEvaluate'));
+        // and which fields held it up (exposed refs are unwrapped on the instance)
+        if (mainForm.value.unevaluatedFieldsWarning) toast.warning(mainForm.value.unevaluatedFieldsWarning);
         status.value = '';
         return;
       }
@@ -1544,7 +1568,8 @@ async function download(id) {
   try {
     await Helpers.downloadFile(`/api/v2/job/${id}/download`);
   } catch (err) {
-    toast.error(err.toString());
+    // the server's reason (downloadFile decodes its error body), else a translated fallback
+    toast.error(Helpers.parseAxiosResponseError(err, t('common.downloadFailed')));
   }
 }
 // get job output
@@ -1630,7 +1655,7 @@ async function getJob(id, final, seq = pollSeq) {
       if (pollFailures.value < 5) {
         timeout.value = setTimeout(async () => await getJob(id, false, seq), 2000);
       } else {
-        message.value = 'Error in axios call to get job\n\n' + err.toString();
+        message.value = t('form.jobReadFailed') + '\n\n' + err.toString();
         status.value = 'error';
       }
     }
@@ -1691,7 +1716,19 @@ async function formNameOf(slug) {
   return formFromPath(slug, (await Form.list())?.forms);
 }
 
-async function loadForm() {
+/**
+ * Loads the form of the address into the page.
+ *
+ * Args:
+ *   seq (number): this load's token (loadSeq) ; once a newer load started, this one stops at
+ *     its next await without writing anything.
+ *
+ * Raises:
+ *   Error: Form.load's failure (loadFormSafely shows it).
+ */
+async function loadForm(seq = loadSeq) {
+  // a newer load started while this one was waiting : drop this one's results
+  const stale = () => seq !== loadSeq;
   const slug = route.params.slug;
   if (!slug) {
     console.error('No form name provided in the URL');
@@ -1701,6 +1738,7 @@ async function loadForm() {
   // a preview carries the designer's copy of the form, perhaps not saved yet : its name is only
   // needed when that copy is missing
   const formName = await formNameOf(slug);
+  if (stale()) return;
   if (!formName && !route.query.preview) {
     console.error('No form with the address ' + slug);
     formNotFound.value = true;
@@ -1738,10 +1776,14 @@ async function loadForm() {
         formNotFound.value = true;
         return;
       }
-      formConfig.value = await Form.load(formName);
+      const loaded = await Form.load(formName);
+      if (stale()) return;
+      formConfig.value = loaded;
     }
   } else {
-    formConfig.value = await Form.load(formName);
+    const loaded = await Form.load(formName);
+    if (stale()) return;
+    formConfig.value = loaded;
   }
   if (formConfig.value.forms.length == 0) {
     console.error('No forms found in the configuration for form: ' + formName);
@@ -1754,6 +1796,7 @@ async function loadForm() {
       try {
         console.log('Loading pre-fill data from job:', route.query.prefillJobId);
         const result = await axios.get(`/api/v2/job/${route.query.prefillJobId}/rawformdata`);
+        if (stale()) return;
         if (result.data) {
           initialFormData.value = result.data;
           toast.info(t('form.prefilled', { id: route.query.prefillJobId }));
@@ -1761,6 +1804,7 @@ async function loadForm() {
           console.log('No data in result:', result.data);
         }
       } catch (err) {
+        if (stale()) return;
         console.error('Failed to load pre-fill data:', err);
 
         // the server's own words when it sent some ({ error }), else what its status means
@@ -1812,12 +1856,14 @@ async function loadForm() {
     if (route.query.storedJob) {
       try {
         const res = await axios.get(`/api/v2/stored-jobs/${encodeURIComponent(route.query.storedJob)}`);
+        if (stale()) return;
         const stored = res.data?.records ? res.data.records[0] : res.data;
         if (stored?.form_data) {
           buildMainStoreCtx().onLoad(JSON.parse(stored.form_data));
           toast.success(t('form.storedJobLoaded', { name: stored.name }));
         }
       } catch (err) {
+        if (stale()) return;
         toast.error(Helpers.parseAxiosResponseError(err, t('form.storedJobLoadFailed')));
       }
     }
@@ -1846,6 +1892,9 @@ watch(
       // the previous form is not drawn while this one loads (nor stays when this one fails)
       currentForm.value = null;
       formLoaded.value = false;
+      // nor are its values carried over : AppForm fills form in place, so a field the new
+      // form shares by name started from the old form's value (subforms close in reloadForm)
+      form.value = {};
       await reloadForm();
     }
   },
@@ -2039,7 +2088,8 @@ onBeforeUnmount(() => {
                   <div v-show="idx === wizardIndex">
                     <!-- Step help -->
                     <div v-if="step.help && step.showHelp" class="alert alert-light" role="alert">
-                      <vue-showdown :markdown="step.help" flavor="github" :options="{ ghCodeBlocks: true }" />
+                      <!-- sanitized : the help is form-provided markdown (lib/markdown.js) -->
+                      <div v-html="renderMarkdown(step.help)"></div>
                     </div>
 
                     <!-- Regular subform step: stepper is injected into the

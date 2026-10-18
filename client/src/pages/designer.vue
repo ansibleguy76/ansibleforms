@@ -74,7 +74,7 @@ const sortedTabs = computed(() => [...tabs].sort((a, b) => a.label().localeCompa
 // (/designer/categories/yaml, /designer/categories/visual, /designer/forms/approval-demo/preview),
 // names written as in every address (lib/formsPath.js). The designer opens on what its address
 // names, else on the first view of the menu, in its YAML.
-const tabOfSlug = (slug) => tabs.find((x) => slugOf(x.name) === slug)?.name;
+const tabOfSlug = (slug) => tabs.find((x) => slugOf(x.name) === slugOf(slug))?.name;
 // the editors, by their name in the address
 const EDITORS = ['yaml', 'visual', 'preview'];
 /**
@@ -238,7 +238,16 @@ function editorCopy() {
 }
 async function editorPaste() {
   if (!activeEditor.value) return;
-  const text = await navigator.clipboard.readText();
+  // the browser may refuse to read the clipboard (permission denied, not a secure page, an
+  // older Firefox without the API) : say so, rather than an unhandled rejection and a button
+  // that silently does nothing - Ctrl+V in the editor still works there
+  let text;
+  try {
+    text = await navigator.clipboard.readText();
+  } catch {
+    toast.warning(t('designer.pasteNotAllowed'));
+    return;
+  }
   if (text) activeEditor.value.insert(text);
 }
 function editorFormat() {
@@ -1724,7 +1733,18 @@ watch(
   () => route.path,
   () => {
     const address = addressOf(route.params);
-    if (address.view && address.view !== currentTab.value) currentTab.value = address.view;
+    // through selectTab : a project file with unsaved changes asks first (and stays when the
+    // answer is no - the address watcher below then puts the address back)
+    if (address.view && address.view !== currentTab.value) selectTab(address.view);
+    // and the form the address names. Back/Forward between two forms changed the address
+    // only : the form shown stayed, so the address and the editor disagreed, and the next
+    // switch of editor rewrote the address back to the form shown. Set directly, not through
+    // selectForm (that pushes an address of its own) ; switching forms loses nothing, every
+    // form's buffer is kept until saved.
+    if (address.form && currentTab.value === 'Forms' && loaded.value) {
+      const f = idmapping.value.find((x) => slugOf(x.name) === slugOf(address.form));
+      if (f && f.id !== currentForm.value) currentForm.value = f.id;
+    }
     nextTick(() => {
       if (loaded.value) applyEditor(address.editor);
     });
@@ -2239,7 +2259,12 @@ async function loadLock() {
     // ours a moment ago, free now : it was left behind (the computer asleep past
     // LOCK_STALE_SECONDS, server/src/models/lock.model.js) and nobody took it - taken back, so
     // the edits open here go on ; somebody else's by now shows who
-    if (before?.match && lock.value?.free && !releasing.value) {
+    //
+    // Unless an admin released it (the server says so, and by whom) : taking it back then
+    // undid their release within seconds. Say so instead, and leave it free.
+    if (before?.match && lock.value?.free && lock.value?.released) {
+      toast.warning(t('designer.lockReleasedBy', { name: lock.value.released.by || '?' }));
+    } else if (before?.match && lock.value?.free && !releasing.value) {
       try {
         await Lock.set();
         lock.value = await Lock.get();
@@ -2273,7 +2298,7 @@ function selectDefaultForm() {
   currentForm.value = idmapping.value[0]?.id || null;
   // the form the address names (/designer/forms/<form>)
   const slug = addressOf(route.params).form;
-  const f = slug ? idmapping.value.find((x) => slugOf(x.name) === slug) : null;
+  const f = slug ? idmapping.value.find((x) => slugOf(x.name) === slugOf(slug)) : null;
   if (f) {
     currentForm.value = f.id;
   }
@@ -3058,7 +3083,11 @@ async function setLock(proceed = true) {
     await loadBackups();
   } catch (err) {
     toast.error(err.message);
-    lock.value = undefined;
+    // Read who holds it now rather than clearing it : `lock = undefined` left the YAML
+    // editors (readonly only for a templated config) editable with no lock at all, and the
+    // next save answered 423. The real lock read back shows "locked by" and keeps every
+    // editor read-only.
+    await loadLock();
     // `loaded` is only ever set back to true inside loadForms(), which is never reached
     // when Lock.set throws - and the panel renders a spinner while `lock && !lock.free &&
     // !loaded`. So losing a race for the lock (someone else took it between the 5s poll
@@ -3129,7 +3158,8 @@ async function releaseLock() {
     await deleteLock();
   } catch (err) {
     toast.error(err.message);
-    lock.value = undefined;
+    // the lock as it really is now, not a cleared one (see setLock)
+    await loadLock();
   }
 }
 
@@ -3147,7 +3177,8 @@ async function deleteLock(proceed = true) {
     await loadAll();
   } catch (err) {
     toast.error(err.message);
-    lock.value = undefined;
+    // the lock as it really is now, not a cleared one (see setLock)
+    await loadLock();
     // same as setLock : a failed release must not leave the editor behind a spinner with
     // the in-memory buffers unreachable
     loaded.value = true;
@@ -3190,8 +3221,12 @@ const loadRepo = ref('');
 // unpushed work : a repository with uncommitted/unpushed changes, or new forms
 // still staged. Drives the "you have unpushed changes" indicator on Save (repository).
 const hasUnpushed = computed(() => stagedForms.value || formsRepos.value.some((r) => r.dirty));
-// a push or load is in flight : gate other actions that would race it
-const busy = computed(() => syncing.value || loadingRepos.value);
+// a save is in flight : a second Save (a double click, Ctrl+S held) used to post the same
+// buffers again while the first request was still out - two backups, and on a repository two
+// commits racing each other
+const saving = ref(false);
+// a push, load or save is in flight : gate other actions that would race it
+const busy = computed(() => syncing.value || loadingRepos.value || saving.value);
 // gate for everything that WRITES : the same in-flight guard, plus the ytt
 // template case where the designer only holds an expansion of the real config
 // the categories, the constants and the forms are changed only with the role option allowFormDesign
@@ -3400,7 +3435,7 @@ async function validateForms() {
 }
 
 async function saveForms(close = false) {
-  if (busy.value) return; // a push/load is in flight : ignore (e.g. Ctrl+S)
+  if (busy.value) return; // a push/load/save is in flight : ignore (e.g. Ctrl+S)
   // the forms without allowFormDesign : read, not saved (Ctrl+S included ; the server refuses too)
   if (!canDesignForms.value) {
     if (close) resetAction();
@@ -3435,6 +3470,7 @@ async function saveForms(close = false) {
     toast.info(t('designer.noChanges'));
     return;
   }
+  saving.value = true;
   try {
     // the roles are Settings' (Settings > Roles) : the ones stored now go back as they are, so
     // a role changed there while the designer was open is never written over with the copy it
@@ -3460,6 +3496,9 @@ async function saveForms(close = false) {
     // Restore until the page is reloaded
     if (canRestore.value) await loadBackups();
     if (formsRepos.value.length > 0) await loadFormsRepos(); // saved to a working tree => now unpushed
+    // the save is done : what "Save and close" goes on to (a reload, a release) must not find
+    // the designer still busy with it
+    saving.value = false;
     if (close && typeof nextAction.value === 'function') {
       const cb = nextAction.value;
       nextAction.value = false;
@@ -3471,6 +3510,8 @@ async function saveForms(close = false) {
     }
   } catch (err) {
     toast.error(err.message);
+  } finally {
+    saving.value = false;
   }
 }
 
@@ -3972,16 +4013,13 @@ onBeforeUnmount(() => {
           </template>
         </template>
         <template #footer>
-          <!-- nothing picked : restoring would dereference a null backup -->
-          <BsButton
-            icon="undo"
-            :disabled="!backupToRestore"
-            @click="
-              restoreBackup();
-              resetAction();
-            "
-            >{{ t('designer.restore') }}</BsButton
-          >
+          <!-- nothing picked : restoring would dereference a null backup.
+               No resetAction() after it : restoreBackup closes this modal itself once the
+               restore is done, and with unsaved edits it swaps it for the reload confirm -
+               which a trailing resetAction() cleared again at once, so Restore did nothing. -->
+          <BsButton icon="undo" :disabled="!backupToRestore" @click="restoreBackup()">{{
+            t('designer.restore')
+          }}</BsButton>
         </template>
       </BsModal>
 
@@ -5010,7 +5048,7 @@ onBeforeUnmount(() => {
                 <div v-else-if="loaded && currentTab == 'Categories'">
                   <BsInput
                     type="editor"
-                    :readonly="configTemplated || !canDesignForms"
+                    :readonly="!lock?.match || configTemplated || !canDesignForms"
                     :isFloating="false"
                     v-model="categories"
                     @save="saveForms()"
@@ -5092,7 +5130,7 @@ onBeforeUnmount(() => {
                 <div v-else-if="loaded && currentTab == 'Constants'">
                   <BsInput
                     type="editor"
-                    :readonly="configTemplated || !canDesignForms"
+                    :readonly="!lock?.match || configTemplated || !canDesignForms"
                     :isFloating="false"
                     v-model="constants"
                     @save="saveForms()"
@@ -5171,7 +5209,7 @@ onBeforeUnmount(() => {
                     <div v-else-if="editorTarget" :key="'formeditor-' + currentForm">
                       <BsInput
                         type="editor"
-                        :readonly="configTemplated || !canDesignForms"
+                        :readonly="!lock?.match || configTemplated || !canDesignForms"
                         :isFloating="false"
                         v-model="forms[currentForm]"
                         @save="saveForms()"

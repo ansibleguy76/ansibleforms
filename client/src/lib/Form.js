@@ -1,4 +1,9 @@
 import axios from 'axios';
+import i18n from '@/plugins/i18n';
+
+// the error's opening line in the user's language (lib files have no component, so the global
+// i18n instance), the server's own message below it
+const t = (key, params) => i18n.global.t(key, params);
 
 const Form = {
   async loadAll() {
@@ -12,7 +17,7 @@ const Form = {
       const error = err.response?.data?.error || err.message;
       const details = err.response?.data?.details;
       const errorMessage = details ? `${error}\n\n${details}` : error;
-      throw new Error(`Could not load the forms.\n\n${errorMessage}`, { cause: err });
+      throw new Error(`${t('errors.formsLoadFailed')}\n\n${errorMessage}`, { cause: err });
     }
   },
 
@@ -29,7 +34,7 @@ const Form = {
       const error = err.response?.data?.error || err.message;
       const details = err.response?.data?.details;
       const errorMessage = details ? `${error}\n\n${details}` : error;
-      throw new Error(`Could not load the form.\n\n${errorMessage}`, { cause: err });
+      throw new Error(`${t('errors.formLoadFailed')}\n\n${errorMessage}`, { cause: err });
     }
   },
 
@@ -44,7 +49,7 @@ const Form = {
       const error = err.response?.data?.error || err.message;
       const details = err.response?.data?.details;
       const errorMessage = details ? `${error}\n\n${details}` : error;
-      throw new Error(`Could not load the forms list.\n\n${errorMessage}`, { cause: err });
+      throw new Error(`${t('errors.formListLoadFailed')}\n\n${errorMessage}`, { cause: err });
     }
   },
 
@@ -59,7 +64,7 @@ const Form = {
       const error = err.response?.data?.error || err.message;
       const details = err.response?.data?.details;
       const errorMessage = details ? `${error}\n\n${details}` : error;
-      throw new Error(`Could not save the forms.\n\n${errorMessage}`, { cause: err });
+      throw new Error(`${t('errors.formsSaveFailed')}\n\n${errorMessage}`, { cause: err });
     }
   },
   async validate(forms) {
@@ -73,7 +78,7 @@ const Form = {
       const error = err.response?.data?.error || err.message;
       const details = err.response?.data?.details;
       const errorMessage = details ? `${error}\n\n${details}` : error;
-      throw new Error(`Could not validate the forms.\n\n${errorMessage}`, { cause: err });
+      throw new Error(`${t('errors.formsValidateFailed')}\n\n${errorMessage}`, { cause: err });
     }
   },
 };

@@ -1,10 +1,16 @@
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAppStore } from '@/stores/app';
 
+const { t } = useI18n();
 const store = useAppStore();
 
-const errorMessageHtml = computed(() => store.errorMessage?.replaceAll('\n', '<br>').replace('Error: ', ''));
+// The reason the app could not start, as TEXT : it is the server's own message (a database or
+// schema error, with whatever it quotes back), so it is never rendered as html. It used to go
+// through v-html with its newlines turned into <br>, which ran any markup it carried ; the
+// newlines are kept by the white-space rule on the element instead.
+const errorMessageText = computed(() => String(store.errorMessage || '').replace('Error: ', ''));
 </script>
 
 <template>
@@ -13,29 +19,34 @@ const errorMessageHtml = computed(() => store.errorMessage?.replaceAll('\n', '<b
       <div class="row justify-content-center">
         <div class="col-md-6 col-lg-5">
           <div class="alert alert-warning shadow-sm p-4">
-            <strong v-if="store.errorMessage !== ''" v-html="errorMessageHtml"></strong><br /><br />
-            This is the end of the line I'm afraid.<br />
-            You'll need to fix a few things, here are some steps:<br />
+            <strong v-if="store.errorMessage !== ''" class="af-error-message">{{ errorMessageText }}</strong
+            ><br /><br />
+            {{ t('errors.endOfLine') }}<br />
+            {{ t('errors.fixSteps') }}<br />
             <ol class="mt-2">
-              <li>Make sure you have a MySQL database running.</li>
-              <li>If the AnsibleForms schema is not present, provide root access so I can create it</li>
-              <li>Login as local admin</li>
+              <li>{{ t('errors.stepDatabase') }}</li>
+              <li>{{ t('errors.stepSchema') }}</li>
+              <li>{{ t('errors.stepLogin') }}</li>
               <li>
-                Double check your environment variables.
-                <router-link class="btn btn-sm btn-secondary ms-2" to="/settings/general">Settings</router-link>
+                {{ t('errors.stepEnvironment') }}
+                <router-link class="btn btn-sm btn-secondary ms-2" to="/settings/general">{{
+                  t('errors.settings')
+                }}</router-link>
               </li>
               <li>
-                Check the logfiles.
-                <router-link class="btn btn-sm btn-secondary ms-2" to="/settings/server-log">Logs</router-link>
+                {{ t('errors.stepLogs') }}
+                <router-link class="btn btn-sm btn-secondary ms-2" to="/settings/server-log">{{
+                  t('errors.logs')
+                }}</router-link>
               </li>
               <li>
-                Make sure you have a valid config.yaml file.<br />
-                Or make a repository to host your forms.
-                <router-link class="btn btn-sm btn-success ms-2" to="/settings/repositories"
-                  >Create repository</router-link
-                >
+                {{ t('errors.stepConfig') }}<br />
+                {{ t('errors.stepRepository') }}
+                <router-link class="btn btn-sm btn-success ms-2" to="/settings/repositories">{{
+                  t('errors.createRepository')
+                }}</router-link>
               </li>
-              <li>Double check firewalls, hostname, username and password</li>
+              <li>{{ t('errors.stepNetwork') }}</li>
             </ol>
           </div>
         </div>
@@ -43,3 +54,10 @@ const errorMessageHtml = computed(() => store.errorMessage?.replaceAll('\n', '<b
     </div>
   </section>
 </template>
+
+<style scoped>
+/* the server's message keeps its line breaks, as text */
+.af-error-message {
+  white-space: pre-line;
+}
+</style>

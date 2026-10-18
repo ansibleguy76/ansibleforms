@@ -1,4 +1,9 @@
 import axios from 'axios';
+import i18n from '@/plugins/i18n';
+
+// the error's opening line in the user's language (lib files have no component, so the global
+// i18n instance), the server's own message below it
+const t = (key, params) => i18n.global.t(key, params);
 
 // Helper to extract API v2 error shape { error: message }
 function extractError(err) {
@@ -6,7 +11,7 @@ function extractError(err) {
   const data = err?.response?.data;
   if (data?.error) return data.error;
   if (typeof data === 'string') return data;
-  return err.message || 'Unknown error';
+  return err.message || t('errors.unknownError');
 }
 
 const Lock = {
@@ -21,7 +26,7 @@ const Lock = {
       const res = await axios.post(`/api/v2/lock`, {});
       return res.data; // { message: 'Lock added' }
     } catch (err) {
-      throw new Error(`Lock set failed: ${extractError(err)}`, { cause: err });
+      throw new Error(t('errors.lockSetFailed', { error: extractError(err) }), { cause: err });
     }
   },
   async release() {
@@ -29,7 +34,7 @@ const Lock = {
       const res = await axios.delete(`/api/v2/lock`);
       return res.data; // { message: 'Lock deleted' } or { message: 'Lock not present', deleted:false }
     } catch (err) {
-      throw new Error(`Lock release failed: ${extractError(err)}`, { cause: err });
+      throw new Error(t('errors.lockReleaseFailed', { error: extractError(err) }), { cause: err });
     }
   },
   // an admin releases somebody else's lock (the server refuses anyone else)
@@ -38,7 +43,7 @@ const Lock = {
       const res = await axios.delete(`/api/v2/lock`, { params: { force: true } });
       return res.data;
     } catch (err) {
-      throw new Error(`Lock release failed: ${extractError(err)}`, { cause: err });
+      throw new Error(t('errors.lockReleaseFailed', { error: extractError(err) }), { cause: err });
     }
   },
 };

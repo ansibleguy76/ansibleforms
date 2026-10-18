@@ -448,14 +448,14 @@ describe('the form page always reaches a definite state', () => {
       src.indexOf('async function loadFormSafely()'),
       src.indexOf('async function loadFormSafely()') + 800,
     );
-    expect(fn).toMatch(/try \{\s*\n\s*await loadForm\(\);/);
+    expect(fn).toMatch(/try \{\s*\n\s*await loadForm\(seq\);/);
     expect(fn).toMatch(/formNotFound\.value = true/);
     // the first load and every reload (another form opened from this one) go through it
     const mounted = src.slice(src.indexOf('onMounted(async () =>'), src.indexOf('onMounted(async () =>') + 1200);
     expect(mounted).toMatch(/await loadFormSafely\(\);/);
     const reload = src.slice(
       src.indexOf('async function reloadForm('),
-      src.indexOf('async function reloadForm(') + 300,
+      src.indexOf('async function reloadForm(') + 700,
     );
     expect(reload).toMatch(/await loadFormSafely\(\);/);
   });
@@ -637,7 +637,9 @@ describe('a stale field response cannot overwrite a newer one', () => {
 
   it('the query response is dropped when it is no longer current', () => {
     const at = src.search(/await axios\.post\(\s*`\/api\/v2\/query/);
-    const around = src.slice(at - 300, at + 900);
+    // the generation is taken before the try now (so the catch can check it too), which
+    // puts it above the request body : a wider window before the call
+    const around = src.slice(at - 1500, at + 900);
     expect(around).toMatch(/const gen = fieldGeneration\.value\[item\.name\] \|\| 0;/);
     expect(around).toMatch(/if \(!isCurrentGeneration\(item\.name, gen\)\) return;/);
   });
@@ -683,7 +685,7 @@ describe('a form is not submitted while its fields are still resolving', () => {
   // it comes first in the file, so an unscoped indexOf found the wrong one
   const mainSubmitCase = () => {
     const h = formPage.indexOf('async function handleSubmitAction');
-    return formPage.slice(h, h + 1400);
+    return formPage.slice(h, h + 2400);
   };
 
   it('form.vue awaits it before launching', () => {

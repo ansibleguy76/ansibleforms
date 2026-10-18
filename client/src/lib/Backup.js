@@ -1,4 +1,9 @@
 import axios from 'axios';
+import i18n from '@/plugins/i18n';
+
+// the error's opening line in the user's language (lib files have no component, so the global
+// i18n instance), the server's own message below it
+const t = (key, params) => i18n.global.t(key, params);
 
 const Backup = {
   async load() {
@@ -12,7 +17,7 @@ const Backup = {
       const error = err.response?.data?.error || err.message;
       const details = err.response?.data?.details;
       const errorMessage = details ? `${error}\n\n${details}` : error;
-      throw new Error(`Could not get the backups.\n\n${errorMessage}`, { cause: err });
+      throw new Error(`${t('errors.backupsLoadFailed')}\n\n${errorMessage}`, { cause: err });
     }
   },
   async restore(backupName, backupBeforeRestore) {
@@ -26,7 +31,7 @@ const Backup = {
       const error = err.response?.data?.error || err.message;
       const details = err.response?.data?.details;
       const errorMessage = details ? `${error}\n\n${details}` : error;
-      throw new Error(`Could not restore the backup.\n\n${errorMessage}`, { cause: err });
+      throw new Error(`${t('errors.backupRestoreFailed')}\n\n${errorMessage}`, { cause: err });
     }
   },
 };
