@@ -933,6 +933,8 @@ export default {
       presetMonthly: 'Mensal',
     },
     common: {
+      enable: 'Ativar',
+      disable: 'Desativar',
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
       zoneBrowser: 'O fuso horário do seu navegador ({zone})',
       zoneApp: 'O fuso horário da aplicação ({zone})',
@@ -1336,7 +1338,6 @@ export default {
       editProvider: 'Editar fornecedor',
       tabProviders: 'Fornecedores',
       active: 'Ativado',
-      useForSignIn: 'Usar para iniciar sessão',
       credential: 'Credencial',
       credentialHelp: 'Uma credencial do seu tipo: Microsoft Entra ID ou Open ID.',
       ownClient:
@@ -1442,7 +1443,6 @@ export default {
       askAgain: 'Pedir novamente',
       askAgainConfirm: 'Pedir a {count} utilizador(es) que aceitem novamente o aviso? A aceitação é apagada.',
       askAgainDone: '{count} utilizador(es) aceitarão o aviso novamente no próximo início de sessão.',
-      restore: 'Ativar esta versão',
       versionEnabled: 'Ativada',
       label: 'Aviso',
       labelPlural: 'Avisos',
@@ -1454,6 +1454,8 @@ export default {
       notFound: 'Nenhum aviso {id}.',
       restoreConfirm: 'Ativar a versão {version}? Quem já a aceitou não volta a ser solicitado.',
       restoreDone: 'A versão {version} está ativada.',
+      disableConfirm: 'Desativar a versão {version}? O aviso fica desligado até uma versão ser ativada.',
+      disableDone: 'A versão {version} está desativada: o aviso está desligado.',
     },
     notificationChannels: {
       label: 'Canal de notificação',

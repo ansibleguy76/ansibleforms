@@ -928,6 +928,8 @@ export default {
       presetMonthly: '毎月',
     },
     common: {
+      enable: '有効にする',
+      disable: '無効にする',
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
       zoneBrowser: 'ブラウザのタイムゾーン ({zone})',
       zoneApp: 'アプリのタイムゾーン ({zone})',
@@ -1323,7 +1325,6 @@ export default {
       editProvider: 'プロバイダーを編集',
       tabProviders: 'プロバイダー',
       active: '有効',
-      useForSignIn: 'サインインに使用',
       credential: '資格情報',
       credentialHelp: 'その種類の資格情報：Microsoft Entra ID または Open ID。',
       ownClient: '資格情報を選ぶまで、資格情報より前の自身のクライアント ID（{client}）でサインインします。',
@@ -1426,7 +1427,6 @@ export default {
       askAgain: '再同意を求める',
       askAgainConfirm: '{count} 人のユーザーに免責事項への再同意を求めますか？既存の同意は消去されます。',
       askAgainDone: '{count} 人のユーザーが次回のサインイン時に免責事項に再同意します。',
-      restore: 'このバージョンを有効にする',
       versionEnabled: '有効',
       label: '免責事項',
       labelPlural: '免責事項',
@@ -1438,6 +1438,9 @@ export default {
       notFound: '免責事項 {id} はありません。',
       restoreConfirm: 'バージョン {version} を有効にしますか？すでに同意したユーザーには再同意を求めません。',
       restoreDone: 'バージョン {version} を有効にしました。',
+      disableConfirm:
+        'バージョン {version} を無効にしますか？いずれかのバージョンを有効にするまで免責事項はオフになります。',
+      disableDone: 'バージョン {version} を無効にしました。免責事項はオフです。',
     },
     notificationChannels: {
       label: '通知チャネル',

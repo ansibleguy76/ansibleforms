@@ -936,6 +936,8 @@ export default {
       presetMonthly: 'Mensuel',
     },
     common: {
+      enable: 'Activer',
+      disable: 'Désactiver',
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
       zoneBrowser: 'Le fuseau horaire de votre navigateur ({zone})',
       zoneApp: "Le fuseau horaire de l'application ({zone})",
@@ -1338,7 +1340,6 @@ export default {
       editProvider: 'Modifier le fournisseur',
       tabProviders: 'Fournisseurs',
       active: 'Activé',
-      useForSignIn: 'Utiliser pour la connexion',
       credential: 'Identifiant',
       credentialHelp: 'Un identifiant de son type : Microsoft Entra ID ou Open ID.',
       ownClient:
@@ -1586,7 +1587,6 @@ export default {
       askAgainConfirm:
         "Demander à {count} utilisateur(s) d'accepter de nouveau l'avertissement ? Leur acceptation est effacée.",
       askAgainDone: "{count} utilisateur(s) accepteront de nouveau l'avertissement à leur prochaine connexion.",
-      restore: 'Activer cette version',
       versionEnabled: 'Activé',
       label: 'Avertissement',
       labelPlural: 'Avertissements',
@@ -1598,6 +1598,9 @@ export default {
       notFound: 'Aucun avertissement {id}.',
       restoreConfirm: "Activer la version {version} ? Ceux qui l'ont acceptée ne sont pas redemandés.",
       restoreDone: 'La version {version} est activée.',
+      disableConfirm:
+        "Désactiver la version {version} ? L'avertissement est désactivé jusqu'à ce qu'une version soit activée.",
+      disableDone: "La version {version} est désactivée : l'avertissement est désactivé.",
     },
     notificationChannels: {
       label: 'Canal de notification',

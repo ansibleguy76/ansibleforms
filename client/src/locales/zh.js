@@ -914,6 +914,8 @@ export default {
       presetMonthly: '每月',
     },
     common: {
+      enable: '启用',
+      disable: '禁用',
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
       zoneBrowser: '浏览器的时区 ({zone})',
       zoneApp: '应用的时区 ({zone})',
@@ -1291,7 +1293,6 @@ export default {
       editProvider: '编辑提供商',
       tabProviders: '提供商',
       active: '已启用',
-      useForSignIn: '用于登录',
       credential: '凭据',
       credentialHelp: '其类型的凭据：Microsoft Entra ID 或 Open ID。',
       ownClient: '在选择凭据之前，它使用凭据之前自己的客户端 ID（{client}）登录。',
@@ -1389,7 +1390,6 @@ export default {
       askAgain: '再次请求',
       askAgainConfirm: '要请 {count} 位用户再次接受免责声明吗？他们的接受记录将被清除。',
       askAgainDone: '{count} 位用户将在下次登录时再次接受免责声明。',
-      restore: '启用此版本',
       versionEnabled: '已启用',
       label: '免责声明',
       labelPlural: '免责声明',
@@ -1399,6 +1399,8 @@ export default {
       notFound: '没有免责声明 {id}。',
       restoreConfirm: '启用版本 {version} 吗？已接受过它的用户不会再被要求接受。',
       restoreDone: '版本 {version} 已启用。',
+      disableConfirm: '禁用版本 {version}？在启用某个版本之前，免责声明将关闭。',
+      disableDone: '版本 {version} 已禁用：免责声明已关闭。',
     },
     notificationChannels: {
       label: '通知通道',

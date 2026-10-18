@@ -926,6 +926,8 @@ export default {
       presetMonthly: 'Monthly',
     },
     common: {
+      enable: 'Enable',
+      disable: 'Disable',
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
       zoneBrowser: "Your browser's time zone ({zone})",
       zoneApp: "The app's time zone ({zone})",
@@ -1320,7 +1322,6 @@ export default {
       editProvider: 'Edit provider',
       tabProviders: 'Providers',
       active: 'Enabled',
-      useForSignIn: 'Use for sign-in',
       credential: 'Credential',
       credentialHelp: 'A credential of its type: Microsoft Entra ID or Open ID.',
       ownClient:
@@ -1559,7 +1560,6 @@ export default {
       askAgain: 'Ask again',
       askAgainConfirm: 'Ask {count} user(s) to accept the disclaimer again? Their acceptance is cleared.',
       askAgainDone: '{count} user(s) will accept the disclaimer again at their next sign-in.',
-      restore: 'Enable this version',
       versionEnabled: 'Enabled',
       label: 'Disclaimer',
       labelPlural: 'Disclaimers',
@@ -1571,6 +1571,8 @@ export default {
       notFound: 'No disclaimer {id}.',
       restoreConfirm: 'Enable version {version}? Users who accepted it are not asked again.',
       restoreDone: 'Version {version} is enabled.',
+      disableConfirm: 'Disable version {version}? The disclaimer is turned off until a version is enabled.',
+      disableDone: 'Version {version} is disabled: the disclaimer is off.',
     },
     notificationChannels: {
       label: 'Notification channel',

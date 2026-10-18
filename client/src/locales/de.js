@@ -937,6 +937,8 @@ export default {
       presetMonthly: 'Monatlich',
     },
     common: {
+      enable: 'Aktivieren',
+      disable: 'Deaktivieren',
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
       zoneBrowser: 'Die Zeitzone Ihres Browsers ({zone})',
       zoneApp: 'Die Zeitzone der Anwendung ({zone})',
@@ -1337,7 +1339,6 @@ export default {
       editProvider: 'Anbieter bearbeiten',
       tabProviders: 'Anbieter',
       active: 'Aktiviert',
-      useForSignIn: 'Für die Anmeldung verwenden',
       credential: 'Anmeldedaten-Eintrag',
       credentialHelp: 'Ein Eintrag seines Typs: Microsoft Entra ID oder Open ID.',
       ownClient:
@@ -1584,7 +1585,6 @@ export default {
       askAgain: 'Erneut anfragen',
       askAgainConfirm: '{count} Benutzer bitten, den Hinweis erneut zu akzeptieren? Ihre Zustimmung wird gelöscht.',
       askAgainDone: '{count} Benutzer akzeptieren den Hinweis bei der nächsten Anmeldung erneut.',
-      restore: 'Diese Version aktivieren',
       versionEnabled: 'Aktiviert',
       label: 'Hinweis',
       labelPlural: 'Hinweise',
@@ -1596,6 +1596,9 @@ export default {
       notFound: 'Kein Hinweis {id}.',
       restoreConfirm: 'Version {version} aktivieren? Wer sie akzeptiert hat, wird nicht erneut gefragt.',
       restoreDone: 'Version {version} ist aktiviert.',
+      disableConfirm:
+        'Version {version} deaktivieren? Der Haftungsausschluss ist aus, bis eine Version aktiviert wird.',
+      disableDone: 'Version {version} ist deaktiviert: der Haftungsausschluss ist aus.',
     },
     notificationChannels: {
       label: 'Benachrichtigungskanal',

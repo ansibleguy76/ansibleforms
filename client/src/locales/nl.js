@@ -933,6 +933,8 @@ export default {
       presetMonthly: 'Maandelijks',
     },
     common: {
+      enable: 'Inschakelen',
+      disable: 'Uitschakelen',
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
       zoneBrowser: 'De tijdzone van je browser ({zone})',
       zoneApp: 'De tijdzone van de applicatie ({zone})',
@@ -1331,7 +1333,6 @@ export default {
       editProvider: 'Provider bewerken',
       tabProviders: 'Providers',
       active: 'Ingeschakeld',
-      useForSignIn: 'Gebruiken om aan te melden',
       credential: 'Referentie',
       credentialHelp: 'Een referentie van zijn type: Microsoft Entra ID of Open ID.',
       ownClient:
@@ -1575,7 +1576,6 @@ export default {
       askAgain: 'Opnieuw vragen',
       askAgainConfirm: '{count} gebruiker(s) vragen de disclaimer opnieuw te accepteren? Hun acceptatie wordt gewist.',
       askAgainDone: '{count} gebruiker(s) accepteren de disclaimer opnieuw bij hun volgende aanmelding.',
-      restore: 'Deze versie inschakelen',
       versionEnabled: 'Ingeschakeld',
       label: 'Disclaimer',
       labelPlural: 'Disclaimers',
@@ -1587,6 +1587,8 @@ export default {
       notFound: 'Geen disclaimer {id}.',
       restoreConfirm: 'Versie {version} inschakelen? Wie hem al accepteerde, wordt niet opnieuw gevraagd.',
       restoreDone: 'Versie {version} is ingeschakeld.',
+      disableConfirm: 'Versie {version} uitschakelen? De disclaimer staat uit tot een versie wordt ingeschakeld.',
+      disableDone: 'Versie {version} is uitgeschakeld: de disclaimer staat uit.',
     },
     notificationChannels: {
       label: 'Meldingskanaal',

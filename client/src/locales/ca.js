@@ -932,6 +932,8 @@ export default {
       presetMonthly: 'Mensualment',
     },
     common: {
+      enable: 'Activa',
+      disable: 'Desactiva',
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
       zoneBrowser: 'La zona horària del teu navegador ({zone})',
       zoneApp: "La zona horària de l'aplicació ({zone})",
@@ -1337,7 +1339,6 @@ export default {
       editProvider: 'Edita el proveïdor',
       tabProviders: 'Proveïdors',
       active: 'Activat',
-      useForSignIn: 'Fes-lo servir per iniciar la sessió',
       credential: 'Credencial',
       credentialHelp: 'Una credencial del seu tipus: Microsoft Entra ID o Open ID.',
       ownClient:
@@ -1444,7 +1445,6 @@ export default {
       askAgain: 'Torna a demanar',
       askAgainConfirm: "Vols demanar a {count} usuari(s) que tornin a acceptar l'avís? La seva acceptació s'esborra.",
       askAgainDone: "{count} usuari(s) tornaran a acceptar l'avís al proper inici de sessió.",
-      restore: 'Activa aquesta versió',
       versionEnabled: 'Activat',
       label: 'Avís',
       labelPlural: 'Avisos',
@@ -1457,6 +1457,8 @@ export default {
       restoreConfirm:
         "Vols activar la versió {version}? Als usuaris que ja l'havien acceptada no se'ls torna a demanar.",
       restoreDone: 'La versió {version} està activada.',
+      disableConfirm: "Vols desactivar la versió {version}? L'avís es desactiva fins que s'activi una versió.",
+      disableDone: "La versió {version} està desactivada: l'avís està desactivat.",
     },
     notificationChannels: {
       label: 'Canal de notificació',

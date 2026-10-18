@@ -541,7 +541,7 @@ export const SECRET_STORE_TYPES = [
  * Returns:
  *   object[]: the two actions.
  */
-export function enableActions(enableTitle, disableTitle) {
+export function enableActions(enableTitle, disableTitle, { field = 'enabled', extra = () => ({}) } = {}) {
   return [
     {
       name: 'enable',
@@ -549,8 +549,8 @@ export function enableActions(enableTitle, disableTitle) {
       icon: 'toggle-on',
       color: 'edit',
       dividerBefore: true,
-      shownWhen: (m) => !m.enabled,
-      update: () => ({ enabled: 1 }),
+      shownWhen: (m) => !m[field],
+      update: (m) => ({ [field]: 1, ...extra(m) }),
     },
     {
       name: 'disable',
@@ -558,8 +558,8 @@ export function enableActions(enableTitle, disableTitle) {
       icon: 'toggle-off',
       color: 'edit',
       dividerBefore: true,
-      shownWhen: (m) => !!m.enabled,
-      update: () => ({ enabled: 0 }),
+      shownWhen: (m) => !!m[field],
+      update: (m) => ({ [field]: 0, ...extra(m) }),
     },
   ];
 }
@@ -1269,16 +1269,12 @@ export default function getSettings(t) {
       ],
       actions: [
         { name: 'edit', title: t('settings.oauth2.editProvider'), icon: 'pencil', color: 'edit' },
-        // the one its type signs in with : the others of its type stop being it (oauth2.model)
-        {
-          name: 'use',
-          title: t('settings.oauth2.useForSignIn'),
-          icon: 'right-to-bracket',
-          color: 'edit',
-          dividerBefore: true,
-          enabledWhen: (p) => !p.enable,
-          update: (p) => ({ enable: 1, provider: p.provider }),
-        },
+        // on or off, as every list with an Enabled column : turned on, the others of its type stop
+        // being the one its type signs in with (oauth2.model), so its type goes along
+        ...enableActions(t('settings.common.enable'), t('settings.common.disable'), {
+          field: 'enable',
+          extra: (p) => ({ provider: p.provider }),
+        }),
         { name: 'delete', title: t('settings.oauth2.deleteProvider'), icon: 'trash', color: 'delete' },
       ],
       fields: [
@@ -2212,6 +2208,7 @@ export default function getSettings(t) {
       // one, which is turned off instead
       actions: [
         { name: 'test', title: t('settings.common.testConnection'), icon: 'plug', dependency: 'enable' },
+        ...enableActions(t('settings.common.enable'), t('settings.common.disable'), { field: 'enable' }),
         { name: 'delete', title: t('common.delete'), icon: 'trash', showWhen: (item) => item.name !== LDAP_DEFAULT },
       ],
       fields: [
@@ -3426,18 +3423,33 @@ export default function getSettings(t) {
       actions: [
         { name: 'edit', title: t('settings.disclaimer.editDisclaimer'), icon: 'pencil', color: 'edit' },
         {
-          // Enable this version : the one users accept (who accepted it is not asked again)
-          name: 'restore',
-          title: t('settings.disclaimer.restore'),
-          icon: 'check',
-          color: 'change',
-          // the enabled one is the disclaimer already
-          enabledWhen: (r) => !r.enabled,
+          // Enable this version : the one users accept (who accepted it is not asked again), as
+          // every list with an Enabled column
+          name: 'enable',
+          title: t('settings.common.enable'),
+          icon: 'toggle-on',
+          color: 'edit',
           dividerBefore: true,
+          shownWhen: (r) => !r.enabled,
           confirm: (_count, rows) => t('settings.disclaimer.restoreConfirm', { version: rows[0].version }),
           done: (version) => t('settings.disclaimer.restoreDone', { version }),
           run: async (ids) => {
             await axios.post(`/api/v2/disclaimerversion/${ids[0]}/enable`, { enabled: true });
+            return ids[0];
+          },
+        },
+        {
+          // Disable the enabled one : the disclaimer is off until a version is enabled again
+          name: 'disable',
+          title: t('settings.common.disable'),
+          icon: 'toggle-off',
+          color: 'edit',
+          dividerBefore: true,
+          shownWhen: (r) => !!r.enabled,
+          confirm: (_count, rows) => t('settings.disclaimer.disableConfirm', { version: rows[0].version }),
+          done: (version) => t('settings.disclaimer.disableDone', { version }),
+          run: async (ids) => {
+            await axios.post(`/api/v2/disclaimerversion/${ids[0]}/enable`, { enabled: false });
             return ids[0];
           },
         },

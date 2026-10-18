@@ -930,6 +930,8 @@ export default {
       presetMonthly: 'Co miesiąc',
     },
     common: {
+      enable: 'Włącz',
+      disable: 'Wyłącz',
       // what a date field takes, as it shows it : its placeholder while empty (BsDateTime)
       zoneBrowser: 'Strefa czasowa przeglądarki ({zone})',
       zoneApp: 'Strefa czasowa aplikacji ({zone})',
@@ -1330,7 +1332,6 @@ export default {
       editProvider: 'Edytuj dostawcę',
       tabProviders: 'Dostawcy',
       active: 'Włączony',
-      useForSignIn: 'Użyj do logowania',
       credential: 'Poświadczenie',
       credentialHelp: 'Poświadczenie jego typu: Microsoft Entra ID lub Open ID.',
       ownClient: 'Loguje się własnym ID klienta ({client}) sprzed poświadczeń, dopóki nie wybierzesz poświadczenia.',
@@ -1437,7 +1438,6 @@ export default {
       askAgainConfirm:
         'Poprosić {count} użytkownika(ów) o ponowną akceptację zastrzeżenia? Ich akceptacja zostanie usunięta.',
       askAgainDone: '{count} użytkownik(ów) zaakceptuje zastrzeżenie ponownie przy następnym logowaniu.',
-      restore: 'Włącz tę wersję',
       versionEnabled: 'Włączona',
       label: 'Zastrzeżenie',
       labelPlural: 'Zastrzeżenia',
@@ -1449,6 +1449,9 @@ export default {
       notFound: 'Brak zastrzeżenia {id}.',
       restoreConfirm: 'Włączyć wersję {version}? Ci, którzy ją zaakceptowali, nie zostaną poproszeni ponownie.',
       restoreDone: 'Wersja {version} jest włączona.',
+      disableConfirm:
+        'Wyłączyć wersję {version}? Zastrzeżenie jest wyłączone, dopóki nie zostanie włączona jakaś wersja.',
+      disableDone: 'Wersja {version} jest wyłączona: zastrzeżenie jest wyłączone.',
     },
     notificationChannels: {
       label: 'Kanał powiadomień',
