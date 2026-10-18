@@ -2504,8 +2504,7 @@ export default function getSettings(t) {
           icon: 'toggle-on',
           color: 'edit',
           dividerBefore: true,
-          // not one of the config seed : it declares enabled itself
-          shownWhen: (m) => !m.enabled && !Number(m.pending) && !m.managed,
+          shownWhen: (m) => !m.enabled && !Number(m.pending),
           update: () => ({ enabled: 1 }),
         },
         {
@@ -2514,7 +2513,7 @@ export default function getSettings(t) {
           icon: 'toggle-off',
           color: 'edit',
           dividerBefore: true,
-          shownWhen: (m) => !!m.enabled && !Number(m.pending) && !m.managed,
+          shownWhen: (m) => !!m.enabled && !Number(m.pending),
           update: () => ({ enabled: 0 }),
         },
         {

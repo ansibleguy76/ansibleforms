@@ -1114,7 +1114,8 @@ const dataTableColumns = computed(() => {
 // leaving it out offered a form whose Save answered 403. test/preview/trigger/
 // reset/sync are deliberately absent : they are read-only or write only runtime
 // status, which the seed does not own.
-const MANAGED_BLOCKS = new Set(['edit', 'delete', 'change_password']);
+// turning a record on or off is a write too : the seed declares it (a runner's enabled)
+const MANAGED_BLOCKS = new Set(['edit', 'delete', 'change_password', 'enable', 'disable']);
 const isManaged = (item) => !!(item && item.managed);
 // The badge below is built as markup because BsDataTable passes render() output to
 // v-html. Only a locale string goes in, but it is escaped anyway : the rule in this
