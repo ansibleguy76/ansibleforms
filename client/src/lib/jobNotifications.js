@@ -24,6 +24,7 @@ import { durationSeconds, formatDuration } from '@/lib/jobTime';
 import { toast } from 'vue-sonner';
 import Helpers from '@/lib/Helpers';
 import BaseUrl from '@/lib/BaseUrl';
+import State from '@/lib/State';
 
 // ─── the browser's choice ────────────────────────────────────────────────────
 
@@ -321,6 +322,35 @@ async function show({ title, body, tag, id, form, open, actions = [] }) {
   }
 }
 
+// a look under way, and whether a change was heard meanwhile : looks never overlap (two at once
+// compared their jobs with the same `seen` and told a job twice, or each half of it), and a
+// change heard during one is looked at once more right after it, not lost
+let looking = false;
+let lookAgain = false;
+
+/**
+ * Looks at the user's jobs, one look at a time : a change heard while a look runs asks for one
+ * more look after it (however many changes were heard, one more is enough).
+ *
+ * Args:
+ *   ctx (object): { t, router, store } - the translations, the router, the app store.
+ */
+async function lookOnce(ctx) {
+  if (looking) {
+    lookAgain = true;
+    return;
+  }
+  looking = true;
+  try {
+    do {
+      lookAgain = false;
+      await look(ctx);
+    } while (lookAgain);
+  } finally {
+    looking = false;
+  }
+}
+
 /**
  * Looks at the user's jobs once and tells what is new.
  *
@@ -343,8 +373,9 @@ async function look({ t, router, store }) {
   let waiting = [];
   try {
     mine = (await axios.get(`/api/v2/job?${params}`)).data?.records || [];
-    // the jobs waiting for its approval : looked up only when there are some
-    const count = Number((await axios.get('/api/v2/job/approvals')).data) || 0;
+    // the jobs waiting for its approval : looked up only when there are some. The count is the
+    // header bell's (State.refreshApprovals), read once for both on the same change
+    const count = await State.refreshApprovals();
     if (count > 0) {
       const newest = (await axios.get(`/api/v2/job?records=${APPROVALS_SHOWN}`)).data?.records || [];
       waiting = newest.filter((j) => j.status === 'approve' && mayApprove(j, profile));
@@ -404,7 +435,7 @@ export function followJobNotifications(ctx) {
   hearWorker();
   // the worker registered as soon as the notifications are on, so the first one has it
   if (notificationsActive()) registration();
-  const run = () => look(ctx);
+  const run = () => lookOnce(ctx);
   run();
   return listen('jobs', run);
 }

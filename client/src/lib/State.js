@@ -7,6 +7,9 @@ import Navigate from '@/lib/Navigate';
 import Time from '@/lib/Time';
 import { ssoSettled } from '@/lib/ssoReturn';
 
+// the approvals count being read (refreshApprovals), shared while it is in flight
+let approvalsInFlight = null;
+
 var State = {
   loadProfile() {
     const store = useAppStore();
@@ -118,10 +121,22 @@ var State = {
       useAppStore().headerLinks = [];
     }
   },
-  async refreshApprovals() {
+  // the jobs waiting for approval, for the header bell. One change of the jobs is heard by the
+  // header and by the desktop notifications (lib/jobNotifications.js) at once : a read already
+  // in flight is shared, so both get the same count from one request. Returns the count.
+  refreshApprovals() {
+    if (approvalsInFlight) return approvalsInFlight;
     const store = useAppStore();
-    const res = await axios.get('/api/v2/job/approvals');
-    store.approvals = res?.data || 0;
+    approvalsInFlight = axios
+      .get('/api/v2/job/approvals')
+      .then((res) => {
+        store.approvals = res?.data || 0;
+        return Number(store.approvals) || 0;
+      })
+      .finally(() => {
+        approvalsInFlight = null;
+      });
+    return approvalsInFlight;
   },
 
   // the RTEs waiting for approval, for the header bell : only for a user who sees the runners
