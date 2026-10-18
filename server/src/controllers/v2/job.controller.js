@@ -313,7 +313,8 @@ const approveJob = async function(req, res) {
       if (err.name === 'NotFoundError') {
         res.status(404).json(RestResultv2.error(err.message));
       } else if (err.name === 'AccessDeniedError' || err.name === 'ForbiddenError') {
-        res.status(403).json(RestResultv2.error(err.message));
+        // one's own job (four eyes) : said in the approver's language
+        res.status(403).json(RestResultv2.error(err.code === 'OWN_JOB' ? i18n.t(req, 'jobs.cantApproveOwnJob') : err.message));
       } else if (err.name === 'ConflictError') {
         res.status(409).json(RestResultv2.error(err.message));
       } else {

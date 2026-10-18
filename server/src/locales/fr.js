@@ -228,6 +228,8 @@ export default {
       'Nom d\'hote requis (parametre de requete "name" ou "host")',
   },
   jobs: {
+    cantApproveOwnJob:
+      "Vous ne pouvez pas approuver votre propre tâche : un autre approbateur doit l'approuver",
     mustProvideJobId: "Vous devez fournir un jobid",
     abortRequested: "Arret de tache demande",
     failedAbort: "Echec de l'arret de la tache",

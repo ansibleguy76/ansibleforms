@@ -225,6 +225,8 @@ export default {
       'Host-Name erforderlich (Query-Parameter "name" oder "host")',
   },
   jobs: {
+    cantApproveOwnJob:
+      "Du kannst deinen eigenen Job nicht genehmigen: ein anderer Genehmiger muss ihn genehmigen",
     mustProvideJobId: "Du musst eine Job-ID angeben",
     abortRequested: "Job-Abbruch angefordert",
     failedAbort: "Job-Abbruch fehlgeschlagen",

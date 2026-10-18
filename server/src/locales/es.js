@@ -221,6 +221,8 @@ export default {
       'Se requiere el nombre del host (parámetro "name" o "host")',
   },
   jobs: {
+    cantApproveOwnJob:
+      "No puedes aprobar tu propio trabajo: otro aprobador debe aprobarlo",
     mustProvideJobId: "Debes proporcionar un jobid",
     abortRequested: "Se ha solicitado abortar el trabajo",
     failedAbort: "Error al abortar el trabajo",

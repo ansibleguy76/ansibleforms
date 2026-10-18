@@ -2364,6 +2364,9 @@ export default {
     visualOnEvent: 'Bij gebeurtenis',
     visualApproval: 'Goedkeuring vragen',
     visualApprovalHelp: 'Een job wacht tot iemand met een van deze rollen hem goedkeurt.',
+    visualApprovalAllowSelf: 'De aanvrager mag zijn eigen job goedkeuren',
+    visualApprovalAllowSelfHelp:
+      'Uit: een andere goedkeurder moet hem goedkeuren. Een admin kan altijd elke job goedkeuren.',
     visualApprovalTitle: 'Titel',
     visualApprovalMessage: 'Bericht',
     visualApprovers: 'Goedgekeurd door',

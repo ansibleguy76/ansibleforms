@@ -211,6 +211,8 @@ export default {
     hostNameRequired: 'Host name (query param "name" or "host") required',
   },
   jobs: {
+    cantApproveOwnJob:
+      "You cannot approve your own job: another approver must approve it",
     mustProvideJobId: "You must provide a jobid",
     abortRequested: "Job abort requested",
     failedAbort: "Failed to abort job",

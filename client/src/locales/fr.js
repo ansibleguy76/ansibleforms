@@ -2380,6 +2380,9 @@ export default {
     visualOnEvent: "Selon l'événement",
     visualApproval: 'Demander une approbation',
     visualApprovalHelp: "Une tâche attend qu'une personne ayant l'un de ces rôles l'approuve.",
+    visualApprovalAllowSelf: 'Le demandeur peut approuver sa propre tâche',
+    visualApprovalAllowSelfHelp:
+      "Désactivé, un autre approbateur doit l'approuver. Un admin peut toujours approuver n'importe quelle tâche.",
     visualApprovalTitle: 'Titre',
     visualApprovalMessage: 'Message',
     visualApprovers: 'Approuvé par',

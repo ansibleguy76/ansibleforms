@@ -2256,6 +2256,8 @@ export default {
     visualOnEvent: '按事件',
     visualApproval: '需要审批',
     visualApprovalHelp: '作业会等待，直到拥有其中某个角色的人批准。',
+    visualApprovalAllowSelf: '发起人可以批准自己的作业',
+    visualApprovalAllowSelfHelp: '关闭时必须由其他审批人批准。admin 始终可以批准任何作业。',
     visualApprovalTitle: '标题',
     visualApprovalMessage: '消息',
     visualApprovers: '审批人',

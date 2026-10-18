@@ -2362,6 +2362,9 @@ export default {
     visualOnEvent: 'Per evento',
     visualApproval: 'Chiedi approvazione',
     visualApprovalHelp: 'Un job attende finché qualcuno con uno di questi ruoli lo approva.',
+    visualApprovalAllowSelf: 'Chi ha avviato il job può approvarlo',
+    visualApprovalAllowSelfHelp:
+      'Disattivato, deve approvarlo un altro approvatore. Un admin può sempre approvare qualsiasi job.',
     visualApprovalTitle: 'Titolo',
     visualApprovalMessage: 'Messaggio',
     visualApprovers: 'Approvato da',

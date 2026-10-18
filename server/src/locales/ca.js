@@ -221,6 +221,8 @@ export default {
       'Cal el nom de l\'amfitrió (paràmetre de consulta "name" o "host")',
   },
   jobs: {
+    cantApproveOwnJob:
+      "No pots aprovar la teva pròpia tasca: l'ha d'aprovar un altre aprovador",
     mustProvideJobId: "Has d'indicar un jobid",
     abortRequested: "S'ha sol·licitat l'avortament de la tasca",
     failedAbort: "No s'ha pogut avortar la tasca",

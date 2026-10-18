@@ -218,6 +218,8 @@ export default {
       'ホスト名 (クエリパラメーター "name" または "host") が必要です',
   },
   jobs: {
+    cantApproveOwnJob:
+      "自分のジョブは承認できません: 別の承認者が承認する必要があります",
     mustProvideJobId: "jobid を指定する必要があります",
     abortRequested: "ジョブの中止を要求しました",
     failedAbort: "ジョブの中止に失敗しました",

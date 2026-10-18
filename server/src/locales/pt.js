@@ -218,6 +218,8 @@ export default {
       'O nome do host (parâmetro de consulta "name" ou "host") é obrigatório',
   },
   jobs: {
+    cantApproveOwnJob:
+      "Não pode aprovar o seu próprio trabalho: outro aprovador tem de o aprovar",
     mustProvideJobId: "Tem de indicar um jobid",
     abortRequested: "Interrupção da tarefa pedida",
     failedAbort: "Falha ao interromper a tarefa",

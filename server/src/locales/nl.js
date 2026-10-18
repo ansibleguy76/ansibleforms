@@ -218,6 +218,8 @@ export default {
     hostNameRequired: 'Host naam (query param "name" of "host") vereist',
   },
   jobs: {
+    cantApproveOwnJob:
+      "Je kunt je eigen job niet goedkeuren: een andere goedkeurder moet hem goedkeuren",
     mustProvideJobId: "U moet een job-id opgeven",
     abortRequested: "Job afbreken aangevraagd",
     failedAbort: "Kan job niet afbreken",

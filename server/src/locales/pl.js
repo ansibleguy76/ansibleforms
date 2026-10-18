@@ -221,6 +221,8 @@ export default {
       'Wymagana nazwa hosta (parametr zapytania "name" lub "host")',
   },
   jobs: {
+    cantApproveOwnJob:
+      "Nie możesz zatwierdzić własnego zadania: musi je zatwierdzić inny zatwierdzający",
     mustProvideJobId: "Musisz podać jobid",
     abortRequested: "Zażądano przerwania zadania",
     failedAbort: "Nie udało się przerwać zadania",

@@ -199,6 +199,8 @@ export default {
     hostNameRequired: '需要提供主机名（查询参数 "name" 或 "host"）',
   },
   jobs: {
+    cantApproveOwnJob:
+      "您不能批准自己的作业：必须由其他审批人批准",
     mustProvideJobId: "您必须提供作业 ID",
     abortRequested: "已请求中止作业",
     failedAbort: "中止作业失败",

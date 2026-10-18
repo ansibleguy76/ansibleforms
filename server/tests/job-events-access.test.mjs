@@ -1,5 +1,5 @@
 // A job's events are read by who may see the job, as the job itself (Job.findById's rule : who
-// sees every job, its owner, anyone while it waits for an approval). Checking that read the whole
+// sees every job, its owner, an approver of its approval while it waits for it). Checking that read the whole
 // job with its output, on every click of a host's line : Job.assertReadable answers it with one
 // small query. And an event's order is a whole number from 0, else 400.
 import { describe, test, expect, vi, beforeEach } from "vitest";
@@ -10,8 +10,12 @@ process.env.DB_PORT ||= "3306";
 process.env.DB_USER ||= "test";
 process.env.DB_PASSWORD ||= "test";
 
-// job 5 is owner's, job 6 waits for an approval ; the queries run, to tell a full read apart
-const jobs = { 5: { user: "owner", user_type: "local", status: "success" }, 6: { user: "owner", user_type: "local", status: "approve" } };
+// job 5 is owner's, job 6 waits for the approval of the role approvers ; the queries run, to tell
+// a full read apart
+const jobs = {
+  5: { user: "owner", user_type: "local", status: "success" },
+  6: { user: "owner", user_type: "local", status: "approve", approval: { roles: ["approvers"] } },
+};
 const queries = [];
 vi.mock("../src/models/db.model.js", () => ({
   default: {
@@ -19,9 +23,11 @@ vi.mock("../src/models/db.model.js", () => ({
       queries.push(sql);
       if (/^SELECT id FROM AnsibleForms\.`jobs` WHERE id = \?$/.test(sql)) return jobs[params[0]] ? [{ id: params[0] }] : [];
       if (/^SELECT id FROM AnsibleForms\.`jobs` WHERE id=\? AND/.test(sql)) {
-        const [id, user, type] = params;
+        // the owner, or one of the roles after them among the approval's while it waits
+        const [id, user, type, ...roles] = params;
         const j = jobs[id];
-        return j && ((j.user === user && j.user_type === type) || j.status === "approve") ? [{ id }] : [];
+        const approver = /JSON_CONTAINS/.test(sql) && j?.status === "approve" && roles.some((r) => j.approval.roles.includes(r));
+        return j && ((j.user === user && j.user_type === type) || approver) ? [{ id }] : [];
       }
       return [];
     },
@@ -50,6 +56,7 @@ function call(handler, user, params) {
 const owner = { username: "owner", type: "local", roles: ["public"], options: {} };
 const other = { username: "other", type: "local", roles: ["public"], options: {} };
 const admin = { username: "admin", type: "local", roles: ["admin"], options: {} };
+const approver = { username: "boss", type: "local", roles: ["public", "approvers"], options: {} };
 
 beforeEach(() => { queries.length = 0; });
 
@@ -61,9 +68,11 @@ describe("a job's events", () => {
     expect(queries.some((q) => /job_output/.test(q))).toBe(false);
   });
 
-  test("another user may not (403), unless the job waits for an approval", async () => {
+  test("another user may not (403), unless the job waits for their approval", async () => {
     expect((await call(controller.getJobEvents, other, { id: "5" })).status).toBe(403);
-    expect((await call(controller.getJobEvents, other, { id: "6" })).status).toBe(200);
+    // waiting for the approvers : not for any other user
+    expect((await call(controller.getJobEvents, other, { id: "6" })).status).toBe(403);
+    expect((await call(controller.getJobEvents, approver, { id: "6" })).status).toBe(200);
   });
 
   test("an admin reads any", async () => {
