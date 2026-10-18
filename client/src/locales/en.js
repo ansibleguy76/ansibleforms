@@ -2193,6 +2193,8 @@ export default {
     },
   },
   forms: {
+    listLoadFailed: 'The forms list could not be loaded.',
+    listLoadFailedReason: 'The server did not say why. Check the server log, then try again.',
     // what the forms page is for, in the info popover after its title
     pageDescription:
       'The forms you can run. Pick a category on the left or filter by name, then open a form to fill it in and launch it.',

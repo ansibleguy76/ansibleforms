@@ -2238,6 +2238,9 @@ export default {
     },
   },
   forms: {
+    listLoadFailed: 'Die Formularliste konnte nicht geladen werden.',
+    listLoadFailedReason:
+      'Der Server hat keinen Grund genannt. Prüfen Sie das Serverprotokoll und versuchen Sie es erneut.',
     // what the forms page is for, in the info popover after its title
     pageDescription:
       'Die Formulare, die Sie ausführen können. Wählen Sie links eine Kategorie oder filtern Sie nach Namen und öffnen Sie dann ein Formular, um es auszufüllen und zu starten.',

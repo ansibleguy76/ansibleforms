@@ -2184,6 +2184,8 @@ export default {
     },
   },
   forms: {
+    listLoadFailed: 'フォーム一覧を読み込めませんでした。',
+    listLoadFailedReason: 'サーバーは理由を返しませんでした。サーバーログを確認してから、もう一度お試しください。',
     // what the forms page is for, in the info popover after its title
     pageDescription:
       '実行できるフォームです。左側でカテゴリを選ぶか名前で絞り込み、フォームを開いて入力し、起動します。',

@@ -15,6 +15,9 @@ const authenticated = ref(false);
 const formConfig = ref({});
 // true while the forms are loading : the page shows its loading indicator meanwhile
 const loading = ref(true);
+// why the forms list could not be loaded (the server's own words when it sent some) : shown
+// in place of the forms, rather than the empty page a failed load used to leave
+const loadError = ref('');
 const search = ref('');
 const viewMode = ref('tiles'); // 'tiles' or 'list'
 const store = useAppStore();
@@ -165,6 +168,10 @@ onMounted(async () => {
   }
   try {
     formConfig.value = await Form.list();
+  } catch (err) {
+    // Form.list wraps the axios error (its cause) : the server's reason is read from that,
+    // with a translated fallback when it gave none
+    loadError.value = Helpers.parseAxiosResponseError(err?.cause || err, t('forms.listLoadFailedReason'));
   } finally {
     loading.value = false;
   }
@@ -215,6 +222,22 @@ onMounted(async () => {
               :description="t('forms.pageDescription')"
             >
               <AppSkeleton shape="tiles" :count="tileCount" />
+            </AppSettings>
+          </div>
+          <!-- the forms list failed to load : why, instead of a blank page -->
+          <div v-else-if="authenticated && loadError" class="col h-100 bg-body">
+            <AppSettings
+              bare
+              :title="categoryTitle.title"
+              :icon="categoryTitle.icon"
+              :crumbs="categoryTitle.crumbs"
+              :description="t('forms.pageDescription')"
+            >
+              <div class="alert alert-danger" role="alert">
+                <div class="fw-bold mb-1">{{ t('forms.listLoadFailed') }}</div>
+                <!-- text, not v-html : the server's message -->
+                <div style="white-space: pre-line">{{ loadError }}</div>
+              </div>
             </AppSettings>
           </div>
           <div v-else-if="authenticated && forms" class="col h-100 bg-body">

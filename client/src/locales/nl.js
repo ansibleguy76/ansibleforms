@@ -2220,6 +2220,8 @@ export default {
     },
   },
   forms: {
+    listLoadFailed: 'De lijst met formulieren kon niet worden geladen.',
+    listLoadFailedReason: 'De server gaf geen reden op. Controleer het serverlogboek en probeer het opnieuw.',
     // what the forms page is for, in the info popover after its title
     pageDescription:
       'De formulieren die u kunt uitvoeren. Kies links een categorie of filter op naam, en open dan een formulier om het in te vullen en te starten.',

@@ -2210,6 +2210,8 @@ export default {
     },
   },
   forms: {
+    listLoadFailed: 'Nie udało się wczytać listy formularzy.',
+    listLoadFailedReason: 'Serwer nie podał przyczyny. Sprawdź dziennik serwera i spróbuj ponownie.',
     // what the forms page is for, in the info popover after its title
     pageDescription:
       'Formularze, które możesz uruchomić. Wybierz kategorię po lewej stronie lub filtruj po nazwie, a następnie otwórz formularz, aby go wypełnić i uruchomić.',

@@ -2230,6 +2230,9 @@ export default {
     },
   },
   forms: {
+    listLoadFailed: 'No se pudo cargar la lista de formularios.',
+    listLoadFailedReason:
+      'El servidor no ha indicado el motivo. Revisa el registro del servidor y vuelve a intentarlo.',
     // what the forms page is for, in the info popover after its title
     pageDescription:
       'Los formularios que puedes ejecutar. Elige una categoría a la izquierda o filtra por nombre y abre un formulario para rellenarlo y lanzarlo.',

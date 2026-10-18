@@ -2234,6 +2234,8 @@ export default {
     },
   },
   forms: {
+    listLoadFailed: "No s'ha pogut carregar la llista de formularis.",
+    listLoadFailedReason: "El servidor no n'ha indicat el motiu. Revisa el registre del servidor i torna-ho a provar.",
     // what the forms page is for, in the info popover after its title
     pageDescription:
       "Els formularis que pots executar. Tria una categoria a l'esquerra o filtra pel nom i obre un formulari per omplir-lo i llançar-lo.",

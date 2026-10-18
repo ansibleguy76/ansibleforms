@@ -2227,6 +2227,8 @@ export default {
     },
   },
   forms: {
+    listLoadFailed: 'Não foi possível carregar a lista de formulários.',
+    listLoadFailedReason: 'O servidor não indicou o motivo. Verifique o registo do servidor e tente novamente.',
     // what the forms page is for, in the info popover after its title
     pageDescription:
       'Os formulários que pode executar. Escolha uma categoria à esquerda ou filtre pelo nome e abra um formulário para o preencher e iniciar.',

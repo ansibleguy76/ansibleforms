@@ -2218,6 +2218,8 @@ export default {
     },
   },
   forms: {
+    listLoadFailed: "Impossibile caricare l'elenco dei moduli.",
+    listLoadFailedReason: 'Il server non ha indicato il motivo. Controlla il log del server, poi riprova.',
     // what the forms page is for, in the info popover after its title
     pageDescription:
       'I moduli che puoi eseguire. Scegli una categoria a sinistra o filtra per nome, poi apri un modulo per compilarlo e avviarlo.',
