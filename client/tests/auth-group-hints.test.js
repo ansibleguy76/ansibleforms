@@ -10,7 +10,7 @@
 //
 // Entra ID : the login reads the groups from Microsoft Graph (lib/entraGraph.js,
 // /me/transitiveMemberOf, by display name) with the access token, and the role mapping
-// sees them as azuread/<name>. The help used to list "Required Group Claims", sending
+// sees them as entraid/<name> (azuread/ still matches). The help used to list "Required Group Claims", sending
 // admins to configure a groups claim in the token that the login never reads.
 import { describe, it, expect } from 'vitest';
 
@@ -31,9 +31,9 @@ describe.each(LANGS)('the auth group hints (%s)', (lang) => {
     expect(ldap.groupsAttributeDesc).toMatch(/\bgroups\b/);
   });
 
-  it('say Entra ID groups come from Microsoft Graph, mapped as azuread/', () => {
+  it('say Entra ID groups come from Microsoft Graph, mapped as entraid/', () => {
     expect(oauth2.requiredGroupClaims).toBeUndefined();
     expect(oauth2.groupsFromGraph).toMatch(/Microsoft Graph/);
-    expect(oauth2.groupsRoleMapping).toMatch(/azuread\//);
+    expect(oauth2.groupsRoleMapping).toMatch(/entraid\//);
   });
 });

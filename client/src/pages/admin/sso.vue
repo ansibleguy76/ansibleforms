@@ -2,10 +2,10 @@
 /******************************************************************/
 /*                                                                */
 /*  Settings > SSO : the SSO providers (Microsoft Entra ID, Open  */
-/*  ID). Each one is enabled or not, the default of its type is   */
-/*  the one its login button signs in with (Use for sign-in in    */
-/*  its row menu), and one may skip the login page ; all three on */
-/*  its own page's Details tab.                                   */
+/*  ID). Each one is enabled or not (Enable / Disable in its row  */
+/*  menu), the enabled one of its type is the one its login       */
+/*  button signs in with, and one may skip the login page ; all   */
+/*  on its own page's Details tab.                                */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted } from 'vue';

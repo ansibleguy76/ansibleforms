@@ -2231,7 +2231,7 @@ export default {
       groupMembership: 'Appartenance aux groupes',
       groupsFromGraph: 'Lus dans Microsoft Graph à la connexion, groupes imbriqués compris ; claim groups inutile.',
       groupsRoleMapping:
-        "Dans un rôle, désignez un groupe par azuread/ suivi de son nom d'affichage (ex. azuread/AF-Admins).",
+        "Dans un rôle, désignez un groupe par entraid/ suivi de son nom d'affichage (ex. entraid/AF-Admins).",
       openIdTestedWith: "Open ID n'a ete teste jusqu'ici qu'avec Keycloak.",
     },
   },

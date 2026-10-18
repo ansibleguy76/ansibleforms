@@ -2186,7 +2186,7 @@ export default {
       delegatedGroupRead: 'Delegated GroupMember.Read.All',
       groupMembership: 'Group membership',
       groupsFromGraph: 'Read from Microsoft Graph at login, nested groups included; no groups claim needed.',
-      groupsRoleMapping: 'In a role, name a group as azuread/ followed by its display name (e.g. azuread/AF-Admins).',
+      groupsRoleMapping: 'In a role, name a group as entraid/ followed by its display name (e.g. entraid/AF-Admins).',
       openIdTestedWith: 'Open ID has only been tested with Keycloak so far.',
     },
   },

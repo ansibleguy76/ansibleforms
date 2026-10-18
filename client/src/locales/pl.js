@@ -2204,7 +2204,7 @@ export default {
       delegatedGroupRead: 'Delegowane GroupMember.Read.All',
       groupMembership: 'Członkostwo w grupach',
       groupsFromGraph: 'Odczytywane z Microsoft Graph przy logowaniu, z grupami zagnieżdżonymi; bez claimu groups.',
-      groupsRoleMapping: 'W roli podaj grupę jako azuread/, a po nim jej nazwę wyświetlaną (np. azuread/AF-Admins).',
+      groupsRoleMapping: 'W roli podaj grupę jako entraid/, a po nim jej nazwę wyświetlaną (np. entraid/AF-Admins).',
       openIdTestedWith: 'Open ID zostało dotąd przetestowane tylko z Keycloak.',
     },
   },

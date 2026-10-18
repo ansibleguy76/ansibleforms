@@ -2213,7 +2213,7 @@ export default {
       groupsFromGraph:
         'Bij aanmelden uit Microsoft Graph gelezen, geneste groepen inbegrepen; geen groups-claim nodig.',
       groupsRoleMapping:
-        'Noem een groep in een rol als azuread/ gevolgd door de weergavenaam (bijv. azuread/AF-Admins).',
+        'Noem een groep in een rol als entraid/ gevolgd door de weergavenaam (bijv. entraid/AF-Admins).',
       openIdTestedWith: 'Open ID is tot nu toe alleen getest met Keycloak.',
     },
   },
