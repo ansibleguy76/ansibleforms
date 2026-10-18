@@ -74,7 +74,7 @@ const sortedTabs = computed(() => [...tabs].sort((a, b) => a.label().localeCompa
 // (/designer/categories/yaml, /designer/categories/visual, /designer/forms/approval-demo/preview),
 // names written as in every address (lib/formsPath.js). The designer opens on what its address
 // names, else on the first view of the menu, in its YAML.
-const tabOfSlug = (slug) => tabs.find((x) => slugOf(x.name) === slug)?.name;
+const tabOfSlug = (slug) => tabs.find((x) => slugOf(x.name) === slugOf(slug))?.name;
 // the editors, by their name in the address
 const EDITORS = ['yaml', 'visual', 'preview'];
 /**
@@ -2278,7 +2278,7 @@ function selectDefaultForm() {
   currentForm.value = idmapping.value[0]?.id || null;
   // the form the address names (/designer/forms/<form>)
   const slug = addressOf(route.params).form;
-  const f = slug ? idmapping.value.find((x) => slugOf(x.name) === slug) : null;
+  const f = slug ? idmapping.value.find((x) => slugOf(x.name) === slugOf(slug)) : null;
   if (f) {
     currentForm.value = f.id;
   }

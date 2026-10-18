@@ -1072,7 +1072,7 @@ function doAction(a, jobid) {
       // the form's own address (/form/<slug>), the job that ran passed on : a field named
       // __previous_jobid__ in that form gets it from the query (AppForm.vue). Another form's
       // address reloads through the watch on the slug ; this same form is loaded again here.
-      const sameForm = slugOf(form) === route.params.slug;
+      const sameForm = slugOf(form) === slugOf(route.params.slug);
       router
         .push({ path: formPath(form), query: { __previous_jobid__: jobid } })
         .then(() => {
