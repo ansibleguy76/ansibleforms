@@ -29,6 +29,7 @@ import { useRouteTab } from '@/composables/useRouteTab';
 import { recordButtons } from '@/lib/recordButtons';
 import { useRecordSearch } from '@/composables/useRecordSearch';
 import Helpers from '@/lib/Helpers';
+import { reloadKeepingEdits } from '@/lib/keepEdits';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -228,7 +229,8 @@ async function save() {
  */
 async function setSwitch(key, on) {
   await update({ [key]: on ? 1 : 0, provider: provider.value.provider });
-  await load();
+  // read again, what is being edited and not saved yet kept as it is (lib/keepEdits.js)
+  await reloadKeepingEdits(edit, load);
 }
 
 // Delete asks first

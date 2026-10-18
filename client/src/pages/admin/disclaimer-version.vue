@@ -24,6 +24,7 @@ import { SIGN_IN_TYPES } from '@/config/settings';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { useRecordSearch } from '@/composables/useRecordSearch';
+import { reloadKeepingEdits } from '@/lib/keepEdits';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -72,7 +73,8 @@ async function setEnabled(on) {
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err));
   }
-  await load();
+  // read again, what is being edited and not saved yet kept as it is (lib/keepEdits.js)
+  await reloadKeepingEdits(edit, load);
 }
 
 // ─── Save : a correction, or everyone again ───────────────────────────────────
@@ -170,7 +172,8 @@ async function askAgain(rows) {
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err));
   }
-  await load();
+  // read again, what is being edited and not saved yet kept as it is (lib/keepEdits.js)
+  await reloadKeepingEdits(edit, load);
 }
 
 // ─── tabs and title ───────────────────────────────────────────────────────────

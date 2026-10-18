@@ -38,6 +38,7 @@ import Time from '@/lib/Time';
 import { durationSeconds, formatDuration } from '@/lib/jobTime';
 import { recordButtons } from '@/lib/recordButtons';
 import { useRecordSearch } from '@/composables/useRecordSearch';
+import { reloadKeepingEdits } from '@/lib/keepEdits';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -347,7 +348,8 @@ async function makeDefault() {
   if (await update({ is_default: 1 })) {
     toast.success(t('settings.common.nameUpdated', { name: runner.value.name }));
   }
-  await load();
+  // read again, what is being edited and not saved yet kept as it is (lib/keepEdits.js)
+  await reloadKeepingEdits(edit, load);
 }
 
 // an RTE's mode as plain words : Outbound, Inbound, or Database (deprecated) for one from before 7.3
@@ -395,7 +397,7 @@ async function decide(what) {
     await axios.post(`/api/v2/runner/${encodeURIComponent(runnerId.value)}/${what}`, {});
     toast.success(t(what === 'approve' ? 'settings.runners.approved' : 'settings.runners.rejected', { name }));
     if (what === 'reject') return router.push('/settings/runners');
-    await load();
+    await reloadKeepingEdits(edit, load);
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err, t(`settings.runners.${what}`)));
   } finally {
@@ -413,7 +415,8 @@ async function setEnabled(on) {
   if (await update({ enabled: on ? 1 : 0 })) {
     toast.success(t('settings.common.nameUpdated', { name: runner.value.name }));
   }
-  await load();
+  // read again, what is being edited and not saved yet kept as it is (lib/keepEdits.js)
+  await reloadKeepingEdits(edit, load);
 }
 
 // Test connection : one at a time

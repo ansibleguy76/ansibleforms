@@ -18,6 +18,7 @@ import Helpers from '@/lib/Helpers';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useSingleTab } from '@/composables/useSingleTab';
 import { useRecordSearch } from '@/composables/useRecordSearch';
+import { reloadKeepingEdits } from '@/lib/keepEdits';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -87,10 +88,8 @@ async function setEnabled(on) {
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err));
   }
-  const kept = edit.value;
-  await load();
-  // what is being edited stays as it is
-  if (kept) edit.value = kept;
+  // read again, what is being edited and not saved yet kept as it is (lib/keepEdits.js)
+  await reloadKeepingEdits(edit, load);
 }
 
 // ─── Save ─────────────────────────────────────────────────────────────────────
