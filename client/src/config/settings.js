@@ -527,6 +527,84 @@ export const SECRET_STORE_TYPES = [
   { value: 'cyberark_ccp', label: 'CyberArk Central Credential Provider', short: 'CyberArk CCP' },
 ];
 
+// ─── row actions several lists share ─────────────────────────────────────────
+/**
+ * The Enable and Disable of a list whose records are on or off (schedules, runners, channels,
+ * syslog servers, announcements, labels) : only the one that changes it is in a row's menu,
+ * Enable on a record turned off, Disable on one turned on, each saving its enabled field at once
+ * (action.update, AppAdminMulti), apart from the actions before them.
+ *
+ * Args:
+ *   enableTitle (string): the Enable item's title.
+ *   disableTitle (string): the Disable item's title.
+ *
+ * Returns:
+ *   object[]: the two actions.
+ */
+export function enableActions(enableTitle, disableTitle) {
+  return [
+    {
+      name: 'enable',
+      title: enableTitle,
+      icon: 'toggle-on',
+      color: 'edit',
+      dividerBefore: true,
+      shownWhen: (m) => !m.enabled,
+      update: () => ({ enabled: 1 }),
+    },
+    {
+      name: 'disable',
+      title: disableTitle,
+      icon: 'toggle-off',
+      color: 'edit',
+      dividerBefore: true,
+      shownWhen: (m) => !!m.enabled,
+      update: () => ({ enabled: 0 }),
+    },
+  ];
+}
+
+/**
+ * The Move up and Move down of a list kept in an order of its own (the labels in the header, the
+ * LDAP directories' lookup order) : one place up or down through the api's move, then the list
+ * read again (action.run, AppAdminMulti), without a toast : the row moving says it.
+ *
+ * Args:
+ *   type (string): the api's record type (label, ldapdirectory).
+ *   upTitle (string): the Move up item's title.
+ *   downTitle (string): the Move down item's title.
+ *
+ * Returns:
+ *   object[]: the two actions, off on the first and the last record (its isFirst, isLast).
+ */
+export function moveActions(type, upTitle, downTitle) {
+  const move = (direction) => async (ids) => {
+    await axios.post(`/api/v2/${type}/${encodeURIComponent(ids[0])}/move`, { direction });
+    return 1;
+  };
+  return [
+    {
+      name: 'move_up',
+      title: upTitle,
+      icon: 'arrow-up',
+      color: 'change',
+      dividerBefore: true,
+      enabledWhen: (r) => !r.isFirst,
+      done: false,
+      run: move('up'),
+    },
+    {
+      name: 'move_down',
+      title: downTitle,
+      icon: 'arrow-down',
+      color: 'change',
+      enabledWhen: (r) => !r.isLast,
+      done: false,
+      run: move('down'),
+    },
+  ];
+}
+
 export default function getSettings(t) {
   const all = {
     users: {
@@ -1391,26 +1469,7 @@ export default function getSettings(t) {
           color: 'refresh',
           dividerBefore: true,
         },
-        {
-          // only the one that changes it : Enable on a schedule turned off (paused), Disable on one
-          // turned on ; its settings are kept, Run now still runs it
-          name: 'enable',
-          title: t('settings.schedules.enable'),
-          icon: 'toggle-on',
-          color: 'edit',
-          dividerBefore: true,
-          shownWhen: (m) => !m.enabled,
-          update: () => ({ enabled: 1 }),
-        },
-        {
-          name: 'disable',
-          title: t('settings.schedules.disable'),
-          icon: 'toggle-off',
-          color: 'edit',
-          dividerBefore: true,
-          shownWhen: (m) => !!m.enabled,
-          update: () => ({ enabled: 0 }),
-        },
+        ...enableActions(t('settings.schedules.enable'), t('settings.schedules.disable')),
         { name: 'delete', icon: 'trash', title: t('settings.schedules.deleteSchedule'), color: 'delete' },
       ],
       // the short columns as wide as their headers, a date as wide as its text, the name and
@@ -2538,25 +2597,7 @@ export default function getSettings(t) {
           color: 'test',
           dividerBefore: true,
         },
-        {
-          // only the one that changes it : Enable on a runner turned off, Disable on one turned on
-          name: 'enable',
-          title: t('settings.runners.enable'),
-          icon: 'toggle-on',
-          color: 'edit',
-          dividerBefore: true,
-          shownWhen: (m) => !m.enabled,
-          update: () => ({ enabled: 1 }),
-        },
-        {
-          name: 'disable',
-          title: t('settings.runners.disable'),
-          icon: 'toggle-off',
-          color: 'edit',
-          dividerBefore: true,
-          shownWhen: (m) => !!m.enabled,
-          update: () => ({ enabled: 0 }),
-        },
+        ...enableActions(t('settings.runners.enable'), t('settings.runners.disable')),
         {
           // the credential it signs in with : its page's Credentials tab
           name: 'change_credentials',
@@ -2790,25 +2831,7 @@ export default function getSettings(t) {
       // (on its page, its dialog open), then Delete last, each apart
       actions: [
         { name: 'edit', title: t('settings.notificationChannels.editChannel'), icon: 'pencil', color: 'edit' },
-        {
-          name: 'enable',
-          title: t('settings.notificationChannels.enable'),
-          icon: 'toggle-on',
-          color: 'edit',
-          dividerBefore: true,
-          // only the one that changes it : Enable on a channel turned off, Disable on one turned on
-          shownWhen: (m) => !m.enabled,
-          update: () => ({ enabled: 1 }),
-        },
-        {
-          name: 'disable',
-          title: t('settings.notificationChannels.disable'),
-          icon: 'toggle-off',
-          color: 'edit',
-          dividerBefore: true,
-          shownWhen: (m) => !!m.enabled,
-          update: () => ({ enabled: 0 }),
-        },
+        ...enableActions(t('settings.notificationChannels.enable'), t('settings.notificationChannels.disable')),
         {
           // a mail channel only : the one the app sends its mail with ; the others stop being it
           name: 'use',
@@ -3062,25 +3085,7 @@ export default function getSettings(t) {
       // Delete last, each apart
       actions: [
         { name: 'edit', title: t('settings.syslogServers.editServer'), icon: 'pencil', color: 'edit' },
-        {
-          name: 'enable',
-          title: t('settings.syslogServers.enable'),
-          icon: 'toggle-on',
-          color: 'edit',
-          dividerBefore: true,
-          // only the one that changes it : Enable on a disabled server, Disable on an enabled one
-          shownWhen: (m) => !m.enabled,
-          update: () => ({ enabled: 1 }),
-        },
-        {
-          name: 'disable',
-          title: t('settings.syslogServers.disable'),
-          icon: 'toggle-off',
-          color: 'edit',
-          dividerBefore: true,
-          shownWhen: (m) => !!m.enabled,
-          update: () => ({ enabled: 0 }),
-        },
+        ...enableActions(t('settings.syslogServers.enable'), t('settings.syslogServers.disable')),
         {
           name: 'send_test',
           title: t('settings.syslogServers.sendTest'),
@@ -3250,33 +3255,7 @@ export default function getSettings(t) {
       ],
       actions: [
         { name: 'edit', title: t('settings.interface.announcementEdit'), icon: 'pencil', color: 'edit' },
-        {
-          // Enable : shown under the header again, from its start until its end
-          name: 'enable',
-          title: t('settings.interface.announcementEnable'),
-          icon: 'check',
-          color: 'change',
-          enabledWhen: (r) => !r.enabled,
-          dividerBefore: true,
-          done: () => t('settings.interface.announcementEnabledDone'),
-          run: async (ids) => {
-            await axios.put(`/api/v2/announcement/${ids[0]}`, { enabled: true });
-            return 1;
-          },
-        },
-        {
-          // Disable : hidden, kept to show again
-          name: 'disable',
-          title: t('settings.interface.announcementDisable'),
-          icon: 'ban',
-          color: 'change',
-          enabledWhen: (r) => !!r.enabled,
-          done: () => t('settings.interface.announcementDisabledDone'),
-          run: async (ids) => {
-            await axios.put(`/api/v2/announcement/${ids[0]}`, { enabled: false });
-            return 1;
-          },
-        },
+        ...enableActions(t('settings.interface.announcementEnable'), t('settings.interface.announcementDisable')),
         {
           name: 'delete',
           title: t('settings.interface.announcementDelete'),
@@ -3362,51 +3341,9 @@ export default function getSettings(t) {
       // in the header's order, as the server lists them (lowest position first)
       actions: [
         { name: 'edit', title: t('settings.labels.edit'), icon: 'pencil', color: 'edit' },
-        {
-          // Enable : beside the logo again
-          name: 'enable',
-          title: t('settings.labels.enable'),
-          icon: 'check',
-          color: 'change',
-          dividerBefore: true,
-          // the one that applies : Enable on a disabled label, Disable on an enabled one
-          shownWhen: (r) => !r.enabled,
-          done: () => t('settings.labels.enabledDone'),
-          run: async (ids) => {
-            await axios.put(`/api/v2/label/${ids[0]}`, { enabled: true });
-            return 1;
-          },
-        },
-        {
-          // Disable : hidden, kept to enable again
-          name: 'disable',
-          title: t('settings.labels.disable'),
-          icon: 'ban',
-          color: 'change',
-          dividerBefore: true,
-          shownWhen: (r) => !!r.enabled,
-          done: () => t('settings.labels.disabledDone'),
-          run: async (ids) => {
-            await axios.put(`/api/v2/label/${ids[0]}`, { enabled: false });
-            return 1;
-          },
-        },
-        {
-          // its place in the header : one up, one down (the page moves it, labels.vue)
-          name: 'move_up',
-          title: t('settings.labels.moveUp'),
-          icon: 'arrow-up',
-          color: 'change',
-          dividerBefore: true,
-          enabledWhen: (r) => !r.isFirst,
-        },
-        {
-          name: 'move_down',
-          title: t('settings.labels.moveDown'),
-          icon: 'arrow-down',
-          color: 'change',
-          enabledWhen: (r) => !r.isLast,
-        },
+        ...enableActions(t('settings.labels.enable'), t('settings.labels.disable')),
+        // its place in the header : one up, one down
+        ...moveActions('label', t('settings.labels.moveUp'), t('settings.labels.moveDown')),
         { name: 'delete', title: t('settings.labels.delete'), icon: 'trash', color: 'delete', dividerBefore: true },
       ],
       fields: [
@@ -3923,22 +3860,8 @@ function ldapDirectories(t, ldap) {
     actions: [
       { name: 'edit', title: t('settings.ldap.editDirectory'), icon: 'pencil', color: 'edit' },
       { name: 'test', title: t('settings.common.testConnection'), icon: 'plug', color: 'test', dividerBefore: true },
-      {
-        // its place in the lookup order : one up, one down (the page moves it, ldap.vue)
-        name: 'move_up',
-        title: t('settings.ldap.moveUp'),
-        icon: 'arrow-up',
-        color: 'change',
-        dividerBefore: true,
-        enabledWhen: (r) => !r.isFirst,
-      },
-      {
-        name: 'move_down',
-        title: t('settings.ldap.moveDown'),
-        icon: 'arrow-down',
-        color: 'change',
-        enabledWhen: (r) => !r.isLast,
-      },
+      // its place in the lookup order : one up, one down
+      ...moveActions('ldapdirectory', t('settings.ldap.moveUp'), t('settings.ldap.moveDown')),
       {
         // never the default directory : it is turned off instead
         name: 'delete',

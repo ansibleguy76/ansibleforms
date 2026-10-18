@@ -1449,7 +1449,7 @@ async function bulkDelete() {
 }
 
 // ─── the list's own actions that run (action.run) : on a row, and on the rows ticked ────
-// each { name, title, icon, enabledWhen?(row), confirm?(count, rows), done?(n, rows),
+// each { name, title, icon, enabledWhen?(row), confirm?(count, rows), done?(n, rows) or false,
 // run(ids, rows), bulk? } : in the row menu, and - bulk - a button beside Delete while rows are
 // ticked, acting on those it is enabled for ; asking first when it says how
 const bulkActions = computed(() => actions.value.filter((a) => a.bulk && typeof a.run === 'function'));
@@ -1484,7 +1484,10 @@ async function runAction(action, rows) {
       rows.map((r) => r[idKey]),
       rows,
     );
-    toast.success(action.done ? action.done(typeof n === 'number' ? n : rows.length, rows) : action.title);
+    // done : false says nothing (a row moved shows it), else its words or its title
+    if (action.done !== false) {
+      toast.success(action.done ? action.done(typeof n === 'number' ? n : rows.length, rows) : action.title);
+    }
     selectedIds.value = new Set();
     await loadItems();
   } catch (err) {
