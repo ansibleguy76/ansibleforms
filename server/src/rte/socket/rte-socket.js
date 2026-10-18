@@ -117,7 +117,7 @@ function isTemplateCert(pem) {
 
 // ─── state ────────────────────────────────────────────────────────────────────
 
-// jobId -> { spool, job, paths, files, dirs, abort, pid, running }
+// jobId -> { spool, job, paths, files, dirs, folder, abort, pid, running }
 const jobs = new Map();
 // the socket to the app, once welcomed
 let session = null;
@@ -300,25 +300,28 @@ const socketJobIO = {
 // ─── messages from the app ────────────────────────────────────────────────────
 
 /**
- * The files a job runs from, sent by the app : fetched when not cached, and their folders set
- * on the job.
+ * The files a job runs from, sent by the app : fetched when not cached, unpacked in a private
+ * folder of the job's own (entry.folder, removed when it ends), and their folders set on the job.
  *
  * Args:
+ *   jobId (number): the job.
  *   entry (object): the job.
  *
  * Returns:
  *   Promise<void>
  */
-async function ensureFiles(entry) {
+async function ensureFiles(jobId, entry) {
   const files = entry.files || {};
   if (filesMode() !== "transfer" || (!files.playbooks && !files.inventories?.length)) return;
   const ask = (hash) => !!session?.send({ t: "fetch", hash });
+  entry.folder = cache.jobFolder(jobId);
   const dirs = {};
-  if (files.playbooks?.hash) dirs.playbooks = await cache.ensure(files.playbooks.hash, ask);
+  if (files.playbooks?.hash) dirs.playbooks = await cache.checkout(files.playbooks.hash, ask, path.join(entry.folder, "playbooks"));
   if (files.inventories?.length) {
     dirs.inventories = [];
-    for (const inv of files.inventories) {
-      dirs.inventories.push({ repository: inv.repository ?? null, root: await cache.ensure(inv.hash, ask) });
+    for (const [i, inv] of files.inventories.entries()) {
+      const root = await cache.checkout(inv.hash, ask, path.join(entry.folder, `inventory-${i}`));
+      dirs.inventories.push({ repository: inv.repository ?? null, root });
     }
   }
   entry.dirs = dirs;
@@ -352,6 +355,7 @@ async function onRun(msg) {
     paths: msg.paths || {},
     files: msg.files || {},
     dirs: null,
+    folder: null,
     abort: false,
     pid: null,
     running: true,
@@ -366,7 +370,7 @@ async function onRun(msg) {
   logger.notice(`RTE: running job ${jobId}`);
   (async () => {
     try {
-      await ensureFiles(entry);
+      await ensureFiles(jobId, entry);
     } catch (err) {
       await socketJobIO.end(jobId, (Number(entry.job?.lastOrder) || 0) + 1, "stderr", "failed", `[ERROR]: ${err.message}`);
       return;
@@ -375,6 +379,9 @@ async function onRun(msg) {
   })()
     .catch((err) => logger.error(`RTE: job ${jobId} failed: ${err.message || err}`))
     .finally(() => {
+      // what the job unpacked and wrote goes with it
+      cache.release(entry.folder);
+      entry.folder = null;
       entry.running = false;
     });
 }
@@ -715,7 +722,7 @@ export async function startSocketRte(rteMode) {
   installFatalHandlers("RTE");
   useJobIO(socketJobIO);
   fs.mkdirSync(spoolDir(), { recursive: true, mode: 0o700 });
-  cache = new FileCache(cacheDir());
+  cache = new FileCache(cacheDir(), 20, nodeId);
   ansible = await ansibleVersion();
 
   // the items an earlier start left : sent once connected ; a job that had not ended cannot go on

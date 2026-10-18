@@ -3,9 +3,11 @@
 /*  The files a job runs from, sent by the app with the job       */
 /*  (RTE_FILES=transfer, the socket modes' default) : the         */
 /*  playbooks folder and the inventories, each a tar.gz the app   */
-/*  names by a hash of its content. The RTE keeps the ones it got */
-/*  (RTE_CACHE_PATH), asks for a hash it does not have, and runs  */
-/*  the job from there : no shared disk, no repository access.    */
+/*  names by a hash of its content. The RTE keeps the packed      */
+/*  ones it got (RTE_CACHE_PATH) and asks for a hash it does not  */
+/*  have. Each job unpacks them in a private folder of its own,   */
+/*  removed when it ends : no job sees what another one wrote,    */
+/*  and no inventory stays unpacked on the disk.                  */
 /*                                                                */
 /*  As ansible-runner's transmit / worker split hands a job and   */
 /*  its project to an execution node.                             */
@@ -19,36 +21,45 @@ import logger from "../../lib/logger.js";
 
 // how long the app may take to send a bundle
 const FETCH_TIMEOUT_MS = 10 * 60 * 1000;
+// a bundle's name : its hash, then the packed suffix
+const HASH = /^[a-f0-9]{64}$/;
+const SUFFIX = ".tar.gz";
+// the folder, under the cache, that holds the running jobs' folders, one per RTE
+const JOBS = "jobs";
 
 /**
- * The bundles this RTE has, on its disk.
+ * The bundles this RTE has, on its disk, and the folders its jobs run from.
  */
 export class FileCache {
   /**
    * Args:
    *   dir (string): the cache folder (RTE_CACHE_PATH).
    *   keep (number): the bundles kept ; the ones used longest ago go first.
+   *   owner (string): the RTE (its node id) : its jobs' folders go under jobs/<owner>, so RTEs
+   *     that share the cache never remove each other's.
    */
-  constructor(dir, keep = 20) {
+  constructor(dir, keep = 20, owner = "rte") {
     this.dir = dir;
     this.keep = keep;
+    this.jobsDir = path.join(dir, JOBS, String(owner).replace(/[^A-Za-z0-9._-]/g, "_") || "rte");
     // hash -> { promise, resolve, reject, file, stream, hasher, timer } : a bundle being received
     this.pending = new Map();
     fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+    this._prune();
   }
 
   /**
-   * A bundle's folder.
+   * A bundle's file.
    *
    * Args:
    *   hash (string): its hash.
    *
    * Returns:
-   *   string: the folder.
+   *   string: the file.
    */
   path(hash) {
-    if (!/^[a-f0-9]{64}$/.test(String(hash))) throw new Error(`not a bundle hash: ${hash}`);
-    return path.join(this.dir, hash);
+    if (!HASH.test(String(hash))) throw new Error(`not a bundle hash: ${hash}`);
+    return path.join(this.dir, `${hash}${SUFFIX}`);
   }
 
   /**
@@ -61,11 +72,11 @@ export class FileCache {
    *   boolean
    */
   has(hash) {
-    return fs.existsSync(path.join(this.path(hash), ".af-complete"));
+    return fs.existsSync(this.path(hash));
   }
 
   /**
-   * A bundle's folder, asking the app for it when it is not here. Two jobs asking for the same
+   * A bundle's file, asking the app for it when it is not here. Two jobs asking for the same
    * bundle at once wait for one transfer.
    *
    * Args:
@@ -74,17 +85,17 @@ export class FileCache {
    *     is not open.
    *
    * Returns:
-   *   Promise<string>: the folder.
+   *   Promise<string>: the file.
    *
    * Raises:
    *   Error: the app could not send it, or it did not arrive whole in time.
    */
   async ensure(hash, ask) {
-    const folder = this.path(hash);
+    const file = this.path(hash);
     if (this.has(hash)) {
       const now = new Date();
-      fs.utimesSync(folder, now, now);
-      return folder;
+      fs.utimesSync(file, now, now);
+      return file;
     }
     if (this.pending.has(hash)) return this.pending.get(hash).promise;
     const entry = {};
@@ -105,6 +116,68 @@ export class FileCache {
   }
 
   /**
+   * A private folder for a job (0700, a random name), under this RTE's jobs folder : its
+   * bundles are unpacked in it, and it goes when the job ends (release).
+   *
+   * Args:
+   *   jobId (number): the job.
+   *
+   * Returns:
+   *   string: the folder.
+   */
+  jobFolder(jobId) {
+    fs.mkdirSync(this.jobsDir, { recursive: true, mode: 0o700 });
+    const folder = fs.mkdtempSync(path.join(this.jobsDir, `${parseInt(jobId, 10) || 0}-`));
+    // mkdtemp makes it 0700 already : said again, whatever the platform
+    fs.chmodSync(folder, 0o700);
+    return folder;
+  }
+
+  /**
+   * A bundle unpacked in a job's folder, fetched first when it is not here.
+   *
+   * Args:
+   *   hash (string): its hash.
+   *   ask (function): as for ensure.
+   *   into (string): the folder it is unpacked in (made here, inside the job's folder).
+   *
+   * Returns:
+   *   Promise<string>: the folder.
+   *
+   * Raises:
+   *   Error: the app could not send it, or it could not be unpacked.
+   */
+  async checkout(hash, ask, into) {
+    // step 1 : the packed bundle ; one another job's eviction took meanwhile is fetched again
+    let file = await this.ensure(hash, ask);
+    fs.mkdirSync(into, { recursive: true, mode: 0o700 });
+    try {
+      await tar.x({ file, cwd: into, strict: true });
+    } catch (e) {
+      if (e.code !== "ENOENT" || fs.existsSync(file)) throw e;
+      file = await this.ensure(hash, ask);
+      await tar.x({ file, cwd: into, strict: true });
+    }
+    return into;
+  }
+
+  /**
+   * A job's folder removed, with everything the job wrote in it.
+   *
+   * Args:
+   *   folder (string): the folder jobFolder gave ; nothing outside this RTE's jobs folder is
+   *     removed.
+   */
+  release(folder) {
+    if (!folder || path.dirname(folder) !== this.jobsDir) return;
+    try {
+      fs.rmSync(folder, { recursive: true, force: true });
+    } catch (e) {
+      logger.warning(`RTE: could not remove the job folder ${folder}: ${e.message}`);
+    }
+  }
+
+  /**
    * A chunk of a bundle from the app.
    *
    * Args:
@@ -122,7 +195,7 @@ export class FileCache {
     if (msg.last) this._finish(msg.hash, msg.sha256);
   }
 
-  /** the last chunk came : checked, unpacked, kept */
+  /** the last chunk came : checked, read through once, kept packed */
   _finish(hash, sha256) {
     const entry = this.pending.get(hash);
     if (!entry) return;
@@ -132,19 +205,13 @@ export class FileCache {
       try {
         const got = entry.hasher.digest("hex");
         if (sha256 && got !== sha256) throw new Error(`the job's files arrived damaged (sha256 ${got} instead of ${sha256})`);
-        const folder = this.path(hash);
-        const work = `${folder}.unpack`;
-        fs.rmSync(work, { recursive: true, force: true });
-        fs.mkdirSync(work, { recursive: true });
-        await tar.x({ file: entry.file, cwd: work, strict: true });
-        fs.writeFileSync(path.join(work, ".af-complete"), new Date().toISOString());
-        fs.rmSync(folder, { recursive: true, force: true });
-        fs.renameSync(work, folder);
-        fs.rmSync(entry.file, { force: true });
+        // a file that is not a whole tar.gz is refused now, not by every job that would use it
+        await tar.t({ file: entry.file, strict: true });
+        fs.renameSync(entry.file, this.path(hash));
         clearTimeout(entry.timer);
         this.pending.delete(hash);
         logger.notice(`RTE: received the job files ${hash.slice(0, 12)}`);
-        entry.resolve(folder);
+        entry.resolve(this.path(hash));
         this._evict();
       } catch (e) {
         this._fail(hash, e);
@@ -179,14 +246,48 @@ export class FileCache {
     let entries;
     try {
       entries = fs.readdirSync(this.dir)
-        .filter((n) => /^[a-f0-9]{64}$/.test(n))
+        .filter((n) => n.endsWith(SUFFIX) && HASH.test(n.slice(0, -SUFFIX.length)))
         .map((n) => ({ n, t: fs.statSync(path.join(this.dir, n)).mtimeMs }))
         .sort((a, b) => b.t - a.t);
     } catch {
       return;
     }
     for (const e of entries.slice(this.keep)) {
-      fs.rmSync(path.join(this.dir, e.n), { recursive: true, force: true });
+      fs.rmSync(path.join(this.dir, e.n), { force: true });
+    }
+  }
+
+  /**
+   * At start : what an earlier start left goes - this RTE's job folders (none of its jobs runs
+   * yet), transfers older than a transfer may take, and bundles of an earlier layout, kept
+   * unpacked. Another RTE sharing the cache keeps its job folders and its transfers.
+   */
+  _prune() {
+    const remove = (target) => {
+      try {
+        fs.rmSync(target, { recursive: true, force: true });
+      } catch (e) {
+        logger.warning(`RTE: could not remove ${target}: ${e.message}`);
+      }
+    };
+    remove(this.jobsDir);
+    let names;
+    try {
+      names = fs.readdirSync(this.dir);
+    } catch {
+      return;
+    }
+    const stale = Date.now() - FETCH_TIMEOUT_MS;
+    for (const n of names) {
+      const target = path.join(this.dir, n);
+      if (n.endsWith(".unpack") || HASH.test(n)) remove(target);
+      else if (n.endsWith(".part")) {
+        try {
+          if (fs.statSync(target).mtimeMs < stale) remove(target);
+        } catch {
+          // gone meanwhile
+        }
+      }
     }
   }
 }

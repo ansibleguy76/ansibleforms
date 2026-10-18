@@ -466,7 +466,8 @@
     description: |
       On an RTE in a socket mode. `transfer`: the app sends the playbooks folder and the
       inventories with the job, packed and named by a hash of their content ; the RTE keeps them
-      (`RTE_CACHE_PATH`) and an unchanged folder is never sent twice. It needs no shared disk and
+      packed (`RTE_CACHE_PATH`) and an unchanged folder is never sent twice. Each job unpacks
+      them in a private folder of its own, removed when it ends. It needs no shared disk and
       no access to the repositories. `local`: the RTE runs from its own folders, as a
       database-mode RTE - mount the playbooks (`ANSIBLE_PATH`) and repositories (`REPO_PATH`).
   - name: RTE_FILES_MAX_MB
@@ -494,10 +495,11 @@
     type: string
     default: "%PERSISTENT_FOLDER%/rte-files"
     short: Where a socket-mode RTE keeps the job files the app sent
-    hint: "On an RTE with RTE_FILES=transfer: the folders it got, the 20 used last."
+    hint: "On an RTE with RTE_FILES=transfer: the packed folders it got, the 20 used last."
     description: |
       On an RTE with `RTE_FILES=transfer`: the playbooks and inventory folders the app sent,
-      each under its hash. The 20 used most recently are kept.
+      packed, each under its hash ; the 20 used most recently are kept. Each running job
+      unpacks them under `jobs/` in a private folder, removed when the job ends.
   - name: RTE_TOKEN
     version: 7.0.0
     type: string

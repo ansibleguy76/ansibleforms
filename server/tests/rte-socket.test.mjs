@@ -135,14 +135,68 @@ describe("the job files", () => {
     });
     assert.equal(asked, b.hash);
     await readChunks(b.file, 64, async (buf, last) => cache.deliver({ hash: b.hash, data: buf.toString("base64"), last, sha256: last ? b.sha256 : undefined }));
-    const folder = await ready;
+    const file = await ready;
+    // kept packed : nothing unpacked in the cache itself
+    assert.equal(file, cache.path(b.hash));
+    assert.deepEqual(fs.readdirSync(path.join(dir, "cache")), [path.basename(file)]);
+    const jobDir = cache.jobFolder(12);
+    const folder = await cache.checkout(b.hash, () => assert.fail("asked again"), path.join(jobDir, "playbooks"));
+    assert.equal(fs.statSync(jobDir).mode & 0o777, 0o700);
     assert.equal(fs.readFileSync(path.join(folder, "site.yml"), "utf8"), "- hosts: all\n");
     assert.ok(fs.existsSync(path.join(folder, "roles/web/tasks/main.yml")));
     assert.equal(fs.existsSync(path.join(folder, ".git")), false);
     assert.equal(fs.existsSync(path.join(folder, "extravars_12.json")), false);
     // cached : not asked again
     assert.equal(cache.has(b.hash), true);
-    assert.equal(await cache.ensure(b.hash, () => assert.fail("asked again")), folder);
+    assert.equal(await cache.ensure(b.hash, () => assert.fail("asked again")), file);
+  });
+
+  test("each job unpacks the files in its own folder, removed when it ends", async () => {
+    const root = path.join(dir, "src-jobs");
+    tree(root);
+    const b = await bundleOf(root);
+    const cache = new FileCache(path.join(dir, "cache-jobs"));
+    const ready = cache.ensure(b.hash, () => true);
+    await readChunks(b.file, 4096, async (buf, last) => cache.deliver({ hash: b.hash, data: buf.toString("base64"), last, sha256: last ? b.sha256 : undefined }));
+    await ready;
+    const one = cache.jobFolder(1);
+    const two = cache.jobFolder(2);
+    const a = await cache.checkout(b.hash, () => false, path.join(one, "playbooks"));
+    const c = await cache.checkout(b.hash, () => false, path.join(two, "playbooks"));
+    // what one job writes or changes, the other never sees
+    fs.writeFileSync(path.join(a, "site.yml"), "changed by job 1\n");
+    fs.writeFileSync(path.join(a, "fetched.txt"), "left by job 1\n");
+    assert.equal(fs.readFileSync(path.join(c, "site.yml"), "utf8"), "- hosts: all\n");
+    assert.equal(fs.existsSync(path.join(c, "fetched.txt")), false);
+    cache.release(one);
+    assert.equal(fs.existsSync(one), false);
+    assert.equal(fs.existsSync(two), true);
+    // the next job gets the files as the app sent them
+    const three = cache.jobFolder(3);
+    const d = await cache.checkout(b.hash, () => false, path.join(three, "playbooks"));
+    assert.equal(fs.readFileSync(path.join(d, "site.yml"), "utf8"), "- hosts: all\n");
+    // release removes nothing outside the jobs folder
+    cache.release(path.join(dir, "cache-jobs"));
+    assert.equal(cache.has(b.hash), true);
+  });
+
+  test("a new start removes its own job folders and old transfers, never another RTE's", () => {
+    const where = path.join(dir, "cache-prune");
+    const hash = "d".repeat(64);
+    const other = "e".repeat(64);
+    fs.mkdirSync(path.join(where, "jobs", "rte-a", "7-abc"), { recursive: true });
+    fs.writeFileSync(path.join(where, "jobs", "rte-a", "7-abc", "hosts"), "secret=1\n");
+    fs.mkdirSync(path.join(where, "jobs", "rte-b", "8-def"), { recursive: true });
+    fs.writeFileSync(path.join(where, `${hash}.part`), "half");
+    const old = new Date(Date.now() - 11 * 60 * 1000);
+    fs.utimesSync(path.join(where, `${hash}.part`), old, old);
+    // another RTE's transfer, still coming
+    fs.writeFileSync(path.join(where, `${other}.part`), "coming");
+    fs.mkdirSync(path.join(where, hash));
+    fs.writeFileSync(path.join(where, `${hash}.tar.gz`), "kept");
+    new FileCache(where, 20, "rte-a");
+    assert.deepEqual(fs.readdirSync(where).sort(), [`${hash}.tar.gz`, `${other}.part`, "jobs"]);
+    assert.deepEqual(fs.readdirSync(path.join(where, "jobs")), ["rte-b"]);
   });
 
   test("a damaged bundle is refused", async () => {
