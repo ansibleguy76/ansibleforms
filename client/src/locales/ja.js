@@ -1762,7 +1762,7 @@ export default {
       pending: '承認待ち',
       pendingHint: 'この RTE が参加を求めています。承認するとジョブが送られます。拒否もできます。',
       pendingTitle: 'この RTE が参加を求めています',
-      pendingHelp: '自分で起動した RTE か確認してください。フィンガープリントがインストーラーまたはログの表示と一致する必要があります。承認するまでジョブは送られません。',
+      pendingHelp: 'この RTE が参加を求めています。承認する前にフィンガープリントを確認してください。',
       pendingFingerprint: 'フィンガープリント',
       pendingHost: 'ホスト',
       pendingIp: '接続元',

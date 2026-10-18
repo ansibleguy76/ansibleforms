@@ -1348,7 +1348,7 @@ export default {
       pending: 'In attesa di approvazione',
       pendingHint: 'Questo RTE ha chiesto di unirsi. Approvalo perché riceva job, o rifiutalo.',
       pendingTitle: 'Questo RTE ha chiesto di unirsi',
-      pendingHelp: 'Verifica che sia uno che hai avviato: la sua impronta deve corrispondere a quella mostrata dal suo installer o dal suo log. Non riceve job finché non lo approvi.',
+      pendingHelp: 'Questo RTE ha chiesto di unirsi: verifica la sua impronta prima di approvarlo.',
       pendingFingerprint: 'Impronta',
       pendingHost: 'Host',
       pendingIp: 'Connesso da',

@@ -1335,7 +1335,7 @@ export default {
       pending: 'Waiting for approval',
       pendingHint: 'This RTE asked to join. Approve it to give it jobs, or reject it.',
       pendingTitle: 'This RTE asked to join',
-      pendingHelp: 'Check it is one you started: its fingerprint must match the one its installer printed or its log shows. It gets no job until you approve it.',
+      pendingHelp: 'This RTE asked to join: check its fingerprint before you approve it.',
       pendingFingerprint: 'Fingerprint',
       pendingHost: 'Host',
       pendingIp: 'Called from',

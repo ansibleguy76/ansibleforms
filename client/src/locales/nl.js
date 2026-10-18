@@ -1348,7 +1348,7 @@ export default {
       pending: 'Wacht op goedkeuring',
       pendingHint: 'Deze RTE vraagt om lid te worden. Keur hem goed zodat hij jobs krijgt, of wijs hem af.',
       pendingTitle: 'Deze RTE vraagt om lid te worden',
-      pendingHelp: 'Controleer dat u hem zelf hebt gestart: de vingerafdruk moet overeenkomen met die van zijn installer of zijn log. Hij krijgt geen jobs tot u hem goedkeurt.',
+      pendingHelp: 'Deze RTE vraagt om lid te worden: controleer de vingerafdruk voor u hem goedkeurt.',
       pendingFingerprint: 'Vingerafdruk',
       pendingHost: 'Host',
       pendingIp: 'Verbonden vanaf',
