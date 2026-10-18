@@ -127,6 +127,8 @@ export default {
       "ランナーを追加、変更、削除できるのは admin だけです：ランナーは実行するジョブの認証情報を受け取ります",
     repositoryAdminOnly:
       "リポジトリを追加または削除し、そのアドレス、ブランチ、用途を変更できるのは admin だけです：その内容は AnsibleForms が実行する設定、フォーム、プレイブックになります",
+    secretStoreAdminOnly:
+      "シークレットストアを追加、変更、削除できるのは admin だけです：そのアドレスに送られるトークンまたはキーでログインします",
     credentialAdminOnly:
       "この認証情報を追加、変更、削除できるのは admin だけです：ランナーや接続はそのアドレスとシークレットをここから取得します",
     credentialInUse:

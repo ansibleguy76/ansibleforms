@@ -133,6 +133,8 @@ export default {
       "Tylko admin może dodać, zmienić lub usunąć runner: runner otrzymuje poświadczenia zadań, które uruchamia",
     repositoryAdminOnly:
       "Tylko admin może dodać lub usunąć repozytorium albo zmienić jego adres, gałąź lub przeznaczenie: jego zawartość staje się konfiguracją, formularzami lub playbookami, które uruchamia AnsibleForms",
+    secretStoreAdminOnly:
+      "Tylko admin może dodać, zmienić lub usunąć magazyn sekretów: loguje się tokenem lub kluczem, który zostałby wysłany na jego adres",
     credentialAdminOnly:
       "Tylko admin może dodać, zmienić lub usunąć to poświadczenie: runner lub połączenie bierze z niego swój adres i sekret",
     credentialInUse:

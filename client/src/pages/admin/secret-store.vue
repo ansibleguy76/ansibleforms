@@ -29,6 +29,7 @@ import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { recordButtons } from '@/lib/recordButtons';
 import { useRecordSearch } from '@/composables/useRecordSearch';
+import { useAppStore } from '@/stores/app';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -81,6 +82,11 @@ function editable(record) {
 }
 
 const managed = computed(() => !!store.value?.managed);
+// a store logs in with a token or a key it sends to its address : only an admin changes one (the
+// server refuses the others, as a runner's page does) ; Test connection of the saved store stays
+// theirs ; a seeded one nobody changes here
+const appStore = useAppStore();
+const readOnly = computed(() => managed.value || !appStore.isAdmin);
 const isVault = computed(() => edit.value?.type === 'vault');
 const dirty = computed(
   () => !!store.value && EDITED.some((k) => String(edit.value[k] ?? '') !== String(editable(store.value)[k] ?? '')),
@@ -389,7 +395,7 @@ onMounted(async () => {
           <div v-if="managed" class="alert alert-secondary py-2">
             <FaIcon icon="lock" class="me-2" />{{ t('settings.common.seedManagedNotice') }}
           </div>
-          <fieldset :disabled="managed">
+          <fieldset :disabled="readOnly">
             <!-- Details : what it is called -->
             <template v-if="tabShown('details')">
               <template v-if="searching && searchHead('details')">
@@ -596,14 +602,14 @@ onMounted(async () => {
         <BsButton
           v-if="activeTab === 'credentials'"
           icon="plus"
-          :disabled="managed"
+          :disabled="readOnly"
           @click="creator?.newItem({ credential_type: isVault ? 'vault' : 'cyberark' })"
           >{{ t('settings.repositories.newCredential') }}</BsButton
         >
         <BsButton icon="plug" cssClass="text-nowrap" :disabled="testing" @click="testConnection()">{{
           t('settings.common.testConnection')
         }}</BsButton>
-        <template v-if="!managed">
+        <template v-if="!readOnly">
           <BsButton icon="trash" @click="confirmDelete = true">{{ t('common.delete') }}</BsButton>
           <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
         </template>

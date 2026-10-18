@@ -167,6 +167,42 @@ class SecretStore extends CrudModel {
     }
   }
 
+  /**
+   * Keeps a store's own secrets from following it to another server. A write that changes where
+   * the store connects (its url, its ca_bundle, or turns its certificate check off or on) without
+   * a new token or client key typed with it would otherwise send the stored Vault token or the
+   * CyberArk client key to the new address on the next Check or read : the write clears them, so
+   * whoever moves a store types its secret again. Defense in depth behind the admin-only rule of
+   * controllers/v2/secretStore.controller.js.
+   *
+   * Args:
+   *   data (object): the fields being saved, normalized (the mask sent back already removed),
+   *     changed in place.
+   *   current (object|null): the store as stored, its own fields (not its credential's).
+   *
+   * Returns:
+   *   object: the record.
+   */
+  static dropSecretsOnRetarget(data, current) {
+    if (!current) return data;
+    // text compared trimmed, a url without its trailing slashes (normalize stores it so)
+    const text = (v) => (v === null || v === undefined ? '' : String(v).trim());
+    const url = (v) => stripTrailingSlashes(text(v));
+    const on = (v) => v === true || v === 1 || v === '1' || v === 'true';
+    const moved =
+      (data.url !== undefined && url(data.url) !== url(current.url)) ||
+      (data.ca_bundle !== undefined && text(data.ca_bundle) !== text(current.ca_bundle)) ||
+      (data.ignore_certs !== undefined && on(data.ignore_certs) !== on(current.ignore_certs));
+    if (!moved) return data;
+    // a secret typed with the move is the writer's own choice to send there ; nothing (or the mask,
+    // removed by normalize) is not
+    const typed = (v) => typeof v === 'string' && v !== '' && !isMasked(v);
+    for (const key of ['token', 'client_key']) {
+      if (!typed(data[key])) data[key] = null;
+    }
+    return data;
+  }
+
   // opts carries { fromSeed:true } for the declarative config seed only
   static async create(data, opts = {}) {
     // the config seed may create its stores before the credentials they name : checked on use
@@ -180,9 +216,11 @@ class SecretStore extends CrudModel {
   }
 
   static async update(data, id, opts = {}) {
+    // the store as stored, its own address (not its credential's) : what a move is compared with
+    const stored = opts.fromSeed ? null : await super.findById(this.modelName, id);
     if (!opts.fromSeed) {
       await this.assertCredentialUsable(data, id);
-      await this.takeConnection(data, await super.findById(this.modelName, id));
+      await this.takeConnection(data, stored);
     }
     // its type stays what it was made as (the credentials that read from it expect it) ; the
     // config seed may change it
@@ -206,7 +244,10 @@ class SecretStore extends CrudModel {
         );
       }
     }
-    const res = await super.update(this.modelName, this.normalize(data, { creating: false }), id, opts);
+    // moved to another address without its secret typed again : the stored one stays behind
+    const normalized = this.normalize(data, { creating: false });
+    if (!opts.fromSeed) this.dropSecretsOnRetarget(normalized, stored);
+    const res = await super.update(this.modelName, normalized, id, opts);
     clearSecretCache();
     return res;
   }

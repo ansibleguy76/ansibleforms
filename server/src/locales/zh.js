@@ -121,6 +121,8 @@ export default {
       "只有 admin 可以添加、更改或删除运行器：运行器会收到它运行的作业的凭据",
     repositoryAdminOnly:
       "只有 admin 可以添加或删除仓库，或更改其地址、分支或用途：其内容会成为 AnsibleForms 运行的配置、表单或 playbook",
+    secretStoreAdminOnly:
+      "只有 admin 可以添加、更改或删除密钥存储：它使用会发送到其地址的令牌或密钥登录",
     credentialAdminOnly:
       "只有 admin 可以添加、更改或删除此凭据：运行器或连接从中获取其地址和密钥",
     credentialInUse:

@@ -138,6 +138,8 @@ export default {
       "Seul un admin peut ajouter, modifier ou supprimer un runner : un runner recoit les identifiants des jobs qu'il execute",
     repositoryAdminOnly:
       "Seul un admin peut ajouter ou supprimer un depot, ou changer son adresse, sa branche ou son usage : son contenu devient la configuration, les formulaires ou les playbooks qu'AnsibleForms execute",
+    secretStoreAdminOnly:
+      "Seul un admin peut ajouter, modifier ou supprimer un coffre de secrets : il se connecte avec un jeton ou une cle qui serait envoye a son adresse",
     credentialAdminOnly:
       "Seul un admin peut ajouter, modifier ou supprimer cet identifiant : un runner ou une connexion en prend son adresse et son secret",
     credentialInUse:
