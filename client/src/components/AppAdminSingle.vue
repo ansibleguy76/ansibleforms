@@ -53,6 +53,7 @@ import { required, helpers, email, sameAs } from '@vuelidate/validators';
 import { useI18n } from 'vue-i18n';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
+import { textsMatch } from '@/lib/recordSearch';
 import { useRoute } from 'vue-router';
 
 const { t } = useI18n();
@@ -130,13 +131,7 @@ const searching = computed(() => props.searchable && !!search.value.trim());
  *   boolean: true when one of them has it.
  */
 function matches(...texts) {
-  const q = search.value.trim().toLowerCase();
-  if (!q) return true;
-  return texts.some((x) =>
-    String(x ?? '')
-      .toLowerCase()
-      .includes(q),
-  );
+  return textsMatch(search.value, texts);
 }
 const fieldMatches = (field) => matches(field.label, field.help, field.description, field.key);
 // a tab has something to show while searching : a field of it that matches, or its top slot's
