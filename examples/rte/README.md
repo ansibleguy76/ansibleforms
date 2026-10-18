@@ -20,9 +20,38 @@ What each layer adds: [Dockerfile.rte-base](../../Dockerfile.rte-base), [Dockerf
 docker build -f examples/rte/Dockerfile.netapp -t my-rte-netapp .
 ```
 
-Run it like the published image: the app's `DB_*` (and `ENCRYPTION_SECRET` when it registers itself), a `RTE_TOKEN`
-and `RTE_URL`, the address the app reaches it on. It adds itself under Connections > Runners.
-See
+Run it like the published image, in a socket mode: it holds no database credentials, only its
+`RTE_TOKEN` (at least 16 characters). In `inbound` mode the app dials it, as the Docker Compose
+project, the Helm chart and [the scale example](../scale) run their RTE:
+
+```bash
+docker run -d --name rte -e RTE_MODE=inbound -e RTE_TOKEN=change-me-at-least-16-characters \
+  -e HTTPS=0 -e PORT=8000 my-rte-netapp
+```
+
+The app then needs its runner: type RTE, mode inbound, and an RTE credential with the address
+the app reaches it on and the same token. Add it under Connections > Runners, or declare it in
+the config seed:
+
+```yaml
+credentials:
+  items:
+    - name: rte-netapp
+      credential_type: rte
+      url: http://rte:8000
+      password: ${RTE_TOKEN}
+runners:
+  items:
+    - name: rte-netapp
+      type: rte
+      rte_mode: inbound
+      credential: rte-netapp
+```
+
+Forms run on it with `runner: rte-netapp`. An RTE that the app cannot reach dials the app
+instead (`RTE_MODE=outbound` with `APP_URL`), and joins once an admin approves it or with a join
+token (`RTE_JOIN_TOKEN`). The mode without a socket, `database`, is deprecated and removed in
+8.0.0. See [the RTE modes](https://ansibleforms.com/rte/modes.html) and
 [the runners README](../../server/src/runners/README.md).
 
 ## Keep it on the app's release

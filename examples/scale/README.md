@@ -10,6 +10,13 @@ One image, started in different roles (`AF_ROLE`):
 | `rte` | the playbooks (the `ansibleforms-rte-full` image) | as many as you like |
 
 [compose.yaml](compose.yaml) runs two app nodes behind nginx, two workers, one RTE and a database.
+Copy [.env.example](.env.example) to `.env` and fill in the secrets first.
+
+The RTE runs in `inbound` mode (`RTE_MODE=inbound`): the app dials it at `http://rte:8000` with its
+`RTE_TOKEN` and keeps one WebSocket open, held by one node at a time. The RTE holds no database
+credentials and reads none of the `.env`. Its runner `rte` and the credential it signs in with are
+declared by the config seed, [seed.yaml](seed.yaml), which the worker applies at every start
+(`CONFIG_SEED_PATH`). See [the RTE modes](https://ansibleforms.com/rte/modes.html).
 
 ## What the nodes share
 
@@ -23,8 +30,9 @@ One image, started in different roles (`AF_ROLE`):
   the first start.
 - **`ACCESS_TOKEN_SECRET`**, the same on every app node, or a token signed by one node is refused
   by the next. An app node refuses to start without it.
-- **`ENCRYPTION_SECRET`**, the same on every container, or a credential stored by one cannot be
-  read by another.
+- **`ENCRYPTION_SECRET`**, the same on every app node and worker, or a credential stored by one
+  cannot be read by another. The RTE needs none: the app sends it each job's secrets.
+- **`RTE_TOKEN`**, the same on the RTE and in its credential (the seed reads it from `.env`).
 
 ## How it behaves
 

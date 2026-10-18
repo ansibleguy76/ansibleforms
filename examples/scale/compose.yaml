@@ -13,6 +13,9 @@ x-ansibleforms: &ansibleforms
     - persistent:/app/dist/persistent
     # the ssh key and known_hosts for git over ssh, the same everywhere
     - ssh:/home/node/.ssh
+    # the config seed the worker applies at every start (CONFIG_SEED_PATH in .env) : the RTE's
+    # runner, inbound, and the credential it signs in with
+    - ./seed.yaml:/app/dist/seed/seed.yaml:ro
 
 services:
   db:
@@ -42,14 +45,24 @@ services:
     <<: *ansibleforms
     environment: { AF_ROLE: worker }
 
-  # runs the playbooks : it adds itself under Connections > Runners as 'rte' (RTE_URL). ansible with
-  # its collections ; ansibleforms-rte-core is the smaller one to build your own on (examples/rte)
+  # runs the playbooks. The app dials it on http://rte:8000 with RTE_TOKEN (RTE_MODE=inbound) and
+  # keeps one WebSocket open, from the app node that holds it : the RTE holds no database
+  # credentials, so it does not read the .env, and it is not published on the host. Its runner
+  # 'rte' is declared by the config seed (seed.yaml). ansible with its collections ;
+  # ansibleforms-rte-core is the smaller one to build your own on (examples/rte)
   rte:
     image: ghcr.io/ansibleforms/ansibleforms-rte-full:7
     restart: unless-stopped
-    depends_on: [db]
-    env_file: .env
-    environment: { HTTPS: "0", RTE_URL: "http://rte:8000" }
+    environment:
+      NODE_ENV: production
+      RTE_MODE: inbound
+      RTE_TOKEN: ${RTE_TOKEN}
+      # its files are the app's own (the shared volume, mounted below) : nothing to send with
+      # each job ; without the volume, leave RTE_FILES out and the app sends them (transfer)
+      RTE_FILES: local
+      PORT: "8000"
+      # only the app nodes call it, inside the compose network
+      HTTPS: "0"
     volumes:
       - persistent:/app/dist/persistent
       - ssh:/home/node/.ssh
