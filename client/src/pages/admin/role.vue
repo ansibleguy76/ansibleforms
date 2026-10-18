@@ -2,7 +2,7 @@
 /******************************************************************/
 /*                                                                */
 /*  A role's page (/settings/roles/<name>), opened from the roles    */
-/*  list : its General tab (name and options), its Users, its     */
+/*  list : its Details tab (name and options), its Users, its     */
 /*  Groups and the Forms that name it, the tab kept in the        */
 /*  address (/users). Saving writes                               */
 /*  the forms config, as the list does ; a renamed role's page    */
@@ -82,7 +82,7 @@ const userCount = computed(() => {
 // Details (the name, its description and the options), Users, Groups, Forms ; the tab kept in
 // the url. Default has no count of users or groups : it is everyone's.
 const tabs = computed(() => [
-  { key: 'general', label: t('settings.common.tabDetails'), icon: 'sliders' },
+  { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
   {
     key: 'users',
     label: t('settings.settingsPage.users'),
@@ -157,7 +157,7 @@ const formColumns = computed(() => [
   { key: 'name', label: t('settings.fields.form'), filterable: true },
   { key: 'description', label: t('settings.fields.description'), filterable: true },
 ]);
-const { activeTab, tabLink } = useRouteTab('general', (key) => tabs.value.some((x) => x.key === key));
+const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
 // the title : Roles › <name>, each step a link : Roles back to the list, the name to this page
 const pageCrumbs = computed(() => [
@@ -272,7 +272,7 @@ async function removeMembers(kind, uids) {
 const { search, searching, matches, shownTabs, tabShown, searchHead } = useRecordSearch({
   tabs: () => tabs.value,
   activeTab: () => activeTab.value,
-  tabMatch: (key) => (key === 'general' ? generalMatch.value : shownRows.value[key].length),
+  tabMatch: (key) => (key === 'details' ? generalMatch.value : shownRows.value[key].length),
 });
 // the editor's fields are its own (AppRoleEditor) : Details shown whole when one matches
 const generalMatch = computed(() =>
@@ -419,13 +419,13 @@ onMounted(async () => {
         <AppSkeleton v-else-if="!loaded && !role" shape="form" :count="3" />
         <template v-if="role && !loadError">
           <!-- Details : the name, its description and the options -->
-          <template v-if="tabShown('general')">
+          <template v-if="tabShown('details')">
             <h6
-              v-if="searching && searchHead('general')"
+              v-if="searching && searchHead('details')"
               class="fw-bold text-body-secondary af-search-tab"
-              :class="{ 'af-search-first': searchHead('general').first }"
+              :class="{ 'af-search-first': searchHead('details').first }"
             >
-              <FaIcon :icon="searchHead('general').tab.icon" class="me-1" />{{ searchHead('general').tab.label }}
+              <FaIcon :icon="searchHead('details').tab.icon" class="me-1" />{{ searchHead('details').tab.label }}
             </h6>
             <AppRoleEditor
               v-model:role="roles[roleIndex]"

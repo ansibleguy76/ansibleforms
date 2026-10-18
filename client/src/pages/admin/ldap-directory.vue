@@ -43,7 +43,7 @@ const settings = computed(() => ({
 // the page in tabs : on or off and where it stands, its credential (the servers and the binding),
 // the users, the groups
 const tabs = computed(() => [
-  { key: 'general', label: t('settings.common.tabDetails'), icon: 'sliders' },
+  { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
   { key: 'credentials', label: t('settings.common.tabCredentials'), icon: 'key' },
   { key: 'users', label: t('settings.ldap.tabUsers'), icon: 'user' },
   { key: 'groups', label: t('settings.ldap.tabGroups'), icon: 'users' },

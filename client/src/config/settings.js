@@ -2158,7 +2158,7 @@ export default function getSettings(t) {
       fields: [
         {
           key: 'enable',
-          tab: 'general',
+          tab: 'details',
           label: t('settings.ldap.enabled'),
           help: t('settings.ldap.enableLdapHelp'),
           type: 'checkbox',
@@ -2168,7 +2168,7 @@ export default function getSettings(t) {
         // lookup order is its place in the list (Move up, Move down)
         {
           key: 'name',
-          tab: 'general',
+          tab: 'details',
           icon: 'tag',
           line: 0,
           label: t('settings.fields.name'),
@@ -2180,7 +2180,7 @@ export default function getSettings(t) {
         {
           // what it is, for the list and its page
           key: 'description',
-          tab: 'general',
+          tab: 'details',
           icon: 'info-circle',
           line: 1,
           label: t('settings.fields.description'),
@@ -3914,7 +3914,7 @@ function ldapDirectories(t, ldap) {
     icon: 'address-book',
     selectable: false,
     steps: [
-      { key: 'general', label: t('settings.common.tabDetails') },
+      { key: 'details', label: t('settings.common.tabDetails') },
       { key: 'credentials', label: t('settings.common.tabCredentials') },
       { key: 'users', label: t('settings.ldap.tabUsers') },
       { key: 'groups', label: t('settings.ldap.tabGroups') },
