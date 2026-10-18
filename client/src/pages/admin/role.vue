@@ -300,13 +300,15 @@ const confirmDelete = ref(false);
  */
 async function deleteRole() {
   confirmDelete.value = false;
-  if (roleIndex.value < 0) return;
-  const removed = roles.value.splice(roleIndex.value, 1)[0];
+  // its place, read before the splice : afterwards the role is not found (roleIndex -1)
+  const at = roleIndex.value;
+  if (at < 0) return;
+  const removed = roles.value.splice(at, 1)[0];
   if (await saveRoles()) {
     router.push('/settings/roles');
   } else {
-    // refused (the config locked) : the role stays
-    roles.value.splice(roleIndex.value < 0 ? roles.value.length : roleIndex.value, 0, removed);
+    // refused (the config locked) : the role stays, where it was
+    roles.value.splice(at, 0, removed);
   }
 }
 
