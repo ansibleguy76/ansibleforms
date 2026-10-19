@@ -226,9 +226,7 @@ onMounted(async () => {
           @click="resetFilters()"
           >{{ t('audit.reset') }}</BsButton
         >
-        <BsButton cssClass="text-nowrap" :icon="loading ? 'spinner' : 'refresh'" @click="load()">{{
-          t('audit.refresh')
-        }}</BsButton>
+        <AppRefreshButton :action="load" :label="t('audit.refresh')" />
       </template>
       <template #default>
         <!-- the first load : the table's rows as grey placeholders (a reload keeps them shown) -->

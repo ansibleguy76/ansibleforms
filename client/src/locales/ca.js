@@ -778,6 +778,8 @@ export default {
     confirm: 'Confirma',
     close: 'Tanca',
     loading: "S'està carregant...",
+    // a Refresh button while it reads again (useRefreshing), at least a second
+    refreshing: "S'està actualitzant...",
     error: 'Error',
     success: 'Èxit',
     warning: 'Avís',

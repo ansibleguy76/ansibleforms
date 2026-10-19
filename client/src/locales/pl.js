@@ -776,6 +776,8 @@ export default {
     confirm: 'Potwierdź',
     close: 'Zamknij',
     loading: 'Wczytywanie...',
+    // a Refresh button while it reads again (useRefreshing), at least a second
+    refreshing: 'Odświeżanie...',
     error: 'Błąd',
     success: 'Sukces',
     warning: 'Ostrzeżenie',

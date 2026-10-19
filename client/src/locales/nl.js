@@ -778,6 +778,8 @@ export default {
     confirm: 'Bevestigen',
     close: 'Sluiten',
     loading: 'Laden...',
+    // a Refresh button while it reads again (useRefreshing), at least a second
+    refreshing: 'Vernieuwen...',
     error: 'Fout',
     success: 'Gelukt',
     warning: 'Waarschuwing',

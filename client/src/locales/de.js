@@ -780,6 +780,8 @@ export default {
     confirm: 'Bestaetigen',
     close: 'Schliessen',
     loading: 'Laedt...',
+    // a Refresh button while it reads again (useRefreshing), at least a second
+    refreshing: 'Wird aktualisiert...',
     error: 'Fehler',
     success: 'Erfolg',
     warning: 'Warnung',
