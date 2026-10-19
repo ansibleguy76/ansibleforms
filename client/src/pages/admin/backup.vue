@@ -43,17 +43,18 @@ async function load() {
 }
 
 /**
- * What a file of the backup is : found and its size, or not found.
+ * What a part of the backup is : its name and size, or not found.
  *
  * Args:
  *   exists (boolean): whether the backup holds it.
- *   size (number): its size in bytes.
+ *   name (string): its name in the backup folder.
+ *   detail (string): its size, or its file count and size.
  *
  * Returns:
- *   string: "Exists (1.2 MB)", or "Not found".
+ *   string: "ansibleforms.sql (1.2 MB)", or "Not found".
  */
-function fileState(exists, size) {
-  return exists ? `${t('admin.backups.exists')} (${Helpers.humanFileSize(size)})` : t('admin.backups.notFound');
+function fileState(exists, name, detail) {
+  return exists ? `${name} (${detail})` : t('admin.backups.notFound');
 }
 
 // ─── its details : read only, one field each ──────────────────────────────────
@@ -68,19 +69,19 @@ const details = computed(() => {
       key: 'backupFile',
       icon: 'database',
       label: t('admin.backups.backupFile'),
-      value: fileState(b.backupFileExists, b.backupFileSize),
+      value: fileState(b.backupFileExists, b.backupFileName, Helpers.humanFileSize(b.backupFileSize)),
     },
     {
       key: 'configYaml',
       icon: 'file-code',
       label: t('admin.backups.configYaml'),
-      value: fileState(b.configYamlExists, b.configYamlSize),
+      value: fileState(b.configYamlExists, b.configYamlName, Helpers.humanFileSize(b.configYamlSize)),
     },
     {
       key: 'envFile',
       icon: 'file-shield',
       label: t('admin.backups.envFile'),
-      value: fileState(b.envFileExists, b.envFileSize),
+      value: fileState(b.envFileExists, b.envFileName, Helpers.humanFileSize(b.envFileSize)),
       // restored on request only, never with the backup : said where the file is shown
       help: b.envFileExists ? t('admin.backups.envFileHelp') : '',
     },
@@ -88,9 +89,11 @@ const details = computed(() => {
       key: 'formsDirectory',
       icon: 'folder-tree',
       label: t('admin.backups.formsDirectory'),
-      value: b.formsDirExists
-        ? `${t('admin.backups.exists')} (${t('admin.backups.fileCount', b.formsDirFileCount)}, ${Helpers.humanFileSize(b.formsDirTotalSize)})`
-        : t('admin.backups.notFound'),
+      value: fileState(
+        b.formsDirExists,
+        `${b.formsDirName}/`,
+        `${t('admin.backups.fileCount', b.formsDirFileCount)}, ${Helpers.humanFileSize(b.formsDirTotalSize)}`,
+      ),
     },
   ];
 });

@@ -2143,7 +2143,6 @@ export default {
       date: '日付',
       description: '説明',
       backupFile: 'バックアップファイル',
-      exists: 'あり',
       notFound: '見つかりません',
       configYaml: 'config.yaml',
       formsDirectory: 'フォームディレクトリ',

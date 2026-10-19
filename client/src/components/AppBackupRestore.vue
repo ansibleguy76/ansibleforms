@@ -139,7 +139,7 @@ async function triggerRestore(item) {
         <li class="list-group-item">
           <strong>{{ t('admin.backups.backupFile') }}:</strong>
           <span v-if="backup.backupFileExists">
-            {{ t('admin.backups.exists') }} ({{ Helpers.humanFileSize(backup.backupFileSize) }})
+            {{ backup.backupFileName }} ({{ Helpers.humanFileSize(backup.backupFileSize) }})
           </span>
           <span v-else>
             {{ t('admin.backups.notFound') }}
@@ -148,7 +148,7 @@ async function triggerRestore(item) {
         <li class="list-group-item">
           <strong>{{ t('admin.backups.configYaml') }}:</strong>
           <span v-if="backup.configYamlExists">
-            {{ t('admin.backups.exists') }} ({{ Helpers.humanFileSize(backup.configYamlSize) }})
+            {{ backup.configYamlName }} ({{ Helpers.humanFileSize(backup.configYamlSize) }})
           </span>
           <span v-else>
             {{ t('admin.backups.notFound') }}
@@ -157,7 +157,7 @@ async function triggerRestore(item) {
         <li class="list-group-item">
           <strong>{{ t('admin.backups.envFile') }}:</strong>
           <span v-if="backup.envFileExists">
-            {{ t('admin.backups.exists') }} ({{ Helpers.humanFileSize(backup.envFileSize) }})
+            {{ backup.envFileName }} ({{ Helpers.humanFileSize(backup.envFileSize) }})
             <div class="form-text">{{ t('admin.backups.envFileHelp') }}</div>
           </span>
           <span v-else>
@@ -167,7 +167,7 @@ async function triggerRestore(item) {
         <li class="list-group-item">
           <strong>{{ t('admin.backups.formsDirectory') }}:</strong>
           <span v-if="backup.formsDirExists">
-            {{ t('admin.backups.exists') }} ({{ t('admin.backups.fileCount', backup.formsDirFileCount) }},
+            {{ backup.formsDirName }}/ ({{ t('admin.backups.fileCount', backup.formsDirFileCount) }},
             {{ Helpers.humanFileSize(backup.formsDirTotalSize) }})
           </span>
           <span v-else>

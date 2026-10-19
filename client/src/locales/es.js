@@ -2190,7 +2190,6 @@ export default {
       date: 'Fecha',
       description: 'Descripción',
       backupFile: 'Archivo de copia de seguridad',
-      exists: 'Existe',
       notFound: 'No encontrado',
       configYaml: 'config.yaml',
       formsDirectory: 'Directorio de formularios',

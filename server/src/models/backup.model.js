@@ -156,6 +156,11 @@ async function describeBackup(folder) {
     date: Helpers.dateFromBackupFolder(folder),
     description,
     valid: backupFileExists && backupFileSize > 0,
+    // the names of what it holds, shown with their sizes (the backup's page, the restore dialog)
+    backupFileName: path.basename(backupFile),
+    configYamlName: path.basename(configYaml),
+    envFileName: path.basename(envFile),
+    formsDirName: path.basename(formsDir),
     backupFileExists,
     configYamlExists: await fs.stat(configYaml).then(() => true).catch(() => false),
     formsDirExists: await fs.stat(formsDir).then(() => true).catch(() => false),
