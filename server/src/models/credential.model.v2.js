@@ -415,10 +415,7 @@ class CredentialModel extends CrudModel {
     logger.debug("Resolving a credential");
     // "vault:<path>" / "secret:<store>:<ref>" : straight from the store, no row
     const inline = parseInlineSecret(nameOrRegex);
-    if (inline) {
-      assertInlineAllowed(nameOrRegex, inline);
-      return resolveInlineSecret(nameOrRegex, inline);
-    }
+    if (inline) return shapeInlineSecret(nameOrRegex, await this.readInlineSecret(nameOrRegex, inline));
     const row = await this.lookupCachedRow(nameOrRegex, fallbackName);
     // the roles of the user this runs for may limit the credentials (lib/resourceScope.js) :
     // checked on the name the pattern found, not on the pattern
@@ -446,6 +443,31 @@ class CredentialModel extends CrudModel {
     }
     stripSecretSource(result);
     return result;
+  }
+
+  /**
+   * The raw secret an inline reference points at, once the roles of the user this runs for
+   * allow it (assertInlineAllowed) : the one way an inline secret is read, by resolveCredential
+   * and by fnCredentials, which reshapes the raw secret with its jq before mapping it.
+   *
+   * Args:
+   *   spec (string): the reference, "vault:<path>" or "secret:<store>:<ref>".
+   *   inline (object): its store and ref, parseInlineSecret(spec) by default.
+   *
+   * Returns:
+   *   Promise<object>: the secret, as its store gives it.
+   *
+   * Raises:
+   *   Errors.AccessDeniedError: the scope does not allow it.
+   *   Error: spec is no inline reference, or the store cannot read it.
+   */
+  static async readInlineSecret(spec, inline = parseInlineSecret(spec)) {
+    if (!inline) throw new Error("Not an inline secret reference");
+    // refused before the store is ever asked
+    assertInlineAllowed(spec, inline);
+    // no log here : the caller reports the error, and the store name comes from the
+    // inline reference, which CodeQL cannot tell apart from the secrets next to it
+    return readSecret(inline.store, inline.ref);
   }
 
   /**
@@ -603,10 +625,9 @@ async function overlaySecret(result, source, isDatabase) {
 // An inline secret carries the whole connection itself, under the keys mapPayloadToCredential
 // knows (https://ansibleforms.com/secret-stores). With a db_type it is a database credential, shaped like a
 // database row ; without one, user and password with the rest of the secret passed through.
-async function resolveInlineSecret(name, source) {
-  // no log here : the caller reports the error, and the store name comes from the
-  // inline reference, which CodeQL cannot tell apart from the secrets next to it
-  const mapped = mapPayloadToCredential(await readSecret(source.store, source.ref));
+// payload is the secret as readInlineSecret read it.
+function shapeInlineSecret(name, payload) {
+  const mapped = mapPayloadToCredential(payload);
   if (!mapped.db_type) return { ...mapped, name };
   return {
     name,

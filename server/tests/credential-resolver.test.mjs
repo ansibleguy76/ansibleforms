@@ -61,6 +61,7 @@ appConfig.encryptionSecret ||= "0123456789abcdef0123456789abcdef";
 const crypto = (await import("../src/lib/crypto.js")).default;
 const Credential = (await import("../src/models/credential.model.v2.js")).default;
 const Errors = (await import("../src/lib/errors.js")).default;
+const { scopeFromRoles, runWithScope } = await import("../src/lib/resourceScope.js");
 
 const dbRow = (over = {}) => ({
   name: "db1", user: "app", password: crypto.encrypt("s3cret"), host: "db.local", port: 3306,
@@ -226,5 +227,42 @@ describe("fnCredentials", () => {
   test("returns nothing, not an error, when nothing matches", async () => {
     const { default: fn } = await import("../src/functions/default.js");
     assert.equal(await fn.fnCredentials("nothing", "neither"), null, "as before 7.x: no throw, nothing returned");
+  });
+  // a role that lists secretStores limits an inline secret read from an expression as it limits
+  // resolveCredential : fnCredentials used to read the store without asking the roles
+  describe("an inline secret inside the roles' scope", () => {
+    const roles = [
+      { name: "default", groups: [] },
+      { name: "ops", groups: [], secretStores: ["cyberark"] },
+    ];
+    const scope = () => scopeFromRoles({ username: "bob", roles: ["default", "ops"] }, roles);
+
+    test("a store the roles do not list is refused, and never read", async () => {
+      vault.payload = { username: "root", password: "pw" };
+      const { default: fn } = await import("../src/functions/default.js");
+      await assert.rejects(
+        runWithScope(scope(), () => fn.fnCredentials("secret:otherstore:prod/root")),
+        (e) => e instanceof Errors.AccessDeniedError && /secret store 'otherstore'/.test(e.message),
+      );
+      await assert.rejects(runWithScope(scope(), () => fn.fnCredentials("vault:prod/root")), /secret store 'vault'/);
+      assert.equal(vault.reads, 0, "refused before the store is asked");
+    });
+
+    test("a store the roles list is read, its jq applied", async () => {
+      vault.payload = { username: "svc", password: "pw", extra: "x" };
+      const { default: fn } = await import("../src/functions/default.js");
+      const c = await runWithScope(scope(), () => fn.fnCredentials("secret:cyberark:Safe=Linux;Object=svc", "", "{username, password}"));
+      assert.equal(c.user, "svc");
+      assert.equal(c.password, "pw");
+      assert.equal(c.extra, undefined, "the jq reshaped the secret");
+      assert.deepEqual(vault.last, { store: "cyberark", ref: "Safe=Linux;Object=svc" });
+    });
+
+    test("outside a scope every store is read, as before", async () => {
+      vault.payload = { username: "root", password: "pw" };
+      const { default: fn } = await import("../src/functions/default.js");
+      const c = await fn.fnCredentials("secret:otherstore:prod/root");
+      assert.equal(c.user, "root");
+    });
   });
 });

@@ -1977,7 +1977,7 @@
         version: 7.0.0
         description: |
           Limits the secret stores a user of this role may read through an inline reference
-          (`vault:<path>`, `secret:<store>:<ref>`) in a credential map or a query. When a role
+          (`vault:<path>`, `secret:<store>:<ref>`) in a credential map, a query or `fnCredentials`. When a role
           limits the credentials and none limits the stores, an inline reference must match a
           credential pattern itself: it is no way around them. Combined across roles as
           `credentials`.
