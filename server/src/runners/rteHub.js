@@ -41,6 +41,7 @@ import {
   SOCKET_CONTRACT, SOCKET_MODES, APP_SOCKET_PATH, CLOSE, CHUNK_BYTES, MAX_PAYLOAD, RETRY_MS,
   queueMinutes, inboundUrl, fingerprint, parseCertBundle, certFingerprint,
 } from "../rte/socket/protocol.js";
+import { DialReport, describeDialFailure, failureLine, safeUrl, scrub, ago } from "../rte/socket/dialReport.js";
 
 // how long a lease lasts, renewed every 20 s while the socket is open
 const LEASE_SECONDS = 60;
@@ -1019,6 +1020,23 @@ export function handleUpgrade(req, socket, head) {
 const dialing = new Set();
 // the inbound runners whose plain http address was said in the log (once per runner and process)
 const plainWarned = new Set();
+// how often the log says that an inbound RTE could not be dialed : one report per runner, so a
+// runner that stays unreachable warns at most every few minutes, not every round (DIAL_MS)
+const dialReports = new Map();
+
+/**
+ * The dial report of an inbound runner (rte/socket/dialReport.js), made on first use.
+ *
+ * Args:
+ *   name (string): the runner.
+ *
+ * Returns:
+ *   DialReport
+ */
+function dialReportOf(name) {
+  if (!dialReports.has(name)) dialReports.set(name, new DialReport());
+  return dialReports.get(name);
+}
 
 /**
  * Whether a host name is this machine : localhost, 127.0.0.0/8 or ::1. A token sent to it in
@@ -1081,9 +1099,19 @@ async function dialInbound() {
       url = inboundUrl(runner.uri);
     } catch (e) {
       dialing.delete(name);
-      logger.error(`Runner '${name}': its address ${runner.uri} is not one: ${e.message}`);
+      // an address that is not one stays so until an admin fixes it : said as a failed dial,
+      // so not every round
+      const line = failureLine(dialReportOf(name), { cause: "address", text: `its address is not one (${e.message})` }, `Runner '${name}': cannot dial its RTE at ${scrub(runner.uri, [runner.token])}`);
+      if (line) logger.error(line);
       continue;
     }
+    // the address as the log shows it (no credentials), and the token it never shows
+    const shown = safeUrl(url);
+    const secrets = [runner.token];
+    // why the dial failed (an error, or the refusal and its body), and whether it opened at all
+    let failure = null;
+    let refusedStatus = null;
+    let opened = false;
     const ws = new WebSocket(url, {
       headers: { Authorization: `Bearer ${runner.token || ""}`, "X-AF-Node": nodeId },
       maxPayload: MAX_PAYLOAD,
@@ -1092,21 +1120,40 @@ async function dialInbound() {
       agent: url.startsWith("wss:") ? getHttpsAgent(runner, { pin: true }) : undefined,
     });
     ws.on("open", () => {
+      opened = true;
       dialing.delete(name);
+      // back after failures : said once, at the default level
+      const back = dialReportOf(name).connected();
+      if (back) logger.notice(`Runner '${name}': reached its RTE at ${shown} again, after ${back.failures} failed dial(s) in ${ago(Date.now() - back.since)}`);
       adopt(new Session(ws, `rte '${name}'`), runner, "inbound");
     });
     ws.on("unexpected-response", (req, res) => {
-      logger.warning(`Runner '${name}': the RTE at ${url} refused the socket (${res.statusCode}): check its RTE_TOKEN`);
-      // listening to this event takes the abort of the handshake over from ws : without it no
-      // close comes, and the runner stays in `dialing` for good (never dialed again)
-      res.resume();
-      ws.terminate();
+      refusedStatus = res.statusCode;
+      let body = "";
+      res.on("data", (c) => (body += c));
+      res.on("end", () => {
+        failure = { status: res.statusCode, body: body.slice(0, 2000) };
+        // listening to this event takes the abort of the handshake over from ws : without it no
+        // close comes, and the runner stays in `dialing` for good (never dialed again)
+        ws.terminate();
+      });
+      res.on("error", () => ws.terminate());
     });
     ws.on("error", (e) => {
       dialing.delete(name);
-      logger.debug(`Runner '${name}': dialing ${url}: ${e.message}`);
+      // the first error is the cause ; what follows it (the abort after a refusal) is not
+      if (!failure && !refusedStatus) failure = { error: e };
+      logger.debug(`Runner '${name}': dialing ${shown}: ${scrub(e.message, secrets)}`);
     });
-    ws.on("close", () => dialing.delete(name));
+    ws.on("close", (code) => {
+      dialing.delete(name);
+      if (opened) return;
+      // the dial itself failed : why, at warning, the first time and on a change of cause, then
+      // at most every few minutes while the same cause lasts
+      const why = describeDialFailure(failure || { status: refusedStatus, code }, { side: "rte", url, secrets });
+      const line = failureLine(dialReportOf(name), why, `Runner '${name}': cannot reach its RTE at ${shown}`);
+      if (line) logger.warning(line);
+    });
   }
 }
 
@@ -1746,6 +1793,6 @@ export function dropSocket(name, reason) {
   if (entry) entry.session.close(CLOSE.UNAUTHORIZED, reason);
 }
 
-export { filesMode, sendSettings, sessions, waiting, cancelSent, claims, sending, masked, pruneEnded, ALLOWED_MAX, warnPlain, dialing, dispatch, dialInbound, storeItem, sendJob, onItem, onFetch, adopt, renewTick, abandonLost, NODE_DEAD_SECONDS };
+export { filesMode, sendSettings, dialReports, sessions, waiting, cancelSent, claims, sending, masked, pruneEnded, ALLOWED_MAX, warnPlain, dialing, dispatch, dialInbound, storeItem, sendJob, onItem, onFetch, adopt, renewTick, abandonLost, NODE_DEAD_SECONDS };
 
 export default { startRteHub, handleUpgrade, authenticate, registerHandler, kick, cancel, socketState, isSocketRunner, holdsSocket, pushSettings };

@@ -391,6 +391,13 @@
       app and an inbound RTE's registration call go through `HTTPS_PROXY`, unless the app's host
       is in `NO_PROXY` (host names, `.domain` suffixes, or `*` for every host).
 
+      A dial that fails is logged at warning with its cause and a hint: a name that does not
+      resolve, nothing listening, a certificate not trusted or not for that name, a proxy, or
+      the app refusing the socket (401 the token, 404 the `APP_URL` path or `BASE_URL`). The
+      first failure and every change of cause are logged at once, the same cause again at most
+      every 5 minutes while it lasts, and reaching the app again at notice. The app does the
+      same for an inbound RTE it cannot dial. The token is never logged.
+
       `inbound`: the RTE listens and the app dials it at its runner's address (`RTE_URL`), one
       app node at a time. With `APP_URL` (and `RTE_JOIN_TOKEN` the first time) it registers
       itself with one call ; without, add its runner under Connections > Runners (type RTE, mode
