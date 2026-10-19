@@ -3814,7 +3814,8 @@ export default function getSettings(t) {
           to: (item) => `/settings/backups/${item.folder}`,
         },
         { name: 'download', icon: 'download', title: t('settings.backups.download'), color: 'change' },
-        { name: 'trigger', icon: 'undo', title: t('settings.backups.restore'), color: 'warning' },
+        // apart from looking and downloading : it overwrites the database and the forms
+        { name: 'trigger', icon: 'undo', title: t('settings.backups.restore'), color: 'warning', dividerBefore: true },
         { name: 'delete', icon: 'trash', title: t('common.delete'), color: 'danger' },
       ],
       fields: [

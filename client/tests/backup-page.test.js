@@ -42,6 +42,8 @@ describe("the backups' list", () => {
     expect(backups.actions.map((a) => a.name)).toEqual(['open', 'download', 'trigger', 'delete']);
     // a short label, as every row menu's ; the page is read only, so not Edit
     expect(backups.actions[0].title).toBe('common.open');
+    // Restore apart from Open and Download (Delete gets its line on its own)
+    expect(backups.actions.find((a) => a.name === 'trigger').dividerBefore).toBe(true);
     const [open, download] = backups.actions;
     expect(open.to({ folder: FOLDER })).toBe(`/settings/backups/${FOLDER}`);
     expect(download.icon).toBe('download');
