@@ -509,6 +509,7 @@ export default {
       syslogserver_test_create: '已发送 syslog 测试消息',
       backup_create: '已创建备份',
       backup_delete: '已删除备份',
+      backup_download: '已下载备份',
       backup_restore: '已还原备份',
       backup_restore_create: '已请求还原备份',
       config_create: '已保存配置',
@@ -1909,6 +1910,7 @@ export default {
       labelPlural: '备份',
       description: '用于灾难恢复和还原的数据库备份。',
       showBackup: '显示备份',
+      download: '下载',
       restore: '还原',
       folder: '文件夹',
     },
@@ -2068,6 +2070,7 @@ export default {
   admin: {
     backups: {
       restoreTitle: '恢复',
+      pageNotFound: '未找到备份 {folder}。',
       folder: '文件夹',
       date: '日期',
       description: '描述',
@@ -2082,7 +2085,6 @@ export default {
       restoreEnvDone: '环境文件已恢复。重启后生效。',
       fileCount: '{n} 个文件',
       backupBeforeRestore: '恢复前先创建新备份（推荐）',
-      backupDetails: '备份详情',
       restoring: '正在恢复...',
       restoreInProgress: '恢复已在进行中',
       restoreFailed: '恢复失败',

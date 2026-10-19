@@ -1,4 +1,11 @@
 <script setup>
+/******************************************************************/
+/*                                                                */
+/*  Settings > System > Backups : the backups, each opening its   */
+/*  own page (backup.vue) from its row or its row menu's Show     */
+/*  backup ; Download, Restore and Delete in the row menu too.    */
+/*                                                                */
+/******************************************************************/
 import { toast } from 'vue-sonner';
 import { ref, onMounted } from 'vue';
 import getSettings from '@/config/settings';
@@ -7,91 +14,25 @@ import { useI18n } from 'vue-i18n';
 const { t } = useI18n();
 const settings = computed(() => getSettings(t));
 import Profile from '@/lib/Profile';
-import axios from 'axios';
 import Helpers from '@/lib/Helpers.js';
 
 const adminMulti = ref(null);
 const authenticated = ref(false);
-const currentBackup = ref(null);
-const showBackupDetails = ref(false);
-const restores = ref({});
-const backupFirst = ref(true);
-const action = ref('');
+// the backup whose Restore dialog is open (AppBackupRestore) ; null : none
+const restoring = ref(null);
 
-function previewDetails(folder) {
-  currentBackup.value = folder;
-  showBackupDetails.value = true;
-}
-
-function offcanvasClose() {
-  showBackupDetails.value = false;
-}
-
-// Separate from triggerRestore on purpose. The environment file is captured by every backup
-// but never restored with one, because DB_HOST, the paths and the TLS locations in it describe
-// the machine the backup was taken on - so this is an explicit, separate action.
-async function triggerRestoreEnv(item) {
+/**
+ * Downloads a backup as a .tar.gz (GET /api/v2/backup/<folder>/download).
+ *
+ * Args:
+ *   item (object): the backup.
+ */
+async function download(item) {
   try {
-    const result = await axios.post(`/api/v2/backup/${item.folder}/restore-env`, {});
-    const data = result.data?.data ?? result.data;
-    if (data?.restored) {
-      toast.success(t('admin.backups.restoreEnvDone'));
-    } else {
-      toast.warning(data?.reason || t('admin.backups.notFound'));
-    }
-    restoreClose();
+    await Helpers.downloadFile(`/api/v2/backup/${item.folder}/download`);
   } catch (err) {
-    toast.error(Helpers.parseAxiosResponseError(err));
-  }
-}
-
-function restoreClose() {
-  action.value = '';
-  backupFirst.value = true;
-}
-
-function restoreOpen(folder) {
-  currentBackup.value = folder;
-  action.value = 'restore';
-}
-
-async function triggerRestore(item) {
-  // the button is hidden for these, but the row action can still open the dialog :
-  // never send a restore the server is going to refuse anyway
-  if (item && !item.valid) {
-    toast.error(t('admin.backups.incompleteDetail'));
-    return;
-  }
-  // Read the choice BEFORE closing the dialog : restoreClose() resets backupFirst to
-  // true, and it used to run first - so unticking "backup before restore" changed
-  // nothing and a full mysqldump was taken every time. Worse than wasted work: the
-  // model aborts the whole restore when that pre-backup fails, so a restore could be
-  // refused because of a backup the user had explicitly declined.
-  const withBackup = backupFirst.value;
-  restoreClose();
-  if (item) {
-    if (!restores.value[item.folder]) {
-      try {
-        restores.value[item.folder] = t('admin.backups.restoring');
-        const result = await axios.post(`/api/v2/backup/${item.folder}/restore?backupFirst=${withBackup}`, {});
-        // restored, but the older schema could not be brought up to this release : a warning
-        if (result.data?.schemaUpgraded === false) toast.warning(result.data.message);
-        else toast.success(result.data.message);
-        adminMulti.value.loadItems();
-      } catch (err) {
-        const msg = Helpers.parseAxiosResponseError(err, t('admin.backups.restoreFailed'));
-        toast.error(msg);
-      } finally {
-        // by FOLDER, the key it was set under. A backup record has no `id` at all
-        // (describeBackup returns folder/date/description/valid), so this deleted
-        // restores[undefined] and left the in-progress marker set for ever -
-        // every later restore of that folder answered "restore in progress" and
-        // the only way out was reloading the page.
-        delete restores.value[item.folder];
-      }
-    } else {
-      toast.warning(t('admin.backups.restoreInProgress'));
-    }
+    // the server's reason (downloadFile decodes its error body), else a translated fallback
+    toast.error(Helpers.parseAxiosResponseError(err, t('common.downloadFailed')));
   }
 }
 
@@ -101,139 +42,18 @@ onMounted(async () => {
 </script>
 
 <template>
-  <BsModal v-if="action == 'restore'" @close="restoreClose" icon="undo">
-    <template #title> {{ t('admin.backups.restoreTitle') }} {{ currentBackup.folder }} </template>
-    <template #default>
-      <div v-if="currentBackup && !currentBackup.valid" class="alert alert-warning mt-3 mb-0" role="alert">
-        <strong>{{ t('admin.backups.incomplete') }}</strong
-        ><br />
-        {{ t('admin.backups.incompleteDetail') }}
-      </div>
-      <ul class="list-group list-group-flush mt-3">
-        <li class="list-group-item">
-          <strong>{{ t('admin.backups.folder') }}:</strong> {{ currentBackup.folder }}
-        </li>
-        <li class="list-group-item">
-          <strong>{{ t('admin.backups.date') }}:</strong> {{ Helpers.formatServerDate(currentBackup.date) }}
-        </li>
-        <li class="list-group-item" v-if="currentBackup.description">
-          <strong>{{ t('admin.backups.description') }}:</strong> {{ currentBackup.description }}
-        </li>
-        <li class="list-group-item">
-          <strong>{{ t('admin.backups.backupFile') }}:</strong>
-          <span v-if="currentBackup.backupFileExists">
-            {{ t('admin.backups.exists') }} ({{ Helpers.humanFileSize(currentBackup.backupFileSize) }})
-          </span>
-          <span v-else>
-            {{ t('admin.backups.notFound') }}
-          </span>
-        </li>
-        <li class="list-group-item">
-          <strong>{{ t('admin.backups.configYaml') }}:</strong>
-          <span v-if="currentBackup.configYamlExists">
-            {{ t('admin.backups.exists') }} ({{ Helpers.humanFileSize(currentBackup.configYamlSize) }})
-          </span>
-          <span v-else>
-            {{ t('admin.backups.notFound') }}
-          </span>
-        </li>
-        <li class="list-group-item">
-          <strong>{{ t('admin.backups.envFile') }}:</strong>
-          <span v-if="currentBackup.envFileExists">
-            {{ t('admin.backups.exists') }} ({{ Helpers.humanFileSize(currentBackup.envFileSize) }})
-            <div class="form-text">{{ t('admin.backups.envFileHelp') }}</div>
-          </span>
-          <span v-else>
-            {{ t('admin.backups.notFound') }}
-          </span>
-        </li>
-        <li class="list-group-item">
-          <strong>{{ t('admin.backups.formsDirectory') }}:</strong>
-          <span v-if="currentBackup.formsDirExists">
-            {{ t('admin.backups.exists') }} ({{ t('admin.backups.fileCount', currentBackup.formsDirFileCount) }},
-            {{ Helpers.humanFileSize(currentBackup.formsDirTotalSize) }})
-          </span>
-          <span v-else>
-            {{ t('admin.backups.notFound') }}
-          </span>
-        </li>
-      </ul>
-      <br />
-      <BsCheckbox v-model="backupFirst" :label="t('admin.backups.backupBeforeRestore')" class="mb-3" />
-    </template>
-    <template #footer>
-      <BsButton
-        v-if="currentBackup?.envFileExists"
-        icon="file-import"
-        colorClass="secondary"
-        @click="triggerRestoreEnv(currentBackup)"
-        >{{ t('admin.backups.restoreEnv') }}</BsButton
-      >
-      <BsButton v-if="currentBackup?.valid" icon="undo" @click="triggerRestore(currentBackup)">{{
-        t('admin.backups.restoreTitle')
-      }}</BsButton>
-    </template>
-  </BsModal>
+  <AppBackupRestore :backup="restoring" @close="restoring = null" @restored="adminMulti?.loadItems()" />
   <AppSettingsPage>
     <AppAdminMulti
       v-if="authenticated"
       ref="adminMulti"
       :settings="settings.backups"
       apiVersion="2"
-      @trigger="restoreOpen"
-      @preview="previewDetails"
+      @trigger="restoring = $event"
+      @download="download"
       @reset="null"
     />
     <!-- the user being checked : the title and placeholders where the list comes -->
     <AppPageSkeleton v-else />
-    <BsOffCanvas :title="t('admin.backups.backupDetails')" :show="showBackupDetails" @close="offcanvasClose">
-      <div v-if="currentBackup">
-        <div v-if="!currentBackup.valid" class="alert alert-warning" role="alert">
-          <strong>{{ t('admin.backups.incomplete') }}</strong
-          ><br />
-          {{ t('admin.backups.incompleteDetail') }}
-        </div>
-        <ul class="list-group list-group-flush">
-          <li class="list-group-item">
-            <strong>{{ t('admin.backups.folder') }}:</strong> {{ currentBackup.folder }}
-          </li>
-          <li class="list-group-item">
-            <strong>{{ t('admin.backups.date') }}:</strong> {{ Helpers.formatServerDate(currentBackup.date) }}
-          </li>
-          <li class="list-group-item" v-if="currentBackup.description">
-            <strong>{{ t('admin.backups.description') }}:</strong> {{ currentBackup.description }}
-          </li>
-          <li class="list-group-item">
-            <strong>{{ t('admin.backups.backupFile') }}:</strong>
-            <span v-if="currentBackup.backupFileExists">
-              {{ t('admin.backups.exists') }} ({{ Helpers.humanFileSize(currentBackup.backupFileSize) }})
-            </span>
-            <span v-else>
-              {{ t('admin.backups.notFound') }}
-            </span>
-          </li>
-          <li class="list-group-item">
-            <strong>{{ t('admin.backups.configYaml') }}:</strong>
-            <span v-if="currentBackup.configYamlExists">
-              {{ t('admin.backups.exists') }} ({{ Helpers.humanFileSize(currentBackup.configYamlSize) }})
-            </span>
-            <span v-else>
-              {{ t('admin.backups.notFound') }}
-            </span>
-          </li>
-          <li class="list-group-item">
-            <strong>{{ t('admin.backups.formsDirectory') }}:</strong>
-            <span v-if="currentBackup.formsDirExists">
-              {{ t('admin.backups.exists') }} ({{ t('admin.backups.fileCount', currentBackup.formsDirFileCount) }},
-              {{ Helpers.humanFileSize(currentBackup.formsDirTotalSize) }})
-            </span>
-            <span v-else>
-              {{ t('admin.backups.notFound') }}
-            </span>
-          </li>
-        </ul>
-      </div>
-      <AppSkeleton v-else shape="detail" :count="5" />
-    </BsOffCanvas>
   </AppSettingsPage>
 </template>

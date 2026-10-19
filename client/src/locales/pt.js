@@ -524,6 +524,7 @@ export default {
       syslogserver_test_create: 'Mensagem de teste de syslog enviada',
       backup_create: 'Cópia de segurança criada',
       backup_delete: 'Cópia de segurança eliminada',
+      backup_download: 'Cópia de segurança transferida',
       backup_restore: 'Cópia de segurança restaurada',
       backup_restore_create: 'Restauro de cópia de segurança pedido',
       config_create: 'Configuração guardada',
@@ -2008,6 +2009,7 @@ export default {
       labelPlural: 'Cópias de segurança',
       description: 'Cópias de segurança da base de dados para recuperação de desastres e restauro.',
       showBackup: 'Mostrar cópia de segurança',
+      download: 'Transferir',
       restore: 'Restaurar',
       folder: 'Pasta',
     },
@@ -2180,6 +2182,7 @@ export default {
   admin: {
     backups: {
       restoreTitle: 'Restaurar',
+      pageNotFound: 'Cópia de segurança {folder} não encontrada.',
       folder: 'Pasta',
       date: 'Data',
       description: 'Descrição',
@@ -2195,7 +2198,6 @@ export default {
       restoreEnvDone: 'Ficheiro de ambiente restaurado. Reinicie para que tenha efeito.',
       fileCount: '{n} ficheiro | {n} ficheiros',
       backupBeforeRestore: 'Criar uma nova cópia de segurança antes de restaurar (recomendado)',
-      backupDetails: 'Detalhes da cópia de segurança',
       restoring: 'A restaurar...',
       restoreInProgress: 'Já está um restauro em curso',
       restoreFailed: 'O restauro falhou',

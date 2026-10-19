@@ -3,6 +3,7 @@ import Audit from '../../models/audit.model.js';
 import BackupModel from '../../models/backup.model.js';
 import RestResult from '../../models/restResult.model.v2.js';
 import i18n from '../../lib/i18n.js';
+import logger from '../../lib/logger.js';
 
 
 const backupController = {
@@ -71,6 +72,29 @@ const backupController = {
       const folder = req.params.folder;
       const record = await BackupModel.getBackupByFolder(folder);
       res.json(RestResult.single(record));
+    } catch (err) {
+      Errors.ReturnError(res, err);
+    }
+  },
+  // The backup folder as a .tar.gz, streamed (BackupModel.archiveBackup) : to keep a copy off the
+  // host, or to restore it on another one. The folder name is checked (and the folder looked
+  // up) BEFORE anything is sent, so a bad or unknown one is still an ordinary JSON error.
+  async download(req, res) {
+    try {
+      const folder = req.params.folder;
+      const { stream, fileName } = await BackupModel.archiveBackup(folder);
+      // a download carries the whole database out of the host (its stored credentials
+      // encrypted, the environment file's other credentials as they are) : who took it is kept
+      Audit.log({ user: req.user?.user, ip: req.ip, action: 'backup.download', targetType: 'backup', target: folder });
+      res.set('Content-Type', 'application/gzip');
+      res.set('Content-Disposition', `attachment; filename="${fileName}"`);
+      // a failure midway (a file that cannot be read) : the status line is sent already, so
+      // the connection is cut and the browser sees a failed download rather than a short archive
+      stream.on('error', (err) => {
+        logger.error(`Downloading backup '${folder}' failed: ${err.message || err}`);
+        res.destroy(err);
+      });
+      stream.pipe(res);
     } catch (err) {
       Errors.ReturnError(res, err);
     }

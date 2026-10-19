@@ -493,6 +493,7 @@ export default {
       auth_login: 'Inicio de sesión',
       backup_create: 'Copia de seguridad creada',
       backup_delete: 'Copia de seguridad eliminada',
+      backup_download: 'Copia de seguridad descargada',
       backup_restore: 'Copia de seguridad restaurada',
       backup_restore_create: 'Restauración de copia solicitada',
       config_create: 'Configuración guardada',
@@ -2011,6 +2012,7 @@ export default {
       labelPlural: 'Copias de seguridad',
       description: 'Copias de seguridad de base de datos para recuperación ante desastres.',
       showBackup: 'Mostrar copia de seguridad',
+      download: 'Descargar',
       restore: 'Restaurar',
       folder: 'Carpeta',
     },
@@ -2183,6 +2185,7 @@ export default {
   admin: {
     backups: {
       restoreTitle: 'Restaurar',
+      pageNotFound: 'No se encontró la copia de seguridad {folder}.',
       folder: 'Carpeta',
       date: 'Fecha',
       description: 'Descripción',
@@ -2198,7 +2201,6 @@ export default {
       restoreEnvDone: 'Archivo de entorno restaurado. Reinicie para aplicarlo.',
       fileCount: '{n} archivo | {n} archivos',
       backupBeforeRestore: 'Crear una nueva copia de seguridad antes de restaurar (recomendado)',
-      backupDetails: 'Detalles de la copia de seguridad',
       restoring: 'Restaurando...',
       restoreInProgress: 'Restauración ya en progreso',
       restoreFailed: 'La restauracion ha fallado',

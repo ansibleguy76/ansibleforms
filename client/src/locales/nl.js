@@ -492,6 +492,7 @@ export default {
       auth_login: 'Aanmelding',
       backup_create: 'Back-up aangemaakt',
       backup_delete: 'Back-up verwijderd',
+      backup_download: 'Back-up gedownload',
       backup_restore: 'Back-up teruggezet',
       backup_restore_create: 'Terugzetten van back-up aangevraagd',
       config_create: 'Configuratie opgeslagen',
@@ -2003,6 +2004,7 @@ export default {
       labelPlural: 'Back-ups',
       description: 'Databaseback-ups voor noodherstel en herstel.',
       showBackup: 'Back-up tonen',
+      download: 'Downloaden',
       restore: 'Herstellen',
       folder: 'Map',
     },
@@ -2173,6 +2175,7 @@ export default {
   admin: {
     backups: {
       restoreTitle: 'Herstellen',
+      pageNotFound: 'Back-up {folder} niet gevonden.',
       folder: 'Map',
       date: 'Datum',
       description: 'Beschrijving',
@@ -2188,7 +2191,6 @@ export default {
       restoreEnvDone: 'Omgevingsbestand hersteld. Herstart om het toe te passen.',
       fileCount: '{n} bestand | {n} bestanden',
       backupBeforeRestore: 'Maak eerst een nieuwe back-up aan voor het herstellen (aanbevolen)',
-      backupDetails: 'Back-up details',
       restoring: 'Herstellen...',
       restoreInProgress: 'Herstel is al bezig',
       restoreFailed: 'Herstellen mislukt',

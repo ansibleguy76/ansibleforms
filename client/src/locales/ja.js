@@ -518,6 +518,7 @@ export default {
       syslogserver_test_create: 'syslog テストメッセージを送信',
       backup_create: 'バックアップを作成',
       backup_delete: 'バックアップを削除',
+      backup_download: 'バックアップをダウンロード',
       backup_restore: 'バックアップを復元',
       backup_restore_create: 'バックアップの復元を要求',
       config_create: '設定を保存',
@@ -1972,6 +1973,7 @@ export default {
       labelPlural: 'バックアップ',
       description: '障害復旧と復元のためのデータベースバックアップです。',
       showBackup: 'バックアップを表示',
+      download: 'ダウンロード',
       restore: '復元',
       folder: 'フォルダー',
     },
@@ -2136,6 +2138,7 @@ export default {
   admin: {
     backups: {
       restoreTitle: '復元',
+      pageNotFound: 'バックアップ {folder} が見つかりません。',
       folder: 'フォルダー',
       date: '日付',
       description: '説明',
@@ -2151,7 +2154,6 @@ export default {
       restoreEnvDone: '環境ファイルを復元しました。反映するには再起動してください。',
       fileCount: '{n} 個のファイル',
       backupBeforeRestore: '復元する前に新しいバックアップを作成する (推奨)',
-      backupDetails: 'バックアップの詳細',
       restoring: '復元中...',
       restoreInProgress: '復元はすでに実行中です',
       restoreFailed: '復元に失敗しました',

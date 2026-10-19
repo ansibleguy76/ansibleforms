@@ -3801,8 +3801,19 @@ export default function getSettings(t) {
       labelPlural: t('settings.backups.labelPlural'),
       description: t('settings.backups.description'),
       idKey: 'folder',
+      selectable: false,
+      // a backup has its own page (pages/admin/backup.vue) : its row and Show backup open it ;
+      // Download (a .tar.gz), Restore (the dialog, AppBackupRestore) and Delete from its menu too
+      openPage: (item) => `/settings/backups/${item.folder}`,
       actions: [
-        { name: 'preview', title: t('settings.backups.showBackup'), icon: 'info-circle', color: 'change' },
+        {
+          name: 'open',
+          title: t('settings.backups.showBackup'),
+          icon: 'info-circle',
+          color: 'change',
+          to: (item) => `/settings/backups/${item.folder}`,
+        },
+        { name: 'download', icon: 'download', title: t('settings.backups.download'), color: 'change' },
         { name: 'trigger', icon: 'undo', title: t('settings.backups.restore'), color: 'warning' },
         { name: 'delete', icon: 'trash', title: t('common.delete'), color: 'danger' },
       ],

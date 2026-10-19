@@ -132,6 +132,7 @@ const emit = defineEmits([
   'allow_sign_in',
   'move_up',
   'move_down',
+  'download',
 ]);
 
 // PROPS

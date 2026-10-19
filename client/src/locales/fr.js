@@ -495,6 +495,7 @@ export default {
       auth_login: 'Connexion',
       backup_create: 'Sauvegarde créée',
       backup_delete: 'Sauvegarde supprimée',
+      backup_download: 'Sauvegarde téléchargée',
       backup_restore: 'Sauvegarde restaurée',
       backup_restore_create: 'Restauration de sauvegarde demandée',
       config_create: 'Configuration enregistrée',
@@ -2019,6 +2020,7 @@ export default {
       labelPlural: 'Sauvegardes',
       description: 'Sauvegardes de base de données pour la reprise après sinistre.',
       showBackup: 'Afficher la sauvegarde',
+      download: 'Télécharger',
       restore: 'Restaurer',
       folder: 'Dossier',
     },
@@ -2191,6 +2193,7 @@ export default {
   admin: {
     backups: {
       restoreTitle: 'Restaurer',
+      pageNotFound: 'La sauvegarde {folder} est introuvable.',
       folder: 'Dossier',
       date: 'Date',
       description: 'Description',
@@ -2206,7 +2209,6 @@ export default {
       restoreEnvDone: "Fichier d'environnement restauré. Redémarrez pour l'appliquer.",
       fileCount: '{n} fichier | {n} fichiers',
       backupBeforeRestore: 'Creer une nouvelle sauvegarde avant la restauration (recommande)',
-      backupDetails: 'Details de la sauvegarde',
       restoring: 'Restauration...',
       restoreInProgress: 'Restauration deja en cours',
       restoreFailed: 'La restauration a echoue',

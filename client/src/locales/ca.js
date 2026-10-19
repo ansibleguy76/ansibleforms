@@ -523,6 +523,7 @@ export default {
       syslogserver_test_create: 'Missatge de prova de syslog enviat',
       backup_create: 'Còpia de seguretat creada',
       backup_delete: 'Còpia de seguretat suprimida',
+      backup_download: 'Còpia de seguretat baixada',
       backup_restore: 'Còpia de seguretat restaurada',
       backup_restore_create: 'Restauració de còpia de seguretat sol·licitada',
       config_create: 'Configuració desada',
@@ -2015,6 +2016,7 @@ export default {
       labelPlural: 'Còpies de seguretat',
       description: 'Còpies de seguretat de la base de dades per a la recuperació davant de desastres i la restauració.',
       showBackup: 'Mostra la còpia de seguretat',
+      download: 'Baixa',
       restore: 'Restaura',
       folder: 'Carpeta',
     },
@@ -2187,6 +2189,7 @@ export default {
   admin: {
     backups: {
       restoreTitle: 'Restaura',
+      pageNotFound: "No s'ha trobat la còpia de seguretat {folder}.",
       folder: 'Carpeta',
       date: 'Data',
       description: 'Descripció',
@@ -2202,7 +2205,6 @@ export default {
       restoreEnvDone: "S'ha restaurat el fitxer d'entorn. Reinicia perquè tingui efecte.",
       fileCount: '{n} fitxer | {n} fitxers',
       backupBeforeRestore: 'Crea una còpia de seguretat nova abans de restaurar (recomanat)',
-      backupDetails: 'Detalls de la còpia de seguretat',
       restoring: "S'està restaurant...",
       restoreInProgress: 'Ja hi ha una restauració en curs',
       restoreFailed: 'La restauració ha fallat',

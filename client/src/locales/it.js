@@ -493,6 +493,7 @@ export default {
       auth_login: 'Accesso',
       backup_create: 'Backup creato',
       backup_delete: 'Backup eliminato',
+      backup_download: 'Backup scaricato',
       backup_restore: 'Backup ripristinato',
       backup_restore_create: 'Ripristino del backup richiesto',
       config_create: 'Configurazione salvata',
@@ -2001,6 +2002,7 @@ export default {
       labelPlural: 'Backup',
       description: 'Backup del database per il ripristino di emergenza.',
       showBackup: 'Mostra backup',
+      download: 'Scarica',
       restore: 'Ripristina',
       folder: 'Cartella',
     },
@@ -2171,6 +2173,7 @@ export default {
   admin: {
     backups: {
       restoreTitle: 'Ripristina',
+      pageNotFound: 'Backup {folder} non trovato.',
       folder: 'Cartella',
       date: 'Data',
       description: 'Descrizione',
@@ -2186,7 +2189,6 @@ export default {
       restoreEnvDone: 'File di ambiente ripristinato. Riavviare per applicarlo.',
       fileCount: '{n} file | {n} file',
       backupBeforeRestore: 'Crea un nuovo backup prima del ripristino (consigliato)',
-      backupDetails: 'Dettagli backup',
       restoring: 'Ripristino...',
       restoreInProgress: 'Ripristino gia in corso',
       restoreFailed: 'Ripristino non riuscito',

@@ -494,6 +494,7 @@ export default {
       auth_login: 'Anmeldung',
       backup_create: 'Backup erstellt',
       backup_delete: 'Backup gelöscht',
+      backup_download: 'Backup heruntergeladen',
       backup_restore: 'Backup wiederhergestellt',
       backup_restore_create: 'Backup-Wiederherstellung angefordert',
       config_create: 'Konfiguration gespeichert',
@@ -2018,6 +2019,7 @@ export default {
       labelPlural: 'Backups',
       description: 'Datenbank-Backups für Notfallwiederherstellung.',
       showBackup: 'Backup anzeigen',
+      download: 'Herunterladen',
       restore: 'Wiederherstellen',
       folder: 'Ordner',
     },
@@ -2191,6 +2193,7 @@ export default {
   admin: {
     backups: {
       restoreTitle: 'Wiederherstellen',
+      pageNotFound: 'Backup {folder} wurde nicht gefunden.',
       folder: 'Ordner',
       date: 'Datum',
       description: 'Beschreibung',
@@ -2206,7 +2209,6 @@ export default {
       restoreEnvDone: 'Umgebungsdatei wiederhergestellt. Neustart erforderlich.',
       fileCount: '{n} Datei | {n} Dateien',
       backupBeforeRestore: 'Vor dem Wiederherstellen ein neues Backup erstellen (empfohlen)',
-      backupDetails: 'Backup-Details',
       restoring: 'Wiederherstellung...',
       restoreInProgress: 'Wiederherstellung laeuft bereits',
       restoreFailed: 'Wiederherstellung fehlgeschlagen',

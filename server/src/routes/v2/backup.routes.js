@@ -18,6 +18,9 @@ router.post('/:folder/restore-env', middleware.checkBackupMiddleware, backupCont
 // GET /backup (list backups)
 router.get('/', middleware.checkBackupMiddleware, backupController.listBackups);
 
+// GET /backup/:folder/download (the backup folder as a .tar.gz, streamed)
+router.get('/:folder/download', middleware.checkBackupMiddleware, backupController.download);
+
 // GET /backup/:folder (get single backup)
 router.get('/:folder', middleware.checkBackupMiddleware, backupController.getBackupByFolder);
 

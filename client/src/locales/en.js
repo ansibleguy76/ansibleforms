@@ -486,6 +486,7 @@ export default {
       auth_login: 'Sign-in',
       backup_create: 'Backup created',
       backup_delete: 'Backup deleted',
+      backup_download: 'Backup downloaded',
       backup_restore: 'Backup restored',
       backup_restore_create: 'Backup restore requested',
       config_create: 'Configuration saved',
@@ -1980,6 +1981,7 @@ export default {
       labelPlural: 'Backups',
       description: 'Database backups for disaster recovery and restore.',
       showBackup: 'Show backup',
+      download: 'Download',
       restore: 'Restore',
       folder: 'Folder',
     },
@@ -2148,6 +2150,7 @@ export default {
   admin: {
     backups: {
       restoreTitle: 'Restore',
+      pageNotFound: 'Backup {folder} was not found.',
       folder: 'Folder',
       date: 'Date',
       description: 'Description',
@@ -2163,7 +2166,6 @@ export default {
       restoreEnvDone: 'Environment file restored. Restart for it to take effect.',
       fileCount: '{n} file | {n} files',
       backupBeforeRestore: 'Create a new backup before restoring (recommended)',
-      backupDetails: 'Backup details',
       restoring: 'Restoring...',
       restoreInProgress: 'Restore already in progress',
       restoreFailed: 'Restore failed',

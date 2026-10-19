@@ -69,6 +69,7 @@ const users = () => import('@/pages/admin/users.vue');
 const user = () => import('@/pages/admin/user.vue');
 const directoryUser = () => import('@/pages/admin/directory-user.vue');
 const backups = () => import('@/pages/admin/backups.vue');
+const backupPage = () => import('@/pages/admin/backup.vue');
 
 import TokenStorage from '@/lib/TokenStorage.js';
 import { hasPermission } from '@/lib/permission';
@@ -360,10 +361,18 @@ const routes = [
     component: directoryUser,
     meta: { permission: 'showSettings' },
   },
+  // the backups ; and a backup's page, its folder the 14 digits of its timestamp
+  // (20261019212310), so a tab of the list is never taken for a backup
   {
     path: '/settings/backups/:tab?',
     name: '/settings/backups',
     component: backups,
+    meta: { permission: 'allowBackupOps' },
+  },
+  {
+    path: '/settings/backups/:folder(\\d{14})/:tab?',
+    name: '/settings/backups/:folder',
+    component: backupPage,
     meta: { permission: 'allowBackupOps' },
   },
   // GET /api/v2/health is mounted behind checkSettingsMiddleware, so the guard

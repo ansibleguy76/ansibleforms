@@ -521,6 +521,7 @@ export default {
       syslogserver_test_create: 'Wysłano komunikat testowy syslog',
       backup_create: 'Utworzono kopię zapasową',
       backup_delete: 'Usunięto kopię zapasową',
+      backup_download: 'Pobrano kopię zapasową',
       backup_restore: 'Przywrócono kopię zapasową',
       backup_restore_create: 'Zażądano przywrócenia kopii zapasowej',
       config_create: 'Zapisano konfigurację',
@@ -1996,6 +1997,7 @@ export default {
       labelPlural: 'Kopie zapasowe',
       description: 'Kopie zapasowe bazy danych do odtwarzania po awarii i przywracania.',
       showBackup: 'Pokaż kopię zapasową',
+      download: 'Pobierz',
       restore: 'Przywróć',
       folder: 'Folder',
     },
@@ -2165,6 +2167,7 @@ export default {
   admin: {
     backups: {
       restoreTitle: 'Przywracanie',
+      pageNotFound: 'Nie znaleziono kopii zapasowej {folder}.',
       folder: 'Folder',
       date: 'Data',
       description: 'Opis',
@@ -2180,7 +2183,6 @@ export default {
       restoreEnvDone: 'Przywrócono plik środowiska. Uruchom ponownie, aby zaczął obowiązywać.',
       fileCount: '{n} plik | {n} pliki | {n} plików',
       backupBeforeRestore: 'Utwórz nową kopię zapasową przed przywróceniem (zalecane)',
-      backupDetails: 'Szczegóły kopii zapasowej',
       restoring: 'Przywracanie...',
       restoreInProgress: 'Przywracanie już trwa',
       restoreFailed: 'Przywracanie nie powiodło się',
