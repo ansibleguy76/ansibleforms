@@ -2319,6 +2319,26 @@
         }
       }
     },
+    "/backup/{folder}/download": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["backup"],
+        "summary": "Download a backup as a .tar.gz",
+        "description": "Streams the backup folder (database dump, config.yaml, forms folder, meta.yaml and the environment file without the master secrets) as ansibleforms-backup-<folder>.tar.gz. Needs the Backup operations role option, like every backup route.",
+        "parameters": [
+          { "name": "folder", "in": "path", "required": true, "schema": { "type": "string", "pattern": "^\\d{14}$" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "The backup folder as a gzipped tar archive",
+            "content": { "application/gzip": { "schema": { "type": "string", "format": "binary" } } }
+          },
+          "400": { "description": "Not a backup folder name" },
+          "403": { "description": "No backup operations permission" },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
     "/credential": {
       "get": {
         "security": [ { "bearerAuth": [] } ],

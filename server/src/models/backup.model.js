@@ -8,6 +8,7 @@ import appConfig from '../../config/app.config.js';
 import { MANAGED_ENV_PATH } from '../lib/envSettings.js';
 import Helpers from '../lib/common.js';
 import yaml from 'yaml';
+import { create as createTar } from 'tar';
 // the same parser load-env.js and envSettings.js read this file with, so the check below
 // cannot disagree with what the application actually sees
 import dotenv from 'dotenv';
@@ -155,6 +156,11 @@ async function describeBackup(folder) {
     date: Helpers.dateFromBackupFolder(folder),
     description,
     valid: backupFileExists && backupFileSize > 0,
+    // the names of what it holds, shown with their sizes (the backup's page, the restore dialog)
+    backupFileName: path.basename(backupFile),
+    configYamlName: path.basename(configYaml),
+    envFileName: path.basename(envFile),
+    formsDirName: path.basename(formsDir),
     backupFileExists,
     configYamlExists: await fs.stat(configYaml).then(() => true).catch(() => false),
     formsDirExists: await fs.stat(formsDir).then(() => true).catch(() => false),
@@ -928,7 +934,23 @@ class BackupModel {
     return { message: 'Backup deleted', folder };
   }
 
-  static async getBackupByFolder(folder) {
+  /**
+   * Resolves a backup folder NAME to the folder on disk, refusing anything that is not one.
+   *
+   * The name must be the 14 digits of a backup's timestamp (YYYYMMDDHHmmss), like every
+   * sibling method checks : no dot, no slash, so it can never leave the backup path.
+   *
+   * Args:
+   *   folder (string): The backup folder name.
+   *
+   * Returns:
+   *   Promise<string>: The absolute path of the backup folder.
+   *
+   * Raises:
+   *   BadRequestError: When the name is missing or not a backup folder name.
+   *   NotFoundError: When there is no such folder.
+   */
+  static async resolveBackupFolder(folder) {
     if (!folder || !/^\d{14}$/.test(folder)) throw new Errors.BadRequestError('Invalid or missing backup folder');
     const backupFolder = path.join(appConfig.backupPath, folder);
     let stat;
@@ -938,7 +960,57 @@ class BackupModel {
       throw new Errors.NotFoundError('Backup folder not found');
     }
     if (!stat.isDirectory()) throw new Errors.NotFoundError('Backup folder not found');
+    return backupFolder;
+  }
+
+  static async getBackupByFolder(folder) {
+    await this.resolveBackupFolder(folder);
     return await describeBackup(folder);
+  }
+
+  /**
+   * A backup folder as a gzipped tar archive, streamed : read from disk as it is sent, never
+   * held in memory as a whole (a dump can be gigabytes).
+   *
+   * The archive holds the folder itself (<folder>/...), so extracting it gives back the same
+   * folder, ready to be dropped into the backup path of another host. Only its regular files
+   * and folders go in : a symbolic link (which a backup does not make : copyDir copies what a
+   * link points to) or anything else is left out, so nothing beyond the folder's own files can
+   * ever end up in the archive.
+   *
+   * What a backup folder holds : the database dump (ansibleforms.sql, its stored credentials
+   * encrypted), config.yaml, the forms folder, meta.yaml (its description), the forms' symbolic
+   * links manifest when there were any, and managed.env WITHOUT the master secrets
+   * (copyEnvWithoutMasterSecrets), which can still hold other credentials (VAULT_TOKEN, a mail
+   * password) : the same 0600 file the folder holds, which is why the route is a backup operator's.
+   *
+   * Args:
+   *   folder (string): The backup folder name.
+   *
+   * Returns:
+   *   Promise<object>: { stream (a readable stream of the .tar.gz), fileName (its download name) }.
+   *
+   * Raises:
+   *   BadRequestError: When the name is missing or not a backup folder name.
+   *   NotFoundError: When there is no such folder.
+   */
+  static async archiveBackup(folder) {
+    await this.resolveBackupFolder(folder);
+    // step 1 : from the backup path, so every entry starts with the folder's name
+    const stream = createTar(
+      {
+        gzip: true,
+        cwd: appConfig.backupPath,
+        // no uid/gid/user names of this host in the archive
+        portable: true,
+        // lstat : a link is seen as a link, never followed
+        follow: false,
+        filter: (_entry, stat) => stat.isFile() || stat.isDirectory(),
+      },
+      [folder]
+    );
+    // step 2 : the name it is downloaded as
+    return { stream, fileName: `ansibleforms-backup-${folder}.tar.gz` };
   }
 }
 
