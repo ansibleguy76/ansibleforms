@@ -21,11 +21,54 @@ export function parseRetentionDays(value) {
   return Number.isNaN(days) || days < 0 ? 30 : days;
 }
 
+// The levels the logger knows : winston's syslog levels, the most severe first. They have
+// `warning` and no `warn`, and winston logs NOTHING at all (errors included) for a level it does
+// not know - which is what LOG_LEVEL=warn did, the value the documentation once gave.
+export const LOG_LEVELS = ['emerg', 'alert', 'crit', 'error', 'warning', 'notice', 'info', 'debug'];
+
+// each level variable with its documented default (help.yaml), used when it is unset or unknown
+export const LOG_LEVEL_DEFAULTS = {
+  LOG_LEVEL: 'notice',
+  LOG_CONSOLE_LEVEL: 'notice',
+  LOG_SYSLOG_LEVEL: 'debug',
+};
+
+/**
+ * The level a value names, or null when it names none : case and spaces do not matter, and
+ * `warn` is `warning` (what the documentation once said, still in many an environment).
+ *
+ * Args:
+ *   value (string|undefined): the value of a level variable.
+ *
+ * Returns:
+ *   string|null: the level, or null for an empty or unknown value.
+ */
+export function knownLogLevel(value) {
+  const level = String(value ?? '').trim().toLowerCase();
+  if (level === 'warn') return 'warning';
+  return LOG_LEVELS.includes(level) ? level : null;
+}
+
+/**
+ * The level a level variable sets : its value when it names one, its documented default when
+ * it is unset or names none (logger.js says which, once, at start).
+ *
+ * Args:
+ *   name (string): the variable (LOG_LEVEL, LOG_CONSOLE_LEVEL, LOG_SYSLOG_LEVEL).
+ *   value (string|undefined): its value.
+ *
+ * Returns:
+ *   string: the level.
+ */
+export function parseLogLevel(name, value) {
+  return knownLogLevel(value) || LOG_LEVEL_DEFAULTS[name] || 'notice';
+}
+
 var log_config = {
-  level: process.env.LOG_LEVEL || "notice",
+  level: parseLogLevel('LOG_LEVEL', process.env.LOG_LEVEL),
   path: process.env.LOG_PATH || path.resolve(__dirname + '/../persistent/logs'),
-  consolelevel: process.env.LOG_CONSOLE_LEVEL || "notice",
-  sysloglevel: process.env.LOG_SYSLOG_LEVEL || "debug",
+  consolelevel: parseLogLevel('LOG_CONSOLE_LEVEL', process.env.LOG_CONSOLE_LEVEL),
+  sysloglevel: parseLogLevel('LOG_SYSLOG_LEVEL', process.env.LOG_SYSLOG_LEVEL),
   // no default host : syslog is off until LOG_SYSLOG_HOST names one (logger.js only builds
   // the transport for a host). A "localhost" default sent every install's logs to udp 514.
   sysloghost: process.env.LOG_SYSLOG_HOST || "",

@@ -1,7 +1,7 @@
 import winston from 'winston';
 import 'winston-daily-rotate-file';
 import 'winston-syslog';
-import loggerConfig from '../../config/log.config.js';
+import loggerConfig, { LOG_LEVEL_DEFAULTS, knownLogLevel, parseLogLevel } from '../../config/log.config.js';
 import moment from 'moment-timezone';
 import os from 'os';
 import { currentRequest } from './requestContext.js';
@@ -167,6 +167,30 @@ const Logger = winston.createLogger({
   levels: winston.config.syslog.levels,
   transports,
 })
+
+/**
+ * The level a level variable sets (log.config.js, parseLogLevel), with one warning naming the
+ * variable and its value when the value names no level : the documented default is used then,
+ * where winston used to be handed the value and log nothing at all.
+ *
+ * Args:
+ *   name (string): the variable (LOG_LEVEL, LOG_CONSOLE_LEVEL, LOG_SYSLOG_LEVEL).
+ *   value (string|undefined): its value.
+ *
+ * Returns:
+ *   string: the level.
+ */
+export function logLevelOf(name, value) {
+  const level = parseLogLevel(name, value);
+  if (String(value ?? '').trim() !== '' && !knownLogLevel(value)) {
+    Logger.warning(`${name}=${String(value).trim()} is not a log level (${Object.keys(winston.config.syslog.levels).join(', ')}), using ${level}`);
+  }
+  return level;
+}
+
+// the level variables the process started with : log.config.js already fell back to the
+// default for an unknown one, said here now that there is a logger to say it with
+for (const name of Object.keys(LOG_LEVEL_DEFAULTS)) logLevelOf(name, process.env[name]);
 
 // Log levels applied without a restart. winston keeps the level on the logger and on each
 // transport as a plain mutable property, so the settings page can change LOG_LEVEL,
@@ -463,7 +487,10 @@ export function sendTestLine(server, message, timeoutMs = 5000) {
   });
 }
 
-export function setLogLevel(which, level) {
+export function setLogLevel(which, value) {
+  if (!value) return false;
+  // `warn` is `warning`, and a level winston does not know would silence the transport
+  const level = knownLogLevel(value);
   if (!level) return false;
   if (which === 'file') {
     // the transport currently attached, NOT the import-time one : see currentFileTransport

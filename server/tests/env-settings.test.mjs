@@ -87,6 +87,31 @@ describe("editing environment variables", () => {
     assert.match(Env.validate("ANY", "a\nb", {}), /line break/);
   });
 
+  test("a log level is refused unless winston knows it, warn taken as warning", async () => {
+    // winston logs nothing at all for a level it does not know : refused where it is typed
+    for (const name of ["LOG_LEVEL", "LOG_CONSOLE_LEVEL", "LOG_SYSLOG_LEVEL"]) {
+      assert.match(Env.validate(name, "loud", {}), /must be one of/);
+      assert.equal(Env.validate(name, "warn", {}), null);
+      assert.equal(Env.validate(name, "WARN", {}), null);
+      assert.equal(Env.validate(name, "warning", {}), null);
+      assert.equal(Env.validate(name, "", {}), null);
+    }
+    // a warn saved before is applied as the level it means
+    const { default: logConfig } = await import("../config/log.config.js");
+    const before = { level: logConfig.level, consolelevel: logConfig.consolelevel };
+    try {
+      assert.equal(Env.applyLive("LOG_LEVEL", "warn"), true);
+      assert.equal(logConfig.level, "warning");
+      Env.applyLive("LOG_CONSOLE_LEVEL", "WARN");
+      assert.equal(logConfig.consolelevel, "warning");
+    } finally {
+      Env.applyLive("LOG_LEVEL", before.level);
+      Env.applyLive("LOG_CONSOLE_LEVEL", before.consolelevel);
+      delete process.env.LOG_LEVEL;
+      delete process.env.LOG_CONSOLE_LEVEL;
+    }
+  });
+
   test("a live variable is applied to the running config, a restart one is not", () => {
     const saved = appConfig.jobRetentionDays;
     try {
