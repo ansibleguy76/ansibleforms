@@ -1996,7 +1996,6 @@ export default {
       label: 'Kopia zapasowa',
       labelPlural: 'Kopie zapasowe',
       description: 'Kopie zapasowe bazy danych do odtwarzania po awarii i przywracania.',
-      showBackup: 'Pokaż kopię zapasową',
       download: 'Pobierz',
       restore: 'Przywróć',
       folder: 'Folder',

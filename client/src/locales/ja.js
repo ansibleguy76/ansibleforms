@@ -1972,7 +1972,6 @@ export default {
       label: 'バックアップ',
       labelPlural: 'バックアップ',
       description: '障害復旧と復元のためのデータベースバックアップです。',
-      showBackup: 'バックアップを表示',
       download: 'ダウンロード',
       restore: '復元',
       folder: 'フォルダー',

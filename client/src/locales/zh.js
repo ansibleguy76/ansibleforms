@@ -1909,7 +1909,6 @@ export default {
       label: '备份',
       labelPlural: '备份',
       description: '用于灾难恢复和还原的数据库备份。',
-      showBackup: '显示备份',
       download: '下载',
       restore: '还原',
       folder: '文件夹',

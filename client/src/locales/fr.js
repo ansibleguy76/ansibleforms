@@ -2019,7 +2019,6 @@ export default {
       label: 'Sauvegarde',
       labelPlural: 'Sauvegardes',
       description: 'Sauvegardes de base de données pour la reprise après sinistre.',
-      showBackup: 'Afficher la sauvegarde',
       download: 'Télécharger',
       restore: 'Restaurer',
       folder: 'Dossier',

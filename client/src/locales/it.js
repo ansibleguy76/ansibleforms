@@ -2001,7 +2001,6 @@ export default {
       label: 'Backup',
       labelPlural: 'Backup',
       description: 'Backup del database per il ripristino di emergenza.',
-      showBackup: 'Mostra backup',
       download: 'Scarica',
       restore: 'Ripristina',
       folder: 'Cartella',

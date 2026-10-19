@@ -2003,7 +2003,6 @@ export default {
       label: 'Back-up',
       labelPlural: 'Back-ups',
       description: 'Databaseback-ups voor noodherstel en herstel.',
-      showBackup: 'Back-up tonen',
       download: 'Downloaden',
       restore: 'Herstellen',
       folder: 'Map',

@@ -3808,7 +3808,7 @@ export default function getSettings(t) {
       actions: [
         {
           name: 'open',
-          title: t('settings.backups.showBackup'),
+          title: t('common.open'),
           icon: 'info-circle',
           color: 'change',
           to: (item) => `/settings/backups/${item.folder}`,

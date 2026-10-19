@@ -2018,7 +2018,6 @@ export default {
       label: 'Backup',
       labelPlural: 'Backups',
       description: 'Datenbank-Backups für Notfallwiederherstellung.',
-      showBackup: 'Backup anzeigen',
       download: 'Herunterladen',
       restore: 'Wiederherstellen',
       folder: 'Ordner',

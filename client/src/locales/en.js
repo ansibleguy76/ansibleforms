@@ -1980,7 +1980,6 @@ export default {
       label: 'Backup',
       labelPlural: 'Backups',
       description: 'Database backups for disaster recovery and restore.',
-      showBackup: 'Show backup',
       download: 'Download',
       restore: 'Restore',
       folder: 'Folder',

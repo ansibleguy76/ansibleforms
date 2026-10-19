@@ -2015,7 +2015,6 @@ export default {
       label: 'Còpia de seguretat',
       labelPlural: 'Còpies de seguretat',
       description: 'Còpies de seguretat de la base de dades per a la recuperació davant de desastres i la restauració.',
-      showBackup: 'Mostra la còpia de seguretat',
       download: 'Baixa',
       restore: 'Restaura',
       folder: 'Carpeta',

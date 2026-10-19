@@ -1,5 +1,5 @@
 // A backup has its own page (/settings/backups/<folder>, pages/admin/backup.vue), opened from
-// the backups' list : its row and its menu's Show backup ; the menu has Download too. The list
+// the backups' list : its row and its menu's Open ; the menu has Download too. The list
 // keeps its address, its tabs never taken for a backup : a backup's folder is the 14 digits of
 // its timestamp.
 import { describe, it, expect } from 'vitest';
@@ -38,8 +38,10 @@ describe("the backups' list", () => {
     expect(backups.openPage({ folder: FOLDER })).toBe(`/settings/backups/${FOLDER}`);
   });
 
-  it("has Show backup, Download, Restore and Delete in a row's menu, in that order", () => {
+  it("has Open, Download, Restore and Delete in a row's menu, in that order", () => {
     expect(backups.actions.map((a) => a.name)).toEqual(['open', 'download', 'trigger', 'delete']);
+    // a short label, as every row menu's ; the page is read only, so not Edit
+    expect(backups.actions[0].title).toBe('common.open');
     const [open, download] = backups.actions;
     expect(open.to({ folder: FOLDER })).toBe(`/settings/backups/${FOLDER}`);
     expect(download.icon).toBe('download');

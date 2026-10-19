@@ -2008,7 +2008,6 @@ export default {
       label: 'Cópia de segurança',
       labelPlural: 'Cópias de segurança',
       description: 'Cópias de segurança da base de dados para recuperação de desastres e restauro.',
-      showBackup: 'Mostrar cópia de segurança',
       download: 'Transferir',
       restore: 'Restaurar',
       folder: 'Pasta',

@@ -2011,7 +2011,6 @@ export default {
       label: 'Copia de seguridad',
       labelPlural: 'Copias de seguridad',
       description: 'Copias de seguridad de base de datos para recuperación ante desastres.',
-      showBackup: 'Mostrar copia de seguridad',
       download: 'Descargar',
       restore: 'Restaurar',
       folder: 'Carpeta',
