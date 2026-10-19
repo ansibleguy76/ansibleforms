@@ -967,6 +967,17 @@ function toggleSelected(id) {
   selected.value = next;
 }
 
+// every job the list shows, on all its pages (the search applied), that can be ticked
+const allSelectable = computed(() => parentJobs.value.filter(canDelete));
+
+/**
+ * Ticks every job of the list that can be deleted, on all its pages, as the other tables'
+ * Select all.
+ */
+function selectAll() {
+  selected.value = new Set(allSelectable.value.map((j) => j.id));
+}
+
 /**
  * Ticks every job of the page that can be deleted, or unticks them all.
  */
@@ -1341,6 +1352,20 @@ onMounted(async () => {
           <div v-else class="d-flex justify-content-end align-items-center">
             <!-- the search, as every table's on the title line -->
             <BsSearch v-model="search" class="af-table-search me-2" />
+            <!-- the selection, as the other tables' : how many, clear it, or tick every job on all pages -->
+            <span v-if="selected.size" class="text-muted small me-2 text-nowrap"
+              >{{ selected.size }} {{ t('dataTable.selected') }}</span
+            >
+            <BsButton v-if="selected.size" icon="xmark" cssClass="me-2 text-nowrap" @click="selected = new Set()">{{
+              t('dataTable.clearSelection')
+            }}</BsButton>
+            <BsButton
+              v-if="allSelectable.length && selected.size < allSelectable.length"
+              icon="check-double"
+              cssClass="me-2 text-nowrap"
+              @click="selectAll()"
+              >{{ t('dataTable.selectAll', { count: allSelectable.length }) }}</BsButton
+            >
             <!-- the ticked jobs, deleted together -->
             <BsButton v-if="selected.size" icon="trash" cssClass="me-2 text-nowrap" @click="showBulkDelete = true">{{
               t('jobs.deleteSelected', { count: selected.size })
