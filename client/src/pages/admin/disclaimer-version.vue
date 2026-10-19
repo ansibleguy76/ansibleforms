@@ -169,6 +169,13 @@ const askAgainRows = ref(null);
 function askAgain(rows) {
   if (rows.length) askAgainRows.value = rows;
 }
+// its question and what follows, each on a line of its own : split after the question mark
+// (? or the full-width ？ of Japanese and Chinese), the whole text when it has none
+const askAgainLines = computed(() => {
+  const text = t('settings.disclaimer.askAgainConfirm', { count: askAgainRows.value?.length || 0 });
+  const m = text.match(/^(.*?[?？])\s*(.+)$/s);
+  return m ? [m[1], m[2]] : [text];
+});
 /**
  * Asks users to accept it again : their acceptances cleared, once the modal is confirmed.
  */
@@ -271,7 +278,7 @@ onMounted(async () => {
   <BsModal v-if="askAgainRows" icon="rotate" size="md" :footerClose="false" @close="askAgainRows = null">
     <template #title>{{ t('settings.disclaimer.askAgain') }}</template>
     <template #default>
-      <p class="mb-0">{{ t('settings.disclaimer.askAgainConfirm', { count: askAgainRows.length }) }}</p>
+      <p v-for="(line, i) in askAgainLines" :key="i" :class="{ 'mb-0': i === askAgainLines.length - 1 }">{{ line }}</p>
     </template>
     <template #footer>
       <BsButton icon="times" @click="askAgainRows = null">{{ t('common.cancel') }}</BsButton>
