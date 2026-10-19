@@ -158,14 +158,24 @@ const acceptanceColumns = computed(() => [
   { key: 'ip', label: t('settings.disclaimer.ip') },
   { key: 'user_agent', label: t('settings.disclaimer.browser') },
 ]);
+// the acceptances Ask again is confirming, in the app's own modal ; null while it is closed
+const askAgainRows = ref(null);
 /**
- * Asks users to accept it again : their acceptances cleared, after asking.
+ * Opens the modal that asks whether these users accept it again.
  *
  * Args:
  *   rows (object[]): the acceptances.
  */
-async function askAgain(rows) {
-  if (!rows.length || !confirm(t('settings.disclaimer.askAgainConfirm', { count: rows.length }))) return;
+function askAgain(rows) {
+  if (rows.length) askAgainRows.value = rows;
+}
+/**
+ * Asks users to accept it again : their acceptances cleared, once the modal is confirmed.
+ */
+async function confirmAskAgain() {
+  const rows = askAgainRows.value || [];
+  askAgainRows.value = null;
+  if (!rows.length) return;
   try {
     const res = await axios.post('/api/v2/disclaimeracceptance/ask-again', { ids: rows.map((r) => r.id) });
     toast.success(t('settings.disclaimer.askAgainDone', { count: res.data?.count ?? rows.length }));
@@ -254,6 +264,19 @@ onMounted(async () => {
       <BsButton icon="pencil" @click="save(false)">{{ t('settings.disclaimer.askAgainNo') }}</BsButton>
       <BsButton icon="rotate" colorClass="primary" @click="save(true)">{{
         t('settings.disclaimer.askAgainYes')
+      }}</BsButton>
+    </template>
+  </BsModal>
+  <!-- Ask again on acceptances : their users accept it again, after confirming -->
+  <BsModal v-if="askAgainRows" icon="rotate" size="md" :footerClose="false" @close="askAgainRows = null">
+    <template #title>{{ t('settings.disclaimer.askAgain') }}</template>
+    <template #default>
+      <p class="mb-0">{{ t('settings.disclaimer.askAgainConfirm', { count: askAgainRows.length }) }}</p>
+    </template>
+    <template #footer>
+      <BsButton icon="times" @click="askAgainRows = null">{{ t('common.cancel') }}</BsButton>
+      <BsButton icon="rotate" colorClass="primary" @click="confirmAskAgain">{{
+        t('settings.disclaimer.askAgain')
       }}</BsButton>
     </template>
   </BsModal>
