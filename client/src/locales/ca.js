@@ -598,6 +598,7 @@ export default {
       settings_env_update: "Configuració de l'entorn actualitzada",
       config_env_update: "Configuració de l'entorn desada",
       seed_apply: 'Config seed aplicat',
+      seed_release: 'Config seed desactivat, els seus objectes alliberats',
       config_seed_apply_create: 'Sol·licitud per tornar a aplicar el config seed',
       backup_restore_env_create: "Fitxer d'entorn restaurat des d'una còpia de seguretat",
       backup_restoreEnv: "Fitxer d'entorn restaurat des d'una còpia de seguretat",

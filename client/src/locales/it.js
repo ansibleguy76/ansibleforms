@@ -599,6 +599,7 @@ export default {
       settings_env_update: 'Impostazioni ambiente aggiornate',
       config_env_update: 'Impostazioni ambiente salvate',
       seed_apply: 'Seed di configurazione applicato',
+      seed_release: 'Seed di configurazione disattivato, i suoi oggetti rilasciati',
       config_seed_apply_create: 'Riapplicazione del seed di configurazione richiesta',
       backup_restore_env_create: 'File di ambiente ripristinato da un backup',
       backup_restoreEnv: 'File di ambiente ripristinato da un backup',
