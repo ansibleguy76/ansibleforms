@@ -175,13 +175,39 @@ const reject = async (req, res) => {
   }
 };
 
+/**
+ * The message Test connection shows : for an RTE, what it said of itself too (its release, its
+ * Ansible version and, in socket mode, the app node holding its socket), in the user's language.
+ * Another type of runner, or an RTE that said nothing, keeps the plain message.
+ *
+ * Args:
+ *   req (object): the request, for its language.
+ *   runner (object): the runner tested.
+ *   details (object): what its check() returned.
+ *
+ * Returns:
+ *   string: the message.
+ */
+export function checkMessage(req, runner, details) {
+  if (runner?.type !== "rte") return i18n.t(req, "resources.runnerConnectionOk");
+  const parts = [];
+  if (details?.version) parts.push(i18n.t(req, "resources.runnerRteRelease", { version: details.version }));
+  // the RTE says "2.18.1" from "ansible-playbook [core 2.18.1]", or the whole first line of an
+  // older ansible that prints no core version
+  const ansible = details?.ansible ? String(details.ansible).trim() : "";
+  if (ansible) parts.push(i18n.t(req, /^\d/.test(ansible) ? "resources.runnerAnsibleCore" : "resources.runnerAnsible", { version: ansible }));
+  if (details?.socketNode) parts.push(i18n.t(req, "resources.runnerOnNode", { node: details.socketNode }));
+  if (!parts.length) return i18n.t(req, "resources.runnerConnectionOk");
+  return i18n.t(req, "resources.runnerConnectionOkDetails", { details: parts.join(i18n.t(req, "resources.runnerDetailsSeparator")) });
+}
+
 // read only : the runner's health, never a job
 const check = async (req, res) => {
   try {
     const runner = await Runner.findById(req.params.id);
     if (!runner) throw new Errors.NotFoundError(i18n.t(req, "resources.runnerNotFound"));
     const details = await Runner.check(runner);
-    return res.json(RestResult.single({ result: i18n.t(req, "resources.runnerConnectionOk"), details }));
+    return res.json(RestResult.single({ result: checkMessage(req, runner, details), details }));
   } catch (err) {
     Errors.ReturnError(res, err);
   }

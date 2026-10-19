@@ -143,6 +143,12 @@ export default {
     passwordTooShort: "La contrasenya necessita almenys {min} caràcters",
     passwordIsUsername: "La contrasenya no pot ser el nom d'usuari",
     runnerConnectionOk: "La connexió amb el runner és correcta",
+    runnerConnectionOkDetails: "La connexió amb el runner és correcta: {details}",
+    runnerRteRelease: "RTE {version}",
+    runnerAnsibleCore: "Ansible core {version}",
+    runnerAnsible: "Ansible {version}",
+    runnerOnNode: "al node {node}",
+    runnerDetailsSeparator: ", ",
     secretStoreAdded: "Magatzem de secrets afegit",
     secretStoreNotFound: "No s'ha trobat el magatzem de secrets",
     secretStoreConnectionOk:

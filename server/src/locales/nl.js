@@ -144,6 +144,12 @@ export default {
     passwordTooShort: "Het wachtwoord heeft minstens {min} tekens nodig",
     passwordIsUsername: "Het wachtwoord mag niet de gebruikersnaam zijn",
     runnerConnectionOk: "Runner verbinding is OK",
+    runnerConnectionOkDetails: "Runner verbinding is OK: {details}",
+    runnerRteRelease: "RTE {version}",
+    runnerAnsibleCore: "Ansible core {version}",
+    runnerAnsible: "Ansible {version}",
+    runnerOnNode: "op node {node}",
+    runnerDetailsSeparator: ", ",
     userNotFound: "Gebruiker niet gevonden",
     currentPasswordRequired:
       "Uw huidige wachtwoord is vereist om een nieuw wachtwoord in te stellen",

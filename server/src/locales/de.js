@@ -148,6 +148,12 @@ export default {
     passwordTooShort: "Das Passwort braucht mindestens {min} Zeichen",
     passwordIsUsername: "Das Passwort darf nicht der Benutzername sein",
     runnerConnectionOk: "Runner-Verbindung ist OK",
+    runnerConnectionOkDetails: "Runner-Verbindung ist OK: {details}",
+    runnerRteRelease: "RTE {version}",
+    runnerAnsibleCore: "Ansible core {version}",
+    runnerAnsible: "Ansible {version}",
+    runnerOnNode: "auf Knoten {node}",
+    runnerDetailsSeparator: ", ",
     userNotFound: "Benutzer nicht gefunden",
     currentPasswordRequired:
       "Zum Festlegen eines neuen Passworts ist Ihr aktuelles Passwort erforderlich",
