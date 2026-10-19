@@ -149,19 +149,20 @@ function pillDate(value) {
 const LDAP_DEFAULT = 'main';
 
 /**
- * The dark grey "Default" badge after the type or the name of the record that is the default : a
+ * The "Default" badge after the type or the name of the record that is the default : a
  * runner the default of its type, the mail channel the app sends with, the SSO provider its type
- * signs in with, the main LDAP directory. A badge rather than a column of one tick.
+ * signs in with, the main LDAP directory. A badge rather than a column of one tick : the shape
+ * of the users' "Never signed in" and the roles' "Required", dark grey (af-default-badge).
  *
  * Args:
  *   t (function): the translation function.
  *   on (boolean): whether the record is the default.
  *
  * Returns:
- *   string: the badge's HTML (a pill, its label escaped), "" when not.
+ *   string: the badge's HTML (its label escaped), "" when not.
  */
 export function defaultNote(t, on) {
-  return on ? ' ' + pill(`${PILL.grey} af-pill-small`, t('settings.common.defaultNote')) : '';
+  return on ? ` <span class="badge af-default-badge ms-2">${escapeHtml(t('settings.common.defaultNote'))}</span>` : '';
 }
 
 /**
