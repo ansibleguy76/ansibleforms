@@ -9,6 +9,7 @@
 // From then on the rows are the only truth and the variables are ignored - a server deleted
 // later is never re-imported - as the VAULT_* variables became the secret store `vault`.
 import logger, { applySyslogServers } from "./logger.js";
+import { parseLogLevel } from "../../config/log.config.js";
 import mysql from "../models/db.model.js";
 
 // the server the variables become
@@ -50,7 +51,8 @@ export function syslogServerFromEnv(env = process.env) {
     // the short names winston-syslog also takes, as the 4 they mean
     protocol: { udp: "udp4", tcp: "tcp4", tls: "tls4" }[protocol] || protocol,
     path: protocol.startsWith("unix") ? env.LOG_SYSLOG_PATH || "/dev/log" : null,
-    level: env.LOG_SYSLOG_LEVEL === "warn" ? "warning" : env.LOG_SYSLOG_LEVEL || "debug",
+    // `warn` as `warning`, in any case ; unset or unknown, the documented default
+    level: parseLogLevel("LOG_SYSLOG_LEVEL", env.LOG_SYSLOG_LEVEL),
     type: ["5424", "RFC5424"].includes(String(env.LOG_SYSLOG_TYPE)) ? "5424" : "BSD",
     app_name: env.LOG_SYSLOG_APPNAME || "AnsibleForms",
     source: env.LOG_SYSLOG_SOURCE || "localhost",

@@ -6,14 +6,14 @@ import { fileURLToPath } from 'url';
 import appConfig, { jobsListSize } from '../../config/app.config.js';
 import { RTE_SETTINGS } from '../rte/socket/settings.js';
 import mysql from '../models/db.model.js';
-import logger, { setLogLevel, setLogColor, setLogFormat, rebuildSyslogTransport, rebuildFileTransports } from './logger.js';
+import logger, { logLevelOf, setLogLevel, setLogColor, setLogFormat, rebuildSyslogTransport, rebuildFileTransports } from './logger.js';
 import { setDefaultLocale } from './i18n.js';
 import { applySecureContext } from './httpsContext.js';
 import { rebuildBodyParsers } from './bodyParsers.js';
 import { applyTrustProxy, compileTrustProxy } from './trustProxy.js';
 import { MIN_HEADER_SIZE, MAX_HEADER_SIZE } from './httpServerOptions.js';
 import authConfig, { entraEnv } from '../../config/auth.config.js';
-import logConfig, { parseRetentionDays } from '../../config/log.config.js';
+import logConfig, { parseRetentionDays, knownLogLevel, LOG_LEVEL_DEFAULTS, LOG_LEVELS } from '../../config/log.config.js';
 import ansibleConfig from '../../config/ansible.config.js';
 
 // Editing environment variables from the settings page.
@@ -238,11 +238,13 @@ const LIVE_CUSTOM = {
   // winston keeps the level as a mutable property on the logger and each transport.
   // logConfig holds its own captured copy, which the Status page reports - update both, or
   // the level changes while the page keeps claiming the old one.
-  LOG_LEVEL: (v) => { logger.level = v; setLogLevel('file', v); logConfig.level = v; },
-  LOG_CONSOLE_LEVEL: (v) => { setLogLevel('console', v); logConfig.consolelevel = v; },
+  // the value as a level (logLevelOf) : `warn` is `warning`, and one winston does not know
+  // would have it log nothing at all, so the documented default is used instead
+  LOG_LEVEL: (v) => { const level = logLevelOf('LOG_LEVEL', v); logger.level = level; setLogLevel('file', level); logConfig.level = level; },
+  LOG_CONSOLE_LEVEL: (v) => { const level = logLevelOf('LOG_CONSOLE_LEVEL', v); setLogLevel('console', level); logConfig.consolelevel = level; },
   // the LOG_SYSLOG_* variables of before 7 : imported once as the syslog server `syslog`
   // (lib/syslogServers.js) - until then they still drive the transport they built
-  LOG_SYSLOG_LEVEL: (v) => { setLogLevel('syslog', v); logConfig.sysloglevel = v; importSyslogSoon(); },
+  LOG_SYSLOG_LEVEL: (v) => { const level = logLevelOf('LOG_SYSLOG_LEVEL', v); setLogLevel('syslog', level); logConfig.sysloglevel = level; importSyslogSoon(); },
   // the colour map is built at import but looked up per log line, so mutating it is enough
   LOG_COLOR_ERROR: (v) => setLogColor('error', v),
   LOG_COLOR_WARN: (v) => setLogColor('warn', v),
@@ -423,6 +425,11 @@ export function validate(name, value, doc) {
     const mode = v.trim().toLowerCase();
     if (mode === 'legacy') return 'EXPRESSION_SANITIZER=legacy can only be set in the real environment (docker-compose, kubernetes)';
     if (!['off', 'paranoid', 'strict'].includes(mode)) return 'EXPRESSION_SANITIZER must be off, paranoid or strict';
+  }
+  // a level winston does not know makes it log nothing at all : refused here, `warn` (and any
+  // case) accepted as the level it means
+  if (name in LOG_LEVEL_DEFAULTS && v !== '' && !knownLogLevel(v)) {
+    return `${name} must be one of ${LOG_LEVELS.join(', ')}`;
   }
   if (name === 'LAUNCH_VALIDATION' && v !== '' && !['off', 'log', 'enforce'].includes(v.trim().toLowerCase())) {
     return 'LAUNCH_VALIDATION must be off, log or enforce';

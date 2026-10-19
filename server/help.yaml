@@ -1297,6 +1297,7 @@
     description: | 
       AnsibleForms logs to a log file called ansibleforms.log.  
       It does so in multiple levels.  
+      `warn` is read as `warning`, in any case. A value that names no level falls back to the default, with one warning in the log naming it.
   - name: LOG_RETENTION_DAYS
     version: 7.0.0
     type: number
@@ -1339,7 +1340,8 @@
     description: | 
       When you run ansibleforms, by default the application also logs to the console.  
       For example with docker you can use the command docker logs to access this console log.  
-      This console log has a seperate loglevel.
+      This console log has a seperate loglevel.  
+      `warn` is read as `warning`, in any case. A value that names no level falls back to the default, with one warning in the log naming it.
   - name: LOG_TZ
     type: string
     allowed: a valid timezone string
@@ -1376,7 +1378,8 @@
     version: 3.0.1
     description: |
       **Deprecated since 7, removed in 8.** The first 7.x start that finds `LOG_SYSLOG_HOST` set imports the `LOG_SYSLOG_*` variables once as the syslog server `syslog`, getting the server log; after that they are ignored. Manage syslog servers under Connections > Syslog.
-      The logging level for the syslog server
+      The logging level for the syslog server.  
+      `warn` is read as `warning`, in any case. A value that names no level falls back to the default, with one warning in the log naming it.
   - name: LOG_SYSLOG_PORT
     type: number
     allowed: valid tcp/udp port number
