@@ -111,6 +111,7 @@ import getSettings, { noCredentialsText } from '@/config/settings';
 import { inSentence } from '@/lib/inSentence';
 import { rememberRows } from '@/lib/recordButtons';
 import { tableControls } from '@/lib/listControls';
+import { askConfirm } from '@/lib/confirmPrompt';
 
 // INIT
 
@@ -1425,7 +1426,7 @@ async function bulkDelete() {
   const question = skipped
     ? t('settings.common.bulkDeleteConfirmSkip', { count: ids.length, skipped })
     : t('settings.common.bulkDeleteConfirm', { count: ids.length });
-  if (!confirm(question)) return;
+  if (!(await askConfirm(question, { title: t('common.delete'), icon: 'trash' }))) return;
   // each delete on its own : one refused (a 403, a row in use) must not hide that the others
   // went, nor leave the list showing rows that are gone and the selection still ticked
   const results = await Promise.allSettled(
@@ -1482,7 +1483,14 @@ function bulkRows(action) {
  */
 async function runAction(action, rows) {
   if (!rows.length) return;
-  if (action.confirm && !confirm(action.confirm(rows.length, rows))) return;
+  if (
+    action.confirm &&
+    !(await askConfirm(action.confirm(rows.length, rows), {
+      title: action.title,
+      icon: action.icon || 'circle-question',
+    }))
+  )
+    return;
   try {
     const n = await action.run(
       rows.map((r) => r[idKey]),

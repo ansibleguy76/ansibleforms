@@ -43,6 +43,7 @@ import { durationSeconds, formatDuration } from '@/lib/jobTime';
 import { recordButtons } from '@/lib/recordButtons';
 import { useRecordSearch } from '@/composables/useRecordSearch';
 import { reloadKeepingEdits } from '@/lib/keepEdits';
+import { askConfirm } from '@/lib/confirmPrompt';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -496,7 +497,14 @@ const deciding = ref(false);
  */
 async function decide(what) {
   const name = runner.value?.name;
-  if (what === 'reject' && !confirm(t('settings.runners.rejectConfirm', { name }))) return;
+  if (
+    what === 'reject' &&
+    !(await askConfirm(t('settings.runners.rejectConfirm', { name }), {
+      title: t('settings.runners.reject'),
+      icon: 'ban',
+    }))
+  )
+    return;
   deciding.value = true;
   try {
     await axios.post(`/api/v2/runner/${encodeURIComponent(runnerId.value)}/${what}`, {});
