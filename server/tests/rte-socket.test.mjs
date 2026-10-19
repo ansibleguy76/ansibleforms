@@ -2,7 +2,7 @@
 // items kept on disk until acked (rte/socket/spool.js), the structured events read as the
 // playbook writes them (rte/events.js), and the job files packed by the app and unpacked by the
 // RTE (lib/jobFiles.js, rte/socket/files.js).
-import { test, describe, beforeEach, afterEach } from "vitest";
+import { test, describe, beforeEach, afterEach, vi } from "vitest";
 import assert from "node:assert/strict";
 import fs from "fs";
 import os from "os";
@@ -240,7 +240,7 @@ describe("what goes wrong on the RTE's side", () => {
 });
 
 describe("the RTE dialing the app again", async () => {
-  const { redialWait, socketJobIO, jobs } = await import("../src/rte/socket/rte-socket.js");
+  const { redialWait, socketJobIO, jobs, dialOut } = await import("../src/rte/socket/rte-socket.js");
   const { CLOSE, REFUSED_REDIAL_MS, CONTRACT_REDIAL_MS } = await import("../src/rte/socket/protocol.js");
 
   test("a socket that dropped : a backoff of 1 s doubling up to 30 s", () => {
@@ -266,6 +266,59 @@ describe("the RTE dialing the app again", async () => {
     assert.ok(CONTRACT_REDIAL_MS >= 30 * 1000 && CONTRACT_REDIAL_MS <= 2 * 60 * 1000);
     assert.equal(next.delay, 1000);
   });
+
+  test("an app it cannot reach : why at warning once, not every dial, and its return said once", async () => {
+    const http = await import("http");
+    const { WebSocketServer } = await import("ws");
+    // the RTE's side writes to the real logger (the alias covers ../lib/logger.js only)
+    const { default: logger } = await import("../src/lib/logger.js");
+    const wss = new WebSocketServer({ noServer: true });
+    // the app answers 404 (a wrong APP_URL path) until it is told to let the socket in
+    let open = false;
+    const server = http.createServer((req, res) => {
+      res.writeHead(404, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "nothing here" }));
+    });
+    server.on("upgrade", (req, socket, head) => {
+      if (open) return wss.handleUpgrade(req, socket, head, (ws) => ws.on("error", () => {}));
+      socket.write("HTTP/1.1 404 Not Found\r\nContent-Type: application/json\r\nContent-Length: 24\r\nConnection: close\r\n\r\n{\"error\":\"nothing here\"}");
+      socket.destroy();
+    });
+    await new Promise((r) => server.listen(0, "127.0.0.1", r));
+    const before = process.env.APP_URL;
+    process.env.APP_URL = `http://joe:pw@127.0.0.1:${server.address().port}/af`;
+    const warn = vi.spyOn(logger, "warning");
+    const notice = vi.spyOn(logger, "notice");
+    const token = "rte-token-0123456789";
+    const said = (spy, what) => spy.mock.calls.map((c) => String(c[0])).filter((m) => m.includes(what));
+    let stop;
+    try {
+      stop = dialOut(token);
+      // two dials refused the same way (the backoff : 1 to 2 s between them)
+      for (let i = 0; i < 250 && said(warn, "cannot reach").length < 1; i++) await new Promise((r) => setTimeout(r, 20));
+      await new Promise((r) => setTimeout(r, 2300));
+      const warned = said(warn, "cannot reach the app");
+      assert.equal(warned.length, 1, warned.join("\n"));
+      assert.match(warned[0], /at ws:\/\/127\.0\.0\.1:\d+\/af\/api\/v2\/rte\/socket: no RTE socket at this address \(HTTP 404: nothing here\)/);
+      assert.match(warned[0], /APP_URL.*BASE_URL/);
+      assert.ok(!warned[0].includes("joe") && !warned[0].includes("pw@"), "no credentials of the address");
+      assert.ok(!warned[0].includes(token), "never the token");
+      // the app lets it in : said once, at notice
+      open = true;
+      for (let i = 0; i < 250 && !said(notice, "reached the app").length; i++) await new Promise((r) => setTimeout(r, 20));
+      const back = said(notice, "reached the app");
+      assert.equal(back.length, 1);
+      assert.match(back[0], /again, after \d+ failed dial\(s\)/);
+    } finally {
+      stop?.();
+      warn.mockRestore();
+      notice.mockRestore();
+      if (before === undefined) delete process.env.APP_URL;
+      else process.env.APP_URL = before;
+      wss.close();
+      server.close();
+    }
+  }, 15000);
 
   test("a cancel of a job this RTE does not know yet is kept a minute, then applied by its run", async () => {
     const { onCancel, earlyCancels, rememberCancel, takeEarlyCancel } = await import("../src/rte/socket/rte-socket.js");

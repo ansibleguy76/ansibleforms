@@ -36,6 +36,7 @@ import { httpServerOptions } from "../../lib/httpServerOptions.js";
 import Repo from "../../models/repo.model.js";
 import { runAnsibleJob, useJobIO } from "../ansible-core.js";
 import { Session } from "./session.js";
+import { DialReport, describeDialFailure, failureLine, safeUrl, scrub, ago } from "./dialReport.js";
 import { JobSpool } from "./spool.js";
 import { FileCache } from "./files.js";
 import { RTE_SETTINGS, parseSetting, settingsOfEnv, effectiveSettings, envSettingWarnings } from "./settings.js";
@@ -540,7 +541,8 @@ function attach(sess) {
     if (session === sess) {
       session = null;
       welcomed = false;
-      cache.failAll(new Error("the socket to the app closed while the job's files came"));
+      // no cache before startSocketRte() made it (a socket opened by the tests alone)
+      cache?.failAll(new Error("the socket to the app closed while the job's files came"));
     }
     logger.warning(`RTE '${rteName()}': socket to the app closed (${code}${reason ? `: ${reason}` : ""})`);
   });
@@ -619,8 +621,12 @@ export function redialWait({ code, status, delay, random = Math.random() }) {
  *
  * Args:
  *   token (string): RTE_TOKEN.
+ *
+ * Returns:
+ *   function: stops dialing and closes the socket (the tests ; the process stops through
+ *     onShutdown).
  */
-function dialOut(token) {
+export function dialOut(token) {
   const url = socketUrl(process.env.APP_URL);
   let delay = 1000;
   const headers = rteHeaders(token);
@@ -635,13 +641,28 @@ function dialOut(token) {
     rejectUnauthorized: String(process.env.APP_TLS_VERIFY ?? "1") !== "0",
   };
   if (proxy && !noProxy(new URL(url).hostname)) options.agent = new HttpsProxyAgent(proxy);
+  // the address as the log shows it (no credentials), and how often it says a failed dial
+  const shown = safeUrl(url);
+  const report = new DialReport();
+  const secrets = [token, process.env.RTE_JOIN_TOKEN];
+  // stopped by the function returned, and the socket of the current dial
+  let stopped = false;
+  let current = null;
   const connect = () => {
-    if (isStopping()) return;
+    if (isStopping() || stopped) return;
     const ws = new WebSocket(url, options);
+    current = ws;
     // the HTTP status the app refused the handshake with, if it did
     let refusedStatus = null;
+    // why the dial failed (an error, or the refusal and its body), and whether it opened at all
+    let failure = null;
+    let opened = false;
     ws.on("open", () => {
+      opened = true;
       delay = 1000;
+      // back after failures : said once, at the default level
+      const back = report.connected();
+      if (back) logger.notice(`RTE '${rteName()}': reached the app at ${shown} again, after ${back.failures} failed dial(s) in ${ago(Date.now() - back.since)}`);
       attach(new Session(ws, "app"));
     });
     ws.on("unexpected-response", (req, res) => {
@@ -649,26 +670,43 @@ function dialOut(token) {
       let body = "";
       res.on("data", (c) => (body += c));
       res.on("end", () => {
-        logger.warning(`RTE '${rteName()}': the app refused the socket (${res.statusCode}): ${body.slice(0, 300)}`);
+        failure = { status: res.statusCode, body: body.slice(0, 2000) };
         // listening to this event takes the abort of the handshake over from ws : without it no
         // close comes, and this RTE never dials again
         ws.terminate();
       });
       res.on("error", () => ws.terminate());
     });
-    ws.on("error", (err) => logger.debug(`RTE: socket to ${url}: ${err.message}`));
+    ws.on("error", (err) => {
+      // the first error is the cause ; what follows it (the abort after a refusal, a reset after
+      // a TLS failure) is not
+      if (!failure && !refusedStatus) failure = { error: err };
+      logger.debug(`RTE: socket to ${shown}: ${scrub(err.message, secrets)}`);
+    });
     ws.on("close", (code) => {
-      if (isStopping()) return;
+      if (isStopping() || stopped) return;
       const next = redialWait({ code, status: refusedStatus, delay });
       delay = next.delay;
-      if (next.refused && code === CLOSE.CONTRACT) logger.warning(`RTE '${rteName()}': the app speaks another contract (an upgrade in progress?): dialing again in ${Math.round(next.wait / 1000)} seconds`);
+      const again = next.wait >= 60000 ? `${Math.round(next.wait / 60000)} minute(s)` : `${Math.round(next.wait / 1000)} seconds`;
+      if (!opened) {
+        // the dial itself failed : why, at warning, the first time and on a change of cause,
+        // then at most every few minutes while the same cause lasts
+        const why = describeDialFailure(failure || { status: refusedStatus, code }, { side: "app", url, proxy: !!options.agent, secrets });
+        const line = failureLine(report, why, `RTE '${rteName()}': cannot reach the app at ${shown}`);
+        if (line) logger.warning(`${line}: dialing again in ${again}${next.refused ? ", or restart it once an admin acted" : ""}`);
+        else logger.debug(`RTE: dialing the app again in ${again} (${why.text})`);
+      } else if (next.refused && code === CLOSE.CONTRACT) logger.warning(`RTE '${rteName()}': the app speaks another contract (an upgrade in progress?): dialing again in ${Math.round(next.wait / 1000)} seconds`);
       else if (next.refused) logger.warning(`RTE '${rteName()}': the app refused this RTE (${refusedStatus || code}): dialing again in ${Math.round(next.wait / 60000)} minutes, or restart it once an admin acted`);
       else logger.info(`RTE: dialing the app again in ${Math.round(next.wait / 1000)} seconds`);
       setTimeout(connect, next.wait).unref?.();
     });
   };
-  logger.notice(`RTE '${rteName()}': dialing the app at ${url}${options.agent ? " through the proxy" : ""}`);
+  logger.notice(`RTE '${rteName()}': dialing the app at ${shown}${options.agent ? " through the proxy" : ""}`);
   connect();
+  return () => {
+    stopped = true;
+    current?.terminate();
+  };
 }
 
 /**

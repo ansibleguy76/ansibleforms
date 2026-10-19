@@ -77,6 +77,8 @@ mysql.tryDo = async (sql, params = []) => {
 };
 
 const hub = await import("../src/runners/rteHub.js");
+// the logger the hub writes to (aliased to the mock, vitest.config.js)
+const { default: logger } = await import("./__mocks__/logger.js");
 // the app settings the hub reads (aliased to tests/__mocks__/app.config.js, vitest.config.js)
 const { default: appConfig } = await import("../../config/app.config.js");
 const { CLOSE } = await import("../src/rte/socket/protocol.js");
@@ -472,6 +474,48 @@ describe("the socket's door", () => {
         mysql.do = doBefore;
       }
     } finally {
+      server.close();
+    }
+  });
+
+  test("an inbound RTE that cannot be reached is said at warning, with why, once per cause, never its token", async () => {
+    const server = http.createServer();
+    server.on("upgrade", (req, socket) => {
+      const body = JSON.stringify({ error: "wrong token" });
+      socket.write(`HTTP/1.1 401 Unauthorized\r\nContent-Type: application/json\r\nContent-Length: ${body.length}\r\nConnection: close\r\n\r\n${body}`);
+      socket.destroy();
+    });
+    await new Promise((r) => server.listen(0, "127.0.0.1", r));
+    const warn = vi.spyOn(logger, "warning");
+    try {
+      const { nodeId } = await import("../src/lib/role.js");
+      runners["in-2"] = { id: 3, name: "in-2", type: "rte", rte_mode: "inbound", token: "rte-token-0123456789", uri: `http://127.0.0.1:${server.address().port}` };
+      hub.dialReports.delete("in-2");
+      const doBefore = mysql.do;
+      mysql.do = async (sql, params) => {
+        if (sql.startsWith("SELECT name FROM AnsibleForms.`runners`")) return [{ name: "in-2" }];
+        if (sql.startsWith("SELECT node_id FROM")) return [{ node_id: nodeId }];
+        return doBefore(sql, params);
+      };
+      try {
+        // two rounds, the same refusal : said once
+        for (let round = 0; round < 2; round++) {
+          await hub.dialInbound();
+          // the refusal counted and the socket closed (a busy machine : up to 5 s)
+          for (let i = 0; i < 250 && (hub.dialing.has("in-2") || (hub.dialReports.get("in-2")?.failures || 0) <= round); i++) await new Promise((r) => setTimeout(r, 20));
+        }
+        const said = warn.mock.calls.map((c) => String(c[0])).filter((m) => m.includes("Runner 'in-2'") && !m.includes("plain http"));
+        assert.equal(said.length, 1, said.join("\n"));
+        assert.match(said[0], /cannot reach its RTE at ws:\/\/127\.0\.0\.1:\d+\/rte\/v1\/socket/);
+        assert.match(said[0], /HTTP 401: wrong token/);
+        assert.match(said[0], /RTE_TOKEN/);
+        assert.ok(!said[0].includes("rte-token-0123456789"), "never the token");
+        assert.equal(hub.dialReports.get("in-2").failures, 2, "the second failure counted, not said");
+      } finally {
+        mysql.do = doBefore;
+      }
+    } finally {
+      warn.mockRestore();
       server.close();
     }
   });
