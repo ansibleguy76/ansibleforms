@@ -1595,7 +1595,8 @@ export default {
       askAgain: 'Redemander',
       askAgainConfirm:
         "Demander à {count} utilisateur(s) d'accepter de nouveau l'avertissement ? Leur acceptation est effacée.",
-      askAgainDone: "{count} utilisateur(s) accepteront de nouveau l'avertissement à leur prochaine connexion.",
+      askAgainDone:
+        "{count} utilisateur(s) accepteront de nouveau l'avertissement la prochaine fois qu'ils utiliseront l'application (leur prochaine page ou action).",
       versionEnabled: 'Activé',
       label: 'Avertissement',
       labelPlural: 'Avertissements',

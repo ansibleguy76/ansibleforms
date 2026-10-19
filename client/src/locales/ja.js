@@ -1416,7 +1416,7 @@ export default {
       browser: 'ブラウザー',
       askAgain: '再同意を求める',
       askAgainConfirm: '{count} 人のユーザーに免責事項への再同意を求めますか？既存の同意は消去されます。',
-      askAgainDone: '{count} 人のユーザーが次回のサインイン時に免責事項に再同意します。',
+      askAgainDone: '{count} 人のユーザーが次にアプリを使うとき（次のページや操作）に免責事項に再同意します。',
       versionEnabled: '有効',
       label: '免責事項',
       labelPlural: '免責事項',

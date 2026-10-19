@@ -1427,7 +1427,8 @@ export default {
       askAgain: 'Poproś ponownie',
       askAgainConfirm:
         'Poprosić {count} użytkownika(ów) o ponowną akceptację zastrzeżenia? Ich akceptacja zostanie usunięta.',
-      askAgainDone: '{count} użytkownik(ów) zaakceptuje zastrzeżenie ponownie przy następnym logowaniu.',
+      askAgainDone:
+        '{count} użytkownik(ów) zaakceptuje zastrzeżenie ponownie przy następnym użyciu aplikacji (następna strona lub akcja).',
       versionEnabled: 'Włączona',
       label: 'Zastrzeżenie',
       labelPlural: 'Zastrzeżenia',

@@ -1379,7 +1379,7 @@ export default {
       browser: '浏览器',
       askAgain: '再次请求',
       askAgainConfirm: '要请 {count} 位用户再次接受免责声明吗？他们的接受记录将被清除。',
-      askAgainDone: '{count} 位用户将在下次登录时再次接受免责声明。',
+      askAgainDone: '{count} 位用户将在下次使用应用时（下一个页面或操作）再次接受免责声明。',
       versionEnabled: '已启用',
       label: '免责声明',
       labelPlural: '免责声明',
