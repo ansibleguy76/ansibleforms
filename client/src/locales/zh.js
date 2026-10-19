@@ -761,6 +761,8 @@ export default {
     confirm: '确认',
     close: '关闭',
     loading: '加载中...',
+    // a Refresh button while it reads again (useRefreshing), at least a second
+    refreshing: '刷新中...',
     error: '错误',
     success: '成功',
     warning: '警告',

@@ -149,7 +149,7 @@ onUnmounted(() => {
           </div>
           <!-- view controls only : these decide WHAT the card shows. Refresh re-reads the same
                view, it does not act on anything ; the download follows, with the page's buttons -->
-          <BsButton class="ms-2 text-nowrap" icon="refresh" @click="load(true)">{{ t('jobs.refresh') }}</BsButton>
+          <AppRefreshButton class="ms-2" :action="() => load(true)" :label="t('jobs.refresh')" />
           <!-- empties the view, not the log : only the lines written after it show from then on -->
           <BsButton class="ms-2 text-nowrap" icon="eraser" :title="t('logs.clearHint')" @click="clearView()">{{
             t('logs.clear')

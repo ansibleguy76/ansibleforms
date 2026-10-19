@@ -22,6 +22,7 @@ import { formPath } from '@/lib/formsPath';
 import { jobTypeLabel, jobTypeName, hasArtifacts } from '@/lib/jobTypes';
 import { useNodeOutput } from '@/composables/useNodeOutput';
 import { mayApprove, mayDecide } from '@/lib/jobNotifications';
+import { useRefreshing } from '@/composables/useRefreshing';
 
 // INIT
 
@@ -707,6 +708,8 @@ function childJobs(id) {
 // the newest read of the job's own output (loadOutput)
 let outputSeq = 0;
 // load job output
+// the output's Refresh : Refreshing... and its arrows turning, at least a second
+const { refreshing: outputRefreshing, refresh: refreshOutput } = useRefreshing();
 async function loadOutput(id, sub = false) {
   if (!id) {
     job.value = null;
@@ -1381,7 +1384,7 @@ onMounted(async () => {
               @apply="applyColumnPreset"
             />
             <!-- last, at the far right -->
-            <BsButton icon="refresh" @click="loadJobs" cssClass="text-nowrap">{{ t('jobs.refresh') }}</BsButton>
+            <AppRefreshButton :action="loadJobs" :label="t('jobs.refresh')" />
           </div>
         </template>
         <!-- the list : table and pager framed like the other tables, running to the card's edges -->
@@ -1809,8 +1812,16 @@ onMounted(async () => {
                     <FaIcon icon="table-cells" />{{ t('jobs.events.button') }}
                   </button>
                   <span class="af-tool-sep" />
-                  <button type="button" class="af-tool-btn" :title="t('jobs.refreshOutput')" @click="loadOutput(jobId)">
-                    <FaIcon icon="sync-alt" />{{ t('jobs.refreshOutput') }}
+                  <!-- its two arrows turn and it says Refreshing... while the output reads again (useRefreshing) -->
+                  <button
+                    type="button"
+                    class="af-tool-btn"
+                    :title="t('jobs.refreshOutput')"
+                    @click="refreshOutput(() => loadOutput(jobId))"
+                  >
+                    <FaIcon icon="sync-alt" :spin="outputRefreshing" />{{
+                      outputRefreshing ? t('common.refreshing') : t('jobs.refreshOutput')
+                    }}
                   </button>
                   <button type="button" class="af-tool-btn" :title="t('jobs.copyOutput')" @click="copyOutput">
                     <FaIcon icon="copy" />{{ t('jobs.copyOutput') }}

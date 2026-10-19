@@ -259,7 +259,7 @@ onMounted(async () => {
         <BsSearch v-model="filter" />
       </template>
       <template #actions>
-        <BsButton :icon="loading ? 'spinner' : 'refresh'" @click="load()">{{ t('health.refresh') }}</BsButton>
+        <AppRefreshButton :action="load" :label="t('health.refresh')" />
       </template>
     </AppSettings>
   </AppSettingsPage>

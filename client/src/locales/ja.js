@@ -773,6 +773,8 @@ export default {
     confirm: '確認',
     close: '閉じる',
     loading: '読み込み中...',
+    // a Refresh button while it reads again (useRefreshing), at least a second
+    refreshing: '更新中...',
     error: 'エラー',
     success: '成功',
     warning: '警告',
