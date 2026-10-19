@@ -31,6 +31,7 @@ import Runner from "./runner.model.js";
 import { stripTrailingSlashes } from "../lib/url.js";
 import { nodeId } from "../lib/role.js";
 import { NODE_DEAD_SECONDS } from "../lib/nodes.js";
+import { SOCKET_MODES, queueMinutes } from "../rte/socket/protocol.js";
 import { runWorkflow } from "./workflowRun.js";
 import { jobTypeOf } from "../lib/jobTypes.js";
 
@@ -452,6 +453,13 @@ Job.abandonOwn = async function (tracker, { untracked = false } = {}) {
  * otherwise to the node following it (jobs.tracker). A workflow job waiting on an approval
  * node goes too : its loop died with that node.
  *
+ * A job running on a socket-mode RTE (its runner's rte_mode is outbound or inbound) is given
+ * RTE_QUEUE_MINUTES instead (0 : for ever). Its row in `nodes` is written by the app node
+ * holding the RTE's socket, so it ages while the connection is down, while the playbook runs on
+ * and the RTE spools its output : back within that time, it sends what it kept and the job goes
+ * on ; back without the job, the hub abandons it (runners/rteHub.js abandonLost). A
+ * database-mode RTE writes its own row, and an app or a worker node too : NODE_DEAD_SECONDS.
+ *
  * Args:
  *   self (string): this node, whose own jobs are never swept here.
  *
@@ -460,11 +468,22 @@ Job.abandonOwn = async function (tracker, { untracked = false } = {}) {
  */
 Job.abandonDeadNodes = async function (self = nodeId) {
   const owner = "COALESCE(j.host, j.tracker)";
+  // step 1 : a job a socket-mode RTE claimed (jobs.host), on a runner in a socket mode now
+  const onSocketRte =
+    "j.host IS NOT NULL AND EXISTS (SELECT 1 FROM AnsibleForms.`runners` r WHERE r.name=j.runner AND r.type='rte' " +
+    "AND r.rte_mode IN (?))";
+  // step 2 : that RTE's row seen within RTE_QUEUE_MINUTES (0 : kept for ever, its row or not)
+  const minutes = queueMinutes();
+  const rteRecent = minutes
+    ? " AND EXISTS (SELECT 1 FROM AnsibleForms.`nodes` rn WHERE rn.id=j.host AND rn.role='rte' AND rn.last_seen > (NOW() - INTERVAL ? SECOND))"
+    : "";
+  // step 3 : the dead-node rule, but for the jobs of a socket-mode RTE still in its window
   const res = await mysql.do(
     "UPDATE AnsibleForms.`jobs` j set j.status='abandoned',j.abort_requested=0 " +
     `where (j.status='running' or (j.status='approve' and j.job_type='workflow')) and ${owner} IS NOT NULL and ${owner}<>? ` +
-    `and NOT EXISTS (SELECT 1 FROM AnsibleForms.\`nodes\` n WHERE n.id=${owner} AND n.last_seen > (NOW() - INTERVAL ? SECOND))`,
-    [self, NODE_DEAD_SECONDS], true);
+    `and NOT EXISTS (SELECT 1 FROM AnsibleForms.\`nodes\` n WHERE n.id=${owner} AND n.last_seen > (NOW() - INTERVAL ? SECOND)) ` +
+    `and NOT (${onSocketRte}${rteRecent})`,
+    [self, NODE_DEAD_SECONDS, SOCKET_MODES, ...(minutes ? [minutes * 60] : [])], true);
   return res.changedRows;
 };
 

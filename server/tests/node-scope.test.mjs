@@ -80,6 +80,45 @@ describe("a starting process ends only the jobs it may", () => {
     assert.ok(params[1] >= 60, "a node is given at least a minute of missed heartbeats");
   });
 
+  test("a socket-mode RTE's running jobs are kept for RTE_QUEUE_MINUTES while its connection is down", async () => {
+    const { NODE_DEAD_SECONDS } = await import("../src/lib/role.js");
+    const saved = process.env.RTE_QUEUE_MINUTES;
+    try {
+      // the default : 60 minutes from the RTE's last heartbeat (written while its socket is open)
+      delete process.env.RTE_QUEUE_MINUTES;
+      await Job.abandonDeadNodes("worker-a");
+      const { sql, params } = calls[0];
+      assert.match(sql, /and NOT \(j\.host IS NOT NULL AND EXISTS \(SELECT 1 FROM AnsibleForms.`runners` r WHERE r\.name=j\.runner AND r\.type='rte' AND r\.rte_mode IN \(\?\)\)/,
+        "only a job an RTE claimed, on a runner in a socket mode");
+      assert.match(sql, /EXISTS \(SELECT 1 FROM AnsibleForms.`nodes` rn WHERE rn\.id=j\.host AND rn\.role='rte' AND rn\.last_seen > \(NOW\(\) - INTERVAL \? SECOND\)\)\)$/);
+      assert.deepEqual(params, ["worker-a", NODE_DEAD_SECONDS, ["outbound", "inbound"], 3600]);
+      // a setting of its own, read at each sweep
+      process.env.RTE_QUEUE_MINUTES = "5";
+      await Job.abandonDeadNodes("worker-a");
+      assert.equal(calls[1].params[3], 300);
+      // 0 : kept for ever, until the RTE comes back with or without them, or they are aborted
+      process.env.RTE_QUEUE_MINUTES = "0";
+      await Job.abandonDeadNodes("worker-a");
+      assert.doesNotMatch(calls[2].sql, /rn\.last_seen/);
+      assert.deepEqual(calls[2].params, ["worker-a", NODE_DEAD_SECONDS, ["outbound", "inbound"]]);
+    } finally {
+      if (saved === undefined) delete process.env.RTE_QUEUE_MINUTES;
+      else process.env.RTE_QUEUE_MINUTES = saved;
+    }
+  });
+
+  test("a database-mode RTE, an app and a worker node keep NODE_DEAD_SECONDS", async () => {
+    const { NODE_DEAD_SECONDS } = await import("../src/lib/role.js");
+    await Job.abandonDeadNodes("worker-a");
+    const { sql, params } = calls[0];
+    // the rule every owner meets first : its row seen within NODE_DEAD_SECONDS
+    assert.match(sql, /n\.id=COALESCE\(j\.host, j\.tracker\) AND n\.last_seen > \(NOW\(\) - INTERVAL \? SECOND\)\) and NOT/);
+    assert.equal(params[1], NODE_DEAD_SECONDS);
+    // the window is only for a runner in a socket mode : never database, never an unclaimed job
+    assert.ok(!params[2].includes("database"));
+    assert.match(sql, /j\.host IS NOT NULL AND EXISTS/);
+  });
+
   test("a new job names the node that follows it", async () => {
     let inserted;
     mysql.do = async (sql, record) => { inserted = record; return { insertId: 7 }; };
