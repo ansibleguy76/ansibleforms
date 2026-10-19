@@ -24,7 +24,7 @@ import { assertUrlAllowed } from "../lib/hostfilter.js";
 import credentialModel from "../models/credential.model.v2.js";
 import Errors from "../lib/errors.js";
 import Helpers from '../lib/common.js';
-import { readSecret, mapPayloadToCredential, parseInlineSecret } from "../secrets/providers/index.js";
+import { mapPayloadToCredential, parseInlineSecret } from "../secrets/providers/index.js";
 import { playbookEnv } from '../lib/playbookEnv.js';
 import { runJq } from "../lib/jq.js";
 import appConfig from "../../config/app.config.js";
@@ -223,9 +223,11 @@ const fnCredentials = async function(name,fallbackname="",credJqe=null){
       // Straight from a secret store, no credential row needed :
       //   "secret:<store>:<ref>"  e.g. "secret:cyberark:Safe=Linux;Object=root"
       //   "vault:<path>"          the store named `vault` (HashiCorp Vault)
+      //   read through the credential model, so the roles of the user limit the
+      //   secret stores (and the credentials) here as they do everywhere else
       const inline = parseInlineSecret(name)
       if (inline) {
-        const payload = await readSecret(inline.store, inline.ref)
+        const payload = await credentialModel.readInlineSecret(name, inline)
         let projected = payload
         if (credJqe) {
           projected = await runJq(credJqe, payload)
