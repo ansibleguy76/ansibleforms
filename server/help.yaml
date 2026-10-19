@@ -589,12 +589,15 @@
     type: number
     allowed: 0 or a positive integer
     default: 60
-    short: Wait for a busy RTE (minutes)
+    short: Wait for a busy or disconnected RTE (minutes)
     hint: Read by the app nodes and the worker.
     description: |
       A job handed to an RTE that is full (RTE_MAX_JOBS) or stopping waits for it, asking again
       every 10 seconds, for this many minutes ; then it fails and says why. An abort ends the
-      wait at once.
+      wait at once. It also covers the running jobs of a socket-mode RTE (outbound, inbound)
+      whose connection dropped: their playbooks run on and the RTE keeps their output, so they
+      stay running for this many minutes and go on when it reconnects, or end as abandoned
+      after that (or at once when the RTE comes back without them). 0 waits for ever.
   - name: LISTEN_HOST
     version: 7.3.0
     type: string

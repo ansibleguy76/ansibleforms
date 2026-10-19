@@ -300,7 +300,7 @@ In dev the `dev:rte` script uses `dev-rte-token-not-a-secret`; never outside a d
 | `RTE_FILES`, `RTE_CACHE_PATH` | RTE | `transfer` (default): the app sends the job files, cached by hash ; `local`: from the RTE's own disk (a shared volume) |
 | `RTE_FILES_MAX_MB` | app | the largest folder the app sends (512) |
 | `RTE_SPOOL_PATH` | RTE | where items wait until acked |
-| `RTE_MAX_JOBS`, `RTE_DRAIN_SECONDS`, `RTE_QUEUE_MINUTES` | RTE, RTE, app | playbooks at once (10) ; the wait for running playbooks on a stop (25 s) ; how long a job waits for a full RTE (60 min) |
+| `RTE_MAX_JOBS`, `RTE_DRAIN_SECONDS`, `RTE_QUEUE_MINUTES` | RTE, RTE, app | playbooks at once (10) ; the wait for running playbooks on a stop (25 s) ; how long a job waits for a full RTE, and a running job for its disconnected socket RTE (60 min) |
 | `RTE_URL` | RTE | inbound with a join token, or database mode registering itself: the address the app reaches it on (`http://rte:8000`) |
 | `RTE_REGISTER` | RTE | database mode: 1 (default) the RTE adds itself as a runner ; 0: add it by hand |
 | `DB_*`, `ENCRYPTION_SECRET` | RTE | database mode only: the app's own values (`ENCRYPTION_SECRET` to store its token when it registers itself) |
