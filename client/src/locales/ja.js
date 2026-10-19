@@ -593,6 +593,7 @@ export default {
       settings_env_update: '環境設定を更新',
       config_env_update: '環境設定を保存',
       seed_apply: 'config seed を適用',
+      seed_release: 'config seed をオフにし、管理対象を解放',
       config_seed_apply_create: 'config seed の再適用を要求',
       backup_restore_env_create: 'バックアップから環境ファイルを復元',
       backup_restoreEnv: 'バックアップから環境ファイルを復元',

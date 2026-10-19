@@ -600,6 +600,7 @@ export default {
       settings_env_update: 'Umgebungseinstellungen aktualisiert',
       config_env_update: 'Umgebungseinstellungen gespeichert',
       seed_apply: 'Konfigurations-Seed angewendet',
+      seed_release: 'Konfigurations-Seed aus, seine Objekte freigegeben',
       config_seed_apply_create: 'Erneutes Anwenden des Konfigurations-Seeds angefordert',
       backup_restore_env_create: 'Umgebungsdatei aus einem Backup wiederhergestellt',
       backup_restoreEnv: 'Umgebungsdatei aus einem Backup wiederhergestellt',

@@ -596,6 +596,7 @@ export default {
       settings_env_update: 'Zaktualizowano ustawienia środowiska',
       config_env_update: 'Zapisano ustawienia środowiska',
       seed_apply: 'Zastosowano config seed',
+      seed_release: 'Config seed wyłączony, jego obiekty zwolnione',
       config_seed_apply_create: 'Zażądano ponownego zastosowania config seed',
       backup_restore_env_create: 'Przywrócono plik środowiska z kopii zapasowej',
       backup_restoreEnv: 'Przywrócono plik środowiska z kopii zapasowej',

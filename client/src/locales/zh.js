@@ -584,6 +584,7 @@ export default {
       settings_env_update: '已更新环境设置',
       config_env_update: '已保存环境设置',
       seed_apply: '已应用配置种子',
+      seed_release: '配置种子已关闭，已释放其管理的对象',
       config_seed_apply_create: '已请求重新应用配置种子',
       backup_restore_env_create: '已从备份还原环境文件',
       backup_restoreEnv: '已从备份还原环境文件',

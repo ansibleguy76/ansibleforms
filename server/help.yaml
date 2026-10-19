@@ -254,7 +254,10 @@
       instance can be rebuilt from git on an empty database. Secrets are referenced as
       ${ENV_VAR} and resolved from the environment, so the file itself holds none.
       Unrelated to CONFIG_PATH, which holds the forms configuration. An invalid seed makes the
-      server refuse to start. See the Config seed page in the documentation.
+      server refuse to start, and so does a path whose file is missing (a mounted file may only
+      be late). Leaving it empty turns the seed off: the next start releases every object an
+      earlier seed made read-only, keeping its values, so it can be changed in the interface
+      again. See the Config seed page in the documentation.
   - name: CONFIG_SEED_RELOAD_SECONDS
     version: 6.3.0
     type: integer

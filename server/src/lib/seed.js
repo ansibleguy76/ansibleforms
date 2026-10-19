@@ -9,7 +9,8 @@
 // Objects that come from the seed are flagged `managed` : the seed re-applies them on
 // every start and the API refuses to change them, so the file stays authoritative.
 // Dropping an object from the file releases the flag (the record stays, editable
-// again) ; `prune: true` on a section deletes it instead.
+// again) ; `prune: true` on a section deletes it instead. Unsetting CONFIG_SEED_PATH turns
+// the seed off and releases every managed record at the next start (releaseWhenOff).
 //
 // A hand-made object is never touched UNLESS the seed declares its name, in which case
 // it is adopted : the declared fields are enforced and it becomes read-only. That is
@@ -390,7 +391,8 @@ export async function applyChat(declared, summary) {
 
 /**
  * Applies the seed file when CONFIG_SEED_PATH is set. Returns a summary, or null when
- * no seed is configured. Throws on anything wrong : the caller treats that as fatal.
+ * no seed is configured (after releasing what an earlier seed managed, see releaseWhenOff).
+ * Throws on anything wrong : the caller treats that as fatal.
  */
 // One apply at a time : the boot, the reload poll and SIGHUP each find-then-create per
 // section, so two at once could create the same row twice. Each waits for the one before.
@@ -411,7 +413,15 @@ export function reloadConfigSeed(opts) {
 
 async function applySeedNow({ schemaIsReady = true } = {}) {
   const seedPath = appConfig.configSeedPath;
-  if (!seedPath) return null;
+  // No seed configured at all : the seed is OFF, and whatever it marked managed on an earlier
+  // start is released here (see releaseWhenOff). That is deliberately NOT what happens when
+  // CONFIG_SEED_PATH is set but its file is missing - just below, that refuses to start,
+  // because a mounted file (a ConfigMap, a secret volume) may simply not be there YET, and
+  // releasing on that would unlock every managed object because of a slow mount.
+  if (!seedPath) {
+    await releaseWhenOff();
+    return null;
+  }
 
   // NOT fatal on its own. `schemaIsReady` is false when hasSchema() collected ANY failure -
   // including a single addIndex that could not apply, which schemaCheck itself grades only a
@@ -491,6 +501,94 @@ async function applySeedNow({ schemaIsReady = true } = {}) {
 
   await logApply(seedPath, summary, 'success');
   return summary;
+}
+
+// ---------------------------------------------------------------------------------
+// Turning the seed off.
+//
+// Only an APPLIED seed releases a row it no longer declares (applyListSection, applySections).
+// Removing CONFIG_SEED_PATH altogether applied nothing, so every row the seed had created
+// stayed `managed` - read-only in the interface and refused by the API - for ever, with no
+// seed left to change it either : an instance that had used a seed once could never change
+// those objects again (a runner adopted under Database mode, its credential, ...).
+//
+// So a start without CONFIG_SEED_PATH releases every managed row of every section the seed
+// manages, exactly as an applied empty seed would, keeping the rows and their values. Once
+// released there is nothing left to find, so every later start is a no-op that writes
+// nothing : no log line, no audit entry.
+
+// The single-row sections (applyLdap, applySettings, applyChat) : the table that holds the
+// `managed` flag, and the name the release reports. The list sections carry theirs in
+// listSections, through their crud config. Exported so a test can hold the two lists against
+// every `managed` column in the schema, which is how a new seedable table cannot be missed.
+export const singleRowSections = [
+  { key: "ldap", table: "ldap" },
+  { key: "settings", table: "settings" },
+  { key: "chat", table: "chat_settings" },
+];
+
+/**
+ * Release every row the seed manages, because the seed is off (CONFIG_SEED_PATH unset).
+ *
+ * Sets `managed` to 0 on every seedable table and nothing else : the rows, their values and
+ * their secrets stay as they are, they only become editable again. The caches of the list
+ * sections are flushed (and the other processes told) the way a save does it, so the
+ * interface stops showing them read-only straight away.
+ *
+ * Says what it released at warning level, since objects change from read-only to editable
+ * without anybody asking in the app, and writes an audit entry like an apply that released
+ * something does. Neither happens when there was nothing to release.
+ *
+ * Returns:
+ *   {string[]} What was released, as `label:name` for a list section and the section key
+ *   for a single-row one - the same form as an apply's `released` list.
+ *
+ * Raises:
+ *   Whatever the database throws. The caller (applyConfigSeed at boot) treats it as fatal,
+ *   like any other failure of the seed.
+ */
+async function releaseWhenOff() {
+  const released = [];
+  const groups = [];
+
+  // Step 1 : the list sections, one table each. The names first, for the log and the audit
+  // entry - only the names, findAll would decrypt every secret for nothing.
+  for (const section of listSections) {
+    const config = CrudModel.getConfig(section.modelName);
+    const rows = await mysql.do(`SELECT name FROM ${config.table} WHERE managed=1`);
+    if (!rows.length) continue;
+    await mysql.do(`UPDATE ${config.table} SET managed=0 WHERE managed=1`);
+    CrudModel.changed(section.modelName);
+    const names = rows.map((r) => r.name);
+    released.push(...names.map((n) => `${section.label}:${n}`));
+    groups.push(`${section.key}: ${names.join(", ")}`);
+  }
+
+  // Step 2 : the single-row sections, which have no name to report
+  for (const section of singleRowSections) {
+    const res = await mysql.do(`UPDATE AnsibleForms.\`${section.table}\` SET managed=0 WHERE managed=1`);
+    if (res.affectedRows > 0) {
+      released.push(section.key);
+      groups.push(section.key);
+    }
+  }
+
+  // Step 3 : say so, once. Nothing released (every start after the first) is silent.
+  if (!released.length) return released;
+  logger.warning(
+    `Config seed is off: released ${released.length} managed row${released.length === 1 ? "" : "s"} ` +
+    `(${groups.join("; ")}) so they can be changed in the app`
+  );
+  // the seed runs outside any request, so without this the rows would turn editable with
+  // nothing in the trail saying when or why (the same reason logApply writes one)
+  await Audit.log({
+    action: "seed.release",
+    outcome: "success",
+    targetType: "seed",
+    target: "CONFIG_SEED_PATH",
+    detail: { released },
+  });
+  return released;
 }
 
 // ---------------------------------------------------------------------------------
