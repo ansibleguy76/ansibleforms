@@ -30,11 +30,10 @@
     allowed: a positive integer
     short: Database port
     hint: The TCP port MySQL or MariaDB listens on.
-    default: 3306
+    required: true
     description: |
-      Port of the MySQL or MariaDB server. Required at startup together with DB_HOST,
-      DB_USER and DB_PASSWORD - the application cannot reach its database without it, so
-      changing it needs a restart.
+      Port of the MySQL or MariaDB server, usually 3306. It has no default: the server refuses to start when DB_PORT,
+      DB_HOST, DB_USER or DB_PASSWORD is not set, and changing it needs a restart.
   - name: DB_USER
     type: string
     allowed: a valid mysql user
@@ -522,21 +521,25 @@
     description: |
       On an RTE (`AF_ROLE=rte`): the bearer token every call must carry ; the RTE refuses to
       start without one. The app stores the same token on the runner (Connections > Runners) ;
-      an RTE that registers itself (`RTE_REGISTER`) puts it there, and keeps it in step when it
-      changes.
+      a socket-mode RTE that joins (`RTE_JOIN_TOKEN` or an admin's approval) puts it there. A
+      database-mode RTE that registers itself (`RTE_REGISTER`) does too, and keeps it in step.
   - name: RTE_REGISTER
     version: 7.0.0
     type: number
     allowed: 0 or 1
-    short: An RTE adds itself as a runner
-    hint: "On an RTE: 1 adds it under Connections > Runners when it starts, no click or config seed needed."
+    short: A database-mode RTE adds itself as a runner (deprecated)
+    hint: "Deprecated, database-mode RTEs only: 1 adds it under Connections > Runners when it starts."
     default: "1"
     description: |
-      On an RTE (`AF_ROLE=rte`): 1 (the default) and the RTE adds itself under Connections >
-      Runners when it starts, and checks every 30 seconds that it is still there - no click and
-      no config seed needed. The first RTE becomes the default runner, so playbook forms run on
-      it at once. Its address is `RTE_URL`, or this container's IP address and `PORT` when that
-      is not set.
+      **Deprecated since 7.3.0, removed in 8.0.0 with database mode.** Read only by an RTE in
+      database mode (no `RTE_MODE`, or `RTE_MODE=database`). An RTE in a socket mode (`outbound`
+      or `inbound`) ignores it: it joins with `RTE_JOIN_TOKEN`, or asks to join and waits for an
+      admin's approval under Connections > Runners.
+
+      On a database-mode RTE: 1 (the default) and the RTE adds itself under Connections >
+      Runners when it starts, and checks every 30 seconds that it is still there. The first RTE
+      becomes the default runner. Its address is `RTE_URL`, or this container's IP address and
+      `PORT` when that is not set.
 
       A runner the RTE registered shows as *automatic* on the Runners page, and as
       *unresponsive* once the RTE stopped writing its heartbeat ; the worker removes it 10
@@ -598,16 +601,16 @@
     type: string
     allowed: an http:// or https:// address, without a slash on the end
     short: The address the app reaches an RTE on
-    hint: "On an RTE that registers itself: the address the app calls it on, usually its service name."
+    hint: "On an inbound RTE: the address the app dials it on, usually its service name."
     description: |
-      On an RTE (`AF_ROLE=rte`) that registers itself (`RTE_REGISTER`): the address the app
-      calls it on, usually the service name - `http://rte:8000` in docker compose, the service
-      in kubernetes. The runner is named after its host (`rte`), so forms can name it with
-      `runner: rte`, and every replica behind that address is the same runner.
+      On an RTE in `inbound` mode: the address the app dials it on, usually the service name -
+      `http://rte:8000` in docker compose, the service in kubernetes. It is required when the RTE
+      registers itself with `APP_URL` (it refuses to start without it), and becomes its runner's
+      address. On an `outbound` RTE it is optional: it is only recorded as the runner's address.
 
-      Not set: the RTE registers this container's IP address and `PORT`, named after the node
-      (`rte-<hostname>-<port>`, as on the Status page). That works without any setting, but the
-      address and the name change when the container is recreated - set `RTE_URL` in production.
+      On a deprecated database-mode RTE that registers itself (`RTE_REGISTER`): the address it
+      registers, its runner named after the host (`rte`). Not set: this container's IP address and
+      `PORT`, named after the node (`rte-<hostname>-<port>`), which change when it is recreated.
 
       An inbound RTE (`RTE_MODE=inbound`) over TLS: set `HTTPS=1` with its own `HTTPS_CERT` and
       `HTTPS_KEY`, and an `https://` address here. When it registers (`APP_URL`) it sends its
@@ -687,11 +690,15 @@
     short: Allow schema creation
     hint: Allows the database schema to be created on a fresh install.
     description: | 
-      When you start AnsibleForms for the first time and there is no database, AnsibleForms will present you the option to create the schema. 
-      Although this is fairly handy, you might want to disable this option to prevent accidental schema re-creation.  
-      Also note that if you use the docker-compose solution, the database is created as part of the Mysql initialization.  
-      If you use a different database, you might want to enable this option, to at the very least create the schema the very first time.  
-      If you want to disable this option, set this variable to 0.
+      With 1, the worker creates the schema (all AnsibleForms tables) itself at startup when it finds an empty database.
+      It only does so on a database without a single AnsibleForms table, so an existing installation is never recreated.
+      App nodes wait until the worker has created and patched the schema before they serve.
+
+      With 0, nothing creates the schema: the worker skips it at startup, the schema endpoint refuses to create it,
+      and app nodes start without waiting for it. Set 0 to rule out any schema creation, for example on a production database.
+
+      The docker-compose MySQL only creates the empty `AnsibleForms` database and its user on its first start:
+      the tables come from AnsibleForms, so keep 1 for a fresh install.
     version: 5.0.3      
   - name: UPGRADE_BACKUP
     version: 7.0.0
@@ -1254,7 +1261,7 @@
       - `af_http_requests_total{route,method,status}`, `af_http_request_duration_seconds{route}` ;
       - `af_jobs{status}` running and awaiting approval now, `af_jobs_ended_24h{status}` ;
       - `af_nodes{role,alive}` ; `af_login_failures_total`, `af_login_lockouts_total` ;
-      - an RTE: `af_rte_running_jobs`, `af_rte_max_jobs`.
+      - an RTE: `af_rte_running_jobs`, `af_rte_max_jobs` ; a socket-mode RTE also `af_rte_socket_connected` (1 open, 0 not).
   - name: LOG_FORMAT
     version: 7.0.0
     type: string
@@ -1277,7 +1284,7 @@
     choices:
     - name: error
       description: Error message, something is wrong
-    - name: warn
+    - name: warning
       description: Warning message, something is off, but acceptable
     - name: notice
       description: Notice message, something happened worth mentioning
@@ -1319,7 +1326,7 @@
     choices:
     - name: error
       description: Error message, something is wrong
-    - name: warn
+    - name: warning
       description: Warning message, something is off, but acceptable
     - name: notice
       description: Notice message, something happened worth mentioning
@@ -1356,7 +1363,7 @@
     choices:
     - name: error
       description: Error message, something is wrong
-    - name: warn
+    - name: warning
       description: Warning message, something is off, but acceptable
     - name: notice
       description: Notice message, something happened worth mentioning
@@ -1491,6 +1498,9 @@
       Once authenticated, the client uses a JWT (Json Web Token) for authorization (Bearer authorization header).
       This token is stored on the client side (i.e. browser cookie) and is signed with a secret key.  
       To keep the communication between client and server safe, we strongly recommend you to set this secret.
+
+      Not set: each start generates a random secret, so a restart ends every session and everyone logs in again.
+      An app node (`AF_ROLE=app`) refuses to start without it: set the same value on every app node.
   - name: ACCESS_TOKEN_EXPIRATION
     type: string
     allowed: a valid time indication
@@ -1602,7 +1612,8 @@
       one start : every stored secret is re-encrypted from it to the new ENCRYPTION_SECRET, then it
       is not used and can be removed. Not needed when ENCRYPTION_SECRET is set for the first time
       (the stored secrets are then re-encrypted from the default key). When the stored secrets were
-      encrypted with a key that is neither, nothing is changed and the log says so.
+      encrypted with a key that is neither, nothing is changed and the worker refuses to start,
+      saying in the log which variable to set.
   - name: ANSIBLE_PATH
     type: string
     allowed: a valid path
@@ -2414,6 +2425,10 @@
                 template: deploy
                 roles:
                 - admin
+                fields:
+                - name: version
+                  type: text
+                  label: Version
         - name: ascender
           description: |
             Runs a job or workflow template on Ascender: the same as `awx` (an Ascender is a
@@ -2426,6 +2441,10 @@
                 template: deploy
                 roles:
                 - admin
+                fields:
+                - name: version
+                  type: text
+                  label: Version
         - name: semaphore
           description: |
             Runs a template on Semaphore UI: the one `template` names (its name or id), in the
@@ -2440,6 +2459,10 @@
                 runner: semaphore-ops
                 roles:
                 - admin
+                fields:
+                - name: version
+                  type: text
+                  label: Version
         - name: rundeck
           description: |
             Runs a job on Rundeck: the one `job` names (`group/name`, a name, or the job's uuid ;
@@ -2455,6 +2478,10 @@
                 runner: rundeck-ops
                 roles:
                 - admin
+                fields:
+                - name: service
+                  type: text
+                  label: Service
         - name: jenkins
           description: |
             Builds a job on Jenkins: the one `job` names (its name, or its path in a folder ;
@@ -2470,6 +2497,10 @@
                 runner: jenkins-ci
                 roles:
                 - admin
+                fields:
+                - name: version
+                  type: text
+                  label: Version
         - name: workflow
           description: |
             Runs one of the designer's workflows (Designer > Workflows), named with `workflow:`,
@@ -2615,7 +2646,7 @@
                 type: ansible
                 playbook: site.yml
                 roles:
-                  - Public
+                  - default
                 fields:
                   - name: addresses
                     type: list
@@ -2689,6 +2720,29 @@
               - name: __template__
                 type: text
                 default: Foobar # this will overwrite the template name            
+      - name: job
+        type: string
+        with_types: awx, aap, ascender, semaphore, rundeck, jenkins
+        group: basic
+        allowed: the name of a template or job on the runner
+        short: Job (or template)
+        description: |
+          The same as `template`, under the word Rundeck and Jenkins use: a Rundeck job
+          (`group/name`, a bare name, or its uuid) or a Jenkins job (its name, or its path in a
+          folder). A form has `template` or `job`, never both.
+
+          **Note**: A field called `__template__` overwrites it too, as it does `template`.
+        examples:
+        - name: Run a Rundeck job
+          code: |
+            name: Restart service
+            type: rundeck
+            job: ops/restart-service
+            roles:
+              - admin
+            fields:
+              - name: service
+                type: text
       - name: workflow
         type: string
         with_types: workflow
@@ -2966,10 +3020,14 @@
           Ascender) for `awx`, `aap` and `ascender`, and semaphore, rundeck, jenkins for the forms
           of that type. Runners are added under Connections > Runners. A runner of another type
           fails the job and says which type to name.
-          Without this property the default runner of the form's type is used (every type has
-          one: the first runner of a type, or the one chosen under Edit defaults) ; without a
-          default the job fails and says how to add one. Since 7 AnsibleForms runs no
-          playbook itself.
+          Without this property the default runner of the form's type is used: the runner whose
+          **Default** switch is on under Connections > Runners (the first runner of a type becomes
+          its default) ; without a default the job fails and says how to add one. Since 7
+          AnsibleForms runs no playbook itself.
+
+          A disabled runner (its **Enabled** switch off) fails the job, also when it is the
+          default: there is no fallback to another runner. A role's `runners` list limits the
+          runners its users' jobs may run on, the named one or the default.
 
           **Semaphore**: a form of type semaphore runs
           the Semaphore template named by `template` (its name, or its id) in the runner's
@@ -3069,7 +3127,7 @@
         examples:
         - name: Add awx credentials to your template
           code: |
-            awx_credentials:
+            awxCredentials:
               - vmware_prod
               - ad_prod
         - name: Dynamically send credentials
@@ -3096,7 +3154,7 @@
           **Note**: You can also dynamically set the check mode by using a field called `__check__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static check field.  The field must result in a boolean (expression or checkbox)
           **Note**: If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: limit
-        type: text
+        type: string
         with_types: ansible, awx, aap, ascender, semaphore, rundeck, jenkins
         allowed: a valid host pattern
         group: workflow
@@ -3104,7 +3162,7 @@
         description: |
           In awx and ansible core you run a playbook against limited hosts by supplying a host pattern.  Use this attribute to do so.  
 
-          **Note**: You can also dynamically set the limit by using a field called `__limit__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static check field.  The field must result in number (number field or expression)
+          **Note**: You can also dynamically set the limit by using a field called `__limit__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static limit field.  The field must result in a host pattern string (text field or expression)
           **Note**: If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: diff
         type: boolean
@@ -4562,13 +4620,6 @@
                   type: password
                   label: Enter password
                   noLog: true
-          - name: multiple
-            type: boolean
-            default: false
-            short: Enable multi select
-            description: |
-              Enable multiple select with dropdown boxes.
-            with_types: enum
           - name: values
             type: array
             group: data
@@ -4649,7 +4700,7 @@
             group: data
             default: false
             short: Evaluates default value
-            description: A default can be treated as javascript and can thus hold expressions like `'$(other_field)'.toUpperCase()` or `Math.PI` or `Date.getDate.toISOString()`
+            description: A default can be treated as javascript and can thus hold expressions like `'$(other_field)'.toUpperCase()` or `Math.PI` or `new Date().toISOString()`
             version: 4.0.5
             with_types: text, textarea, number, expression, password, enum, radio, checkbox, datetime
           - name: switch
@@ -4663,6 +4714,7 @@
           - name: required
             type: boolean
             group: validation
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, list, file, yaml
             default: false
             short: Required field
             description: |
@@ -4810,6 +4862,7 @@
           - name: validIf
             type: object
             group: validation
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, list, yaml
             version: 2.2.4
             short: An field based validation (field must be true)
             description: |
@@ -4826,6 +4879,7 @@
           - name: validIfNot
             type: object
             group: validation
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, list, yaml
             version: 2.2.4
             short: An field based validation (field must be false)
             description: |
@@ -4882,6 +4936,7 @@
           - name: model
             type: string or array
             group: output
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, list, file, yaml
             allowed: An dot-based string notation of an object, or an array of these
             short: Extravar modelling
             description: |
@@ -4960,9 +5015,10 @@
             description: |
                 By default this javascript is evaluated on the server side and limited to predefined functions (for security).
                 However in combination with `runLocal`, the evaluation is ran in the browsers sandbox and allows the full javascript power.
+                An `html` field always evaluates its expression in the browser, as with `runLocal: true`: it never runs on the server.
                 When used in an `enum` field, the expression must return a flat array or array of flat objects, to make it presentable in a dropdown box.  
-                An expression supports placeholders.  Read more about placeholders here. [TODO]
-                Click here to find out more about the predefined functions. [TODO]  
+                An expression supports placeholders: `$(fieldname)` is replaced by the value of that field before the expression runs.  
+                On the server, the predefined functions are called as `fn.<name>(...)`, for example `fn.fnTime()`.  
                   
                 **tip**: use the alias `local` (type='expression',runLocal=true,hide=true,output=false)  
                 **tip**: use the alias `local_out` (type='expression',runLocal=true,hide=true)  
@@ -5120,7 +5176,7 @@
             description: |
               This is typically a classic SELECT statement.  
               However, in the case of mongodb, the query is slightly different.  See the examples.  
-              An expression supports placeholders.  Read more about placeholders here. [TODO]
+              A query supports placeholders: `$(fieldname)` is replaced by the value of that field before the query runs.
 
               Every `$(...)` value is escaped for the database engine before it is pasted into the query: single quotes are doubled, backslashes are doubled too on mysql (postgres, mssql and oracle keep them as they are), and on mongodb the value is escaped as the body of a JSON string. An object or array value is pasted as json, escaped the same way.  
               This protects a quoted placeholder (`where name='$(name)'`) only: an unquoted one (`limit $(n)`) is pasted as plain text, so quote your placeholders.
@@ -5147,9 +5203,9 @@
             with_types: expression, enum
             short: Transform database query results with jq
             description: |
-              Apply a jq expression to transform the result of a `query`+`dbConfig` or a remote `expression`.  
-              jq is a post-processor applied server-side, after that remote call returns, to filter, map or reshape the result.  
-              It only runs for remote calls: a local expression (`runLocal: true`) is evaluated in the browser and never reaches the server, so `jq` is ignored there.
+              Apply a jq expression to transform the result of a `query` (with `dbConfig`).  
+              jq is a post-processor applied server-side, after the query returns, to filter, map or reshape the result.  
+              It only applies to query results: on an `expression`, server-side or local (`runLocal: true`), `jq` is ignored.
             examples:
             - name: extract specific fields from query result
               code: |
@@ -5165,7 +5221,7 @@
             with_types: enum
             short: Allow multiple selection
             description: |
-              When you want to select multiple items from a dropdown box, set this property to true.  `horizontal: true` will automatically trigger multiple.
+              When you want to select multiple items from a dropdown box, set this property to true. The field's value is then a list of the selected items.
           - name: sticky
             type: boolean
             group: visualization
@@ -5322,11 +5378,11 @@
                 - name: computername
                   type: expression
                   dbConfig: CMDB
-                  query: SELECT name FROM computers where user_id=$(user)
+                  query: SELECT name FROM computers where user_id='$(user)'
                 - name: computername_2nd_example
                   type: expression
                   dbConfig: CMDB
-                  query: SELECT name FROM computers where user_id=$(user.id)      
+                  query: SELECT name FROM computers where user_id='$(user.id)'      
                   # this example is better readable 
                   # and removes the need of the placeholderColumn property
           - name: previewColumn
@@ -5497,7 +5553,7 @@
                   name: server_config
                   label: Server Configuration
                   readonly: true
-                  expression: fn.getServerConfig()
+                  expression: fn.fnReadYamlFile('/tmp/server_config.yaml')
                   showDownloadButton: true              
         - name: Approval point
           itemName: attribute
@@ -5508,11 +5564,12 @@
           items:
           - name: title
             type: string
-            required: true
+            required: false
             allowed: Free text with placeholders
             short: Approval message title
             description: | 
-              The approval point consists out of a title and message.  This is the title attribute.  
+              The approval point consists out of a title and message.  This is the title attribute, used as the subject of the approval mail.  
+              Without it, the mail gets the default approval subject. A workflow's approval nodes take the node's name as title.  
               **Note**: This supports placeholders (the placeholders point to extravars)
           - name: message
             type: string
@@ -5734,7 +5791,7 @@
             description: | 
               This action allows you to load another form.  
 
-              **new in v4.0.20**: the previous jobid is sent as \_\_previous\_\_jobid\_\_.  
+              **new in v4.0.20**: the previous jobid is sent as `__previous_jobid__`.  
               You must make sure you have this field in your form, it will be populated with the previous jobid.  
 
               This is particularly interesting to grab information from the previous job (for example, load output, ...)                                          
