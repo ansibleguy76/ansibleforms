@@ -247,6 +247,8 @@ onMounted(async () => {
   <AppChat />
   <!-- asked when a page with unsaved changes is left (useUnsavedGuard) -->
   <AppUnsavedDialog />
+  <!-- the app's own confirm question, before a delete, a reject or a list action (askConfirm) -->
+  <AppConfirmDialog />
   <!-- the disclaimer, accepted once before anything else (Settings > Access > Disclaimer) -->
   <AppDisclaimer v-if="appStore.disclaimerOpen" />
   <router-view v-if="isLoaded || route.name === '/schema' || route.name === '/login' || route.name === '/error'" />

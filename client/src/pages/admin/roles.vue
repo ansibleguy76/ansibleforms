@@ -10,6 +10,7 @@ import { requiredRoleDescription } from '@/config/roles';
 import { toast } from 'vue-sonner';
 import BsDataTable from '@/components/BsDataTable.vue';
 import { tableControls } from '@/lib/listControls';
+import { askConfirm } from '@/lib/confirmPrompt';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -230,7 +231,7 @@ async function bulkDelete() {
   const question = skipped
     ? t('settings.common.bulkDeleteConfirmSkip', { count: ids.length, skipped })
     : t('settings.common.bulkDeleteConfirm', { count: ids.length });
-  if (!confirm(question)) return;
+  if (!(await askConfirm(question, { title: t('common.delete'), icon: 'trash' }))) return;
   await deleteRoles(ids);
 }
 
@@ -242,7 +243,13 @@ async function bulkDelete() {
  */
 async function deleteOne(item) {
   if (item.required) return;
-  if (!confirm(`${t('settings.common.deleteConfirm')} ${item.name}?`)) return;
+  if (
+    !(await askConfirm(`${t('settings.common.deleteConfirm')} ${item.name}?`, {
+      title: t('common.delete'),
+      icon: 'trash',
+    }))
+  )
+    return;
   await deleteRoles([item.id]);
 }
 

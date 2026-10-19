@@ -9,6 +9,7 @@
 import axios from 'axios';
 import { toast } from 'vue-sonner';
 import Helpers from '@/lib/Helpers';
+import { askConfirm } from '@/lib/confirmPrompt';
 
 /**
  * Deletes records one by one after asking ; a failure is said, the others still go.
@@ -23,7 +24,8 @@ import Helpers from '@/lib/Helpers';
  */
 export async function deleteRecords(t, urls) {
   if (!urls.length) return false;
-  if (!confirm(t('settings.common.bulkDeleteConfirm', { count: urls.length }))) return false;
+  const question = t('settings.common.bulkDeleteConfirm', { count: urls.length });
+  if (!(await askConfirm(question, { title: t('common.delete'), icon: 'trash' }))) return false;
   const results = await Promise.allSettled(urls.map((url) => axios.delete(url)));
   const failed = results.filter((r) => r.status === 'rejected');
   if (failed.length) toast.error(Helpers.parseAxiosResponseError(failed[0].reason, t('common.delete')));
