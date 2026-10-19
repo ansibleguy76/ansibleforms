@@ -1584,7 +1584,8 @@ export default {
       askAgain: 'Richiedi di nuovo',
       askAgainConfirm:
         "Chiedere a {count} utente/i di accettare di nuovo l'avviso? La loro accettazione viene cancellata.",
-      askAgainDone: "{count} utente/i accetteranno di nuovo l'avviso al prossimo accesso.",
+      askAgainDone:
+        "{count} utente/i accetteranno di nuovo l'avviso la prossima volta che useranno l'app (la prossima pagina o azione).",
       versionEnabled: 'Abilitato',
       label: 'Avviso',
       labelPlural: 'Avvisi',

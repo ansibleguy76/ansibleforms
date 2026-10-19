@@ -1584,7 +1584,8 @@ export default {
       browser: 'Browser',
       askAgain: 'Opnieuw vragen',
       askAgainConfirm: '{count} gebruiker(s) vragen de disclaimer opnieuw te accepteren? Hun acceptatie wordt gewist.',
-      askAgainDone: '{count} gebruiker(s) accepteren de disclaimer opnieuw bij hun volgende aanmelding.',
+      askAgainDone:
+        '{count} gebruiker(s) accepteren de disclaimer opnieuw zodra ze de app weer gebruiken (hun volgende pagina of actie).',
       versionEnabled: 'Ingeschakeld',
       label: 'Disclaimer',
       labelPlural: 'Disclaimers',

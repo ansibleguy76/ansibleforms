@@ -1593,7 +1593,8 @@ export default {
       browser: 'Browser',
       askAgain: 'Erneut anfragen',
       askAgainConfirm: '{count} Benutzer bitten, den Hinweis erneut zu akzeptieren? Ihre Zustimmung wird gelöscht.',
-      askAgainDone: '{count} Benutzer akzeptieren den Hinweis bei der nächsten Anmeldung erneut.',
+      askAgainDone:
+        '{count} Benutzer akzeptieren den Hinweis erneut, sobald sie die App das nächste Mal verwenden (ihre nächste Seite oder Aktion).',
       versionEnabled: 'Aktiviert',
       label: 'Hinweis',
       labelPlural: 'Hinweise',

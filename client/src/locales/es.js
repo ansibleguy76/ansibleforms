@@ -1591,7 +1591,8 @@ export default {
       browser: 'Navegador',
       askAgain: 'Volver a pedir',
       askAgainConfirm: '¿Pedir a {count} usuario(s) que acepten de nuevo el aviso? Su aceptación se borra.',
-      askAgainDone: '{count} usuario(s) aceptarán el aviso de nuevo en su próximo inicio de sesión.',
+      askAgainDone:
+        '{count} usuario(s) aceptarán el aviso de nuevo la próxima vez que usen la aplicación (su próxima página o acción).',
       versionEnabled: 'Habilitado',
       label: 'Aviso',
       labelPlural: 'Avisos',

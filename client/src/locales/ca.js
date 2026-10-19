@@ -1434,7 +1434,8 @@ export default {
       browser: 'Navegador',
       askAgain: 'Torna a demanar',
       askAgainConfirm: "Vols demanar a {count} usuari(s) que tornin a acceptar l'avís? La seva acceptació s'esborra.",
-      askAgainDone: "{count} usuari(s) tornaran a acceptar l'avís al proper inici de sessió.",
+      askAgainDone:
+        "{count} usuari(s) tornaran a acceptar l'avís la propera vegada que facin servir l'aplicació (la propera pàgina o acció).",
       versionEnabled: 'Activat',
       label: 'Avís',
       labelPlural: 'Avisos',

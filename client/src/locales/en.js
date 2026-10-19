@@ -1568,7 +1568,8 @@ export default {
       browser: 'Browser',
       askAgain: 'Ask again',
       askAgainConfirm: 'Ask {count} user(s) to accept the disclaimer again? Their acceptance is cleared.',
-      askAgainDone: '{count} user(s) will accept the disclaimer again at their next sign-in.',
+      askAgainDone:
+        '{count} user(s) will accept the disclaimer again the next time they use the app (their next page or action).',
       versionEnabled: 'Enabled',
       label: 'Disclaimer',
       labelPlural: 'Disclaimers',
