@@ -1572,10 +1572,34 @@ Form.save = async function(data){
       for (const g of dirGroups) {
         const target = path.join(dirEntry.path, g.source)
         const forms = g.forms
+        // the forms of this file the designer never received (no name, failing validation)
+        // are written back as they were, in their places : saving another form of the file
+        // must not drop them (formsToKeep)
+        let kept = []
+        if (fs.existsSync(target)) {
+          const onDisk = readFileForms(target, g.source)
+          if (onDisk === null) {
+            // the loader left the whole file out, so none of its forms were in the designer :
+            // writing over it would lose them all
+            throw new Errors.BadRequestError(`The file '${g.source}' cannot be read as forms ; fix it, or save the form to another file`)
+          }
+          const savedNames = new Set(forms.map(f => f?.name).filter(Boolean))
+          // a form the designer never received, sent now : it is that form, edited. It must
+          // load once saved, or the save is refused with the reason
+          for (const f of onDisk.forms.filter(x => x.notLoaded && x.name && savedNames.has(x.name))) {
+            try {
+              Form.validateForm({ ...structuredClone(forms.find(x => x.name === f.name)), source: g.source })
+            } catch (e) {
+              throw new Errors.BadRequestError(`Form '${f.name}' is not valid: ${Helpers.getError(e)}`)
+            }
+          }
+          kept = formsToKeep(onDisk, savedNames)
+          if (kept.length) logger.info(`Keeping ${kept.map(k => k.name ? `'${k.name}'` : '(a form with no name)').join(", ")} in '${target}' as it was : it does not load, so the designer never had it`)
+        }
         logger.debug(`saving ${forms.length==1 ? `single form '${forms[0].name}'` : `forms ${forms.map(x => x.name)}`} to '${target}'`)
         // ensure parent directory exists for nested paths
         fse.ensureDirSync(path.dirname(target));
-        fs.writeFileSync(target, yaml.stringify(forms.length==1 ? forms[0] : forms));
+        fs.writeFileSync(target, formsFileText(forms, kept));
       }
       // a dedicated forms folder is fully managed : the yaml files of deleted
       // forms are removed ; a repository ROOT serving forms can hold unrelated
@@ -1599,18 +1623,26 @@ Form.save = async function(data){
             // gone from the config. Anything unreadable, or still naming a form that
             // survived, is left alone and reported.
             const fullPath = path.join(dirEntry.path, existing)
-            let definedNames = null
-            try {
-              const parsed = yaml.parse(fs.readFileSync(fullPath, "utf8"))
-              const list = Array.isArray(parsed) ? parsed : [parsed]
-              definedNames = list.map(f => f?.name).filter(Boolean)
-            } catch (e) {
-              definedNames = null   // unparseable
-            }
-            if (definedNames === null) {
+            const onDisk = readFileForms(fullPath, existing)
+            if (onDisk === null) {
               logger.warning(`Not removing '${existing}' from '${dirEntry.path}': it could not be parsed, so it was never loaded and cannot have been deleted here`)
               continue
             }
+            // a form the designer never received cannot have been deleted in it. Such a file
+            // stays as it is when nothing else in it was deleted, and is written again without
+            // the deleted forms only : the forms that do not load stay, and so does a form
+            // whose name the configuration still has (see stillDefined below)
+            if (onDisk.forms.some(f => f.notLoaded)) {
+              const kept = onDisk.forms.filter(f => f.notLoaded || (f.name && savedFormNames.has(f.name)))
+              if (kept.length < onDisk.forms.length) {
+                logger.info(`Keeping ${kept.map(k => k.name ? `'${k.name}'` : '(a form with no name)').join(", ")} in '${existing}' : the designer never had it ; the other forms of the file were deleted`)
+                fs.writeFileSync(fullPath, kept.map(k => k.text).join(""))
+              } else {
+                logger.warning(`Not removing '${existing}' from '${dirEntry.path}': its forms do not load, so the designer never had them`)
+              }
+              continue
+            }
+            const definedNames = onDisk.forms.map(f => f.name).filter(Boolean)
             const stillDefined = definedNames.filter(n => savedFormNames.has(n))
             if (stillDefined.length > 0) {
               logger.warning(`Not removing '${existing}' from '${dirEntry.path}': it defines ${stillDefined.join(", ")}, which the configuration still has - most likely a duplicate form name that the loader skipped`)
@@ -1639,6 +1671,9 @@ Form.save = async function(data){
   catch(err) {
     // handle error
     logger.error("Failed to save forms: ",err)
+    // a refusal (lib/errors.js) keeps its class and its status ; only a real failure
+    // becomes the generic "Failed to save forms"
+    if (err instanceof Errors.ApiError) throw err
     throw new Error(Helpers.getError(err,"Failed to save forms"), { cause: err })
   }
   finally {
@@ -1651,6 +1686,141 @@ Form.save = async function(data){
 
   return true
 }
+// ===========================================================================
+// FORMS THE DESIGNER NEVER SAW
+// ===========================================================================
+// The loader leaves out a form that has no name or fails validation (Form.load) : it is
+// reported as an error, and the designer never receives it. A save rewrites a file from the
+// forms the designer sent, so such a form was dropped from its file - and from git at the
+// next push - by a save of ANOTHER form of the same file. These helpers find those forms on
+// disk so the save writes them back exactly as they were.
+
+/**
+ * Tells whether the loader would leave a form of a file out (Form.load) : not a mapping, no
+ * name, or a form failing validation.
+ *
+ * Args:
+ *   item (any): one form of a file, as parsed.
+ *   filename (string): the file, relative to its forms folder ; the loader validates a form
+ *     with it as its source.
+ *
+ * Returns:
+ *   boolean: true when the designer never received this form.
+ */
+function notLoaded(item, filename) {
+  if (!item || typeof item !== "object" || Array.isArray(item) || !item.name) return true
+  try {
+    Form.validateForm({ ...structuredClone(item), source: filename })
+    return false
+  } catch {
+    return true
+  }
+}
+
+/**
+ * Reads the forms of a file on disk, each with the text it is written in, and whether the
+ * designer ever received it.
+ *
+ * The text of a form is the file's own bytes for that entry - its comments and the blank
+ * lines before it included - when the file is a block list at the top level, which is how a
+ * file of several forms is written. Otherwise (a single form, a flow list, an indented list)
+ * the parsed node is kept, and written again with its comments and styles.
+ *
+ * Args:
+ *   fullPath (string): the file.
+ *   filename (string): the file, relative to its forms folder.
+ *
+ * Returns:
+ *   object|null: { forms: [{ name, notLoaded, text }], single (the file holds one form, not
+ *   a list) } ; null when the file cannot be read or parsed as forms (the loader then left
+ *   the whole file out).
+ */
+function readFileForms(fullPath, filename) {
+  let raw
+  let doc
+  try {
+    raw = fs.readFileSync(fullPath, "utf8")
+    doc = yaml.parseDocument(raw)
+  } catch {
+    return null
+  }
+  if (doc.errors.length) return null
+  const contents = doc.contents
+  let nodes
+  if (contents === null || contents === undefined) nodes = []
+  else if (yaml.isSeq(contents)) nodes = contents.items
+  else if (yaml.isMap(contents)) nodes = [contents]
+  else return null
+  const values = [].concat(doc.toJS() ?? [])
+  const blockList = yaml.isSeq(contents) && !contents.flow
+  let previousEnd = 0
+  const forms = nodes.map((node, i) => {
+    let text = null
+    if (blockList && node?.range) {
+      // the entry from the end of the previous one : its "- " marker, and the comments and
+      // blank lines above it. A document marker or a directive there is not taken along.
+      const lineStart = raw.lastIndexOf("\n", node.range[0] - 1) + 1
+      let start = previousEnd
+      const above = raw.slice(previousEnd, lineStart)
+      if (!above.split("\n").every(line => /^\s*(#.*)?$/.test(line))) start = lineStart
+      // the marker at the first column only : an indented list cannot be mixed with the
+      // entries written at the first column
+      if (/^-\s+$/.test(raw.slice(lineStart, node.range[0]))) {
+        text = raw.slice(start, node.range[2])
+        if (!text.endsWith("\n")) text += "\n"
+      }
+      previousEnd = node.range[2]
+    }
+    if (text === null) {
+      // the node itself, as an entry of a list
+      const one = new yaml.Document()
+      one.contents = new yaml.YAMLSeq()
+      one.contents.items.push(node)
+      text = String(one)
+    }
+    const value = values[i]
+    return { name: value?.name, notLoaded: notLoaded(value, filename), text }
+  })
+  return { forms, single: !yaml.isSeq(contents) }
+}
+
+/**
+ * The forms of a file a save keeps : the ones the designer never received, unless the save
+ * writes a form of the same name into that file (it is then that form, edited).
+ *
+ * Args:
+ *   onDisk (object|null): the file, as readFileForms returns it.
+ *   savedNames (Set<string>): the names of the forms the save writes into the file.
+ *
+ * Returns:
+ *   object[]: [{ index (its place in the file), name, text }].
+ */
+function formsToKeep(onDisk, savedNames) {
+  if (!onDisk) return []
+  return onDisk.forms
+    .map((f, index) => ({ ...f, index }))
+    .filter(f => f.notLoaded && !(f.name && savedNames.has(f.name)))
+}
+
+/**
+ * The text of a forms file : the forms the designer sent, with the forms it never received
+ * back in their places.
+ *
+ * Args:
+ *   forms (object[]): the forms the save writes into the file, in their order.
+ *   kept (object[]): the forms to keep, as formsToKeep returns them.
+ *
+ * Returns:
+ *   string: the yaml text of the file.
+ */
+function formsFileText(forms, kept) {
+  // nothing to keep : the file is written as it always was, a single form as a mapping
+  if (!kept.length) return yaml.stringify(forms.length == 1 ? forms[0] : forms)
+  const entries = forms.map(form => ({ text: yaml.stringify([form]) }))
+  for (const k of kept) entries.splice(Math.min(k.index, entries.length), 0, k)
+  return entries.map(e => e.text).join("")
+}
+
 /**
  * The roles a configuration backup holds, for a check before it is restored.
  *
