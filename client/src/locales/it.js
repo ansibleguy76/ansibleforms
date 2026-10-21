@@ -1318,6 +1318,8 @@ export default {
       pullAll: 'Pull di tutti',
       pullAllDone: '{n} repository aggiornato | {n} repository aggiornati',
       pullAllFailed: 'Pull non riuscito per: {names}',
+      pullAllSkipped:
+        'Pull non eseguito, modifiche non ancora inviate: inviale prima (Push) o reimposta il repository: {names}',
       push: 'Push',
       pushHint:
         'Solo un repository in cui scrive il designer (moduli, impostazioni, playbook, workflow) viene rimandato.',

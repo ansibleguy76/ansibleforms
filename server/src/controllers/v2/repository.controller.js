@@ -335,14 +335,20 @@ const formsRepoPullAll = async function(req, res) {
         await Repository.pull(repo.name);
         results.push({ name: repo.name, status: "success" });
       } catch (e) {
+        // a repository with changes not pushed yet is skipped, and the others are pulled
+        // (Repository.assertNoLocalChanges) : it is said in the result, not a failure
+        if (e instanceof Errors.ConflictError) {
+          results.push({ name: repo.name, status: "skipped", output: e.message });
+          continue;
+        }
         failed = true;
         results.push({ name: repo.name, status: "failed", output: e.message });
       }
     }
     if (failed) {
-      return res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedPullRepository'), results.filter(r => r.status === "failed").map(r => `${r.name}: ${r.output}`).join("\n")));
+      return res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedPullRepository'), results.filter(r => r.status !== "success").map(r => `${r.name}: ${r.output}`).join("\n")));
     }
-    res.json(RestResult.single({ results }));
+    res.json(RestResult.single({ results, skipped: results.filter(r => r.status === "skipped").map(r => r.name) }));
   } catch(err) {
     res.status(err.status || 500).json(RestResult.error(i18n.t(req, 'resources.failedPullRepository'), err.message || String(err)));
   }

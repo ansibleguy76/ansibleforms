@@ -1307,6 +1307,7 @@ export default {
       pullAll: 'Pull all',
       pullAllDone: '{n} repository pulled | {n} repositories pulled',
       pullAllFailed: 'Pull failed for: {names}',
+      pullAllSkipped: 'Not pulled, changes not pushed yet: push them first (Push), or reset the repository: {names}',
       push: 'Push',
       pushHint: 'Only a repository the designer writes to (forms, settings, playbooks, workflows) is pushed back.',
       reset: 'Reset',

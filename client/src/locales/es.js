@@ -1322,6 +1322,7 @@ export default {
       pullAll: 'Pull de todos',
       pullAllDone: '{n} repositorio actualizado | {n} repositorios actualizados',
       pullAllFailed: 'Falló el pull de: {names}',
+      pullAllSkipped: 'Sin pull, hay cambios sin enviar: envíalos primero (Push) o restablece el repositorio: {names}',
       push: 'Push',
       pushHint:
         'Solo se envía de vuelta un repositorio en el que escribe el diseñador (formularios, ajustes, playbooks, workflows).',

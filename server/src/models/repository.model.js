@@ -615,6 +615,10 @@ class Repository extends CrudModel {
   static async clone(name, claimed = false) {
     var output, status, head, repo
     if (!claimed) {
+      // the settings' Pull runs a clone, which pulls a repository already cloned
+      // (Repo.clone) : the same rule as a pull (assertNoLocalChanges). A reset deletes
+      // the working tree first and comes in claimed, so it is never refused here.
+      await Repository.assertNoLocalChanges(name)
       // atomic check-and-set : a clone must not run git while a pull/sync/reset
       // is touching the same working tree
       const claim = await Repository.claim(name)
@@ -652,8 +656,34 @@ class Repository extends CrudModel {
     }
   }
 
+  /**
+   * Refuses a pull over a working tree that has changes not pushed yet : uncommitted
+   * changes, or commits not pushed (a designer save nobody pushed). The scheduled pull
+   * skips such a repository (cron.service.js) ; a manual pull now follows the same rule,
+   * rather than running git and failing on a conflict, or merging over work that was
+   * never pushed. Checked before the repository is claimed : a refused pull leaves its
+   * status as it was.
+   *
+   * A repository not cloned yet has nothing to lose, and is not checked.
+   *
+   * Args:
+   *   name (string): the repository.
+   *
+   * Raises:
+   *   Errors.ConflictError: the working tree has changes not pushed yet (409).
+   *   Error: git could not tell (Repo.hasChanges never answers "no changes" on a failure).
+   */
+  static async assertNoLocalChanges(name) {
+    if (!Repo.isValidName(name) || !fs.existsSync(path.join(Repo.folderOf(name), ".git"))) return
+    if (await Repository.hasLocalChanges(name)) {
+      throw new Errors.ConflictError(friendlyPullError("", name, true))
+    }
+  }
+
   static async pull(name) {
     var output, status, head
+    // a working tree with changes not pushed yet is not pulled over, as the scheduled pull does
+    await Repository.assertNoLocalChanges(name)
     // atomic check-and-set : a pull and a sync (or another pull) must not run
     // git on the same working tree at the same time (issue #414)
     const claimed = await Repository.claim(name)

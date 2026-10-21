@@ -1323,6 +1323,8 @@ export default {
       pullAll: 'Alle pullen',
       pullAllDone: '{n} Repository gepullt | {n} Repositories gepullt',
       pullAllFailed: 'Pull fehlgeschlagen für: {names}',
+      pullAllSkipped:
+        'Nicht gepullt, Änderungen noch nicht gepusht: zuerst pushen (Push) oder das Repository zurücksetzen: {names}',
       push: 'Push',
       pushHint:
         'Nur ein Repository, in das der Designer schreibt (Formulare, Einstellungen, Playbooks, Workflows), wird zurückgepusht.',

@@ -10,8 +10,9 @@ test("friendlyPullError rewrites local-change conflicts, passes the rest through
   // the git message when uncommitted local work blocks the merge
   const gitMsg = "error: Your local changes to the following files would be overwritten by merge:\n\tforms/a.yaml\nPlease commit your changes or stash them before you merge.";
   const friendly = friendlyPullError(gitMsg, "myrepo");
-  assert.match(friendly, /Repository 'myrepo' has local changes that block the pull/);
-  assert.match(friendly, /Save \(repository\)/);
+  assert.match(friendly, /Repository 'myrepo' has changes not pushed yet: push them first \(Push\), or reset the repository to discard them/);
+  // asked directly (a pull refused before git runs) : the same message
+  assert.equal(friendlyPullError("", "myrepo", true), friendly);
 
   // an unrelated error is returned unchanged
   assert.equal(friendlyPullError("fatal: could not read from remote repository", "myrepo"), "fatal: could not read from remote repository");

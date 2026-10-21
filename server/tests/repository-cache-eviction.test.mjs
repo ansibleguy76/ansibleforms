@@ -31,6 +31,9 @@ vi.mock("../src/models/repo.model.js", () => ({
     delete: async () => {},
     info: async () => "new1234",
     maskGitToken: (s) => s,
+    // no working tree : the check for changes not pushed yet has nothing to look at
+    isValidName: () => true,
+    folderOf: (name) => `/nonexistent/${name}`,
   },
 }));
 

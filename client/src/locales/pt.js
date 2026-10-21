@@ -1321,6 +1321,8 @@ export default {
       pullAll: 'Pull de todos',
       pullAllDone: '{n} repositório atualizado | {n} repositórios atualizados',
       pullAllFailed: 'O pull falhou para: {names}',
+      pullAllSkipped:
+        'Sem pull, há alterações ainda não enviadas: envie-as primeiro (Push) ou reponha o repositório: {names}',
       push: 'Push',
       pushHint:
         'Só um repositório onde o designer escreve (formulários, definições, playbooks, workflows) é enviado de volta.',

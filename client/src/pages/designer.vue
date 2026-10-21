@@ -44,6 +44,7 @@ import {
   categoryPaths,
 } from '@/config/categories';
 import { formPath } from '@/lib/formsPath';
+import { skippedPulls } from '@/lib/pullResults';
 import { EVERYONE_ROLES } from '@/composables/useRoleSupport';
 
 dayjs.extend(relativeTime);
@@ -3382,10 +3383,14 @@ function pullAndReload(name) {
     loadingRepos.value = true;
     try {
       const url = name ? `/api/v2/forms-repos/pull/${encodeURIComponent(name)}` : `/api/v2/forms-repos/pull`;
-      await axios.post(url, {});
+      const result = await axios.post(url, {});
       stagedForms.value = false;
       await reloadFromDisk();
       toast.success(t('designer.loadDone'));
+      // a repository whose changes are not pushed yet is not pulled (a single pull is refused
+      // with the server's reason, in the catch below) : say which ones Pull all skipped
+      const skipped = skippedPulls(result?.data);
+      if (skipped.length) toast.warning(t('settings.repositories.pullAllSkipped', { names: skipped.join(', ') }));
     } catch (err) {
       const error = err.response?.data?.error || err.message;
       const details = err.response?.data?.details;

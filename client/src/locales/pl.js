@@ -1315,6 +1315,8 @@ export default {
       pullAll: 'Pull wszystkich',
       pullAllDone: 'Pobrano {n} repozytorium | Pobrano {n} repozytoria | Pobrano {n} repozytoriów',
       pullAllFailed: 'Pull nie powiódł się dla: {names}',
+      pullAllSkipped:
+        'Nie pobrano, zmiany nie zostały jeszcze wypchnięte: najpierw je wypchnij (Push) lub zresetuj repozytorium: {names}',
       push: 'Push',
       pushHint:
         'Wypychane jest tylko repozytorium, do którego pisze projektant (formularze, ustawienia, playbooki, workflowy).',

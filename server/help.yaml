@@ -6842,6 +6842,7 @@
       ## Additional Features
       
       You can choose if the repository must be cloned when AnsibleForms starts, and you can add cron-schedule to schedule recurring pull-actions.  
+      A pull never runs over changes that are not pushed yet (a designer save nobody pushed, or uncommitted changes): the scheduled pull skips such a repository, a manual pull is refused (409) until you push them (Push) or reset the repository to discard them, and Pull all skips it and pulls the others.  
       Additionally, in the swagger interface, you will find a clone and pull rest api for webhooks.  
       In case you want long-lived access tokens for the webhooks, with swagger you can pass an expiryDays parameter (for admin roles only) and create long-lived tokens.
   - name: Enable ytt

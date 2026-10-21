@@ -1317,6 +1317,8 @@ export default {
       pullAll: 'Alles pullen',
       pullAllDone: '{n} repository gepulld | {n} repository’s gepulld',
       pullAllFailed: 'Pull mislukt voor: {names}',
+      pullAllSkipped:
+        'Niet gepulld, wijzigingen nog niet gepusht: push ze eerst (Push), of reset de repository: {names}',
       push: 'Push',
       pushHint:
         'Alleen een repository waarin de designer schrijft (formulieren, instellingen, playbooks, workflows) wordt teruggepusht.',

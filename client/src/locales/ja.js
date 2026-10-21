@@ -1310,6 +1310,8 @@ export default {
       pullAll: 'すべてプル',
       pullAllDone: '{n} 件のリポジトリをプルしました',
       pullAllFailed: 'プルに失敗: {names}',
+      pullAllSkipped:
+        'プッシュされていない変更があるためプルしませんでした。先にプッシュするか、リポジトリをリセットしてください: {names}',
       push: 'プッシュ',
       pushHint: 'デザイナーが書き込むリポジトリ (フォーム、設定、プレイブック、ワークフロー) だけがプッシュされます。',
       reset: 'リセット',

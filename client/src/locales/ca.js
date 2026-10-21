@@ -1322,6 +1322,8 @@ export default {
       pullAll: 'Pull de tots',
       pullAllDone: '{n} repositori actualitzat | {n} repositoris actualitzats',
       pullAllFailed: 'Ha fallat el pull de: {names}',
+      pullAllSkipped:
+        "Sense pull, hi ha canvis sense enviar: envia'ls primer (Push) o restableix el repositori: {names}",
       push: 'Push',
       pushHint:
         'Només es torna a enviar un repositori on escriu el dissenyador (formularis, configuració, playbooks, workflows).',
