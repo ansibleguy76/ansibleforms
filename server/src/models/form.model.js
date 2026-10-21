@@ -1481,9 +1481,47 @@ Form.restoreBackup = async function(backupName,configOnly=false){
     }
   }
 }
+/**
+ * Refuses a designer save that names the same form twice.
+ *
+ * The loader keeps the first form of a name and skips the others (Form.load), so a
+ * second form of the same name would be written and then never be seen again : the
+ * designer would show the first one, and the edit made to the second one would be lost
+ * on the next save. JSON Schema cannot say "unique by property", so it is checked here.
+ *
+ * Args:
+ *   forms (object[]): the forms of the save.
+ *
+ * Raises:
+ *   Errors.ConflictError: a form name is used more than once (409).
+ */
+function assertUniqueFormNames(forms){
+  const seen = new Set()
+  const duplicates = new Set()
+  for (const form of (Array.isArray(forms) ? forms : [])) {
+    const name = typeof form?.name === 'string' ? form.name : null
+    if (name === null) continue
+    if (seen.has(name)) duplicates.add(name)
+    seen.add(name)
+  }
+  if (duplicates.size > 0) {
+    throw new Errors.ConflictError(`A form named ${[...duplicates].map(n => `'${n}'`).join(", ")} already exists ; every form needs a name of its own`)
+  }
+}
+
 Form.save = async function(data){
-  var formsConfig = Form.parse(data)
-  formsConfig = Form.validate(formsConfig)
+  // The checks of what the user sent come first, and each answers as the user's mistake
+  // (lib/errors.js) : the controller turns them into a 400 or a 409 with their message,
+  // where a plain Error became a 500 that read as a broken server.
+  var formsConfig
+  try {
+    formsConfig = Form.parse(data)
+    formsConfig = Form.validate(formsConfig)
+  } catch (err) {
+    if (err instanceof Errors.ApiError) throw err
+    throw new Errors.BadRequestError(Helpers.getError(err))
+  }
+  assertUniqueFormNames(formsConfig.forms)
   const { configPath: targetConfigPath, formsDirs, repoMode, repoNames } = await getSaveTargets()
   logger.info(`Saving forms to ${formsDirs.map(d => d.path).join(", ")}`)
   var groups={}  // key "<repository>\0<source>" -> { repository, source, forms:[] }
@@ -1496,7 +1534,7 @@ Form.save = async function(data){
   // than written into the base config
   const homeless = (formsConfig.forms || []).filter(item => !item.source).map(item => item.name || '(no name)')
   if (homeless.length) {
-    throw new Error(`Every form must be saved to a file in the forms folder ; not in a file: ${homeless.join(", ")}`)
+    throw new Errors.BadRequestError(`Every form must be saved to a file in the forms folder ; not in a file: ${homeless.join(", ")}`)
   }
   formsConfig.forms = formsConfig.forms.filter(item => {
     var src = item.source
@@ -1516,7 +1554,7 @@ Form.save = async function(data){
   for (const g of Object.values(groups)) {
     const probe = path.resolve(formsPath(), g.source)
     if (g.source.includes("\0") || path.isAbsolute(g.source) || !probe.startsWith(path.resolve(formsPath()) + path.sep)) {
-      throw new Error(`Invalid form source '${g.source}': must be a path inside the forms folder`)
+      throw new Errors.BadRequestError(`Invalid form source '${g.source}': must be a path inside the forms folder`)
     }
   }
 
@@ -1639,6 +1677,9 @@ Form.save = async function(data){
   catch(err) {
     // handle error
     logger.error("Failed to save forms: ",err)
+    // a refusal (lib/errors.js) keeps its class and its status ; only a real failure
+    // becomes the generic "Failed to save forms"
+    if (err instanceof Errors.ApiError) throw err
     throw new Error(Helpers.getError(err,"Failed to save forms"), { cause: err })
   }
   finally {

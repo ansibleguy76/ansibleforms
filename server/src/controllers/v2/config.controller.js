@@ -463,6 +463,12 @@ const save = async function(req,res){
         res.status(500).json(RestResult.error(i18n.t(req, 'config.failedSaveForms')))
       }
     }catch(err){
+      // a refusal of what the user sent (lib/errors.js) answers with its own status and
+      // message : an invalid form 400, a forbidden change 403, a duplicate form name 409.
+      // Only a real failure (a disk, a database, a repository) stays a 500.
+      if (err instanceof Errors.ApiError && err.status) {
+        return res.status(err.status).json(RestResult.error(i18n.t(req, 'config.failedSaveForms'), helpers.getError(err)))
+      }
       res.status(500).json(RestResult.error(i18n.t(req, 'config.failedSaveForms'), helpers.getError(err)))
     }finally{
       // release ONLY when we took it, exactly as restore() does
