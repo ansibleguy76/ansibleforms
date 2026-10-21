@@ -384,7 +384,8 @@ describe("forms live in files only (7.0.0)", () => {
   // than lose a form silently.
   const src = readFileSync(path.join(here, "../src/models/form.model.js"), "latin1");
   const load = src.slice(src.indexOf("const unvalidatedBase = await getBaseConfig();"), src.indexOf("// read extra form files"));
-  const save = src.slice(src.indexOf("Form.save = async function"), src.indexOf("Form.save = async function") + 9000);
+  // the whole of Form.save : up to the function that follows it
+  const save = src.slice(src.indexOf("Form.save = async function"), src.indexOf("Form.backupRoles = function"));
 
   test("a forms section in the base config is reported, and none of it is loaded", () => {
     assert.match(load, /unvalidatedBase\.forms/);
