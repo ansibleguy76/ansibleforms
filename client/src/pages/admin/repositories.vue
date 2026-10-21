@@ -5,6 +5,7 @@ import Profile from '@/lib/Profile';
 import getSettings from '@/config/settings';
 import { useI18n } from 'vue-i18n';
 import Helpers from '@/lib/Helpers';
+import { sortPulls } from '@/lib/pullResults';
 import { useAppStore } from '@/stores/app';
 
 const { t } = useI18n();
@@ -48,7 +49,8 @@ async function triggerClone(repo) {
   await runGit(repo, 'clone', t('settings.repositories.pull'));
 }
 // Pull all : every repository pulled (cloned when it is not there yet) at once, as its own Pull
-// does ; the ones that fail are named
+// does ; the ones that fail are named, and so are the ones skipped because their changes are
+// not pushed yet (the server refuses their pull with a 409, the others still go)
 const pullingAll = ref(false);
 async function pullAll() {
   pullingAll.value = true;
@@ -59,9 +61,10 @@ async function pullAll() {
     const pulls = await Promise.allSettled(
       repos.map((repo) => axios.post(`/api/v2/repository/${encodeURIComponent(repo.name)}/clone`, {})),
     );
-    const failed = repos.filter((_, i) => pulls[i].status === 'rejected').map((repo) => repo.name);
+    const { pulled, skipped, failed } = sortPulls(repos, pulls);
     if (failed.length) toast.error(t('settings.repositories.pullAllFailed', { names: failed.join(', ') }));
-    else toast.success(t('settings.repositories.pullAllDone', repos.length));
+    if (skipped.length) toast.warning(t('settings.repositories.pullAllSkipped', { names: skipped.join(', ') }));
+    if (!failed.length && pulled.length) toast.success(t('settings.repositories.pullAllDone', pulled.length));
   } catch (err) {
     toast.error(Helpers.parseAxiosResponseError(err, t('settings.repositories.pullAll')));
   } finally {

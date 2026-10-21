@@ -5,11 +5,14 @@ import path from "path";
 
 // Map a raw `git pull` failure to a clear, actionable message. The common case
 // is a working tree with local (unpushed) changes that block the merge ; any
-// other error is passed through unchanged.
-export function friendlyPullError(message, name) {
+// other error is passed through unchanged. Called with no git output but
+// `unpushed` true, it gives that message directly : a pull refused before git
+// runs, because the working tree has changes (Repository.assertNoLocalChanges),
+// says exactly what a pull git refused says.
+export function friendlyPullError(message, name, unpushed = false) {
   const m = String(message || "");
-  if (/local changes|would be overwritten|commit your changes|stash them|Please commit/i.test(m)) {
-    return `Repository '${name}' has local changes that block the pull. Use 'Save (repository)' to push them first, or discard them.`;
+  if (unpushed || /local changes|would be overwritten|commit your changes|stash them|Please commit/i.test(m)) {
+    return `Repository '${name}' has changes not pushed yet: push them first (Push), or reset the repository to discard them`;
   }
   return m;
 }

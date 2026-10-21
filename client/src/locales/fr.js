@@ -1324,6 +1324,8 @@ export default {
       pullAll: 'Tout puller',
       pullAllDone: '{n} dépôt mis à jour | {n} dépôts mis à jour',
       pullAllFailed: 'Échec du pull pour : {names}',
+      pullAllSkipped:
+        'Pas de pull, des modifications ne sont pas encore poussées : poussez-les d’abord (Push), ou réinitialisez le dépôt : {names}',
       push: 'Push',
       pushHint: 'Seul un dépôt où écrit le designer (formulaires, paramètres, playbooks, workflows) est renvoyé.',
       reset: 'Réinitialiser',

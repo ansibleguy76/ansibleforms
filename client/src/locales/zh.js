@@ -1278,6 +1278,7 @@ export default {
       pullAll: '全部拉取',
       pullAllDone: '已拉取 {n} 个仓库',
       pullAllFailed: '拉取失败: {names}',
+      pullAllSkipped: '有尚未推送的更改，未拉取：请先推送，或重置仓库: {names}',
       push: '推送',
       pushHint: '只有设计器写入的仓库 (表单、设置、playbook、工作流) 才会推送回去。',
       reset: '重置',
